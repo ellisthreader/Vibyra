@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")"
+
+APP_URL="http://127.0.0.1:4317/desktop"
+CHROME_PROFILE="$HOME/.code-x-desktop-window"
+
+open_window() {
+  if command -v google-chrome >/dev/null 2>&1; then
+    google-chrome --app="$APP_URL" --class=CodeXDesktop --user-data-dir="$CHROME_PROFILE" --window-size=1040,760 >/dev/null 2>&1 &
+  elif command -v chromium >/dev/null 2>&1; then
+    chromium --app="$APP_URL" --class=CodeXDesktop --window-size=1040,760 >/dev/null 2>&1 &
+  else
+    xdg-open "$APP_URL" >/dev/null 2>&1 &
+  fi
+}
+
+if lsof -ti :4317 >/dev/null 2>&1; then
+  open_window
+  exit 0
+fi
+
+if [ ! -f backend/public/build/manifest.json ]; then
+  (cd backend && npm install && npm run build)
+fi
+
+mkdir -p backend/storage/app/codex backend/storage/logs
+(cd backend && php artisan serve --host=0.0.0.0 --port=4317 > storage/logs/code-x-desktop.log 2>&1 & echo $! > storage/app/codex/desktop.pid)
+
+sleep 1
+open_window

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Code X Desktop
+Comment=Pair your phone with your coding machine
+Exec=/home/taylor/Desktop/SaaS/Code X Desktop
+Path=/home/taylor/Desktop/SaaS
+Icon=/home/taylor/Desktop/SaaS/desktop/icon.svg
+Terminal=false
+Categories=Development;
