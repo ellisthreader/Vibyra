@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Vibyra Desktop
+Comment=Pair your phone with your coding machine
+Exec=/home/ellis/Desktop/SaaS/Vibyra Desktop
+Path=/home/ellis/Desktop/SaaS
+Icon=/home/ellis/Desktop/SaaS/desktop/vibyra.png
+Terminal=false
+Categories=Development;

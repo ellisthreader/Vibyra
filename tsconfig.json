@@ -3,5 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "backend/public/build",
+    "backend/vendor",
+    "backend/node_modules"
+  ]
 }

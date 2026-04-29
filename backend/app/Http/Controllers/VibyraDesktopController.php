@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\CodeXDesktopState;
+use App\Services\VibyraDesktopState;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class CodeXDesktopController extends Controller
+class VibyraDesktopController extends Controller
 {
-    public function __construct(private readonly CodeXDesktopState $desktop)
+    public function __construct(private readonly VibyraDesktopState $desktop)
     {
     }
 
@@ -32,7 +32,7 @@ class CodeXDesktopController extends Controller
     {
         return $this->json($this->desktop->requestPair(
             (string) $request->input('code'),
-            (string) $request->input('deviceName', 'Code X iPhone')
+            (string) $request->input('deviceName', 'Vibyra Phone')
         ), 202);
     }
 
@@ -58,6 +58,41 @@ class CodeXDesktopController extends Controller
         return $this->json($this->desktop->projects());
     }
 
+    public function createProject(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->createProject((string) $request->input('name', 'Untitled Workspace')), 201);
+    }
+
+    public function files(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->files((string) $request->query('projectId')));
+    }
+
+    public function createFile(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->createFile(
+            (string) $request->input('projectId'),
+            (string) $request->input('path', 'note.txt'),
+            (string) $request->input('content', '')
+        ), 201);
+    }
+
+    public function readFile(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->readFile(
+            (string) $request->query('projectId'),
+            (string) $request->query('path')
+        ));
+    }
+
     public function events(Request $request): JsonResponse
     {
         $this->authorizeToken($request);
@@ -79,7 +114,8 @@ class CodeXDesktopController extends Controller
         return $this->json($this->desktop->startAgent(
             (string) $request->input('projectId'),
             (string) $request->input('prompt'),
-            (string) $request->input('model', 'OpenAI')
+            (string) $request->input('model', 'gpt-5.5'),
+            (string) $request->input('reasoningEffort', 'medium')
         ));
     }
 

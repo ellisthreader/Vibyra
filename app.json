@@ -1,26 +1,29 @@
 {
   "expo": {
-    "name": "Code X",
-    "slug": "code-x-ios",
+    "name": "Vibyra",
+    "slug": "vibyra",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "scheme": "codex",
+    "scheme": "vibyra",
+    "icon": "./src/assets/vibyra.png",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.codex.mobile",
+      "bundleIdentifier": "app.vibyra.mobile",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSLocalNetworkUsageDescription": "Vibyra connects to the desktop app on your local Wi-Fi network.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         }
       }
     },
     "android": {
-      "package": "app.codex.mobile"
+      "package": "app.vibyra.mobile",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro"
