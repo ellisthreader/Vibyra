@@ -71,7 +71,7 @@ export type AppSetters = {
 };
 
 export type AppActions = {
-  authenticateWith: (method: "apple" | "google" | "email") => void;
+  authenticateWith: (method: "apple" | "google" | "microsoft" | "email") => void;
   confirmPhonePermission: () => void;
   pairMachine: () => Promise<void>;
   testDesktopConnection: () => Promise<boolean>;

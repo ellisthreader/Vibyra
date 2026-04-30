@@ -24,8 +24,8 @@ const styles = StyleSheet.create({
     width: 44
   },
   logo: {
-    height: 190,
-    width: 230
+    height: 150,
+    width: 206
   },
   logoWrap: {
     alignItems: "center"
