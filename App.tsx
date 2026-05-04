@@ -1,6 +1,8 @@
+import "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppProvider, useAppContext } from "./src/context/AppContext";
 import { AuthScreen } from "./src/screens/AuthScreen";
@@ -15,12 +17,12 @@ function AppContent() {
     return <AuthScreen />;
   }
 
-  if (!app.paired) {
+  if (!app.onboardingComplete) {
     return <OnboardingScreen />;
   }
 
   return (
-    <SafeAreaView style={styles.shell}>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.shell}>
       <StatusBar style="light" />
       <WorkspaceScreen />
     </SafeAreaView>
@@ -29,15 +31,20 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1
+  },
   shell: {
     backgroundColor: colors.background,
     flex: 1

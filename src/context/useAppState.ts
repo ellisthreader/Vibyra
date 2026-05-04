@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   starterAgents,
   starterChanges,
@@ -7,6 +7,7 @@ import {
   starterProjects
 } from "../data/appData";
 import { getDefaultAgentUrl } from "../utils/network";
+import { loadPersistedSession, savePersistedSession } from "../utils/persistence";
 import { AppDerivedState, AppState } from "./appContextTypes";
 import { ChatMessage, FileEntry, ReasoningEffort } from "../types/domain";
 
@@ -28,11 +29,13 @@ const welcomeMessages: ChatMessage[] = [
 ];
 
 export function useAppState() {
+  const persistedSession = useMemo(loadPersistedSession, []);
   const [authenticated, setAuthenticated] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
   const [authName, setAuthName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [onboardingComplete, setOnboardingComplete] = useState(persistedSession.onboardingComplete);
   const [paired, setPaired] = useState(false);
   const [agentUrl, setAgentUrl] = useState(getDefaultAgentUrl);
   const [pairCode, setPairCode] = useState("");
@@ -43,6 +46,7 @@ export function useAppState() {
   const [checkingHealth, setCheckingHealth] = useState(false);
   const [pendingPhoneApproval, setPendingPhoneApproval] = useState<AppState["pendingPhoneApproval"]>(null);
   const [connection, setConnection] = useState<AppState["connection"]>(null);
+  const [rememberedDesktops, setRememberedDesktops] = useState<AppState["rememberedDesktops"]>(persistedSession.rememberedDesktops);
   const [machineName, setMachineName] = useState("Vibyra Desktop");
   const [projects, setProjects] = useState(starterProjects);
   const [selectedProjectId, setSelectedProjectId] = useState("p1");
@@ -62,6 +66,16 @@ export function useAppState() {
   const [chatMessages, setChatMessages] = useState(welcomeMessages);
   const [newFilePath, setNewFilePath] = useState("note.txt");
   const [command, setCommand] = useState("npm run build");
+  const [promptMoney, setPromptMoney] = useState<AppState["promptMoney"]>({
+    total: 0,
+    count: 0,
+    lastEarned: 0,
+    longestPromptLength: 0
+  });
+
+  useEffect(() => {
+    savePersistedSession({ onboardingComplete, rememberedDesktops });
+  }, [onboardingComplete, rememberedDesktops]);
 
   const derived: AppDerivedState = useMemo(() => {
     const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
@@ -76,24 +90,24 @@ export function useAppState() {
 
   return {
     state: {
-      authenticated, authMode, authName, authEmail, authPassword,
+      authenticated, authMode, authName, authEmail, authPassword, onboardingComplete,
       paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
-      healthMessage, checkingHealth, pendingPhoneApproval, connection,
+      healthMessage, checkingHealth, pendingPhoneApproval, connection, rememberedDesktops,
       machineName, projects, selectedProjectId, selectedModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
       workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages,
-      newFilePath, command
+      newFilePath, command, promptMoney
     },
     derived,
     setters: {
       setAuthenticated, setAuthMode, setAuthName, setAuthEmail, setAuthPassword,
-      setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
+      setOnboardingComplete, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
       setPairingMessage, setHealthMessage, setCheckingHealth,
-      setPendingPhoneApproval, setConnection, setMachineName, setProjects,
+      setPendingPhoneApproval, setConnection, setRememberedDesktops, setMachineName, setProjects,
       setSelectedProjectId, setSelectedModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState,
       setPreviewState, setWorkflowIndex, setLastPrompt, setAgentRequesting,
-      setTaskText, setChatMessages, setNewFilePath, setCommand
+      setTaskText, setChatMessages, setNewFilePath, setCommand, setPromptMoney
     }
   };
 }

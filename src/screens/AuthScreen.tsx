@@ -1,19 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Easing, Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
 import { colors } from "../styles/theme";
 
-const { width, height } = Dimensions.get("window");
+type AuthMethod = "apple" | "google" | "email";
+type IconName = keyof typeof Ionicons.glyphMap;
+const frontPageBackground = require("../assets/front-auth.jpg");
+const logoAspectRatio = 515 / 375;
+
+const featureItems = [
+  { title: "Beautiful", body: "by design", symbol: "braces" },
+  { title: "Fast", body: "by nature", icon: "flash-outline" },
+  { title: "Code", body: "anywhere", icon: "globe-outline" }
+] satisfies Array<{ title: string; body: string; symbol?: "braces"; icon?: IconName }>;
 
 export function AuthScreen() {
   const app = useAppContext();
-  const tagline = "Code from anywhere";
-  const [shimmerActive, setShimmerActive] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const [backgroundSource, setBackgroundSource] = useState(() => frontPageBackground);
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
   const logoTranslateY = useRef(new Animated.Value(-120)).current;
@@ -21,6 +34,37 @@ export function AuthScreen() {
   const titleTranslateY = useRef(new Animated.Value(20)).current;
   const restOpacity = useRef(new Animated.Value(0)).current;
   const restTranslateY = useRef(new Animated.Value(28)).current;
+  const availableHeight = height - insets.top - insets.bottom;
+  const fitScale = Math.min(1, Math.max(0.82, availableHeight / 790));
+  const compact = availableHeight < 735;
+  const logoWidth = Math.min(width * (compact ? 0.51 : 0.58), 250) * fitScale;
+  const titleFontSize = Math.min(width * (compact ? 0.075 : 0.082), 34) * Math.max(fitScale, 0.88);
+  const contentSpacing = useMemo(() => ({
+    paddingBottom: Math.max(insets.bottom + 8, compact ? 10 : 22),
+    paddingTop: Math.max(insets.top + (compact ? 42 : 78), availableHeight * (compact ? 0.075 : 0.115))
+  }), [availableHeight, compact, insets.bottom, insets.top]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBackground() {
+      const asset = Asset.fromModule(frontPageBackground);
+      if (!asset.localUri) {
+        await asset.downloadAsync();
+      }
+      if (!cancelled && asset.localUri) {
+        setBackgroundSource({ uri: asset.localUri });
+      }
+    }
+
+    loadBackground().catch(() => {
+      // Keep the static require fallback if the asset resolver fails.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const logoEntrance = Animated.parallel([
@@ -76,19 +120,19 @@ export function AuthScreen() {
 
     logoEntrance.start(() => {
       titleEntrance.start(() => {
-        setShimmerActive(true);
         restEntrance.start();
       });
     });
   }, [logoOpacity, logoScale, logoTranslateY, titleOpacity, titleTranslateY, restOpacity, restTranslateY]);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView edges={[]} style={styles.screen}>
       <StatusBar style="light" />
-      <LinearGradient colors={["#050509", "#07070A", "#0C0A11"]} style={styles.screen}>
-        <AnimatedBackdrop />
-        <View style={styles.content}>
-          <View style={styles.hero}>
+      <View style={styles.screen}>
+        <Image source={backgroundSource} resizeMode="cover" style={styles.backgroundImage} />
+        <LinearGradient colors={["rgba(3, 2, 18, 0.12)", "rgba(7, 3, 26, 0.2)", "rgba(2, 1, 14, 0.48)"]} style={styles.backgroundOverlay} />
+        <View style={[styles.content, contentSpacing]}>
+          <View style={styles.heroStack}>
             <Animated.View
               style={[
                 styles.logoStage,
@@ -98,29 +142,22 @@ export function AuthScreen() {
                 }
               ]}
             >
-              <VibyraLogo />
+              <VibyraLogo style={{ height: logoWidth / logoAspectRatio, width: logoWidth }} />
             </Animated.View>
             <Animated.View
               style={[
                 styles.titleStage,
                 {
                   opacity: titleOpacity,
+                  marginTop: 32 * fitScale,
                   transform: [{ translateY: titleTranslateY }]
                 }
               ]}
             >
-              <Text style={styles.title}>Welcome to Vibyra</Text>
-            </Animated.View>
-            <Animated.View
-              style={[
-                styles.taglineStage,
-                {
-                  opacity: restOpacity,
-                  transform: [{ translateY: restTranslateY }]
-                }
-              ]}
-            >
-              <ShimmerLine text={tagline} active={shimmerActive} />
+              <View style={styles.titleRow}>
+                <Text style={[styles.title, { fontSize: titleFontSize, lineHeight: titleFontSize * 1.16 }]}>Welcome to </Text>
+                <GradientTitleWord fontSize={titleFontSize} text="Vibyra" />
+              </View>
             </Animated.View>
           </View>
 
@@ -128,267 +165,334 @@ export function AuthScreen() {
             style={[
               styles.actions,
               {
+                gap: 11 * fitScale,
                 opacity: restOpacity,
                 transform: [{ translateY: restTranslateY }]
               }
             ]}
           >
-            <Pressable style={({ pressed }) => [styles.primaryCta, pressed ? styles.primaryCtaPressed : null]} onPress={() => app.authenticateWith("email")}>
-              <Text style={styles.primaryCtaText}>Get started</Text>
-              <Ionicons name="arrow-forward" size={18} color={colors.text} />
-            </Pressable>
-            <Pressable style={({ pressed }) => [styles.accountButton, pressed ? styles.accountButtonPressed : null]} onPress={() => app.authenticateWith("email")}>
-              <Text style={styles.accountText}>I have an account</Text>
-            </Pressable>
+            <FeatureStrip scale={fitScale} />
+            <AuthChoice
+              icon="logo-google"
+              label="Continue with Google"
+              method="google"
+              scale={fitScale}
+              onSelect={(method) => app.authenticateWith(method, "new")}
+            />
+            <AuthChoice
+              icon="logo-apple"
+              label="Continue with Apple"
+              method="apple"
+              scale={fitScale}
+              onSelect={(method) => app.authenticateWith(method, "new")}
+            />
+            <AuthChoice
+              icon="mail-outline"
+              label="Continue with email"
+              method="email"
+              scale={fitScale}
+              onSelect={(method) => app.authenticateWith(method, "new")}
+            />
+            <View style={[styles.legalBlock, { gap: 14 * fitScale, paddingTop: 21 * fitScale }]}>
+              <Text style={[styles.legalIntro, { fontSize: 14 * fitScale, lineHeight: 20 * fitScale }]}>By continuing, you agree to our</Text>
+              <View style={[styles.legalRow, { gap: 24 * fitScale }]}>
+                <Pressable style={({ pressed }) => pressed ? styles.legalPressed : null}>
+                  <Text style={[styles.legalLink, { fontSize: 15 * fitScale, lineHeight: 20 * fitScale }]}>Privacy Policy</Text>
+                </Pressable>
+                <View style={[styles.legalDivider, { height: 26 * fitScale }]} />
+                <Pressable style={({ pressed }) => pressed ? styles.legalPressed : null}>
+                  <Text style={[styles.legalLink, { fontSize: 15 * fitScale, lineHeight: 20 * fitScale }]}>Terms of Service</Text>
+                </Pressable>
+              </View>
+            </View>
           </Animated.View>
         </View>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 }
 
-function AnimatedBackdrop() {
-  const drift = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const driftLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(drift, {
-          toValue: 1,
-          duration: 14000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true
-        }),
-        Animated.timing(drift, {
-          toValue: 0,
-          duration: 14000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true
-        })
-      ])
-    );
-
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 9000,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true
-        }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 9000,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true
-        })
-      ])
-    );
-
-    driftLoop.start();
-    pulseLoop.start();
-
-    return () => {
-      driftLoop.stop();
-      pulseLoop.stop();
-    };
-  }, [drift, pulse]);
-
-  const leftBlob = {
-    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.28, 0.42] }),
-    transform: [
-      { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [-24, 28] }) },
-      { translateY: pulse.interpolate({ inputRange: [0, 1], outputRange: [12, -18] }) },
-      { scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }
-    ]
-  };
-
-  const rightBlob = {
-    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.3] }),
-    transform: [
-      { translateX: drift.interpolate({ inputRange: [0, 1], outputRange: [18, -36] }) },
-      { translateY: drift.interpolate({ inputRange: [0, 1], outputRange: [-22, 22] }) },
-      { scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1.04, 0.96] }) }
-    ]
-  };
-
-  const centerGlow = {
-    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.32] }),
-    transform: [
-      { translateY: pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
-      { scale: drift.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] }) }
-    ]
-  };
+function GradientTitleWord({ fontSize, text }: { fontSize: number; text: string }) {
+  const titleStyle = [styles.title, { fontSize, lineHeight: fontSize * 1.16 }];
 
   return (
-    <View pointerEvents="none" style={styles.backdrop}>
-      <Animated.View style={[styles.blob, styles.leftBlob, leftBlob]}>
-        <LinearGradient colors={["rgba(109, 59, 255, 0.78)", "rgba(242, 58, 205, 0.14)"]} style={styles.blobFill} />
-      </Animated.View>
-      <Animated.View style={[styles.blob, styles.rightBlob, rightBlob]}>
-        <LinearGradient colors={["rgba(255, 179, 71, 0.55)", "rgba(242, 58, 205, 0.08)"]} style={styles.blobFill} />
-      </Animated.View>
-      <Animated.View style={[styles.centerGlow, centerGlow]}>
-        <LinearGradient colors={["rgba(242, 58, 205, 0.18)", "rgba(109, 59, 255, 0.02)"]} style={styles.blobFill} />
-      </Animated.View>
-      <View style={styles.noiseVeil} />
+    <MaskedView maskElement={<Text style={titleStyle}>{text}</Text>} style={{ height: fontSize * 1.2, width: fontSize * 3.23 }}>
+      <LinearGradient
+        colors={["#FFFFFF", "#C65BFF", "#FF38C5", "#FFB24A"]}
+        locations={[0, 0.34, 0.68, 1]}
+        start={{ x: 0, y: 0.48 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.gradientTitleFill}
+      />
+    </MaskedView>
+  );
+}
+
+function FeatureStrip({ scale }: { scale: number }) {
+  const iconTileSize = 56 * scale;
+  const iconSize = 32 * scale;
+  const featureTitleSize = 17 * scale;
+  const featureBodySize = 15 * scale;
+
+  return (
+    <View style={[styles.featureStrip, { marginBottom: 27 * scale }]}>
+      {featureItems.map((item, index) => (
+        <React.Fragment key={item.title}>
+          <View style={styles.featureItem}>
+            <LinearGradient
+              colors={["rgba(176, 65, 255, 0.38)", "rgba(83, 26, 154, 0.54)"]}
+              start={{ x: 0.1, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
+              style={[styles.featureIconTile, { borderRadius: 20 * scale, height: iconTileSize, marginBottom: 11 * scale, width: iconTileSize }]}
+            >
+              {item.symbol === "braces" ? (
+                <Text style={[styles.bracesIcon, { fontSize: 30 * scale, lineHeight: 36 * scale }]}>{"{ }"}</Text>
+              ) : (
+                <Ionicons name={item.icon} size={iconSize} color="#B15BFF" />
+              )}
+            </LinearGradient>
+            <Text style={[styles.featureTitle, { fontSize: featureTitleSize, lineHeight: featureTitleSize * 1.35 }]}>{item.title}</Text>
+            <Text style={[styles.featureBody, { fontSize: featureBodySize, lineHeight: featureBodySize * 1.4 }]}>{item.body}</Text>
+          </View>
+          {index < featureItems.length - 1 ? <View style={[styles.featureDivider, { height: 64 * scale, marginTop: 16 * scale }]} /> : null}
+        </React.Fragment>
+      ))}
     </View>
   );
 }
 
-function ShimmerLine({ text, active }: { text: string; active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    progress.setValue(0);
-    if (!active) {
-      return undefined;
-    }
-
-    const animation = Animated.timing(progress, {
-      toValue: text.length + 4,
-      duration: 2600,
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: false
-    });
-
-    animation.start();
-
-    return () => {
-      animation.stop();
-    };
-  }, [active, progress, text]);
+function AuthChoice({
+  icon,
+  label,
+  method,
+  scale,
+  onSelect
+}: {
+  icon: IconName;
+  label: string;
+  method: AuthMethod;
+  scale: number;
+  onSelect: (method: AuthMethod) => void;
+}) {
+  const buttonHeight = Math.max(48, 56 * scale);
+  const labelSize = Math.max(14.5, 17 * scale);
 
   return (
-    <View style={styles.shimmerRow}>
-      {text.split("").map((char, index) => {
-        const opacity = progress.interpolate({
-          inputRange: [index - 1.1, index, index + 0.8, index + 1.8],
-          outputRange: [0.45, 0.68, 1, 0.68],
-          extrapolate: "clamp"
-        });
+    <Pressable
+      style={({ pressed }) => [
+        styles.authChoice,
+        {
+          gap: 28 * scale,
+          height: buttonHeight,
+          paddingHorizontal: 24 * scale
+        },
+        pressed ? styles.authChoicePressed : null
+      ]}
+      onPress={() => onSelect(method)}
+    >
+      <AuthProviderIcon icon={icon} method={method} scale={scale} />
+      <Text style={[styles.authChoiceText, { fontSize: labelSize, minWidth: 190 * scale }]}>{label}</Text>
+    </Pressable>
+  );
+}
 
-        const color = progress.interpolate({
-          inputRange: [index - 1.1, index + 0.6, index + 1.8],
-          outputRange: ["rgb(122,122,140)", "rgb(255,255,255)", "rgb(184,184,200)"],
-          extrapolate: "clamp"
-        });
+function AuthProviderIcon({ icon, method, scale }: { icon: IconName; method: AuthMethod; scale: number }) {
+  const iconBoxWidth = 40 * scale;
 
-        return (
-          <Animated.Text key={`${char}-${index}`} style={[styles.shimmerChar, { color, opacity }]}>
-            {char === " " ? "\u00A0" : char}
-          </Animated.Text>
-        );
-      })}
-    </View>
+  if (method === "google") {
+    return (
+      <View style={[styles.googleIcon, { height: 34 * scale, width: iconBoxWidth }]}>
+        <Svg width={30 * scale} height={30 * scale} viewBox="0 0 24 24">
+          <Path fill="#4285F4" d="M23.49 12.27c0-.84-.08-1.65-.21-2.43H12v4.6h6.45a5.52 5.52 0 0 1-2.39 3.62v3.01h3.88c2.27-2.09 3.55-5.17 3.55-8.8Z" />
+          <Path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.93l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.72-4.95H1.27v3.1A11.99 11.99 0 0 0 12 24Z" />
+          <Path fill="#FBBC05" d="M5.28 14.26A7.21 7.21 0 0 1 4.9 12c0-.78.13-1.54.38-2.26v-3.1H1.27A11.93 11.93 0 0 0 0 12c0 1.94.46 3.78 1.27 5.36l4.01-3.1Z" />
+          <Path fill="#EA4335" d="M12 4.79c1.76 0 3.34.61 4.59 1.8l3.43-3.43A11.46 11.46 0 0 0 12 0 11.99 11.99 0 0 0 1.27 6.64l4.01 3.1C6.23 6.9 8.88 4.79 12 4.79Z" />
+        </Svg>
+      </View>
+    );
+  }
+
+  return (
+    <Ionicons
+      name={icon}
+      size={(method === "apple" ? 35 : 31) * scale}
+      color={method === "apple" ? "#FFFFFF" : "#A855FF"}
+      style={[styles.authIcon, { width: iconBoxWidth }]}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  accountButton: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center"
-  },
-  accountButtonPressed: {
-    opacity: 0.72
-  },
-  accountText: {
-    color: colors.muted,
-    fontSize: 15,
-    fontWeight: "700"
-  },
   actions: {
-    alignSelf: "stretch",
-    gap: 10,
-    paddingBottom: 4,
+    alignSelf: "center",
+    gap: 11,
+    paddingBottom: 0,
+    width: "92.5%"
+  },
+  authChoice: {
+    alignItems: "center",
+    backgroundColor: "rgba(12, 5, 35, 0.34)",
+    borderColor: "rgba(176, 70, 255, 0.82)",
+    borderRadius: 999,
+    borderWidth: 1.2,
+    flexDirection: "row",
+    gap: 28,
+    height: 56,
+    justifyContent: "center",
+    overflow: "hidden",
+    paddingHorizontal: 24,
+    shadowColor: "#B141FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
     width: "100%"
   },
-  backdrop: {
+  authChoicePressed: {
+    backgroundColor: "rgba(40, 17, 78, 0.62)",
+    borderColor: "rgba(205, 103, 255, 0.94)",
+    transform: [{ scale: 0.99 }]
+  },
+  authChoiceText: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "800",
+    minWidth: 190
+  },
+  backgroundImage: {
     ...StyleSheet.absoluteFillObject,
-    overflow: "hidden"
+    height: undefined,
+    opacity: 1,
+    width: undefined
   },
-  blob: {
-    borderRadius: 999,
-    position: "absolute"
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject
   },
-  blobFill: {
-    borderRadius: 999,
-    flex: 1
+  bracesIcon: {
+    color: "#C77AFF",
+    fontSize: 30,
+    fontWeight: "700",
+    letterSpacing: 0,
+    lineHeight: 36
   },
-  centerGlow: {
-    borderRadius: 999,
-    height: 300,
-    left: width * 0.5 - 150,
-    position: "absolute",
-    top: height * 0.24,
-    width: 300
+  authIcon: {
+    textAlign: "center",
+    width: 40
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 28
+    justifyContent: "space-between",
+    paddingHorizontal: 22
   },
-  hero: {
+  featureBody: {
+    color: "rgba(223, 212, 255, 0.74)",
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 21,
+    textAlign: "center"
+  },
+  featureDivider: {
+    backgroundColor: "rgba(144, 75, 255, 0.24)",
+    height: 64,
+    marginTop: 16,
+    width: 1
+  },
+  featureIconTile: {
     alignItems: "center",
-    flex: 1,
-    gap: 0,
+    borderColor: "rgba(199, 98, 255, 0.36)",
+    borderRadius: 20,
+    borderWidth: 1,
+    height: 56,
     justifyContent: "center",
-    paddingBottom: 32
+    marginBottom: 11,
+    shadowColor: "#B141FF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    width: 56
   },
-  leftBlob: {
-    height: 420,
-    left: -110,
-    top: height * 0.14,
-    width: 420
+  featureItem: {
+    alignItems: "center",
+    flex: 1
   },
-  noiseVeil: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(7, 7, 10, 0.16)"
+  featureStrip: {
+    alignItems: "flex-start",
+    alignSelf: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 27,
+    width: "96%"
+  },
+  featureTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 23,
+    textAlign: "center"
+  },
+  gradientTitleFill: {
+    height: "100%",
+    minWidth: 112
+  },
+  heroStack: {
+    alignItems: "center",
+    gap: 0
+  },
+  legalBlock: {
+    alignItems: "center",
+    gap: 14,
+    paddingTop: 21
+  },
+  legalDivider: {
+    backgroundColor: "rgba(212, 194, 255, 0.52)",
+    height: 26,
+    width: 1
+  },
+  legalIntro: {
+    color: "rgba(222, 213, 245, 0.62)",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+    textAlign: "center"
+  },
+  legalLink: {
+    color: "#A855FF",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20
+  },
+  legalPressed: {
+    opacity: 0.65
+  },
+  legalRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 24,
+    justifyContent: "center",
+    paddingTop: 0
+  },
+  googleIcon: {
+    alignItems: "center",
+    height: 34,
+    justifyContent: "center",
+    width: 40
   },
   logoStage: {
     alignItems: "center",
     justifyContent: "center"
   },
-  primaryCta: {
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    height: 56,
-    justifyContent: "center",
-    paddingHorizontal: 18,
-    width: "100%"
-  },
-  primaryCtaPressed: {
-    backgroundColor: "rgba(23, 23, 34, 0.98)",
-    borderColor: "rgba(139, 92, 255, 0.42)",
-    transform: [{ scale: 0.99 }]
-  },
-  primaryCtaText: { color: colors.text, fontSize: 16, fontWeight: "800" },
-  rightBlob: {
-    height: 380,
-    right: -90,
-    top: height * 0.08,
-    width: 380
-  },
   screen: { backgroundColor: colors.background, flex: 1 },
-  shimmerChar: {
-    fontSize: 16,
-    fontWeight: "500",
-    lineHeight: 24
+  title: {
+    color: colors.text,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textAlign: "center"
   },
-  shimmerRow: { alignItems: "center", flexDirection: "row", justifyContent: "center", marginTop: 8 },
-  taglineStage: {
+  titleRow: {
     alignItems: "center",
-    marginTop: 8
+    flexDirection: "row",
+    justifyContent: "center"
   },
-  title: { color: colors.text, fontSize: 31, fontWeight: "700", textAlign: "center" },
   titleStage: {
-    marginTop: -2
+    marginTop: 32
   }
 });

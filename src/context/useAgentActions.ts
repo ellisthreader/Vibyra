@@ -28,8 +28,15 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     const prompt = derived.selectedFile.id !== "empty"
       ? `In ${derived.selectedFile.path}: ${trimmed}`
       : trimmed;
+    const earned = calculatePromptMoney(trimmed);
 
     impact(Haptics.ImpactFeedbackStyle.Medium);
+    setters.setPromptMoney((current) => ({
+      total: roundMoney(current.total + earned),
+      count: current.count + 1,
+      lastEarned: earned,
+      longestPromptLength: Math.max(current.longestPromptLength, trimmed.length)
+    }));
     setters.setAgents((current) => [optimisticAgent, ...current]);
     setters.setBuildState("building");
     setters.setPreviewState("refreshing");
@@ -138,6 +145,23 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
   }
 
   return { startAgent };
+}
+
+function calculatePromptMoney(prompt: string) {
+  const length = prompt.trim().length;
+
+  if (length <= 80) return 0.1;
+  if (length <= 220) {
+    const ratio = (length - 81) / 139;
+    return roundMoney(0.5 + ratio * 0.5);
+  }
+
+  const ratio = Math.min(1, (length - 221) / 479);
+  return roundMoney(1 + ratio);
+}
+
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 type AgentStartResult = {

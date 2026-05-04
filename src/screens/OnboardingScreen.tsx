@@ -1,14 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { Asset } from "expo-asset";
+import { useIAP, ProductSubscription, Purchase } from "expo-iap";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
   Image,
   ImageSourcePropType,
   LayoutChangeEvent,
+  KeyboardAvoidingView,
+  Modal,
   PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,11 +22,12 @@ import {
   TextInput,
   View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinkButton, PrimaryButton } from "../components/Buttons";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
 import { colors } from "../styles/theme";
+import { RememberedDesktop } from "../types/domain";
 
 type UsageFrequency = "rarely" | "occasionally" | "few_times_week" | "every_day";
 type BuildIntent = "exploring" | "learning" | "side_project" | "app_website" | "work" | "automation";
@@ -40,6 +47,7 @@ type Plan = "Starter" | "Builder" | "Pro";
 type OnboardingStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type QuizStep = 0 | 1 | 2 | 3 | 4;
 type BillingPeriod = "monthly" | "annual";
+type OnboardingBackdropVariant = "default" | "quiz" | "result";
 
 type Answers = {
   frequency: UsageFrequency | null;
@@ -106,6 +114,10 @@ const personaModels: Record<Persona, PersonaModel> = {
     icon: require("../assets/persona-icons/power-engineer.png")
   }
 };
+
+const connectBackdrop = require("../assets/front-page-nebula.png");
+const frequencyBackdrop = require("../assets/frequency-background.png");
+const resultBackdrop = require("../assets/result-background.png");
 
 const weeklyOutcomes: Record<UsageFrequency, string[]> = {
   rarely: [
@@ -252,6 +264,13 @@ const personaInsights: Record<Persona, { bullets: Array<{ icon: keyof typeof Ion
   }
 };
 
+const resultBulletAccents = [
+  { color: "#7C4DFF", glow: "rgba(124, 77, 255, 0.28)", border: "rgba(124, 77, 255, 0.58)" },
+  { color: "#B642FF", glow: "rgba(182, 66, 255, 0.28)", border: "rgba(182, 66, 255, 0.58)" },
+  { color: "#FF55C8", glow: "rgba(255, 85, 200, 0.24)", border: "rgba(255, 85, 200, 0.52)" },
+  { color: "#FF6EA9", glow: "rgba(255, 110, 169, 0.24)", border: "rgba(255, 110, 169, 0.52)" }
+];
+
 const plans: Array<{
   name: Plan;
   monthlyPrice: string;
@@ -332,6 +351,23 @@ const plans: Array<{
   }
 ];
 
+const membershipProductIds: Record<Plan, Record<BillingPeriod, string>> = {
+  Starter: {
+    monthly: "app.vibyra.membership.starter.monthly",
+    annual: "app.vibyra.membership.starter.annual"
+  },
+  Builder: {
+    monthly: "app.vibyra.membership.builder.monthly",
+    annual: "app.vibyra.membership.builder.annual"
+  },
+  Pro: {
+    monthly: "app.vibyra.membership.pro.monthly",
+    annual: "app.vibyra.membership.pro.annual"
+  }
+};
+
+const membershipSkus = Object.values(membershipProductIds).flatMap((periods) => Object.values(periods));
+
 const initialAnswers: Answers = {
   frequency: null,
   intent: [],
@@ -380,7 +416,9 @@ const depthOptions: Array<{ label: string; value: UsageDepth; icon: ImageSourceP
 ];
 
 export function OnboardingScreen() {
-  const [step, setStep] = useState<OnboardingStep>(0);
+  const app = useAppContext();
+  const insets = useSafeAreaInsets();
+  const [step, setStep] = useState<OnboardingStep>(() => app.onboardingComplete ? 7 : 0);
   const [momentStep, setMomentStep] = useState<QuizStep | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [profileGenerating, setProfileGenerating] = useState(false);
@@ -388,7 +426,19 @@ export function OnboardingScreen() {
   const personaModel = personaModels[persona];
   const progressStep = Math.min((momentStep ?? step) + 1, 7);
   const showingMoment = momentStep !== null;
+  const isPaywall = step === 6 && !showingMoment;
+  const isGeneratingProfile = step === 5 && profileGenerating && !showingMoment;
+  const isResultStep = step === 5 && !profileGenerating && !showingMoment;
+  const isFullBleedStep = isPaywall || showingMoment || isGeneratingProfile || step === 7;
+  const isStyledQuizStep = !showingMoment && step >= 0 && step <= 4;
+  const isArtQuizStep = isStyledQuizStep || isGeneratingProfile || isResultStep;
+  const hideFlowChrome = isGeneratingProfile;
   const canContinue = showingMoment || canContinueFromStep(step, answers);
+  const backdropVariant: OnboardingBackdropVariant = isResultStep
+    ? "result"
+    : (isStyledQuizStep || isGeneratingProfile)
+      ? "quiz"
+      : "default";
 
   useEffect(() => {
     if (step !== 5) {
@@ -400,6 +450,10 @@ export function OnboardingScreen() {
     const timer = setTimeout(() => setProfileGenerating(false), 1900);
     return () => clearTimeout(timer);
   }, [step, persona]);
+
+  useEffect(() => {
+    void Asset.loadAsync([connectBackdrop, frequencyBackdrop, resultBackdrop]);
+  }, []);
 
   const selectFrequency = (frequency: UsageFrequency) => {
     setAnswers((current) => ({ ...current, frequency }));
@@ -425,6 +479,11 @@ export function OnboardingScreen() {
   const selectIdentity = (identity: BuilderIdentity) => {
     setAnswers((current) => ({ ...current, identity }));
     setStep(5);
+  };
+
+  const finishOnboarding = () => {
+    app.completeOnboarding();
+    setStep(7);
   };
 
   const next = () => {
@@ -453,26 +512,53 @@ export function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.shell}>
+    <SafeAreaView edges={isFullBleedStep || isArtQuizStep ? [] : ["top", "right", "bottom", "left"]} style={styles.shell}>
       <StatusBar style="light" />
       <LinearGradient colors={["#08070D", "#100C18", "#07070A"]} style={styles.shell}>
-        <OnboardingBackdrop />
+        <PersistentOnboardingBackground variant={backdropVariant} />
         {step < 7 ? (
           <View style={[
             styles.flow,
-            step === 6 && !showingMoment ? styles.flowPaywall : null,
-            showingMoment ? styles.flowMoment : null
+            isPaywall ? styles.flowPaywall : null,
+            showingMoment ? styles.flowMoment : null,
+            isFullBleedStep ? styles.flowFullBleed : null,
+            isResultStep ? [
+              styles.flowResult,
+              {
+                paddingTop: Math.max(insets.top + 8, 18),
+                paddingBottom: Math.max(insets.bottom + 10, 18)
+              }
+            ] : null,
+            isStyledQuizStep || isGeneratingProfile ? [
+              styles.flowFrequency,
+              {
+                paddingTop: Math.max(insets.top + 8, 18),
+                paddingBottom: Math.max(insets.bottom + 10, 18)
+              }
+            ] : null
           ]}>
-            {step === 6 && !showingMoment ? null : <ProgressIndicator step={progressStep} total={7} />}
+            {isPaywall || hideFlowChrome ? null : (
+              <View
+                style={showingMoment ? [
+                  styles.momentProgressSafe,
+                  { paddingHorizontal: 20, paddingTop: Math.max(insets.top + 10, 20) }
+                ] : null}
+              >
+                <ProgressIndicator
+                  step={progressStep}
+                  style={isResultStep ? styles.resultProgressWrap : isStyledQuizStep ? styles.frequencyProgressWrap : undefined}
+                  total={7}
+                />
+              </View>
+            )}
 
-            <AnimatedStep transitionKey={showingMoment ? `moment-${momentStep}` : `step-${step}`}>
+            <AnimatedStep fullBleed={isFullBleedStep} transitionKey={showingMoment ? `moment-${momentStep}` : `step-${step}`}>
               {showingMoment ? (
                 <QuestionMomentScreen step={momentStep} answers={answers} />
               ) : null}
 
               {!showingMoment && step === 0 ? (
-                <QuestionScreen
-                  title="How often will you code with Vibyra?"
+                <FrequencyQuestionScreen
                   options={[
                     { label: "Rarely", value: "rarely", icon: optionIcons.rarely },
                     { label: "Occasionally", value: "occasionally", icon: optionIcons.occasionally },
@@ -531,29 +617,59 @@ export function OnboardingScreen() {
               ) : null}
 
               {!showingMoment && step === 5 ? (
-                profileGenerating ? <ProfileGeneratingScreen persona={personaModel} /> : <InsightScreen personaId={persona} persona={personaModel} />
+                profileGenerating ? <ProfileGeneratingScreen /> : <InsightScreen personaId={persona} persona={personaModel} />
               ) : null}
-              {!showingMoment && step === 6 ? <PricingScreen persona={personaModel} onClose={() => setStep(5)} /> : null}
+              {!showingMoment && step === 6 ? <PricingScreen persona={personaModel} onClose={finishOnboarding} /> : null}
             </AnimatedStep>
 
-            {step === 6 && !showingMoment ? null : <View style={styles.navRow}>
+            {isPaywall || hideFlowChrome ? null : <View style={[
+              styles.navRow,
+              isArtQuizStep ? [
+                styles.navRowFrequency,
+                { paddingBottom: Math.max(insets.bottom + 6, 16), marginTop: 14 }
+              ] : null,
+              showingMoment ? [
+                styles.navRowMoment,
+                { paddingBottom: Math.max(insets.bottom + 14, 20), paddingHorizontal: 20 }
+              ] : null
+            ]}>
               {showingMoment || step > 0 ? (
-                <Pressable style={styles.backButton} onPress={back}>
-                  <Ionicons name="chevron-back" color={colors.muted} size={18} />
-                  <Text style={styles.backText}>Back</Text>
+                <Pressable style={[styles.backButton, isArtQuizStep ? styles.backButtonArt : null]} onPress={back}>
+                  <View style={isArtQuizStep ? styles.backIconArt : null}>
+                    <Ionicons name="chevron-back" color={isArtQuizStep ? "#D8CAFF" : colors.muted} size={isArtQuizStep ? 31 : 18} />
+                  </View>
+                  <Text style={[styles.backText, isArtQuizStep ? styles.backTextArt : null]}>Back</Text>
                 </Pressable>
               ) : (
                 <View />
               )}
               <Pressable
                 disabled={!canContinue || profileGenerating}
-                style={[styles.nextButton, !canContinue || profileGenerating ? styles.nextButtonDisabled : null]}
+                style={[
+                  styles.nextButton,
+                  isArtQuizStep ? styles.nextButtonFrequency : null,
+                  !canContinue || profileGenerating ? styles.nextButtonDisabled : null
+                ]}
                 onPress={next}
               >
-                <Text style={styles.nextText}>
-                  {showingMoment ? "Continue" : step === 4 ? "Skip" : step === 5 ? "Continue" : step === 6 ? "Start free trial" : "Continue"}
-                </Text>
-                <Ionicons name="arrow-forward" color={colors.text} size={18} />
+                {isArtQuizStep ? (
+                  <LinearGradient
+                    colors={["rgba(183, 86, 255, 0.98)", "rgba(118, 42, 216, 0.95)", "rgba(59, 18, 128, 0.96)"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.nextButtonFrequencyGradient}
+                  >
+                    <Text style={[styles.nextText, styles.nextTextFrequency]}>{step === 4 ? "Skip" : "Continue"}</Text>
+                    <Ionicons name="arrow-forward" color={colors.text} size={28} />
+                  </LinearGradient>
+                ) : (
+                  <>
+                    <Text style={styles.nextText}>
+                      {showingMoment ? "Continue" : step === 4 ? "Skip" : step === 5 ? "Continue" : step === 6 ? "Start free trial" : "Continue"}
+                    </Text>
+                    <Ionicons name="arrow-forward" color={colors.text} size={18} />
+                  </>
+                )}
               </Pressable>
             </View>}
           </View>
@@ -624,33 +740,100 @@ function canContinueFromStep(step: OnboardingStep, answers: Answers) {
   return true;
 }
 
-function AnimatedStep({ children, transitionKey }: { children: React.ReactNode; transitionKey: string }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(18)).current;
+function getOnboardingDesktopStatusLabel(status: RememberedDesktop["status"]) {
+  if (status === "current") return "Connected now";
+  if (status === "online") return "Available nearby";
+  if (status === "checking") return "Checking activity...";
+  return "Remembered, not reachable";
+}
+
+function getOnboardingDesktopStatusStyle(status: RememberedDesktop["status"]) {
+  if (status === "current") return styles.desktopResultStatusCurrent;
+  if (status === "online") return styles.desktopResultStatusOnline;
+  if (status === "checking") return styles.desktopResultStatusChecking;
+  return styles.desktopResultStatusOffline;
+}
+
+function AnimatedStep({ children, fullBleed = false, transitionKey }: { children: React.ReactNode; fullBleed?: boolean; transitionKey: string }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const hasAnimatedRef = useRef(false);
 
   useEffect(() => {
-    opacity.setValue(0);
-    translateY.setValue(18);
+    const startOpacity = hasAnimatedRef.current ? 0.94 : 1;
+    const startOffset = hasAnimatedRef.current ? (fullBleed ? 6 : 10) : 0;
+
+    opacity.stopAnimation();
+    translateY.stopAnimation();
+    opacity.setValue(startOpacity);
+    translateY.setValue(startOffset);
+
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 360,
+        duration: hasAnimatedRef.current ? 220 : 0,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true
       }),
       Animated.timing(translateY, {
         toValue: 0,
-        duration: 420,
+        duration: hasAnimatedRef.current ? 260 : 0,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true
       })
     ]).start();
+    hasAnimatedRef.current = true;
   }, [opacity, transitionKey, translateY]);
 
   return (
-    <Animated.View style={[styles.stepBody, { opacity, transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.stepBody, fullBleed ? styles.stepBodyFullBleed : null, { opacity, transform: [{ translateY }] }]}>
       {children}
     </Animated.View>
+  );
+}
+
+function PersistentOnboardingBackground({ variant }: { variant: OnboardingBackdropVariant }) {
+  const defaultOpacity = useRef(new Animated.Value(variant === "default" ? 1 : 0)).current;
+  const quizOpacity = useRef(new Animated.Value(variant === "quiz" ? 1 : 0)).current;
+  const resultOpacity = useRef(new Animated.Value(variant === "result" ? 1 : 0)).current;
+
+  useEffect(() => {
+    const duration = 240;
+
+    Animated.parallel([
+      Animated.timing(defaultOpacity, {
+        toValue: variant === "default" ? 1 : 0,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.timing(quizOpacity, {
+        toValue: variant === "quiz" ? 1 : 0,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.timing(resultOpacity, {
+        toValue: variant === "result" ? 1 : 0,
+        duration,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      })
+    ]).start();
+  }, [defaultOpacity, quizOpacity, resultOpacity, variant]);
+
+  return (
+    <View pointerEvents="none" style={styles.persistentBackdrop}>
+      <Animated.View style={[styles.backdropLayer, { opacity: defaultOpacity }]}>
+        <OnboardingBackdrop />
+      </Animated.View>
+      <Animated.View style={[styles.backdropLayer, { opacity: quizOpacity }]}>
+        <Image fadeDuration={0} source={frequencyBackdrop} resizeMode="stretch" style={styles.frequencyBackdropImage} />
+      </Animated.View>
+      <Animated.View style={[styles.backdropLayer, { opacity: resultOpacity }]}>
+        <Image fadeDuration={0} source={resultBackdrop} resizeMode="stretch" style={styles.resultBackdropImage} />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -678,57 +861,14 @@ function QuestionMomentScreen(props: {
   step: QuizStep;
   answers: Answers;
 }) {
+  const insets = useSafeAreaInsets();
   const { answers, step } = props;
   const content = getMomentContent(answers);
-  const float = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
   const image = momentIcons[step] ?? momentIcons[2];
-
-  useEffect(() => {
-    const floatLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(float, {
-          toValue: 1,
-          duration: 1700,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true
-        }),
-        Animated.timing(float, {
-          toValue: 0,
-          duration: 1700,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true
-        })
-      ])
-    );
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 1400,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true
-        }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 1400,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true
-        })
-      ])
-    );
-    floatLoop.start();
-    pulseLoop.start();
-
-    return () => {
-      floatLoop.stop();
-      pulseLoop.stop();
-    };
-  }, [float, pulse]);
-
-  const translateY = float.interpolate({ inputRange: [0, 1], outputRange: [8, -10] });
-  const glowScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] });
-  const glowOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.78] });
+  const contentInsets = {
+    paddingBottom: Math.max(insets.bottom + 14, 28),
+    paddingTop: Math.max(insets.top + 14, 28)
+  };
 
   return (
     <LinearGradient
@@ -756,32 +896,119 @@ function QuestionMomentScreen(props: {
       <View pointerEvents="none" style={styles.syncStarOne} />
       <View pointerEvents="none" style={styles.syncStarTwo} />
 
-      <ScrollView contentContainerStyle={styles.syncContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.syncContent, contentInsets]} showsVerticalScrollIndicator={false}>
         <View style={styles.syncPill}>
           <Ionicons name="sync" color="#2EEBFF" size={17} />
           <Text style={styles.syncPillText}>Cross-device sync</Text>
         </View>
 
-        <Text style={styles.syncTitle}>
-          Start anywhere.
-          {"\n"}
-          Continue <Text style={styles.syncTitleGradient}>everywhere.</Text>
-        </Text>
+        <View style={styles.syncTitleBlock}>
+          <Text style={styles.syncTitle}>Start anywhere.</Text>
+          <View style={styles.syncTitleLine}>
+            <Text style={styles.syncTitleInline}>Continue </Text>
+            <GradientWord text="Everywhere." />
+          </View>
+        </View>
 
         <Text style={styles.syncSubtitle}>{content.body}</Text>
 
         <View style={styles.syncHero}>
-          <Animated.View style={[styles.syncHeroGlow, { opacity: glowOpacity, transform: [{ scale: glowScale }] }]} />
-          <Animated.Image
+          <View style={styles.syncHeroGlowBlue} />
+          <View style={styles.syncHeroGlowPink} />
+          <View style={styles.syncHeroGlowPurple} />
+          <Image
             resizeMode="contain"
             source={image}
-            style={[styles.syncHeroImage, { transform: [{ translateY }] }]}
+            style={styles.syncHeroImage}
           />
+        </View>
+        <View style={styles.syncCards}>
+          {syncFeatures.map((feature) => (
+            <View
+              key={feature.title}
+              style={[
+                styles.syncCard,
+                { backgroundColor: feature.backgroundColor, borderColor: feature.borderColor }
+              ]}
+            >
+              <View
+                style={[
+                  styles.syncCardIcon,
+                  {
+                    backgroundColor: feature.iconBackgroundColor,
+                    borderColor: feature.borderColor,
+                    shadowColor: feature.color
+                  }
+                ]}
+              >
+                <Ionicons name={feature.icon} color={feature.color} size={21} />
+              </View>
+              <View style={styles.syncCardCopy}>
+                <Text style={styles.syncCardTitle}>{feature.title}</Text>
+                <Text style={styles.syncCardBody}>{feature.body}</Text>
+              </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </LinearGradient>
   );
 }
+
+function GradientWord({ text }: { text: string }) {
+  return (
+    <MaskedView
+      style={styles.syncGradientMask}
+      maskElement={<Text style={[styles.syncTitleInline, styles.syncTitleGradientMaskText]}>{text}</Text>}
+    >
+      <LinearGradient
+        colors={["#08D8FF", "#149CFF", "#5861F2", "#944AE2", "#D83EC9"]}
+        locations={[0, 0.27, 0.56, 0.78, 1]}
+        start={{ x: 0, y: 0.52 }}
+        end={{ x: 1, y: 0.52 }}
+        style={styles.syncGradientFill}
+      />
+    </MaskedView>
+  );
+}
+
+const syncFeatures: Array<{
+  title: string;
+  body: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  backgroundColor: string;
+  borderColor: string;
+  iconBackgroundColor: string;
+}> = [
+  {
+    title: "Instant handoff",
+    body: "Switch devices in a second.",
+    icon: "swap-horizontal-outline",
+    color: "#8AF7FF",
+    backgroundColor: "rgba(46, 235, 255, 0.08)",
+    borderColor: "rgba(138, 247, 255, 0.42)",
+    iconBackgroundColor: "rgba(46, 235, 255, 0.14)"
+  },
+  {
+    title: "Live Sync",
+    body: "Updates in real time.",
+    icon: "radio-outline",
+    color: "#FF7DE3",
+    backgroundColor: "rgba(242, 58, 205, 0.09)",
+    borderColor: "rgba(255, 125, 227, 0.42)",
+    iconBackgroundColor: "rgba(242, 58, 205, 0.14)"
+  },
+  {
+    title: "Access whenever",
+    body: "Open projects anytime.",
+    icon: "phone-portrait-outline",
+    color: "#A76DFF",
+    backgroundColor: "rgba(109, 59, 255, 0.1)",
+    borderColor: "rgba(167, 109, 255, 0.44)",
+    iconBackgroundColor: "rgba(109, 59, 255, 0.16)"
+  }
+];
 
 function getMomentContent(answers: Answers) {
   const content: Record<DeviceMode, { title: string; body: string; bullets: string[] }> = {
@@ -810,6 +1037,87 @@ function getMomentContent(answers: Answers) {
   return { kicker: "Connected workspace", ...(content[answers.device ?? "phone_computer"]) };
 }
 
+function FrequencyQuestionScreen(props: {
+  options: Array<{ label: string; value: UsageFrequency; icon: ImageSourcePropType }>;
+  selected: UsageFrequency | null;
+  onSelect: (value: UsageFrequency) => void;
+}) {
+  const entrance = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1700,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1700,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true
+        })
+      ])
+    );
+
+    pulseLoop.start();
+    return () => pulseLoop.stop();
+  }, [entrance, pulse]);
+
+  const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
+  const opacity = entrance.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const selectedScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.018] });
+  const selectedGlow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0.75] });
+
+  return (
+    <Animated.View style={[styles.frequencyQuestion, { opacity, transform: [{ translateY }] }]}>
+      <View style={styles.frequencyHeader}>
+        <Text style={styles.frequencyTitle}>How often will you code with Vibyra?</Text>
+        <Text style={styles.frequencyHelper}>This helps us personalize your experience.</Text>
+      </View>
+
+      <View style={styles.frequencyOptionGrid}>
+        {props.options.map((option) => {
+          const selected = props.selected === option.value;
+
+          return (
+            <Animated.View
+              key={option.value}
+              style={[
+                styles.frequencyOptionMotion,
+                selected ? { transform: [{ scale: selectedScale }] } : null
+              ]}
+            >
+              <Pressable
+                style={({ pressed }) => [
+                  styles.frequencyOption,
+                  selected ? styles.frequencyOptionSelected : null,
+                  pressed ? styles.frequencyOptionPressed : null
+                ]}
+                onPress={() => props.onSelect(option.value)}
+              >
+                {selected ? <Animated.View pointerEvents="none" style={[styles.frequencySelectedGlow, { opacity: selectedGlow }]} /> : null}
+                <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
+                <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
 function QuestionScreen<T extends string>(props: {
   title: string;
   helper?: string;
@@ -818,38 +1126,32 @@ function QuestionScreen<T extends string>(props: {
   onSelect: (value: T) => void;
 }) {
   return (
-    <View style={styles.question}>
-      <Text style={styles.title}>{props.title}</Text>
-      {props.helper ? <Text style={styles.questionHelper}>{props.helper}</Text> : null}
+    <View style={styles.frequencyQuestion}>
+      <View style={styles.frequencyHeader}>
+        <Text style={styles.frequencyTitle}>{props.title}</Text>
+        {props.helper ? <Text style={styles.frequencyHelper}>{props.helper}</Text> : null}
+      </View>
 
-      <View style={styles.optionStack}>
+      <View style={styles.frequencyOptionGrid}>
         {props.options.map((option) => {
           const selected = Array.isArray(props.selected)
             ? props.selected.includes(option.value)
             : props.selected === option.value;
           return (
-            <Pressable
-              key={option.value}
-              style={({ pressed }) => [
-                styles.option,
-                selected ? styles.optionSelected : null,
-                pressed ? styles.optionPressed : null
-              ]}
-              onPress={() => props.onSelect(option.value)}
-            >
-              <View style={[styles.optionIconShell, selected ? styles.optionIconShellSelected : null]}>
-                <Image resizeMode="contain" source={option.icon} style={styles.optionIcon} />
-              </View>
-              <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>{option.label}</Text>
-              </View>
-              <Ionicons
-                name={selected ? "checkmark-circle" : "ellipse-outline"}
-                color={selected ? colors.amber : colors.dim}
-                size={22}
-                style={styles.optionCheck}
-              />
-            </Pressable>
+            <View key={option.value} style={styles.frequencyOptionMotion}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.frequencyOption,
+                  selected ? styles.frequencyOptionSelected : null,
+                  pressed ? styles.frequencyOptionPressed : null
+                ]}
+                onPress={() => props.onSelect(option.value)}
+              >
+                {selected ? <View pointerEvents="none" style={styles.frequencySelectedGlow} /> : null}
+                <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
+                <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
+              </Pressable>
+            </View>
           );
         })}
       </View>
@@ -862,36 +1164,30 @@ function IdentityQuestion(props: {
   onSelect: (value: BuilderIdentity) => void;
 }) {
   return (
-    <View style={styles.question}>
-      <Text style={styles.title}>What best describes you?</Text>
-      <Text style={styles.questionHelper}>Optional. Tap one or skip.</Text>
+    <View style={styles.frequencyQuestion}>
+      <View style={styles.frequencyHeader}>
+        <Text style={styles.frequencyTitle}>What best describes you?</Text>
+        <Text style={styles.frequencyHelper}>Optional. Tap one or skip.</Text>
+      </View>
 
-      <View style={styles.optionStack}>
+      <View style={styles.frequencyOptionGrid}>
         {identityOptions.map((option) => {
           const selected = props.selected === option.value;
           return (
-            <Pressable
-              key={option.value}
-              style={({ pressed }) => [
-                styles.option,
-                selected ? styles.optionSelected : null,
-                pressed ? styles.optionPressed : null
-              ]}
-              onPress={() => props.onSelect(option.value)}
-            >
-              <View style={[styles.identityIconShell, selected ? styles.optionIconShellSelected : null]}>
-                <Image resizeMode="contain" source={option.icon} style={styles.identityIcon} />
-              </View>
-              <View style={styles.optionCopy}>
-                <Text style={styles.optionTitle}>{option.label}</Text>
-              </View>
-              <Ionicons
-                name={selected ? "checkmark-circle" : "ellipse-outline"}
-                color={selected ? colors.amber : colors.dim}
-                size={22}
-                style={styles.optionCheck}
-              />
-            </Pressable>
+            <View key={option.value} style={styles.frequencyOptionMotion}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.frequencyOption,
+                  selected ? styles.frequencyOptionSelected : null,
+                  pressed ? styles.frequencyOptionPressed : null
+                ]}
+                onPress={() => props.onSelect(option.value)}
+              >
+                {selected ? <View pointerEvents="none" style={styles.frequencySelectedGlow} /> : null}
+                <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
+                <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
+              </Pressable>
+            </View>
           );
         })}
       </View>
@@ -930,14 +1226,24 @@ function UsageSlider(props: {
   };
 
   return (
-    <View style={styles.question}>
-      <Text style={styles.title}>{props.title}</Text>
+    <View style={styles.frequencyQuestion}>
+      <View style={styles.frequencyHeader}>
+        <Text style={styles.frequencyTitle}>{props.title}</Text>
+      </View>
 
       <View style={styles.sliderOptions}>
         {depthOptions.map((option) => {
           const active = props.selected === option.value;
           return (
-            <Pressable key={option.value} style={styles.sliderOption} onPress={() => props.onSelect(option.value)}>
+            <Pressable
+              key={option.value}
+              style={({ pressed }) => [
+                styles.sliderOption,
+                active ? styles.sliderOptionActive : null,
+                pressed ? styles.sliderOptionPressed : null
+              ]}
+              onPress={() => props.onSelect(option.value)}
+            >
               <Image resizeMode="contain" source={option.icon} style={[styles.sliderIcon, active ? styles.sliderIconActive : null]} />
               <Text style={[styles.sliderOptionText, active ? styles.sliderOptionTextActive : null]}>{option.label}</Text>
             </Pressable>
@@ -966,83 +1272,162 @@ function UsageSlider(props: {
   );
 }
 
-function ProfileGeneratingScreen({ persona }: { persona: PersonaModel }) {
+function ProfileGeneratingScreen() {
+  const insets = useSafeAreaInsets();
   const pulse = useRef(new Animated.Value(0)).current;
-  const scan = useRef(new Animated.Value(0)).current;
   const rotate = useRef(new Animated.Value(0)).current;
+  const progress = useRef(new Animated.Value(0.08)).current;
+  const statusOpacity = useRef(new Animated.Value(1)).current;
+  const dotOne = useRef(new Animated.Value(0)).current;
+  const dotTwo = useRef(new Animated.Value(0)).current;
+  const dotThree = useRef(new Animated.Value(0)).current;
+  const [phase, setPhase] = useState<"analyzing" | "generating">("analyzing");
 
   useEffect(() => {
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1,
-          duration: 900,
+          duration: 2200,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true
         }),
         Animated.timing(pulse, {
           toValue: 0,
-          duration: 900,
+          duration: 2200,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true
         })
       ])
     );
-    const scanLoop = Animated.loop(
-      Animated.timing(scan, {
-        toValue: 1,
-        duration: 1450,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true
-      })
-    );
     const rotateLoop = Animated.loop(
       Animated.timing(rotate, {
         toValue: 1,
-        duration: 3600,
+        duration: 12000,
         easing: Easing.linear,
         useNativeDriver: true
       })
     );
+    const dotLoop = Animated.loop(
+      Animated.stagger(150, [dotOne, dotTwo, dotThree].map((dot) => (
+        Animated.sequence([
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 520,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 520,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: true
+          })
+        ])
+      )))
+    );
+    const progressAnimation = Animated.timing(progress, {
+      toValue: 0.68,
+      duration: 1850,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false
+    });
+    const statusTimer = setTimeout(() => {
+      Animated.timing(statusOpacity, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setPhase("generating");
+        Animated.timing(statusOpacity, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true
+        }).start();
+      });
+    }, 960);
 
     pulseLoop.start();
-    scanLoop.start();
     rotateLoop.start();
+    dotLoop.start();
+    progressAnimation.start();
 
     return () => {
+      clearTimeout(statusTimer);
       pulseLoop.stop();
-      scanLoop.stop();
       rotateLoop.stop();
+      dotLoop.stop();
     };
-  }, [pulse, rotate, scan]);
+  }, [dotOne, dotThree, dotTwo, progress, pulse, rotate, statusOpacity]);
 
-  const haloScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1.08] });
-  const haloOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0.78] });
-  const scanY = scan.interpolate({ inputRange: [0, 1], outputRange: [-82, 82] });
+  const haloScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1.045] });
+  const haloOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0.74] });
   const rotateZ = rotate.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
+  const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] });
+  const progressDot = progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] });
+  const dots = [dotOne, dotTwo, dotThree];
+  const title = phase === "analyzing" ? "Analyzing your answers..." : "Generating your builder profile...";
+  const subtitle = phase === "analyzing"
+    ? "Understanding your workflow and how you like to build."
+    : "Tailoring the best coding experience for you.";
 
   return (
-    <View style={styles.generatingScreen}>
-      <View style={styles.generatingVisual}>
-        <Animated.View style={[styles.generatingHalo, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
-        <Animated.View style={[styles.generatingOrbit, { transform: [{ rotate: rotateZ }] }]}>
-          <View style={styles.generatingOrbitDot} />
+    <View style={[styles.generatingScreen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <View style={styles.generatingContent}>
+        <View style={styles.generatingVisual}>
+          <Animated.View style={[styles.generatingOuterGlow, { opacity: haloOpacity, transform: [{ scale: haloScale }] }]} />
+          <View style={styles.generatingOrbitGhost} />
+          <Animated.View style={[styles.generatingOrbitRing, { transform: [{ rotate: rotateZ }] }]}>
+            <View style={[styles.generatingOrbitDot, styles.generatingOrbitDotMagenta]} />
+            <View style={[styles.generatingOrbitDot, styles.generatingOrbitDotCyan]} />
+            <View style={[styles.generatingOrbitDot, styles.generatingOrbitDotPurple]} />
+          </Animated.View>
+          <View style={styles.generatingInnerRing} />
+          <LinearGradient
+            colors={["rgba(214, 132, 255, 0.95)", "rgba(108, 37, 222, 0.96)", "rgba(35, 13, 86, 0.98)"]}
+            start={{ x: 0.18, y: 0.12 }}
+            end={{ x: 0.88, y: 0.9 }}
+            style={styles.generatingCore}
+          >
+            <View style={styles.generatingCoreShade} />
+            <View style={styles.generatingCoreGlass} />
+            <View style={styles.generatingDots}>
+              {dots.map((dot, index) => {
+                const opacity = dot.interpolate({ inputRange: [0, 1], outputRange: [0.42, 1] });
+                const translateY = dot.interpolate({ inputRange: [0, 1], outputRange: [0, -2] });
+
+                return (
+                  <Animated.View
+                    key={index}
+                    style={[styles.generatingDot, { opacity, transform: [{ translateY }] }]}
+                  />
+                );
+              })}
+            </View>
+          </LinearGradient>
+        </View>
+
+        <Animated.View style={[styles.generatingStatusWrap, { opacity: statusOpacity }]}>
+          <Text style={styles.generatingStatus}>{title}</Text>
+          <Text style={styles.generatingSubtitle}>{subtitle}</Text>
         </Animated.View>
-        <Image resizeMode="contain" source={persona.icon} style={styles.generatingIcon} />
-        <Animated.View style={[styles.generatingScan, { transform: [{ translateY: scanY }] }]} />
-      </View>
 
-      <Text style={styles.generatingKicker}>Analyzing your answers</Text>
-      <Text style={[styles.title, styles.resultTitle]}>Generating your builder profile</Text>
-      <Text style={styles.generatingCopy}>Matching your workflow, goals, and build style to the right Vibyra setup.</Text>
-
-      <View style={styles.generatingSteps}>
-        {["Reading your intent", "Mapping your workflow", "Preparing your recommendation"].map((item) => (
-          <View key={item} style={styles.generatingStep}>
-            <LinearGradient colors={["#2EEBFF", colors.accent, colors.magenta]} style={styles.generatingStepDot} />
-            <Text style={styles.generatingStepText}>{item}</Text>
-          </View>
-        ))}
+        <View style={styles.generatingTrack}>
+          <Animated.View style={[styles.generatingTrackFill, { width: progressWidth }]}>
+            <LinearGradient
+              colors={["#5B22D6", "#9E36FF", "#D978FF"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.generatingTrackFillGradient}
+            />
+          </Animated.View>
+          <Animated.View style={[styles.generatingTrackDotWrap, { left: progressDot }]}>
+            <View style={styles.generatingTrackDot} />
+          </Animated.View>
+        </View>
       </View>
     </View>
   );
@@ -1050,37 +1435,145 @@ function ProfileGeneratingScreen({ persona }: { persona: PersonaModel }) {
 
 function InsightScreen({ personaId, persona }: { personaId: Persona; persona: PersonaModel }) {
   const insight = personaInsights[personaId];
+  const nameParts = persona.name.split(" ");
+  const titleLead = nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : "";
+  const titleAccent = nameParts[nameParts.length - 1] ?? persona.name;
+  const cardEntrances = useMemo(
+    () => insight.bullets.map(() => new Animated.Value(0)),
+    [insight.bullets]
+  );
+
+  useEffect(() => {
+    cardEntrances.forEach((entrance) => entrance.setValue(0));
+
+    Animated.stagger(
+      145,
+      cardEntrances.map((entrance) =>
+        Animated.spring(entrance, {
+          toValue: 1,
+          damping: 18,
+          mass: 0.82,
+          stiffness: 118,
+          useNativeDriver: true
+        })
+      )
+    ).start();
+  }, [cardEntrances, personaId]);
 
   return (
-    <ScrollView contentContainerStyle={styles.resultContent} showsVerticalScrollIndicator={false}>
+    <View style={styles.resultContent}>
       <View style={styles.personaHero}>
+        <View pointerEvents="none" style={styles.personaHeroOrbit} />
+        <View pointerEvents="none" style={styles.personaHeroGlow} />
         <Image resizeMode="contain" source={persona.icon} style={styles.personaIcon} />
       </View>
-      <Text style={[styles.title, styles.resultTitle]}>You're a {persona.name}</Text>
+
+      <View style={styles.resultTitleBlock}>
+        <Text style={styles.resultTitlePrimary}>
+          You're a{titleLead ? ` ${titleLead}` : ""}
+        </Text>
+        <MaskedView
+          style={styles.resultTitleGradientMask}
+          maskElement={<Text style={styles.resultTitleGradientText}>{titleAccent}</Text>}
+        >
+          <LinearGradient
+            colors={["#7C45FF", "#C849FF", "#FF5EBA", "#FFB45F"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.resultTitleGradientFill}
+          />
+        </MaskedView>
+      </View>
+
       <Text style={styles.insightSubtitle}>What you could build:</Text>
 
       <View style={styles.insightStack}>
-        {insight.bullets.map((bullet) => (
-          <View key={bullet.text} style={styles.insightRow}>
-            <View style={styles.insightIcon}>
-              <Ionicons name={bullet.icon} color="#8AF7FF" size={18} />
-            </View>
-            <Text style={styles.insightText}>{bullet.text}</Text>
-          </View>
-        ))}
+        {insight.bullets.map((bullet, index) => {
+          const accent = resultBulletAccents[index % resultBulletAccents.length];
+          const entrance = cardEntrances[index];
+          const opacity = entrance.interpolate({
+            inputRange: [0, 0.45, 1],
+            outputRange: [0, 0.9, 1]
+          });
+          const translateY = entrance.interpolate({
+            inputRange: [0, 1],
+            outputRange: [34, 0]
+          });
+          const scale = entrance.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.94, 1]
+          });
+
+          return (
+            <Animated.View key={bullet.text} style={[styles.insightRow, { opacity, transform: [{ translateY }, { scale }] }]}>
+              <LinearGradient
+                colors={["rgba(255, 255, 255, 0.09)", "rgba(137, 76, 255, 0.1)", "rgba(255, 255, 255, 0.035)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.insightRowFill}
+              >
+                <View pointerEvents="none" style={styles.insightRowGlow} />
+                <View style={[styles.insightIcon, { backgroundColor: accent.glow, borderColor: accent.border, shadowColor: accent.color }]}>
+                  <Ionicons name={bullet.icon} color={accent.color} size={26} />
+                </View>
+                <Text style={styles.insightText}>{bullet.text}</Text>
+                <Ionicons name="chevron-forward" color="#C8AFFF" size={27} style={styles.insightChevron} />
+              </LinearGradient>
+            </Animated.View>
+          );
+        })}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const app = useAppContext();
   const [selectedPlan, setSelectedPlan] = useState<Plan>(persona.recommendedPlan);
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("annual");
+  const [purchaseMessage, setPurchaseMessage] = useState("");
+  const [purchaseError, setPurchaseError] = useState("");
+  const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
   const auraMotion = useRef(new Animated.Value(getPlanMotionValue(persona.recommendedPlan))).current;
+  const cardSwipeX = useRef(new Animated.Value(0)).current;
   const selected = plans.find((plan) => plan.name === selectedPlan) ?? plans[0];
+  const selectedPlanIndex = Math.max(plans.findIndex((plan) => plan.name === selected.name), 0);
+  const selectedProductId = membershipProductIds[selected.name][billingPeriod];
   const theme = getPlanTheme(selected.name);
-  const selectedPrice = billingPeriod === "monthly" ? selected.monthlyPrice : selected.yearlyPrice;
   const billingLabel = billingPeriod === "monthly" ? "Monthly" : "Annual";
+  const {
+    connected: storeConnected,
+    subscriptions,
+    fetchProducts,
+    finishTransaction,
+    requestPurchase
+  } = useIAP({
+    onPurchaseSuccess: async (purchase: Purchase) => {
+      try {
+        await finishTransaction({ purchase, isConsumable: false });
+        setPurchaseError("");
+        setPurchaseMessage("Membership active. Taking you to connect your PC...");
+        app.completeOnboarding();
+        setTimeout(onClose, 650);
+      } catch {
+        setPurchaseError("Payment completed, but we could not finish the store transaction. Please restore purchases or contact support.");
+      } finally {
+        setPurchasingProductId(null);
+      }
+    },
+    onPurchaseError: (error) => {
+      setPurchasingProductId(null);
+      setPurchaseMessage("");
+      setPurchaseError(error.message || "Purchase could not be completed.");
+    },
+    onError: (error) => {
+      setPurchaseError(error.message || "The store is not available right now.");
+    }
+  });
+  const selectedStoreProduct = subscriptions.find((subscription) => subscription.id === selectedProductId);
+  const selectedPrice = selectedStoreProduct?.displayPrice ?? (billingPeriod === "monthly" ? selected.monthlyPrice : selected.yearlyPrice);
+  const isPurchasing = purchasingProductId === selectedProductId;
 
   useEffect(() => {
     Animated.timing(auraMotion, {
@@ -1091,12 +1584,108 @@ function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: (
     }).start();
   }, [auraMotion, selectedPlan]);
 
+  useEffect(() => {
+    if (!storeConnected) return;
+
+    fetchProducts({ skus: membershipSkus, type: "subs" }).catch(() => {
+      setPurchaseError("Memberships are not available yet. Try a development build with store products configured.");
+    });
+  }, [fetchProducts, storeConnected]);
+
   const auraOneTranslateX = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [-24, 0, 26] });
   const auraOneTranslateY = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [18, 0, -14] });
   const auraOneScale = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [0.9, 1.08, 1.18] });
   const auraTwoTranslateX = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [28, 0, -30] });
   const auraTwoTranslateY = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [-16, 0, 20] });
   const auraTwoScale = auraMotion.interpolate({ inputRange: [0, 1, 2], outputRange: [1.12, 1, 0.92] });
+  const cardRotate = cardSwipeX.interpolate({ inputRange: [-220, 0, 220], outputRange: ["-2.5deg", "0deg", "2.5deg"], extrapolate: "clamp" });
+  const cardOpacity = cardSwipeX.interpolate({ inputRange: [-260, 0, 260], outputRange: [0.7, 1, 0.7], extrapolate: "clamp" });
+  const contentPaddingTop = Math.max(insets.top + 12, 34);
+  const footerPaddingBottom = Math.max(insets.bottom + 8, 14);
+
+  const settleCard = () => {
+    Animated.spring(cardSwipeX, {
+      toValue: 0,
+      damping: 22,
+      mass: 0.8,
+      stiffness: 210,
+      useNativeDriver: true
+    }).start();
+  };
+
+  const switchPlanBySwipe = (direction: 1 | -1) => {
+    const nextIndex = selectedPlanIndex + direction;
+
+    if (nextIndex < 0 || nextIndex >= plans.length) {
+      settleCard();
+      return;
+    }
+
+    Animated.timing(cardSwipeX, {
+      toValue: direction === 1 ? -420 : 420,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start(() => {
+      setSelectedPlan(plans[nextIndex].name);
+      cardSwipeX.setValue(direction === 1 ? 420 : -420);
+      Animated.spring(cardSwipeX, {
+        toValue: 0,
+        damping: 24,
+        mass: 0.85,
+        stiffness: 190,
+        useNativeDriver: true
+      }).start();
+    });
+  };
+
+  const cardPanResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 10 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.25,
+    onPanResponderMove: (_event, gesture) => {
+      const boundedX = Math.max(Math.min(gesture.dx, 140), -140);
+      cardSwipeX.setValue(boundedX);
+    },
+    onPanResponderRelease: (_event, gesture) => {
+      if (Math.abs(gesture.dx) < 58 && Math.abs(gesture.vx) < 0.45) {
+        settleCard();
+        return;
+      }
+
+      switchPlanBySwipe(gesture.dx < 0 ? 1 : -1);
+    },
+    onPanResponderTerminate: settleCard
+  }), [cardSwipeX, selectedPlanIndex]);
+
+  const buyMembership = async () => {
+    setPurchaseError("");
+    setPurchaseMessage("");
+
+    if (!storeConnected) {
+      setPurchaseError("In-app purchases need a development or store build. They will not open inside Expo Go.");
+      return;
+    }
+
+    try {
+      setPurchasingProductId(selectedProductId);
+      const androidOfferToken = Platform.OS === "android"
+        ? selectedStoreProduct?.subscriptionOffers?.[0]?.offerTokenAndroid
+        : undefined;
+
+      await requestPurchase({
+        type: "subs",
+        request: {
+          apple: { sku: selectedProductId },
+          google: {
+            skus: [selectedProductId],
+            subscriptionOffers: androidOfferToken ? [{ sku: selectedProductId, offerToken: androidOfferToken }] : undefined
+          }
+        }
+      });
+    } catch (error) {
+      setPurchasingProductId(null);
+      setPurchaseError(error instanceof Error ? error.message : "Purchase could not be started.");
+    }
+  };
 
   return (
     <View style={styles.paywallShell}>
@@ -1121,7 +1710,14 @@ function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: (
         ]}
       />
       <View pointerEvents="none" style={styles.paywallNoise} />
-      <ScrollView contentContainerStyle={styles.paywallContent} scrollEnabled={false} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.paywallContent,
+          { paddingBottom: footerPaddingBottom + 96, paddingTop: contentPaddingTop }
+        ]}
+        scrollEnabled={false}
+        showsVerticalScrollIndicator={false}
+      >
         <Pressable style={styles.paywallClose} onPress={onClose}>
           <Ionicons name="close" color={colors.text} size={32} />
         </Pressable>
@@ -1168,7 +1764,16 @@ function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: (
           })}
         </View>
 
-        <View style={styles.paywallCard}>
+        <Animated.View
+          {...cardPanResponder.panHandlers}
+          style={[
+            styles.paywallCard,
+            {
+              opacity: cardOpacity,
+              transform: [{ translateX: cardSwipeX }, { rotate: cardRotate }]
+            }
+          ]}
+        >
           <View style={styles.paywallCardHeader}>
             <View>
               <Text style={[styles.paywallPlanName, { color: theme.accent }]}>{selected.name}</Text>
@@ -1194,20 +1799,28 @@ function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: (
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
-      <View style={styles.paywallFooter}>
-        <Pressable style={({ pressed }) => [styles.paywallCtaWrap, pressed ? styles.planCtaPressed : null]}>
+      <View style={[styles.paywallFooter, { paddingBottom: footerPaddingBottom }]}>
+        <Pressable
+          disabled={isPurchasing}
+          style={({ pressed }) => [styles.paywallCtaWrap, pressed && !isPurchasing ? styles.planCtaPressed : null, isPurchasing ? styles.paywallCtaDisabled : null]}
+          onPress={buyMembership}
+        >
           <LinearGradient
             colors={theme.button}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.paywallCta}
           >
-            <Text style={styles.paywallCtaText}>Upgrade to {selected.name} {billingLabel}</Text>
+            <Text style={styles.paywallCtaText}>
+              {isPurchasing ? "Opening secure checkout..." : `Upgrade to ${selected.name} ${billingLabel}`}
+            </Text>
           </LinearGradient>
         </Pressable>
+        {purchaseError ? <Text style={styles.paywallErrorText}>{purchaseError}</Text> : null}
+        {purchaseMessage ? <Text style={styles.paywallSuccessText}>{purchaseMessage}</Text> : null}
         <Text style={styles.paywallFooterText}>
           Subscribe for {selectedPrice}. Cancel anytime
         </Text>
@@ -1250,11 +1863,11 @@ function getPlanMotionValue(plan: Plan) {
   return 1;
 }
 
-function ProgressIndicator({ step, total }: { step: number; total: number }) {
+function ProgressIndicator({ step, style, total }: { step: number; style?: object; total: number }) {
   const progress = `${(step / total) * 100}%` as `${number}%`;
 
   return (
-    <View style={styles.progressWrap}>
+    <View style={[styles.progressWrap, style]}>
       <View style={styles.progressRail}>
         <LinearGradient
           colors={[colors.accent, colors.magenta, colors.amber]}
@@ -1269,51 +1882,471 @@ function ProgressIndicator({ step, total }: { step: number; total: number }) {
 
 function SetupScreen() {
   const app = useAppContext();
+  const insets = useSafeAreaInsets();
+  const [connectStep, setConnectStep] = useState<1 | 2 | 3 | 4>(1);
+  const [connectMode, setConnectMode] = useState<"auto" | "manual">("auto");
+  const [guideVisible, setGuideVisible] = useState(false);
+  const [foundDesktops, setFoundDesktops] = useState<RememberedDesktop[]>(app.rememberedDesktops);
+  const autoFindStartedRef = useRef(false);
+  const ambientGlow = useRef(new Animated.Value(0)).current;
+  const panelOpacity = useRef(new Animated.Value(1)).current;
+  const panelTranslateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (app.pendingPhoneApproval) {
+      setConnectStep(3);
+    }
+  }, [app.pendingPhoneApproval]);
+
+  useEffect(() => {
+    if (app.rememberedDesktops.length > 0) setFoundDesktops(app.rememberedDesktops);
+  }, [app.rememberedDesktops]);
+
+  useEffect(() => {
+    const glowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientGlow, {
+          toValue: 1,
+          duration: 2600,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true
+        }),
+        Animated.timing(ambientGlow, {
+          toValue: 0,
+          duration: 2600,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true
+        })
+      ])
+    );
+
+    glowLoop.start();
+    return () => glowLoop.stop();
+  }, [ambientGlow]);
+
+  useEffect(() => {
+    panelOpacity.setValue(0);
+    panelTranslateY.setValue(12);
+    Animated.parallel([
+      Animated.timing(panelOpacity, {
+        toValue: 1,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.timing(panelTranslateY, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      })
+    ]).start();
+  }, [connectMode, connectStep, panelOpacity, panelTranslateY]);
+
+  const confirmConnection = () => {
+    setConnectStep(4);
+    setTimeout(() => app.confirmPhonePermission(), 900);
+  };
+
+  const findDesktops = useCallback(async () => {
+    if (app.checkingHealth) return;
+    setFoundDesktops([]);
+    const results = await app.discoverPairableDesktops();
+    setFoundDesktops(results);
+  }, [app]);
+
+  useEffect(() => {
+    if (connectStep !== 2 || connectMode !== "auto" || autoFindStartedRef.current) return;
+    autoFindStartedRef.current = true;
+    void findDesktops();
+  }, [connectMode, connectStep, findDesktops]);
+
+  const logoTranslateY = ambientGlow.interpolate({ inputRange: [0, 1], outputRange: [0, -7] });
 
   return (
-    <View style={styles.onboarding}>
-      <VibyraLogo />
-      <Text style={styles.promise}>Your AI software studio, anywhere.</Text>
-
-      <View style={styles.pairPanel}>
-        <View style={styles.prereqRow}>
-          <Ionicons name="desktop-outline" color={colors.amber} size={19} />
-          <View style={styles.rowContent}>
-            <Text style={styles.rowTitle}>Open Vibyra Desktop</Text>
-            <Text style={styles.rowMeta}>{app.pairingMessage}</Text>
-          </View>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.connectScreen}>
+      <Image source={connectBackdrop} resizeMode="cover" style={styles.connectBackdropImage} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.connectScrollContent,
+          {
+            paddingBottom: Math.max(insets.bottom + 14, 22),
+            paddingTop: Math.max(insets.top + 8, 18)
+          }
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.connectHeader}>
+          <Animated.View style={[styles.connectLogoWrap, { transform: [{ translateY: logoTranslateY }] }]}>
+            <VibyraLogo style={styles.connectLogo} />
+          </Animated.View>
+          <Text style={styles.connectTitle}>
+            <Text style={styles.connectTitleAccent}>Connect</Text> to your PC
+          </Text>
+          <Text style={styles.connectSubtitle}>One clear step at a time. Keep both devices on the same Wi-Fi.</Text>
         </View>
 
-        <View style={styles.codeHalo}>
-          <Text style={styles.codeLabel}>Pairing key</Text>
+        <View style={styles.connectStepDots}>
+          {[1, 2, 3, 4].map((step, index) => (
+            <React.Fragment key={step}>
+              <View style={[styles.connectStepDot, step <= connectStep ? styles.connectStepDotActive : null]}>
+                <Text style={[styles.connectStepDotText, step <= connectStep ? styles.connectStepDotTextActive : null]}>{step}</Text>
+              </View>
+              {index < 3 ? <View style={[styles.connectStepRail, step < connectStep ? styles.connectStepRailActive : null]} /> : null}
+            </React.Fragment>
+          ))}
         </View>
-        <TextInput
-          value={app.pairCode}
-          onChangeText={(value) => app.setPairCode(value.toUpperCase())}
-          placeholder="Pair code"
-          placeholderTextColor={colors.dim}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          maxLength={6}
-          style={[styles.input, styles.pairInput, styles.pairCodeInput]}
-        />
 
-        <LinkButton
-          icon="search-outline"
-          label={app.checkingHealth ? "Finding Vibyra..." : "Find Vibyra"}
-          onPress={app.testDesktopConnection}
-        />
-        {app.healthMessage ? <Text style={styles.healthText}>{app.healthMessage}</Text> : null}
-        <PairCode code={app.pairCode} />
-        {app.pairingError ? <Text style={styles.errorText}>{app.pairingError}</Text> : null}
-        <PairAction />
-      </View>
+        <Animated.View style={[styles.connectActivePanel, { opacity: panelOpacity, transform: [{ translateY: panelTranslateY }] }]}>
+          {connectStep === 1 ? (
+          <ConnectStep
+            number={1}
+            icon="download-outline"
+            title="Download Vibyra Desktop"
+            lines={["Download Vibyra Desktop at vibyra.ai.", "Available for Windows, Mac, and Linux."]}
+          >
+            <Pressable style={({ pressed }) => [styles.connectPrimaryAction, pressed ? styles.connectActionPressed : null]} onPress={() => setConnectStep(2)}>
+              <LinearGradient
+                colors={["#762CFF", "#9D35FF", "#B13CFF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.connectPrimaryActionGradient}
+              >
+                <Ionicons name="checkmark-circle-outline" color={colors.text} size={31} />
+                <Text style={styles.connectPrimaryActionText}>I downloaded Vibyra Desktop</Text>
+              </LinearGradient>
+            </Pressable>
+          </ConnectStep>
+          ) : null}
 
-      <View style={styles.onboardingFooter}>
-        <Ionicons name="shield-checkmark-outline" color={colors.success} size={18} />
-        <Text style={styles.mutedText}>Trusted devices only via Vibyra pairing</Text>
+          {connectStep === 2 ? (
+          <ConnectStep number={2} icon="phone-portrait-outline" title="Choose how to connect">
+            <View style={styles.connectActionStack}>
+              <View style={styles.connectModeTabs}>
+                <Pressable style={[styles.connectModeTab, connectMode === "auto" ? styles.connectModeTabActive : null]} onPress={() => setConnectMode("auto")}>
+                  <Ionicons name="wifi-outline" color={connectMode === "auto" ? colors.text : colors.muted} size={15} />
+                  <Text style={[styles.connectModeText, connectMode === "auto" ? styles.connectModeTextActive : null]}>Auto Find</Text>
+                </Pressable>
+                <Pressable style={[styles.connectModeTab, connectMode === "manual" ? styles.connectModeTabActive : null]} onPress={() => setConnectMode("manual")}>
+                  <Ionicons name="keypad-outline" color={connectMode === "manual" ? colors.text : colors.muted} size={15} />
+                  <Text style={[styles.connectModeText, connectMode === "manual" ? styles.connectModeTextActive : null]}>Manual</Text>
+                </Pressable>
+              </View>
+
+              {connectMode === "auto" ? (
+                <View style={styles.connectSimplePane}>
+                  <Pressable
+                    disabled={app.checkingHealth}
+                    style={({ pressed }) => [styles.connectPrimaryAction, pressed && !app.checkingHealth ? styles.connectActionPressed : null, app.checkingHealth ? styles.connectActionDisabled : null]}
+                    onPress={findDesktops}
+                  >
+                    <LinearGradient
+                      colors={["#762CFF", "#9D35FF", "#B13CFF"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.connectPrimaryActionGradient}
+                    >
+                      <Ionicons name="search-outline" color={colors.text} size={27} />
+                      <View style={styles.connectActionCopy}>
+                        <Text style={styles.connectActionTitle}>{app.checkingHealth ? "Searching nearby PCs..." : foundDesktops.length > 0 ? "Search again" : "Auto Find My PC"}</Text>
+                        <Text style={styles.connectActionMeta}>Starts automatically on same Wi-Fi.</Text>
+                      </View>
+                    </LinearGradient>
+                  </Pressable>
+
+                  {foundDesktops.length > 0 ? (
+                    <View style={styles.desktopList}>
+                      {foundDesktops.map((desktop) => (
+                        <Pressable
+                          key={desktop.url}
+                          style={({ pressed }) => [styles.desktopResult, pressed ? styles.connectActionPressed : null]}
+                          onPress={() => app.pairMachineAt(desktop.url, desktop.pairCode)}
+                        >
+                          <Ionicons name="desktop-outline" color="#8AF7FF" size={18} />
+                          <View style={styles.connectActionCopy}>
+                            <Text style={styles.desktopResultTitle}>{desktop.machineName}</Text>
+                            <View style={styles.desktopResultMetaRow}>
+                              <View style={[styles.desktopResultStatusDot, getOnboardingDesktopStatusStyle(desktop.status)]} />
+                              <Text style={styles.desktopResultMeta}>{getOnboardingDesktopStatusLabel(desktop.status)}</Text>
+                            </View>
+                          </View>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              ) : (
+                <View style={styles.connectSimplePane}>
+                  <Text style={styles.connectCodeLabel}>Manual code</Text>
+                  <TextInput
+                    value={app.pairCode}
+                    onChangeText={(value) => app.setPairCode(value.toUpperCase())}
+                    placeholder="ABC123"
+                    placeholderTextColor={colors.dim}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={6}
+                    onSubmitEditing={app.pairMachine}
+                    returnKeyType="done"
+                    style={[styles.input, styles.connectCodeInput]}
+                  />
+                  <Text style={styles.connectOrText}>Use the 2 codes shown on phone and desktop</Text>
+                  <Pressable style={({ pressed }) => [styles.connectSecondaryAction, pressed ? styles.connectActionPressed : null]} onPress={app.pairMachine}>
+                    <Ionicons name="link-outline" color={colors.text} size={18} />
+                    <Text style={styles.connectSecondaryActionText}>{app.pairing ? "Connecting..." : "Connect manually"}</Text>
+                  </Pressable>
+                </View>
+              )}
+              {app.pairing && !app.pendingPhoneApproval ? <WaitingApprovalIndicator message="Awaiting approval from PC application" /> : null}
+              {app.healthMessage ? <Text style={styles.connectStatus}>{app.healthMessage}</Text> : null}
+              {app.pairingError ? <Text style={styles.errorText}>{app.pairingError}</Text> : null}
+            </View>
+          </ConnectStep>
+          ) : null}
+
+          {connectStep === 3 ? (
+          <ConnectStep
+            number={3}
+            icon="shield-checkmark-outline"
+            title="Approve the connection"
+            lines={["Tap Allow on your computer.", "Then confirm on your phone."]}
+          >
+            <Pressable style={({ pressed }) => [styles.connectPrimaryAction, pressed ? styles.connectActionPressed : null]} onPress={confirmConnection}>
+              <LinearGradient
+                colors={["#762CFF", "#9D35FF", "#B13CFF"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.connectPrimaryActionGradient}
+              >
+                <Ionicons name="checkmark-circle-outline" color={colors.text} size={31} />
+                <Text style={styles.connectPrimaryActionText}>Confirm on phone</Text>
+              </LinearGradient>
+            </Pressable>
+          </ConnectStep>
+          ) : null}
+
+          {connectStep === 4 ? (
+          <ConnectStep
+            number={4}
+            icon="sparkles-outline"
+            title="You're connected"
+            lines={["Start controlling your PC instantly."]}
+          />
+          ) : null}
+        </Animated.View>
+        <Pressable style={({ pressed }) => [styles.connectHelpRow, pressed ? styles.connectActionPressed : null]} onPress={() => setGuideVisible(true)}>
+          <Ionicons name="shield-checkmark-outline" color="#9A4DFF" size={23} />
+          <Text style={styles.connectHelpText}>Need help?</Text>
+          <Text style={styles.connectGuideText}>View guide</Text>
+          <Ionicons name="chevron-forward" color="#9A4DFF" size={19} />
+        </Pressable>
+      </ScrollView>
+      <ConnectGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
+    </KeyboardAvoidingView>
+  );
+}
+
+function ConnectStep({
+  children,
+  icon,
+  lines,
+  number,
+  title
+}: {
+  children?: React.ReactNode;
+  icon: keyof typeof Ionicons.glyphMap;
+  lines?: string[];
+  number: number;
+  title: string;
+}) {
+  return (
+    <View style={styles.connectStep}>
+      <View style={styles.connectStepTop}>
+        <View style={styles.connectStepNumber}>
+          <Text style={styles.connectStepNumberText}>{number}</Text>
+        </View>
+        <View style={styles.connectStepIcon}>
+          <Ionicons name={icon} color="#8F32FF" size={27} />
+        </View>
+        <Text style={styles.connectStepTitle}>{title}</Text>
       </View>
+      {lines?.map((line) => <Text key={line} style={styles.connectLine}>{line}</Text>)}
+      {children}
     </View>
+  );
+}
+
+const connectGuideSteps: Array<{
+  icon: keyof typeof Ionicons.glyphMap;
+  kicker: string;
+  title: string;
+  lines: string[];
+}> = [
+  {
+    icon: "desktop-outline",
+    kicker: "Step 1",
+    title: "💻 Set up Vibyra on your computer",
+    lines: [
+      "Download Vibyra Desktop for Windows, Mac, or Linux.",
+      "Install and open the app.",
+      "Keep Vibyra running. You will see a connection code or QR code."
+    ]
+  },
+  {
+    icon: "phone-portrait-outline",
+    kicker: "Step 2",
+    title: "📱 Open Vibyra on your phone",
+    lines: [
+      "Download and open the Vibyra mobile app.",
+      "Tap \"Connect to a Computer\"."
+    ]
+  },
+  {
+    icon: "link-outline",
+    kicker: "Step 3",
+    title: "🔗 Connect your devices",
+    lines: [
+      "✨ Find My Computer automatically finds your computer on the same Wi-Fi.",
+      "🔢 Use Code lets you enter the code shown on your computer."
+    ]
+  },
+  {
+    icon: "shield-checkmark-outline",
+    kicker: "Step 4",
+    title: "🔐 Approve the connection",
+    lines: [
+      "A prompt will appear on your computer.",
+      "Tap \"Allow\" to confirm.",
+      "Your phone will connect instantly."
+    ]
+  },
+  {
+    icon: "sparkles-outline",
+    kicker: "Step 5",
+    title: "🎉 You're connected!",
+    lines: [
+      "Control your computer.",
+      "Use touch as a mouse.",
+      "Type with your phone keyboard."
+    ]
+  }
+];
+
+const connectGuideTroubleshooting = [
+  {
+    title: "Can't find your computer?",
+    lines: [
+      "Make sure both devices are on the same Wi-Fi.",
+      "Check that Vibyra is open on your computer."
+    ]
+  },
+  {
+    title: "Connecting from anywhere?",
+    lines: ["Use \"Use Code\" instead of auto find."]
+  }
+];
+
+const connectGuideTips = [
+  "Your computer will be saved for next time → just tap to reconnect.",
+  "Keep Vibyra running on your computer for quick access."
+];
+
+function ConnectGuideModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
+      <View style={styles.connectGuideOverlay}>
+        <Image source={connectBackdrop} resizeMode="cover" style={styles.connectBackdropImage} />
+        <View style={styles.connectGuideScrim} />
+        <ScrollView
+          contentContainerStyle={[
+            styles.connectGuideContent,
+            {
+              paddingBottom: Math.max(insets.bottom + 24, 36),
+              paddingTop: Math.max(insets.top + 14, 28)
+            }
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.connectGuideHero}>
+            <Pressable style={({ pressed }) => [styles.connectGuideClose, pressed ? styles.connectActionPressed : null]} onPress={onClose}>
+              <Ionicons name="close" color={colors.text} size={22} />
+            </Pressable>
+            <View style={styles.connectGuideHeroIcon}>
+              <Ionicons name="rocket-outline" color="#C97BFF" size={28} />
+            </View>
+            <Text style={styles.connectGuideTitle}>🚀 Getting Started with Vibyra</Text>
+            <Text style={styles.connectGuideIntro}>Follow these simple steps to connect your phone to your computer in seconds.</Text>
+          </View>
+
+          <View style={styles.connectGuideStepStack}>
+            {connectGuideSteps.map((step) => (
+              <View key={step.kicker} style={styles.connectGuideCard}>
+                <LinearGradient
+                  colors={["rgba(255, 255, 255, 0.08)", "rgba(113, 48, 255, 0.13)", "rgba(255, 255, 255, 0.035)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.connectGuideCardFill}
+                >
+                  <View style={styles.connectGuideCardTop}>
+                    <View style={styles.connectGuideStepIcon}>
+                      <Ionicons name={step.icon} color="#C97BFF" size={22} />
+                    </View>
+                    <View style={styles.connectGuideCardHeader}>
+                      <Text style={styles.connectGuideKicker}>{step.kicker}</Text>
+                      <Text style={styles.connectGuideSectionTitle}>{step.title}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.connectGuideBullets}>
+                    {step.lines.map((line) => (
+                      <View key={line} style={styles.connectGuideBulletRow}>
+                        <View style={styles.connectGuideBulletDot} />
+                        <Text style={styles.connectGuideBody}>{line}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </LinearGradient>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.connectGuideInfoGrid}>
+            <View style={styles.connectGuideInfoCard}>
+              <Text style={styles.connectGuideInfoTitle}>❓ Troubleshooting</Text>
+              {connectGuideTroubleshooting.map((item) => (
+                <View key={item.title} style={styles.connectGuideInfoBlock}>
+                  <Text style={styles.connectGuideQuestion}>{item.title}</Text>
+                  {item.lines.map((line) => (
+                    <Text key={line} style={styles.connectGuideSmallLine}>• {line}</Text>
+                  ))}
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.connectGuideInfoCard}>
+              <Text style={styles.connectGuideInfoTitle}>💡 Tips</Text>
+              {connectGuideTips.map((tip) => (
+                <Text key={tip} style={styles.connectGuideSmallLine}>• {tip}</Text>
+              ))}
+            </View>
+          </View>
+
+          <LinearGradient
+            colors={["#762CFF", "#B63AFF", "#FF8D72"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.connectGuideDone}
+          >
+            <Pressable style={({ pressed }) => [styles.connectGuideDonePressable, pressed ? styles.connectActionPressed : null]} onPress={onClose}>
+              <Text style={styles.connectGuideDoneText}>Enjoy seamless control with Vibyra ✨</Text>
+              <Ionicons name="arrow-forward" color={colors.text} size={22} />
+            </Pressable>
+          </LinearGradient>
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }
 
@@ -1321,22 +2354,62 @@ function PairAction() {
   const app = useAppContext();
   if (!app.pendingPhoneApproval) {
     return (
-      <PrimaryButton
-        icon="link-outline"
-        label={app.pairing ? "Finding Vibyra..." : "Pair phone"}
-        onPress={app.pairMachine}
-      />
+      <Pressable style={({ pressed }) => [styles.connectSecondaryAction, pressed ? styles.connectActionPressed : null]} onPress={app.pairMachine}>
+        <Ionicons name="link-outline" color={colors.text} size={18} />
+        <Text style={styles.connectSecondaryActionText}>{app.pairing ? "Connecting..." : "Connect with code"}</Text>
+      </Pressable>
     );
   }
 
   return (
-    <View style={styles.phonePermission}>
+    <View style={styles.connectApproval}>
       <Ionicons name="shield-checkmark-outline" color={colors.success} size={22} />
-      <Text style={styles.rowTitle}>Allow {app.pendingPhoneApproval.machineName}?</Text>
+      <Text style={styles.connectApprovalTitle}>Allow {app.pendingPhoneApproval.machineName}?</Text>
       <Text style={styles.rowMeta}>
         Vibyra can show projects, receive prompts, run approved commands, and send live updates.
       </Text>
-      <PrimaryButton icon="checkmark-circle-outline" label="Allow Vibyra" onPress={app.confirmPhonePermission} />
+      <PrimaryButton icon="checkmark-circle-outline" label="Confirm on phone" onPress={app.confirmPhonePermission} />
+    </View>
+  );
+}
+
+function WaitingApprovalIndicator({ message }: { message: string }) {
+  const dotOne = useRef(new Animated.Value(0.35)).current;
+  const dotTwo = useRef(new Animated.Value(0.35)).current;
+  const dotThree = useRef(new Animated.Value(0.35)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.stagger(180, [dotOne, dotTwo, dotThree].map((dot) => (
+        Animated.sequence([
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 420,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true
+          }),
+          Animated.timing(dot, {
+            toValue: 0.35,
+            duration: 420,
+            easing: Easing.in(Easing.cubic),
+            useNativeDriver: true
+          })
+        ])
+      )))
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [dotOne, dotTwo, dotThree]);
+
+  return (
+    <View style={styles.connectWaiting}>
+      <Text style={styles.connectWaitingTitle}>{message}</Text>
+      <View style={styles.connectWaitingDots}>
+        {[dotOne, dotTwo, dotThree].map((dot, index) => (
+          <Animated.View key={index} style={[styles.connectWaitingDot, { opacity: dot, transform: [{ scale: dot }] }]} />
+        ))}
+      </View>
     </View>
   );
 }
@@ -1361,19 +2434,40 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 4
   },
+  backButtonArt: {
+    gap: 8,
+    height: 62
+  },
+  backIconArt: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.07)",
+    borderRadius: 999,
+    height: 56,
+    justifyContent: "center",
+    shadowColor: "#8158FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    width: 56
+  },
   backText: { color: colors.muted, fontSize: 15, fontWeight: "700" },
+  backTextArt: {
+    color: "#D8CAFF",
+    fontSize: 20,
+    fontWeight: "900"
+  },
   billingSave: {
     color: colors.muted,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: "900",
-    marginTop: 1
+    marginTop: 0
   },
   billingTab: {
     alignItems: "center",
     borderRadius: 999,
     flex: 1,
     justifyContent: "center",
-    minHeight: 38
+    minHeight: 34
   },
   billingTabActive: {
     backgroundColor: "rgba(109, 59, 255, 0.16)",
@@ -1388,18 +2482,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     gap: 4,
-    marginTop: 8,
-    padding: 4,
-    width: "68%"
+    marginTop: 6,
+    padding: 3,
+    width: "72%"
   },
   billingTabText: {
     color: "rgba(255, 255, 255, 0.58)",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900"
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     overflow: "hidden"
+  },
+  backdropLayer: {
+    ...StyleSheet.absoluteFillObject
   },
   backdropBand: {
     borderRadius: 999,
@@ -1444,22 +2541,757 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14
   },
   codeLabel: { color: colors.magenta, fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
+  connectActionCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  connectActionMeta: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 3
+  },
+  connectActionPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.99 }]
+  },
+  connectActionDisabled: {
+    opacity: 0.7
+  },
+  connectActionStack: {
+    gap: 10,
+    marginTop: 12
+  },
+  connectActionTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  connectApproval: {
+    alignItems: "center",
+    backgroundColor: colors.successSoft,
+    borderColor: "rgba(55, 214, 122, 0.38)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 9,
+    marginTop: 8,
+    padding: 12
+  },
+  connectApprovalTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+    textAlign: "center"
+  },
+  connectCodeBlock: {
+    backgroundColor: "rgba(255, 255, 255, 0.035)",
+    borderColor: "rgba(255, 255, 255, 0.07)",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10
+  },
+  connectCodeInput: {
+    backgroundColor: "rgba(5, 4, 20, 0.74)",
+    borderColor: "rgba(147, 57, 255, 0.46)",
+    borderRadius: 16,
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: 5,
+    minHeight: 54,
+    textAlign: "center",
+    textTransform: "uppercase"
+  },
+  connectCodeLabel: {
+    color: "#A94BFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.7,
+    marginLeft: 2,
+    textTransform: "uppercase"
+  },
+  connectContent: {
+    padding: 20,
+    paddingBottom: 34
+  },
+  connectHeader: {
+    alignItems: "center",
+    paddingHorizontal: 4
+  },
+  connectGuideText: {
+    color: "#9A4DFF",
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  connectGuideBody: {
+    color: "rgba(232, 226, 255, 0.82)",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 19
+  },
+  connectGuideBulletDot: {
+    backgroundColor: "#B96DFF",
+    borderRadius: 999,
+    height: 6,
+    marginTop: 7,
+    shadowColor: "#B96DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    width: 6
+  },
+  connectGuideBulletRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 10
+  },
+  connectGuideBullets: {
+    gap: 8,
+    marginTop: 14
+  },
+  connectGuideCard: {
+    borderColor: "rgba(174, 98, 255, 0.34)",
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowColor: "#8E35FF",
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.2,
+    shadowRadius: 22
+  },
+  connectGuideCardFill: {
+    paddingHorizontal: 16,
+    paddingVertical: 16
+  },
+  connectGuideCardHeader: {
+    flex: 1,
+    minWidth: 0
+  },
+  connectGuideCardTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  connectGuideClose: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.09)",
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    position: "absolute",
+    right: 14,
+    top: 14,
+    width: 42,
+    zIndex: 2
+  },
+  connectGuideContent: {
+    gap: 14,
+    paddingHorizontal: 18
+  },
+  connectGuideDone: {
+    borderColor: "rgba(255, 255, 255, 0.24)",
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowColor: "#B63AFF",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.42,
+    shadowRadius: 24
+  },
+  connectGuideDonePressable: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center",
+    minHeight: 56,
+    paddingHorizontal: 16
+  },
+  connectGuideDoneText: {
+    color: colors.text,
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20,
+    textAlign: "center"
+  },
+  connectGuideHero: {
+    alignItems: "center",
+    backgroundColor: "rgba(6, 5, 22, 0.72)",
+    borderColor: "rgba(174, 98, 255, 0.42)",
+    borderRadius: 26,
+    borderWidth: 1.5,
+    overflow: "hidden",
+    paddingBottom: 22,
+    paddingHorizontal: 18,
+    paddingTop: 26,
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.28,
+    shadowRadius: 28
+  },
+  connectGuideHeroIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(149, 60, 255, 0.2)",
+    borderColor: "rgba(201, 123, 255, 0.42)",
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 58,
+    justifyContent: "center",
+    shadowColor: "#C97BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.58,
+    shadowRadius: 18,
+    width: 58
+  },
+  connectGuideInfoBlock: {
+    gap: 5,
+    marginTop: 12
+  },
+  connectGuideInfoCard: {
+    backgroundColor: "rgba(6, 5, 22, 0.7)",
+    borderColor: "rgba(174, 98, 255, 0.26)",
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16
+  },
+  connectGuideInfoGrid: {
+    gap: 12
+  },
+  connectGuideInfoTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 22
+  },
+  connectGuideIntro: {
+    color: "rgba(226, 219, 255, 0.78)",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 8,
+    maxWidth: 310,
+    textAlign: "center"
+  },
+  connectGuideKicker: {
+    color: "#C97BFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    marginBottom: 3,
+    textTransform: "uppercase"
+  },
+  connectGuideOverlay: {
+    backgroundColor: colors.background,
+    flex: 1,
+    overflow: "hidden"
+  },
+  connectGuideQuestion: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 19
+  },
+  connectGuideScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(2, 1, 12, 0.32)"
+  },
+  connectGuideSectionTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 22
+  },
+  connectGuideSmallLine: {
+    color: "rgba(232, 226, 255, 0.8)",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 19,
+    marginTop: 5
+  },
+  connectGuideStepIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(149, 60, 255, 0.18)",
+    borderColor: "rgba(201, 123, 255, 0.34)",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    shadowColor: "#C97BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+    width: 44
+  },
+  connectGuideStepStack: {
+    gap: 12
+  },
+  connectGuideTitle: {
+    color: colors.text,
+    fontSize: 26,
+    fontWeight: "900",
+    lineHeight: 32,
+    marginTop: 16,
+    maxWidth: 310,
+    textAlign: "center"
+  },
+  connectHelpRow: {
+    alignItems: "center",
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    marginTop: 18,
+    minHeight: 28,
+    paddingHorizontal: 14
+  },
+  connectHelpText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "800"
+  },
+  connectLine: {
+    color: "rgba(227, 222, 255, 0.78)",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 3
+  },
+  connectLogo: {
+    height: 116,
+    width: 160
+  },
+  connectLogoWrap: {
+    marginBottom: 4,
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.35,
+    shadowRadius: 30
+  },
+  connectModeTab: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderRadius: 999,
+    flex: 1,
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "center",
+    minHeight: 36
+  },
+  connectModeTabActive: {
+    backgroundColor: "rgba(148, 65, 255, 0.24)"
+  },
+  connectModeTabs: {
+    backgroundColor: "rgba(11, 8, 32, 0.74)",
+    borderColor: "rgba(154, 77, 255, 0.22)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    padding: 4
+  },
+  connectModeText: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  connectModeTextActive: {
+    color: colors.text
+  },
+  connectOrText: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 17,
+    marginTop: 2,
+    textAlign: "center",
+    textTransform: "none"
+  },
+  connectPrimaryAction: {
+    alignItems: "center",
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "center",
+    marginTop: 16,
+    minHeight: 58,
+    overflow: "hidden",
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.42,
+    shadowRadius: 18
+  },
+  connectPrimaryActionGradient: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flexDirection: "row",
+    gap: 11,
+    justifyContent: "center",
+    minHeight: 58,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    width: "100%"
+  },
+  connectPrimaryActionText: {
+    color: colors.text,
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20,
+    textAlign: "center"
+  },
+  connectBackdropImage: {
+    ...StyleSheet.absoluteFillObject
+  },
+  connectScreen: {
+    flex: 1,
+    overflow: "hidden"
+  },
+  connectScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 22
+  },
+  connectSecondaryAction: {
+    alignItems: "center",
+    backgroundColor: "rgba(15, 10, 42, 0.82)",
+    borderColor: "rgba(154, 77, 255, 0.26)",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: 14
+  },
+  connectSecondaryActionText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  connectStatus: {
+    color: "#C371FF",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+    textAlign: "center"
+  },
+  connectWaiting: {
+    alignItems: "center",
+    gap: 10,
+    marginTop: 6
+  },
+  connectWaitingDot: {
+    backgroundColor: "#D07CFF",
+    borderRadius: 999,
+    height: 10,
+    shadowColor: "#D07CFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 12,
+    width: 10
+  },
+  connectWaitingDots: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "center"
+  },
+  connectWaitingTitle: {
+    color: "#E6C8FF",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 18,
+    textAlign: "center"
+  },
+  connectActivePanel: {
+    alignSelf: "center",
+    maxWidth: 430,
+    width: "100%"
+  },
+  connectStep: {
+    backgroundColor: "rgba(6, 5, 22, 0.72)",
+    borderColor: "rgba(151, 54, 255, 0.54)",
+    borderRadius: 24,
+    borderWidth: 1.5,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    shadowColor: "#9A35FF",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.32,
+    shadowRadius: 24
+  },
+  connectStepDot: {
+    alignItems: "center",
+    backgroundColor: "rgba(16, 14, 34, 0.88)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+  connectStepDotActive: {
+    backgroundColor: "#8F32FF",
+    borderColor: "rgba(176, 95, 255, 0.92)",
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.78,
+    shadowRadius: 15
+  },
+  connectStepDots: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 14,
+    marginTop: 18
+  },
+  connectStepDotText: {
+    color: "rgba(255, 255, 255, 0.48)",
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  connectStepDotTextActive: {
+    color: colors.text
+  },
+  connectStepIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(80, 34, 160, 0.28)",
+    borderColor: "rgba(154, 77, 255, 0.28)",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    shadowColor: "#8A35FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.26,
+    shadowRadius: 18,
+    width: 48
+  },
+  connectStepNumber: {
+    alignItems: "center",
+    backgroundColor: "rgba(12, 9, 38, 0.9)",
+    borderColor: "rgba(151, 54, 255, 0.88)",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  connectStepNumberText: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900"
+  },
+  connectStepRail: {
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    height: 3,
+    width: 28
+  },
+  connectStepRailActive: {
+    backgroundColor: "#9B40FF",
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8
+  },
+  connectSteps: {
+    gap: 12,
+    marginTop: 22
+  },
+  connectStepTitle: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 19,
+    fontWeight: "900",
+    lineHeight: 25
+  },
+  connectStepTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16
+  },
+  connectSimplePane: {
+    gap: 10,
+    marginTop: 10
+  },
+  connectSubtitle: {
+    color: "rgba(226, 219, 255, 0.78)",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 4,
+    maxWidth: 300,
+    textAlign: "center"
+  },
+  connectTitle: {
+    color: colors.text,
+    fontSize: 33,
+    fontWeight: "900",
+    lineHeight: 44,
+    marginTop: -5,
+    textAlign: "center"
+  },
+  connectTitleAccent: {
+    color: "#C241FF"
+  },
   errorText: { color: colors.error, fontSize: 13, fontWeight: "700", marginBottom: 10, textAlign: "center" },
+  frequencyCornerGlow: {
+    backgroundColor: "rgba(163, 76, 255, 0.2)",
+    borderRadius: 999,
+    height: 92,
+    left: -48,
+    opacity: 0.64,
+    position: "absolute",
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.36,
+    shadowRadius: 28,
+    top: -44,
+    width: 92
+  },
+  frequencyCornerGlowSelected: {
+    opacity: 0.9
+  },
+  frequencyBackdropImage: {
+    ...StyleSheet.absoluteFillObject
+  },
+  resultBackdropImage: {
+    ...StyleSheet.absoluteFillObject
+  },
+  frequencyHeader: {
+    alignSelf: "stretch",
+    marginBottom: 18
+  },
+  frequencyHelper: {
+    color: "rgba(226, 219, 255, 0.72)",
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+    marginTop: 10
+  },
+  frequencyOption: {
+    alignItems: "center",
+    backgroundColor: "rgba(8, 7, 28, 0.62)",
+    borderColor: "rgba(171, 100, 255, 0.38)",
+    borderRadius: 20,
+    borderWidth: 1.4,
+    height: 128,
+    justifyContent: "center",
+    overflow: "hidden",
+    paddingHorizontal: 12,
+    paddingTop: 18,
+    position: "relative",
+    shadowColor: "#8C2DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.34,
+    shadowRadius: 22,
+    width: "100%"
+  },
+  frequencyOptionGrid: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 14
+  },
+  frequencyOptionIcon: {
+    height: 54,
+    marginBottom: 12,
+    width: 54
+  },
+  frequencyOptionMotion: {
+    shadowColor: "#A741FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    width: "48%"
+  },
+  frequencyOptionPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.985 }]
+  },
+  frequencyOptionSelected: {
+    backgroundColor: "rgba(20, 9, 48, 0.78)",
+    borderColor: "rgba(216, 134, 255, 0.95)",
+    shadowOpacity: 0.5,
+    shadowRadius: 28
+  },
+  frequencyOptionTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 21,
+    textAlign: "center",
+    textShadowColor: "rgba(255, 255, 255, 0.18)",
+    textShadowOffset: { width: 0, height: 6 },
+    textShadowRadius: 12
+  },
+  frequencyProgressWrap: {
+    paddingHorizontal: 4,
+    paddingTop: 10
+  },
+  frequencyQuestion: {
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 0,
+    position: "relative"
+  },
+  frequencySelectedGlow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(151, 54, 255, 0.12)",
+    borderRadius: 20
+  },
+  frequencyTitle: {
+    color: colors.text,
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 41,
+    maxWidth: 330,
+    textShadowColor: "rgba(255, 255, 255, 0.2)",
+    textShadowOffset: { width: 0, height: 8 },
+    textShadowRadius: 16
+  },
   flow: {
     flex: 1,
     paddingHorizontal: 20,
     paddingBottom: 20,
     paddingTop: 14
   },
+  flowFrequency: {
+    flex: 1,
+    paddingBottom: 8,
+    paddingHorizontal: 24,
+    paddingTop: 8
+  },
+  flowResult: {
+    flex: 1,
+    paddingBottom: 8,
+    paddingHorizontal: 24,
+    paddingTop: 8
+  },
   flowPaywall: {
     paddingBottom: 0,
     paddingHorizontal: 0,
     paddingTop: 0
   },
+  flowFullBleed: {
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+    paddingTop: 0
+  },
   flowMoment: {
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    paddingTop: 14
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+    paddingTop: 0
   },
   deviceChip: {
     alignItems: "center",
@@ -1503,107 +3335,242 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 12
   },
-  healthText: { color: colors.muted, fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 8, textAlign: "center" },
-  generatingCopy: {
-    color: colors.muted,
-    fontSize: 16,
-    fontWeight: "700",
-    lineHeight: 23,
-    marginTop: 12,
-    textAlign: "center"
+  desktopList: {
+    gap: 10,
+    marginTop: 2
   },
-  generatingHalo: {
-    backgroundColor: "rgba(46, 235, 255, 0.16)",
-    borderRadius: 999,
-    height: 190,
-    position: "absolute",
-    width: 190
-  },
-  generatingIcon: {
-    height: 136,
-    width: 136
-  },
-  generatingKicker: {
-    color: "#8AF7FF",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-    marginBottom: 8,
-    textAlign: "center",
-    textTransform: "uppercase"
-  },
-  generatingOrbit: {
+  desktopResult: {
     alignItems: "center",
-    borderColor: "rgba(138, 247, 255, 0.22)",
-    borderRadius: 999,
+    backgroundColor: "rgba(46, 235, 255, 0.1)",
+    borderColor: "rgba(138, 247, 255, 0.24)",
+    borderRadius: 18,
     borderWidth: 1,
-    height: 214,
-    justifyContent: "flex-start",
-    paddingTop: 4,
-    position: "absolute",
-    width: 214
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 56,
+    paddingHorizontal: 14
   },
-  generatingOrbitDot: {
-    backgroundColor: "#8AF7FF",
+  desktopResultMeta: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  desktopResultMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7,
+    marginTop: 2
+  },
+  desktopResultStatusChecking: {
+    backgroundColor: "#FFE76A"
+  },
+  desktopResultStatusCurrent: {
+    backgroundColor: "#70F0A2"
+  },
+  desktopResultStatusDot: {
     borderRadius: 999,
-    height: 8,
-    shadowColor: "#8AF7FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
-    width: 8
+    height: 7,
+    width: 7
   },
-  generatingScan: {
-    backgroundColor: "rgba(138, 247, 255, 0.42)",
-    borderRadius: 999,
-    height: 3,
-    position: "absolute",
-    shadowColor: "#8AF7FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 14,
-    width: 190
+  desktopResultStatusOffline: {
+    backgroundColor: "#7D778D"
   },
-  generatingScreen: {
+  desktopResultStatusOnline: {
+    backgroundColor: "#51E895"
+  },
+  desktopResultTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  healthText: { color: colors.muted, fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 8, textAlign: "center" },
+  generatingContent: {
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 10
-  },
-  generatingStep: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
-    borderColor: "rgba(255, 255, 255, 0.07)",
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: 28,
     width: "100%"
   },
-  generatingStepDot: {
+  generatingCore: {
+    alignItems: "center",
+    borderColor: "rgba(214, 132, 255, 0.72)",
+    borderRadius: 999,
+    borderWidth: 1.5,
+    height: 184,
+    justifyContent: "center",
+    overflow: "hidden",
+    shadowColor: "#A13CFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.78,
+    shadowRadius: 42,
+    width: 184
+  },
+  generatingCoreGlass: {
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderRadius: 999,
+    height: 136,
+    left: 20,
+    position: "absolute",
+    top: 14,
+    transform: [{ rotate: "-18deg" }],
+    width: 72
+  },
+  generatingCoreShade: {
+    backgroundColor: "rgba(5, 2, 18, 0.28)",
+    borderRadius: 999,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: "44%"
+  },
+  generatingDot: {
+    backgroundColor: "rgba(243, 233, 255, 0.96)",
+    borderRadius: 999,
+    height: 16,
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.92,
+    shadowRadius: 18,
+    width: 16
+  },
+  generatingDots: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 17,
+    justifyContent: "center",
+    zIndex: 1
+  },
+  generatingInnerRing: {
+    borderColor: "rgba(159, 68, 255, 0.22)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 252,
+    position: "absolute",
+    width: 252
+  },
+  generatingOrbitDot: {
+    borderRadius: 999,
+    height: 16,
+    position: "absolute",
+    width: 16
+  },
+  generatingOrbitDotCyan: {
+    backgroundColor: "#D978FF",
+    right: -8,
+    shadowColor: "#D978FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 16,
+    top: "48%"
+  },
+  generatingOrbitDotMagenta: {
+    backgroundColor: "#B154FF",
+    left: 22,
+    shadowColor: "#DD79FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 16,
+    top: 18
+  },
+  generatingOrbitDotPurple: {
+    backgroundColor: "#8C36FF",
+    bottom: 18,
+    left: 10,
+    shadowColor: "#A46AFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 14
+  },
+  generatingOrbitGhost: {
+    borderColor: "rgba(163, 76, 255, 0.1)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 300,
+    position: "absolute",
+    width: 300
+  },
+  generatingOrbitRing: {
+    borderColor: "rgba(178, 80, 255, 0.78)",
+    borderRadius: 999,
+    borderWidth: 1.5,
+    height: 270,
+    position: "absolute",
+    width: 270
+  },
+  generatingOuterGlow: {
+    backgroundColor: "rgba(137, 38, 255, 0.28)",
+    borderRadius: 999,
+    height: 220,
+    position: "absolute",
+    shadowColor: "#AD4AFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.74,
+    shadowRadius: 54,
+    width: 220
+  },
+  generatingScreen: {
+    flex: 1,
+    overflow: "hidden"
+  },
+  generatingStatus: {
+    color: "rgba(255, 255, 255, 0.98)",
+    fontSize: 27,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 33,
+    textAlign: "center"
+  },
+  generatingStatusWrap: {
+    alignItems: "center",
+    marginTop: 28,
+    width: "100%"
+  },
+  generatingSubtitle: {
+    color: "rgba(222, 206, 255, 0.78)",
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 21,
+    marginTop: 12,
+    maxWidth: 280,
+    textAlign: "center"
+  },
+  generatingTrack: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 999,
     height: 10,
-    width: 10
+    marginTop: 30,
+    overflow: "visible",
+    width: "78%"
   },
-  generatingSteps: {
-    gap: 9,
-    marginTop: 24,
-    width: "100%"
+  generatingTrackDot: {
+    backgroundColor: "#D978FF",
+    borderRadius: 999,
+    height: 18,
+    shadowColor: "#D978FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.98,
+    shadowRadius: 16,
+    width: 18
   },
-  generatingStepText: {
-    color: colors.text,
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "800"
+  generatingTrackDotWrap: {
+    marginLeft: -9,
+    marginTop: -4,
+    position: "absolute",
+    top: 0
+  },
+  generatingTrackFill: {
+    borderRadius: 999,
+    height: 10,
+    overflow: "hidden"
+  },
+  generatingTrackFillGradient: {
+    ...StyleSheet.absoluteFillObject
   },
   generatingVisual: {
     alignItems: "center",
-    height: 230,
+    height: 318,
     justifyContent: "center",
-    marginBottom: 8,
-    overflow: "hidden",
     width: "100%"
   },
   input: {
@@ -1629,28 +3596,73 @@ const styles = StyleSheet.create({
   },
   insightIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(46, 235, 255, 0.12)",
-    borderColor: "rgba(138, 247, 255, 0.34)",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    height: 38,
+    height: 48,
     justifyContent: "center",
-    width: 38
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.72,
+    shadowRadius: 20,
+    width: 48
   },
   insightRow: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.035)",
-    borderColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 14,
+    borderColor: "rgba(156, 89, 255, 0.42)",
+    borderRadius: 22,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12
+    minHeight: 62,
+    overflow: "hidden",
+    shadowColor: "#8A36FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 22,
+    width: "100%"
   },
-  insightStack: { gap: 10, marginTop: 26, width: "100%" },
-  insightSubtitle: { color: colors.muted, fontSize: 15, fontWeight: "700", lineHeight: 22, marginTop: 12, textAlign: "center" },
-  insightText: { color: colors.text, flex: 1, fontSize: 15, fontWeight: "800", lineHeight: 21 },
+  insightRowFill: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    minHeight: 62,
+    overflow: "hidden",
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+    width: "100%"
+  },
+  insightRowGlow: {
+    backgroundColor: "rgba(172, 90, 255, 0.14)",
+    borderRadius: 999,
+    bottom: -56,
+    height: 120,
+    position: "absolute",
+    right: -34,
+    shadowColor: "#A442FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.52,
+    shadowRadius: 34,
+    width: 170
+  },
+  insightStack: {
+    gap: 8,
+    marginTop: 14,
+    width: "100%"
+  },
+  insightSubtitle: {
+    color: "#BEB5DF",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 19,
+    marginTop: 4,
+    textAlign: "center"
+  },
+  insightText: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20
+  },
+  insightChevron: {
+    marginRight: -2
+  },
   mainPlanLabel: {
     backgroundColor: colors.accentSoft,
     borderColor: colors.accent,
@@ -1755,11 +3767,23 @@ const styles = StyleSheet.create({
     width: "100%"
   },
   mutedText: { color: colors.muted, fontSize: 14, fontWeight: "600" },
+  momentProgressSafe: {
+    width: "100%"
+  },
   navRow: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
     paddingTop: 16
+  },
+  navRowFrequency: {
+    justifyContent: "space-between",
+    paddingBottom: 20,
+    paddingTop: 8
+  },
+  navRowMoment: {
+    paddingTop: 10,
+    width: "100%"
   },
   nextButton: {
     alignItems: "center",
@@ -1772,10 +3796,41 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: 18
   },
+  nextButtonFrequency: {
+    backgroundColor: "transparent",
+    borderColor: "rgba(214, 132, 255, 0.98)",
+    borderRadius: 21,
+    minHeight: 56,
+    overflow: "hidden",
+    paddingHorizontal: 0,
+    shadowColor: "#C86DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.96,
+    shadowRadius: 28,
+    width: 148
+  },
+  nextButtonFrequencyGradient: {
+    alignItems: "center",
+    borderRadius: 21,
+    flexDirection: "row",
+    gap: 13,
+    justifyContent: "center",
+    minHeight: 56,
+    paddingHorizontal: 14,
+    shadowColor: "#D07CFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.88,
+    shadowRadius: 22,
+    width: "100%"
+  },
   nextButtonDisabled: {
     opacity: 0.45
   },
   nextText: { color: colors.text, fontSize: 15, fontWeight: "800" },
+  nextTextFrequency: {
+    fontSize: 18,
+    fontWeight: "900"
+  },
   onboarding: { alignItems: "center", flex: 1, justifyContent: "center", padding: 22 },
   onboardingFooter: { alignItems: "center", flexDirection: "row", gap: 8, marginTop: 18 },
   option: {
@@ -1801,6 +3856,10 @@ const styles = StyleSheet.create({
   optionIcon: {
     height: 52,
     width: 52
+  },
+  persistentBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden"
   },
   optionIconShell: {
     alignItems: "center",
@@ -1978,8 +4037,8 @@ const styles = StyleSheet.create({
   },
   paywallBadge: {
     borderRadius: 999,
-    paddingHorizontal: 11,
-    paddingVertical: 6
+    paddingHorizontal: 10,
+    paddingVertical: 5
   },
   paywallBadgeText: {
     color: "#FFFFFF",
@@ -1991,8 +4050,8 @@ const styles = StyleSheet.create({
     borderColor: "rgba(139, 92, 255, 0.32)",
     borderRadius: 22,
     borderWidth: 1,
-    marginTop: 12,
-    padding: 16,
+    marginTop: 8,
+    padding: 13,
     shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.12,
@@ -2012,26 +4071,30 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.16)",
     borderWidth: 1,
     borderRadius: 14,
-    height: 44,
+    height: 40,
     justifyContent: "center",
-    width: 44
+    width: 40
   },
   paywallContent: {
     flexGrow: 1,
-    paddingBottom: 114,
+    justifyContent: "space-between",
+    minHeight: "100%",
     paddingHorizontal: 22,
-    paddingTop: 12
+    paddingTop: 34
   },
   paywallCta: {
     alignItems: "center",
     borderRadius: 999,
-    minHeight: 56,
+    minHeight: 52,
     justifyContent: "center"
   },
   paywallCtaText: {
     color: "#FFFFFF",
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "900"
+  },
+  paywallCtaDisabled: {
+    opacity: 0.72
   },
   paywallCtaWrap: {
     borderRadius: 999,
@@ -2045,68 +4108,82 @@ const styles = StyleSheet.create({
   paywallDivider: {
     backgroundColor: "rgba(139, 92, 255, 0.24)",
     height: 1.5,
-    marginBottom: 12,
-    marginTop: 12,
+    marginBottom: 10,
+    marginTop: 10,
     width: "100%"
   },
   paywallFeatureRow: {
     alignItems: "flex-start",
     flexDirection: "row",
-    gap: 10
+    gap: 8
   },
   paywallFeatureStack: {
-    gap: 9
+    gap: 7
   },
   paywallFeatureText: {
     color: colors.text,
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
-    lineHeight: 20
+    lineHeight: 18
+  },
+  paywallErrorText: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+    marginTop: 8,
+    textAlign: "center"
   },
   paywallFooter: {
     bottom: 0,
     left: 0,
-    paddingBottom: 10,
     paddingHorizontal: 22,
-    paddingTop: 10,
+    paddingTop: 8,
     position: "absolute",
     right: 0
   },
   paywallFooterText: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
-    lineHeight: 18,
+    lineHeight: 16,
+    marginTop: 6,
+    textAlign: "center"
+  },
+  paywallSuccessText: {
+    color: colors.success,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
     marginTop: 8,
     textAlign: "center"
   },
   paywallHero: {
-    marginTop: 18
+    marginTop: 0
   },
   paywallPlanName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "900",
-    lineHeight: 33
+    lineHeight: 30
   },
   paywallPlanPrice: {
     color: colors.muted,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "900",
-    lineHeight: 24,
-    marginTop: 4
+    lineHeight: 22,
+    marginTop: 3
   },
   paywallShell: {
     backgroundColor: colors.background,
     flex: 1,
-    marginTop: -10,
     overflow: "hidden"
   },
   paywallTab: {
     alignItems: "center",
     borderRadius: 999,
     flex: 1,
-    minHeight: 42,
+    minHeight: 38,
     justifyContent: "center"
   },
   paywallTabActive: {
@@ -2122,21 +4199,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     flexDirection: "row",
     gap: 4,
-    marginTop: 34,
-    padding: 5,
-    width: "72%"
+    marginTop: 16,
+    padding: 4,
+    width: "80%"
   },
   paywallTabText: {
     color: "rgba(255, 255, 255, 0.58)",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "900"
   },
   paywallTitle: {
     color: colors.text,
-    fontSize: 34,
+    fontSize: 31,
     fontWeight: "900",
     letterSpacing: -1.1,
-    lineHeight: 39
+    lineHeight: 35
   },
   paywallYearly: {
     color: colors.dim,
@@ -2149,12 +4226,36 @@ const styles = StyleSheet.create({
     height: 150,
     justifyContent: "center",
     marginBottom: 2,
-    marginTop: -24,
+    marginTop: 0,
+    position: "relative",
     width: "100%"
   },
+  personaHeroGlow: {
+    backgroundColor: "rgba(181, 76, 255, 0.18)",
+    borderRadius: 999,
+    height: 146,
+    position: "absolute",
+    shadowColor: "#C95DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 36,
+    width: 146
+  },
+  personaHeroOrbit: {
+    borderColor: "rgba(104, 52, 255, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 176,
+    position: "absolute",
+    width: 176
+  },
   personaIcon: {
-    height: 132,
-    width: 132
+    height: 140,
+    shadowColor: "#FF6FD8",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 26,
+    width: 140
   },
   profileLabel: {
     color: colors.muted,
@@ -2187,7 +4288,52 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 10
   },
-  resultContent: { alignItems: "center", flexGrow: 1, justifyContent: "center", paddingBottom: 12 },
+  resultContent: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 4,
+    paddingTop: 0
+  },
+  resultProgressWrap: {
+    paddingHorizontal: 8,
+    paddingTop: 8
+  },
+  resultTitleBlock: {
+    alignItems: "center",
+    width: "100%"
+  },
+  resultTitleGradientFill: {
+    height: 40,
+    width: "100%"
+  },
+  resultTitleGradientMask: {
+    alignSelf: "center",
+    height: 40,
+    justifyContent: "flex-start",
+    overflow: "visible",
+    width: "100%"
+  },
+  resultTitleGradientText: {
+    color: colors.text,
+    fontSize: 31,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 37,
+    textAlign: "center"
+  },
+  resultTitlePrimary: {
+    color: colors.text,
+    fontSize: 29,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 35,
+    textAlign: "center",
+    textShadowColor: "rgba(255, 255, 255, 0.22)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 14,
+    width: "100%"
+  },
   resultTitle: { textAlign: "center", width: "100%" },
   rowContent: { flex: 1, minWidth: 0 },
   rowMeta: { color: colors.muted, fontSize: 13, fontWeight: "600", marginTop: 3, textAlign: "center" },
@@ -2195,48 +4341,68 @@ const styles = StyleSheet.create({
   sectionTitle: { alignSelf: "flex-start", color: colors.text, fontSize: 18, fontWeight: "900", lineHeight: 24, marginTop: 26 },
   shell: { backgroundColor: colors.background, flex: 1 },
   sliderDot: {
-    backgroundColor: colors.elevated,
-    borderColor: colors.border,
+    backgroundColor: "rgba(8, 7, 28, 0.95)",
+    borderColor: "rgba(186, 170, 255, 0.62)",
     borderRadius: 999,
     borderWidth: 2,
-    height: 18,
-    width: 18
+    height: 17,
+    width: 17
   },
   sliderDotActive: {
-    backgroundColor: colors.amber,
-    borderColor: colors.amber
+    backgroundColor: "#B15CFF",
+    borderColor: "#D48AFF",
+    shadowColor: "#B33BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.72,
+    shadowRadius: 9
   },
   sliderFill: {
-    backgroundColor: colors.amber,
+    backgroundColor: "#C56BFF",
     borderRadius: 999,
     height: 6,
     left: 0,
     position: "absolute",
+    shadowColor: "#C56BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 10,
     top: 21
   },
   sliderIcon: {
-    height: 48,
-    opacity: 0.7,
-    width: 48
+    height: 44,
+    opacity: 0.78,
+    width: 44
   },
   sliderIconActive: {
-    opacity: 1,
-    transform: [{ scale: 1.08 }]
+    opacity: 1
   },
   sliderOption: {
     alignItems: "center",
-    gap: 8,
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 18,
+    borderWidth: 0,
+    gap: 7,
+    height: 112,
+    justifyContent: "center",
+    overflow: "hidden",
+    paddingHorizontal: 6,
+    position: "relative",
     width: "23%"
+  },
+  sliderOptionActive: {},
+  sliderOptionPressed: {
+    opacity: 0.92
   },
   sliderOptions: {
     alignSelf: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 34,
-    width: "92%"
+    marginTop: 4,
+    width: "100%"
   },
-  sliderOptionText: { color: colors.dim, fontSize: 13, fontWeight: "800", textAlign: "center" },
-  sliderOptionTextActive: { color: colors.text },
+  sliderOptionText: { color: "rgba(226, 219, 255, 0.72)", fontSize: 11, fontWeight: "900", lineHeight: 14, textAlign: "center", textShadowColor: "rgba(181, 92, 255, 0.12)", textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12 },
+  sliderOptionTextActive: { color: colors.text, textShadowColor: "rgba(212, 124, 255, 0.42)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 },
   sliderStop: {
     alignItems: "center",
     height: 48,
@@ -2248,17 +4414,21 @@ const styles = StyleSheet.create({
   },
   sliderThumb: {
     backgroundColor: colors.text,
-    borderColor: colors.amber,
+    borderColor: "#CD79FF",
     borderRadius: 999,
     borderWidth: 3,
     height: 26,
     marginLeft: -13,
     position: "absolute",
+    shadowColor: "#D07CFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 16,
     top: 11,
     width: 26
   },
   sliderTrack: {
-    backgroundColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
     borderRadius: 999,
     height: 6,
     left: 0,
@@ -2269,13 +4439,17 @@ const styles = StyleSheet.create({
   sliderTrackWrap: {
     alignSelf: "center",
     height: 48,
-    marginTop: 34,
-    width: "82%"
+    marginTop: 22,
+    width: "88%"
   },
   stepBody: {
     flex: 1,
     justifyContent: "center",
     paddingTop: 10
+  },
+  stepBodyFullBleed: {
+    justifyContent: "flex-start",
+    paddingTop: 0
   },
   syncAuraCyan: {
     backgroundColor: "rgba(46, 235, 255, 0.16)",
@@ -2334,45 +4508,49 @@ const styles = StyleSheet.create({
   },
   syncCard: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 18,
+    borderRadius: 12,
     borderWidth: 1,
     flex: 1,
-    minHeight: 156,
-    paddingHorizontal: 12,
-    paddingVertical: 16
+    justifyContent: "flex-start",
+    minHeight: 112,
+    paddingHorizontal: 8,
+    paddingVertical: 10
   },
   syncCardBody: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: "700",
-    lineHeight: 18,
-    marginTop: 8,
+    lineHeight: 13,
+    marginTop: 4,
     textAlign: "center"
+  },
+  syncCardCopy: {
+    alignItems: "center",
+    minWidth: 0
   },
   syncCardIcon: {
     alignItems: "center",
-    borderRadius: 999,
-    borderWidth: 1.5,
-    height: 58,
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 34,
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: 9,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
+    shadowOpacity: 0.45,
     shadowRadius: 12,
-    width: 58
+    width: 34
   },
   syncCards: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 20,
+    gap: 8,
+    marginTop: 10,
     width: "100%"
   },
   syncCardTitle: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "900",
+    lineHeight: 15,
     textAlign: "center"
   },
   syncCenterOrb: {
@@ -2394,8 +4572,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexGrow: 1,
     justifyContent: "center",
-    paddingBottom: 24,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 0
   },
   syncDesktopLabel: {
@@ -2431,21 +4608,52 @@ const styles = StyleSheet.create({
   },
   syncHero: {
     alignItems: "center",
-    height: 310,
+    height: 228,
     justifyContent: "center",
-    marginTop: 18,
+    marginTop: 8,
     width: "100%"
   },
-  syncHeroGlow: {
+  syncHeroGlowBlue: {
+    backgroundColor: "rgba(46, 235, 255, 0.22)",
+    borderRadius: 999,
+    height: 148,
+    left: 28,
+    position: "absolute",
+    shadowColor: "#8AF7FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.65,
+    shadowRadius: 28,
+    top: 30,
+    width: 148
+  },
+  syncHeroGlowPink: {
+    backgroundColor: "rgba(242, 58, 205, 0.18)",
+    borderRadius: 999,
+    height: 138,
+    position: "absolute",
+    right: 36,
+    shadowColor: "#FF7DE3",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 26,
+    top: 58,
+    width: 138
+  },
+  syncHeroGlowPurple: {
     backgroundColor: "rgba(109, 59, 255, 0.2)",
     borderRadius: 999,
-    height: 250,
+    bottom: 18,
+    height: 168,
     position: "absolute",
-    width: 330
+    shadowColor: "#A76DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.56,
+    shadowRadius: 30,
+    width: 220
   },
   syncHeroImage: {
-    height: 310,
-    width: 390
+    height: 228,
+    width: 318
   },
   syncMobileLabel: {
     bottom: 20,
@@ -2458,14 +4666,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     marginTop: 0,
-    paddingHorizontal: 18,
-    paddingVertical: 10
+    paddingHorizontal: 14,
+    paddingVertical: 8
   },
   syncPillText: {
     color: "#8AF7FF",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.7,
     textTransform: "uppercase"
@@ -2489,9 +4697,6 @@ const styles = StyleSheet.create({
   },
   syncScreen: {
     flex: 1,
-    marginHorizontal: -20,
-    marginBottom: -20,
-    marginTop: -8,
     overflow: "hidden"
   },
   syncSkipButton: {
@@ -2529,24 +4734,55 @@ const styles = StyleSheet.create({
   },
   syncSubtitle: {
     color: colors.muted,
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "700",
-    lineHeight: 25,
-    marginTop: 12,
-    maxWidth: 330,
+    lineHeight: 20,
+    marginTop: 8,
+    maxWidth: 318,
     textAlign: "center"
+  },
+  syncGradientFill: {
+    height: 42,
+    width: "100%"
+  },
+  syncGradientMask: {
+    height: 42,
+    justifyContent: "flex-start",
+    overflow: "visible",
+    width: 176
   },
   syncTitle: {
     color: colors.text,
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "900",
-    letterSpacing: -1.4,
-    lineHeight: 39,
-    marginTop: 20,
+    letterSpacing: 0,
+    lineHeight: 38,
+    marginTop: 14,
     textAlign: "center"
   },
-  syncTitleGradient: {
-    color: colors.magenta
+  syncTitleBlock: {
+    alignItems: "center",
+    marginTop: 14
+  },
+  syncTitleGradientMaskText: {
+    lineHeight: 38,
+    marginTop: 0,
+    textAlign: "left"
+  },
+  syncTitleInline: {
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 38,
+    marginTop: 0,
+    textAlign: "center"
+  },
+  syncTitleLine: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "center",
+    minHeight: 38
   },
   syncTopBar: {
     alignItems: "center",

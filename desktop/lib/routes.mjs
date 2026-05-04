@@ -118,9 +118,10 @@ async function handleAuthedRoutes(req, res, url) {
 
 async function approvePairing() {
   if (!appState.pendingPair) return;
-  appState.pairedDevice = appState.pendingPair.deviceName;
-  appState.pendingPair = { ...appState.pendingPair, status: "approved" };
+  const pendingPair = appState.pendingPair;
+  appState.pairedDevice = pendingPair.deviceName;
   await discoverProjects();
+  appState.pendingPair = { ...pendingPair, status: "approved" };
   pushEvents([event("Pairing", `${appState.pairedDevice} approved in Vibyra Desktop`, "success")]);
 }
 
@@ -165,7 +166,6 @@ async function pairStatus(res, requestId) {
     return;
   }
   if (appState.pendingPair.status === "approved") {
-    await discoverProjects();
     send(res, 200, { ok: true, status: "approved", token: TOKEN, machineName, projects: appState.cachedProjects, events: appState.events });
     return;
   }

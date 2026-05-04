@@ -63,6 +63,17 @@ export type AgentConnection = {
   machineName: string;
 };
 
+export type DesktopStatus = "current" | "online" | "offline" | "checking";
+
+export type RememberedDesktop = {
+  url: string;
+  machineName: string;
+  pairCode: string;
+  status: DesktopStatus;
+  lastSeenAt?: string;
+  lastConnectedAt?: string;
+};
+
 export type PairApprovalPayload = {
   url: string;
   token: string;

@@ -46,15 +46,28 @@ export function AppProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppContextValue>(() => ({
     ...state,
     ...derived,
-    authenticateWith: (method) => {
+    authenticateWith: (method, accountStatus) => {
+      const existingAccount = accountStatus === "existing" || (accountStatus === undefined && state.authMode === "login");
       setters.setAuthenticated(true);
+      setters.setOnboardingComplete(existingAccount || state.onboardingComplete);
       if (method !== "email") {
         setters.setAuthEmail("");
         setters.setAuthPassword("");
       }
-      if (state.authMode === "login") {
+      if (existingAccount) {
         setters.setAuthName("");
       }
+    },
+    completeOnboarding: () => {
+      setters.setOnboardingComplete(true);
+    },
+    resetPromptMoney: () => {
+      setters.setPromptMoney({
+        total: 0,
+        count: 0,
+        lastEarned: 0,
+        longestPromptLength: 0
+      });
     },
     setAuthMode: setters.setAuthMode,
     setAuthName: setters.setAuthName,

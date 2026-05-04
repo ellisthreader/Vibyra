@@ -24,22 +24,18 @@ export function ChatPanel(props: Props) {
     <View style={styles.chatPanel}>
       <View style={styles.chatHeader}>
         <View>
-          <Text style={styles.eyebrow}>Vibyra Agent</Text>
-          <Text style={styles.chatTitle}>{props.selectedFile.name}</Text>
+          <Text style={styles.eyebrow}>AI Builder</Text>
+          <Text style={styles.chatTitle}>Create or edit</Text>
         </View>
-        <Text style={styles.rowDim}>{props.selectedModel}</Text>
+        <View style={styles.modelPill}>
+          <Ionicons name="sparkles-outline" color="#FDE68A" size={14} />
+          <Text style={styles.rowDim}>{props.selectedModel}</Text>
+        </View>
       </View>
 
       <ScrollView style={styles.chatThread} contentContainerStyle={styles.chatThreadContent}>
         {props.chatMessages.map((message) => <ChatBubble key={message.id} message={message} />)}
       </ScrollView>
-
-      <View style={styles.filePreviewStrip}>
-        <Text style={styles.rowTitle}>{props.selectedFile.path}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <Text style={styles.filePreviewText}>{props.selectedFile.body || "Tap a file to load its contents."}</Text>
-        </ScrollView>
-      </View>
 
       <View style={styles.chatControls}>
         <SegmentedControl selected={props.selectedModel} values={models} onChange={props.setSelectedModel} />
@@ -50,7 +46,7 @@ export function ChatPanel(props: Props) {
         <TextInput
           value={props.taskText}
           onChangeText={props.setTaskText}
-          placeholder="Message Vibyra about this file"
+          placeholder={`Ask Vibyra to build in ${props.selectedFile.name}`}
           placeholderTextColor={colors.dim}
           multiline
           style={styles.chatInput}
@@ -106,8 +102,8 @@ const styles = StyleSheet.create({
     textAlignVertical: "top"
   },
   chatPanel: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+    backgroundColor: "#101219",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 8,
     borderWidth: 1,
     gap: 12,
@@ -122,7 +118,7 @@ const styles = StyleSheet.create({
     width: 42
   },
   chatText: { color: colors.text, fontSize: 15, fontWeight: "600", lineHeight: 22 },
-  chatThread: { maxHeight: 430, minHeight: 280 },
+  chatThread: { maxHeight: 360, minHeight: 230 },
   chatThreadContent: { gap: 10, paddingVertical: 4 },
   chatTitle: { color: colors.text, fontSize: 20, fontWeight: "800" },
   eyebrow: { color: colors.magenta, fontSize: 13, fontWeight: "800", textTransform: "uppercase" },
@@ -136,6 +132,17 @@ const styles = StyleSheet.create({
     padding: 10
   },
   filePreviewText: { color: "#E5E7EB", fontSize: 12, lineHeight: 18 },
+  modelPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(253, 230, 138, 0.08)",
+    borderColor: "rgba(253, 230, 138, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 6
+  },
   rowDim: { color: colors.dim, fontSize: 12, fontWeight: "600" },
   rowTitle: { color: colors.text, fontSize: 15, fontWeight: "800" }
 });
