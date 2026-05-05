@@ -97,7 +97,8 @@ async function handleAuthedRoutes(req, res, url) {
     send(res, 200, {
       events: appState.events,
       preview: appState.latestPreview,
-      selectedProjectId: appState.selectedProjectId
+      selectedProjectId: appState.selectedProjectId,
+      activeAgentRun: appState.activeAgentRun
     });
     return true;
   }

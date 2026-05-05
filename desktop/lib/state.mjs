@@ -13,6 +13,7 @@ export const appState = {
   pendingPair: null,
   selectedProjectId: null,
   latestPreview: null,
+  activeAgentRun: null,
   cachedProjects: [],
   events: [
     event("Desktop", "Vibyra Desktop is ready", "success"),

@@ -140,6 +140,7 @@ trait ProjectFileState
             'events' => $state['events'],
             'preview' => $state['latestPreview'],
             'selectedProjectId' => $state['selectedProjectId'],
+            'activeAgentRun' => $state['activeAgentRun'],
         ];
     }
 

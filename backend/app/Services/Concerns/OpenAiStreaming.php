@@ -44,6 +44,8 @@ trait OpenAiStreaming
         $responseText = '';
         $lineBuffer = '';
         $error = null;
+        $lastProgress = 12;
+        $lastProgressWriteAt = 0.0;
 
         $handle = curl_init('https://api.openai.com/v1/responses');
         curl_setopt_array($handle, [
@@ -55,7 +57,7 @@ trait OpenAiStreaming
             CURLOPT_POSTFIELDS => $body,
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT => 180,
-            CURLOPT_WRITEFUNCTION => function ($curl, string $chunk) use (&$buffer, &$responseText, &$lineBuffer, &$error) {
+            CURLOPT_WRITEFUNCTION => function ($curl, string $chunk) use (&$buffer, &$responseText, &$lineBuffer, &$error, &$lastProgress, &$lastProgressWriteAt) {
                 $buffer .= $chunk;
 
                 while (($position = strpos($buffer, "\n\n")) !== false) {
@@ -91,6 +93,20 @@ trait OpenAiStreaming
 
                             $responseText .= $delta;
                             $lineBuffer .= $delta;
+                            $progress = min(92, 12 + (int) floor(sqrt(strlen($responseText)) * 2.4));
+                            $now = microtime(true);
+
+                            if ($progress > $lastProgress && ($progress - $lastProgress >= 4 || $now - $lastProgressWriteAt >= 0.75)) {
+                                $state = $this->read();
+                                if (! empty($state['activeAgentRun'])) {
+                                    $state['activeAgentRun']['progress'] = $progress;
+                                    $state['activeAgentRun']['updatedAt'] = now()->toISOString();
+                                    $this->write($state);
+                                }
+
+                                $lastProgress = $progress;
+                                $lastProgressWriteAt = $now;
+                            }
 
                             while (($newline = strpos($lineBuffer, "\n")) !== false) {
                                 $lineText = trim(substr($lineBuffer, 0, $newline));

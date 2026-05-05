@@ -68,7 +68,12 @@ trait AgentExecution
             'model' => $model,
             'reasoningEffort' => $reasoningEffort,
             'promptHash' => $promptHash,
+            'title' => $prompt,
+            'progress' => 12,
+            'state' => 'running',
+            'file' => 'OpenAI stream',
             'startedAt' => now()->toISOString(),
+            'updatedAt' => now()->toISOString(),
         ];
         $state['lastPromptStartedAt'] = now()->toISOString();
         $state['recentPromptHashes'] = [
@@ -147,6 +152,8 @@ trait AgentExecution
             $this->event('Backend', 'Prompt sent to '.$model.' with '.$reasoningEffort.' reasoning', 'info'),
         ];
         $state['events'] = array_slice([...$newEvents, ...$state['events']], 0, 50);
+        $state['activeAgentRun'] = null;
+        $state['lastPromptCompletedAt'] = now()->toISOString();
         $this->write($state);
 
         return [

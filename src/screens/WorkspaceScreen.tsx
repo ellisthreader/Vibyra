@@ -20,16 +20,18 @@ import {
   View,
   ViewStyle
 } from "react-native";
+import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
 import { colors } from "../styles/theme";
-import { ChatMessage, Project, RememberedDesktop } from "../types/domain";
+import { Agent, ChatMessage, ModelKey, Project, RememberedDesktop } from "../types/domain";
 
-const dashboardBackdrop = require("../assets/home-ready-build.png");
+const dashboardHeroArt = require("../assets/BG-transparent-vibyra.png");
 const chatBuildAiHero = require("../assets/chat-build-ai-hero.png");
 const projectsBackdrop = require("../assets/result-background.png");
 const projectsFoldersHero = require("../assets/projects-folders-hero-glow-transparent.png");
-type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile";
+const communityHero = require("../assets/community-hero-glow-transparent.png");
+type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile" | "upgrade";
 type SettingsTab = "profile" | "billing" | "preferences" | "security";
 type DesktopCandidate = RememberedDesktop;
 
@@ -60,6 +62,49 @@ const tokenUsageRows = [
   { icon: "image-outline" as const, label: "Asset generation", value: "Images and app assets" }
 ];
 
+type BillingCycle = "monthly" | "annual";
+type MembershipPlan = {
+  accent: string;
+  annual: number;
+  badge: string;
+  description: string;
+  featured?: boolean;
+  features: string[];
+  monthly: number;
+  name: string;
+};
+
+const membershipPlans: MembershipPlan[] = [
+  {
+    accent: "#8E5CFF",
+    annual: 19,
+    badge: "Best value",
+    description: "A strong starting point for solo builders shipping small projects.",
+    features: ["1,500 tokens monthly", "Core AI models", "3 active projects", "Community templates"],
+    monthly: 24,
+    name: "Starter"
+  },
+  {
+    accent: "#45E99B",
+    annual: 49,
+    badge: "Most popular",
+    description: "More room, faster models, and enough usage for serious weekly builds.",
+    featured: true,
+    features: ["6,000 tokens monthly", "Claude, OpenAI and Gemini models", "Unlimited projects", "Priority build queue", "Advanced file edits"],
+    monthly: 59,
+    name: "Builder"
+  },
+  {
+    accent: "#FFB44F",
+    annual: 129,
+    badge: "Scale",
+    description: "Built for heavy product work, client builds, and high-output teams.",
+    features: ["20,000 tokens monthly", "Highest-capability models", "Team workspaces", "Priority support", "Early access features"],
+    monthly: 159,
+    name: "Pro"
+  }
+];
+
 const previousChats = [
   { detail: "Edited hero.tsx", icon: "chatbubble-ellipses-outline" as const, id: "landing-polish", meta: "Current chat", running: true, time: "2 mins ago", title: "Landing page polish" },
   { detail: "Investigating login issue", icon: "bug-outline" as const, id: "auth-bug", meta: "Saved 2d ago", running: false, time: "2d ago", title: "Fix auth bug" },
@@ -73,6 +118,52 @@ const chatSuggestions = [
   { color: "#43E585", icon: "add-circle-outline" as const, text: "Add a pricing comparison section" },
   { color: "#F5C542", icon: "document-text-outline" as const, text: "Refactor API integration" }
 ];
+
+type ChatModelProvider = "auto" | "claude" | "openai" | "gemini";
+type ChatModelOption = {
+  key: string;
+  label: string;
+  provider: ChatModelProvider;
+  modelKey?: ModelKey;
+};
+
+const chatModelGroups: Array<{ title: string; options: ChatModelOption[] }> = [
+  {
+    title: "",
+    options: [{ key: "auto", label: "Auto", provider: "auto" }]
+  },
+  {
+    title: "Claude Models",
+    options: [
+      { key: "claude-opus-4", label: "Claude Opus 4", provider: "claude" },
+      { key: "claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" },
+      { key: "claude-3-5-haiku", label: "Claude Haiku 3.5", provider: "claude" }
+    ]
+  },
+  {
+    title: "OpenAI models",
+    options: [
+      { key: "gpt-5.5", label: "GPT-5.5", provider: "openai", modelKey: "gpt-5.5" },
+      { key: "gpt-5.4", label: "GPT-5.4", provider: "openai", modelKey: "gpt-5.4" },
+      { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai", modelKey: "gpt-5.4-mini" },
+      { key: "gpt-5-codex", label: "GPT-5 Codex", provider: "openai", modelKey: "gpt-5-codex" }
+    ]
+  },
+  {
+    title: "Gemini Models",
+    options: [
+      { key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
+      { key: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
+      { key: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" }
+    ]
+  }
+];
+
+const chatModelOptions = chatModelGroups.flatMap((group) => group.options);
+const providerLogoSources = {
+  gemini: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/250px-Google_Gemini_icon_2025.svg.png",
+  openai: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/OpenAI_logo_2025_%28symbol%29.svg/250px-OpenAI_logo_2025_%28symbol%29.svg.png"
+};
 
 const communityPosts = [
   {
@@ -125,7 +216,6 @@ type ProjectDisplay = {
 };
 
 type ProjectLayout = {
-  actionButtonSize: number;
   cardStyle: StyleProp<ViewStyle>;
   createIconSize: number;
   folderIconSize: number;
@@ -150,7 +240,6 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
 
   if (compact) {
     return {
-      actionButtonSize: 30,
       cardStyle: { borderRadius: 14, padding: 12 },
       createIconSize: 23,
       folderIconSize: 21,
@@ -169,7 +258,6 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
 
   if (narrow || tallNarrow) {
     return {
-      actionButtonSize: 32,
       cardStyle: { borderRadius: 15, padding: 14 },
       createIconSize: 25,
       folderIconSize: 22,
@@ -188,7 +276,6 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
 
   if (!roomy) {
     return {
-      actionButtonSize: 33,
       cardStyle: { borderRadius: 15, padding: 15 },
       createIconSize: 26,
       folderIconSize: 23,
@@ -206,7 +293,6 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
   }
 
   return {
-    actionButtonSize: 34,
     cardStyle: null,
     createIconSize: 27,
     folderIconSize: 24,
@@ -273,7 +359,10 @@ export function WorkspaceScreen() {
   const [switcherScanning, setSwitcherScanning] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [projectChatTitles, setProjectChatTitles] = useState<Record<string, string>>({});
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
+  const [projectsCanScroll, setProjectsCanScroll] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("annual");
 
   const filteredProjects = useMemo(() => {
     const search = projectSearch.trim().toLowerCase();
@@ -315,6 +404,13 @@ export function WorkspaceScreen() {
     setPcSwitcherVisible(false);
   }, [app]);
 
+  const openProjectChat = useCallback((projectId: string, projectName: string) => {
+    const chatId = `project-${projectId}`;
+    setProjectChatTitles((current) => ({ ...current, [chatId]: projectName }));
+    setSelectedChatId(chatId);
+    setActivePage("chat");
+  }, []);
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
       <View style={styles.shell}>
@@ -331,20 +427,22 @@ export function WorkspaceScreen() {
               styles.content,
               activePage === "dashboard" ? styles.dashboardContent : null,
               activePage === "chat" ? styles.chatContent : null,
-              activePage === "chat" && selectedChatId ? styles.chatActiveContent : null,
+              activePage === "chat" ? styles.chatActiveContent : null,
               activePage === "projects" ? styles.projectsContent : null,
-              { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : activePage === "chat" ? selectedChatId ? 84 : 184 : 72), 0) }
+              activePage === "upgrade" ? styles.upgradeContent : null,
+              { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : activePage === "chat" ? 84 : 72), 0) }
             ]}
-            scrollEnabled={activePage !== "dashboard" && !(activePage === "chat" && selectedChatId)}
+            bounces={activePage === "projects" ? projectsCanScroll : true}
+            scrollEnabled={activePage === "projects" ? projectsCanScroll : activePage !== "dashboard" && activePage !== "chat"}
             showsVerticalScrollIndicator={false}
           >
             {activePage === "dashboard" ? (
               <DashboardHome
-                activeAgents={app.activeAgents.length}
+                activeAgents={app.activeAgents}
                 machineName={app.connection?.machineName ?? app.machineName}
-                onCreateProject={app.createProject}
                 onNavigate={setActivePage}
                 projectCount={app.projects.length}
+                projects={app.projects}
                 selectedModel={app.selectedModel}
                 tokenBalance={tokenMembership.balance}
               />
@@ -354,8 +452,10 @@ export function WorkspaceScreen() {
               <ProjectsPage
                 filteredProjects={filteredProjects}
                 onCreateProject={app.createProject}
+                onOpenProjectChat={openProjectChat}
                 onSearch={setProjectSearch}
                 onSelectProject={app.selectProject}
+                onScrollNeededChange={setProjectsCanScroll}
                 projectSearch={projectSearch}
                 selectedProjectId={app.selectedProject.id}
               />
@@ -365,10 +465,17 @@ export function WorkspaceScreen() {
               <AIChatPage
                 agentRequesting={app.agentRequesting}
                 chatMessages={app.chatMessages}
+                onBack={() => {
+                  setSelectedChatId(null);
+                  setActivePage("dashboard");
+                }}
                 onStart={app.startAgent}
                 selectedChatId={selectedChatId}
+                projectChatTitles={projectChatTitles}
                 selectedFileName={app.selectedFile.name}
+                selectedModel={app.selectedModel}
                 setSelectedChatId={setSelectedChatId}
+                setSelectedModel={app.setSelectedModel}
                 setTaskText={app.setTaskText}
                 taskText={app.taskText}
               />
@@ -386,9 +493,17 @@ export function WorkspaceScreen() {
                 selectedModel={app.selectedModel}
               />
             ) : null}
+
+            {activePage === "upgrade" ? (
+              <UpgradePage
+                billingCycle={billingCycle}
+                onBack={() => setActivePage("dashboard")}
+                onChangeBillingCycle={setBillingCycle}
+              />
+            ) : null}
           </ScrollView>
         </View>
-        {activePage === "chat" && selectedChatId ? null : <BottomNav activePage={activePage} onChange={setActivePage} />}
+        {activePage === "chat" ? null : <BottomNav activePage={activePage} onChange={setActivePage} />}
         <PcSwitcherSheet
           candidates={desktopCandidates}
           currentMachineName={connectedMachineName}
@@ -410,8 +525,7 @@ export function WorkspaceScreen() {
           onClose={() => setTokenSheetVisible(false)}
           onManage={() => {
             setTokenSheetVisible(false);
-            setActivePage("profile");
-            setSettingsTab("billing");
+            setActivePage("upgrade");
           }}
           visible={tokenSheetVisible}
         />
@@ -627,7 +741,6 @@ function TokenMembershipSheet({ onClose, onManage, visible }: {
   onManage: () => void;
   visible: boolean;
 }) {
-  const progress = Math.min(1, tokenMembership.used / tokenMembership.allowance);
   const availablePercent = Math.round((tokenMembership.balance / tokenMembership.allowance) * 100);
 
   return (
@@ -635,74 +748,35 @@ function TokenMembershipSheet({ onClose, onManage, visible }: {
       <View style={styles.tokenSheetOverlay}>
         <Pressable accessibilityLabel="Close token membership" style={styles.tokenSheetScrim} onPress={onClose} />
         <View style={styles.tokenSheet}>
-          <View style={styles.tokenSheetHandle} />
           <View style={styles.tokenSheetHeader}>
             <View style={styles.tokenSheetHeaderIcon}>
               <Ionicons name="flash" color="#FFE76A" size={24} />
             </View>
             <View style={styles.tokenSheetHeaderCopy}>
-              <Text style={styles.tokenSheetKicker}>{tokenMembership.plan} membership</Text>
-              <Text style={styles.tokenSheetTitle}>{tokenMembership.balance.toLocaleString()} tokens available</Text>
+              <Text style={styles.tokenSheetKicker}>Tokens remaining</Text>
+              <Text style={styles.tokenSheetTitle}>{tokenMembership.balance.toLocaleString()}</Text>
             </View>
             <Pressable style={styles.tokenSheetClose} onPress={onClose}>
               <Ionicons name="close" color="#BDB8CE" size={21} />
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={styles.tokenSheetContent} showsVerticalScrollIndicator={false} style={styles.tokenSheetScroll}>
-            <View style={styles.tokenHeroPanel}>
-              <View style={styles.tokenHeroTop}>
-                <View>
-                  <Text style={styles.tokenHeroLabel}>Current cycle</Text>
-                  <Text style={styles.tokenHeroValue}>{availablePercent}% remaining</Text>
-                </View>
-                <View style={styles.tokenRenewalBadge}>
-                  <Ionicons name="refresh-outline" color="#FFF2A4" size={15} />
-                  <Text style={styles.tokenRenewalText}>{tokenMembership.renewal}</Text>
-                </View>
-              </View>
-              <View style={styles.tokenTrack}>
-                <LinearGradient
-                  colors={["#FFE76A", "#FFB44F", "#9B5CFF"]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={[styles.tokenTrackFill, { width: `${progress * 100}%` }]}
-                />
-              </View>
-              <View style={styles.tokenCycleStats}>
-                <TokenMiniStat label="Used" value={tokenMembership.used.toLocaleString()} />
-                <TokenMiniStat label="Allowance" value={tokenMembership.allowance.toLocaleString()} />
-                <TokenMiniStat label="Bonus" value={`+${tokenMembership.bonusTokens}`} />
-              </View>
-            </View>
+          <View style={styles.tokenCompactPanel}>
+            <Text style={styles.tokenCompactPercent}>{availablePercent}% left this cycle</Text>
+            <Text style={styles.tokenCompactMeta}>{tokenMembership.plan} plan - {tokenMembership.renewal.toLowerCase()}</Text>
+          </View>
 
-            <View style={styles.tokenUsagePanel}>
-              <Text style={styles.tokenSectionTitle}>Tokens power</Text>
-              {tokenUsageRows.map((row) => (
-                <View key={row.label} style={styles.tokenUsageRow}>
-                  <View style={styles.tokenUsageIcon}>
-                    <Ionicons name={row.icon} color="#FFE76A" size={18} />
-                  </View>
-                  <View style={styles.tokenUsageCopy}>
-                    <Text style={styles.tokenUsageLabel}>{row.label}</Text>
-                    <Text style={styles.tokenUsageValue}>{row.value}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            <Pressable style={({ pressed }) => [styles.tokenManageButton, pressed ? styles.tokenManageButtonPressed : null]} onPress={onManage}>
-              <LinearGradient
-                colors={["#7A35FF", "#A85DFF", "#FFB44F"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.tokenManageGradient}
-              >
-                <Ionicons name="card-outline" color={colors.text} size={20} />
-                <Text style={styles.tokenManageText}>Manage membership</Text>
-              </LinearGradient>
-            </Pressable>
-          </ScrollView>
+          <Pressable style={({ pressed }) => [styles.tokenManageButton, pressed ? styles.tokenManageButtonPressed : null]} onPress={onManage}>
+            <LinearGradient
+              colors={["#7A35FF", "#A85DFF", "#FFB44F"]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.tokenManageGradient}
+            >
+              <Ionicons name="arrow-up-circle-outline" color={colors.text} size={20} />
+              <Text style={styles.tokenManageText}>Upgrade</Text>
+            </LinearGradient>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -714,6 +788,113 @@ function TokenMiniStat({ label, value }: { label: string; value: string }) {
     <View style={styles.tokenMiniStat}>
       <Text style={styles.tokenMiniStatLabel}>{label}</Text>
       <Text style={styles.tokenMiniStatValue}>{value}</Text>
+    </View>
+  );
+}
+
+function UpgradePage({ billingCycle, onBack, onChangeBillingCycle }: {
+  billingCycle: BillingCycle;
+  onBack: () => void;
+  onChangeBillingCycle: (cycle: BillingCycle) => void;
+}) {
+  return (
+    <View style={styles.upgradePage}>
+      <View style={styles.upgradeHeader}>
+        <Pressable style={styles.upgradeBackButton} onPress={onBack}>
+          <Ionicons name="chevron-back" color={colors.text} size={22} />
+        </Pressable>
+        <View style={styles.upgradeHeaderCopy}>
+          <Text style={styles.upgradeKicker}>Upgrade Vibyra</Text>
+          <Text style={styles.upgradeTitle}>Build more with fewer limits.</Text>
+          <Text style={styles.upgradeSubtitle}>Annual plans give you the best effective price and the most room to keep momentum.</Text>
+        </View>
+      </View>
+
+      <View style={styles.upgradeCycleControl}>
+        {(["annual", "monthly"] as BillingCycle[]).map((cycle) => {
+          const active = billingCycle === cycle;
+          return (
+            <Pressable
+              key={cycle}
+              onPress={() => onChangeBillingCycle(cycle)}
+              style={[styles.upgradeCycleOption, active ? styles.upgradeCycleOptionActive : null]}
+            >
+              <Text style={[styles.upgradeCycleText, active ? styles.upgradeCycleTextActive : null]}>
+                {cycle === "annual" ? "Annual" : "Monthly"}
+              </Text>
+              {cycle === "annual" ? <Text style={styles.upgradeCycleSave}>Save up to 19%</Text> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={styles.upgradePlans}>
+        {membershipPlans.map((plan) => (
+          <PlanCard key={plan.name} billingCycle={billingCycle} plan={plan} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function PlanCard({ billingCycle, plan }: {
+  billingCycle: BillingCycle;
+  plan: MembershipPlan;
+}) {
+  const price = billingCycle === "annual" ? plan.annual : plan.monthly;
+  const monthlySavings = plan.monthly - plan.annual;
+
+  return (
+    <View style={[styles.planCard, plan.featured ? styles.planCardFeatured : null, { borderColor: `${plan.accent}66` }]}>
+      {plan.featured ? (
+        <LinearGradient
+          colors={["rgba(69, 233, 155, 0.16)", "rgba(142, 92, 255, 0.08)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.planFeaturedWash}
+        />
+      ) : null}
+      <View style={styles.planTopRow}>
+        <View>
+          <Text style={styles.planName}>{plan.name}</Text>
+          <Text style={[styles.planBadge, { color: plan.accent }]}>{plan.badge}</Text>
+        </View>
+        <View style={[styles.planIcon, { backgroundColor: `${plan.accent}20`, borderColor: `${plan.accent}44` }]}>
+          <Ionicons name={plan.featured ? "rocket-outline" : "sparkles-outline"} color={plan.accent} size={22} />
+        </View>
+      </View>
+
+      <View style={styles.planPriceRow}>
+        <Text style={styles.planPrice}>£{price}</Text>
+        <Text style={styles.planPriceMeta}>/mo</Text>
+      </View>
+      <Text style={styles.planDescription}>
+        {billingCycle === "annual" ? `Billed annually. Save £${monthlySavings * 12} a year.` : plan.description}
+      </Text>
+
+      <View style={styles.planFeatures}>
+        {plan.features.map((feature) => (
+          <View key={feature} style={styles.planFeatureRow}>
+            <Ionicons name="checkmark-circle" color={plan.accent} size={18} />
+            <Text style={styles.planFeatureText}>{feature}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Pressable style={({ pressed }) => [styles.planButton, plan.featured ? styles.planButtonFeatured : null, pressed ? styles.planButtonPressed : null]}>
+        {plan.featured ? (
+          <LinearGradient
+            colors={["#44E99C", "#8E5CFF"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.planButtonGradient}
+          >
+            <Text style={styles.planButtonTextFeatured}>Choose Builder</Text>
+          </LinearGradient>
+        ) : (
+          <Text style={styles.planButtonText}>Choose {plan.name}</Text>
+        )}
+      </Pressable>
     </View>
   );
 }
@@ -731,91 +912,162 @@ function MobileConnectionCard({ machineName }: { machineName: string }) {
 }
 
 function DashboardHome(props: {
-  activeAgents: number;
+  activeAgents: Agent[];
   machineName: string;
-  onCreateProject: () => void;
   onNavigate: (page: DashboardPage) => void;
   projectCount: number;
+  projects: Project[];
   selectedModel: string;
   tokenBalance: number;
 }) {
-  const activeTasks = props.activeAgents > 0 ? props.activeAgents : 2;
+  const { height } = useWindowDimensions();
+  const compact = height < 780;
   const displayProjectCount = Math.max(props.projectCount, 7);
+  const runningProjects = props.activeAgents.slice(0, compact ? 1 : 2).map((agent, index) => {
+    const project = props.projects.find((item) => item.id === agent.projectId);
+    return {
+      agent,
+      projectName: project?.name ?? "Current project",
+      time: agent.state === "waiting" ? "3m waiting" : index === 0 ? "8m running" : "1m running"
+    };
+  });
 
   return (
-    <View style={styles.dashboardPage}>
-      <View style={styles.welcomePanel}>
-        <View style={styles.welcomeBackdrop}>
-          <View pointerEvents="none" style={styles.welcomeBackdropLayer}>
-            <Image
-              blurRadius={18}
-              resizeMode="cover"
-              source={dashboardBackdrop}
-              style={[styles.welcomeBackdropLayer, styles.welcomeBackdropFill]}
-            />
-            <Image
-              resizeMode="contain"
-              source={dashboardBackdrop}
-              style={styles.welcomeBackdropLayer}
-            />
+    <View style={[styles.dashboardPage, compact ? styles.dashboardPageCompact : null]}>
+      <View style={[styles.welcomePanel, compact ? styles.welcomePanelCompact : null]}>
+        <LinearGradient
+          colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.welcomeBackdrop}
+        >
+          <View pointerEvents="none" style={styles.welcomeHeroImageWrap}>
+            <Image resizeMode="contain" source={dashboardHeroArt} style={styles.welcomeHeroImage} />
           </View>
-          <LinearGradient
-            pointerEvents="none"
-            colors={["rgba(5, 6, 17, 0.92)", "rgba(7, 6, 18, 0.62)", "rgba(8, 6, 18, 0.16)"]}
-            locations={[0, 0.48, 1]}
-            start={{ x: 0, y: 0.45 }}
-            end={{ x: 1, y: 0.45 }}
-            style={styles.welcomeBackdropShade}
-          />
-
-          <View style={styles.welcomeCopy}>
-            <Text style={styles.welcomeTitle}>Ready to build.</Text>
-            <Text style={[styles.bodyText, styles.welcomeBodyText]}>Everything you need,{'\n'}all in one place.</Text>
-          </View>
-
-          <View style={styles.heroActionsRow}>
-            <Pressable style={styles.heroPrimaryButton} onPress={props.onCreateProject}>
-              <Ionicons name="add" color={colors.text} size={26} />
-              <Text style={styles.heroPrimaryButtonText}>Create Project</Text>
-            </Pressable>
-            <View style={styles.taskPill}>
-              <View style={styles.taskDot} />
-              <Text style={styles.taskPillText}>{activeTasks} AI TASKS RUNNING</Text>
+          <View style={styles.welcomeHeroLeft}>
+            <View style={styles.welcomeLivePill}>
+              <View style={styles.welcomeLiveDot} />
+              <Text style={styles.welcomeLiveText}>{runningProjects.length || 0} live</Text>
             </View>
+            <Text style={styles.welcomeTitle}>Ready to build</Text>
+            <Text style={styles.welcomeBodyText}>Launch the next thing.</Text>
           </View>
-        </View>
+        </LinearGradient>
       </View>
 
-      <View style={styles.dashboardStats}>
-        <DashboardStat icon="folder-open-outline" value={displayProjectCount.toString()} label={"Projects\nsaved"} />
-        <DashboardStat icon="chatbubble-ellipses-outline" value="18" label={"AI Chats\nthis week"} />
-        <DashboardStat icon="terminal-outline" value="24" label={"AI Prompts\nused"} />
-        <DashboardStat icon="time-outline" value="12h" label={"Time saved\nthis week"} last />
-      </View>
+      <RunningProjectsPanel
+        onCreateBuild={() => props.onNavigate("chat")}
+        onOpenProjects={() => props.onNavigate("projects")}
+        runningProjects={runningProjects}
+      />
 
       <View style={styles.homeActions}>
-        <HomeAction icon="folder-open-outline" label="Projects" meta="View and manage your projects" badge={`${displayProjectCount} saved`} onPress={() => props.onNavigate("projects")} />
-        <HomeAction icon="chatbubble-ellipses-outline" label="AI Chat" meta="Start building with AI" onPress={() => props.onNavigate("chat")} />
-        <HomeAction icon="people-outline" label="Community" meta="Explore ideas and connect" onPress={() => props.onNavigate("community")} />
-        <HomeAction icon="flash-outline" label="Usage & Billing" meta="Track usage and manage plan" onPress={() => props.onNavigate("profile")} />
+        <HomeAction icon="folder-open-outline" label="Projects" meta={`${displayProjectCount} saved workspaces`} onPress={() => props.onNavigate("projects")} />
+        <HomeAction icon="chatbubble-ellipses-outline" label="AI Chat" meta="Start a build chat" onPress={() => props.onNavigate("chat")} />
+        <HomeAction icon="people-outline" label="Community" meta="Explore shared ideas" onPress={() => props.onNavigate("community")} />
+        <HomeAction icon="card-outline" label="Plan & Billing" meta="Manage usage and plan" onPress={() => props.onNavigate("profile")} />
       </View>
     </View>
   );
 }
 
-function DashboardStat({ icon, value, label, last }: {
-  icon: keyof typeof Ionicons.glyphMap;
-  value: string;
-  label: string;
-  last?: boolean;
+function RunningProjectsPanel({ onCreateBuild, onOpenProjects, runningProjects }: {
+  onCreateBuild: () => void;
+  onOpenProjects: () => void;
+  runningProjects: Array<{
+    agent: Agent;
+    projectName: string;
+    time: string;
+  }>;
 }) {
+  const hasRunning = runningProjects.length > 0;
+
   return (
-    <View style={[styles.dashboardStat, last ? styles.dashboardStatLast : null]}>
-      <View style={styles.dashboardStatTop}>
-        <Ionicons name={icon} color="#B65BFF" size={22} />
-        <Text style={styles.dashboardStatValue}>{value}</Text>
+    <View style={styles.runningProjectsPanel}>
+      <View style={styles.runningProjectsHeader}>
+        <View style={styles.runningProjectsTitleBlock}>
+          <Text style={styles.runningProjectsKicker}>Live builds</Text>
+          <Text style={styles.runningProjectsTitle}>{hasRunning ? "In motion now" : "Quiet for now"}</Text>
+        </View>
+        <Pressable style={styles.runningProjectsOpenButton} onPress={onOpenProjects}>
+          <Ionicons name="arrow-forward" color="#DAD3FF" size={18} />
+        </Pressable>
       </View>
-      <Text style={styles.dashboardStatLabel}>{label}</Text>
+
+      <View style={styles.runningProjectsList}>
+        {runningProjects.length > 0 ? runningProjects.map((item, index) => (
+          <View key={item.agent.id} style={[styles.runningProjectCard, item.agent.state === "waiting" ? styles.runningProjectCardWaiting : styles.runningProjectCardRunning]}>
+            <View style={styles.runningProjectTop}>
+              <View style={[styles.runningProjectIcon, item.agent.state === "waiting" ? styles.runningProjectIconWaiting : null]}>
+                <Ionicons name={item.agent.state === "waiting" ? "hourglass-outline" : "pulse-outline"} color={item.agent.state === "waiting" ? "#78F0A4" : "#C894FF"} size={20} />
+              </View>
+              <View style={styles.runningProjectCopy}>
+                <Text numberOfLines={1} style={styles.runningProjectName}>{item.projectName}</Text>
+                <Text numberOfLines={1} style={styles.runningProjectTask}>{item.agent.title}</Text>
+              </View>
+              <View style={[styles.runningProjectSignal, item.agent.state === "waiting" ? styles.runningProjectSignalWaiting : null]}>
+                <Text style={[styles.runningProjectTime, item.agent.state === "waiting" ? styles.runningProjectTimeWaiting : null]}>{item.time}</Text>
+                {item.agent.state === "waiting" ? null : <RunningProjectGraph progress={item.agent.progress} />}
+              </View>
+            </View>
+            {item.agent.state === "waiting" ? null : (
+              <View style={styles.runningProjectBeamTrack}>
+                <LinearGradient
+                  colors={["#8D25FF", "#C836FF", "#F2C4FF"]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={[styles.runningProjectBeamFill, { width: `${Math.max(0, Math.min(item.agent.progress, 100))}%` }]}
+                />
+              </View>
+            )}
+          </View>
+        )) : (
+          <View style={styles.runningProjectsEmpty}>
+            <View style={styles.runningProjectsEmptyGlow} />
+            <View style={styles.runningProjectsEmptyIcon}>
+              <Ionicons name="sparkles-outline" color="#DDBBFF" size={24} />
+            </View>
+            <View style={styles.runningProjectsEmptyCopy}>
+              <Text style={styles.runningProjectsEmptyTitle}>No active builds</Text>
+              <Text style={styles.runningProjectsEmptyText}>Your running prompts will appear here.</Text>
+            </View>
+            <Pressable style={({ pressed }) => [styles.runningProjectsEmptyButton, pressed ? styles.runningProjectsEmptyButtonPressed : null]} onPress={onCreateBuild}>
+              <LinearGradient
+                colors={["#7C2DFF", "#AA35FF", "#6C22E8"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.runningProjectsEmptyButtonGradient}
+              >
+                <Ionicons name="add" color={colors.text} size={18} />
+                <Text style={styles.runningProjectsEmptyButtonText}>Create your first build</Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function RunningProjectGraph({ progress }: { progress: number }) {
+  const normalized = Math.max(0, Math.min(progress, 100));
+  const finalX = 18 + (normalized / 100) * 67;
+  const graphPath = `M2 32 C8 32 8 25 14 25 C20 25 19 18 25 18 C31 18 31 23 37 23 C43 23 43 16 49 16 C55 16 55 20 61 20 C67 20 67 13 73 13 C79 13 80 9 86 7`;
+  const progressPath = `M2 32 C8 32 8 25 14 25 C20 25 19 18 25 18 C31 18 31 23 37 23 C43 23 43 16 49 16 C55 16 55 20 61 20 C67 20 67 13 73 13 C79 13 80 9 86 7`;
+  return (
+    <View style={styles.runningProjectGraph}>
+      <Svg height="48" viewBox="0 0 88 44" width="102">
+        <Defs>
+          <SvgGradient id="buildGraphGradient" x1="0" x2="1" y1="0" y2="0">
+            <Stop offset="0" stopColor="#8C2AFF" />
+            <Stop offset="0.55" stopColor="#C63BFF" />
+            <Stop offset="1" stopColor="#F3B2FF" />
+          </SvgGradient>
+        </Defs>
+        <Path d={graphPath} fill="none" opacity={0.2} stroke="#9E41F4" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} />
+        <Path d={progressPath} fill="none" opacity={0.7} stroke="url(#buildGraphGradient)" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={`${Math.max(10, normalized * 1.4)} 160`} strokeWidth={2.1} />
+        <Path d={`M${finalX} ${Math.max(7, 32 - normalized * 0.25)} L86 7`} fill="none" opacity={normalized > 82 ? 0.55 : 0} stroke="#F3B2FF" strokeLinecap="round" strokeWidth={2} />
+      </Svg>
     </View>
   );
 }
@@ -823,21 +1075,21 @@ function DashboardStat({ icon, value, label, last }: {
 function HomeAction({ icon, label, meta, badge, onPress }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  meta: string;
+  meta?: string;
   badge?: string;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.homeAction} onPress={onPress}>
-      <View style={styles.homeActionIcon}>
-        <Ionicons name={icon} color="#D9D0FF" size={22} />
+    <Pressable style={({ pressed }) => [styles.homeAction, pressed ? styles.homeActionPressed : null]} onPress={onPress}>
+      <View style={styles.homeActionTop}>
+        <View style={styles.homeActionIcon}>
+          <Ionicons name={icon} color="#D9D0FF" size={21} />
+        </View>
+        <Ionicons name="chevron-forward" color="#817A9E" size={19} />
       </View>
-      <View style={styles.homeActionCopy}>
-        <Text style={styles.homeActionLabel}>{label}</Text>
-        <Text style={styles.homeActionMeta}>{meta}</Text>
-      </View>
-      {badge ? <Text style={styles.homeActionBadge}>{badge}</Text> : null}
-      <Ionicons name="chevron-forward" color="#A9A6BE" size={24} />
+      <Text style={styles.homeActionLabel}>{label}</Text>
+      {badge ? <Text style={styles.homeActionBadge}>{badge} saved</Text> : null}
+      {meta ? <Text style={styles.homeActionMeta}>{meta}</Text> : null}
     </Pressable>
   );
 }
@@ -845,8 +1097,10 @@ function HomeAction({ icon, label, meta, badge, onPress }: {
 function ProjectsPage(props: {
   filteredProjects: Project[];
   onCreateProject: () => void;
+  onOpenProjectChat: (projectId: string, projectName: string) => void;
+  onScrollNeededChange: (needed: boolean) => void;
   onSearch: (value: string) => void;
-  onSelectProject: (projectId: string) => void;
+  onSelectProject: (projectId: string) => Promise<void>;
   projectSearch: string;
   selectedProjectId: string;
 }) {
@@ -854,15 +1108,20 @@ function ProjectsPage(props: {
   const projectLayout = useMemo(() => getProjectsLayout(width, height), [height, width]);
   const [archivedProjectIds, setArchivedProjectIds] = useState<Set<string>>(() => new Set());
   const [deletedProjectIds, setDeletedProjectIds] = useState<Set<string>>(() => new Set());
-  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectDisplay | null>(null);
   const [filterMode, setFilterMode] = useState<typeof projectFilterModes[number]>("All");
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
+  const [renamedProjectNames, setRenamedProjectNames] = useState<Record<string, string>>({});
+  const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
   const hasSearch = props.projectSearch.trim().length > 0;
   const baseProjects = hasSearch
     ? props.filteredProjects.map((project, index): ProjectDisplay => ({
       branch: index % 2 === 0 ? "main" : "develop",
       id: project.id,
-      name: project.name,
+      name: renamedProjectNames[project.id] ?? project.name,
       path: project.path,
       sourceProject: project,
       stack: project.stack,
@@ -871,6 +1130,7 @@ function ProjectsPage(props: {
     }))
     : projectMockups.map((mockup, index) => ({
       ...mockup,
+      name: renamedProjectNames[mockup.id] ?? mockup.name,
       sourceProject: props.filteredProjects[index]
     }));
   const displayProjects = baseProjects
@@ -880,16 +1140,28 @@ function ProjectsPage(props: {
       status: archivedProjectIds.has(project.id) ? "Archived" as const : project.status
     }))
     .filter((project) => filterMode === "All" || project.status === filterMode);
+  const estimatedCardHeight = width <= 375 ? 134 : width <= 393 ? 130 : 122;
+  const estimatedProjectsHeight = 182 + 44 + 18 + 18 + 14 * 4 + displayProjects.length * estimatedCardHeight + Math.max(displayProjects.length - 1, 0) * 12;
+  const availableProjectsHeight = height - 74 - 88;
+  const onScrollNeededChange = props.onScrollNeededChange;
 
-  function cycleFilterMode() {
-    const currentIndex = projectFilterModes.indexOf(filterMode);
-    setFilterMode(projectFilterModes[(currentIndex + 1) % projectFilterModes.length]);
+  useEffect(() => {
+    onScrollNeededChange(estimatedProjectsHeight > availableProjectsHeight);
+  }, [availableProjectsHeight, estimatedProjectsHeight, onScrollNeededChange]);
+
+  function selectFilterMode(mode: typeof projectFilterModes[number]) {
+    setFilterMode(mode);
+    setFilterMenuOpen(false);
   }
 
   function openProject(project: ProjectDisplay) {
     setOpenedProjectId(project.id);
-    setExpandedProjectId(null);
-    if (project.sourceProject) props.onSelectProject(project.sourceProject.id);
+    setFilterMenuOpen(false);
+    setMenuProjectId(null);
+    setRenamingProjectId(null);
+    const projectId = project.sourceProject?.id ?? project.id;
+    if (project.sourceProject) void props.onSelectProject(project.sourceProject.id);
+    props.onOpenProjectChat(projectId, project.name);
   }
 
   function archiveProject(projectId: string) {
@@ -900,11 +1172,11 @@ function ProjectsPage(props: {
     });
     setArchivedProjectIds((current) => {
       const next = new Set(current);
-      if (next.has(projectId)) next.delete(projectId);
-      else next.add(projectId);
+      next.add(projectId);
       return next;
     });
-    setExpandedProjectId(projectId);
+    setMenuProjectId(null);
+    if (renamingProjectId === projectId) setRenamingProjectId(null);
   }
 
   function deleteProject(projectId: string) {
@@ -915,7 +1187,46 @@ function ProjectsPage(props: {
       return next;
     });
     if (openedProjectId === projectId) setOpenedProjectId(null);
-    if (expandedProjectId === projectId) setExpandedProjectId(null);
+    if (menuProjectId === projectId) setMenuProjectId(null);
+    if (renamingProjectId === projectId) setRenamingProjectId(null);
+  }
+
+  function requestDeleteProject(project: ProjectDisplay) {
+    setDeleteTarget(project);
+    setFilterMenuOpen(false);
+    setMenuProjectId(null);
+    if (renamingProjectId === project.id) setRenamingProjectId(null);
+  }
+
+  function confirmDeleteProject() {
+    if (!deleteTarget) return;
+    deleteProject(deleteTarget.id);
+    setDeleteTarget(null);
+  }
+
+  function cancelDeleteProject() {
+    setDeleteTarget(null);
+  }
+
+  function startRenameProject(project: ProjectDisplay) {
+    setRenameDraft(project.name);
+    setFilterMenuOpen(false);
+    setRenamingProjectId(project.id);
+    setMenuProjectId(null);
+  }
+
+  function submitRenameProject(projectId: string) {
+    const nextName = renameDraft.trim();
+    if (nextName.length > 0) {
+      setRenamedProjectNames((current) => ({ ...current, [projectId]: nextName }));
+    }
+    setRenamingProjectId(null);
+    setRenameDraft("");
+  }
+
+  function cancelRenameProject() {
+    setRenamingProjectId(null);
+    setRenameDraft("");
   }
 
   return (
@@ -936,14 +1247,14 @@ function ProjectsPage(props: {
               style={styles.projectsCreateGradient}
             >
               <Ionicons name="add" color={colors.text} size={projectLayout.createIconSize} />
-              <Text style={styles.projectsCreateText}>Create Project</Text>
+              <Text numberOfLines={1} style={styles.projectsCreateText}>Create Project</Text>
             </LinearGradient>
           </Pressable>
         </View>
         <Image source={projectsFoldersHero} style={[styles.projectsFoldersHero, projectLayout.heroImageStyle]} resizeMode="contain" />
       </View>
 
-      <View style={styles.projectsSearchRow}>
+      <View style={[styles.projectsSearchRow, filterMenuOpen ? styles.projectsSearchRowMenuOpen : null]}>
         <View style={styles.projectsSearchBar}>
           <Ionicons name="search-outline" color="#8E8AA3" size={22} />
           <TextInput
@@ -954,9 +1265,23 @@ function ProjectsPage(props: {
             style={styles.projectsSearchInput}
           />
         </View>
-        <Pressable style={[styles.projectsFilterButton, filterMode !== "All" ? styles.projectsFilterButtonActive : null]} onPress={cycleFilterMode}>
-          <Ionicons name="options-outline" color="#B4B1C9" size={22} />
-        </Pressable>
+        <View style={styles.projectsFilterWrap}>
+          <Pressable style={[styles.projectsFilterButton, filterMode !== "All" ? styles.projectsFilterButtonActive : null]} onPress={() => setFilterMenuOpen((current) => !current)}>
+            <Ionicons name="options-outline" color={filterMenuOpen ? "#F1ECFF" : "#B4B1C9"} size={22} />
+          </Pressable>
+          {filterMenuOpen ? (
+            <View style={styles.projectsFilterMenu}>
+              {projectFilterModes.map((mode) => (
+                <ProjectFilterMenuItem
+                  key={mode}
+                  active={filterMode === mode}
+                  label={mode}
+                  onPress={() => selectFilterMode(mode)}
+                />
+              ))}
+            </View>
+          ) : null}
+        </View>
       </View>
 
       <Text style={styles.projectsFilterLabel}>Showing {filterMode.toLowerCase()} projects</Text>
@@ -966,13 +1291,19 @@ function ProjectsPage(props: {
           <ProjectCard
             key={`${project.id}-${index}`}
             active={openedProjectId === project.id || project.sourceProject?.id === props.selectedProjectId}
-            expanded={expandedProjectId === project.id}
+            menuOpen={menuProjectId === project.id}
+            onCancelRename={cancelRenameProject}
+            onChangeRename={setRenameDraft}
             onArchive={() => archiveProject(project.id)}
-            onDelete={() => deleteProject(project.id)}
-            onMore={() => setExpandedProjectId((current) => current === project.id ? null : project.id)}
+            onDelete={() => requestDeleteProject(project)}
+            onMore={() => setMenuProjectId((current) => current === project.id ? null : project.id)}
             onOpen={() => openProject(project)}
+            onStartRename={() => startRenameProject(project)}
+            onSubmitRename={() => submitRenameProject(project.id)}
             layout={projectLayout}
             project={project}
+            renameValue={renameDraft}
+            renaming={renamingProjectId === project.id}
           />
         ))}
         {displayProjects.length === 0 ? (
@@ -982,6 +1313,11 @@ function ProjectsPage(props: {
           </View>
         ) : null}
       </View>
+      <ProjectDeleteConfirmModal
+        onCancel={cancelDeleteProject}
+        onConfirm={confirmDeleteProject}
+        project={deleteTarget}
+      />
     </View>
   );
 }
@@ -989,113 +1325,43 @@ function ProjectsPage(props: {
 function AIChatPage(props: {
   agentRequesting: boolean;
   chatMessages: ChatMessage[];
+  onBack: () => void;
   onStart: () => void;
+  projectChatTitles: Record<string, string>;
   selectedChatId: string | null;
   selectedFileName: string;
+  selectedModel: ModelKey;
   setSelectedChatId: (chatId: string | null) => void;
+  setSelectedModel: (model: ModelKey) => void;
   setTaskText: (value: string) => void;
   taskText: string;
 }) {
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [selectedChatModel, setSelectedChatModel] = useState<string>(props.selectedModel);
   const hasConversation = props.chatMessages.some((message) => message.id !== "welcome");
   const activeChat = previousChats.find((chat) => chat.id === props.selectedChatId);
+  const projectChatTitle = props.selectedChatId ? props.projectChatTitles[props.selectedChatId] : undefined;
+  const currentModel = chatModelOptions.find((model) => model.key === selectedChatModel) ?? chatModelOptions[0];
+  const title = activeChat?.title ?? projectChatTitle ?? "New chat";
 
-  if (!props.selectedChatId) {
-    return (
-      <View style={styles.chatLandingScreen}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={["rgba(104, 32, 255, 0.28)", "rgba(10, 8, 27, 0.22)", "rgba(2, 3, 12, 0)"]}
-          locations={[0, 0.48, 1]}
-          start={{ x: 1, y: 0.1 }}
-          end={{ x: 0.12, y: 0.72 }}
-          style={styles.chatLandingLight}
-        />
-
-        <View style={styles.chatLandingHero}>
-          <View style={styles.chatLandingCopy}>
-            <Text style={styles.chatLandingKicker}>AI Chat</Text>
-            <Text style={styles.chatLandingTitle}>Build with AI</Text>
-            <Text style={styles.chatLandingSubtitle}>Start a new chat or continue where you left off.</Text>
-          </View>
-          <ChatLandingArt />
-        </View>
-
-        <Pressable style={styles.chatLandingPrimary} onPress={() => props.setSelectedChatId("new-chat")}>
-          <LinearGradient
-            colors={["#7D22EA", "#7B25DC", "#5B18BC"]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.chatLandingPrimaryGradient}
-          >
-            <Ionicons name="sparkles-outline" color={colors.text} size={24} />
-            <View style={styles.chatLandingPrimaryCopy}>
-              <Text style={styles.chatLandingPrimaryTitle}>Start new chat</Text>
-              <Text style={styles.chatLandingPrimaryMeta}>Open a fresh AI workspace</Text>
-            </View>
-            <Ionicons name="arrow-forward" color={colors.text} size={26} />
-          </LinearGradient>
-        </Pressable>
-
-        <Pressable style={styles.chatResumeCard} onPress={() => props.setSelectedChatId(previousChats[0].id)}>
-          <View style={styles.chatResumeIcon}>
-            <Ionicons name="chatbubble-ellipses-outline" color="#55F09C" size={24} />
-          </View>
-          <View style={styles.chatResumeCopy}>
-            <Text style={styles.chatResumeLabel}>Resume last session</Text>
-            <Text numberOfLines={1} style={styles.chatResumeTitle}>{previousChats[0].title}</Text>
-            <View style={styles.chatPreviousMetaRow}>
-              <View style={[styles.chatStatusDot, styles.chatStatusDotRunning]} />
-              <Text style={styles.chatResumeMeta}>Running</Text>
-              <Text style={styles.chatResumeMeta}>·</Text>
-              <Text style={styles.chatResumeMeta}>{previousChats[0].time}</Text>
-            </View>
-          </View>
-          <View style={styles.chatResumeArrow}>
-            <Ionicons name="arrow-forward" color="#CFC7E6" size={24} />
-          </View>
-          <View style={styles.chatResumeProgressTrack}>
-            <LinearGradient
-              colors={["#8A34FF", "#B13DFF"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.chatResumeProgressFill}
-            />
-          </View>
-        </Pressable>
-
-        <View style={styles.chatRecentPanel}>
-          <View style={styles.chatRecentHeader}>
-            <Text style={styles.chatRecentTitle}>Recent chats</Text>
-            <Text style={styles.chatRecentBadge}>{previousChats.length} saved</Text>
-          </View>
-          <View style={styles.chatRecentList}>
-            {previousChats.map((chat, index) => (
-              <ChatLandingRow
-                key={chat.id}
-                active={index === 0}
-                chat={chat}
-                onOpen={() => props.setSelectedChatId(chat.id)}
-              />
-            ))}
-          </View>
-        </View>
-      </View>
-    );
+  function selectModel(model: ChatModelOption) {
+    setSelectedChatModel(model.key);
+    if (model.modelKey) props.setSelectedModel(model.modelKey);
+    setModelMenuOpen(false);
   }
 
   return (
     <View style={[styles.chatPage, styles.chatActivePage]}>
       <View style={styles.chatActiveHeader}>
-        <Pressable style={styles.chatBackButton} onPress={() => props.setSelectedChatId(null)}>
+        <Pressable style={styles.chatBackButton} onPress={props.onBack}>
           <Ionicons name="chevron-back" color={colors.text} size={22} />
         </Pressable>
         <View style={styles.chatActiveHeaderCopy}>
-          <Text numberOfLines={1} style={styles.chatActiveTitle}>{activeChat?.title ?? "New chat"}</Text>
-          <View style={styles.chatPreviousMetaRow}>
-            <View style={[styles.chatStatusDot, activeChat?.running ? styles.chatStatusDotRunning : null]} />
-            <Text style={styles.chatActiveMeta}>{activeChat?.running ? "Running" : props.selectedChatId === "new-chat" ? "New AI chat" : "Not running"}</Text>
-          </View>
+          <Text numberOfLines={1} style={styles.chatActiveTitle}>{title}</Text>
         </View>
+        <Pressable style={styles.chatEditButton}>
+          <Ionicons name="create-outline" color="#DCD7EA" size={20} />
+        </Pressable>
       </View>
       <View style={styles.chatAssistantPanel}>
         {hasConversation ? (
@@ -1108,72 +1374,96 @@ function AIChatPage(props: {
             {props.agentRequesting ? <LoadingBubble /> : null}
           </ScrollView>
         ) : (
-          <View style={styles.chatWelcomeBlock}>
-            <View style={styles.chatOrb}>
-              <LinearGradient
-                colors={["#E044FF", "#7433FF", "#0B4DFF"]}
-                start={{ x: 0.15, y: 0.1 }}
-                end={{ x: 0.92, y: 0.9 }}
-                style={styles.chatOrbGradient}
-              >
-                <View style={styles.chatOrbFace}>
-                  <View style={styles.chatOrbEye} />
-                  <View style={styles.chatOrbEye} />
-                </View>
-              </LinearGradient>
-            </View>
-
-            <Text style={styles.chatWelcomeTitle}>Hi Ellis, how can I help?</Text>
-            <Text style={styles.chatWelcomeSubtitle}>Ask me to modify files, debug issues, add features, and more.</Text>
-
-            <View style={styles.chatSuggestionGrid}>
-              {chatSuggestions.map((suggestion) => (
-                <Pressable
-                  key={suggestion.text}
-                  style={styles.chatSuggestionCard}
-                  onPress={() => props.setTaskText(suggestion.text)}
-                >
-                  <View style={[styles.chatSuggestionIcon, { borderColor: `${suggestion.color}66`, backgroundColor: `${suggestion.color}20` }]}>
-                    <Ionicons name={suggestion.icon} color={suggestion.color} size={20} />
-                  </View>
-                  <Text numberOfLines={2} style={styles.chatSuggestionText}>{suggestion.text}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
+          <View style={styles.chatEmptySpace} />
         )}
 
-        <View style={styles.chatComposer}>
-          <TextInput
-            value={props.taskText}
-            onChangeText={props.setTaskText}
-            placeholder="Ask anything about your project..."
-            placeholderTextColor="#8F8A9E"
-            multiline
-            style={styles.chatComposerInput}
-          />
-          <View style={styles.chatComposerBottom}>
-            <View style={styles.chatComposerTools}>
-              <Pressable style={styles.chatComposerTool}>
-                <Ionicons name="attach-outline" color="#B9B5C8" size={26} />
-              </Pressable>
-              <Pressable style={styles.chatComposerTool}>
-                <Ionicons name="folder-outline" color="#B9B5C8" size={27} />
+        <View style={styles.chatComposerShell}>
+          {modelMenuOpen ? (
+            <View style={styles.chatModelMenu}>
+              {chatModelGroups.map((group) => (
+                <View key={group.title || "auto"} style={styles.chatModelGroup}>
+                  {group.title ? <Text style={styles.chatModelGroupTitle}>{group.title}</Text> : null}
+                  {group.options.map((model) => (
+                    <Pressable
+                      key={model.key}
+                      onPress={() => selectModel(model)}
+                      style={[styles.chatModelRow, selectedChatModel === model.key ? styles.chatModelRowActive : null]}
+                    >
+                      <ModelProviderIcon provider={model.provider} />
+                      <Text numberOfLines={1} style={styles.chatModelName}>{model.label}</Text>
+                      {selectedChatModel === model.key ? <Ionicons name="checkmark" color="#7CF1B3" size={18} /> : null}
+                    </Pressable>
+                  ))}
+                </View>
+              ))}
+            </View>
+          ) : null}
+          <View style={styles.chatComposer}>
+            <TextInput
+              value={props.taskText}
+              onChangeText={props.setTaskText}
+              placeholder="Ask anything about your project..."
+              placeholderTextColor="#8F8A9E"
+              multiline
+              style={styles.chatComposerInput}
+            />
+            <View style={styles.chatComposerBottom}>
+              <View style={styles.chatComposerTools}>
+                <Pressable style={styles.chatComposerTool}>
+                  <Ionicons name="attach-outline" color="#B9B5C8" size={24} />
+                </Pressable>
+                <Pressable style={styles.chatModelButton} onPress={() => setModelMenuOpen((open) => !open)}>
+                  <ModelProviderIcon provider={currentModel.provider} compact />
+                  <Text numberOfLines={1} style={styles.chatModelButtonText}>{currentModel.label}</Text>
+                  <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color="#AAA6BC" size={15} />
+                </Pressable>
+              </View>
+              <Pressable style={styles.chatSendButton} onPress={props.agentRequesting ? undefined : props.onStart}>
+                <LinearGradient
+                  colors={props.agentRequesting ? ["#282B34", "#1A1C25"] : ["#8E3CFF", "#5D24D8"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.chatSendGradient}
+                >
+                  <Ionicons name={props.agentRequesting ? "pause" : "arrow-up"} color={colors.text} size={props.agentRequesting ? 24 : 28} />
+                </LinearGradient>
               </Pressable>
             </View>
-            <Pressable style={styles.chatSendButton} onPress={props.onStart}>
-              <LinearGradient
-                colors={["#8E3CFF", "#5D24D8"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.chatSendGradient}
-              >
-                <Ionicons name={props.agentRequesting ? "hourglass-outline" : "arrow-up"} color={colors.text} size={32} />
-              </LinearGradient>
-            </Pressable>
           </View>
         </View>
       </View>
+    </View>
+  );
+}
+
+function ModelProviderIcon({ compact, provider }: { compact?: boolean; provider: ChatModelProvider }) {
+  const config = {
+    auto: { backgroundColor: "rgba(255, 255, 255, 0.08)", color: "#EDE9FF", icon: "sparkles-outline" as const },
+    claude: { backgroundColor: "rgba(217, 119, 87, 0.16)", color: "#D97757", icon: "sunny-outline" as const },
+    openai: { backgroundColor: "rgba(16, 163, 127, 0.16)", color: "#10A37F", icon: "aperture-outline" as const },
+    gemini: { backgroundColor: "rgba(102, 126, 234, 0.18)", color: "#8EA0FF", icon: "diamond-outline" as const }
+  }[provider];
+  const logoSource = provider === "openai" || provider === "gemini" ? providerLogoSources[provider] : null;
+
+  return (
+    <View style={[
+      styles.chatProviderIcon,
+      compact ? styles.chatProviderIconCompact : null,
+      { backgroundColor: config.backgroundColor }
+    ]}>
+      {logoSource ? (
+        <Image
+          resizeMode="contain"
+          source={{ uri: logoSource }}
+          style={[
+            styles.chatProviderLogo,
+            compact ? styles.chatProviderLogoCompact : null,
+            provider === "openai" ? styles.chatProviderLogoOpenAi : null
+          ]}
+        />
+      ) : (
+        <Ionicons name={config.icon} color={config.color} size={compact ? 14 : 18} />
+      )}
     </View>
   );
 }
@@ -1186,6 +1476,7 @@ function CommunityPage() {
           <Text style={styles.communityHeroTitle}>Community</Text>
           <Text style={styles.communityHeroSubtitle}>See what other builders are making.</Text>
         </View>
+        <Image resizeMode="contain" source={communityHero} style={styles.communityHeroImage} />
       </View>
 
       <View style={styles.communityTabs}>
@@ -1542,32 +1833,79 @@ function CompactRow({ icon, meta, title, tone = "default" }: {
   );
 }
 
-function ProjectCard({ active, expanded, layout, onArchive, onDelete, onMore, onOpen, project }: {
+function ProjectCard({
+  active,
+  layout,
+  menuOpen,
+  onArchive,
+  onCancelRename,
+  onChangeRename,
+  onDelete,
+  onMore,
+  onOpen,
+  onStartRename,
+  onSubmitRename,
+  project,
+  renameValue,
+  renaming
+}: {
   active: boolean;
-  expanded: boolean;
   layout: ProjectLayout;
+  menuOpen: boolean;
   onArchive: () => void;
+  onCancelRename: () => void;
+  onChangeRename: (value: string) => void;
   onDelete: () => void;
   onMore: () => void;
   onOpen: () => void;
+  onStartRename: () => void;
+  onSubmitRename: () => void;
   project: ProjectDisplay;
+  renameValue: string;
+  renaming: boolean;
 }) {
   const status = project.status;
+  const activeStatus = status === "Active";
   const completed = status === "Completed";
   const draft = status === "Draft";
   const archived = status === "Archived";
-  const projectAccent = active ? "#59E8A0" : completed ? "#BE62FF" : archived ? "#AAA6BC" : "#DAD6F6";
-  const titleDot = active ? "#3CD783" : completed ? "#4C2D84" : archived ? "#6F6A80" : "#373B52";
+  const projectAccent = activeStatus ? "#59E8A0" : completed ? "#BE62FF" : archived ? "#AAA6BC" : draft ? "#DAD6F6" : "#DAD6F6";
+  const titleDot = activeStatus ? "#3CD783" : completed ? "#B869FF" : archived ? "#6F6A80" : "#8F8AA3";
 
   return (
-    <View style={[styles.projectCard, layout.cardStyle, active ? styles.projectCardActive : null]}>
+    <View style={[
+      styles.projectCard,
+      layout.cardStyle,
+      activeStatus ? styles.projectCardStatusActive : null,
+      draft ? styles.projectCardStatusDraft : null,
+      completed ? styles.projectCardStatusCompleted : null,
+      archived ? styles.projectCardStatusArchived : null,
+      menuOpen ? styles.projectCardMenuOpen : null
+    ]}>
       <View style={[styles.projectCardMain, { gap: layout.mainGap }]}>
-        <View style={[styles.projectIcon, layout.iconBoxStyle, active ? styles.projectIconActive : completed ? styles.projectIconCompleted : null]}>
+        <View style={[styles.projectIcon, layout.iconBoxStyle, activeStatus ? styles.projectIconActive : completed ? styles.projectIconCompleted : archived ? styles.projectIconArchived : null]}>
           <Ionicons name="folder-open-outline" color={projectAccent} size={layout.folderIconSize} />
         </View>
         <View style={styles.projectCardCopy}>
           <View style={styles.projectTitleRow}>
-            <Text numberOfLines={1} style={styles.projectName}>{project.name}</Text>
+            {renaming ? (
+              <TextInput
+                autoCapitalize="words"
+                autoCorrect={false}
+                autoFocus
+                onBlur={onSubmitRename}
+                onChangeText={onChangeRename}
+                onSubmitEditing={onSubmitRename}
+                placeholder="Project name"
+                placeholderTextColor="#858197"
+                returnKeyType="done"
+                selectTextOnFocus
+                style={styles.projectRenameInput}
+                value={renameValue}
+              />
+            ) : (
+              <Text numberOfLines={1} style={styles.projectName}>{project.name}</Text>
+            )}
             <View style={[styles.projectTitleDot, { backgroundColor: titleDot }]} />
           </View>
           <Text numberOfLines={1} style={styles.projectMeta}>{project.path}</Text>
@@ -1580,24 +1918,23 @@ function ProjectCard({ active, expanded, layout, onArchive, onDelete, onMore, on
           <Text style={[
             styles.projectStatusPill,
             layout.statusStyle,
-            active ? styles.projectStatusActive : null,
+            activeStatus ? styles.projectStatusActive : null,
             draft ? styles.projectStatusDraft : null,
             completed ? styles.projectStatusCompleted : null,
             archived ? styles.projectStatusArchived : null
           ]}>{status}</Text>
           <Pressable hitSlop={8} onPress={onMore} style={styles.projectMoreButton}>
-            <Ionicons name="ellipsis-vertical" color={expanded ? "#DAD6F6" : "#858197"} size={18} />
+            <Ionicons name="ellipsis-vertical" color={menuOpen ? "#F1ECFF" : "#858197"} size={18} />
           </Pressable>
         </View>
       </View>
-
-      {expanded ? (
-        <View style={styles.projectQuickPanel}>
-          <Text numberOfLines={1} style={styles.projectQuickText}>{project.path}</Text>
-          <Pressable style={styles.projectQuickAction} onPress={onOpen}>
-            <Ionicons name="open-outline" color="#DAD6F6" size={15} />
-            <Text style={styles.projectQuickActionText}>Open</Text>
-          </Pressable>
+      {menuOpen ? (
+        <View pointerEvents="box-none" style={styles.projectMenuLayer}>
+          <View style={styles.projectMenu}>
+            <ProjectMenuItem icon="create-outline" label="Rename" onPress={onStartRename} />
+            <ProjectMenuItem icon="archive-outline" label="Archive" onPress={onArchive} />
+            <ProjectMenuItem danger icon="trash-outline" label="Delete" onPress={onDelete} />
+          </View>
         </View>
       ) : null}
 
@@ -1608,10 +1945,6 @@ function ProjectCard({ active, expanded, layout, onArchive, onDelete, onMore, on
           <View style={styles.projectFooterMeta}>
             <Ionicons name="calendar-outline" color="#AAA6BC" size={15} />
             <Text numberOfLines={1} style={styles.projectFooterText}>{project.updated}</Text>
-          </View>
-          <View style={styles.projectFooterMeta}>
-            <Ionicons name="git-branch-outline" color="#AAA6BC" size={15} />
-            <Text numberOfLines={1} style={styles.projectFooterText}>{project.branch}</Text>
           </View>
         </View>
         <View style={layout.footerActionsStyle}>
@@ -1626,15 +1959,77 @@ function ProjectCard({ active, expanded, layout, onArchive, onDelete, onMore, on
               <Ionicons name="arrow-forward" color={colors.text} size={layout.openIconSize} />
             </LinearGradient>
           </Pressable>
-          <Pressable style={[styles.projectIconButton, { height: layout.actionButtonSize, width: layout.actionButtonSize }]} onPress={onArchive}>
-            <Ionicons name={archived ? "arrow-up-circle-outline" : "archive-outline"} color="#BEB9D4" size={18} />
-          </Pressable>
-          <Pressable style={[styles.projectIconButton, { height: layout.actionButtonSize, width: layout.actionButtonSize }]} onPress={onDelete}>
-            <Ionicons name="trash-outline" color="#FF6480" size={18} />
-          </Pressable>
+          {renaming ? (
+            <Pressable style={styles.projectRenameDoneButton} onPress={onSubmitRename}>
+              <Text style={styles.projectRenameDoneText}>Done</Text>
+            </Pressable>
+          ) : null}
+          {renaming ? (
+            <Pressable style={styles.projectRenameCancelButton} onPress={onCancelRename}>
+              <Ionicons name="close" color="#BEB9D4" size={18} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </View>
+  );
+}
+
+function ProjectMenuItem({ danger, icon, label, onPress }: {
+  danger?: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={({ pressed }) => [styles.projectMenuItem, pressed ? styles.projectMenuItemPressed : null]} onPress={onPress}>
+      <Ionicons name={icon} color={danger ? "#FF7F96" : "#E8E1FF"} size={17} />
+      <Text style={[styles.projectMenuItemText, danger ? styles.projectMenuItemTextDanger : null]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function ProjectFilterMenuItem({ active, label, onPress }: {
+  active: boolean;
+  label: typeof projectFilterModes[number];
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={({ pressed }) => [styles.projectsFilterMenuItem, active ? styles.projectsFilterMenuItemActive : null, pressed ? styles.projectsFilterMenuItemPressed : null]} onPress={onPress}>
+      <Text style={[styles.projectsFilterMenuText, active ? styles.projectsFilterMenuTextActive : null]}>{label}</Text>
+      {active ? <Ionicons name="checkmark" color="#E8E1FF" size={15} /> : null}
+    </Pressable>
+  );
+}
+
+function ProjectDeleteConfirmModal({ onCancel, onConfirm, project }: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  project: ProjectDisplay | null;
+}) {
+  return (
+    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={project !== null}>
+      <View style={styles.projectDeleteOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+        <View style={styles.projectDeleteDialog}>
+          <View style={styles.projectDeleteIcon}>
+            <Ionicons name="trash-outline" color="#FF8CA0" size={24} />
+          </View>
+          <Text style={styles.projectDeleteTitle}>Delete project?</Text>
+          <Text style={styles.projectDeleteBody}>
+            {project ? `This will remove ${project.name} from your project list.` : "This will remove this project from your project list."}
+          </Text>
+          <View style={styles.projectDeleteActions}>
+            <Pressable style={styles.projectDeleteCancelButton} onPress={onCancel}>
+              <Text style={styles.projectDeleteCancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.projectDeleteConfirmButton} onPress={onConfirm}>
+              <Text style={styles.projectDeleteConfirmText}>Delete</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -1964,23 +2359,23 @@ const styles = StyleSheet.create({
     width: 6
   },
   chatAssistantPanel: {
-    backgroundColor: "rgba(11, 12, 28, 0.92)",
-    borderColor: "rgba(134, 70, 211, 0.62)",
-    borderRadius: 18,
-    borderWidth: 1,
     flex: 1,
-    gap: 12,
+    gap: 10,
+    justifyContent: "flex-end",
     minHeight: 0,
-    overflow: "hidden",
-    padding: 12
+    paddingBottom: Platform.OS === "ios" ? 8 : 4
   },
   chatComposer: {
-    backgroundColor: "rgba(20, 22, 36, 0.82)",
-    borderColor: "rgba(122, 67, 198, 0.48)",
-    borderRadius: 16,
+    backgroundColor: "#11131B",
+    borderColor: "rgba(255, 255, 255, 0.09)",
+    borderRadius: 18,
     borderWidth: 1,
-    minHeight: 96,
-    padding: 12
+    minHeight: 104,
+    padding: 12,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18
   },
   chatComposerBottom: {
     alignItems: "center",
@@ -1991,7 +2386,7 @@ const styles = StyleSheet.create({
   chatComposerInput: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700",
     lineHeight: 20,
     maxHeight: 70,
     minHeight: 26,
@@ -2000,25 +2395,96 @@ const styles = StyleSheet.create({
   },
   chatComposerTool: {
     alignItems: "center",
-    height: 30,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
+    height: 36,
     justifyContent: "center",
-    width: 30
+    width: 36
   },
   chatComposerTools: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12
+    flex: 1,
+    gap: 8,
+    minWidth: 0
+  },
+  chatComposerShell: {
+    position: "relative",
+    zIndex: 10
+  },
+  chatModelButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 7,
+    height: 36,
+    maxWidth: 176,
+    minWidth: 0,
+    paddingHorizontal: 9
+  },
+  chatModelButtonText: {
+    color: "#DAD6E7",
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  chatModelGroup: {
+    gap: 2
+  },
+  chatModelGroupTitle: {
+    color: "#8C879A",
+    fontSize: 10,
+    fontWeight: "900",
+    paddingHorizontal: 7,
+    paddingTop: 5,
+    textTransform: "uppercase"
+  },
+  chatModelMenu: {
+    backgroundColor: "#11131B",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 15,
+    borderWidth: 1,
+    bottom: 112,
+    gap: 4,
+    left: 0,
+    padding: 6,
+    position: "absolute",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.34,
+    shadowRadius: 24,
+    width: 272,
+    zIndex: 20
+  },
+  chatModelName: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  chatModelRow: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 32,
+    paddingHorizontal: 7
+  },
+  chatModelRowActive: {
+    backgroundColor: "rgba(124, 241, 179, 0.08)"
   },
   chatActiveContent: {
-    paddingBottom: Platform.OS === "ios" ? 16 : 12,
-    paddingHorizontal: 10,
+    paddingBottom: Platform.OS === "ios" ? 10 : 8,
+    paddingHorizontal: 12,
     paddingTop: 8
   },
   chatActiveHeader: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 10,
-    minHeight: 46
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 2
   },
   chatActiveHeaderCopy: {
     flex: 1,
@@ -2030,7 +2496,9 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   chatActivePage: {
-    gap: 8
+    backgroundColor: "#02030C",
+    gap: 8,
+    overflow: "hidden"
   },
   chatActiveTitle: {
     color: colors.text,
@@ -2040,15 +2508,30 @@ const styles = StyleSheet.create({
   },
   chatBackButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 40,
+    borderRadius: 999,
+    height: 36,
     justifyContent: "center",
-    width: 40
+    width: 36
+  },
+  chatEditButton: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  chatEmptySpace: {
+    flex: 1,
+    minHeight: 0
+  },
+  chatBackgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    height: "100%",
+    opacity: 0.78,
+    width: "100%"
   },
   chatContent: {
+    backgroundColor: "#02030C",
     paddingBottom: Platform.OS === "ios" ? 96 : 90,
     paddingHorizontal: 14,
     paddingTop: 4
@@ -2146,6 +2629,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   chatPage: {
+    backgroundColor: "#02030C",
     flex: 1,
     flexDirection: "column",
     gap: 10,
@@ -2653,15 +3137,37 @@ const styles = StyleSheet.create({
     shadowRadius: 28,
     width: "100%"
   },
+  chatProviderIcon: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    width: 28
+  },
+  chatProviderIconCompact: {
+    height: 20,
+    width: 20
+  },
+  chatProviderLogo: {
+    height: 18,
+    width: 18
+  },
+  chatProviderLogoCompact: {
+    height: 13,
+    width: 13
+  },
+  chatProviderLogoOpenAi: {
+    tintColor: colors.text
+  },
   chatSendButton: {
-    borderRadius: 13,
+    borderRadius: 14,
     overflow: "hidden"
   },
   chatSendGradient: {
     alignItems: "center",
-    height: 46,
+    height: 44,
     justifyContent: "center",
-    width: 46
+    width: 44
   },
   chatSuggestionCard: {
     alignItems: "center",
@@ -2866,13 +3372,24 @@ const styles = StyleSheet.create({
     marginTop: 6
   },
   communityHero: {
-    alignItems: "flex-start",
-    minHeight: 72,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    minHeight: 138,
     paddingTop: 4
   },
   communityHeroCopy: {
-    maxWidth: "100%",
+    flex: 1,
+    maxWidth: 320,
     minWidth: 0
+  },
+  communityHeroImage: {
+    aspectRatio: 1536 / 1024,
+    flexShrink: 1,
+    height: 126,
+    maxWidth: 188,
+    minWidth: 112
   },
   communityHeroSubtitle: {
     color: "#B5B0CA",
@@ -3418,31 +3935,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900"
   },
-  heroActionsRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 22,
-    width: "100%"
-  },
-  heroPrimaryButton: {
-    alignItems: "center",
-    backgroundColor: "#7433FF",
-    borderRadius: 9,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 40,
-    paddingHorizontal: 14,
-    shadowColor: "#7433FF",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 22
-  },
-  heroPrimaryButtonText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "900"
-  },
   profileAvatar: {
     alignItems: "center",
     backgroundColor: "rgba(167, 243, 208, 0.12)",
@@ -3726,26 +4218,31 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(5, 7, 17, 0.72)"
   },
   projectsCreateButton: {
-    alignSelf: "flex-start",
-    borderRadius: 9,
+    alignSelf: "stretch",
+    borderRadius: 12,
     marginTop: 14,
+    maxWidth: 220,
+    minWidth: 178,
     overflow: "hidden",
     shadowColor: "#7130FF",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.26,
-    shadowRadius: 16
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.32,
+    shadowRadius: 18
   },
   projectsCreateGradient: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
-    minHeight: 42,
-    paddingHorizontal: 14
+    gap: 9,
+    justifyContent: "center",
+    minHeight: 46,
+    paddingHorizontal: 16
   },
   projectsCreateText: {
     color: colors.text,
     fontSize: 14,
-    fontWeight: "900"
+    fontWeight: "900",
+    flexShrink: 0,
+    lineHeight: 18
   },
   projectsFilterButton: {
     alignItems: "center",
@@ -3768,6 +4265,49 @@ const styles = StyleSheet.create({
     marginTop: -4,
     paddingHorizontal: 2,
     textTransform: "capitalize"
+  },
+  projectsFilterMenu: {
+    backgroundColor: "#0C0B18",
+    borderColor: "rgba(183, 121, 255, 0.24)",
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 3,
+    padding: 6,
+    position: "absolute",
+    right: 0,
+    shadowColor: "#8D36FF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    top: 50,
+    width: 154,
+    zIndex: 40
+  },
+  projectsFilterMenuItem: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 37,
+    paddingHorizontal: 10
+  },
+  projectsFilterMenuItemActive: {
+    backgroundColor: "rgba(112, 51, 255, 0.18)"
+  },
+  projectsFilterMenuItemPressed: {
+    backgroundColor: "rgba(112, 51, 255, 0.24)"
+  },
+  projectsFilterMenuText: {
+    color: "#C9C1DC",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  projectsFilterMenuTextActive: {
+    color: "#E8E1FF"
+  },
+  projectsFilterWrap: {
+    position: "relative",
+    zIndex: 40
   },
   projectsHero: {
     alignItems: "center",
@@ -3839,7 +4379,9 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   projectsScreen: {
+    flex: 1,
     gap: 14,
+    minHeight: "100%",
     paddingBottom: 18,
     paddingHorizontal: 10,
     position: "relative"
@@ -3866,7 +4408,11 @@ const styles = StyleSheet.create({
   projectsSearchRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 10
+    gap: 10,
+    zIndex: 30
+  },
+  projectsSearchRowMenuOpen: {
+    zIndex: 50
   },
   projectCard: {
     alignSelf: "stretch",
@@ -3874,11 +4420,28 @@ const styles = StyleSheet.create({
     borderColor: "rgba(128, 106, 180, 0.26)",
     borderRadius: 16,
     borderWidth: 1,
+    overflow: "visible",
     padding: 16,
+    position: "relative",
     width: "100%"
   },
   projectCardActive: {
     borderColor: "rgba(79, 221, 154, 0.54)"
+  },
+  projectCardMenuOpen: {
+    zIndex: 20
+  },
+  projectCardStatusActive: {
+    borderColor: "rgba(89, 232, 160, 0.42)"
+  },
+  projectCardStatusArchived: {
+    borderColor: "rgba(170, 166, 188, 0.28)"
+  },
+  projectCardStatusCompleted: {
+    borderColor: "rgba(190, 98, 255, 0.42)"
+  },
+  projectCardStatusDraft: {
+    borderColor: "rgba(146, 134, 174, 0.32)"
   },
   projectCardCopy: {
     flex: 1,
@@ -3906,7 +4469,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     flexDirection: "row",
     gap: 12,
-    paddingTop: 1
+    paddingTop: 1,
+    position: "relative",
+    zIndex: 10
   },
   projectCardTop: {
     alignItems: "center",
@@ -3965,6 +4530,92 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800"
   },
+  projectDeleteActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 22,
+    width: "100%"
+  },
+  projectDeleteBody: {
+    color: "#B8B1C9",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 8,
+    textAlign: "center"
+  },
+  projectDeleteCancelButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(170, 166, 188, 0.2)",
+    borderRadius: 11,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center"
+  },
+  projectDeleteCancelText: {
+    color: "#E1DAF2",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  projectDeleteConfirmButton: {
+    alignItems: "center",
+    backgroundColor: "#E84866",
+    borderRadius: 11,
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+    shadowColor: "#FF5F78",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18
+  },
+  projectDeleteConfirmText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  projectDeleteDialog: {
+    alignItems: "center",
+    backgroundColor: "#0B0A16",
+    borderColor: "rgba(183, 121, 255, 0.28)",
+    borderRadius: 20,
+    borderWidth: 1,
+    maxWidth: 342,
+    padding: 22,
+    shadowColor: "#0A061A",
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.55,
+    shadowRadius: 34,
+    width: "86%"
+  },
+  projectDeleteIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(232, 72, 102, 0.14)",
+    borderColor: "rgba(255, 140, 160, 0.28)",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 52,
+    justifyContent: "center",
+    width: 52
+  },
+  projectDeleteOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(3, 4, 12, 0.78)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 22
+  },
+  projectDeleteTitle: {
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 26,
+    marginTop: 16,
+    textAlign: "center"
+  },
   projectGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -3981,24 +4632,64 @@ const styles = StyleSheet.create({
   projectIconActive: {
     backgroundColor: "rgba(43, 96, 79, 0.38)"
   },
-  projectIconButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(20, 22, 35, 0.78)",
-    borderColor: "rgba(104, 100, 124, 0.28)",
-    borderRadius: 9,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: "center",
-    width: 34
+  projectIconArchived: {
+    backgroundColor: "rgba(82, 79, 96, 0.34)"
   },
   projectIconCompleted: {
     backgroundColor: "rgba(83, 31, 150, 0.58)"
   },
+  projectMenu: {
+    backgroundColor: "#0C0B18",
+    borderColor: "rgba(183, 121, 255, 0.24)",
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 3,
+    minWidth: 154,
+    padding: 6,
+    shadowColor: "#8D36FF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    width: 158
+  },
+  projectMenuLayer: {
+    alignItems: "flex-end",
+    bottom: 10,
+    justifyContent: "flex-start",
+    left: 10,
+    position: "absolute",
+    right: 10,
+    top: 50,
+    zIndex: 30
+  },
+  projectMenuItem: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 39,
+    paddingHorizontal: 10
+  },
+  projectMenuItemPressed: {
+    backgroundColor: "rgba(112, 51, 255, 0.22)"
+  },
+  projectMenuItemText: {
+    color: "#E8E1FF",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  projectMenuItemTextDanger: {
+    color: "#FF7F96"
+  },
   projectMoreButton: {
     alignItems: "center",
+    backgroundColor: "rgba(23, 22, 36, 0.72)",
+    borderColor: "rgba(146, 119, 205, 0.2)",
+    borderRadius: 10,
+    borderWidth: 1,
     height: 28,
     justifyContent: "center",
-    width: 24
+    width: 28
   },
   projectMeta: {
     color: "#8F8B9F",
@@ -4030,39 +4721,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900"
   },
-  projectQuickAction: {
+  projectRenameCancelButton: {
     alignItems: "center",
-    backgroundColor: "rgba(96, 42, 168, 0.28)",
-    borderColor: "rgba(188, 104, 255, 0.28)",
-    borderRadius: 8,
+    backgroundColor: "rgba(20, 22, 35, 0.78)",
+    borderColor: "rgba(104, 100, 124, 0.28)",
+    borderRadius: 9,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    minHeight: 30,
-    paddingHorizontal: 10
+    height: 34,
+    justifyContent: "center",
+    width: 34
   },
-  projectQuickActionText: {
-    color: "#DAD6F6",
-    fontSize: 12,
+  projectRenameDoneButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(89, 232, 160, 0.15)",
+    borderColor: "rgba(89, 232, 160, 0.32)",
+    borderRadius: 9,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 12
+  },
+  projectRenameDoneText: {
+    color: "#8EF4BA",
+    fontSize: 13,
     fontWeight: "900"
   },
-  projectQuickPanel: {
-    alignItems: "center",
-    backgroundColor: "rgba(15, 17, 29, 0.76)",
-    borderColor: "rgba(118, 101, 171, 0.22)",
+  projectRenameInput: {
+    backgroundColor: "rgba(21, 18, 38, 0.9)",
+    borderColor: "rgba(183, 121, 255, 0.34)",
     borderRadius: 10,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8
-  },
-  projectQuickText: {
-    color: "#A9A5B8",
+    color: colors.text,
     flex: 1,
-    fontSize: 12,
-    fontWeight: "800"
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 20,
+    minHeight: 34,
+    paddingHorizontal: 10,
+    paddingVertical: 6
   },
   projectStackDot: {
     backgroundColor: "#5C2FE8",
@@ -4256,29 +4952,6 @@ const styles = StyleSheet.create({
     color: "#B9F8D0",
     fontSize: 12,
     fontWeight: "900"
-  },
-  taskDot: {
-    backgroundColor: "#48D88A",
-    borderRadius: 999,
-    height: 7,
-    width: 7
-  },
-  taskPill: {
-    alignItems: "center",
-    backgroundColor: "rgba(14, 45, 41, 0.62)",
-    borderColor: "rgba(62, 226, 145, 0.22)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    minHeight: 28,
-    paddingHorizontal: 14
-  },
-  taskPillText: {
-    color: "#9BE8BC",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 0
   },
   pcApprovalCard: {
     alignItems: "center",
@@ -4515,17 +5188,21 @@ const styles = StyleSheet.create({
   pcSwitcherSheet: {
     backgroundColor: "rgba(6, 8, 18, 0.98)",
     borderColor: "rgba(126, 102, 190, 0.32)",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
     gap: 15,
+    alignSelf: "center",
+    marginBottom: 18,
+    marginHorizontal: 18,
+    maxWidth: 430,
     paddingBottom: 28,
     paddingHorizontal: 18,
     paddingTop: 10,
     shadowColor: "#6E31FF",
     shadowOffset: { width: 0, height: -14 },
     shadowOpacity: 0.22,
-    shadowRadius: 28
+    shadowRadius: 28,
+    width: "91%"
   },
   pcSwitcherTitle: {
     color: colors.text,
@@ -4533,6 +5210,126 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0,
     lineHeight: 24
+  },
+  planBadge: {
+    fontSize: 11,
+    fontWeight: "900",
+    marginTop: 4,
+    textTransform: "uppercase"
+  },
+  planButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 13,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 46,
+    overflow: "hidden"
+  },
+  planButtonFeatured: {
+    borderWidth: 0,
+    shadowColor: "#45E99B",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 18
+  },
+  planButtonGradient: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 46,
+    width: "100%"
+  },
+  planButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }]
+  },
+  planButtonText: {
+    color: "#E8E1FF",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  planButtonTextFeatured: {
+    color: "#06100B",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  planCard: {
+    backgroundColor: "rgba(11, 13, 24, 0.84)",
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 14,
+    overflow: "hidden",
+    padding: 16,
+    position: "relative"
+  },
+  planCardFeatured: {
+    shadowColor: "#45E99B",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 22
+  },
+  planDescription: {
+    color: "#B8B1C7",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18
+  },
+  planFeaturedWash: {
+    ...StyleSheet.absoluteFillObject
+  },
+  planFeatureRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 9
+  },
+  planFeatureText: {
+    color: "#D8D2E4",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18
+  },
+  planFeatures: {
+    gap: 9
+  },
+  planIcon: {
+    alignItems: "center",
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  planName: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 24
+  },
+  planPrice: {
+    color: colors.text,
+    fontSize: 36,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 40
+  },
+  planPriceMeta: {
+    color: "#AFA8C0",
+    fontSize: 14,
+    fontWeight: "900",
+    paddingBottom: 6
+  },
+  planPriceRow: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 4
+  },
+  planTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
   },
   tokenPill: {
     alignItems: "center",
@@ -4549,6 +5346,28 @@ const styles = StyleSheet.create({
   tokenPillPressed: {
     opacity: 0.76,
     transform: [{ scale: 0.98 }]
+  },
+  tokenCompactMeta: {
+    color: "#AFA8C0",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 4,
+    textAlign: "center"
+  },
+  tokenCompactPanel: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 231, 106, 0.08)",
+    borderColor: "rgba(255, 231, 106, 0.18)",
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 13
+  },
+  tokenCompactPercent: {
+    color: "#FFF2A4",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 19
   },
   tokenCycleStats: {
     flexDirection: "row",
@@ -4600,7 +5419,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 9,
     justifyContent: "center",
-    minHeight: 48
+    minHeight: 46
   },
   tokenManageText: {
     color: colors.text,
@@ -4656,17 +5475,19 @@ const styles = StyleSheet.create({
   tokenSheet: {
     backgroundColor: "rgba(6, 8, 18, 0.98)",
     borderColor: "rgba(126, 102, 190, 0.32)",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
-    gap: 15,
-    paddingBottom: 28,
-    paddingHorizontal: 18,
-    paddingTop: 10,
+    gap: 14,
+    marginBottom: 18,
+    marginHorizontal: 18,
+    maxWidth: 390,
+    padding: 16,
+    alignSelf: "center",
     shadowColor: "#6E31FF",
-    shadowOffset: { width: 0, height: -14 },
-    shadowOpacity: 0.22,
-    shadowRadius: 28
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.28,
+    shadowRadius: 28,
+    width: "91%"
   },
   tokenSheetClose: {
     alignItems: "center",
@@ -4700,8 +5521,8 @@ const styles = StyleSheet.create({
   },
   tokenSheetHeaderIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(92, 47, 232, 0.34)",
-    borderColor: "rgba(183, 124, 255, 0.34)",
+    backgroundColor: "rgba(255, 231, 106, 0.12)",
+    borderColor: "rgba(255, 231, 106, 0.22)",
     borderRadius: 14,
     borderWidth: 1,
     height: 48,
@@ -4727,10 +5548,10 @@ const styles = StyleSheet.create({
   },
   tokenSheetTitle: {
     color: colors.text,
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 24
+    lineHeight: 32
   },
   tokenText: {
     color: "#FFE76A",
@@ -4807,13 +5628,24 @@ const styles = StyleSheet.create({
   },
   topLeft: {
     alignItems: "center",
+    backgroundColor: "rgba(15, 18, 31, 0.88)",
+    borderColor: "rgba(112, 240, 162, 0.18)",
+    borderRadius: 16,
+    borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     gap: 11,
-    minWidth: 0
+    minHeight: 52,
+    minWidth: 0,
+    paddingHorizontal: 10,
+    shadowColor: "#1EEA7B",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16
   },
   topLeftPressed: {
-    opacity: 0.74
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }]
   },
   topMachineCopy: {
     flex: 1,
@@ -4857,54 +5689,162 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 16
   },
-  welcomeCopy: {
-    alignItems: "flex-start",
-    marginTop: 26,
-    minWidth: 0,
+  upgradeBackButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  upgradeContent: {
+    paddingBottom: Platform.OS === "ios" ? 96 : 90,
+    paddingHorizontal: 14,
+    paddingTop: 8
+  },
+  upgradeCycleControl: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    padding: 5
+  },
+  upgradeCycleOption: {
+    alignItems: "center",
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 48
+  },
+  upgradeCycleOptionActive: {
+    backgroundColor: "rgba(69, 233, 155, 0.14)",
+    borderColor: "rgba(69, 233, 155, 0.26)",
+    borderWidth: 1
+  },
+  upgradeCycleSave: {
+    color: "#7CF1B3",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 2
+  },
+  upgradeCycleText: {
+    color: "#AFA8C0",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  upgradeCycleTextActive: {
+    color: colors.text
+  },
+  upgradeHeader: {
+    flexDirection: "row",
+    gap: 12
+  },
+  upgradeHeaderCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  upgradeKicker: {
+    color: "#7CF1B3",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  upgradePage: {
+    gap: 16,
     width: "100%"
   },
+  upgradePlans: {
+    gap: 12
+  },
+  upgradeSubtitle: {
+    color: "#B8B1C7",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 8
+  },
+  upgradeTitle: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 32,
+    marginTop: 4
+  },
   welcomeBodyText: {
+    color: "#B5B0CA",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 19,
+    marginTop: 6,
     textAlign: "left"
   },
   welcomePanel: {
-    backgroundColor: "#0B0B18",
-    borderColor: "rgba(153, 84, 255, 0.42)",
-    borderRadius: 18,
-    borderWidth: 1,
-    minHeight: 204,
-    overflow: "hidden",
-    shadowColor: "#7C3DFF",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.18,
-    shadowRadius: 34
+    minHeight: 182,
+    overflow: "visible"
+  },
+  welcomePanelCompact: {
+    minHeight: 158
   },
   welcomeBackdrop: {
-    minHeight: 204,
-    overflow: "hidden",
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    paddingTop: 18,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 18,
+    justifyContent: "space-between",
+    minHeight: "100%",
+    overflow: "visible",
+    paddingTop: 8,
     width: "100%"
   },
-  welcomeBackdropFill: {
-    opacity: 0.62,
-    transform: [{ scale: 1.04 }]
-  },
-  welcomeBackdropLayer: {
-    ...StyleSheet.absoluteFillObject,
+  welcomeHeroImage: {
+    aspectRatio: 1,
     height: "100%",
-    opacity: 0.98,
+    opacity: 0.92,
     width: "100%"
   },
-  welcomeBackdropShade: {
-    ...StyleSheet.absoluteFillObject
+  welcomeHeroImageWrap: {
+    bottom: -18,
+    height: 190,
+    position: "absolute",
+    right: -32,
+    width: 212
+  },
+  welcomeHeroLeft: {
+    maxWidth: 210,
+    minWidth: 0,
+    zIndex: 1
+  },
+  welcomeLiveDot: {
+    backgroundColor: "#68F8A6",
+    borderRadius: 999,
+    height: 8,
+    width: 8
+  },
+  welcomeLivePill: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 14,
+    paddingVertical: 2
+  },
+  welcomeLiveText: {
+    color: "#D7D1E7",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase"
   },
   welcomeTitle: {
     color: colors.text,
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 41,
+    lineHeight: 32,
     textAlign: "left"
   },
   mobileConnectionCard: {
@@ -4925,114 +5865,317 @@ const styles = StyleSheet.create({
   },
   dashboardPage: {
     flex: 1,
-    gap: 6,
+    gap: 14,
     width: "100%"
+  },
+  dashboardPageCompact: {
+    gap: 10
   },
   dashboardLogo: {
     height: 36,
     width: 52
   },
-  dashboardStat: {
-    borderRightColor: "rgba(101, 72, 139, 0.38)",
-    borderRightWidth: 1,
-    flex: 1,
-    alignItems: "center",
-    minHeight: 62,
-    paddingHorizontal: 6,
-    paddingVertical: 9
-  },
-  dashboardStatLast: {
-    borderRightWidth: 0
-  },
-  dashboardStatLabel: {
-    color: "#A9A7BB",
-    fontSize: 10,
-    fontWeight: "800",
-    lineHeight: 13,
-    marginTop: 4,
-    textAlign: "center"
-  },
-  dashboardStats: {
-    alignItems: "stretch",
-    backgroundColor: "rgba(14, 18, 34, 0.86)",
-    borderColor: "rgba(102, 73, 145, 0.32)",
-    borderRadius: 16,
+  runningProjectCard: {
+    backgroundColor: "rgba(8, 6, 20, 0.58)",
+    borderRadius: 12,
     borderWidth: 1,
-    flexDirection: "row",
-    marginTop: -2,
+    height: 98,
     overflow: "hidden",
-    shadowColor: "#2D1B4D",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20
+    paddingHorizontal: 10,
+    position: "relative"
   },
-  dashboardStatTop: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 5,
-    justifyContent: "center"
-  },
-  dashboardStatValue: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "900",
-    letterSpacing: 0
-  },
-  homeActions: {
-    gap: 10
-  },
-  homeAction: {
-    alignItems: "center",
-    backgroundColor: "rgba(13, 17, 31, 0.9)",
-    borderColor: "rgba(113, 91, 149, 0.28)",
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    minHeight: 66,
-    paddingHorizontal: 18,
-    shadowColor: "#101625",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
+  runningProjectCardRunning: {
+    backgroundColor: "rgba(78, 20, 137, 0.14)",
+    borderColor: "rgba(179, 91, 255, 0.58)",
+    paddingBottom: 20,
+    paddingTop: 13,
+    shadowColor: "#7F24FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.36,
     shadowRadius: 18
   },
-  homeActionBadge: {
-    backgroundColor: "rgba(83, 39, 156, 0.54)",
-    borderColor: "rgba(157, 91, 255, 0.36)",
-    borderRadius: 8,
-    borderWidth: 1,
-    color: "#B96DFF",
-    fontSize: 10,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 8,
-    paddingVertical: 4
+  runningProjectCardWaiting: {
+    backgroundColor: "rgba(27, 114, 66, 0.12)",
+    borderColor: "rgba(105, 239, 151, 0.48)",
+    justifyContent: "center",
+    paddingBottom: 0,
+    paddingTop: 0,
+    shadowColor: "#45E986",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.26,
+    shadowRadius: 16
   },
-  homeActionCopy: {
+  runningProjectCopy: {
     flex: 1,
     minWidth: 0
   },
-  homeActionIcon: {
+  runningProjectIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(75, 32, 145, 0.62)",
-    borderColor: "rgba(128, 72, 235, 0.32)",
-    borderRadius: 12,
+    backgroundColor: "rgba(42, 207, 194, 0.18)",
+    borderColor: "rgba(78, 238, 220, 0.16)",
+    borderRadius: 9,
     borderWidth: 1,
-    height: 42,
+    height: 36,
     justifyContent: "center",
-    width: 42
+    shadowColor: "#2EEFD8",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    width: 36
   },
-  homeActionLabel: {
+  runningProjectIconWaiting: {
+    backgroundColor: "rgba(81, 235, 139, 0.14)",
+    borderColor: "rgba(131, 242, 173, 0.18)",
+    shadowColor: "#63F29D"
+  },
+  runningProjectName: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900",
-    lineHeight: 19
+    letterSpacing: 0,
+    lineHeight: 18
   },
-  homeActionMeta: {
-    color: "#A9A7BB",
+  runningProjectGraph: {
+    height: 48,
+    marginTop: 2,
+    width: 102
+  },
+  runningProjectBeamFill: {
+    borderRadius: 999,
+    height: "100%",
+    shadowColor: "#F2B3FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 7
+  },
+  runningProjectBeamTrack: {
+    backgroundColor: "rgba(118, 43, 190, 0.36)",
+    borderRadius: 999,
+    bottom: 13,
+    height: 5,
+    left: 14,
+    overflow: "hidden",
+    position: "absolute",
+    right: 128
+  },
+  runningProjectsEmpty: {
+    alignItems: "center",
+    backgroundColor: "rgba(13, 8, 28, 0.62)",
+    borderColor: "rgba(176, 102, 255, 0.32)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 11,
+    justifyContent: "center",
+    minHeight: 205,
+    overflow: "hidden",
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    position: "relative",
+    shadowColor: "#7F24FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18
+  },
+  runningProjectsEmptyButton: {
+    borderRadius: 12,
+    marginTop: 2,
+    overflow: "hidden",
+    shadowColor: "#9631FF",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.26,
+    shadowRadius: 16
+  },
+  runningProjectsEmptyButtonGradient: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    minHeight: 42,
+    paddingHorizontal: 15
+  },
+  runningProjectsEmptyButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }]
+  },
+  runningProjectsEmptyButtonText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 17
+  },
+  runningProjectsEmptyCopy: {
+    alignItems: "center",
+    maxWidth: 250
+  },
+  runningProjectsEmptyGlow: {
+    backgroundColor: "rgba(164, 58, 255, 0.22)",
+    borderRadius: 999,
+    height: 120,
+    position: "absolute",
+    shadowColor: "#A43AFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 42,
+    top: -70,
+    width: 180
+  },
+  runningProjectsEmptyIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(122, 47, 255, 0.2)",
+    borderColor: "rgba(216, 184, 255, 0.2)",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    width: 48
+  },
+  runningProjectsEmptyText: {
+    color: "#BFB7D0",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+    marginTop: 5,
+    textAlign: "center"
+  },
+  runningProjectsEmptyTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 22,
+    textAlign: "center"
+  },
+  runningProjectsHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  runningProjectsKicker: {
+    color: "#B977FF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase"
+  },
+  runningProjectsList: {
+    gap: 9
+  },
+  runningProjectsOpenButton: {
+    alignItems: "center",
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+  runningProjectsPanel: {
+    gap: 10
+  },
+  runningProjectsTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 24,
+    marginTop: 2
+  },
+  runningProjectsTitleBlock: {
+    minWidth: 0
+  },
+  runningProjectTask: {
+    color: "#C8BFE0",
     fontSize: 12,
     fontWeight: "800",
     lineHeight: 15,
     marginTop: 2
+  },
+  runningProjectTime: {
+    backgroundColor: "rgba(42, 9, 75, 0.86)",
+    borderColor: "rgba(172, 58, 255, 0.42)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#F0B8FF",
+    fontSize: 9,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    textAlign: "right",
+    textTransform: "lowercase"
+  },
+  runningProjectTimeWaiting: {
+    backgroundColor: "rgba(7, 48, 30, 0.82)",
+    borderColor: "rgba(117, 244, 166, 0.34)",
+    color: "#83F2AD"
+  },
+  runningProjectTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 9
+  },
+  runningProjectSignal: {
+    alignItems: "flex-end",
+    alignSelf: "stretch",
+    justifyContent: "flex-start",
+    minWidth: 112
+  },
+  runningProjectSignalWaiting: {
+    alignSelf: "auto",
+    justifyContent: "center"
+  },
+  homeActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  homeAction: {
+    backgroundColor: "rgba(12, 15, 28, 0.64)",
+    borderColor: "rgba(119, 103, 157, 0.18)",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 132,
+    justifyContent: "space-between",
+    padding: 15,
+    width: "48.5%"
+  },
+  homeActionBadge: {
+    color: "#9E98B5",
+    fontSize: 11,
+    fontWeight: "900",
+    marginTop: 4
+  },
+  homeActionIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(82, 45, 154, 0.38)",
+    borderColor: "rgba(164, 110, 255, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: "center",
+    width: 38
+  },
+  homeActionLabel: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 18,
+    marginTop: 10
+  },
+  homeActionMeta: {
+    color: "#A9A7BB",
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: 14,
+    marginTop: 4,
+    minHeight: 28
+  },
+  homeActionPressed: {
+    backgroundColor: "rgba(23, 20, 43, 0.78)",
+    borderColor: "rgba(164, 110, 255, 0.32)",
+    transform: [{ scale: 0.99 }]
+  },
+  homeActionTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
   }
 });

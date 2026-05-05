@@ -11,10 +11,22 @@ export async function startAgentTask({ projectId, prompt, model }) {
   const runId = `run-${Date.now()}`;
   const outputDir = join(project.path, ".vibyra-agent", "runs");
   const outputPath = join(outputDir, `${runId}.md`);
+  appState.activeAgentRun = {
+    id: runId,
+    projectId: project.id,
+    model,
+    title: prompt,
+    state: "running",
+    progress: 18,
+    file: "Local desktop task",
+    updatedAt: new Date().toISOString()
+  };
   const summary = makeRunSummary({ prompt, model, project });
 
   await mkdir(outputDir, { recursive: true });
+  appState.activeAgentRun = { ...appState.activeAgentRun, progress: 48, file: outputPath, updatedAt: new Date().toISOString() };
   await writeFile(outputPath, summary, "utf8");
+  appState.activeAgentRun = { ...appState.activeAgentRun, progress: 82, updatedAt: new Date().toISOString() };
 
   appState.selectedProjectId = project.id;
   appState.latestPreview = {
@@ -34,6 +46,7 @@ export async function startAgentTask({ projectId, prompt, model }) {
     event("Backend", `Prompt sent to ${model}`, "info")
   ];
   pushEvents(newEvents);
+  appState.activeAgentRun = null;
 
   return {
     agent: {
