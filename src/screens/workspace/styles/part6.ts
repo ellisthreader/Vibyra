@@ -1,36 +1,8 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part6 = {
-  chatRecentActiveDot: {
-    backgroundColor: "#2EDB78",
-    borderRadius: 999,
-    height: 8,
-    left: -5,
-    position: "absolute",
-    shadowColor: "#2EDB78",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.95,
-    shadowRadius: 8,
-    top: 38,
-    width: 8
-  },
-  chatRecentBadge: {
-    backgroundColor: "rgba(111, 50, 191, 0.2)",
-    borderColor: "rgba(141, 72, 235, 0.22)",
-    borderRadius: 8,
-    borderWidth: 1,
-    color: "#B678FF",
-    fontSize: 11,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 8,
-    paddingVertical: 4
-  },
-  chatRecentCopy: {
-    flex: 1,
-    minWidth: 0
-  },
   chatRecentHeader: {
     alignItems: "center",
     flexDirection: "row",
@@ -171,4 +143,26 @@ export const part6 = {
     fontSize: 13,
     fontWeight: "800"
   },
-};
+  chatResumeProgressFill: {
+    borderRadius: 999,
+    height: 4,
+    width: "30%"
+  },
+  chatResumeProgressTrack: {
+    backgroundColor: "rgba(34, 33, 53, 0.88)",
+    borderRadius: 999,
+    bottom: 9,
+    height: 4,
+    left: 14,
+    overflow: "hidden",
+    position: "absolute",
+    right: 14
+  },
+  chatResumeTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 22,
+    marginTop: 4
+  },
+} as const;

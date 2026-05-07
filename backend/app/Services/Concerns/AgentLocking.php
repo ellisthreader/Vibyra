@@ -17,7 +17,7 @@ trait AgentLocking
         if (! $lock || ! flock($lock, LOCK_EX | LOCK_NB)) {
             abort(response()->json([
                 'ok' => false,
-                'error' => 'An OpenAI task is already running. Wait for it to finish before sending another prompt.',
+                'error' => 'An AI task is already running. Wait for it to finish before sending another prompt.',
             ], 429));
         }
 

@@ -29,7 +29,7 @@ export function findProjectById(id) {
 }
 
 export function projectById(id) {
-  return findProjectById(id) ?? appState.cachedProjects[0];
+  return findProjectById(id);
 }
 
 async function scanChildren(root, seen, projects) {

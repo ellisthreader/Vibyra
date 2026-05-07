@@ -33,5 +33,6 @@ Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
 Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOnboarding']);
 Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);
+Route::get('/api/skills', [VibyraAppController::class, 'skills']);
 Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('any', '.*');
 Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');

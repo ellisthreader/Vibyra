@@ -1,144 +1,171 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part20 = {
-  messageAvatarLogo: {
-    height: 18,
-    width: 18
-  },
-  messageAvatarUser: {
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderWidth: 1
-  },
-  messageContent: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0
-  },
-  messageFile: {
-    color: "#9E98AD",
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16
-  },
-  messageRow: {
-    flexDirection: "row",
-    gap: 12,
-    paddingBottom: 14,
-    paddingTop: 14
-  },
-  messageRowAssistant: {
-    backgroundColor: "transparent"
-  },
-  messageRowUser: {
-    backgroundColor: "transparent"
-  },
-  messageText: {
-    color: "#E7E3EF",
-    fontSize: 15,
-    fontWeight: "600",
-    lineHeight: 23
-  },
-  messageBody: {
-    gap: 6
-  },
-  messageBold: {
-    color: "#FFFFFF",
+  profileAvatarLargeText: {
+    color: colors.text,
+    fontSize: 32,
     fontWeight: "900"
   },
-  messageInlineCode: {
-    backgroundColor: "rgba(139, 53, 255, 0.18)",
-    borderRadius: 4,
-    color: "#E2D6FF",
-    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
-    fontSize: 13.5,
-    paddingHorizontal: 5,
-    paddingVertical: 1
+  profileAvatarEditButton: {
+    alignItems: "center",
+    backgroundColor: "#242737",
+    borderColor: "rgba(174, 168, 196, 0.36)",
+    borderRadius: 999,
+    borderWidth: 1,
+    bottom: -3,
+    height: 27,
+    justifyContent: "center",
+    position: "absolute",
+    right: -3,
+    width: 27
   },
-  messageCodeBlock: {
-    backgroundColor: "#0B0D17",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+  profileAvatarWrap: {
+    position: "relative"
+  },
+  profileConnectionDot: {
+    backgroundColor: "#55D77D",
+    borderRadius: 999,
+    height: 9,
+    width: 9
+  },
+  profileConnectionRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 11
+  },
+  profileConnectionText: {
+    color: "#6FEA8E",
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  profileEditButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(35, 35, 49, 0.86)",
+    borderColor: "rgba(113, 108, 132, 0.32)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 39,
+    paddingHorizontal: 16
+  },
+  profileEditText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  profileGroup: {
+    backgroundColor: "rgba(10, 13, 24, 0.74)",
+    borderColor: "rgba(125, 120, 142, 0.24)",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+    paddingHorizontal: 13
+  },
+  profileGroupDangerTitle: {
+    color: "#FF5D5D"
+  },
+  profileGroupTitle: {
+    color: "#A8A2B6",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0,
+    marginBottom: 8
+  },
+  profileHeader: {
+    paddingHorizontal: 12,
+    paddingTop: 24
+  },
+  profileContent: {
+    paddingBottom: Platform.OS === "ios" ? 104 : 98,
+    paddingHorizontal: 28,
+    paddingTop: 16
+  },
+  profileDivider: {
+    backgroundColor: "rgba(125, 120, 142, 0.26)",
+    height: 1,
+    marginTop: 12
+  },
+  profileHeroCard: {
+    gap: 0
+  },
+  profileHeroTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 34,
+    paddingHorizontal: 8
+  },
+  profilePlanBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(126, 30, 188, 0.18)",
+    borderColor: "rgba(194, 89, 255, 0.45)",
     borderRadius: 10,
     borderWidth: 1,
-    marginVertical: 4,
-    overflow: "hidden"
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+    minHeight: 28,
+    paddingHorizontal: 11
   },
-  messageCodeBlockHeader: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+  profilePlanBadgeText: {
+    color: "#C259FF",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  profileRow: {
+    alignItems: "center",
+    borderBottomColor: "rgba(125, 120, 142, 0.18)",
     borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 38
+  },
+  profileRowActive: {
+    backgroundColor: "rgba(126, 72, 255, 0.035)"
+  },
+  profileRowBadge: {
+    backgroundColor: "rgba(45, 177, 106, 0.2)",
+    borderRadius: 999,
+    color: "#6FEA8E",
+    fontSize: 13,
+    fontWeight: "900",
+    overflow: "hidden",
     paddingHorizontal: 12,
     paddingVertical: 6
   },
-  messageCodeBlockLang: {
-    color: "#9E98AD",
-    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    textTransform: "uppercase"
+  profileRowCopy: {
+    flex: 1,
+    minWidth: 0
   },
-  messageCodeBlockText: {
-    color: "#E5E2F0",
-    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
-    fontSize: 13,
-    lineHeight: 19,
-    padding: 12
-  },
-  messageHeading1: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontWeight: "900",
-    lineHeight: 25,
-    marginTop: 4
-  },
-  messageHeading2: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "900",
-    lineHeight: 23,
-    marginTop: 2
-  },
-  messageHeading3: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 21
-  },
-  messageListRow: {
-    flexDirection: "row",
-    gap: 8
-  },
-  messageBulletDot: {
-    color: "#B9B5C8",
-    fontSize: 15,
-    lineHeight: 23,
-    width: 12
-  },
-  messageNumberedMarker: {
-    color: "#B9B5C8",
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 23,
-    minWidth: 20
-  },
-  messageListText: {
-    flex: 1
-  },
-  messageSpacer: {
-    height: 4
-  },
-  typingIndicator: {
+  profileRowIcon: {
     alignItems: "center",
-    flexDirection: "row",
-    gap: 5,
-    paddingTop: 6
+    backgroundColor: "rgba(79, 32, 129, 0.28)",
+    borderRadius: 9,
+    height: 28,
+    justifyContent: "center",
+    width: 28
   },
-  typingDot: {
-    backgroundColor: "#B49CFF",
-    borderRadius: 4,
-    height: 7,
-    width: 7
+  profileRowIconDanger: {
+    backgroundColor: "rgba(255, 70, 92, 0.11)"
   },
-};
+  profileRowLabel: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 18
+  },
+  profileRowLabelDanger: {
+    color: "#FF465C"
+  },
+  profileRowLast: {
+    borderBottomWidth: 0
+  },
+  profileRowPressed: {
+    opacity: 0.74
+  },
+} as const;

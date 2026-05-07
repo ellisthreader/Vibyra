@@ -93,6 +93,7 @@ function normalizeDesktops(value: unknown): RememberedDesktop[] {
       return {
         url,
         pairCode,
+        token: desktop.token ? String(desktop.token) : undefined,
         machineName: String(desktop.machineName ?? "Vibyra Desktop"),
         status: normalizeStatus(desktop.status),
         lastSeenAt: desktop.lastSeenAt,

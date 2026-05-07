@@ -1,133 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part16 = {
-  communityPrimaryOpenText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "900"
-  },
-  communitySmallAction: {
-    alignItems: "center",
-    backgroundColor: "rgba(12, 15, 24, 0.5)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 7,
-    height: 46,
-    justifyContent: "center",
-    minWidth: 78,
-    paddingHorizontal: 10
-  },
-  communitySmallActionText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "900"
-  },
-  communityPictureCard: {
-    backgroundColor: "rgba(16, 18, 30, 0.78)",
-    borderRadius: 13,
-    borderWidth: 1,
-    flex: 1,
-    gap: 8,
-    minWidth: 142,
-    padding: 10
-  },
-  communityPictureGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10
-  },
-  communityDetailScreenshots: {
-    gap: 9
-  },
-  communityScreenshotGrid: {
-    flexDirection: "row",
-    gap: 9
-  },
-  communityScreenshotLabel: {
-    color: "#D8D3E4",
-    fontSize: 12,
-    fontWeight: "900"
-  },
-  communityScreenshotPreview: {
-    flex: 1,
-    gap: 7,
-    minWidth: 0
-  },
-  communityPostBadge: {
+  communityPreviewSideDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.16)",
     borderRadius: 999,
-    fontSize: 10,
+    height: 5,
+    width: 5
+  },
+  communityPreviewTiny: {
+    color: "#DAD6EA",
+    fontSize: 7,
+    fontWeight: "900"
+  },
+  communityPreviewValue: {
+    color: colors.text,
+    fontSize: 11,
     fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 9,
-    paddingVertical: 5
-  },
-  communityPostBadgeBlue: {
-    backgroundColor: "rgba(37, 88, 178, 0.32)",
-    color: "#5792FF"
-  },
-  communityPostBadgeGreen: {
-    backgroundColor: "rgba(45, 177, 106, 0.2)",
-    color: "#51E895"
-  },
-  communityPostBadgePurple: {
-    backgroundColor: "rgba(83, 31, 150, 0.52)",
-    color: "#C975FF"
-  },
-  communityPostBody: {
-    flex: 1,
-    gap: 8,
-    minWidth: 0
-  },
-  communityPostCard: {
-    backgroundColor: "rgba(8, 13, 24, 0.86)",
-    borderColor: "rgba(128, 106, 180, 0.26)",
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 12,
-    minHeight: 142,
-    padding: 13
-  },
-  communityPostCardPressed: {
-    borderColor: "rgba(183, 139, 255, 0.54)",
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }]
-  },
-  communityPostDescription: {
-    color: "#B2AFC1",
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16,
     marginTop: 4
   },
-  communityPostBottom: {
+  communityReportButton: {
     alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255, 100, 128, 0.08)",
+    borderColor: "rgba(255, 100, 128, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 9,
-    justifyContent: "space-between"
+    gap: 8,
+    minHeight: 42,
+    paddingHorizontal: 13
   },
-  communityPostLeft: {
+  communityReportText: {
+    color: "#FFB4C1",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityReportTextDone: {
+    color: "#B7FBD0"
+  },
+  communityTabPanel: {
+    gap: 14
+  },
+  communityDetailTopSave: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    marginRight: -8,
+    width: 44
+  },
+  communityScreen: {
+    flex: 1,
+    gap: 12,
+    paddingBottom: 8,
+    position: "relative"
+  },
+  communitySearchBar: {
+    alignItems: "center",
+    backgroundColor: "rgba(10, 13, 24, 0.8)",
+    borderColor: "rgba(118, 101, 171, 0.28)",
+    borderRadius: 11,
+    borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     gap: 10,
-    minWidth: 0
+    minHeight: 44,
+    paddingHorizontal: 14
   },
-  communityPostStat: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 6
-  },
-  communityPostStats: {
-    alignItems: "center",
-    flexDirection: "row",
+  communitySearchInput: {
+    color: colors.text,
     flex: 1,
-    gap: 14
+    fontSize: 15,
+    fontWeight: "800",
+    minHeight: 42
   },
-  communityPostStatText: {
-    color: "#B7B4C8",
-    fontSize: 12,
+  communitySearchRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
+  },
+  communityTab: {
+    alignItems: "center",
+    backgroundColor: "rgba(18, 19, 30, 0.82)",
+    borderColor: "rgba(112, 105, 133, 0.32)",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: 16
+  },
+  communityTabActive: {
+    backgroundColor: "rgba(96, 42, 168, 0.74)",
+    borderColor: "rgba(188, 104, 255, 0.78)",
+    shadowColor: "#A64BFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.74,
+    shadowRadius: 12
+  },
+  communityTabs: {
+    flexDirection: "row",
+    gap: 8
+  },
+  communityTabText: {
+    color: "#B5B0C3",
+    fontSize: 13,
     fontWeight: "900"
   },
-};
+  communityTabTextActive: {
+    color: colors.text
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 126,
+    paddingHorizontal: 18,
+    paddingTop: 8
+  },
+  contentScroll: {
+    flex: 1
+  },
+  dashboardContent: {
+    justifyContent: "space-between",
+    paddingBottom: 94,
+    paddingTop: 4
+  },
+  projectsContent: {
+    paddingHorizontal: 8,
+    paddingTop: 10
+  },
+  dangerButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255, 93, 122, 0.11)",
+    borderColor: "rgba(255, 93, 122, 0.26)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 42,
+    paddingHorizontal: 13
+  },
+  dangerButtonText: {
+    color: "#FFB4C1",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  emptyText: {
+    color: colors.dim,
+    fontSize: 14,
+    fontWeight: "700"
+  },
+  filterChip: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  filterChipActive: {
+    backgroundColor: "rgba(167, 243, 208, 0.12)",
+    borderColor: "rgba(167, 243, 208, 0.28)"
+  },
+  filterChipText: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  filterChipTextActive: {
+    color: "#DDFCEB"
+  },
+} as const;

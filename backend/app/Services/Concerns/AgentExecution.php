@@ -23,7 +23,7 @@ trait AgentExecution
         }
 
         if ($prompt === '' || mb_strlen($prompt) < 3) {
-            abort(response()->json(['ok' => false, 'error' => 'Enter a prompt before starting OpenAI.'], 422));
+            abort(response()->json(['ok' => false, 'error' => 'Enter a prompt before starting the desktop AI agent.'], 422));
         }
 
         if (mb_strlen($prompt) > 8000) {
@@ -36,7 +36,7 @@ trait AgentExecution
         if ($cooldownRemaining > 0) {
             abort(response()->json([
                 'ok' => false,
-                'error' => 'Please wait '.$cooldownRemaining.'s before sending another OpenAI prompt.',
+                'error' => 'Please wait '.$cooldownRemaining.'s before sending another desktop AI prompt.',
             ], 429));
         }
 
@@ -46,19 +46,19 @@ trait AgentExecution
         if (isset($recentPromptHashes[$promptHash])) {
             abort(response()->json([
                 'ok' => false,
-                'error' => 'That exact OpenAI prompt was already sent. Change the prompt before running it again.',
+                'error' => 'That exact desktop AI prompt was already sent. Change the prompt before running it again.',
             ], 409));
         }
 
         if (! empty($state['activeAgentRun'])) {
             abort(response()->json([
                 'ok' => false,
-                'error' => 'An OpenAI task is already running. Wait for it to finish before sending another prompt.',
+                'error' => 'An AI task is already running. Wait for it to finish before sending another prompt.',
             ], 429));
         }
 
-        if (! env('OPENAI_API_KEY')) {
-            abort(response()->json(['ok' => false, 'error' => 'OPENAI_API_KEY is not configured on the desktop backend'], 422));
+        if (! config('services.openrouter.key')) {
+            abort(response()->json(['ok' => false, 'error' => 'OPENROUTER_API_KEY is not configured on the desktop backend'], 422));
         }
 
         $runId = 'run-'.now()->timestamp.'-'.random_int(100, 999);
@@ -71,7 +71,7 @@ trait AgentExecution
             'title' => $prompt,
             'progress' => 12,
             'state' => 'running',
-            'file' => 'OpenAI stream',
+            'file' => 'OpenRouter stream',
             'startedAt' => now()->toISOString(),
             'updatedAt' => now()->toISOString(),
         ];
@@ -85,8 +85,8 @@ trait AgentExecution
         $outputDir = $project['path'].'/.vibyra-agent/runs';
         File::ensureDirectoryExists($outputDir);
         $outputPath = $outputDir.'/'.$runId.'.md';
-        $this->recordEvent('OpenAI', 'Starting '.$model.' with '.$reasoningEffort.' reasoning', 'info');
-        $this->recordEvent('OpenAI', 'Prompt: '.Str::limit($prompt, 180), 'info');
+        $this->recordEvent('OpenRouter', 'Starting '.$model.' with '.$reasoningEffort.' reasoning', 'info');
+        $this->recordEvent('OpenRouter', 'Prompt: '.Str::limit($prompt, 180), 'info');
         $responseText = $this->streamOpenAiResponse($project, $prompt, $model, $reasoningEffort);
         $state = $this->read();
         $appliedFiles = $this->applyGeneratedFiles($project, $this->extractGeneratedFiles($project, $responseText));
@@ -99,7 +99,7 @@ trait AgentExecution
             'Project: '.$project['name'],
             'Created: '.now()->toISOString(),
             '',
-            'OpenAI response:',
+            'OpenRouter response:',
             '',
             $responseText,
         ]);
@@ -145,10 +145,10 @@ trait AgentExecution
                 'Agent',
                 count($appliedFiles) > 0
                     ? 'Applied '.count($appliedFiles).' generated file(s) to '.$project['path']
-                    : 'No file changes found in OpenAI response; saved run artifact only',
+                    : 'No file changes found in OpenRouter response; saved run artifact only',
                 count($appliedFiles) > 0 ? 'success' : 'warning'
             ),
-            $this->event($model, 'OpenAI response saved to '.$outputPath, 'success'),
+            $this->event($model, 'OpenRouter response saved to '.$outputPath, 'success'),
             $this->event('Backend', 'Prompt sent to '.$model.' with '.$reasoningEffort.' reasoning', 'info'),
         ];
         $state['events'] = array_slice([...$newEvents, ...$state['events']], 0, 50);

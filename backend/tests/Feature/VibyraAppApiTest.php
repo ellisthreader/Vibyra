@@ -79,6 +79,8 @@ class VibyraAppApiTest extends TestCase
             $messages = $request['messages'];
 
             return $request['model'] === 'openai/gpt-4o-mini'
+                && $request['max_completion_tokens'] === 800
+                && ! array_key_exists('max_tokens', $request->data())
                 && $messages[1]['role'] === 'user'
                 && $messages[1]['content'] === 'The login screen is too generic.'
                 && $messages[2]['role'] === 'assistant'
@@ -143,6 +145,31 @@ class VibyraAppApiTest extends TestCase
         ], ['Authorization' => 'Bearer '.$desktopState['token']])
             ->assertUnprocessable()
             ->assertJsonPath('error', 'Prompt is too long. Keep it under 8,000 characters.');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_desktop_agent_does_not_fall_back_to_first_project_for_unknown_project_id(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'Should not run.'],
+                ]],
+            ]),
+        ]);
+
+        $desktopState = app(VibyraDesktopState::class)->state();
+
+        $this->postJson('/agents/start', [
+            'projectId' => 'missing-project-id',
+            'prompt' => 'Build a landing page',
+            'model' => 'gpt-5.5',
+            'reasoningEffort' => 'medium',
+        ], ['Authorization' => 'Bearer '.$desktopState['token']])
+            ->assertUnprocessable()
+            ->assertJsonPath('error', 'No project selected');
 
         Http::assertNothingSent();
     }

@@ -49,4 +49,21 @@ class VibyraAppController extends Controller
     {
         return $this->json([]);
     }
+
+    public function skills(): JsonResponse
+    {
+        $skills = collect(config('skills.list', []))
+            ->map(fn ($skill) => [
+                'id' => $skill['id'],
+                'slash' => $skill['slash'],
+                'label' => $skill['label'],
+                'description' => $skill['description'] ?? '',
+                'category' => $skill['category'] ?? 'general',
+                'mode' => $skill['mode'] ?? 'chat',
+            ])
+            ->values()
+            ->all();
+
+        return $this->json(['ok' => true, 'skills' => $skills]);
+    }
 }

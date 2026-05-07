@@ -1,6 +1,7 @@
-import React, { createContext, PropsWithChildren, useContext, useMemo } from "react";
-import { appApiRequest, AuthResponse, RemoteUser } from "../utils/appApi";
+import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo } from "react";
+import { appApiRequest, AuthResponse, RemoteUser, SkillsResponse } from "../utils/appApi";
 import { normalizePersistedUser } from "../utils/persistence";
+import { makeId } from "../utils/ids";
 import { useAgentActions } from "./useAgentActions";
 import { AppContextValue } from "./appContextTypes";
 import { useAppState } from "./useAppState";
@@ -23,6 +24,14 @@ export function AppProvider({ children }: PropsWithChildren) {
     loadProjectFilesWithConnection: workspace.loadProjectFilesWithConnection
   });
   const agent = useAgentActions(store, requests, logs);
+
+  useEffect(() => {
+    let cancelled = false;
+    appApiRequest<SkillsResponse>("/api/skills")
+      .then((result) => { if (!cancelled && result.skills) setters.setChatSkills(result.skills); })
+      .catch(() => { /* skills are optional; silent fallback */ });
+    return () => { cancelled = true; };
+  }, [setters]);
 
   useLiveSync(state.connection, requests, setters, logs);
   useCloudSync({
@@ -109,6 +118,34 @@ export function AppProvider({ children }: PropsWithChildren) {
     },
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
+    },
+    clearCurrentChat: (projectId = state.selectedProjectId) => {
+      setters.setChatThreads((current) => ({
+        ...current,
+        [projectId]: []
+      }));
+      setters.setChatTitles((current) => {
+        const next = { ...current };
+        delete next[projectId];
+        return next;
+      });
+      setters.setTaskText("");
+    },
+    addLocalChatReply: (prompt, reply, target) => {
+      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
+      const targetFile = target?.file === null
+        ? null
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+      const file = targetFile?.path;
+      setters.setChatThreads((current) => ({
+        ...current,
+        [projectId]: [
+          ...(current[projectId] ?? []),
+          { id: makeId("chat-user"), role: "user", text: prompt, file },
+          { id: makeId("chat-assistant"), role: "assistant", text: reply, file }
+        ]
+      }));
+      setters.setTaskText("");
     },
     setAuthMode: setters.setAuthMode,
     setAuthName: setters.setAuthName,

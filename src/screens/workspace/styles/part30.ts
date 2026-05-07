@@ -1,136 +1,176 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part30 = {
-  projectStatusPill: {
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 10,
-    paddingVertical: 6
-  },
-  projectTitleDot: {
-    borderRadius: 999,
-    height: 8,
-    marginLeft: 8,
-    width: 8
-  },
-  projectTitleRow: {
+  chatTopLeft: {
     alignItems: "center",
-    flexDirection: "row"
+    flexDirection: "row",
+    flexShrink: 0,
+    gap: 7
   },
-  rowCopy: {
+  chatTopTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 22,
+    minWidth: 0,
+    textAlign: "center"
+  },
+  chatTopTitleWrap: {
+    alignItems: "center",
+    bottom: 0,
+    justifyContent: "center",
+    left: 94,
+    paddingHorizontal: 6,
+    position: "absolute",
+    right: 94,
+    top: 0
+  },
+  topBarChat: {
+    borderBottomColor: "rgba(91, 91, 112, 0.26)",
+    minHeight: 74,
+    paddingHorizontal: 18
+  },
+  topLeft: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: 11,
+    minWidth: 0
+  },
+  topLeftPressed: {
+    opacity: 0.74
+  },
+  topMachineCopy: {
     flex: 1,
     minWidth: 0
   },
-  rowIcon: {
+  topConnectionRow: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: 8,
-    height: 38,
-    justifyContent: "center",
-    width: 38
+    flexDirection: "row",
+    gap: 8
   },
-  rowIconGreen: {
-    backgroundColor: "rgba(167, 243, 208, 0.1)"
+  topKicker: {
+    color: "#9AE9B4",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase"
   },
-  rowTitle: {
+  topRight: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "flex-end"
+  },
+  topTitle: {
     color: colors.text,
-    fontSize: 15,
-    fontWeight: "900"
+    flexShrink: 1,
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 22
   },
-  searchBar: {
+  topTitleRow: {
     alignItems: "center",
-    backgroundColor: "#101219",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
+    flexDirection: "row",
+    gap: 4,
+    minWidth: 0
+  },
+  twoColumn: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16
+  },
+  welcomeBodyText: {
+    color: "#B5B0CA",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 19,
+    marginTop: 6,
+    textAlign: "left"
+  },
+  welcomePanel: {
+    minHeight: 182,
+    overflow: "visible"
+  },
+  welcomePanelCompact: {
+    minHeight: 158
+  },
+  welcomeBackdrop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 18,
+    justifyContent: "space-between",
+    minHeight: "100%",
+    overflow: "visible",
+    paddingTop: 8,
+    width: "100%"
+  },
+  welcomeHeroImage: {
+    aspectRatio: 1,
+    height: "100%",
+    opacity: 0.92,
+    width: "100%"
+  },
+  welcomeHeroImageWrap: {
+    bottom: -18,
+    height: 190,
+    position: "absolute",
+    right: -32,
+    width: 212
+  },
+  welcomeHeroLeft: {
+    maxWidth: 210,
+    minWidth: 0,
+    zIndex: 1
+  },
+  welcomeLiveDot: {
+    backgroundColor: "#68F8A6",
+    borderRadius: 999,
+    height: 8,
+    width: 8
+  },
+  welcomeLivePill: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 14,
+    paddingVertical: 2
+  },
+  welcomeLiveText: {
+    color: "#D7D1E7",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase"
+  },
+  welcomeTitle: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 32,
+    textAlign: "left"
+  },
+  mobileConnectionCard: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(55, 214, 122, 0.1)",
+    borderColor: "rgba(55, 214, 122, 0.18)",
+    borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
     gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 13
-  },
-  searchInput: {
-    color: colors.text,
-    flex: 1,
-    fontSize: 15,
-    minHeight: 46
-  },
-  secondaryButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 36,
-    paddingHorizontal: 12
-  },
-  secondaryButtonText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "900"
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900"
-  },
-  sendButton: {
-    alignItems: "center",
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    height: 42,
-    justifyContent: "center",
-    width: 42
-  },
-  settingsPanel: {
-    backgroundColor: "#101219",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 10,
-    padding: 16
-  },
-  settingsTab: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
-    borderWidth: 1,
+    maxWidth: "100%",
     paddingHorizontal: 12,
-    paddingVertical: 9
+    paddingVertical: 8
   },
-  settingsTabActive: {
-    backgroundColor: "rgba(167, 243, 208, 0.12)",
-    borderColor: "rgba(167, 243, 208, 0.28)"
+  mobileConnectionCopy: {
+    minWidth: 0
   },
-  settingsTabText: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "900"
-  },
-  settingsTabTextActive: {
-    color: "#DDFCEB"
-  },
-  settingsTabs: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  shell: {
-    backgroundColor: "#02030C",
-    flex: 1,
-    flexDirection: "column",
-    overflow: "hidden"
-  },
-  statusActive: {
-    backgroundColor: "rgba(167, 243, 208, 0.12)",
-    color: "#DDFCEB"
-  },
-  statusDot: {
-    backgroundColor: colors.success,
-    borderRadius: 999,
-    height: 7,
-    width: 7
-  },
-};
+} as const;

@@ -76,7 +76,7 @@ class VibyraDesktopController extends Controller
     {
         $this->authorizeToken($request);
         $query = (string) $request->query('q', '');
-        $this->moderation->assertTextAllowed($query !== '' ? $query : 'desktop search', 'desktop.search');
+        $this->moderation->assertLocalTextAllowed($query !== '' ? $query : 'desktop search', 'desktop.search');
 
         return $this->json($this->desktop->desktopSearch($query));
     }

@@ -1,7 +1,33 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part2 = {
+  chatArtStarLarge: {
+    backgroundColor: "#C179FF",
+    height: 10,
+    left: 32,
+    position: "absolute",
+    top: 33,
+    transform: [{ rotate: "45deg" }],
+    width: 10
+  },
+  chatArtStarSmall: {
+    backgroundColor: "#9A4DFF",
+    height: 6,
+    position: "absolute",
+    right: 5,
+    top: 55,
+    transform: [{ rotate: "45deg" }],
+    width: 6
+  },
+  chatAssistantPanel: {
+    flex: 1,
+    gap: 0,
+    justifyContent: "flex-end",
+    minHeight: 0,
+    paddingBottom: Platform.OS === "ios" ? 8 : 2
+  },
   chatComposer: {
     backgroundColor: "rgba(17, 19, 28, 0.96)",
     borderColor: "rgba(255, 255, 255, 0.13)",
@@ -143,61 +169,4 @@ export const part2 = {
     paddingVertical: 2,
     textTransform: "uppercase"
   },
-  chatModelBadge: {
-    backgroundColor: "rgba(124, 241, 179, 0.1)",
-    borderColor: "rgba(124, 241, 179, 0.24)",
-    borderRadius: 999,
-    borderWidth: 1,
-    color: "#7CF1B3",
-    fontSize: 9,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    textTransform: "uppercase"
-  },
-  chatModelGroup: {
-    gap: 2
-  },
-  chatModelGroupTitle: {
-    color: "#8C879A",
-    fontSize: 10,
-    fontWeight: "900",
-    paddingHorizontal: 7,
-    paddingTop: 5,
-    textTransform: "uppercase"
-  },
-  chatModelMenu: {
-    backgroundColor: "#11131B",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 15,
-    borderWidth: 1,
-    bottom: 148,
-    gap: 4,
-    left: 0,
-    padding: 6,
-    position: "absolute",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.34,
-    shadowRadius: 24,
-    width: 304,
-    zIndex: 20
-  },
-  chatModelLockPill: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(201, 194, 214, 0.18)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    minHeight: 22,
-    paddingHorizontal: 7
-  },
-  chatModelLockText: {
-    color: "#C9C2D6",
-    fontSize: 10,
-    fontWeight: "900"
-  },
-};
+} as const;

@@ -1,129 +1,170 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part17 = {
-  communityPostStatLiked: {
-    color: "#FF9DBB"
-  },
-  communityPostTag: {
-    borderRadius: 999,
-    fontSize: 10,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 9,
-    paddingVertical: 5
-  },
-  communityPostTagBlue: {
-    backgroundColor: "rgba(37, 88, 178, 0.32)",
-    color: "#5792FF"
-  },
-  communityPostTagGreen: {
-    backgroundColor: "rgba(45, 177, 106, 0.18)",
-    color: "#51E895"
-  },
-  communityPostTagPurple: {
-    backgroundColor: "rgba(83, 31, 150, 0.52)",
-    color: "#B96DFF"
-  },
-  communityPostTags: {
+  filterRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6
+    gap: 8
   },
-  communityPostTime: {
-    color: "#A9A5B8",
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 2
+  fixedComposer: {
+    alignItems: "flex-end",
+    backgroundColor: "#0C0E14",
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    padding: 12
   },
-  communityPostTitle: {
+  bottomNav: {
+    alignItems: "center",
+    backgroundColor: "rgba(12, 15, 28, 0.96)",
+    borderColor: "rgba(119, 81, 178, 0.28)",
+    borderRadius: 30,
+    borderWidth: 1,
+    bottom: Platform.OS === "ios" ? 18 : 14,
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "space-between",
+    left: 18,
+    minHeight: 64,
+    padding: 6,
+    position: "absolute",
+    right: 18,
+    shadowColor: "#4A2E83",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.28,
+    shadowRadius: 24
+  },
+  bottomNavItem: {
+    alignItems: "center",
+    borderRadius: 20,
+    flex: 1,
+    gap: 3,
+    minHeight: 52,
+    justifyContent: "center",
+    paddingHorizontal: 2
+  },
+  bottomNavItemActive: {
+    backgroundColor: "rgba(99, 42, 210, 0.42)",
+    borderColor: "rgba(171, 89, 255, 0.38)",
+    borderWidth: 1
+  },
+  bottomNavText: {
+    color: "#A8A7BA",
+    fontSize: 10,
+    fontWeight: "900"
+  },
+  bottomNavTextActive: {
+    color: "#A95BFF"
+  },
+  iconOnlyButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  infoLabel: {
+    color: colors.dim,
+    fontSize: 13,
+    fontWeight: "800"
+  },
+  infoRow: {
+    alignItems: "center",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 52
+  },
+  infoValue: {
     color: colors.text,
-    fontSize: 16,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 20
+    fontSize: 14,
+    fontWeight: "900"
   },
-  communityPostTitleBlock: {
+  keyboard: {
+    flex: 1
+  },
+  main: {
+    backgroundColor: "#02030C",
     flex: 1,
     minWidth: 0
   },
-  communityPostTop: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12
+  messageBubble: {
+    display: "none"
   },
-  communityPostOpenButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(126, 72, 255, 0.18)",
-    borderColor: "rgba(183, 139, 255, 0.36)",
-    borderRadius: 10,
-    borderWidth: 1,
-    height: 32,
-    justifyContent: "center",
-    paddingHorizontal: 14
-  },
-  communityPostOpenText: {
-    color: "#D8C8FF",
-    fontSize: 12,
-    fontWeight: "900"
-  },
-  communityPostUser: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "900",
-    lineHeight: 17
-  },
-  communityPostSide: {
-    alignItems: "flex-end",
+  messageStack: {
     gap: 10,
-    justifyContent: "space-between"
+    minHeight: 500,
+    padding: 16
   },
-  communityPreview: {
-    backgroundColor: "rgba(10, 14, 25, 0.96)",
-    borderRadius: 7,
-    borderWidth: 1,
-    flexDirection: "row",
-    height: 84,
-    overflow: "hidden",
-    width: 122
+  messageAuthor: {
+    color: "#F2EFFB",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 18
   },
-  communityPreviewContent: {
-    flex: 1,
-    padding: 8
-  },
-  communityPreviewRow: {
-    backgroundColor: "rgba(255, 255, 255, 0.11)",
+  messageAvatar: {
+    alignItems: "center",
     borderRadius: 999,
-    height: 5,
-    marginTop: 5,
-    width: "86%"
+    height: 28,
+    justifyContent: "center",
+    marginTop: 2,
+    width: 28
   },
-  communityPreviewRows: {
-    marginTop: 6
+  messageAvatarAssistant: {
+    backgroundColor: "rgba(8, 10, 20, 0.92)",
+    borderColor: "rgba(139, 53, 255, 0.28)",
+    borderWidth: 1
   },
-  communityPreviewRowShort: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 999,
-    height: 5,
-    marginTop: 5,
-    width: "62%"
+  messageAvatarLogo: {
+    height: 18,
+    width: 18
   },
-  communityPreviewSidebar: {
-    backgroundColor: "rgba(15, 14, 28, 0.92)",
-    gap: 6,
-    paddingHorizontal: 7,
-    paddingTop: 9,
-    width: 32
-  },
-  communityPreviewSideDot: {
+  messageAvatarUser: {
     backgroundColor: "rgba(255, 255, 255, 0.16)",
-    borderRadius: 999,
-    height: 5,
-    width: 5
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 1
   },
-  communityPreviewTiny: {
-    color: "#DAD6EA",
-    fontSize: 7,
+  messageContent: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0
+  },
+  messageFile: {
+    color: "#9E98AD",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16
+  },
+  messageRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingBottom: 14,
+    paddingTop: 14
+  },
+  messageRowAssistant: {
+    backgroundColor: "transparent"
+  },
+  messageRowUser: {
+    backgroundColor: "transparent"
+  },
+  messageText: {
+    color: "#E7E3EF",
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 23
+  },
+  messageBody: {
+    gap: 6
+  },
+  messageBold: {
+    color: "#FFFFFF",
     fontWeight: "900"
   },
-};
+} as const;

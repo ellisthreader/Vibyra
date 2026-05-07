@@ -1,7 +1,26 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part4 = {
+  chatHistoryCardActive: {
+    backgroundColor: "rgba(31, 20, 54, 0.96)",
+    borderColor: "#B64FFF"
+  },
+  chatHistoryCardMeta: {
+    color: "#A9A5B8",
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  chatHistoryCardMetaActive: {
+    color: "#B64FFF"
+  },
+  chatHistoryCardTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 16
+  },
   chatHistoryHeader: {
     alignItems: "center",
     flexDirection: "row",
@@ -142,4 +161,15 @@ export const part4 = {
     shadowOpacity: 0.72,
     shadowRadius: 18
   },
-};
+  chatLandingPrimaryCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  chatLandingPrimaryGradient: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 13,
+    minHeight: 66,
+    paddingHorizontal: 17
+  },
+} as const;

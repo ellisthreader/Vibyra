@@ -1,7 +1,65 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part3 = {
+  chatModelBadge: {
+    backgroundColor: "rgba(124, 241, 179, 0.1)",
+    borderColor: "rgba(124, 241, 179, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#7CF1B3",
+    fontSize: 9,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    textTransform: "uppercase"
+  },
+  chatModelGroup: {
+    gap: 2
+  },
+  chatModelGroupTitle: {
+    color: "#8C879A",
+    fontSize: 10,
+    fontWeight: "900",
+    paddingHorizontal: 7,
+    paddingTop: 5,
+    textTransform: "uppercase"
+  },
+  chatModelMenu: {
+    backgroundColor: "#11131B",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 15,
+    borderWidth: 1,
+    bottom: 148,
+    gap: 4,
+    left: 0,
+    padding: 6,
+    position: "absolute",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.34,
+    shadowRadius: 24,
+    width: 304,
+    zIndex: 20
+  },
+  chatModelLockPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(201, 194, 214, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    minHeight: 22,
+    paddingHorizontal: 7
+  },
+  chatModelLockText: {
+    color: "#C9C2D6",
+    fontSize: 10,
+    fontWeight: "900"
+  },
   chatModelName: {
     color: colors.text,
     flex: 1,
@@ -113,22 +171,4 @@ export const part3 = {
     padding: 10,
     width: 132
   },
-  chatHistoryCardActive: {
-    backgroundColor: "rgba(31, 20, 54, 0.96)",
-    borderColor: "#B64FFF"
-  },
-  chatHistoryCardMeta: {
-    color: "#A9A5B8",
-    fontSize: 11,
-    fontWeight: "900"
-  },
-  chatHistoryCardMetaActive: {
-    color: "#B64FFF"
-  },
-  chatHistoryCardTitle: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "900",
-    lineHeight: 16
-  },
-};
+} as const;

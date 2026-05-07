@@ -7,68 +7,81 @@ use Illuminate\Support\Str;
 
 trait ChatPrompting
 {
-    private function chatMessages(Request $request, string $prompt): array
+    private function chatMessages(Request $request, string $prompt, ?array $skill = null): array
     {
         $project = trim((string) $request->input('project', ''));
         $filePath = trim((string) $request->input('filePath', ''));
         $fileBody = trim((string) $request->input('fileBody', ''));
+        $buildMode = ($skill['mode'] ?? null) === 'build' || $this->isBuildPrompt($prompt);
+        $history = $this->chatHistoryMessages((array) $request->input('history', []), $buildMode);
         $context = [];
-        $history = $this->chatHistoryMessages((array) $request->input('history', []));
 
         if ($project !== '') {
             $context[] = "Project: {$project}";
         }
 
         if ($filePath !== '' && $fileBody !== '') {
-            $context[] = "Current file {$filePath}:\n{$fileBody}";
+            $context[] = "File {$filePath}:\n".Str::limit($fileBody, 1200, '');
         }
 
-        $contextText = $context ? "\n\nContext:\n".implode("\n\n", $context) : '';
+        $contextText = $context ? "\n\n".implode("\n\n", $context) : '';
+        $userText = $this->applySkillTemplate($skill, $prompt, $filePath).$contextText;
+        $systemContent = $this->systemPrompt($buildMode);
+        $skillAddon = trim((string) ($skill['system_prompt_addon'] ?? ''));
+        if ($skillAddon !== '') {
+            $systemContent .= "\n".$skillAddon;
+        }
 
         return [
-            [
-                'role' => 'system',
-                'content' => implode("\n", [
-                    'You are Vibyra, a senior coding agent for an app builder. Answer like Codex or ChatGPT inside a developer chat.',
-                    'Be direct, specific, and useful. Do not invent file paths, components, or frameworks that are not in the provided context.',
-                    'If the user asks for a code change, explain the exact change briefly and prefer concrete next steps over generic tutorial text.',
-                    'Do not return placeholder comments like "Implement login logic here" unless the user explicitly asks for a sketch.',
-                    'When code is useful, keep it minimal and production-shaped. When no code is needed, answer in clean prose.',
-                    '',
-                    'RUNNABLE APP MODE — when the user asks you to build, create, make, or generate an app, tool, page, tracker, dashboard, calculator, game, or any interactive UI, you MUST respond with a runnable preview.',
-                    'Format the preview EXACTLY like this:',
-                    '',
-                    '<vibyra-app title="Short App Name">',
-                    '<!doctype html>',
-                    '<html>...complete self-contained HTML document with inline <style> and <script>...</html>',
-                    '</vibyra-app>',
-                    '',
-                    'Rules for the preview HTML:',
-                    '- ONE self-contained HTML document. No separate files. No imports of local files.',
-                    '- All CSS goes inside <style> tags. All JS goes inside <script> tags.',
-                    '- External resources are only allowed from these CDNs: cdn.jsdelivr.net, unpkg.com, cdn.tailwindcss.com, fonts.googleapis.com, fonts.gstatic.com.',
-                    '- Use localStorage for any persistence. Do not call backend APIs.',
-                    '- Make the UI look modern: dark theme by default (background near #0B0D17, text near #E7E3EF), rounded corners, generous spacing, sans-serif system font, mobile-friendly viewport meta tag.',
-                    '- The app must work on a phone-sized WebView (assume 375px width). Use responsive layout.',
-                    '- Include real interactive functionality, not placeholder copy.',
-                    '',
-                    'Before the <vibyra-app> block, write 1-2 short sentences introducing what you built. Do NOT include code blocks, file lists, install instructions, or "here is the HTML/CSS/JS" walkthroughs — the preview replaces all of that. Do NOT repeat the HTML outside the <vibyra-app> tags.',
-                    'If the user asks a non-build question (explanations, debugging, opinions), answer normally without a <vibyra-app> block.',
-                ]),
-            ],
+            ['role' => 'system', 'content' => $systemContent],
             ...$history,
-            [
-                'role' => 'user',
-                'content' => $prompt.$contextText,
-            ],
+            ['role' => 'user', 'content' => $userText],
         ];
     }
 
-    private function chatHistoryMessages(array $history): array
+    private function applySkillTemplate(?array $skill, string $prompt, string $filePath): string
+    {
+        $template = trim((string) ($skill['prompt_template'] ?? ''));
+        if ($template === '') {
+            return $prompt;
+        }
+        return trim(strtr($template, [
+            '{{prompt}}' => $prompt,
+            '{{file}}' => $filePath !== '' ? $filePath : 'the current context',
+        ]));
+    }
+
+    private function systemPrompt(bool $buildMode): string
+    {
+        if (! $buildMode) {
+            return 'You are Vibyra, a senior coding assistant. Be direct and concise. Prefer short answers and minimal code. Do not invent files or frameworks not shown in context.';
+        }
+
+        return implode("\n", [
+            'You are Vibyra, a senior coding agent for an app builder. Be direct and concise.',
+            'When the user asks to build/create/make an app, tool, page, dashboard, calculator, or game, return a runnable preview EXACTLY as:',
+            '<vibyra-app title="Short Name"><!doctype html><html>...self-contained HTML with inline <style> and <script>...</html></vibyra-app>',
+            'Rules: one self-contained HTML doc; CDNs only from cdn.jsdelivr.net, unpkg.com, cdn.tailwindcss.com, fonts.googleapis.com, fonts.gstatic.com; localStorage for persistence; dark theme (#0B0D17 bg, #E7E3EF text); responsive for 375px width; real interactive functionality.',
+            'Before the block, write 1-2 short sentences introducing what you built. Do NOT repeat the HTML or include walkthroughs.',
+        ]);
+    }
+
+    private function isBuildPrompt(string $prompt): bool
+    {
+        $p = Str::lower($prompt);
+        if (! preg_match('/\b(build|create|make|generate|design|prototype)\b/', $p)) {
+            return false;
+        }
+        return (bool) preg_match('/\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen)\b/', $p);
+    }
+
+    private function chatHistoryMessages(array $history, bool $buildMode): array
     {
         $messages = [];
+        $window = $buildMode ? 4 : 3;
+        $perMessage = $buildMode ? 1200 : 600;
 
-        foreach (array_slice($history, -8) as $item) {
+        foreach (array_slice($history, -$window) as $item) {
             if (! is_array($item)) {
                 continue;
             }
@@ -80,12 +93,9 @@ trait ChatPrompting
                 continue;
             }
 
-            $file = trim((string) ($item['file'] ?? ''));
-            $content = $file !== '' ? "File {$file}:\n{$text}" : $text;
-
             $messages[] = [
                 'role' => $role,
-                'content' => Str::limit($content, 2400, ''),
+                'content' => Str::limit($text, $perMessage, ''),
             ];
         }
 

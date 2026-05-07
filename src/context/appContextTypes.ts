@@ -58,6 +58,7 @@ export type AppState = {
   chatMessages: ChatMessage[];
   chatThreads: Record<string, ChatMessage[]>;
   chatTitles: Record<string, string>;
+  chatSkills: import("../utils/appApi").ChatSkill[];
   newFilePath: string;
   command: string;
   promptMoney: {
@@ -89,11 +90,19 @@ export type AppSetters = {
   setNewFilePath: (path: string) => void;
 };
 
+export type AgentStartTarget = {
+  projectId?: string;
+  project?: Project;
+  chatProjectId?: string;
+  file?: FileEntry | null;
+};
+
 export type AppActions = {
   authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => Promise<void>;
   completeOnboarding: () => void;
   confirmPhonePermission: () => void;
   discoverPairableDesktops: () => Promise<RememberedDesktop[]>;
+  connectRememberedDesktop: (desktop: RememberedDesktop) => Promise<boolean>;
   pairMachine: () => Promise<void>;
   pairMachineAt: (url: string, code: string) => Promise<void>;
   testDesktopConnection: () => Promise<boolean>;
@@ -101,7 +110,9 @@ export type AppActions = {
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
   selectProject: (projectId: string) => Promise<void>;
-  startAgent: () => Promise<void>;
+  startAgent: (target?: AgentStartTarget) => Promise<void>;
+  clearCurrentChat: (projectId?: string) => void;
+  addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget) => void;
   resetPromptMoney: () => void;
   loadDesktopFolders: () => Promise<Project[]>;
   searchDesktopFolders: (query: string) => Promise<Project[]>;

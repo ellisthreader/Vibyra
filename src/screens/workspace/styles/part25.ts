@@ -1,145 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part25 = {
-  profileUsageIcon: {
-    alignItems: "center",
-    backgroundColor: "rgba(30, 31, 48, 0.86)",
-    borderRadius: 12,
-    height: 43,
-    justifyContent: "center",
-    width: 43
+  renameChatCancelText: {
+    color: "#D8D3E4",
+    fontSize: 14,
+    fontWeight: "900"
   },
-  profileUsageItem: {
-    alignItems: "center",
+  renameChatCopy: {
     flex: 1,
-    flexDirection: "row",
-    gap: 10,
     minWidth: 0
   },
-  profileUsageLabel: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 17
+  renameChatDialog: {
+    backgroundColor: "rgba(9, 11, 21, 0.98)",
+    borderColor: "rgba(139, 53, 255, 0.32)",
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 14,
+    marginHorizontal: 18,
+    maxWidth: 420,
+    padding: 16,
+    shadowColor: "#8B35FF",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.24,
+    shadowRadius: 28,
+    width: "90%"
   },
-  profileUsageStrip: {
+  renameChatHeader: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 13,
-    minHeight: 58,
-    paddingHorizontal: 0
+    gap: 12
   },
-  profileUsageValue: {
-    color: colors.text,
-    fontSize: 21,
-    fontWeight: "900",
-    lineHeight: 25
-  },
-  projectsBackdrop: {
-    ...StyleSheet.absoluteFillObject
-  },
-  projectsBackdropImage: {
-    opacity: 0.44
-  },
-  projectsBackdropShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(5, 7, 17, 0.72)"
-  },
-  projectsCreateButton: {
-    alignSelf: "stretch",
+  renameChatIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderColor: "rgba(183, 139, 255, 0.28)",
     borderRadius: 12,
-    marginTop: 14,
-    maxWidth: 220,
-    minWidth: 178,
-    overflow: "hidden",
-    shadowColor: "#7130FF",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.32,
-    shadowRadius: 18
-  },
-  projectsCreateButtonPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.98 }]
-  },
-  projectsCreateGradient: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 9,
+    borderWidth: 1,
+    height: 42,
     justifyContent: "center",
-    minHeight: 46,
-    paddingHorizontal: 16
+    width: 42
   },
-  projectsCreateText: {
+  renameChatInput: {
+    backgroundColor: "rgba(16, 18, 30, 0.9)",
+    borderColor: "rgba(126, 124, 155, 0.28)",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    minHeight: 48,
+    paddingHorizontal: 13
+  },
+  renameChatOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    flex: 1,
+    justifyContent: "center"
+  },
+  renameChatSaveButton: {
+    alignItems: "center",
+    backgroundColor: "#8B35FF",
+    borderRadius: 11,
+    minHeight: 42,
+    paddingHorizontal: 18,
+    justifyContent: "center"
+  },
+  renameChatSaveText: {
     color: colors.text,
     fontSize: 14,
+    fontWeight: "900"
+  },
+  renameChatSubtitle: {
+    color: "#AFA9BB",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17,
+    marginTop: 2
+  },
+  renameChatTitle: {
+    color: colors.text,
+    fontSize: 18,
     fontWeight: "900",
-    flexShrink: 0,
-    lineHeight: 18
+    lineHeight: 22
   },
-  projectsFilterButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(15, 17, 29, 0.8)",
-    borderColor: "rgba(118, 101, 171, 0.3)",
-    borderRadius: 11,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: "center",
-    width: 44
-  },
-  projectsFilterButtonActive: {
-    backgroundColor: "rgba(96, 42, 168, 0.58)",
-    borderColor: "rgba(188, 104, 255, 0.64)"
-  },
-  projectsFilterLabel: {
-    color: "#A9A5B8",
-    fontSize: 12,
+  projectName: {
+    color: colors.text,
+    fontSize: 17,
     fontWeight: "900",
-    marginTop: -4,
-    paddingHorizontal: 2,
-    textTransform: "capitalize"
+    lineHeight: 20
   },
-  projectsFilterMenu: {
-    backgroundColor: "#0C0B18",
-    borderColor: "rgba(183, 121, 255, 0.24)",
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 3,
-    padding: 6,
-    position: "absolute",
-    right: 0,
-    shadowColor: "#8D36FF",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-    top: 50,
-    width: 154,
-    zIndex: 40
+  projectOpenButton: {
+    borderRadius: 9,
+    overflow: "hidden"
   },
-  projectsFilterMenuItem: {
+  projectOpenGradient: {
     alignItems: "center",
-    borderRadius: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: 37,
-    paddingHorizontal: 10
+    gap: 8,
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 12
   },
-  projectsFilterMenuItemActive: {
-    backgroundColor: "rgba(112, 51, 255, 0.18)"
-  },
-  projectsFilterMenuItemPressed: {
-    backgroundColor: "rgba(112, 51, 255, 0.24)"
-  },
-  projectsFilterMenuText: {
-    color: "#C9C1DC",
+  projectOpenText: {
+    color: colors.text,
     fontSize: 13,
     fontWeight: "900"
   },
-  projectsFilterMenuTextActive: {
-    color: "#E8E1FF"
+  projectRenameCancelButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(20, 22, 35, 0.78)",
+    borderColor: "rgba(104, 100, 124, 0.28)",
+    borderRadius: 9,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: "center",
+    width: 34
   },
-  projectsFilterWrap: {
-    position: "relative",
-    zIndex: 40
+  projectRenameDoneButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(89, 232, 160, 0.15)",
+    borderColor: "rgba(89, 232, 160, 0.32)",
+    borderRadius: 9,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 12
   },
-};
+  projectRenameDoneText: {
+    color: "#8EF4BA",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  projectRenameInput: {
+    backgroundColor: "rgba(21, 18, 38, 0.9)",
+    borderColor: "rgba(183, 121, 255, 0.34)",
+    borderRadius: 10,
+    borderWidth: 1,
+    color: colors.text,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "900",
+    lineHeight: 20,
+    minHeight: 34,
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  projectStackDot: {
+    backgroundColor: "#5C2FE8",
+    borderRadius: 999,
+    height: 7,
+    width: 7
+  },
+  projectStackRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8
+  },
+  projectStack: {
+    color: "#B9B5C8",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 15
+  },
+  projectStatusActive: {
+    backgroundColor: "rgba(45, 177, 106, 0.22)",
+    color: "#5AF19D"
+  },
+} as const;

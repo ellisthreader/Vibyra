@@ -1,29 +1,8 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part7 = {
-  chatResumeProgressFill: {
-    borderRadius: 999,
-    height: 4,
-    width: "30%"
-  },
-  chatResumeProgressTrack: {
-    backgroundColor: "rgba(34, 33, 53, 0.88)",
-    borderRadius: 999,
-    bottom: 9,
-    height: 4,
-    left: 14,
-    overflow: "hidden",
-    position: "absolute",
-    right: 14
-  },
-  chatResumeTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-    lineHeight: 22,
-    marginTop: 4
-  },
   chatPrimaryAction: {
     borderRadius: 16,
     flex: 1,
@@ -145,4 +124,48 @@ export const part7 = {
     height: 13,
     width: 13
   },
-};
+  chatProviderLogoOpenAi: {
+    tintColor: colors.text
+  },
+  chatSendButton: {
+    borderRadius: 13,
+    overflow: "hidden"
+  },
+  chatSendGradient: {
+    alignItems: "center",
+    height: 38,
+    justifyContent: "center",
+    width: 38
+  },
+  chatSuggestionCard: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(16, 18, 30, 0.74)",
+    borderColor: "rgba(126, 124, 155, 0.28)",
+    borderRadius: 11,
+    borderWidth: 1,
+    flexBasis: "47%",
+    flexGrow: 1,
+    gap: 6,
+    minHeight: 124,
+    justifyContent: "flex-start",
+    minWidth: 0,
+    overflow: "hidden",
+    padding: 12
+  },
+  chatSuggestionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 9,
+    marginTop: 19,
+    paddingHorizontal: 10,
+    width: "100%"
+  },
+  chatSuggestionIcon: {
+    alignItems: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+} as const;

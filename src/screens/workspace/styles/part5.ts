@@ -1,18 +1,8 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part5 = {
-  chatLandingPrimaryCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  chatLandingPrimaryGradient: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 13,
-    minHeight: 66,
-    paddingHorizontal: 17
-  },
   chatLandingPrimaryMeta: {
     color: "#D7C6FF",
     fontSize: 13,
@@ -149,4 +139,33 @@ export const part5 = {
   chatPreviewIconRunning: {
     backgroundColor: "rgba(43, 96, 79, 0.28)"
   },
-};
+  chatRecentActiveDot: {
+    backgroundColor: "#2EDB78",
+    borderRadius: 999,
+    height: 8,
+    left: -5,
+    position: "absolute",
+    shadowColor: "#2EDB78",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.95,
+    shadowRadius: 8,
+    top: 38,
+    width: 8
+  },
+  chatRecentBadge: {
+    backgroundColor: "rgba(111, 50, 191, 0.2)",
+    borderColor: "rgba(141, 72, 235, 0.22)",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: "#B678FF",
+    fontSize: 11,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 4
+  },
+  chatRecentCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+} as const;

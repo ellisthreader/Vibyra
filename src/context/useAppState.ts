@@ -77,6 +77,8 @@ export function useAppState() {
     longestPromptLength: 0
   });
 
+  const [chatSkills, setChatSkills] = useState<import("../utils/appApi").ChatSkill[]>([]);
+
   const chatMessages = chatThreads[selectedProjectId] ?? emptyChatMessages;
   const setChatMessages = useCallback<Dispatch<SetStateAction<ChatMessage[]>>>((update) => {
     setChatThreads((current) => {
@@ -146,6 +148,7 @@ export function useAppState() {
       machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
       workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
+      chatSkills,
       newFilePath, command, promptMoney
     },
     derived,
@@ -158,7 +161,8 @@ export function useAppState() {
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState,
       setPreviewState, setWorkflowIndex, setLastPrompt, setAgentRequesting,
-      setTaskText, setChatMessages, setChatThreads, setChatTitles, setNewFilePath, setCommand, setPromptMoney
+      setTaskText, setChatMessages, setChatThreads, setChatTitles, setChatSkills,
+      setNewFilePath, setCommand, setPromptMoney
     }
   };
 }

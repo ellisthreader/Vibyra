@@ -1,141 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part18 = {
-  communityPreviewValue: {
-    color: colors.text,
+  messageInlineCode: {
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderRadius: 4,
+    color: "#E2D6FF",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 13.5,
+    paddingHorizontal: 5,
+    paddingVertical: 1
+  },
+  messageCodeBlock: {
+    backgroundColor: "#0B0D17",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginVertical: 4,
+    overflow: "hidden"
+  },
+  messageCodeBlockHeader: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  messageCodeBlockLang: {
+    color: "#9E98AD",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
     fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase"
+  },
+  messageCodeBlockText: {
+    color: "#E5E2F0",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 13,
+    lineHeight: 19,
+    padding: 12
+  },
+  messageHeading1: {
+    color: "#FFFFFF",
+    fontSize: 19,
     fontWeight: "900",
+    lineHeight: 25,
     marginTop: 4
   },
-  communityReportButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255, 100, 128, 0.08)",
-    borderColor: "rgba(255, 100, 128, 0.22)",
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 42,
-    paddingHorizontal: 13
+  messageHeading2: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 23,
+    marginTop: 2
   },
-  communityReportText: {
-    color: "#FFB4C1",
-    fontSize: 13,
-    fontWeight: "900"
-  },
-  communityReportTextDone: {
-    color: "#B7FBD0"
-  },
-  communityTabPanel: {
-    gap: 14
-  },
-  communityDetailTopSave: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center",
-    marginRight: -8,
-    width: 44
-  },
-  communityScreen: {
-    flex: 1,
-    gap: 12,
-    paddingBottom: 8,
-    position: "relative"
-  },
-  communitySearchBar: {
-    alignItems: "center",
-    backgroundColor: "rgba(10, 13, 24, 0.8)",
-    borderColor: "rgba(118, 101, 171, 0.28)",
-    borderRadius: 11,
-    borderWidth: 1,
-    flex: 1,
-    flexDirection: "row",
-    gap: 10,
-    minHeight: 44,
-    paddingHorizontal: 14
-  },
-  communitySearchInput: {
-    color: colors.text,
-    flex: 1,
+  messageHeading3: {
+    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "800",
-    minHeight: 42
+    lineHeight: 21
   },
-  communitySearchRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10
-  },
-  communityTab: {
-    alignItems: "center",
-    backgroundColor: "rgba(18, 19, 30, 0.82)",
-    borderColor: "rgba(112, 105, 133, 0.32)",
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 36,
-    paddingHorizontal: 16
-  },
-  communityTabActive: {
-    backgroundColor: "rgba(96, 42, 168, 0.74)",
-    borderColor: "rgba(188, 104, 255, 0.78)",
-    shadowColor: "#A64BFF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.74,
-    shadowRadius: 12
-  },
-  communityTabs: {
+  messageListRow: {
     flexDirection: "row",
     gap: 8
   },
-  communityTabText: {
-    color: "#B5B0C3",
-    fontSize: 13,
-    fontWeight: "900"
+  messageBulletDot: {
+    color: "#B9B5C8",
+    fontSize: 15,
+    lineHeight: 23,
+    width: 12
   },
-  communityTabTextActive: {
-    color: colors.text
+  messageNumberedMarker: {
+    color: "#B9B5C8",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 23,
+    minWidth: 20
   },
-  content: {
-    flexGrow: 1,
-    paddingBottom: 126,
-    paddingHorizontal: 18,
-    paddingTop: 8
-  },
-  contentScroll: {
+  messageListText: {
     flex: 1
   },
-  dashboardContent: {
-    justifyContent: "space-between",
-    paddingBottom: 94,
-    paddingTop: 4
+  messageSpacer: {
+    height: 4
   },
-  projectsContent: {
-    paddingHorizontal: 8,
-    paddingTop: 10
-  },
-  dangerButton: {
+  typingIndicator: {
     alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255, 93, 122, 0.11)",
-    borderColor: "rgba(255, 93, 122, 0.26)",
-    borderRadius: 8,
+    flexDirection: "row",
+    gap: 5,
+    paddingTop: 6
+  },
+  typingDot: {
+    backgroundColor: "#B49CFF",
+    borderRadius: 4,
+    height: 7,
+    width: 7
+  },
+  appPreviewCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(142, 60, 255, 0.10)",
+    borderColor: "rgba(142, 60, 255, 0.35)",
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
-    minHeight: 42,
-    paddingHorizontal: 13
+    gap: 12,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12
   },
-  dangerButtonText: {
-    color: "#FFB4C1",
-    fontSize: 13,
-    fontWeight: "900"
+  appPreviewIcon: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 42,
+    justifyContent: "center",
+    width: 42
   },
-  emptyText: {
-    color: colors.dim,
-    fontSize: 14,
-    fontWeight: "700"
+  appPreviewBody: {
+    flex: 1,
+    minWidth: 0
   },
-};
+  appPreviewLabel: {
+    color: "#B49CFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+    textTransform: "uppercase"
+  },
+  appPreviewTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 2
+  },
+  appPreviewHint: {
+    color: "#AAA6BC",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2
+  },
+  appPreviewArrow: {
+    alignItems: "center",
+    height: 28,
+    justifyContent: "center",
+    width: 20
+  },
+  appModalScreen: {
+    backgroundColor: "#02030C",
+    flex: 1
+  },
+  appModalHeader: {
+    alignItems: "center",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  appModalIconButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  appModalTitleStack: {
+    flex: 1,
+    minWidth: 0
+  },
+} as const;

@@ -1,5 +1,6 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part1 = {
   avatar: {
@@ -171,29 +172,4 @@ export const part1 = {
     width: 80,
     zIndex: 2
   },
-  chatArtStarLarge: {
-    backgroundColor: "#C179FF",
-    height: 10,
-    left: 32,
-    position: "absolute",
-    top: 33,
-    transform: [{ rotate: "45deg" }],
-    width: 10
-  },
-  chatArtStarSmall: {
-    backgroundColor: "#9A4DFF",
-    height: 6,
-    position: "absolute",
-    right: 5,
-    top: 55,
-    transform: [{ rotate: "45deg" }],
-    width: 6
-  },
-  chatAssistantPanel: {
-    flex: 1,
-    gap: 0,
-    justifyContent: "flex-end",
-    minHeight: 0,
-    paddingBottom: Platform.OS === "ios" ? 8 : 2
-  },
-};
+} as const;

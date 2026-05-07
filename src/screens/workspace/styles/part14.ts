@@ -1,139 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part14 = {
-  communityHabitRing: {
+  communityMakerMiniAvatar: {
     alignItems: "center",
     borderRadius: 999,
-    borderWidth: 6,
-    height: 55,
+    height: 22,
     justifyContent: "center",
-    width: 55
+    width: 22
   },
-  communityHabitScore: {
+  communityMakerMiniAvatarText: {
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  communityMakerMiniDot: {
+    color: "#6F6A80",
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  communityMakerMiniName: {
+    color: "#DAD6EA",
+    fontSize: 12,
+    fontWeight: "900",
+    maxWidth: 118
+  },
+  communityMakerMiniRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7
+  },
+  communityMakerMiniTime: {
+    color: "#9D98AD",
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  communityDetailMakerLine: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 44
+  },
+  communityMakerRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  communityOpenedNotice: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(126, 72, 255, 0.1)",
+    borderColor: "rgba(183, 139, 255, 0.24)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 9,
+    padding: 12
+  },
+  communityOpenedText: {
+    color: "#CFC8DE",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 18
+  },
+  communityOpenButton: {
+    borderRadius: 13,
+    flex: 1,
+    overflow: "hidden"
+  },
+  communityOpenGradient: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    height: 44,
+    justifyContent: "center",
+    paddingHorizontal: 14
+  },
+  communityOpenText: {
     color: colors.text,
     fontSize: 14,
     fontWeight: "900"
   },
-  communityHabitText: {
-    fontSize: 9,
-    fontWeight: "900",
-    marginTop: 6
-  },
-  communityHabitLogoCore: {
-    borderRadius: 999,
-    height: 10,
-    width: 10
-  },
-  communityHabitLogoDot: {
-    backgroundColor: "rgba(255, 255, 255, 0.38)",
-    borderRadius: 999,
-    height: 4,
-    width: 4
-  },
-  communityHabitLogoDots: {
-    bottom: 8,
-    flexDirection: "row",
-    gap: 4,
-    position: "absolute"
-  },
-  communityHabitLogoRing: {
-    alignItems: "center",
-    borderRadius: 999,
-    borderWidth: 5,
-    justifyContent: "center",
-    opacity: 0.9
-  },
-  communityHabitDemoCopy: {
+  communityPrimaryOpenButton: {
+    borderRadius: 10,
     flex: 1,
-    minWidth: 0
+    height: 46,
+    minWidth: 0,
+    overflow: "hidden"
   },
-  communityHabitDemoDot: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 999,
-    height: 13,
-    width: 13
-  },
-  communityHabitDemoDotDone: {
-    backgroundColor: communityDetailAccent
-  },
-  communityHabitDemoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  communityHabitDemoRing: {
+  communityPrimaryOpenGradient: {
     alignItems: "center",
-    borderColor: "rgba(139, 53, 255, 0.7)",
-    borderRadius: 999,
-    borderWidth: 7,
-    height: 74,
+    flexDirection: "row",
+    gap: 12,
+    height: "100%",
     justifyContent: "center",
-    width: 74
+    paddingHorizontal: 14
   },
-  communityHabitDemoRingDone: {
-    borderColor: "#7CF1B3"
-  },
-  communityHabitDemoScore: {
+  communityPrimaryOpenText: {
     color: colors.text,
     fontSize: 16,
     fontWeight: "900"
   },
-  communityHabitDemoTop: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 13
-  },
-  communityHero: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    minHeight: 138,
-    paddingTop: 4
-  },
-  communityHeroCopy: {
-    flex: 1,
-    maxWidth: 320,
-    minWidth: 0
-  },
-  communityHeroImage: {
-    aspectRatio: 1536 / 1024,
-    flexShrink: 1,
-    height: 126,
-    maxWidth: 188,
-    minWidth: 112
-  },
-  communityHeroSubtitle: {
-    color: "#B5B0CA",
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 19
-  },
-  communityLineChart: {
-    flex: 1,
-    marginTop: 14,
-    overflow: "hidden",
-    position: "relative"
-  },
-  communityLinePoint: {
-    backgroundColor: "#5D32FF",
-    borderRadius: 999,
-    height: 5,
-    position: "absolute",
-    width: 5
-  },
-  communityLikeButton: {
+  communitySmallAction: {
     alignItems: "center",
     backgroundColor: "rgba(12, 15, 24, 0.5)",
     borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 10,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
+    gap: 7,
     height: 46,
     justifyContent: "center",
-    minWidth: 74,
-    paddingHorizontal: 13
+    minWidth: 78,
+    paddingHorizontal: 10
   },
-};
+  communitySmallActionText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityPictureCard: {
+    backgroundColor: "rgba(16, 18, 30, 0.78)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flex: 1,
+    gap: 8,
+    minWidth: 142,
+    padding: 10
+  },
+  communityPictureGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
+  communityDetailScreenshots: {
+    gap: 9
+  },
+  communityScreenshotGrid: {
+    flexDirection: "row",
+    gap: 9
+  },
+  communityScreenshotLabel: {
+    color: "#D8D3E4",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  communityScreenshotPreview: {
+    flex: 1,
+    gap: 7,
+    minWidth: 0
+  },
+  communityPostBadge: {
+    borderRadius: 999,
+    fontSize: 10,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 9,
+    paddingVertical: 5
+  },
+  communityPostBadgeBlue: {
+    backgroundColor: "rgba(37, 88, 178, 0.32)",
+    color: "#5792FF"
+  },
+  communityPostBadgeGreen: {
+    backgroundColor: "rgba(45, 177, 106, 0.2)",
+    color: "#51E895"
+  },
+  communityPostBadgePurple: {
+    backgroundColor: "rgba(83, 31, 150, 0.52)",
+    color: "#C975FF"
+  },
+} as const;

@@ -8,3 +8,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+
+# Obsidian vault local state. Keep notes, ignore app/workspace metadata.
+Vibyra/.obsidian/
+Vibyra/.trash/
+Vibyra/_attachments/
+Vibyra/_ai/Runs/

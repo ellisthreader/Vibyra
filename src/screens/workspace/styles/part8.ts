@@ -1,51 +1,8 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part8 = {
-  chatProviderLogoOpenAi: {
-    tintColor: colors.text
-  },
-  chatSendButton: {
-    borderRadius: 13,
-    overflow: "hidden"
-  },
-  chatSendGradient: {
-    alignItems: "center",
-    height: 38,
-    justifyContent: "center",
-    width: 38
-  },
-  chatSuggestionCard: {
-    alignItems: "flex-start",
-    backgroundColor: "rgba(16, 18, 30, 0.74)",
-    borderColor: "rgba(126, 124, 155, 0.28)",
-    borderRadius: 11,
-    borderWidth: 1,
-    flexBasis: "47%",
-    flexGrow: 1,
-    gap: 6,
-    minHeight: 124,
-    justifyContent: "flex-start",
-    minWidth: 0,
-    overflow: "hidden",
-    padding: 12
-  },
-  chatSuggestionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 9,
-    marginTop: 19,
-    paddingHorizontal: 10,
-    width: "100%"
-  },
-  chatSuggestionIcon: {
-    alignItems: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 34,
-    justifyContent: "center",
-    width: 34
-  },
   chatSuggestionText: {
     color: colors.text,
     flex: 1,
@@ -150,4 +107,63 @@ export const part8 = {
     shadowOpacity: 0.18,
     shadowRadius: 16
   },
-};
+  communityGeneratedLogoInner: {
+    alignItems: "center",
+    backgroundColor: "rgba(22, 11, 43, 0.36)",
+    height: "82%",
+    justifyContent: "center",
+    overflow: "hidden",
+    position: "relative",
+    width: "82%"
+  },
+  communityMiniCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    gap: 7,
+    minHeight: 112,
+    minWidth: 150,
+    padding: 14
+  },
+  communityPreviewGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
+  communityAnalytics: {
+    flex: 1,
+    padding: 11
+  },
+  communityAnalyticsLogoBar: {
+    borderRadius: 999,
+    width: 5
+  },
+  communityAnalyticsLogoBars: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 4,
+    height: "78%"
+  },
+  communityAuthorAvatar: {
+    alignItems: "center",
+    borderWidth: 1,
+    justifyContent: "center",
+    overflow: "hidden"
+  },
+  communityAuthorAvatarText: {
+    fontWeight: "900"
+  },
+  communityAvatar: {
+    alignItems: "center",
+    borderRadius: 9,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  communityAvatarText: {
+    fontSize: 18,
+    fontWeight: "900"
+  },
+} as const;

@@ -1,144 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part19 = {
-  filterChip: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8
+  appModalLabel: {
+    color: "#B49CFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+    textTransform: "uppercase"
   },
-  filterChipActive: {
-    backgroundColor: "rgba(167, 243, 208, 0.12)",
-    borderColor: "rgba(167, 243, 208, 0.28)"
+  appModalTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 2
   },
-  filterChipText: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "900"
+  appModalWebContainer: {
+    backgroundColor: "#0B0D17",
+    flex: 1
   },
-  filterChipTextActive: {
-    color: "#DDFCEB"
+  appModalWebView: {
+    backgroundColor: "transparent",
+    flex: 1
   },
-  filterRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
-  },
-  fixedComposer: {
-    alignItems: "flex-end",
-    backgroundColor: "#0C0E14",
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    padding: 12
-  },
-  bottomNav: {
+  appModalLoader: {
     alignItems: "center",
-    backgroundColor: "rgba(12, 15, 28, 0.96)",
-    borderColor: "rgba(119, 81, 178, 0.28)",
-    borderRadius: 30,
-    borderWidth: 1,
-    bottom: Platform.OS === "ios" ? 18 : 14,
-    flexDirection: "row",
-    gap: 6,
-    justifyContent: "space-between",
-    left: 18,
-    minHeight: 64,
-    padding: 6,
-    position: "absolute",
-    right: 18,
-    shadowColor: "#4A2E83",
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24
-  },
-  bottomNavItem: {
-    alignItems: "center",
-    borderRadius: 20,
+    backgroundColor: "#0B0D17",
     flex: 1,
-    gap: 3,
-    minHeight: 52,
     justifyContent: "center",
-    paddingHorizontal: 2
+    ...StyleSheet.absoluteFillObject
   },
-  bottomNavItemActive: {
-    backgroundColor: "rgba(99, 42, 210, 0.42)",
-    borderColor: "rgba(171, 89, 255, 0.38)",
-    borderWidth: 1
+  pageHeader: {
+    alignItems: "flex-start",
+    flexDirection: "column",
+    gap: 16,
+    justifyContent: "space-between"
   },
-  bottomNavText: {
-    color: "#A8A7BA",
-    fontSize: 10,
-    fontWeight: "900"
+  pageHeaderCopy: {
+    flex: 1,
+    minWidth: 0
   },
-  bottomNavTextActive: {
-    color: "#A95BFF"
+  pageStack: {
+    flex: 1,
+    gap: 16,
+    minHeight: "100%"
   },
-  iconOnlyButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  pageTitle: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 36
+  },
+  postCard: {
+    alignItems: "flex-start",
+    backgroundColor: "#101219",
     borderColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 8,
     borderWidth: 1,
-    height: 36,
-    justifyContent: "center",
-    width: 36
-  },
-  infoLabel: {
-    color: colors.dim,
-    fontSize: 13,
-    fontWeight: "800"
-  },
-  infoRow: {
-    alignItems: "center",
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    borderBottomWidth: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: 52
+    gap: 12,
+    padding: 14
   },
-  infoValue: {
+  postContent: {
+    flex: 1,
+    minWidth: 0
+  },
+  postTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 22,
+    marginTop: 4
+  },
+  postTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  postUser: {
+    color: "#DDFCEB",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  previousChat: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 148,
+    padding: 10
+  },
+  previousChatsRail: {
+    gap: 8,
+    paddingRight: 4
+  },
+  previousChatActive: {
+    borderColor: "rgba(167, 243, 208, 0.3)"
+  },
+  previousChatMeta: {
+    color: colors.dim,
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 4
+  },
+  previousChatTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  primaryButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 44,
+    paddingHorizontal: 14
+  },
+  primaryButtonText: {
     color: colors.text,
     fontSize: 14,
     fontWeight: "900"
   },
-  keyboard: {
-    flex: 1
-  },
-  main: {
-    backgroundColor: "#02030C",
-    flex: 1,
-    minWidth: 0
-  },
-  messageBubble: {
-    display: "none"
-  },
-  messageStack: {
-    gap: 10,
-    minHeight: 500,
-    padding: 16
-  },
-  messageAuthor: {
-    color: "#F2EFFB",
-    fontSize: 13,
-    fontWeight: "900",
-    lineHeight: 18
-  },
-  messageAvatar: {
+  profileAvatar: {
     alignItems: "center",
-    borderRadius: 999,
-    height: 28,
+    backgroundColor: "rgba(167, 243, 208, 0.12)",
+    borderRadius: 8,
+    height: 62,
     justifyContent: "center",
-    marginTop: 2,
-    width: 28
+    width: 62
   },
-  messageAvatarAssistant: {
-    backgroundColor: "rgba(8, 10, 20, 0.92)",
-    borderColor: "rgba(139, 53, 255, 0.28)",
-    borderWidth: 1
+  profileAvatarText: {
+    color: "#DDFCEB",
+    fontSize: 24,
+    fontWeight: "900"
   },
-};
+  profileHero: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    marginBottom: 8
+  },
+  profileMeta: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 3
+  },
+  profileName: {
+    color: colors.text,
+    fontSize: 23,
+    fontWeight: "900",
+    letterSpacing: 0
+  },
+  profileAvatarLarge: {
+    alignItems: "center",
+    backgroundColor: "rgba(64, 24, 112, 0.82)",
+    borderColor: "#A84BFF",
+    borderRadius: 999,
+    borderWidth: 4,
+    height: 72,
+    justifyContent: "center",
+    shadowColor: "#8F35FF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.74,
+    shadowRadius: 16,
+    width: 72
+  },
+} as const;

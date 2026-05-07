@@ -35,6 +35,8 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
       const nextFiles = dedupeFiles(result.files);
       setters.setProjects(result.projects);
       setters.setSelectedProjectId(result.project.id);
+      setters.setChatThreads((current) => ({ ...current, [result.project.id]: [] }));
+      setters.setChatTitles((current) => ({ ...current, [result.project.id]: result.project.name }));
       setters.setFiles(nextFiles);
       setters.setSelectedFileId(nextFiles[0]?.id ?? "empty");
       setters.setPreviewState("live");
@@ -147,6 +149,7 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     const project = makeLocalProject();
     setters.setProjects((current) => [project, ...current]);
     setters.setSelectedProjectId(project.id);
+    setters.setChatThreads((current) => ({ ...current, [project.id]: [] }));
     setters.setChatTitles((current) => ({ ...current, [project.id]: "New chat" }));
     setters.setFiles([]);
     setters.setSelectedFileId("empty");

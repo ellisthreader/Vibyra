@@ -43,8 +43,10 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
         if (cancelled) return;
         setters.setLogs(result.events);
         if (result.preview?.state) setters.setPreviewState(result.preview.state);
-        if (result.selectedProjectId) setters.setSelectedProjectId(result.selectedProjectId);
         const activeAgentRun = result.activeAgentRun;
+        if (activeAgentRun?.projectId && result.selectedProjectId === activeAgentRun.projectId) {
+          setters.setSelectedProjectId(activeAgentRun.projectId);
+        }
         if (activeAgentRun) {
           setters.setAgents((current) => syncLiveAgentProgress(current, activeAgentRun));
         }

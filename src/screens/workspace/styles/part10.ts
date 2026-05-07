@@ -1,86 +1,8 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part10 = {
-  communityAnalyticsRangeTextActive: {
-    color: colors.text
-  },
-  communityAppExperience: {
-    backgroundColor: "rgba(8, 11, 22, 0.9)",
-    borderColor: "rgba(139, 53, 255, 0.34)",
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 13,
-    padding: 14,
-    shadowColor: communityDetailAccent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18
-  },
-  communityAppExperienceHeader: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between"
-  },
-  communityAppExperienceKicker: {
-    color: "#BFAEFF",
-    fontSize: 11,
-    fontWeight: "900",
-    textTransform: "uppercase"
-  },
-  communityAppExperienceTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900",
-    lineHeight: 22,
-    marginTop: 3
-  },
-  communityOpenedAppCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  communityOpenedAppIntro: {
-    alignItems: "center",
-    backgroundColor: "rgba(8, 11, 22, 0.78)",
-    borderColor: "rgba(139, 53, 255, 0.22)",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 13,
-    padding: 14
-  },
-  communityOpenedAppKicker: {
-    color: "#BFAEFF",
-    fontSize: 12,
-    fontWeight: "900",
-    textTransform: "uppercase"
-  },
-  communityOpenedAppScreen: {
-    flexGrow: 1,
-    gap: 14,
-    paddingBottom: 18
-  },
-  communityOpenedAppSubtitle: {
-    color: "#BDB8C7",
-    fontSize: 13,
-    fontWeight: "700",
-    lineHeight: 18,
-    marginTop: 5
-  },
-  communityOpenedAppTitle: {
-    color: colors.text,
-    fontSize: 21,
-    fontWeight: "900",
-    lineHeight: 25,
-    marginTop: 3
-  },
-  communityAppLiveDot: {
-    backgroundColor: "#7CF1B3",
-    borderRadius: 999,
-    height: 7,
-    width: 7
-  },
   communityAppLivePill: {
     alignItems: "center",
     backgroundColor: "rgba(124, 241, 179, 0.1)",
@@ -143,4 +65,110 @@ export const part10 = {
     fontSize: 14,
     fontWeight: "900"
   },
-};
+  communityCommentHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  communityCommentComposer: {
+    alignItems: "flex-end",
+    backgroundColor: "rgba(10, 13, 24, 0.84)",
+    borderColor: "rgba(139, 53, 255, 0.28)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    padding: 8
+  },
+  communityCommentError: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(255, 107, 154, 0.1)",
+    borderColor: "rgba(255, 157, 174, 0.26)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    padding: 10
+  },
+  communityCommentErrorText: {
+    color: "#FFB4C1",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  communityCommentInput: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 19,
+    maxHeight: 86,
+    minHeight: 39,
+    paddingHorizontal: 6,
+    paddingTop: 9
+  },
+  communityCommentName: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  communityCommentNameRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  communityCommentPostButton: {
+    alignItems: "center",
+    backgroundColor: communityDetailAccent,
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 38,
+    paddingHorizontal: 12
+  },
+  communityCommentPostButtonDisabled: {
+    opacity: 0.42
+  },
+  communityCommentPostText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityCommentRow: {
+    alignItems: "flex-start",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingBottom: 12
+  },
+  communityCommentSection: {
+    gap: 12,
+    paddingTop: 2
+  },
+  communityCommentText: {
+    color: "#BDB7CA",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: 3
+  },
+  communityCommentTime: {
+    color: "#B8B2C4",
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  communityDefaultLogoBlade: {
+    borderRadius: 999,
+    opacity: 0.82,
+    position: "absolute",
+    transform: [{ rotate: "34deg" }]
+  },
+  communityDefaultLogoBladeAlt: {
+    backgroundColor: "rgba(255, 255, 255, 0.68)",
+    opacity: 0.72,
+    transform: [{ rotate: "-42deg" }]
+  },
+} as const;

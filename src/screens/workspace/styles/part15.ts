@@ -1,138 +1,173 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part15 = {
-  communityMetricCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderRadius: 6,
+  communityPostBody: {
     flex: 1,
-    padding: 6
-  },
-  communityMetricDelta: {
-    color: "#51E895",
-    fontSize: 8,
-    fontWeight: "900",
-    marginTop: 2
-  },
-  communityMetricRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 11
-  },
-  communityMetricValue: {
-    color: colors.text,
-    fontSize: 10,
-    fontWeight: "900"
-  },
-  communityMakerBio: {
-    color: "#BDB8C7",
-    fontSize: 14,
-    fontWeight: "700",
-    lineHeight: 20,
-    marginTop: 2
-  },
-  communityMakerCopy: {
-    flex: 1,
-    justifyContent: "center",
+    gap: 8,
     minWidth: 0
   },
-  communityMakerName: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-    lineHeight: 22
+  communityPostCard: {
+    backgroundColor: "rgba(8, 13, 24, 0.86)",
+    borderColor: "rgba(128, 106, 180, 0.26)",
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    minHeight: 142,
+    padding: 13
   },
-  communityMakerMiniAvatar: {
-    alignItems: "center",
-    borderRadius: 999,
-    height: 22,
-    justifyContent: "center",
-    width: 22
+  communityPostCardPressed: {
+    borderColor: "rgba(183, 139, 255, 0.54)",
+    opacity: 0.88,
+    transform: [{ scale: 0.99 }]
   },
-  communityMakerMiniAvatarText: {
-    fontSize: 11,
-    fontWeight: "900"
-  },
-  communityMakerMiniDot: {
-    color: "#6F6A80",
-    fontSize: 11,
-    fontWeight: "900"
-  },
-  communityMakerMiniName: {
-    color: "#DAD6EA",
+  communityPostDescription: {
+    color: "#B2AFC1",
     fontSize: 12,
-    fontWeight: "900",
-    maxWidth: 118
+    fontWeight: "800",
+    lineHeight: 16,
+    marginTop: 4
   },
-  communityMakerMiniRow: {
+  communityPostBottom: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 7
+    gap: 9,
+    justifyContent: "space-between"
   },
-  communityMakerMiniTime: {
-    color: "#9D98AD",
-    fontSize: 11,
-    fontWeight: "800"
-  },
-  communityDetailMakerLine: {
-    alignItems: "center",
+  communityPostLeft: {
+    flex: 1,
     flexDirection: "row",
     gap: 10,
-    minHeight: 44
+    minWidth: 0
   },
-  communityMakerRow: {
+  communityPostStat: {
     alignItems: "center",
+    flexDirection: "row",
+    gap: 6
+  },
+  communityPostStats: {
+    alignItems: "center",
+    flexDirection: "row",
+    flex: 1,
+    gap: 14
+  },
+  communityPostStatText: {
+    color: "#B7B4C8",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  communityPostStatLiked: {
+    color: "#FF9DBB"
+  },
+  communityPostTag: {
+    borderRadius: 999,
+    fontSize: 10,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 9,
+    paddingVertical: 5
+  },
+  communityPostTagBlue: {
+    backgroundColor: "rgba(37, 88, 178, 0.32)",
+    color: "#5792FF"
+  },
+  communityPostTagGreen: {
+    backgroundColor: "rgba(45, 177, 106, 0.18)",
+    color: "#51E895"
+  },
+  communityPostTagPurple: {
+    backgroundColor: "rgba(83, 31, 150, 0.52)",
+    color: "#B96DFF"
+  },
+  communityPostTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6
+  },
+  communityPostTime: {
+    color: "#A9A5B8",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2
+  },
+  communityPostTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 20
+  },
+  communityPostTitleBlock: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityPostTop: {
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 12
   },
-  communityOpenedNotice: {
-    alignItems: "flex-start",
-    backgroundColor: "rgba(126, 72, 255, 0.1)",
-    borderColor: "rgba(183, 139, 255, 0.24)",
-    borderRadius: 13,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 9,
-    padding: 12
-  },
-  communityOpenedText: {
-    color: "#CFC8DE",
-    flex: 1,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 18
-  },
-  communityOpenButton: {
-    borderRadius: 13,
-    flex: 1,
-    overflow: "hidden"
-  },
-  communityOpenGradient: {
+  communityPostOpenButton: {
     alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    height: 44,
+    backgroundColor: "rgba(126, 72, 255, 0.18)",
+    borderColor: "rgba(183, 139, 255, 0.36)",
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 32,
     justifyContent: "center",
     paddingHorizontal: 14
   },
-  communityOpenText: {
-    color: colors.text,
-    fontSize: 14,
+  communityPostOpenText: {
+    color: "#D8C8FF",
+    fontSize: 12,
     fontWeight: "900"
   },
-  communityPrimaryOpenButton: {
-    borderRadius: 10,
-    flex: 1,
-    height: 46,
-    minWidth: 0,
-    overflow: "hidden"
+  communityPostUser: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 17
   },
-  communityPrimaryOpenGradient: {
-    alignItems: "center",
+  communityPostSide: {
+    alignItems: "flex-end",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  communityPreview: {
+    backgroundColor: "rgba(10, 14, 25, 0.96)",
+    borderRadius: 7,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 12,
-    height: "100%",
-    justifyContent: "center",
-    paddingHorizontal: 14
+    height: 84,
+    overflow: "hidden",
+    width: 122
   },
-};
+  communityPreviewContent: {
+    flex: 1,
+    padding: 8
+  },
+  communityPreviewRow: {
+    backgroundColor: "rgba(255, 255, 255, 0.11)",
+    borderRadius: 999,
+    height: 5,
+    marginTop: 5,
+    width: "86%"
+  },
+  communityPreviewRows: {
+    marginTop: 6
+  },
+  communityPreviewRowShort: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 999,
+    height: 5,
+    marginTop: 5,
+    width: "62%"
+  },
+  communityPreviewSidebar: {
+    backgroundColor: "rgba(15, 14, 28, 0.92)",
+    gap: 6,
+    paddingHorizontal: 7,
+    paddingTop: 9,
+    width: 32
+  },
+} as const;

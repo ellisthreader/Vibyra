@@ -1,7 +1,7 @@
 import * as Haptics from "expo-haptics";
 import { LogEvent, RememberedDesktop } from "../types/domain";
 import { impact } from "../utils/haptics";
-import { getDesktopCandidates } from "../utils/network";
+import { getDesktopCandidates, normalizeAgentUrl } from "../utils/network";
 import { useAppState } from "./useAppState";
 import { mergeRememberedDesktops } from "./pairingHelpers";
 import { findDesktopByCode, requestPairAtUrl, waitForDesktopApproval } from "./pairingDiscovery";
@@ -17,6 +17,14 @@ type Logs = {
 };
 type Files = {
   loadProjectFilesWithConnection: (url: string, token: string, projectId: string) => Promise<void>;
+};
+type EstablishedConnection = {
+  url: string;
+  token: string;
+  machineName: string;
+  pairCode: string;
+  projects: State["projects"];
+  events: LogEvent[];
 };
 
 export function usePairingActions(state: State, setters: Setters, requests: Requests, logs: Logs, files: Files) {
@@ -121,13 +129,53 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
   function confirmPhonePermission() {
     if (!state.pendingPhoneApproval) return;
     const result = state.pendingPhoneApproval;
+    establishConnection({
+      url: result.url,
+      token: result.token,
+      machineName: result.machineName,
+      pairCode: state.pairCode.trim().toUpperCase() || "PAIRED",
+      projects: result.projects,
+      events: result.events
+    });
+  }
+
+  async function connectRememberedDesktop(desktop: RememberedDesktop) {
+    if (!desktop.token) return false;
+
+    try {
+      const result = await requests.desktopRequest<{ projects: State["projects"] }>(
+        normalizeAgentUrl(desktop.url),
+        "/projects",
+        { headers: { Authorization: `Bearer ${desktop.token}` } },
+        3000
+      );
+      establishConnection({
+        url: desktop.url,
+        token: desktop.token,
+        machineName: desktop.machineName,
+        pairCode: desktop.pairCode,
+        projects: result.projects ?? [],
+        events: []
+      });
+      setters.setPairingError("");
+      setters.setPairingMessage(`Reconnected to ${desktop.machineName}.`);
+      return true;
+    } catch {
+      setters.setRememberedDesktops(mergeRememberedDesktops(state.rememberedDesktops, [{ ...desktop, status: "offline" }]));
+      return false;
+    }
+  }
+
+  function establishConnection(result: EstablishedConnection) {
     setters.setConnection({ url: result.url, token: result.token, machineName: result.machineName });
     setters.setMachineName(result.machineName);
     setters.setAgentUrl(result.url);
+    setters.setPairCode(result.pairCode);
     setters.setRememberedDesktops(mergeRememberedDesktops(state.rememberedDesktops, [{
       url: result.url,
       machineName: result.machineName,
-      pairCode: state.pairCode.trim().toUpperCase() || "PAIRED",
+      pairCode: result.pairCode,
+      token: result.token,
       status: "current",
       lastConnectedAt: new Date().toISOString(),
       lastSeenAt: new Date().toISOString()
@@ -165,5 +213,5 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     }
   }
 
-  return { confirmPhonePermission, discoverPairableDesktops, pairMachine, pairMachineAt, testDesktopConnection };
+  return { confirmPhonePermission, connectRememberedDesktop, discoverPairableDesktops, pairMachine, pairMachineAt, testDesktopConnection };
 }

@@ -79,6 +79,7 @@ export type RememberedDesktop = {
   url: string;
   machineName: string;
   pairCode: string;
+  token?: string;
   status: DesktopStatus;
   lastSeenAt?: string;
   lastConnectedAt?: string;

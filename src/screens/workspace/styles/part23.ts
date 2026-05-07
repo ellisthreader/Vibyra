@@ -1,132 +1,172 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part23 = {
-  profileEditButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(35, 35, 49, 0.86)",
-    borderColor: "rgba(113, 108, 132, 0.32)",
-    borderRadius: 13,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 39,
-    paddingHorizontal: 16
+  projectsScreen: {
+    flex: 1,
+    gap: 14,
+    minHeight: "100%",
+    paddingBottom: 18,
+    paddingHorizontal: 10,
+    position: "relative"
   },
-  profileEditText: {
+  projectsSearchBar: {
+    alignItems: "center",
+    backgroundColor: "rgba(10, 13, 24, 0.8)",
+    borderColor: "rgba(118, 101, 171, 0.28)",
+    borderRadius: 11,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 44,
+    paddingHorizontal: 14
+  },
+  projectsSearchInput: {
     color: colors.text,
-    fontSize: 13,
-    fontWeight: "900"
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    minHeight: 42
   },
-  profileGroup: {
-    backgroundColor: "rgba(10, 13, 24, 0.74)",
-    borderColor: "rgba(125, 120, 142, 0.24)",
-    borderRadius: 12,
+  projectsSearchRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    zIndex: 30
+  },
+  projectsSearchRowMenuOpen: {
+    zIndex: 50
+  },
+  projectCard: {
+    alignSelf: "stretch",
+    backgroundColor: "rgba(7, 10, 20, 0.86)",
+    borderColor: "rgba(128, 106, 180, 0.26)",
+    borderRadius: 16,
     borderWidth: 1,
-    overflow: "hidden",
-    paddingHorizontal: 13
+    overflow: "visible",
+    padding: 16,
+    position: "relative",
+    width: "100%"
   },
-  profileGroupDangerTitle: {
-    color: "#FF5D5D"
+  projectCardActive: {
+    borderColor: "rgba(79, 221, 154, 0.54)"
   },
-  profileGroupTitle: {
-    color: "#A8A2B6",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 0,
-    marginBottom: 8
+  projectCardMenuOpen: {
+    zIndex: 20
   },
-  profileHeader: {
-    paddingHorizontal: 12,
-    paddingTop: 24
+  projectCardStatusActive: {
+    borderColor: "rgba(89, 232, 160, 0.42)"
   },
-  profileContent: {
-    paddingBottom: Platform.OS === "ios" ? 104 : 98,
-    paddingHorizontal: 28,
-    paddingTop: 16
+  projectCardStatusArchived: {
+    borderColor: "rgba(170, 166, 188, 0.28)"
   },
-  profileDivider: {
-    backgroundColor: "rgba(125, 120, 142, 0.26)",
-    height: 1,
-    marginTop: 12
+  projectCardStatusCompleted: {
+    borderColor: "rgba(190, 98, 255, 0.42)"
   },
-  profileHeroCard: {
-    gap: 0
+  projectCardStatusDraft: {
+    borderColor: "rgba(146, 134, 174, 0.32)"
   },
-  profileHeroTop: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 34,
-    paddingHorizontal: 8
-  },
-  profilePlanBadge: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(126, 30, 188, 0.18)",
-    borderColor: "rgba(194, 89, 255, 0.45)",
-    borderRadius: 10,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 10,
-    minHeight: 28,
-    paddingHorizontal: 11
-  },
-  profilePlanBadgeText: {
-    color: "#C259FF",
-    fontSize: 14,
-    fontWeight: "900"
-  },
-  profileRow: {
-    alignItems: "center",
-    borderBottomColor: "rgba(125, 120, 142, 0.18)",
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    minHeight: 38
-  },
-  profileRowActive: {
-    backgroundColor: "rgba(126, 72, 255, 0.035)"
-  },
-  profileRowBadge: {
-    backgroundColor: "rgba(45, 177, 106, 0.2)",
-    borderRadius: 999,
-    color: "#6FEA8E",
-    fontSize: 13,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 12,
-    paddingVertical: 6
-  },
-  profileRowCopy: {
+  projectCardCopy: {
     flex: 1,
     minWidth: 0
   },
-  profileRowIcon: {
+  projectCardFooter: {
     alignItems: "center",
-    backgroundColor: "rgba(79, 32, 129, 0.28)",
-    borderRadius: 9,
-    height: 28,
-    justifyContent: "center",
-    width: 28
+    flexDirection: "row",
+    gap: 10
   },
-  profileRowIconDanger: {
-    backgroundColor: "rgba(255, 70, 92, 0.11)"
+  projectCardFooterComfort: {
+    flexWrap: "wrap"
   },
-  profileRowLabel: {
-    color: colors.text,
+  projectCardFooterStacked: {
+    alignItems: "stretch",
+    flexDirection: "column",
+    gap: 10
+  },
+  projectCardMain: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12
+  },
+  projectCardRight: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 12,
+    paddingTop: 1,
+    position: "relative",
+    zIndex: 10
+  },
+  projectCardTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  projectDivider: {
+    backgroundColor: "rgba(132, 128, 151, 0.16)",
+    height: 1,
+    marginBottom: 10,
+    marginTop: 12,
+    width: "100%"
+  },
+  projectFooterActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginLeft: "auto"
+  },
+  projectFooterActionsComfort: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7,
+    marginLeft: "auto"
+  },
+  projectFooterActionsStacked: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flexDirection: "row",
+    gap: 7,
+    justifyContent: "flex-end"
+  },
+  projectFooterDetails: {
+    alignItems: "center",
     flex: 1,
+    flexDirection: "row",
+    gap: 10,
+    minWidth: 0
+  },
+  projectFooterDetailsStacked: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 9
+  },
+  projectFooterMeta: {
+    alignItems: "center",
+    flexShrink: 1,
+    flexDirection: "row",
+    gap: 5,
+    minWidth: 0
+  },
+  projectFooterText: {
+    color: "#AAA6BC",
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  projectDeleteActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 22,
+    width: "100%"
+  },
+  projectDeleteBody: {
+    color: "#B8B1C9",
     fontSize: 14,
-    fontWeight: "900",
-    lineHeight: 18
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 8,
+    textAlign: "center"
   },
-  profileRowLabelDanger: {
-    color: "#FF465C"
-  },
-  profileRowLast: {
-    borderBottomWidth: 0
-  },
-  profileRowPressed: {
-    opacity: 0.74
-  },
-};
+} as const;

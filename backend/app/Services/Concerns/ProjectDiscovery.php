@@ -120,6 +120,6 @@ trait ProjectDiscovery
             return $desktopMatch;
         }
 
-        return $state['projects'][0] ?? null;
+        return null;
     }
 }

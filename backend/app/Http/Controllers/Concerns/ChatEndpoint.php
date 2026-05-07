@@ -14,6 +14,8 @@ trait ChatEndpoint
     {
         $user = $this->authenticatedUser($request);
         $prompt = trim((string) $request->input('prompt', ''));
+        $skillId = trim((string) $request->input('skill', ''));
+        $skill = $skillId !== '' ? $this->resolveSkill($skillId) : null;
         $modelKey = trim((string) $request->input('model', 'auto')) ?: 'auto';
         $openRouterModel = $this->resolveOpenRouterModel($modelKey);
         $creditCost = $this->creditCost($modelKey);
@@ -46,8 +48,9 @@ trait ChatEndpoint
                 ])
                 ->post((string) config('services.openrouter.url'), [
                     'model' => $openRouterModel,
-                    'messages' => $this->chatMessages($request, $prompt),
+                    'messages' => $this->chatMessages($request, $prompt, $skill),
                     'temperature' => 0.25,
+                    'max_completion_tokens' => $this->resolveMaxTokens($prompt, $skill),
                 ]);
         } catch (Throwable) {
             return $this->json(['ok' => false, 'error' => 'Could not reach OpenRouter. Please try again.'], 502);
@@ -82,6 +85,25 @@ trait ChatEndpoint
             'creditsUsed' => $user->credits_used,
             'user' => $this->userPayload($user),
         ]);
+    }
+
+    private function resolveSkill(string $id): ?array
+    {
+        foreach ((array) config('skills.list', []) as $skill) {
+            if (($skill['id'] ?? null) === $id) {
+                return $skill;
+            }
+        }
+        return null;
+    }
+
+    private function resolveMaxTokens(string $prompt, ?array $skill): int
+    {
+        $mode = $skill['mode'] ?? null;
+        if ($mode === 'build' || ($mode === null && $this->isBuildPrompt($prompt))) {
+            return 3000;
+        }
+        return 800;
     }
 
     private function extractRunnableApp(string $reply): array

@@ -24,6 +24,20 @@ export type SessionResponse = {
   user: RemoteUser;
 };
 
+export type ChatSkill = {
+  id: string;
+  slash: string;
+  label: string;
+  description: string;
+  category: string;
+  mode: "chat" | "build";
+};
+
+export type SkillsResponse = {
+  ok: boolean;
+  skills: ChatSkill[];
+};
+
 export type ChatResponse = {
   ok: boolean;
   reply: string;
