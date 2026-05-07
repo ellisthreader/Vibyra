@@ -1,6 +1,6 @@
 import { Agent, CodeChange, FileEntry, LogEvent, ModelKey, Project, ReasoningEffort } from "../types/domain";
 
-export const DESKTOP_RELAY_URL = "https://creates-commands-conjunction-maria.trycloudflare.com";
+export const DESKTOP_RELAY_URL = process.env.EXPO_PUBLIC_DESKTOP_RELAY_URL ?? "";
 export const models: ModelKey[] = ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5-codex"];
 export const reasoningEfforts: ReasoningEffort[] = ["none", "low", "medium", "high", "xhigh"];
 
@@ -10,21 +10,24 @@ export const starterProjects: Project[] = [
     name: "LaunchPad SaaS",
     path: "~/Desktop/SaaS",
     stack: "Next.js, Stripe, Supabase",
-    updated: "2 min ago"
+    updated: "2 min ago",
+    source: "mobile"
   },
   {
     id: "p2",
     name: "Founders CRM",
     path: "~/Code/founders-crm",
     stack: "React Native, API",
-    updated: "Yesterday"
+    updated: "Yesterday",
+    source: "mobile"
   },
   {
     id: "p3",
     name: "Edge Billing",
     path: "~/Work/edge-billing",
     stack: "Node, Postgres",
-    updated: "Apr 20"
+    updated: "Apr 20",
+    source: "mobile"
   }
 ];
 

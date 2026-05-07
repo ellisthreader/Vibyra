@@ -29,7 +29,8 @@ export function useRequests({ agentUrl, connection }: RequestConfig) {
       headers.Authorization = `Bearer ${connection.token}`;
     }
 
-    const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, { ...options, headers });
+    const timeoutMs = endpoint === "/agents/start" ? 190000 : endpoint === "/commands/run" ? 25000 : 5000;
+    const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, { ...options, headers }, timeoutMs);
     return parseResponse<T>(response);
   }
 
@@ -44,9 +45,25 @@ function makeHeaders(options: RequestInit): Record<string, string> {
 }
 
 async function parseResponse<T>(response: Response) {
-  const payload = await response.json();
+  const payload = await readPayload(response);
   if (!response.ok) {
-    throw new Error(payload?.error ?? "Vibyra Desktop request failed");
+    const message = payload && typeof payload === "object" && "error" in payload
+      ? String(payload.error)
+      : typeof payload === "string" && payload.trim()
+        ? payload.trim()
+        : `Vibyra Desktop request failed (${response.status})`;
+    throw new Error(message);
   }
   return payload as T;
+}
+
+async function readPayload(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  try {
+    if (contentType.includes("application/json")) return await response.json();
+    const text = await response.text();
+    return text.trim() ? text : {};
+  } catch {
+    return {};
+  }
 }

@@ -6,12 +6,15 @@ export type ModelKey = "gpt-5.5" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" |
 export type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh";
 export type PreviewState = "offline" | "live" | "refreshing" | "delivered";
 
+export type ProjectSource = "pc" | "mobile" | "desktop";
+
 export type Project = {
   id: string;
   name: string;
   path: string;
   stack: string;
   updated: string;
+  source?: ProjectSource;
 };
 
 export type Agent = {
@@ -46,6 +49,13 @@ export type ChatMessage = {
   role: "assistant" | "user";
   text: string;
   file?: string;
+  app?: GeneratedApp;
+};
+
+export type GeneratedApp = {
+  id: string;
+  title: string;
+  html: string;
 };
 
 export type CodeChange = {

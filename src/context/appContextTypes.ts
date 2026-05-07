@@ -16,10 +16,16 @@ import {
 
 export type AppState = {
   authenticated: boolean;
+  authToken: string;
+  installId: string;
+  accountId: number | null;
+  accountPlan: string;
   authMode: "login" | "signup";
   authName: string;
   authEmail: string;
   authPassword: string;
+  creditsBalance: number;
+  creditsUsed: number;
   onboardingComplete: boolean;
   paired: boolean;
   agentUrl: string;
@@ -36,6 +42,7 @@ export type AppState = {
   projects: Project[];
   selectedProjectId: string;
   selectedModel: ModelKey;
+  selectedChatModel: string;
   reasoningEffort: ReasoningEffort;
   agents: Agent[];
   logs: LogEvent[];
@@ -49,6 +56,8 @@ export type AppState = {
   agentRequesting: boolean;
   taskText: string;
   chatMessages: ChatMessage[];
+  chatThreads: Record<string, ChatMessage[]>;
+  chatTitles: Record<string, string>;
   newFilePath: string;
   command: string;
   promptMoney: {
@@ -74,25 +83,29 @@ export type AppSetters = {
   setAgentUrl: (url: string) => void;
   setPairCode: (code: string) => void;
   setSelectedModel: (model: ModelKey) => void;
+  setSelectedChatModel: (model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setTaskText: (task: string) => void;
   setNewFilePath: (path: string) => void;
 };
 
 export type AppActions = {
-  authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => void;
+  authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => Promise<void>;
   completeOnboarding: () => void;
   confirmPhonePermission: () => void;
   discoverPairableDesktops: () => Promise<RememberedDesktop[]>;
   pairMachine: () => Promise<void>;
   pairMachineAt: (url: string, code: string) => Promise<void>;
   testDesktopConnection: () => Promise<boolean>;
-  createProject: () => Promise<void>;
+  createProject: () => Promise<Project | null>;
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
   selectProject: (projectId: string) => Promise<void>;
   startAgent: () => Promise<void>;
   resetPromptMoney: () => void;
+  loadDesktopFolders: () => Promise<Project[]>;
+  searchDesktopFolders: (query: string) => Promise<Project[]>;
+  adoptProject: (project: Project) => Promise<void>;
 };
 
 export type AppContextValue = AppState & AppDerivedState & AppSetters & AppActions;

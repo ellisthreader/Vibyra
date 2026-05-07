@@ -17,6 +17,16 @@ trait ProjectFileState
         return ['projects' => $state['projects']];
     }
 
+    public function desktopFolders(): array
+    {
+        return ['folders' => $this->discoverDesktopFolders()];
+    }
+
+    public function desktopSearch(string $query): array
+    {
+        return ['matches' => $this->searchDesktopFolders($query)];
+    }
+
     public function createProject(string $name): array
     {
         $state = $this->read();
@@ -42,6 +52,7 @@ trait ProjectFileState
             '',
         ]);
         File::put($path.'/README.md', $readme);
+        File::put($path.'/index.html', $this->starterPreviewHtml($projectName));
 
         $project = $this->projectFromPath($path, 'New project');
         $state['projects'] = [$project, ...array_values(array_filter(
@@ -151,7 +162,7 @@ trait ProjectFileState
         $state['selectedProjectId'] = $projectId;
         $state['latestPreview'] = [
             'state' => 'live',
-            'url' => 'http://localhost:3000/'.Str::slug($project['name'] ?? 'project'),
+            'url' => $project ? $this->previewUrl($project['id'], $state['token']) : null,
             'title' => $project['name'] ?? 'Project',
             'message' => 'Live preview stream started',
             'capturedAt' => now()->toISOString(),
@@ -162,5 +173,28 @@ trait ProjectFileState
         $this->write($state);
 
         return ['preview' => $state['latestPreview'], 'events' => [$event]];
+    }
+
+    private function starterPreviewHtml(string $projectName): string
+    {
+        return '<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>'.e($projectName).'</title>
+    <style>
+      :root { color-scheme: dark; --bg: #080910; --panel: #12131d; --line: #2d2541; --text: #fbf8ff; --muted: #beb8ce; --violet: #7c3cff; --green: #6df4a6; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 22px; background: linear-gradient(145deg, #080910, #151122 58%, #0c1620); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      main { width: min(680px, 100%); border: 1px solid var(--line); border-radius: 22px; background: rgba(18, 19, 29, .88); padding: clamp(22px, 7vw, 42px); box-shadow: 0 22px 60px rgba(0, 0, 0, .32); }
+      .kicker { color: var(--green); font-size: 13px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+      h1 { margin: 14px 0 12px; font-size: clamp(38px, 11vw, 76px); line-height: .94; }
+      p { margin: 0; color: var(--muted); font-size: clamp(16px, 4vw, 20px); font-weight: 750; line-height: 1.55; }
+      .button { display: inline-flex; align-items: center; min-height: 48px; margin-top: 26px; border-radius: 14px; background: linear-gradient(135deg, var(--violet), #63a6ff); padding: 0 18px; color: #fff; font-weight: 900; }
+    </style>
+  </head>
+  <body><main><div class="kicker">Live Vibyra workspace</div><h1>'.e($projectName).'</h1><p>This workspace is ready for a phone-viewable build.</p><div class="button">Open preview</div></main></body>
+</html>';
     }
 }

@@ -80,10 +80,20 @@ export function appendDesktopCandidates(candidates: string[], urls: string[] = [
 
 export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   try {
     return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (timedOut) {
+      const seconds = Math.max(1, Math.round(timeoutMs / 1000));
+      throw new Error(`Request timed out after ${seconds}s`);
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }

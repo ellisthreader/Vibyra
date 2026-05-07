@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'openrouter' => [
+        'key' => env('OPENROUTER_API_KEY'),
+        'url' => env('OPENROUTER_API_URL', 'https://openrouter.ai/api/v1/chat/completions'),
+    ],
+
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'moderation_url' => env('OPENAI_MODERATION_URL', 'https://api.openai.com/v1/moderations'),
+        'moderation_model' => env('OPENAI_MODERATION_MODEL', 'omni-moderation-latest'),
+    ],
+
 ];

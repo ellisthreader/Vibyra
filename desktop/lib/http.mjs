@@ -19,7 +19,13 @@ export async function sendFile(res, filePath) {
   const typeByExt = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
-    ".js": "application/javascript; charset=utf-8"
+    ".gif": "image/gif",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".js": "application/javascript; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml; charset=utf-8",
+    ".webp": "image/webp"
   };
   const content = await readFile(filePath);
   res.writeHead(200, headers(typeByExt[extname(filePath)] ?? "text/plain; charset=utf-8"));

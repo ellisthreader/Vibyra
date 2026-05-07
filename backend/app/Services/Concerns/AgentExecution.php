@@ -131,7 +131,7 @@ trait AgentExecution
         $state['selectedProjectId'] = $project['id'];
         $state['latestPreview'] = [
             'state' => 'delivered',
-            'url' => 'http://localhost:3000/'.Str::slug($project['name']),
+            'url' => $this->previewUrl($project['id'], $state['token']),
             'title' => $project['name'],
             'message' => 'Updated preview captured from Vibyra Desktop',
             'capturedAt' => now()->toISOString(),

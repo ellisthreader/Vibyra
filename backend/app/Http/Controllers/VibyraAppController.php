@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Concerns\AuthEndpoints;
+use App\Http\Controllers\Concerns\ChatEndpoint;
+use App\Http\Controllers\Concerns\ChatModelMap;
+use App\Http\Controllers\Concerns\ChatPrompting;
+use App\Http\Controllers\Concerns\UserPayloads;
+use App\Services\ContentModeration;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class VibyraAppController extends Controller
+{
+    use AuthEndpoints;
+    use ChatEndpoint;
+    use ChatModelMap;
+    use ChatPrompting;
+    use UserPayloads;
+
+    private const FREE_CREDITS = 50;
+
+    public function __construct(private readonly ContentModeration $moderation)
+    {
+    }
+
+    public function moderate(Request $request): JsonResponse
+    {
+        $this->authenticatedUser($request);
+        $surface = (string) $request->input('surface', 'user upload');
+        $failClosed = ! str_contains($surface, 'community.comment');
+
+        $decision = $this->moderation->assertModerationInputAllowed([
+            'text' => (string) $request->input('text', ''),
+            'images' => (array) $request->input('images', []),
+        ], $surface, $failClosed);
+
+        return $this->json([
+            'ok' => true,
+            'moderation' => [
+                'blocked' => false,
+                'warning' => $decision['warning'] ?? null,
+            ],
+        ]);
+    }
+
+    public function options(): JsonResponse
+    {
+        return $this->json([]);
+    }
+}

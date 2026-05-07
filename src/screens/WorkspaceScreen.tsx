@@ -1,13 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
   ImageBackground,
   ImageStyle,
   KeyboardAvoidingView,
+  Linking,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -20,18 +24,24 @@ import {
   View,
   ViewStyle
 } from "react-native";
-import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
+import { AppWebView } from "../components/AppWebView";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
 import { colors } from "../styles/theme";
-import { Agent, ChatMessage, ModelKey, Project, RememberedDesktop } from "../types/domain";
+import { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../types/domain";
+import { appApiRequest } from "../utils/appApi";
+import { fetchWithTimeout, normalizeAgentUrl } from "../utils/network";
 
 const dashboardHeroArt = require("../assets/BG-transparent-vibyra.png");
+const aiChatGlyph = require("../assets/ai-chat-glyph-focused.png");
 const chatBuildAiHero = require("../assets/chat-build-ai-hero.png");
+const vibyraLogo = require("../assets/vibyra.png");
 const projectsBackdrop = require("../assets/result-background.png");
 const projectsFoldersHero = require("../assets/projects-folders-hero-glow-transparent.png");
 const communityHero = require("../assets/community-hero-glow-transparent.png");
-type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile" | "upgrade";
+type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile";
 type SettingsTab = "profile" | "billing" | "preferences" | "security";
 type DesktopCandidate = RememberedDesktop;
 
@@ -44,7 +54,7 @@ const pages: Array<{ key: DashboardPage; label: string; icon: keyof typeof Ionic
 ];
 
 const projectStatuses = ["Active", "Draft", "Completed"] as const;
-const projectFilterModes = ["All", "Active", "Draft", "Completed", "Archived"] as const;
+const projectFilterModes = ["All", "PC", "Mobile"] as const;
 const tokenMembership = {
   allowance: 1500,
   balance: 1240,
@@ -56,55 +66,6 @@ const tokenMembership = {
   used: 260
 };
 
-const tokenUsageRows = [
-  { icon: "code-slash-outline" as const, label: "AI coding tasks", value: "Build, edit, debug" },
-  { icon: "hardware-chip-outline" as const, label: "Model access", value: tokenMembership.modelAccess },
-  { icon: "image-outline" as const, label: "Asset generation", value: "Images and app assets" }
-];
-
-type BillingCycle = "monthly" | "annual";
-type MembershipPlan = {
-  accent: string;
-  annual: number;
-  badge: string;
-  description: string;
-  featured?: boolean;
-  features: string[];
-  monthly: number;
-  name: string;
-};
-
-const membershipPlans: MembershipPlan[] = [
-  {
-    accent: "#8E5CFF",
-    annual: 19,
-    badge: "Best value",
-    description: "A strong starting point for solo builders shipping small projects.",
-    features: ["1,500 tokens monthly", "Core AI models", "3 active projects", "Community templates"],
-    monthly: 24,
-    name: "Starter"
-  },
-  {
-    accent: "#45E99B",
-    annual: 49,
-    badge: "Most popular",
-    description: "More room, faster models, and enough usage for serious weekly builds.",
-    featured: true,
-    features: ["6,000 tokens monthly", "Claude, OpenAI and Gemini models", "Unlimited projects", "Priority build queue", "Advanced file edits"],
-    monthly: 59,
-    name: "Builder"
-  },
-  {
-    accent: "#FFB44F",
-    annual: 129,
-    badge: "Scale",
-    description: "Built for heavy product work, client builds, and high-output teams.",
-    features: ["20,000 tokens monthly", "Highest-capability models", "Team workspaces", "Priority support", "Early access features"],
-    monthly: 159,
-    name: "Pro"
-  }
-];
-
 const previousChats = [
   { detail: "Edited hero.tsx", icon: "chatbubble-ellipses-outline" as const, id: "landing-polish", meta: "Current chat", running: true, time: "2 mins ago", title: "Landing page polish" },
   { detail: "Investigating login issue", icon: "bug-outline" as const, id: "auth-bug", meta: "Saved 2d ago", running: false, time: "2d ago", title: "Fix auth bug" },
@@ -113,16 +74,18 @@ const previousChats = [
 ];
 
 const chatSuggestions = [
-  { color: "#B24CFF", icon: "code-slash-outline" as const, text: "Update the landing page hero section" },
-  { color: "#FF4F90", icon: "bug-outline" as const, text: "Fix the login redirect bug" },
-  { color: "#43E585", icon: "add-circle-outline" as const, text: "Add a pricing comparison section" },
-  { color: "#F5C542", icon: "document-text-outline" as const, text: "Refactor API integration" }
+  { description: "Find & resolve\nissues", icon: "construct-outline" as const, title: "Fix a bug" },
+  { description: "Add something\nnew", icon: "cube-outline" as const, title: "Build a feature" },
+  { description: "Improve code\nquality", icon: "code-slash-outline" as const, title: "Refactor code" },
+  { description: "Prepare and\ndeploy", icon: "rocket-outline" as const, title: "Ship it" }
 ];
 
 type ChatModelProvider = "auto" | "claude" | "openai" | "gemini";
 type ChatModelOption = {
+  badge?: "New";
   key: string;
   label: string;
+  locked?: boolean;
   provider: ChatModelProvider;
   modelKey?: ModelKey;
 };
@@ -135,24 +98,24 @@ const chatModelGroups: Array<{ title: string; options: ChatModelOption[] }> = [
   {
     title: "Claude Models",
     options: [
-      { key: "claude-opus-4", label: "Claude Opus 4", provider: "claude" },
-      { key: "claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" },
+      { badge: "New", key: "claude-opus-4", label: "Claude Opus 4", locked: true, provider: "claude" },
+      { key: "claude-sonnet-4", label: "Claude Sonnet 4", locked: true, provider: "claude" },
       { key: "claude-3-5-haiku", label: "Claude Haiku 3.5", provider: "claude" }
     ]
   },
   {
     title: "OpenAI models",
     options: [
-      { key: "gpt-5.5", label: "GPT-5.5", provider: "openai", modelKey: "gpt-5.5" },
-      { key: "gpt-5.4", label: "GPT-5.4", provider: "openai", modelKey: "gpt-5.4" },
+      { badge: "New", key: "gpt-5.5", label: "GPT-5.5", locked: true, provider: "openai", modelKey: "gpt-5.5" },
+      { key: "gpt-5.4", label: "GPT-5.4", locked: true, provider: "openai", modelKey: "gpt-5.4" },
       { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai", modelKey: "gpt-5.4-mini" },
-      { key: "gpt-5-codex", label: "GPT-5 Codex", provider: "openai", modelKey: "gpt-5-codex" }
+      { key: "gpt-5-codex", label: "GPT-5 Codex", locked: true, provider: "openai", modelKey: "gpt-5-codex" }
     ]
   },
   {
     title: "Gemini Models",
     options: [
-      { key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
+      { badge: "New", key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", locked: true, provider: "gemini" },
       { key: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
       { key: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" }
     ]
@@ -165,13 +128,51 @@ const providerLogoSources = {
   openai: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/OpenAI_logo_2025_%28symbol%29.svg/250px-OpenAI_logo_2025_%28symbol%29.svg.png"
 };
 
-const communityPosts = [
+type CommunityLogoKind = "analytics" | "default" | "habit" | "invoice";
+type CommunityPreviewKind = "analytics" | "habit" | "invoice";
+type CommunityFilter = "All" | "Recent" | "Popular" | "Featured";
+type CommunityDetailTab = "about" | "comments";
+type CommunityComment = {
+  id: string;
+  name: string;
+  text: string;
+  time: string;
+};
+type CommunityPost = {
+  accent: string;
+  appUrl: string;
+  about: string;
+  comments: number;
+  description: string;
+  id: string;
+  likes: number;
+  logo?: CommunityLogoKind;
+  makerBio: string;
+  preview: CommunityPreviewKind;
+  screenshots: string[];
+  tag: CommunityFilter;
+  tags: string[];
+  time: string;
+  title: string;
+  user: string;
+};
+
+const communityDetailAccent = "#8B35FF";
+const communityDetailAccentDark = "#5D24D8";
+
+const communityPosts: CommunityPost[] = [
   {
     accent: "#9B5CFF",
+    appUrl: "https://vibyra.app/community/ai-invoice-tool",
+    about: "AI Invoice Tool helps freelancers and SaaS teams turn rough billing notes into polished invoices, follow-up emails, and payment summaries. It is built for quick client work where accuracy, presentation, and speed matter.",
     comments: 9,
     description: "Automate invoices and billing with AI. Save hours of work.",
+    id: "ai-invoice-tool",
     likes: 42,
+    logo: "invoice" as const,
+    makerBio: "Maya is a product designer building calm finance tools for independent studios.",
     preview: "invoice" as const,
+    screenshots: ["Invoice dashboard", "Client payment timeline", "AI billing assistant"],
     tag: "Popular",
     tags: ["SaaS", "AI"],
     time: "2h ago",
@@ -180,10 +181,16 @@ const communityPosts = [
   },
   {
     accent: "#51E895",
+    appUrl: "https://vibyra.app/community/habit-tracker-app",
+    about: "Habit Tracker App turns tiny daily goals into a simple rhythm with streaks, reminders, reflection prompts, and progress summaries that are easy to scan at a glance.",
     comments: 4,
     description: "Track habits, build consistency, and achieve your goals.",
+    id: "habit-tracker-app",
     likes: 18,
+    logo: "habit" as const,
+    makerBio: "Noah builds wellness utilities with soft visuals and practical routines.",
     preview: "habit" as const,
+    screenshots: ["Daily streak board", "Weekly reflection", "Goal setup flow"],
     tag: "Recent",
     tags: ["Productivity", "Health"],
     time: "5h ago",
@@ -192,10 +199,16 @@ const communityPosts = [
   },
   {
     accent: "#5792FF",
+    appUrl: "https://vibyra.app/community/saas-analytics-board",
+    about: "SaaS Analytics Board gives founders a clean view of revenue, activation, retention, and churn signals without needing a heavy BI setup.",
     comments: 6,
     description: "Beautiful analytics dashboard for SaaS founders.",
+    id: "saas-analytics-board",
     likes: 31,
+    logo: "analytics" as const,
+    makerBio: "Leah is a full-stack maker focused on decision tools for early-stage teams.",
     preview: "analytics" as const,
+    screenshots: ["Revenue overview", "Retention health", "Founder weekly brief"],
     tag: "Featured",
     tags: ["SaaS", "Analytics"],
     time: "1d ago",
@@ -246,7 +259,7 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
       footerActionsStyle: styles.projectFooterActionsStacked,
       footerDetailsStyle: styles.projectFooterDetailsStacked,
       footerStyle: styles.projectCardFooterStacked,
-      heroImageStyle: styles.projectsFoldersHeroCompact,
+      heroImageStyle: styles.projectsFoldersHeroCompact as ImageStyle,
       iconBoxStyle: { borderRadius: 11, height: 38, width: 38 },
       mainGap: 9,
       openGradientStyle: { height: 32, paddingHorizontal: 10 },
@@ -264,7 +277,7 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
       footerActionsStyle: styles.projectFooterActionsStacked,
       footerDetailsStyle: styles.projectFooterDetailsStacked,
       footerStyle: styles.projectCardFooterStacked,
-      heroImageStyle: styles.projectsFoldersHeroNarrow,
+      heroImageStyle: styles.projectsFoldersHeroNarrow as ImageStyle,
       iconBoxStyle: { borderRadius: 12, height: 40, width: 40 },
       mainGap: 10,
       openGradientStyle: { height: 33, paddingHorizontal: 11 },
@@ -282,7 +295,7 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
       footerActionsStyle: styles.projectFooterActionsComfort,
       footerDetailsStyle: styles.projectFooterDetails,
       footerStyle: styles.projectCardFooterComfort,
-      heroImageStyle: styles.projectsFoldersHeroComfort,
+      heroImageStyle: styles.projectsFoldersHeroComfort as ImageStyle,
       iconBoxStyle: { borderRadius: 12, height: 42, width: 42 },
       mainGap: 11,
       openGradientStyle: { height: 34, paddingHorizontal: 11 },
@@ -309,48 +322,10 @@ function getProjectsLayout(width: number, height: number): ProjectLayout {
   };
 }
 
-const projectMockups: ProjectDisplay[] = [
-  {
-    branch: "main",
-    id: "mock-saas",
-    name: "SaaS",
-    path: "/home/ellis/Desktop/SaaS",
-    stack: "Expo React Native",
-    status: "Active",
-    updated: "Updated 1 min ago"
-  },
-  {
-    branch: "develop",
-    id: "mock-backend",
-    name: "backend",
-    path: "/home/ellis/Desktop/SaaS/backend",
-    stack: "Node / React",
-    status: "Draft",
-    updated: "Updated 3d ago"
-  },
-  {
-    branch: "main",
-    id: "mock-portfolio",
-    name: "Portfolio",
-    path: "/home/ellis/Desktop/Portfolio",
-    stack: "Next.js / Tailwind",
-    status: "Completed",
-    updated: "Updated 2w ago"
-  },
-  {
-    branch: "main",
-    id: "mock-marketing",
-    name: "Marketing Site",
-    path: "/home/ellis/Desktop/Marketing",
-    stack: "Next.js",
-    status: "Draft",
-    updated: "Updated 1mo ago"
-  }
-];
-
 export function WorkspaceScreen() {
   const app = useAppContext();
   const { height, width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const compact = width < 420;
   const [activePage, setActivePage] = useState<DashboardPage>("dashboard");
   const [desktopCandidates, setDesktopCandidates] = useState<DesktopCandidate[]>(app.rememberedDesktops);
@@ -359,10 +334,17 @@ export function WorkspaceScreen() {
   const [switcherScanning, setSwitcherScanning] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [chatTitleOverrides, setChatTitleOverrides] = useState<Record<string, string>>({});
+  const [renameChatVisible, setRenameChatVisible] = useState(false);
+  const [renameChatDraft, setRenameChatDraft] = useState("");
   const [projectChatTitles, setProjectChatTitles] = useState<Record<string, string>>({});
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
   const [projectsCanScroll, setProjectsCanScroll] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("annual");
+  const [selectedCommunityPost, setSelectedCommunityPost] = useState<CommunityPost | null>(null);
+  const [openedCommunityPostId, setOpenedCommunityPostId] = useState<string | null>(null);
+  const [previewApp, setPreviewApp] = useState<GeneratedApp | null>(null);
+  const [desktopFolders, setDesktopFolders] = useState<Project[]>([]);
+  const [folderConfirm, setFolderConfirm] = useState<{ query: string; matches: Project[] } | null>(null);
 
   const filteredProjects = useMemo(() => {
     const search = projectSearch.trim().toLowerCase();
@@ -374,7 +356,60 @@ export function WorkspaceScreen() {
     ));
   }, [app.projects, projectSearch]);
 
-  const connectedMachineName = app.connection?.machineName ?? app.rememberedDesktops[0]?.machineName ?? app.machineName;
+  const filteredDesktopFolders = useMemo(() => {
+    const search = projectSearch.trim().toLowerCase();
+    if (!search) return desktopFolders;
+    return desktopFolders.filter((folder) => (
+      folder.name.toLowerCase().includes(search) ||
+      folder.path.toLowerCase().includes(search) ||
+      (folder.stack ?? "").toLowerCase().includes(search)
+    ));
+  }, [desktopFolders, projectSearch]);
+
+  useEffect(() => {
+    if (!app.connection) {
+      setDesktopFolders([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const folders = await app.loadDesktopFolders();
+      if (!cancelled) setDesktopFolders(folders);
+    })();
+    return () => { cancelled = true; };
+  }, [app, app.connection]);
+
+  const isConnected = Boolean(app.connection);
+  const lastRememberedDesktop = app.rememberedDesktops.find((desktop) => desktop.lastConnectedAt) ?? app.rememberedDesktops[0];
+  const connectedMachineName = app.connection?.machineName ?? lastRememberedDesktop?.machineName ?? app.machineName;
+  const autoReconnectAttempted = useRef(false);
+
+  useEffect(() => {
+    if (isConnected) return;
+    if (autoReconnectAttempted.current) return;
+    if (!lastRememberedDesktop?.lastConnectedAt) return;
+    autoReconnectAttempted.current = true;
+
+    let cancelled = false;
+    (async () => {
+      const currentPairCode = await getCurrentDesktopPairCode(lastRememberedDesktop.url);
+      if (cancelled || !currentPairCode) return;
+      await app.pairMachineAt(lastRememberedDesktop.url, currentPairCode);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [app, isConnected, lastRememberedDesktop]);
+  const tokenBalance = 5;
+  const creditAllowance = Math.max(tokenBalance + app.creditsUsed, app.accountPlan === "free" ? 50 : tokenMembership.allowance);
+  const creditPercentRemaining = creditAllowance > 0 ? Math.round((tokenBalance / creditAllowance) * 100) : 0;
+  const creditsLow = creditAllowance > 0 && tokenBalance / creditAllowance < 0.1;
+  const activeChat = previousChats.find((chat) => chat.id === selectedChatId);
+  const selectedChatProjectId = selectedChatId?.startsWith("project-") ? selectedChatId.replace("project-", "") : null;
+  const projectChatTitle = selectedChatProjectId ? app.chatTitles[selectedChatProjectId] ?? projectChatTitles[selectedChatId ?? ""] : undefined;
+  const chatTitleKey = selectedChatId ?? "new-chat";
+  const chatTitle = chatTitleOverrides[chatTitleKey] ?? activeChat?.title ?? projectChatTitle ?? "New chat";
 
   useEffect(() => {
     if (app.rememberedDesktops.length > 0) setDesktopCandidates(app.rememberedDesktops);
@@ -406,107 +441,241 @@ export function WorkspaceScreen() {
 
   const openProjectChat = useCallback((projectId: string, projectName: string) => {
     const chatId = `project-${projectId}`;
-    setProjectChatTitles((current) => ({ ...current, [chatId]: projectName }));
+    const title = app.chatTitles[projectId] ?? projectName;
+    setProjectChatTitles((current) => ({ ...current, [chatId]: title }));
     setSelectedChatId(chatId);
     setActivePage("chat");
+  }, [app.chatTitles]);
+
+  const openProjectPreview = useCallback(async (projectId: string, projectName: string) => {
+    await app.selectProject(projectId);
+
+    if (!app.connection) {
+      openProjectChat(projectId, projectName);
+      return;
+    }
+
+    const previewUrl = projectPreviewUrl(app.connection.url, projectId, app.connection.token);
+    try {
+      await Linking.openURL(previewUrl);
+    } catch {
+      openProjectChat(projectId, projectName);
+    }
+  }, [app, openProjectChat]);
+
+  const createProjectAndOpenChat = useCallback(async () => {
+    const project = await app.createProject();
+    if (!project) return;
+    openProjectChat(project.id, app.chatTitles[project.id] ?? project.name);
+  }, [app, openProjectChat]);
+
+  const promptReferencesPcFolder = useCallback((prompt: string) => {
+    const text = prompt.toLowerCase();
+    if (/(on|in)\s+(my\s+)?(desktop|pc|computer|mac|machine)/.test(text)) return true;
+    if (/(open|find|use|locate|look\s+(at|in)|switch\s+to|start\s+(coding|working)\s+(on|in)|work\s+(on|in))\s+(the\s+)?[\w\- .]+\s+(folder|repo|repository|project|directory|app|codebase)/.test(text)) return true;
+    if (/(the|my)\s+[\w\- .]+\s+(folder|repo|repository|project|directory|app|codebase)\b/.test(text)) return true;
+    return false;
   }, []);
+
+  const onStartChat = useCallback(async () => {
+    const prompt = app.taskText.trim();
+    if (!prompt) return;
+    if (!app.connection || !promptReferencesPcFolder(prompt)) {
+      await app.startAgent();
+      return;
+    }
+    const matches = await app.searchDesktopFolders(prompt);
+    if (matches.length === 0) {
+      await app.startAgent();
+      return;
+    }
+    const selectedPath = app.selectedProject?.path;
+    const alreadyOnTopMatch = matches[0]?.path && matches[0].path === selectedPath;
+    if (alreadyOnTopMatch) {
+      await app.startAgent();
+      return;
+    }
+    setFolderConfirm({ query: prompt, matches });
+  }, [app, promptReferencesPcFolder]);
+
+  const acceptFolderConfirm = useCallback(async (folder: Project) => {
+    setFolderConfirm(null);
+    await app.adoptProject(folder);
+    await app.startAgent();
+  }, [app]);
+
+  const skipFolderConfirm = useCallback(async () => {
+    setFolderConfirm(null);
+    await app.startAgent();
+  }, [app]);
+
+  const cancelFolderConfirm = useCallback(() => {
+    setFolderConfirm(null);
+  }, []);
+
+  const openRenameChat = useCallback(() => {
+    setRenameChatDraft(chatTitle);
+    setRenameChatVisible(true);
+  }, [chatTitle]);
+
+  const saveRenameChat = useCallback(() => {
+    const nextTitle = renameChatDraft.trim();
+    if (nextTitle) {
+      setChatTitleOverrides((current) => ({ ...current, [chatTitleKey]: nextTitle }));
+      if (selectedChatId?.startsWith("project-")) {
+        setProjectChatTitles((current) => ({ ...current, [selectedChatId]: nextTitle }));
+      }
+    }
+    setRenameChatVisible(false);
+  }, [chatTitleKey, renameChatDraft, selectedChatId]);
+
+  const deleteCurrentChat = useCallback(() => {
+    setChatTitleOverrides((current) => {
+      const next = { ...current };
+      delete next[chatTitleKey];
+      return next;
+    });
+    if (selectedChatId) {
+      setProjectChatTitles((current) => {
+        const next = { ...current };
+        delete next[selectedChatId];
+        return next;
+      });
+    }
+    setSelectedChatId(null);
+    app.setTaskText("");
+    setActivePage("dashboard");
+  }, [app, chatTitleKey, selectedChatId]);
+
+  const backFromCommunitySubPage = useCallback(() => {
+    if (openedCommunityPostId) {
+      setOpenedCommunityPostId(null);
+      return;
+    }
+
+    setSelectedCommunityPost(null);
+  }, [openedCommunityPostId]);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
       <View style={styles.shell}>
         <View style={styles.main}>
           <TopBar
+            activePage={activePage}
+            chatTitle={chatTitle}
             compact={compact}
+            communitySubPageTitle={selectedCommunityPost ? formatCommunityTitle(selectedCommunityPost.title) : ""}
+            isConnected={isConnected}
             machineName={connectedMachineName}
+            onBackFromChat={() => {
+              setSelectedChatId(null);
+              setActivePage("dashboard");
+            }}
+            onBackFromCommunity={backFromCommunitySubPage}
+            onDeleteChat={deleteCurrentChat}
             onOpenPcSwitcher={openPcSwitcher}
             onOpenTokens={() => setTokenSheetVisible(true)}
-            tokenBalance={tokenMembership.balance}
+            onRenameChat={openRenameChat}
+            tokenBalance={tokenBalance}
           />
-          <ScrollView
-            contentContainerStyle={[
-              styles.content,
-              activePage === "dashboard" ? styles.dashboardContent : null,
-              activePage === "chat" ? styles.chatContent : null,
-              activePage === "chat" ? styles.chatActiveContent : null,
-              activePage === "projects" ? styles.projectsContent : null,
-              activePage === "upgrade" ? styles.upgradeContent : null,
-              { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : activePage === "chat" ? 84 : 72), 0) }
-            ]}
-            bounces={activePage === "projects" ? projectsCanScroll : true}
-            scrollEnabled={activePage === "projects" ? projectsCanScroll : activePage !== "dashboard" && activePage !== "chat"}
-            showsVerticalScrollIndicator={false}
-          >
-            {activePage === "dashboard" ? (
-              <DashboardHome
-                activeAgents={app.activeAgents}
-                machineName={app.connection?.machineName ?? app.machineName}
-                onNavigate={setActivePage}
-                projectCount={app.projects.length}
-                projects={app.projects}
-                selectedModel={app.selectedModel}
-                tokenBalance={tokenMembership.balance}
-              />
-            ) : null}
-
-            {activePage === "projects" ? (
-              <ProjectsPage
-                filteredProjects={filteredProjects}
-                onCreateProject={app.createProject}
-                onOpenProjectChat={openProjectChat}
-                onSearch={setProjectSearch}
-                onSelectProject={app.selectProject}
-                onScrollNeededChange={setProjectsCanScroll}
-                projectSearch={projectSearch}
-                selectedProjectId={app.selectedProject.id}
-              />
-            ) : null}
-
-            {activePage === "chat" ? (
+          {activePage === "chat" ? (
+            <View style={styles.chatPageHost}>
               <AIChatPage
+                bottomInset={insets.bottom}
+                onOpenApp={setPreviewApp}
                 agentRequesting={app.agentRequesting}
                 chatMessages={app.chatMessages}
-                onBack={() => {
-                  setSelectedChatId(null);
-                  setActivePage("dashboard");
-                }}
-                onStart={app.startAgent}
+                creditsLow={creditsLow}
+                creditPercentRemaining={creditPercentRemaining}
+                onOpenTokens={() => setTokenSheetVisible(true)}
+                onStart={onStartChat}
                 selectedChatId={selectedChatId}
                 projectChatTitles={projectChatTitles}
                 selectedFileName={app.selectedFile.name}
+                selectedChatModel={app.selectedChatModel}
                 selectedModel={app.selectedModel}
+                accountPlan={app.accountPlan}
                 setSelectedChatId={setSelectedChatId}
+                setSelectedChatModel={app.setSelectedChatModel}
                 setSelectedModel={app.setSelectedModel}
                 setTaskText={app.setTaskText}
                 taskText={app.taskText}
               />
-            ) : null}
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.contentScroll}
+              contentContainerStyle={[
+                styles.content,
+                activePage === "dashboard" ? styles.dashboardContent : null,
+                activePage === "projects" ? styles.projectsContent : null,
+                activePage === "profile" ? styles.profileContent : null,
+                { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : 72), 0) }
+              ]}
+              bounces={activePage === "projects" ? projectsCanScroll : true}
+              scrollEnabled={activePage === "projects" ? projectsCanScroll : activePage === "community" ? true : activePage !== "dashboard"}
+              showsVerticalScrollIndicator={false}
+            >
+              {activePage === "dashboard" ? (
+                <DashboardHome
+                  activeAgents={app.activeAgents}
+                  machineName={app.connection?.machineName ?? app.machineName}
+                  onNavigate={setActivePage}
+                  projectCount={app.projects.length}
+                  projects={app.projects}
+                  selectedModel={app.selectedModel}
+                  tokenBalance={tokenBalance}
+                />
+              ) : null}
 
-            {activePage === "community" ? <CommunityPage /> : null}
+              {activePage === "projects" ? (
+                <ProjectsPage
+                  connected={Boolean(app.connection)}
+                  desktopFolders={filteredDesktopFolders}
+                  filteredProjects={filteredProjects}
+                  onCreateProject={createProjectAndOpenChat}
+                  onOpenProjectPreview={openProjectPreview}
+                  onSearch={setProjectSearch}
+                  onScrollNeededChange={setProjectsCanScroll}
+                  projectSearch={projectSearch}
+                  selectedProjectId={app.selectedProject.id}
+                />
+              ) : null}
 
-            {activePage === "profile" ? (
-              <ProfilePage
-                activeTab={settingsTab}
-                email={app.authEmail || "you@vibyra.app"}
-                machineName={app.machineName}
-                onTabChange={setSettingsTab}
-                projectCount={app.projects.length}
-                selectedModel={app.selectedModel}
-              />
-            ) : null}
+              {activePage === "community" ? (
+                <CommunityPage
+                  authToken={app.authToken}
+                  currentUserName={app.authName}
+                  openedPostId={openedCommunityPostId}
+                  onOpenApp={(postId) => setOpenedCommunityPostId(postId)}
+                  onSelectPost={setSelectedCommunityPost}
+                  selectedPost={selectedCommunityPost}
+                />
+              ) : null}
 
-            {activePage === "upgrade" ? (
-              <UpgradePage
-                billingCycle={billingCycle}
-                onBack={() => setActivePage("dashboard")}
-                onChangeBillingCycle={setBillingCycle}
-              />
-            ) : null}
-          </ScrollView>
+              {activePage === "profile" ? (
+                <ProfilePage
+                  activeTab={settingsTab}
+                  accountPlan={app.accountPlan}
+                  creditsBalance={tokenBalance}
+                  email={app.authEmail || "you@vibyra.app"}
+                  machineName={app.machineName}
+                  name={app.authName}
+                  onTabChange={setSettingsTab}
+                  projectCount={app.projects.length}
+                  selectedModel={app.selectedModel}
+                />
+              ) : null}
+            </ScrollView>
+          )}
         </View>
         {activePage === "chat" ? null : <BottomNav activePage={activePage} onChange={setActivePage} />}
         <PcSwitcherSheet
           candidates={desktopCandidates}
+          connectedUrl={app.connection?.url}
+          connectedMachineName={app.connection?.machineName}
           currentMachineName={connectedMachineName}
+          isConnected={isConnected}
           healthMessage={app.healthMessage}
           manualCode={app.pairCode}
           onClose={() => setPcSwitcherVisible(false)}
@@ -517,6 +686,7 @@ export function WorkspaceScreen() {
           onScan={scanDesktops}
           pairing={app.pairing}
           pairingError={app.pairingError}
+          pairingMessage={app.pairingMessage}
           pendingMachineName={app.pendingPhoneApproval?.machineName}
           scanning={switcherScanning || app.checkingHealth}
           visible={pcSwitcherVisible}
@@ -525,9 +695,27 @@ export function WorkspaceScreen() {
           onClose={() => setTokenSheetVisible(false)}
           onManage={() => {
             setTokenSheetVisible(false);
-            setActivePage("upgrade");
+            setActivePage("profile");
+            setSettingsTab("billing");
           }}
+          plan={app.accountPlan}
+          tokenBalance={tokenBalance}
+          tokensUsed={app.creditsUsed}
           visible={tokenSheetVisible}
+        />
+        <RenameChatModal
+          draft={renameChatDraft}
+          onCancel={() => setRenameChatVisible(false)}
+          onChangeDraft={setRenameChatDraft}
+          onSave={saveRenameChat}
+          visible={renameChatVisible}
+        />
+        <AppPreviewModal app={previewApp} onClose={() => setPreviewApp(null)} />
+        <FolderConfirmModal
+          confirm={folderConfirm}
+          onAccept={acceptFolderConfirm}
+          onCancel={cancelFolderConfirm}
+          onSkip={skipFolderConfirm}
         />
       </View>
     </KeyboardAvoidingView>
@@ -556,13 +744,91 @@ function BottomNav(props: { activePage: DashboardPage; onChange: (page: Dashboar
   );
 }
 
-function TopBar({ compact, machineName, onOpenPcSwitcher, onOpenTokens, tokenBalance }: {
+function TopBar({
+  activePage,
+  chatTitle,
+  compact,
+  communitySubPageTitle,
+  isConnected,
+  machineName,
+  onBackFromChat,
+  onBackFromCommunity,
+  onDeleteChat,
+  onOpenPcSwitcher,
+  onOpenTokens,
+  onRenameChat,
+  tokenBalance
+}: {
+  activePage: DashboardPage;
+  chatTitle: string;
   compact: boolean;
+  communitySubPageTitle: string;
+  isConnected: boolean;
   machineName: string;
+  onBackFromChat: () => void;
+  onBackFromCommunity: () => void;
+  onDeleteChat: () => void;
   onOpenPcSwitcher: () => void;
   onOpenTokens: () => void;
+  onRenameChat: () => void;
   tokenBalance: number;
 }) {
+  const title = getTopBarTitle(activePage);
+
+  if (activePage === "chat") {
+    return (
+      <View style={[styles.topBar, styles.chatTopBar]}>
+        <View style={styles.chatTopLeft}>
+          <Pressable accessibilityLabel="Back to home" style={styles.chatTopIconButton} onPress={onBackFromChat}>
+            <Ionicons name="chevron-back" color={colors.text} size={26} />
+          </Pressable>
+        </View>
+        <View pointerEvents="none" style={styles.chatTopTitleWrap}>
+          <Text numberOfLines={1} style={styles.chatTopTitle}>{chatTitle}</Text>
+        </View>
+        <View style={styles.chatTopActions}>
+          <Pressable accessibilityLabel="Rename chat" style={styles.chatTopIconButton} onPress={onRenameChat}>
+            <Ionicons name="create-outline" color="#DCD7EA" size={22} />
+          </Pressable>
+          <Pressable accessibilityLabel="Delete chat" style={styles.chatTopIconButton} onPress={onDeleteChat}>
+            <Ionicons name="trash-outline" color="#FF9DAE" size={22} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  if (activePage === "community" && communitySubPageTitle) {
+    return (
+      <View style={[styles.topBar, styles.chatTopBar]}>
+        <View style={styles.chatTopLeft}>
+          <Pressable accessibilityLabel="Back to community" style={styles.chatTopIconButton} onPress={onBackFromCommunity}>
+            <Ionicons name="chevron-back" color={colors.text} size={26} />
+          </Pressable>
+        </View>
+        <View pointerEvents="none" style={styles.chatTopTitleWrap}>
+          <Text numberOfLines={1} style={styles.chatTopTitle}>{communitySubPageTitle}</Text>
+        </View>
+        <View style={styles.chatTopActions}>
+          <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
+        </View>
+      </View>
+    );
+  }
+
+  if (activePage !== "dashboard") {
+    return (
+      <View style={styles.topBar}>
+        <View style={styles.pageTopTitleBlock}>
+          <Text numberOfLines={1} style={styles.pageTopTitle}>{title}</Text>
+        </View>
+        <View style={styles.topRight}>
+          <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.topBar}>
       <Pressable
@@ -572,11 +838,11 @@ function TopBar({ compact, machineName, onOpenPcSwitcher, onOpenTokens, tokenBal
         onPress={onOpenPcSwitcher}
         style={({ pressed }) => [styles.topLeft, pressed ? styles.topLeftPressed : null]}
       >
-        <VibyraLogo compact style={styles.dashboardLogo} />
+        <VibyraLogo compact style={styles.dashboardLogo as ImageStyle} />
         <View style={styles.topMachineCopy}>
           <View style={styles.topConnectionRow}>
-            <View style={styles.statusDot} />
-            <Text style={styles.topKicker}>Connected to PC</Text>
+            <View style={[styles.statusDot, isConnected ? null : styles.statusDotOffline]} />
+            <Text style={styles.topKicker}>{isConnected ? "Connected to PC" : "Not connected"}</Text>
           </View>
           <View style={styles.topTitleRow}>
             <Text numberOfLines={1} style={styles.topTitle}>{machineName}</Text>
@@ -585,21 +851,102 @@ function TopBar({ compact, machineName, onOpenPcSwitcher, onOpenTokens, tokenBal
         </View>
       </Pressable>
       <View style={styles.topRight}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open token balance and membership"
-          hitSlop={8}
-          onPress={onOpenTokens}
-          style={({ pressed }) => [styles.tokenPill, pressed ? styles.tokenPillPressed : null]}
-        >
-          <Ionicons name="flash-outline" color="#FFE76A" size={compact ? 18 : 20} />
-          <View>
-            <Text style={styles.tokenText}>{tokenBalance.toLocaleString()}</Text>
-            <Text style={styles.tokenSubtext}>tokens</Text>
-          </View>
-        </Pressable>
+        <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
       </View>
     </View>
+  );
+}
+
+function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
+  compact: boolean;
+  onOpenTokens: () => void;
+  tokenBalance: number;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Open token balance and membership"
+      hitSlop={8}
+      onPress={onOpenTokens}
+      style={({ pressed }) => [styles.tokenPill, pressed ? styles.tokenPillPressed : null]}
+    >
+      <Ionicons name="flash-outline" color="#FFE76A" size={compact ? 18 : 20} />
+      <View>
+        <Text style={styles.tokenText}>{tokenBalance.toLocaleString()}</Text>
+        <Text style={styles.tokenSubtext}>tokens</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function getTopBarTitle(page: DashboardPage) {
+  if (page === "projects") return "Projects";
+  if (page === "community") return "Community";
+  if (page === "profile") return "Profile";
+  if (page === "chat") return "AI Chat";
+  return "Home";
+}
+
+function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {
+  return `${normalizeAgentUrl(baseUrl)}/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
+}
+
+async function getCurrentDesktopPairCode(url: string): Promise<string | null> {
+  try {
+    const timeoutMs = url.startsWith("https://") ? 1400 : 900;
+    const response = await fetchWithTimeout(`${url}/health`, {}, timeoutMs);
+    if (!response.ok) return null;
+    const payload = await response.json();
+    if (!payload?.ok) return null;
+    const pairCode = String(payload?.pairCode ?? "").toUpperCase();
+    return pairCode || null;
+  } catch {
+    return null;
+  }
+}
+
+function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visible }: {
+  draft: string;
+  onCancel: () => void;
+  onChangeDraft: (value: string) => void;
+  onSave: () => void;
+  visible: boolean;
+}) {
+  return (
+    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
+      <View style={styles.renameChatOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+        <View style={styles.renameChatDialog}>
+          <View style={styles.renameChatHeader}>
+            <View style={styles.renameChatIcon}>
+              <Ionicons name="create-outline" color="#DCD7EA" size={22} />
+            </View>
+            <View style={styles.renameChatCopy}>
+              <Text style={styles.renameChatTitle}>Rename chat</Text>
+              <Text style={styles.renameChatSubtitle}>Give this chat a clearer title.</Text>
+            </View>
+          </View>
+          <TextInput
+            autoFocus
+            onChangeText={onChangeDraft}
+            onSubmitEditing={onSave}
+            placeholder="Chat title"
+            placeholderTextColor="#8F8A9E"
+            returnKeyType="done"
+            style={styles.renameChatInput}
+            value={draft}
+          />
+          <View style={styles.renameChatActions}>
+            <Pressable style={styles.renameChatCancelButton} onPress={onCancel}>
+              <Text style={styles.renameChatCancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.renameChatSaveButton} onPress={onSave}>
+              <Text style={styles.renameChatSaveText}>Save</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -619,8 +966,11 @@ function getDesktopStatusStyle(status: RememberedDesktop["status"]) {
 
 function PcSwitcherSheet({
   candidates,
+  connectedMachineName,
+  connectedUrl,
   currentMachineName,
   healthMessage,
+  isConnected,
   manualCode,
   onClose,
   onCodeChange,
@@ -630,13 +980,17 @@ function PcSwitcherSheet({
   onScan,
   pairing,
   pairingError,
+  pairingMessage,
   pendingMachineName,
   scanning,
   visible
 }: {
   candidates: DesktopCandidate[];
+  connectedMachineName?: string;
+  connectedUrl?: string;
   currentMachineName: string;
   healthMessage: string;
+  isConnected: boolean;
   manualCode: string;
   onClose: () => void;
   onCodeChange: (code: string) => void;
@@ -646,11 +1000,21 @@ function PcSwitcherSheet({
   onScan: () => Promise<void>;
   pairing: boolean;
   pairingError: string;
+  pairingMessage: string;
   pendingMachineName?: string;
   scanning: boolean;
   visible: boolean;
 }) {
-  const visibleCandidates = candidates.length > 0 ? candidates : [];
+  const normalizeUrl = (url: string) => url.replace(/\/+$/, "").toLowerCase();
+  const normalizedConnectedUrl = connectedUrl ? normalizeUrl(connectedUrl) : "";
+  const visibleCandidates = candidates.filter((desktop) => {
+    if (!isConnected) return true;
+    if (desktop.status === "current") return false;
+    if (normalizedConnectedUrl && normalizeUrl(desktop.url) === normalizedConnectedUrl) return false;
+    if (connectedMachineName && desktop.machineName && desktop.machineName === connectedMachineName) return false;
+    return true;
+  });
+  const statusMessage = pairing ? pairingMessage : healthMessage;
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
@@ -663,7 +1027,7 @@ function PcSwitcherSheet({
               <Ionicons name="desktop-outline" color="#DAD2FF" size={24} />
             </View>
             <View style={styles.pcSwitcherHeaderCopy}>
-              <Text style={styles.pcSwitcherKicker}>Connected PC</Text>
+              <Text style={styles.pcSwitcherKicker}>{isConnected ? "Connected PC" : "Not connected"}</Text>
               <Text numberOfLines={1} style={styles.pcSwitcherTitle}>{currentMachineName}</Text>
             </View>
             <Pressable style={styles.pcSwitcherClose} onPress={onClose}>
@@ -686,27 +1050,31 @@ function PcSwitcherSheet({
             </View>
           ) : null}
 
-          <Pressable style={styles.pcScanButton} onPress={onScan}>
+          <Pressable disabled={pairing || scanning} style={[styles.pcScanButton, pairing || scanning ? styles.pcControlDisabled : null]} onPress={onScan}>
             {scanning ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="search-outline" color={colors.text} size={21} />}
             <Text style={styles.pcScanButtonText}>{scanning ? "Finding nearby PCs..." : candidates.length > 0 ? "Search again" : "Find nearby PCs"}</Text>
           </Pressable>
 
           <View style={styles.pcCandidateList}>
-            {visibleCandidates.map((desktop) => (
-              <Pressable key={`${desktop.url}-${desktop.pairCode}`} style={styles.pcCandidateRow} onPress={() => onConnectCandidate(desktop)}>
-                <View style={[styles.pcCandidateIcon, desktop.status === "current" ? styles.pcCandidateIconCurrent : null]}>
-                  <Ionicons name="desktop-outline" color="#BFAEFF" size={21} />
-                </View>
-                <View style={styles.pcCandidateCopy}>
-                  <Text numberOfLines={1} style={styles.pcCandidateTitle}>{desktop.machineName}</Text>
-                  <View style={styles.pcCandidateStatusRow}>
-                    <View style={[styles.pcCandidateStatusDot, getDesktopStatusStyle(desktop.status)]} />
-                    <Text style={styles.pcCandidateMeta}>{getDesktopStatusLabel(desktop.status, desktop.pairCode)}</Text>
+            {visibleCandidates.map((desktop) => {
+              const disabled = pairing || scanning || desktop.status === "offline";
+
+              return (
+                <Pressable disabled={disabled} key={`${desktop.url}-${desktop.pairCode}`} style={[styles.pcCandidateRow, disabled ? styles.pcControlDisabled : null]} onPress={() => onConnectCandidate(desktop)}>
+                  <View style={[styles.pcCandidateIcon, desktop.status === "current" ? styles.pcCandidateIconCurrent : null]}>
+                    <Ionicons name="desktop-outline" color="#BFAEFF" size={21} />
                   </View>
-                </View>
-                <Ionicons name="chevron-forward" color="#A9A6BE" size={21} />
-              </Pressable>
-            ))}
+                  <View style={styles.pcCandidateCopy}>
+                    <Text numberOfLines={1} style={styles.pcCandidateTitle}>{desktop.machineName}</Text>
+                    <View style={styles.pcCandidateStatusRow}>
+                      <View style={[styles.pcCandidateStatusDot, getDesktopStatusStyle(desktop.status)]} />
+                      <Text style={styles.pcCandidateMeta}>{getDesktopStatusLabel(desktop.status, desktop.pairCode)}</Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" color="#A9A6BE" size={21} />
+                </Pressable>
+              );
+            })}
           </View>
 
           <View style={styles.pcManualPanel}>
@@ -722,13 +1090,13 @@ function PcSwitcherSheet({
                 style={styles.pcCodeInput}
                 value={manualCode}
               />
-              <Pressable style={styles.pcCodeButton} onPress={onConnectManual}>
+              <Pressable disabled={pairing} style={[styles.pcCodeButton, pairing ? styles.pcControlDisabled : null]} onPress={onConnectManual}>
                 {pairing ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="link-outline" color={colors.text} size={20} />}
               </Pressable>
             </View>
           </View>
 
-          {healthMessage ? <Text style={styles.pcSwitcherMessage}>{healthMessage}</Text> : null}
+          {statusMessage ? <Text style={styles.pcSwitcherMessage}>{statusMessage}</Text> : null}
           {pairingError ? <Text style={styles.pcSwitcherError}>{pairingError}</Text> : null}
         </View>
       </View>
@@ -736,167 +1104,82 @@ function PcSwitcherSheet({
   );
 }
 
-function TokenMembershipSheet({ onClose, onManage, visible }: {
+function TokenMembershipSheet({ onClose, onManage, plan, tokenBalance, tokensUsed, visible }: {
   onClose: () => void;
   onManage: () => void;
+  plan: string;
+  tokenBalance: number;
+  tokensUsed: number;
   visible: boolean;
 }) {
-  const availablePercent = Math.round((tokenMembership.balance / tokenMembership.allowance) * 100);
+  const allowance = Math.max(tokenBalance + tokensUsed, plan === "free" ? 50 : tokenMembership.allowance);
+  const progress = Math.min(1, tokenBalance / allowance);
+  const availablePercent = Math.round((tokenBalance / allowance) * 100);
+  const planLabel = formatPlanLabel(plan);
 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <View style={styles.tokenSheetOverlay}>
         <Pressable accessibilityLabel="Close token membership" style={styles.tokenSheetScrim} onPress={onClose} />
         <View style={styles.tokenSheet}>
+          <View style={styles.tokenSheetHandle} />
           <View style={styles.tokenSheetHeader}>
             <View style={styles.tokenSheetHeaderIcon}>
-              <Ionicons name="flash" color="#FFE76A" size={24} />
+              <Ionicons name="flash" color="#FFF200" size={24} />
             </View>
             <View style={styles.tokenSheetHeaderCopy}>
-              <Text style={styles.tokenSheetKicker}>Tokens remaining</Text>
-              <Text style={styles.tokenSheetTitle}>{tokenMembership.balance.toLocaleString()}</Text>
+              <Text style={styles.tokenSheetKicker}>{planLabel} membership</Text>
+              <Text numberOfLines={1} style={styles.tokenSheetTitle}>{tokenBalance.toLocaleString()} tokens available</Text>
             </View>
             <Pressable style={styles.tokenSheetClose} onPress={onClose}>
-              <Ionicons name="close" color="#BDB8CE" size={21} />
+              <Ionicons name="close" color={colors.text} size={21} />
             </Pressable>
           </View>
 
-          <View style={styles.tokenCompactPanel}>
-            <Text style={styles.tokenCompactPercent}>{availablePercent}% left this cycle</Text>
-            <Text style={styles.tokenCompactMeta}>{tokenMembership.plan} plan - {tokenMembership.renewal.toLowerCase()}</Text>
-          </View>
+          <ScrollView contentContainerStyle={styles.tokenSheetContent} showsVerticalScrollIndicator={false} style={styles.tokenSheetScroll}>
+            <View style={styles.tokenHeroPanel}>
+              <View style={styles.tokenHeroTop}>
+                <View>
+                  <Text style={styles.tokenHeroLabel}>Current cycle</Text>
+                  <Text style={styles.tokenHeroValue}>{availablePercent}% remaining</Text>
+                </View>
+                <View style={styles.tokenRenewalBadge}>
+                  <Ionicons name="refresh-outline" color="#FFF200" size={15} />
+                  <Text style={styles.tokenRenewalText}>{tokenMembership.renewal}</Text>
+                </View>
+              </View>
+              <View style={styles.tokenTrack}>
+                <LinearGradient
+                  colors={["#FFF200", "#C6FF00", "#8B35FF"]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={[styles.tokenTrackFill, { width: `${progress * 100}%` }]}
+                />
+              </View>
+            </View>
 
-          <Pressable style={({ pressed }) => [styles.tokenManageButton, pressed ? styles.tokenManageButtonPressed : null]} onPress={onManage}>
-            <LinearGradient
-              colors={["#7A35FF", "#A85DFF", "#FFB44F"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.tokenManageGradient}
-            >
-              <Ionicons name="arrow-up-circle-outline" color={colors.text} size={20} />
-              <Text style={styles.tokenManageText}>Upgrade</Text>
-            </LinearGradient>
-          </Pressable>
+            <Pressable style={({ pressed }) => [styles.tokenManageButton, pressed ? styles.tokenManageButtonPressed : null]} onPress={onManage}>
+              <LinearGradient
+                colors={["#5E28D9", "#8B35FF"]}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.tokenManageGradient}
+              >
+                <Ionicons name="card-outline" color={colors.text} size={20} />
+                <Text style={styles.tokenManageText}>Manage membership</Text>
+              </LinearGradient>
+            </Pressable>
+          </ScrollView>
         </View>
       </View>
     </Modal>
   );
 }
 
-function TokenMiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.tokenMiniStat}>
-      <Text style={styles.tokenMiniStatLabel}>{label}</Text>
-      <Text style={styles.tokenMiniStatValue}>{value}</Text>
-    </View>
-  );
-}
-
-function UpgradePage({ billingCycle, onBack, onChangeBillingCycle }: {
-  billingCycle: BillingCycle;
-  onBack: () => void;
-  onChangeBillingCycle: (cycle: BillingCycle) => void;
-}) {
-  return (
-    <View style={styles.upgradePage}>
-      <View style={styles.upgradeHeader}>
-        <Pressable style={styles.upgradeBackButton} onPress={onBack}>
-          <Ionicons name="chevron-back" color={colors.text} size={22} />
-        </Pressable>
-        <View style={styles.upgradeHeaderCopy}>
-          <Text style={styles.upgradeKicker}>Upgrade Vibyra</Text>
-          <Text style={styles.upgradeTitle}>Build more with fewer limits.</Text>
-          <Text style={styles.upgradeSubtitle}>Annual plans give you the best effective price and the most room to keep momentum.</Text>
-        </View>
-      </View>
-
-      <View style={styles.upgradeCycleControl}>
-        {(["annual", "monthly"] as BillingCycle[]).map((cycle) => {
-          const active = billingCycle === cycle;
-          return (
-            <Pressable
-              key={cycle}
-              onPress={() => onChangeBillingCycle(cycle)}
-              style={[styles.upgradeCycleOption, active ? styles.upgradeCycleOptionActive : null]}
-            >
-              <Text style={[styles.upgradeCycleText, active ? styles.upgradeCycleTextActive : null]}>
-                {cycle === "annual" ? "Annual" : "Monthly"}
-              </Text>
-              {cycle === "annual" ? <Text style={styles.upgradeCycleSave}>Save up to 19%</Text> : null}
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View style={styles.upgradePlans}>
-        {membershipPlans.map((plan) => (
-          <PlanCard key={plan.name} billingCycle={billingCycle} plan={plan} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function PlanCard({ billingCycle, plan }: {
-  billingCycle: BillingCycle;
-  plan: MembershipPlan;
-}) {
-  const price = billingCycle === "annual" ? plan.annual : plan.monthly;
-  const monthlySavings = plan.monthly - plan.annual;
-
-  return (
-    <View style={[styles.planCard, plan.featured ? styles.planCardFeatured : null, { borderColor: `${plan.accent}66` }]}>
-      {plan.featured ? (
-        <LinearGradient
-          colors={["rgba(69, 233, 155, 0.16)", "rgba(142, 92, 255, 0.08)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.planFeaturedWash}
-        />
-      ) : null}
-      <View style={styles.planTopRow}>
-        <View>
-          <Text style={styles.planName}>{plan.name}</Text>
-          <Text style={[styles.planBadge, { color: plan.accent }]}>{plan.badge}</Text>
-        </View>
-        <View style={[styles.planIcon, { backgroundColor: `${plan.accent}20`, borderColor: `${plan.accent}44` }]}>
-          <Ionicons name={plan.featured ? "rocket-outline" : "sparkles-outline"} color={plan.accent} size={22} />
-        </View>
-      </View>
-
-      <View style={styles.planPriceRow}>
-        <Text style={styles.planPrice}>£{price}</Text>
-        <Text style={styles.planPriceMeta}>/mo</Text>
-      </View>
-      <Text style={styles.planDescription}>
-        {billingCycle === "annual" ? `Billed annually. Save £${monthlySavings * 12} a year.` : plan.description}
-      </Text>
-
-      <View style={styles.planFeatures}>
-        {plan.features.map((feature) => (
-          <View key={feature} style={styles.planFeatureRow}>
-            <Ionicons name="checkmark-circle" color={plan.accent} size={18} />
-            <Text style={styles.planFeatureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
-
-      <Pressable style={({ pressed }) => [styles.planButton, plan.featured ? styles.planButtonFeatured : null, pressed ? styles.planButtonPressed : null]}>
-        {plan.featured ? (
-          <LinearGradient
-            colors={["#44E99C", "#8E5CFF"]}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.planButtonGradient}
-          >
-            <Text style={styles.planButtonTextFeatured}>Choose Builder</Text>
-          </LinearGradient>
-        ) : (
-          <Text style={styles.planButtonText}>Choose {plan.name}</Text>
-        )}
-      </Pressable>
-    </View>
-  );
+function formatPlanLabel(plan: string) {
+  const normalized = plan.trim().toLowerCase();
+  if (!normalized || normalized === "free") return "Free Plan";
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} Plan`;
 }
 
 function MobileConnectionCard({ machineName }: { machineName: string }) {
@@ -942,7 +1225,7 @@ function DashboardHome(props: {
           style={styles.welcomeBackdrop}
         >
           <View pointerEvents="none" style={styles.welcomeHeroImageWrap}>
-            <Image resizeMode="contain" source={dashboardHeroArt} style={styles.welcomeHeroImage} />
+            <Image resizeMode="contain" source={dashboardHeroArt} style={styles.welcomeHeroImage as ImageStyle} />
           </View>
           <View style={styles.welcomeHeroLeft}>
             <View style={styles.welcomeLivePill}>
@@ -1095,12 +1378,13 @@ function HomeAction({ icon, label, meta, badge, onPress }: {
 }
 
 function ProjectsPage(props: {
+  connected: boolean;
+  desktopFolders: Project[];
   filteredProjects: Project[];
-  onCreateProject: () => void;
-  onOpenProjectChat: (projectId: string, projectName: string) => void;
+  onCreateProject: () => Promise<void>;
+  onOpenProjectPreview: (projectId: string, projectName: string) => void;
   onScrollNeededChange: (needed: boolean) => void;
   onSearch: (value: string) => void;
-  onSelectProject: (projectId: string) => Promise<void>;
   projectSearch: string;
   selectedProjectId: string;
 }) {
@@ -1109,16 +1393,42 @@ function ProjectsPage(props: {
   const [archivedProjectIds, setArchivedProjectIds] = useState<Set<string>>(() => new Set());
   const [deletedProjectIds, setDeletedProjectIds] = useState<Set<string>>(() => new Set());
   const [deleteTarget, setDeleteTarget] = useState<ProjectDisplay | null>(null);
-  const [filterMode, setFilterMode] = useState<typeof projectFilterModes[number]>("All");
+  const initialFilterMode: typeof projectFilterModes[number] = props.connected ? "All" : "All";
+  const [filterMode, setFilterMode] = useState<typeof projectFilterModes[number]>(initialFilterMode);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
   const [renamedProjectNames, setRenamedProjectNames] = useState<Record<string, string>>({});
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
-  const hasSearch = props.projectSearch.trim().length > 0;
-  const baseProjects = hasSearch
-    ? props.filteredProjects.map((project, index): ProjectDisplay => ({
+
+  useEffect(() => {
+    if (!props.connected && filterMode !== "All") {
+      setFilterMode("All");
+      setFilterMenuOpen(false);
+    }
+  }, [props.connected, filterMode]);
+
+  const sourceFilteredProjects = useMemo(() => {
+    if (!props.connected) return props.filteredProjects;
+    if (filterMode === "PC") {
+      return props.filteredProjects.filter((project) => (project.source ?? "pc") === "pc");
+    }
+    if (filterMode === "Mobile") {
+      return props.filteredProjects.filter((project) => project.source === "mobile");
+    }
+    return props.filteredProjects;
+  }, [props.connected, props.filteredProjects, filterMode]);
+
+  const includedDesktopFolders = useMemo(() => {
+    if (!props.connected || filterMode !== "All") return [];
+    const knownPaths = new Set(props.filteredProjects.map((project) => project.path));
+    return props.desktopFolders.filter((folder) => !knownPaths.has(folder.path));
+  }, [props.connected, props.desktopFolders, props.filteredProjects, filterMode]);
+
+  const combined = useMemo(() => [...sourceFilteredProjects, ...includedDesktopFolders], [includedDesktopFolders, sourceFilteredProjects]);
+
+  const baseProjects = combined.map((project, index): ProjectDisplay => ({
       branch: index % 2 === 0 ? "main" : "develop",
       id: project.id,
       name: renamedProjectNames[project.id] ?? project.name,
@@ -1127,19 +1437,13 @@ function ProjectsPage(props: {
       stack: project.stack,
       status: projectStatuses[index % projectStatuses.length],
       updated: `Updated ${project.updated}`
-    }))
-    : projectMockups.map((mockup, index) => ({
-      ...mockup,
-      name: renamedProjectNames[mockup.id] ?? mockup.name,
-      sourceProject: props.filteredProjects[index]
     }));
   const displayProjects = baseProjects
     .filter((project) => !deletedProjectIds.has(project.id))
     .map((project) => ({
       ...project,
       status: archivedProjectIds.has(project.id) ? "Archived" as const : project.status
-    }))
-    .filter((project) => filterMode === "All" || project.status === filterMode);
+    }));
   const estimatedCardHeight = width <= 375 ? 134 : width <= 393 ? 130 : 122;
   const estimatedProjectsHeight = 182 + 44 + 18 + 18 + 14 * 4 + displayProjects.length * estimatedCardHeight + Math.max(displayProjects.length - 1, 0) * 12;
   const availableProjectsHeight = height - 74 - 88;
@@ -1154,14 +1458,21 @@ function ProjectsPage(props: {
     setFilterMenuOpen(false);
   }
 
+  function createProject() {
+    setFilterMenuOpen(false);
+    setMenuProjectId(null);
+    setRenamingProjectId(null);
+    setDeletedProjectIds(new Set());
+    void props.onCreateProject();
+  }
+
   function openProject(project: ProjectDisplay) {
     setOpenedProjectId(project.id);
     setFilterMenuOpen(false);
     setMenuProjectId(null);
     setRenamingProjectId(null);
     const projectId = project.sourceProject?.id ?? project.id;
-    if (project.sourceProject) void props.onSelectProject(project.sourceProject.id);
-    props.onOpenProjectChat(projectId, project.name);
+    props.onOpenProjectPreview(projectId, project.name);
   }
 
   function archiveProject(projectId: string) {
@@ -1231,15 +1542,14 @@ function ProjectsPage(props: {
 
   return (
     <View style={styles.projectsScreen}>
-      <ImageBackground source={projectsBackdrop} style={styles.projectsBackdrop} imageStyle={styles.projectsBackdropImage}>
+      <ImageBackground source={projectsBackdrop} style={styles.projectsBackdrop} imageStyle={styles.projectsBackdropImage as ImageStyle}>
         <View style={styles.projectsBackdropShade} />
       </ImageBackground>
 
       <View style={styles.projectsHero}>
         <View style={styles.projectsHeroCopy}>
-          <Text style={styles.projectsHeroTitle}>Projects</Text>
           <Text style={styles.projectsHeroSubtitle}>Manage and organize all your workspace projects.</Text>
-          <Pressable style={styles.projectsCreateButton} onPress={props.onCreateProject}>
+          <Pressable style={({ pressed }) => [styles.projectsCreateButton, pressed ? styles.projectsCreateButtonPressed : null]} onPress={createProject}>
             <LinearGradient
               colors={["#6630FF", "#7433FF", "#6425E6"]}
               start={{ x: 0, y: 0.5 }}
@@ -1251,7 +1561,7 @@ function ProjectsPage(props: {
             </LinearGradient>
           </Pressable>
         </View>
-        <Image source={projectsFoldersHero} style={[styles.projectsFoldersHero, projectLayout.heroImageStyle]} resizeMode="contain" />
+        <Image source={projectsFoldersHero} style={[styles.projectsFoldersHero as ImageStyle, projectLayout.heroImageStyle]} resizeMode="contain" />
       </View>
 
       <View style={[styles.projectsSearchRow, filterMenuOpen ? styles.projectsSearchRowMenuOpen : null]}>
@@ -1265,6 +1575,7 @@ function ProjectsPage(props: {
             style={styles.projectsSearchInput}
           />
         </View>
+        {props.connected ? (
         <View style={styles.projectsFilterWrap}>
           <Pressable style={[styles.projectsFilterButton, filterMode !== "All" ? styles.projectsFilterButtonActive : null]} onPress={() => setFilterMenuOpen((current) => !current)}>
             <Ionicons name="options-outline" color={filterMenuOpen ? "#F1ECFF" : "#B4B1C9"} size={22} />
@@ -1282,9 +1593,14 @@ function ProjectsPage(props: {
             </View>
           ) : null}
         </View>
+        ) : null}
       </View>
 
-      <Text style={styles.projectsFilterLabel}>Showing {filterMode.toLowerCase()} projects</Text>
+      {props.connected ? (
+        <Text style={styles.projectsFilterLabel}>
+          Showing {filterMode === "All" ? "all" : filterMode === "PC" ? "PC" : "mobile"} projects
+        </Text>
+      ) : null}
 
       <View style={styles.projectsList}>
         {displayProjects.map((project, index) => (
@@ -1323,76 +1639,120 @@ function ProjectsPage(props: {
 }
 
 function AIChatPage(props: {
+  accountPlan: string;
   agentRequesting: boolean;
+  bottomInset: number;
   chatMessages: ChatMessage[];
-  onBack: () => void;
+  creditsLow: boolean;
+  creditPercentRemaining: number;
+  onOpenApp: (app: GeneratedApp) => void;
+  onOpenTokens: () => void;
   onStart: () => void;
   projectChatTitles: Record<string, string>;
+  selectedChatModel: string;
   selectedChatId: string | null;
   selectedFileName: string;
   selectedModel: ModelKey;
   setSelectedChatId: (chatId: string | null) => void;
+  setSelectedChatModel: (model: string) => void;
   setSelectedModel: (model: ModelKey) => void;
   setTaskText: (value: string) => void;
   taskText: string;
 }) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
-  const [selectedChatModel, setSelectedChatModel] = useState<string>(props.selectedModel);
-  const hasConversation = props.chatMessages.some((message) => message.id !== "welcome");
-  const activeChat = previousChats.find((chat) => chat.id === props.selectedChatId);
-  const projectChatTitle = props.selectedChatId ? props.projectChatTitles[props.selectedChatId] : undefined;
+  const [selectedChatModel, setSelectedChatModel] = useState<string>(() => getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel));
+  const hasConversation = props.chatMessages.length > 0;
   const currentModel = chatModelOptions.find((model) => model.key === selectedChatModel) ?? chatModelOptions[0];
-  const title = activeChat?.title ?? projectChatTitle ?? "New chat";
+  const messageListRef = useRef<ScrollView | null>(null);
+  const shouldFollowChatRef = useRef(true);
+  const latestMessage = props.chatMessages[props.chatMessages.length - 1];
+  const latestMessageKey = latestMessage ? `${latestMessage.id}:${latestMessage.text.length}` : "";
+
+  const scrollToBottom = useCallback((animated = true) => {
+    requestAnimationFrame(() => messageListRef.current?.scrollToEnd({ animated }));
+    setTimeout(() => messageListRef.current?.scrollToEnd({ animated }), 60);
+    setTimeout(() => messageListRef.current?.scrollToEnd({ animated }), 180);
+  }, []);
+
+  const followIfAtBottom = useCallback((animated = true) => {
+    if (!shouldFollowChatRef.current) return;
+    scrollToBottom(animated);
+  }, [scrollToBottom]);
+
+  const handleMessageScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    shouldFollowChatRef.current = distanceFromBottom < 72;
+  }, []);
+
+  useEffect(() => {
+    const safeModel = getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel);
+    setSelectedChatModel(safeModel);
+    if (safeModel !== props.selectedChatModel) {
+      props.setSelectedChatModel(safeModel);
+    }
+  }, [props.accountPlan, props.selectedChatModel, props.selectedModel, props.setSelectedChatModel]);
+
+  useEffect(() => {
+    if (!hasConversation) return;
+    if (latestMessage?.role === "user") {
+      shouldFollowChatRef.current = true;
+      scrollToBottom(true);
+      return;
+    }
+    followIfAtBottom(true);
+  }, [hasConversation, latestMessage?.role, latestMessageKey, followIfAtBottom, scrollToBottom]);
 
   function selectModel(model: ChatModelOption) {
+    if (isModelLockedForPlan(model, props.accountPlan)) return;
     setSelectedChatModel(model.key);
+    props.setSelectedChatModel(model.key);
     if (model.modelKey) props.setSelectedModel(model.modelKey);
     setModelMenuOpen(false);
   }
 
   return (
     <View style={[styles.chatPage, styles.chatActivePage]}>
-      <View style={styles.chatActiveHeader}>
-        <Pressable style={styles.chatBackButton} onPress={props.onBack}>
-          <Ionicons name="chevron-back" color={colors.text} size={22} />
-        </Pressable>
-        <View style={styles.chatActiveHeaderCopy}>
-          <Text numberOfLines={1} style={styles.chatActiveTitle}>{title}</Text>
-        </View>
-        <Pressable style={styles.chatEditButton}>
-          <Ionicons name="create-outline" color="#DCD7EA" size={20} />
-        </Pressable>
-      </View>
       <View style={styles.chatAssistantPanel}>
         {hasConversation ? (
           <ScrollView
             contentContainerStyle={styles.chatMessageListContent}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => followIfAtBottom(true)}
+            onLayout={() => followIfAtBottom(false)}
+            onScroll={handleMessageScroll}
+            ref={messageListRef}
+            scrollEventThrottle={16}
             showsVerticalScrollIndicator={false}
             style={styles.chatMessageList}
           >
-            {props.chatMessages.map((message) => <MessageBubble key={message.id} message={message} />)}
-            {props.agentRequesting ? <LoadingBubble /> : null}
+            {props.chatMessages.map((message) => <MessageBubble key={message.id} message={message} onOpenApp={props.onOpenApp} />)}
           </ScrollView>
         ) : (
-          <View style={styles.chatEmptySpace} />
+          <ChatEmptyState />
         )}
 
-        <View style={styles.chatComposerShell}>
+        <View style={[styles.chatComposerShell, { paddingBottom: Math.max(props.bottomInset, 8) }]}>
+          {props.creditsLow ? (
+            <LowCreditsWarning
+              onOpenTokens={props.onOpenTokens}
+              percentRemaining={props.creditPercentRemaining}
+            />
+          ) : null}
           {modelMenuOpen ? (
             <View style={styles.chatModelMenu}>
               {chatModelGroups.map((group) => (
                 <View key={group.title || "auto"} style={styles.chatModelGroup}>
                   {group.title ? <Text style={styles.chatModelGroupTitle}>{group.title}</Text> : null}
                   {group.options.map((model) => (
-                    <Pressable
+                    <ModelMenuRow
                       key={model.key}
-                      onPress={() => selectModel(model)}
-                      style={[styles.chatModelRow, selectedChatModel === model.key ? styles.chatModelRowActive : null]}
-                    >
-                      <ModelProviderIcon provider={model.provider} />
-                      <Text numberOfLines={1} style={styles.chatModelName}>{model.label}</Text>
-                      {selectedChatModel === model.key ? <Ionicons name="checkmark" color="#7CF1B3" size={18} /> : null}
-                    </Pressable>
+                      accountPlan={props.accountPlan}
+                      model={model}
+                      onSelect={selectModel}
+                      selected={selectedChatModel === model.key}
+                    />
                   ))}
                 </View>
               ))}
@@ -1415,6 +1775,8 @@ function AIChatPage(props: {
                 <Pressable style={styles.chatModelButton} onPress={() => setModelMenuOpen((open) => !open)}>
                   <ModelProviderIcon provider={currentModel.provider} compact />
                   <Text numberOfLines={1} style={styles.chatModelButtonText}>{currentModel.label}</Text>
+                  {currentModel.badge ? <Text style={styles.chatModelButtonBadge}>New</Text> : null}
+                  {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color="#AAA6BC" size={12} /> : null}
                   <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color="#AAA6BC" size={15} />
                 </Pressable>
               </View>
@@ -1436,29 +1798,127 @@ function AIChatPage(props: {
   );
 }
 
+function ModelMenuRow({
+  accountPlan,
+  model,
+  onSelect,
+  selected
+}: {
+  accountPlan: string;
+  model: ChatModelOption;
+  onSelect: (model: ChatModelOption) => void;
+  selected: boolean;
+}) {
+  const locked = isModelLockedForPlan(model, accountPlan);
+
+  return (
+    <Pressable
+      disabled={locked}
+      onPress={() => onSelect(model)}
+      style={[
+        styles.chatModelRow,
+        selected ? styles.chatModelRowActive : null,
+        locked ? styles.chatModelRowLocked : null
+      ]}
+    >
+      <ModelProviderIcon provider={model.provider} />
+      <Text numberOfLines={1} style={styles.chatModelName}>{model.label}</Text>
+      {model.badge ? <Text style={styles.chatModelBadge}>{model.badge}</Text> : null}
+      {locked ? (
+        <View style={styles.chatModelLockPill}>
+          <Ionicons name="lock-closed" color="#C9C2D6" size={11} />
+          <Text style={styles.chatModelLockText}>Pro</Text>
+        </View>
+      ) : null}
+      {selected ? <Ionicons name="checkmark" color="#7CF1B3" size={18} /> : null}
+    </Pressable>
+  );
+}
+
+function getUnlockedInitialChatModel(selectedModel: ModelKey, accountPlan: string, preferredModel?: string) {
+  const preferred = preferredModel ? chatModelOptions.find((model) => model.key === preferredModel) : null;
+  if (preferred && !isModelLockedForPlan(preferred, accountPlan)) return preferred.key;
+
+  const selected = chatModelOptions.find((model) => model.modelKey === selectedModel || model.key === selectedModel);
+  if (selected && !isModelLockedForPlan(selected, accountPlan)) return selected.key;
+  return "gpt-5.4-mini";
+}
+
+function isModelLockedForPlan(model: ChatModelOption, accountPlan: string) {
+  return Boolean(model.locked && accountPlan.toLowerCase() === "free");
+}
+
+function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
+  onOpenTokens: () => void;
+  percentRemaining: number;
+}) {
+  return (
+    <View style={styles.lowCreditsCard}>
+      <View style={styles.lowCreditsIcon}>
+        <Ionicons name="flash" color="#FFF200" size={20} />
+      </View>
+      <View style={styles.lowCreditsCopy}>
+        <Text style={styles.lowCreditsTitle}>Credits are running low</Text>
+        <Text style={styles.lowCreditsText}>{Math.max(0, percentRemaining)}% remaining. Top up soon to keep AI chat flowing.</Text>
+      </View>
+      <Pressable style={styles.lowCreditsButton} onPress={onOpenTokens}>
+        <Text style={styles.lowCreditsButtonText}>View</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function ChatEmptyState() {
+  return (
+    <View style={styles.chatEmptyState}>
+      <ChatWelcomeGlyph />
+      <Text style={styles.chatWelcomeTitle}>How can I help you build today?</Text>
+      <Text style={styles.chatWelcomeSubtitle}>Ask anything about your project, code, ideas, or problems.</Text>
+      <View style={styles.chatSuggestionGrid}>
+        {chatSuggestions.map((suggestion) => (
+          <Pressable key={suggestion.title} style={styles.chatSuggestionCard}>
+            <Ionicons name={suggestion.icon} color="#8B35FF" size={28} style={styles.chatSuggestionIconGlyph} />
+            <Text numberOfLines={2} style={styles.chatSuggestionTitle}>{suggestion.title}</Text>
+            <Text numberOfLines={3} style={styles.chatSuggestionDescription}>{suggestion.description}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ChatWelcomeGlyph() {
+  return (
+    <View pointerEvents="none" style={styles.chatWelcomeGlyph}>
+      <Image resizeMode="contain" source={aiChatGlyph} style={styles.chatWelcomeGlyphImage as ImageStyle} />
+    </View>
+  );
+}
+
 function ModelProviderIcon({ compact, provider }: { compact?: boolean; provider: ChatModelProvider }) {
   const config = {
-    auto: { backgroundColor: "rgba(255, 255, 255, 0.08)", color: "#EDE9FF", icon: "sparkles-outline" as const },
-    claude: { backgroundColor: "rgba(217, 119, 87, 0.16)", color: "#D97757", icon: "sunny-outline" as const },
-    openai: { backgroundColor: "rgba(16, 163, 127, 0.16)", color: "#10A37F", icon: "aperture-outline" as const },
-    gemini: { backgroundColor: "rgba(102, 126, 234, 0.18)", color: "#8EA0FF", icon: "diamond-outline" as const }
+    auto: { color: "#EDE9FF", icon: "sparkles-outline" as const },
+    claude: { color: "#D97757", icon: "sunny-outline" as const },
+    openai: { color: "#10A37F", icon: "aperture-outline" as const },
+    gemini: { color: "#8EA0FF", icon: "diamond-outline" as const }
   }[provider];
   const logoSource = provider === "openai" || provider === "gemini" ? providerLogoSources[provider] : null;
 
   return (
     <View style={[
       styles.chatProviderIcon,
-      compact ? styles.chatProviderIconCompact : null,
-      { backgroundColor: config.backgroundColor }
+      compact ? styles.chatProviderIconCompact : null
     ]}>
-      {logoSource ? (
+      {provider === "claude" ? (
+        <ClaudeLogo compact={compact} />
+      ) : logoSource ? (
         <Image
           resizeMode="contain"
           source={{ uri: logoSource }}
           style={[
-            styles.chatProviderLogo,
-            compact ? styles.chatProviderLogoCompact : null,
-            provider === "openai" ? styles.chatProviderLogoOpenAi : null
+            styles.chatProviderLogo as ImageStyle,
+            compact ? styles.chatProviderLogoCompact as ImageStyle : null,
+            provider === "openai" ? styles.chatProviderLogoOpenAi as ImageStyle : null
           ]}
         />
       ) : (
@@ -1468,99 +1928,670 @@ function ModelProviderIcon({ compact, provider }: { compact?: boolean; provider:
   );
 }
 
-function CommunityPage() {
+function ClaudeLogo({ compact }: { compact?: boolean }) {
+  const size = compact ? 10 : 13;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Rect width="100" height="100" rx="22" fill="#D97757" />
+      <Path
+        d="M50 45 38 14l4-5h7l11 31 4-27 6-4 7 5-5 29 20-22h7l4 6-3 8-23 24 26-5 6 4 1 7-6 5-28 5 27 12 4 6-3 7-8 2-28-15 22 24v8l-6 5-8-2-18-24 5 30-4 7-8 1-5-7-1-30-18 25-8 2-6-5 2-8 22-28-26 15-8-1-4-7 3-7 28-17-30-2-6-5 2-7 7-4 30 3-25-19-2-8 6-5h8l25 19Z"
+        fill="#FFF7F0"
+      />
+    </Svg>
+  );
+}
+
+function CommunityPage({
+  authToken,
+  currentUserName,
+  openedPostId,
+  onOpenApp,
+  onSelectPost,
+  selectedPost
+}: {
+  authToken: string;
+  currentUserName: string;
+  openedPostId: string | null;
+  onOpenApp: (postId: string) => void;
+  onSelectPost: (post: CommunityPost | null) => void;
+  selectedPost: CommunityPost | null;
+}) {
+  const [activeFilter, setActiveFilter] = useState<CommunityFilter>("All");
+  const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
+  const [commentDraftsByPostId, setCommentDraftsByPostId] = useState<Record<string, string>>({});
+  const [commentErrorsByPostId, setCommentErrorsByPostId] = useState<Record<string, string>>({});
+  const [commentsByPostId, setCommentsByPostId] = useState<Record<string, CommunityComment[]>>(() => loadCommunityComments());
+  const [commentPostingByPostId, setCommentPostingByPostId] = useState<Record<string, boolean>>({});
+  const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
+  const [openedPostIds, setOpenedPostIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    saveCommunityComments(commentsByPostId);
+  }, [commentsByPostId]);
+
+  const filteredPosts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return communityPosts.filter((post) => {
+      const matchesFilter = activeFilter === "All" || post.tag === activeFilter;
+      const searchable = [post.title, post.description, post.user, ...post.tags].join(" ").toLowerCase();
+      return matchesFilter && (!query || searchable.includes(query));
+    });
+  }, [activeFilter, searchQuery]);
+
+  const toggleBookmark = useCallback((postId: string) => {
+    setBookmarkedPostIds((current) => current.includes(postId) ? current.filter((id) => id !== postId) : [...current, postId]);
+  }, []);
+
+  const toggleLike = useCallback((postId: string) => {
+    setLikedPostIds((current) => current.includes(postId) ? current.filter((id) => id !== postId) : [...current, postId]);
+  }, []);
+
+  const openApp = useCallback((postId: string) => {
+    setOpenedPostIds((current) => current.includes(postId) ? current : [...current, postId]);
+    onOpenApp(postId);
+  }, [onOpenApp]);
+
+  const addComment = useCallback(async (postId: string) => {
+    const text = (commentDraftsByPostId[postId] ?? "").trim();
+    if (!text) return;
+
+    setCommentErrorsByPostId((current) => ({ ...current, [postId]: "" }));
+    setCommentPostingByPostId((current) => ({ ...current, [postId]: true }));
+
+    try {
+      if (!authToken) {
+        throw new Error("Log in to post a comment.");
+      }
+
+      await appApiRequest("/api/moderation", {
+        method: "POST",
+        body: JSON.stringify({
+          surface: "community.comment",
+          text
+        })
+      }, authToken);
+    } catch (error) {
+      setCommentErrorsByPostId((current) => ({
+        ...current,
+        [postId]: error instanceof Error ? error.message : "That comment could not be posted."
+      }));
+      setCommentPostingByPostId((current) => ({ ...current, [postId]: false }));
+      return;
+    }
+
+    const displayName = currentUserName.trim() || "You";
+
+    setCommentsByPostId((current) => ({
+      ...current,
+      [postId]: [
+        ...(current[postId] ?? []),
+        { id: `community-comment-${Date.now()}`, name: displayName, text, time: "Just now" }
+      ]
+    }));
+    setCommentDraftsByPostId((current) => ({ ...current, [postId]: "" }));
+    setCommentPostingByPostId((current) => ({ ...current, [postId]: false }));
+  }, [authToken, commentDraftsByPostId, currentUserName]);
+
+  if (selectedPost) {
+    const addedComments = commentsByPostId[selectedPost.id] ?? [];
+    const opened = openedPostIds.includes(selectedPost.id);
+
+    if (openedPostId === selectedPost.id) {
+      return <CommunityOpenedAppPage opened={opened} post={selectedPost} />;
+    }
+
+    return (
+      <CommunityPostDetail
+        addedComments={addedComments}
+        bookmarked={bookmarkedPostIds.includes(selectedPost.id)}
+        commentCount={selectedPost.comments + addedComments.length}
+        commentDraft={commentDraftsByPostId[selectedPost.id] ?? ""}
+        commentError={commentErrorsByPostId[selectedPost.id] ?? ""}
+        commentPosting={Boolean(commentPostingByPostId[selectedPost.id])}
+        liked={likedPostIds.includes(selectedPost.id)}
+        opened={opened}
+        post={selectedPost}
+        onAddComment={() => addComment(selectedPost.id)}
+        onCommentDraftChange={(text) => setCommentDraftsByPostId((current) => ({ ...current, [selectedPost.id]: text }))}
+        onOpen={() => openApp(selectedPost.id)}
+        onToggleBookmark={() => toggleBookmark(selectedPost.id)}
+        onToggleLike={() => toggleLike(selectedPost.id)}
+      />
+    );
+  }
+
   return (
     <View style={styles.communityScreen}>
       <View style={styles.communityHero}>
         <View style={styles.communityHeroCopy}>
-          <Text style={styles.communityHeroTitle}>Community</Text>
           <Text style={styles.communityHeroSubtitle}>See what other builders are making.</Text>
         </View>
-        <Image resizeMode="contain" source={communityHero} style={styles.communityHeroImage} />
+        <Image resizeMode="contain" source={communityHero} style={styles.communityHeroImage as ImageStyle} />
       </View>
 
       <View style={styles.communityTabs}>
-        {["Recent", "Popular", "Featured"].map((filter, index) => (
-          <Pressable key={filter} style={[styles.communityTab, index === 0 ? styles.communityTabActive : null]}>
-            <Text style={[styles.communityTabText, index === 0 ? styles.communityTabTextActive : null]}>{filter}</Text>
-          </Pressable>
-        ))}
+        {(["All", "Recent", "Popular", "Featured"] as CommunityFilter[]).map((filter) => {
+          const active = activeFilter === filter;
+          return (
+            <Pressable key={filter} onPress={() => setActiveFilter(filter)} style={[styles.communityTab, active ? styles.communityTabActive : null]}>
+              <Text style={[styles.communityTabText, active ? styles.communityTabTextActive : null]}>{filter}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.communitySearchRow}>
         <View style={styles.communitySearchBar}>
           <Ionicons name="search-outline" color="#8E8AA3" size={22} />
           <TextInput
-            editable={false}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
             placeholder="Search projects, builders, tags..."
             placeholderTextColor="#8E8AA3"
             style={styles.communitySearchInput}
           />
         </View>
-        <Pressable style={styles.communityFilterButton}>
+        <Pressable
+          accessibilityLabel="Cycle community filter"
+          style={styles.communityFilterButton}
+          onPress={() => {
+            const filters: CommunityFilter[] = ["All", "Recent", "Popular", "Featured"];
+            const nextIndex = (filters.indexOf(activeFilter) + 1) % filters.length;
+            setActiveFilter(filters[nextIndex]);
+          }}
+        >
           <Ionicons name="options-outline" color="#B4B1C9" size={22} />
         </Pressable>
       </View>
 
       <View style={styles.communityFeed}>
-        {communityPosts.map((post) => <CommunityPostCard key={post.title} post={post} />)}
+        {filteredPosts.length ? filteredPosts.map((post) => (
+          <CommunityPostCard
+            key={post.id}
+            bookmarked={bookmarkedPostIds.includes(post.id)}
+            liked={likedPostIds.includes(post.id)}
+            post={post}
+            commentCount={post.comments + (commentsByPostId[post.id]?.length ?? 0)}
+            onOpen={() => onSelectPost(post)}
+            onToggleBookmark={() => toggleBookmark(post.id)}
+            onToggleLike={() => toggleLike(post.id)}
+          />
+        )) : (
+          <View style={styles.communityEmptyState}>
+            <Ionicons name="search-outline" color="#9D80FF" size={30} />
+            <Text style={styles.communityEmptyTitle}>No apps found</Text>
+            <Text style={styles.communityEmptyText}>Try a different search or filter.</Text>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
-function CommunityPostCard({ post }: { post: typeof communityPosts[number] }) {
-  const green = post.tag === "Recent";
-  const blue = post.tag === "Featured";
-  const tagStyle = green ? styles.communityPostBadgeGreen : blue ? styles.communityPostBadgeBlue : styles.communityPostBadgePurple;
+function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onToggleBookmark, onToggleLike, post }: {
+  bookmarked: boolean;
+  commentCount: number;
+  liked: boolean;
+  onOpen: () => void;
+  onToggleBookmark: () => void;
+  onToggleLike: () => void;
+  post: CommunityPost;
+}) {
+  const likes = post.likes + (liked ? 1 : 0);
 
   return (
-    <View style={styles.communityPostCard}>
-      <View style={styles.communityPostLeft}>
-        <View style={[styles.communityAvatar, { backgroundColor: `${post.accent}2A` }]}>
-          <Text style={[styles.communityAvatarText, { color: post.accent }]}>{post.user.slice(0, 1)}</Text>
-        </View>
-
-        <View style={styles.communityPostBody}>
-          <View>
-            <Text style={styles.communityPostUser}>{post.user}</Text>
-            <Text style={styles.communityPostTime}>{post.time}</Text>
-          </View>
-
-          <View>
-            <Text style={styles.communityPostTitle}>{post.title}</Text>
-            <Text style={styles.communityPostDescription}>{post.description}</Text>
-          </View>
-
-          <View style={styles.communityPostTags}>
-            {post.tags.map((tag) => (
-              <Text key={tag} style={[
-                styles.communityPostTag,
-                green ? styles.communityPostTagGreen : blue ? styles.communityPostTagBlue : styles.communityPostTagPurple
-              ]}>{tag}</Text>
-            ))}
-          </View>
-
-          <View style={styles.communityPostStats}>
-            <View style={styles.communityPostStat}>
-              <Ionicons name="heart-outline" color="#B7B4C8" size={18} />
-              <Text style={styles.communityPostStatText}>{post.likes}</Text>
-            </View>
-            <View style={styles.communityPostStat}>
-              <Ionicons name="chatbubble-outline" color="#B7B4C8" size={18} />
-              <Text style={styles.communityPostStatText}>{post.comments}</Text>
-            </View>
-          </View>
+    <Pressable style={({ pressed }) => [styles.communityPostCard, pressed ? styles.communityPostCardPressed : null]} onPress={onOpen}>
+      <View style={styles.communityPostTop}>
+        <CommunityAppLogo post={post} size={48} />
+        <View style={styles.communityPostTitleBlock}>
+          <Text numberOfLines={1} style={styles.communityPostTitle}>{post.title}</Text>
+          <Text numberOfLines={2} style={styles.communityPostDescription}>{post.description}</Text>
         </View>
       </View>
 
-      <View style={styles.communityPostSide}>
-        <Text style={[styles.communityPostBadge, tagStyle]}>{post.tag}</Text>
-        <Pressable style={styles.communityBookmark}>
-          <Ionicons name="bookmark-outline" color="#D7D3EA" size={18} />
+      <View style={styles.communityMakerMiniRow}>
+        <View style={[styles.communityMakerMiniAvatar, { backgroundColor: `${post.accent}26` }]}>
+          <Text style={[styles.communityMakerMiniAvatarText, { color: post.accent }]}>{post.user.slice(0, 1)}</Text>
+        </View>
+        <Text numberOfLines={1} style={styles.communityMakerMiniName}>{post.user}</Text>
+        <Text style={styles.communityMakerMiniDot}>-</Text>
+        <Text style={styles.communityMakerMiniTime}>{post.time}</Text>
+      </View>
+
+      <View style={styles.communityPostBottom}>
+        <View style={styles.communityPostStats}>
+          <Pressable style={styles.communityPostStat} onPress={(event) => {
+            event.stopPropagation();
+            onToggleLike();
+          }}>
+            <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : "#B7B4C8"} size={17} />
+            <Text style={[styles.communityPostStatText, liked ? styles.communityPostStatLiked : null]}>{likes}</Text>
+          </Pressable>
+          <View style={styles.communityPostStat}>
+            <Ionicons name="chatbubble-outline" color="#B7B4C8" size={17} />
+            <Text style={styles.communityPostStatText}>{commentCount}</Text>
+          </View>
+        </View>
+
+        <Pressable style={styles.communityPostOpenButton} onPress={(event) => {
+          event.stopPropagation();
+          onOpen();
+        }}>
+          <Text style={styles.communityPostOpenText}>Open</Text>
+        </Pressable>
+        <Pressable style={styles.communityBookmark} onPress={(event) => {
+          event.stopPropagation();
+          onToggleBookmark();
+        }}>
+          <Ionicons name={bookmarked ? "bookmark" : "bookmark-outline"} color={bookmarked ? post.accent : "#D7D3EA"} size={17} />
         </Pressable>
       </View>
+    </Pressable>
+  );
+}
+
+function CommunityPostDetail({
+  addedComments,
+  bookmarked,
+  commentCount,
+  commentDraft,
+  commentError,
+  commentPosting,
+  liked,
+  onAddComment,
+  onCommentDraftChange,
+  onOpen,
+  onToggleBookmark,
+  onToggleLike,
+  opened,
+  post
+}: {
+  addedComments: CommunityComment[];
+  bookmarked: boolean;
+  commentCount: number;
+  commentDraft: string;
+  commentError: string;
+  commentPosting: boolean;
+  liked: boolean;
+  onAddComment: () => void;
+  onCommentDraftChange: (text: string) => void;
+  onOpen: () => void;
+  onToggleBookmark: () => void;
+  onToggleLike: () => void;
+  opened: boolean;
+  post: CommunityPost;
+}) {
+  const [activeTab, setActiveTab] = useState<CommunityDetailTab>("about");
+  const likes = post.likes + (liked ? 1 : 0);
+  const comments = [...getCommunitySeedComments(post), ...addedComments];
+  const canPostComment = commentDraft.trim().length > 0 && !commentPosting;
+
+  return (
+    <View style={styles.communityDetailScreen}>
+      <View style={styles.communityDetailIdentity}>
+        <View style={styles.communityDetailTitleBlock}>
+          <Text style={styles.communityDetailKicker}>{post.tag} app</Text>
+          <Text numberOfLines={2} style={styles.communityDetailTitle}>{formatCommunityTitle(post.title)}</Text>
+          <Text style={styles.communityDetailDescription}>{post.description}</Text>
+        </View>
+        <CommunityAppLogo accent={communityDetailAccent} post={post} size={76} />
+      </View>
+
+      <View style={styles.communityDetailMakerLine}>
+        <CommunityAuthorAvatar accent={communityDetailAccent} name={post.user} size={44} />
+        <View style={styles.communityMakerCopy}>
+          <Text style={styles.communityMakerName}>{post.user}</Text>
+        </View>
+      </View>
+
+      <View style={styles.communityDetailActions}>
+        <Pressable style={styles.communityPrimaryOpenButton} onPress={onOpen}>
+          <LinearGradient
+            colors={[communityDetailAccentDark, communityDetailAccent]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.communityPrimaryOpenGradient}
+          >
+            <Ionicons name={opened ? "checkmark-circle" : "open-outline"} color={colors.text} size={25} />
+            <Text style={styles.communityPrimaryOpenText}>{opened ? "Opened" : "Open app"}</Text>
+          </LinearGradient>
+        </Pressable>
+        <Pressable style={styles.communitySmallAction} onPress={onToggleBookmark}>
+          <Ionicons name={bookmarked ? "bookmark" : "bookmark-outline"} color={colors.text} size={24} />
+          <Text style={styles.communitySmallActionText}>{bookmarked ? "Saved" : "Save"}</Text>
+        </Pressable>
+        <Pressable style={styles.communityLikeButton} onPress={onToggleLike}>
+          <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : colors.text} size={25} />
+          <Text style={styles.communityDetailIconText}>{likes}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.communityDetailDivider} />
+
+      <View style={styles.communityDetailTabs}>
+        {(["about", "comments"] as CommunityDetailTab[]).map((tab) => {
+          const active = activeTab === tab;
+          return (
+            <Pressable key={tab} style={[styles.communityDetailTab, active ? styles.communityDetailTabActive : null]} onPress={() => setActiveTab(tab)}>
+              <Text style={[styles.communityDetailTabText, active ? styles.communityDetailTabTextActive : null]}>
+                {tab === "about" ? "About" : `Comments ${commentCount}`}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {activeTab === "about" ? (
+        <View style={styles.communityTabPanel}>
+          <View style={styles.communityDetailScreenshots}>
+            <Text style={styles.communityDetailPanelTitle}>Screenshots</Text>
+            <View style={styles.communityScreenshotGrid}>
+              {post.screenshots.map((screenshot, index) => (
+                <View key={screenshot} style={styles.communityScreenshotPreview}>
+                  <CommunityPreview tone={post.accent} type={post.preview} />
+                  <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.communityAboutBlock}>
+            <Text style={styles.communityDetailPanelTitle}>About this app</Text>
+            <Text style={styles.communityDetailPanelBody}>{post.about}</Text>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.communityCommentSection}>
+          <View style={styles.communityCommentHeader}>
+            <Text style={styles.communityDetailPanelTitle}>Comments</Text>
+            <Text style={styles.communityCommentCount}>{commentCount}</Text>
+          </View>
+          <View style={styles.communityCommentComposer}>
+            <TextInput
+              multiline
+              onChangeText={onCommentDraftChange}
+              placeholder="Add a comment..."
+              placeholderTextColor="#8F8A9E"
+              style={styles.communityCommentInput}
+              value={commentDraft}
+            />
+            <Pressable
+              disabled={!canPostComment}
+              onPress={onAddComment}
+              style={[styles.communityCommentPostButton, !canPostComment ? styles.communityCommentPostButtonDisabled : null]}
+            >
+              {commentPosting ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="send" color={colors.text} size={17} />}
+              <Text style={styles.communityCommentPostText}>{commentPosting ? "Checking" : "Post"}</Text>
+            </Pressable>
+          </View>
+          {commentError ? (
+            <View style={styles.communityCommentError}>
+              <Ionicons name="alert-circle-outline" color="#FFB4C1" size={18} />
+              <Text style={styles.communityCommentErrorText}>{commentError}</Text>
+            </View>
+          ) : null}
+          {comments.map((comment) => (
+            <View key={comment.id} style={styles.communityCommentRow}>
+              <CommunityAuthorAvatar accent={communityDetailAccent} name={comment.name} size={36} />
+              <View style={styles.communityCommentCopy}>
+                <View style={styles.communityCommentNameRow}>
+                  <Text style={styles.communityCommentName}>{comment.name}</Text>
+                  <Text style={styles.communityCommentTime}>{comment.time}</Text>
+                </View>
+                <Text style={styles.communityCommentText}>{comment.text}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
+  );
+}
+
+function getCommunitySeedComments(post: CommunityPost): CommunityComment[] {
+  const shared = [
+    { name: "Iris", text: post.preview === "invoice" ? "The payment follow-up flow feels useful." : "This is clean and easy to understand.", time: "2d ago" },
+    { name: "Sam", text: post.preview === "habit" ? "The weekly reflection screen is my favourite bit." : "The screenshots make the app feel ready to try.", time: "3d ago" },
+    { name: "Ava", text: "The layout feels polished without being busy.", time: "4d ago" },
+    { name: "Ben", text: "I like how quickly the core workflow makes sense.", time: "5d ago" },
+    { name: "Nia", text: "This would be useful as a starter template.", time: "6d ago" },
+    { name: "Theo", text: "The visual direction is strong and practical.", time: "1w ago" },
+    { name: "Mila", text: "Nice balance between simple controls and useful detail.", time: "1w ago" },
+    { name: "Owen", text: "The screenshots make me want to try the live version.", time: "1w ago" },
+    { name: "Rae", text: "Clear idea, good execution, and easy to scan.", time: "2w ago" }
+  ];
+
+  return shared.slice(0, post.comments).map((comment, index) => ({
+    id: `${post.id}-seed-${index}`,
+    ...comment
+  }));
+}
+
+function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post: CommunityPost }) {
+  return (
+    <View style={styles.communityOpenedAppScreen}>
+      <View style={styles.communityOpenedAppIntro}>
+        <CommunityAppLogo accent={communityDetailAccent} post={post} size={64} />
+        <View style={styles.communityOpenedAppCopy}>
+          <Text style={styles.communityOpenedAppKicker}>{opened ? "Opened app" : "App preview"}</Text>
+          <Text numberOfLines={2} style={styles.communityOpenedAppTitle}>{formatCommunityTitle(post.title)}</Text>
+          <Text style={styles.communityOpenedAppSubtitle}>{post.description}</Text>
+        </View>
+      </View>
+      <CommunityAppExperience post={post} />
+    </View>
+  );
+}
+
+function CommunityAppExperience({ post }: { post: CommunityPost }) {
+  const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d">("7d");
+  const [habitChecked, setHabitChecked] = useState(false);
+  const [invoicePaid, setInvoicePaid] = useState(false);
+
+  return (
+    <View style={styles.communityAppExperience}>
+      <View style={styles.communityAppExperienceHeader}>
+        <View>
+          <Text style={styles.communityAppExperienceKicker}>Live preview</Text>
+          <Text style={styles.communityAppExperienceTitle}>{formatCommunityTitle(post.title)}</Text>
+        </View>
+        <View style={styles.communityAppLivePill}>
+          <View style={styles.communityAppLiveDot} />
+          <Text style={styles.communityAppLiveText}>Open</Text>
+        </View>
+      </View>
+
+      {post.preview === "invoice" ? (
+        <View style={styles.communityDemoPanel}>
+          <View style={styles.communityDemoTopRow}>
+            <View>
+              <Text style={styles.communityDemoLabel}>Invoice total</Text>
+              <Text style={styles.communityDemoValue}>$2,480</Text>
+            </View>
+            <Text style={[styles.communityDemoStatus, invoicePaid ? styles.communityDemoStatusDone : null]}>
+              {invoicePaid ? "Paid" : "Due today"}
+            </Text>
+          </View>
+          {["Design sprint", "Frontend build", "QA pass"].map((item, index) => (
+            <View key={item} style={styles.communityDemoLineItem}>
+              <Text style={styles.communityDemoLineText}>{item}</Text>
+              <Text style={styles.communityDemoLineAmount}>${[900, 1280, 300][index].toLocaleString()}</Text>
+            </View>
+          ))}
+          <Pressable style={styles.communityDemoAction} onPress={() => setInvoicePaid((paid) => !paid)}>
+            <Ionicons name={invoicePaid ? "refresh-outline" : "checkmark-circle-outline"} color={colors.text} size={20} />
+            <Text style={styles.communityDemoActionText}>{invoicePaid ? "Reset invoice" : "Mark as paid"}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {post.preview === "habit" ? (
+        <View style={styles.communityDemoPanel}>
+          <View style={styles.communityHabitDemoTop}>
+            <View style={[styles.communityHabitDemoRing, habitChecked ? styles.communityHabitDemoRingDone : null]}>
+              <Text style={styles.communityHabitDemoScore}>{habitChecked ? "9/10" : "8/10"}</Text>
+            </View>
+            <View style={styles.communityHabitDemoCopy}>
+              <Text style={styles.communityDemoLabel}>Today</Text>
+              <Text style={styles.communityDemoValue}>{habitChecked ? "Completed" : "One habit left"}</Text>
+            </View>
+          </View>
+          <View style={styles.communityHabitDemoGrid}>
+            {Array.from({ length: 21 }).map((_, index) => (
+              <View key={index} style={[styles.communityHabitDemoDot, index < (habitChecked ? 18 : 16) ? styles.communityHabitDemoDotDone : null]} />
+            ))}
+          </View>
+          <Pressable style={styles.communityDemoAction} onPress={() => setHabitChecked((checked) => !checked)}>
+            <Ionicons name={habitChecked ? "remove-circle-outline" : "add-circle-outline"} color={colors.text} size={20} />
+            <Text style={styles.communityDemoActionText}>{habitChecked ? "Undo check-in" : "Check in"}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {post.preview === "analytics" ? (
+        <View style={styles.communityDemoPanel}>
+          <View style={styles.communityAnalyticsDemoHeader}>
+            <View>
+              <Text style={styles.communityDemoLabel}>MRR</Text>
+              <Text style={styles.communityDemoValue}>{analyticsRange === "7d" ? "$28.9K" : "$34.2K"}</Text>
+            </View>
+            <View style={styles.communityAnalyticsRange}>
+              {(["7d", "30d"] as const).map((range) => (
+                <Pressable key={range} style={[styles.communityAnalyticsRangeOption, analyticsRange === range ? styles.communityAnalyticsRangeOptionActive : null]} onPress={() => setAnalyticsRange(range)}>
+                  <Text style={[styles.communityAnalyticsRangeText, analyticsRange === range ? styles.communityAnalyticsRangeTextActive : null]}>{range}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <View style={styles.communityAnalyticsBars}>
+            {(analyticsRange === "7d" ? [46, 62, 54, 78, 66, 88, 94] : [36, 44, 58, 52, 68, 74, 82]).map((height, index) => (
+              <View key={index} style={[styles.communityAnalyticsDemoBar, { height }]} />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function formatCommunityTitle(title: string) {
+  return title.replace(/\b\w/g, (letter) => letter.toUpperCase()).replace(/\bAi\b/g, "AI").replace(/\bSaas\b/g, "SaaS");
+}
+
+const COMMUNITY_COMMENTS_KEY = "vibyra.community.comments.v1";
+
+function loadCommunityComments(): Record<string, CommunityComment[]> {
+  try {
+    if (typeof globalThis.localStorage === "undefined") return {};
+    const raw = globalThis.localStorage.getItem(COMMUNITY_COMMENTS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(parsed).map(([postId, value]) => [
+      postId,
+      normalizeCommunityComments(value)
+    ]).filter(([, comments]) => comments.length > 0));
+  } catch {
+    return {};
+  }
+}
+
+function saveCommunityComments(commentsByPostId: Record<string, CommunityComment[]>) {
+  try {
+    if (typeof globalThis.localStorage === "undefined") return;
+    globalThis.localStorage.setItem(COMMUNITY_COMMENTS_KEY, JSON.stringify(commentsByPostId));
+  } catch {
+    // Community comments should remain usable even if local persistence is unavailable.
+  }
+}
+
+function normalizeCommunityComments(value: unknown): CommunityComment[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item): CommunityComment | null => {
+      if (!item || typeof item !== "object") return null;
+      const comment = item as Partial<CommunityComment>;
+      const id = String(comment.id ?? "").trim();
+      const text = String(comment.text ?? "").trim();
+      if (!id || !text) return null;
+      return {
+        id,
+        name: String(comment.name ?? "You").trim() || "You",
+        text,
+        time: String(comment.time ?? "Just now").trim() || "Just now"
+      };
+    })
+    .filter((comment): comment is CommunityComment => Boolean(comment))
+    .slice(-100);
+}
+
+function CommunityAuthorAvatar({ accent, name, size }: { accent: string; name: string; size: number }) {
+  return (
+    <LinearGradient
+      colors={[`${accent}4D`, "rgba(126, 72, 255, 0.24)", "rgba(255, 255, 255, 0.07)"]}
+      style={[
+        styles.communityAuthorAvatar,
+        { borderColor: `${accent}73`, borderRadius: size / 2, height: size, width: size }
+      ]}
+    >
+      <Text style={[styles.communityAuthorAvatarText, { color: colors.text, fontSize: Math.max(11, size * 0.36) }]}>{name.slice(0, 1)}</Text>
+    </LinearGradient>
+  );
+}
+
+function CommunityAppLogo({ accent, post, size }: { accent?: string; post: CommunityPost; size: number }) {
+  const logo = (post.logo ?? "default") as CommunityLogoKind;
+  const radius = Math.round(size * 0.26);
+  const tone = accent ?? post.accent;
+
+  return (
+    <LinearGradient
+      colors={[`${tone}E6`, `${tone}78`, "rgba(255, 255, 255, 0.18)"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[styles.communityGeneratedLogo, { borderRadius: radius, height: size, width: size }]}
+    >
+      <View style={[styles.communityGeneratedLogoInner, { borderRadius: Math.max(8, radius - 6) }]}>
+        {logo === "invoice" ? (
+          <>
+            <View style={[styles.communityInvoicePage, { height: size * 0.54, width: size * 0.38 }]}>
+              <View style={[styles.communityInvoiceLine, { width: "66%" }]} />
+              <View style={[styles.communityInvoiceLine, { opacity: 0.62, width: "86%" }]} />
+              <View style={[styles.communityInvoiceLine, { opacity: 0.42, width: "54%" }]} />
+            </View>
+            <View style={[styles.communityInvoiceCoin, { height: size * 0.2, right: size * 0.18, top: size * 0.18, width: size * 0.2 }]} />
+          </>
+        ) : null}
+
+        {logo === "habit" ? (
+          <>
+            <View style={[styles.communityHabitLogoRing, { borderColor: colors.text, height: size * 0.5, width: size * 0.5 }]}>
+              <View style={[styles.communityHabitLogoCore, { backgroundColor: tone }]} />
+            </View>
+            <View style={styles.communityHabitLogoDots}>
+              {Array.from({ length: 5 }).map((_, index) => <View key={index} style={[styles.communityHabitLogoDot, index < 3 ? { backgroundColor: colors.text } : null]} />)}
+            </View>
+          </>
+        ) : null}
+
+        {logo === "analytics" ? (
+          <View style={styles.communityAnalyticsLogoBars}>
+            {[0.36, 0.64, 0.48, 0.78].map((height, index) => (
+              <View key={index} style={[styles.communityAnalyticsLogoBar, { backgroundColor: index === 3 ? colors.text : "rgba(255, 255, 255, 0.72)", height: size * height }]} />
+            ))}
+          </View>
+        ) : null}
+
+        {logo === "default" ? (
+          <>
+            <View style={[styles.communityDefaultLogoOrb, { backgroundColor: colors.text, height: size * 0.24, width: size * 0.24 }]} />
+            <View style={[styles.communityDefaultLogoBlade, { backgroundColor: `${tone}CC`, height: size * 0.52, width: size * 0.18 }]} />
+            <View style={[styles.communityDefaultLogoBlade, styles.communityDefaultLogoBladeAlt, { height: size * 0.42, width: size * 0.15 }]} />
+          </>
+        ) : null}
+      </View>
+    </LinearGradient>
   );
 }
 
@@ -1629,101 +2660,131 @@ function CommunityPreview({ tone, type }: { tone: string; type: typeof community
 
 function ProfilePage(props: {
   activeTab: SettingsTab;
+  accountPlan: string;
+  creditsBalance: number;
   email: string;
   machineName: string;
+  name: string;
   onTabChange: (tab: SettingsTab) => void;
   projectCount: number;
   selectedModel: string;
 }) {
-  const tabs: Array<{ key: SettingsTab; icon: keyof typeof Ionicons.glyphMap; label: string }> = [
-    { key: "profile", icon: "person-circle-outline", label: "Profile" },
-    { key: "billing", icon: "card-outline", label: "Billing" },
-    { key: "preferences", icon: "options-outline", label: "Preferences" },
-    { key: "security", icon: "lock-closed-outline", label: "Security" }
-  ];
-  const projectCount = Math.max(props.projectCount, 7);
-  const machineName = props.machineName === "Vibyra Desktop" ? "ellis-Z270P-D3" : props.machineName;
+  const [selectedRow, setSelectedRow] = useState(getProfileRowForTab(props.activeTab));
+  const profileEmail = props.email === "you@vibyra.app" || !props.email ? "you@vibyra.app" : props.email;
+  const profileName = props.name.trim() || "Vibyra User";
+  const profileInitial = profileName.charAt(0).toUpperCase();
+  const planLabel = formatPlanLabel(props.accountPlan);
+
+  useEffect(() => {
+    setSelectedRow(getProfileRowForTab(props.activeTab));
+  }, [props.activeTab]);
+
+  const selectProfileRow = useCallback((label: string) => {
+    setSelectedRow(label);
+    const tab = getProfileTabForRow(label);
+    if (tab) props.onTabChange(tab);
+  }, [props]);
 
   return (
     <View style={styles.profileScreen}>
-      <View style={styles.profileHeader}>
-        <Text style={styles.profilePageTitle}>Profile / Settings</Text>
-        <Text style={styles.profilePageSubtitle}>Manage your account, preferences, and security.</Text>
-      </View>
-
-      <View style={styles.profileTabs}>
-        {tabs.map((tab) => {
-          const active = tab.key === props.activeTab;
-          return (
-            <Pressable key={tab.key} onPress={() => props.onTabChange(tab.key)} style={[styles.profileTab, active ? styles.profileTabActive : null]}>
-              <Ionicons name={tab.icon} color={active ? "#DDFCEB" : "#BAB5CA"} size={18} />
-              <Text style={[styles.profileTabText, active ? styles.profileTabTextActive : null]}>{tab.label}</Text>
+      <View style={styles.profileHeroCard}>
+        <View style={styles.profileHeroTop}>
+          <View style={styles.profileAvatarWrap}>
+            <View style={styles.profileAvatarLarge}>
+              <Text style={styles.profileAvatarLargeText}>{profileInitial}</Text>
+            </View>
+            <Pressable style={styles.profileAvatarEditButton}>
+              <Ionicons name="pencil-outline" color="#E8E2F7" size={18} />
             </Pressable>
-          );
-        })}
-      </View>
-
-      <View style={styles.profileSummaryCard}>
-        <View style={styles.profileSummaryTop}>
-          <View style={styles.profileAvatarLarge}>
-            <Text style={styles.profileAvatarLargeText}>B</Text>
           </View>
+
           <View style={styles.profileSummaryCopy}>
-            <Text style={styles.profileSummaryName}>Builder</Text>
-            <Text style={styles.profileSummaryEmail}>{props.email}</Text>
-            <View style={styles.profileConnectionRow}>
-              <View style={styles.profileConnectionDot} />
-              <Text style={styles.profileConnectionText}>Connected to {machineName}</Text>
+            <Text style={styles.profileSummaryName}>{profileName}</Text>
+            <Text style={styles.profileSummaryEmail}>{profileEmail}</Text>
+            <View style={styles.profilePlanBadge}>
+              <Ionicons name="diamond" color="#C259FF" size={16} />
+              <Text style={styles.profilePlanBadgeText}>{planLabel}</Text>
             </View>
           </View>
-          <Pressable style={styles.profileEditButton}>
-            <Ionicons name="pencil-outline" color={colors.text} size={17} />
-            <Text style={styles.profileEditText}>Edit Profile</Text>
-          </Pressable>
         </View>
 
-        <View style={styles.profileStatsPanel}>
-          <ProfileStat icon="folder-outline" value={`${projectCount}`} label="Projects" />
-          <ProfileStat icon="flash-outline" value="1,240" label="Tokens left" />
-          <ProfileStat icon="pulse-outline" value="2" label="AI tasks running" last />
+        <View style={styles.profileDivider} />
+
+        <View style={styles.profileUsageStrip}>
+          <View style={styles.profileUsageItem}>
+            <View style={styles.profileUsageIcon}>
+              <Ionicons name="flash" color="#C259FF" size={29} />
+            </View>
+            <View>
+              <Text style={styles.profileUsageValue}>{props.creditsBalance.toLocaleString()}</Text>
+              <Text style={styles.profileUsageLabel}>tokens remaining</Text>
+            </View>
+          </View>
+          <View style={styles.profileUsageDivider} />
+          <View style={styles.profileUsageItem}>
+            <View style={styles.profileUsageIcon}>
+              <Ionicons name="calendar-clear-outline" color="#B8B3CB" size={25} />
+            </View>
+            <View>
+              <Text style={styles.profileRenewMeta}>{props.accountPlan === "free" ? "Current plan" : "Renews on"}</Text>
+              <Text style={styles.profileRenewDate}>{props.accountPlan === "free" ? "Free trial" : "May 24, 2025"}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
       <ProfileSettingsGroup
-        title="Account"
+        activeLabel={selectedRow}
+        onSelect={selectProfileRow}
+        title="ACCOUNT"
         rows={[
-          { icon: "mail-outline", label: "Email", value: props.email },
-          { icon: "desktop-outline", label: "Connected PC", value: machineName, badge: "Active" },
-          { icon: "diamond-outline", label: "Plan", value: "Starter Plan" }
+          { icon: "person-outline", label: "Profile information" },
+          { icon: "card-outline", label: "Billing & subscription" },
+          { icon: "time-outline", label: "Usage & history" },
+          { icon: "gift-outline", label: "Refer & earn" }
         ]}
       />
 
       <ProfileSettingsGroup
-        title="Preferences"
+        activeLabel={selectedRow}
+        onSelect={selectProfileRow}
+        title="PREFERENCES"
         rows={[
-          { icon: "color-palette-outline", label: "Appearance", value: "Dark" },
-          { icon: "notifications-outline", label: "Notifications", value: "Email updates, project activity" }
+          { icon: "notifications-outline", label: "Notifications" },
+          { icon: "color-palette-outline", label: "Appearance" },
+          { icon: "shield-outline", label: "Privacy & security" },
+          { icon: "globe-outline", label: "Language", value: "English" }
         ]}
       />
 
       <ProfileSettingsGroup
-        title="Security"
+        activeLabel={selectedRow}
+        onSelect={selectProfileRow}
+        title="SUPPORT"
         rows={[
-          { icon: "lock-closed-outline", label: "Password", value: "Last changed 14 days ago" },
-          { icon: "shield-outline", label: "Active Sessions", value: "2 active sessions" }
-        ]}
-      />
-
-      <ProfileSettingsGroup
-        danger
-        title="Danger Zone"
-        rows={[
-          { icon: "trash-outline", label: "Log out", value: "Sign out from this account" },
-          { icon: "warning-outline", label: "Delete Account", value: "Permanently delete your account and data" }
+          { icon: "help-circle-outline", label: "Help center" },
+          { icon: "chatbubble-outline", label: "Contact support" },
+          { icon: "document-text-outline", label: "Terms of service" },
+          { danger: true, icon: "log-out-outline", label: "Log out" }
         ]}
       />
     </View>
   );
+}
+
+function getProfileRowForTab(tab: SettingsTab) {
+  if (tab === "billing") return "Billing & subscription";
+  if (tab === "preferences") return "Appearance";
+  if (tab === "security") return "Privacy & security";
+  return "Profile information";
+}
+
+function getProfileTabForRow(label: string): SettingsTab | null {
+  if (label === "Profile information") return "profile";
+  if (label === "Billing & subscription" || label === "Usage & history") return "billing";
+  if (label === "Notifications" || label === "Appearance" || label === "Language") return "preferences";
+  if (label === "Privacy & security") return "security";
+  return null;
 }
 
 function ProfileStat({ icon, label, last, value }: {
@@ -1745,27 +2806,39 @@ function ProfileStat({ icon, label, last, value }: {
   );
 }
 
-function ProfileSettingsGroup({ danger, rows, title }: {
-  danger?: boolean;
-  rows: Array<{ badge?: string; icon: keyof typeof Ionicons.glyphMap; label: string; value: string }>;
+function ProfileSettingsGroup({ activeLabel, onSelect, rows, title }: {
+  activeLabel: string;
+  onSelect: (label: string) => void;
+  rows: Array<{ danger?: boolean; icon: keyof typeof Ionicons.glyphMap; label: string; value?: string }>;
   title: string;
 }) {
   return (
-    <View style={styles.profileGroup}>
-      <Text style={[styles.profileGroupTitle, danger ? styles.profileGroupDangerTitle : null]}>{title}</Text>
-      {rows.map((row, index) => (
-        <View key={row.label} style={[styles.profileRow, index === rows.length - 1 ? styles.profileRowLast : null]}>
-          <View style={[styles.profileRowIcon, danger ? styles.profileRowIconDanger : null]}>
-            <Ionicons name={row.icon} color={danger ? "#FF5D5D" : "#C8C4D8"} size={23} />
-          </View>
-          <View style={styles.profileRowCopy}>
-            <Text style={styles.profileRowLabel}>{row.label}</Text>
-            <Text style={styles.profileRowValue}>{row.value}</Text>
-          </View>
-          {row.badge ? <Text style={styles.profileRowBadge}>{row.badge}</Text> : null}
-          <Ionicons name="chevron-forward" color="#B8B4C8" size={21} />
-        </View>
-      ))}
+    <View style={styles.profileSection}>
+      <Text style={styles.profileGroupTitle}>{title}</Text>
+      <View style={styles.profileGroup}>
+        {rows.map((row, index) => {
+          const active = activeLabel === row.label;
+          return (
+            <Pressable
+              key={row.label}
+              onPress={() => onSelect(row.label)}
+              style={({ pressed }) => [
+                styles.profileRow,
+                index === rows.length - 1 ? styles.profileRowLast : null,
+                active ? styles.profileRowActive : null,
+                pressed ? styles.profileRowPressed : null
+              ]}
+            >
+              <View style={[styles.profileRowIcon, row.danger ? styles.profileRowIconDanger : null]}>
+                <Ionicons name={row.icon} color={row.danger ? "#FF465C" : "#B953FF"} size={23} />
+              </View>
+              <Text numberOfLines={1} style={[styles.profileRowLabel, row.danger ? styles.profileRowLabelDanger : null]}>{row.label}</Text>
+              {row.value ? <Text numberOfLines={1} style={styles.profileRowValue}>{row.value}</Text> : null}
+              <Ionicons name="chevron-forward" color="#AAA6BA" size={23} />
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -2002,6 +3075,54 @@ function ProjectFilterMenuItem({ active, label, onPress }: {
   );
 }
 
+function FolderConfirmModal({ confirm, onAccept, onCancel, onSkip }: {
+  confirm: { query: string; matches: Project[] } | null;
+  onAccept: (folder: Project) => void | Promise<void>;
+  onCancel: () => void;
+  onSkip: () => void | Promise<void>;
+}) {
+  return (
+    <Modal animationType="fade" onRequestClose={onCancel} transparent visible={confirm !== null}>
+      <View style={styles.projectDeleteOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+        <View style={styles.projectDeleteDialog}>
+          <View style={styles.projectDeleteIcon}>
+            <Ionicons name="folder-open-outline" color="#A88BFF" size={24} />
+          </View>
+          <Text style={styles.projectDeleteTitle}>Open this folder on your PC?</Text>
+          <Text style={styles.projectDeleteBody}>
+            Vibyra found these folders that match your request. Pick one to start coding in, or skip to keep using the current project.
+          </Text>
+          <View style={{ width: "100%", gap: 8, marginTop: 12 }}>
+            {(confirm?.matches ?? []).slice(0, 5).map((folder) => (
+              <Pressable
+                key={folder.id}
+                style={({ pressed }) => [styles.projectMenuItem, pressed ? styles.projectMenuItemPressed : null, { borderRadius: 12, paddingVertical: 12 }]}
+                onPress={() => onAccept(folder)}
+              >
+                <Ionicons name="folder-outline" color="#E8E1FF" size={18} />
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={1} style={styles.projectMenuItemText}>{folder.name}</Text>
+                  <Text numberOfLines={1} style={[styles.projectMenuItemText, { color: "#9892B5", fontSize: 11, marginTop: 2 }]}>{folder.path}</Text>
+                </View>
+                <Ionicons name="chevron-forward" color="#9892B5" size={16} />
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.projectDeleteActions}>
+            <Pressable style={styles.projectDeleteCancelButton} onPress={onCancel}>
+              <Text style={styles.projectDeleteCancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.projectDeleteConfirmButton} onPress={() => { void onSkip(); }}>
+              <Text style={styles.projectDeleteConfirmText}>Skip</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function ProjectDeleteConfirmModal({ onCancel, onConfirm, project }: {
   onCancel: () => void;
   onConfirm: () => void;
@@ -2097,7 +3218,7 @@ function ChatPreviewCard({ active, chat, onOpen }: {
 function ChatLandingArt() {
   return (
     <View pointerEvents="none" style={styles.chatLandingArt}>
-      <Image resizeMode="contain" source={chatBuildAiHero} style={styles.chatLandingArtImage} />
+      <Image resizeMode="contain" source={chatBuildAiHero} style={styles.chatLandingArtImage as ImageStyle} />
     </View>
   );
 }
@@ -2130,19 +3251,252 @@ function ChatLandingRow({ active, chat, onOpen }: {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message, onOpenApp }: { message: ChatMessage; onOpenApp?: (app: GeneratedApp) => void }) {
   const user = message.role === "user";
+  const isThinking = !user && message.text === "Working on it...";
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 320, useNativeDriver: true })
+    ]).start();
+  }, [opacity, translateY]);
+
   return (
-    <View style={[styles.messageBubble, user ? styles.messageBubbleUser : styles.messageBubbleAssistant]}>
-      <Text style={styles.messageText}>{message.text}</Text>
+    <Animated.View style={[styles.messageRow, user ? styles.messageRowUser : styles.messageRowAssistant, { opacity, transform: [{ translateY }] }]}>
+      <View style={[styles.messageAvatar, user ? styles.messageAvatarUser : styles.messageAvatarAssistant]}>
+        {user ? (
+          <Ionicons name="person" color="#FFFFFF" size={14} />
+        ) : (
+          <Image resizeMode="contain" source={vibyraLogo} style={styles.messageAvatarLogo as ImageStyle} />
+        )}
+      </View>
+      <View style={styles.messageContent}>
+        <Text style={styles.messageAuthor}>{user ? "You" : "Vibyra"}</Text>
+        {message.file ? <Text numberOfLines={1} style={styles.messageFile}>{message.file}</Text> : null}
+        {isThinking ? (
+          <TypingIndicator />
+        ) : (
+          <RichMessageText text={message.text} />
+        )}
+        {message.app && onOpenApp ? <AppPreviewCard app={message.app} onOpen={onOpenApp} /> : null}
+      </View>
+    </Animated.View>
+  );
+}
+
+function TypingIndicator() {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const sequence = (value: Animated.Value, delay: number) => Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, { toValue: 1, duration: 360, delay, useNativeDriver: true }),
+        Animated.timing(value, { toValue: 0, duration: 360, useNativeDriver: true })
+      ])
+    );
+    const animation = Animated.parallel([
+      sequence(dot1, 0),
+      sequence(dot2, 140),
+      sequence(dot3, 280)
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [dot1, dot2, dot3]);
+
+  const dotStyle = (value: Animated.Value) => ({
+    opacity: value.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
+    transform: [{ translateY: value.interpolate({ inputRange: [0, 1], outputRange: [0, -3] }) }]
+  });
+
+  return (
+    <View style={styles.typingIndicator}>
+      <Animated.View style={[styles.typingDot, dotStyle(dot1)]} />
+      <Animated.View style={[styles.typingDot, dotStyle(dot2)]} />
+      <Animated.View style={[styles.typingDot, dotStyle(dot3)]} />
     </View>
   );
 }
 
-function LoadingBubble() {
+function AppPreviewCard({ app, onOpen }: { app: GeneratedApp; onOpen: (app: GeneratedApp) => void }) {
   return (
-    <View style={[styles.messageBubble, styles.messageBubbleAssistant]}>
-      <Text style={styles.messageText}>Thinking...</Text>
+    <Pressable onPress={() => onOpen(app)} style={styles.appPreviewCard}>
+      <LinearGradient
+        colors={["#8E3CFF", "#5D24D8"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.appPreviewIcon}
+      >
+        <Ionicons name="play" color="#FFFFFF" size={20} />
+      </LinearGradient>
+      <View style={styles.appPreviewBody}>
+        <Text style={styles.appPreviewLabel}>Runnable preview</Text>
+        <Text numberOfLines={1} style={styles.appPreviewTitle}>{app.title}</Text>
+        <Text numberOfLines={1} style={styles.appPreviewHint}>Tap to open the app inside Vibyra</Text>
+      </View>
+      <View style={styles.appPreviewArrow}>
+        <Ionicons name="chevron-forward" color="#C9C2D6" size={18} />
+      </View>
+    </Pressable>
+  );
+}
+
+function AppPreviewModal({ app, onClose }: { app: GeneratedApp | null; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (app) setReloadKey(0);
+  }, [app?.id]);
+
+  if (!app) return null;
+
+  return (
+    <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
+      <View style={[styles.appModalScreen, { paddingTop: insets.top }]}>
+        <View style={styles.appModalHeader}>
+          <Pressable onPress={onClose} style={styles.appModalIconButton}>
+            <Ionicons name="close" color="#FFFFFF" size={22} />
+          </Pressable>
+          <View style={styles.appModalTitleStack}>
+            <Text style={styles.appModalLabel}>Vibyra preview</Text>
+            <Text numberOfLines={1} style={styles.appModalTitle}>{app.title}</Text>
+          </View>
+          <Pressable onPress={() => setReloadKey((k) => k + 1)} style={styles.appModalIconButton}>
+            <Ionicons name="refresh" color="#FFFFFF" size={20} />
+          </Pressable>
+        </View>
+        <View style={styles.appModalWebContainer}>
+          <AppWebView html={app.html} reloadKey={reloadKey} style={styles.appModalWebView} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+type MessageBlock =
+  | { kind: "code"; language: string; code: string }
+  | { kind: "heading"; level: number; text: string }
+  | { kind: "bullet"; text: string }
+  | { kind: "numbered"; marker: string; text: string }
+  | { kind: "paragraph"; text: string }
+  | { kind: "spacer" };
+
+function parseMessageBlocks(input: string): MessageBlock[] {
+  const blocks: MessageBlock[] = [];
+  const fenceRegex = /```([^\n`]*)\n?([\s\S]*?)```/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = fenceRegex.exec(input)) !== null) {
+    if (match.index > cursor) {
+      pushTextBlocks(blocks, input.slice(cursor, match.index));
+    }
+    blocks.push({ kind: "code", language: match[1].trim(), code: match[2].replace(/\n$/, "") });
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < input.length) {
+    pushTextBlocks(blocks, input.slice(cursor));
+  }
+  return blocks;
+}
+
+function pushTextBlocks(blocks: MessageBlock[], text: string) {
+  const lines = text.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (blocks.length && blocks[blocks.length - 1].kind !== "spacer") {
+        blocks.push({ kind: "spacer" });
+      }
+      continue;
+    }
+    const heading = /^(#{1,3})\s+(.+)$/.exec(trimmed);
+    if (heading) {
+      blocks.push({ kind: "heading", level: heading[1].length, text: heading[2] });
+      continue;
+    }
+    const bullet = /^[-*]\s+(.+)$/.exec(trimmed);
+    if (bullet) {
+      blocks.push({ kind: "bullet", text: bullet[1] });
+      continue;
+    }
+    const numbered = /^(\d+)[.)]\s+(.+)$/.exec(trimmed);
+    if (numbered) {
+      blocks.push({ kind: "numbered", marker: `${numbered[1]}.`, text: numbered[2] });
+      continue;
+    }
+    blocks.push({ kind: "paragraph", text: trimmed });
+  }
+}
+
+function renderInline(text: string, keyPrefix: string) {
+  const tokenRegex = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  const parts = text.split(tokenRegex).filter((part) => part.length > 0);
+  return parts.map((part, index) => {
+    const key = `${keyPrefix}-${index}`;
+    if (/^\*\*[^*]+\*\*$/.test(part)) {
+      return <Text key={key} style={styles.messageBold}>{part.slice(2, -2)}</Text>;
+    }
+    if (/^`[^`]+`$/.test(part)) {
+      return <Text key={key} style={styles.messageInlineCode}>{part.slice(1, -1)}</Text>;
+    }
+    return <Text key={key}>{part}</Text>;
+  });
+}
+
+function RichMessageText({ text }: { text: string }) {
+  const blocks = useMemo(() => parseMessageBlocks(text), [text]);
+
+  return (
+    <View style={styles.messageBody}>
+      {blocks.map((block, index) => {
+        const key = `block-${index}`;
+        if (block.kind === "code") {
+          return (
+            <View key={key} style={styles.messageCodeBlock}>
+              {block.language ? (
+                <View style={styles.messageCodeBlockHeader}>
+                  <Text style={styles.messageCodeBlockLang}>{block.language.toLowerCase()}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.messageCodeBlockText}>{block.code}</Text>
+            </View>
+          );
+        }
+        if (block.kind === "heading") {
+          const headingStyle = block.level === 1
+            ? styles.messageHeading1
+            : block.level === 2
+              ? styles.messageHeading2
+              : styles.messageHeading3;
+          return <Text key={key} style={headingStyle}>{renderInline(block.text, key)}</Text>;
+        }
+        if (block.kind === "bullet") {
+          return (
+            <View key={key} style={styles.messageListRow}>
+              <Text style={styles.messageBulletDot}>•</Text>
+              <Text style={[styles.messageText, styles.messageListText]}>{renderInline(block.text, key)}</Text>
+            </View>
+          );
+        }
+        if (block.kind === "numbered") {
+          return (
+            <View key={key} style={styles.messageListRow}>
+              <Text style={styles.messageNumberedMarker}>{block.marker}</Text>
+              <Text style={[styles.messageText, styles.messageListText]}>{renderInline(block.text, key)}</Text>
+            </View>
+          );
+        }
+        if (block.kind === "spacer") {
+          return <View key={key} style={styles.messageSpacer} />;
+        }
+        return <Text key={key} style={styles.messageText}>{renderInline(block.text, key)}</Text>;
+      })}
     </View>
   );
 }
@@ -2360,46 +3714,50 @@ const styles = StyleSheet.create({
   },
   chatAssistantPanel: {
     flex: 1,
-    gap: 10,
+    gap: 0,
     justifyContent: "flex-end",
     minHeight: 0,
-    paddingBottom: Platform.OS === "ios" ? 8 : 4
+    paddingBottom: Platform.OS === "ios" ? 8 : 2
   },
   chatComposer: {
-    backgroundColor: "#11131B",
-    borderColor: "rgba(255, 255, 255, 0.09)",
-    borderRadius: 18,
+    backgroundColor: "rgba(17, 19, 28, 0.96)",
+    borderColor: "rgba(255, 255, 255, 0.13)",
+    borderRadius: 16,
     borderWidth: 1,
-    minHeight: 104,
-    padding: 12,
+    minHeight: 116,
+    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: 14,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.2,
     shadowRadius: 18
   },
   chatComposerBottom: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10
+    marginTop: 18
   },
   chatComposerInput: {
-    color: colors.text,
+    color: "#F3F1FA",
     fontSize: 15,
     fontWeight: "700",
-    lineHeight: 20,
+    lineHeight: 22,
     maxHeight: 70,
-    minHeight: 26,
+    minHeight: 28,
     padding: 0,
     textAlignVertical: "top"
   },
   chatComposerTool: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
-    height: 36,
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(126, 124, 155, 0.22)",
+    borderRadius: 11,
+    borderWidth: 1,
+    height: 38,
     justifyContent: "center",
-    width: 36
+    width: 38
   },
   chatComposerTools: {
     alignItems: "center",
@@ -2409,25 +3767,111 @@ const styles = StyleSheet.create({
     minWidth: 0
   },
   chatComposerShell: {
+    paddingTop: 10,
     position: "relative",
     zIndex: 10
   },
+  lowCreditsButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 242, 0, 0.14)",
+    borderColor: "rgba(255, 242, 0, 0.34)",
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: 12
+  },
+  lowCreditsButtonText: {
+    color: "#FFF200",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  lowCreditsCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(13, 15, 25, 0.94)",
+    borderColor: "rgba(255, 242, 0, 0.22)",
+    borderRadius: 15,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 11,
+    marginBottom: 10,
+    padding: 12,
+    shadowColor: "#FFF200",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 18
+  },
+  lowCreditsCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  lowCreditsIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 242, 0, 0.1)",
+    borderColor: "rgba(255, 242, 0, 0.26)",
+    borderRadius: 11,
+    borderWidth: 1,
+    height: 39,
+    justifyContent: "center",
+    width: 39
+  },
+  lowCreditsText: {
+    color: "#C9C3D5",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+    marginTop: 2
+  },
+  lowCreditsTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 18
+  },
   chatModelButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(126, 124, 155, 0.22)",
+    borderRadius: 11,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 7,
-    height: 36,
-    maxWidth: 176,
+    gap: 8,
+    height: 38,
+    maxWidth: 206,
     minWidth: 0,
-    paddingHorizontal: 9
+    paddingHorizontal: 12
   },
   chatModelButtonText: {
     color: "#DAD6E7",
     flexShrink: 1,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "800"
+  },
+  chatModelButtonBadge: {
+    backgroundColor: "rgba(124, 241, 179, 0.11)",
+    borderColor: "rgba(124, 241, 179, 0.28)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#7CF1B3",
+    fontSize: 9,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    textTransform: "uppercase"
+  },
+  chatModelBadge: {
+    backgroundColor: "rgba(124, 241, 179, 0.1)",
+    borderColor: "rgba(124, 241, 179, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#7CF1B3",
+    fontSize: 9,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    textTransform: "uppercase"
   },
   chatModelGroup: {
     gap: 2
@@ -2445,7 +3889,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 15,
     borderWidth: 1,
-    bottom: 112,
+    bottom: 148,
     gap: 4,
     left: 0,
     padding: 6,
@@ -2454,8 +3898,24 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.34,
     shadowRadius: 24,
-    width: 272,
+    width: 304,
     zIndex: 20
+  },
+  chatModelLockPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(201, 194, 214, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    minHeight: 22,
+    paddingHorizontal: 7
+  },
+  chatModelLockText: {
+    color: "#C9C2D6",
+    fontSize: 10,
+    fontWeight: "900"
   },
   chatModelName: {
     color: colors.text,
@@ -2468,23 +3928,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     flexDirection: "row",
     gap: 8,
-    minHeight: 32,
+    minHeight: 36,
     paddingHorizontal: 7
   },
   chatModelRowActive: {
     backgroundColor: "rgba(124, 241, 179, 0.08)"
   },
+  chatModelRowLocked: {
+    opacity: 0.64
+  },
   chatActiveContent: {
-    paddingBottom: Platform.OS === "ios" ? 10 : 8,
-    paddingHorizontal: 12,
-    paddingTop: 8
+    paddingBottom: Platform.OS === "ios" ? 38 : 36,
+    paddingHorizontal: 14,
+    paddingTop: 0
   },
   chatActiveHeader: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 2
+    gap: 16,
+    minHeight: 64,
+    paddingHorizontal: 3
   },
   chatActiveHeaderCopy: {
     flex: 1,
@@ -2496,33 +3959,52 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   chatActivePage: {
-    backgroundColor: "#02030C",
-    gap: 8,
+    backgroundColor: "#080A12",
+    gap: 0,
     overflow: "hidden"
   },
   chatActiveTitle: {
     color: colors.text,
     fontSize: 18,
     fontWeight: "900",
-    lineHeight: 22
+    lineHeight: 24
   },
   chatBackButton: {
     alignItems: "center",
-    borderRadius: 999,
-    height: 36,
+    backgroundColor: "rgba(93, 40, 161, 0.12)",
+    borderColor: "rgba(137, 72, 255, 0.22)",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 32,
     justifyContent: "center",
-    width: 36
+    width: 32
   },
   chatEditButton: {
     alignItems: "center",
     borderRadius: 999,
-    height: 36,
+    height: 34,
     justifyContent: "center",
-    width: 36
+    width: 34
+  },
+  chatFavoriteButton: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 34,
+    justifyContent: "center",
+    marginLeft: 2,
+    width: 34
   },
   chatEmptySpace: {
     flex: 1,
     minHeight: 0
+  },
+  chatEmptyState: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 0,
+    paddingBottom: 52,
+    paddingTop: 24
   },
   chatBackgroundImage: {
     ...StyleSheet.absoluteFillObject,
@@ -2531,10 +4013,10 @@ const styles = StyleSheet.create({
     width: "100%"
   },
   chatContent: {
-    backgroundColor: "#02030C",
-    paddingBottom: Platform.OS === "ios" ? 96 : 90,
+    backgroundColor: "#080A12",
+    paddingBottom: Platform.OS === "ios" ? 38 : 36,
     paddingHorizontal: 14,
-    paddingTop: 4
+    paddingTop: 0
   },
   chatHistoryCard: {
     backgroundColor: "rgba(13, 17, 29, 0.9)",
@@ -2633,8 +4115,15 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     gap: 10,
-    minHeight: "100%",
+    minHeight: 0,
     width: "100%"
+  },
+  chatPageHost: {
+    backgroundColor: "#080A12",
+    flex: 1,
+    minHeight: 0,
+    paddingHorizontal: 14,
+    paddingTop: 0
   },
   chatNewButton: {
     alignItems: "center",
@@ -3160,32 +4649,36 @@ const styles = StyleSheet.create({
     tintColor: colors.text
   },
   chatSendButton: {
-    borderRadius: 14,
+    borderRadius: 13,
     overflow: "hidden"
   },
   chatSendGradient: {
     alignItems: "center",
-    height: 44,
+    height: 38,
     justifyContent: "center",
-    width: 44
+    width: 38
   },
   chatSuggestionCard: {
-    alignItems: "center",
-    backgroundColor: "rgba(28, 30, 47, 0.8)",
-    borderColor: "rgba(111, 107, 132, 0.32)",
-    borderRadius: 12,
+    alignItems: "flex-start",
+    backgroundColor: "rgba(16, 18, 30, 0.74)",
+    borderColor: "rgba(126, 124, 155, 0.28)",
+    borderRadius: 11,
     borderWidth: 1,
-    flexBasis: "48.5%",
-    flexDirection: "row",
-    gap: 9,
-    minHeight: 58,
-    paddingHorizontal: 10
+    flexBasis: "47%",
+    flexGrow: 1,
+    gap: 6,
+    minHeight: 124,
+    justifyContent: "flex-start",
+    minWidth: 0,
+    overflow: "hidden",
+    padding: 12
   },
   chatSuggestionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 16,
+    gap: 9,
+    marginTop: 19,
+    paddingHorizontal: 10,
     width: "100%"
   },
   chatSuggestionIcon: {
@@ -3203,15 +4696,33 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 17
   },
+  chatSuggestionDescription: {
+    color: "#BBB6C9",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+    marginTop: 1,
+    width: "100%"
+  },
+  chatSuggestionIconGlyph: {
+    marginBottom: 2
+  },
+  chatSuggestionTitle: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 18,
+    width: "100%"
+  },
   chatMessageList: {
     flex: 1,
     minHeight: 0
   },
   chatMessageListContent: {
-    gap: 10,
-    justifyContent: "flex-end",
-    minHeight: "100%",
-    paddingBottom: 2
+    flexGrow: 1,
+    gap: 4,
+    paddingBottom: 14,
+    paddingTop: 14
   },
   chatWelcomeBlock: {
     alignItems: "center",
@@ -3219,22 +4730,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 0
   },
+  chatWelcomeGlyph: {
+    alignItems: "center",
+    height: 136,
+    justifyContent: "center",
+    marginBottom: 18,
+    marginTop: 8,
+    width: 166
+  },
+  chatWelcomeGlyphImage: {
+    height: 166,
+    width: 166
+  },
   chatWelcomeSubtitle: {
-    color: "#AAA6BC",
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 21,
-    marginTop: 7,
-    maxWidth: 310,
+    color: "#C1BCCE",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 9,
+    maxWidth: 340,
     textAlign: "center"
   },
   chatWelcomeTitle: {
     color: colors.text,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 27,
-    marginTop: 16,
+    lineHeight: 25,
     textAlign: "center"
   },
   chatWindow: {
@@ -3256,6 +4778,30 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 10
   },
+  communityAboutBlock: {
+    gap: 9,
+    paddingTop: 2
+  },
+  communityGeneratedLogo: {
+    alignItems: "center",
+    borderColor: "rgba(170, 83, 255, 0.34)",
+    borderWidth: 1,
+    justifyContent: "center",
+    overflow: "hidden",
+    shadowColor: "#7E48FF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16
+  },
+  communityGeneratedLogoInner: {
+    alignItems: "center",
+    backgroundColor: "rgba(22, 11, 43, 0.36)",
+    height: "82%",
+    justifyContent: "center",
+    overflow: "hidden",
+    position: "relative",
+    width: "82%"
+  },
   communityMiniCard: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderColor: "rgba(255, 255, 255, 0.08)",
@@ -3276,6 +4822,25 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 11
   },
+  communityAnalyticsLogoBar: {
+    borderRadius: 999,
+    width: 5
+  },
+  communityAnalyticsLogoBars: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 4,
+    height: "78%"
+  },
+  communityAuthorAvatar: {
+    alignItems: "center",
+    borderWidth: 1,
+    justifyContent: "center",
+    overflow: "hidden"
+  },
+  communityAuthorAvatarText: {
+    fontWeight: "900"
+  },
   communityAvatar: {
     alignItems: "center",
     borderRadius: 9,
@@ -3286,6 +4851,14 @@ const styles = StyleSheet.create({
   communityAvatarText: {
     fontSize: 18,
     fontWeight: "900"
+  },
+  communityAppIcon: {
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    width: 44
   },
   communityBarChart: {
     alignItems: "flex-end",
@@ -3303,6 +4876,157 @@ const styles = StyleSheet.create({
     height: 32,
     justifyContent: "center",
     width: 32
+  },
+  communityAvatarLarge: {
+    alignItems: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 50,
+    justifyContent: "center",
+    width: 50
+  },
+  communityAvatarLargeText: {
+    fontSize: 22,
+    fontWeight: "900"
+  },
+  communityAnalyticsBars: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 8,
+    height: 112
+  },
+  communityAnalyticsDemoBar: {
+    backgroundColor: communityDetailAccent,
+    borderRadius: 999,
+    flex: 1,
+    shadowColor: communityDetailAccent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8
+  },
+  communityAnalyticsDemoHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  communityAnalyticsRange: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.09)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    padding: 4
+  },
+  communityAnalyticsRangeOption: {
+    alignItems: "center",
+    borderRadius: 7,
+    minHeight: 29,
+    minWidth: 42,
+    justifyContent: "center"
+  },
+  communityAnalyticsRangeOptionActive: {
+    backgroundColor: "rgba(139, 53, 255, 0.44)"
+  },
+  communityAnalyticsRangeText: {
+    color: "#AFA9BB",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  communityAnalyticsRangeTextActive: {
+    color: colors.text
+  },
+  communityAppExperience: {
+    backgroundColor: "rgba(8, 11, 22, 0.9)",
+    borderColor: "rgba(139, 53, 255, 0.34)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 13,
+    padding: 14,
+    shadowColor: communityDetailAccent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18
+  },
+  communityAppExperienceHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between"
+  },
+  communityAppExperienceKicker: {
+    color: "#BFAEFF",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  communityAppExperienceTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 22,
+    marginTop: 3
+  },
+  communityOpenedAppCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityOpenedAppIntro: {
+    alignItems: "center",
+    backgroundColor: "rgba(8, 11, 22, 0.78)",
+    borderColor: "rgba(139, 53, 255, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 13,
+    padding: 14
+  },
+  communityOpenedAppKicker: {
+    color: "#BFAEFF",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  communityOpenedAppScreen: {
+    flexGrow: 1,
+    gap: 14,
+    paddingBottom: 18
+  },
+  communityOpenedAppSubtitle: {
+    color: "#BDB8C7",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 5
+  },
+  communityOpenedAppTitle: {
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: "900",
+    lineHeight: 25,
+    marginTop: 3
+  },
+  communityAppLiveDot: {
+    backgroundColor: "#7CF1B3",
+    borderRadius: 999,
+    height: 7,
+    width: 7
+  },
+  communityAppLivePill: {
+    alignItems: "center",
+    backgroundColor: "rgba(124, 241, 179, 0.1)",
+    borderColor: "rgba(124, 241, 179, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    minHeight: 28,
+    paddingHorizontal: 10
+  },
+  communityAppLiveText: {
+    color: "#C9F8DD",
+    fontSize: 11,
+    fontWeight: "900"
   },
   communityCalendar: {
     alignContent: "center",
@@ -3322,6 +5046,146 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     width: 7
   },
+  communityInvoiceCoin: {
+    backgroundColor: "rgba(255, 255, 255, 0.72)",
+    borderRadius: 999,
+    position: "absolute"
+  },
+  communityInvoiceLine: {
+    backgroundColor: "rgba(255, 255, 255, 0.74)",
+    borderRadius: 999,
+    height: 4,
+    marginTop: 5
+  },
+  communityInvoicePage: {
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    borderColor: "rgba(255, 255, 255, 0.34)",
+    borderRadius: 6,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingHorizontal: 6
+  },
+  communityCommentCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityCommentCount: {
+    color: "#B7B1C6",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityCommentHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  communityCommentComposer: {
+    alignItems: "flex-end",
+    backgroundColor: "rgba(10, 13, 24, 0.84)",
+    borderColor: "rgba(139, 53, 255, 0.28)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    padding: 8
+  },
+  communityCommentError: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(255, 107, 154, 0.1)",
+    borderColor: "rgba(255, 157, 174, 0.26)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    padding: 10
+  },
+  communityCommentErrorText: {
+    color: "#FFB4C1",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  communityCommentInput: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 19,
+    maxHeight: 86,
+    minHeight: 39,
+    paddingHorizontal: 6,
+    paddingTop: 9
+  },
+  communityCommentName: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  communityCommentNameRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  communityCommentPostButton: {
+    alignItems: "center",
+    backgroundColor: communityDetailAccent,
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 38,
+    paddingHorizontal: 12
+  },
+  communityCommentPostButtonDisabled: {
+    opacity: 0.42
+  },
+  communityCommentPostText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityCommentRow: {
+    alignItems: "flex-start",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingBottom: 12
+  },
+  communityCommentSection: {
+    gap: 12,
+    paddingTop: 2
+  },
+  communityCommentText: {
+    color: "#BDB7CA",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: 3
+  },
+  communityCommentTime: {
+    color: "#B8B2C4",
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  communityDefaultLogoBlade: {
+    borderRadius: 999,
+    opacity: 0.82,
+    position: "absolute",
+    transform: [{ rotate: "34deg" }]
+  },
+  communityDefaultLogoBladeAlt: {
+    backgroundColor: "rgba(255, 255, 255, 0.68)",
+    opacity: 0.72,
+    transform: [{ rotate: "-42deg" }]
+  },
+  communityDefaultLogoOrb: {
+    borderRadius: 999,
+    position: "absolute",
+    right: 10,
+    top: 10
+  },
   communityFilterButton: {
     alignItems: "center",
     backgroundColor: "rgba(15, 17, 29, 0.8)",
@@ -3331,6 +5195,298 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
     width: 44
+  },
+  communityDetailActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7
+  },
+  communityDetailBack: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    marginLeft: -10,
+    width: 44
+  },
+  communityDetailDescription: {
+    color: "#B9B4C6",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0,
+    lineHeight: 21,
+    marginTop: 8
+  },
+  communityDetailHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 42
+  },
+  communityDetailHeaderCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityDetailHero: {
+    alignItems: "center",
+    backgroundColor: "rgba(10, 13, 24, 0.86)",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 14,
+    overflow: "hidden",
+    padding: 14
+  },
+  communityDetailHeroCopy: {
+    flex: 1,
+    gap: 12,
+    minWidth: 0
+  },
+  communityDetailIconButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(16, 18, 30, 0.86)",
+    borderColor: "rgba(126, 124, 155, 0.28)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    height: 44,
+    justifyContent: "center",
+    minWidth: 46,
+    paddingHorizontal: 12
+  },
+  communityDetailIconText: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900"
+  },
+  communityDetailIdentity: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    justifyContent: "space-between",
+    paddingTop: 2
+  },
+  communityDetailKicker: {
+    color: "#BFAEFF",
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase"
+  },
+  communityDetailDivider: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    height: 1,
+    marginTop: 2
+  },
+  communityDetailPanel: {
+    backgroundColor: "rgba(8, 11, 22, 0.86)",
+    borderColor: "rgba(126, 124, 155, 0.24)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    padding: 15
+  },
+  communityDetailPanelBody: {
+    color: "#C5C0CF",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 21
+  },
+  communityDetailPanelTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 22
+  },
+  communityDetailScreen: {
+    flexGrow: 1,
+    gap: 12,
+    paddingBottom: 18,
+    paddingTop: 2
+  },
+  communityDetailTab: {
+    alignItems: "center",
+    borderRadius: 10,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 36
+  },
+  communityDetailTabActive: {
+    backgroundColor: "rgba(139, 53, 255, 0.32)"
+  },
+  communityDetailTabs: {
+    backgroundColor: "rgba(8, 10, 18, 0.72)",
+    borderColor: "rgba(255, 255, 255, 0.09)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    padding: 4
+  },
+  communityDetailTabText: {
+    color: "#AFA9BB",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityDetailTabTextActive: {
+    color: colors.text
+  },
+  communityDetailSectionTab: {
+    alignItems: "center",
+    backgroundColor: "rgba(16, 18, 30, 0.74)",
+    borderColor: "rgba(126, 124, 155, 0.24)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    flex: 1,
+    gap: 6,
+    justifyContent: "center",
+    minHeight: 42,
+    paddingHorizontal: 8
+  },
+  communityDetailSectionTabActive: {
+    backgroundColor: "rgba(126, 72, 255, 0.2)",
+    borderColor: "rgba(183, 139, 255, 0.56)"
+  },
+  communityDetailSectionTabs: {
+    flexDirection: "row",
+    gap: 7
+  },
+  communityDetailSectionText: {
+    color: "#B8B2CB",
+    flexShrink: 1,
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  communityDetailSectionTextActive: {
+    color: colors.text
+  },
+  communityDetailTag: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#DCD8EA",
+    fontSize: 11,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  communityDetailTagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 7
+  },
+  communityDetailTitle: {
+    color: colors.text,
+    fontSize: 29,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 34
+  },
+  communityDetailTitleBlock: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityDemoAction: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: communityDetailAccent,
+    borderRadius: 11,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 40,
+    paddingHorizontal: 13
+  },
+  communityDemoActionText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityDemoLabel: {
+    color: "#AFA9BB",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  communityDemoLineAmount: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityDemoLineItem: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 39,
+    paddingHorizontal: 11
+  },
+  communityDemoLineText: {
+    color: "#DAD6EA",
+    fontSize: 13,
+    fontWeight: "800"
+  },
+  communityDemoPanel: {
+    backgroundColor: "rgba(4, 6, 15, 0.62)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 13,
+    borderWidth: 1,
+    gap: 11,
+    padding: 12
+  },
+  communityDemoStatus: {
+    backgroundColor: "rgba(255, 205, 92, 0.12)",
+    borderColor: "rgba(255, 205, 92, 0.25)",
+    borderRadius: 999,
+    borderWidth: 1,
+    color: "#FFD27E",
+    fontSize: 12,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  communityDemoStatusDone: {
+    backgroundColor: "rgba(124, 241, 179, 0.12)",
+    borderColor: "rgba(124, 241, 179, 0.25)",
+    color: "#BDF8D8"
+  },
+  communityDemoTopRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  communityDemoValue: {
+    color: colors.text,
+    fontSize: 25,
+    fontWeight: "900",
+    lineHeight: 30,
+    marginTop: 3
+  },
+  communityEmptyState: {
+    alignItems: "center",
+    backgroundColor: "rgba(8, 13, 24, 0.72)",
+    borderColor: "rgba(128, 106, 180, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 7,
+    minHeight: 150,
+    justifyContent: "center",
+    padding: 18
+  },
+  communityEmptyText: {
+    color: "#AFAABD",
+    fontSize: 13,
+    fontWeight: "800"
+  },
+  communityEmptyTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900"
   },
   communityBackdrop: {
     ...StyleSheet.absoluteFillObject
@@ -3371,6 +5527,70 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 6
   },
+  communityHabitLogoCore: {
+    borderRadius: 999,
+    height: 10,
+    width: 10
+  },
+  communityHabitLogoDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.38)",
+    borderRadius: 999,
+    height: 4,
+    width: 4
+  },
+  communityHabitLogoDots: {
+    bottom: 8,
+    flexDirection: "row",
+    gap: 4,
+    position: "absolute"
+  },
+  communityHabitLogoRing: {
+    alignItems: "center",
+    borderRadius: 999,
+    borderWidth: 5,
+    justifyContent: "center",
+    opacity: 0.9
+  },
+  communityHabitDemoCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityHabitDemoDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 999,
+    height: 13,
+    width: 13
+  },
+  communityHabitDemoDotDone: {
+    backgroundColor: communityDetailAccent
+  },
+  communityHabitDemoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  communityHabitDemoRing: {
+    alignItems: "center",
+    borderColor: "rgba(139, 53, 255, 0.7)",
+    borderRadius: 999,
+    borderWidth: 7,
+    height: 74,
+    justifyContent: "center",
+    width: 74
+  },
+  communityHabitDemoRingDone: {
+    borderColor: "#7CF1B3"
+  },
+  communityHabitDemoScore: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  communityHabitDemoTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 13
+  },
   communityHero: {
     alignItems: "center",
     flexDirection: "row",
@@ -3395,15 +5615,7 @@ const styles = StyleSheet.create({
     color: "#B5B0CA",
     fontSize: 14,
     fontWeight: "800",
-    lineHeight: 19,
-    marginTop: 6
-  },
-  communityHeroTitle: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 32
+    lineHeight: 19
   },
   communityLineChart: {
     flex: 1,
@@ -3417,6 +5629,19 @@ const styles = StyleSheet.create({
     height: 5,
     position: "absolute",
     width: 5
+  },
+  communityLikeButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(12, 15, 24, 0.5)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 46,
+    justifyContent: "center",
+    minWidth: 74,
+    paddingHorizontal: 13
   },
   communityMetricCard: {
     backgroundColor: "rgba(255, 255, 255, 0.055)",
@@ -3439,6 +5664,171 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 10,
     fontWeight: "900"
+  },
+  communityMakerBio: {
+    color: "#BDB8C7",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 2
+  },
+  communityMakerCopy: {
+    flex: 1,
+    justifyContent: "center",
+    minWidth: 0
+  },
+  communityMakerName: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 22
+  },
+  communityMakerMiniAvatar: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 22,
+    justifyContent: "center",
+    width: 22
+  },
+  communityMakerMiniAvatarText: {
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  communityMakerMiniDot: {
+    color: "#6F6A80",
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  communityMakerMiniName: {
+    color: "#DAD6EA",
+    fontSize: 12,
+    fontWeight: "900",
+    maxWidth: 118
+  },
+  communityMakerMiniRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7
+  },
+  communityMakerMiniTime: {
+    color: "#9D98AD",
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  communityDetailMakerLine: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 44
+  },
+  communityMakerRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  communityOpenedNotice: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(126, 72, 255, 0.1)",
+    borderColor: "rgba(183, 139, 255, 0.24)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 9,
+    padding: 12
+  },
+  communityOpenedText: {
+    color: "#CFC8DE",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 18
+  },
+  communityOpenButton: {
+    borderRadius: 13,
+    flex: 1,
+    overflow: "hidden"
+  },
+  communityOpenGradient: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    height: 44,
+    justifyContent: "center",
+    paddingHorizontal: 14
+  },
+  communityOpenText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityPrimaryOpenButton: {
+    borderRadius: 10,
+    flex: 1,
+    height: 46,
+    minWidth: 0,
+    overflow: "hidden"
+  },
+  communityPrimaryOpenGradient: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    height: "100%",
+    justifyContent: "center",
+    paddingHorizontal: 14
+  },
+  communityPrimaryOpenText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  communitySmallAction: {
+    alignItems: "center",
+    backgroundColor: "rgba(12, 15, 24, 0.5)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    height: 46,
+    justifyContent: "center",
+    minWidth: 78,
+    paddingHorizontal: 10
+  },
+  communitySmallActionText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  communityPictureCard: {
+    backgroundColor: "rgba(16, 18, 30, 0.78)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flex: 1,
+    gap: 8,
+    minWidth: 142,
+    padding: 10
+  },
+  communityPictureGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
+  communityDetailScreenshots: {
+    gap: 9
+  },
+  communityScreenshotGrid: {
+    flexDirection: "row",
+    gap: 9
+  },
+  communityScreenshotLabel: {
+    color: "#D8D3E4",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  communityScreenshotPreview: {
+    flex: 1,
+    gap: 7,
+    minWidth: 0
   },
   communityPostBadge: {
     borderRadius: 999,
@@ -3470,10 +5860,14 @@ const styles = StyleSheet.create({
     borderColor: "rgba(128, 106, 180, 0.26)",
     borderRadius: 14,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    minHeight: 132,
-    padding: 12
+    gap: 12,
+    minHeight: 142,
+    padding: 13
+  },
+  communityPostCardPressed: {
+    borderColor: "rgba(183, 139, 255, 0.54)",
+    opacity: 0.88,
+    transform: [{ scale: 0.99 }]
   },
   communityPostDescription: {
     color: "#B2AFC1",
@@ -3481,6 +5875,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 16,
     marginTop: 4
+  },
+  communityPostBottom: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "space-between"
   },
   communityPostLeft: {
     flex: 1,
@@ -3496,12 +5896,16 @@ const styles = StyleSheet.create({
   communityPostStats: {
     alignItems: "center",
     flexDirection: "row",
+    flex: 1,
     gap: 14
   },
   communityPostStatText: {
     color: "#B7B4C8",
     fontSize: 12,
     fontWeight: "900"
+  },
+  communityPostStatLiked: {
+    color: "#FF9DBB"
   },
   communityPostTag: {
     borderRadius: 999,
@@ -3540,6 +5944,30 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0,
     lineHeight: 20
+  },
+  communityPostTitleBlock: {
+    flex: 1,
+    minWidth: 0
+  },
+  communityPostTop: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12
+  },
+  communityPostOpenButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(126, 72, 255, 0.18)",
+    borderColor: "rgba(183, 139, 255, 0.36)",
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    paddingHorizontal: 14
+  },
+  communityPostOpenText: {
+    color: "#D8C8FF",
+    fontSize: 12,
+    fontWeight: "900"
   },
   communityPostUser: {
     color: colors.text,
@@ -3606,6 +6034,36 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 4
   },
+  communityReportButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255, 100, 128, 0.08)",
+    borderColor: "rgba(255, 100, 128, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 42,
+    paddingHorizontal: 13
+  },
+  communityReportText: {
+    color: "#FFB4C1",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityReportTextDone: {
+    color: "#B7FBD0"
+  },
+  communityTabPanel: {
+    gap: 14
+  },
+  communityDetailTopSave: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    marginRight: -8,
+    width: 44
+  },
   communityScreen: {
     flex: 1,
     gap: 12,
@@ -3671,6 +6129,9 @@ const styles = StyleSheet.create({
     paddingBottom: 126,
     paddingHorizontal: 18,
     paddingTop: 8
+  },
+  contentScroll: {
+    flex: 1
   },
   dashboardContent: {
     justifyContent: "space-between",
@@ -3816,30 +6277,271 @@ const styles = StyleSheet.create({
     minWidth: 0
   },
   messageBubble: {
-    borderRadius: 8,
-    maxWidth: "82%",
-    padding: 12
-  },
-  messageBubbleAssistant: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.elevated,
-    borderColor: colors.border,
-    borderWidth: 1
-  },
-  messageBubbleUser: {
-    alignSelf: "flex-end",
-    backgroundColor: colors.magenta
+    display: "none"
   },
   messageStack: {
     gap: 10,
     minHeight: 500,
     padding: 16
   },
+  messageAuthor: {
+    color: "#F2EFFB",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 18
+  },
+  messageAvatar: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    marginTop: 2,
+    width: 28
+  },
+  messageAvatarAssistant: {
+    backgroundColor: "rgba(8, 10, 20, 0.92)",
+    borderColor: "rgba(139, 53, 255, 0.28)",
+    borderWidth: 1
+  },
+  messageAvatarLogo: {
+    height: 18,
+    width: 18
+  },
+  messageAvatarUser: {
+    backgroundColor: "rgba(255, 255, 255, 0.16)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderWidth: 1
+  },
+  messageContent: {
+    flex: 1,
+    gap: 4,
+    minWidth: 0
+  },
+  messageFile: {
+    color: "#9E98AD",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16
+  },
+  messageRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingBottom: 14,
+    paddingTop: 14
+  },
+  messageRowAssistant: {
+    backgroundColor: "transparent"
+  },
+  messageRowUser: {
+    backgroundColor: "transparent"
+  },
   messageText: {
-    color: colors.text,
+    color: "#E7E3EF",
     fontSize: 15,
     fontWeight: "600",
-    lineHeight: 22
+    lineHeight: 23
+  },
+  messageBody: {
+    gap: 6
+  },
+  messageBold: {
+    color: "#FFFFFF",
+    fontWeight: "900"
+  },
+  messageInlineCode: {
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderRadius: 4,
+    color: "#E2D6FF",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 13.5,
+    paddingHorizontal: 5,
+    paddingVertical: 1
+  },
+  messageCodeBlock: {
+    backgroundColor: "#0B0D17",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginVertical: 4,
+    overflow: "hidden"
+  },
+  messageCodeBlockHeader: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  messageCodeBlockLang: {
+    color: "#9E98AD",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase"
+  },
+  messageCodeBlockText: {
+    color: "#E5E2F0",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 13,
+    lineHeight: 19,
+    padding: 12
+  },
+  messageHeading1: {
+    color: "#FFFFFF",
+    fontSize: 19,
+    fontWeight: "900",
+    lineHeight: 25,
+    marginTop: 4
+  },
+  messageHeading2: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 23,
+    marginTop: 2
+  },
+  messageHeading3: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21
+  },
+  messageListRow: {
+    flexDirection: "row",
+    gap: 8
+  },
+  messageBulletDot: {
+    color: "#B9B5C8",
+    fontSize: 15,
+    lineHeight: 23,
+    width: 12
+  },
+  messageNumberedMarker: {
+    color: "#B9B5C8",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 23,
+    minWidth: 20
+  },
+  messageListText: {
+    flex: 1
+  },
+  messageSpacer: {
+    height: 4
+  },
+  typingIndicator: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+    paddingTop: 6
+  },
+  typingDot: {
+    backgroundColor: "#B49CFF",
+    borderRadius: 4,
+    height: 7,
+    width: 7
+  },
+  appPreviewCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(142, 60, 255, 0.10)",
+    borderColor: "rgba(142, 60, 255, 0.35)",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12
+  },
+  appPreviewIcon: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  appPreviewBody: {
+    flex: 1,
+    minWidth: 0
+  },
+  appPreviewLabel: {
+    color: "#B49CFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+    textTransform: "uppercase"
+  },
+  appPreviewTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 2
+  },
+  appPreviewHint: {
+    color: "#AAA6BC",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2
+  },
+  appPreviewArrow: {
+    alignItems: "center",
+    height: 28,
+    justifyContent: "center",
+    width: 20
+  },
+  appModalScreen: {
+    backgroundColor: "#02030C",
+    flex: 1
+  },
+  appModalHeader: {
+    alignItems: "center",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10
+  },
+  appModalIconButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  appModalTitleStack: {
+    flex: 1,
+    minWidth: 0
+  },
+  appModalLabel: {
+    color: "#B49CFF",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.6,
+    textTransform: "uppercase"
+  },
+  appModalTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    marginTop: 2
+  },
+  appModalWebContainer: {
+    backgroundColor: "#0B0D17",
+    flex: 1
+  },
+  appModalWebView: {
+    backgroundColor: "transparent",
+    flex: 1
+  },
+  appModalLoader: {
+    alignItems: "center",
+    backgroundColor: "#0B0D17",
+    flex: 1,
+    justifyContent: "center",
+    ...StyleSheet.absoluteFillObject
   },
   pageHeader: {
     alignItems: "flex-start",
@@ -3968,22 +6670,38 @@ const styles = StyleSheet.create({
   },
   profileAvatarLarge: {
     alignItems: "center",
-    backgroundColor: "rgba(38, 24, 78, 0.96)",
-    borderColor: "rgba(151, 67, 255, 0.72)",
+    backgroundColor: "rgba(64, 24, 112, 0.82)",
+    borderColor: "#A84BFF",
     borderRadius: 999,
-    borderWidth: 1,
-    height: 91,
+    borderWidth: 4,
+    height: 72,
     justifyContent: "center",
     shadowColor: "#8F35FF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.78,
-    shadowRadius: 18,
-    width: 91
+    shadowOpacity: 0.74,
+    shadowRadius: 16,
+    width: 72
   },
   profileAvatarLargeText: {
     color: colors.text,
-    fontSize: 35,
+    fontSize: 32,
     fontWeight: "900"
+  },
+  profileAvatarEditButton: {
+    alignItems: "center",
+    backgroundColor: "#242737",
+    borderColor: "rgba(174, 168, 196, 0.36)",
+    borderRadius: 999,
+    borderWidth: 1,
+    bottom: -3,
+    height: 27,
+    justifyContent: "center",
+    position: "absolute",
+    right: -3,
+    width: 27
+  },
+  profileAvatarWrap: {
+    position: "relative"
   },
   profileConnectionDot: {
     backgroundColor: "#55D77D",
@@ -4019,47 +6737,74 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   profileGroup: {
-    backgroundColor: "rgba(15, 18, 28, 0.88)",
-    borderColor: "rgba(106, 101, 122, 0.28)",
-    borderRadius: 13,
+    backgroundColor: "rgba(10, 13, 24, 0.74)",
+    borderColor: "rgba(125, 120, 142, 0.24)",
+    borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 18,
-    paddingTop: 18
+    overflow: "hidden",
+    paddingHorizontal: 13
   },
   profileGroupDangerTitle: {
     color: "#FF5D5D"
   },
   profileGroupTitle: {
-    color: "#A95BFF",
-    fontSize: 16,
+    color: "#A8A2B6",
+    fontSize: 12,
     fontWeight: "900",
-    marginBottom: 6
+    letterSpacing: 0,
+    marginBottom: 8
   },
   profileHeader: {
     paddingHorizontal: 12,
     paddingTop: 24
   },
-  profilePageSubtitle: {
-    color: "#B7B3C4",
-    fontSize: 16,
-    fontWeight: "800",
-    lineHeight: 22,
-    marginTop: 9
+  profileContent: {
+    paddingBottom: Platform.OS === "ios" ? 104 : 98,
+    paddingHorizontal: 28,
+    paddingTop: 16
   },
-  profilePageTitle: {
-    color: colors.text,
-    fontSize: 34,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 40
+  profileDivider: {
+    backgroundColor: "rgba(125, 120, 142, 0.26)",
+    height: 1,
+    marginTop: 12
+  },
+  profileHeroCard: {
+    gap: 0
+  },
+  profileHeroTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 34,
+    paddingHorizontal: 8
+  },
+  profilePlanBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(126, 30, 188, 0.18)",
+    borderColor: "rgba(194, 89, 255, 0.45)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+    minHeight: 28,
+    paddingHorizontal: 11
+  },
+  profilePlanBadgeText: {
+    color: "#C259FF",
+    fontSize: 14,
+    fontWeight: "900"
   },
   profileRow: {
     alignItems: "center",
     borderBottomColor: "rgba(125, 120, 142, 0.18)",
     borderBottomWidth: 1,
     flexDirection: "row",
-    gap: 14,
-    minHeight: 65
+    gap: 12,
+    minHeight: 38
+  },
+  profileRowActive: {
+    backgroundColor: "rgba(126, 72, 255, 0.035)"
   },
   profileRowBadge: {
     backgroundColor: "rgba(45, 177, 106, 0.2)",
@@ -4077,33 +6822,43 @@ const styles = StyleSheet.create({
   },
   profileRowIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(43, 43, 59, 0.82)",
-    borderRadius: 12,
-    height: 43,
+    backgroundColor: "rgba(79, 32, 129, 0.28)",
+    borderRadius: 9,
+    height: 28,
     justifyContent: "center",
-    width: 43
+    width: 28
   },
   profileRowIconDanger: {
-    backgroundColor: "rgba(255, 93, 93, 0.13)"
+    backgroundColor: "rgba(255, 70, 92, 0.11)"
   },
   profileRowLabel: {
     color: colors.text,
-    fontSize: 15,
+    flex: 1,
+    fontSize: 14,
     fontWeight: "900",
-    lineHeight: 19
+    lineHeight: 18
+  },
+  profileRowLabelDanger: {
+    color: "#FF465C"
   },
   profileRowLast: {
     borderBottomWidth: 0
   },
+  profileRowPressed: {
+    opacity: 0.74
+  },
   profileRowValue: {
-    color: "#B6B1C4",
-    fontSize: 14,
+    color: "#AAA5B8",
+    flexShrink: 0,
+    fontSize: 13,
     fontWeight: "800",
-    lineHeight: 18,
-    marginTop: 3
+    lineHeight: 17
   },
   profileScreen: {
-    gap: 13
+    gap: 8
+  },
+  profileSection: {
+    gap: 0
   },
   profileStat: {
     alignItems: "center",
@@ -4148,6 +6903,18 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 25
   },
+  profileRenewDate: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 19
+  },
+  profileRenewMeta: {
+    color: "#A8A2B6",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17
+  },
   profileSummaryCard: {
     backgroundColor: "rgba(14, 17, 28, 0.9)",
     borderColor: "rgba(139, 60, 255, 0.48)",
@@ -4160,17 +6927,17 @@ const styles = StyleSheet.create({
     minWidth: 0
   },
   profileSummaryEmail: {
-    color: "#B7B3C4",
-    fontSize: 17,
+    color: "#A9A3B8",
+    fontSize: 14,
     fontWeight: "800",
-    marginTop: 7
+    marginTop: 5
   },
   profileSummaryName: {
     color: colors.text,
-    fontSize: 26,
+    fontSize: 21,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 31
+    lineHeight: 26
   },
   profileSummaryTop: {
     alignItems: "center",
@@ -4207,6 +6974,45 @@ const styles = StyleSheet.create({
   profileTabTextActive: {
     color: "#DDFCEB"
   },
+  profileUsageDivider: {
+    backgroundColor: "rgba(125, 120, 142, 0.25)",
+    height: 49,
+    width: 1
+  },
+  profileUsageIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(30, 31, 48, 0.86)",
+    borderRadius: 12,
+    height: 43,
+    justifyContent: "center",
+    width: 43
+  },
+  profileUsageItem: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: 10,
+    minWidth: 0
+  },
+  profileUsageLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  profileUsageStrip: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 13,
+    minHeight: 58,
+    paddingHorizontal: 0
+  },
+  profileUsageValue: {
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: "900",
+    lineHeight: 25
+  },
   projectsBackdrop: {
     ...StyleSheet.absoluteFillObject
   },
@@ -4228,6 +7034,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.32,
     shadowRadius: 18
+  },
+  projectsCreateButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.98 }]
   },
   projectsCreateGradient: {
     alignItems: "center",
@@ -4349,15 +7159,7 @@ const styles = StyleSheet.create({
     color: "#B5B0CA",
     fontSize: 14,
     fontWeight: "800",
-    lineHeight: 19,
-    marginTop: 6
-  },
-  projectsHeroTitle: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 32
+    lineHeight: 19
   },
   projectsList: {
     gap: 12,
@@ -4698,6 +7500,103 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginTop: 4
   },
+  renameChatActions: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "flex-end"
+  },
+  renameChatCancelButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 11,
+    borderWidth: 1,
+    minHeight: 42,
+    paddingHorizontal: 16,
+    justifyContent: "center"
+  },
+  renameChatCancelText: {
+    color: "#D8D3E4",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  renameChatCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  renameChatDialog: {
+    backgroundColor: "rgba(9, 11, 21, 0.98)",
+    borderColor: "rgba(139, 53, 255, 0.32)",
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 14,
+    marginHorizontal: 18,
+    maxWidth: 420,
+    padding: 16,
+    shadowColor: "#8B35FF",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.24,
+    shadowRadius: 28,
+    width: "90%"
+  },
+  renameChatHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  renameChatIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderColor: "rgba(183, 139, 255, 0.28)",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  renameChatInput: {
+    backgroundColor: "rgba(16, 18, 30, 0.9)",
+    borderColor: "rgba(126, 124, 155, 0.28)",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    minHeight: 48,
+    paddingHorizontal: 13
+  },
+  renameChatOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    flex: 1,
+    justifyContent: "center"
+  },
+  renameChatSaveButton: {
+    alignItems: "center",
+    backgroundColor: "#8B35FF",
+    borderRadius: 11,
+    minHeight: 42,
+    paddingHorizontal: 18,
+    justifyContent: "center"
+  },
+  renameChatSaveText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  renameChatSubtitle: {
+    color: "#AFA9BB",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17,
+    marginTop: 2
+  },
+  renameChatTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 22
+  },
   projectName: {
     color: colors.text,
     fontSize: 17,
@@ -4926,6 +7825,9 @@ const styles = StyleSheet.create({
     height: 7,
     width: 7
   },
+  statusDotOffline: {
+    backgroundColor: "#FF5A6B"
+  },
   statusLabel: {
     alignSelf: "flex-start",
     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -5094,6 +7996,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900"
   },
+  pcControlDisabled: {
+    opacity: 0.58
+  },
   pcManualPanel: {
     gap: 9
   },
@@ -5188,21 +8093,17 @@ const styles = StyleSheet.create({
   pcSwitcherSheet: {
     backgroundColor: "rgba(6, 8, 18, 0.98)",
     borderColor: "rgba(126, 102, 190, 0.32)",
-    borderRadius: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
     gap: 15,
-    alignSelf: "center",
-    marginBottom: 18,
-    marginHorizontal: 18,
-    maxWidth: 430,
     paddingBottom: 28,
     paddingHorizontal: 18,
     paddingTop: 10,
     shadowColor: "#6E31FF",
     shadowOffset: { width: 0, height: -14 },
     shadowOpacity: 0.22,
-    shadowRadius: 28,
-    width: "91%"
+    shadowRadius: 28
   },
   pcSwitcherTitle: {
     color: colors.text,
@@ -5210,126 +8111,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0,
     lineHeight: 24
-  },
-  planBadge: {
-    fontSize: 11,
-    fontWeight: "900",
-    marginTop: 4,
-    textTransform: "uppercase"
-  },
-  planButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 13,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 46,
-    overflow: "hidden"
-  },
-  planButtonFeatured: {
-    borderWidth: 0,
-    shadowColor: "#45E99B",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.24,
-    shadowRadius: 18
-  },
-  planButtonGradient: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 46,
-    width: "100%"
-  },
-  planButtonPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }]
-  },
-  planButtonText: {
-    color: "#E8E1FF",
-    fontSize: 14,
-    fontWeight: "900"
-  },
-  planButtonTextFeatured: {
-    color: "#06100B",
-    fontSize: 14,
-    fontWeight: "900"
-  },
-  planCard: {
-    backgroundColor: "rgba(11, 13, 24, 0.84)",
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 14,
-    overflow: "hidden",
-    padding: 16,
-    position: "relative"
-  },
-  planCardFeatured: {
-    shadowColor: "#45E99B",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 22
-  },
-  planDescription: {
-    color: "#B8B1C7",
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 18
-  },
-  planFeaturedWash: {
-    ...StyleSheet.absoluteFillObject
-  },
-  planFeatureRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 9
-  },
-  planFeatureText: {
-    color: "#D8D2E4",
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 18
-  },
-  planFeatures: {
-    gap: 9
-  },
-  planIcon: {
-    alignItems: "center",
-    borderRadius: 13,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: "center",
-    width: 44
-  },
-  planName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 24
-  },
-  planPrice: {
-    color: colors.text,
-    fontSize: 36,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 40
-  },
-  planPriceMeta: {
-    color: "#AFA8C0",
-    fontSize: 14,
-    fontWeight: "900",
-    paddingBottom: 6
-  },
-  planPriceRow: {
-    alignItems: "flex-end",
-    flexDirection: "row",
-    gap: 4
-  },
-  planTopRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between"
   },
   tokenPill: {
     alignItems: "center",
@@ -5347,46 +8128,16 @@ const styles = StyleSheet.create({
     opacity: 0.76,
     transform: [{ scale: 0.98 }]
   },
-  tokenCompactMeta: {
-    color: "#AFA8C0",
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 4,
-    textAlign: "center"
-  },
-  tokenCompactPanel: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 231, 106, 0.08)",
-    borderColor: "rgba(255, 231, 106, 0.18)",
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 13
-  },
-  tokenCompactPercent: {
-    color: "#FFF2A4",
-    fontSize: 15,
-    fontWeight: "900",
-    lineHeight: 19
-  },
-  tokenCycleStats: {
-    flexDirection: "row",
-    gap: 8
-  },
   tokenHeroLabel: {
-    color: "#D7D1E5",
+    color: "#FFF200",
     fontSize: 12,
     fontWeight: "900",
     textTransform: "uppercase"
   },
   tokenHeroPanel: {
-    backgroundColor: "rgba(16, 18, 31, 0.82)",
-    borderColor: "rgba(255, 231, 106, 0.2)",
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 12,
-    overflow: "hidden",
-    padding: 13
+    gap: 14,
+    paddingHorizontal: 2,
+    paddingTop: 2
   },
   tokenHeroTop: {
     alignItems: "flex-start",
@@ -5395,7 +8146,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   tokenHeroValue: {
-    color: colors.text,
+    color: "#F9F6FF",
     fontSize: 23,
     fontWeight: "900",
     letterSpacing: 0,
@@ -5405,10 +8156,10 @@ const styles = StyleSheet.create({
   tokenManageButton: {
     borderRadius: 13,
     overflow: "hidden",
-    shadowColor: "#7334FF",
+    shadowColor: "#FFF200",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.24,
-    shadowRadius: 18
+    shadowOpacity: 0.3,
+    shadowRadius: 22
   },
   tokenManageButtonPressed: {
     opacity: 0.86,
@@ -5419,40 +8170,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 9,
     justifyContent: "center",
-    minHeight: 46
+    minHeight: 48
   },
   tokenManageText: {
     color: colors.text,
     fontSize: 15,
     fontWeight: "900"
   },
-  tokenMiniStat: {
-    backgroundColor: "rgba(9, 11, 21, 0.78)",
-    borderColor: "rgba(118, 101, 171, 0.2)",
-    borderRadius: 12,
-    borderWidth: 1,
-    flex: 1,
-    minHeight: 54,
-    paddingHorizontal: 10,
-    paddingVertical: 9
-  },
-  tokenMiniStatLabel: {
-    color: "#A9A2B8",
-    fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase"
-  },
-  tokenMiniStatValue: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-    lineHeight: 21,
-    marginTop: 4
-  },
   tokenRenewalBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 231, 106, 0.1)",
-    borderColor: "rgba(255, 231, 106, 0.24)",
+    backgroundColor: "rgba(255, 242, 0, 0.12)",
+    borderColor: "rgba(255, 242, 0, 0.36)",
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -5461,38 +8189,29 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   tokenRenewalText: {
-    color: "#FFF2A4",
+    color: "#FFF200",
     fontSize: 11,
     fontWeight: "900"
-  },
-  tokenSectionTitle: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 18
   },
   tokenSheet: {
     backgroundColor: "rgba(6, 8, 18, 0.98)",
     borderColor: "rgba(126, 102, 190, 0.32)",
-    borderRadius: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderWidth: 1,
-    gap: 14,
-    marginBottom: 18,
-    marginHorizontal: 18,
-    maxWidth: 390,
-    padding: 16,
-    alignSelf: "center",
-    shadowColor: "#6E31FF",
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.28,
-    shadowRadius: 28,
-    width: "91%"
+    gap: 15,
+    paddingBottom: 28,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    shadowColor: "#FFF200",
+    shadowOffset: { width: 0, height: -14 },
+    shadowOpacity: 0.18,
+    shadowRadius: 30
   },
   tokenSheetClose: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderColor: "rgba(255, 242, 0, 0.16)",
     borderRadius: 10,
     borderWidth: 1,
     height: 36,
@@ -5505,7 +8224,7 @@ const styles = StyleSheet.create({
   },
   tokenSheetHandle: {
     alignSelf: "center",
-    backgroundColor: "rgba(207, 199, 226, 0.26)",
+    backgroundColor: "rgba(255, 242, 0, 0.42)",
     borderRadius: 999,
     height: 4,
     width: 42
@@ -5521,16 +8240,20 @@ const styles = StyleSheet.create({
   },
   tokenSheetHeaderIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 231, 106, 0.12)",
-    borderColor: "rgba(255, 231, 106, 0.22)",
+    backgroundColor: "rgba(255, 242, 0, 0.14)",
+    borderColor: "rgba(255, 242, 0, 0.42)",
     borderRadius: 14,
     borderWidth: 1,
     height: 48,
     justifyContent: "center",
+    shadowColor: "#FFF200",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
     width: 48
   },
   tokenSheetKicker: {
-    color: "#FFE76A",
+    color: "#FFF200",
     fontSize: 10,
     fontWeight: "900",
     textTransform: "uppercase"
@@ -5547,11 +8270,11 @@ const styles = StyleSheet.create({
     flexShrink: 1
   },
   tokenSheetTitle: {
-    color: colors.text,
-    fontSize: 28,
+    color: "#F9F6FF",
+    fontSize: 20,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 32
+    lineHeight: 24
   },
   tokenText: {
     color: "#FFE76A",
@@ -5565,7 +8288,7 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   tokenTrack: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(139, 53, 255, 0.34)",
     borderRadius: 999,
     height: 10,
     overflow: "hidden"
@@ -5574,44 +8297,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     height: 10
   },
-  tokenUsageCopy: {
+  pageTopTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 28
+  },
+  pageTopTitleBlock: {
     flex: 1,
     minWidth: 0
-  },
-  tokenUsageIcon: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 231, 106, 0.08)",
-    borderColor: "rgba(255, 231, 106, 0.18)",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 38,
-    justifyContent: "center",
-    width: 38
-  },
-  tokenUsageLabel: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: "900"
-  },
-  tokenUsagePanel: {
-    backgroundColor: "rgba(16, 18, 31, 0.82)",
-    borderColor: "rgba(112, 105, 133, 0.26)",
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 10,
-    padding: 12
-  },
-  tokenUsageRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 11,
-    minHeight: 42
-  },
-  tokenUsageValue: {
-    color: "#AFA9C0",
-    fontSize: 12,
-    fontWeight: "800",
-    marginTop: 2
   },
   topBar: {
     alignItems: "center",
@@ -5624,28 +8319,73 @@ const styles = StyleSheet.create({
     minHeight: 74,
     paddingBottom: 10,
     paddingHorizontal: 16,
-    paddingTop: 10
+    paddingTop: 10,
+    position: "relative"
+  },
+  chatTopActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 7,
+    justifyContent: "flex-end",
+    minWidth: 0
+  },
+  chatTopBar: {
+    backgroundColor: "#080A12",
+    borderBottomColor: "rgba(255, 255, 255, 0.04)",
+    gap: 8,
+    justifyContent: "space-between",
+    paddingHorizontal: 12
+  },
+  chatTopIconButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(126, 124, 155, 0.22)",
+    borderRadius: 11,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: "center",
+    width: 38
+  },
+  chatTopLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 0,
+    gap: 7
+  },
+  chatTopTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "900",
+    letterSpacing: 0,
+    lineHeight: 22,
+    minWidth: 0,
+    textAlign: "center"
+  },
+  chatTopTitleWrap: {
+    alignItems: "center",
+    bottom: 0,
+    justifyContent: "center",
+    left: 94,
+    paddingHorizontal: 6,
+    position: "absolute",
+    right: 94,
+    top: 0
+  },
+  topBarChat: {
+    borderBottomColor: "rgba(91, 91, 112, 0.26)",
+    minHeight: 74,
+    paddingHorizontal: 18
   },
   topLeft: {
     alignItems: "center",
-    backgroundColor: "rgba(15, 18, 31, 0.88)",
-    borderColor: "rgba(112, 240, 162, 0.18)",
-    borderRadius: 16,
-    borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     gap: 11,
-    minHeight: 52,
-    minWidth: 0,
-    paddingHorizontal: 10,
-    shadowColor: "#1EEA7B",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16
+    minWidth: 0
   },
   topLeftPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }]
+    opacity: 0.74
   },
   topMachineCopy: {
     flex: 1,
@@ -5688,92 +8428,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 16
-  },
-  upgradeBackButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 40,
-    justifyContent: "center",
-    width: 40
-  },
-  upgradeContent: {
-    paddingBottom: Platform.OS === "ios" ? 96 : 90,
-    paddingHorizontal: 14,
-    paddingTop: 8
-  },
-  upgradeCycleControl: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    padding: 5
-  },
-  upgradeCycleOption: {
-    alignItems: "center",
-    borderRadius: 12,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 48
-  },
-  upgradeCycleOptionActive: {
-    backgroundColor: "rgba(69, 233, 155, 0.14)",
-    borderColor: "rgba(69, 233, 155, 0.26)",
-    borderWidth: 1
-  },
-  upgradeCycleSave: {
-    color: "#7CF1B3",
-    fontSize: 10,
-    fontWeight: "900",
-    marginTop: 2
-  },
-  upgradeCycleText: {
-    color: "#AFA8C0",
-    fontSize: 14,
-    fontWeight: "900"
-  },
-  upgradeCycleTextActive: {
-    color: colors.text
-  },
-  upgradeHeader: {
-    flexDirection: "row",
-    gap: 12
-  },
-  upgradeHeaderCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  upgradeKicker: {
-    color: "#7CF1B3",
-    fontSize: 11,
-    fontWeight: "900",
-    textTransform: "uppercase"
-  },
-  upgradePage: {
-    gap: 16,
-    width: "100%"
-  },
-  upgradePlans: {
-    gap: 12
-  },
-  upgradeSubtitle: {
-    color: "#B8B1C7",
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
-    marginTop: 8
-  },
-  upgradeTitle: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 32,
-    marginTop: 4
   },
   welcomeBodyText: {
     color: "#B5B0CA",
@@ -5874,6 +8528,10 @@ const styles = StyleSheet.create({
   dashboardLogo: {
     height: 36,
     width: 52
+  },
+  dashboardLogoChat: {
+    height: 38,
+    width: 54
   },
   runningProjectCard: {
     backgroundColor: "rgba(8, 6, 20, 0.58)",

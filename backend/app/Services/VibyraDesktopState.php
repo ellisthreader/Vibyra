@@ -11,6 +11,7 @@ use App\Services\Concerns\OpenAiStreaming;
 use App\Services\Concerns\PairingState;
 use App\Services\Concerns\ProjectDiscovery;
 use App\Services\Concerns\ProjectFileState;
+use App\Services\Concerns\ProjectPreview;
 use App\Services\Concerns\StatePersistence;
 
 class VibyraDesktopState
@@ -24,6 +25,7 @@ class VibyraDesktopState
     use PairingState;
     use ProjectDiscovery;
     use ProjectFileState;
+    use ProjectPreview;
     use StatePersistence;
 
     private const AGENT_COOLDOWN_SECONDS = 8;

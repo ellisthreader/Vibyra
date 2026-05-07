@@ -1,5 +1,7 @@
 node_modules/
 .expo/
+backend/.env
+.env
 dist/
 build/
 npm-debug.log*

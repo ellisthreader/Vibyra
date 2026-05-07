@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import {
   starterAgents,
   starterChanges,
@@ -8,6 +8,7 @@ import {
 } from "../data/appData";
 import { getDefaultAgentUrl } from "../utils/network";
 import { loadPersistedSession, savePersistedSession } from "../utils/persistence";
+import { normalizeChatThreads, normalizeChatTitles } from "../utils/chatThreads";
 import { AppDerivedState, AppState } from "./appContextTypes";
 import { ChatMessage, FileEntry, ReasoningEffort } from "../types/domain";
 
@@ -20,21 +21,22 @@ const emptyFile: FileEntry = {
   body: "Select a project with readable files."
 };
 
-const welcomeMessages: ChatMessage[] = [
-  {
-    id: "welcome",
-    role: "assistant",
-    text: "Pick a file, then tell Vibyra what to change. I can create or rewrite files in this project."
-  }
-];
+const emptyChatMessages: ChatMessage[] = [];
 
 export function useAppState() {
   const persistedSession = useMemo(loadPersistedSession, []);
-  const [authenticated, setAuthenticated] = useState(false);
+  const persistedAppState = persistedSession.user?.appState ?? {};
+  const [authenticated, setAuthenticated] = useState(Boolean(persistedSession.authToken && persistedSession.user));
+  const [authToken, setAuthToken] = useState(persistedSession.authToken);
+  const [installId] = useState(persistedSession.installId);
+  const [accountId, setAccountId] = useState<number | null>(persistedSession.user?.id ?? null);
+  const [accountPlan, setAccountPlan] = useState(persistedSession.user?.plan ?? "free");
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
-  const [authName, setAuthName] = useState("");
-  const [authEmail, setAuthEmail] = useState("");
+  const [authName, setAuthName] = useState(persistedSession.user?.name ?? "");
+  const [authEmail, setAuthEmail] = useState(persistedSession.user?.email ?? "");
   const [authPassword, setAuthPassword] = useState("");
+  const [creditsBalance, setCreditsBalance] = useState(persistedSession.user?.creditsBalance ?? 0);
+  const [creditsUsed, setCreditsUsed] = useState(persistedSession.user?.creditsUsed ?? 0);
   const [onboardingComplete, setOnboardingComplete] = useState(persistedSession.onboardingComplete);
   const [paired, setPaired] = useState(false);
   const [agentUrl, setAgentUrl] = useState(getDefaultAgentUrl);
@@ -51,6 +53,7 @@ export function useAppState() {
   const [projects, setProjects] = useState(starterProjects);
   const [selectedProjectId, setSelectedProjectId] = useState("p1");
   const [selectedModel, setSelectedModel] = useState<AppState["selectedModel"]>("gpt-5.5");
+  const [selectedChatModel, setSelectedChatModel] = useState(persistedSession.selectedChatModel);
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>("medium");
   const [agents, setAgents] = useState(starterAgents);
   const [logs, setLogs] = useState(starterLogs);
@@ -63,7 +66,8 @@ export function useAppState() {
   const [lastPrompt, setLastPrompt] = useState("Add a clean project switcher and wire it to recent workspaces");
   const [agentRequesting, setAgentRequesting] = useState(false);
   const [taskText, setTaskText] = useState("");
-  const [chatMessages, setChatMessages] = useState(welcomeMessages);
+  const [chatThreads, setChatThreads] = useState<Record<string, ChatMessage[]>>(() => normalizeChatThreads(persistedAppState.chatThreads));
+  const [chatTitles, setChatTitles] = useState<Record<string, string>>(() => normalizeChatTitles(persistedAppState.chatTitles));
   const [newFilePath, setNewFilePath] = useState("note.txt");
   const [command, setCommand] = useState("npm run build");
   const [promptMoney, setPromptMoney] = useState<AppState["promptMoney"]>({
@@ -73,9 +77,54 @@ export function useAppState() {
     longestPromptLength: 0
   });
 
+  const chatMessages = chatThreads[selectedProjectId] ?? emptyChatMessages;
+  const setChatMessages = useCallback<Dispatch<SetStateAction<ChatMessage[]>>>((update) => {
+    setChatThreads((current) => {
+      const previous = current[selectedProjectId] ?? emptyChatMessages;
+      const nextMessages = typeof update === "function" ? update(previous) : update;
+      return {
+        ...current,
+        [selectedProjectId]: nextMessages
+      };
+    });
+  }, [selectedProjectId]);
+
   useEffect(() => {
-    savePersistedSession({ onboardingComplete, rememberedDesktops });
-  }, [onboardingComplete, rememberedDesktops]);
+    savePersistedSession({
+      authToken,
+      installId,
+      onboardingComplete,
+      selectedChatModel,
+      rememberedDesktops,
+      user: accountId ? {
+        id: accountId,
+        name: authName || "Vibyra User",
+        email: authEmail,
+        plan: accountPlan,
+        creditsBalance,
+        creditsUsed,
+        onboardingComplete,
+        rememberedDesktops,
+        appState: { chatThreads, chatTitles, selectedModel, selectedChatModel, promptMoney }
+      } : null
+    });
+  }, [
+    accountId,
+    accountPlan,
+    authEmail,
+    authName,
+    authToken,
+    chatThreads,
+    chatTitles,
+    creditsBalance,
+    creditsUsed,
+    installId,
+    onboardingComplete,
+    promptMoney,
+    rememberedDesktops,
+    selectedChatModel,
+    selectedModel
+  ]);
 
   const derived: AppDerivedState = useMemo(() => {
     const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
@@ -90,24 +139,27 @@ export function useAppState() {
 
   return {
     state: {
-      authenticated, authMode, authName, authEmail, authPassword, onboardingComplete,
+      authenticated, authToken, installId, accountId, accountPlan, authMode,
+      authName, authEmail, authPassword, creditsBalance, creditsUsed, onboardingComplete,
       paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
       healthMessage, checkingHealth, pendingPhoneApproval, connection, rememberedDesktops,
-      machineName, projects, selectedProjectId, selectedModel, reasoningEffort,
+      machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
-      workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages,
+      workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
       newFilePath, command, promptMoney
     },
     derived,
     setters: {
-      setAuthenticated, setAuthMode, setAuthName, setAuthEmail, setAuthPassword,
+      setAuthenticated, setAuthToken, setAccountId, setAccountPlan, setAuthMode,
+      setAuthName, setAuthEmail, setAuthPassword, setCreditsBalance, setCreditsUsed,
       setOnboardingComplete, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
       setPairingMessage, setHealthMessage, setCheckingHealth,
       setPendingPhoneApproval, setConnection, setRememberedDesktops, setMachineName, setProjects,
-      setSelectedProjectId, setSelectedModel, setReasoningEffort, setAgents,
+      setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState,
       setPreviewState, setWorkflowIndex, setLastPrompt, setAgentRequesting,
-      setTaskText, setChatMessages, setNewFilePath, setCommand, setPromptMoney
+      setTaskText, setChatMessages, setChatThreads, setChatTitles, setNewFilePath, setCommand, setPromptMoney
     }
   };
 }
+

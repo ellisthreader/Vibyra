@@ -1,9 +1,10 @@
 import { PreviewState, Project, FileEntry, LogEvent } from "../types/domain";
 import { dedupeFiles } from "../utils/files";
 import { impact } from "../utils/haptics";
-import { makeId } from "../utils/ids";
 import { normalizeAgentUrl } from "../utils/network";
 import { useAppState } from "./useAppState";
+import { useDesktopFolders } from "./useDesktopFolders";
+import { FileCreateResult, ProjectCreateResult, makeLocalProject } from "./workspaceTypes";
 
 type Store = ReturnType<typeof useAppState>;
 type Requests = {
@@ -18,14 +19,12 @@ type Logs = {
 
 export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs) {
   const { state, derived, setters } = store;
+  const desktopFolders = useDesktopFolders(Boolean(state.connection), requests, logs);
 
-  async function createProject() {
+  async function createProject(): Promise<Project | null> {
     impact();
     if (!state.connection) {
-      const project = makeLocalProject();
-      setters.setProjects((current) => [project, ...current]);
-      setters.setSelectedProjectId(project.id);
-      return;
+      return createLocalProject();
     }
 
     try {
@@ -41,8 +40,10 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
       setters.setPreviewState("live");
       logs.advanceWorkflow(5);
       logs.appendLogs(result.events);
+      return result.project;
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Project creation failed", "Projects", "error");
+      return createLocalProject();
     }
   }
 
@@ -142,28 +143,35 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     logs.appendLog(message, "Files", "error");
   }
 
-  return { createProject, createFile, loadProjectFilesWithConnection, selectFile, selectProject };
-}
+  function createLocalProject() {
+    const project = makeLocalProject();
+    setters.setProjects((current) => [project, ...current]);
+    setters.setSelectedProjectId(project.id);
+    setters.setChatTitles((current) => ({ ...current, [project.id]: "New chat" }));
+    setters.setFiles([]);
+    setters.setSelectedFileId("empty");
+    setters.setPreviewState("live");
+    logs.advanceWorkflow(5);
+    logs.appendLog(`Created ${project.name}`, "Projects", "success");
+    return project;
+  }
 
-function makeLocalProject(): Project {
+  async function adoptProject(project: Project): Promise<void> {
+    setters.setProjects((current) => {
+      if (current.some((existing) => existing.id === project.id)) return current;
+      return [project, ...current];
+    });
+    await selectProject(project.id);
+  }
+
   return {
-    id: makeId("project"),
-    name: "Untitled Workspace",
-    path: "~/Desktop/Vibyra Projects/untitled-workspace",
-    stack: "New project",
-    updated: "Now"
+    adoptProject,
+    createProject,
+    createFile,
+    loadProjectFilesWithConnection,
+    selectFile,
+    selectProject,
+    ...desktopFolders
   };
 }
 
-type ProjectCreateResult = {
-  project: Project;
-  projects: Project[];
-  files: FileEntry[];
-  events: LogEvent[];
-};
-
-type FileCreateResult = {
-  file: FileEntry | null;
-  files: FileEntry[];
-  events: LogEvent[];
-};

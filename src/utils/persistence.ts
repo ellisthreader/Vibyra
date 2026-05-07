@@ -3,13 +3,33 @@ import { RememberedDesktop } from "../types/domain";
 const SESSION_KEY = "vibyra.session.v1";
 
 export type PersistedSession = {
+  authToken: string;
+  installId: string;
+  onboardingComplete: boolean;
+  selectedChatModel: string;
+  rememberedDesktops: RememberedDesktop[];
+  user: PersistedUser | null;
+};
+
+export type PersistedUser = {
+  id: number;
+  name: string;
+  email: string;
+  plan: string;
+  creditsBalance: number;
+  creditsUsed: number;
   onboardingComplete: boolean;
   rememberedDesktops: RememberedDesktop[];
+  appState?: Record<string, unknown>;
 };
 
 const emptySession: PersistedSession = {
+  authToken: "",
+  installId: makeInstallId(),
   onboardingComplete: false,
-  rememberedDesktops: []
+  selectedChatModel: "gpt-5.4-mini",
+  rememberedDesktops: [],
+  user: null
 };
 
 export function loadPersistedSession(): PersistedSession {
@@ -19,9 +39,14 @@ export function loadPersistedSession(): PersistedSession {
     const raw = storage.getItem(SESSION_KEY);
     if (!raw) return emptySession;
     const parsed = JSON.parse(raw) as Partial<PersistedSession>;
+    const user = normalizeUser(parsed.user);
     return {
-      onboardingComplete: Boolean(parsed.onboardingComplete),
-      rememberedDesktops: normalizeDesktops(parsed.rememberedDesktops)
+      authToken: String(parsed.authToken ?? ""),
+      installId: String(parsed.installId ?? "") || makeInstallId(),
+      onboardingComplete: Boolean(user?.onboardingComplete ?? parsed.onboardingComplete),
+      selectedChatModel: String(parsed.selectedChatModel ?? "gpt-5.4-mini"),
+      rememberedDesktops: user?.rememberedDesktops ?? normalizeDesktops(parsed.rememberedDesktops),
+      user
     };
   } catch {
     return emptySession;
@@ -33,12 +58,20 @@ export function savePersistedSession(session: PersistedSession) {
     const storage = getStorage();
     if (!storage) return;
     storage.setItem(SESSION_KEY, JSON.stringify({
+      authToken: session.authToken,
+      installId: session.installId,
       onboardingComplete: session.onboardingComplete,
-      rememberedDesktops: normalizeDesktops(session.rememberedDesktops)
+      selectedChatModel: session.selectedChatModel,
+      rememberedDesktops: normalizeDesktops(session.rememberedDesktops),
+      user: normalizeUser(session.user)
     }));
   } catch {
     // Persistence is a convenience layer; the app should still run if storage is unavailable.
   }
+}
+
+export function normalizePersistedUser(value: unknown): PersistedUser | null {
+  return normalizeUser(value);
 }
 
 function getStorage() {
@@ -74,4 +107,33 @@ function normalizeStatus(status: unknown): RememberedDesktop["status"] {
   if (status === "current") return "online";
   if (status === "online" || status === "checking" || status === "offline") return status;
   return "offline";
+}
+
+function normalizeUser(value: unknown): PersistedUser | null {
+  if (!value || typeof value !== "object") return null;
+  const user = value as Partial<PersistedUser>;
+  const id = Number(user.id);
+  const email = String(user.email ?? "");
+  if (!Number.isFinite(id) || !email) return null;
+
+  return {
+    id,
+    name: String(user.name ?? "Vibyra User"),
+    email,
+    plan: String(user.plan ?? "free"),
+    creditsBalance: normalizeNumber(user.creditsBalance, 0),
+    creditsUsed: normalizeNumber(user.creditsUsed, 0),
+    onboardingComplete: Boolean(user.onboardingComplete),
+    rememberedDesktops: normalizeDesktops(user.rememberedDesktops),
+    appState: user.appState && typeof user.appState === "object" ? user.appState : {}
+  };
+}
+
+function normalizeNumber(value: unknown, fallback: number) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function makeInstallId() {
+  return `install-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
 }

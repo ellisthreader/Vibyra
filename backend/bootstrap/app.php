@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\VibyraCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(VibyraCors::class);
         $middleware->validateCsrfTokens(except: [
             'pair',
             'pair/status',
@@ -24,8 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'preview/start',
             'agents/start',
             'commands/run',
+            'api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->respond(fn ($response) => VibyraCors::withCorsHeaders($response));
     })->create();

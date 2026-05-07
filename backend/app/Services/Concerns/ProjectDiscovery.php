@@ -3,11 +3,11 @@
 namespace App\Services\Concerns;
 
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
-use Symfony\Component\Process\Process;
 
 trait ProjectDiscovery
 {
+    use DesktopFolders;
+
     private function discoverProjects(): array
     {
         return $this->discoverProjectsWithoutState();
@@ -61,7 +61,7 @@ trait ProjectDiscovery
         $projects[] = $this->projectFromPath($path, $this->detectStack($names));
     }
 
-    private function projectFromPath(string $path, ?string $stack = null): array
+    private function projectFromPath(string $path, ?string $stack = null, string $source = 'pc'): array
     {
         $entries = is_dir($path)
             ? collect(File::files($path))->map(fn ($file) => $file->getFilename())->all()
@@ -73,6 +73,7 @@ trait ProjectDiscovery
             'path' => $path,
             'stack' => $stack ?: $this->detectStack($entries),
             'updated' => $this->formatUpdated(filemtime($path) ?: time()),
+            'source' => $source,
         ];
     }
 
@@ -112,6 +113,11 @@ trait ProjectDiscovery
             if ($project['id'] === $projectId) {
                 return $project;
             }
+        }
+
+        $desktopMatch = $this->projectFromDesktopId($projectId);
+        if ($desktopMatch) {
+            return $desktopMatch;
         }
 
         return $state['projects'][0] ?? null;

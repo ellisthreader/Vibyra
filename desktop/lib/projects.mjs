@@ -24,8 +24,12 @@ export async function discoverProjects() {
   return appState.cachedProjects;
 }
 
+export function findProjectById(id) {
+  return appState.cachedProjects.find((project) => project.id === id) ?? null;
+}
+
 export function projectById(id) {
-  return appState.cachedProjects.find((project) => project.id === id) ?? appState.cachedProjects[0];
+  return findProjectById(id) ?? appState.cachedProjects[0];
 }
 
 async function scanChildren(root, seen, projects) {

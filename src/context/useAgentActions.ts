@@ -1,9 +1,12 @@
+import { useRef } from "react";
 import * as Haptics from "expo-haptics";
-import { Agent, BuildState, CodeChange, FileEntry, LogEvent, PreviewState } from "../types/domain";
+import { Agent, LogEvent } from "../types/domain";
+import { appApiRequest, ChatResponse } from "../utils/appApi";
 import { dedupeFiles, formatAssistantReply } from "../utils/files";
 import { impact } from "../utils/haptics";
 import { makeId } from "../utils/ids";
 import { useAppState } from "./useAppState";
+import { AgentStartResult, calculatePromptMoney, roundMoney } from "./agentTypes";
 
 type Store = ReturnType<typeof useAppState>;
 type Requests = {
@@ -17,11 +20,13 @@ type Logs = {
 
 export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
   const { state, derived, setters } = store;
+  const agentRequestingRef = useRef(false);
 
   async function startAgent() {
     const trimmed = state.taskText.trim();
-    if (!trimmed || state.agentRequesting) return;
+    if (!trimmed || state.agentRequesting || agentRequestingRef.current) return;
 
+    agentRequestingRef.current = true;
     setters.setAgentRequesting(true);
     const assistantMessageId = appendPendingChat(trimmed);
     const optimisticAgent = makeOptimisticAgent(trimmed);
@@ -42,26 +47,48 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     setters.setPreviewState("refreshing");
     setters.setLastPrompt(trimmed);
 
-    if (!state.connection) {
-      finishDemoAgent(optimisticAgent, trimmed);
-      setters.setAgentRequesting(false);
-      return;
-    }
-
     try {
-      const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
+      if (state.connection) {
+        const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
+          method: "POST",
+          body: JSON.stringify({
+            model: state.selectedModel,
+            projectId: derived.selectedProject.id,
+            prompt,
+            reasoningEffort: state.reasoningEffort
+          })
+        });
+        finishRealAgent(result, optimisticAgent.id, assistantMessageId);
+        return;
+      }
+
+      if (!state.authToken) {
+        throw new Error("Log in or create an account to use Vibyra AI chat.");
+      }
+
+      const result = await appApiRequest<ChatResponse>("/api/chat", {
         method: "POST",
         body: JSON.stringify({
-          projectId: derived.selectedProject.id,
-          prompt,
-          model: state.selectedModel,
-          reasoningEffort: state.reasoningEffort
+          fileBody: derived.selectedFile.id !== "empty" ? derived.selectedFile.body : "",
+          filePath: derived.selectedFile.id !== "empty" ? derived.selectedFile.path : "",
+          history: state.chatMessages
+            .filter((message) => message.id !== "welcome" && message.text.trim() && message.text !== "Working on it...")
+            .slice(-8)
+            .map((message) => ({
+              file: message.file,
+              role: message.role,
+              text: message.text
+            })),
+          model: state.selectedChatModel || state.selectedModel,
+          project: derived.selectedProject.name,
+          prompt
         })
-      });
-      finishRealAgent(result, optimisticAgent.id, assistantMessageId);
+      }, state.authToken);
+      finishOpenRouterAgent(result, optimisticAgent.id, assistantMessageId);
     } catch (error) {
       failAgent(optimisticAgent.id, assistantMessageId, error);
     } finally {
+      agentRequestingRef.current = false;
       setters.setAgentRequesting(false);
     }
   }
@@ -104,27 +131,28 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     updateAssistantMessage(assistantMessageId, formatAssistantReply(result.reply, result.changes));
   }
 
-  function finishDemoAgent(agent: Agent, prompt: string) {
-    setters.setAgents((current) => current.map((item) => (
-      item.id === agent.id
-        ? { ...item, state: "complete", progress: 100, file: "app/(dashboard)/project-switcher.tsx" }
-        : item
+  function finishOpenRouterAgent(result: ChatResponse, optimisticAgentId: string, assistantMessageId: string) {
+    setters.setAgents((current) => current.map((agent) => (
+      agent.id === optimisticAgentId
+        ? { ...agent, state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
+        : agent
     )));
     setters.setBuildState("passed");
     setters.setPreviewState("delivered");
-    setters.setChanges([{
-      id: makeId("diff"),
-      file: "app/(dashboard)/project-switcher.tsx",
-      summary: "Adds the requested Vibyra-driven project switcher",
-      additions: 96,
-      deletions: 18,
-      status: "applied"
-    }]);
+    setters.setCreditsBalance(result.creditsBalance);
+    setters.setCreditsUsed(result.creditsUsed);
+    if (result.title) {
+      setters.setChatTitles((current) => ({
+        ...current,
+        [state.selectedProjectId]: result.title ?? current[state.selectedProjectId] ?? derived.selectedProject.name
+      }));
+    }
     logs.appendLogs([
-      { source: "Preview", message: "Updated preview delivered to iPhone", tone: "success" },
-      { source: "Agent", message: `Demo agent completed: ${prompt}`, tone: "success" }
+      { source: "OpenRouter", message: `Model replied with ${result.model}`, tone: "success" },
+      { source: "Credits", message: `${result.creditCost} credit${result.creditCost === 1 ? "" : "s"} used`, tone: "info" }
     ]);
     logs.advanceWorkflow(12);
+    updateAssistantMessage(assistantMessageId, result.reply, result.app ?? null);
   }
 
   function failAgent(agentId: string, assistantMessageId: string, error: unknown) {
@@ -134,42 +162,22 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     setters.setBuildState("failed");
     setters.setPreviewState("live");
     const message = error instanceof Error ? error.message : "Agent task failed";
-    logs.appendLog(message, "Desktop Agent", "error");
+    logs.appendLog(message, "AI Chat", "error");
     updateAssistantMessage(assistantMessageId, message);
   }
 
-  function updateAssistantMessage(messageId: string, text: string) {
-    setters.setChatMessages((current) => current.map((message) => (
-      message.id === messageId ? { ...message, text } : message
-    )));
+  function updateAssistantMessage(messageId: string, text: string, app?: ChatResponse["app"]) {
+    setters.setChatMessages((current) => current.map((message) => {
+      if (message.id !== messageId) return message;
+      const next = { ...message, text };
+      if (app !== undefined) {
+        if (app) next.app = app;
+        else delete next.app;
+      }
+      return next;
+    }));
   }
 
   return { startAgent };
 }
 
-function calculatePromptMoney(prompt: string) {
-  const length = prompt.trim().length;
-
-  if (length <= 80) return 0.1;
-  if (length <= 220) {
-    const ratio = (length - 81) / 139;
-    return roundMoney(0.5 + ratio * 0.5);
-  }
-
-  const ratio = Math.min(1, (length - 221) / 479);
-  return roundMoney(1 + ratio);
-}
-
-function roundMoney(value: number) {
-  return Math.round(value * 100) / 100;
-}
-
-type AgentStartResult = {
-  agent: Agent;
-  changes: CodeChange[];
-  files: FileEntry[];
-  reply: string;
-  events: LogEvent[];
-  preview: { state: PreviewState };
-  buildState: BuildState;
-};
