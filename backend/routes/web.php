@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillingController;
 use App\Http\Controllers\VibyraDesktopController;
 use App\Http\Controllers\VibyraAppController;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,10 @@ Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOn
 Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
+Route::get('/api/billing/plans', [BillingController::class, 'plans']);
+Route::post('/api/billing/checkout', [BillingController::class, 'checkout']);
+Route::post('/api/billing/portal', [BillingController::class, 'portal']);
+Route::post('/api/billing/iap-receipt', [BillingController::class, 'iapReceipt']);
+Route::post('/api/billing/webhook', [BillingController::class, 'webhook']);
 Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('any', '.*');
 Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');

@@ -47,6 +47,8 @@ Authenticated routes require `Authorization: Bearer ${TOKEN}`.
 
 `desktop/lib/projects.mjs::projectById` returns `null` for unknown project ids. Do not reintroduce fallback-to-first-project behavior; stale mobile ids should fail clearly instead of running against an unrelated project.
 
+Manual folder selection from mobile uses authenticated `GET /desktop/browse?path=...` in `desktop/lib/routes.mjs`, backed by `browseDesktopPath` in `desktop/lib/projects.mjs`. With no `path`, it returns common roots (home, Desktop, Documents, Downloads, Code, Projects, Work). With a path, it returns the current folder, parent path, and visible child files/folders; browsed folders are cached as projects so selecting one from the phone can load files by id.
+
 ## Agent Runs
 
 There are two desktop-agent implementations in the repo:

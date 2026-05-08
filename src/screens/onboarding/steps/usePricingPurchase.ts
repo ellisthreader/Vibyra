@@ -4,6 +4,7 @@ import { useIAP, Purchase } from "expo-iap";
 import { useAppContext } from "../../../context/AppContext";
 import { membershipProductIds, membershipSkus } from "../data/plans";
 import { BillingPeriod, Plan } from "../types";
+import { reportIapReceipt } from "../../../utils/billingApi";
 
 export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPeriod, onClose: () => void) {
   const app = useAppContext();
@@ -16,6 +17,32 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
   const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useIAP({
     onPurchaseSuccess: async (purchase: Purchase) => {
       try {
+        const platform: "apple" | "google" = Platform.OS === "ios" ? "apple" : "google";
+        const receipt = purchase.purchaseToken
+          ?? (purchase as { transactionReceipt?: string }).transactionReceipt
+          ?? "";
+        const transactionId = (purchase as { transactionId?: string }).transactionId
+          ?? (purchase as { purchaseToken?: string }).purchaseToken
+          ?? "";
+
+        if (receipt && transactionId && app.authToken) {
+          try {
+            const result = await reportIapReceipt(app.authToken, {
+              platform,
+              productId: purchase.productId,
+              transactionId,
+              receipt
+            });
+            if (result.user) {
+              app.applyRemoteUserFromIap(result.user);
+            }
+          } catch (error) {
+            setPurchaseError(error instanceof Error ? error.message : "Could not register your subscription with Vibyra.");
+            setPurchasingProductId(null);
+            return;
+          }
+        }
+
         await finishTransaction({ purchase, isConsumable: false });
         setPurchaseError("");
         setPurchaseMessage("Membership active. Taking you to connect your PC...");

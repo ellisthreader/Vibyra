@@ -19,5 +19,14 @@ export function userFacingAgentError(message: string) {
   if (lower.includes("failed to fetch") || lower.includes("could not reach")) {
     return "I could not reach Vibyra from the app. Check that the backend and desktop bridge are running on your LAN, then try again.";
   }
+  if (lower.includes("not enough credits") || lower.includes("out of free credits") || lower.includes("out of credits")) {
+    return "You're out of credits for this request. Open Account → Billing to top up or upgrade your plan.";
+  }
+  if (lower.includes("daily ai usage cap")) {
+    return "You've hit today's AI usage cap. The cap resets every 24 hours, or upgrade your plan for a higher cap.";
+  }
+  if (lower.includes("plan does not include this model")) {
+    return "Your current plan doesn't include this model. Pick a model included in your plan, or upgrade in Account → Billing.";
+  }
   return message;
 }

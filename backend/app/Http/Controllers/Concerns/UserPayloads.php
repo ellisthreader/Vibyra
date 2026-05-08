@@ -51,13 +51,25 @@ trait UserPayloads
 
     private function userPayload(User $user): array
     {
+        $plan = $user->plan ?: 'free';
+        $cycle = $user->plan_billing_cycle ?: 'monthly';
+        $planConfig = (array) config("billing.plans.{$plan}", []);
+
         return [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'plan' => $user->plan ?: 'free',
+            'plan' => $plan,
+            'planBillingCycle' => $cycle,
+            'planRenewsAt' => optional($user->plan_renews_at)->toIso8601String(),
             'creditsBalance' => (int) $user->credits_balance,
             'creditsUsed' => (int) $user->credits_used,
+            'dailyCreditsUsed' => (int) ($user->daily_credits_used ?? 0),
+            'dailyCreditsCap' => (int) ($planConfig['daily_credit_cap'] ?? 0),
+            'monthlyCredits' => (int) ($cycle === 'annual'
+                ? ($planConfig['annual_credits'] ?? $planConfig['monthly_credits'] ?? 0)
+                : ($planConfig['monthly_credits'] ?? 0)),
+            'allowedModelTiers' => array_values((array) ($planConfig['allowed_tiers'] ?? ['free', 'budget'])),
             'onboardingComplete' => (bool) $user->onboarding_complete,
             'rememberedDesktops' => $this->normalizeRememberedDesktops($user->remembered_desktops),
             'appState' => is_array($user->app_state) ? $user->app_state : [],

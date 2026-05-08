@@ -31,6 +31,12 @@ import { part29 } from "./part29";
 import { part30 } from "./part30";
 import { part31 } from "./part31";
 import { part32 } from "./part32";
+import { part33 } from "./part33";
+import { part34 } from "./part34";
+import { part35 } from "./part35";
+import { part36 } from "./part36";
+import { part37 } from "./part37";
+import { part38 } from "./part38";
 
 export const styles = StyleSheet.create({
   ...part1,
@@ -64,5 +70,11 @@ export const styles = StyleSheet.create({
   ...part29,
   ...part30,
   ...part31,
-  ...part32
+  ...part32,
+  ...part33,
+  ...part34,
+  ...part35,
+  ...part36,
+  ...part37,
+  ...part38
 } as any);

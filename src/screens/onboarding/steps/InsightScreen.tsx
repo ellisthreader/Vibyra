@@ -32,8 +32,8 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
   return (
     <View style={styles.resultContent}>
       <View style={styles.personaHero}>
-        <View pointerEvents="none" style={styles.personaHeroOrbit} />
-        <View pointerEvents="none" style={styles.personaHeroGlow} />
+        <View style={[styles.personaHeroOrbit, { pointerEvents: "none" }]} />
+        <View style={[styles.personaHeroGlow, { pointerEvents: "none" }]} />
         <Image resizeMode="contain" source={persona.icon} style={styles.personaIcon} />
       </View>
 
@@ -72,7 +72,7 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
                 end={{ x: 1, y: 1 }}
                 style={styles.insightRowFill}
               >
-                <View pointerEvents="none" style={styles.insightRowGlow} />
+                <View style={[styles.insightRowGlow, { pointerEvents: "none" }]} />
                 <View style={[styles.insightIcon, { backgroundColor: accent.glow, borderColor: accent.border, shadowColor: accent.color }]}>
                   <Ionicons name={bullet.icon} color={accent.color} size={26} />
                 </View>

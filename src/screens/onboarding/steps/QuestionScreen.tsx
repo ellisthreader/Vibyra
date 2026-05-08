@@ -31,7 +31,7 @@ export function QuestionScreen<T extends string>(props: {
                 ]}
                 onPress={() => props.onSelect(option.value)}
               >
-                {selected ? <View pointerEvents="none" style={styles.frequencySelectedGlow} /> : null}
+                {selected ? <View style={[styles.frequencySelectedGlow, { pointerEvents: "none" }]} /> : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
                 <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
               </Pressable>

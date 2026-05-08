@@ -2,35 +2,97 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\User;
+use App\Services\Billing\CreditCalculator;
+use App\Services\Billing\CreditDeductor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Throwable;
 
 trait ChatEndpoint
 {
+    private const CHAT_PROMPT_MAX_CHARS = 8000;
+    private const CHAT_FILE_BODY_MAX_CHARS = 20000;
+    private const CHAT_HISTORY_MAX_ITEMS = 20;
+    private const CHAT_PER_IP_PER_MINUTE = 30;
+
     public function chat(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
+        $plan = $user->plan ?: 'free';
+
+        $rateLimited = $this->enforceChatRateLimit($request, $user->id, $plan);
+        if ($rateLimited !== null) {
+            return $rateLimited;
+        }
+
         $prompt = trim((string) $request->input('prompt', ''));
         $skillId = trim((string) $request->input('skill', ''));
         $skill = $skillId !== '' ? $this->resolveSkill($skillId) : null;
+
+        $calc = app(CreditCalculator::class);
+        $deductor = app(CreditDeductor::class);
+
         $modelKey = trim((string) $request->input('model', 'auto')) ?: 'auto';
-        $openRouterModel = $this->resolveOpenRouterModel($modelKey);
-        $creditCost = $this->creditCost($modelKey);
+        if (! $calc->modelConfig($modelKey)) {
+            $modelKey = 'auto';
+        }
+        if (! $calc->planAllowsModel($plan, $modelKey)) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'Your plan does not include this model. Upgrade to use it, or pick a model included in your plan.',
+                'requiredTier' => $calc->tier($modelKey),
+                'plan' => $plan,
+            ], 403);
+        }
+
+        $openRouterModel = $calc->resolveSlug($modelKey);
 
         if ($prompt === '') {
             return $this->json(['ok' => false, 'error' => 'Ask Vibyra something first.'], 422);
         }
+        if (mb_strlen($prompt) > self::CHAT_PROMPT_MAX_CHARS) {
+            return $this->json(['ok' => false, 'error' => 'That prompt is too long. Trim it to under ' . self::CHAT_PROMPT_MAX_CHARS . ' characters.'], 413);
+        }
 
-        if ($user->credits_balance < $creditCost) {
+        $fileBody = (string) $request->input('fileBody', '');
+        if (mb_strlen($fileBody) > self::CHAT_FILE_BODY_MAX_CHARS) {
+            return $this->json(['ok' => false, 'error' => 'File context is too large for chat. Open the file in a project agent instead.'], 413);
+        }
+
+        $history = $request->input('history');
+        if ($history !== null && (! is_array($history) || count($history) > self::CHAT_HISTORY_MAX_ITEMS)) {
+            return $this->json(['ok' => false, 'error' => 'Chat history payload is malformed or too large.'], 422);
+        }
+
+        $deductor->maybeResetDaily($user);
+
+        $maxOutputTokens = $this->resolveMaxTokens($prompt, $skill);
+        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : []);
+        $agentMode = ($skill['mode'] ?? null) === 'build' || $this->isBuildPrompt($prompt);
+
+        $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
+        if ($user->credits_balance < $estimatedCredits) {
             return $this->json([
                 'ok' => false,
-                'error' => 'You are out of free credits. Upgrade your plan to keep using premium AI models.',
+                'error' => 'You do not have enough credits for this request. Top up or upgrade your plan to continue.',
                 'creditsBalance' => $user->credits_balance,
                 'creditsUsed' => $user->credits_used,
+                'estimatedCredits' => $estimatedCredits,
             ], 402);
+        }
+
+        $dailyCap = $deductor->dailyCap($user);
+        if ($dailyCap > 0 && (int) $user->daily_credits_used + $estimatedCredits > $dailyCap) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'Daily AI usage cap reached. The cap resets every 24 hours; upgrade your plan for a higher cap.',
+                'dailyCap' => $dailyCap,
+                'dailyCreditsUsed' => (int) $user->daily_credits_used,
+            ], 429);
         }
 
         $apiKey = (string) config('services.openrouter.key');
@@ -50,7 +112,8 @@ trait ChatEndpoint
                     'model' => $openRouterModel,
                     'messages' => $this->chatMessages($request, $prompt, $skill),
                     'temperature' => 0.25,
-                    'max_completion_tokens' => $this->resolveMaxTokens($prompt, $skill),
+                    'max_completion_tokens' => $maxOutputTokens,
+                    'usage' => ['include' => true],
                 ]);
         } catch (Throwable) {
             return $this->json(['ok' => false, 'error' => 'Could not reach OpenRouter. Please try again.'], 502);
@@ -58,7 +121,6 @@ trait ChatEndpoint
 
         if (! $response->successful()) {
             $message = $response->json('error.message') ?: $response->json('message') ?: 'OpenRouter could not complete the request.';
-
             return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
         }
 
@@ -66,13 +128,24 @@ trait ChatEndpoint
         if ($reply === '') {
             $reply = 'I received an empty response from the selected model.';
         }
-
         [$replyText, $app] = $this->extractRunnableApp($reply);
 
-        $user->forceFill([
-            'credits_balance' => max(0, $user->credits_balance - $creditCost),
-            'credits_used' => $user->credits_used + $creditCost,
-        ])->save();
+        $usage = $response->json('usage') ?? [];
+        $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
+        $outputTokens = (int) ($usage['completion_tokens'] ?? 0);
+        $openRouterUsd = isset($usage['cost']) ? (float) $usage['cost'] : null;
+
+        $reference = 'chat:' . Str::uuid()->toString();
+        $ledger = $deductor->chargeForChat(
+            $user,
+            $modelKey,
+            $openRouterUsd,
+            $inputTokens,
+            $outputTokens,
+            $agentMode,
+            $reference,
+            ['skill' => $skillId ?: null],
+        );
 
         return $this->json([
             'ok' => true,
@@ -80,11 +153,57 @@ trait ChatEndpoint
             'app' => $app,
             'title' => $this->suggestChatTitle($request, $prompt, $replyText),
             'model' => $openRouterModel,
-            'creditCost' => $creditCost,
+            'modelKey' => $modelKey,
+            'creditCost' => abs($ledger->credits_delta),
             'creditsBalance' => $user->credits_balance,
             'creditsUsed' => $user->credits_used,
+            'dailyCreditsUsed' => $user->daily_credits_used,
+            'dailyCreditsCap' => $dailyCap,
             'user' => $this->userPayload($user),
         ]);
+    }
+
+    private function estimateInputTokens(string $prompt, string $fileBody, array $history): int
+    {
+        $chars = mb_strlen($prompt) + mb_strlen($fileBody);
+        foreach ($history as $item) {
+            if (is_array($item)) {
+                $chars += mb_strlen((string) ($item['text'] ?? ''));
+            }
+        }
+        // Conservative estimate: 1 token ≈ 3.5 chars (over-estimate so we don't under-charge).
+        return (int) max(1, ceil($chars / 3.5));
+    }
+
+    private function enforceChatRateLimit(Request $request, int $userId, string $plan): ?JsonResponse
+    {
+        $perMinute = (int) config("billing.plans.{$plan}.rate_per_minute", 12);
+        $perHour = (int) config("billing.plans.{$plan}.rate_per_hour", 200);
+        $perIp = self::CHAT_PER_IP_PER_MINUTE;
+
+        $perMinuteKey = "chat:user:{$userId}:1m";
+        $perHourKey = "chat:user:{$userId}:1h";
+        $perIpKey = 'chat:ip:' . sha1((string) $request->ip()) . ':1m';
+
+        $limits = [
+            [$perMinuteKey, $perMinute, 60, 'You are sending messages too fast. Wait a moment and try again.'],
+            [$perHourKey, $perHour, 3600, 'Hourly chat limit reached. Try again later.'],
+            [$perIpKey, $perIp, 60, 'Too many chat requests from this network. Wait a moment and try again.'],
+        ];
+
+        foreach ($limits as [$key, $max, $window, $message]) {
+            if (RateLimiter::tooManyAttempts($key, $max)) {
+                $retry = RateLimiter::availableIn($key);
+                return $this->json([
+                    'ok' => false,
+                    'error' => $message,
+                    'retryAfter' => $retry,
+                ], 429);
+            }
+            RateLimiter::hit($key, $window);
+        }
+
+        return null;
     }
 
     private function resolveSkill(string $id): ?array

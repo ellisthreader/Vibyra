@@ -14,7 +14,7 @@ import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDes
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
-import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
+import { chatModelGroups, chatModelOptions, modelLockedForTiers, modelTierFor, planAllowedTiers, providerLogoSources } from "../data/chatModels";
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
@@ -25,19 +25,21 @@ export function ModelMenuRow({
   accountPlan,
   model,
   onSelect,
+  onUpgrade,
   selected
 }: {
   accountPlan: string;
   model: ChatModelOption;
   onSelect: (model: ChatModelOption) => void;
+  onUpgrade?: (model: ChatModelOption) => void;
   selected: boolean;
 }) {
   const locked = isModelLockedForPlan(model, accountPlan);
+  const lockInfo = locked ? modelLockReason(model) : null;
 
   return (
     <Pressable
-      disabled={locked}
-      onPress={() => onSelect(model)}
+      onPress={() => (locked ? onUpgrade?.(model) : onSelect(model))}
       style={[
         styles.chatModelRow,
         selected ? styles.chatModelRowActive : null,
@@ -47,10 +49,10 @@ export function ModelMenuRow({
       <ModelProviderIcon provider={model.provider} />
       <Text numberOfLines={1} style={styles.chatModelName}>{model.label}</Text>
       {model.badge ? <Text style={styles.chatModelBadge}>{model.badge}</Text> : null}
-      {locked ? (
+      {locked && lockInfo ? (
         <View style={styles.chatModelLockPill}>
           <Ionicons name="lock-closed" color="#C9C2D6" size={11} />
-          <Text style={styles.chatModelLockText}>Pro</Text>
+          <Text style={styles.chatModelLockText}>{lockInfo.label}</Text>
         </View>
       ) : null}
       {selected ? <Ionicons name="checkmark" color="#7CF1B3" size={18} /> : null}
@@ -67,8 +69,15 @@ export function getUnlockedInitialChatModel(selectedModel: ModelKey, accountPlan
   return "gpt-5.4-mini";
 }
 
-export function isModelLockedForPlan(model: ChatModelOption, accountPlan: string) {
-  return Boolean(model.locked && accountPlan.toLowerCase() === "free");
+export function isModelLockedForPlan(model: ChatModelOption, accountPlan: string, allowedTiers?: string[]) {
+  const tiers = (allowedTiers && allowedTiers.length > 0)
+    ? allowedTiers
+    : planAllowedTiers[accountPlan.toLowerCase()] ?? planAllowedTiers.free;
+  return modelLockedForTiers(model, tiers);
+}
+
+export function modelLockReason(model: ChatModelOption): { label: string; tier: string } {
+  return { label: "Upgrade", tier: modelTierFor(model) };
 }
 
 export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
@@ -112,7 +121,7 @@ export function ChatEmptyState() {
 
 export function ChatWelcomeGlyph() {
   return (
-    <View pointerEvents="none" style={styles.chatWelcomeGlyph}>
+    <View style={[styles.chatWelcomeGlyph, { pointerEvents: "none" }]}>
       <Image resizeMode="contain" source={aiChatGlyph} style={styles.chatWelcomeGlyphImage as ImageStyle} />
     </View>
   );
@@ -150,4 +159,3 @@ export function ModelProviderIcon({ compact, provider }: { compact?: boolean; pr
     </View>
   );
 }
-

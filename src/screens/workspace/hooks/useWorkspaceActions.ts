@@ -1,16 +1,27 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Linking } from "react-native";
-import { Project } from "../../../types/domain";
+import { FolderRecovery, Project } from "../../../types/domain";
 import {
+  bareNameCandidate,
+  bareNameClarifyReply,
   currentProjectReply,
   desktopConnectionRequiredReply,
-  desktopProjectSearchQuery,
+  detachedFallbackReply,
+  extractFileName,
+  extractFolderName,
+  greetingReply,
   isCurrentProjectQuestion,
+  isFindFolderIntent,
+  isGreeting,
+  isOpenFileIntent,
   isProjectLookupOnly,
-  projectPreviewUrl
+  isSmallTalk,
+  projectPreviewUrl,
+  smallTalkReply
 } from "../helpers/chatPrompts";
 import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
+import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
 
 export function useWorkspaceActions(s: WorkspaceState) {
   const { app } = s;
@@ -48,17 +59,41 @@ export function useWorkspaceActions(s: WorkspaceState) {
   const navigatePage = useCallback((page: DashboardPage) => { if (page === "chat") { openNewChat(); return; } s.setActivePage(page); }, [openNewChat, s]);
 
   const addDetachedChatReply = useCallback((prompt: string, reply: string) => {
+    const assistantId = `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`;
     s.setNewChatMessages((c) => [
       ...c,
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: prompt },
-      { id: `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "assistant", text: reply }
+      { id: assistantId, role: "assistant", text: TYPING_CURSOR }
     ]);
     app.setTaskText("");
+    streamChatText(reply, (text) => {
+      s.setNewChatMessages((c) => c.map((m) => (m.id === assistantId ? { ...m, text } : m)));
+    });
+  }, [app, s]);
+
+  const addDetachedChatProposal = useCallback((prompt: string, reply: string, matches: Project[], query: string) => {
+    const proposalId = `new-chat-proposal-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+    const assistantId = `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+    s.setNewChatMessages((c) => [
+      ...c,
+      { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: prompt },
+      {
+        id: assistantId,
+        role: "assistant",
+        text: TYPING_CURSOR,
+        folderProposal: { id: proposalId, status: "pending", matches, selectedIndex: 0, query }
+      }
+    ]);
+    app.setTaskText("");
+    streamChatText(reply, (text) => {
+      s.setNewChatMessages((c) => c.map((m) => (m.id === assistantId ? { ...m, text } : m)));
+    });
   }, [app, s]);
 
   const openProjectPreview = useCallback(async (projectId: string, projectName: string) => {
     await app.selectProject(projectId);
-    if (!app.connection) { openProjectChat(projectId, projectName); return; }
+    const known = app.projects.some((p) => p.id === projectId);
+    if (!app.connection || !known) { openProjectChat(projectId, projectName); return; }
     const url = projectPreviewUrl(app.connection.url, projectId, app.connection.token);
     try { await Linking.openURL(url); } catch { openProjectChat(projectId, projectName); }
   }, [app, openProjectChat]);
@@ -68,14 +103,6 @@ export function useWorkspaceActions(s: WorkspaceState) {
     if (!project) return;
     openProjectChat(project.id, app.chatTitles[project.id] ?? project.name);
   }, [app, openProjectChat]);
-
-  const promptReferencesPcFolder = useCallback((prompt: string) => {
-    const text = prompt.toLowerCase();
-    if (/(on|in)\s+(my\s+)?(desktop|pc|computer|mac|machine)/.test(text)) return true;
-    if (/(open|find|use|locate|look\s+(at|in)|switch\s+to|start\s+(coding|working)\s+(on|in)|work\s+(on|in))\s+(the\s+)?[\w\- .]+\s+(folder|repo|repository|project|directory|app|codebase)/.test(text)) return true;
-    if (/(the|my)\s+[\w\- .]+\s+(folder|repo|repository|project|directory|app|codebase)\b/.test(text)) return true;
-    return false;
-  }, []);
 
   const activeProjectTarget = useCallback((project?: Project) => {
     const selectedChatProjectId = s.selectedChatId?.startsWith("project-")
@@ -94,35 +121,185 @@ export function useWorkspaceActions(s: WorkspaceState) {
     };
   }, [app.projects, app.selectedFile, app.selectedProject, s.selectedChatId]);
 
-  const onStartChat = useCallback(async () => {
-    const prompt = app.taskText.trim();
-    if (!prompt) return;
-    const detached = s.selectedChatId === null;
-    const reply = (r: string, project?: Project) => detached ? addDetachedChatReply(prompt, r) : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
-    if (isCurrentProjectQuestion(prompt)) {
-      const target = activeProjectTarget();
-      reply(detached ? "This is a new chat with no project attached yet. Open a folder from Projects, or ask me to find a folder on your PC." : currentProjectReply(target.project, target.file?.name ?? "No file selected"));
+  const awaitingFolderNameRef = useRef(false);
+  const folderRecoveryRef = useRef(false);
+  const submitLockRef = useRef(false);
+
+  const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
+    const reply = (r: string, project?: Project) => detached
+      ? addDetachedChatReply(prompt, r)
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+
+    const matches = await app.searchDesktopFolders(query);
+    if (matches.length === 0) {
+      reply(`I couldn't find a folder matching "${query}". Try the exact folder name, or open the Projects tab to browse.`);
       return;
     }
-    const refs = promptReferencesPcFolder(prompt);
-    if (!app.connection && refs) { reply(desktopConnectionRequiredReply(desktopProjectSearchQuery(prompt))); return; }
-    if (!refs) {
-      if (detached) { addDetachedChatReply(prompt, "Start by opening a project, or ask me to find a folder on your PC. I will keep this new chat blank until a project is attached."); return; }
-      await app.startAgent(activeProjectTarget()); return;
-    }
-    const q = desktopProjectSearchQuery(prompt);
-    const matches = await app.searchDesktopFolders(q);
-    if (matches.length === 0) { reply(`I couldn't find a desktop project matching "${q}". Try opening the Projects tab or use a more exact folder name.`); return; }
     const onTop = matches[0]?.path && matches[0].path === app.selectedProject?.path;
-    if (onTop) { if (isProjectLookupOnly(prompt)) { app.addLocalChatReply(prompt, `${matches[0].name} is already the selected project.`, activeProjectTarget(matches[0])); return; } await app.startAgent(activeProjectTarget(matches[0])); return; }
-    if (isProjectLookupOnly(prompt)) {
-      await app.adoptProject(matches[0]);
-      s.setSelectedChatId(`project-${matches[0].id}`);
-      app.addLocalChatReply(prompt, `Found ${matches[0].name} and selected it for this chat.`, activeProjectTarget(matches[0]));
+    if (onTop) {
+      if (lookupOnly) {
+        app.addLocalChatReply(prompt, `${matches[0].name} is already the selected project.`, activeProjectTarget(matches[0]));
+        return;
+      }
+      await app.startAgent(activeProjectTarget(matches[0]));
+      return;
+    }
+    if (lookupOnly || detached) {
+      const top = matches[0];
+      const replyText = matches.length > 1
+        ? `I found ${matches.length} folders matching "${query}". Open ${top.name}?`
+        : `Found ${top.name} on your desktop. Open it for this chat?`;
+      if (detached) {
+        addDetachedChatProposal(prompt, replyText, matches, query);
+      } else {
+        app.addLocalChatProposal(prompt, replyText, matches, activeProjectTarget(), query);
+      }
       return;
     }
     s.setFolderConfirm({ query: prompt, matches });
-  }, [activeProjectTarget, addDetachedChatReply, app, promptReferencesPcFolder, s]);
+  }, [activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, app, s]);
+
+  const runFileOpen = useCallback(async (prompt: string, query: string, detached: boolean) => {
+    const reply = (r: string, project?: Project) => detached
+      ? addDetachedChatReply(prompt, r)
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+
+    if (!app.connection) {
+      reply(desktopConnectionRequiredReply(query));
+      return;
+    }
+    if (detached) {
+      reply(`I can open "${query}", but first attach a project chat. Ask me to find the folder on your PC, then open the file from that project.`);
+      return;
+    }
+
+    const target = activeProjectTarget();
+    const normalized = query.toLowerCase();
+    const matches = app.files
+      .filter((file) => file.id !== "empty")
+      .filter((file) => file.name.toLowerCase().includes(normalized) || file.path.toLowerCase().includes(normalized))
+      .sort((a, b) => Number(b.name.toLowerCase() === normalized) - Number(a.name.toLowerCase() === normalized));
+
+    const file = matches[0];
+    if (!file) {
+      reply(`I couldn't find a loaded file matching "${query}" in ${target.project.name}. Open the project first, then try the exact file name or path.`);
+      return;
+    }
+
+    await app.selectFile(file.id);
+    reply(`Opened ${file.path} in ${target.project.name}.`, target.project);
+  }, [activeProjectTarget, addDetachedChatReply, app]);
+
+  const onStartChat = useCallback(async () => {
+    const prompt = app.taskText.trim();
+    if (!prompt) return;
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
+    const detached = s.selectedChatId === null;
+    const reply = (r: string, project?: Project) => detached
+      ? addDetachedChatReply(prompt, r)
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+
+    try {
+      if (detached && !awaitingFolderNameRef.current) {
+        if (isGreeting(prompt)) { addDetachedChatReply(prompt, greetingReply()); return; }
+        if (isSmallTalk(prompt)) { addDetachedChatReply(prompt, smallTalkReply()); return; }
+      }
+
+      if (folderRecoveryRef.current) {
+        const name = extractFolderName(prompt) ?? bareNameCandidate(prompt);
+        const looksLikeName = name && name.length <= 80 && /[a-z0-9]/i.test(name) && !/\s{2,}/.test(name);
+        if (!looksLikeName) {
+          reply("Type just the folder name, or use Manual search / Auto search PC.");
+          return;
+        }
+        if (/^cancel$/i.test(name)) {
+          folderRecoveryRef.current = false;
+          reply("Got it — cancelled.");
+          return;
+        }
+        folderRecoveryRef.current = false;
+        awaitingFolderNameRef.current = false;
+        if (!app.connection) { reply(desktopConnectionRequiredReply(name)); return; }
+        await runFolderSearch(prompt, name, true, detached);
+        return;
+      }
+
+      if (awaitingFolderNameRef.current) {
+        const name = extractFolderName(prompt) ?? prompt.replace(/^(?:yes|yeah|yep|ok(?:ay)?|sure|please)\b\s*/i, "").trim();
+        const looksLikeName = name && name.length <= 80 && /[a-z0-9]/i.test(name) && !/\s{2,}/.test(name);
+        if (!looksLikeName) {
+          reply(`Type just the folder name, like \`test1\`. (Or say "cancel" to drop it.)`);
+          return;
+        }
+        if (/^cancel$/i.test(name)) {
+          awaitingFolderNameRef.current = false;
+          reply("Got it — cancelled.");
+          return;
+        }
+        awaitingFolderNameRef.current = false;
+        if (!app.connection) { reply(desktopConnectionRequiredReply(name)); return; }
+        await runFolderSearch(prompt, name, true, detached);
+        return;
+      }
+
+      if (isCurrentProjectQuestion(prompt)) {
+        const target = activeProjectTarget();
+        reply(detached
+          ? "This is a new chat with no project attached yet. Open a folder from Projects, or ask me to find a folder on your PC."
+          : currentProjectReply(target.project, target.file?.name ?? "No file selected"));
+        return;
+      }
+
+      const findIntent = isFindFolderIntent(prompt);
+      const fileIntent = isOpenFileIntent(prompt);
+      const extractedFileName = extractFileName(prompt);
+      const extractedName = extractFolderName(prompt);
+
+      if (fileIntent) {
+        if (!extractedFileName) {
+          reply("Which file should I open? Send the exact file name or path, like `App.tsx`.");
+          return;
+        }
+        await runFileOpen(prompt, extractedFileName, detached);
+        return;
+      }
+
+      if (findIntent && !extractedName) {
+        if (!app.connection) { reply(desktopConnectionRequiredReply("")); return; }
+        awaitingFolderNameRef.current = true;
+        reply("Sure — what's the folder called? Just type the name (e.g. `test1`).");
+        return;
+      }
+
+      if (findIntent && extractedName) {
+        if (!app.connection) { reply(desktopConnectionRequiredReply(extractedName)); return; }
+        await runFolderSearch(prompt, extractedName, isProjectLookupOnly(prompt), detached);
+        return;
+      }
+
+      if (detached) {
+        const bare = bareNameCandidate(prompt);
+        if (bare) {
+          if (/^(?:no|nope|nah|not)\b/i.test(prompt)) {
+            if (!app.connection) { addDetachedChatReply(prompt, desktopConnectionRequiredReply(bare)); return; }
+            await runFolderSearch(prompt, bare, true, true);
+            return;
+          }
+          addDetachedChatReply(prompt, bareNameClarifyReply(bare));
+          return;
+        }
+        addDetachedChatReply(prompt, detachedFallbackReply());
+        return;
+      }
+
+      await app.startAgent(activeProjectTarget());
+    } finally {
+      setTimeout(() => {
+        submitLockRef.current = false;
+      }, 750);
+    }
+  }, [activeProjectTarget, addDetachedChatReply, app, runFileOpen, runFolderSearch, s]);
 
   const acceptFolderConfirm = useCallback(async (folder: Project) => {
     s.setFolderConfirm(null);
@@ -130,6 +307,111 @@ export function useWorkspaceActions(s: WorkspaceState) {
     s.setSelectedChatId(`project-${folder.id}`);
     await app.startAgent(activeProjectTarget(folder));
   }, [activeProjectTarget, app, s]);
+
+  const acceptFolderProposal = useCallback(async (proposalId: string, folder: Project) => {
+    if (!s.selectedChatId) {
+      s.setNewChatMessages((current) => current.map((message) => (
+        message.folderProposal?.id === proposalId
+          ? { ...message, folderProposal: { ...message.folderProposal, status: "accepted" } }
+          : message
+      )));
+      await app.adoptProject(folder);
+      s.setSelectedChatId(`project-${folder.id}`);
+      return;
+    }
+    const sourceProjectId = s.selectedChatId?.startsWith("project-")
+      ? s.selectedChatId.replace("project-", "")
+      : app.selectedProject.id;
+    app.resolveFolderProposal(proposalId, "accepted", sourceProjectId);
+    await app.adoptProject(folder);
+    s.setSelectedChatId(`project-${folder.id}`);
+  }, [app, s]);
+
+  const addDetachedFolderRecovery = useCallback((recovery: FolderRecovery) => {
+    s.setNewChatMessages((current) => [
+      ...current,
+      { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: "Wrong folder" },
+      {
+        id: `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`,
+        role: "assistant",
+        text: "No problem. Should I search your PC again automatically, or do you want to type the folder name?",
+        folderRecovery: recovery
+      }
+    ]);
+  }, [s]);
+
+  const wrongFolderProposal = useCallback((proposalId: string, folder: Project, query: string) => {
+    const recovery: FolderRecovery = {
+      id: `folder-recovery-${Date.now()}-${Math.round(Math.random() * 1000)}`,
+      proposalId,
+      query: query.trim() || folder.name,
+      excludedProjectId: folder.id
+    };
+    folderRecoveryRef.current = true;
+    awaitingFolderNameRef.current = false;
+
+    if (!s.selectedChatId) {
+      addDetachedFolderRecovery(recovery);
+      return;
+    }
+
+    app.addLocalFolderRecovery(
+      "Wrong folder",
+      "No problem. Should I search your PC again automatically, or do you want to type the folder name?",
+      recovery,
+      activeProjectTarget()
+    );
+  }, [activeProjectTarget, addDetachedFolderRecovery, app, s.selectedChatId]);
+
+  const searchFolderProposal = useCallback(async (_proposalId: string, query: string, excludeProjectId?: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const detached = !s.selectedChatId;
+    const prompt = excludeProjectId ? "Auto search PC" : `Search PC for ${trimmed}`;
+    const reply = (text: string) => detached
+      ? addDetachedChatReply(prompt, text)
+      : app.addLocalChatReply(prompt, text, activeProjectTarget());
+
+    if (!app.connection) {
+      reply(desktopConnectionRequiredReply(trimmed));
+      return;
+    }
+
+    const matches = await app.searchDesktopFolders(trimmed);
+    const filtered = excludeProjectId ? matches.filter((match) => match.id !== excludeProjectId) : matches;
+    if (filtered.length > 0) {
+      const top = filtered[0];
+      const replyText = filtered.length > 1
+        ? `I found ${filtered.length} other folders matching "${trimmed}". Open ${top.name}?`
+        : `Found another match for "${trimmed}". Open ${top.name} for this chat?`;
+      if (detached) {
+        addDetachedChatProposal(prompt, replyText, filtered, trimmed);
+      } else {
+        app.addLocalChatProposal(prompt, replyText, filtered, activeProjectTarget(), trimmed);
+      }
+      return;
+    }
+
+    const error = matches.length > 0
+      ? `I only found that same folder for "${trimmed}". Try a more specific name or browse Projects.`
+      : `I couldn't find another folder matching "${trimmed}". Try a different name or open Projects to browse.`;
+    reply(error);
+  }, [activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, app, s.selectedChatId]);
+
+  const dismissFolderProposal = useCallback((proposalId: string) => {
+    if (!s.selectedChatId) {
+      s.setNewChatMessages((current) => current.map((message) => (
+        message.folderProposal?.id === proposalId
+          ? { ...message, folderProposal: { ...message.folderProposal, status: "dismissed" } }
+          : message
+      )));
+      return;
+    }
+    const sourceProjectId = s.selectedChatId?.startsWith("project-")
+      ? s.selectedChatId.replace("project-", "")
+      : app.selectedProject.id;
+    app.resolveFolderProposal(proposalId, "dismissed", sourceProjectId);
+  }, [app, s]);
   const skipFolderConfirm = useCallback(async () => { s.setFolderConfirm(null); await app.startAgent(activeProjectTarget()); }, [activeProjectTarget, app, s]);
   const cancelFolderConfirm = useCallback(() => s.setFolderConfirm(null), [s]);
   const openRenameChat = useCallback(() => { s.setRenameChatDraft(s.chatTitle); s.setRenameChatVisible(true); }, [s]);
@@ -162,6 +444,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
     openPcSwitcher, scanDesktops, connectToDesktop, connectWithCode, confirmPcSwitch,
     navigatePage, openProjectPreview, createProjectAndOpenChat,
     onStartChat, acceptFolderConfirm, skipFolderConfirm, cancelFolderConfirm,
+    acceptFolderProposal, dismissFolderProposal, searchFolderProposal, wrongFolderProposal,
     openRenameChat, saveRenameChat, deleteCurrentChat, backFromCommunitySubPage
   };
 }

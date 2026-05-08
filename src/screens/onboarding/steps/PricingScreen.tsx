@@ -28,20 +28,20 @@ export function PricingScreen({ persona, onClose }: { persona: PersonaModel; onC
     <View style={styles.paywallShell}>
       <LinearGradient colors={theme.background} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.paywallBackground} />
       <Animated.View
-        pointerEvents="none"
         style={[
           styles.paywallAuraOne,
+          { pointerEvents: "none" },
           { transform: [{ translateX: motion.auraOneTranslateX }, { translateY: motion.auraOneTranslateY }, { scale: motion.auraOneScale }] }
         ]}
       />
       <Animated.View
-        pointerEvents="none"
         style={[
           styles.paywallAuraTwo,
+          { pointerEvents: "none" },
           { transform: [{ translateX: motion.auraTwoTranslateX }, { translateY: motion.auraTwoTranslateY }, { scale: motion.auraTwoScale }] }
         ]}
       />
-      <View pointerEvents="none" style={styles.paywallNoise} />
+      <View style={[styles.paywallNoise, { pointerEvents: "none" }]} />
       <ScrollView
         contentContainerStyle={[styles.paywallContent, { paddingBottom: footerPaddingBottom + 96, paddingTop: contentPaddingTop }]}
         scrollEnabled={false}

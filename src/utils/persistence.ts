@@ -16,8 +16,14 @@ export type PersistedUser = {
   name: string;
   email: string;
   plan: string;
+  planBillingCycle: "monthly" | "annual";
+  planRenewsAt: string | null;
   creditsBalance: number;
   creditsUsed: number;
+  dailyCreditsUsed: number;
+  dailyCreditsCap: number;
+  monthlyCredits: number;
+  allowedModelTiers: string[];
   onboardingComplete: boolean;
   rememberedDesktops: RememberedDesktop[];
   appState?: Record<string, unknown>;
@@ -117,13 +123,26 @@ function normalizeUser(value: unknown): PersistedUser | null {
   const email = String(user.email ?? "");
   if (!Number.isFinite(id) || !email) return null;
 
+  const cycleRaw = String(user.planBillingCycle ?? "monthly");
+  const planBillingCycle: "monthly" | "annual" = cycleRaw === "annual" ? "annual" : "monthly";
+  const tiersRaw = (user as { allowedModelTiers?: unknown }).allowedModelTiers;
+  const allowedModelTiers = Array.isArray(tiersRaw)
+    ? tiersRaw.filter((t): t is string => typeof t === "string")
+    : ["free", "budget"];
+
   return {
     id,
     name: String(user.name ?? "Vibyra User"),
     email,
     plan: String(user.plan ?? "free"),
+    planBillingCycle,
+    planRenewsAt: typeof user.planRenewsAt === "string" ? user.planRenewsAt : null,
     creditsBalance: normalizeNumber(user.creditsBalance, 0),
     creditsUsed: normalizeNumber(user.creditsUsed, 0),
+    dailyCreditsUsed: normalizeNumber((user as { dailyCreditsUsed?: unknown }).dailyCreditsUsed, 0),
+    dailyCreditsCap: normalizeNumber((user as { dailyCreditsCap?: unknown }).dailyCreditsCap, 0),
+    monthlyCredits: normalizeNumber((user as { monthlyCredits?: unknown }).monthlyCredits, 0),
+    allowedModelTiers,
     onboardingComplete: Boolean(user.onboardingComplete),
     rememberedDesktops: normalizeDesktops(user.rememberedDesktops),
     appState: user.appState && typeof user.appState === "object" ? user.appState : {}

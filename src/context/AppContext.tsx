@@ -2,6 +2,7 @@ import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo
 import { appApiRequest, AuthResponse, RemoteUser, SkillsResponse } from "../utils/appApi";
 import { normalizePersistedUser } from "../utils/persistence";
 import { makeId } from "../utils/ids";
+import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
 import { useAgentActions } from "./useAgentActions";
 import { AppContextValue } from "./appContextTypes";
 import { useAppState } from "./useAppState";
@@ -25,13 +26,14 @@ export function AppProvider({ children }: PropsWithChildren) {
   });
   const agent = useAgentActions(store, requests, logs);
 
+  const setChatSkills = setters.setChatSkills;
   useEffect(() => {
     let cancelled = false;
-    appApiRequest<SkillsResponse>("/api/skills")
-      .then((result) => { if (!cancelled && result.skills) setters.setChatSkills(result.skills); })
+    appApiRequest<SkillsResponse>("/api/skills", undefined, undefined, { background: true })
+      .then((result) => { if (!cancelled && result.skills) setChatSkills(result.skills); })
       .catch(() => { /* skills are optional; silent fallback */ });
     return () => { cancelled = true; };
-  }, [setters]);
+  }, [setChatSkills]);
 
   useLiveSync(state.connection, requests, setters, logs);
   useCloudSync({
@@ -41,6 +43,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     rememberedDesktops: state.rememberedDesktops,
     chatThreads: state.chatThreads,
     chatTitles: state.chatTitles,
+    chatProjects: state.chatProjects,
     promptMoney: state.promptMoney,
     selectedChatModel: state.selectedChatModel,
     selectedModel: state.selectedModel
@@ -72,6 +75,18 @@ export function AppProvider({ children }: PropsWithChildren) {
     }
     if (normalized.appState?.chatTitles && typeof normalized.appState.chatTitles === "object") {
       setters.setChatTitles(normalized.appState.chatTitles as AppContextValue["chatTitles"]);
+    }
+    if (normalized.appState?.chatProjects && typeof normalized.appState.chatProjects === "object") {
+      const restored = normalized.appState.chatProjects as AppContextValue["chatProjects"];
+      setters.setChatProjects(restored);
+      const restoredList = Object.values(restored);
+      if (restoredList.length > 0) {
+        setters.setProjects((current) => {
+          const ids = new Set(current.map((p) => p.id));
+          const additions = restoredList.filter((p) => !ids.has(p.id));
+          return additions.length > 0 ? [...additions, ...current] : current;
+        });
+      }
     }
   }
 
@@ -116,6 +131,9 @@ export function AppProvider({ children }: PropsWithChildren) {
           });
       }
     },
+    applyRemoteUserFromIap: (user: RemoteUser) => {
+      applyRemoteUser(user);
+    },
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
     },
@@ -137,20 +155,145 @@ export function AppProvider({ children }: PropsWithChildren) {
         ? null
         : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
       const file = targetFile?.path;
+      const assistantId = makeId("chat-assistant");
       setters.setChatThreads((current) => ({
         ...current,
         [projectId]: [
           ...(current[projectId] ?? []),
           { id: makeId("chat-user"), role: "user", text: prompt, file },
-          { id: makeId("chat-assistant"), role: "assistant", text: reply, file }
+          { id: assistantId, role: "assistant", text: TYPING_CURSOR, file }
         ]
       }));
       setters.setTaskText("");
+      streamChatText(reply, (text) => {
+        setters.setChatThreads((current) => {
+          const thread = current[projectId];
+          if (!thread) return current;
+          return {
+            ...current,
+            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text } : m))
+          };
+        });
+      });
+    },
+    addLocalChatProposal: (prompt, reply, matches, target, query) => {
+      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
+      const targetFile = target?.file === null
+        ? null
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+      const file = targetFile?.path;
+      const proposalId = makeId("proposal");
+      const assistantId = makeId("chat-assistant");
+      setters.setChatThreads((current) => ({
+        ...current,
+        [projectId]: [
+          ...(current[projectId] ?? []),
+          { id: makeId("chat-user"), role: "user", text: prompt, file },
+          {
+            id: assistantId,
+            role: "assistant",
+            text: TYPING_CURSOR,
+            file,
+            folderProposal: { id: proposalId, status: "pending", matches, selectedIndex: 0, query: query ?? prompt }
+          }
+        ]
+      }));
+      setters.setTaskText("");
+      streamChatText(reply, (text) => {
+        setters.setChatThreads((current) => {
+          const thread = current[projectId];
+          if (!thread) return current;
+          return {
+            ...current,
+            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text } : m))
+          };
+        });
+      });
+      return { proposalProjectId: projectId };
+    },
+    addLocalFolderRecovery: (prompt, reply, recovery, target) => {
+      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
+      const targetFile = target?.file === null
+        ? null
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+      const file = targetFile?.path;
+      setters.setChatThreads((current) => ({
+        ...current,
+        [projectId]: [
+          ...(current[projectId] ?? []),
+          { id: makeId("chat-user"), role: "user", text: prompt, file },
+          { id: makeId("chat-assistant"), role: "assistant", text: reply, file, folderRecovery: recovery }
+        ]
+      }));
+      setters.setTaskText("");
+    },
+    resolveFolderProposal: (proposalId, status, projectId) => {
+      const targetProjectId = projectId ?? state.selectedProjectId;
+      setters.setChatThreads((current) => {
+        const thread = current[targetProjectId];
+        if (!thread) return current;
+        return {
+          ...current,
+          [targetProjectId]: thread.map((message) => (
+            message.folderProposal?.id === proposalId
+              ? { ...message, folderProposal: { ...message.folderProposal, status } }
+              : message
+          ))
+        };
+      });
+    },
+    updateFolderProposal: (proposalId, update, projectId) => {
+      const targetProjectId = projectId ?? state.selectedProjectId;
+      setters.setChatThreads((current) => {
+        const thread = current[targetProjectId];
+        if (!thread) return current;
+        return {
+          ...current,
+          [targetProjectId]: thread.map((message) => (
+            message.folderProposal?.id === proposalId
+              ? { ...message, folderProposal: { ...message.folderProposal, ...update } }
+              : message
+          ))
+        };
+      });
     },
     setAuthMode: setters.setAuthMode,
     setAuthName: setters.setAuthName,
     setAuthEmail: setters.setAuthEmail,
     setAuthPassword: setters.setAuthPassword,
+    signOut: () => {
+      setters.setAuthenticated(false);
+      setters.setAuthToken("");
+      setters.setAccountId(null);
+      setters.setAuthPassword("");
+      setters.setOnboardingComplete(false);
+      setters.setChatThreads({});
+      setters.setChatTitles({});
+      setters.setChatProjects({});
+      setters.setConnection(null);
+      setters.setRememberedDesktops([]);
+      setters.setProjects([]);
+      setters.setAgents([]);
+      setters.setLogs([]);
+      setters.setFiles([]);
+      setters.setChanges([]);
+    },
+    updateProfile: (changes) => {
+      if (typeof changes.name === "string") setters.setAuthName(changes.name);
+      if (typeof changes.email === "string") setters.setAuthEmail(changes.email);
+      if (typeof changes.machineName === "string") setters.setMachineName(changes.machineName);
+      if (state.authToken) {
+        appApiRequest("/api/account/profile", {
+          method: "POST",
+          body: JSON.stringify({
+            name: changes.name ?? state.authName,
+            email: changes.email ?? state.authEmail
+          })
+        }, state.authToken).catch(() => {
+          logs.appendLog("Profile saved locally and will sync later.", "Account", "warning");
+        });
+      }
+    },
     setAgentUrl: setters.setAgentUrl,
     setPairCode: setters.setPairCode,
     setSelectedModel: setters.setSelectedModel,

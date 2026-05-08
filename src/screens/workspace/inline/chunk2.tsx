@@ -60,7 +60,7 @@ export function TopBar({
             <Ionicons name="chevron-back" color={colors.text} size={26} />
           </Pressable>
         </View>
-        <View pointerEvents="none" style={styles.chatTopTitleWrap}>
+        <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
           <Text numberOfLines={1} style={styles.chatTopTitle}>{chatTitle}</Text>
         </View>
         <View style={styles.chatTopActions}>
@@ -83,7 +83,7 @@ export function TopBar({
             <Ionicons name="chevron-back" color={colors.text} size={26} />
           </Pressable>
         </View>
-        <View pointerEvents="none" style={styles.chatTopTitleWrap}>
+        <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
           <Text numberOfLines={1} style={styles.chatTopTitle}>{communitySubPageTitle}</Text>
         </View>
         <View style={styles.chatTopActions}>
@@ -133,4 +133,3 @@ export function TopBar({
     </View>
   );
 }
-

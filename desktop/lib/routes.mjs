@@ -1,9 +1,10 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAgentTask, runCommand } from "./agent.mjs";
+import { createProjectFile, listProjectFiles, readProjectFile } from "./files.mjs";
 import { readBody, send, sendFile } from "./http.mjs";
-import { discoverProjects } from "./projects.mjs";
-import { appState, publicState } from "./state.mjs";
+import { browseDesktopPath, createDesktopProject, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
+import { appState, event, publicState, pushEvents } from "./state.mjs";
 import { serveProjectPreview } from "./preview.mjs";
 import {
   approvePairing,
@@ -41,6 +42,30 @@ export async function handle(req, res) {
 }
 
 async function handleDesktopRoutes(req, res, url) {
+  if (req.method === "GET" && url.pathname === "/desktop/folders") {
+    if (!isAuthed(req)) {
+      send(res, 401, { ok: false, error: "Missing or invalid desktop token" });
+      return true;
+    }
+    send(res, 200, { folders: await listDesktopFolders() });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/search") {
+    if (!isAuthed(req)) {
+      send(res, 401, { ok: false, error: "Missing or invalid desktop token" });
+      return true;
+    }
+    send(res, 200, { matches: await searchDesktopProjects(url.searchParams.get("q")) });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/browse") {
+    if (!isAuthed(req)) {
+      send(res, 401, { ok: false, error: "Missing or invalid desktop token" });
+      return true;
+    }
+    send(res, 200, await browseDesktopPath(url.searchParams.get("path")));
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/desktop/state") {
     send(res, 200, publicState());
     return true;
@@ -94,6 +119,36 @@ async function handlePairingRoutes(req, res, url) {
 async function handleAuthedRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/projects") {
     send(res, 200, { projects: await discoverProjects() });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/projects/create") {
+    const body = await readBody(req);
+    const project = await createDesktopProject(body.name);
+    const files = await listProjectFiles(project.id);
+    const projects = [project, ...(await discoverProjects()).filter((item) => item.id !== project.id)].slice(0, 12);
+    const log = event("Projects", `Created ${project.name}`, "success");
+    appState.cachedProjects = projects;
+    pushEvents([log]);
+    send(res, 200, {
+      project,
+      projects,
+      files,
+      events: [log]
+    });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/files") {
+    send(res, 200, { files: await listProjectFiles(url.searchParams.get("projectId")) });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/files/read") {
+    send(res, 200, {
+      file: await readProjectFile(url.searchParams.get("projectId"), url.searchParams.get("path"))
+    });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/files/create") {
+    send(res, 200, await createProjectFile(await readBody(req)));
     return true;
   }
   if (req.method === "GET" && url.pathname === "/events") {

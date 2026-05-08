@@ -4,7 +4,10 @@ import {
   BuildState,
   ChatMessage,
   CodeChange,
+  DesktopBrowseListing,
   FileEntry,
+  FolderProposal,
+  FolderRecovery,
   LogEvent,
   ModelKey,
   PairApprovalPayload,
@@ -59,6 +62,7 @@ export type AppState = {
   chatThreads: Record<string, ChatMessage[]>;
   chatTitles: Record<string, string>;
   chatSkills: import("../utils/appApi").ChatSkill[];
+  chatProjects: Record<string, Project>;
   newFilePath: string;
   command: string;
   promptMoney: {
@@ -100,6 +104,7 @@ export type AgentStartTarget = {
 export type AppActions = {
   authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => Promise<void>;
   completeOnboarding: () => void;
+  applyRemoteUserFromIap: (user: import("../utils/appApi").RemoteUser) => void;
   confirmPhonePermission: () => void;
   discoverPairableDesktops: () => Promise<RememberedDesktop[]>;
   connectRememberedDesktop: (desktop: RememberedDesktop) => Promise<boolean>;
@@ -113,10 +118,17 @@ export type AppActions = {
   startAgent: (target?: AgentStartTarget) => Promise<void>;
   clearCurrentChat: (projectId?: string) => void;
   addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget) => void;
+  addLocalChatProposal: (prompt: string, reply: string, matches: Project[], target?: AgentStartTarget, query?: string) => { proposalProjectId: string };
+  addLocalFolderRecovery: (prompt: string, reply: string, recovery: FolderRecovery, target?: AgentStartTarget) => void;
+  resolveFolderProposal: (proposalId: string, status: "accepted" | "dismissed", projectId?: string) => void;
+  updateFolderProposal: (proposalId: string, update: Partial<FolderProposal>, projectId?: string) => void;
   resetPromptMoney: () => void;
+  browseDesktopPath: (path?: string) => Promise<DesktopBrowseListing>;
   loadDesktopFolders: () => Promise<Project[]>;
   searchDesktopFolders: (query: string) => Promise<Project[]>;
   adoptProject: (project: Project) => Promise<void>;
+  signOut: () => void;
+  updateProfile: (changes: { name?: string; email?: string; machineName?: string }) => void;
 };
 
 export type AppContextValue = AppState & AppDerivedState & AppSetters & AppActions;

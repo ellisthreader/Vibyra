@@ -21,11 +21,12 @@ trait ChatModelMap
 
     private function resolveOpenRouterModel(string $model): string
     {
-        if (str_contains($model, '/')) {
-            return $model;
-        }
-
         return self::MODEL_MAP[$model] ?? self::MODEL_MAP['auto'];
+    }
+
+    private function isKnownModelKey(string $model): bool
+    {
+        return array_key_exists($model, self::MODEL_MAP);
     }
 
     private function creditCost(string $model): int

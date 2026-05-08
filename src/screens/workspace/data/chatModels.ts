@@ -1,5 +1,23 @@
 import { ChatModelOption } from "../types";
 
+export type ModelTier = "free" | "budget" | "balanced" | "premium";
+
+// Mirrors backend/config/billing.php "models" tier assignment.
+export const modelTiers: Record<string, ModelTier> = {
+  auto: "budget",
+  "gpt-5.5": "premium",
+  "gpt-5.4": "balanced",
+  "gpt-5.4-mini": "budget",
+  "gpt-5.4-nano": "budget",
+  "gpt-5-codex": "premium",
+  "claude-opus-4": "premium",
+  "claude-sonnet-4": "balanced",
+  "claude-3-5-haiku": "budget",
+  "gemini-2.5-pro": "premium",
+  "gemini-2.5-flash": "budget",
+  "gemini-2.0-flash": "budget"
+};
+
 export const chatModelGroups: Array<{ title: string; options: ChatModelOption[] }> = [
   {
     title: "",
@@ -8,29 +26,48 @@ export const chatModelGroups: Array<{ title: string; options: ChatModelOption[] 
   {
     title: "Claude Models",
     options: [
-      { badge: "New", key: "claude-opus-4", label: "Claude Opus 4", locked: true, provider: "claude" },
-      { key: "claude-sonnet-4", label: "Claude Sonnet 4", locked: true, provider: "claude" },
+      { badge: "New", key: "claude-opus-4", label: "Claude Opus 4", provider: "claude" },
+      { key: "claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" },
       { key: "claude-3-5-haiku", label: "Claude Haiku 3.5", provider: "claude" }
     ]
   },
   {
     title: "OpenAI models",
     options: [
-      { badge: "New", key: "gpt-5.5", label: "GPT-5.5", locked: true, provider: "openai", modelKey: "gpt-5.5" },
-      { key: "gpt-5.4", label: "GPT-5.4", locked: true, provider: "openai", modelKey: "gpt-5.4" },
+      { badge: "New", key: "gpt-5.5", label: "GPT-5.5", provider: "openai", modelKey: "gpt-5.5" },
+      { key: "gpt-5.4", label: "GPT-5.4", provider: "openai", modelKey: "gpt-5.4" },
       { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai", modelKey: "gpt-5.4-mini" },
-      { key: "gpt-5-codex", label: "GPT-5 Codex", locked: true, provider: "openai", modelKey: "gpt-5-codex" }
+      { key: "gpt-5-codex", label: "GPT-5 Codex", provider: "openai", modelKey: "gpt-5-codex" }
     ]
   },
   {
     title: "Gemini Models",
     options: [
-      { badge: "New", key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", locked: true, provider: "gemini" },
+      { badge: "New", key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" },
       { key: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" },
       { key: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" }
     ]
   }
 ];
+
+export const planAllowedTiers: Record<string, ModelTier[]> = {
+  free: ["free", "budget"],
+  starter: ["free", "budget", "balanced", "premium"],
+  builder: ["free", "budget", "balanced", "premium"],
+  pro: ["free", "budget", "balanced", "premium"]
+};
+
+export function modelTierFor(model: ChatModelOption): ModelTier {
+  return modelTiers[model.modelKey ?? model.key] ?? "balanced";
+}
+
+export function modelLockedForTiers(model: ChatModelOption, allowedTiers: ModelTier[] | string[] | undefined): boolean {
+  const tier = modelTierFor(model);
+  const allowed = (allowedTiers && allowedTiers.length > 0)
+    ? (allowedTiers as ModelTier[])
+    : planAllowedTiers.free;
+  return !allowed.includes(tier);
+}
 
 export const chatModelOptions = chatModelGroups.flatMap((group) => group.options);
 

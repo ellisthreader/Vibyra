@@ -83,7 +83,7 @@ export function ChatPreviewCard({ active, chat, onOpen }: {
 
 export function ChatLandingArt() {
   return (
-    <View pointerEvents="none" style={styles.chatLandingArt}>
+    <View style={[styles.chatLandingArt, { pointerEvents: "none" }]}>
       <Image resizeMode="contain" source={chatBuildAiHero} style={styles.chatLandingArtImage as ImageStyle} />
     </View>
   );
@@ -116,4 +116,3 @@ export function ChatLandingRow({ active, chat, onOpen }: {
     </Pressable>
   );
 }
-

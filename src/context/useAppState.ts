@@ -78,6 +78,10 @@ export function useAppState() {
   });
 
   const [chatSkills, setChatSkills] = useState<import("../utils/appApi").ChatSkill[]>([]);
+  const [chatProjects, setChatProjects] = useState<Record<string, import("../types/domain").Project>>(() => {
+    const persisted = persistedAppState.chatProjects;
+    return persisted && typeof persisted === "object" ? (persisted as Record<string, import("../types/domain").Project>) : {};
+  });
 
   const chatMessages = chatThreads[selectedProjectId] ?? emptyChatMessages;
   const setChatMessages = useCallback<Dispatch<SetStateAction<ChatMessage[]>>>((update) => {
@@ -103,8 +107,14 @@ export function useAppState() {
         name: authName || "Vibyra User",
         email: authEmail,
         plan: accountPlan,
+        planBillingCycle: "monthly",
+        planRenewsAt: null,
         creditsBalance,
         creditsUsed,
+        dailyCreditsUsed: 0,
+        dailyCreditsCap: 0,
+        monthlyCredits: 0,
+        allowedModelTiers: [],
         onboardingComplete,
         rememberedDesktops,
         appState: { chatThreads, chatTitles, selectedModel, selectedChatModel, promptMoney }
@@ -149,6 +159,7 @@ export function useAppState() {
       agents, logs, files, changes, selectedFileId, buildState, previewState,
       workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
       chatSkills,
+      chatProjects,
       newFilePath, command, promptMoney
     },
     derived,
@@ -161,7 +172,7 @@ export function useAppState() {
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState,
       setPreviewState, setWorkflowIndex, setLastPrompt, setAgentRequesting,
-      setTaskText, setChatMessages, setChatThreads, setChatTitles, setChatSkills,
+      setTaskText, setChatMessages, setChatThreads, setChatTitles, setChatSkills, setChatProjects,
       setNewFilePath, setCommand, setPromptMoney
     }
   };

@@ -22,7 +22,15 @@ import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 import { RichMessageText } from "./index";
 
-export function MessageBubble({ message, onOpenApp }: { message: ChatMessage; onOpenApp?: (app: GeneratedApp) => void }) {
+export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onDismissFolderProposal, onSearchFolderProposal, onWrongFolderProposal }: {
+  message: ChatMessage;
+  onOpenApp?: (app: GeneratedApp) => void;
+  onAcceptFolderProposal?: (proposalId: string, folder: Project) => void;
+  onBrowseFolderRecovery?: (recovery: NonNullable<ChatMessage["folderRecovery"]>) => void;
+  onDismissFolderProposal?: (proposalId: string) => void;
+  onSearchFolderProposal?: (proposalId: string, query: string, excludeProjectId?: string) => void;
+  onWrongFolderProposal?: (proposalId: string, folder: Project, query: string) => void;
+}) {
   const user = message.role === "user";
   const isThinking = !user && message.text === "Working on it...";
   const opacity = useRef(new Animated.Value(0)).current;
@@ -30,8 +38,8 @@ export function MessageBubble({ message, onOpenApp }: { message: ChatMessage; on
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 320, useNativeDriver: true })
+      Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(translateY, { toValue: 0, duration: 320, useNativeDriver: Platform.OS !== "web" })
     ]).start();
   }, [opacity, translateY]);
 
@@ -53,10 +61,265 @@ export function MessageBubble({ message, onOpenApp }: { message: ChatMessage; on
           <RichMessageText text={message.text} />
         )}
         {message.app && onOpenApp ? <AppPreviewCard app={message.app} onOpen={onOpenApp} /> : null}
+        {message.folderProposal ? (
+          <FolderProposalCard
+            proposal={message.folderProposal}
+            onAccept={onAcceptFolderProposal}
+            onDismiss={onDismissFolderProposal}
+            onWrong={onWrongFolderProposal}
+          />
+        ) : null}
+        {message.folderRecovery ? (
+          <FolderRecoveryCard recovery={message.folderRecovery} onBrowse={onBrowseFolderRecovery} onSearch={onSearchFolderProposal} />
+        ) : null}
       </View>
     </Animated.View>
   );
 }
+
+function FolderProposalCard({ proposal, onAccept, onDismiss, onWrong }: {
+  proposal: NonNullable<ChatMessage["folderProposal"]>;
+  onAccept?: (proposalId: string, folder: Project) => void;
+  onDismiss?: (proposalId: string) => void;
+  onWrong?: (proposalId: string, folder: Project, query: string) => void;
+}) {
+  const folder = proposal.matches[proposal.selectedIndex] ?? proposal.matches[0];
+  if (!folder) return null;
+  const resolved = proposal.status !== "pending";
+  const accepted = proposal.status === "accepted";
+  const query = proposal.query ?? folder.name;
+
+  return (
+    <View style={folderProposalStyles.card}>
+      <View style={folderProposalStyles.kickerRow}>
+        <View style={folderProposalStyles.kickerPill}>
+          <Ionicons name="sparkles-outline" color="#D7C4FF" size={12} />
+          <Text style={folderProposalStyles.kickerText}>Desktop match</Text>
+        </View>
+        <Text style={folderProposalStyles.matchCount}>
+          {proposal.matches.length > 1 ? `${proposal.selectedIndex + 1} of ${proposal.matches.length}` : "Best match"}
+        </Text>
+      </View>
+      <View style={folderProposalStyles.header}>
+        <View style={folderProposalStyles.icon}>
+          <Ionicons name="folder-open-outline" color="#B084FF" size={18} />
+        </View>
+        <View style={folderProposalStyles.headerText}>
+          <Text numberOfLines={1} style={folderProposalStyles.name}>{folder.name}</Text>
+          <Text numberOfLines={1} style={folderProposalStyles.path}>{folder.path}</Text>
+        </View>
+      </View>
+      <View style={folderProposalStyles.metaRow}>
+        <View style={folderProposalStyles.metaChip}>
+          <Ionicons name="cube-outline" color="#B084FF" size={12} />
+          <Text numberOfLines={1} style={folderProposalStyles.metaText}>{folder.stack || "Project"}</Text>
+        </View>
+        <View style={folderProposalStyles.metaChip}>
+          <Ionicons name="desktop-outline" color="#B084FF" size={12} />
+          <Text style={folderProposalStyles.metaText}>PC</Text>
+        </View>
+      </View>
+      {proposal.error ? (
+        <View style={folderProposalStyles.errorBox}>
+          <Ionicons name="alert-circle-outline" color="#FFD166" size={14} />
+          <Text style={folderProposalStyles.errorText}>{proposal.error}</Text>
+        </View>
+      ) : null}
+      {resolved ? (
+        <Text style={folderProposalStyles.status}>
+          {accepted ? `Opened ${folder.name}` : "Dismissed"}
+        </Text>
+      ) : (
+        <>
+          <View style={folderProposalStyles.actions}>
+            <Pressable
+              onPress={() => onWrong?.(proposal.id, folder, query)}
+              style={({ pressed }) => [folderProposalStyles.button, folderProposalStyles.buttonGhost, pressed && folderProposalStyles.buttonPressed]}
+            >
+              <Ionicons name="help-circle-outline" color="#D5D0E6" size={13} />
+              <Text style={folderProposalStyles.buttonGhostText}>Wrong folder</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onDismiss?.(proposal.id)}
+              style={({ pressed }) => [folderProposalStyles.button, folderProposalStyles.buttonQuiet, pressed && folderProposalStyles.buttonPressed]}
+            >
+              <Text style={folderProposalStyles.buttonQuietText}>Not now</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onAccept?.(proposal.id, folder)}
+              style={({ pressed }) => [folderProposalStyles.button, folderProposalStyles.buttonPrimary, pressed && folderProposalStyles.buttonPressed]}
+            >
+              <Ionicons name="arrow-forward" color="#FFFFFF" size={14} />
+              <Text style={folderProposalStyles.buttonPrimaryText}>Open folder</Text>
+            </Pressable>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+function FolderRecoveryCard({ recovery, onBrowse, onSearch }: {
+  recovery: NonNullable<ChatMessage["folderRecovery"]>;
+  onBrowse?: (recovery: NonNullable<ChatMessage["folderRecovery"]>) => void;
+  onSearch?: (proposalId: string, query: string, excludeProjectId?: string) => void;
+}) {
+  return (
+    <View style={folderProposalStyles.recoveryCard}>
+      <View style={folderProposalStyles.recoveryHeader}>
+        <View style={folderProposalStyles.iconSmall}>
+          <Ionicons name="search-outline" color="#B084FF" size={16} />
+        </View>
+        <View style={folderProposalStyles.headerText}>
+          <Text style={folderProposalStyles.recoveryTitle}>Find the right folder</Text>
+          <Text style={folderProposalStyles.recoverySubtitle}>Choose how Vibyra should search your PC.</Text>
+        </View>
+      </View>
+      <View style={folderProposalStyles.actions}>
+        <Pressable
+          onPress={() => onBrowse?.(recovery)}
+          style={({ pressed }) => [folderProposalStyles.button, folderProposalStyles.buttonGhost, pressed && folderProposalStyles.buttonPressed]}
+        >
+          <Ionicons name="folder-open-outline" color="#D5D0E6" size={13} />
+          <Text style={folderProposalStyles.buttonGhostText}>Browse PC</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onSearch?.(recovery.proposalId, recovery.query, recovery.excludedProjectId)}
+          style={({ pressed }) => [folderProposalStyles.button, folderProposalStyles.buttonPrimary, pressed && folderProposalStyles.buttonPressed]}
+        >
+          <Ionicons name="sparkles-outline" color="#FFFFFF" size={14} />
+          <Text style={folderProposalStyles.buttonPrimaryText}>Auto search PC</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const folderProposalStyles = StyleSheet.create({
+  card: {
+    marginTop: 10,
+    backgroundColor: "rgba(18, 19, 30, 0.96)",
+    borderColor: "rgba(176, 132, 255, 0.34)",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 10
+  },
+  kickerRow: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "space-between" },
+  kickerPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(142, 60, 255, 0.18)",
+    borderColor: "rgba(176, 132, 255, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5
+  },
+  kickerText: { color: "#D7C4FF", fontSize: 11, fontWeight: "800" },
+  matchCount: { color: "#8F8A9E", fontSize: 11, fontWeight: "700" },
+  header: { flexDirection: "row", alignItems: "center", gap: 10 },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(176, 132, 255, 0.18)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  headerText: { flex: 1, minWidth: 0 },
+  name: { color: colors.text, fontSize: 16, fontWeight: "900" },
+  path: { color: "#A29CB8", fontSize: 12, marginTop: 2 },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  metaChip: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    minHeight: 26,
+    paddingHorizontal: 9
+  },
+  metaText: { color: "#D5D0E6", fontSize: 11, fontWeight: "800", maxWidth: 150 },
+  errorBox: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 209, 102, 0.09)",
+    borderColor: "rgba(255, 209, 102, 0.22)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    padding: 9
+  },
+  errorText: { color: "#FFE1A3", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 },
+  recoveryCard: {
+    backgroundColor: "rgba(18, 19, 30, 0.96)",
+    borderColor: "rgba(176, 132, 255, 0.28)",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 10,
+    marginTop: 10,
+    padding: 14
+  },
+  recoveryHeader: { alignItems: "center", flexDirection: "row", gap: 10 },
+  iconSmall: {
+    alignItems: "center",
+    backgroundColor: "rgba(176, 132, 255, 0.15)",
+    borderRadius: 10,
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+  recoveryTitle: { color: colors.text, fontSize: 15, fontWeight: "900" },
+  recoverySubtitle: { color: "#A29CB8", fontSize: 12, fontWeight: "700", marginTop: 2 },
+  status: { color: "#A29CB8", fontSize: 12, fontStyle: "italic" },
+  searchBox: {
+    backgroundColor: "rgba(255,255,255,0.045)",
+    borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    padding: 10
+  },
+  searchInputRow: {
+    alignItems: "center",
+    backgroundColor: "rgba(7, 8, 15, 0.55)",
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 42,
+    paddingHorizontal: 10
+  },
+  searchInput: { color: colors.text, flex: 1, fontSize: 14, fontWeight: "700", minWidth: 0, paddingVertical: 8 },
+  searchActions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" },
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 999
+  },
+  buttonGhost: {
+    borderColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1
+  },
+  buttonGhostText: { color: "#D5D0E6", fontSize: 13, fontWeight: "700" },
+  buttonQuiet: { backgroundColor: "rgba(255,255,255,0.06)" },
+  buttonQuietText: { color: "#A29CB8", fontSize: 13, fontWeight: "700" },
+  buttonPrimary: { backgroundColor: "#8E3CFF" },
+  buttonPrimaryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
+  buttonDisabled: { opacity: 0.45 },
+  buttonPressed: { opacity: 0.85 }
+});
 
 export function TypingIndicator() {
   const dot1 = useRef(new Animated.Value(0)).current;
@@ -66,8 +329,8 @@ export function TypingIndicator() {
   useEffect(() => {
     const sequence = (value: Animated.Value, delay: number) => Animated.loop(
       Animated.sequence([
-        Animated.timing(value, { toValue: 1, duration: 360, delay, useNativeDriver: true }),
-        Animated.timing(value, { toValue: 0, duration: 360, useNativeDriver: true })
+        Animated.timing(value, { toValue: 1, duration: 360, delay, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(value, { toValue: 0, duration: 360, useNativeDriver: Platform.OS !== "web" })
       ])
     );
     const animation = Animated.parallel([
@@ -148,4 +411,3 @@ export function AppPreviewModal({ app, onClose }: { app: GeneratedApp | null; on
     </Modal>
   );
 }
-

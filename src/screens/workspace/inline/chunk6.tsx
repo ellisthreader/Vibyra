@@ -51,7 +51,7 @@ export function DashboardHome(props: {
           end={{ x: 1, y: 1 }}
           style={styles.welcomeBackdrop}
         >
-          <View pointerEvents="none" style={styles.welcomeHeroImageWrap}>
+          <View style={[styles.welcomeHeroImageWrap, { pointerEvents: "none" }]}>
             <Image resizeMode="contain" source={dashboardHeroArt} style={styles.welcomeHeroImage as ImageStyle} />
           </View>
           <View style={styles.welcomeHeroLeft}>
@@ -80,4 +80,3 @@ export function DashboardHome(props: {
     </View>
   );
 }
-

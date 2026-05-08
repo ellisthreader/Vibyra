@@ -46,6 +46,11 @@ export function WorkspaceScreen() {
               <AIChatPage
                 bottomInset={insets.bottom}
                 onOpenApp={w.setPreviewApp}
+                onAcceptFolderProposal={w.acceptFolderProposal}
+                onBrowseDesktopPath={app.browseDesktopPath}
+                onDismissFolderProposal={w.dismissFolderProposal}
+                onSearchFolderProposal={w.searchFolderProposal}
+                onWrongFolderProposal={w.wrongFolderProposal}
                 agentRequesting={app.agentRequesting}
                 chatMessages={w.visibleChatMessages}
                 chatSkills={app.chatSkills}
@@ -115,17 +120,7 @@ export function WorkspaceScreen() {
                 />
               ) : null}
               {activePage === "profile" ? (
-                <ProfilePage
-                  activeTab={w.settingsTab}
-                  accountPlan={app.accountPlan}
-                  creditsBalance={w.tokenBalance}
-                  email={app.authEmail || "you@vibyra.app"}
-                  machineName={app.machineName}
-                  name={app.authName}
-                  onTabChange={w.setSettingsTab}
-                  projectCount={app.projects.length}
-                  selectedModel={app.selectedModel}
-                />
+                <ProfilePage activeTab={w.settingsTab} onTabChange={w.setSettingsTab} />
               ) : null}
             </ScrollView>
           )}

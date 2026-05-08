@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { Agent, ChatMessage, FileEntry, LogEvent, Project } from "../types/domain";
 import { appApiRequest, ChatResponse } from "../utils/appApi";
 import { dedupeFiles, formatAssistantReply } from "../utils/files";
+import { streamChatText } from "../utils/chatStream";
 import { impact } from "../utils/haptics";
 import { makeId } from "../utils/ids";
 import { useAppState } from "./useAppState";
@@ -29,14 +30,14 @@ type ResolvedAgentTarget = {
 export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
   const { state, derived, setters } = store;
   const agentRequestingRef = useRef(false);
-  const streamingRef = useRef<{ cancel: () => void } | null>(null);
+  const streamingRef = useRef<(() => void) | null>(null);
 
   async function startAgent(target?: AgentStartTarget) {
     const trimmed = state.taskText.trim();
     if (!trimmed || state.agentRequesting || agentRequestingRef.current) return;
 
     if (streamingRef.current) {
-      streamingRef.current.cancel();
+      streamingRef.current();
       streamingRef.current = null;
     }
 
@@ -242,55 +243,21 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
 
   function streamAssistantMessage(target: ResolvedAgentTarget, messageId: string, fullText: string, app?: ChatResponse["app"]) {
     if (streamingRef.current) {
-      streamingRef.current.cancel();
+      streamingRef.current();
       streamingRef.current = null;
     }
-
-    const text = fullText ?? "";
-    if (text.length === 0) {
-      updateAssistantMessage(target, messageId, text, app);
-      return;
-    }
-
-    const chunks = text.match(/\S+\s*|\s+/g) ?? [text];
-    const cursor = "▍";
-    let index = 0;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let cancelled = false;
-
-    const cancel = () => {
-      cancelled = true;
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
-      }
-      updateAssistantMessage(target, messageId, text, app);
-    };
-    streamingRef.current = { cancel };
-
-    const tick = () => {
-      if (cancelled) return;
-      index += 1;
-      const done = index >= chunks.length;
-      const partial = chunks.slice(0, index).join("");
+    streamingRef.current = streamChatText(fullText, (text, done) => {
       updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
         if (message.id !== messageId) return message;
-        const next = { ...message, text: done ? partial : `${partial}${cursor}` };
+        const next = { ...message, text };
         if (done && app !== undefined) {
           if (app) next.app = app;
           else delete next.app;
         }
         return next;
       }));
-      if (done) {
-        streamingRef.current = null;
-        return;
-      }
-      const delay = 15 + Math.random() * 30;
-      timer = setTimeout(tick, delay);
-    };
-
-    tick();
+      if (done) streamingRef.current = null;
+    });
   }
 
   return { startAgent };

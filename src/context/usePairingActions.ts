@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { LogEvent, RememberedDesktop } from "../types/domain";
+import { mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
 import { getDesktopCandidates, normalizeAgentUrl } from "../utils/network";
 import { useAppState } from "./useAppState";
@@ -186,7 +187,7 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     impact(Haptics.ImpactFeedbackStyle.Medium);
 
     if (result.projects.length > 0) {
-      setters.setProjects(result.projects);
+      setters.setProjects((current) => mergeProjects(current, result.projects));
       setters.setSelectedProjectId(result.projects[0].id);
       void files.loadProjectFilesWithConnection(result.url, result.token, result.projects[0].id);
     }

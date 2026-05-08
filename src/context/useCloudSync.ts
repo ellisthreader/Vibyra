@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { LogEvent, RememberedDesktop } from "../types/domain";
+import { LogEvent, Project, RememberedDesktop } from "../types/domain";
 import { appApiRequest } from "../utils/appApi";
 
 const FAILURE_COOLDOWN_MS = 30000;
@@ -18,6 +18,7 @@ type Snapshot = {
   rememberedDesktops: RememberedDesktop[];
   chatThreads: unknown;
   chatTitles: unknown;
+  chatProjects: Record<string, Project>;
   promptMoney: unknown;
   selectedChatModel: string;
   selectedModel: string;
@@ -31,6 +32,7 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
     rememberedDesktops,
     chatThreads,
     chatTitles,
+    chatProjects,
     promptMoney,
     selectedChatModel,
     selectedModel
@@ -50,9 +52,9 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
         body: JSON.stringify({
           onboardingComplete,
           rememberedDesktops: rememberedDesktops.map(({ token, ...desktop }) => desktop),
-          appState: { chatThreads, chatTitles, promptMoney, selectedChatModel, selectedModel }
+          appState: { chatThreads, chatTitles, chatProjects, promptMoney, selectedChatModel, selectedModel }
         })
-      }, authToken).then(() => {
+      }, authToken, { background: true }).then(() => {
         nextAttemptAtRef.current = 0;
         cooldownLoggedRef.current = false;
       }).catch(() => {
@@ -71,6 +73,7 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
     authenticated,
     chatThreads,
     chatTitles,
+    chatProjects,
     onboardingComplete,
     promptMoney,
     rememberedDesktops,

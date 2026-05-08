@@ -6,12 +6,48 @@ export type RemoteUser = {
   name: string;
   email: string;
   plan: string;
+  planBillingCycle?: "monthly" | "annual";
+  planRenewsAt?: string | null;
   creditsBalance: number;
   creditsUsed: number;
+  dailyCreditsUsed?: number;
+  dailyCreditsCap?: number;
+  monthlyCredits?: number;
+  allowedModelTiers?: string[];
   onboardingComplete: boolean;
   rememberedDesktops: unknown[];
   appState?: Record<string, unknown>;
 };
+
+export type BillingPlan = {
+  key: "free" | "starter" | "builder" | "pro";
+  label: string;
+  monthlyCredits: number;
+  annualCredits: number;
+  monthlyPricePence: number;
+  annualPricePence: number;
+  allowedTiers: string[];
+  dailyCreditCap: number;
+  maxConcurrentAgents: number;
+  maxActiveProjects: number;
+};
+
+export type BillingTopup = {
+  key: string;
+  credits: number;
+  pricePence: number;
+};
+
+export type BillingPlansResponse = {
+  ok: true;
+  plans: BillingPlan[];
+  topups: BillingTopup[];
+  currency: string;
+  vatInclusive: boolean;
+};
+
+export type CheckoutResponse = { ok: true; url: string };
+export type IapReceiptResponse = { ok: true; user?: RemoteUser; idempotent?: boolean };
 
 export type AuthResponse = {
   ok: boolean;
@@ -44,9 +80,12 @@ export type ChatResponse = {
   app?: { id: string; title: string; html: string } | null;
   title?: string;
   model: string;
+  modelKey?: string;
   creditCost: number;
   creditsBalance: number;
   creditsUsed: number;
+  dailyCreditsUsed?: number;
+  dailyCreditsCap?: number;
   user?: RemoteUser;
 };
 
@@ -68,9 +107,50 @@ export function getAppApiUrl() {
   return "http://127.0.0.1:8000";
 }
 
-export async function appApiRequest<T>(endpoint: string, options: RequestInit = {}, token?: string) {
-  const headers = buildHeaders(options.headers, token);
+const BACKEND_OFFLINE_COOLDOWN_MS = 60000;
+let backendOfflineUntil = 0;
+
+export function isBackendKnownOffline() {
+  return Date.now() < backendOfflineUntil;
+}
+
+export function markBackendOffline() {
+  backendOfflineUntil = Date.now() + BACKEND_OFFLINE_COOLDOWN_MS;
+}
+
+export function markBackendOnline() {
+  backendOfflineUntil = 0;
+}
+
+export class BackendOfflineError extends Error {
+  constructor(url: string) {
+    super(`Backend marked offline; skipping request to ${url}`);
+    this.name = "BackendOfflineError";
+  }
+}
+
+export type AppApiRequestMeta = {
+  /**
+   * When true, the request is silently skipped if the backend is currently
+   * marked offline. Use for background syncs/polls so they don't spam the
+   * console with ERR_CONNECTION_REFUSED while the API is down.
+   */
+  background?: boolean;
+};
+
+export async function appApiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  token?: string,
+  meta: AppApiRequestMeta = {}
+) {
   const url = `${getAppApiUrl()}${endpoint}`;
+
+  if (meta.background && isBackendKnownOffline()) {
+    throw new BackendOfflineError(url);
+  }
+
+  const headers = buildHeaders(options.headers, token);
 
   let response: Response;
   try {
@@ -81,9 +161,16 @@ export async function appApiRequest<T>(endpoint: string, options: RequestInit = 
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown error";
     const aborted = reason.toLowerCase().includes("abort");
+    if (!aborted) markBackendOffline();
     throw new Error(aborted
       ? `Could not reach Vibyra (timed out at ${url}). Check the backend is running and EXPO_PUBLIC_API_URL is set to your dev machine's LAN IP.`
       : `Could not reach Vibyra at ${url}. ${reason}. Set EXPO_PUBLIC_API_URL in .env to your dev machine's LAN IP and restart Expo.`);
+  }
+
+  if (response.status >= 500) {
+    markBackendOffline();
+  } else {
+    markBackendOnline();
   }
 
   const data = await readJson<ApiErrorPayload | T>(response);

@@ -21,7 +21,7 @@ export function PersistentOnboardingBackground({ variant }: { variant: Onboardin
   }, [defaultOpacity, quizOpacity, resultOpacity, variant]);
 
   return (
-    <View pointerEvents="none" style={styles.persistentBackdrop}>
+    <View style={[styles.persistentBackdrop, { pointerEvents: "none" }]}>
       <Animated.View style={[styles.backdropLayer, { opacity: defaultOpacity }]}>
         <OnboardingBackdrop />
       </Animated.View>
@@ -37,7 +37,7 @@ export function PersistentOnboardingBackground({ variant }: { variant: Onboardin
 
 function OnboardingBackdrop() {
   return (
-    <View pointerEvents="none" style={styles.backdrop}>
+    <View style={[styles.backdrop, { pointerEvents: "none" }]}>
       <LinearGradient
         colors={["rgba(109, 59, 255, 0.22)", "rgba(242, 58, 205, 0.08)", "rgba(255, 179, 71, 0)"]}
         start={{ x: 0, y: 0 }}

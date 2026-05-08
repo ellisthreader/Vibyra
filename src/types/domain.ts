@@ -17,6 +17,22 @@ export type Project = {
   source?: ProjectSource;
 };
 
+export type DesktopBrowseEntry = {
+  id: string;
+  name: string;
+  path: string;
+  kind: "folder" | "file";
+  stack: string;
+  updated: string;
+  source?: ProjectSource;
+};
+
+export type DesktopBrowseListing = {
+  current: Project | null;
+  parentPath: string | null;
+  entries: DesktopBrowseEntry[];
+};
+
 export type Agent = {
   id: string;
   title: string;
@@ -44,12 +60,30 @@ export type FileEntry = {
   body: string;
 };
 
+export type FolderProposal = {
+  id: string;
+  status: "pending" | "accepted" | "dismissed";
+  matches: Project[];
+  selectedIndex: number;
+  query?: string;
+  error?: string;
+};
+
+export type FolderRecovery = {
+  id: string;
+  proposalId: string;
+  query: string;
+  excludedProjectId?: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   text: string;
   file?: string;
   app?: GeneratedApp;
+  folderProposal?: FolderProposal;
+  folderRecovery?: FolderRecovery;
 };
 
 export type GeneratedApp = {

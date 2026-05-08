@@ -30,24 +30,22 @@ export function QuestionMomentScreen(props: {
       end={{ x: 0.9, y: 1 }}
       style={styles.syncScreen}
     >
-      <View pointerEvents="none" style={styles.syncAuraCyan} />
-      <View pointerEvents="none" style={styles.syncAuraPurple} />
+      <View style={[styles.syncAuraCyan, { pointerEvents: "none" }]} />
+      <View style={[styles.syncAuraPurple, { pointerEvents: "none" }]} />
       <LinearGradient
-        pointerEvents="none"
         colors={["rgba(46, 235, 255, 0.16)", "rgba(109, 59, 255, 0.08)", "rgba(242, 58, 205, 0)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.syncAuroraBand}
+        style={[styles.syncAuroraBand, { pointerEvents: "none" }]}
       />
       <LinearGradient
-        pointerEvents="none"
         colors={["rgba(255, 179, 71, 0.11)", "rgba(242, 58, 205, 0.08)", "rgba(46, 235, 255, 0)"]}
         start={{ x: 1, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={styles.syncAuroraBandBottom}
+        style={[styles.syncAuroraBandBottom, { pointerEvents: "none" }]}
       />
-      <View pointerEvents="none" style={styles.syncStarOne} />
-      <View pointerEvents="none" style={styles.syncStarTwo} />
+      <View style={[styles.syncStarOne, { pointerEvents: "none" }]} />
+      <View style={[styles.syncStarTwo, { pointerEvents: "none" }]} />
 
       <ScrollView contentContainerStyle={[styles.syncContent, contentInsets]} showsVerticalScrollIndicator={false}>
         <View style={styles.syncPill}>

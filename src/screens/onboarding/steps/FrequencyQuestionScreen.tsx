@@ -62,7 +62,7 @@ export function FrequencyQuestionScreen(props: {
                 ]}
                 onPress={() => props.onSelect(option.value)}
               >
-                {selected ? <Animated.View pointerEvents="none" style={[styles.frequencySelectedGlow, { opacity: selectedGlow }]} /> : null}
+                {selected ? <Animated.View style={[styles.frequencySelectedGlow, { opacity: selectedGlow, pointerEvents: "none" }]} /> : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
                 <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
               </Pressable>

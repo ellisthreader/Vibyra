@@ -1,4 +1,4 @@
-import { LogEvent, Project } from "../types/domain";
+import { DesktopBrowseListing, LogEvent, Project } from "../types/domain";
 
 type Requests = {
   agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
@@ -35,5 +35,16 @@ export function useDesktopFolders(hasConnection: boolean, requests: Requests, lo
     }
   }
 
-  return { loadDesktopFolders, searchDesktopFolders };
+  async function browseDesktopPath(path?: string): Promise<DesktopBrowseListing> {
+    if (!hasConnection) return { current: null, parentPath: null, entries: [] };
+    try {
+      const suffix = path ? `?path=${encodeURIComponent(path)}` : "";
+      return await requests.agentRequest<DesktopBrowseListing>(`/desktop/browse${suffix}`);
+    } catch (error) {
+      logs.appendLog(error instanceof Error ? error.message : "Desktop browse failed", "Desktop", "warning");
+      return { current: null, parentPath: null, entries: [] };
+    }
+  }
+
+  return { browseDesktopPath, loadDesktopFolders, searchDesktopFolders };
 }

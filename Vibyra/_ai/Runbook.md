@@ -2,16 +2,35 @@
 
 ## Local App
 
-Open Vibyra Desktop and the backend API first, then run:
+The Expo app reads `EXPO_PUBLIC_API_URL` from root `.env`; for LAN/device testing it should point to the dev machine on Laravel's API port, e.g. `http://192.168.1.109:8000`. The backend MUST be running before the app boots — otherwise the AI chat fails silently: foreground `/api/chat` POSTs reject with `Could not reach Vibyra at http://…:8000/api/chat`, the chat bubble shows the mapped "I could not reach Vibyra from the app." reply via `userFacingAgentError`, and the browser logs `ERR_CONNECTION_REFUSED` natively (not suppressible — see backend-offline gate decision).
+
+One command to run both processes (Laravel + Expo) with `Ctrl+C` killing both:
 
 ```bash
+npm run dev
+```
+
+Or split across two terminals:
+
+```bash
+# terminal 1 — backend (must be first)
+npm run backend
+
+# terminal 2 — Expo
 npm start
 ```
 
-The Expo app reads `EXPO_PUBLIC_API_URL` from root `.env`; for LAN/device testing it should point to the dev machine on Laravel's API port, for example `http://192.168.1.109:8000`. Start the backend from `backend/` with:
+Manual fallback if scripts fail or you want a fully detached server:
 
 ```bash
-php artisan serve --host=0.0.0.0 --port=8000
+cd backend && php artisan serve --host=0.0.0.0 --port=8000
+```
+
+Quick liveness check:
+
+```bash
+curl -s http://127.0.0.1:8000/api/skills | head -c 80
+# expect {"ok":true,"skills":[...
 ```
 
 Useful checks:

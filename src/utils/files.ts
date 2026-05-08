@@ -1,4 +1,10 @@
-import { CodeChange, FileEntry } from "../types/domain";
+import { CodeChange, FileEntry, Project } from "../types/domain";
+
+export function mergeProjects(existing: Project[], incoming: Project[]): Project[] {
+  const incomingIds = new Set(incoming.map((project) => project.id));
+  const adopted = existing.filter((project) => !incomingIds.has(project.id));
+  return [...incoming, ...adopted];
+}
 
 export function dedupeFiles(files: FileEntry[]) {
   const byId = new Map<string, FileEntry>();

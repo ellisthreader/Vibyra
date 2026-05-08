@@ -117,7 +117,7 @@ export function ProjectCard({
         </View>
       </View>
       {menuOpen ? (
-        <View pointerEvents="box-none" style={styles.projectMenuLayer}>
+        <View style={[styles.projectMenuLayer, { pointerEvents: "box-none" }]}>
           <View style={styles.projectMenu}>
             <ProjectMenuItem icon="create-outline" label="Rename" onPress={onStartRename} />
             <ProjectMenuItem icon="archive-outline" label="Archive" onPress={onArchive} />
@@ -162,4 +162,3 @@ export function ProjectCard({
     </View>
   );
 }
-
