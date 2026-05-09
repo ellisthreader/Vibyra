@@ -1,24 +1,37 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Linking } from "react-native";
-import { FolderRecovery, Project } from "../../../types/domain";
+import { FolderRecovery, GeneratedApp, Project } from "../../../types/domain";
 import {
   bareNameCandidate,
-  bareNameClarifyReply,
   currentProjectReply,
   desktopConnectionRequiredReply,
-  detachedFallbackReply,
   extractFileName,
   extractFolderName,
-  greetingReply,
   isCurrentProjectQuestion,
   isFindFolderIntent,
-  isGreeting,
   isOpenFileIntent,
   isProjectLookupOnly,
-  isSmallTalk,
-  projectPreviewUrl,
-  smallTalkReply
+  projectPreviewUrl
 } from "../helpers/chatPrompts";
+import {
+  bareNameClarifyReply,
+  confusionReply,
+  createProjectReply,
+  detachedFallbackReply,
+  greetingReply,
+  helpReply,
+  isConfusion,
+  isCreateProjectIntent,
+  isGreeting,
+  isHelpRequest,
+  isPreviewTroubleIntent,
+  isSmallTalk,
+  isViewPreviewIntent,
+  previewNeedsProjectReply,
+  previewNotConnectedReply,
+  previewOpeningReply,
+  previewTroubleReply,
+  smallTalkReply
+} from "../helpers/chatReplies";
 import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
 import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
@@ -90,13 +103,24 @@ export function useWorkspaceActions(s: WorkspaceState) {
     });
   }, [app, s]);
 
+  const desktopPreviewApp = useCallback((projectId: string, projectName: string): GeneratedApp | null => {
+    if (!app.connection) return null;
+    return {
+      id: `desktop-preview-${projectId}`,
+      title: projectName,
+      url: projectPreviewUrl(app.connection.url, projectId, app.connection.token)
+    };
+  }, [app.connection]);
+
   const openProjectPreview = useCallback(async (projectId: string, projectName: string) => {
-    await app.selectProject(projectId);
     const known = app.projects.some((p) => p.id === projectId);
-    if (!app.connection || !known) { openProjectChat(projectId, projectName); return; }
-    const url = projectPreviewUrl(app.connection.url, projectId, app.connection.token);
-    try { await Linking.openURL(url); } catch { openProjectChat(projectId, projectName); }
-  }, [app, openProjectChat]);
+    openProjectChat(projectId, projectName);
+    if (known) await app.selectProject(projectId);
+    if (app.connection && known) {
+      const preview = desktopPreviewApp(projectId, projectName);
+      if (preview) s.setPreviewApp(preview);
+    }
+  }, [app, desktopPreviewApp, openProjectChat, s]);
 
   const createProjectAndOpenChat = useCallback(async () => {
     const project = await app.createProject();
@@ -126,9 +150,9 @@ export function useWorkspaceActions(s: WorkspaceState) {
   const submitLockRef = useRef(false);
 
   const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
-    const reply = (r: string, project?: Project) => detached
+    const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
       ? addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project), preview);
 
     const matches = await app.searchDesktopFolders(query);
     if (matches.length === 0) {
@@ -160,9 +184,9 @@ export function useWorkspaceActions(s: WorkspaceState) {
   }, [activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, app, s]);
 
   const runFileOpen = useCallback(async (prompt: string, query: string, detached: boolean) => {
-    const reply = (r: string, project?: Project) => detached
+    const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
       ? addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project), preview);
 
     if (!app.connection) {
       reply(desktopConnectionRequiredReply(query));
@@ -196,11 +220,32 @@ export function useWorkspaceActions(s: WorkspaceState) {
     if (submitLockRef.current) return;
     submitLockRef.current = true;
     const detached = s.selectedChatId === null;
-    const reply = (r: string, project?: Project) => detached
+    const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
       ? addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, activeProjectTarget(project));
+      : app.addLocalChatReply(prompt, r, activeProjectTarget(project), preview);
 
     try {
+      if (detached) {
+        if (isConfusion(prompt)) {
+          awaitingFolderNameRef.current = false;
+          folderRecoveryRef.current = false;
+          addDetachedChatReply(prompt, confusionReply());
+          return;
+        }
+        if (isHelpRequest(prompt)) {
+          awaitingFolderNameRef.current = false;
+          folderRecoveryRef.current = false;
+          addDetachedChatReply(prompt, helpReply());
+          return;
+        }
+        if (isCreateProjectIntent(prompt)) {
+          awaitingFolderNameRef.current = false;
+          folderRecoveryRef.current = false;
+          addDetachedChatReply(prompt, createProjectReply());
+          return;
+        }
+      }
+
       if (detached && !awaitingFolderNameRef.current) {
         if (isGreeting(prompt)) { addDetachedChatReply(prompt, greetingReply()); return; }
         if (isSmallTalk(prompt)) { addDetachedChatReply(prompt, smallTalkReply()); return; }
@@ -208,7 +253,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
 
       if (folderRecoveryRef.current) {
         const name = extractFolderName(prompt) ?? bareNameCandidate(prompt);
-        const looksLikeName = name && name.length <= 80 && /[a-z0-9]/i.test(name) && !/\s{2,}/.test(name);
+        const looksLikeName = !!name && name.length <= 40 && /^[a-z0-9][\w.-]*$/i.test(name);
         if (!looksLikeName) {
           reply("Type just the folder name, or use Manual search / Auto search PC.");
           return;
@@ -227,7 +272,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
 
       if (awaitingFolderNameRef.current) {
         const name = extractFolderName(prompt) ?? prompt.replace(/^(?:yes|yeah|yep|ok(?:ay)?|sure|please)\b\s*/i, "").trim();
-        const looksLikeName = name && name.length <= 80 && /[a-z0-9]/i.test(name) && !/\s{2,}/.test(name);
+        const looksLikeName = !!name && name.length <= 40 && /^[a-z0-9][\w.-]*$/i.test(name);
         if (!looksLikeName) {
           reply(`Type just the folder name, like \`test1\`. (Or say "cancel" to drop it.)`);
           return;
@@ -278,6 +323,22 @@ export function useWorkspaceActions(s: WorkspaceState) {
         return;
       }
 
+      if (isViewPreviewIntent(prompt)) {
+        if (detached) { addDetachedChatReply(prompt, previewNeedsProjectReply()); return; }
+        const target = activeProjectTarget();
+        if (!app.connection) { reply(previewNotConnectedReply(target.project.name), target.project); return; }
+        reply(previewOpeningReply(target.project.name), target.project, desktopPreviewApp(target.projectId, target.project.name) ?? undefined);
+        return;
+      }
+
+      if (isPreviewTroubleIntent(prompt)) {
+        if (detached) { addDetachedChatReply(prompt, previewNeedsProjectReply()); return; }
+        const target = activeProjectTarget();
+        if (!app.connection) { reply(previewNotConnectedReply(target.project.name), target.project); return; }
+        reply(previewTroubleReply(target.project.name), target.project, desktopPreviewApp(target.projectId, target.project.name) ?? undefined);
+        return;
+      }
+
       if (detached) {
         const bare = bareNameCandidate(prompt);
         if (bare) {
@@ -299,7 +360,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
         submitLockRef.current = false;
       }, 750);
     }
-  }, [activeProjectTarget, addDetachedChatReply, app, runFileOpen, runFolderSearch, s]);
+  }, [activeProjectTarget, addDetachedChatReply, app, desktopPreviewApp, openProjectPreview, runFileOpen, runFolderSearch, s]);
 
   const acceptFolderConfirm = useCallback(async (folder: Project) => {
     s.setFolderConfirm(null);

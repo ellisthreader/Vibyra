@@ -6,10 +6,11 @@ Purpose: minimize token use by routing agents through small, durable notes befor
 
 1. `Project Context.md`
 2. `Context Map.md`
-3. Exactly one domain note unless the task crosses boundaries:
+3. Exactly one domain index unless the task crosses boundaries:
    - `Vibyra App Memory.md`
    - `Vibyra Desktop Memory.md`
-4. Only then inspect source files named by the domain note or found with a targeted search.
+4. If the domain index points to focused topic notes, read exactly one focused note for the task.
+5. Only then inspect source files named by the focused note or found with a targeted search.
 
 ## Token Rules
 
@@ -17,7 +18,7 @@ Purpose: minimize token use by routing agents through small, durable notes befor
 - Do not read generated folders: `node_modules`, `.git`, `.expo`, `.vibyra-agent`, `backend/vendor`.
 - Prefer `rg` for symbols, route names, component names, and error strings.
 - Read files in slices when only one function or area is needed.
-- Keep durable notes short; move long logs and temporary detail to `_ai/Runs/`.
+- Keep durable notes short and topic-scoped; move long logs and temporary detail to `_ai/Runs/`.
 
 ## Update Rules
 
@@ -37,7 +38,14 @@ For most tasks, read no more than:
 
 - this protocol;
 - `Project Context.md`;
-- one domain memory note;
+- one domain index and one focused topic note;
 - two to five source files.
 
 If more context is needed, summarize what was learned before reading more.
+
+## Note Size Rules
+
+- Index notes should route, not explain; keep them under about 60 lines.
+- Focused notes should fit one feature/workflow and stay under about 80 lines.
+- Split notes when a section grows enough that a future task would not usually need the whole thing.
+- Prefer filenames that match user language, for example `AI Live Chat.md`, `Live Preview.md`, or `Pairing And Connection.md`.

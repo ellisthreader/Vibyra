@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
-import { appApiRequest } from "../utils/appApi";
+import { appApiRequest, BackendOfflineError } from "../utils/appApi";
 
 const FAILURE_COOLDOWN_MS = 30000;
 
@@ -57,8 +57,10 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
       }, authToken, { background: true }).then(() => {
         nextAttemptAtRef.current = 0;
         cooldownLoggedRef.current = false;
-      }).catch(() => {
+      }).catch((error: unknown) => {
         nextAttemptAtRef.current = Date.now() + FAILURE_COOLDOWN_MS;
+        if (errorIsBackendOffline(error)) return;
+
         if (!cooldownLoggedRef.current) {
           cooldownLoggedRef.current = true;
           logs.appendLog("Saved locally. Cloud sync will retry when the API is reachable.", "Account", "warning");
@@ -80,4 +82,9 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
     selectedChatModel,
     selectedModel
   ]);
+}
+
+function errorIsBackendOffline(error: unknown) {
+  return error instanceof BackendOfflineError
+    || (error instanceof Error && error.name === "BackendOfflineError");
 }

@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import { Agent, ChatMessage, FileEntry, LogEvent, Project } from "../types/domain";
 import { appApiRequest, ChatResponse } from "../utils/appApi";
 import { dedupeFiles, formatAssistantReply } from "../utils/files";
+import { normalizeAgentUrl } from "../utils/network";
 import { streamChatText } from "../utils/chatStream";
 import { impact } from "../utils/haptics";
 import { makeId } from "../utils/ids";
@@ -191,7 +192,11 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     setters.setFiles((current) => dedupeFiles([...result.files, ...current]));
     logs.advanceWorkflow(12);
     logs.appendLogs(result.events);
-    streamAssistantMessage(target, assistantMessageId, formatAssistantReply(result.reply, result.changes));
+    streamAssistantMessage(target, assistantMessageId, formatAssistantReply(result.reply, result.changes), desktopPreviewApp(target, result), {
+      codeChanges: result.changes,
+      codeFiles: result.files,
+      codeProjectId: target.projectId
+    });
   }
 
   function finishOpenRouterAgent(target: ResolvedAgentTarget, result: ChatResponse, optimisticAgentId: string, assistantMessageId: string) {
@@ -241,7 +246,13 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     }));
   }
 
-  function streamAssistantMessage(target: ResolvedAgentTarget, messageId: string, fullText: string, app?: ChatResponse["app"]) {
+  function streamAssistantMessage(
+    target: ResolvedAgentTarget,
+    messageId: string,
+    fullText: string,
+    app?: ChatResponse["app"],
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId">
+  ) {
     if (streamingRef.current) {
       streamingRef.current();
       streamingRef.current = null;
@@ -254,10 +265,40 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
           if (app) next.app = app;
           else delete next.app;
         }
+        if (done && metadata) {
+          next.codeChanges = metadata.codeChanges;
+          next.codeFiles = metadata.codeFiles;
+          next.codeProjectId = metadata.codeProjectId;
+        }
         return next;
       }));
       if (done) streamingRef.current = null;
     });
+  }
+
+  function desktopPreviewApp(target: ResolvedAgentTarget, result: AgentStartResult): ChatResponse["app"] {
+    const html = previewHtmlFromFiles(result.files);
+    if (!state.connection && !html) return null;
+    if (!html && !result.preview.url) return null;
+    return {
+      id: `${result.agent.id}-preview`,
+      title: result.preview.title || target.project.name,
+      ...(html ? { html } : {}),
+      ...(state.connection && result.preview.url ? { url: absoluteDesktopUrl(state.connection.url, result.preview.url) } : {})
+    };
+  }
+
+  function previewHtmlFromFiles(files: FileEntry[]) {
+    const htmlFile = files.find((file) => {
+      const path = file.path.toLowerCase();
+      return path.endsWith("/index.html") || path === "index.html" || (file.name.toLowerCase() === "index.html" && file.language === "html");
+    });
+    return htmlFile?.body?.trim() || "";
+  }
+
+  function absoluteDesktopUrl(baseUrl: string, path: string) {
+    if (/^https?:\/\//i.test(path)) return path;
+    return `${normalizeAgentUrl(baseUrl)}${path.startsWith("/") ? path : `/${path}`}`;
   }
 
   return { startAgent };

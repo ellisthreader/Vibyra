@@ -69,6 +69,34 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     }
   }
 
+  async function undoCodeChange(projectId: string, messageId: string, changeId: string, file: FileEntry) {
+    if (!state.connection || file.previousBody === undefined || file.previousBody === null) return;
+
+    try {
+      const result = await requests.agentRequest<FileCreateResult>("/files/create", {
+        method: "POST",
+        body: JSON.stringify({ projectId, path: file.path, content: file.previousBody })
+      });
+      setters.setFiles(dedupeFiles(result.files));
+      setters.setChatThreads((current) => {
+        const thread = current[projectId];
+        if (!thread) return current;
+        return {
+          ...current,
+          [projectId]: thread.map((message) => (
+            message.id === messageId
+              ? { ...message, undoneChangeIds: Array.from(new Set([...(message.undoneChangeIds ?? []), changeId])) }
+              : message
+          ))
+        };
+      });
+      logs.appendLogs(result.events);
+      logs.appendLog(`Undid ${file.path}`, "Code Review", "success");
+    } catch (error) {
+      logs.appendLog(error instanceof Error ? error.message : "Could not undo file change", "Code Review", "error");
+    }
+  }
+
   async function loadProjectFiles(projectId: string) {
     if (!state.connection) return;
     try {
@@ -202,6 +230,7 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     adoptProject,
     createProject,
     createFile,
+    undoCodeChange,
     loadProjectFilesWithConnection,
     selectFile,
     selectProject,

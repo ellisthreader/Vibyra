@@ -4,7 +4,17 @@ Use this map to choose the smallest useful context.
 
 ## Mobile App Work
 
-Read: `Vibyra App Memory.md`
+Read: `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
+
+Focused routing:
+
+- AI live chat, prompts, slash commands, chat messages, undo/review changed files: `App/AI Live Chat.md`
+- In-app previews, blank preview, preview button/card, WebView: `App/Live Preview.md`
+- PC reachable/not reachable, pairing, reconnect, Wi-Fi discovery: `App/Pairing And Connection.md`
+- Projects tab, folder search, detached/project chat, file browser: `App/Workspace Projects.md`
+- `/api/session/state`, cloud state, background API refused errors: `App/Cloud Sync.md`
+- Profile, billing, membership, model locks: `App/Profile Billing.md`
+- Bottom nav, app shell, broad visual/UI routing: `App/Navigation UI.md`
 
 Start files:
 
@@ -31,7 +41,7 @@ Start files:
 
 ## Pairing Or Connection Bugs
 
-Read both app and desktop memory notes.
+Read `Vibyra App Memory.md`, `App/Pairing And Connection.md`, and `Vibyra Desktop Memory.md`.
 
 Key files:
 
@@ -45,7 +55,7 @@ Key files:
 
 ## Agent Or Prompt Flow
 
-Read both app and desktop memory notes.
+Read `Vibyra App Memory.md`, `App/AI Live Chat.md`, and `Vibyra Desktop Memory.md`.
 
 Key files:
 
@@ -57,6 +67,8 @@ Key files:
 ## Backend Or Account Work
 
 Read: `Vibyra Backend Memory.md`
+
+For mobile cloud-sync or `/api/session/state` errors, also read `Vibyra App Memory.md` and `App/Cloud Sync.md`.
 
 Start files:
 
@@ -81,6 +93,8 @@ Start files:
 - `src/context/useAgentActions.ts` (frontend payload trimming)
 
 ## Style Or UI Work
+
+Read `Vibyra App Memory.md`, then `App/Navigation UI.md` unless the task names a more specific app feature.
 
 Start files:
 

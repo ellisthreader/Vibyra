@@ -1,146 +1,133 @@
 export const part37 = {
   featuredPlanWrap: {
-    borderRadius: 22,
-    marginTop: 4,
+    borderRadius: 18,
+    flex: 1,
+    minHeight: 118,
     position: "relative" as const
   },
   featuredPlanGlow: {
-    borderColor: "rgba(194, 89, 255, 0.55)",
-    borderRadius: 26,
-    borderWidth: 2,
-    bottom: -3,
-    left: -3,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    bottom: -2,
+    left: -2,
     position: "absolute" as const,
-    right: -3,
-    top: -3
+    right: -2,
+    top: -2
   },
   featuredPlanCard: {
-    backgroundColor: "#15102A",
-    borderColor: "rgba(139, 92, 255, 0.42)",
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
+    flex: 1,
     overflow: "hidden" as const
   },
-  featuredPlanGradient: {
-    gap: 14,
-    padding: 18,
-    position: "relative" as const
+  featuredPlanInner: {
+    flex: 1,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14
   },
-  featuredPlanRocket: {
-    height: 92,
-    position: "absolute" as const,
-    right: 8,
-    top: 8,
-    width: 92
-  },
-  featuredPlanRibbon: {
-    alignItems: "center" as const,
-    alignSelf: "flex-start" as const,
-    backgroundColor: "rgba(139, 53, 255, 0.32)",
-    borderColor: "rgba(194, 89, 255, 0.6)",
-    borderRadius: 999,
-    borderWidth: 1,
+  featuredPlanHead: {
+    alignItems: "flex-start" as const,
     flexDirection: "row" as const,
-    gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 4
+    gap: 11
   },
-  featuredPlanRibbonText: {
-    color: "#E8D6FF",
-    fontSize: 10,
-    fontWeight: "900" as const,
-    letterSpacing: 0.7,
-    textTransform: "uppercase" as const
+  featuredPlanIcon: {
+    alignItems: "center" as const,
+    borderRadius: 10,
+    height: 36,
+    justifyContent: "center" as const,
+    width: 36
+  },
+  featuredPlanHeadCopy: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0
+  },
+  featuredPlanNameRow: {
+    alignItems: "center" as const,
+    flexDirection: "row" as const,
+    gap: 8
   },
   featuredPlanName: {
     color: "#FFFFFF",
-    fontSize: 30,
+    fontSize: 17,
     fontWeight: "900" as const,
-    letterSpacing: -0.5,
-    marginTop: 2
+    letterSpacing: -0.2
+  },
+  featuredPlanRibbon: {
+    alignItems: "center" as const,
+    borderRadius: 6,
+    flexDirection: "row" as const,
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2
+  },
+  featuredPlanRibbonText: {
+    fontSize: 9,
+    fontWeight: "900" as const,
+    letterSpacing: 0.5,
+    textTransform: "uppercase" as const
+  },
+  featuredPlanTokens: {
+    color: "#9C97AE",
+    fontSize: 12,
+    fontWeight: "700" as const
+  },
+  featuredPlanRight: {
+    alignItems: "flex-end" as const,
+    gap: 4
   },
   featuredPlanPriceRow: {
     alignItems: "baseline" as const,
-    flexDirection: "row" as const,
-    gap: 6
+    flexDirection: "row" as const
   },
   featuredPlanPrice: {
     color: "#FFFFFF",
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: "900" as const,
-    letterSpacing: -0.6
+    letterSpacing: -0.4
   },
   featuredPlanCadence: {
-    color: "rgba(255, 255, 255, 0.62)",
-    fontSize: 14,
+    color: "#9C97AE",
+    fontSize: 12,
     fontWeight: "700" as const
   },
-  featuredPlanTokensRow: {
-    alignItems: "center" as const,
-    flexDirection: "row" as const,
-    gap: 7
-  },
-  featuredPlanTokensText: {
-    color: "#FFFFFF",
-    fontSize: 13,
+  featuredPlanAnnualNote: {
+    color: "#FFD166",
+    fontSize: 10.5,
     fontWeight: "800" as const
   },
-  featuredPlanPerks: {
-    backgroundColor: "rgba(8, 8, 18, 0.6)",
-    borderRadius: 14,
+  featuredPlanCurrentChip: {
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderRadius: 7,
+    borderWidth: 1,
     flexDirection: "row" as const,
     gap: 4,
-    padding: 10
+    paddingHorizontal: 9,
+    paddingVertical: 3
+  },
+  featuredPlanCurrentChipText: {
+    color: "#E8E2F7",
+    fontSize: 11,
+    fontWeight: "900" as const
+  },
+  featuredPlanPerks: {
+    flex: 1,
+    gap: 6,
+    justifyContent: "center" as const
   },
   featuredPlanPerk: {
     alignItems: "center" as const,
+    flexDirection: "row" as const,
+    gap: 8
+  },
+  featuredPlanPerkText: {
+    color: "rgba(255, 255, 255, 0.86)",
     flex: 1,
-    gap: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 6
-  },
-  featuredPlanPerkTitle: {
-    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "900" as const,
-    textAlign: "center" as const
-  },
-  featuredPlanPerkSub: {
-    color: "rgba(255, 255, 255, 0.6)",
-    fontSize: 10,
-    fontWeight: "700" as const,
-    textAlign: "center" as const
-  },
-  featuredPlanCta: {
-    alignItems: "center" as const,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    flexDirection: "row" as const,
-    gap: 8,
-    justifyContent: "center" as const,
-    minHeight: 50,
-    paddingHorizontal: 18
-  },
-  featuredPlanCtaText: {
-    color: "#1A0E33",
-    fontSize: 15,
-    fontWeight: "900" as const
-  },
-  featuredPlanCtaCurrent: {
-    alignItems: "center" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row" as const,
-    gap: 8,
-    justifyContent: "center" as const,
-    minHeight: 50,
-    paddingHorizontal: 18
-  },
-  featuredPlanCtaCurrentText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "900" as const
+    fontWeight: "600" as const,
+    lineHeight: 16
   }
 } as const;

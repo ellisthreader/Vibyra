@@ -74,8 +74,13 @@ export function ConnectStepTwo({
               <View style={styles.desktopList}>
                 {foundDesktops.map((desktop) => (
                   <Pressable
+                    disabled={app.pairing || app.checkingHealth || desktop.status === "offline"}
                     key={desktop.url}
-                    style={({ pressed }) => [styles.desktopResult, pressed ? styles.connectActionPressed : null]}
+                    style={({ pressed }) => [
+                      styles.desktopResult,
+                      pressed && desktop.status !== "offline" ? styles.connectActionPressed : null,
+                      desktop.status === "offline" ? styles.connectActionDisabled : null
+                    ]}
                     onPress={() => app.pairMachineAt(desktop.url, desktop.pairCode)}
                   >
                     <Ionicons name="desktop-outline" color="#8AF7FF" size={18} />

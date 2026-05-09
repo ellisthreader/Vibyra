@@ -77,7 +77,7 @@ export type SkillsResponse = {
 export type ChatResponse = {
   ok: boolean;
   reply: string;
-  app?: { id: string; title: string; html: string } | null;
+  app?: { id: string; title: string; html?: string; url?: string } | null;
   title?: string;
   model: string;
   modelKey?: string;
@@ -109,6 +109,7 @@ export function getAppApiUrl() {
 
 const BACKEND_OFFLINE_COOLDOWN_MS = 60000;
 let backendOfflineUntil = 0;
+let backendKnownOnline = false;
 
 export function isBackendKnownOffline() {
   return Date.now() < backendOfflineUntil;
@@ -116,10 +117,18 @@ export function isBackendKnownOffline() {
 
 export function markBackendOffline() {
   backendOfflineUntil = Date.now() + BACKEND_OFFLINE_COOLDOWN_MS;
+  backendKnownOnline = false;
 }
 
 export function markBackendOnline() {
   backendOfflineUntil = 0;
+  backendKnownOnline = true;
+}
+
+function shouldSkipBackgroundRequest() {
+  if (isBackendKnownOffline()) return true;
+
+  return !backendKnownOnline && process.env.EXPO_PUBLIC_ALLOW_BACKGROUND_API_PROBES !== "true";
 }
 
 export class BackendOfflineError extends Error {
@@ -132,8 +141,9 @@ export class BackendOfflineError extends Error {
 export type AppApiRequestMeta = {
   /**
    * When true, the request is silently skipped if the backend is currently
-   * marked offline. Use for background syncs/polls so they don't spam the
-   * console with ERR_CONNECTION_REFUSED while the API is down.
+   * marked offline or has not yet been proven reachable by a foreground
+   * request. Use for background syncs/polls so they don't spam the console
+   * with ERR_CONNECTION_REFUSED while the API is down.
    */
   background?: boolean;
 };
@@ -146,7 +156,7 @@ export async function appApiRequest<T>(
 ) {
   const url = `${getAppApiUrl()}${endpoint}`;
 
-  if (meta.background && isBackendKnownOffline()) {
+  if (meta.background && shouldSkipBackgroundRequest()) {
     throw new BackendOfflineError(url);
   }
 

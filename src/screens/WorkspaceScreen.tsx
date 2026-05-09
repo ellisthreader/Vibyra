@@ -51,6 +51,7 @@ export function WorkspaceScreen() {
                 onDismissFolderProposal={w.dismissFolderProposal}
                 onSearchFolderProposal={w.searchFolderProposal}
                 onWrongFolderProposal={w.wrongFolderProposal}
+                onUndoCodeChange={app.undoCodeChange}
                 agentRequesting={app.agentRequesting}
                 chatMessages={w.visibleChatMessages}
                 chatSkills={app.chatSkills}

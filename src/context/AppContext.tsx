@@ -149,7 +149,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       });
       setters.setTaskText("");
     },
-    addLocalChatReply: (prompt, reply, target) => {
+    addLocalChatReply: (prompt, reply, target, app) => {
       const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
       const targetFile = target?.file === null
         ? null
@@ -171,7 +171,7 @@ export function AppProvider({ children }: PropsWithChildren) {
           if (!thread) return current;
           return {
             ...current,
-            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text } : m))
+            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text, ...(app ? { app } : {}) } : m))
           };
         });
       });

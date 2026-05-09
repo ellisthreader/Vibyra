@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Linking, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Modal, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../../../context/AppContext";
+import { usePreferences } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
-import { CurrentPlanCard } from "./CurrentPlanCard";
 import { BillingCycleToggle } from "./BillingCycleToggle";
 import { BillingPlanPager } from "./BillingPlanPager";
 import { BillingCycle, PlanKey, nextRecommendedTier } from "./types";
@@ -11,6 +11,7 @@ import { openBillingPortal, startStripeCheckout } from "../../../../utils/billin
 
 export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const app = useAppContext();
+  const prefs = usePreferences();
   const currentKey = (app.accountPlan.trim().toLowerCase() || "free") as PlanKey;
   const recommendedKey = currentKey === "pro" ? "pro" : nextRecommendedTier(currentKey);
   const [cycle, setCycle] = useState<BillingCycle>("annual");
@@ -56,23 +57,17 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
       <View style={styles.billingScreen}>
         <View style={styles.billingHeader}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
-            <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
+            <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#0A0814" : "#FFFFFF"} size={24} />
           </Pressable>
-          <Text style={styles.billingHeaderTitle}>Pick your plan</Text>
+          <Text style={styles.billingHeaderTitle}>{prefs.t("billing.title")}</Text>
           <View style={styles.billingHeaderTokens}>
             <Ionicons name="flash" color="#FFD166" size={13} />
-            <Text style={styles.billingHeaderTokensText}>{app.creditsBalance.toLocaleString()} tokens</Text>
+            <Text style={styles.billingHeaderTokensText}>{prefs.formatNumber(app.creditsBalance)} {prefs.t("billing.tokens")}</Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ gap: 14, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
-          <View style={{ paddingHorizontal: 18 }}>
-            <CurrentPlanCard />
-          </View>
-
-          <View style={{ paddingHorizontal: 18 }}>
-            <BillingCycleToggle cycle={cycle} onChange={setCycle} />
-          </View>
+        <View style={{ flex: 1, gap: 12, paddingHorizontal: 18, paddingBottom: 16 }}>
+          <BillingCycleToggle cycle={cycle} onChange={setCycle} />
 
           <BillingPlanPager
             cycle={cycle}
@@ -82,7 +77,7 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
             busy={busy}
           />
 
-          <View style={{ paddingHorizontal: 18 }}>
+          <View style={{ alignItems: "center", gap: 4 }}>
             {error ? (
               <Pressable onPress={managePayments} style={styles.billingFooter}>
                 <Ionicons name="information-circle" color="#5E8BFF" size={16} />
@@ -91,11 +86,16 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
             ) : (
               <Pressable onPress={managePayments} style={styles.billingFooter}>
                 <Ionicons name="card-outline" color="#9C97AE" size={14} />
-                <Text style={styles.billingFooterText}>Manage payment & invoices</Text>
+                <Text style={styles.billingFooterText}>{prefs.t("billing.manage")}</Text>
+                <Ionicons name="chevron-forward" color="#9C97AE" size={14} />
               </Pressable>
             )}
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+              <Ionicons name="lock-closed" color="#5C5870" size={10} />
+              <Text style={{ color: "#5C5870", fontSize: 10, fontWeight: "700" }}>{prefs.t("billing.secure")}</Text>
+            </View>
           </View>
-        </ScrollView>
+        </View>
       </View>
     </Modal>
   );

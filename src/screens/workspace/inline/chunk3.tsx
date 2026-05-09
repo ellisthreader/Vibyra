@@ -18,6 +18,7 @@ import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 
 export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
@@ -25,6 +26,7 @@ export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
   onOpenTokens: () => void;
   tokenBalance: number;
 }) {
+  const flashColor = useThemedColor("#FFE76A");
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,7 +35,7 @@ export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
       onPress={onOpenTokens}
       style={({ pressed }) => [styles.tokenPill, pressed ? styles.tokenPillPressed : null]}
     >
-      <Ionicons name="flash-outline" color="#FFE76A" size={compact ? 18 : 20} />
+      <Ionicons name="flash-outline" color={flashColor} size={compact ? 18 : 20} />
       <View>
         <Text style={styles.tokenText}>{tokenBalance.toLocaleString()}</Text>
         <Text style={styles.tokenSubtext}>tokens</Text>

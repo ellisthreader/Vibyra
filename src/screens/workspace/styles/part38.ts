@@ -63,12 +63,16 @@ export const part38 = {
   },
   billingFooter: {
     alignItems: "center" as const,
+    alignSelf: "stretch" as const,
+    backgroundColor: "rgba(15, 15, 24, 0.92)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: "row" as const,
-    gap: 8,
+    gap: 10,
     justifyContent: "center" as const,
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8
+    paddingHorizontal: 14,
+    paddingVertical: 12
   },
   billingFooterText: {
     color: "#9C97AE",

@@ -1,6 +1,7 @@
 import { RememberedDesktop } from "../types/domain";
 import { appendDesktopCandidates, getDesktopCandidates } from "../utils/network";
 import {
+  desktopConnectionUrls,
   HEALTH_SCAN_BATCH_SIZE,
   HealthResult,
   PAIR_SCAN_BATCH_SIZE,
@@ -54,7 +55,8 @@ export async function scanPairableDesktops(ctx: ScanContext) {
 
   found = found.map((desktop) => desktop.status === "checking" ? { ...desktop, status: "offline" } : desktop);
   ctx.setRememberedDesktops(found);
-  ctx.setHealthMessage(found.length > 0 ? `Found ${found.length} Vibyra Desktop app${found.length === 1 ? "" : "s"}.` : "No Vibyra Desktop app found. Check Vibyra Desktop is open and your firewall allows local connections.");
+  const reachable = found.filter((desktop) => desktop.status === "online" || desktop.status === "current");
+  ctx.setHealthMessage(reachable.length > 0 ? `Found ${reachable.length} reachable Vibyra Desktop app${reachable.length === 1 ? "" : "s"}.` : "No reachable Vibyra Desktop app found on this Wi-Fi. Check Vibyra Desktop is open and your firewall allows local connections.");
   return found;
 }
 
@@ -73,7 +75,7 @@ export async function scanPairByCode(
   if (healthMatch) {
     const directPair = await requestPairAtUrl(requests, healthMatch.url, code);
     if (directPair.type === "paired") return directPair;
-    candidates = appendDesktopCandidates(candidates, [healthMatch.url, ...healthMatch.connectionUrls]);
+    candidates = appendDesktopCandidates(candidates, desktopConnectionUrls(healthMatch.url, healthMatch.connectionUrls));
   }
 
   for (let index = 0; index < candidates.length; index += PAIR_SCAN_BATCH_SIZE) {

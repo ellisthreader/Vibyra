@@ -99,6 +99,7 @@ function normalizeDesktops(value: unknown): RememberedDesktop[] {
       return {
         url,
         pairCode,
+        connectionUrls: normalizeDesktopUrls(desktop.connectionUrls),
         token: desktop.token ? String(desktop.token) : undefined,
         machineName: String(desktop.machineName ?? "Vibyra Desktop"),
         status: normalizeStatus(desktop.status),
@@ -108,6 +109,12 @@ function normalizeDesktops(value: unknown): RememberedDesktop[] {
     })
     .filter((item): item is RememberedDesktop => Boolean(item))
     .slice(0, 8);
+}
+
+function normalizeDesktopUrls(value: unknown) {
+  if (!Array.isArray(value)) return undefined;
+  const urls = Array.from(new Set(value.map((item) => String(item).trim()).filter(Boolean)));
+  return urls.length > 0 ? urls : undefined;
 }
 
 function normalizeStatus(status: unknown): RememberedDesktop["status"] {

@@ -6,7 +6,7 @@ export type AgentStartResult = {
   files: FileEntry[];
   reply: string;
   events: LogEvent[];
-  preview: { state: PreviewState };
+  preview: { state: PreviewState; url?: string | null; title?: string | null };
   buildState: BuildState;
 };
 

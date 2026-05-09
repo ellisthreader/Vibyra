@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
-import { AppearanceMode, SheetKind } from "./types";
+import { usePreferences } from "../../../../context/PreferencesContext";
+import { SheetKind } from "./types";
 
 export function useProfileSheets() {
+  const prefs = usePreferences();
   const [activeSheet, setActiveSheet] = useState<SheetKind | null>(null);
-  const [language, setLanguage] = useState("English");
-  const [appearance, setAppearance] = useState<AppearanceMode>("dark");
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [agentNotifications, setAgentNotifications] = useState(true);
@@ -17,8 +17,11 @@ export function useProfileSheets() {
 
   return {
     open, close, isOpen, setActiveSheet,
-    language, setLanguage,
-    appearance, setAppearance,
+    language: prefs.language,
+    setLanguage: prefs.setLanguage,
+    appearance: prefs.appearance,
+    setAppearance: prefs.setAppearance,
+    effectiveScheme: prefs.effectiveScheme,
     pushNotifications, setPushNotifications,
     emailNotifications, setEmailNotifications,
     agentNotifications, setAgentNotifications,

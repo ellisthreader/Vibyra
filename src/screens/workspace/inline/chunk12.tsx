@@ -1,8 +1,6 @@
 import React from "react";
-import { Image, Pressable, Text, TextInput, View } from "react-native";
-import type { ImageStyle } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { communityHero } from "../data/assets";
 import { useCommunityPage } from "../hooks/useCommunityPage";
 import { styles } from "../styles";
 import type { CommunityFilter, CommunityPost } from "../types";
@@ -46,13 +44,6 @@ export function CommunityPage({
 
   return (
     <View style={styles.communityScreen}>
-      <View style={styles.communityHero}>
-        <View style={styles.communityHeroCopy}>
-          <Text style={styles.communityHeroSubtitle}>See what other builders are making.</Text>
-        </View>
-        <Image resizeMode="contain" source={communityHero} style={styles.communityHeroImage as ImageStyle} />
-      </View>
-
       <View style={styles.communityTabs}>
         {(["All", "Recent", "Popular", "Featured"] as CommunityFilter[]).map((filter) => {
           const active = c.activeFilter === filter;

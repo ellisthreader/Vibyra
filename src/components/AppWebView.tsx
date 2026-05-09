@@ -3,24 +3,27 @@ import { ActivityIndicator, StyleProp, View, ViewStyle, StyleSheet } from "react
 import { WebView } from "react-native-webview";
 
 export type AppWebViewProps = {
-  html: string;
+  html?: string;
+  url?: string;
   reloadKey: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function AppWebView({ html, reloadKey, style }: AppWebViewProps) {
+export function AppWebView({ html, reloadKey, style, url }: AppWebViewProps) {
+  const source = html ? { html, baseUrl: "about:blank" } : { uri: url ?? "about:blank" };
+
   return (
     <WebView
       key={reloadKey}
       originWhitelist={["*"]}
-      source={{ html, baseUrl: "about:blank" }}
+      source={source}
       style={[styles.web, style]}
       javaScriptEnabled
       domStorageEnabled
       allowsInlineMediaPlayback
       mediaPlaybackRequiresUserAction
       setSupportMultipleWindows={false}
-      mixedContentMode="never"
+      mixedContentMode="always"
       startInLoadingState
       renderLoading={() => (
         <View style={styles.loader}>

@@ -11,7 +11,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
-import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
+import type { Agent, ChatMessage, CodeChange, FileEntry, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
@@ -22,17 +22,19 @@ import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 import { RichMessageText } from "./index";
 
-export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onDismissFolderProposal, onSearchFolderProposal, onWrongFolderProposal }: {
+export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onDismissFolderProposal, onSearchFolderProposal, onUndoCodeChange, onWrongFolderProposal }: {
   message: ChatMessage;
   onOpenApp?: (app: GeneratedApp) => void;
   onAcceptFolderProposal?: (proposalId: string, folder: Project) => void;
   onBrowseFolderRecovery?: (recovery: NonNullable<ChatMessage["folderRecovery"]>) => void;
   onDismissFolderProposal?: (proposalId: string) => void;
   onSearchFolderProposal?: (proposalId: string, query: string, excludeProjectId?: string) => void;
+  onUndoCodeChange?: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
   onWrongFolderProposal?: (proposalId: string, folder: Project, query: string) => void;
 }) {
   const user = message.role === "user";
   const isThinking = !user && message.text === "Working on it...";
+  const [reviewFile, setReviewFile] = useState<FileEntry | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(8)).current;
 
@@ -61,6 +63,17 @@ export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBr
           <RichMessageText text={message.text} />
         )}
         {message.app && onOpenApp ? <AppPreviewCard app={message.app} onOpen={onOpenApp} /> : null}
+        {message.codeChanges?.length ? (
+          <CodeChangesCard
+            changes={message.codeChanges}
+            files={message.codeFiles ?? []}
+            messageId={message.id}
+            onReview={setReviewFile}
+            onUndo={onUndoCodeChange}
+            projectId={message.codeProjectId}
+            undoneIds={message.undoneChangeIds ?? []}
+          />
+        ) : null}
         {message.folderProposal ? (
           <FolderProposalCard
             proposal={message.folderProposal}
@@ -72,9 +85,96 @@ export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBr
         {message.folderRecovery ? (
           <FolderRecoveryCard recovery={message.folderRecovery} onBrowse={onBrowseFolderRecovery} onSearch={onSearchFolderProposal} />
         ) : null}
+        <CodeReviewModal file={reviewFile} onClose={() => setReviewFile(null)} />
       </View>
     </Animated.View>
   );
+}
+
+function CodeChangesCard({ changes, files, messageId, onReview, onUndo, projectId, undoneIds }: {
+  changes: CodeChange[];
+  files: FileEntry[];
+  messageId: string;
+  onReview: (file: FileEntry) => void;
+  onUndo?: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
+  projectId?: string;
+  undoneIds: string[];
+}) {
+  const visibleChanges = changes.filter((change) => !isRunArtifact(change.file));
+  if (visibleChanges.length === 0) return null;
+  const totalAdditions = visibleChanges.reduce((sum, change) => sum + change.additions, 0);
+  const totalDeletions = visibleChanges.reduce((sum, change) => sum + change.deletions, 0);
+
+  return (
+    <View style={codeReviewStyles.card}>
+      <View style={codeReviewStyles.header}>
+        <View>
+          <Text style={codeReviewStyles.kicker}>Code changes</Text>
+          <Text style={codeReviewStyles.title}>{visibleChanges.length} file{visibleChanges.length === 1 ? "" : "s"} changed</Text>
+        </View>
+        <Text style={codeReviewStyles.totals}>+{totalAdditions} / -{totalDeletions}</Text>
+      </View>
+      {visibleChanges.map((change) => {
+        const file = files.find((item) => sameFile(item, change));
+        const undone = undoneIds.includes(change.id);
+        const canUndo = Boolean(projectId && file && file.previousBody !== undefined && file.previousBody !== null && onUndo && !undone);
+
+        return (
+          <View key={change.id} style={codeReviewStyles.row}>
+            <View style={codeReviewStyles.fileIcon}>
+              <Ionicons name={undone ? "return-up-back-outline" : "document-text-outline"} color={undone ? "#FFD166" : "#BFAEFF"} size={16} />
+            </View>
+            <View style={codeReviewStyles.fileMain}>
+              <Text numberOfLines={1} style={codeReviewStyles.fileName}>{fileName(change.file)}</Text>
+              <Text style={codeReviewStyles.fileStats}>+{change.additions} / -{change.deletions}{undone ? " · undone" : ""}</Text>
+            </View>
+            <Pressable disabled={!file} onPress={() => file && onReview(file)} style={({ pressed }) => [codeReviewStyles.actionButton, pressed && file ? codeReviewStyles.actionPressed : null, !file ? codeReviewStyles.actionDisabled : null]}>
+              <Text style={codeReviewStyles.actionText}>Review</Text>
+            </Pressable>
+            <Pressable disabled={!canUndo} onPress={() => projectId && file && onUndo?.(projectId, messageId, change.id, file)} style={({ pressed }) => [codeReviewStyles.iconButton, pressed && canUndo ? codeReviewStyles.actionPressed : null, !canUndo ? codeReviewStyles.actionDisabled : null]}>
+              <Ionicons name="arrow-undo-outline" color={canUndo ? "#F3EEFF" : "#777186"} size={15} />
+            </Pressable>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function CodeReviewModal({ file, onClose }: { file: FileEntry | null; onClose: () => void }) {
+  if (!file) return null;
+  return (
+    <Modal animationType="slide" visible transparent onRequestClose={onClose}>
+      <View style={codeReviewStyles.modalOverlay}>
+        <View style={codeReviewStyles.modalSheet}>
+          <View style={codeReviewStyles.modalHeader}>
+            <View>
+              <Text style={codeReviewStyles.kicker}>Review file</Text>
+              <Text numberOfLines={1} style={codeReviewStyles.modalTitle}>{file.name}</Text>
+            </View>
+            <Pressable onPress={onClose} style={codeReviewStyles.closeButton}>
+              <Ionicons name="close" color="#F6F2FF" size={20} />
+            </Pressable>
+          </View>
+          <ScrollView style={codeReviewStyles.codeScroll} contentContainerStyle={codeReviewStyles.codeContent}>
+            <Text selectable style={codeReviewStyles.codeText}>{file.body || "(empty file)"}</Text>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function fileName(path: string) {
+  return path.replace(/\\/g, "/").split("/").filter(Boolean).pop() ?? path;
+}
+
+function isRunArtifact(path: string) {
+  return path.includes(".vibyra-agent/runs/");
+}
+
+function sameFile(file: FileEntry, change: CodeChange) {
+  return file.path === change.file || file.name === fileName(change.file) || change.file.endsWith(`/${file.path}`);
 }
 
 function FolderProposalCard({ proposal, onAccept, onDismiss, onWrong }: {
@@ -405,9 +505,88 @@ export function AppPreviewModal({ app, onClose }: { app: GeneratedApp | null; on
           </Pressable>
         </View>
         <View style={styles.appModalWebContainer}>
-          <AppWebView html={app.html} reloadKey={reloadKey} style={styles.appModalWebView} />
+          <AppWebView html={app.html} url={app.url} reloadKey={reloadKey} style={styles.appModalWebView} />
         </View>
       </View>
     </Modal>
   );
 }
+
+const codeReviewStyles = StyleSheet.create({
+  actionButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 30,
+    paddingHorizontal: 10
+  },
+  actionDisabled: { opacity: 0.45 },
+  actionPressed: { transform: [{ scale: 0.98 }] },
+  actionText: { color: "#F2EEFF", fontSize: 12, fontWeight: "800" },
+  card: {
+    backgroundColor: "rgba(12, 14, 22, 0.96)",
+    borderColor: "rgba(124, 255, 177, 0.18)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 9,
+    marginTop: 10,
+    padding: 12
+  },
+  closeButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 10,
+    height: 38,
+    justifyContent: "center",
+    width: 38
+  },
+  codeContent: { padding: 14 },
+  codeScroll: { backgroundColor: "#090B12", flex: 1 },
+  codeText: {
+    color: "#ECE8F8",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 12,
+    lineHeight: 18
+  },
+  fileIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(191, 174, 255, 0.11)",
+    borderRadius: 8,
+    height: 30,
+    justifyContent: "center",
+    width: 30
+  },
+  fileMain: { flex: 1, minWidth: 0 },
+  fileName: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  fileStats: { color: "#89F4B8", fontSize: 11, fontWeight: "800", marginTop: 2 },
+  header: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "space-between" },
+  iconButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    width: 32
+  },
+  kicker: { color: "#8EF3B7", fontSize: 10, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
+  modalHeader: {
+    alignItems: "center",
+    backgroundColor: "#11131D",
+    borderBottomColor: "rgba(255,255,255,0.08)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 14
+  },
+  modalOverlay: { backgroundColor: "rgba(0,0,0,0.54)", flex: 1, justifyContent: "flex-end" },
+  modalSheet: { backgroundColor: "#090B12", borderTopLeftRadius: 18, borderTopRightRadius: 18, height: "78%", overflow: "hidden" },
+  modalTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900", marginTop: 3, maxWidth: 250 },
+  row: { alignItems: "center", flexDirection: "row", gap: 8 },
+  title: { color: "#FFFFFF", fontSize: 15, fontWeight: "900", marginTop: 2 },
+  totals: { color: "#89F4B8", fontSize: 12, fontWeight: "900" }
+});

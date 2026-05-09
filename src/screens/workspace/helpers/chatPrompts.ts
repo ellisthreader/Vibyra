@@ -19,15 +19,12 @@ const TARGET_NOUN_RE = new RegExp(String.raw`\b${TARGET_NOUN}\b`, "i");
 const QUOTED_RE = /["'`“”‘’]([^"'`“”‘’]{1,120})["'`“”‘’]/;
 const NAMED_RE = /\b(?:called|named|name\s+is|titled|labelled?)\b/i;
 
-const STOP_NAMES = /^(?:a|an|the|some|any|it|me|my|you|your|that|this|one|please|pls|plz|thanks?|thank|yes|yeah|yep|yup|ya|no|nope|nah|not|ok|okay|kk|sure|hi|hey|hello|hiya|yo|sup|um|uh|so|well|maybe|just|actually|hmm|now|asap)$/i;
+const STOP_NAMES = /^(?:a|an|the|some|any|it|me|my|you|your|that|this|one|please|pls|plz|thanks?|thank|ty|thx|tnx|tysm|cheers|yes|yeah|yep|yup|ya|no|nope|nah|not|ok|okay|kk|sure|hi|hey|hello|hiya|yo|sup|um|uh|so|well|maybe|just|actually|hmm|now|asap|fine|cool|nice|great|awesome|nvm|lol|lmao|aight|alright|right)$/i;
 
 const FILLER_PREFIX = /^(?:(?:yes|yeah|yep|yup|ya|ok|okay|kk|sure|please|pls|plz|no|nope|not|nah|hi|hey|hello|hiya|yo|sup|um|uh|so|well|maybe|just|actually|hmm|alright|right|cool)\b[\s,.!?-]*)+/i;
-const FILLER_TOKEN_RE = /^(?:a|an|the|some|any|it|me|my|you|your|that|this|one|please|pls|plz|thanks?|thank|yes|yeah|yep|yup|ya|no|nope|nah|not|ok|okay|kk|sure|hi|hey|hello|hiya|yo|sup|um|uh|so|well|maybe|just|actually|hmm|now|asap)$/i;
+const FILLER_TOKEN_RE = /^(?:a|an|the|some|any|it|me|my|you|your|that|this|one|please|pls|plz|thanks?|thank|ty|thx|tnx|tysm|cheers|yes|yeah|yep|yup|ya|no|nope|nah|not|ok|okay|kk|sure|hi|hey|hello|hiya|yo|sup|um|uh|so|well|maybe|just|actually|hmm|now|asap|fine|cool|nice|great|awesome|nvm|lol|lmao|aight|alright|right)$/i;
 
-const GREETING_RE = /^(?:hi+|hello+|hey+|yo+|sup|hiya|howdy|morning|afternoon|evening|gm|gn|good\s+(?:morning|afternoon|evening|day))[\s!.?…]*$/i;
-
-const SMALL_TALK_RE = /^(?:thanks?|thank\s*you|ty|thx|cheers|cool|nice|great|got\s+it|gotcha|sounds\s+good|ok+|okay|kk|alright|all\s+right|nvm|never\s*mind)[\s!.?…]*$/i;
-const QUESTION_PHRASE_RE = /\b(?:what|where|who|why|how|is|are|called|named)\b/i;
+const QUESTION_PHRASE_RE = /\b(?:what|where|who|why|how|is|are|called|named|don'?t|dont|understand|confused|lost|help|mean)\b/i;
 
 function stripFiller(text: string): string {
   return text.replace(FILLER_PREFIX, "").trim();
@@ -35,11 +32,21 @@ function stripFiller(text: string): string {
 
 function cleanCandidateName(raw: string): string | null {
   let trimmed = raw
-    .replace(/\b(?:on|in|from|inside|under|please|thanks?|thank\s+you|now|asap|for\s+me|pls|plz)\b.*$/i, "")
+    .replace(/\b(?:on|in|from|inside|under|please|thanks?|thank\s+you|now|asap|for\s+me|pls|plz|its?|it'?s|that'?s|which\s+is|that\s+is|located|saved|stored|sitting|living)\b.*$/i, "")
     .replace(/[?.!,;:]+$/g, "")
     .trim();
   trimmed = stripFiller(trimmed);
   trimmed = trimmed.replace(new RegExp(String.raw`^${FIND_VERBS}\b\s*`, "i"), "").trim();
+  while (/\s/.test(trimmed)) {
+    const tokens = trimmed.split(/\s+/);
+    const last = tokens[tokens.length - 1];
+    if (FILLER_TOKEN_RE.test(last) || /^(?:its?|it'?s|that'?s|thats|here|there|please|pls|plz)$/i.test(last)) {
+      tokens.pop();
+      trimmed = tokens.join(" ").trim();
+    } else {
+      break;
+    }
+  }
   if (!trimmed) return null;
   if (STOP_NAMES.test(trimmed)) return null;
   if (new RegExp(`^${TARGET_NOUN}$`, "i").test(trimmed)) return null;
@@ -174,25 +181,16 @@ export function isCurrentProjectQuestion(prompt: string) {
   return asksWhere && mentionsWorkspace && !asksForCodeWork;
 }
 
-export function isGreeting(prompt: string): boolean {
-  return GREETING_RE.test(prompt.trim());
-}
-
-export function isSmallTalk(prompt: string): boolean {
-  return SMALL_TALK_RE.test(prompt.trim());
-}
-
 export function isBareName(prompt: string): boolean {
   const stripped = stripFiller(prompt.trim()).replace(/[?.!,;:]+$/g, "").trim();
   if (!stripped) return false;
   if (STOP_NAMES.test(stripped)) return false;
-  if (stripped.split(/\s+/).every((token) => FILLER_TOKEN_RE.test(token))) return false;
+  if (FILLER_TOKEN_RE.test(stripped)) return false;
+  if (/\s/.test(stripped)) return false;
   if (FIND_VERB_RE.test(stripped)) return false;
   if (TARGET_NOUN_RE.test(stripped)) return false;
   if (QUESTION_PHRASE_RE.test(stripped)) return false;
-  if (!/^[a-z0-9][\w. -]{0,79}$/i.test(stripped)) return false;
-  if (stripped.length > 40) return false;
-  if (/\s{2,}/.test(stripped)) return false;
+  if (!/^[a-z0-9][\w.-]{0,39}$/i.test(stripped)) return false;
   return true;
 }
 
@@ -213,18 +211,3 @@ export function desktopConnectionRequiredReply(searchQuery: string) {
   return `I can search your desktop${target}, but only when Vibyra Desktop is connected. Open Vibyra Desktop on your PC, pair this app, then send this again.`;
 }
 
-export function greetingReply(): string {
-  return "Hey! Open a project from the Projects tab to get started, or tell me a folder name on your PC (e.g. `open folder test1`) and I'll look it up.";
-}
-
-export function smallTalkReply(): string {
-  return "No worries — whenever you're ready, open a project or ask me to find a folder on your PC.";
-}
-
-export function detachedFallbackReply(): string {
-  return "I'm not sure what to do with that yet. Try `open folder <name>`, ask `where am I?`, or open a project from the Projects tab.";
-}
-
-export function bareNameClarifyReply(name: string): string {
-  return `Did you mean a folder called \`${name}\`? Say \`open folder ${name}\` and I'll look on your PC.`;
-}

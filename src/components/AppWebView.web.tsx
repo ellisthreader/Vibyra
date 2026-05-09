@@ -2,17 +2,19 @@ import React from "react";
 import { StyleProp, View, ViewStyle, StyleSheet } from "react-native";
 
 export type AppWebViewProps = {
-  html: string;
+  html?: string;
+  url?: string;
   reloadKey: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function AppWebView({ html, reloadKey, style }: AppWebViewProps) {
+export function AppWebView({ html, reloadKey, style, url }: AppWebViewProps) {
   return (
     <View style={[styles.host, style]}>
       <iframe
         key={reloadKey}
-        srcDoc={html}
+        src={html ? undefined : url}
+        srcDoc={html || undefined}
         sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals allow-same-origin"
         style={iframeStyle}
         title="Vibyra preview"

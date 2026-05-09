@@ -37,44 +37,44 @@ import { part35 } from "./part35";
 import { part36 } from "./part36";
 import { part37 } from "./part37";
 import { part38 } from "./part38";
+import { part39 } from "./part39";
+import { transformStyleMap } from "./themeTransform";
 
-export const styles = StyleSheet.create({
-  ...part1,
-  ...part2,
-  ...part3,
-  ...part4,
-  ...part5,
-  ...part6,
-  ...part7,
-  ...part8,
-  ...part9,
-  ...part10,
-  ...part11,
-  ...part12,
-  ...part13,
-  ...part14,
-  ...part15,
-  ...part16,
-  ...part17,
-  ...part18,
-  ...part19,
-  ...part20,
-  ...part21,
-  ...part22,
-  ...part23,
-  ...part24,
-  ...part25,
-  ...part26,
-  ...part27,
-  ...part28,
-  ...part29,
-  ...part30,
-  ...part31,
-  ...part32,
-  ...part33,
-  ...part34,
-  ...part35,
-  ...part36,
-  ...part37,
-  ...part38
-} as any);
+const rawDark = {
+  ...part1, ...part2, ...part3, ...part4, ...part5, ...part6, ...part7, ...part8,
+  ...part9, ...part10, ...part11, ...part12, ...part13, ...part14, ...part15, ...part16,
+  ...part17, ...part18, ...part19, ...part20, ...part21, ...part22, ...part23, ...part24,
+  ...part25, ...part26, ...part27, ...part28, ...part29, ...part30, ...part31, ...part32,
+  ...part33, ...part34, ...part35, ...part36, ...part37, ...part38, ...part39
+} as Record<string, Record<string, unknown>>;
+
+const rawLight = transformStyleMap(rawDark);
+
+const darkSheet = StyleSheet.create(rawDark as any);
+const lightSheet = StyleSheet.create(rawLight as any);
+
+let activeScheme: "dark" | "light" = "dark";
+
+export function setStylesScheme(scheme: "dark" | "light") {
+  activeScheme = scheme;
+}
+
+export const styles: any = new Proxy({} as Record<string, unknown>, {
+  get(_, key: string) {
+    const sheet = activeScheme === "light" ? lightSheet : darkSheet;
+    return (sheet as Record<string, unknown>)[key];
+  },
+  has(_, key: string) {
+    return key in (activeScheme === "light" ? lightSheet : darkSheet);
+  },
+  ownKeys() {
+    return Object.keys(activeScheme === "light" ? lightSheet : darkSheet);
+  },
+  getOwnPropertyDescriptor(_, key: string) {
+    const sheet = activeScheme === "light" ? lightSheet : darkSheet;
+    if (key in sheet) {
+      return { enumerable: true, configurable: true, value: (sheet as Record<string, unknown>)[key] };
+    }
+    return undefined;
+  }
+});

@@ -22,13 +22,13 @@ Vibyra is a mobile command center for AI software workflows running on the user'
 
 ## How To Use This Note
 
-Agents should read this note before broad repo exploration, then read `Memory Protocol.md` and one domain note:
+Agents should read this note before broad repo exploration, then read `Memory Protocol.md`, `Context Map.md`, one domain index, and one focused note when the domain index has topic notes:
 
 - App/mobile work: `Vibyra App Memory.md`
 - Desktop bridge work: `Vibyra Desktop Memory.md`
 - Cloud chat / credits / OpenRouter cost work: `Vibyra Backend Memory.md`
 
-Prefer reading the specific files listed in the domain note, then search narrowly for symbols or errors.
+Prefer reading the specific files listed in the focused note, then search narrowly for symbols or errors.
 
 ## Active Goal
 

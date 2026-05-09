@@ -4,8 +4,8 @@ import { mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
 import { getDesktopCandidates, normalizeAgentUrl } from "../utils/network";
 import { useAppState } from "./useAppState";
-import { mergeRememberedDesktops } from "./pairingHelpers";
-import { findDesktopByCode, requestPairAtUrl, waitForDesktopApproval } from "./pairingDiscovery";
+import { desktopConnectionUrls, mergeRememberedDesktops } from "./pairingHelpers";
+import { checkHealth, findDesktopByCode, requestPairAtUrl, waitForDesktopApproval } from "./pairingDiscovery";
 import { scanPairByCode, scanPairableDesktops } from "./pairingScans";
 
 type State = ReturnType<typeof useAppState>["state"];
@@ -111,7 +111,7 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     setters.setPairCode(normalizedCode);
 
     try {
-      const pair = await requestPairAtUrl(requests, url, normalizedCode);
+      const pair = await requestPairAtReachableUrl(url, normalizedCode);
       if (pair.type !== "paired") throw new Error(pair.message);
       const result = pair.result.status === "pending" && pair.result.requestId
         ? await waitForDesktopApproval(requests, pair.result.requestId, pair.url, setters.setPairingMessage)
@@ -144,18 +144,14 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     if (!desktop.token) return false;
 
     try {
-      const result = await requests.desktopRequest<{ projects: State["projects"] }>(
-        normalizeAgentUrl(desktop.url),
-        "/projects",
-        { headers: { Authorization: `Bearer ${desktop.token}` } },
-        3000
-      );
+      const connected = await requestProjectsFromRememberedDesktop(desktop);
+      if (!connected) throw new Error("Desktop is offline");
       establishConnection({
-        url: desktop.url,
+        url: connected.url,
         token: desktop.token,
         machineName: desktop.machineName,
         pairCode: desktop.pairCode,
-        projects: result.projects ?? [],
+        projects: connected.projects,
         events: []
       });
       setters.setPairingError("");
@@ -212,6 +208,42 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     } finally {
       setters.setCheckingHealth(false);
     }
+  }
+
+  async function requestPairAtReachableUrl(url: string, code: string) {
+    const knownDesktop = state.rememberedDesktops.find((desktop) => desktop.url === url || desktop.pairCode === code);
+    const health = await checkHealth(url, code);
+    const urls = desktopConnectionUrls(url, [
+      ...(knownDesktop?.connectionUrls ?? []),
+      ...(health?.connectionUrls ?? [])
+    ]);
+    let lastFailure = { type: "failed" as const, url, message: "Could not reach Vibyra Desktop" };
+
+    for (const candidateUrl of urls) {
+      const pair = await requestPairAtUrl(requests, candidateUrl, code);
+      if (pair.type === "paired") return pair;
+      lastFailure = pair;
+    }
+
+    return lastFailure;
+  }
+
+  async function requestProjectsFromRememberedDesktop(desktop: RememberedDesktop) {
+    const urls = desktopConnectionUrls(desktop.url, desktop.connectionUrls);
+    for (const url of urls) {
+      try {
+        const result = await requests.desktopRequest<{ projects: State["projects"] }>(
+          normalizeAgentUrl(url),
+          "/projects",
+          { headers: { Authorization: `Bearer ${desktop.token}` } },
+          3000
+        );
+        return { url, projects: result.projects ?? [] };
+      } catch {
+        // Try the next LAN address advertised by this same desktop.
+      }
+    }
+    return null;
   }
 
   return { confirmPhonePermission, connectRememberedDesktop, discoverPairableDesktops, pairMachine, pairMachineAt, testDesktopConnection };

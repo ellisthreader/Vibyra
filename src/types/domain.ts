@@ -58,6 +58,7 @@ export type FileEntry = {
   language: string;
   changed: "added" | "modified" | "clean";
   body: string;
+  previousBody?: string | null;
 };
 
 export type FolderProposal = {
@@ -82,6 +83,10 @@ export type ChatMessage = {
   text: string;
   file?: string;
   app?: GeneratedApp;
+  codeChanges?: CodeChange[];
+  codeFiles?: FileEntry[];
+  codeProjectId?: string;
+  undoneChangeIds?: string[];
   folderProposal?: FolderProposal;
   folderRecovery?: FolderRecovery;
 };
@@ -89,7 +94,8 @@ export type ChatMessage = {
 export type GeneratedApp = {
   id: string;
   title: string;
-  html: string;
+  html?: string;
+  url?: string;
 };
 
 export type CodeChange = {
@@ -113,6 +119,7 @@ export type RememberedDesktop = {
   url: string;
   machineName: string;
   pairCode: string;
+  connectionUrls?: string[];
   token?: string;
   status: DesktopStatus;
   lastSeenAt?: string;

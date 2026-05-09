@@ -5,26 +5,31 @@ import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppProvider, useAppContext } from "./src/context/AppContext";
+import { PreferencesProvider, usePreferences, LIGHT_SHELL_BG, DARK_SHELL_BG } from "./src/context/PreferencesContext";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { WorkspaceScreen } from "./src/screens/WorkspaceScreen";
-import { colors } from "./src/styles/theme";
+import { setStylesScheme } from "./src/screens/workspace/styles";
 
 function AppContent() {
   const app = useAppContext();
+  const prefs = usePreferences();
+  setStylesScheme(prefs.effectiveScheme);
+  const isLight = prefs.effectiveScheme === "light";
+  const shellBg = isLight ? LIGHT_SHELL_BG : DARK_SHELL_BG;
 
   if (!app.authenticated) {
-    return <AuthScreen />;
+    return <AuthScreen key={prefs.effectiveScheme} />;
   }
 
   if (!app.onboardingComplete) {
-    return <OnboardingScreen />;
+    return <OnboardingScreen key={prefs.effectiveScheme} />;
   }
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} style={styles.shell}>
-      <StatusBar style="light" />
-      <WorkspaceScreen />
+    <SafeAreaView edges={["top", "left", "right"]} style={[styles.shell, { backgroundColor: shellBg }]}>
+      <StatusBar style={isLight ? "dark" : "light"} />
+      <WorkspaceScreen key={prefs.effectiveScheme} />
     </SafeAreaView>
   );
 }
@@ -33,9 +38,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <AppProvider>
-          <AppContent />
-        </AppProvider>
+        <PreferencesProvider>
+          <AppProvider>
+            <AppContent />
+          </AppProvider>
+        </PreferencesProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -46,7 +53,6 @@ const styles = StyleSheet.create({
     flex: 1
   },
   shell: {
-    backgroundColor: colors.background,
     flex: 1
   }
 });

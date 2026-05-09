@@ -13,7 +13,7 @@ import { colors } from "../../../styles/theme";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
-import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
+import { aiChatGlyph, chatBuildAiHero, communityHero, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
 import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
@@ -51,16 +51,12 @@ export function DashboardHome(props: {
           end={{ x: 1, y: 1 }}
           style={styles.welcomeBackdrop}
         >
-          <View style={[styles.welcomeHeroImageWrap, { pointerEvents: "none" }]}>
-            <Image resizeMode="contain" source={dashboardHeroArt} style={styles.welcomeHeroImage as ImageStyle} />
-          </View>
           <View style={styles.welcomeHeroLeft}>
             <View style={styles.welcomeLivePill}>
               <View style={styles.welcomeLiveDot} />
               <Text style={styles.welcomeLiveText}>{runningProjects.length || 0} live</Text>
             </View>
             <Text style={styles.welcomeTitle}>Ready to build</Text>
-            <Text style={styles.welcomeBodyText}>Launch the next thing.</Text>
           </View>
         </LinearGradient>
       </View>

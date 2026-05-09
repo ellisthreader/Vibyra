@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "../../styles";
+import { useThemedColor } from "../../../../context/PreferencesContext";
 import { ProfileSheet } from "./ProfileSheet";
 import { FAQS } from "./types";
 
@@ -10,6 +11,7 @@ export function HelpSheet({ visible, onClose, onOpenSupport }: {
   onClose: () => void;
   onOpenSupport: () => void;
 }) {
+  const supportIconColor = useThemedColor("#E8E2F7");
   return (
     <ProfileSheet visible={visible} onClose={onClose} icon="help-circle-outline" kicker="Support" title="Help center">
       {FAQS.map((item) => (
@@ -19,7 +21,7 @@ export function HelpSheet({ visible, onClose, onOpenSupport }: {
         </View>
       ))}
       <Pressable onPress={onOpenSupport} style={styles.profileSheetSecondary}>
-        <Ionicons name="chatbubble-ellipses-outline" color="#E8E2F7" size={18} />
+        <Ionicons name="chatbubble-ellipses-outline" color={supportIconColor} size={18} />
         <Text style={styles.profileSheetSecondaryText}>Still stuck? Contact support</Text>
       </Pressable>
     </ProfileSheet>

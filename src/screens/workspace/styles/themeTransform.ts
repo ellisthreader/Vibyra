@@ -1,0 +1,176 @@
+type RGBA = { r: number; g: number; b: number; a: number };
+
+function parseHex(c: string): RGBA | null {
+  const hex = c.slice(1);
+  if (hex.length !== 6 && hex.length !== 8) return null;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const a = hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1;
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+  return { r: r / 255, g: g / 255, b: b / 255, a };
+}
+
+function parseRgb(c: string): RGBA | null {
+  const open = c.indexOf("(");
+  const close = c.lastIndexOf(")");
+  if (open < 0 || close < 0) return null;
+  const parts = c.slice(open + 1, close).split(",").map((p) => p.trim());
+  if (parts.length !== 3 && parts.length !== 4) return null;
+  const r = parseFloat(parts[0]);
+  const g = parseFloat(parts[1]);
+  const b = parseFloat(parts[2]);
+  const a = parts.length === 4 ? parseFloat(parts[3]) : 1;
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b) || Number.isNaN(a)) return null;
+  return { r: r / 255, g: g / 255, b: b / 255, a };
+}
+
+function parseColor(c: string): RGBA | null {
+  if (c.startsWith("#")) return parseHex(c);
+  if (c.startsWith("rgb")) return parseRgb(c);
+  return null;
+}
+
+function toCss({ r, g, b, a }: RGBA): string {
+  const R = Math.round(Math.max(0, Math.min(1, r)) * 255);
+  const G = Math.round(Math.max(0, Math.min(1, g)) * 255);
+  const B = Math.round(Math.max(0, Math.min(1, b)) * 255);
+  const A = Math.max(0, Math.min(1, a));
+  if (A >= 0.999) {
+    return `#${R.toString(16).padStart(2, "0").toUpperCase()}${G.toString(16).padStart(2, "0").toUpperCase()}${B.toString(16).padStart(2, "0").toUpperCase()}`;
+  }
+  return `rgba(${R}, ${G}, ${B}, ${Math.round(A * 1000) / 1000})`;
+}
+
+function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h, s, l };
+}
+
+function hslToRgb({ h, s, l }: { h: number; s: number; l: number }) {
+  if (s === 0) return { r: l, g: l, b: l };
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return {
+    r: hue2rgb(p, q, h + 1 / 3),
+    g: hue2rgb(p, q, h),
+    b: hue2rgb(p, q, h - 1 / 3)
+  };
+}
+
+const NEUTRAL_CHROMA_THRESHOLD = 0.18;
+
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function transformColorForLight(c: string): string {
+  const parsed = parseColor(c);
+  if (!parsed) return c;
+  const max = Math.max(parsed.r, parsed.g, parsed.b);
+  const min = Math.min(parsed.r, parsed.g, parsed.b);
+  const chroma = max - min;
+  const hsl = rgbToHsl(parsed);
+
+  if (chroma >= NEUTRAL_CHROMA_THRESHOLD) {
+    const lum = relativeLuminance(parsed);
+    let newL = hsl.l;
+    let newAlpha = parsed.a;
+    if (lum > 0.5) {
+      newL = 0.42;
+    }
+    if (parsed.a > 0 && parsed.a < 0.4) {
+      newAlpha = Math.min(0.4, parsed.a * 3);
+    }
+    if (Math.abs(newL - hsl.l) < 0.001 && Math.abs(newAlpha - parsed.a) < 0.001) {
+      return c;
+    }
+    const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l: newL });
+    return toCss({ ...rgb, a: newAlpha });
+  }
+
+  if (parsed.a < 1 && hsl.l < 0.4) {
+    const cardL = 0.94;
+    const rgb = hslToRgb({ h: hsl.h, s: Math.min(hsl.s, 0.18), l: cardL });
+    return toCss({ ...rgb, a: 1 });
+  }
+
+  const inverted = { ...hsl, l: 1 - hsl.l };
+  const rgb = hslToRgb(inverted);
+  return toCss({ ...rgb, a: parsed.a });
+}
+
+const COLOR_KEYS = new Set([
+  "color",
+  "backgroundColor",
+  "borderColor",
+  "borderTopColor",
+  "borderRightColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "borderStartColor",
+  "borderEndColor",
+  "shadowColor",
+  "tintColor",
+  "textShadowColor",
+  "textDecorationColor",
+  "overlayColor",
+  "placeholderTextColor",
+  "underlayColor"
+]);
+
+function transformValue(key: string, value: unknown): unknown {
+  if (typeof value === "string" && COLOR_KEYS.has(key)) {
+    return transformColorForLight(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => (typeof v === "object" && v !== null ? transformStyleObject(v as Record<string, unknown>) : v));
+  }
+  if (value && typeof value === "object") {
+    return transformStyleObject(value as Record<string, unknown>);
+  }
+  return value;
+}
+
+function transformStyleObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key in obj) {
+    out[key] = transformValue(key, obj[key]);
+  }
+  return out;
+}
+
+export function transformStyleMap(map: Record<string, Record<string, unknown>>): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const key in map) {
+    out[key] = transformStyleObject(map[key]);
+  }
+  return out;
+}
+
+export function themedColor(color: string, scheme: "light" | "dark"): string {
+  return scheme === "light" ? transformColorForLight(color) : color;
+}

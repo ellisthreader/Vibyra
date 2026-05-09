@@ -30,6 +30,7 @@ export function healthToDesktop(result: HealthResult, status: RememberedDesktop[
     url: result.url,
     machineName: result.machineName || "Vibyra Desktop",
     pairCode: result.pairCode,
+    connectionUrls: desktopConnectionUrls(result.url, result.connectionUrls),
     status,
     lastSeenAt: new Date().toISOString()
   };
@@ -40,7 +41,7 @@ export function mergeRememberedDesktops(current: RememberedDesktop[], updates: R
   updates.forEach((update) => {
     const index = merged.findIndex((desktop) => desktop.url === update.url || desktopKey(desktop.machineName, desktop.pairCode) === desktopKey(update.machineName, update.pairCode));
     if (index >= 0) {
-      merged[index] = { ...merged[index], ...update };
+      merged[index] = mergeDesktop(merged[index], update);
     } else {
       merged.push(update);
     }
@@ -48,6 +49,30 @@ export function mergeRememberedDesktops(current: RememberedDesktop[], updates: R
   return merged
     .sort((a, b) => statusRank(a.status) - statusRank(b.status))
     .slice(0, 8);
+}
+
+export function desktopConnectionUrls(url: string, connectionUrls: string[] = []) {
+  return uniqueValues([url, ...connectionUrls]);
+}
+
+function mergeDesktop(current: RememberedDesktop, update: RememberedDesktop): RememberedDesktop {
+  return {
+    ...current,
+    ...withoutUndefined(update),
+    connectionUrls: desktopConnectionUrls(update.url || current.url, [
+      current.url,
+      ...(current.connectionUrls ?? []),
+      ...(update.connectionUrls ?? [])
+    ])
+  };
+}
+
+function withoutUndefined<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as Partial<T>;
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
 }
 
 function desktopKey(machineName: string, pairCode: string) {

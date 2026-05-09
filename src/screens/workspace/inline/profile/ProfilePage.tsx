@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { styles } from "../../styles";
+import { usePreferences } from "../../../../context/PreferencesContext";
 import type { SettingsTab } from "../../types";
 import { ProfileSettingsGroup } from "../index";
 import { ProfileHero } from "./ProfileHero";
@@ -24,6 +25,7 @@ export function ProfilePage({ activeTab, onTabChange }: {
   onTabChange: (tab: SettingsTab) => void;
 }) {
   const sheets = useProfileSheets();
+  const { t } = usePreferences();
   const [selectedRow, setSelectedRow] = useState(getProfileRowForTab(activeTab));
 
   useEffect(() => { setSelectedRow(getProfileRowForTab(activeTab)); }, [activeTab]);
@@ -47,36 +49,36 @@ export function ProfilePage({ activeTab, onTabChange }: {
       <ProfileSettingsGroup
         activeLabel={selectedRow}
         onSelect={selectRow}
-        title="ACCOUNT"
+        title={t("profile.account")}
         rows={[
-          { icon: "person-outline", label: "Profile information" },
-          { icon: "card-outline", label: "Billing & subscription" },
-          { icon: "time-outline", label: "Usage & history" },
-          { icon: "gift-outline", label: "Refer & earn" }
+          { key: "Profile information", icon: "person-outline", label: t("profile.row.profileInformation") },
+          { key: "Billing & subscription", icon: "card-outline", label: t("profile.row.billing") },
+          { key: "Usage & history", icon: "time-outline", label: t("profile.row.usage") },
+          { key: "Refer & earn", icon: "gift-outline", label: t("profile.row.refer") }
         ]}
       />
 
       <ProfileSettingsGroup
         activeLabel={selectedRow}
         onSelect={selectRow}
-        title="PREFERENCES"
+        title={t("profile.preferences")}
         rows={[
-          { icon: "notifications-outline", label: "Notifications" },
-          { icon: "color-palette-outline", label: "Appearance", value: appearanceLabel(sheets.appearance) },
-          { icon: "shield-outline", label: "Privacy & security" },
-          { icon: "globe-outline", label: "Language", value: sheets.language }
+          { key: "Notifications", icon: "notifications-outline", label: t("profile.row.notifications") },
+          { key: "Appearance", icon: "color-palette-outline", label: t("profile.row.appearance"), value: appearanceLabel(sheets.appearance) },
+          { key: "Privacy & security", icon: "shield-outline", label: t("profile.row.security") },
+          { key: "Language", icon: "globe-outline", label: t("profile.row.language"), value: sheets.language }
         ]}
       />
 
       <ProfileSettingsGroup
         activeLabel={selectedRow}
         onSelect={selectRow}
-        title="SUPPORT"
+        title={t("profile.support")}
         rows={[
-          { icon: "help-circle-outline", label: "Help center" },
-          { icon: "chatbubble-outline", label: "Contact support" },
-          { icon: "document-text-outline", label: "Terms of service" },
-          { danger: true, icon: "log-out-outline", label: "Log out" }
+          { key: "Help center", icon: "help-circle-outline", label: t("profile.row.help") },
+          { key: "Contact support", icon: "chatbubble-outline", label: t("profile.row.contact") },
+          { key: "Terms of service", icon: "document-text-outline", label: t("profile.row.terms") },
+          { key: "Log out", danger: true, icon: "log-out-outline", label: t("profile.row.logout") }
         ]}
       />
 

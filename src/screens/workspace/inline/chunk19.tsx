@@ -42,7 +42,7 @@ export function ProfileStat({ icon, label, last, value }: {
 export function ProfileSettingsGroup({ activeLabel, onSelect, rows, title }: {
   activeLabel: string;
   onSelect: (label: string) => void;
-  rows: Array<{ danger?: boolean; icon: keyof typeof Ionicons.glyphMap; label: string; value?: string }>;
+  rows: Array<{ danger?: boolean; icon: keyof typeof Ionicons.glyphMap; label: string; value?: string; key?: string }>;
   title: string;
 }) {
   return (
@@ -50,11 +50,12 @@ export function ProfileSettingsGroup({ activeLabel, onSelect, rows, title }: {
       <Text style={styles.profileGroupTitle}>{title}</Text>
       <View style={styles.profileGroup}>
         {rows.map((row, index) => {
-          const active = activeLabel === row.label;
+          const rowKey = row.key ?? row.label;
+          const active = activeLabel === rowKey;
           return (
             <Pressable
-              key={row.label}
-              onPress={() => onSelect(row.label)}
+              key={rowKey}
+              onPress={() => onSelect(rowKey)}
               style={({ pressed }) => [
                 styles.profileRow,
                 index === rows.length - 1 ? styles.profileRowLast : null,

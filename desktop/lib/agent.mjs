@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
 import { basename, join } from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { allowedCommands, appState, event, pushEvents } from "./state.mjs";
 import { projectById } from "./projects.mjs";
 import { makePreviewHtml, makeRunSummary, prepareObsidianRun, previewUrl } from "./agentTemplates.mjs";
@@ -14,6 +14,7 @@ export async function startAgentTask({ projectId, prompt, model }) {
   const outputPath = join(outputDir, `${runId}.md`);
   const previewPath = join(project.path, "index.html");
   const previewHtml = makePreviewHtml({ prompt, project });
+  const previousPreviewBody = await readOptionalText(previewPath);
   const obsidianRun = await prepareObsidianRun({ project, runId, prompt, model });
   appState.activeAgentRun = {
     id: runId, projectId: project.id, model, title: prompt,
@@ -53,12 +54,12 @@ export async function startAgentTask({ projectId, prompt, model }) {
   return {
     agent: { id: runId, title: prompt, model, projectId: project.id, state: "complete", progress: 100, file: outputPath },
     changes: [
-      { id: `${runId}-change`, file: previewPath, summary: "Created phone-viewable app preview", additions: previewHtml.split("\n").length, deletions: 0, status: "applied" },
+      { id: `${runId}-change`, file: previewPath, summary: "Created phone-viewable app preview", additions: previewHtml.split("\n").length, deletions: previousPreviewBody ? previousPreviewBody.split("\n").length : 0, status: "applied" },
       { id: `${runId}-artifact-change`, file: outputPath, summary: "Created local Vibyra run artifact", additions: summary.split("\n").length, deletions: 0, status: "applied" },
       ...(obsidianRun ? [{ id: `${runId}-obsidian-change`, file: obsidianRun.outputPath, summary: "Created compact Obsidian run note", additions: obsidianRun.summary.split("\n").length, deletions: 0, status: "applied" }] : [])
     ],
     files: [
-      { id: `${runId}-preview-file`, name: "index.html", path: previewPath, language: "html", changed: "added", body: previewHtml },
+      { id: `${runId}-preview-file`, name: "index.html", path: previewPath, language: "html", changed: previousPreviewBody === null ? "added" : "modified", body: previewHtml, previousBody: previousPreviewBody },
       { id: `${runId}-file`, name: basename(outputPath), path: outputPath, language: "md", changed: "added", body: summary },
       ...(obsidianRun ? [{ id: `${runId}-obsidian-file`, name: basename(obsidianRun.outputPath), path: obsidianRun.outputPath, language: "md", changed: "added", body: obsidianRun.summary }] : [])
     ],
@@ -66,6 +67,14 @@ export async function startAgentTask({ projectId, prompt, model }) {
     preview: appState.latestPreview,
     buildState: "passed"
   };
+}
+
+async function readOptionalText(path) {
+  try {
+    return await readFile(path, "utf8");
+  } catch {
+    return null;
+  }
 }
 
 export function runCommand({ projectId, command }) {

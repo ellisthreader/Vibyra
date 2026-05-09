@@ -103,9 +103,7 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
 export function ChatEmptyState() {
   return (
     <View style={styles.chatEmptyState}>
-      <ChatWelcomeGlyph />
       <Text style={styles.chatWelcomeTitle}>How can I help you build today?</Text>
-      <Text style={styles.chatWelcomeSubtitle}>Ask anything about your project, code, ideas, or problems.</Text>
       <View style={styles.chatSuggestionGrid}>
         {chatSuggestions.map((suggestion) => (
           <Pressable key={suggestion.title} style={styles.chatSuggestionCard}>

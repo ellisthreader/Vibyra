@@ -11,16 +11,42 @@ export const part22 = {
     backgroundColor: "rgba(5, 7, 17, 0.72)"
   },
   projectsCreateButton: {
-    alignSelf: "stretch",
     borderRadius: 12,
-    marginTop: 14,
-    maxWidth: 220,
-    minWidth: 178,
+    flex: 1,
+    minWidth: 0,
     overflow: "hidden",
     shadowColor: "#7130FF",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.32,
     shadowRadius: 18
+  },
+  projectsBrowsePcButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(15, 17, 29, 0.85)",
+    borderColor: "rgba(176, 132, 255, 0.32)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    minHeight: 46,
+    minWidth: 0,
+    paddingHorizontal: 14,
+    shadowColor: "#7130FF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14
+  },
+  projectsBrowsePcButtonPressed: {
+    backgroundColor: "rgba(96, 42, 168, 0.36)",
+    opacity: 0.9
+  },
+  projectsBrowsePcText: {
+    color: "#E8E2FF",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 18
   },
   projectsCreateButtonPressed: {
     opacity: 0.86,
@@ -107,17 +133,10 @@ export const part22 = {
     zIndex: 40
   },
   projectsHero: {
-    alignItems: "center",
+    alignItems: "stretch",
     flexDirection: "row",
-    gap: 18,
-    justifyContent: "space-between",
-    minHeight: 182,
-    paddingTop: 8
-  },
-  projectsHeroCopy: {
-    flex: 1,
-    maxWidth: 320,
-    minWidth: 0
+    gap: 10,
+    paddingTop: 4
   },
   projectsFoldersHero: {
     aspectRatio: 1448 / 1086,

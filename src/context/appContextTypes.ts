@@ -8,6 +8,7 @@ import {
   FileEntry,
   FolderProposal,
   FolderRecovery,
+  GeneratedApp,
   LogEvent,
   ModelKey,
   PairApprovalPayload,
@@ -117,11 +118,12 @@ export type AppActions = {
   selectProject: (projectId: string) => Promise<void>;
   startAgent: (target?: AgentStartTarget) => Promise<void>;
   clearCurrentChat: (projectId?: string) => void;
-  addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget) => void;
+  addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
   addLocalChatProposal: (prompt: string, reply: string, matches: Project[], target?: AgentStartTarget, query?: string) => { proposalProjectId: string };
   addLocalFolderRecovery: (prompt: string, reply: string, recovery: FolderRecovery, target?: AgentStartTarget) => void;
   resolveFolderProposal: (proposalId: string, status: "accepted" | "dismissed", projectId?: string) => void;
   updateFolderProposal: (proposalId: string, update: Partial<FolderProposal>, projectId?: string) => void;
+  undoCodeChange: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
   resetPromptMoney: () => void;
   browseDesktopPath: (path?: string) => Promise<DesktopBrowseListing>;
   loadDesktopFolders: () => Promise<Project[]>;

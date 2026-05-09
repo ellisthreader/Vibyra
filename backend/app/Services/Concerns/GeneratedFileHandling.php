@@ -81,13 +81,15 @@ trait GeneratedFileHandling
             }
 
             $fullPath = $projectPath.'/'.$relativePath;
+            $previousBody = File::exists($fullPath) ? File::get($fullPath) : null;
             File::ensureDirectoryExists(dirname($fullPath));
             File::put($fullPath, $content);
             $this->recordEvent('Agent', 'Wrote '.$relativePath, 'success');
 
             $entry = $this->fileEntry($project, $relativePath, true);
             if ($entry) {
-                $entry['changed'] = 'added';
+                $entry['changed'] = $previousBody === null ? 'added' : 'modified';
+                $entry['previousBody'] = $previousBody;
                 $applied[] = $entry;
             }
         }
