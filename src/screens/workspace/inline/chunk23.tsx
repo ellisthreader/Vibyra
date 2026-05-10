@@ -21,9 +21,11 @@ import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatu
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 import { RichMessageText } from "./index";
+import { EditPermissionCard } from "./EditPermissionCard";
 
-export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onDismissFolderProposal, onSearchFolderProposal, onUndoCodeChange, onWrongFolderProposal }: {
+export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onDismissFolderProposal, onSearchFolderProposal, onUndoCodeChange, onWrongFolderProposal, onApproveEdits, onDenyEdits }: {
   message: ChatMessage;
+  projectName?: string;
   onOpenApp?: (app: GeneratedApp) => void;
   onAcceptFolderProposal?: (proposalId: string, folder: Project) => void;
   onBrowseFolderRecovery?: (recovery: NonNullable<ChatMessage["folderRecovery"]>) => void;
@@ -31,17 +33,19 @@ export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBr
   onSearchFolderProposal?: (proposalId: string, query: string, excludeProjectId?: string) => void;
   onUndoCodeChange?: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
   onWrongFolderProposal?: (proposalId: string, folder: Project, query: string) => void;
+  onApproveEdits?: (messageId: string, projectId: string, alwaysAllow: boolean) => void;
+  onDenyEdits?: (messageId: string, projectId: string) => Promise<void>;
 }) {
   const user = message.role === "user";
   const isThinking = !user && message.text === "Working on it...";
   const [reviewFile, setReviewFile] = useState<FileEntry | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(8)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(translateY, { toValue: 0, duration: 320, useNativeDriver: Platform.OS !== "web" })
+      Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(translateY, { toValue: 0, duration: 360, useNativeDriver: Platform.OS !== "web" })
     ]).start();
   }, [opacity, translateY]);
 
@@ -55,7 +59,7 @@ export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBr
         )}
       </View>
       <View style={styles.messageContent}>
-        <Text style={styles.messageAuthor}>{user ? "You" : "Vibyra"}</Text>
+        <Text style={[styles.messageAuthor, !user && styles.messageAuthorAssistant]}>{user ? "You" : "Vibyra"}</Text>
         {message.file ? <Text numberOfLines={1} style={styles.messageFile}>{message.file}</Text> : null}
         {isThinking ? (
           <TypingIndicator />
@@ -63,7 +67,16 @@ export function MessageBubble({ message, onOpenApp, onAcceptFolderProposal, onBr
           <RichMessageText text={message.text} />
         )}
         {message.app && onOpenApp ? <AppPreviewCard app={message.app} onOpen={onOpenApp} /> : null}
-        {message.codeChanges?.length ? (
+        {message.codeChanges?.length && message.editApproval === "pending" && message.codeProjectId ? (
+          <EditPermissionCard
+            changes={message.codeChanges}
+            projectName={projectName}
+            onAllow={() => onApproveEdits?.(message.id, message.codeProjectId!, false)}
+            onAllowAlways={() => onApproveEdits?.(message.id, message.codeProjectId!, true)}
+            onDeny={() => { void onDenyEdits?.(message.id, message.codeProjectId!); }}
+          />
+        ) : null}
+        {message.codeChanges?.length && message.editApproval !== "pending" ? (
           <CodeChangesCard
             changes={message.codeChanges}
             files={message.codeFiles ?? []}
@@ -298,9 +311,9 @@ function FolderRecoveryCard({ recovery, onBrowse, onSearch }: {
 const folderProposalStyles = StyleSheet.create({
   card: {
     marginTop: 10,
-    backgroundColor: "rgba(18, 19, 30, 0.96)",
-    borderColor: "rgba(176, 132, 255, 0.34)",
-    borderRadius: 16,
+    backgroundColor: "rgba(15, 17, 26, 0.92)",
+    borderColor: "rgba(176, 132, 255, 0.24)",
+    borderRadius: 14,
     borderWidth: 1,
     padding: 14,
     gap: 10
@@ -356,9 +369,9 @@ const folderProposalStyles = StyleSheet.create({
   },
   errorText: { color: "#FFE1A3", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 },
   recoveryCard: {
-    backgroundColor: "rgba(18, 19, 30, 0.96)",
-    borderColor: "rgba(176, 132, 255, 0.28)",
-    borderRadius: 16,
+    backgroundColor: "rgba(15, 17, 26, 0.92)",
+    borderColor: "rgba(176, 132, 255, 0.24)",
+    borderRadius: 14,
     borderWidth: 1,
     gap: 10,
     marginTop: 10,
@@ -527,13 +540,13 @@ const codeReviewStyles = StyleSheet.create({
   actionPressed: { transform: [{ scale: 0.98 }] },
   actionText: { color: "#F2EEFF", fontSize: 12, fontWeight: "800" },
   card: {
-    backgroundColor: "rgba(12, 14, 22, 0.96)",
-    borderColor: "rgba(124, 255, 177, 0.18)",
-    borderRadius: 12,
+    backgroundColor: "rgba(15, 17, 26, 0.92)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 14,
     borderWidth: 1,
     gap: 9,
     marginTop: 10,
-    padding: 12
+    padding: 14
   },
   closeButton: {
     alignItems: "center",

@@ -10,7 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
-import type { Agent, ChatMessage, DesktopBrowseEntry, DesktopBrowseListing, FileEntry, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
+import type { Agent, ChatMessage, DesktopBrowseEntry, DesktopBrowseListing, FileEntry, GeneratedApp, ModelKey, Project, ReasoningEffort, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest, ChatSkill } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
@@ -22,6 +22,17 @@ import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDet
 import { ChatEmptyState, LowCreditsWarning, MessageBubble, ModelMenuRow, ModelProviderIcon, getUnlockedInitialChatModel, isModelLockedForPlan } from "./index";
 import { FolderBrowserModal } from "./FolderBrowserModal";
 import { BillingSheet } from "./profile/BillingSheet";
+
+const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hint: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: "low", label: "Low", short: "Low", hint: "Fast • cheap", icon: "battery-half-outline" },
+  { value: "medium", label: "Medium", short: "Med", hint: "Balanced", icon: "flash-outline" },
+  { value: "high", label: "High", short: "High", hint: "Deeper reasoning", icon: "sparkles-outline" },
+  { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Maximum reasoning", icon: "rocket-outline" },
+];
+
+function effortShortLabel(value: ReasoningEffort): string {
+  return EFFORT_OPTIONS.find((o) => o.value === value)?.short ?? "Med";
+}
 
 export function AIChatPage(props: {
   accountPlan: string;
@@ -37,10 +48,15 @@ export function AIChatPage(props: {
   onDismissFolderProposal: (proposalId: string) => void;
   onSearchFolderProposal: (proposalId: string, query: string, excludeProjectId?: string) => void;
   onUndoCodeChange: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
+  onApproveEdits: (messageId: string, projectId: string, alwaysAllow: boolean) => void;
+  onDenyEdits: (messageId: string, projectId: string) => Promise<void>;
   onWrongFolderProposal: (proposalId: string, folder: Project, query: string) => void;
+  projectName?: string;
   onOpenTokens: () => void;
   onStart: () => void;
   projectChatTitles: Record<string, string>;
+  reasoningEffort: ReasoningEffort;
+  setReasoningEffort: (effort: ReasoningEffort) => void;
   selectedChatModel: string;
   selectedChatId: string | null;
   selectedFileName: string;
@@ -52,7 +68,9 @@ export function AIChatPage(props: {
   taskText: string;
 }) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [effortMenuOpen, setEffortMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
+  const [composerFocused, setComposerFocused] = useState(false);
   const [folderBrowserRecovery, setFolderBrowserRecovery] = useState<NonNullable<ChatMessage["folderRecovery"]> | null>(null);
   const [selectedChatModel, setSelectedChatModel] = useState<string>(() => getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel));
   const hasConversation = props.chatMessages.length > 0;
@@ -143,12 +161,15 @@ export function AIChatPage(props: {
               <MessageBubble
                 key={message.id}
                 message={message}
+                projectName={props.projectName}
                 onOpenApp={props.onOpenApp}
                 onAcceptFolderProposal={props.onAcceptFolderProposal}
                 onBrowseFolderRecovery={setFolderBrowserRecovery}
                 onDismissFolderProposal={props.onDismissFolderProposal}
                 onSearchFolderProposal={props.onSearchFolderProposal}
                 onUndoCodeChange={props.onUndoCodeChange}
+                onApproveEdits={props.onApproveEdits}
+                onDenyEdits={props.onDenyEdits}
                 onWrongFolderProposal={props.onWrongFolderProposal}
               />
             ))}
@@ -197,36 +218,71 @@ export function AIChatPage(props: {
               ))}
             </View>
           ) : null}
-          <View style={styles.chatComposer}>
+          {effortMenuOpen ? (
+            <View style={styles.chatEffortMenu}>
+              {EFFORT_OPTIONS.map((option) => {
+                const active = props.reasoningEffort === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => { props.setReasoningEffort(option.value); setEffortMenuOpen(false); }}
+                    style={({ pressed }) => [
+                      styles.chatEffortMenuRow,
+                      active && styles.chatEffortMenuRowActive,
+                      pressed && { opacity: 0.85 }
+                    ]}
+                  >
+                    <Ionicons name={option.icon} color={active ? "#D7C4FF" : "#8F8A9E"} size={16} />
+                    <Text style={[styles.chatEffortMenuLabel, active && styles.chatEffortMenuLabelActive]}>{option.label}</Text>
+                    <Text style={styles.chatEffortMenuHint}>{option.hint}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+          <View style={[styles.chatComposer, composerFocused && styles.chatComposerFocused]}>
             <TextInput
               value={props.taskText}
               onChangeText={props.setTaskText}
               placeholder="Ask anything about your project..."
               placeholderTextColor="#8F8A9E"
               multiline
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => setComposerFocused(false)}
               style={styles.chatComposerInput}
             />
             <View style={styles.chatComposerBottom}>
               <View style={styles.chatComposerTools}>
-                <Pressable style={styles.chatComposerTool}>
-                  <Ionicons name="attach-outline" color="#B9B5C8" size={24} />
+                <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
+                  <Ionicons name="attach-outline" color="#B9B5C8" size={20} />
                 </Pressable>
-                <Pressable style={styles.chatModelButton} onPress={() => setModelMenuOpen((open) => !open)}>
+                <Pressable
+                  onPress={() => { setEffortMenuOpen((open) => !open); setModelMenuOpen(false); }}
+                  style={({ pressed }) => [styles.chatEffortPill, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}
+                >
+                  <Ionicons name="flash-outline" color="#D7C4FF" size={14} />
+                  <Text style={styles.chatEffortPillLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
+                  <Ionicons name={effortMenuOpen ? "chevron-down" : "chevron-up"} color="#9F99B6" size={13} />
+                </Pressable>
+                <Pressable style={({ pressed }) => [styles.chatModelButton, pressed && { opacity: 0.85 }]} onPress={() => { setModelMenuOpen((open) => !open); setEffortMenuOpen(false); }}>
                   <ModelProviderIcon provider={currentModel.provider} compact />
                   <Text numberOfLines={1} style={styles.chatModelButtonText}>{currentModel.label}</Text>
                   {currentModel.badge ? <Text style={styles.chatModelButtonBadge}>New</Text> : null}
                   {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color="#AAA6BC" size={12} /> : null}
-                  <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color="#AAA6BC" size={15} />
+                  <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color="#9F99B6" size={13} />
                 </Pressable>
               </View>
-              <Pressable style={styles.chatSendButton} onPress={props.agentRequesting ? undefined : props.onStart}>
+              <Pressable
+                style={({ pressed }) => [styles.chatSendButton, pressed && styles.chatSendButtonPressed]}
+                onPress={props.agentRequesting ? undefined : props.onStart}
+              >
                 <LinearGradient
-                  colors={props.agentRequesting ? ["#282B34", "#1A1C25"] : ["#8E3CFF", "#5D24D8"]}
+                  colors={props.agentRequesting ? ["#282B34", "#1A1C25"] : ["#A368FF", "#5D24D8"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.chatSendGradient}
                 >
-                  <Ionicons name={props.agentRequesting ? "pause" : "arrow-up"} color={colors.text} size={props.agentRequesting ? 24 : 28} />
+                  <Ionicons name={props.agentRequesting ? "pause" : "arrow-up"} color={colors.text} size={props.agentRequesting ? 22 : 22} />
                 </LinearGradient>
               </Pressable>
             </View>
@@ -251,13 +307,17 @@ export function AIChatPage(props: {
 
 const skillMenuStyles = StyleSheet.create({
   menu: {
-    backgroundColor: "#171823",
-    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "#13131F",
+    borderColor: "rgba(176, 132, 255, 0.24)",
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 8,
     padding: 6,
-    gap: 2
+    gap: 2,
+    shadowColor: "#8E3CFF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18
   },
   heading: {
     color: "#8F8A9E",

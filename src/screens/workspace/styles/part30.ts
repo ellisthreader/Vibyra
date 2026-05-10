@@ -11,9 +11,9 @@ export const part30 = {
   },
   chatTopTitle: {
     color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-    letterSpacing: 0,
+    fontSize: 16.5,
+    fontWeight: "800",
+    letterSpacing: -0.2,
     lineHeight: 22,
     minWidth: 0,
     textAlign: "center"

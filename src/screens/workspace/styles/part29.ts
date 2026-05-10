@@ -158,16 +158,17 @@ export const part29 = {
   },
   chatTopBar: {
     backgroundColor: "#080A12",
-    borderBottomColor: "rgba(255, 255, 255, 0.04)",
+    borderBottomColor: "rgba(176, 132, 255, 0.10)",
+    borderBottomWidth: 1,
     gap: 8,
     justifyContent: "space-between",
     paddingHorizontal: 12
   },
   chatTopIconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(126, 124, 155, 0.22)",
-    borderRadius: 11,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(176, 132, 255, 0.16)",
+    borderRadius: 12,
     borderWidth: 1,
     height: 38,
     justifyContent: "center",

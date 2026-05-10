@@ -29,44 +29,104 @@ export const part2 = {
     paddingBottom: Platform.OS === "ios" ? 8 : 2
   },
   chatComposer: {
-    backgroundColor: "rgba(17, 19, 28, 0.96)",
-    borderColor: "rgba(255, 255, 255, 0.13)",
-    borderRadius: 16,
+    backgroundColor: "rgba(15, 17, 26, 0.92)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 18,
     borderWidth: 1,
-    minHeight: 116,
-    paddingBottom: 14,
+    minHeight: 118,
+    paddingBottom: 12,
     paddingHorizontal: 14,
     paddingTop: 14,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 18
+    shadowColor: "#8E3CFF",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 22
+  },
+  chatComposerFocused: {
+    borderColor: "rgba(176, 132, 255, 0.42)",
+    shadowOpacity: 0.22,
+    shadowRadius: 26
   },
   chatComposerBottom: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 18
+    marginTop: 16
   },
   chatComposerInput: {
     color: "#F3F1FA",
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
     lineHeight: 22,
-    maxHeight: 70,
-    minHeight: 28,
+    maxHeight: 100,
+    minHeight: 32,
     padding: 0,
     textAlignVertical: "top"
   },
   chatComposerTool: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(126, 124, 155, 0.22)",
-    borderRadius: 11,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 12,
     borderWidth: 1,
-    height: 38,
+    height: 36,
     justifyContent: "center",
-    width: 38
+    width: 36
+  },
+  chatEffortPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 10,
+  },
+  chatEffortPillLabel: {
+    color: "#DAD6E7",
+    fontSize: 12.5,
+    fontWeight: "800",
+    letterSpacing: 0.2
+  },
+  chatEffortMenu: {
+    backgroundColor: "#13131F",
+    borderColor: "rgba(176, 132, 255, 0.24)",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+    overflow: "hidden",
+    padding: 6,
+    shadowColor: "#8E3CFF",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 18
+  },
+  chatEffortMenuRow: {
+    alignItems: "center",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10
+  },
+  chatEffortMenuRowActive: {
+    backgroundColor: "rgba(176, 132, 255, 0.16)"
+  },
+  chatEffortMenuLabel: {
+    color: "#F2EFFB",
+    flex: 1,
+    fontSize: 13.5,
+    fontWeight: "800"
+  },
+  chatEffortMenuLabelActive: {
+    color: "#FFFFFF"
+  },
+  chatEffortMenuHint: {
+    color: "#8F8A9E",
+    fontSize: 11.5,
+    fontWeight: "700"
   },
   chatComposerTools: {
     alignItems: "center",
@@ -139,22 +199,23 @@ export const part2 = {
   },
   chatModelButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(126, 124, 155, 0.22)",
-    borderRadius: 11,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
-    height: 38,
-    maxWidth: 206,
+    flexShrink: 1,
+    gap: 6,
+    height: 36,
     minWidth: 0,
-    paddingHorizontal: 12
+    paddingHorizontal: 10
   },
   chatModelButtonText: {
     color: "#DAD6E7",
     flexShrink: 1,
-    fontSize: 14,
-    fontWeight: "800"
+    fontSize: 12.5,
+    fontWeight: "800",
+    letterSpacing: 0.2
   },
   chatModelButtonBadge: {
     backgroundColor: "rgba(124, 241, 179, 0.11)",

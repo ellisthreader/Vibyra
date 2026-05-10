@@ -35,6 +35,11 @@ import {
 import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
 import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
+import { pickPreviewHtml } from "../../../utils/files";
+
+function makeStubProject(id: string): Project {
+  return { id, name: id, path: "", stack: "", updated: "" };
+}
 
 export function useWorkspaceActions(s: WorkspaceState) {
   const { app } = s;
@@ -114,13 +119,31 @@ export function useWorkspaceActions(s: WorkspaceState) {
 
   const openProjectPreview = useCallback(async (projectId: string, projectName: string) => {
     const known = app.projects.some((p) => p.id === projectId);
+    const desktopMatch = s.filteredDesktopFolders.find((f) => f.id === projectId);
+    const knownProject = app.projects.find((p) => p.id === projectId)
+      ?? desktopMatch
+      ?? app.chatProjects[projectId]
+      ?? makeStubProject(projectId);
+    const remembered = knownProject.name === projectName ? knownProject : { ...knownProject, name: projectName };
+    app.rememberProject(remembered);
     openProjectChat(projectId, projectName);
-    if (known) await app.selectProject(projectId);
-    if (app.connection && known) {
-      const preview = desktopPreviewApp(projectId, projectName);
-      if (preview) s.setPreviewApp(preview);
+
+    const loadedFiles = known ? await app.selectProject(projectId) : [];
+    const filesForPreview = loadedFiles.length > 0 ? loadedFiles : app.files;
+    const desktopUrl = (app.connection && known)
+      ? projectPreviewUrl(app.connection.url, projectId, app.connection.token)
+      : undefined;
+    const html = pickPreviewHtml(filesForPreview, Boolean(desktopUrl));
+
+    if (html || desktopUrl) {
+      s.setPreviewApp({
+        id: `desktop-preview-${projectId}`,
+        title: projectName,
+        ...(html ? { html } : {}),
+        ...(desktopUrl ? { url: desktopUrl } : {}),
+      });
     }
-  }, [app, desktopPreviewApp, openProjectChat, s]);
+  }, [app, openProjectChat, s]);
 
   const createProjectAndOpenChat = useCallback(async () => {
     const project = await app.createProject();
@@ -133,8 +156,11 @@ export function useWorkspaceActions(s: WorkspaceState) {
       ? s.selectedChatId.replace("project-", "")
       : null;
     const targetProject = project
-      ?? (selectedChatProjectId ? app.projects.find((item) => item.id === selectedChatProjectId) : null)
-      ?? app.selectedProject;
+      ?? (selectedChatProjectId
+        ? (app.projects.find((item) => item.id === selectedChatProjectId)
+          ?? app.chatProjects[selectedChatProjectId]
+          ?? makeStubProject(selectedChatProjectId))
+        : app.selectedProject);
     const useSelectedFile = targetProject.id === app.selectedProject.id ? app.selectedFile : null;
 
     return {
@@ -143,7 +169,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
       chatProjectId: targetProject.id,
       file: useSelectedFile
     };
-  }, [app.projects, app.selectedFile, app.selectedProject, s.selectedChatId]);
+  }, [app.chatProjects, app.projects, app.selectedFile, app.selectedProject, s.selectedChatId]);
 
   const awaitingFolderNameRef = useRef(false);
   const folderRecoveryRef = useRef(false);

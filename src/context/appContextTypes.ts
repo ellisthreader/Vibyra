@@ -64,6 +64,7 @@ export type AppState = {
   chatTitles: Record<string, string>;
   chatSkills: import("../utils/appApi").ChatSkill[];
   chatProjects: Record<string, Project>;
+  editApprovals: Record<string, "always">;
   newFilePath: string;
   command: string;
   promptMoney: {
@@ -115,7 +116,7 @@ export type AppActions = {
   createProject: () => Promise<Project | null>;
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
-  selectProject: (projectId: string) => Promise<void>;
+  selectProject: (projectId: string) => Promise<FileEntry[]>;
   startAgent: (target?: AgentStartTarget) => Promise<void>;
   clearCurrentChat: (projectId?: string) => void;
   addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
@@ -129,6 +130,9 @@ export type AppActions = {
   loadDesktopFolders: () => Promise<Project[]>;
   searchDesktopFolders: (query: string) => Promise<Project[]>;
   adoptProject: (project: Project) => Promise<void>;
+  rememberProject: (project: Project) => void;
+  approveEdits: (messageId: string, projectId: string, alwaysAllow: boolean) => void;
+  denyEdits: (messageId: string, projectId: string) => Promise<void>;
   signOut: () => void;
   updateProfile: (changes: { name?: string; email?: string; machineName?: string }) => void;
 };

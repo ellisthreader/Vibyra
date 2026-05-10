@@ -2,7 +2,7 @@ import { useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { Agent, ChatMessage, FileEntry, LogEvent, Project } from "../types/domain";
 import { appApiRequest, ChatResponse } from "../utils/appApi";
-import { dedupeFiles, formatAssistantReply } from "../utils/files";
+import { dedupeFiles, formatAssistantReply, isRunArtifact } from "../utils/files";
 import { normalizeAgentUrl } from "../utils/network";
 import { streamChatText } from "../utils/chatStream";
 import { impact } from "../utils/haptics";
@@ -117,6 +117,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
           model: state.selectedChatModel || state.selectedModel,
           project: chatTarget.project.name,
           prompt,
+          reasoningEffort: state.reasoningEffort,
           skill: skillId ?? ""
         })
       }, state.authToken);
@@ -132,8 +133,11 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
   function resolveTarget(target?: AgentStartTarget): ResolvedAgentTarget {
     const explicitProjectId = target?.projectId ?? target?.project?.id ?? target?.chatProjectId;
     const project = target?.project
-      ?? state.projects.find((item) => item.id === explicitProjectId)
-      ?? derived.selectedProject;
+      ?? (explicitProjectId
+        ? (state.projects.find((item) => item.id === explicitProjectId)
+          ?? state.chatProjects[explicitProjectId]
+          ?? makeStubProject(explicitProjectId))
+        : derived.selectedProject);
     const projectId = explicitProjectId ?? project.id;
     const chatProjectId = target?.chatProjectId ?? projectId;
     const selectedFile = projectId === state.selectedProjectId && derived.selectedFile.id !== "empty"
@@ -141,12 +145,17 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
       : null;
     const file = target?.file === null ? null : target?.file ?? selectedFile;
 
+    const safeFile = file && file.id !== "empty" && !isRunArtifact(file) ? file : null;
     return {
       project,
       projectId,
       chatProjectId,
-      file: file && file.id !== "empty" ? file : null
+      file: safeFile
     };
+  }
+
+  function makeStubProject(id: string): Project {
+    return { id, name: id, path: "", stack: "", updated: "" };
   }
 
   function updateChatMessages(projectId: string, update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) {
@@ -192,10 +201,14 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     setters.setFiles((current) => dedupeFiles([...result.files, ...current]));
     logs.advanceWorkflow(12);
     logs.appendLogs(result.events);
+    const editApproval: ChatMessage["editApproval"] = result.changes.length === 0
+      ? undefined
+      : (state.editApprovals[target.projectId] === "always" ? "allowed" : "pending");
     streamAssistantMessage(target, assistantMessageId, formatAssistantReply(result.reply, result.changes), desktopPreviewApp(target, result), {
       codeChanges: result.changes,
       codeFiles: result.files,
-      codeProjectId: target.projectId
+      codeProjectId: target.projectId,
+      editApproval
     });
   }
 
@@ -251,7 +264,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     messageId: string,
     fullText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval">
   ) {
     if (streamingRef.current) {
       streamingRef.current();
@@ -269,6 +282,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
           next.codeChanges = metadata.codeChanges;
           next.codeFiles = metadata.codeFiles;
           next.codeProjectId = metadata.codeProjectId;
+          if (metadata.editApproval !== undefined) next.editApproval = metadata.editApproval;
         }
         return next;
       }));

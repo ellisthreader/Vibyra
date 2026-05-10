@@ -128,29 +128,50 @@ export const part7 = {
     tintColor: colors.text
   },
   chatSendButton: {
-    borderRadius: 13,
-    overflow: "hidden"
+    borderRadius: 14,
+    overflow: "hidden",
+    shadowColor: "#8E3CFF",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10
+  },
+  chatSendButtonPressed: {
+    transform: [{ scale: 0.94 }]
   },
   chatSendGradient: {
     alignItems: "center",
-    height: 38,
+    height: 40,
     justifyContent: "center",
-    width: 38
+    width: 40
   },
   chatSuggestionCard: {
     alignItems: "flex-start",
-    backgroundColor: "rgba(16, 18, 30, 0.74)",
-    borderColor: "rgba(126, 124, 155, 0.28)",
-    borderRadius: 11,
+    backgroundColor: "rgba(15, 17, 26, 0.78)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 14,
     borderWidth: 1,
     flexBasis: "47%",
     flexGrow: 1,
-    gap: 6,
-    minHeight: 124,
+    gap: 8,
+    minHeight: 130,
     justifyContent: "flex-start",
     minWidth: 0,
     overflow: "hidden",
-    padding: 12
+    padding: 13
+  },
+  chatSuggestionCardPressed: {
+    backgroundColor: "rgba(176, 132, 255, 0.10)",
+    borderColor: "rgba(176, 132, 255, 0.36)",
+    transform: [{ scale: 0.98 }]
+  },
+  chatSuggestionIconPlate: {
+    alignItems: "center",
+    borderRadius: 10,
+    height: 34,
+    justifyContent: "center",
+    marginBottom: 4,
+    overflow: "hidden",
+    width: 34
   },
   chatSuggestionGrid: {
     flexDirection: "row",

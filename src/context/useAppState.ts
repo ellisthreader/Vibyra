@@ -7,6 +7,7 @@ import {
   starterProjects
 } from "../data/appData";
 import { getDefaultAgentUrl } from "../utils/network";
+import { isRunArtifact } from "../utils/files";
 import { loadPersistedSession, savePersistedSession } from "../utils/persistence";
 import { normalizeChatThreads, normalizeChatTitles } from "../utils/chatThreads";
 import { AppDerivedState, AppState } from "./appContextTypes";
@@ -82,6 +83,20 @@ export function useAppState() {
     const persisted = persistedAppState.chatProjects;
     return persisted && typeof persisted === "object" ? (persisted as Record<string, import("../types/domain").Project>) : {};
   });
+  const [editApprovals, setEditApprovals] = useState<Record<string, "always">>(() => {
+    const persisted = persistedAppState.editApprovals;
+    if (!persisted || typeof persisted !== "object") return {};
+    const entries = Object.entries(persisted as Record<string, unknown>).filter(([, v]) => v === "always");
+    return Object.fromEntries(entries) as Record<string, "always">;
+  });
+
+  useEffect(() => {
+    setProjects((current) => {
+      const known = new Set(current.map((p) => p.id));
+      const additions = Object.values(chatProjects).filter((p) => p && !known.has(p.id));
+      return additions.length > 0 ? [...additions, ...current] : current;
+    });
+  }, []);
 
   const chatMessages = chatThreads[selectedProjectId] ?? emptyChatMessages;
   const setChatMessages = useCallback<Dispatch<SetStateAction<ChatMessage[]>>>((update) => {
@@ -117,7 +132,7 @@ export function useAppState() {
         allowedModelTiers: [],
         onboardingComplete,
         rememberedDesktops,
-        appState: { chatThreads, chatTitles, selectedModel, selectedChatModel, promptMoney }
+        appState: { chatThreads, chatTitles, chatProjects, editApprovals, selectedModel, selectedChatModel, promptMoney }
       } : null
     });
   }, [
@@ -128,6 +143,8 @@ export function useAppState() {
     authToken,
     chatThreads,
     chatTitles,
+    chatProjects,
+    editApprovals,
     creditsBalance,
     creditsUsed,
     installId,
@@ -140,7 +157,9 @@ export function useAppState() {
 
   const derived: AppDerivedState = useMemo(() => {
     const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? projects[0];
-    const selectedFile = files.find((file) => file.id === selectedFileId) ?? files[0] ?? emptyFile;
+    const explicitFile = files.find((file) => file.id === selectedFileId);
+    const fallbackFile = files.find((file) => !isRunArtifact(file)) ?? files[0];
+    const selectedFile = explicitFile ?? fallbackFile ?? emptyFile;
     return {
       selectedProject,
       selectedFile,
@@ -160,6 +179,7 @@ export function useAppState() {
       workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
       chatSkills,
       chatProjects,
+      editApprovals,
       newFilePath, command, promptMoney
     },
     derived,
@@ -172,7 +192,7 @@ export function useAppState() {
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState,
       setPreviewState, setWorkflowIndex, setLastPrompt, setAgentRequesting,
-      setTaskText, setChatMessages, setChatThreads, setChatTitles, setChatSkills, setChatProjects,
+      setTaskText, setChatMessages, setChatThreads, setChatTitles, setChatSkills, setChatProjects, setEditApprovals,
       setNewFilePath, setCommand, setPromptMoney
     }
   };

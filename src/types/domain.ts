@@ -87,6 +87,7 @@ export type ChatMessage = {
   codeFiles?: FileEntry[];
   codeProjectId?: string;
   undoneChangeIds?: string[];
+  editApproval?: "pending" | "allowed" | "denied";
   folderProposal?: FolderProposal;
   folderRecovery?: FolderRecovery;
 };

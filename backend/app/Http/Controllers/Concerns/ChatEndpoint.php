@@ -100,7 +100,21 @@ trait ChatEndpoint
             return $this->json(['ok' => false, 'error' => 'OpenRouter is not configured on the Vibyra backend.'], 500);
         }
 
+        $reasoningEffort = $this->normalizeReasoningEffort((string) $request->input('reasoningEffort', 'medium'));
+        $reasoningPayload = $this->buildReasoningPayload($reasoningEffort, $maxOutputTokens);
+
         try {
+            $payload = [
+                'model' => $openRouterModel,
+                'messages' => $this->chatMessages($request, $prompt, $skill),
+                'temperature' => 0.25,
+                'max_completion_tokens' => $maxOutputTokens,
+                'usage' => ['include' => true],
+            ];
+            if ($reasoningPayload !== null) {
+                $payload['reasoning'] = $reasoningPayload;
+            }
+
             $response = Http::timeout(60)
                 ->acceptJson()
                 ->withToken($apiKey)
@@ -108,13 +122,7 @@ trait ChatEndpoint
                     'HTTP-Referer' => (string) config('app.url', 'http://localhost'),
                     'X-Title' => 'Vibyra',
                 ])
-                ->post((string) config('services.openrouter.url'), [
-                    'model' => $openRouterModel,
-                    'messages' => $this->chatMessages($request, $prompt, $skill),
-                    'temperature' => 0.25,
-                    'max_completion_tokens' => $maxOutputTokens,
-                    'usage' => ['include' => true],
-                ]);
+                ->post((string) config('services.openrouter.url'), $payload);
         } catch (Throwable) {
             return $this->json(['ok' => false, 'error' => 'Could not reach OpenRouter. Please try again.'], 502);
         }
@@ -214,6 +222,26 @@ trait ChatEndpoint
             }
         }
         return null;
+    }
+
+    private function normalizeReasoningEffort(string $value): string
+    {
+        $value = strtolower(trim($value));
+        return in_array($value, ['none', 'low', 'medium', 'high', 'xhigh'], true) ? $value : 'medium';
+    }
+
+    private function buildReasoningPayload(string $effort, int $maxOutputTokens): ?array
+    {
+        if ($effort === 'none') {
+            return ['exclude' => true];
+        }
+        if ($effort === 'xhigh') {
+            return [
+                'effort' => 'high',
+                'max_tokens' => max($maxOutputTokens * 4, 8000),
+            ];
+        }
+        return ['effort' => $effort];
     }
 
     private function resolveMaxTokens(string $prompt, ?array $skill): int

@@ -56,19 +56,19 @@ export function TopBar({
     return (
       <View style={[styles.topBar, styles.chatTopBar]}>
         <View style={styles.chatTopLeft}>
-          <Pressable accessibilityLabel="Back to home" style={styles.chatTopIconButton} onPress={onBackFromChat}>
-            <Ionicons name="chevron-back" color={colors.text} size={26} />
+          <Pressable accessibilityLabel="Back to home" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onBackFromChat}>
+            <Ionicons name="chevron-back" color={colors.text} size={24} />
           </Pressable>
         </View>
         <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
           <Text numberOfLines={1} style={styles.chatTopTitle}>{chatTitle}</Text>
         </View>
         <View style={styles.chatTopActions}>
-          <Pressable accessibilityLabel="Rename chat" style={styles.chatTopIconButton} onPress={onRenameChat}>
-            <Ionicons name="create-outline" color="#DCD7EA" size={22} />
+          <Pressable accessibilityLabel="Rename chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onRenameChat}>
+            <Ionicons name="create-outline" color="#DCD7EA" size={20} />
           </Pressable>
-          <Pressable accessibilityLabel="Delete chat" style={styles.chatTopIconButton} onPress={onDeleteChat}>
-            <Ionicons name="trash-outline" color="#FF9DAE" size={22} />
+          <Pressable accessibilityLabel="Delete chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onDeleteChat}>
+            <Ionicons name="trash-outline" color="#FF9DAE" size={20} />
           </Pressable>
         </View>
       </View>

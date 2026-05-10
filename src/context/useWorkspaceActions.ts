@@ -97,17 +97,19 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     }
   }
 
-  async function loadProjectFiles(projectId: string) {
-    if (!state.connection) return;
+  async function loadProjectFiles(projectId: string): Promise<FileEntry[]> {
+    if (!state.connection) return [];
     try {
       const result = await requests.agentRequest<{ files: FileEntry[] }>(`/files?projectId=${encodeURIComponent(projectId)}`);
       const nextFiles = setLoadedFiles(result.files);
-      await hydrateFirstFile(nextFiles, (path) => {
+      const hydrated = await hydrateFirstFile(nextFiles, (path) => {
         const endpoint = `/files/read?projectId=${encodeURIComponent(projectId)}&path=${encodeURIComponent(path)}`;
         return requests.agentRequest<{ file: FileEntry }>(endpoint);
       });
+      return hydrated;
     } catch (error) {
       clearFiles(error instanceof Error ? error.message : "Could not load files");
+      return [];
     }
   }
 
@@ -149,7 +151,7 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     }
   }
 
-  async function selectProject(projectId: string) {
+  async function selectProject(projectId: string): Promise<FileEntry[]> {
     const project = state.projects.find((item) => item.id === projectId);
     impact();
     setters.setSelectedProjectId(projectId);
@@ -160,17 +162,19 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
       { source: "Projects", message: `Selected ${project?.path ?? "project folder"}`, tone: "info" }
     ]);
 
-    if (!state.connection) return;
+    if (!state.connection) return [];
     try {
-      await loadProjectFiles(projectId);
+      const files = await loadProjectFiles(projectId);
       const result = await requests.agentRequest<{ preview: { state: PreviewState }; events: LogEvent[] }>(
         "/preview/start",
         { method: "POST", body: JSON.stringify({ projectId }) }
       );
       setters.setPreviewState(result.preview.state);
       logs.appendLogs(result.events);
+      return files;
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Preview failed", "Desktop Agent", "error");
+      return [];
     }
   }
 
@@ -184,15 +188,18 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
   async function hydrateFirstFile(
     files: FileEntry[],
     readFile: (path: string) => Promise<{ file: FileEntry }>
-  ) {
+  ): Promise<FileEntry[]> {
     const firstFile = files[0];
-    if (!firstFile || firstFile.body) return;
+    if (!firstFile || firstFile.body) return files;
 
     try {
       const result = await readFile(firstFile.path);
+      const hydrated = files.map((item) => (item.id === firstFile.id ? result.file : item));
       setters.setFiles((current) => current.map((item) => (item.id === firstFile.id ? result.file : item)));
+      return hydrated;
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Could not open first file", "Files", "warning");
+      return files;
     }
   }
 
@@ -217,6 +224,14 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     return project;
   }
 
+  function rememberProject(project: Project): void {
+    setters.setChatProjects((current) => {
+      const existing = current[project.id];
+      if (existing && existing.id === project.id && existing.name === project.name && existing.path === project.path) return current;
+      return { ...current, [project.id]: project };
+    });
+  }
+
   async function adoptProject(project: Project): Promise<void> {
     setters.setProjects((current) => {
       if (current.some((existing) => existing.id === project.id)) return current;
@@ -228,6 +243,7 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
 
   return {
     adoptProject,
+    rememberProject,
     createProject,
     createFile,
     undoCodeChange,

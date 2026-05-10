@@ -3,6 +3,7 @@ import { appApiRequest, AuthResponse, RemoteUser, SkillsResponse } from "../util
 import { normalizePersistedUser } from "../utils/persistence";
 import { makeId } from "../utils/ids";
 import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
+import { isRunArtifact } from "../utils/files";
 import { useAgentActions } from "./useAgentActions";
 import { AppContextValue } from "./appContextTypes";
 import { useAppState } from "./useAppState";
@@ -137,6 +138,41 @@ export function AppProvider({ children }: PropsWithChildren) {
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
     },
+    approveEdits: (messageId: string, projectId: string, alwaysAllow: boolean) => {
+      setters.setChatThreads((current) => {
+        const thread = current[projectId];
+        if (!thread) return current;
+        return {
+          ...current,
+          [projectId]: thread.map((message) => (
+            message.id === messageId ? { ...message, editApproval: "allowed" } : message
+          ))
+        };
+      });
+      if (alwaysAllow) {
+        setters.setEditApprovals((current) => ({ ...current, [projectId]: "always" }));
+      }
+    },
+    denyEdits: async (messageId: string, projectId: string) => {
+      const thread = state.chatThreads[projectId];
+      const message = thread?.find((m) => m.id === messageId);
+      const changes = message?.codeChanges ?? [];
+      const files = message?.codeFiles ?? [];
+      setters.setChatThreads((current) => {
+        const t = current[projectId];
+        if (!t) return current;
+        return {
+          ...current,
+          [projectId]: t.map((m) => (m.id === messageId ? { ...m, editApproval: "denied" } : m))
+        };
+      });
+      for (const change of changes) {
+        const file = files.find((f) => f.path === change.file || f.name === change.file.split("/").pop() || change.file.endsWith(`/${f.path}`));
+        if (file && file.previousBody !== undefined && file.previousBody !== null) {
+          await workspace.undoCodeChange(projectId, messageId, change.id, file);
+        }
+      }
+    },
     clearCurrentChat: (projectId = state.selectedProjectId) => {
       setters.setChatThreads((current) => ({
         ...current,
@@ -153,7 +189,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
       const targetFile = target?.file === null
         ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
       const file = targetFile?.path;
       const assistantId = makeId("chat-assistant");
       setters.setChatThreads((current) => ({
@@ -180,7 +216,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
       const targetFile = target?.file === null
         ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
       const file = targetFile?.path;
       const proposalId = makeId("proposal");
       const assistantId = makeId("chat-assistant");
@@ -215,7 +251,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
       const targetFile = target?.file === null
         ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" ? derived.selectedFile : null);
+        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
       const file = targetFile?.path;
       setters.setChatThreads((current) => ({
         ...current,

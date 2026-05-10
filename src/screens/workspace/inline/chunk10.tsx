@@ -8,7 +8,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
 import { AppWebView } from "../../../components/AppWebView";
-import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
@@ -101,19 +100,57 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
 }
 
 export function ChatEmptyState() {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const lift = useRef(new Animated.Value(12)).current;
+  const orbPulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 380, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(lift, { toValue: 0, duration: 420, useNativeDriver: Platform.OS !== "web" })
+    ]).start();
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(orbPulse, { toValue: 1, duration: 1800, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(orbPulse, { toValue: 0, duration: 1800, useNativeDriver: Platform.OS !== "web" })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity, lift, orbPulse]);
+
+  const orbScale = orbPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
+  const orbGlow = orbPulse.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+
   return (
-    <View style={styles.chatEmptyState}>
+    <Animated.View style={[styles.chatEmptyState, { opacity, transform: [{ translateY: lift }] }]}>
+      <Animated.View style={[styles.chatWelcomeGlyph, { pointerEvents: "none", transform: [{ scale: orbScale }], opacity: orbGlow }]}>
+        <Image resizeMode="contain" source={aiChatGlyph} style={styles.chatWelcomeGlyphImage as ImageStyle} />
+      </Animated.View>
+      <Text style={styles.chatWelcomeKicker}>Vibyra AI</Text>
       <Text style={styles.chatWelcomeTitle}>How can I help you build today?</Text>
+      <Text style={styles.chatWelcomeSubtle}>Ask anything, edit code, or describe an idea — I'll handle the rest.</Text>
       <View style={styles.chatSuggestionGrid}>
         {chatSuggestions.map((suggestion) => (
-          <Pressable key={suggestion.title} style={styles.chatSuggestionCard}>
-            <Ionicons name={suggestion.icon} color="#8B35FF" size={28} style={styles.chatSuggestionIconGlyph} />
+          <Pressable
+            key={suggestion.title}
+            style={({ pressed }) => [styles.chatSuggestionCard, pressed && styles.chatSuggestionCardPressed]}
+          >
+            <View style={styles.chatSuggestionIconPlate}>
+              <LinearGradient
+                colors={["rgba(142, 60, 255, 0.32)", "rgba(93, 36, 216, 0.18)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <Ionicons name={suggestion.icon} color="#D7C4FF" size={18} />
+            </View>
             <Text numberOfLines={2} style={styles.chatSuggestionTitle}>{suggestion.title}</Text>
             <Text numberOfLines={3} style={styles.chatSuggestionDescription}>{suggestion.description}</Text>
           </Pressable>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

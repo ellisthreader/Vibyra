@@ -19,30 +19,79 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
+import { diffCounts, SYNTAX_COLORS, tokenize } from "../../../utils/syntaxHighlight";
 
 type MessageBlock =
-  | { kind: "code"; language: string; code: string }
+  | { kind: "code"; language: string; filename: string; code: string; streaming: boolean }
   | { kind: "spacer" }
   | { kind: "heading"; level: number; text: string }
   | { kind: "bullet"; text: string }
   | { kind: "numbered"; marker: string; text: string }
   | { kind: "paragraph"; text: string };
 
+const TYPING_CURSOR_CHARS = /▍+\s*$/;
+
+function parseFenceInfo(info: string): { language: string; filename: string } {
+  const tokens = info.trim().split(/\s+/).filter(Boolean);
+  let language = "";
+  let filename = "";
+  for (const token of tokens) {
+    const looksLikePath = /[\/.]/.test(token) && !/^[a-z0-9+#-]+$/i.test(token);
+    if (!filename && (looksLikePath || /\.[a-z0-9]+$/i.test(token))) {
+      filename = token;
+    } else if (!language) {
+      language = token;
+    }
+  }
+  if (!language && filename) {
+    const ext = /\.([a-z0-9]+)$/i.exec(filename);
+    if (ext) language = ext[1];
+  }
+  return { language, filename };
+}
+
 export function parseMessageBlocks(input: string): MessageBlock[] {
   const blocks: MessageBlock[] = [];
-  const fenceRegex = /```([^\n`]*)\n?([\s\S]*?)```/g;
+  const closedFenceRegex = /```([^\n`]*)\n?([\s\S]*?)```/g;
   let cursor = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = fenceRegex.exec(input)) !== null) {
+  while ((match = closedFenceRegex.exec(input)) !== null) {
     if (match.index > cursor) {
       pushTextBlocks(blocks, input.slice(cursor, match.index));
     }
-    blocks.push({ kind: "code", language: match[1].trim(), code: match[2].replace(/\n$/, "") });
+    const { language, filename } = parseFenceInfo(match[1]);
+    blocks.push({
+      kind: "code",
+      language,
+      filename,
+      code: match[2].replace(/\n$/, ""),
+      streaming: false,
+    });
     cursor = match.index + match[0].length;
   }
   if (cursor < input.length) {
-    pushTextBlocks(blocks, input.slice(cursor));
+    const tail = input.slice(cursor);
+    const openFenceIndex = tail.indexOf("```");
+    if (openFenceIndex >= 0) {
+      if (openFenceIndex > 0) {
+        pushTextBlocks(blocks, tail.slice(0, openFenceIndex));
+      }
+      const afterFence = tail.slice(openFenceIndex + 3);
+      const newlineIdx = afterFence.indexOf("\n");
+      const info = newlineIdx >= 0 ? afterFence.slice(0, newlineIdx) : afterFence;
+      const body = newlineIdx >= 0 ? afterFence.slice(newlineIdx + 1) : "";
+      const { language, filename } = parseFenceInfo(info);
+      blocks.push({
+        kind: "code",
+        language,
+        filename,
+        code: body.replace(TYPING_CURSOR_CHARS, "").replace(/\n$/, ""),
+        streaming: true,
+      });
+    } else {
+      pushTextBlocks(blocks, tail);
+    }
   }
   return blocks;
 }
@@ -91,6 +140,68 @@ export function renderInline(text: string, keyPrefix: string) {
   });
 }
 
+function CollapsibleCodeBlock({
+  language,
+  filename,
+  code,
+  streaming,
+}: {
+  language: string;
+  filename: string;
+  code: string;
+  streaming: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const headerLabel = filename || (language ? language.toLowerCase() : "code");
+  const counts = useMemo(() => diffCounts(code), [code]);
+  const tokens = useMemo(
+    () => (expanded ? tokenize(code, language || filename.split(".").pop() || "") : []),
+    [expanded, code, language, filename]
+  );
+
+  return (
+    <View style={styles.messageCodeBlock}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${expanded ? "Hide" : "Show"} code for ${headerLabel}`}
+        onPress={() => setExpanded((prev) => !prev)}
+        style={styles.messageCodeBlockHeader}
+      >
+        <Ionicons
+          name={expanded ? "chevron-down" : "chevron-forward"}
+          size={14}
+          color="#9E98AD"
+        />
+        <Text style={styles.messageCodeBlockLang} numberOfLines={1}>
+          {headerLabel}
+        </Text>
+        <View style={styles.messageCodeBlockCounts}>
+          {counts.added > 0 ? (
+            <Text style={styles.messageCodeBlockAdded}>+{counts.added}</Text>
+          ) : null}
+          {counts.removed > 0 ? (
+            <Text style={styles.messageCodeBlockRemoved}>-{counts.removed}</Text>
+          ) : null}
+          {streaming ? (
+            <Text style={styles.messageCodeBlockStreaming}>writing…</Text>
+          ) : null}
+        </View>
+      </Pressable>
+      {expanded ? (
+        <View style={styles.messageCodeBlockBody}>
+          <Text style={styles.messageCodeBlockText}>
+            {tokens.map((token, index) => (
+              <Text key={index} style={{ color: SYNTAX_COLORS[token.kind] }}>
+                {token.text}
+              </Text>
+            ))}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function RichMessageText({ text }: { text: string }) {
   const blocks = useMemo(() => parseMessageBlocks(text), [text]);
 
@@ -100,14 +211,13 @@ export function RichMessageText({ text }: { text: string }) {
         const key = `block-${index}`;
         if (block.kind === "code") {
           return (
-            <View key={key} style={styles.messageCodeBlock}>
-              {block.language ? (
-                <View style={styles.messageCodeBlockHeader}>
-                  <Text style={styles.messageCodeBlockLang}>{block.language.toLowerCase()}</Text>
-                </View>
-              ) : null}
-              <Text style={styles.messageCodeBlockText}>{block.code}</Text>
-            </View>
+            <CollapsibleCodeBlock
+              key={key}
+              language={block.language}
+              filename={block.filename}
+              code={block.code}
+              streaming={block.streaming}
+            />
           );
         }
         if (block.kind === "heading") {

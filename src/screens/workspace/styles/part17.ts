@@ -105,48 +105,57 @@ export const part17 = {
   },
   messageAuthor: {
     color: "#F2EFFB",
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: "900",
-    lineHeight: 18
+    letterSpacing: 0.2,
+    lineHeight: 17
+  },
+  messageAuthorAssistant: {
+    color: "#D7C4FF"
   },
   messageAvatar: {
     alignItems: "center",
     borderRadius: 999,
-    height: 28,
+    height: 30,
     justifyContent: "center",
-    marginTop: 2,
-    width: 28
+    marginTop: 1,
+    width: 30
   },
   messageAvatarAssistant: {
-    backgroundColor: "rgba(8, 10, 20, 0.92)",
-    borderColor: "rgba(139, 53, 255, 0.28)",
-    borderWidth: 1
+    backgroundColor: "rgba(12, 10, 26, 0.95)",
+    borderColor: "rgba(176, 132, 255, 0.42)",
+    borderWidth: 1,
+    shadowColor: "#8E3CFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8
   },
   messageAvatarLogo: {
     height: 18,
     width: 18
   },
   messageAvatarUser: {
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.14)",
     borderWidth: 1
   },
   messageContent: {
     flex: 1,
-    gap: 4,
+    gap: 5,
     minWidth: 0
   },
   messageFile: {
     color: "#9E98AD",
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 16
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 11.5,
+    fontWeight: "700",
+    lineHeight: 15
   },
   messageRow: {
     flexDirection: "row",
     gap: 12,
-    paddingBottom: 14,
-    paddingTop: 14
+    paddingBottom: 12,
+    paddingTop: 12
   },
   messageRowAssistant: {
     backgroundColor: "transparent"
@@ -154,10 +163,19 @@ export const part17 = {
   messageRowUser: {
     backgroundColor: "transparent"
   },
+  messageUserBubble: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(176, 132, 255, 0.10)",
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9
+  },
   messageText: {
-    color: "#E7E3EF",
+    color: "#EAE5F4",
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
     lineHeight: 23
   },
   messageBody: {

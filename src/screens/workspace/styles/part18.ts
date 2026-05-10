@@ -14,26 +14,57 @@ export const part18 = {
   },
   messageCodeBlock: {
     backgroundColor: "#0B0D17",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 10,
+    borderColor: "rgba(176, 132, 255, 0.18)",
+    borderRadius: 12,
     borderWidth: 1,
     marginVertical: 4,
     overflow: "hidden"
   },
   messageCodeBlockHeader: {
+    alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
-    borderBottomWidth: 1,
+    flexDirection: "row",
+    gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6
+    paddingVertical: 8
   },
   messageCodeBlockLang: {
-    color: "#9E98AD",
+    color: "#E5E2F0",
+    flexShrink: 1,
     fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.4,
-    textTransform: "uppercase"
+    letterSpacing: 0.2
+  },
+  messageCodeBlockCounts: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginLeft: "auto"
+  },
+  messageCodeBlockAdded: {
+    color: "#4EC07A",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.2
+  },
+  messageCodeBlockRemoved: {
+    color: "#F26A6A",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 11.5,
+    fontWeight: "800",
+    letterSpacing: 0.2
+  },
+  messageCodeBlockStreaming: {
+    color: "#9E98AD",
+    fontSize: 11,
+    fontStyle: "italic",
+    fontWeight: "600"
+  },
+  messageCodeBlockBody: {
+    borderTopColor: "rgba(255, 255, 255, 0.06)",
+    borderTopWidth: 1
   },
   messageCodeBlockText: {
     color: "#E5E2F0",
@@ -99,8 +130,8 @@ export const part18 = {
   },
   appPreviewCard: {
     alignItems: "center",
-    backgroundColor: "rgba(142, 60, 255, 0.10)",
-    borderColor: "rgba(142, 60, 255, 0.35)",
+    backgroundColor: "rgba(15, 17, 26, 0.92)",
+    borderColor: "rgba(176, 132, 255, 0.24)",
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",

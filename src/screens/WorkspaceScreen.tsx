@@ -52,6 +52,9 @@ export function WorkspaceScreen() {
                 onSearchFolderProposal={w.searchFolderProposal}
                 onWrongFolderProposal={w.wrongFolderProposal}
                 onUndoCodeChange={app.undoCodeChange}
+                onApproveEdits={app.approveEdits}
+                onDenyEdits={app.denyEdits}
+                projectName={app.selectedProject.name}
                 agentRequesting={app.agentRequesting}
                 chatMessages={w.visibleChatMessages}
                 chatSkills={app.chatSkills}
@@ -68,6 +71,8 @@ export function WorkspaceScreen() {
                 setSelectedChatId={w.setSelectedChatId}
                 setSelectedChatModel={app.setSelectedChatModel}
                 setSelectedModel={app.setSelectedModel}
+                reasoningEffort={app.reasoningEffort}
+                setReasoningEffort={app.setReasoningEffort}
                 setTaskText={app.setTaskText}
                 taskText={app.taskText}
               />
