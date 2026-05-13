@@ -38,9 +38,7 @@ export const part5 = {
     letterSpacing: 0,
     lineHeight: 41,
     marginTop: 10,
-    textShadowColor: "rgba(255, 255, 255, 0.24)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4
+    textShadow: "0px 2px 4px rgba(255, 255, 255, 0.24)"
   },
   chatHeroOrb: {
     borderRadius: 999,

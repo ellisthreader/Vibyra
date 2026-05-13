@@ -34,11 +34,15 @@ export type CommunityPost = {
   comments: number;
   description: string;
   id: string;
+  isPublic?: boolean;
   likes: number;
+  logoImageUrl?: string | null;
   logo?: CommunityLogoKind;
   makerBio: string;
   preview: CommunityPreviewKind;
+  reviewStatus?: string;
   screenshots: string[];
+  screenshotUrls?: string[];
   tag: CommunityFilter;
   tags: string[];
   time: string;
@@ -47,7 +51,6 @@ export type CommunityPost = {
 };
 
 export type ProjectDisplay = {
-  branch: string;
   id: string;
   name: string;
   path: string;
@@ -57,7 +60,7 @@ export type ProjectDisplay = {
   updated: string;
 };
 
-export type ProjectStatus = "Active" | "Draft" | "Completed" | "Archived";
+export type ProjectStatus = "Active" | "Draft" | "Published" | "Archived" | "On PC" | "On mobile";
 
 export type ProjectLayout = {
   cardStyle: StyleProp<ViewStyle>;

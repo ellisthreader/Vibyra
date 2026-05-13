@@ -8,15 +8,15 @@ use Symfony\Component\Process\Process;
 
 trait AgentExecution
 {
-    private function startAgentLocked(string $projectId, string $prompt, string $model, string $reasoningEffort): array
+    private function startAgentLocked(string $projectId, string $projectPath, string $prompt, string $model, string $reasoningEffort, bool $apply): array
     {
-        $allowedModels = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5-codex'];
+        $allowedModels = ['auto', 'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5-codex', 'claude-opus-4', 'claude-sonnet-4', 'claude-3-5-haiku', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
         $allowedEfforts = ['none', 'low', 'medium', 'high', 'xhigh'];
         $model = in_array($model, $allowedModels, true) ? $model : 'gpt-5.5';
         $reasoningEffort = in_array($reasoningEffort, $allowedEfforts, true) ? $reasoningEffort : 'medium';
         $prompt = trim($prompt);
-        $state = $this->read();
-        $project = $this->projectById($state, $projectId);
+        $state = $this->recoverStaleActiveAgentRun($this->read());
+        $project = $this->projectById($state, $projectId) ?? $this->projectFromTrustedPath($projectPath);
 
         if (! $project) {
             abort(response()->json(['ok' => false, 'error' => 'No project selected'], 422));
@@ -51,10 +51,7 @@ trait AgentExecution
         }
 
         if (! empty($state['activeAgentRun'])) {
-            abort(response()->json([
-                'ok' => false,
-                'error' => 'An AI task is already running. Wait for it to finish before sending another prompt.',
-            ], 429));
+            abort(response()->json($this->agentBusyPayload($state, 'active-run'), 429));
         }
 
         if (! config('services.openrouter.key')) {
@@ -83,13 +80,12 @@ trait AgentExecution
         $this->write($state);
 
         $outputDir = $project['path'].'/.vibyra-agent/runs';
-        File::ensureDirectoryExists($outputDir);
         $outputPath = $outputDir.'/'.$runId.'.md';
         $this->recordEvent('OpenRouter', 'Starting '.$model.' with '.$reasoningEffort.' reasoning', 'info');
         $this->recordEvent('OpenRouter', 'Prompt: '.Str::limit($prompt, 180), 'info');
         $responseText = $this->streamOpenAiResponse($project, $prompt, $model, $reasoningEffort);
         $state = $this->read();
-        $appliedFiles = $this->applyGeneratedFiles($project, $this->extractGeneratedFiles($project, $responseText));
+        $generatedFiles = $this->extractGeneratedFiles($project, $responseText);
         $summary = implode("\n", [
             '# Vibyra Agent Run',
             '',
@@ -103,21 +99,28 @@ trait AgentExecution
             '',
             $responseText,
         ]);
+
+        if (! $apply) {
+            return $this->storePendingAgent($state, $project, [
+                'runId' => $runId,
+                'projectId' => $project['id'],
+                'prompt' => $prompt,
+                'model' => $model,
+                'reasoningEffort' => $reasoningEffort,
+                'generatedFiles' => $generatedFiles,
+                'outputPath' => $outputPath,
+                'artifactPath' => Str::after($outputPath, rtrim($project['path'], '/').'/'),
+                'summary' => $summary,
+                'responseText' => $responseText,
+            ]);
+        }
+
+        $appliedFiles = $this->applyGeneratedFiles($project, $generatedFiles);
+        File::ensureDirectoryExists($outputDir);
         File::put($outputPath, $summary);
         $artifactFile = $this->fileEntry($project, Str::after($outputPath, rtrim($project['path'], '/').'/'), true);
         $returnedFiles = array_values(array_filter([...$appliedFiles, $artifactFile]));
-        $changes = [];
-
-        foreach ($appliedFiles as $index => $file) {
-            $changes[] = [
-                'id' => $runId.'-applied-'.$index,
-                'file' => $file['path'],
-                'summary' => 'Applied Vibyra generated file',
-                'additions' => count(explode("\n", $file['body'])),
-                'deletions' => 0,
-                'status' => 'applied',
-            ];
-        }
+        $changes = $this->changesForFiles($runId, $appliedFiles, 'applied');
 
         $changes[] = [
             'id' => $runId.'-artifact',
@@ -174,4 +177,5 @@ trait AgentExecution
             'buildState' => 'passed',
         ];
     }
+
 }

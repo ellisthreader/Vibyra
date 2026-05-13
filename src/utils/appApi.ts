@@ -1,98 +1,24 @@
 import { Platform } from "react-native";
-import { fetchWithTimeout, getExpoHost, normalizeAgentUrl } from "./network";
+import { fetchWithTimeout, getExpoHost, normalizeAgentUrl, TimeoutError } from "./network";
 
-export type RemoteUser = {
-  id: number;
-  name: string;
-  email: string;
-  plan: string;
-  planBillingCycle?: "monthly" | "annual";
-  planRenewsAt?: string | null;
-  creditsBalance: number;
-  creditsUsed: number;
-  dailyCreditsUsed?: number;
-  dailyCreditsCap?: number;
-  monthlyCredits?: number;
-  allowedModelTiers?: string[];
-  onboardingComplete: boolean;
-  rememberedDesktops: unknown[];
-  appState?: Record<string, unknown>;
-};
-
-export type BillingPlan = {
-  key: "free" | "starter" | "builder" | "pro";
-  label: string;
-  monthlyCredits: number;
-  annualCredits: number;
-  monthlyPricePence: number;
-  annualPricePence: number;
-  allowedTiers: string[];
-  dailyCreditCap: number;
-  maxConcurrentAgents: number;
-  maxActiveProjects: number;
-};
-
-export type BillingTopup = {
-  key: string;
-  credits: number;
-  pricePence: number;
-};
-
-export type BillingPlansResponse = {
-  ok: true;
-  plans: BillingPlan[];
-  topups: BillingTopup[];
-  currency: string;
-  vatInclusive: boolean;
-};
-
-export type CheckoutResponse = { ok: true; url: string };
-export type IapReceiptResponse = { ok: true; user?: RemoteUser; idempotent?: boolean };
-
-export type AuthResponse = {
-  ok: boolean;
-  token: string;
-  user: RemoteUser;
-};
-
-export type SessionResponse = {
-  ok: boolean;
-  user: RemoteUser;
-};
-
-export type ChatSkill = {
-  id: string;
-  slash: string;
-  label: string;
-  description: string;
-  category: string;
-  mode: "chat" | "build";
-};
-
-export type SkillsResponse = {
-  ok: boolean;
-  skills: ChatSkill[];
-};
-
-export type ChatResponse = {
-  ok: boolean;
-  reply: string;
-  app?: { id: string; title: string; html?: string; url?: string } | null;
-  title?: string;
-  model: string;
-  modelKey?: string;
-  creditCost: number;
-  creditsBalance: number;
-  creditsUsed: number;
-  dailyCreditsUsed?: number;
-  dailyCreditsCap?: number;
-  user?: RemoteUser;
-};
+export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
 
 type ApiErrorPayload = {
   error?: string;
   message?: string;
 };
+
+export class AppApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly endpoint: string,
+    public readonly payload: ApiErrorPayload | Record<string, never>
+  ) {
+    super(message);
+    this.name = "AppApiError";
+  }
+}
 
 export function getAppApiUrl() {
   if (process.env.EXPO_PUBLIC_API_URL) {
@@ -138,6 +64,13 @@ export class BackendOfflineError extends Error {
   }
 }
 
+export function isAppSessionExpiredMessage(message: string) {
+  const lower = message.toLowerCase();
+  return lower.includes("your session expired")
+    || lower.includes("missing app session token")
+    || (lower.includes("log in") && lower.includes("session"));
+}
+
 export type AppApiRequestMeta = {
   /**
    * When true, the request is silently skipped if the backend is currently
@@ -167,14 +100,18 @@ export async function appApiRequest<T>(
     response = await fetchWithTimeout(url, {
       ...options,
       headers
-    }, endpoint === "/api/chat" ? 70000 : 15000);
+    }, requestTimeoutFor(endpoint));
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown error";
+    const timedOut = error instanceof TimeoutError || reason.toLowerCase().includes("timed out");
+    if (timedOut && endpoint === "/api/chat") {
+      throw new Error("Vibyra AI chat timed out while generating the preview edit. Try a smaller change or retry.");
+    }
     const aborted = reason.toLowerCase().includes("abort");
-    if (!aborted) markBackendOffline();
-    throw new Error(aborted
-      ? `Could not reach Vibyra (timed out at ${url}). Check the backend is running and EXPO_PUBLIC_API_URL is set to your dev machine's LAN IP.`
-      : `Could not reach Vibyra at ${url}. ${reason}. Set EXPO_PUBLIC_API_URL in .env to your dev machine's LAN IP and restart Expo.`);
+    if (!aborted && !timedOut) markBackendOffline();
+    throw new Error(timedOut || aborted
+      ? `Could not reach Vibyra (timed out at ${url}). Start the backend with npm run backend or npm run dev, and check EXPO_PUBLIC_API_URL points to this machine's LAN IP.`
+      : `Could not reach Vibyra at ${url}. ${reason}. Start the backend with npm run backend or npm run dev; if it is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
   }
 
   if (response.status >= 500) {
@@ -187,10 +124,32 @@ export async function appApiRequest<T>(
 
   if (!response.ok) {
     const errorPayload = data as ApiErrorPayload;
-    throw new Error(errorPayload.error || errorPayload.message || `Request failed with ${response.status}`);
+    throw new AppApiError(
+      errorPayload.error || errorPayload.message || `Request failed with ${response.status}`,
+      response.status,
+      endpoint,
+      errorPayload
+    );
   }
 
   return data as T;
+}
+
+function requestTimeoutFor(endpoint: string) {
+  if (endpoint === "/api/chat") return 120000;
+  if (endpoint === "/api/community/assets/generate") return 100000;
+  return 15000;
+}
+
+export function isAppSessionExpiredError(error: unknown) {
+  if (error instanceof AppApiError) {
+    if (error.status !== 401) return false;
+    return error.endpoint === "/api/session"
+      || error.endpoint === "/api/session/state"
+      || isAppSessionExpiredMessage(error.message);
+  }
+
+  return error instanceof Error && isAppSessionExpiredMessage(error.message);
 }
 
 function buildHeaders(input: RequestInit["headers"], token?: string) {

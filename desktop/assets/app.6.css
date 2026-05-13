@@ -1,0 +1,80 @@
+.main { background: rgba(4, 7, 17, 0.34); min-width: 0; }
+.topbar {
+  align-items: center;
+  background: rgba(5, 8, 18, 0.72);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 14px;
+  height: 96px;
+  justify-content: space-between;
+  padding: 0 35px 0 44px;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
+.content { margin: 0; max-width: none; padding: 0; }
+.content.chat-content { min-height: calc(100vh - 96px); }
+.connection-button {
+  align-items: center;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+.connection-logo { display: none; }
+.kicker {
+  align-items: center;
+  color: var(--success);
+  display: flex;
+  font-size: 13px;
+  font-weight: 900;
+  gap: 9px;
+  letter-spacing: 0;
+  line-height: 18px;
+  text-transform: uppercase;
+}
+.page-title, .machine-title {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  font-size: 24px;
+  font-weight: 900;
+  gap: 10px;
+  line-height: 34px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.machine-title { font-size: 25px; }
+.machine-title svg { color: #c7c9d6; height: 16px; width: 16px; }
+.top-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.token-pill {
+  align-items: center;
+  background: rgba(4, 6, 14, 0.46);
+  border: 1px solid rgba(117, 126, 153, 0.22);
+  border-radius: 20px;
+  color: var(--token);
+  display: flex;
+  gap: 13px;
+  min-height: 54px;
+  min-width: 210px;
+  padding: 0 18px;
+}
+.token-pill > svg:first-child { height: 22px; width: 22px; }
+.token-pill > svg:last-child { color: #b7bbc9; height: 16px; margin-left: auto; width: 16px; }
+.token-pill strong { color: #f7e9a0; display: block; font-size: 16px; font-weight: 900; line-height: 20px; }
+.token-pill span span { color: #9296a8; display: block; font-size: 14px; font-weight: 650; line-height: 20px; }
+.icon-button {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(176, 132, 255, 0.16);
+  border-radius: 12px;
+  color: #dcd7ea;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}

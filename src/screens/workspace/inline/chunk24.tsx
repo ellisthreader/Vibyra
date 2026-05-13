@@ -1,9 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator, Animated, Image, ImageBackground, KeyboardAvoidingView, Linking, Modal,
-  NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View
-} from "react-native";
-import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
+import React, { useMemo } from "react";
+import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
@@ -19,7 +15,7 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { diffCounts, SYNTAX_COLORS, tokenize } from "../../../utils/syntaxHighlight";
+import { CollapsibleCodeBlock } from "./CollapsibleCodeBlock";
 
 type MessageBlock =
   | { kind: "code"; language: string; filename: string; code: string; streaming: boolean }
@@ -140,68 +136,6 @@ export function renderInline(text: string, keyPrefix: string) {
   });
 }
 
-function CollapsibleCodeBlock({
-  language,
-  filename,
-  code,
-  streaming,
-}: {
-  language: string;
-  filename: string;
-  code: string;
-  streaming: boolean;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const headerLabel = filename || (language ? language.toLowerCase() : "code");
-  const counts = useMemo(() => diffCounts(code), [code]);
-  const tokens = useMemo(
-    () => (expanded ? tokenize(code, language || filename.split(".").pop() || "") : []),
-    [expanded, code, language, filename]
-  );
-
-  return (
-    <View style={styles.messageCodeBlock}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${expanded ? "Hide" : "Show"} code for ${headerLabel}`}
-        onPress={() => setExpanded((prev) => !prev)}
-        style={styles.messageCodeBlockHeader}
-      >
-        <Ionicons
-          name={expanded ? "chevron-down" : "chevron-forward"}
-          size={14}
-          color="#9E98AD"
-        />
-        <Text style={styles.messageCodeBlockLang} numberOfLines={1}>
-          {headerLabel}
-        </Text>
-        <View style={styles.messageCodeBlockCounts}>
-          {counts.added > 0 ? (
-            <Text style={styles.messageCodeBlockAdded}>+{counts.added}</Text>
-          ) : null}
-          {counts.removed > 0 ? (
-            <Text style={styles.messageCodeBlockRemoved}>-{counts.removed}</Text>
-          ) : null}
-          {streaming ? (
-            <Text style={styles.messageCodeBlockStreaming}>writing…</Text>
-          ) : null}
-        </View>
-      </Pressable>
-      {expanded ? (
-        <View style={styles.messageCodeBlockBody}>
-          <Text style={styles.messageCodeBlockText}>
-            {tokens.map((token, index) => (
-              <Text key={index} style={{ color: SYNTAX_COLORS[token.kind] }}>
-                {token.text}
-              </Text>
-            ))}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 export function RichMessageText({ text }: { text: string }) {
   const blocks = useMemo(() => parseMessageBlocks(text), [text]);
 
@@ -262,4 +196,3 @@ export function CommunityMiniCard({ post }: { post: typeof communityPosts[number
     </View>
   );
 }
-

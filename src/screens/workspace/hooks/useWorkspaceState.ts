@@ -3,11 +3,11 @@ import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../../context/AppContext";
 import { ChatMessage, GeneratedApp, Project } from "../../../types/domain";
-import { previousChats, tokenMembership } from "../data/pages";
-import { getCurrentDesktopPairCode } from "../inline";
+import { previousChats } from "../data/pages";
 import { CommunityPost, DashboardPage, DesktopCandidate, SettingsTab } from "../types";
 
 export type WorkspaceState = ReturnType<typeof useWorkspaceState>;
+type PendingDesktopFolderIntent = { action: "analyze-project" | "search"; query: string; detached: boolean; messageId: string; projectId?: string };
 
 export function useWorkspaceState() {
   const app = useAppContext();
@@ -26,6 +26,7 @@ export function useWorkspaceState() {
   const [renameChatVisible, setRenameChatVisible] = useState(false);
   const [renameChatDraft, setRenameChatDraft] = useState("");
   const [projectChatTitles, setProjectChatTitles] = useState<Record<string, string>>({});
+  const [publishProjectId, setPublishProjectId] = useState<string | null>(null);
   const [tokenSheetVisible, setTokenSheetVisible] = useState(false);
   const [projectsCanScroll, setProjectsCanScroll] = useState(false);
   const [selectedCommunityPost, setSelectedCommunityPost] = useState<CommunityPost | null>(null);
@@ -33,6 +34,7 @@ export function useWorkspaceState() {
   const [previewApp, setPreviewApp] = useState<GeneratedApp | null>(null);
   const [desktopFolders, setDesktopFolders] = useState<Project[]>([]);
   const [folderConfirm, setFolderConfirm] = useState<{ query: string; matches: Project[] } | null>(null);
+  const [pendingDesktopFolderIntent, setPendingDesktopFolderIntent] = useState<PendingDesktopFolderIntent | null>(null);
 
   const filteredProjects = useMemo(() => {
     const s = projectSearch.trim().toLowerCase();
@@ -64,15 +66,13 @@ export function useWorkspaceState() {
     let cancelled = false;
     (async () => {
       if (lastRememberedDesktop.token && await app.connectRememberedDesktop(lastRememberedDesktop)) return;
-      const code = await getCurrentDesktopPairCode(lastRememberedDesktop.url);
-      if (cancelled || !code) return;
-      await app.pairMachineAt(lastRememberedDesktop.url, code);
+      if (cancelled) return;
     })();
     return () => { cancelled = true; };
   }, [app, isConnected, lastRememberedDesktop]);
 
-  const tokenBalance = 5;
-  const creditAllowance = Math.max(tokenBalance + app.creditsUsed, app.accountPlan === "free" ? 50 : tokenMembership.allowance);
+  const tokenBalance = app.creditsBalance;
+  const creditAllowance = Math.max(tokenBalance + app.creditsUsed, 1);
   const creditPercentRemaining = creditAllowance > 0 ? Math.round((tokenBalance / creditAllowance) * 100) : 0;
   const creditsLow = creditAllowance > 0 && tokenBalance / creditAllowance < 0.1;
   const activeChat = previousChats.find((c) => c.id === selectedChatId);
@@ -101,12 +101,14 @@ export function useWorkspaceState() {
     renameChatVisible, setRenameChatVisible,
     renameChatDraft, setRenameChatDraft,
     projectChatTitles, setProjectChatTitles,
+    publishProjectId, setPublishProjectId,
     tokenSheetVisible, setTokenSheetVisible,
     projectsCanScroll, setProjectsCanScroll,
     selectedCommunityPost, setSelectedCommunityPost,
     openedCommunityPostId, setOpenedCommunityPostId,
     previewApp, setPreviewApp,
     folderConfirm, setFolderConfirm,
+    pendingDesktopFolderIntent, setPendingDesktopFolderIntent,
     filteredProjects, filteredDesktopFolders,
     isConnected, connectedMachineName,
     tokenBalance, creditPercentRemaining, creditsLow,

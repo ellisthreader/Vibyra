@@ -47,14 +47,10 @@ export function FolderBrowserModal({ browseDesktopPath, label, onClose, onSelect
       .filter((entry) => !needle || entry.name.toLowerCase().includes(needle) || entry.path.toLowerCase().includes(needle));
   }, [listing.entries, query]);
 
-  const projectFromEntry = useCallback((entry: DesktopBrowseEntry): Project => ({
-    id: entry.id,
-    name: entry.name,
-    path: entry.path,
-    stack: entry.stack || "Folder",
-    updated: entry.updated || "Now",
-    source: entry.source ?? "desktop"
-  }), []);
+  const projectFromEntry = useCallback((entry: DesktopBrowseEntry): Project => {
+    const { kind, ...project } = entry;
+    return { ...project, stack: project.stack || "Folder", updated: project.updated || "Now", source: project.source ?? "desktop" };
+  }, []);
 
   return (
     <Modal animationType="slide" presentationStyle="pageSheet" visible={visible} onRequestClose={onClose}>

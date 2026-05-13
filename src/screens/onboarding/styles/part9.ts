@@ -72,7 +72,7 @@ export const part9 = {
   momentBullet: {
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(138, 247, 255, 0.12)",
+    borderColor: "rgba(216, 134, 255, 0.12)",
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -99,7 +99,7 @@ export const part9 = {
     lineHeight: 19
   },
   momentGlow: {
-    backgroundColor: "rgba(46, 235, 255, 0.18)",
+    backgroundColor: "rgba(151, 54, 255, 0.18)",
     borderRadius: 999,
     height: 220,
     position: "absolute",
@@ -110,7 +110,7 @@ export const part9 = {
     width: 214
   },
   momentKicker: {
-    color: "#8AF7FF",
+    color: "#D8A6FF",
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 1.1,
@@ -121,7 +121,7 @@ export const part9 = {
   },
   momentOrbit: {
     alignItems: "center",
-    borderColor: "rgba(138, 247, 255, 0.16)",
+    borderColor: "rgba(216, 134, 255, 0.16)",
     borderRadius: 999,
     borderWidth: 1,
     height: 236,
@@ -131,7 +131,7 @@ export const part9 = {
     width: 236
   },
   momentOrbitDot: {
-    backgroundColor: "#8AF7FF",
+    backgroundColor: "#C77DFF",
     borderRadius: 999,
     height: 7,
     width: 7
@@ -153,7 +153,9 @@ export const part9 = {
   },
   mutedText: { color: colors.muted, fontSize: 14, fontWeight: "600" },
   momentProgressSafe: {
-    width: "100%"
+    position: "relative",
+    width: "100%",
+    zIndex: 3
   },
   navRow: {
     alignItems: "center",

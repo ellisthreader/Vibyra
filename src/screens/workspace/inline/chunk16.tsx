@@ -13,6 +13,7 @@ import { colors } from "../../../styles/theme";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
+import { readStorageItem, readStorageItemSync, writeStorageItem } from "../../../utils/nativeStorage";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
 import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
@@ -21,9 +22,23 @@ import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 
 export function loadCommunityComments(): Record<string, CommunityComment[]> {
+  return parseCommunityComments(readStorageItemSync(COMMUNITY_COMMENTS_KEY));
+}
+
+export async function loadCommunityCommentsAsync(): Promise<Record<string, CommunityComment[]>> {
+  return parseCommunityComments(await readStorageItem(COMMUNITY_COMMENTS_KEY));
+}
+
+export async function saveCommunityComments(commentsByPostId: Record<string, CommunityComment[]>) {
   try {
-    if (typeof globalThis.localStorage === "undefined") return {};
-    const raw = globalThis.localStorage.getItem(COMMUNITY_COMMENTS_KEY);
+    await writeStorageItem(COMMUNITY_COMMENTS_KEY, JSON.stringify(commentsByPostId));
+  } catch {
+    // Community comments should remain usable even if local persistence is unavailable.
+  }
+}
+
+function parseCommunityComments(raw: string | null): Record<string, CommunityComment[]> {
+  try {
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return Object.fromEntries(Object.entries(parsed).map(([postId, value]) => [
@@ -32,15 +47,6 @@ export function loadCommunityComments(): Record<string, CommunityComment[]> {
     ]).filter(([, comments]) => comments.length > 0));
   } catch {
     return {};
-  }
-}
-
-export function saveCommunityComments(commentsByPostId: Record<string, CommunityComment[]>) {
-  try {
-    if (typeof globalThis.localStorage === "undefined") return;
-    globalThis.localStorage.setItem(COMMUNITY_COMMENTS_KEY, JSON.stringify(commentsByPostId));
-  } catch {
-    // Community comments should remain usable even if local persistence is unavailable.
   }
 }
 
@@ -83,6 +89,10 @@ export function CommunityAppLogo({ accent, post, size }: { accent?: string; post
   const logo = (post.logo ?? "default") as CommunityLogoKind;
   const radius = Math.round(size * 0.26);
   const tone = accent ?? post.accent;
+
+  if (post.logoImageUrl) {
+    return <Image source={{ uri: post.logoImageUrl }} style={[styles.communityGeneratedLogo, { borderRadius: radius, height: size, width: size }]} />;
+  }
 
   return (
     <LinearGradient
@@ -133,4 +143,3 @@ export function CommunityAppLogo({ accent, post, size }: { accent?: string; post
     </LinearGradient>
   );
 }
-

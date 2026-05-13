@@ -1,0 +1,204 @@
+:root {
+  color-scheme: dark;
+  --bg: #060912;
+  --shell: #050712;
+  --panel: rgba(8, 11, 22, 0.78);
+  --panel-strong: rgba(7, 9, 18, 0.92);
+  --line: rgba(123, 133, 162, 0.16);
+  --line-strong: rgba(126, 61, 255, 0.46);
+  --text: #f7f7fb;
+  --muted: #a5a9ba;
+  --subtle: #7f8394;
+  --dim: #62677a;
+  --accent: #8e34ff;
+  --accent-2: #b33fff;
+  --accent-3: #5b2cff;
+  --token: #f7d65b;
+  --success: #16d492;
+  --warning: #ffb21f;
+  --danger: #ff5d7a;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background:
+    radial-gradient(circle at 50% -12%, rgba(81, 99, 150, 0.2), transparent 34%),
+    radial-gradient(circle at 8% 9%, rgba(84, 36, 154, 0.18), transparent 24%),
+    #040711;
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+button, input, textarea { font: inherit; }
+button { border: 0; cursor: pointer; }
+button:disabled { cursor: wait; opacity: 0.62; }
+p, h1, h2, h3 { margin: 0; }
+svg { height: 20px; width: 20px; }
+
+.app {
+  background: rgba(4, 7, 17, 0.94);
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  min-height: 100vh;
+  overflow: hidden;
+}
+.rail {
+  background: linear-gradient(180deg, rgba(6, 8, 18, 0.98), rgba(3, 5, 12, 0.98));
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 38px 14px 30px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.rail-logo {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  height: 42px;
+  margin: 0 18px 44px;
+}
+.rail-logo span {
+  display: block;
+  height: 39px;
+  overflow: hidden;
+  position: relative;
+  width: 46px;
+}
+.rail-logo img {
+  height: 46px;
+  left: -8px;
+  object-fit: cover;
+  position: absolute;
+  top: -6px;
+  width: 64px;
+}
+.rail-logo strong { color: #fff; font-size: 24px; font-weight: 850; letter-spacing: -0.01em; }
+.nav { display: grid; gap: 12px; }
+.nav-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #f0eff9;
+  display: flex;
+  font-size: 16px;
+  font-weight: 760;
+  gap: 18px;
+  height: 62px;
+  padding: 0 22px;
+  text-align: left;
+  width: 100%;
+}
+.nav-button svg { color: currentColor; height: 24px; width: 24px; }
+.nav-button.active {
+  background: linear-gradient(105deg, rgba(121, 42, 255, 0.96), rgba(72, 28, 137, 0.58));
+  border-color: rgba(162, 87, 255, 0.34);
+  box-shadow: 0 16px 44px rgba(95, 34, 191, 0.28), inset 0 0 32px rgba(186, 79, 255, 0.12);
+  color: #fff;
+}
+.rail-status {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding: 0 8px;
+}
+.rail-status-line {
+  align-items: center;
+  color: #969aaa;
+  display: flex;
+  font-size: 11px;
+  font-weight: 850;
+  gap: 9px;
+  letter-spacing: 0.02em;
+  padding-left: 16px;
+  text-transform: uppercase;
+}
+.rail-machine {
+  align-items: center;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  font-size: 18px;
+  font-weight: 820;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 16px 12px;
+  text-align: left;
+}
+.rail-machine svg { height: 16px; width: 16px; }
+.feedback-button {
+  align-items: center;
+  background: rgba(8, 11, 20, 0.72);
+  border: 1px solid rgba(134, 143, 169, 0.18);
+  border-radius: 12px;
+  color: #dfe1eb;
+  display: flex;
+  font-size: 14px;
+  font-weight: 720;
+  gap: 13px;
+  height: 58px;
+  justify-content: center;
+}
+.rail-status-card {
+  background: linear-gradient(145deg, rgba(20, 24, 40, 0.94), rgba(10, 12, 24, 0.92));
+  border: 1px solid rgba(139, 120, 180, 0.22);
+  border-radius: 18px;
+  color: #fff;
+  display: grid;
+  gap: 13px;
+  padding: 15px;
+  text-align: left;
+  width: 100%;
+}
+.rail-status-card.pending { border-color: rgba(255, 179, 71, 0.28); }
+.rail-status-top {
+  align-items: center;
+  color: #a8adbd;
+  display: flex;
+  font-size: 11px;
+  font-weight: 900;
+  gap: 9px;
+  text-transform: uppercase;
+}
+.rail-status-main {
+  align-items: center;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+.rail-phone-icon {
+  align-items: center;
+  background: rgba(126, 54, 255, 0.18);
+  border-radius: 12px;
+  color: #d7c4ff;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+.rail-status-main strong { display: block; font-size: 15px; font-weight: 900; line-height: 19px; }
+.rail-status-main small { color: #9ca2b3; display: block; font-size: 12px; font-weight: 720; line-height: 16px; margin-top: 2px; }
+.rail-status-action {
+  align-items: center;
+  color: #c17cff;
+  display: flex;
+  font-size: 13px;
+  font-weight: 900;
+  gap: 7px;
+}
+.rail-status-action svg { height: 15px; width: 15px; }
+.dot {
+  background: var(--success);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(22, 212, 146, 0.76);
+  display: inline-block;
+  height: 10px;
+  width: 10px;
+}
+.dot.offline { background: var(--danger); box-shadow: 0 0 12px rgba(255, 93, 122, 0.45); }
+.dot.warning { background: var(--warning); box-shadow: 0 0 12px rgba(255, 179, 71, 0.55); }

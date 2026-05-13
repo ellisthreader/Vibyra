@@ -1,87 +1,40 @@
 # Vibyra Desktop Memory
 
-Scope: local desktop bridge in `desktop/`.
+Scope: local desktop bridge in `desktop/`. Use this as the desktop index only.
 
 ## Mental Model
 
-The desktop app is a local HTTP bridge. It shows a pair code, approves phone pairing, discovers local projects, serves previews, runs safe commands, and executes local agent tasks.
+The desktop app is a local HTTP bridge. It shows/approves phone pairing, discovers local projects, serves previews, exposes a static desktop shell, runs safe commands, and applies/discards real pending edits.
 
-## Entrypoints
+## Start Files
 
-- `desktop/local-app.mjs`: desktop process entry.
-- `desktop/index.html`: desktop UI.
-- `desktop/lib/routes.mjs`: HTTP route dispatcher.
-- `desktop/lib/state.mjs`: process state, pair code, auth token, allowed command set.
+- `desktop/local-app.mjs`: process entry.
+- `desktop/index.html`: legacy bridge screen.
+- `desktop/app.html`: static desktop shell.
+- `desktop/lib/routes.mjs`: HTTP dispatcher.
+- `desktop/lib/state.mjs`: process state, pair code, token, LAN URLs.
+
+## Focused Notes
+
+- Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
+- Pairing, bearer token, `/health`, phone session, LAN discovery: `Desktop/Pairing And Phone Session.md`
+- Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`
+- Agent runs, apply/discard, safe commands, run artifacts: `Desktop/Agent Runs And Commands.md`
 
 ## Route Groups
 
 `desktop/lib/routes.mjs` splits requests into:
 
-- desktop UI routes: `/desktop`, `/desktop/state`, `/desktop/approve`, `/desktop/deny`, `/desktop/quit`;
-- pairing routes: `/health`, `/pair`, `/pair/status`, `/preview/project/...`;
-- authenticated routes: `/projects`, `/events`, `/preview/start`, `/agents/start`, `/commands/run`.
+- desktop UI: `/desktop`, `/desktop/state`, `/desktop/approve`, `/desktop/deny`, `/desktop/quit`;
+- pairing: `/health`, `/pair`, `/pair/status`, `/preview/project/...`;
+- authenticated: `/projects`, `/events`, `/preview/start`, `/agents/start`, `/commands/run`.
 
 Authenticated routes require `Authorization: Bearer ${TOKEN}`.
 
-## Pairing
+## Organization Rule
 
-`desktop/lib/pairingHandlers.mjs` owns:
+Desktop bridge source follows the 200-line app-source standard. Keep `desktop/lib/routes.mjs` as a dispatcher and delegate route behavior to focused modules. Static desktop assets are served through `desktop/lib/assetRoutes.mjs`; project metadata/create/browse behavior is split into `projectInfo.mjs`, `projectCreate.mjs`, and `projectBrowse.mjs`, with `projects.mjs` as a small public facade.
 
-- pair-code validation;
-- pending pair state;
-- desktop approval/denial;
-- token handoff after approval;
-- project discovery on approval;
-- preview start response.
+## Token Hint
 
-`desktop/lib/state.mjs` generates:
-
-- `PORT`, default `4317`;
-- `PAIR_CODE`, default random six-character code;
-- `TOKEN`, default process-local token;
-- LAN connection URLs.
-
-## Project Discovery
-
-`desktop/lib/projects.mjs` scans the current working directory and common user folders. It recognizes projects by markers like `package.json`, `.git`, `app.json`, `requirements.txt`, and `pyproject.toml`.
-
-`desktop/lib/projects.mjs::projectById` returns `null` for unknown project ids. Do not reintroduce fallback-to-first-project behavior; stale mobile ids should fail clearly instead of running against an unrelated project.
-
-Manual folder selection from mobile uses authenticated `GET /desktop/browse?path=...` in `desktop/lib/routes.mjs`, backed by `browseDesktopPath` in `desktop/lib/projects.mjs`. With no `path`, it returns common roots (home, Desktop, Documents, Downloads, Code, Projects, Work). With a path, it returns the current folder, parent path, and visible child files/folders; browsed folders are cached as projects so selecting one from the phone can load files by id.
-
-## Agent Runs
-
-There are two desktop-agent implementations in the repo:
-
-- Node desktop bridge (`desktop/lib/agent.mjs`) uses a local/template run path and does not call OpenRouter.
-- Laravel desktop route (`backend/routes/web.php` -> `VibyraDesktopController::startAgent` -> `VibyraDesktopState`) is the OpenRouter-backed desktop agent path.
-
-`desktop/lib/agent.mjs` currently:
-
-- creates `.vibyra-agent/runs/<run-id>.md`;
-- writes `index.html` preview output in the selected project;
-- updates `appState.latestPreview`;
-- returns agent/change/file/event metadata to the phone;
-- writes compact Obsidian run notes to `_ai/Runs/` when a vault is found;
-- adds frontmatter tags to generated run notes: `vibyra/run` and `generated`.
-
-Vault lookup order:
-
-- `VIBYRA_OBSIDIAN_VAULT`
-- `<project>/Vibyra`
-- `<project>`
-
-## Safe Commands
-
-`desktop/lib/state.mjs` allows only:
-
-- `git status`
-- `npm install`
-- `npm run dev`
-- `npm run build`
-- `npm test`
-- `pytest`
-
-## Token Hints
-
-For desktop tasks, start with this note plus `routes.mjs` and only the route handler file related to the request.
+For desktop tasks, read this index plus exactly one focused desktop note, then inspect only the route/helper files named there.

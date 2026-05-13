@@ -1,5 +1,5 @@
 import dgram from "node:dgram";
-import { connectionUrls, machineName, PAIR_CODE, PORT } from "./state.mjs";
+import { connectionUrls, machineName, PORT } from "./state.mjs";
 
 const DISCOVERY_PORT = Number(process.env.VIBYRA_DISCOVERY_PORT ?? 4318);
 const ANNOUNCE_INTERVAL_MS = 2500;
@@ -35,7 +35,6 @@ function announce(socket) {
     type: "vibyra.desktop",
     message: "I am Vibyra-PC",
     machineName,
-    pairCode: PAIR_CODE,
     port: PORT,
     urls: connectionUrls()
   }));

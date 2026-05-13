@@ -33,37 +33,40 @@ export const part1 = {
   },
   billingSave: {
     color: colors.muted,
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: "900",
-    marginTop: 0
+    lineHeight: 11,
+    marginTop: 1,
+    textAlign: "center"
   },
   billingTab: {
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: 16,
     flex: 1,
     justifyContent: "center",
-    minHeight: 34
+    minHeight: 46,
+    paddingHorizontal: 6
   },
   billingTabActive: {
-    backgroundColor: "rgba(109, 59, 255, 0.16)",
-    borderColor: "rgba(139, 92, 255, 0.34)",
-    borderWidth: 1
+    backgroundColor: "rgba(109, 59, 255, 0.24)",
+    borderColor: "rgba(216, 134, 255, 0.48)",
+    borderWidth: 1.2
   },
   billingTabs: {
     alignSelf: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.07)",
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    borderRadius: 999,
+    backgroundColor: "rgba(8, 7, 18, 0.72)",
+    borderColor: "rgba(216, 134, 255, 0.2)",
+    borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 4,
-    marginTop: 6,
-    padding: 3,
-    width: "72%"
+    gap: 6,
+    marginTop: 8,
+    padding: 5,
+    width: "92%"
   },
   billingTabText: {
-    color: "rgba(255, 255, 255, 0.58)",
-    fontSize: 12,
+    color: "rgba(226, 219, 255, 0.66)",
+    fontSize: 13,
     fontWeight: "900"
   },
   backdrop: {

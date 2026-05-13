@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\LevelProgression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -147,5 +148,10 @@ trait AuthEndpoints
         }
 
         return $this->json($this->sessionPayload($request, $user));
+    }
+
+    private function recordDailyLogin(User $user): void
+    {
+        app(LevelProgression::class)->record($user, 'daily_login', 'daily-login:' . now()->toDateString());
     }
 }

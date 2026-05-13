@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import {
   AIChatPage,
@@ -16,11 +16,19 @@ import {
   formatCommunityTitle
 } from "./workspace/inline";
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
+import { directoryForChat } from "./workspace/helpers/chatDirectory";
 import { styles } from "./workspace/styles";
 
 export function WorkspaceScreen() {
   const w = useWorkspace();
   const { app, activePage, height, insets } = w;
+  const chatDirectory = directoryForChat(w.selectedChatId, app);
+  const latestRunnablePreview = [...w.visibleChatMessages].reverse().find((message) => message.app)?.app;
+
+  useEffect(() => {
+    if (!w.previewApp || !latestRunnablePreview || w.previewApp.id === latestRunnablePreview.id) return;
+    w.setPreviewApp(latestRunnablePreview);
+  }, [latestRunnablePreview, w.previewApp, w.setPreviewApp]);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
@@ -28,6 +36,7 @@ export function WorkspaceScreen() {
         <View style={styles.main}>
           <TopBar
             activePage={activePage}
+            chatDirectory={chatDirectory}
             chatTitle={w.chatTitle}
             compact={w.compact}
             communitySubPageTitle={w.selectedCommunityPost ? formatCommunityTitle(w.selectedCommunityPost.title) : ""}
@@ -48,10 +57,13 @@ export function WorkspaceScreen() {
                 onOpenApp={w.setPreviewApp}
                 onAcceptFolderProposal={w.acceptFolderProposal}
                 onBrowseDesktopPath={app.browseDesktopPath}
+                onConnectDesktop={w.openPcSwitcher}
                 onDismissFolderProposal={w.dismissFolderProposal}
+                onScanForDesktop={w.openPcSearch}
                 onSearchFolderProposal={w.searchFolderProposal}
                 onWrongFolderProposal={w.wrongFolderProposal}
                 onUndoCodeChange={app.undoCodeChange}
+                onRevertPreviewCode={app.revertPreviewCode}
                 onApproveEdits={app.approveEdits}
                 onDenyEdits={app.denyEdits}
                 projectName={app.selectedProject.name}
@@ -62,6 +74,7 @@ export function WorkspaceScreen() {
                 creditPercentRemaining={w.creditPercentRemaining}
                 onOpenTokens={() => w.setTokenSheetVisible(true)}
                 onStart={w.onStartChat}
+                onTestPreviewCommand={w.openTestPreview}
                 selectedChatId={w.selectedChatId}
                 projectChatTitles={w.projectChatTitles}
                 selectedFileName={app.selectedFile.name}
@@ -87,19 +100,15 @@ export function WorkspaceScreen() {
                 activePage === "profile" ? styles.profileContent : null,
                 { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : 72), 0) }
               ]}
-              bounces={activePage === "projects" ? w.projectsCanScroll : true}
-              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : activePage === "community" ? true : activePage !== "dashboard"}
+              bounces={activePage === "projects" ? w.projectsCanScroll : activePage !== "profile"}
+              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : activePage === "community" ? true : activePage !== "dashboard" && activePage !== "profile"}
               showsVerticalScrollIndicator={false}
             >
               {activePage === "dashboard" ? (
                 <DashboardHome
                   activeAgents={app.activeAgents}
-                  machineName={app.connection?.machineName ?? app.machineName}
                   onNavigate={w.navigatePage}
-                  projectCount={app.projects.length}
                   projects={app.projects}
-                  selectedModel={app.selectedModel}
-                  tokenBalance={w.tokenBalance}
                 />
               ) : null}
               {activePage === "projects" ? (
@@ -109,9 +118,11 @@ export function WorkspaceScreen() {
                   filteredProjects={w.filteredProjects}
                   onCreateProject={w.createProjectAndOpenChat}
                   onOpenProjectPreview={w.openProjectPreview}
+                  onPublishRequestHandled={() => w.setPublishProjectId(null)}
                   onSearch={w.setProjectSearch}
                   onScrollNeededChange={w.setProjectsCanScroll}
                   projectSearch={w.projectSearch}
+                  publishProjectId={w.publishProjectId}
                   selectedProjectId={app.selectedProject.id}
                 />
               ) : null}
@@ -120,6 +131,7 @@ export function WorkspaceScreen() {
                   authToken={app.authToken}
                   currentUserName={app.authName}
                   openedPostId={w.openedCommunityPostId}
+                  onLevelActivity={app.reportLevelActivity}
                   onOpenApp={(id) => w.setOpenedCommunityPostId(id)}
                   onSelectPost={w.setSelectedCommunityPost}
                   selectedPost={w.selectedCommunityPost}
@@ -140,11 +152,12 @@ export function WorkspaceScreen() {
           isConnected={w.isConnected}
           healthMessage={app.healthMessage}
           manualCode={app.pairCode}
-          onClose={() => w.setPcSwitcherVisible(false)}
+          onClose={w.closePcSwitcher}
           onCodeChange={app.setPairCode}
           onConfirm={w.confirmPcSwitch}
           onConnectCandidate={w.connectToDesktop}
           onConnectManual={w.connectWithCode}
+          onDisconnect={w.disconnectPc}
           onScan={w.scanDesktops}
           pairing={app.pairing}
           pairingError={app.pairingError}
@@ -168,7 +181,7 @@ export function WorkspaceScreen() {
           onSave={w.saveRenameChat}
           visible={w.renameChatVisible}
         />
-        <AppPreviewModal app={w.previewApp} onClose={() => w.setPreviewApp(null)} />
+        <AppPreviewModal app={w.previewApp} onClose={() => w.setPreviewApp(null)} onSubmitAiPrompt={w.submitPreviewEdit} />
         <FolderConfirmModal
           confirm={w.folderConfirm}
           onAccept={w.acceptFolderConfirm}

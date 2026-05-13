@@ -1,12 +1,11 @@
 import * as Haptics from "expo-haptics";
-import { LogEvent, RememberedDesktop } from "../types/domain";
-import { mergeProjects } from "../utils/files";
+import { LogEvent } from "../types/domain";
 import { impact } from "../utils/haptics";
-import { getDesktopCandidates, normalizeAgentUrl } from "../utils/network";
+import { getDesktopCandidates } from "../utils/network";
 import { useAppState } from "./useAppState";
-import { desktopConnectionUrls, mergeRememberedDesktops } from "./pairingHelpers";
-import { checkHealth, findDesktopByCode, requestPairAtUrl, waitForDesktopApproval } from "./pairingDiscovery";
+import { findDesktopByCode, waitForDesktopApproval } from "./pairingDiscovery";
 import { scanPairByCode, scanPairableDesktops } from "./pairingScans";
+import { usePairingConnectionActions } from "./usePairingConnectionActions";
 
 type State = ReturnType<typeof useAppState>["state"];
 type Setters = ReturnType<typeof useAppState>["setters"];
@@ -19,16 +18,10 @@ type Logs = {
 type Files = {
   loadProjectFilesWithConnection: (url: string, token: string, projectId: string) => Promise<void>;
 };
-type EstablishedConnection = {
-  url: string;
-  token: string;
-  machineName: string;
-  pairCode: string;
-  projects: State["projects"];
-  events: LogEvent[];
-};
 
 export function usePairingActions(state: State, setters: Setters, requests: Requests, logs: Logs, files: Files) {
+  const connectionActions = usePairingConnectionActions(state, setters, requests, logs, files);
+
   async function discoverPairableDesktops() {
     setters.setCheckingHealth(true);
     setters.setHealthMessage("Searching this Wi-Fi for Vibyra Desktop...");
@@ -77,13 +70,21 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
 
     setters.setCheckingHealth(true);
     try {
-      const pair = await scanPairByCode(requests, state.agentUrl, code, setters.setHealthMessage);
+      const pair = await scanPairByCode(requests, state.agentUrl, code, setters.setHealthMessage, state.rememberedDesktops);
       setters.setCheckingHealth(false);
       setters.setPairingMessage("Awaiting approval from PC application");
       const result = pair.result.status === "pending" && pair.result.requestId
-        ? await waitForDesktopApproval(requests, pair.result.requestId, pair.url, setters.setPairingMessage)
+        ? await waitForDesktopApproval(requests, pair.result.requestId, pair.url, setters.setPairingMessage, pair.connectionUrls)
         : pair.result;
-      setters.setPendingPhoneApproval({ url: pair.url, ...result });
+      if (!result.token) throw new Error("Desktop did not return a secure session token");
+      setters.setPendingPhoneApproval({
+        url: pair.url,
+        connectionUrls: "connectionUrls" in pair ? pair.connectionUrls : undefined,
+        token: result.token,
+        machineName: result.machineName,
+        projects: result.projects ?? [],
+        events: result.events ?? []
+      });
       setters.setPairingMessage("Desktop approved. Allow this phone to control your coding machine.");
       impact(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
@@ -98,10 +99,6 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
 
   async function pairMachineAt(url: string, code: string) {
     const normalizedCode = code.trim().toUpperCase();
-    if (normalizedCode.length < 4) {
-      setters.setPairingError("Choose a PC or enter the code shown in Vibyra Desktop.");
-      return;
-    }
 
     setters.setPairing(true);
     setters.setPairingError("");
@@ -111,12 +108,20 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     setters.setPairCode(normalizedCode);
 
     try {
-      const pair = await requestPairAtReachableUrl(url, normalizedCode);
+      const pair = await connectionActions.requestPairAtReachableUrl(url, normalizedCode);
       if (pair.type !== "paired") throw new Error(pair.message);
       const result = pair.result.status === "pending" && pair.result.requestId
-        ? await waitForDesktopApproval(requests, pair.result.requestId, pair.url, setters.setPairingMessage)
+        ? await waitForDesktopApproval(requests, pair.result.requestId, pair.url, setters.setPairingMessage, pair.connectionUrls)
         : pair.result;
-      setters.setPendingPhoneApproval({ url: pair.url, ...result });
+      if (!result.token) throw new Error("Desktop did not return a secure session token");
+      setters.setPendingPhoneApproval({
+        url: pair.url,
+        connectionUrls: pair.connectionUrls,
+        token: result.token,
+        machineName: result.machineName,
+        projects: result.projects ?? [],
+        events: result.events ?? []
+      });
       setters.setPairingMessage("Desktop approved. Confirm this phone to finish connecting.");
       impact(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
@@ -124,71 +129,6 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
       setters.setPairingError(`${message}. Keep Vibyra Desktop open and approve the request.`);
     } finally {
       setters.setPairing(false);
-    }
-  }
-
-  function confirmPhonePermission() {
-    if (!state.pendingPhoneApproval) return;
-    const result = state.pendingPhoneApproval;
-    establishConnection({
-      url: result.url,
-      token: result.token,
-      machineName: result.machineName,
-      pairCode: state.pairCode.trim().toUpperCase() || "PAIRED",
-      projects: result.projects,
-      events: result.events
-    });
-  }
-
-  async function connectRememberedDesktop(desktop: RememberedDesktop) {
-    if (!desktop.token) return false;
-
-    try {
-      const connected = await requestProjectsFromRememberedDesktop(desktop);
-      if (!connected) throw new Error("Desktop is offline");
-      establishConnection({
-        url: connected.url,
-        token: desktop.token,
-        machineName: desktop.machineName,
-        pairCode: desktop.pairCode,
-        projects: connected.projects,
-        events: []
-      });
-      setters.setPairingError("");
-      setters.setPairingMessage(`Reconnected to ${desktop.machineName}.`);
-      return true;
-    } catch {
-      setters.setRememberedDesktops(mergeRememberedDesktops(state.rememberedDesktops, [{ ...desktop, status: "offline" }]));
-      return false;
-    }
-  }
-
-  function establishConnection(result: EstablishedConnection) {
-    setters.setConnection({ url: result.url, token: result.token, machineName: result.machineName });
-    setters.setMachineName(result.machineName);
-    setters.setAgentUrl(result.url);
-    setters.setPairCode(result.pairCode);
-    setters.setRememberedDesktops(mergeRememberedDesktops(state.rememberedDesktops, [{
-      url: result.url,
-      machineName: result.machineName,
-      pairCode: result.pairCode,
-      token: result.token,
-      status: "current",
-      lastConnectedAt: new Date().toISOString(),
-      lastSeenAt: new Date().toISOString()
-    }]));
-    setters.setPendingPhoneApproval(null);
-    setters.setPaired(true);
-    logs.appendLog(`Secure session established with ${result.machineName}`, "Pairing", "success");
-    impact(Haptics.ImpactFeedbackStyle.Medium);
-
-    if (result.projects.length > 0) {
-      setters.setProjects((current) => mergeProjects(current, result.projects));
-      setters.setSelectedProjectId(result.projects[0].id);
-      void files.loadProjectFilesWithConnection(result.url, result.token, result.projects[0].id);
-    }
-    if (result.events.length > 0) {
-      setters.setLogs(result.events);
     }
   }
 
@@ -210,41 +150,12 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     }
   }
 
-  async function requestPairAtReachableUrl(url: string, code: string) {
-    const knownDesktop = state.rememberedDesktops.find((desktop) => desktop.url === url || desktop.pairCode === code);
-    const health = await checkHealth(url, code);
-    const urls = desktopConnectionUrls(url, [
-      ...(knownDesktop?.connectionUrls ?? []),
-      ...(health?.connectionUrls ?? [])
-    ]);
-    let lastFailure = { type: "failed" as const, url, message: "Could not reach Vibyra Desktop" };
-
-    for (const candidateUrl of urls) {
-      const pair = await requestPairAtUrl(requests, candidateUrl, code);
-      if (pair.type === "paired") return pair;
-      lastFailure = pair;
-    }
-
-    return lastFailure;
-  }
-
-  async function requestProjectsFromRememberedDesktop(desktop: RememberedDesktop) {
-    const urls = desktopConnectionUrls(desktop.url, desktop.connectionUrls);
-    for (const url of urls) {
-      try {
-        const result = await requests.desktopRequest<{ projects: State["projects"] }>(
-          normalizeAgentUrl(url),
-          "/projects",
-          { headers: { Authorization: `Bearer ${desktop.token}` } },
-          3000
-        );
-        return { url, projects: result.projects ?? [] };
-      } catch {
-        // Try the next LAN address advertised by this same desktop.
-      }
-    }
-    return null;
-  }
-
-  return { confirmPhonePermission, connectRememberedDesktop, discoverPairableDesktops, pairMachine, pairMachineAt, testDesktopConnection };
+  return {
+    confirmPhonePermission: connectionActions.confirmPhonePermission,
+    connectRememberedDesktop: connectionActions.connectRememberedDesktop,
+    discoverPairableDesktops,
+    pairMachine,
+    pairMachineAt,
+    testDesktopConnection
+  };
 }

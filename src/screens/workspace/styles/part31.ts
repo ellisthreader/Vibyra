@@ -5,7 +5,7 @@ import { communityDetailAccent, communityDetailAccentDark } from "../data/commun
 export const part31 = {
   dashboardPage: {
     flex: 1,
-    gap: 14,
+    gap: 12,
     width: "100%"
   },
   dashboardPageCompact: {
@@ -20,34 +20,22 @@ export const part31 = {
     width: 54
   },
   runningProjectCard: {
-    backgroundColor: "rgba(8, 6, 20, 0.58)",
-    borderRadius: 12,
+    backgroundColor: "rgba(7, 10, 20, 0.82)",
+    borderColor: "rgba(118, 74, 202, 0.36)",
+    borderRadius: 16,
     borderWidth: 1,
-    height: 98,
+    minHeight: 92,
     overflow: "hidden",
-    paddingHorizontal: 10,
+    padding: 14,
     position: "relative"
   },
   runningProjectCardRunning: {
-    backgroundColor: "rgba(78, 20, 137, 0.14)",
-    borderColor: "rgba(179, 91, 255, 0.58)",
-    paddingBottom: 20,
-    paddingTop: 13,
-    shadowColor: "#7F24FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.36,
-    shadowRadius: 18
+    backgroundColor: "rgba(11, 7, 25, 0.9)",
+    borderColor: "rgba(145, 57, 255, 0.78)"
   },
   runningProjectCardWaiting: {
-    backgroundColor: "rgba(27, 114, 66, 0.12)",
-    borderColor: "rgba(105, 239, 151, 0.48)",
-    justifyContent: "center",
-    paddingBottom: 0,
-    paddingTop: 0,
-    shadowColor: "#45E986",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.26,
-    shadowRadius: 16
+    backgroundColor: "rgba(7, 10, 20, 0.86)",
+    borderColor: "rgba(83, 91, 122, 0.48)"
   },
   runningProjectCopy: {
     flex: 1,
@@ -55,70 +43,58 @@ export const part31 = {
   },
   runningProjectIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(42, 207, 194, 0.18)",
-    borderColor: "rgba(78, 238, 220, 0.16)",
-    borderRadius: 9,
+    backgroundColor: "rgba(109, 59, 255, 0.2)",
+    borderColor: "rgba(170, 88, 255, 0.18)",
+    borderRadius: 12,
     borderWidth: 1,
-    height: 36,
+    height: 44,
     justifyContent: "center",
-    shadowColor: "#2EEFD8",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    width: 36
+    width: 44
   },
   runningProjectIconWaiting: {
-    backgroundColor: "rgba(81, 235, 139, 0.14)",
-    borderColor: "rgba(131, 242, 173, 0.18)",
-    shadowColor: "#63F29D"
+    backgroundColor: "rgba(23, 89, 170, 0.18)",
+    borderColor: "rgba(76, 163, 255, 0.18)"
   },
   runningProjectName: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 18
-  },
-  runningProjectGraph: {
-    height: 48,
-    marginTop: 2,
-    width: 102
+    lineHeight: 21
   },
   runningProjectBeamFill: {
     borderRadius: 999,
-    height: "100%",
-    shadowColor: "#F2B3FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 7
+    backgroundColor: "#B36DFF",
+    height: "100%"
   },
   runningProjectBeamTrack: {
-    backgroundColor: "rgba(118, 43, 190, 0.36)",
+    backgroundColor: "rgba(75, 78, 94, 0.52)",
     borderRadius: 999,
-    bottom: 13,
-    height: 5,
-    left: 14,
+    flex: 1,
+    height: 6,
     overflow: "hidden",
-    position: "absolute",
-    right: 128
+    width: "100%"
+  },
+  runningProjectBeamQueued: {
+    backgroundColor: "rgba(170, 166, 188, 0.56)"
   },
   runningProjectsEmpty: {
     alignItems: "center",
-    backgroundColor: "rgba(13, 8, 28, 0.62)",
-    borderColor: "rgba(176, 102, 255, 0.32)",
+    backgroundColor: "rgba(7, 10, 20, 0.82)",
+    borderColor: "rgba(118, 74, 202, 0.34)",
     borderRadius: 16,
     borderWidth: 1,
-    gap: 11,
+    gap: 10,
     justifyContent: "center",
-    minHeight: 205,
+    minHeight: 132,
     overflow: "hidden",
-    paddingHorizontal: 18,
-    paddingVertical: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     position: "relative",
     shadowColor: "#7F24FF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18
+    shadowOpacity: 0,
+    shadowRadius: 0
   },
   runningProjectsEmptyButton: {
     borderRadius: 12,
@@ -151,26 +127,14 @@ export const part31 = {
     alignItems: "center",
     maxWidth: 250
   },
-  runningProjectsEmptyGlow: {
-    backgroundColor: "rgba(164, 58, 255, 0.22)",
-    borderRadius: 999,
-    height: 120,
-    position: "absolute",
-    shadowColor: "#A43AFF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 42,
-    top: -70,
-    width: 180
-  },
   runningProjectsEmptyIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(122, 47, 255, 0.2)",
-    borderColor: "rgba(216, 184, 255, 0.2)",
-    borderRadius: 14,
+    backgroundColor: "rgba(109, 59, 255, 0.2)",
+    borderColor: "rgba(216, 184, 255, 0.16)",
+    borderRadius: 12,
     borderWidth: 1,
-    height: 48,
+    height: 44,
     justifyContent: "center",
-    width: 48
+    width: 44
   },
 } as const;

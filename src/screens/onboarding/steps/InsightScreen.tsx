@@ -3,6 +3,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo } from "react";
 import { Animated, Image, Text, View } from "react-native";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { personaInsights } from "../data/personas";
 import { resultBulletAccents } from "../data/options";
 import { Persona, PersonaModel } from "../types";
@@ -24,7 +25,7 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
     Animated.stagger(
       145,
       cardEntrances.map((entrance) =>
-        Animated.spring(entrance, { toValue: 1, damping: 18, mass: 0.82, stiffness: 118, useNativeDriver: true })
+        Animated.spring(entrance, { toValue: 1, damping: 18, mass: 0.82, stiffness: 118, useNativeDriver: supportsNativeAnimation })
       )
     ).start();
   }, [cardEntrances, personaId]);
@@ -32,8 +33,6 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
   return (
     <View style={styles.resultContent}>
       <View style={styles.personaHero}>
-        <View style={[styles.personaHeroOrbit, { pointerEvents: "none" }]} />
-        <View style={[styles.personaHeroGlow, { pointerEvents: "none" }]} />
         <Image resizeMode="contain" source={persona.icon} style={styles.personaIcon} />
       </View>
 

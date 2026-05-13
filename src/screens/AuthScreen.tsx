@@ -1,8 +1,8 @@
 import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useMemo, useState } from "react";
-import { Animated, Image, Pressable, Text, useWindowDimensions, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
@@ -25,15 +25,18 @@ export function AuthScreen() {
   const [authError, setAuthError] = useState("");
   const [emailFormVisible, setEmailFormVisible] = useState(false);
   const entrance = useAuthEntrance();
+  const scrollRef = useRef<ScrollView>(null);
   const availableHeight = height - insets.top - insets.bottom;
-  const fitScale = Math.min(1, Math.max(0.82, availableHeight / 790));
-  const compact = availableHeight < 735;
-  const logoWidth = Math.min(width * (compact ? 0.51 : 0.58), 250) * fitScale;
-  const titleFontSize = Math.min(width * (compact ? 0.075 : 0.082), 34) * Math.max(fitScale, 0.88);
+  const fitScale = Math.min(1, Math.max(emailFormVisible ? 0.74 : 0.82, availableHeight / (emailFormVisible ? 870 : 790)));
+  const compact = emailFormVisible || availableHeight < 735;
+  const logoWidth = Math.min(width * (emailFormVisible ? 0.44 : compact ? 0.51 : 0.58), emailFormVisible ? 202 : 250) * fitScale;
+  const titleFontSize = Math.min(width * (emailFormVisible ? 0.068 : compact ? 0.075 : 0.082), emailFormVisible ? 29 : 34) * Math.max(fitScale, 0.88);
   const contentSpacing = useMemo(() => ({
-    paddingBottom: Math.max(insets.bottom + 8, compact ? 10 : 22),
-    paddingTop: Math.max(insets.top + (compact ? 42 : 78), availableHeight * (compact ? 0.075 : 0.115))
-  }), [availableHeight, compact, insets.bottom, insets.top]);
+    paddingBottom: Math.max(insets.bottom + (emailFormVisible ? 16 : 8), compact ? 10 : 22),
+    paddingTop: emailFormVisible
+      ? Math.max(insets.top + 22, availableHeight * 0.042)
+      : Math.max(insets.top + (compact ? 42 : 78), availableHeight * (compact ? 0.075 : 0.115))
+  }), [availableHeight, compact, emailFormVisible, insets.bottom, insets.top]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +60,16 @@ export function AuthScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!emailFormVisible) {
+      return;
+    }
+    const handle = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 80);
+    return () => clearTimeout(handle);
+  }, [emailFormVisible]);
+
   async function runAuth(method: AuthMethod, accountStatus: "new" | "existing") {
     setAuthBusy(method);
     setAuthError("");
@@ -79,7 +92,15 @@ export function AuthScreen() {
       <View style={styles.screen}>
         <Image source={backgroundSource} resizeMode="cover" style={styles.backgroundImage} />
         <LinearGradient colors={["rgba(3, 2, 18, 0.12)", "rgba(7, 3, 26, 0.2)", "rgba(2, 1, 14, 0.48)"]} style={styles.backgroundOverlay} />
-        <View style={[styles.content, contentSpacing]}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.foreground}>
+          <ScrollView
+            ref={scrollRef}
+            bounces={false}
+            contentContainerStyle={[styles.content, emailFormVisible ? styles.contentExpanded : null, contentSpacing, { minHeight: availableHeight }]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            style={styles.foreground}
+          >
           <View style={styles.heroStack}>
             <Animated.View
               style={[
@@ -97,7 +118,7 @@ export function AuthScreen() {
                 styles.titleStage,
                 {
                   opacity: entrance.titleOpacity,
-                  marginTop: 32 * fitScale,
+                  marginTop: (emailFormVisible ? 20 : 32) * fitScale,
                   transform: [{ translateY: entrance.titleTranslateY }]
                 }
               ]}
@@ -112,6 +133,7 @@ export function AuthScreen() {
           <Animated.View
             style={[
               styles.actions,
+              emailFormVisible ? styles.actionsExpanded : null,
               {
                 gap: 11 * fitScale,
                 opacity: entrance.restOpacity,
@@ -119,7 +141,7 @@ export function AuthScreen() {
               }
             ]}
           >
-            <FeatureStrip scale={fitScale} />
+            {emailFormVisible ? null : <FeatureStrip scale={fitScale} />}
             <AuthChoice busy={authBusy === "google"} icon="logo-google" label="Continue with Google" method="google" scale={fitScale} onSelect={(method) => runAuth(method, "new")} />
             <AuthChoice busy={authBusy === "apple"} icon="logo-apple" label="Continue with Apple" method="apple" scale={fitScale} onSelect={(method) => runAuth(method, "new")} />
             <AuthChoice
@@ -164,7 +186,8 @@ export function AuthScreen() {
               </View>
             </View>
           </Animated.View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   );

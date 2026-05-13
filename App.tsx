@@ -14,6 +14,8 @@ import { setStylesScheme } from "./src/screens/workspace/styles";
 function AppContent() {
   const app = useAppContext();
   const prefs = usePreferences();
+  if (!app.persistenceReady || !prefs.preferencesReady) return null;
+
   setStylesScheme(prefs.effectiveScheme);
   const isLight = prefs.effectiveScheme === "light";
   const shellBg = isLight ? LIGHT_SHELL_BG : DARK_SHELL_BG;

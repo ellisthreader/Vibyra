@@ -163,15 +163,6 @@ export const part17 = {
   messageRowUser: {
     backgroundColor: "transparent"
   },
-  messageUserBubble: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(176, 132, 255, 0.10)",
-    borderColor: "rgba(176, 132, 255, 0.18)",
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 9
-  },
   messageText: {
     color: "#EAE5F4",
     fontSize: 15,

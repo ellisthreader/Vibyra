@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../../../styles/theme";
 import { styles } from "../../styles";
 
@@ -12,11 +13,12 @@ export function ProfileSheet({ visible, onClose, icon, kicker, title, children }
   title: string;
   children: React.ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <View style={styles.profileSheetOverlay}>
         <Pressable accessibilityLabel="Close" onPress={onClose} style={styles.profileSheetScrim} />
-        <View style={styles.profileSheet}>
+        <View style={[styles.profileSheet, { paddingBottom: Math.max(insets.bottom, 10) }]}>
           <View style={styles.profileSheetHandle} />
           <View style={styles.profileSheetHeader}>
             <View style={styles.profileSheetHeaderIcon}>

@@ -33,9 +33,9 @@ export const part15 = {
     top: 21
   },
   sliderIcon: {
-    height: 44,
+    height: 42,
     opacity: 0.78,
-    width: 44
+    width: 42
   },
   sliderIconActive: {
     opacity: 1
@@ -46,8 +46,8 @@ export const part15 = {
     borderColor: "transparent",
     borderRadius: 18,
     borderWidth: 0,
-    gap: 7,
-    height: 112,
+    gap: 8,
+    height: 116,
     justifyContent: "center",
     overflow: "hidden",
     paddingHorizontal: 6,
@@ -65,8 +65,8 @@ export const part15 = {
     marginTop: 4,
     width: "100%"
   },
-  sliderOptionText: { color: "rgba(226, 219, 255, 0.72)", fontSize: 11, fontWeight: "900", lineHeight: 14, textAlign: "center", textShadowColor: "rgba(181, 92, 255, 0.12)", textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12 },
-  sliderOptionTextActive: { color: colors.text, textShadowColor: "rgba(212, 124, 255, 0.42)", textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12 },
+  sliderOptionText: { color: "rgba(226, 219, 255, 0.72)", fontSize: 11, fontWeight: "900", lineHeight: 14, textAlign: "center", textShadow: "0px 4px 12px rgba(181, 92, 255, 0.12)" },
+  sliderOptionTextActive: { color: colors.text, textShadow: "0px 0px 12px rgba(212, 124, 255, 0.42)" },
   sliderStop: {
     alignItems: "center",
     height: 48,
@@ -116,7 +116,7 @@ export const part15 = {
     paddingTop: 0
   },
   syncAuraCyan: {
-    backgroundColor: "rgba(46, 235, 255, 0.16)",
+    backgroundColor: "rgba(151, 54, 255, 0.16)",
     borderRadius: 999,
     height: 360,
     left: -150,

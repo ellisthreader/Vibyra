@@ -8,6 +8,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 0,
     width: "92.5%"
   },
+  actionsExpanded: { marginTop: 22, width: "100%" },
   authChoice: {
     alignItems: "center",
     backgroundColor: "rgba(12, 5, 35, 0.34)",
@@ -55,7 +56,9 @@ export const styles = StyleSheet.create({
     width: undefined
   },
   backgroundOverlay: { ...StyleSheet.absoluteFillObject },
-  content: { flex: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+  content: { flexGrow: 1, justifyContent: "space-between", paddingHorizontal: 22 },
+  contentExpanded: { justifyContent: "flex-start" },
+  foreground: { flex: 1 },
   googleIcon: { alignItems: "center", height: 34, justifyContent: "center", width: 40 },
   gradientTitleFill: { height: "100%", minWidth: 112 },
   heroStack: { alignItems: "center", gap: 0 },

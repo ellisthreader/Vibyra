@@ -1,170 +1,79 @@
 import { PreviewState, Project, FileEntry, LogEvent } from "../types/domain";
 import { dedupeFiles, mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
-import { normalizeAgentUrl } from "../utils/network";
-import { useAppState } from "./useAppState";
 import { useDesktopFolders } from "./useDesktopFolders";
-import { FileCreateResult, ProjectCreateResult, makeLocalProject } from "./workspaceTypes";
+import { useWorkspaceFileActions } from "./useWorkspaceFileActions";
+import { ProjectCreateResult, makeLocalProject } from "./workspaceTypes";
+import { WorkspaceLogs, WorkspaceRequests, WorkspaceStore } from "./workspaceActionTypes";
 
-type Store = ReturnType<typeof useAppState>;
-type Requests = {
-  agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
-  desktopRequest: <T>(baseUrl: string, endpoint: string, options?: RequestInit, timeoutMs?: number) => Promise<T>;
-};
-type Logs = {
-  appendLog: (message: string, source?: string, tone?: LogEvent["tone"]) => void;
-  appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void;
-  advanceWorkflow: (index: number) => void;
-};
+type ProjectOpenOptions = { startPreview?: boolean };
 
-export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs) {
-  const { state, derived, setters } = store;
+export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRequests, logs: WorkspaceLogs) {
+  const { state, setters } = store;
   const desktopFolders = useDesktopFolders(Boolean(state.connection), requests, logs);
+  const fileActions = useWorkspaceFileActions(store, requests, logs);
 
-  async function createProject(): Promise<Project | null> {
+  async function createProject(name?: string): Promise<Project | null> {
     impact();
     if (!state.connection) {
-      return createLocalProject();
+      return createLocalProject(name);
     }
+    const projectName = name?.trim() || "Untitled Workspace";
 
     try {
       const result = await requests.agentRequest<ProjectCreateResult>("/projects/create", {
         method: "POST",
-        body: JSON.stringify({ name: "Untitled Workspace" })
+        body: JSON.stringify({ name: projectName })
       });
+      const project = { ...result.project, briefRequired: true };
+      const projects = [project, ...result.projects.filter((item) => item.id !== project.id)];
       const nextFiles = dedupeFiles(result.files);
-      setters.setProjects((current) => mergeProjects(current, result.projects));
-      setters.setSelectedProjectId(result.project.id);
-      setters.setChatThreads((current) => ({ ...current, [result.project.id]: [] }));
-      setters.setChatTitles((current) => ({ ...current, [result.project.id]: result.project.name }));
-      setters.setChatProjects((current) => ({ ...current, [result.project.id]: result.project }));
+      setters.setProjects((current) => mergeProjects(current, projects));
+      setters.setSelectedProjectId(project.id);
+      setters.setChatThreads((current) => ({ ...current, [project.id]: [] }));
+      setters.setChatTitles((current) => ({ ...current, [project.id]: project.name }));
+      setters.setChatProjects((current) => ({ ...current, [project.id]: project }));
       setters.setFiles(nextFiles);
       setters.setSelectedFileId(nextFiles[0]?.id ?? "empty");
       setters.setPreviewState("live");
       logs.advanceWorkflow(5);
       logs.appendLogs(result.events);
-      return result.project;
+      return project;
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Project creation failed", "Projects", "error");
-      return createLocalProject();
+      return createLocalProject(projectName);
     }
   }
 
-  async function createFile() {
-    const path = state.newFilePath.trim() || "note.txt";
-    impact();
-    if (!state.connection) return;
-
-    try {
-      const result = await requests.agentRequest<FileCreateResult>("/files/create", {
-        method: "POST",
-        body: JSON.stringify({ projectId: derived.selectedProject.id, path, content: `# ${path}\n\n` })
-      });
-      setters.setFiles(dedupeFiles(result.files));
-      if (result.file) setters.setSelectedFileId(result.file.id);
-      setters.setNewFilePath(`note-${Date.now()}.txt`);
-      logs.appendLogs(result.events);
-    } catch (error) {
-      logs.appendLog(error instanceof Error ? error.message : "Could not create file", "Files", "error");
-    }
-  }
-
-  async function undoCodeChange(projectId: string, messageId: string, changeId: string, file: FileEntry) {
-    if (!state.connection || file.previousBody === undefined || file.previousBody === null) return;
-
-    try {
-      const result = await requests.agentRequest<FileCreateResult>("/files/create", {
-        method: "POST",
-        body: JSON.stringify({ projectId, path: file.path, content: file.previousBody })
-      });
-      setters.setFiles(dedupeFiles(result.files));
-      setters.setChatThreads((current) => {
-        const thread = current[projectId];
-        if (!thread) return current;
-        return {
-          ...current,
-          [projectId]: thread.map((message) => (
-            message.id === messageId
-              ? { ...message, undoneChangeIds: Array.from(new Set([...(message.undoneChangeIds ?? []), changeId])) }
-              : message
-          ))
-        };
-      });
-      logs.appendLogs(result.events);
-      logs.appendLog(`Undid ${file.path}`, "Code Review", "success");
-    } catch (error) {
-      logs.appendLog(error instanceof Error ? error.message : "Could not undo file change", "Code Review", "error");
-    }
-  }
-
-  async function loadProjectFiles(projectId: string): Promise<FileEntry[]> {
-    if (!state.connection) return [];
-    try {
-      const result = await requests.agentRequest<{ files: FileEntry[] }>(`/files?projectId=${encodeURIComponent(projectId)}`);
-      const nextFiles = setLoadedFiles(result.files);
-      const hydrated = await hydrateFirstFile(nextFiles, (path) => {
-        const endpoint = `/files/read?projectId=${encodeURIComponent(projectId)}&path=${encodeURIComponent(path)}`;
-        return requests.agentRequest<{ file: FileEntry }>(endpoint);
-      });
-      return hydrated;
-    } catch (error) {
-      clearFiles(error instanceof Error ? error.message : "Could not load files");
-      return [];
-    }
-  }
-
-  async function loadProjectFilesWithConnection(url: string, token: string, projectId: string) {
-    try {
-      const result = await requests.desktopRequest<{ files: FileEntry[] }>(
-        normalizeAgentUrl(url),
-        `/files?projectId=${encodeURIComponent(projectId)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const nextFiles = setLoadedFiles(result.files);
-      await hydrateFirstFile(nextFiles, (path) => {
-        const endpoint = `/files/read?projectId=${encodeURIComponent(projectId)}&path=${encodeURIComponent(path)}`;
-        return requests.desktopRequest<{ file: FileEntry }>(
-          normalizeAgentUrl(url),
-          endpoint,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      });
-    } catch (error) {
-      clearFiles(error instanceof Error ? error.message : "Could not load files");
-    }
-  }
-
-  async function selectFile(fileId: string) {
-    impact();
-    setters.setSelectedFileId(fileId);
-    if (!state.connection) return;
-
-    const file = state.files.find((item) => item.id === fileId);
-    if (!file || file.body) return;
-
-    try {
-      const endpoint = `/files/read?projectId=${encodeURIComponent(derived.selectedProject.id)}&path=${encodeURIComponent(file.path)}`;
-      const result = await requests.agentRequest<{ file: FileEntry }>(endpoint);
-      setters.setFiles((current) => current.map((item) => (item.id === fileId ? result.file : item)));
-    } catch (error) {
-      logs.appendLog(error instanceof Error ? error.message : "Could not open file", "Files", "error");
-    }
-  }
-
-  async function selectProject(projectId: string): Promise<FileEntry[]> {
-    const project = state.projects.find((item) => item.id === projectId);
+  async function selectProject(
+    projectId: string,
+    projectOverrideOrOptions?: Project | ProjectOpenOptions,
+    maybeOptions?: ProjectOpenOptions
+  ): Promise<FileEntry[]> {
+    const projectOverride = isProject(projectOverrideOrOptions) ? projectOverrideOrOptions : undefined;
+    const options = isProject(projectOverrideOrOptions) ? maybeOptions : projectOverrideOrOptions;
+    const startPreview = options?.startPreview !== false;
+    const project = projectOverride ?? state.projects.find((item) => item.id === projectId);
     impact();
     setters.setSelectedProjectId(projectId);
-    setters.setPreviewState("live");
     logs.advanceWorkflow(5);
-    logs.appendLogs([
-      { source: "Preview", message: `Live preview started for ${project?.name ?? "project"}`, tone: "success" },
-      { source: "Projects", message: `Selected ${project?.path ?? "project folder"}`, tone: "info" }
-    ]);
+    if (startPreview) setters.setPreviewState("live");
+    logs.appendLogs(startPreview
+      ? [
+          { source: "Preview", message: `Live preview started for ${project?.name ?? "project"}`, tone: "success" },
+          { source: "Projects", message: `Selected ${project?.path ?? "project folder"}`, tone: "info" }
+        ]
+      : [{ source: "Projects", message: `Opened ${project?.path ?? "project folder"} in chat`, tone: "info" }]);
 
     if (!state.connection) return [];
     try {
-      const files = await loadProjectFiles(projectId);
+      const files = await fileActions.loadProjectFiles(projectId);
+      if (!startPreview) return files;
+      const setupProject = projectOverride ?? state.chatProjects[projectId] ?? project;
+      if (setupProject?.briefRequired && !setupProject.brief) {
+        logs.appendLog(`Choose the project type for ${setupProject.name} before starting preview.`, "Projects", "info");
+        return files;
+      }
       const result = await requests.agentRequest<{ preview: { state: PreviewState }; events: LogEvent[] }>(
         "/preview/start",
         { method: "POST", body: JSON.stringify({ projectId }) }
@@ -178,39 +87,8 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
     }
   }
 
-  function setLoadedFiles(files: FileEntry[]) {
-    const nextFiles = dedupeFiles(files);
-    setters.setFiles(nextFiles);
-    setters.setSelectedFileId(nextFiles[0]?.id ?? "empty");
-    return nextFiles;
-  }
-
-  async function hydrateFirstFile(
-    files: FileEntry[],
-    readFile: (path: string) => Promise<{ file: FileEntry }>
-  ): Promise<FileEntry[]> {
-    const firstFile = files[0];
-    if (!firstFile || firstFile.body) return files;
-
-    try {
-      const result = await readFile(firstFile.path);
-      const hydrated = files.map((item) => (item.id === firstFile.id ? result.file : item));
-      setters.setFiles((current) => current.map((item) => (item.id === firstFile.id ? result.file : item)));
-      return hydrated;
-    } catch (error) {
-      logs.appendLog(error instanceof Error ? error.message : "Could not open first file", "Files", "warning");
-      return files;
-    }
-  }
-
-  function clearFiles(message: string) {
-    setters.setFiles([]);
-    setters.setSelectedFileId("empty");
-    logs.appendLog(message, "Files", "error");
-  }
-
-  function createLocalProject() {
-    const project = makeLocalProject();
+  function createLocalProject(name?: string) {
+    const project = { ...makeLocalProject(name), briefRequired: true };
     setters.setProjects((current) => [project, ...current]);
     setters.setSelectedProjectId(project.id);
     setters.setChatThreads((current) => ({ ...current, [project.id]: [] }));
@@ -227,29 +105,57 @@ export function useWorkspaceActions(store: Store, requests: Requests, logs: Logs
   function rememberProject(project: Project): void {
     setters.setChatProjects((current) => {
       const existing = current[project.id];
-      if (existing && existing.id === project.id && existing.name === project.name && existing.path === project.path) return current;
-      return { ...current, [project.id]: project };
+      const next = mergeRememberedProject(existing, project);
+      if (existing && JSON.stringify(existing) === JSON.stringify(next)) return current;
+      return { ...current, [project.id]: next };
     });
   }
 
-  async function adoptProject(project: Project): Promise<void> {
+  async function adoptProject(project: Project, options: ProjectOpenOptions = { startPreview: false }): Promise<void> {
+    const remembered = mergeRememberedProject(state.chatProjects[project.id], project);
     setters.setProjects((current) => {
-      if (current.some((existing) => existing.id === project.id)) return current;
-      return [project, ...current];
+      if (current.some((existing) => existing.id === project.id)) {
+        return current.map((existing) => existing.id === project.id ? mergeRememberedProject(existing, remembered) : existing);
+      }
+      return [remembered, ...current];
     });
-    setters.setChatProjects((current) => ({ ...current, [project.id]: project }));
-    await selectProject(project.id);
+    setters.setChatProjects((current) => ({ ...current, [project.id]: mergeRememberedProject(current[project.id], remembered) }));
+    await selectProject(remembered.id, remembered, options);
   }
 
   return {
     adoptProject,
     rememberProject,
     createProject,
-    createFile,
-    undoCodeChange,
-    loadProjectFilesWithConnection,
-    selectFile,
+    createFile: fileActions.createFile,
+    undoCodeChange: fileActions.undoCodeChange,
+    loadProjectFilesWithConnection: fileActions.loadProjectFilesWithConnection,
+    selectFile: fileActions.selectFile,
     selectProject,
     ...desktopFolders
+  };
+}
+
+function isProject(value: Project | ProjectOpenOptions | undefined): value is Project {
+  return Boolean(value && "id" in value);
+}
+
+function mergeRememberedProject(existing: Project | undefined, incoming: Project): Project {
+  if (!existing) return incoming;
+  const savedBrief = existing.brief;
+  return {
+    ...incoming,
+    ...existing,
+    name: incoming.name || existing.name,
+    path: incoming.path || existing.path,
+    source: incoming.source ?? existing.source,
+    updated: incoming.updated || existing.updated,
+    analysis: incoming.analysis ?? existing.analysis,
+    stack: savedBrief ? existing.stack : incoming.stack || existing.stack,
+    brief: savedBrief ?? incoming.brief,
+    detectedBrief: savedBrief ? (existing.detectedBrief ?? incoming.detectedBrief) : (incoming.detectedBrief ?? existing.detectedBrief),
+    briefRequired: savedBrief ? false : (incoming.briefRequired ?? existing.briefRequired),
+    briefRequiredFilePath: savedBrief ? undefined : (incoming.briefRequiredFilePath ?? existing.briefRequiredFilePath),
+    briefedFilePaths: existing.briefedFilePaths ?? incoming.briefedFilePaths
   };
 }

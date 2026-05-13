@@ -151,4 +151,15 @@ export const part5 = {
   frequencyBackdropImage: {
     ...StyleSheet.absoluteFillObject
   },
+  quizBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#04070D",
+    overflow: "hidden"
+  },
+  quizBackdropShade: {
+    ...StyleSheet.absoluteFillObject
+  },
+  quizBackdropVignette: {
+    ...StyleSheet.absoluteFillObject
+  },
 };

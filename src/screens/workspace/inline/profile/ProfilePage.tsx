@@ -8,7 +8,6 @@ import { ProfileHero } from "./ProfileHero";
 import { EditProfileSheet } from "./EditProfileSheet";
 import { BillingSheet } from "./BillingSheet";
 import { UsageSheet } from "./UsageSheet";
-import { ReferSheet } from "./ReferSheet";
 import { NotificationsSheet } from "./NotificationsSheet";
 import { AppearanceSheet } from "./AppearanceSheet";
 import { SecuritySheet } from "./SecuritySheet";
@@ -41,9 +40,7 @@ export function ProfilePage({ activeTab, onTabChange }: {
   return (
     <View style={styles.profileScreen}>
       <ProfileHero
-        onEdit={() => sheets.open("edit")}
         onOpenBilling={() => sheets.open("billing")}
-        onOpenUsage={() => sheets.open("usage")}
       />
 
       <ProfileSettingsGroup
@@ -53,8 +50,7 @@ export function ProfilePage({ activeTab, onTabChange }: {
         rows={[
           { key: "Profile information", icon: "person-outline", label: t("profile.row.profileInformation") },
           { key: "Billing & subscription", icon: "card-outline", label: t("profile.row.billing") },
-          { key: "Usage & history", icon: "time-outline", label: t("profile.row.usage") },
-          { key: "Refer & earn", icon: "gift-outline", label: t("profile.row.refer") }
+          { key: "Usage & history", icon: "time-outline", label: t("profile.row.usage") }
         ]}
       />
 
@@ -85,10 +81,9 @@ export function ProfilePage({ activeTab, onTabChange }: {
       <EditProfileSheet visible={sheets.isOpen("edit")} onClose={sheets.close} />
       <BillingSheet visible={sheets.isOpen("billing")} onClose={sheets.close} />
       <UsageSheet visible={sheets.isOpen("usage")} onClose={sheets.close} onUpgrade={() => sheets.open("billing")} />
-      <ReferSheet visible={sheets.isOpen("refer")} onClose={sheets.close} />
-      <NotificationsSheet visible={sheets.isOpen("notifications")} onClose={sheets.close} sheets={sheets} />
+      <NotificationsSheet visible={sheets.isOpen("notifications")} onClose={sheets.close} />
       <AppearanceSheet visible={sheets.isOpen("appearance")} onClose={sheets.close} sheets={sheets} />
-      <SecuritySheet visible={sheets.isOpen("security")} onClose={sheets.close} sheets={sheets} onSignOutAll={() => sheets.open("logout")} />
+      <SecuritySheet visible={sheets.isOpen("security")} onClose={sheets.close} />
       <LanguageSheet visible={sheets.isOpen("language")} onClose={sheets.close} sheets={sheets} />
       <HelpSheet visible={sheets.isOpen("help")} onClose={sheets.close} onOpenSupport={() => sheets.open("support")} />
       <SupportSheet visible={sheets.isOpen("support")} onClose={sheets.close} />

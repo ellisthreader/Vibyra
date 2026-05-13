@@ -114,18 +114,18 @@ export const part16 = {
     flexGrow: 1,
     paddingBottom: 126,
     paddingHorizontal: 18,
-    paddingTop: 8
+    paddingTop: 10
   },
   contentScroll: {
     flex: 1
   },
   dashboardContent: {
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     paddingBottom: 94,
-    paddingTop: 4
+    paddingTop: 10
   },
   projectsContent: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 18,
     paddingTop: 10
   },
   dangerButton: {

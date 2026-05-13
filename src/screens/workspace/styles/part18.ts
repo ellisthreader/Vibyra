@@ -164,41 +164,4 @@ export const part18 = {
     fontWeight: "900",
     marginTop: 2
   },
-  appPreviewHint: {
-    color: "#AAA6BC",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 2
-  },
-  appPreviewArrow: {
-    alignItems: "center",
-    height: 28,
-    justifyContent: "center",
-    width: 20
-  },
-  appModalScreen: {
-    backgroundColor: "#02030C",
-    flex: 1
-  },
-  appModalHeader: {
-    alignItems: "center",
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10
-  },
-  appModalIconButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
-    height: 36,
-    justifyContent: "center",
-    width: 36
-  },
-  appModalTitleStack: {
-    flex: 1,
-    minWidth: 0
-  },
 } as const;

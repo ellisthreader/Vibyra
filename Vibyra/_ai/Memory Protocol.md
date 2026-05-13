@@ -4,13 +4,15 @@ Purpose: minimize token use by routing agents through small, durable notes befor
 
 ## Read Order
 
-1. `Project Context.md`
+1. `Memory Protocol.md` (this file, usually from repo instructions)
 2. `Context Map.md`
-3. Exactly one domain index unless the task crosses boundaries:
+3. `Project Context.md`
+4. Exactly one domain index unless the task crosses boundaries:
    - `Vibyra App Memory.md`
    - `Vibyra Desktop Memory.md`
-4. If the domain index points to focused topic notes, read exactly one focused note for the task.
-5. Only then inspect source files named by the focused note or found with a targeted search.
+   - `Vibyra Backend Memory.md`
+5. If the domain index points to focused topic notes, read exactly one focused note for the task.
+6. Only then inspect source files named by the focused note or found with a targeted search.
 
 ## Token Rules
 
@@ -45,7 +47,8 @@ If more context is needed, summarize what was learned before reading more.
 
 ## Note Size Rules
 
-- Index notes should route, not explain; keep them under about 60 lines.
-- Focused notes should fit one feature/workflow and stay under about 80 lines.
+- Index notes should route, not explain; keep them under about 60 lines when practical.
+- Focused notes should fit one feature/workflow and stay under about 80 lines when practical.
 - Split notes when a section grows enough that a future task would not usually need the whole thing.
 - Prefer filenames that match user language, for example `AI Live Chat.md`, `Live Preview.md`, or `Pairing And Connection.md`.
+- Long specs and decision logs are deep references. Do not read them by default; use `rg` for exact terms and then read only the matching section.

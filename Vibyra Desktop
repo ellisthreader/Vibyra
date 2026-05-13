@@ -3,7 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-APP_URL="http://127.0.0.1:4317/desktop"
+PORT="${VIBYRA_AGENT_PORT:-4317}"
+APP_URL="http://127.0.0.1:${PORT}/desktop"
 CHROME_PROFILE="$HOME/.vibyra-desktop-window"
 
 open_window() {
@@ -16,17 +17,23 @@ open_window() {
   fi
 }
 
-if lsof -ti :4317 >/dev/null 2>&1; then
-  open_window
-  exit 0
+PORT_PIDS="$(lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN 2>/dev/null || true)"
+
+if [ -n "$PORT_PIDS" ]; then
+  if curl -fsS "http://127.0.0.1:${PORT}/health" 2>/dev/null | grep -q '"ok":true'; then
+    open_window
+    exit 0
+  fi
+  echo "Port ${PORT} is already in use by a different local server." >&2
+  ps -o pid=,cmd= -p "$PORT_PIDS" >&2 || true
+  echo "Stop the old Vibyra Desktop process first, then run npm run desktop again." >&2
+  echo "Try: kill ${PORT_PIDS}" >&2
+  exit 1
 fi
 
-if [ ! -f backend/public/build/manifest.json ]; then
-  (cd backend && npm install && npm run build)
+if [ ! -f desktop/local-app.mjs ]; then
+  echo "Could not find desktop/local-app.mjs" >&2
+  exit 1
 fi
 
-mkdir -p backend/storage/app/vibyra backend/storage/logs
-(cd backend && php artisan serve --host=0.0.0.0 --port=4317 > storage/logs/vibyra-desktop.log 2>&1 & echo $! > storage/app/vibyra/desktop.pid)
-
-sleep 1
-open_window
+node desktop/local-app.mjs

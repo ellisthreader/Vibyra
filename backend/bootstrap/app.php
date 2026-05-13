@@ -25,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'events',
             'preview/start',
             'agents/start',
+            'agents/apply',
+            'agents/discard',
             'commands/run',
             'api/*',
         ]);

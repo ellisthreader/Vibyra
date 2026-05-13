@@ -11,7 +11,7 @@ export const part21 = {
     lineHeight: 17
   },
   profileScreen: {
-    gap: 8
+    gap: 5
   },
   profileSection: {
     gap: 0
@@ -61,15 +61,15 @@ export const part21 = {
   },
   profileRenewDate: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
-    lineHeight: 19
+    lineHeight: 18
   },
   profileRenewMeta: {
     color: "#A8A2B6",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
-    lineHeight: 17
+    lineHeight: 15
   },
   profileSummaryCard: {
     backgroundColor: "rgba(14, 17, 28, 0.9)",
@@ -84,16 +84,16 @@ export const part21 = {
   },
   profileSummaryEmail: {
     color: "#A9A3B8",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "800",
-    marginTop: 5
+    marginTop: 3
   },
   profileSummaryName: {
     color: colors.text,
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 26
+    lineHeight: 24
   },
   profileSummaryTop: {
     alignItems: "center",
@@ -132,42 +132,42 @@ export const part21 = {
   },
   profileUsageDivider: {
     backgroundColor: "rgba(125, 120, 142, 0.25)",
-    height: 49,
+    height: 40,
     width: 1
   },
   profileUsageIcon: {
     alignItems: "center",
     backgroundColor: "rgba(30, 31, 48, 0.86)",
-    borderRadius: 12,
-    height: 43,
+    borderRadius: 11,
+    height: 38,
     justifyContent: "center",
-    width: 43
+    width: 38
   },
   profileUsageItem: {
     alignItems: "center",
     flex: 1,
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     minWidth: 0
   },
   profileUsageLabel: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
-    lineHeight: 17
+    lineHeight: 15
   },
   profileUsageStrip: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 13,
-    minHeight: 58,
+    gap: 9,
+    minHeight: 48,
     paddingHorizontal: 0
   },
   profileUsageValue: {
     color: colors.text,
-    fontSize: 21,
+    fontSize: 19,
     fontWeight: "900",
-    lineHeight: 25
+    lineHeight: 23
   },
   projectsBackdrop: {
     ...StyleSheet.absoluteFillObject

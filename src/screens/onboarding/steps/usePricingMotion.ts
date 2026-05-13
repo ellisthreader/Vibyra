@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, PanResponder } from "react-native";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { plans } from "../data/plans";
 import { getPlanMotionValue } from "../persona";
 import { Plan } from "../types";
@@ -14,12 +15,12 @@ export function usePricingMotion(selectedPlan: Plan, recommendedPlan: Plan, setS
       toValue: getPlanMotionValue(selectedPlan),
       duration: 520,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true
+      useNativeDriver: supportsNativeAnimation
     }).start();
   }, [auraMotion, selectedPlan]);
 
   const settleCard = () => {
-    Animated.spring(cardSwipeX, { toValue: 0, damping: 22, mass: 0.8, stiffness: 210, useNativeDriver: true }).start();
+    Animated.spring(cardSwipeX, { toValue: 0, damping: 22, mass: 0.8, stiffness: 210, useNativeDriver: supportsNativeAnimation }).start();
   };
 
   const switchPlanBySwipe = (direction: 1 | -1) => {
@@ -34,11 +35,11 @@ export function usePricingMotion(selectedPlan: Plan, recommendedPlan: Plan, setS
       toValue: direction === 1 ? -420 : 420,
       duration: 180,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true
+      useNativeDriver: supportsNativeAnimation
     }).start(() => {
       setSelectedPlan(plans[nextIndex].name);
       cardSwipeX.setValue(direction === 1 ? 420 : -420);
-      Animated.spring(cardSwipeX, { toValue: 0, damping: 24, mass: 0.85, stiffness: 190, useNativeDriver: true }).start();
+      Animated.spring(cardSwipeX, { toValue: 0, damping: 24, mass: 0.85, stiffness: 190, useNativeDriver: supportsNativeAnimation }).start();
     });
   };
 

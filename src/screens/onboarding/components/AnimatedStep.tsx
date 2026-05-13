@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing } from "react-native";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { styles } from "../styles";
 
 export function AnimatedStep({ children, fullBleed = false, transitionKey }: { children: React.ReactNode; fullBleed?: boolean; transitionKey: string }) {
@@ -21,13 +22,13 @@ export function AnimatedStep({ children, fullBleed = false, transitionKey }: { c
         toValue: 1,
         duration: hasAnimatedRef.current ? 220 : 0,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
+        useNativeDriver: supportsNativeAnimation
       }),
       Animated.timing(translateY, {
         toValue: 0,
         duration: hasAnimatedRef.current ? 260 : 0,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
+        useNativeDriver: supportsNativeAnimation
       })
     ]).start();
     hasAnimatedRef.current = true;

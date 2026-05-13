@@ -2,6 +2,7 @@ import { dirname, extname, relative, resolve } from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { headers } from "./http.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
+import { STATIC_PREVIEW_ENTRIES, analyzedProjectPreviewHtml } from "./previewResolver.mjs";
 import { appState, TOKEN } from "./state.mjs";
 
 export async function serveProjectPreview(res, url) {
@@ -27,12 +28,18 @@ export async function serveProjectPreview(res, url) {
   const relativePath = requestedPath || entryPath;
 
   if (!relativePath) {
-    sendHtml(res, 200, previewShell(project.name, "This project does not have a phone-viewable app entry yet."));
+    sendHtml(res, 200, analyzedProjectPreviewHtml(project));
     return;
   }
 
   const filePath = await safeProjectFile(project.path, relativePath);
   if (!filePath) {
+    if (isPreviewImagePath(relativePath)) {
+      res.writeHead(200, headers("image/svg+xml; charset=utf-8"));
+      res.end(missingPreviewImageSvg());
+      return;
+    }
+
     sendHtml(res, 404, previewShell("Preview file missing", "The requested preview asset is no longer available."));
     return;
   }
@@ -58,9 +65,7 @@ export function previewUrl(projectId, token) {
 }
 
 async function previewEntryPath(project) {
-  const candidates = ["index.html", "dist/index.html", "build/index.html", "public/index.html", "web/index.html"];
-
-  for (const candidate of candidates) {
+  for (const candidate of STATIC_PREVIEW_ENTRIES) {
     if (await safeProjectFile(project.path, candidate)) return candidate;
   }
 
@@ -111,6 +116,15 @@ function contentTypeFor(filePath) {
   };
 
   return types[extname(filePath).toLowerCase()] ?? "application/octet-stream";
+}
+
+function isPreviewImagePath(path) {
+  const cleanPath = String(path).split("?")[0];
+  return [".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"].includes(extname(cleanPath).toLowerCase());
+}
+
+function missingPreviewImageSvg() {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21163a"/><stop offset="1" stop-color="#0b0d17"/></linearGradient></defs><rect width="960" height="540" fill="url(#g)"/><path d="M120 404 302 242l118 102 78-70 342 130v46H120z" fill="#8e3cff" opacity=".42"/><circle cx="690" cy="170" r="58" fill="#d7c4ff" opacity=".72"/><text x="480" y="478" fill="#efe8ff" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="700" text-anchor="middle">Image asset not included</text></svg>`;
 }
 
 function sendHtml(res, status, html) {

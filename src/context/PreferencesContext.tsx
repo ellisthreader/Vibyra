@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useColorScheme } from "react-native";
 import { AppearanceMode } from "../screens/workspace/inline/profile/types";
 import { themedColor } from "../screens/workspace/styles/themeTransform";
+import { readStorageItem, readStorageItemSync, writeStorageItem } from "../utils/nativeStorage";
 import { localizedDate, localizedNumber, translate } from "./translations";
 
 const PREFS_KEY = "vibyra.prefs.v1";
@@ -13,13 +14,8 @@ type StoredPrefs = {
 
 const defaults: StoredPrefs = { appearance: "dark", language: "English" };
 
-function getStorage() {
-  return typeof globalThis.localStorage === "undefined" ? null : globalThis.localStorage;
-}
-
-function loadPrefs(): StoredPrefs {
+function parsePrefs(raw: string | null): StoredPrefs {
   try {
-    const raw = getStorage()?.getItem(PREFS_KEY);
     if (!raw) return defaults;
     const parsed = JSON.parse(raw) as Partial<StoredPrefs>;
     const appearance: AppearanceMode = parsed.appearance === "light" || parsed.appearance === "auto" ? parsed.appearance : "dark";
@@ -30,9 +26,17 @@ function loadPrefs(): StoredPrefs {
   }
 }
 
-function savePrefs(prefs: StoredPrefs) {
+function loadPrefsSync(): StoredPrefs {
+  return parsePrefs(readStorageItemSync(PREFS_KEY));
+}
+
+async function loadPrefs(): Promise<StoredPrefs> {
+  return parsePrefs(await readStorageItem(PREFS_KEY));
+}
+
+async function savePrefs(prefs: StoredPrefs) {
   try {
-    getStorage()?.setItem(PREFS_KEY, JSON.stringify(prefs));
+    await writeStorageItem(PREFS_KEY, JSON.stringify(prefs));
   } catch {
     /* ignore */
   }
@@ -40,6 +44,7 @@ function savePrefs(prefs: StoredPrefs) {
 
 export type PreferencesValue = {
   appearance: AppearanceMode;
+  preferencesReady: boolean;
   setAppearance: (mode: AppearanceMode) => void;
   language: string;
   setLanguage: (lang: string) => void;
@@ -52,14 +57,30 @@ export type PreferencesValue = {
 const PreferencesContext = createContext<PreferencesValue | null>(null);
 
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
-  const initial = useMemo(loadPrefs, []);
+  const initial = useMemo(loadPrefsSync, []);
+  const [preferencesReady, setPreferencesReady] = useState(false);
   const [appearance, setAppearanceState] = useState<AppearanceMode>(initial.appearance);
   const [language, setLanguageState] = useState<string>(initial.language);
   const systemScheme = useColorScheme();
 
   useEffect(() => {
-    savePrefs({ appearance, language });
-  }, [appearance, language]);
+    let cancelled = false;
+    loadPrefs()
+      .then((prefs) => {
+        if (cancelled) return;
+        setAppearanceState(prefs.appearance);
+        setLanguageState(prefs.language);
+      })
+      .finally(() => {
+        if (!cancelled) setPreferencesReady(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesReady) return;
+    void savePrefs({ appearance, language });
+  }, [appearance, language, preferencesReady]);
 
   const setAppearance = useCallback((mode: AppearanceMode) => setAppearanceState(mode), []);
   const setLanguage = useCallback((lang: string) => setLanguageState(lang), []);
@@ -81,6 +102,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   const value: PreferencesValue = {
     appearance,
+    preferencesReady,
     setAppearance,
     language,
     setLanguage,

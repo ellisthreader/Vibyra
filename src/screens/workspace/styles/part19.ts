@@ -161,13 +161,19 @@ export const part19 = {
     backgroundColor: "rgba(64, 24, 112, 0.82)",
     borderColor: "#A84BFF",
     borderRadius: 999,
-    borderWidth: 4,
-    height: 72,
+    borderWidth: 3,
+    height: 64,
     justifyContent: "center",
+    overflow: "hidden",
     shadowColor: "#8F35FF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.74,
-    shadowRadius: 16,
-    width: 72
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    width: 64
+  },
+  profileAvatarImage: {
+    borderRadius: 999,
+    height: "100%",
+    width: "100%"
   },
 } as const;

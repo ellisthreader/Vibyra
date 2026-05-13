@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\DesktopResponses;
 use App\Services\ContentModeration;
 use App\Services\VibyraDesktopState;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class VibyraDesktopController extends Controller
 {
+    use DesktopResponses;
+
     public function __construct(
         private readonly VibyraDesktopState $desktop,
         private readonly ContentModeration $moderation,
@@ -152,10 +155,26 @@ class VibyraDesktopController extends Controller
 
         return $this->json($this->desktop->startAgent(
             (string) $request->input('projectId'),
+            (string) $request->input('projectPath', ''),
             (string) $request->input('prompt'),
             (string) $request->input('model', 'gpt-5.5'),
-            (string) $request->input('reasoningEffort', 'medium')
+            (string) $request->input('reasoningEffort', 'medium'),
+            $request->boolean('apply')
         ));
+    }
+
+    public function applyAgent(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->applyPendingAgent((string) $request->input('runId')));
+    }
+
+    public function discardAgent(Request $request): JsonResponse
+    {
+        $this->authorizeToken($request);
+
+        return $this->json($this->desktop->discardPendingAgent((string) $request->input('runId')));
     }
 
     public function runCommand(Request $request): JsonResponse
@@ -169,26 +188,4 @@ class VibyraDesktopController extends Controller
         ));
     }
 
-    public function options(): JsonResponse
-    {
-        return $this->json([]);
-    }
-
-    private function authorizeToken(Request $request): void
-    {
-        if (! $this->desktop->tokenIsValid($request->header('Authorization'))) {
-            abort(response()->json(['ok' => false, 'error' => 'Missing or invalid desktop token'], 401));
-        }
-    }
-
-    private function json(array $payload, int $status = 200): JsonResponse
-    {
-        return response()
-            ->json($payload, $status)
-            ->withHeaders([
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
-                'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-            ]);
-    }
 }

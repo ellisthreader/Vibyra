@@ -8,6 +8,7 @@ export type AgentStartResult = {
   events: LogEvent[];
   preview: { state: PreviewState; url?: string | null; title?: string | null };
   buildState: BuildState;
+  pendingApplyId?: string;
 };
 
 export function calculatePromptMoney(prompt: string) {

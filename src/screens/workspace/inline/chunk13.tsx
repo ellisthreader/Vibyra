@@ -19,7 +19,7 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { CommunityAppLogo } from "./index";
+import { CommunityAppLogo } from "./chunk16";
 
 export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onToggleBookmark, onToggleLike, post }: {
   bookmarked: boolean;
@@ -30,8 +30,6 @@ export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onT
   onToggleLike: () => void;
   post: CommunityPost;
 }) {
-  const likes = post.likes + (liked ? 1 : 0);
-
   return (
     <Pressable style={({ pressed }) => [styles.communityPostCard, pressed ? styles.communityPostCardPressed : null]} onPress={onOpen}>
       <View style={styles.communityPostTop}>
@@ -58,7 +56,7 @@ export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onT
             onToggleLike();
           }}>
             <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : "#B7B4C8"} size={17} />
-            <Text style={[styles.communityPostStatText, liked ? styles.communityPostStatLiked : null]}>{likes}</Text>
+            <Text style={[styles.communityPostStatText, liked ? styles.communityPostStatLiked : null]}>{post.likes}</Text>
           </Pressable>
           <View style={styles.communityPostStat}>
             <Ionicons name="chatbubble-outline" color="#B7B4C8" size={17} />
@@ -82,4 +80,3 @@ export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onT
     </Pressable>
   );
 }
-

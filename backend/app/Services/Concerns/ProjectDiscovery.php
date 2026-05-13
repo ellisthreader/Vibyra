@@ -122,4 +122,22 @@ trait ProjectDiscovery
 
         return null;
     }
+
+    private function projectFromTrustedPath(string $path): ?array
+    {
+        if (trim($path) === '') {
+            return null;
+        }
+
+        $real = realpath($path);
+        if (! $real || ! is_dir($real)) {
+            return null;
+        }
+        $home = rtrim((string) getenv('HOME'), '/');
+        $homeReal = $home ? (realpath($home) ?: $home) : '';
+        if (! $homeReal || ! str_starts_with($real.'/', $homeReal.'/')) {
+            return null;
+        }
+        return $this->projectFromPath($real, null, 'desktop');
+    }
 }

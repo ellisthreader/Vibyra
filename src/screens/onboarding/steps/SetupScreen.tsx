@@ -7,6 +7,7 @@ import { VibyraLogo } from "../../../components/VibyraLogo";
 import { useAppContext } from "../../../context/AppContext";
 import { colors } from "../../../styles/theme";
 import { RememberedDesktop } from "../../../types/domain";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { ConnectStep } from "../components/ConnectStep";
 import { connectBackdrop } from "../data/options";
 import { styles } from "../styles";
@@ -36,8 +37,8 @@ export function SetupScreen() {
   useEffect(() => {
     const glowLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(ambientGlow, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(ambientGlow, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.cubic), useNativeDriver: true })
+        Animated.timing(ambientGlow, { toValue: 1, duration: 2600, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+        Animated.timing(ambientGlow, { toValue: 0, duration: 2600, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation })
       ])
     );
 
@@ -49,8 +50,8 @@ export function SetupScreen() {
     panelOpacity.setValue(0);
     panelTranslateY.setValue(12);
     Animated.parallel([
-      Animated.timing(panelOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(panelTranslateY, { toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true })
+      Animated.timing(panelOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+      Animated.timing(panelTranslateY, { toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation })
     ]).start();
   }, [connectMode, connectStep, panelOpacity, panelTranslateY]);
 

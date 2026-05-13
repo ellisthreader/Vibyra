@@ -26,32 +26,33 @@ export function OnboardingNav({
   next: () => void;
 }) {
   const continueLabel = showingMoment ? "Continue" : step === 4 ? "Skip" : step === 5 ? "Continue" : step === 6 ? "Start free trial" : "Continue";
+  const useArtButtons = isArtQuizStep || showingMoment;
 
   return (
-    <View style={[styles.navRow, isArtQuizStep ? styles.navRowFrequency : null, navRowExtra]}>
+    <View style={[styles.navRow, useArtButtons ? styles.navRowFrequency : null, showingMoment ? styles.navRowMoment : null, navRowExtra]}>
       {showingMoment || step > 0 ? (
-        <Pressable style={[styles.backButton, isArtQuizStep ? styles.backButtonArt : null]} onPress={back}>
-          <View style={isArtQuizStep ? styles.backIconArt : null}>
-            <Ionicons name="chevron-back" color={isArtQuizStep ? "#D8CAFF" : colors.muted} size={isArtQuizStep ? 31 : 18} />
+        <Pressable style={[styles.backButton, useArtButtons ? styles.backButtonArt : null]} onPress={back}>
+          <View style={useArtButtons ? styles.backIconArt : null}>
+            <Ionicons name="chevron-back" color={useArtButtons ? "#D8CAFF" : colors.muted} size={useArtButtons ? 31 : 18} />
           </View>
-          <Text style={[styles.backText, isArtQuizStep ? styles.backTextArt : null]}>Back</Text>
+          <Text style={[styles.backText, useArtButtons ? styles.backTextArt : null]}>Back</Text>
         </Pressable>
       ) : (
         <View />
       )}
       <Pressable
         disabled={!canContinue || profileGenerating}
-        style={[styles.nextButton, isArtQuizStep ? styles.nextButtonFrequency : null, !canContinue || profileGenerating ? styles.nextButtonDisabled : null]}
+        style={[styles.nextButton, useArtButtons ? styles.nextButtonFrequency : null, !canContinue || profileGenerating ? styles.nextButtonDisabled : null]}
         onPress={next}
       >
-        {isArtQuizStep ? (
+        {useArtButtons ? (
           <LinearGradient
             colors={["rgba(183, 86, 255, 0.98)", "rgba(118, 42, 216, 0.95)", "rgba(59, 18, 128, 0.96)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.nextButtonFrequencyGradient}
           >
-            <Text style={[styles.nextText, styles.nextTextFrequency]}>{step === 4 ? "Skip" : "Continue"}</Text>
+            <Text style={[styles.nextText, styles.nextTextFrequency]}>{continueLabel}</Text>
             <Ionicons name="arrow-forward" color={colors.text} size={28} />
           </LinearGradient>
         ) : (

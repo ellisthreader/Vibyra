@@ -97,6 +97,61 @@ trait GeneratedFileHandling
         return $applied;
     }
 
+    private function previewGeneratedFiles(array $project, array $files): array
+    {
+        $prepared = [];
+        $projectPath = rtrim((string) $project['path'], '/');
+
+        foreach ($files as $file) {
+            $relativePath = $this->safeRelativePath($project, (string) ($file['path'] ?? ''));
+            $content = (string) ($file['content'] ?? '');
+
+            if (! $relativePath || $content === '' || strlen($content) > 200000) {
+                continue;
+            }
+
+            $fullPath = $projectPath.'/'.$relativePath;
+            $previousBody = File::exists($fullPath) ? File::get($fullPath) : null;
+            $prepared[] = $this->fileEntryFromContent($fullPath, $relativePath, $content, $previousBody);
+        }
+
+        return $prepared;
+    }
+
+    private function fileEntryFromContent(string $fullPath, string $relativePath, string $body, ?string $previousBody): array
+    {
+        $extension = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION) ?: 'txt');
+        $previewBody = mb_check_encoding($body, 'UTF-8')
+            ? Str::limit($body, 20000, "\n\n[Preview truncated]")
+            : '[Binary file cannot be previewed]';
+
+        return [
+            'id' => rtrim(strtr(base64_encode($fullPath), '+/', '-_'), '='),
+            'name' => basename($fullPath),
+            'path' => $relativePath,
+            'language' => $extension,
+            'changed' => $previousBody === null ? 'added' : 'modified',
+            'body' => $previewBody,
+            'previousBody' => $previousBody,
+        ];
+    }
+
+    private function changesForFiles(string $runId, array $files, string $status): array
+    {
+        return array_values(array_map(function ($file, $index) use ($runId, $status) {
+            return [
+                'id' => $runId.'-applied-'.$index,
+                'file' => $file['path'],
+                'summary' => $status === 'applied' ? 'Applied Vibyra generated file' : 'Apply Vibyra generated file',
+                'additions' => count(explode("\n", (string) ($file['body'] ?? ''))),
+                'deletions' => isset($file['previousBody']) && $file['previousBody'] !== null
+                    ? count(explode("\n", (string) $file['previousBody']))
+                    : 0,
+                'status' => $status,
+            ];
+        }, $files, array_keys($files)));
+    }
+
     private function safeRelativePath(array $project, string $path): ?string
     {
         $projectPath = rtrim(str_replace('\\', '/', (string) ($project['path'] ?? '')), '/');

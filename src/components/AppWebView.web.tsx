@@ -1,47 +1,45 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { StyleProp, View, ViewStyle, StyleSheet } from "react-native";
+import { parsePreviewError, prepareSrcDocHtml, PreviewRuntimeError } from "./appWebViewPreview";
+
+export type { PreviewRuntimeError };
 
 export type AppWebViewProps = {
   html?: string;
+  onPreviewError?: (error: PreviewRuntimeError) => void;
   url?: string;
   reloadKey: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function AppWebView({ html, reloadKey, style, url }: AppWebViewProps) {
+export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppWebViewProps) {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const safeHtml = html ? prepareSrcDocHtml(html) : undefined;
+
+  useEffect(() => {
+    if (!onPreviewError) return undefined;
+    const listener = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const error = parsePreviewError(event.data);
+      if (error) onPreviewError(error);
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, [onPreviewError]);
+
   return (
     <View style={[styles.host, style]}>
       <iframe
         key={reloadKey}
+        ref={iframeRef}
         src={safeHtml ? undefined : url}
         srcDoc={safeHtml}
-        sandbox="allow-scripts allow-forms allow-pointer-lock allow-popups allow-modals"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals"
         style={iframeStyle}
-        title="Vibyra preview"
+        title="App preview"
       />
     </View>
   );
-}
-
-const RELATIVE_SCRIPT_RE = /<script\b([^>]*)\bsrc\s*=\s*("|')(?!https?:|data:|blob:|\/\/|about:)([^"']*?)\2([^>]*)>\s*<\/script>/gi;
-const RELATIVE_LINK_RE = /<link\b([^>]*?)\bhref\s*=\s*("|')(?!https?:|data:|\/\/|about:)([^"']*?)\2([^>]*)>/gi;
-const BASE_TAG = '<base href="about:srcdoc">';
-
-function prepareSrcDocHtml(html: string): string {
-  // Strip relative <script src> and <link href> — they would resolve against the host page
-  // (e.g. http://localhost:8081/App.js), which is never what an AI-generated preview wants.
-  let next = html.replace(RELATIVE_SCRIPT_RE, "").replace(RELATIVE_LINK_RE, "");
-  if (!/<base\b/i.test(next)) {
-    if (/<head[^>]*>/i.test(next)) {
-      next = next.replace(/<head([^>]*)>/i, `<head$1>${BASE_TAG}`);
-    } else if (/<html[^>]*>/i.test(next)) {
-      next = next.replace(/<html([^>]*)>/i, `<html$1><head>${BASE_TAG}</head>`);
-    } else {
-      next = `<!doctype html><html><head>${BASE_TAG}</head><body>${next}</body></html>`;
-    }
-  }
-  return next;
 }
 
 const iframeStyle: React.CSSProperties = {

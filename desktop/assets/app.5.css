@@ -1,0 +1,105 @@
+.home-aside {
+  border-left: 1px solid var(--line);
+  display: grid;
+  grid-template-rows: 1fr;
+  padding: 36px 35px 36px 35px;
+}
+.activity-panel { min-height: 0; }
+.activity-list {
+  display: grid;
+  margin-top: 27px;
+}
+.activity-row {
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 10px minmax(0, 1fr) 45px;
+  min-height: 91px;
+  padding: 0 0 21px 7px;
+}
+.activity-row + .activity-row { padding-top: 26px; }
+.activity-dot {
+  border-radius: 999px;
+  height: 10px;
+  margin-top: 8px;
+  width: 10px;
+}
+.activity-row h3 {
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 850;
+  line-height: 22px;
+}
+.activity-row p {
+  color: #a9adbc;
+  font-size: 15px;
+  font-weight: 570;
+  line-height: 22px;
+  margin-top: 4px;
+}
+.activity-row time {
+  color: #9ca1b2;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 22px;
+  white-space: nowrap;
+}
+.connection-card {
+  background: rgba(5, 8, 17, 0.86);
+  border: 1px solid rgba(124, 132, 156, 0.2);
+  border-radius: 18px;
+  display: grid;
+  gap: 17px;
+  padding: 26px 22px 24px;
+}
+.connection-title {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+.connection-title svg { color: #bd43ff; }
+.connection-card > p {
+  color: #aeb3c3;
+  font-size: 14px;
+  font-weight: 650;
+}
+.copy-url {
+  align-items: center;
+  background: rgba(11, 14, 25, 0.86);
+  border: 1px solid rgba(126, 134, 159, 0.14);
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 13px;
+}
+.copy-url span {
+  color: #fff;
+  flex: 1;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.copy-url button {
+  background: transparent;
+  color: #b5bac8;
+  display: flex;
+  padding: 0;
+}
+.add-new {
+  background: transparent;
+  color: #b63dff;
+  font-size: 16px;
+  font-weight: 780;
+  justify-self: end;
+  padding: 0;
+}
+.section-title { align-items: center; display: flex; gap: 12px; justify-content: space-between; margin-bottom: 14px; }
+.section-title h2 { font-size: 20px; font-weight: 900; line-height: 24px; }
+.section-title p { color: var(--accent-2); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.count { color: var(--subtle); font-size: 12px; font-weight: 900; }

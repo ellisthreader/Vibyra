@@ -30,7 +30,7 @@ export async function checkHealth(url: string, code?: string): Promise<HealthRes
     return {
       url,
       machineName: String(payload?.machineName ?? ""),
-      pairCode,
+      pairCode: pairCode || undefined,
       connectionUrls,
       ok: Boolean(payload?.ok) && (!code || pairCode === code)
     };
@@ -58,12 +58,20 @@ export async function findDesktopByCode(
   return null;
 }
 
-export async function requestPairAtUrl(requests: Requests, url: string, code: string) {
+export async function requestPairAtUrl(requests: Requests, url: string, code: string, requestId = makePairRequestId()) {
   try {
+    const normalizedCode = code.trim().toUpperCase();
     const result = await requests.desktopRequest<PairResponse>(
       url,
       "/pair",
-      { method: "POST", body: JSON.stringify({ code, deviceName: "Vibyra Phone" }) },
+      {
+        method: "POST",
+        body: JSON.stringify({
+          deviceName: "Vibyra Phone",
+          requestId,
+          ...(normalizedCode ? { code: normalizedCode } : { autoPair: true })
+        })
+      },
       url.startsWith("https://") ? RELAY_PAIR_TIMEOUT_MS : LAN_PAIR_TIMEOUT_MS
     );
     return { type: "paired" as const, url, result };
@@ -73,28 +81,54 @@ export async function requestPairAtUrl(requests: Requests, url: string, code: st
   }
 }
 
+function makePairRequestId() {
+  return `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export async function waitForDesktopApproval(
   requests: Requests,
   requestId: string,
   desktopUrl: string,
-  setStatus: (message: string) => void
+  setStatus: (message: string) => void,
+  desktopUrls: string[] = []
 ) {
-  const maxAttempts = Math.ceil(APPROVAL_TIMEOUT_MS / APPROVAL_POLL_MS);
+  const urls = uniqueValues([desktopUrl, ...desktopUrls]);
+  const deadline = Date.now() + APPROVAL_TIMEOUT_MS;
   let lastStatusError = "";
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+  while (Date.now() < deadline) {
     await wait(APPROVAL_POLL_MS);
     setStatus("Awaiting approval from PC application");
-    try {
-      const result = await requests.desktopRequest<ApprovalResult>(desktopUrl, `/pair/status?requestId=${encodeURIComponent(requestId)}`);
-      if (result.status === "approved") return result;
-      if (result.status === "denied") throw new Error("Desktop denied pairing.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Pairing status check failed";
-      if (message.toLowerCase().includes("denied")) throw new Error("Desktop denied pairing.");
-      if (message.toLowerCase().includes("not found")) throw new Error("Desktop lost the pairing request. Try the code again.");
-      lastStatusError = message;
-      setStatus(`Waiting for PC approval. Last check: ${message}`);
+    let foundStatusRoute = false;
+    let missingRequestCount = 0;
+
+    for (const url of urls) {
+      try {
+        const result = await requests.desktopRequest<ApprovalResult>(
+          url,
+          `/pair/status?requestId=${encodeURIComponent(requestId)}`,
+          {},
+          url.startsWith("https://") ? 2500 : 1200
+        );
+        foundStatusRoute = true;
+        if (result.status === "approved" && result.token) return { ...result, projects: result.projects ?? [], events: result.events ?? [] };
+        if (result.status === "denied") throw new Error("Desktop denied pairing.");
+        break;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Pairing status check failed";
+        if (message.toLowerCase().includes("denied")) throw new Error("Desktop denied pairing.");
+        if (message.toLowerCase().includes("not found")) missingRequestCount += 1;
+        lastStatusError = message;
+      }
     }
+
+    if (urls.length > 0 && missingRequestCount === urls.length) {
+      throw new Error("Desktop lost the pairing request. Try the code again.");
+    }
+    if (!foundStatusRoute && lastStatusError) setStatus(`Waiting for PC approval. Last check: ${lastStatusError}`);
   }
   throw new Error(lastStatusError ? `Pairing timed out while checking PC approval: ${lastStatusError}` : "Pairing timed out. Try the code again.");
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
 }

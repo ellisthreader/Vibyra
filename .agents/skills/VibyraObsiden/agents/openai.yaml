@@ -1,0 +1,3 @@
+display_name: VibyraObsiden
+short_description: Keeps Vibyra Obsidian memory accurate before and after repo work.
+default_prompt: Use Vibyra Obsidian memory for this task: read the required notes first, make the code or analysis changes, then update the smallest relevant Obsidian note with any durable architecture, workflow, route, permission, or debugging knowledge.

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
-import { appApiRequest, BackendOfflineError } from "../utils/appApi";
+import { appApiRequest, BackendOfflineError, isAppSessionExpiredError } from "../utils/appApi";
 
 const FAILURE_COOLDOWN_MS = 30000;
 
@@ -24,7 +24,7 @@ type Snapshot = {
   selectedModel: string;
 };
 
-export function useCloudSync(snapshot: Snapshot, logs: Logs) {
+export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: () => void) {
   const {
     authenticated,
     authToken,
@@ -40,6 +40,11 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
 
   const nextAttemptAtRef = useRef(0);
   const cooldownLoggedRef = useRef(false);
+  const onSessionExpiredRef = useRef(onSessionExpired);
+
+  useEffect(() => {
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [onSessionExpired]);
 
   useEffect(() => {
     if (!authenticated || !authToken) return undefined;
@@ -58,6 +63,10 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs) {
         nextAttemptAtRef.current = 0;
         cooldownLoggedRef.current = false;
       }).catch((error: unknown) => {
+        if (isAppSessionExpiredError(error)) {
+          onSessionExpiredRef.current?.();
+          return;
+        }
         nextAttemptAtRef.current = Date.now() + FAILURE_COOLDOWN_MS;
         if (errorIsBackendOffline(error)) return;
 

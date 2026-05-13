@@ -5,8 +5,8 @@ import { communityDetailAccent, communityDetailAccentDark } from "../data/commun
 export const part29 = {
   tokenRenewalBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 242, 0, 0.12)",
-    borderColor: "rgba(255, 242, 0, 0.36)",
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    borderColor: "rgba(221, 187, 255, 0.22)",
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -15,7 +15,7 @@ export const part29 = {
     paddingVertical: 6
   },
   tokenRenewalText: {
-    color: "#FFF200",
+    color: "#DDBBFF",
     fontSize: 11,
     fontWeight: "900"
   },
@@ -29,15 +29,15 @@ export const part29 = {
     paddingBottom: 28,
     paddingHorizontal: 18,
     paddingTop: 10,
-    shadowColor: "#FFF200",
+    shadowColor: "#8B35FF",
     shadowOffset: { width: 0, height: -14 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.2,
     shadowRadius: 30
   },
   tokenSheetClose: {
     alignItems: "center",
     backgroundColor: "rgba(139, 53, 255, 0.18)",
-    borderColor: "rgba(255, 242, 0, 0.16)",
+    borderColor: "rgba(221, 187, 255, 0.16)",
     borderRadius: 10,
     borderWidth: 1,
     height: 36,
@@ -50,7 +50,7 @@ export const part29 = {
   },
   tokenSheetHandle: {
     alignSelf: "center",
-    backgroundColor: "rgba(255, 242, 0, 0.42)",
+    backgroundColor: "rgba(221, 187, 255, 0.32)",
     borderRadius: 999,
     height: 4,
     width: 42
@@ -66,20 +66,20 @@ export const part29 = {
   },
   tokenSheetHeaderIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 242, 0, 0.14)",
-    borderColor: "rgba(255, 242, 0, 0.42)",
+    backgroundColor: "rgba(139, 53, 255, 0.2)",
+    borderColor: "rgba(221, 187, 255, 0.24)",
     borderRadius: 14,
     borderWidth: 1,
     height: 48,
     justifyContent: "center",
-    shadowColor: "#FFF200",
+    shadowColor: "#8B35FF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.22,
     shadowRadius: 14,
     width: 48
   },
   tokenSheetKicker: {
-    color: "#FFF200",
+    color: "#BFAEFF",
     fontSize: 10,
     fontWeight: "900",
     textTransform: "uppercase"
@@ -103,10 +103,10 @@ export const part29 = {
     lineHeight: 24
   },
   tokenText: {
-    color: "#FFE76A",
-    fontSize: 15,
+    color: "#F1E9FF",
+    fontSize: 14,
     fontWeight: "900",
-    lineHeight: 18
+    lineHeight: 17
   },
   tokenSubtext: {
     color: "#BDB9C7",

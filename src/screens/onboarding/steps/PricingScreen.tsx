@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
-import { Animated, Pressable, ScrollView, Text, View } from "react-native";
+import { Animated, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../../styles/theme";
 import { plans } from "../data/plans";
@@ -10,6 +10,8 @@ import { BillingPeriod, Plan, PersonaModel } from "../types";
 import { styles } from "../styles";
 import { usePricingMotion } from "./usePricingMotion";
 import { usePricingPurchase } from "./usePricingPurchase";
+
+const pricingBackdrop = require("../../../assets/onboarding-pricing-background.png");
 
 export function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: () => void }) {
   const insets = useSafeAreaInsets();
@@ -27,19 +29,11 @@ export function PricingScreen({ persona, onClose }: { persona: PersonaModel; onC
   return (
     <View style={styles.paywallShell}>
       <LinearGradient colors={theme.background} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.paywallBackground} />
-      <Animated.View
-        style={[
-          styles.paywallAuraOne,
-          { pointerEvents: "none" },
-          { transform: [{ translateX: motion.auraOneTranslateX }, { translateY: motion.auraOneTranslateY }, { scale: motion.auraOneScale }] }
-        ]}
-      />
-      <Animated.View
-        style={[
-          styles.paywallAuraTwo,
-          { pointerEvents: "none" },
-          { transform: [{ translateX: motion.auraTwoTranslateX }, { translateY: motion.auraTwoTranslateY }, { scale: motion.auraTwoScale }] }
-        ]}
+      <Image fadeDuration={0} source={pricingBackdrop} resizeMode="stretch" style={styles.paywallBackgroundImage} />
+      <LinearGradient
+        colors={["rgba(4, 5, 12, 0.3)", "rgba(4, 5, 12, 0.58)", "rgba(4, 5, 12, 0.36)"]}
+        locations={[0, 0.48, 1]}
+        style={[styles.paywallBackgroundShade, { pointerEvents: "none" }]}
       />
       <View style={[styles.paywallNoise, { pointerEvents: "none" }]} />
       <ScrollView

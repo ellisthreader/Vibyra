@@ -13,8 +13,18 @@ export const part30 = {
     color: colors.text,
     fontSize: 16.5,
     fontWeight: "800",
-    letterSpacing: -0.2,
-    lineHeight: 22,
+    letterSpacing: 0,
+    lineHeight: 20,
+    minWidth: 0,
+    textAlign: "center"
+  },
+  chatTopDirectory: {
+    color: "#8F8A9E",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
+    fontSize: 11,
+    fontWeight: "700",
+    lineHeight: 15,
+    marginTop: 1,
     minWidth: 0,
     textAlign: "center"
   },
@@ -94,20 +104,24 @@ export const part30 = {
     textAlign: "left"
   },
   welcomePanel: {
-    minHeight: 182,
-    overflow: "visible"
+    backgroundColor: "rgba(12, 15, 28, 0.74)",
+    borderColor: "rgba(119, 103, 157, 0.22)",
+    borderRadius: 16,
+    borderWidth: 1,
+    minHeight: 118,
+    overflow: "hidden"
   },
   welcomePanelCompact: {
-    minHeight: 158
+    minHeight: 106
   },
   welcomeBackdrop: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 18,
+    gap: 14,
     justifyContent: "space-between",
     minHeight: "100%",
     overflow: "visible",
-    paddingTop: 8,
+    padding: 13,
     width: "100%"
   },
   welcomeHeroImage: {
@@ -124,7 +138,8 @@ export const part30 = {
     width: 212
   },
   welcomeHeroLeft: {
-    maxWidth: 210,
+    flex: 1,
+    maxWidth: 178,
     minWidth: 0,
     zIndex: 1
   },
@@ -137,10 +152,15 @@ export const part30 = {
   welcomeLivePill: {
     alignItems: "center",
     alignSelf: "flex-start",
+    backgroundColor: "rgba(55, 214, 122, 0.1)",
+    borderColor: "rgba(95, 235, 154, 0.2)",
+    borderRadius: 999,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 7,
-    marginBottom: 14,
-    paddingVertical: 2
+    marginBottom: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 5
   },
   welcomeLiveText: {
     color: "#D7D1E7",
@@ -151,26 +171,10 @@ export const part30 = {
   },
   welcomeTitle: {
     color: colors.text,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 32,
+    lineHeight: 28,
     textAlign: "left"
-  },
-  mobileConnectionCard: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(55, 214, 122, 0.1)",
-    borderColor: "rgba(55, 214, 122, 0.18)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    maxWidth: "100%",
-    paddingHorizontal: 12,
-    paddingVertical: 8
-  },
-  mobileConnectionCopy: {
-    minWidth: 0
   },
 } as const;

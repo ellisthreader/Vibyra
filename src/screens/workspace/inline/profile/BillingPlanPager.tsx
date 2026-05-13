@@ -3,12 +3,13 @@ import { View } from "react-native";
 import { BillingFeaturedPlan } from "./BillingFeaturedPlan";
 import { BillingCycle, PLAN_TIERS, PlanKey } from "./types";
 
-export function BillingPlanPager({ cycle, currentKey, recommendedKey, onSelect, busy }: {
+export function BillingPlanPager({ cycle, currentKey, recommendedKey, onSelect, busy, disabled }: {
   cycle: BillingCycle;
   currentKey: PlanKey;
   recommendedKey: PlanKey;
   onSelect: (key: PlanKey, cycle: BillingCycle) => void;
   busy?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <View style={{ flex: 1, gap: 10 }}>
@@ -19,6 +20,7 @@ export function BillingPlanPager({ cycle, currentKey, recommendedKey, onSelect, 
           cycle={cycle}
           onSelect={onSelect}
           busy={busy && tier.key === recommendedKey}
+          disabled={disabled}
           isCurrent={tier.key === currentKey}
           isRecommended={tier.key === recommendedKey}
         />

@@ -2,6 +2,7 @@ import { RememberedDesktop } from "../types/domain";
 import { appendDesktopCandidates, getDesktopCandidates } from "../utils/network";
 import {
   desktopConnectionUrls,
+  DISCOVERY_SCAN_TIMEOUT_MS,
   HEALTH_SCAN_BATCH_SIZE,
   HealthResult,
   PAIR_SCAN_BATCH_SIZE,
@@ -9,7 +10,7 @@ import {
   healthToDesktop,
   mergeRememberedDesktops
 } from "./pairingHelpers";
-import { checkHealth, findDesktopByCode, requestPairAtUrl } from "./pairingDiscovery";
+import { checkHealth, requestPairAtUrl } from "./pairingDiscovery";
 
 type Requests = {
   desktopRequest: <T>(baseUrl: string, endpoint: string, options?: RequestInit, timeoutMs?: number) => Promise<T>;
@@ -24,25 +25,37 @@ type ScanContext = {
 };
 
 export async function scanPairableDesktops(ctx: ScanContext) {
+  const deadline = Date.now() + DISCOVERY_SCAN_TIMEOUT_MS;
+  const currentDesktopUrl = (desktop: RememberedDesktop) => Boolean(
+    ctx.connectionUrl && [desktop.url, ...(desktop.connectionUrls ?? [])].includes(ctx.connectionUrl)
+  );
   const rememberedChecking = ctx.rememberedDesktops.map((desktop) => ({
     ...desktop,
-    status: ctx.connectionUrl === desktop.url ? "current" : "checking"
+    status: currentDesktopUrl(desktop) ? "current" : "checking"
   }) satisfies RememberedDesktop);
   if (rememberedChecking.length > 0) ctx.setRememberedDesktops(rememberedChecking);
 
   const candidates = appendDesktopCandidates(
     await getDesktopCandidates(ctx.agentUrl),
-    ctx.rememberedDesktops.flatMap((desktop) => [desktop.url])
+    ctx.rememberedDesktops.flatMap((desktop) => [desktop.url, ...(desktop.connectionUrls ?? [])])
   );
   let found: RememberedDesktop[] = rememberedChecking;
   let checked = 0;
+  let timedOut = false;
 
   for (let index = 0; index < candidates.length; index += HEALTH_SCAN_BATCH_SIZE) {
+    if (Date.now() >= deadline) {
+      timedOut = true;
+      break;
+    }
     const group = candidates.slice(index, index + HEALTH_SCAN_BATCH_SIZE);
     const results = await Promise.all(group.map((url) => checkHealth(url)));
     const online = results
-      .filter((item): item is HealthResult => Boolean(item?.ok && item.pairCode))
-      .map((result) => healthToDesktop(result, ctx.connectionUrl === result.url ? "current" : "online"));
+      .filter((item): item is HealthResult => Boolean(item?.ok))
+      .map((result) => healthToDesktop(
+        result,
+        ctx.connectionUrl && [result.url, ...result.connectionUrls].includes(ctx.connectionUrl) ? "current" : "online"
+      ));
 
     if (online.length > 0) {
       found = mergeRememberedDesktops(found, online);
@@ -56,7 +69,11 @@ export async function scanPairableDesktops(ctx: ScanContext) {
   found = found.map((desktop) => desktop.status === "checking" ? { ...desktop, status: "offline" } : desktop);
   ctx.setRememberedDesktops(found);
   const reachable = found.filter((desktop) => desktop.status === "online" || desktop.status === "current");
-  ctx.setHealthMessage(reachable.length > 0 ? `Found ${reachable.length} reachable Vibyra Desktop app${reachable.length === 1 ? "" : "s"}.` : "No reachable Vibyra Desktop app found on this Wi-Fi. Check Vibyra Desktop is open and your firewall allows local connections.");
+  ctx.setHealthMessage(reachable.length > 0
+    ? `Found ${reachable.length} reachable Vibyra Desktop app${reachable.length === 1 ? "" : "s"}.`
+    : timedOut
+      ? "PC appears offline. Could not find Vibyra Desktop after about 90 seconds. Check it is open, awake, and on the same Wi-Fi."
+      : "PC appears offline. No reachable Vibyra Desktop app found on this Wi-Fi. Check Vibyra Desktop is open and your firewall allows local connections.");
   return found;
 }
 
@@ -64,25 +81,33 @@ export async function scanPairByCode(
   requests: Requests,
   agentUrl: string,
   code: string,
-  setHealthMessage: (message: string) => void
+  setHealthMessage: (message: string) => void,
+  rememberedDesktops: RememberedDesktop[] = []
 ) {
-  let candidates = await getDesktopCandidates(agentUrl);
+  const deadline = Date.now() + DISCOVERY_SCAN_TIMEOUT_MS;
+  const candidates = appendDesktopCandidates(
+    await getDesktopCandidates(agentUrl),
+    rememberedDesktops.flatMap((desktop) => [desktop.url, ...(desktop.connectionUrls ?? [])])
+  );
   const wrongCodeUrls: string[] = [];
+  const requestId = `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let checked = 0;
+  let timedOut = false;
   setHealthMessage("Finding Vibyra Desktop...");
 
-  const healthMatch = await findDesktopByCode(code, candidates, setHealthMessage);
-  if (healthMatch) {
-    const directPair = await requestPairAtUrl(requests, healthMatch.url, code);
-    if (directPair.type === "paired") return directPair;
-    candidates = appendDesktopCandidates(candidates, desktopConnectionUrls(healthMatch.url, healthMatch.connectionUrls));
-  }
-
   for (let index = 0; index < candidates.length; index += PAIR_SCAN_BATCH_SIZE) {
+    if (Date.now() >= deadline) {
+      timedOut = true;
+      break;
+    }
     const group = candidates.slice(index, index + PAIR_SCAN_BATCH_SIZE);
-    const results = group.map((url) => requestPairAtUrl(requests, url, code));
+    const results = group.map((url) => requestPairAtUrl(requests, url, code, requestId));
     const paired = await firstMatching(results, (result) => result.type === "paired");
-    if (paired?.type === "paired") return paired;
+    if (paired?.type === "paired") {
+      const health = await checkHealth(paired.url, code);
+      const connectionUrls = desktopConnectionUrls(paired.url, health?.connectionUrls ?? []);
+      return { ...paired, connectionUrls };
+    }
     const settledResults = await Promise.all(results);
 
     wrongCodeUrls.push(...settledResults
@@ -93,5 +118,7 @@ export async function scanPairByCode(
   }
 
   if (wrongCodeUrls.length > 0) throw new Error("Found Vibyra Desktop, but the code did not match");
-  throw new Error("Could not reach Vibyra Desktop");
+  throw new Error(timedOut
+    ? "PC appears offline. Could not find Vibyra Desktop after about 90 seconds"
+    : "PC appears offline. Could not reach Vibyra Desktop");
 }

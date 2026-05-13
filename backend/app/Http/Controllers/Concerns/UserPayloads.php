@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
 use App\Models\VibyraSession;
+use App\Services\LevelProgression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,6 +13,11 @@ trait UserPayloads
 {
     private function sessionPayload(Request $request, User $user): array
     {
+        if (method_exists($this, 'recordDailyLogin')) {
+            $this->recordDailyLogin($user);
+            $user = $user->fresh() ?? $user;
+        }
+
         return [
             'ok' => true,
             'token' => $this->createSession($request, $user),
@@ -64,6 +70,7 @@ trait UserPayloads
             'planRenewsAt' => optional($user->plan_renews_at)->toIso8601String(),
             'creditsBalance' => (int) $user->credits_balance,
             'creditsUsed' => (int) $user->credits_used,
+            'level' => app(LevelProgression::class)->payload($user),
             'dailyCreditsUsed' => (int) ($user->daily_credits_used ?? 0),
             'dailyCreditsCap' => (int) ($planConfig['daily_credit_cap'] ?? 0),
             'monthlyCredits' => (int) ($cycle === 'annual'

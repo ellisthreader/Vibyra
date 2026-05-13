@@ -22,6 +22,17 @@ export function isRunArtifact(file: { path?: string } | null | undefined) {
   return Boolean(file?.path && isRunArtifactPath(file.path));
 }
 
+function isRunArtifactReply(reply: string) {
+  return /^#\s*Vibyra Agent Run\b/i.test(reply.trim())
+    || reply.includes("Vibyra Desktop wrote a safe run artifact");
+}
+
+export function normalizeAgentReply(reply: string) {
+  return isRunArtifactReply(reply)
+    ? "I updated the local preview.\n\nThe internal run log was saved locally, and the changes are ready to review below."
+    : reply.trim();
+}
+
 const HTML_ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
 
 function escapeHtml(value: string) {
@@ -72,14 +83,15 @@ export function pickPreviewHtml(files: FileEntry[], hasLiveUrl: boolean): string
 }
 
 export function formatAssistantReply(reply: string, changes: CodeChange[]) {
+  const safeReply = normalizeAgentReply(reply);
   const applied = changes
     .filter((change) => change.summary.includes("Applied Vibyra generated file"))
     .map((change) => change.file);
 
   if (applied.length === 0) {
-    return reply.trim() || "Done.";
+    return safeReply || "Done.";
   }
 
   const label = applied.length === 1 ? "file" : "files";
-  return `${reply.trim() || "Done."}\n\nApplied ${applied.length} ${label}:\n${applied.map((file) => `- ${file}`).join("\n")}`;
+  return `${safeReply || "Done."}\n\nApplied ${applied.length} ${label}:\n${applied.map((file) => `- ${file}`).join("\n")}`;
 }

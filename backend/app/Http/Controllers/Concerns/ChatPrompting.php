@@ -12,12 +12,18 @@ trait ChatPrompting
         $project = trim((string) $request->input('project', ''));
         $filePath = trim((string) $request->input('filePath', ''));
         $fileBody = trim((string) $request->input('fileBody', ''));
-        $buildMode = ($skill['mode'] ?? null) === 'build' || $this->isBuildPrompt($prompt);
+        $projectFiles = $this->projectFilesContext((array) $request->input('projectFiles', []));
+        $buildMode = $this->resolveChatMode($request, $prompt, $skill) === 'build';
         $history = $this->chatHistoryMessages((array) $request->input('history', []), $buildMode);
         $context = [];
 
         if ($project !== '') {
             $context[] = "Project: {$project}";
+        }
+
+        if ($projectFiles !== '') {
+            $context[] = "Project files:\n{$projectFiles}";
+            $context[] = "Answer rule: use the project files and snippets above to give the user a direct answer. Do not respond with bash, grep, find, rg, npm, or terminal commands unless the user explicitly asks for commands.";
         }
 
         if ($filePath !== '' && $fileBody !== '') {
@@ -54,15 +60,17 @@ trait ChatPrompting
     private function systemPrompt(bool $buildMode): string
     {
         if (! $buildMode) {
-            return 'You are Vibyra, a senior coding assistant. Be direct and concise. Prefer short answers and minimal code. Do not invent files or frameworks not shown in context.';
+            return 'You are Vibyra, a senior coding assistant. Be direct and concise. Prefer short answers and minimal code. Use the project/folder context first; focus on a single file only when the user explicitly asks about that file. For project analysis questions, synthesize the answer from the provided context instead of telling the user to run shell commands. If the user asks to run a terminal command, Vibyra can run approved project commands through the paired desktop app; do not say terminal commands are impossible. Do not invent files or frameworks not shown in context.';
         }
 
         return implode("\n", [
             'You are Vibyra, a senior coding agent for an app builder. Be direct and concise.',
-            'When the user asks to build/create/make an app, tool, page, dashboard, calculator, or game, return a runnable preview EXACTLY as:',
+            'When the user asks to build/create/make an app, tool, page, dashboard, calculator, game, site, or website, return a runnable preview EXACTLY as:',
             '<vibyra-app title="Short Name"><!doctype html><html>...self-contained HTML with inline <style> and <script>...</html></vibyra-app>',
             'Rules: one self-contained HTML doc; CDNs only from cdn.jsdelivr.net, unpkg.com, cdn.tailwindcss.com, fonts.googleapis.com, fonts.gstatic.com; localStorage for persistence; dark theme (#0B0D17 bg, #E7E3EF text); responsive for 375px width; real interactive functionality.',
-            'Before the block, write 1-2 short sentences introducing what you built. Do NOT repeat the HTML or include walkthroughs.',
+            'Do not invent or reference image asset URLs, local files, or asset CDNs (especially cdn.jsdelivr.net/gh/vibyra/assets@main); avoid Phaser external sprite URLs unless verified. Use canvas drawing, inline SVG symbols, CSS shapes/gradients, emoji, or generated data/blob-safe inline assets.',
+            'Return only the <vibyra-app> block. Do not add prose, markdown, walkthroughs, or a conversational introduction.',
+            'All JavaScript must be valid. When assigning HTML strings, use quoted strings or template literals; never write raw HTML after an equals sign.',
         ]);
     }
 
@@ -72,7 +80,7 @@ trait ChatPrompting
         if (! preg_match('/\b(build|create|make|generate|design|prototype)\b/', $p)) {
             return false;
         }
-        return (bool) preg_match('/\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen)\b/', $p);
+        return (bool) preg_match('/\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen|preview)\b/', $p);
     }
 
     private function chatHistoryMessages(array $history, bool $buildMode): array

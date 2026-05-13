@@ -19,137 +19,120 @@ export const part32 = {
     lineHeight: 22,
     textAlign: "center"
   },
-  runningProjectsHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  runningProjectsKicker: {
-    color: "#B977FF",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0,
-    textTransform: "uppercase"
-  },
   runningProjectsList: {
-    gap: 9
+    gap: 12
   },
-  runningProjectsOpenButton: {
-    alignItems: "center",
-    height: 34,
-    justifyContent: "center",
-    width: 34
+  runningProjectsScroll: {
+    maxHeight: 430
+  },
+  runningProjectsScrollContent: {
+    gap: 12,
+    paddingBottom: 2
   },
   runningProjectsPanel: {
-    gap: 10
-  },
-  runningProjectsTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 24,
-    marginTop: 2
-  },
-  runningProjectsTitleBlock: {
-    minWidth: 0
+    gap: 14
   },
   runningProjectTask: {
-    color: "#C8BFE0",
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 15,
-    marginTop: 2
-  },
-  runningProjectTime: {
-    backgroundColor: "rgba(42, 9, 75, 0.86)",
-    borderColor: "rgba(172, 58, 255, 0.42)",
-    borderRadius: 999,
-    borderWidth: 1,
-    color: "#F0B8FF",
-    fontSize: 9,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    textAlign: "right",
-    textTransform: "lowercase"
-  },
-  runningProjectTimeWaiting: {
-    backgroundColor: "rgba(7, 48, 30, 0.82)",
-    borderColor: "rgba(117, 244, 166, 0.34)",
-    color: "#83F2AD"
+    color: "#B8B4C4",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 3
   },
   runningProjectTop: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
-    gap: 9
+    gap: 12
   },
-  runningProjectSignal: {
-    alignItems: "flex-end",
-    alignSelf: "stretch",
-    justifyContent: "flex-start",
-    minWidth: 112
-  },
-  runningProjectSignalWaiting: {
-    alignSelf: "auto",
-    justifyContent: "center"
-  },
-  homeActions: {
+  homeQueueStats: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    justifyContent: "space-between"
+    gap: 10
   },
-  homeAction: {
-    backgroundColor: "rgba(12, 15, 28, 0.64)",
-    borderColor: "rgba(119, 103, 157, 0.18)",
+  homeQueueStat: {
+    backgroundColor: "rgba(7, 10, 20, 0.82)",
+    borderColor: "rgba(118, 74, 202, 0.36)",
     borderRadius: 16,
     borderWidth: 1,
-    height: 132,
-    justifyContent: "space-between",
-    padding: 15,
-    width: "48.5%"
+    flex: 1,
+    minHeight: 74,
+    paddingHorizontal: 16,
+    paddingVertical: 12
   },
-  homeActionBadge: {
-    color: "#9E98B5",
-    fontSize: 11,
+  homeQueueStatValue: {
+    color: "#D18BFF",
+    fontSize: 34,
     fontWeight: "900",
-    marginTop: 4
+    lineHeight: 38
   },
-  homeActionIcon: {
-    alignItems: "center",
-    backgroundColor: "rgba(82, 45, 154, 0.38)",
-    borderColor: "rgba(164, 110, 255, 0.22)",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 38,
-    justifyContent: "center",
-    width: 38
+  homeQueueStatValueQueued: {
+    color: "#8CC8FF"
   },
-  homeActionLabel: {
-    color: colors.text,
+  homeQueueStatLabel: {
+    color: "#A855FF",
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 16,
+    marginTop: 2,
+    textTransform: "uppercase"
+  },
+  homeQueueStatLabelQueued: {
+    color: "#4CA3FF"
+  },
+  homeQueueSection: {
+    gap: 10
+  },
+  homeQueueSectionTitle: {
+    color: "#AAA7B7",
     fontSize: 15,
-    fontWeight: "900",
-    lineHeight: 18,
-    marginTop: 10
-  },
-  homeActionMeta: {
-    color: "#A9A7BB",
-    fontSize: 11,
     fontWeight: "800",
-    lineHeight: 14,
-    marginTop: 4,
-    minHeight: 28
+    lineHeight: 19
   },
-  homeActionPressed: {
-    backgroundColor: "rgba(23, 20, 43, 0.78)",
-    borderColor: "rgba(164, 110, 255, 0.32)",
-    transform: [{ scale: 0.99 }]
-  },
-  homeActionTop: {
+  runningProjectMetaRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between"
+    gap: 7,
+    marginTop: 8
+  },
+  runningProjectMetaDot: {
+    backgroundColor: "#A855FF",
+    borderRadius: 999,
+    height: 8,
+    width: 8
+  },
+  runningProjectMetaDotQueued: {
+    backgroundColor: "#4CA3FF"
+  },
+  runningProjectMetaText: {
+    color: "#A855FF",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  runningProjectMetaTextQueued: {
+    color: "#4CA3FF"
+  },
+  runningProjectMetaSep: {
+    color: "#7C798A",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  runningProjectMetaMuted: {
+    color: "#AAA7B7",
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 17
+  },
+  runningProjectBottom: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 12
+  },
+  runningProjectPercent: {
+    color: "#A855FF",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 19
   },
 } as const;

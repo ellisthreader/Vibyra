@@ -145,7 +145,7 @@ trait ProjectFileState
 
     public function events(): array
     {
-        $state = $this->read();
+        $state = $this->recoverStaleActiveAgentRun($this->read());
 
         return [
             'events' => $state['events'],

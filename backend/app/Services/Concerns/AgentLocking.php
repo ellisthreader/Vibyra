@@ -8,25 +8,26 @@ use Symfony\Component\Process\Process;
 
 trait AgentLocking
 {
-    public function startAgent(string $projectId, string $prompt, string $model, string $reasoningEffort): array
+    public function startAgent(string $projectId, string $projectPath, string $prompt, string $model, string $reasoningEffort, bool $apply): array
     {
         $lockPath = storage_path('app/vibyra/agent.lock');
         File::ensureDirectoryExists(dirname($lockPath));
         $lock = fopen($lockPath, 'c');
 
         if (! $lock || ! flock($lock, LOCK_EX | LOCK_NB)) {
-            abort(response()->json([
-                'ok' => false,
-                'error' => 'An AI task is already running. Wait for it to finish before sending another prompt.',
-            ], 429));
+            $state = $this->recoverStaleActiveAgentRun($this->read());
+            abort(response()->json($this->agentBusyPayload($state, 'lock'), 429));
         }
 
         try {
-            return $this->startAgentLocked($projectId, $prompt, $model, $reasoningEffort);
+            return $this->startAgentLocked($projectId, $projectPath, $prompt, $model, $reasoningEffort, $apply);
         } finally {
             $state = $this->read();
+            $hadActiveRun = ! empty($state['activeAgentRun']);
             $state['activeAgentRun'] = null;
-            $state['lastPromptCompletedAt'] = now()->toISOString();
+            if ($hadActiveRun) {
+                $state['lastPromptCompletedAt'] = now()->toISOString();
+            }
             $this->write($state);
 
             flock($lock, LOCK_UN);

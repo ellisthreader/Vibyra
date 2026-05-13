@@ -2,14 +2,14 @@ import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
-import { View } from "react-native";
+import { Image, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
 import { AnimatedStep } from "./onboarding/components/AnimatedStep";
 import { PersistentOnboardingBackground } from "./onboarding/components/Backdrop";
 import { OnboardingNav } from "./onboarding/components/OnboardingNav";
 import { ProgressIndicator } from "./onboarding/components/ProgressIndicator";
-import { connectBackdrop, frequencyBackdrop, initialAnswers, resultBackdrop } from "./onboarding/data/options";
+import { connectBackdrop, frequencyBackdrop, initialAnswers, momentBackdrop, resultBackdrop } from "./onboarding/data/options";
 import { personaModels } from "./onboarding/data/personas";
 import { deviceOptions, frequencyOptions, intentOptions } from "./onboarding/data/quizOptions";
 import { calculatePersona, canContinueFromStep } from "./onboarding/persona";
@@ -62,7 +62,7 @@ export function OnboardingScreen() {
   }, [step, persona]);
 
   useEffect(() => {
-    void Asset.loadAsync([connectBackdrop, frequencyBackdrop, resultBackdrop]);
+    void Asset.loadAsync([connectBackdrop, frequencyBackdrop, momentBackdrop, resultBackdrop]);
   }, []);
 
   const selectFrequency = (frequency: UsageFrequency) => setAnswers((current) => ({ ...current, frequency }));
@@ -112,7 +112,7 @@ export function OnboardingScreen() {
   const navExtra = isArtQuizStep
     ? { paddingBottom: Math.max(insets.bottom + 6, 16), marginTop: 14 }
     : showingMoment
-      ? { paddingBottom: Math.max(insets.bottom + 14, 20), paddingHorizontal: 20 }
+      ? { paddingBottom: Math.max(insets.bottom + 6, 16) }
       : null;
 
   return (
@@ -129,6 +129,22 @@ export function OnboardingScreen() {
             isResultStep ? [styles.flowResult, { paddingTop: Math.max(insets.top + 8, 18), paddingBottom: Math.max(insets.bottom + 10, 18) }] : null,
             isStyledQuizStep || isGeneratingProfile ? [styles.flowFrequency, { paddingTop: Math.max(insets.top + 8, 18), paddingBottom: Math.max(insets.bottom + 10, 18) }] : null
           ]}>
+            {showingMoment ? (
+              <>
+                <Image fadeDuration={0} source={momentBackdrop} resizeMode="stretch" style={styles.frequencyBackdropImage} />
+                <LinearGradient
+                  colors={["rgba(4, 7, 13, 0.36)", "rgba(4, 7, 13, 0.58)", "rgba(4, 7, 13, 0.38)"]}
+                  locations={[0, 0.52, 1]}
+                  style={[styles.quizBackdropShade, { pointerEvents: "none" }]}
+                />
+                <LinearGradient
+                  colors={["rgba(0, 0, 0, 0.42)", "rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.52)"]}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={[styles.quizBackdropVignette, { pointerEvents: "none" }]}
+                />
+              </>
+            ) : null}
             {isPaywall || hideFlowChrome ? null : (
               <View style={showingMoment ? [styles.momentProgressSafe, { paddingHorizontal: 20, paddingTop: Math.max(insets.top + 10, 20) }] : null}>
                 <ProgressIndicator

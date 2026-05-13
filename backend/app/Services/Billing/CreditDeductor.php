@@ -98,6 +98,31 @@ class CreditDeductor
         });
     }
 
+    public function spend(User $user, int $credits, string $kind, ?string $reference = null, ?array $meta = null): CreditLedger
+    {
+        return DB::transaction(function () use ($user, $credits, $kind, $reference, $meta) {
+            $fresh = User::lockForUpdate()->find($user->id);
+            $newBalance = max(0, (int) $fresh->credits_balance - $credits);
+            $fresh->forceFill([
+                'credits_balance' => $newBalance,
+                'credits_used' => (int) $fresh->credits_used + $credits,
+                'daily_credits_used' => (int) $fresh->daily_credits_used + $credits,
+            ])->save();
+            $user->credits_balance = $newBalance;
+            $user->credits_used = $fresh->credits_used;
+            $user->daily_credits_used = $fresh->daily_credits_used;
+
+            return CreditLedger::create([
+                'user_id' => $user->id,
+                'kind' => $kind,
+                'credits_delta' => -$credits,
+                'credits_balance_after' => $newBalance,
+                'reference' => $reference,
+                'meta' => $meta,
+            ]);
+        });
+    }
+
     public function refresh(User $user, int $monthlyAllowance, ?array $meta = null): CreditLedger
     {
         return DB::transaction(function () use ($user, $monthlyAllowance, $meta) {

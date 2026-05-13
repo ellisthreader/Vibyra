@@ -29,27 +29,33 @@ export const part12 = {
   paywallBackground: {
     ...StyleSheet.absoluteFillObject
   },
+  paywallBackgroundImage: {
+    ...StyleSheet.absoluteFillObject
+  },
+  paywallBackgroundShade: {
+    ...StyleSheet.absoluteFillObject
+  },
   paywallAuraOne: {
-    backgroundColor: "rgba(109, 59, 255, 0.28)",
+    backgroundColor: "rgba(109, 59, 255, 0.08)",
     borderRadius: 999,
-    height: 260,
+    height: 220,
     position: "absolute",
-    right: -90,
-    top: 60,
-    width: 260
+    right: -160,
+    top: -20,
+    width: 220
   },
   paywallAuraTwo: {
-    backgroundColor: "rgba(242, 58, 205, 0.18)",
+    backgroundColor: "rgba(242, 58, 205, 0.08)",
     borderRadius: 999,
-    bottom: 120,
-    height: 280,
-    left: -120,
+    bottom: 80,
+    height: 220,
+    left: -160,
     position: "absolute",
-    width: 280
+    width: 220
   },
   paywallNoise: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.025)"
+    backgroundColor: "rgba(255, 255, 255, 0.012)"
   },
   paywallBadge: {
     borderRadius: 999,
@@ -62,16 +68,16 @@ export const part12 = {
     fontWeight: "900"
   },
   paywallCard: {
-    backgroundColor: "rgba(13, 13, 18, 0.88)",
-    borderColor: "rgba(139, 92, 255, 0.32)",
-    borderRadius: 22,
-    borderWidth: 1,
-    marginTop: 8,
-    padding: 13,
+    backgroundColor: "rgba(8, 7, 18, 0.82)",
+    borderColor: "rgba(216, 134, 255, 0.34)",
+    borderRadius: 24,
+    borderWidth: 1.2,
+    marginTop: 12,
+    padding: 16,
     shadowColor: colors.accent,
     shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
+    shadowOpacity: 0.2,
+    shadowRadius: 26,
     width: "100%"
   },
   paywallCardHeader: {
@@ -95,7 +101,7 @@ export const part12 = {
     flexGrow: 1,
     justifyContent: "space-between",
     minHeight: "100%",
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingTop: 34
   },
   paywallCta: {

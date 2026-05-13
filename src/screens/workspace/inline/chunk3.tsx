@@ -12,7 +12,7 @@ import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
-import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
+import { normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
 import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
@@ -26,7 +26,7 @@ export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
   onOpenTokens: () => void;
   tokenBalance: number;
 }) {
-  const flashColor = useThemedColor("#FFE76A");
+  const flashColor = useThemedColor("#DDBBFF");
   return (
     <Pressable
       accessibilityRole="button"
@@ -35,11 +35,8 @@ export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
       onPress={onOpenTokens}
       style={({ pressed }) => [styles.tokenPill, pressed ? styles.tokenPillPressed : null]}
     >
-      <Ionicons name="flash-outline" color={flashColor} size={compact ? 18 : 20} />
-      <View>
-        <Text style={styles.tokenText}>{tokenBalance.toLocaleString()}</Text>
-        <Text style={styles.tokenSubtext}>tokens</Text>
-      </View>
+      <Ionicons name="flash" color={flashColor} size={compact ? 15 : 16} />
+      <Text style={styles.tokenText}>{tokenBalance.toLocaleString()}</Text>
     </Pressable>
   );
 }
@@ -54,20 +51,6 @@ export function getTopBarTitle(page: DashboardPage) {
 
 export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {
   return `${normalizeAgentUrl(baseUrl)}/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
-}
-
-export async function getCurrentDesktopPairCode(url: string): Promise<string | null> {
-  try {
-    const timeoutMs = url.startsWith("https://") ? 1400 : 900;
-    const response = await fetchWithTimeout(`${url}/health`, {}, timeoutMs);
-    if (!response.ok) return null;
-    const payload = await response.json();
-    if (!payload?.ok) return null;
-    const pairCode = String(payload?.pairCode ?? "").toUpperCase();
-    return pairCode || null;
-  } catch {
-    return null;
-  }
 }
 
 export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visible }: {
@@ -115,9 +98,9 @@ export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visibl
   );
 }
 
-export function getDesktopStatusLabel(status: RememberedDesktop["status"], pairCode: string) {
+export function getDesktopStatusLabel(status: RememberedDesktop["status"]) {
   if (status === "current") return "Connected now";
-  if (status === "online") return `Available nearby - code ${pairCode}`;
+  if (status === "online") return "Available nearby";
   if (status === "checking") return "Checking activity...";
   return "Not reachable on this Wi-Fi";
 }
@@ -128,4 +111,3 @@ export function getDesktopStatusStyle(status: RememberedDesktop["status"]) {
   if (status === "checking") return styles.pcCandidateStatusChecking;
   return styles.pcCandidateStatusOffline;
 }
-

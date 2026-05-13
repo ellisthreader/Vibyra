@@ -1,4 +1,7 @@
 import { RememberedDesktop } from "../types/domain";
+import { LevelProgress } from "./appApiTypes";
+import { readStorageItem, writeStorageItem } from "./nativeStorage";
+import { normalizeLevelProgress } from "./persistenceLevel";
 
 const SESSION_KEY = "vibyra.session.v1";
 
@@ -24,46 +27,35 @@ export type PersistedUser = {
   dailyCreditsCap: number;
   monthlyCredits: number;
   allowedModelTiers: string[];
+  level?: LevelProgress;
   onboardingComplete: boolean;
   rememberedDesktops: RememberedDesktop[];
   appState?: Record<string, unknown>;
 };
 
-const emptySession: PersistedSession = {
-  authToken: "",
-  installId: makeInstallId(),
-  onboardingComplete: false,
-  selectedChatModel: "gpt-5.4-mini",
-  rememberedDesktops: [],
-  user: null
-};
+export function createEmptyPersistedSession(): PersistedSession {
+  return {
+    authToken: "",
+    installId: makeInstallId(),
+    onboardingComplete: false,
+    selectedChatModel: "gpt-5.4-mini",
+    rememberedDesktops: [],
+    user: null
+  };
+}
 
-export function loadPersistedSession(): PersistedSession {
+export async function loadPersistedSession(): Promise<PersistedSession> {
   try {
-    const storage = getStorage();
-    if (!storage) return emptySession;
-    const raw = storage.getItem(SESSION_KEY);
-    if (!raw) return emptySession;
-    const parsed = JSON.parse(raw) as Partial<PersistedSession>;
-    const user = normalizeUser(parsed.user);
-    return {
-      authToken: String(parsed.authToken ?? ""),
-      installId: String(parsed.installId ?? "") || makeInstallId(),
-      onboardingComplete: Boolean(user?.onboardingComplete ?? parsed.onboardingComplete),
-      selectedChatModel: String(parsed.selectedChatModel ?? "gpt-5.4-mini"),
-      rememberedDesktops: user?.rememberedDesktops ?? normalizeDesktops(parsed.rememberedDesktops),
-      user
-    };
+    const raw = await readStorageItem(SESSION_KEY);
+    return raw ? parsePersistedSession(raw) : createEmptyPersistedSession();
   } catch {
-    return emptySession;
+    return createEmptyPersistedSession();
   }
 }
 
-export function savePersistedSession(session: PersistedSession) {
+export async function savePersistedSession(session: PersistedSession) {
   try {
-    const storage = getStorage();
-    if (!storage) return;
-    storage.setItem(SESSION_KEY, JSON.stringify({
+    await writeStorageItem(SESSION_KEY, JSON.stringify({
       authToken: session.authToken,
       installId: session.installId,
       onboardingComplete: session.onboardingComplete,
@@ -80,8 +72,17 @@ export function normalizePersistedUser(value: unknown): PersistedUser | null {
   return normalizeUser(value);
 }
 
-function getStorage() {
-  return typeof globalThis.localStorage === "undefined" ? null : globalThis.localStorage;
+function parsePersistedSession(raw: string): PersistedSession {
+  const parsed = JSON.parse(raw) as Partial<PersistedSession>;
+  const user = normalizeUser(parsed.user);
+  return {
+    authToken: String(parsed.authToken ?? ""),
+    installId: String(parsed.installId ?? "") || makeInstallId(),
+    onboardingComplete: Boolean(user?.onboardingComplete ?? parsed.onboardingComplete),
+    selectedChatModel: String(parsed.selectedChatModel ?? "gpt-5.4-mini"),
+    rememberedDesktops: user?.rememberedDesktops ?? normalizeDesktops(parsed.rememberedDesktops),
+    user
+  };
 }
 
 function normalizeDesktops(value: unknown): RememberedDesktop[] {
@@ -150,6 +151,7 @@ function normalizeUser(value: unknown): PersistedUser | null {
     dailyCreditsCap: normalizeNumber((user as { dailyCreditsCap?: unknown }).dailyCreditsCap, 0),
     monthlyCredits: normalizeNumber((user as { monthlyCredits?: unknown }).monthlyCredits, 0),
     allowedModelTiers,
+    level: normalizeLevelProgress((user as { level?: unknown }).level),
     onboardingComplete: Boolean(user.onboardingComplete),
     rememberedDesktops: normalizeDesktops(user.rememberedDesktops),
     appState: user.appState && typeof user.appState === "object" ? user.appState : {}

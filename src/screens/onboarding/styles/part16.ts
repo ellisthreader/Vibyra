@@ -20,11 +20,11 @@ export const part16 = {
     width: 52
   },
   syncBeam: {
-    backgroundColor: "rgba(46, 235, 255, 0.46)",
+    backgroundColor: "rgba(199, 125, 255, 0.46)",
     borderRadius: 999,
     height: 7,
     position: "absolute",
-    shadowColor: "#2EEBFF",
+    shadowColor: "#C77DFF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.85,
     shadowRadius: 12,
@@ -36,8 +36,8 @@ export const part16 = {
     borderWidth: 1,
     flex: 1,
     justifyContent: "flex-start",
-    minHeight: 112,
-    paddingHorizontal: 8,
+    minHeight: 104,
+    paddingHorizontal: 10,
     paddingVertical: 10
   },
   syncCardBody: {
@@ -45,7 +45,7 @@ export const part16 = {
     fontSize: 10,
     fontWeight: "700",
     lineHeight: 13,
-    marginTop: 4,
+    marginTop: 5,
     textAlign: "center"
   },
   syncCardCopy: {
@@ -56,37 +56,37 @@ export const part16 = {
     alignItems: "center",
     borderRadius: 10,
     borderWidth: 1,
-    height: 34,
+    height: 36,
     justifyContent: "center",
     marginBottom: 9,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.45,
     shadowRadius: 12,
-    width: 34
+    width: 36
   },
   syncCards: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 10,
+    marginTop: 8,
     width: "100%"
   },
   syncCardTitle: {
     color: colors.text,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "900",
-    lineHeight: 15,
+    lineHeight: 16,
     textAlign: "center"
   },
   syncCenterOrb: {
     alignItems: "center",
-    backgroundColor: "rgba(46, 235, 255, 0.2)",
-    borderColor: "rgba(138, 247, 255, 0.7)",
+    backgroundColor: "rgba(151, 54, 255, 0.2)",
+    borderColor: "rgba(216, 134, 255, 0.7)",
     borderRadius: 999,
     borderWidth: 2,
     height: 72,
     justifyContent: "center",
     position: "absolute",
-    shadowColor: "#2EEBFF",
+    shadowColor: "#C77DFF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 18,
@@ -132,52 +132,52 @@ export const part16 = {
   },
   syncHero: {
     alignItems: "center",
-    height: 228,
+    height: 176,
     justifyContent: "center",
-    marginTop: 8,
+    marginTop: 0,
     width: "100%"
   },
   syncHeroGlowBlue: {
-    backgroundColor: "rgba(46, 235, 255, 0.22)",
+    backgroundColor: "rgba(151, 54, 255, 0.2)",
     borderRadius: 999,
-    height: 148,
+    height: 126,
     left: 28,
     position: "absolute",
-    shadowColor: "#8AF7FF",
+    shadowColor: "#C77DFF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.65,
     shadowRadius: 28,
-    top: 30,
-    width: 148
+    top: 26,
+    width: 126
   },
   syncHeroGlowPink: {
     backgroundColor: "rgba(242, 58, 205, 0.18)",
     borderRadius: 999,
-    height: 138,
+    height: 118,
     position: "absolute",
     right: 36,
     shadowColor: "#FF7DE3",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 26,
-    top: 58,
-    width: 138
+    top: 50,
+    width: 118
   },
   syncHeroGlowPurple: {
     backgroundColor: "rgba(109, 59, 255, 0.2)",
     borderRadius: 999,
     bottom: 18,
-    height: 168,
+    height: 140,
     position: "absolute",
     shadowColor: "#A76DFF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.56,
     shadowRadius: 30,
-    width: 220
+    width: 190
   },
   syncHeroImage: {
-    height: 228,
-    width: 318
+    height: 176,
+    width: 246
   },
   syncMobileLabel: {
     bottom: 20,
@@ -185,8 +185,8 @@ export const part16 = {
   },
   syncPill: {
     alignItems: "center",
-    backgroundColor: "rgba(46, 235, 255, 0.08)",
-    borderColor: "rgba(46, 235, 255, 0.38)",
+    backgroundColor: "rgba(151, 54, 255, 0.1)",
+    borderColor: "rgba(216, 134, 255, 0.38)",
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",

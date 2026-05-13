@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
 export type BuildState = "idle" | "building" | "passed" | "failed";
@@ -8,6 +9,14 @@ export type PreviewState = "offline" | "live" | "refreshing" | "delivered";
 
 export type ProjectSource = "pc" | "mobile" | "desktop";
 
+export type ProjectBrief = {
+  kindId: string;
+  kindLabel: string;
+  frameworkId: string;
+  frameworkLabel: string;
+  frameworkDescription: string;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -15,6 +24,12 @@ export type Project = {
   stack: string;
   updated: string;
   source?: ProjectSource;
+  analysis?: ProjectAnalysis;
+  brief?: ProjectBrief;
+  briefRequired?: boolean;
+  briefRequiredFilePath?: string;
+  briefedFilePaths?: string[];
+  detectedBrief?: ProjectBrief | null;
 };
 
 export type DesktopBrowseEntry = {
@@ -25,6 +40,12 @@ export type DesktopBrowseEntry = {
   stack: string;
   updated: string;
   source?: ProjectSource;
+  analysis?: ProjectAnalysis;
+  brief?: ProjectBrief;
+  briefRequired?: boolean;
+  briefRequiredFilePath?: string;
+  briefedFilePaths?: string[];
+  detectedBrief?: ProjectBrief | null;
 };
 
 export type DesktopBrowseListing = {
@@ -36,7 +57,7 @@ export type DesktopBrowseListing = {
 export type Agent = {
   id: string;
   title: string;
-  model: ModelKey;
+  model: string;
   projectId: string;
   state: AgentState;
   progress: number;
@@ -77,19 +98,56 @@ export type FolderRecovery = {
   excludedProjectId?: string;
 };
 
+export type DesktopConnectionPrompt = {
+  query?: string;
+  reason: "desktop-search" | "desktop-browse" | "desktop-agent";
+  stage?: "connect" | "pair" | "open";
+};
+
 export type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   text: string;
   file?: string;
+  assistantModel?: string;
+  runStatus?: ChatRunStatus;
   app?: GeneratedApp;
   codeChanges?: CodeChange[];
   codeFiles?: FileEntry[];
   codeProjectId?: string;
+  pendingApplyId?: string;
   undoneChangeIds?: string[];
   editApproval?: "pending" | "allowed" | "denied";
   folderProposal?: FolderProposal;
   folderRecovery?: FolderRecovery;
+  projectBriefSetup?: ProjectBriefSetupPrompt;
+  desktopConnection?: DesktopConnectionPrompt;
+  agentBusy?: AgentBusyInfo;
+};
+
+export type ChatRunStatus = {
+  startedAt: number;
+  completedAt?: number;
+  activeFile?: string;
+  route: "desktop" | "cloud";
+  mode: "build" | "chat";
+  status: "running" | "complete" | "failed";
+};
+
+export type AgentBusyInfo = {
+  reason?: "active-run" | "lock" | string;
+  runId?: string | null;
+  title?: string | null;
+  model?: string | null;
+  projectId?: string | null;
+  projectName?: string | null;
+  projectPath?: string | null;
+  state?: string | null;
+  progress?: number | null;
+  file?: string | null;
+  startedAt?: string | null;
+  updatedAt?: string | null;
+  elapsedSeconds?: number | null;
 };
 
 export type GeneratedApp = {
@@ -112,6 +170,7 @@ export type AgentConnection = {
   url: string;
   token: string;
   machineName: string;
+  connectionUrls?: string[];
 };
 
 export type DesktopStatus = "current" | "online" | "offline" | "checking";
@@ -131,6 +190,7 @@ export type PairApprovalPayload = {
   url: string;
   token: string;
   machineName: string;
+  connectionUrls?: string[];
   projects: Project[];
   events: LogEvent[];
 };
@@ -138,10 +198,10 @@ export type PairApprovalPayload = {
 export type PairResponse = {
   status: "pending" | "approved";
   requestId?: string;
-  token: string;
+  token?: string;
   machineName: string;
-  projects: Project[];
-  events: LogEvent[];
+  projects?: Project[];
+  events?: LogEvent[];
 };
 
 export type TabDefinition = {

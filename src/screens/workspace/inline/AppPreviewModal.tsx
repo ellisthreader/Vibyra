@@ -1,0 +1,140 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Keyboard, Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { AppWebView } from "../../../components/AppWebView";
+import { useAppContext } from "../../../context/AppContext";
+import type { PreviewRuntimeError } from "../../../components/AppWebView";
+import type { GeneratedApp } from "../../../types/domain";
+import { styles } from "../styles";
+import { chatModelOptions } from "../data/chatModels";
+import { AppPreviewEditStatus, PreviewEditStatus } from "./AppPreviewEditStatus";
+import { PreviewErrorPanel, buildFixPrompt } from "./AppPreviewErrorPanel";
+import { AppPreviewMiniChat } from "./AppPreviewMiniChat";
+
+export function AppPreviewModal({
+  app,
+  onClose,
+  onSubmitAiPrompt
+}: {
+  app: GeneratedApp | null;
+  onClose: () => void;
+  onSubmitAiPrompt: (prompt: string) => Promise<void> | void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [reloadKey, setReloadKey] = useState(0);
+  const [editStatus, setEditStatus] = useState<PreviewEditStatus>("idle");
+  const [editDoneMessage, setEditDoneMessage] = useState("");
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const [miniChatOpen, setMiniChatOpen] = useState(false);
+  const [previewErrors, setPreviewErrors] = useState<PreviewRuntimeError[]>([]);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const appCtx = useAppContext();
+  const modelKey = appCtx.selectedChatModel || appCtx.selectedModel;
+  const modelLabel = chatModelOptions.find((model) => model.key === modelKey)?.label ?? String(modelKey || "AI");
+
+  useEffect(() => {
+    if (app) setReloadKey(0);
+    setMiniChatOpen(false);
+    setPreviewErrors([]);
+  }, [app?.id]);
+
+  useEffect(() => () => {
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (event) => {
+      setKeyboardInset(Math.max(0, event.endCoordinates.height - insets.bottom));
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardInset(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [insets.bottom]);
+
+  if (!app) return null;
+  const previewApp = app;
+
+  const latestError = previewErrors[previewErrors.length - 1];
+
+  function handlePreviewError(error: PreviewRuntimeError) {
+    setPreviewErrors((current) => {
+      const signature = `${error.type}:${error.message}:${error.line ?? ""}:${error.column ?? ""}`;
+      const alreadyCaptured = current.some((item) => `${item.type}:${item.message}:${item.line ?? ""}:${item.column ?? ""}` === signature);
+      if (alreadyCaptured) return current;
+      return [...current, error].slice(-8);
+    });
+  }
+
+  function askAiToFix() {
+    if (!latestError) return;
+    appCtx.setTaskText(buildFixPrompt(previewApp, previewErrors));
+    onClose();
+  }
+
+  async function submitAiPrompt(prompt: string) {
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    setEditDoneMessage(doneMessageForPrompt(prompt));
+    setEditStatus("running");
+    try {
+      await onSubmitAiPrompt(prompt);
+      setEditStatus("done");
+      statusTimerRef.current = setTimeout(() => setEditStatus("idle"), 2600);
+    } catch (error) {
+      setEditStatus("error");
+      statusTimerRef.current = setTimeout(() => setEditStatus("idle"), 3600);
+      throw error;
+    }
+  }
+
+  const previewBottomOffset = 18 + keyboardInset;
+  const errorBottomOffset = keyboardInset + (miniChatOpen ? 224 : 88);
+
+  return (
+    <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
+      <View style={[styles.appModalScreen, { paddingTop: insets.top }]}>
+        <View style={styles.appModalHeader}>
+          <Pressable onPress={onClose} style={styles.appModalIconButton}>
+            <Ionicons name="close" color="#FFFFFF" size={22} />
+          </Pressable>
+          <View style={styles.appModalTitleStack}>
+            <Text style={styles.appModalLabel}>App preview</Text>
+            <Text numberOfLines={1} style={styles.appModalTitle}>{previewApp.title}</Text>
+          </View>
+          <Pressable onPress={() => setReloadKey((k) => k + 1)} style={styles.appModalIconButton}>
+            <Ionicons name="refresh" color="#FFFFFF" size={20} />
+          </Pressable>
+        </View>
+        <View style={styles.appModalWebContainer}>
+          <AppWebView html={previewApp.html} onPreviewError={handlePreviewError} url={previewApp.url} reloadKey={reloadKey} style={styles.appModalWebView} />
+          <AppPreviewEditStatus doneMessage={editDoneMessage} modelLabel={modelLabel} status={editStatus} />
+          {latestError ? (
+            <PreviewErrorPanel
+              bottomOffset={errorBottomOffset}
+              errors={previewErrors}
+              onAskAi={askAiToFix}
+              onDismiss={() => setPreviewErrors([])}
+            />
+          ) : null}
+          <AppPreviewMiniChat
+            agentRequesting={appCtx.agentRequesting}
+            app={previewApp}
+            bottomOffset={previewBottomOffset}
+            onOpenChange={setMiniChatOpen}
+            onSubmit={submitAiPrompt}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function doneMessageForPrompt(prompt: string) {
+  const lowerPrompt = prompt.toLowerCase();
+  if (/\b(error|bug|broken|crash|blank|not working|issue|fix)\b/.test(lowerPrompt)) {
+    return "I fixed the preview issue and refreshed the live app.";
+  }
+  return "I implemented your preview change and refreshed the live app.";
+}

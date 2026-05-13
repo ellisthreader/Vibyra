@@ -42,7 +42,7 @@ export function ConnectStepTwo({
         <View style={styles.connectModeTabs}>
           <Pressable style={[styles.connectModeTab, connectMode === "auto" ? styles.connectModeTabActive : null]} onPress={() => setConnectMode("auto")}>
             <Ionicons name="wifi-outline" color={connectMode === "auto" ? colors.text : colors.muted} size={15} />
-            <Text style={[styles.connectModeText, connectMode === "auto" ? styles.connectModeTextActive : null]}>Auto Find</Text>
+            <Text style={[styles.connectModeText, connectMode === "auto" ? styles.connectModeTextActive : null]}>Automatic</Text>
           </Pressable>
           <Pressable style={[styles.connectModeTab, connectMode === "manual" ? styles.connectModeTabActive : null]} onPress={() => setConnectMode("manual")}>
             <Ionicons name="keypad-outline" color={connectMode === "manual" ? colors.text : colors.muted} size={15} />
@@ -64,8 +64,8 @@ export function ConnectStepTwo({
               <LinearGradient colors={["#762CFF", "#9D35FF", "#B13CFF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.connectPrimaryActionGradient}>
                 <Ionicons name="search-outline" color={colors.text} size={27} />
                 <View style={styles.connectActionCopy}>
-                  <Text style={styles.connectActionTitle}>{app.checkingHealth ? "Searching nearby PCs..." : foundDesktops.length > 0 ? "Search again" : "Auto Find My PC"}</Text>
-                  <Text style={styles.connectActionMeta}>Starts automatically on same Wi-Fi.</Text>
+                  <Text style={styles.connectActionTitle}>{app.checkingHealth ? "Searching nearby PCs..." : foundDesktops.length > 0 ? "Search again" : "Find my PC"}</Text>
+                  <Text style={styles.connectActionMeta}>Tap your PC to request approval.</Text>
                 </View>
               </LinearGradient>
             </Pressable>
@@ -81,9 +81,9 @@ export function ConnectStepTwo({
                       pressed && desktop.status !== "offline" ? styles.connectActionPressed : null,
                       desktop.status === "offline" ? styles.connectActionDisabled : null
                     ]}
-                    onPress={() => app.pairMachineAt(desktop.url, desktop.pairCode)}
+                    onPress={() => app.pairMachineAt(desktop.url, "")}
                   >
-                    <Ionicons name="desktop-outline" color="#8AF7FF" size={18} />
+                    <Ionicons name="desktop-outline" color="#D8A6FF" size={18} />
                     <View style={styles.connectActionCopy}>
                       <Text style={styles.desktopResultTitle}>{desktop.machineName}</Text>
                       <View style={styles.desktopResultMetaRow}>
@@ -98,7 +98,7 @@ export function ConnectStepTwo({
           </View>
         ) : (
           <View style={styles.connectSimplePane}>
-            <Text style={styles.connectCodeLabel}>Manual code</Text>
+            <Text style={styles.connectCodeLabel}>Enter code</Text>
             <TextInput
               value={app.pairCode}
               onChangeText={(value) => app.setPairCode(value.toUpperCase())}
@@ -111,14 +111,14 @@ export function ConnectStepTwo({
               returnKeyType="done"
               style={[styles.input, styles.connectCodeInput]}
             />
-            <Text style={styles.connectOrText}>Use the 2 codes shown on phone and desktop</Text>
+            <Text style={styles.connectOrText}>Type the desktop code, then approve on your PC.</Text>
             <Pressable style={({ pressed }) => [styles.connectSecondaryAction, pressed ? styles.connectActionPressed : null]} onPress={app.pairMachine}>
               <Ionicons name="link-outline" color={colors.text} size={18} />
-              <Text style={styles.connectSecondaryActionText}>{app.pairing ? "Connecting..." : "Connect manually"}</Text>
+              <Text style={styles.connectSecondaryActionText}>{app.pairing ? "Connecting..." : "Send code"}</Text>
             </Pressable>
           </View>
         )}
-        {app.pairing && !app.pendingPhoneApproval ? <WaitingApprovalIndicator message="Awaiting approval from PC application" /> : null}
+        {app.pairing && !app.pendingPhoneApproval ? <WaitingApprovalIndicator message={app.pairingMessage} /> : null}
         {app.healthMessage ? <Text style={styles.connectStatus}>{app.healthMessage}</Text> : null}
         {app.pairingError ? <Text style={styles.errorText}>{app.pairingError}</Text> : null}
       </View>

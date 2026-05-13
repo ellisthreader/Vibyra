@@ -90,32 +90,43 @@ export const part13 = {
   },
   paywallTab: {
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: 18,
     flex: 1,
-    minHeight: 38,
-    justifyContent: "center"
+    justifyContent: "center",
+    minHeight: 58,
+    paddingHorizontal: 4
   },
   paywallTabActive: {
-    backgroundColor: "rgba(109, 59, 255, 0.18)",
-    borderColor: "rgba(139, 92, 255, 0.42)",
-    borderWidth: 1
+    backgroundColor: "rgba(109, 59, 255, 0.26)",
+    borderColor: "rgba(216, 134, 255, 0.62)",
+    borderWidth: 1.4,
+    shadowColor: "#C77DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.42,
+    shadowRadius: 16
   },
   paywallTabs: {
     alignSelf: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.10)",
-    borderColor: "rgba(255, 255, 255, 0.16)",
-    borderRadius: 999,
-    borderWidth: 2,
+    backgroundColor: "rgba(8, 7, 18, 0.76)",
+    borderColor: "rgba(216, 134, 255, 0.26)",
+    borderRadius: 22,
+    borderWidth: 1.2,
     flexDirection: "row",
-    gap: 4,
-    marginTop: 16,
-    padding: 4,
-    width: "80%"
+    gap: 6,
+    marginTop: 18,
+    padding: 6,
+    shadowColor: "#8B5CFF",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    width: "100%"
   },
   paywallTabText: {
-    color: "rgba(255, 255, 255, 0.58)",
-    fontSize: 13,
-    fontWeight: "900"
+    color: "rgba(226, 219, 255, 0.68)",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 20,
+    textAlign: "center"
   },
   paywallTitle: {
     color: colors.text,

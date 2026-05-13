@@ -5,11 +5,6 @@ import { SheetKind } from "./types";
 export function useProfileSheets() {
   const prefs = usePreferences();
   const [activeSheet, setActiveSheet] = useState<SheetKind | null>(null);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [agentNotifications, setAgentNotifications] = useState(true);
-  const [biometricLock, setBiometricLock] = useState(false);
-  const [analyticsOptIn, setAnalyticsOptIn] = useState(true);
 
   const open = useCallback((kind: SheetKind) => setActiveSheet(kind), []);
   const close = useCallback(() => setActiveSheet(null), []);
@@ -21,12 +16,7 @@ export function useProfileSheets() {
     setLanguage: prefs.setLanguage,
     appearance: prefs.appearance,
     setAppearance: prefs.setAppearance,
-    effectiveScheme: prefs.effectiveScheme,
-    pushNotifications, setPushNotifications,
-    emailNotifications, setEmailNotifications,
-    agentNotifications, setAgentNotifications,
-    biometricLock, setBiometricLock,
-    analyticsOptIn, setAnalyticsOptIn
+    effectiveScheme: prefs.effectiveScheme
   };
 }
 

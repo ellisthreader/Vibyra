@@ -1,7 +1,11 @@
 import { homedir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
-import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { basename, isAbsolute, join, resolve } from "node:path";
+import { readdir } from "node:fs/promises";
 import { appState } from "./state.mjs";
+import { isDirectory, projectFromPath } from "./projectInfo.mjs";
+
+export { browseDesktopPath } from "./projectBrowse.mjs";
+export { createDesktopProject } from "./projectCreate.mjs";
 
 export async function discoverProjects() {
   const roots = [
@@ -20,12 +24,12 @@ export async function discoverProjects() {
     await scanChildren(root, seen, projects);
   }
 
-  appState.cachedProjects = projects.slice(0, 12);
+  cacheProjects(projects.slice(0, 12));
   return appState.cachedProjects;
 }
 
 export function findProjectById(id) {
-  return appState.cachedProjects.find((project) => project.id === id) ?? null;
+  return appState.cachedProjects.find((project) => project.id === id) ?? projectFromEncodedId(id);
 }
 
 export function projectById(id) {
@@ -36,23 +40,8 @@ export async function listDesktopFolders() {
   return discoverProjects();
 }
 
-export async function browseDesktopPath(path) {
-  const targetPath = path ? resolve(String(path)) : null;
-  if (!targetPath) {
-    const roots = await browseRoots();
-    cacheProjects(roots);
-    return { current: null, parentPath: null, entries: roots.map((project) => ({ ...project, kind: "folder" })) };
-  }
-
-  if (!(await isDirectory(targetPath))) throw new Error("Folder is not available");
-  const current = await projectFromPath(targetPath);
-  const entries = await browseChildren(targetPath);
-  cacheProjects([current, ...entries.filter((entry) => entry.kind === "folder")]);
-  return {
-    current,
-    parentPath: await isDirectory(dirname(targetPath)) ? dirname(targetPath) : null,
-    entries
-  };
+export async function analyzeDesktopProject(path) {
+  return projectFromPath(resolve(String(path ?? "")));
 }
 
 export async function searchDesktopProjects(query) {
@@ -60,36 +49,16 @@ export async function searchDesktopProjects(query) {
   if (!needle) return [];
 
   const projects = appState.cachedProjects.length > 0 ? appState.cachedProjects : await discoverProjects();
-  return projects
+  const rankedProjects = projects
     .map((project) => ({ project, score: projectSearchScore(project, needle) }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score || a.project.name.localeCompare(b.project.name))
     .slice(0, 10)
     .map((item) => item.project);
-}
-
-export async function createDesktopProject(name = "Untitled Workspace") {
-  const root = join(homedir(), "Desktop", "Vibyra Projects");
-  await mkdir(root, { recursive: true });
-
-  const baseName = sanitizeProjectName(name);
-  const projectPath = await uniqueProjectPath(root, baseName);
-  await mkdir(projectPath, { recursive: true });
-  await writeFile(
-    join(projectPath, "package.json"),
-    `${JSON.stringify({ private: true, name: packageName(basename(projectPath)), version: "0.1.0" }, null, 2)}\n`,
-    { flag: "wx" }
-  );
-  await writeFile(
-    join(projectPath, "README.md"),
-    `# ${basename(projectPath)}\n\nCreated from Vibyra mobile.\n`,
-    { flag: "wx" }
-  );
-
-  const project = await projectFromPath(projectPath);
-  if (!project) throw new Error("Could not create project");
-  appState.cachedProjects = [project, ...appState.cachedProjects.filter((item) => item.id !== project.id)].slice(0, 12);
-  return project;
+  const folderMatches = await searchFoldersByName(needle, new Set(rankedProjects.map((project) => project.id)));
+  const matches = mergeSearchResults(rankedProjects, folderMatches).slice(0, 10);
+  cacheProjects(matches);
+  return matches;
 }
 
 async function scanChildren(root, seen, projects) {
@@ -122,141 +91,7 @@ async function maybeAddProject(path, seen, projects) {
   const markers = ["package.json", ".git", "app.json", "requirements.txt", "pyproject.toml"];
   if (!markers.some((marker) => entries.includes(marker))) return;
 
-  const info = await stat(path);
-  projects.push(projectFromInfo(path, entries, info));
-}
-
-async function projectFromPath(path) {
-  const entries = await readdir(path);
-  const info = await stat(path);
-  return projectFromInfo(path, entries, info);
-}
-
-async function browseRoots() {
-  const candidates = [
-    homedir(),
-    join(homedir(), "Desktop"),
-    join(homedir(), "Documents"),
-    join(homedir(), "Downloads"),
-    join(homedir(), "Code"),
-    join(homedir(), "Projects"),
-    join(homedir(), "Work")
-  ];
-  const seen = new Set();
-  const roots = [];
-  for (const candidate of candidates) {
-    const path = resolve(candidate);
-    if (seen.has(path) || !(await isDirectory(path))) continue;
-    seen.add(path);
-    roots.push(await projectFromPath(path));
-  }
-  return roots;
-}
-
-async function browseChildren(root) {
-  let children = [];
-  try {
-    children = await readdir(root, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-
-  const entries = [];
-  for (const child of children) {
-    if (entries.length >= 200) break;
-    if (child.name.startsWith(".")) continue;
-    const childPath = join(root, child.name);
-    let info;
-    try {
-      info = await stat(childPath);
-    } catch {
-      continue;
-    }
-
-    if (child.isDirectory()) {
-      entries.push({
-        ...projectFromInfo(childPath, [], info),
-        kind: "folder"
-      });
-      continue;
-    }
-
-    if (child.isFile()) {
-      entries.push({
-        id: Buffer.from(childPath).toString("base64url"),
-        name: child.name,
-        path: childPath,
-        kind: "file",
-        stack: "File",
-        updated: formatUpdated(info.mtime),
-        source: "desktop"
-      });
-    }
-  }
-  return entries.sort((a, b) => Number(b.kind === "folder") - Number(a.kind === "folder") || a.name.localeCompare(b.name));
-}
-
-function cacheProjects(projects) {
-  const next = [];
-  const seen = new Set();
-  for (const project of [...projects, ...appState.cachedProjects]) {
-    if (!project?.id || seen.has(project.id)) continue;
-    seen.add(project.id);
-    const { kind, ...cleanProject } = project;
-    next.push(cleanProject);
-    if (next.length >= 80) break;
-  }
-  appState.cachedProjects = next;
-}
-
-function projectFromInfo(path, entries, info) {
-  return {
-    id: Buffer.from(path).toString("base64url"),
-    name: basename(path),
-    path,
-    stack: detectStack(entries),
-    updated: formatUpdated(info.mtime),
-    source: "desktop"
-  };
-}
-
-async function isDirectory(path) {
-  try {
-    return (await stat(path)).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-function detectStack(entries) {
-  if (entries.includes("app.json")) return "Expo React Native";
-  if (entries.includes("package.json")) return "Node / React";
-  if (entries.includes("pyproject.toml")) return "Python";
-  if (entries.includes("requirements.txt")) return "Python";
-  return "Project";
-}
-
-async function uniqueProjectPath(root, baseName) {
-  let candidate = join(root, baseName);
-  let suffix = 2;
-  while (await isDirectory(candidate)) {
-    candidate = join(root, `${baseName}-${suffix}`);
-    suffix += 1;
-  }
-  return candidate;
-}
-
-function sanitizeProjectName(name) {
-  const cleaned = String(name)
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80);
-  return cleaned || "Untitled Workspace";
-}
-
-function packageName(name) {
-  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "vibyra-workspace";
+  projects.push(await projectFromPath(path));
 }
 
 function projectSearchScore(project, needle) {
@@ -272,10 +107,93 @@ function projectSearchScore(project, needle) {
   return 0;
 }
 
-function formatUpdated(date) {
-  const minutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60000));
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.round(hours / 24)}d ago`;
+async function searchFoldersByName(needle, seenIds) {
+  const roots = Array.from(new Set([
+    process.cwd(),
+    join(homedir(), "Desktop"),
+    join(homedir(), "Documents"),
+    join(homedir(), "Downloads"),
+    join(homedir(), "Code"),
+    join(homedir(), "Projects"),
+    join(homedir(), "Work")
+  ].map((path) => resolve(path))));
+  const state = { results: [], seenIds, seenPaths: new Set(), visited: 0 };
+  for (const root of roots) {
+    if (state.results.length >= 10 || !(await isDirectory(root))) continue;
+    await scanFolderMatches(root, needle, state, 0);
+  }
+  return state.results
+    .sort((a, b) => projectSearchScore(b, needle) - projectSearchScore(a, needle) || a.name.localeCompare(b.name))
+    .slice(0, 10);
+}
+
+async function scanFolderMatches(root, needle, state, depth) {
+  if (state.results.length >= 10 || depth > 4 || state.visited > 1200 || state.seenPaths.has(root)) return;
+  state.seenPaths.add(root);
+  state.visited += 1;
+
+  let children = [];
+  try {
+    children = await readdir(root, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const child of children.slice(0, 120)) {
+    if (!child.isDirectory() || shouldSkipFolder(child.name)) continue;
+    const childPath = join(root, child.name);
+    if (child.name.toLowerCase().includes(needle)) {
+      try {
+        const project = await projectFromPath(childPath);
+        if (!state.seenIds.has(project.id)) {
+          state.seenIds.add(project.id);
+          state.results.push(project);
+        }
+      } catch {
+        // A folder can disappear or be unreadable while scanning; keep searching.
+      }
+      if (state.results.length >= 10) return;
+    }
+    await scanFolderMatches(childPath, needle, state, depth + 1);
+    if (state.results.length >= 10 || state.visited > 1200) return;
+  }
+}
+
+function shouldSkipFolder(name) {
+  return name.startsWith(".") || ["node_modules", "vendor", "dist", "build", ".expo", ".git", ".vibyra-agent"].includes(name);
+}
+
+function mergeSearchResults(...groups) {
+  const merged = [];
+  const seen = new Set();
+  for (const group of groups) {
+    for (const project of group) {
+      if (!project?.id || seen.has(project.id)) continue;
+      seen.add(project.id);
+      merged.push(project);
+    }
+  }
+  return merged;
+}
+
+function cacheProjects(projects) {
+  const seen = new Set();
+  const next = [];
+  for (const project of [...projects, ...appState.cachedProjects]) {
+    if (!project?.id || seen.has(project.id)) continue;
+    seen.add(project.id);
+    next.push(project);
+    if (next.length >= 80) break;
+  }
+  appState.cachedProjects = next;
+}
+
+function projectFromEncodedId(id) {
+  try {
+    const path = Buffer.from(String(id ?? ""), "base64url").toString("utf8");
+    if (!isAbsolute(path)) return null;
+    return { id, name: basename(path), path, stack: "Project", updated: "Now", source: "desktop" };
+  } catch {
+    return null;
+  }
 }

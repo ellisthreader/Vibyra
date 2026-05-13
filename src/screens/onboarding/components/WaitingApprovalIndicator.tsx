@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Text, View } from "react-native";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { styles } from "../styles";
 
 export function WaitingApprovalIndicator({ message }: { message: string }) {
@@ -11,8 +12,8 @@ export function WaitingApprovalIndicator({ message }: { message: string }) {
     const loop = Animated.loop(
       Animated.stagger(180, [dotOne, dotTwo, dotThree].map((dot) => (
         Animated.sequence([
-          Animated.timing(dot, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0.35, duration: 420, easing: Easing.in(Easing.cubic), useNativeDriver: true })
+          Animated.timing(dot, { toValue: 1, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+          Animated.timing(dot, { toValue: 0.35, duration: 420, easing: Easing.in(Easing.cubic), useNativeDriver: supportsNativeAnimation })
         ])
       )))
     );

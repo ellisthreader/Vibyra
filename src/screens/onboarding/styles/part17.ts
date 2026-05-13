@@ -3,7 +3,7 @@ import { colors } from "../../../styles/theme";
 
 export const part17 = {
   syncPillText: {
-    color: "#8AF7FF",
+    color: "#D8A6FF",
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.7,
@@ -24,7 +24,7 @@ export const part17 = {
     width: 34
   },
   syncProgressDashActive: {
-    backgroundColor: "#2EEBFF"
+    backgroundColor: "#C77DFF"
   },
   syncScreen: {
     flex: 1,
@@ -46,7 +46,7 @@ export const part17 = {
     fontWeight: "900"
   },
   syncStarOne: {
-    backgroundColor: "#8AF7FF",
+    backgroundColor: "#C77DFF",
     borderRadius: 999,
     height: 4,
     position: "absolute",
@@ -68,7 +68,7 @@ export const part17 = {
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 20,
-    marginTop: 8,
+    marginTop: 6,
     maxWidth: 318,
     textAlign: "center"
   },
@@ -84,16 +84,16 @@ export const part17 = {
   },
   syncTitle: {
     color: colors.text,
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 38,
-    marginTop: 14,
+    lineHeight: 36,
+    marginTop: 10,
     textAlign: "center"
   },
   syncTitleBlock: {
     alignItems: "center",
-    marginTop: 14
+    marginTop: 10
   },
   syncTitleGradientMaskText: {
     lineHeight: 38,
@@ -102,10 +102,10 @@ export const part17 = {
   },
   syncTitleInline: {
     color: colors.text,
-    fontSize: 30,
+    fontSize: 29,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 38,
+    lineHeight: 36,
     marginTop: 0,
     textAlign: "center"
   },

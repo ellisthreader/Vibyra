@@ -19,10 +19,11 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { TokenBalancePill, getTopBarTitle } from "./index";
+import { TokenBalancePill, getTopBarTitle } from "./chunk3";
 
 export function TopBar({
   activePage,
+  chatDirectory,
   chatTitle,
   compact,
   communitySubPageTitle,
@@ -37,6 +38,7 @@ export function TopBar({
   tokenBalance
 }: {
   activePage: DashboardPage;
+  chatDirectory?: string;
   chatTitle: string;
   compact: boolean;
   communitySubPageTitle: string;
@@ -62,6 +64,7 @@ export function TopBar({
         </View>
         <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
           <Text numberOfLines={1} style={styles.chatTopTitle}>{chatTitle}</Text>
+          {chatDirectory ? <Text numberOfLines={1} style={styles.chatTopDirectory}>{chatDirectory}</Text> : null}
         </View>
         <View style={styles.chatTopActions}>
           <Pressable accessibilityLabel="Rename chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onRenameChat}>

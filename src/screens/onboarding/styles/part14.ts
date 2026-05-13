@@ -12,10 +12,6 @@ export const part14 = {
   },
   personaIcon: {
     height: 140,
-    shadowColor: "#FF6FD8",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 26,
     width: 140
   },
   profileLabel: {
@@ -90,9 +86,7 @@ export const part14 = {
     letterSpacing: 0,
     lineHeight: 35,
     textAlign: "center",
-    textShadowColor: "rgba(255, 255, 255, 0.22)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 14,
+    textShadow: "0px 0px 14px rgba(255, 255, 255, 0.22)",
     width: "100%"
   },
   resultTitle: { textAlign: "center", width: "100%" },

@@ -19,25 +19,11 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { CommunityAppLogo } from "./index";
+import { CommunityAppLogo } from "./chunk16";
 
 export function getCommunitySeedComments(post: CommunityPost): CommunityComment[] {
-  const shared = [
-    { name: "Iris", text: post.preview === "invoice" ? "The payment follow-up flow feels useful." : "This is clean and easy to understand.", time: "2d ago" },
-    { name: "Sam", text: post.preview === "habit" ? "The weekly reflection screen is my favourite bit." : "The screenshots make the app feel ready to try.", time: "3d ago" },
-    { name: "Ava", text: "The layout feels polished without being busy.", time: "4d ago" },
-    { name: "Ben", text: "I like how quickly the core workflow makes sense.", time: "5d ago" },
-    { name: "Nia", text: "This would be useful as a starter template.", time: "6d ago" },
-    { name: "Theo", text: "The visual direction is strong and practical.", time: "1w ago" },
-    { name: "Mila", text: "Nice balance between simple controls and useful detail.", time: "1w ago" },
-    { name: "Owen", text: "The screenshots make me want to try the live version.", time: "1w ago" },
-    { name: "Rae", text: "Clear idea, good execution, and easy to scan.", time: "2w ago" }
-  ];
-
-  return shared.slice(0, post.comments).map((comment, index) => ({
-    id: `${post.id}-seed-${index}`,
-    ...comment
-  }));
+  void post;
+  return [];
 }
 
 export function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post: CommunityPost }) {
@@ -57,10 +43,6 @@ export function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post
 }
 
 export function CommunityAppExperience({ post }: { post: CommunityPost }) {
-  const [analyticsRange, setAnalyticsRange] = useState<"7d" | "30d">("7d");
-  const [habitChecked, setHabitChecked] = useState(false);
-  const [invoicePaid, setInvoicePaid] = useState(false);
-
   return (
     <View style={styles.communityAppExperience}>
       <View style={styles.communityAppExperienceHeader}>
@@ -73,76 +55,17 @@ export function CommunityAppExperience({ post }: { post: CommunityPost }) {
           <Text style={styles.communityAppLiveText}>Open</Text>
         </View>
       </View>
-
-      {post.preview === "invoice" ? (
-        <View style={styles.communityDemoPanel}>
-          <View style={styles.communityDemoTopRow}>
-            <View>
-              <Text style={styles.communityDemoLabel}>Invoice total</Text>
-              <Text style={styles.communityDemoValue}>$2,480</Text>
-            </View>
-            <Text style={[styles.communityDemoStatus, invoicePaid ? styles.communityDemoStatusDone : null]}>
-              {invoicePaid ? "Paid" : "Due today"}
-            </Text>
-          </View>
-          {["Design sprint", "Frontend build", "QA pass"].map((item, index) => (
-            <View key={item} style={styles.communityDemoLineItem}>
-              <Text style={styles.communityDemoLineText}>{item}</Text>
-              <Text style={styles.communityDemoLineAmount}>${[900, 1280, 300][index].toLocaleString()}</Text>
-            </View>
-          ))}
-          <Pressable style={styles.communityDemoAction} onPress={() => setInvoicePaid((paid) => !paid)}>
-            <Ionicons name={invoicePaid ? "refresh-outline" : "checkmark-circle-outline"} color={colors.text} size={20} />
-            <Text style={styles.communityDemoActionText}>{invoicePaid ? "Reset invoice" : "Mark as paid"}</Text>
-          </Pressable>
+      {post.appUrl ? (
+        <View style={[styles.communityDemoPanel, { height: 420, overflow: "hidden", padding: 0 }]}>
+          <AppWebView reloadKey={post.id.length} url={post.appUrl} />
         </View>
-      ) : null}
-
-      {post.preview === "habit" ? (
+      ) : (
         <View style={styles.communityDemoPanel}>
-          <View style={styles.communityHabitDemoTop}>
-            <View style={[styles.communityHabitDemoRing, habitChecked ? styles.communityHabitDemoRingDone : null]}>
-              <Text style={styles.communityHabitDemoScore}>{habitChecked ? "9/10" : "8/10"}</Text>
-            </View>
-            <View style={styles.communityHabitDemoCopy}>
-              <Text style={styles.communityDemoLabel}>Today</Text>
-              <Text style={styles.communityDemoValue}>{habitChecked ? "Completed" : "One habit left"}</Text>
-            </View>
-          </View>
-          <View style={styles.communityHabitDemoGrid}>
-            {Array.from({ length: 21 }).map((_, index) => (
-              <View key={index} style={[styles.communityHabitDemoDot, index < (habitChecked ? 18 : 16) ? styles.communityHabitDemoDotDone : null]} />
-            ))}
-          </View>
-          <Pressable style={styles.communityDemoAction} onPress={() => setHabitChecked((checked) => !checked)}>
-            <Ionicons name={habitChecked ? "remove-circle-outline" : "add-circle-outline"} color={colors.text} size={20} />
-            <Text style={styles.communityDemoActionText}>{habitChecked ? "Undo check-in" : "Check in"}</Text>
-          </Pressable>
+          <Text style={styles.communityDemoLabel}>Live app data</Text>
+          <Text style={styles.communityDemoValue}>Unavailable</Text>
+          <Text style={styles.communityDemoLineText}>This community app does not expose a live preview payload yet.</Text>
         </View>
-      ) : null}
-
-      {post.preview === "analytics" ? (
-        <View style={styles.communityDemoPanel}>
-          <View style={styles.communityAnalyticsDemoHeader}>
-            <View>
-              <Text style={styles.communityDemoLabel}>MRR</Text>
-              <Text style={styles.communityDemoValue}>{analyticsRange === "7d" ? "$28.9K" : "$34.2K"}</Text>
-            </View>
-            <View style={styles.communityAnalyticsRange}>
-              {(["7d", "30d"] as const).map((range) => (
-                <Pressable key={range} style={[styles.communityAnalyticsRangeOption, analyticsRange === range ? styles.communityAnalyticsRangeOptionActive : null]} onPress={() => setAnalyticsRange(range)}>
-                  <Text style={[styles.communityAnalyticsRangeText, analyticsRange === range ? styles.communityAnalyticsRangeTextActive : null]}>{range}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-          <View style={styles.communityAnalyticsBars}>
-            {(analyticsRange === "7d" ? [46, 62, 54, 78, 66, 88, 94] : [36, 44, 58, 52, 68, 74, 82]).map((height, index) => (
-              <View key={index} style={[styles.communityAnalyticsDemoBar, { height }]} />
-            ))}
-          </View>
-        </View>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -150,4 +73,3 @@ export function CommunityAppExperience({ post }: { post: CommunityPost }) {
 export function formatCommunityTitle(title: string) {
   return title.replace(/\b\w/g, (letter) => letter.toUpperCase()).replace(/\bAi\b/g, "AI").replace(/\bSaas\b/g, "SaaS");
 }
-

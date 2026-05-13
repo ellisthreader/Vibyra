@@ -99,12 +99,6 @@ export function appearanceLabel(mode: AppearanceMode) {
   return "Dark";
 }
 
-export function buildReferralCode(name: string, email: string) {
-  const base = `${name}${email}`.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const padded = (base + "VIBYRA").slice(0, 6);
-  return `VIBY-${padded}`;
-}
-
 export function tierCompare(a: PlanKey, b: PlanKey) {
   return PLAN_ORDER.indexOf(a) - PLAN_ORDER.indexOf(b);
 }

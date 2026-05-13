@@ -152,6 +152,11 @@ export const part27 = {
   pcControlDisabled: {
     opacity: 0.58
   },
+  pcConnectTab: { alignItems: "center", borderRadius: 999, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 38 },
+  pcConnectTabActive: { backgroundColor: "rgba(148, 65, 255, 0.24)" },
+  pcConnectTabs: { backgroundColor: "rgba(10, 12, 24, 0.82)", borderColor: "rgba(118, 101, 171, 0.28)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, padding: 4 },
+  pcConnectTabText: { color: "#9E98B1", fontSize: 13, fontWeight: "900" },
+  pcConnectTabTextActive: { color: colors.text },
   pcManualPanel: {
     gap: 9
   },

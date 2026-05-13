@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, ImageSourcePropType, Pressable, Text, View } from "react-native";
 import { styles } from "../styles";
@@ -32,6 +33,11 @@ export function QuestionScreen<T extends string>(props: {
                 onPress={() => props.onSelect(option.value)}
               >
                 {selected ? <View style={[styles.frequencySelectedGlow, { pointerEvents: "none" }]} /> : null}
+                {selected ? (
+                  <View style={styles.frequencyOptionCheck}>
+                    <Ionicons name="checkmark" color="#071016" size={15} />
+                  </View>
+                ) : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
                 <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
               </Pressable>

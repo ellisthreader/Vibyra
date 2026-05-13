@@ -37,12 +37,20 @@ trait ProjectPreview
 
         if ($relativePath === '') {
             return $this->previewHtmlResponse(
-                $this->previewShell($project['name'], 'This project does not have a phone-viewable app entry yet.')
+                $this->previewShell($project['name'], 'Project analyzed. A built browser entry was not found yet, so Vibyra is showing this phone-viewable project preview immediately.')
             );
         }
 
         $filePath = $this->safePreviewFile($project, $relativePath);
         if (! $filePath) {
+            if ($this->isPreviewImagePath($relativePath)) {
+                return [
+                    'body' => $this->missingPreviewImageSvg(),
+                    'contentType' => 'image/svg+xml; charset=UTF-8',
+                    'status' => 200,
+                ];
+            }
+
             return $this->previewHtmlResponse(
                 $this->previewShell('Preview file missing', 'The requested preview asset is no longer available.'),
                 404
@@ -77,7 +85,7 @@ trait ProjectPreview
 
     private function previewEntryPath(array $project): string
     {
-        foreach (['index.html', 'dist/index.html', 'build/index.html', 'public/index.html', 'web/index.html'] as $candidate) {
+        foreach (['index.html', 'dist/index.html', 'build/index.html', 'public/index.html', 'web/index.html', 'out/index.html', '.output/public/index.html', 'www/index.html', 'app/index.html', 'client/dist/index.html', 'frontend/dist/index.html', 'apps/web/dist/index.html', 'packages/web/dist/index.html', 'storybook-static/index.html', 'docs/index.html', 'game/index.html', 'demo/index.html'] as $candidate) {
             if ($this->safePreviewFile($project, $candidate)) {
                 return $candidate;
             }
@@ -147,6 +155,18 @@ trait ProjectPreview
     private function previewUrl(string $projectId, string $token): string
     {
         return '/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/';
+    }
+
+    private function isPreviewImagePath(string $path): bool
+    {
+        $extension = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?: $path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'], true);
+    }
+
+    private function missingPreviewImageSvg(): string
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#21163a"/><stop offset="1" stop-color="#0b0d17"/></linearGradient></defs><rect width="960" height="540" fill="url(#g)"/><path d="M120 404 302 242l118 102 78-70 342 130v46H120z" fill="#8e3cff" opacity=".42"/><circle cx="690" cy="170" r="58" fill="#d7c4ff" opacity=".72"/><text x="480" y="478" fill="#efe8ff" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="700" text-anchor="middle">Image asset not included</text></svg>';
     }
 
     private function previewHtmlResponse(string $body, int $status = 200): array

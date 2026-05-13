@@ -35,6 +35,7 @@ trait StatePersistence
             'pairedDevice' => null,
             'pendingPair' => null,
             'activeAgentRun' => null,
+            'pendingAgentApplies' => [],
             'lastPromptStartedAt' => null,
             'lastPromptCompletedAt' => null,
             'recentPromptHashes' => [],
@@ -55,12 +56,83 @@ trait StatePersistence
         $state = json_decode(File::get($this->statePath), true);
         $state += [
             'activeAgentRun' => null,
+            'pendingAgentApplies' => [],
             'lastPromptStartedAt' => null,
             'lastPromptCompletedAt' => null,
             'recentPromptHashes' => [],
         ];
 
         return $state;
+    }
+
+    private function recoverStaleActiveAgentRun(array $state): array
+    {
+        $run = $state['activeAgentRun'] ?? null;
+        if (! is_array($run) || ! $this->activeAgentRunIsStale($run)) {
+            return $state;
+        }
+
+        $state['activeAgentRun'] = null;
+        $state['lastPromptCompletedAt'] = $run['updatedAt'] ?? $run['startedAt'] ?? $state['lastPromptCompletedAt'] ?? null;
+        $state['events'] = $this->pushEvent(
+            $state['events'] ?? [],
+            'Agent',
+            'Cleared stale desktop AI run state',
+            'warning'
+        );
+        $this->write($state);
+
+        return $state;
+    }
+
+    private function agentBusyPayload(array $state, string $reason): array
+    {
+        $run = is_array($state['activeAgentRun'] ?? null) ? $state['activeAgentRun'] : [];
+        $project = isset($run['projectId']) ? $this->projectById($state, (string) $run['projectId']) : null;
+        $timestamp = $run['startedAt'] ?? $run['updatedAt'] ?? $state['lastPromptStartedAt'] ?? null;
+        $startedAt = is_string($timestamp) && trim($timestamp) !== '' ? $timestamp : null;
+        $elapsedSeconds = null;
+        if ($startedAt) {
+            $time = strtotime($startedAt);
+            if ($time !== false) {
+                $elapsedSeconds = max(0, time() - $time);
+            }
+        }
+
+        return [
+            'ok' => false,
+            'error' => 'An AI task is already running. Wait for it to finish before sending another prompt.',
+            'busyReason' => $reason,
+            'activeAgentRun' => [
+                'id' => $run['id'] ?? null,
+                'title' => $run['title'] ?? 'AI request',
+                'model' => $run['model'] ?? null,
+                'projectId' => $run['projectId'] ?? null,
+                'projectName' => $project['name'] ?? null,
+                'projectPath' => $project['path'] ?? null,
+                'state' => $run['state'] ?? 'running',
+                'progress' => $run['progress'] ?? null,
+                'file' => $run['file'] ?? null,
+                'startedAt' => $startedAt,
+                'updatedAt' => $run['updatedAt'] ?? null,
+                'elapsedSeconds' => $elapsedSeconds,
+            ],
+        ];
+    }
+
+    private function activeAgentRunIsStale(array $run): bool
+    {
+        $timestamp = $run['updatedAt'] ?? $run['startedAt'] ?? null;
+        if (! is_string($timestamp) || trim($timestamp) === '') {
+            return true;
+        }
+
+        $time = strtotime($timestamp);
+        if ($time === false) {
+            return true;
+        }
+
+        return time() - $time > self::STALE_AGENT_RUN_SECONDS;
     }
 
     private function write(array $state): void

@@ -8,7 +8,7 @@ export const part23 = {
     gap: 14,
     minHeight: "100%",
     paddingBottom: 18,
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     position: "relative"
   },
   projectsSearchBar: {

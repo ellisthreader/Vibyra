@@ -1,0 +1,582 @@
+# Vibyra Mobile App Desktop Recreation Spec
+
+Deep reference: do not read this file during routine app, backend, or desktop debugging. Use `rg` for exact assets/screens/copy, then read only the matching section. Read end-to-end only when recreating or auditing the desktop app against the mobile product.
+
+Purpose: use this file as the source brief for recreating the current Vibyra mobile app as a desktop app while preserving the brand, product model, visual language, labels, imagery, and interaction patterns.
+
+## Product Identity
+
+- Product name: Vibyra.
+- App package: `app.vibyra.mobile`.
+- Current app version: `0.1.0`.
+- Web domain used by the app: `https://vibyra.app`.
+- Core promise: a mobile command center for AI software workflows running on the user's own machine.
+- User-facing job: connect to a desktop, choose or create projects, chat with AI agents, preview generated apps, manage credits/plans, and browse community examples.
+- Desktop recreation goal: make the desktop version feel like the same product, not a new dashboard. Keep the dark Vibyra shell, purple glow language, same logo, same titles, same page model, and same account/profile structure.
+
+## Source Of Truth
+
+Use these files when implementing or checking fidelity:
+
+- Desktop implementation handoff: `Vibyra/_ai/Desktop App Implementation Spec.md`.
+- App routing: `App.tsx`.
+- Workspace shell: `src/screens/WorkspaceScreen.tsx`.
+- Page registry: `src/screens/workspace/data/pages.ts`.
+- Workspace components: `src/screens/workspace/inline/`.
+- Workspace styles: `src/screens/workspace/styles/`.
+- Core colors: `src/styles/theme.ts`.
+- Light theme transform: `src/screens/workspace/styles/themeTransform.ts`.
+- Auth screen: `src/screens/AuthScreen.tsx`, `src/screens/auth/`.
+- Onboarding: `src/screens/OnboardingScreen.tsx`, `src/screens/onboarding/`.
+- Profile and billing: `src/screens/workspace/inline/profile/`.
+- Assets: `src/assets/`.
+
+## Brand Assets
+
+Primary logo:
+
+- `src/assets/vibyra.png`: used by `VibyraLogo`. Full logo renders around `206x150`; compact header logo renders around `44x44`, with dashboard override around `52x36`.
+
+Auth and branded backgrounds:
+
+- `src/assets/front-auth.jpg`: full-screen auth background.
+- `src/assets/front-page-nebula.png`: onboarding/connect backdrop.
+- `src/assets/frequency-background.png`: onboarding quiz backdrop.
+- `src/assets/result-background.png`: onboarding result/projects backdrop.
+- `src/assets/BG-transparent-vibyra.png`: legacy dashboard hero art, currently imported but top-level page hero artwork is intentionally not shown.
+- `src/assets/BG-transparent.png`, `src/assets/Front.png`: legacy/supporting brand imagery.
+
+Chat and workspace imagery:
+
+- `src/assets/ai-chat-glyph-focused.png`: current AI Chat empty-state glyph.
+- `src/assets/ai-chat-glyph.png`, `src/assets/ai-chat-glyph-cutout.png`: alternate chat glyphs.
+- `src/assets/ai-chat-background.png`, `src/assets/chat-build-ai-hero.png`: chat supporting artwork.
+- `src/assets/projects-folders-hero.png`, `src/assets/projects-folders-hero-glow.png`, `src/assets/projects-folders-hero-glow-transparent.png`: project/folder artwork, mostly legacy after header simplification.
+- `src/assets/community-hero-glow-transparent.png`: community supporting artwork, mostly legacy after header simplification.
+- `src/assets/home-ready-build.png`: dashboard supporting art.
+
+Onboarding assets:
+
+- `src/assets/onboarding-icons/`: quiz option icons for frequency, intent, device, and usage depth.
+- `src/assets/moment-icons/`: moment screens, especially `device-sync-hero.png`.
+- `src/assets/identity-icons/`: Beginner, Student, Developer, Founder/Freelancer.
+- `src/assets/persona-icons/`: Idea Explorer, Learning Builder, Hobby Builder, Side Project Builder, App Builder, Workflow Automator, Product Developer, Power Engineer.
+
+Billing assets:
+
+- `src/assets/billing-plans/free.png`
+- `src/assets/billing-plans/starter.png`
+- `src/assets/billing-plans/builder.png`
+- `src/assets/billing-plans/pro.png`
+- `src/assets/plan-icons/starter.png`
+- `src/assets/plan-icons/builder.png`
+- `src/assets/plan-icons/pro.png`
+
+Provider logos:
+
+- OpenAI and Gemini are currently remote image URLs in `src/screens/workspace/data/chatModels.ts`.
+- Claude uses an inline custom logo component, `ClaudeLogo`.
+
+## Color System
+
+Base dark palette from `src/styles/theme.ts`:
+
+- Background: `#07070A`.
+- Main workspace shell: `#02030C`.
+- Chat top/surface: `#080A12`.
+- Surface: `#12121A`.
+- Elevated: `#0D0D12`.
+- Border: `#232332`.
+- Strong border/accent: `#8B5CFF`.
+- Text: `#FFFFFF`.
+- Muted text: `#B8B8C8`.
+- Dim text: `#7A7A8C`.
+- Primary accent: `#6D3BFF`.
+- Purple glow accents: `#8F35FF`, `#A95BFF`, `#B64FFF`, `#C259FF`.
+- Magenta: `#F23ACD`.
+- Amber/token: `#FFB347`, `#FFE76A`, `#FFF200`.
+- Success/online: `#37D67A`, `#68F8A6`, `#9AE9B4`.
+- Error/danger: `#FF5D7A`, `#FF465C`, `#FF9DAE`.
+
+Light mode exists, but it is generated by transforming the dark style map. The default and signature look is dark. Desktop should ship dark first and use the same light transform logic only if light mode is required.
+
+## Typography And Shape
+
+- Default font is the React Native system font. Monospace is Menlo or platform monospace for code/file details.
+- Weight language is heavy: most headings, labels, nav text, chips, and actions use `800` or `900`.
+- Letter spacing should be `0`. Do not introduce tight negative tracking.
+- Main headings: 24-28px on mobile. On desktop, scale modestly to 28-34px, not a marketing hero size.
+- Body/copy: 13-15px, line height around 17-23px.
+- Repeated UI radius: 8-16px for cards and buttons, 999px only for pills/avatar circles.
+- App surfaces use thin translucent borders, dark glass backgrounds, purple/success glow shadows, and compact spacing.
+
+## App Flow
+
+The app has three major states:
+
+1. Auth: unauthenticated users see `AuthScreen`.
+2. Onboarding: authenticated users who have not completed setup see `OnboardingScreen`.
+3. Workspace: authenticated and onboarded users see `WorkspaceScreen`.
+
+Desktop should keep this state order. Do not let users land directly in a generic dashboard before auth/onboarding state is resolved.
+
+## Auth Screen
+
+Screen character:
+
+- Full-screen photographic background from `front-auth.jpg`.
+- Dark purple overlay gradient.
+- Centered Vibyra logo.
+- Title: `Welcome to Vibyra`, with `Vibyra` rendered as gradient text.
+- Action stack width is about 92.5% on mobile. Desktop should cap the auth card/actions at 420-520px and center them over the same image background.
+
+Actions:
+
+- `Continue with Google`
+- `Continue with Apple`
+- `Continue with email`
+- Email form can reveal name/email/password fields.
+- Legal footer: `By continuing, you agree to our`, `Privacy Policy`, `Terms of Service`.
+
+Auth button styling:
+
+- Pill shape, 56px mobile height.
+- Background: `rgba(12, 5, 35, 0.34)`.
+- Border: `rgba(176, 70, 255, 0.82)`.
+- Text: white, 17px, weight 800.
+- Purple glow shadow.
+
+## Onboarding
+
+Onboarding is a seven-step, portrait-first quiz with immersive backgrounds. Desktop should present it as a centered flow panel with a large visual side or background, preserving the same steps and art.
+
+Steps:
+
+1. Frequency: `Rarely`, `Occasionally`, `A few times`, `Every day`.
+2. Intent: `Ideas`, `Learning`, `Side project`, `App / website`, `Work`, `Automations`.
+3. Device: `Phone`, `Phone + computer`, `Computer`, `Other`.
+4. Usage depth: `Light`, `Steady`, `Heavy`, `Max`.
+5. Identity: `Beginner`, `Student`, `Developer`, `Founder / freelancer`.
+6. Persona result/generation: generates one of the persona models.
+7. Pricing/paywall, then desktop pairing/setup.
+
+Persona result names:
+
+- Idea Explorer
+- Learning Builder
+- Hobby Builder
+- Side Project Builder
+- App Builder
+- Workflow Automator
+- Product Developer
+- Power Engineer
+
+Onboarding visual rules:
+
+- Use `front-page-nebula.png`, `frequency-background.png`, and `result-background.png` as the major backdrops.
+- Keep progress indicator at the top unless on paywall or profile generation.
+- Use large image-backed option cards from the onboarding icon folders.
+- The flow should feel app-like and immersive, not like a web form.
+
+## Workspace Shell
+
+Mobile shell:
+
+- Top bar is fixed at the top.
+- Content scrolls beneath the top bar.
+- Bottom nav floats above the bottom safe area.
+- AI Chat is a full-height active page and hides bottom nav.
+
+Desktop shell adaptation:
+
+- Keep the same five primary destinations, but convert the mobile bottom nav into a persistent left rail or bottom dock depending on window width.
+- Recommended desktop layout: left rail width 84-108px with icon + short label, top bar across the content area, and central content max width around 1100-1280px.
+- For narrow desktop/tablet widths, fall back to the mobile-style floating bottom nav.
+- Keep top bar connection state and token pill visible on every non-chat page.
+- AI Chat should use a desktop split surface: message area centered, composer fixed at bottom, optional model/effort menus above composer. Do not show a separate marketing hero.
+
+## Navigation
+
+Pages from `src/screens/workspace/data/pages.ts`:
+
+- Dashboard: mobile nav label `Home`, icon `grid-outline`.
+- Projects: label `Projects`, icon `folder-open-outline`.
+- AI Chat: nav label appears as `Chat`, icon `chatbubble-ellipses-outline`.
+- Community: label `Community`, icon `people-outline`.
+- Profile: label `Profile`, icon `person-circle-outline`.
+
+Bottom nav styling to preserve in desktop rail/dock:
+
+- Background: `rgba(12, 15, 28, 0.96)`.
+- Border: `rgba(119, 81, 178, 0.28)`.
+- Radius: 30px for dock, 20px for active item.
+- Active item background: `rgba(99, 42, 210, 0.42)`.
+- Active item border: `rgba(171, 89, 255, 0.38)`.
+- Active icon/text: `#A95BFF`.
+- Inactive icon/text: `#A8A7BA`.
+
+## Top Bar
+
+Dashboard top bar:
+
+- Left side is a pressable PC switcher target.
+- Shows compact Vibyra logo.
+- Shows connection row: green dot and `Connected to PC`, or offline dot and `Not connected`.
+- Shows current machine name and chevron.
+- Right side shows token balance pill.
+
+Non-dashboard top bar:
+
+- Title only: `Projects`, `Community`, or `Profile`.
+- Right side shows token balance pill.
+
+Chat top bar:
+
+- Back button.
+- Center title from current chat.
+- Rename and delete icon buttons.
+- Background: `#080A12`.
+
+Community detail top bar:
+
+- Back button.
+- Center title from selected post.
+- Token pill on the right.
+
+Token pill:
+
+- Flash icon.
+- Token balance number.
+- Sub-label `tokens`.
+- Number color: `#FFE76A`.
+
+## Dashboard
+
+Title area:
+
+- Live pill: `<count> live`.
+- Main title: `Ready to build`.
+- Machine pill with desktop icon and connected machine name.
+- Metrics: token balance and project count.
+- Selected model label.
+
+Panels:
+
+- `Live builds` panel.
+- Empty state title: `Quiet for now`.
+- Empty state copy: `No active builds`, `Your running prompts will appear here.`
+- CTA: `Create your first build`.
+
+Running build card:
+
+- Purple running state: pulse icon, progress graph, beam progress track.
+- Green waiting state: hourglass icon and waiting time.
+
+Home actions:
+
+- Projects: `saved workspaces`.
+- AI Chat: `Start a build chat`.
+- Community: `Explore shared ideas`.
+- Plan & Billing: `Manage usage and plan`.
+
+Desktop adaptation:
+
+- Use a two-column dashboard: left column welcome/live builds, right column home actions and recent activity.
+- Keep the mobile card vocabulary and labels. Do not turn the dashboard into a data-heavy admin console.
+
+## Projects
+
+Header actions:
+
+- Primary gradient button: `Create Project`.
+- Secondary button when connected: `Browse PC`.
+
+Search/filter:
+
+- Search placeholder: `Search projects...`.
+- Filter modes: `All`, `PC`, `Mobile`.
+- Filter label: `Showing all projects`, `Showing PC projects`, or `Showing mobile projects`.
+
+Project cards:
+
+- Dark translucent card with purple border.
+- Active project border uses success green.
+- Card actions include open, rename, archive, delete, and more menu.
+- Empty state: `No projects match this view.`
+
+Desktop adaptation:
+
+- Recommended layout: toolbar at top, project cards in a 2-3 column responsive grid.
+- Keep `Create Project` and `Browse PC` as the first visible controls.
+- Preserve card menus and destructive delete confirmation.
+
+## AI Chat
+
+Empty state:
+
+- Glyph: `ai-chat-glyph-focused.png`.
+- Kicker: `Vibyra AI`.
+- Title: `How can I help you build today?`
+- Supporting copy: `Ask anything, edit code, or describe an idea - I'll handle the rest.`
+
+Suggestion cards:
+
+- `Fix a bug`: `Find & resolve issues`.
+- `Build a feature`: `Add something new`.
+- `Refactor code`: `Improve code quality`.
+- `Ship it`: `Prepare and deploy`.
+
+Composer:
+
+- Placeholder: `Ask anything about your project...`
+- Left tools: attach icon, reasoning effort pill, model picker.
+- Reasoning effort options: Low, Medium, High, Extra high.
+- Send button: purple gradient with up arrow; pause icon while agent is requesting.
+- Low credits warning: `Credits are running low`, with `View` action.
+
+Slash commands:
+
+- `/help`
+- `/clear`
+- `/new`
+- `/open`
+
+Model menu:
+
+- Auto.
+- Claude Models: Claude Opus 4, Claude Sonnet 4, Claude Haiku 3.5.
+- OpenAI models: GPT-5.5, GPT-5.4, GPT-5.4 Mini, GPT-5 Codex.
+- Gemini Models: Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.0 Flash.
+- Locked models show a lock and `Upgrade`.
+
+Desktop adaptation:
+
+- Make AI Chat the most spacious desktop surface.
+- Use a centered transcript max width around 860-980px.
+- Composer should be sticky/fixed at the bottom of the chat pane.
+- Model and effort menus should open as desktop popovers, not full-width mobile sheets.
+- Keep code/file cards and app preview cards visually consistent with mobile.
+
+## Community
+
+Filters:
+
+- `All`
+- `Recent`
+- `Popular`
+- `Featured`
+
+Search placeholder:
+
+- `Search projects, builders, tags...`
+
+Seed posts:
+
+- `AI invoice tool`, by Maya, tag `Popular`, tags `SaaS`, `AI`.
+- `Habit tracker app`, by Noah, tag `Recent`, tags `Productivity`, `Health`.
+- `SaaS analytics board`, by Leah, tag `Featured`, tags `SaaS`, `Analytics`.
+
+Community card actions:
+
+- Like.
+- Bookmark.
+- Open post detail.
+- Open app.
+- Add comments in detail view.
+
+Desktop adaptation:
+
+- Use a feed/grid hybrid: filters and search at the top, cards in two columns on wide screens.
+- Detail view can be a full page with a right-hand comment panel or modal drawer.
+- Preserve accent colors per post.
+
+## Profile
+
+Profile hero:
+
+- Avatar is generated from first initial.
+- Edit pencil overlays avatar.
+- Name fallback: `Vibyra User`.
+- Email fallback: `you@vibyra.app`.
+- Plan badge with diamond icon.
+- Usage strip has two actions: token balance and renewal/current plan.
+- Free plan shows `Current plan` and `Free trial`.
+
+Settings groups:
+
+- ACCOUNT
+  - Profile information
+  - Billing & subscription
+  - Usage & history
+  - Refer & earn
+- PREFERENCES
+  - Notifications
+  - Appearance
+  - Privacy & security
+  - Language
+- SUPPORT
+  - Help center
+  - Contact support
+  - Terms of service
+  - Log out
+
+Profile sheets:
+
+- Edit profile.
+- Billing.
+- Usage.
+- Refer.
+- Notifications.
+- Appearance.
+- Security.
+- Language.
+- Help.
+- Support.
+- Terms.
+- Logout.
+
+Appearance options:
+
+- Dark: `Vibyra signature look`.
+- Auto: `Match system appearance`.
+- Light: `High-contrast daytime`.
+
+Languages:
+
+- English, Espanol, Francais, Deutsch, Japanese, Chinese, Portugues.
+
+Desktop adaptation:
+
+- Profile should become a two-pane settings screen.
+- Left pane: profile hero and settings groups.
+- Right pane: selected settings detail. On narrow widths, keep mobile sheet behavior.
+- Billing should open inline on desktop or as a large modal, not a phone-style full-screen sheet unless narrow.
+
+## Billing And Membership
+
+Plans from profile billing:
+
+- Free: GBP 0 forever, 50 credits/month, free + budget models only, 1 active project, community access.
+- Starter: GBP 19/month or GBP 190/year, 500 credits/month or 550 on annual, all AI models supported, 1 active project, 1 agent, daily soft cap.
+- Builder: GBP 49/month or GBP 490/year, 1,800 credits/month or 1,980 on annual, all models, 3 projects, 2 agents, priority queue. Badge: `Most popular`.
+- Pro: GBP 99/month or GBP 990/year, 4,500 credits/month or 4,950 on annual, all models with priority routing, 10 projects, 4 concurrent agents.
+
+Billing UI:
+
+- Title: `Pick your plan`.
+- Cycle toggle: `Monthly`, `Annual`, badge `2 MONTHS FREE`.
+- Footer link: `Manage payment & invoices`.
+- Security copy: `Secure payments powered by Stripe`.
+
+Desktop adaptation:
+
+- Use plan cards in a row on desktop.
+- Keep annual/monthly toggle at the top.
+- Keep token count visible in the billing header.
+
+## PC Pairing And Desktop Connection
+
+The mobile app is designed to pair with a local desktop bridge. Desktop recreation must keep these concepts:
+
+- Connected PC state.
+- Machine name.
+- Pairing code/manual code.
+- Nearby desktop scan.
+- Candidate desktop list with online/current/offline/checking states.
+- Pair approval status.
+- Desktop health messages.
+
+Important labels:
+
+- `Connected now`
+- `Available nearby - code <code>`
+- `Checking activity...`
+- `Not reachable on this Wi-Fi`
+
+Desktop version note:
+
+- If the desktop app is the local bridge itself, the PC switcher can become a local status/control panel instead of a pairing target. Still keep the visual status language and machine identity.
+
+## Modals And Sheets
+
+Mobile uses bottom sheets and full-screen modals. Desktop should convert them based on width:
+
+- PC switcher: centered modal or right drawer.
+- Token membership sheet: compact modal from token pill.
+- Billing sheet: large modal or inline profile pane.
+- Rename chat: small centered dialog.
+- App preview: large modal with web preview frame.
+- Folder browser: desktop-native file/folder picker style, but visually wrapped in Vibyra dark modal.
+- Confirm folder/delete/logout: small confirmation dialogs.
+
+## Desktop Visual Layout Rules
+
+- Preserve the mobile colors and components, but use desktop space deliberately.
+- Avoid a marketing landing-page treatment inside the app shell.
+- Keep controls dense, app-like, and utilitarian.
+- Use icons for nav/actions, with text labels where the mobile app has labels.
+- Keep top-level page headers simple. Current app intentionally removed decorative hero images from Dashboard, Projects, Community, and Chat page headers.
+- Do not create nested cards inside cards. Use cards for repeated items, modals, and framed tools.
+- Keep text inside controls from wrapping awkwardly. Use fixed button heights and responsive truncation.
+
+## Recommended Desktop Information Architecture
+
+Use this desktop shell:
+
+- Left rail: Vibyra logo, Dashboard, Projects, Chat, Community, Profile.
+- Top bar: page title or connection block, token pill, optional account/avatar.
+- Main region:
+  - Dashboard: welcome/live builds plus action grid.
+  - Projects: toolbar/search/filter plus project grid.
+  - Chat: transcript and composer.
+  - Community: filters/search plus feed cards.
+  - Profile: settings two-pane layout.
+- Modal layer: PC switcher, billing, rename, previews, folder browser.
+
+Responsive breakpoints:
+
+- Under 720px: mobile layout with floating bottom nav.
+- 720-1024px: compact left rail or bottom dock.
+- Over 1024px: persistent left rail and wider content grids.
+
+## Copy Inventory
+
+Key titles and labels to reuse:
+
+- `Welcome to Vibyra`
+- `Ready to build`
+- `Live builds`
+- `Quiet for now`
+- `Create your first build`
+- `Projects`
+- `Create Project`
+- `Browse PC`
+- `AI Chat`
+- `Vibyra AI`
+- `How can I help you build today?`
+- `Ask anything about your project...`
+- `Community`
+- `Profile`
+- `ACCOUNT`
+- `PREFERENCES`
+- `SUPPORT`
+- `Pick your plan`
+- `Manage payment & invoices`
+
+## Implementation Checklist
+
+Before considering the desktop recreation faithful:
+
+- Logo uses `src/assets/vibyra.png` and matches compact/full use cases.
+- Auth uses `front-auth.jpg` and the same auth choices.
+- Onboarding includes all seven steps, option labels, persona results, and plan prompt.
+- Main app has exactly the five primary destinations.
+- Top bar preserves connection state and token pill behavior.
+- Dashboard has `Ready to build`, live builds, metrics, and four action cards.
+- Projects has create, browse, search, filter, project cards, empty state, and folder browser.
+- Chat has empty state glyph, suggestions, model picker, reasoning effort, slash commands, low-credit warning, message list, and fixed composer.
+- Community has filters, search, post cards, detail, comments, likes, bookmarks, and open-app flow.
+- Profile has hero, grouped settings, billing, appearance, language, usage, support, terms, and logout.
+- Billing includes Free, Starter, Builder, Pro with monthly/annual pricing and credit allowances.
+- Light mode either uses the same transform strategy or is deferred explicitly.
+- Wide desktop layouts add space without changing labels, visual tone, or product hierarchy.

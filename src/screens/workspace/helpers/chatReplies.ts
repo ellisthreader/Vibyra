@@ -75,11 +75,11 @@ export function confusionReply(): string {
 }
 
 export function helpReply(): string {
-  return "Here's what I can do from this chat:\n• `open folder <name>` — search your PC for that folder and open it here.\n• `where am I?` — show the project and file currently selected.\n• Once a project is open, I can read, edit, and build with the AI agent.\nNew projects are created from the **Projects** tab (＋ New project), pointed at a folder on your PC.";
+  return "Here's what I can do from this chat:\n• `create a project` — create a new folder on your PC and open it here.\n• `open folder <name>` — search your PC for that folder and open it here.\n• `where am I?` — show the project and file currently selected.\n• Once a project is open, I can read, edit, and build with the AI agent.";
 }
 
 export function createProjectReply(): string {
-  return "Yep — but project creation lives in the **Projects** tab, not in chat, so it stays tied to a real folder on your PC. Tap **Projects** at the bottom, hit **＋ New project**, and pick a folder. Once it's there I'll pick it up here automatically.";
+  return "Sure. I can create a project from here, open it in chat, then ask what kind of product and stack you want to start with.";
 }
 
 export function detachedFallbackReply(): string {
@@ -105,7 +105,7 @@ export function isPreviewTroubleIntent(prompt: string): boolean {
 }
 
 export function previewOpeningReply(projectName: string): string {
-  return `Ready to preview ${projectName} — tap the preview below to open it inside Vibyra.`;
+  return `Ready to preview ${projectName} — tap the preview below to open it.`;
 }
 
 export function previewTroubleReply(projectName: string): string {

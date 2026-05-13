@@ -23,6 +23,16 @@ export const part26 = {
     paddingHorizontal: 10,
     paddingVertical: 6
   },
+  projectSourcePill: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 53, 255, 0.24)",
+    borderColor: "rgba(221, 187, 255, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    width: 30
+  },
   projectTitleDot: {
     borderRadius: 999,
     height: 8,

@@ -78,24 +78,31 @@ export function appendDesktopCandidates(candidates: string[], urls: string[] = [
   return uniqueValues([...normalized, ...candidates]);
 }
 
+export class TimeoutError extends Error {
+  constructor(message: string, public readonly timeoutMs: number) {
+    super(message);
+    this.name = "TimeoutError";
+  }
+}
+
 export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000) {
   const controller = new AbortController();
-  let timedOut = false;
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, timeoutMs);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      controller.abort();
+      const seconds = Math.max(1, Math.round(timeoutMs / 1000));
+      reject(new TimeoutError(`Request timed out after ${seconds}s`, timeoutMs));
+    }, timeoutMs);
+  });
 
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } catch (error) {
-    if (timedOut) {
-      const seconds = Math.max(1, Math.round(timeoutMs / 1000));
-      throw new Error(`Request timed out after ${seconds}s`);
-    }
-    throw error;
+    return await Promise.race([
+      fetch(url, { ...options, signal: controller.signal }),
+      timeoutPromise
+    ]);
   } finally {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
   }
 }
 

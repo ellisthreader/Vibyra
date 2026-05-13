@@ -19,60 +19,35 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { HomeAction, RunningProjectsPanel } from "./index";
+import { RunningProjectsPanel } from "./chunk7";
 
 export function DashboardHome(props: {
   activeAgents: Agent[];
-  machineName: string;
   onNavigate: (page: DashboardPage) => void;
-  projectCount: number;
   projects: Project[];
-  selectedModel: string;
-  tokenBalance: number;
 }) {
   const { height } = useWindowDimensions();
   const compact = height < 780;
-  const displayProjectCount = Math.max(props.projectCount, 7);
-  const runningProjects = props.activeAgents.slice(0, compact ? 1 : 2).map((agent, index) => {
-    const project = props.projects.find((item) => item.id === agent.projectId);
-    return {
-      agent,
-      projectName: project?.name ?? "Current project",
-      time: agent.state === "waiting" ? "3m waiting" : index === 0 ? "8m running" : "1m running"
-    };
-  });
+  const activeWork = props.activeAgents
+    .filter((agent) => agent.state === "running" || agent.state === "waiting")
+    .sort((a, b) => (a.state === b.state ? 0 : a.state === "running" ? -1 : 1));
+  const runningProjects = activeWork
+    .map((agent) => {
+      const project = props.projects.find((item) => item.id === agent.projectId);
+      return {
+        agent,
+        projectName: project?.name ?? "Current project"
+      };
+    });
 
   return (
     <View style={[styles.dashboardPage, compact ? styles.dashboardPageCompact : null]}>
-      <View style={[styles.welcomePanel, compact ? styles.welcomePanelCompact : null]}>
-        <LinearGradient
-          colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.welcomeBackdrop}
-        >
-          <View style={styles.welcomeHeroLeft}>
-            <View style={styles.welcomeLivePill}>
-              <View style={styles.welcomeLiveDot} />
-              <Text style={styles.welcomeLiveText}>{runningProjects.length || 0} live</Text>
-            </View>
-            <Text style={styles.welcomeTitle}>Ready to build</Text>
-          </View>
-        </LinearGradient>
-      </View>
-
       <RunningProjectsPanel
+        buildingCount={activeWork.filter((agent) => agent.state === "running").length}
+        queuedCount={activeWork.filter((agent) => agent.state === "waiting").length}
         onCreateBuild={() => props.onNavigate("chat")}
-        onOpenProjects={() => props.onNavigate("projects")}
         runningProjects={runningProjects}
       />
-
-      <View style={styles.homeActions}>
-        <HomeAction icon="folder-open-outline" label="Projects" meta={`${displayProjectCount} saved workspaces`} onPress={() => props.onNavigate("projects")} />
-        <HomeAction icon="chatbubble-ellipses-outline" label="AI Chat" meta="Start a build chat" onPress={() => props.onNavigate("chat")} />
-        <HomeAction icon="people-outline" label="Community" meta="Explore shared ideas" onPress={() => props.onNavigate("community")} />
-        <HomeAction icon="card-outline" label="Plan & Billing" meta="Manage usage and plan" onPress={() => props.onNavigate("profile")} />
-      </View>
     </View>
   );
 }

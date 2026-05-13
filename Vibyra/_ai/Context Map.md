@@ -1,107 +1,55 @@
 # Context Map
 
-Use this map to choose the smallest useful context.
+Use this map to choose the smallest useful context. Read one domain index and one focused note unless the task clearly crosses domains.
 
-## Mobile App Work
+## Mobile App
 
-Read: `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
+Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
 
-Focused routing:
+- Broad AI chat routing: `App/AI Live Chat.md`
+- Prompt routing, project briefs, reasoning effort: `App/Chat Prompt Routing.md`
+- Slash commands and AI skills: `App/Chat Slash Commands.md`
+- Streaming, code blocks, chat visual polish: `App/Chat Rendering UI.md`
+- Edit approval, changed files, run artifacts: `App/Chat Code Changes.md`
+- Detached chat folder/project intents: `App/Detached Chat Routing.md`
+- Preview/WebView/blank preview: `App/Live Preview.md`
+- Pairing/reconnect/Wi-Fi discovery: `App/Pairing And Connection.md`
+- Projects tab, file browser, folder search: `App/Workspace Projects.md`
+- `/api/session/state`, cloud sync: `App/Cloud Sync.md`
+- Profile, billing, model locks: `App/Profile Billing.md`
+- Bottom nav, app shell, broad UI: `App/Navigation UI.md`
 
-- AI live chat, prompts, slash commands, chat messages, undo/review changed files: `App/AI Live Chat.md`
-- In-app previews, blank preview, preview button/card, WebView: `App/Live Preview.md`
-- PC reachable/not reachable, pairing, reconnect, Wi-Fi discovery: `App/Pairing And Connection.md`
-- Projects tab, folder search, detached/project chat, file browser: `App/Workspace Projects.md`
-- `/api/session/state`, cloud state, background API refused errors: `App/Cloud Sync.md`
-- Profile, billing, membership, model locks: `App/Profile Billing.md`
-- Bottom nav, app shell, broad visual/UI routing: `App/Navigation UI.md`
+## Desktop Bridge
 
-Start files:
+Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/`.
 
-- `src/context/AppContext.tsx`
-- `src/context/useAgentActions.ts`
-- `src/context/usePairingActions.ts`
-- `src/context/useWorkspaceActions.ts`
-- `src/screens/WorkspaceScreen.tsx`
-- `src/screens/OnboardingScreen.tsx`
+- Shell UI/auth gate/launcher: `Desktop/Desktop Shell.md`
+- Pairing/phone session/LAN URLs: `Desktop/Pairing And Phone Session.md`
+- Discovery/browse/search/preview: `Desktop/Projects And Preview.md`
+- Agent runs/apply-discard/safe commands: `Desktop/Agent Runs And Commands.md`
 
-## Desktop Bridge Work
+## Backend
 
-Read: `Vibyra Desktop Memory.md`
+Read `Vibyra Backend Memory.md`, then one focused note from `Vibyra/_ai/Backend/`.
 
-Start files:
+- `/api/chat`, OpenRouter, token caps: `Backend/Chat And Cost Controls.md`
+- Billing, credits, levels: `Backend/Billing Credits And Levels.md`
+- Auth and cloud sync: `Backend/Auth And Cloud Sync.md`
+- Community publish/moderation/assets: `Backend/Community Publishing.md`
+- Laravel desktop-agent route/locks: `Backend/Desktop Agent Backend.md`
 
-- `desktop/local-app.mjs`
-- `desktop/lib/routes.mjs`
-- `desktop/lib/state.mjs`
-- `desktop/lib/pairingHandlers.mjs`
-- `desktop/lib/agent.mjs`
-- `desktop/lib/projects.mjs`
-- `desktop/lib/preview.mjs`
+## Cross-Domain Shortcuts
 
-## Pairing Or Connection Bugs
+Pairing bugs: read `App/Pairing And Connection.md` plus `Desktop/Pairing And Phone Session.md`. Start near `src/context/usePairingActions.ts`, `src/context/pairingDiscovery.ts`, `desktop/lib/pairingHandlers.mjs`, and `desktop/lib/state.mjs`.
 
-Read `Vibyra App Memory.md`, `App/Pairing And Connection.md`, and `Vibyra Desktop Memory.md`.
+Agent or prompt flow: read `App/Chat Prompt Routing.md` plus `Desktop/Agent Runs And Commands.md` if desktop apply/run behavior matters. Start near `src/context/useAgentActions.ts`, `src/context/agentTypes.ts`, `desktop/lib/agent.mjs`, and `desktop/lib/routes.mjs`.
 
-Key files:
+Backend account/cloud-sync errors: read `Backend/Auth And Cloud Sync.md` plus `App/Cloud Sync.md`. Start near `backend/routes/web.php`, `src/utils/appApi.ts`, and `src/context/useCloudSync.ts`.
 
-- `src/context/usePairingActions.ts`
-- `src/context/pairingDiscovery.ts`
-- `src/context/pairingScans.ts`
-- `src/utils/network.ts`
-- `desktop/lib/pairingHandlers.mjs`
-- `desktop/lib/state.mjs`
-- `desktop/lib/discovery.mjs`
+OpenRouter cost tuning: read `Backend/Chat And Cost Controls.md`. Start near `ChatEndpoint.php`, `ChatPrompting.php`, and `src/context/useAgentActions.ts`.
 
-## Agent Or Prompt Flow
+Style or UI work: read `App/Navigation UI.md` unless the task names a more specific feature. Start near `src/styles/theme.ts`, `src/components/`, `src/screens/WorkspaceScreen.tsx`, and `src/screens/workspace/styles/`.
 
-Read `Vibyra App Memory.md`, `App/AI Live Chat.md`, and `Vibyra Desktop Memory.md`.
+## Known Noise
 
-Key files:
-
-- `src/context/useAgentActions.ts`
-- `src/context/agentTypes.ts`
-- `desktop/lib/agent.mjs`
-- `desktop/lib/routes.mjs`
-
-## Backend Or Account Work
-
-Read: `Vibyra Backend Memory.md`
-
-For mobile cloud-sync or `/api/session/state` errors, also read `Vibyra App Memory.md` and `App/Cloud Sync.md`.
-
-Start files:
-
-- `backend/routes/web.php`
-- `backend/app/Http/Controllers/VibyraDesktopController.php`
-- `backend/app/Http/Controllers/Concerns/ChatEndpoint.php`
-- `backend/app/Http/Controllers/Concerns/ChatPrompting.php`
-- `backend/app/Http/Controllers/Concerns/ChatModelMap.php`
-- `backend/app/Services/Concerns/OpenAiStreaming.php`
-- `backend/config/services.php`
-- `src/utils/appApi.ts`
-- `src/context/useCloudSync.ts`
-
-## OpenRouter Cost / Token Tuning
-
-Read: `Vibyra Backend Memory.md` → "Token Cost Controls".
-
-Start files:
-
-- `backend/app/Http/Controllers/Concerns/ChatEndpoint.php` (`max_completion_tokens` cap)
-- `backend/app/Http/Controllers/Concerns/ChatPrompting.php` (`isBuildPrompt`, `systemPrompt`, `chatHistoryMessages`)
-- `src/context/useAgentActions.ts` (frontend payload trimming)
-
-## Style Or UI Work
-
-Read `Vibyra App Memory.md`, then `App/Navigation UI.md` unless the task names a more specific app feature.
-
-Start files:
-
-- `src/styles/theme.ts`
-- `src/components/`
-- `src/screens/WorkspaceScreen.tsx`
-- `src/screens/onboarding/`
-- `src/screens/workspace/styles/`
-
-Known current typecheck noise: several `src/screens/workspace/styles/part*.ts` files reference missing `Platform` and `communityDetailAccent`.
+Current typecheck noise: several `src/screens/workspace/styles/part*.ts` files reference missing `Platform` and `communityDetailAccent`.

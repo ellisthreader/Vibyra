@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,32 +23,10 @@ export function QuestionMomentScreen(props: {
   };
 
   return (
-    <LinearGradient
-      colors={["#04070C", "#061A24", "#07070A"]}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
-      style={styles.syncScreen}
-    >
-      <View style={[styles.syncAuraCyan, { pointerEvents: "none" }]} />
-      <View style={[styles.syncAuraPurple, { pointerEvents: "none" }]} />
-      <LinearGradient
-        colors={["rgba(46, 235, 255, 0.16)", "rgba(109, 59, 255, 0.08)", "rgba(242, 58, 205, 0)"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.syncAuroraBand, { pointerEvents: "none" }]}
-      />
-      <LinearGradient
-        colors={["rgba(255, 179, 71, 0.11)", "rgba(242, 58, 205, 0.08)", "rgba(46, 235, 255, 0)"]}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={[styles.syncAuroraBandBottom, { pointerEvents: "none" }]}
-      />
-      <View style={[styles.syncStarOne, { pointerEvents: "none" }]} />
-      <View style={[styles.syncStarTwo, { pointerEvents: "none" }]} />
-
+    <View style={styles.syncScreen}>
       <ScrollView contentContainerStyle={[styles.syncContent, contentInsets]} showsVerticalScrollIndicator={false}>
         <View style={styles.syncPill}>
-          <Ionicons name="sync" color="#2EEBFF" size={17} />
+          <Ionicons name="sync" color="#C77DFF" size={17} />
           <Text style={styles.syncPillText}>Cross-device sync</Text>
         </View>
 
@@ -64,9 +41,6 @@ export function QuestionMomentScreen(props: {
         <Text style={styles.syncSubtitle}>{content.body}</Text>
 
         <View style={styles.syncHero}>
-          <View style={styles.syncHeroGlowBlue} />
-          <View style={styles.syncHeroGlowPink} />
-          <View style={styles.syncHeroGlowPurple} />
           <Image resizeMode="contain" source={image} style={styles.syncHeroImage} />
         </View>
         <View style={styles.syncCards}>
@@ -91,6 +65,6 @@ export function QuestionMomentScreen(props: {
           ))}
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }

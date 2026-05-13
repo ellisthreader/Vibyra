@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { Agent, LogEvent, ModelKey, PreviewState } from "../types/domain";
+import { Agent, AgentConnection, LogEvent, PreviewState } from "../types/domain";
 
-type Connection = { url: string; token: string; machineName: string } | null;
+type Connection = AgentConnection | null;
 type Setters = {
   setLogs: (events: LogEvent[]) => void;
   setPreviewState: (state: PreviewState) => void;
@@ -10,9 +10,6 @@ type Setters = {
 };
 type Requests = {
   agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
-};
-type Logs = {
-  appendLog: (message: string, source?: string, tone?: LogEvent["tone"]) => void;
 };
 
 type EventsResult = {
@@ -25,22 +22,27 @@ type EventsResult = {
 type ActiveAgentRun = {
   id: string;
   projectId: string;
-  model: ModelKey;
+  model: string;
   title?: string;
   state?: Agent["state"];
   progress?: number;
   file?: string;
 };
 
-export function useLiveSync(connection: Connection, requests: Requests, setters: Setters, logs: Logs) {
+export function useLiveSync(connection: Connection, requests: Requests, setters: Setters, onConnectionLost: () => void) {
   useEffect(() => {
     if (!connection) return undefined;
 
     let cancelled = false;
+    let failedPolls = 0;
+    let inFlight = false;
     const interval = setInterval(async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const result = await requests.agentRequest<EventsResult>("/events");
         if (cancelled) return;
+        failedPolls = 0;
         setters.setLogs(result.events);
         if (result.preview?.state) setters.setPreviewState(result.preview.state);
         const activeAgentRun = result.activeAgentRun;
@@ -50,8 +52,17 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
         if (activeAgentRun) {
           setters.setAgents((current) => syncLiveAgentProgress(current, activeAgentRun));
         }
-      } catch {
-        if (!cancelled) logs.appendLog("Live Vibyra updates paused", "Desktop", "warning");
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "";
+        if (isInvalidDesktopToken(message)) {
+          return;
+        }
+        failedPolls += 1;
+        if (failedPolls < 3) return;
+        onConnectionLost();
+      } finally {
+        inFlight = false;
       }
     }, 2200);
 
@@ -59,7 +70,12 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
       cancelled = true;
       clearInterval(interval);
     };
-  }, [connection, requests, setters, logs]);
+  }, [connection, requests, setters, onConnectionLost]);
+}
+
+function isInvalidDesktopToken(message: string) {
+  const lower = message.toLowerCase();
+  return lower.includes("secure desktop session expired") || lower.includes("missing or invalid desktop token") || lower.includes("unauthorized") || lower.includes("401");
 }
 
 function syncLiveAgentProgress(agents: Agent[], run: ActiveAgentRun) {

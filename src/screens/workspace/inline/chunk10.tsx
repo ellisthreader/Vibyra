@@ -18,7 +18,7 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { ClaudeLogo } from "./index";
+import { ClaudeLogo } from "./chunk11";
 
 export function ModelMenuRow({
   accountPlan,
@@ -99,7 +99,7 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
   );
 }
 
-export function ChatEmptyState() {
+export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (prompt: string) => void }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(12)).current;
   const orbPulse = useRef(new Animated.Value(0)).current;
@@ -134,6 +134,7 @@ export function ChatEmptyState() {
         {chatSuggestions.map((suggestion) => (
           <Pressable
             key={suggestion.title}
+            onPress={() => onPickSuggestion?.(suggestion.prompt)}
             style={({ pressed }) => [styles.chatSuggestionCard, pressed && styles.chatSuggestionCardPressed]}
           >
             <View style={styles.chatSuggestionIconPlate}>

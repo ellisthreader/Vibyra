@@ -27,9 +27,9 @@ Route entrypoint: `desktop/lib/routes.mjs`.
 
 ## Agent Flow
 
-`src/context/useAgentActions.ts` builds an optimistic mobile agent record, sends the prompt to the paired desktop at `/agents/start` when connected, or to backend chat when not connected.
+`src/context/useAgentActions.ts` builds an optimistic mobile agent record and normally sends real AI prompts to backend `/api/chat`. Desktop `/agents/start` is not a general AI generator; it is used for desktop-owned agent/apply flows and local bridge behavior.
 
-Desktop local flow currently writes a Markdown run artifact and preview HTML from `desktop/lib/agent.mjs`.
+Desktop local flow can write Markdown run artifacts from `desktop/lib/agent.mjs`, but it must not pretend template output is arbitrary AI generation.
 
 If an Obsidian vault is found, the desktop flow also writes a compact run note to `_ai/Runs/`.
 
@@ -49,4 +49,4 @@ Token budget rule: every OpenRouter call sets `max_completion_tokens` (800 chat 
 
 The vault lives at `Vibyra/`. Durable project memory should live under `Vibyra/_ai/`.
 
-Keep `Project Context.md` short. Move detailed history into focused notes and link them.
+Keep `Project Context.md` and domain indexes short. Move detailed history into focused notes and mark long specs/decision logs as deep references.

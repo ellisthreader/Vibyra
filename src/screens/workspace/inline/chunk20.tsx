@@ -19,7 +19,7 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { ProjectMenuItem } from "./index";
+import { ProjectMenuItem } from "./chunk21";
 
 export function ProjectCard({
   active,
@@ -31,6 +31,7 @@ export function ProjectCard({
   onDelete,
   onMore,
   onOpen,
+  onPublish,
   onStartRename,
   onSubmitRename,
   project,
@@ -46,6 +47,7 @@ export function ProjectCard({
   onDelete: () => void;
   onMore: () => void;
   onOpen: () => void;
+  onPublish: () => void;
   onStartRename: () => void;
   onSubmitRename: () => void;
   project: ProjectDisplay;
@@ -54,11 +56,12 @@ export function ProjectCard({
 }) {
   const status = project.status;
   const activeStatus = status === "Active";
-  const completed = status === "Completed";
+  const published = status === "Published";
   const draft = status === "Draft";
   const archived = status === "Archived";
-  const projectAccent = activeStatus ? "#59E8A0" : completed ? "#BE62FF" : archived ? "#AAA6BC" : draft ? "#DAD6F6" : "#DAD6F6";
-  const titleDot = activeStatus ? "#3CD783" : completed ? "#B869FF" : archived ? "#6F6A80" : "#8F8AA3";
+  const sourceIcon = status === "On PC" ? "desktop-outline" : status === "On mobile" ? "phone-portrait-outline" : null;
+  const projectAccent = activeStatus ? "#59E8A0" : published ? "#BE62FF" : archived ? "#AAA6BC" : draft ? "#DAD6F6" : "#DAD6F6";
+  const titleDot = activeStatus ? "#3CD783" : published ? "#B869FF" : archived ? "#6F6A80" : "#8F8AA3";
 
   return (
     <View style={[
@@ -66,12 +69,12 @@ export function ProjectCard({
       layout.cardStyle,
       activeStatus ? styles.projectCardStatusActive : null,
       draft ? styles.projectCardStatusDraft : null,
-      completed ? styles.projectCardStatusCompleted : null,
+      published ? styles.projectCardStatusCompleted : null,
       archived ? styles.projectCardStatusArchived : null,
       menuOpen ? styles.projectCardMenuOpen : null
     ]}>
       <View style={[styles.projectCardMain, { gap: layout.mainGap }]}>
-        <View style={[styles.projectIcon, layout.iconBoxStyle, activeStatus ? styles.projectIconActive : completed ? styles.projectIconCompleted : archived ? styles.projectIconArchived : null]}>
+        <View style={[styles.projectIcon, layout.iconBoxStyle, activeStatus ? styles.projectIconActive : published ? styles.projectIconCompleted : archived ? styles.projectIconArchived : null]}>
           <Ionicons name="folder-open-outline" color={projectAccent} size={layout.folderIconSize} />
         </View>
         <View style={styles.projectCardCopy}>
@@ -103,14 +106,20 @@ export function ProjectCard({
           </View>
         </View>
         <View style={styles.projectCardRight}>
-          <Text style={[
-            styles.projectStatusPill,
-            layout.statusStyle,
-            activeStatus ? styles.projectStatusActive : null,
-            draft ? styles.projectStatusDraft : null,
-            completed ? styles.projectStatusCompleted : null,
-            archived ? styles.projectStatusArchived : null
-          ]}>{status}</Text>
+          {sourceIcon ? (
+            <View style={styles.projectSourcePill}>
+              <Ionicons name={sourceIcon} color="#DDBBFF" size={16} />
+            </View>
+          ) : (
+            <Text style={[
+              styles.projectStatusPill,
+              layout.statusStyle,
+              activeStatus ? styles.projectStatusActive : null,
+              draft ? styles.projectStatusDraft : null,
+              published ? styles.projectStatusCompleted : null,
+              archived ? styles.projectStatusArchived : null
+            ]}>{status}</Text>
+          )}
           <Pressable hitSlop={8} onPress={onMore} style={styles.projectMoreButton}>
             <Ionicons name="ellipsis-vertical" color={menuOpen ? "#F1ECFF" : "#858197"} size={18} />
           </Pressable>
@@ -120,6 +129,7 @@ export function ProjectCard({
         <View style={[styles.projectMenuLayer, { pointerEvents: "box-none" }]}>
           <View style={styles.projectMenu}>
             <ProjectMenuItem icon="create-outline" label="Rename" onPress={onStartRename} />
+            <ProjectMenuItem icon="cloud-upload-outline" label="Publish" onPress={onPublish} />
             <ProjectMenuItem icon="archive-outline" label="Archive" onPress={onArchive} />
             <ProjectMenuItem danger icon="trash-outline" label="Delete" onPress={onDelete} />
           </View>

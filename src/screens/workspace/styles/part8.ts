@@ -70,7 +70,7 @@ export const part8 = {
     color: colors.text,
     fontSize: 22,
     fontWeight: "900",
-    letterSpacing: -0.3,
+    letterSpacing: 0,
     lineHeight: 28,
     textAlign: "center"
   },
@@ -167,39 +167,5 @@ export const part8 = {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10
-  },
-  communityAnalytics: {
-    flex: 1,
-    padding: 11
-  },
-  communityAnalyticsLogoBar: {
-    borderRadius: 999,
-    width: 5
-  },
-  communityAnalyticsLogoBars: {
-    alignItems: "flex-end",
-    flexDirection: "row",
-    gap: 4,
-    height: "78%"
-  },
-  communityAuthorAvatar: {
-    alignItems: "center",
-    borderWidth: 1,
-    justifyContent: "center",
-    overflow: "hidden"
-  },
-  communityAuthorAvatarText: {
-    fontWeight: "900"
-  },
-  communityAvatar: {
-    alignItems: "center",
-    borderRadius: 9,
-    height: 40,
-    justifyContent: "center",
-    width: 40
-  },
-  communityAvatarText: {
-    fontSize: 18,
-    fontWeight: "900"
   },
 } as const;

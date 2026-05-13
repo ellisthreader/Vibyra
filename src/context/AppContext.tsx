@@ -1,335 +1,107 @@
-import React, { createContext, PropsWithChildren, useContext, useEffect, useMemo } from "react";
-import { appApiRequest, AuthResponse, RemoteUser, SkillsResponse } from "../utils/appApi";
-import { normalizePersistedUser } from "../utils/persistence";
-import { makeId } from "../utils/ids";
-import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
-import { isRunArtifact } from "../utils/files";
+import React, { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo } from "react";
+import { LevelUpNotification } from "../components/LevelUpNotification";
+import type { AgentConnection, RememberedDesktop } from "../types/domain";
+import { appApiRequest, LevelActivityResponse, SkillsResponse } from "../utils/appApi";
+import { fetchWithTimeout, normalizeAgentUrl } from "../utils/network";
 import { useAgentActions } from "./useAgentActions";
+import { useAppRemoteSync } from "./useAppRemoteSync";
 import { AppContextValue } from "./appContextTypes";
 import { useAppState } from "./useAppState";
-import { useCloudSync } from "./useCloudSync";
+import { useAuthContextActions } from "./useAuthContextActions";
+import { useDesktopUrlPromotion } from "./useDesktopUrlPromotion";
+import { useEditPermissionActions } from "./useEditPermissionActions";
 import { useLiveSync } from "./useLiveSync";
+import { useLocalChatActions } from "./useLocalChatActions";
 import { useLogActions } from "./useLogActions";
 import { usePairingActions } from "./usePairingActions";
+import { useProjectBriefActions } from "./useProjectBriefActions";
+import { useProjectBriefChatActions } from "./useProjectBriefChatActions";
 import { useRequests } from "./useRequests";
+import { useTerminalCommandActions } from "./useTerminalCommandActions";
 import { useWorkspaceActions } from "./useWorkspaceActions";
 
 const AppContext = createContext<AppContextValue | null>(null);
-
 export function AppProvider({ children }: PropsWithChildren) {
   const store = useAppState();
   const { state, derived, setters } = store;
-  const requests = useRequests({ agentUrl: state.agentUrl, connection: state.connection });
   const logs = useLogActions(setters);
-  const workspace = useWorkspaceActions(store, requests, logs);
-  const pairing = usePairingActions(store.state, setters, requests, logs, {
-    loadProjectFilesWithConnection: workspace.loadProjectFilesWithConnection
+  const disconnectDesktop = useDisconnectDesktop(store, logs);
+  const promoteDesktopUrl = useDesktopUrlPromotion(store);
+  const requests = useRequests({
+    agentUrl: state.agentUrl,
+    connection: state.connection,
+    onDesktopRequestUrlResolved: promoteDesktopUrl,
+    onInvalidDesktopSession: () => disconnectDesktop({
+      clearRememberedToken: true,
+      healthMessage: "Secure desktop session expired. Reconnect this phone to Vibyra Desktop.",
+      logMessage: "Secure desktop session expired. Reconnect this phone to Vibyra Desktop."
+    })
   });
-  const agent = useAgentActions(store, requests, logs);
+  const workspace = useWorkspaceActions(store, requests, logs);
+  const pairing = usePairingActions(store.state, setters, requests, logs, { loadProjectFilesWithConnection: workspace.loadProjectFilesWithConnection });
+  const authActions = useAuthContextActions(store, logs);
+  const agent = useAgentActions(store, requests, logs, authActions);
+  const localChatActions = useLocalChatActions(store);
+  const terminal = useTerminalCommandActions(store, requests, logs);
+  const projectBriefActions = { ...useProjectBriefActions(store), ...useProjectBriefChatActions(store) };
+  const editActions = useEditPermissionActions(store, requests, logs, { undoCodeChange: workspace.undoCodeChange });
+  const handleLiveConnectionLost = useCallback(() => disconnectDesktop({
+    healthMessage: "Vibyra Desktop disconnected. Reconnect this phone to continue.",
+    logMessage: "Lost connection to Vibyra Desktop.",
+    rememberedStatus: "offline"
+  }), [disconnectDesktop]);
 
-  const setChatSkills = setters.setChatSkills;
-  useEffect(() => {
-    let cancelled = false;
-    appApiRequest<SkillsResponse>("/api/skills", undefined, undefined, { background: true })
-      .then((result) => { if (!cancelled && result.skills) setChatSkills(result.skills); })
-      .catch(() => { /* skills are optional; silent fallback */ });
-    return () => { cancelled = true; };
-  }, [setChatSkills]);
-
-  useLiveSync(state.connection, requests, setters, logs);
-  useCloudSync({
-    authenticated: state.authenticated,
-    authToken: state.authToken,
-    onboardingComplete: state.onboardingComplete,
-    rememberedDesktops: state.rememberedDesktops,
-    chatThreads: state.chatThreads,
-    chatTitles: state.chatTitles,
-    chatProjects: state.chatProjects,
-    promptMoney: state.promptMoney,
-    selectedChatModel: state.selectedChatModel,
-    selectedModel: state.selectedModel
-  }, logs);
-
-  function applyAuthenticatedUser(token: string, user: RemoteUser) {
-    setters.setAuthToken(token);
-    applyRemoteUser(user);
-  }
-
-  function applyRemoteUser(user: RemoteUser) {
-    const normalized = normalizePersistedUser(user);
-    if (!normalized) return;
-
-    setters.setAccountId(normalized.id);
-    setters.setAccountPlan(normalized.plan);
-    setters.setAuthName(normalized.name);
-    setters.setAuthEmail(normalized.email);
-    setters.setCreditsBalance(normalized.creditsBalance);
-    setters.setCreditsUsed(normalized.creditsUsed);
-    setters.setOnboardingComplete(normalized.onboardingComplete);
-    setters.setRememberedDesktops(normalized.rememberedDesktops);
-    const selectedChatModel = normalized.appState?.selectedChatModel;
-    if (typeof selectedChatModel === "string" && selectedChatModel) {
-      setters.setSelectedChatModel(selectedChatModel);
-    }
-    if (normalized.appState?.chatThreads && typeof normalized.appState.chatThreads === "object") {
-      setters.setChatThreads(normalized.appState.chatThreads as AppContextValue["chatThreads"]);
-    }
-    if (normalized.appState?.chatTitles && typeof normalized.appState.chatTitles === "object") {
-      setters.setChatTitles(normalized.appState.chatTitles as AppContextValue["chatTitles"]);
-    }
-    if (normalized.appState?.chatProjects && typeof normalized.appState.chatProjects === "object") {
-      const restored = normalized.appState.chatProjects as AppContextValue["chatProjects"];
-      setters.setChatProjects(restored);
-      const restoredList = Object.values(restored);
-      if (restoredList.length > 0) {
-        setters.setProjects((current) => {
-          const ids = new Set(current.map((p) => p.id));
-          const additions = restoredList.filter((p) => !ids.has(p.id));
-          return additions.length > 0 ? [...additions, ...current] : current;
-        });
-      }
-    }
-  }
+  useLoadSkills(setters.setChatSkills);
+  useLiveSync(state.connection, requests, setters, handleLiveConnectionLost);
+  useAppRemoteSync(state, logs, authActions);
 
   const value = useMemo<AppContextValue>(() => ({
     ...state,
     ...derived,
-    authenticateWith: async (method, accountStatus) => {
-      const existingAccount = accountStatus === "existing" || (accountStatus === undefined && state.authMode === "login");
-      const payload = method === "email"
-        ? {
-            email: state.authEmail.trim(),
-            installId: state.installId,
-            name: state.authName.trim(),
-            password: state.authPassword
-          }
-        : {
-            installId: state.installId,
-            name: state.authName.trim() || providerDisplayName(method),
-            provider: method,
-            providerId: state.installId
-          };
-      const endpoint = method === "email" && !existingAccount ? "/api/auth/signup" : "/api/auth/login";
-      const result = await appApiRequest<AuthResponse>(endpoint, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
-      applyAuthenticatedUser(result.token, result.user);
-      setters.setAuthenticated(true);
-      setters.setAuthPassword("");
-    },
-    completeOnboarding: () => {
-      setters.setOnboardingComplete(true);
-      if (state.authToken) {
-        appApiRequest("/api/onboarding/complete", { method: "POST" }, state.authToken)
-          .then((result) => {
-            const response = result as { user?: RemoteUser };
-            if (response.user) applyRemoteUser(response.user);
-          })
-          .catch(() => {
-            logs.appendLog("Onboarding saved locally and will sync later.", "Account", "warning");
-          });
-      }
-    },
-    applyRemoteUserFromIap: (user: RemoteUser) => {
-      applyRemoteUser(user);
-    },
+    ...authActions,
+    ...editActions,
+    ...localChatActions,
+    ...terminal,
+    ...projectBriefActions,
+    disconnectDesktop,
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
     },
-    approveEdits: (messageId: string, projectId: string, alwaysAllow: boolean) => {
-      setters.setChatThreads((current) => {
-        const thread = current[projectId];
-        if (!thread) return current;
-        return {
-          ...current,
-          [projectId]: thread.map((message) => (
-            message.id === messageId ? { ...message, editApproval: "allowed" } : message
-          ))
-        };
-      });
-      if (alwaysAllow) {
-        setters.setEditApprovals((current) => ({ ...current, [projectId]: "always" }));
-      }
+    revertPreviewCode: (messageId) => {
+      setters.setChatThreads((threads) => Object.fromEntries(Object.entries(threads).map(([projectId, messages]) => [
+        projectId,
+        messages.map((message) => {
+          if (message.id !== messageId) return message;
+          const next = { ...message };
+          delete next.app;
+          delete next.codeChanges;
+          delete next.codeFiles;
+          delete next.editApproval;
+          return next;
+        })
+      ])));
     },
-    denyEdits: async (messageId: string, projectId: string) => {
-      const thread = state.chatThreads[projectId];
-      const message = thread?.find((m) => m.id === messageId);
-      const changes = message?.codeChanges ?? [];
-      const files = message?.codeFiles ?? [];
-      setters.setChatThreads((current) => {
-        const t = current[projectId];
-        if (!t) return current;
-        return {
-          ...current,
-          [projectId]: t.map((m) => (m.id === messageId ? { ...m, editApproval: "denied" } : m))
-        };
-      });
-      for (const change of changes) {
-        const file = files.find((f) => f.path === change.file || f.name === change.file.split("/").pop() || change.file.endsWith(`/${f.path}`));
-        if (file && file.previousBody !== undefined && file.previousBody !== null) {
-          await workspace.undoCodeChange(projectId, messageId, change.id, file);
-        }
-      }
-    },
-    clearCurrentChat: (projectId = state.selectedProjectId) => {
-      setters.setChatThreads((current) => ({
-        ...current,
-        [projectId]: []
-      }));
-      setters.setChatTitles((current) => {
-        const next = { ...current };
-        delete next[projectId];
-        return next;
-      });
-      setters.setTaskText("");
-    },
-    addLocalChatReply: (prompt, reply, target, app) => {
-      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
-      const targetFile = target?.file === null
-        ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
-      const file = targetFile?.path;
-      const assistantId = makeId("chat-assistant");
-      setters.setChatThreads((current) => ({
-        ...current,
-        [projectId]: [
-          ...(current[projectId] ?? []),
-          { id: makeId("chat-user"), role: "user", text: prompt, file },
-          { id: assistantId, role: "assistant", text: TYPING_CURSOR, file }
-        ]
-      }));
-      setters.setTaskText("");
-      streamChatText(reply, (text) => {
-        setters.setChatThreads((current) => {
-          const thread = current[projectId];
-          if (!thread) return current;
-          return {
-            ...current,
-            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text, ...(app ? { app } : {}) } : m))
-          };
-        });
-      });
-    },
-    addLocalChatProposal: (prompt, reply, matches, target, query) => {
-      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
-      const targetFile = target?.file === null
-        ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
-      const file = targetFile?.path;
-      const proposalId = makeId("proposal");
-      const assistantId = makeId("chat-assistant");
-      setters.setChatThreads((current) => ({
-        ...current,
-        [projectId]: [
-          ...(current[projectId] ?? []),
-          { id: makeId("chat-user"), role: "user", text: prompt, file },
-          {
-            id: assistantId,
-            role: "assistant",
-            text: TYPING_CURSOR,
-            file,
-            folderProposal: { id: proposalId, status: "pending", matches, selectedIndex: 0, query: query ?? prompt }
+    reportLevelActivity: (action, contextId, meta = {}) => {
+      if (!state.authToken) return;
+      appApiRequest<LevelActivityResponse>("/api/level/activity", {
+        method: "POST",
+        body: JSON.stringify({ action, contextId, meta })
+      }, state.authToken)
+        .then((result) => {
+          if (result.user) {
+            authActions.applyRemoteUserFromIap(result.user);
+            return;
           }
-        ]
-      }));
-      setters.setTaskText("");
-      streamChatText(reply, (text) => {
-        setters.setChatThreads((current) => {
-          const thread = current[projectId];
-          if (!thread) return current;
-          return {
-            ...current,
-            [projectId]: thread.map((m) => (m.id === assistantId ? { ...m, text } : m))
-          };
+          if (result.level) setters.setLevelProgress(result.level);
+        })
+        .catch(() => {
+          /* Level activity is nice-to-have telemetry; primary actions should not fail on it. */
         });
-      });
-      return { proposalProjectId: projectId };
-    },
-    addLocalFolderRecovery: (prompt, reply, recovery, target) => {
-      const projectId = target?.chatProjectId ?? target?.projectId ?? target?.project?.id ?? state.selectedProjectId;
-      const targetFile = target?.file === null
-        ? null
-        : target?.file ?? (projectId === state.selectedProjectId && derived.selectedFile.id !== "empty" && !isRunArtifact(derived.selectedFile) ? derived.selectedFile : null);
-      const file = targetFile?.path;
-      setters.setChatThreads((current) => ({
-        ...current,
-        [projectId]: [
-          ...(current[projectId] ?? []),
-          { id: makeId("chat-user"), role: "user", text: prompt, file },
-          { id: makeId("chat-assistant"), role: "assistant", text: reply, file, folderRecovery: recovery }
-        ]
-      }));
-      setters.setTaskText("");
-    },
-    resolveFolderProposal: (proposalId, status, projectId) => {
-      const targetProjectId = projectId ?? state.selectedProjectId;
-      setters.setChatThreads((current) => {
-        const thread = current[targetProjectId];
-        if (!thread) return current;
-        return {
-          ...current,
-          [targetProjectId]: thread.map((message) => (
-            message.folderProposal?.id === proposalId
-              ? { ...message, folderProposal: { ...message.folderProposal, status } }
-              : message
-          ))
-        };
-      });
-    },
-    updateFolderProposal: (proposalId, update, projectId) => {
-      const targetProjectId = projectId ?? state.selectedProjectId;
-      setters.setChatThreads((current) => {
-        const thread = current[targetProjectId];
-        if (!thread) return current;
-        return {
-          ...current,
-          [targetProjectId]: thread.map((message) => (
-            message.folderProposal?.id === proposalId
-              ? { ...message, folderProposal: { ...message.folderProposal, ...update } }
-              : message
-          ))
-        };
-      });
     },
     setAuthMode: setters.setAuthMode,
     setAuthName: setters.setAuthName,
     setAuthEmail: setters.setAuthEmail,
     setAuthPassword: setters.setAuthPassword,
-    signOut: () => {
-      setters.setAuthenticated(false);
-      setters.setAuthToken("");
-      setters.setAccountId(null);
-      setters.setAuthPassword("");
-      setters.setOnboardingComplete(false);
-      setters.setChatThreads({});
-      setters.setChatTitles({});
-      setters.setChatProjects({});
-      setters.setConnection(null);
-      setters.setRememberedDesktops([]);
-      setters.setProjects([]);
-      setters.setAgents([]);
-      setters.setLogs([]);
-      setters.setFiles([]);
-      setters.setChanges([]);
-    },
-    updateProfile: (changes) => {
-      if (typeof changes.name === "string") setters.setAuthName(changes.name);
-      if (typeof changes.email === "string") setters.setAuthEmail(changes.email);
-      if (typeof changes.machineName === "string") setters.setMachineName(changes.machineName);
-      if (state.authToken) {
-        appApiRequest("/api/account/profile", {
-          method: "POST",
-          body: JSON.stringify({
-            name: changes.name ?? state.authName,
-            email: changes.email ?? state.authEmail
-          })
-        }, state.authToken).catch(() => {
-          logs.appendLog("Profile saved locally and will sync later.", "Account", "warning");
-        });
-      }
-    },
     setAgentUrl: setters.setAgentUrl,
     setPairCode: setters.setPairCode,
     setSelectedModel: setters.setSelectedModel,
@@ -340,22 +112,89 @@ export function AppProvider({ children }: PropsWithChildren) {
     ...pairing,
     ...workspace,
     ...agent
-  }), [state, derived, setters, pairing, workspace, agent, logs]);
+  }), [
+    state,
+    derived,
+    setters,
+    authActions,
+    editActions,
+    localChatActions,
+    terminal,
+    projectBriefActions,
+    pairing,
+    workspace,
+    agent,
+    disconnectDesktop
+  ]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return <AppContext.Provider value={value}>
+    {children}
+    <LevelUpNotification enabled={state.authenticated && state.persistenceReady} levelProgress={state.levelProgress} />
+  </AppContext.Provider>;
 }
 
-function providerDisplayName(method: "apple" | "google" | "microsoft" | "email") {
-  if (method === "apple") return "Apple User";
-  if (method === "google") return "Google User";
-  if (method === "microsoft") return "Microsoft User";
-  return "Vibyra User";
+function useDisconnectDesktop(store: ReturnType<typeof useAppState>, logs: ReturnType<typeof useLogActions>) {
+  const { state, setters } = store;
+  return useCallback((options: { clearRememberedToken?: boolean; healthMessage?: string; logMessage?: string; notifyDesktop?: boolean; rememberedStatus?: RememberedDesktop["status"] } = {}) => {
+    const activeConnection = state.connection;
+    const clearRememberedToken = Boolean(options.clearRememberedToken);
+    if (activeConnection && options.notifyDesktop !== false && !clearRememberedToken) {
+      void notifyDesktopDisconnect(activeConnection);
+    }
+    setters.setConnection(null);
+    setters.setPaired(false);
+    setters.setPendingPhoneApproval(null);
+    setters.setPairing(false);
+    setters.setPairingError("");
+    setters.setPairingMessage("Open Vibyra Desktop and type the code shown there.");
+    setters.setHealthMessage(options.healthMessage ?? "Disconnected from Vibyra Desktop.");
+    setters.setPreviewState("offline");
+    setters.setFiles([]);
+    setters.setSelectedFileId("empty");
+    setters.setRememberedDesktops((current) => current.map((desktop) => {
+      const activeUrls = new Set([activeConnection?.url, ...(activeConnection?.connectionUrls ?? [])].filter(Boolean));
+      const desktopUrls = [desktop.url, ...(desktop.connectionUrls ?? [])].filter(Boolean);
+      const matchesActive = desktop.status === "current" || desktopUrls.some((url) => activeUrls.has(url));
+      if (!matchesActive) return desktop;
+      const status = options.rememberedStatus ?? (clearRememberedToken ? "offline" as const : "online" as const);
+      const next = { ...desktop, status };
+      if (clearRememberedToken) delete next.token;
+      return next;
+    }));
+    logs.appendLog(options.logMessage ?? "Phone disconnected from Vibyra Desktop.", "Desktop", "warning");
+  }, [logs, setters, state.connection]);
+}
+
+async function notifyDesktopDisconnect(connection: AgentConnection) {
+  const urls = uniqueValues([connection.url, ...(connection.connectionUrls ?? [])].map(normalizeAgentUrl));
+  for (const url of urls) {
+    try {
+      const response = await fetchWithTimeout(`${url}/desktop/disconnect`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${connection.token}`, "Content-Type": "application/json" }
+      }, 1200);
+      if (response.ok) return;
+    } catch {
+    }
+  }
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function useLoadSkills(setChatSkills: ReturnType<typeof useAppState>["setters"]["setChatSkills"]) {
+  useEffect(() => {
+    let cancelled = false;
+    appApiRequest<SkillsResponse>("/api/skills", undefined, undefined, { background: true })
+      .then((result) => { if (!cancelled && result.skills) setChatSkills(result.skills); })
+      .catch(() => { /* skills are optional; silent fallback */ });
+    return () => { cancelled = true; };
+  }, [setChatSkills]);
 }
 
 export function useAppContext() {
   const value = useContext(AppContext);
-  if (!value) {
-    throw new Error("useAppContext must be used inside AppProvider");
-  }
+  if (!value) throw new Error("useAppContext must be used inside AppProvider");
   return value;
 }

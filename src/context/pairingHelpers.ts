@@ -1,18 +1,19 @@
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
 
-export const HEALTH_SCAN_BATCH_SIZE = 32;
-export const PAIR_SCAN_BATCH_SIZE = 16;
-export const LAN_HEALTH_TIMEOUT_MS = 900;
+export const HEALTH_SCAN_BATCH_SIZE = 48;
+export const PAIR_SCAN_BATCH_SIZE = 48;
+export const LAN_HEALTH_TIMEOUT_MS = 600;
 export const RELAY_HEALTH_TIMEOUT_MS = 1400;
-export const LAN_PAIR_TIMEOUT_MS = 1800;
+export const LAN_PAIR_TIMEOUT_MS = 900;
 export const RELAY_PAIR_TIMEOUT_MS = 3500;
 export const APPROVAL_POLL_MS = 500;
 export const APPROVAL_TIMEOUT_MS = 90_000;
+export const DISCOVERY_SCAN_TIMEOUT_MS = 90_000;
 
 export type HealthResult = {
   url: string;
   machineName: string;
-  pairCode: string;
+  pairCode?: string;
   connectionUrls: string[];
   ok: boolean;
 };
@@ -29,7 +30,7 @@ export function healthToDesktop(result: HealthResult, status: RememberedDesktop[
   return {
     url: result.url,
     machineName: result.machineName || "Vibyra Desktop",
-    pairCode: result.pairCode,
+    pairCode: result.pairCode ?? "",
     connectionUrls: desktopConnectionUrls(result.url, result.connectionUrls),
     status,
     lastSeenAt: new Date().toISOString()
@@ -39,7 +40,7 @@ export function healthToDesktop(result: HealthResult, status: RememberedDesktop[
 export function mergeRememberedDesktops(current: RememberedDesktop[], updates: RememberedDesktop[]) {
   const merged = [...current];
   updates.forEach((update) => {
-    const index = merged.findIndex((desktop) => desktop.url === update.url || desktopKey(desktop.machineName, desktop.pairCode) === desktopKey(update.machineName, update.pairCode));
+    const index = merged.findIndex((desktop) => sameUrlDesktop(desktop, update) || samePairCodeDesktop(desktop, update));
     if (index >= 0) {
       merged[index] = mergeDesktop(merged[index], update);
     } else {
@@ -73,6 +74,15 @@ function withoutUndefined<T extends Record<string, unknown>>(value: T) {
 
 function uniqueValues(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
+}
+
+function samePairCodeDesktop(a: RememberedDesktop, b: RememberedDesktop) {
+  return Boolean(a.pairCode && b.pairCode && desktopKey(a.machineName, a.pairCode) === desktopKey(b.machineName, b.pairCode));
+}
+
+function sameUrlDesktop(a: RememberedDesktop, b: RememberedDesktop) {
+  const aUrls = new Set([a.url, ...(a.connectionUrls ?? [])]);
+  return [b.url, ...(b.connectionUrls ?? [])].some((url) => aUrls.has(url));
 }
 
 function desktopKey(machineName: string, pairCode: string) {

@@ -66,11 +66,12 @@ const ACCENTS: Record<PlanKey, Accent> = {
 
 const CHECK_COLOR = "#4ADE80";
 
-export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, isCurrent, isRecommended }: {
+export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, disabled, isCurrent, isRecommended }: {
   tier: PlanTier;
   cycle?: BillingCycle;
   onSelect: (key: PlanKey, cycle: BillingCycle) => void;
   busy?: boolean;
+  disabled?: boolean;
   isCurrent?: boolean;
   isRecommended?: boolean;
 }) {
@@ -118,11 +119,11 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, i
         />
       ) : null}
       <Pressable
-        disabled={isCurrent || busy}
+        disabled={isCurrent || busy || disabled}
         onPressIn={pressIn}
         onPressOut={pressOut}
         onPress={() => onSelect(tier.key, cycle)}
-        style={[styles.featuredPlanCard, { backgroundColor: accent.cardBg, borderColor: accent.cardBorder }]}
+        style={[styles.featuredPlanCard, { backgroundColor: accent.cardBg, borderColor: accent.cardBorder }, disabled && !isCurrent ? { opacity: 0.62 } : null]}
       >
         <View style={styles.featuredPlanInner}>
           <View style={styles.featuredPlanHead}>

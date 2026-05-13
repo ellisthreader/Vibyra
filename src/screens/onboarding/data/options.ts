@@ -2,8 +2,9 @@ import { ImageSourcePropType } from "react-native";
 import { Answers, BuilderIdentity, QuizStep, UsageDepth, UsageFrequency } from "../types";
 
 export const connectBackdrop = require("../../../assets/front-page-nebula.png");
-export const frequencyBackdrop = require("../../../assets/frequency-background.png");
-export const resultBackdrop = require("../../../assets/result-background.png");
+export const frequencyBackdrop = require("../../../assets/onboarding-quiz-background.png");
+export const momentBackdrop = require("../../../assets/onboarding-moment-background.png");
+export const resultBackdrop = require("../../../assets/onboarding-quiz-background.png");
 
 export const weeklyOutcomes: Record<UsageFrequency, string[]> = {
   rarely: [

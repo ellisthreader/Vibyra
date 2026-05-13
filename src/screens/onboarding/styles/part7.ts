@@ -12,7 +12,7 @@ export const part7 = {
     fontWeight: "900"
   },
   deviceMomentPanel: {
-    borderColor: "rgba(138, 247, 255, 0.12)",
+    borderColor: "rgba(216, 134, 255, 0.14)",
     borderRadius: 34,
     borderWidth: 1,
     bottom: 88,
@@ -22,7 +22,7 @@ export const part7 = {
     top: 64
   },
   deviceSyncBeam: {
-    backgroundColor: "rgba(46, 235, 255, 0.38)",
+    backgroundColor: "rgba(199, 125, 255, 0.38)",
     borderRadius: 999,
     height: 132,
     position: "absolute",
@@ -34,8 +34,8 @@ export const part7 = {
   },
   desktopResult: {
     alignItems: "center",
-    backgroundColor: "rgba(46, 235, 255, 0.1)",
-    borderColor: "rgba(138, 247, 255, 0.24)",
+    backgroundColor: "rgba(151, 54, 255, 0.1)",
+    borderColor: "rgba(216, 134, 255, 0.24)",
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",

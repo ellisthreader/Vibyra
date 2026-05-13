@@ -8,8 +8,11 @@ export const part10 = {
     paddingTop: 8
   },
   navRowMoment: {
-    paddingTop: 10,
-    width: "100%"
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    position: "relative",
+    width: "100%",
+    zIndex: 3
   },
   nextButton: {
     alignItems: "center",
@@ -31,8 +34,8 @@ export const part10 = {
     paddingHorizontal: 0,
     shadowColor: "#C86DFF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.96,
-    shadowRadius: 28,
+    shadowOpacity: 0.82,
+    shadowRadius: 24,
     width: 148
   },
   nextButtonFrequencyGradient: {
@@ -45,8 +48,8 @@ export const part10 = {
     paddingHorizontal: 14,
     shadowColor: "#D07CFF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.88,
-    shadowRadius: 22,
+    shadowOpacity: 0.78,
+    shadowRadius: 20,
     width: "100%"
   },
   nextButtonDisabled: {

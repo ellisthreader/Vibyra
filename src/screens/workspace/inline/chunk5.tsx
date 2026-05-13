@@ -28,7 +28,7 @@ export function TokenMembershipSheet({ onClose, onManage, plan, tokenBalance, to
   tokensUsed: number;
   visible: boolean;
 }) {
-  const allowance = Math.max(tokenBalance + tokensUsed, plan === "free" ? 50 : tokenMembership.allowance);
+  const allowance = Math.max(tokenBalance + tokensUsed, 1);
   const progress = Math.min(1, tokenBalance / allowance);
   const availablePercent = Math.round((tokenBalance / allowance) * 100);
   const planLabel = formatPlanLabel(plan);
@@ -41,7 +41,7 @@ export function TokenMembershipSheet({ onClose, onManage, plan, tokenBalance, to
           <View style={styles.tokenSheetHandle} />
           <View style={styles.tokenSheetHeader}>
             <View style={styles.tokenSheetHeaderIcon}>
-              <Ionicons name="flash" color="#FFF200" size={24} />
+              <Ionicons name="flash" color="#DDBBFF" size={24} />
             </View>
             <View style={styles.tokenSheetHeaderCopy}>
               <Text style={styles.tokenSheetKicker}>{planLabel} membership</Text>
@@ -60,13 +60,13 @@ export function TokenMembershipSheet({ onClose, onManage, plan, tokenBalance, to
                   <Text style={styles.tokenHeroValue}>{availablePercent}% remaining</Text>
                 </View>
                 <View style={styles.tokenRenewalBadge}>
-                  <Ionicons name="refresh-outline" color="#FFF200" size={15} />
+                  <Ionicons name="refresh-outline" color="#DDBBFF" size={15} />
                   <Text style={styles.tokenRenewalText}>{tokenMembership.renewal}</Text>
                 </View>
               </View>
               <View style={styles.tokenTrack}>
                 <LinearGradient
-                  colors={["#FFF200", "#C6FF00", "#8B35FF"]}
+                  colors={["#6D35FF", "#A855FF", "#DDBBFF"]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
                   style={[styles.tokenTrackFill, { width: `${progress * 100}%` }]}
@@ -109,4 +109,3 @@ export function MobileConnectionCard({ machineName }: { machineName: string }) {
     </View>
   );
 }
-

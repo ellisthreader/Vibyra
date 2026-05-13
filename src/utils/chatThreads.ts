@@ -17,6 +17,7 @@ export function normalizeChatThreads(value: unknown): Record<string, ChatMessage
           id,
           role,
           text,
+          assistantModel: typeof item.assistantModel === "string" ? item.assistantModel : undefined,
           file: item.file ? String(item.file) : undefined
         };
       })

@@ -19,11 +19,14 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
-import { CommunityAppLogo, CommunityAuthorAvatar, CommunityPreview, formatCommunityTitle, getCommunitySeedComments } from "./index";
+import { formatCommunityTitle, getCommunitySeedComments } from "./chunk15";
+import { CommunityAppLogo, CommunityAuthorAvatar } from "./chunk16";
+import { CommunityPreview } from "./chunk17";
 
 export function CommunityPostDetail({
   addedComments,
   bookmarked,
+  canComment,
   commentCount,
   commentDraft,
   commentError,
@@ -39,6 +42,7 @@ export function CommunityPostDetail({
 }: {
   addedComments: CommunityComment[];
   bookmarked: boolean;
+  canComment: boolean;
   commentCount: number;
   commentDraft: string;
   commentError: string;
@@ -53,9 +57,8 @@ export function CommunityPostDetail({
   post: CommunityPost;
 }) {
   const [activeTab, setActiveTab] = useState<CommunityDetailTab>("about");
-  const likes = post.likes + (liked ? 1 : 0);
   const comments = [...getCommunitySeedComments(post), ...addedComments];
-  const canPostComment = commentDraft.trim().length > 0 && !commentPosting;
+  const canPostComment = canComment && commentDraft.trim().length > 0 && !commentPosting;
 
   return (
     <View style={styles.communityDetailScreen}>
@@ -93,7 +96,7 @@ export function CommunityPostDetail({
         </Pressable>
         <Pressable style={styles.communityLikeButton} onPress={onToggleLike}>
           <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : colors.text} size={25} />
-          <Text style={styles.communityDetailIconText}>{likes}</Text>
+          <Text style={styles.communityDetailIconText}>{post.likes}</Text>
         </Pressable>
       </View>
 
@@ -119,7 +122,9 @@ export function CommunityPostDetail({
             <View style={styles.communityScreenshotGrid}>
               {post.screenshots.map((screenshot, index) => (
                 <View key={screenshot} style={styles.communityScreenshotPreview}>
-                  <CommunityPreview tone={post.accent} type={post.preview} />
+                  {post.screenshotUrls?.[index]
+                    ? <Image source={{ uri: post.screenshotUrls[index] }} style={{ borderRadius: 14, height: "100%", width: "100%" }} />
+                    : <CommunityPreview tone={post.accent} type={post.preview} />}
                   <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot}</Text>
                 </View>
               ))}
@@ -139,9 +144,10 @@ export function CommunityPostDetail({
           </View>
           <View style={styles.communityCommentComposer}>
             <TextInput
+              editable={canComment}
               multiline
               onChangeText={onCommentDraftChange}
-              placeholder="Add a comment..."
+              placeholder={canComment ? "Add a comment..." : "Log in to comment"}
               placeholderTextColor="#8F8A9E"
               style={styles.communityCommentInput}
               value={commentDraft}
@@ -178,4 +184,3 @@ export function CommunityPostDetail({
     </View>
   );
 }
-

@@ -1,17 +1,18 @@
 import { useRef } from "react";
 import * as Haptics from "expo-haptics";
-import { Agent, ChatMessage, FileEntry, LogEvent, Project } from "../types/domain";
-import { appApiRequest, ChatResponse } from "../utils/appApi";
-import { dedupeFiles, formatAssistantReply, isRunArtifact } from "../utils/files";
-import { normalizeAgentUrl } from "../utils/network";
-import { streamChatText } from "../utils/chatStream";
+import { LogEvent } from "../types/domain";
+import { appApiRequest, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
 import { impact } from "../utils/haptics";
-import { makeId } from "../utils/ids";
 import { useAppState } from "./useAppState";
 import { AgentStartResult, calculatePromptMoney, roundMoney } from "./agentTypes";
-import { userFacingAgentError } from "./agentErrors";
 import type { AgentStartTarget } from "./appContextTypes";
-
+import { makeOptimisticAgent, resolveAgentTarget } from "./agentActionHelpers";
+import { useAgentChatMessages } from "./useAgentChatMessages";
+import { useAgentResultHandlers } from "./useAgentResultHandlers";
+import { applyLocalSkillPrompt, mergeChatSkills } from "../utils/chatSkills";
+import { normalizeAgentReply } from "../utils/files";
+import { withProjectBriefPrompt } from "../utils/projectBriefs";
+import { projectFileContext, shouldAttachFileContext, type ProjectFileContext } from "./agentContextPayload";
 type Store = ReturnType<typeof useAppState>;
 type Requests = {
   agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
@@ -21,20 +22,18 @@ type Logs = {
   appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void;
   advanceWorkflow: (index: number) => void;
 };
-type ResolvedAgentTarget = {
-  project: Project;
-  projectId: string;
-  chatProjectId: string;
-  file: FileEntry | null;
+type AuthSession = {
+  expireSession: (message?: string) => void;
 };
-
-export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
+export function useAgentActions(store: Store, requests: Requests, logs: Logs, authSession?: AuthSession) {
   const { state, derived, setters } = store;
   const agentRequestingRef = useRef(false);
   const streamingRef = useRef<(() => void) | null>(null);
+  const messages = useAgentChatMessages(store, logs, streamingRef);
+  const results = useAgentResultHandlers(store, logs, messages);
 
-  async function startAgent(target?: AgentStartTarget) {
-    const trimmed = state.taskText.trim();
+  async function startAgent(target?: AgentStartTarget, promptOverride?: string) {
+    const trimmed = (promptOverride ?? state.taskText).trim();
     if (!trimmed || state.agentRequesting || agentRequestingRef.current) return;
 
     if (streamingRef.current) {
@@ -43,22 +42,45 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
     }
 
     const skillMatch = trimmed.match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
-    const skill = skillMatch ? state.chatSkills.find((s) => s.id === skillMatch[1]) : undefined;
+    const allSkills = mergeChatSkills(state.chatSkills);
+    const skill = skillMatch ? allSkills.find((s) => s.id === skillMatch[1].toLowerCase()) : undefined;
     const skillId = skill?.id;
     const userText = skill ? (skillMatch?.[2] ?? "").trim() : trimmed;
     const visibleText = skill
       ? (userText ? `${skill.slash} ${userText}` : skill.slash)
       : trimmed;
 
-    const chatTarget = resolveTarget(target);
+    const chatTarget = resolveAgentTarget(state, derived, target);
+    const selectedModel = state.selectedChatModel || state.selectedModel;
     agentRequestingRef.current = true;
     setters.setAgentRequesting(true);
-    const assistantMessageId = appendPendingChat(chatTarget, visibleText);
-    const optimisticAgent = makeOptimisticAgent(chatTarget, visibleText);
-    const promptBody = userText || (skill ? skill.label : trimmed);
-    const prompt = chatTarget.file
-      ? `In ${chatTarget.file.path}: ${promptBody}`
+    const intentText = skill ? userText : trimmed;
+    const buildMode = shouldUseBuildChatMode(intentText, skill?.mode);
+    const desktopAgentMode = false;
+    const runMode = desktopAgentMode || buildMode ? "build" : "chat";
+    const fileContextEnabled = shouldAttachFileContext(intentText, chatTarget.file);
+    const messageTarget = fileContextEnabled ? chatTarget : { ...chatTarget, file: null };
+    const liveEditFile = fileContextEnabled && shouldShowLiveEditActivity(intentText, skill?.mode, buildMode)
+      ? inferLiveEditFile(chatTarget.file?.path, intentText)
+      : undefined;
+    const assistantMessageId = messages.appendPendingChat(messageTarget, visibleText, selectedModel, {
+      route: state.connection && desktopAgentMode ? "desktop" : "cloud",
+      mode: runMode,
+      activeFile: liveEditFile
+    });
+    const optimisticAgent = makeOptimisticAgent(chatTarget, visibleText, selectedModel);
+    const richContextMode = buildMode || shouldUseAdviceContext(intentText, skill?.mode);
+    const promptBody = skill
+      ? ("promptPrefix" in skill ? applyLocalSkillPrompt(skill, userText) : (userText || skill.label))
+      : trimmed;
+    const shouldScopeToFile = Boolean(chatTarget.file && fileContextEnabled && !desktopAgentMode && !buildMode);
+    const scopedPrompt = shouldScopeToFile
+      ? `In ${chatTarget.file?.path}: ${promptBody}`
       : promptBody;
+    const projectBrief = state.chatProjects[chatTarget.chatProjectId]?.brief
+      ?? state.chatProjects[chatTarget.projectId]?.brief
+      ?? chatTarget.project.brief;
+    const prompt = withProjectBriefPrompt(projectBrief, scopedPrompt);
     const earned = calculatePromptMoney(trimmed);
 
     impact(Haptics.ImpactFeedbackStyle.Medium);
@@ -69,22 +91,24 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
       longestPromptLength: Math.max(current.longestPromptLength, trimmed.length)
     }));
     setters.setAgents((current) => [optimisticAgent, ...current]);
-    setters.setBuildState("building");
-    setters.setPreviewState("refreshing");
+    setters.setBuildState(desktopAgentMode || buildMode ? "building" : "idle");
+    setters.setPreviewState(desktopAgentMode || buildMode ? "refreshing" : "live");
     setters.setLastPrompt(trimmed);
 
     try {
-      if (state.connection) {
+      if (state.connection && desktopAgentMode) {
         const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
           method: "POST",
           body: JSON.stringify({
-            model: state.selectedModel,
+            apply: state.editApprovals[chatTarget.projectId] === "always",
+            model: selectedModel,
             projectId: chatTarget.projectId,
+            projectPath: chatTarget.project.path,
             prompt,
             reasoningEffort: state.reasoningEffort
           })
         });
-        finishRealAgent(chatTarget, result, optimisticAgent.id, assistantMessageId);
+        results.finishRealAgent(chatTarget, result, optimisticAgent.id, assistantMessageId);
         return;
       }
 
@@ -92,12 +116,11 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
         throw new Error("Log in or create an account to use Vibyra AI chat.");
       }
 
-      const buildMode = skill?.mode === "build"
-        || (!skill && /\b(build|create|make|generate|design|prototype)\b.*\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen)\b/i.test(prompt));
-      const fileBody = chatTarget.file && buildMode
+      const filesInActiveProject = chatTarget.projectId === state.selectedProjectId ? state.files : [];
+      const fileBody = chatTarget.file && fileContextEnabled && richContextMode && !buildMode
         ? (chatTarget.file.body || "").slice(0, 1200)
         : "";
-      const filePath = chatTarget.file ? chatTarget.file.path : "";
+      const filePath = chatTarget.file && fileContextEnabled && !buildMode ? chatTarget.file.path : "";
       const historyWindow = buildMode ? 4 : 3;
       const historyCharCap = buildMode ? 1200 : 600;
       const history = state.chatThreads[chatTarget.chatProjectId] ?? [];
@@ -112,208 +135,66 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs) {
             .slice(-historyWindow)
             .map((message) => ({
               role: message.role,
-              text: message.text.slice(0, historyCharCap)
+              text: (message.role === "assistant" ? normalizeAgentReply(message.text) : message.text).slice(0, historyCharCap)
             })),
-          model: state.selectedChatModel || state.selectedModel,
+          model: selectedModel,
+          mode: runMode,
           project: chatTarget.project.name,
+          projectFiles: await projectFileContext(filesInActiveProject, intentText, state.connection ? async (path) => (
+            await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
+          ).file : undefined, state.connection ? async (query) => (
+            await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
+          ).files ?? [] : undefined),
           prompt,
           reasoningEffort: state.reasoningEffort,
           skill: skillId ?? ""
         })
       }, state.authToken);
-      finishOpenRouterAgent(chatTarget, result, optimisticAgent.id, assistantMessageId);
+      results.finishOpenRouterAgent(messageTarget, result, optimisticAgent.id, assistantMessageId);
     } catch (error) {
-      failAgent(chatTarget, optimisticAgent.id, assistantMessageId, error);
+      if (isAppSessionExpiredError(error)) {
+        authSession?.expireSession("Your Vibyra login needs refreshing before AI chat can continue.");
+      }
+      messages.failAgent(messageTarget, optimisticAgent, assistantMessageId, error);
     } finally {
       agentRequestingRef.current = false;
       setters.setAgentRequesting(false);
     }
   }
 
-  function resolveTarget(target?: AgentStartTarget): ResolvedAgentTarget {
-    const explicitProjectId = target?.projectId ?? target?.project?.id ?? target?.chatProjectId;
-    const project = target?.project
-      ?? (explicitProjectId
-        ? (state.projects.find((item) => item.id === explicitProjectId)
-          ?? state.chatProjects[explicitProjectId]
-          ?? makeStubProject(explicitProjectId))
-        : derived.selectedProject);
-    const projectId = explicitProjectId ?? project.id;
-    const chatProjectId = target?.chatProjectId ?? projectId;
-    const selectedFile = projectId === state.selectedProjectId && derived.selectedFile.id !== "empty"
-      ? derived.selectedFile
-      : null;
-    const file = target?.file === null ? null : target?.file ?? selectedFile;
-
-    const safeFile = file && file.id !== "empty" && !isRunArtifact(file) ? file : null;
-    return {
-      project,
-      projectId,
-      chatProjectId,
-      file: safeFile
-    };
-  }
-
-  function makeStubProject(id: string): Project {
-    return { id, name: id, path: "", stack: "", updated: "" };
-  }
-
-  function updateChatMessages(projectId: string, update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) {
-    setters.setChatThreads((current) => {
-      const previous = current[projectId] ?? [];
-      const nextMessages = typeof update === "function" ? update(previous) : update;
-      return { ...current, [projectId]: nextMessages };
-    });
-  }
-
-  function appendPendingChat(target: ResolvedAgentTarget, prompt: string) {
-    const userMessageId = makeId("chat-user");
-    const assistantMessageId = makeId("chat-assistant");
-    const file = target.file?.path;
-    updateChatMessages(target.chatProjectId, (current) => [
-      ...current,
-      { id: userMessageId, role: "user", text: prompt, file },
-      { id: assistantMessageId, role: "assistant", text: "Working on it...", file }
-    ]);
-    setters.setTaskText("");
-    return assistantMessageId;
-  }
-
-  function makeOptimisticAgent(target: ResolvedAgentTarget, title: string): Agent {
-    return {
-      id: makeId("agent"),
-      title,
-      model: state.selectedModel,
-      projectId: target.projectId,
-      state: "running",
-      progress: 12,
-      file: "backend/orchestration"
-    };
-  }
-
-  function finishRealAgent(target: ResolvedAgentTarget, result: AgentStartResult, optimisticAgentId: string, assistantMessageId: string) {
-    setters.setAgents((current) => current.map((agent) => (
-      agent.id === optimisticAgentId ? result.agent : agent
-    )));
-    setters.setBuildState(result.buildState);
-    setters.setPreviewState(result.preview.state);
-    setters.setChanges(result.changes);
-    setters.setFiles((current) => dedupeFiles([...result.files, ...current]));
-    logs.advanceWorkflow(12);
-    logs.appendLogs(result.events);
-    const editApproval: ChatMessage["editApproval"] = result.changes.length === 0
-      ? undefined
-      : (state.editApprovals[target.projectId] === "always" ? "allowed" : "pending");
-    streamAssistantMessage(target, assistantMessageId, formatAssistantReply(result.reply, result.changes), desktopPreviewApp(target, result), {
-      codeChanges: result.changes,
-      codeFiles: result.files,
-      codeProjectId: target.projectId,
-      editApproval
-    });
-  }
-
-  function finishOpenRouterAgent(target: ResolvedAgentTarget, result: ChatResponse, optimisticAgentId: string, assistantMessageId: string) {
-    setters.setAgents((current) => current.map((agent) => (
-      agent.id === optimisticAgentId
-        ? { ...agent, state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
-        : agent
-    )));
-    setters.setBuildState("passed");
-    setters.setPreviewState("delivered");
-    setters.setCreditsBalance(result.creditsBalance);
-    setters.setCreditsUsed(result.creditsUsed);
-    if (result.title) {
-      setters.setChatTitles((current) => ({
-        ...current,
-        [target.chatProjectId]: result.title ?? current[target.chatProjectId] ?? target.project.name
-      }));
-    }
-    logs.appendLogs([
-      { source: "OpenRouter", message: `Model replied with ${result.model}`, tone: "success" },
-      { source: "Credits", message: `${result.creditCost} credit${result.creditCost === 1 ? "" : "s"} used`, tone: "info" }
-    ]);
-    logs.advanceWorkflow(12);
-    streamAssistantMessage(target, assistantMessageId, result.reply, result.app ?? null);
-  }
-
-  function failAgent(target: ResolvedAgentTarget, agentId: string, assistantMessageId: string, error: unknown) {
-    setters.setAgents((current) => current.map((agent) => (
-      agent.id === agentId ? { ...agent, state: "failed", progress: 100 } : agent
-    )));
-    setters.setBuildState("failed");
-    setters.setPreviewState("live");
-    const rawMessage = error instanceof Error ? error.message : "Agent task failed";
-    logs.appendLog(rawMessage, "AI Chat", "error");
-    updateAssistantMessage(target, assistantMessageId, userFacingAgentError(rawMessage));
-  }
-
-  function updateAssistantMessage(target: ResolvedAgentTarget, messageId: string, text: string, app?: ChatResponse["app"]) {
-    updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
-      if (message.id !== messageId) return message;
-      const next = { ...message, text };
-      if (app !== undefined) {
-        if (app) next.app = app;
-        else delete next.app;
-      }
-      return next;
-    }));
-  }
-
-  function streamAssistantMessage(
-    target: ResolvedAgentTarget,
-    messageId: string,
-    fullText: string,
-    app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval">
-  ) {
-    if (streamingRef.current) {
-      streamingRef.current();
-      streamingRef.current = null;
-    }
-    streamingRef.current = streamChatText(fullText, (text, done) => {
-      updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
-        if (message.id !== messageId) return message;
-        const next = { ...message, text };
-        if (done && app !== undefined) {
-          if (app) next.app = app;
-          else delete next.app;
-        }
-        if (done && metadata) {
-          next.codeChanges = metadata.codeChanges;
-          next.codeFiles = metadata.codeFiles;
-          next.codeProjectId = metadata.codeProjectId;
-          if (metadata.editApproval !== undefined) next.editApproval = metadata.editApproval;
-        }
-        return next;
-      }));
-      if (done) streamingRef.current = null;
-    });
-  }
-
-  function desktopPreviewApp(target: ResolvedAgentTarget, result: AgentStartResult): ChatResponse["app"] {
-    const html = previewHtmlFromFiles(result.files);
-    if (!state.connection && !html) return null;
-    if (!html && !result.preview.url) return null;
-    return {
-      id: `${result.agent.id}-preview`,
-      title: result.preview.title || target.project.name,
-      ...(html ? { html } : {}),
-      ...(state.connection && result.preview.url ? { url: absoluteDesktopUrl(state.connection.url, result.preview.url) } : {})
-    };
-  }
-
-  function previewHtmlFromFiles(files: FileEntry[]) {
-    const htmlFile = files.find((file) => {
-      const path = file.path.toLowerCase();
-      return path.endsWith("/index.html") || path === "index.html" || (file.name.toLowerCase() === "index.html" && file.language === "html");
-    });
-    return htmlFile?.body?.trim() || "";
-  }
-
-  function absoluteDesktopUrl(baseUrl: string, path: string) {
-    if (/^https?:\/\//i.test(path)) return path;
-    return `${normalizeAgentUrl(baseUrl)}${path.startsWith("/") ? path : `/${path}`}`;
-  }
-
   return { startAgent };
+}
+
+function shouldUseBuildChatMode(text: string, skillMode?: string) {
+  if (skillMode === "build") return true;
+  const prompt = text.trim().toLowerCase();
+  const buildVerb = "(build|create|make|generate|design|prototype)";
+  const target = "\\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen|preview)\\b";
+  return (new RegExp(`^(please\\s+|pls\\s+)?${buildVerb}\\b.*${target}`).test(prompt)
+    || new RegExp(`^(can|could|would)\\s+(you|u)\\s+${buildVerb}\\b.*${target}`).test(prompt)
+    || new RegExp(`^(i\\s+want\\s+you\\s+to|i\\s+need\\s+you\\s+to|need\\s+you\\s+to)\\s+${buildVerb}\\b.*${target}`).test(prompt));
+}
+
+function shouldUseAdviceContext(text: string, skillMode?: string) {
+  if (skillMode === "chat") return true;
+  const prompt = text.toLowerCase();
+  return /\b(what|why|how|where|when|which|who|review|explain|audit|inspect|look|suggest|advice|recommend|feedback|nicer|better|improve)\b/.test(prompt);
+}
+
+function shouldShowLiveEditActivity(text: string, skillMode: string | undefined, buildMode: boolean) {
+  if (buildMode || skillMode === "build") return true;
+  const prompt = text.trim().toLowerCase();
+  const editVerb = "(add|build|change|create|delete|design|edit|fix|generate|implement|make|modify|refactor|remove|replace|rewrite|update)";
+  return new RegExp(`\\b${editVerb}\\b`).test(prompt)
+    && /\b(code|component|file|screen|ui|style|css|html|app|page|website|site|function|bug)\b/.test(prompt);
+}
+
+function inferLiveEditFile(selectedPath: string | undefined, text: string) {
+  const prompt = text.trim().toLowerCase();
+  if (selectedPath && /\b(this|current|selected)\s+file\b|\b(edit|fix|update|change|refactor|rewrite|replace)\b/.test(prompt)) {
+    return selectedPath;
+  }
+  if (/\b(css|styles?|theme|layout|spacing|color|visual|polish)\b/.test(prompt)) return "App.css";
+  if (/\b(html|landing|website|site|page)\b/.test(prompt)) return "index.html";
+  return "App.js";
 }

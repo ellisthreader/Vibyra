@@ -2,6 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { styles } from "../styles";
 
 export function ProfileGeneratingScreen() {
@@ -18,27 +19,27 @@ export function ProfileGeneratingScreen() {
   useEffect(() => {
     const pulseLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: true })
+        Animated.timing(pulse, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: supportsNativeAnimation }),
+        Animated.timing(pulse, { toValue: 0, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: supportsNativeAnimation })
       ])
     );
     const rotateLoop = Animated.loop(
-      Animated.timing(rotate, { toValue: 1, duration: 12000, easing: Easing.linear, useNativeDriver: true })
+      Animated.timing(rotate, { toValue: 1, duration: 12000, easing: Easing.linear, useNativeDriver: supportsNativeAnimation })
     );
     const dotLoop = Animated.loop(
       Animated.stagger(150, [dotOne, dotTwo, dotThree].map((dot) => (
         Animated.sequence([
-          Animated.timing(dot, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 520, easing: Easing.in(Easing.cubic), useNativeDriver: true })
+          Animated.timing(dot, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+          Animated.timing(dot, { toValue: 0, duration: 520, easing: Easing.in(Easing.cubic), useNativeDriver: supportsNativeAnimation })
         ])
       )))
     );
     const progressAnimation = Animated.timing(progress, { toValue: 0.68, duration: 1850, easing: Easing.out(Easing.cubic), useNativeDriver: false });
     const statusTimer = setTimeout(() => {
-      Animated.timing(statusOpacity, { toValue: 0, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(({ finished }) => {
+      Animated.timing(statusOpacity, { toValue: 0, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation }).start(({ finished }) => {
         if (!finished) return;
         setPhase("generating");
-        Animated.timing(statusOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+        Animated.timing(statusOpacity, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: supportsNativeAnimation }).start();
       });
     }, 960);
 

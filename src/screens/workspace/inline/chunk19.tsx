@@ -139,4 +139,3 @@ export function CompactRow({ icon, meta, title, tone = "default" }: {
     </View>
   );
 }
-

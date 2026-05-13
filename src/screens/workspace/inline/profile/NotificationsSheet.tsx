@@ -1,21 +1,26 @@
 import React from "react";
+import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { colors } from "../../../../styles/theme";
+import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
-import { ToggleRow } from "./ToggleRow";
-import { ProfileSheets } from "./useProfileSheets";
 
-export function NotificationsSheet({ visible, onClose, sheets }: {
+export function NotificationsSheet({ visible, onClose }: {
   visible: boolean;
   onClose: () => void;
-  sheets: ProfileSheets;
 }) {
   return (
     <ProfileSheet visible={visible} onClose={onClose} icon="notifications-outline" kicker="Preferences" title="Notifications">
-      <ToggleRow icon="phone-portrait-outline" title="Push notifications" subtitle="Build progress, agent results, mentions"
-        value={sheets.pushNotifications} onChange={sheets.setPushNotifications} />
-      <ToggleRow icon="mail-outline" title="Email digests" subtitle="Weekly summary of your projects"
-        value={sheets.emailNotifications} onChange={sheets.setEmailNotifications} />
-      <ToggleRow icon="flash-outline" title="Agent alerts" subtitle="Ping me when an agent needs input"
-        value={sheets.agentNotifications} onChange={sheets.setAgentNotifications} />
+      <Text style={styles.profileSheetText}>
+        Notification preferences are not connected to account settings yet.
+      </Text>
+      <Text style={styles.profileSheetMuted}>
+        Vibyra will keep using the device and system notification settings already granted to the app.
+      </Text>
+      <View style={styles.profileSheetSecondary}>
+        <Ionicons name="notifications-off-outline" color={colors.text} size={18} />
+        <Text style={styles.profileSheetSecondaryText}>Controls unavailable</Text>
+      </View>
     </ProfileSheet>
   );
 }

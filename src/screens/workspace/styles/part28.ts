@@ -3,6 +3,26 @@ import { colors } from "../../../styles/theme";
 import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part28 = {
+  pcDisconnectButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 111, 145, 0.08)",
+    borderColor: "rgba(255, 157, 174, 0.28)",
+    borderRadius: 13,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    minHeight: 44
+  },
+  pcDisconnectButtonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.99 }]
+  },
+  pcDisconnectButtonText: {
+    color: "#FFB2C0",
+    fontSize: 13,
+    fontWeight: "900"
+  },
   pcScanButton: {
     alignItems: "center",
     backgroundColor: "rgba(108, 49, 255, 0.88)",
@@ -109,22 +129,22 @@ export const part28 = {
   },
   tokenPill: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 232, 111, 0.08)",
-    borderColor: "rgba(255, 232, 111, 0.2)",
-    borderRadius: 13,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 999,
+    borderWidth: 0,
     flexDirection: "row",
-    gap: 8,
-    minHeight: 38,
-    paddingHorizontal: 10,
-    paddingVertical: 5
+    gap: 6,
+    minHeight: 34,
+    paddingHorizontal: 11,
+    paddingVertical: 6
   },
   tokenPillPressed: {
     opacity: 0.76,
     transform: [{ scale: 0.98 }]
   },
   tokenHeroLabel: {
-    color: "#FFF200",
+    color: "#BFAEFF",
     fontSize: 12,
     fontWeight: "900",
     textTransform: "uppercase"
@@ -151,9 +171,9 @@ export const part28 = {
   tokenManageButton: {
     borderRadius: 13,
     overflow: "hidden",
-    shadowColor: "#FFF200",
+    shadowColor: "#8B35FF",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.24,
     shadowRadius: 22
   },
   tokenManageButtonPressed: {

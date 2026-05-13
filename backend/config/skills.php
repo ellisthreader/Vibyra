@@ -63,6 +63,15 @@ return [
             'system_prompt_addon' => 'Output the minimum change needed. No extra refactors.',
         ],
         [
+            'id' => 'publish',
+            'slash' => '/publish',
+            'label' => 'Publish project',
+            'description' => 'Open publish settings for the current project.',
+            'category' => 'create',
+            'mode' => 'chat',
+            'prompt_template' => 'Open publish settings for this project. {{prompt}}',
+        ],
+        [
             'id' => 'build',
             'slash' => '/build',
             'label' => 'Build a runnable preview',

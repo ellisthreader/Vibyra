@@ -1,5 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Image, ImageSourcePropType, Pressable, Text, View } from "react-native";
+import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { UsageFrequency } from "../types";
 import { styles } from "../styles";
 
@@ -16,13 +18,13 @@ export function FrequencyQuestionScreen(props: {
       toValue: 1,
       duration: 520,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true
+      useNativeDriver: supportsNativeAnimation
     }).start();
 
     const pulseLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: true })
+        Animated.timing(pulse, { toValue: 1, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+        Animated.timing(pulse, { toValue: 0, duration: 1700, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation })
       ])
     );
 
@@ -33,7 +35,7 @@ export function FrequencyQuestionScreen(props: {
   const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [18, 0] });
   const opacity = entrance.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const selectedScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.018] });
-  const selectedGlow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0.75] });
+  const selectedGlow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0.34] });
 
   return (
     <Animated.View style={[styles.frequencyQuestion, { opacity, transform: [{ translateY }] }]}>
@@ -63,6 +65,11 @@ export function FrequencyQuestionScreen(props: {
                 onPress={() => props.onSelect(option.value)}
               >
                 {selected ? <Animated.View style={[styles.frequencySelectedGlow, { opacity: selectedGlow, pointerEvents: "none" }]} /> : null}
+                {selected ? (
+                  <View style={styles.frequencyOptionCheck}>
+                    <Ionicons name="checkmark" color="#071016" size={15} />
+                  </View>
+                ) : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />
                 <Text style={styles.frequencyOptionTitle}>{option.label}</Text>
               </Pressable>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Models\User;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\CreditDeductor;
+use App\Services\LevelProgression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -14,6 +15,8 @@ use Throwable;
 
 trait ChatEndpoint
 {
+    use ChatEndpointHelpers;
+
     private const CHAT_PROMPT_MAX_CHARS = 8000;
     private const CHAT_FILE_BODY_MAX_CHARS = 20000;
     private const CHAT_HISTORY_MAX_ITEMS = 20;
@@ -62,6 +65,7 @@ trait ChatEndpoint
         if (mb_strlen($fileBody) > self::CHAT_FILE_BODY_MAX_CHARS) {
             return $this->json(['ok' => false, 'error' => 'File context is too large for chat. Open the file in a project agent instead.'], 413);
         }
+        $projectFiles = $this->projectFilesContext((array) $request->input('projectFiles', []));
 
         $history = $request->input('history');
         if ($history !== null && (! is_array($history) || count($history) > self::CHAT_HISTORY_MAX_ITEMS)) {
@@ -70,9 +74,10 @@ trait ChatEndpoint
 
         $deductor->maybeResetDaily($user);
 
-        $maxOutputTokens = $this->resolveMaxTokens($prompt, $skill);
-        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : []);
-        $agentMode = ($skill['mode'] ?? null) === 'build' || $this->isBuildPrompt($prompt);
+        $chatMode = $this->resolveChatMode($request, $prompt, $skill);
+        $maxOutputTokens = $this->resolveMaxTokens($request, $prompt, $skill);
+        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles);
+        $agentMode = $chatMode === 'build';
 
         $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
         if ($user->credits_balance < $estimatedCredits) {
@@ -115,7 +120,7 @@ trait ChatEndpoint
                 $payload['reasoning'] = $reasoningPayload;
             }
 
-            $response = Http::timeout(60)
+            $response = Http::timeout(90)
                 ->acceptJson()
                 ->withToken($apiKey)
                 ->withHeaders([
@@ -136,7 +141,8 @@ trait ChatEndpoint
         if ($reply === '') {
             $reply = 'I received an empty response from the selected model.';
         }
-        [$replyText, $app] = $this->extractRunnableApp($reply);
+        [$replyText, $app] = $this->extractRunnableApp($reply, $agentMode);
+        $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode);
 
         $usage = $response->json('usage') ?? [];
         $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
@@ -154,6 +160,12 @@ trait ChatEndpoint
             $reference,
             ['skill' => $skillId ?: null],
         );
+        $levelActivity = app(LevelProgression::class)->record(
+            $user,
+            $agentMode ? 'coding_agent_completed' : 'cloud_chat_completed',
+            $reference,
+            ['model' => $modelKey, 'credits' => abs($ledger->credits_delta)],
+        );
 
         return $this->json([
             'ok' => true,
@@ -167,130 +179,9 @@ trait ChatEndpoint
             'creditsUsed' => $user->credits_used,
             'dailyCreditsUsed' => $user->daily_credits_used,
             'dailyCreditsCap' => $dailyCap,
+            'levelActivity' => $levelActivity,
             'user' => $this->userPayload($user),
         ]);
     }
 
-    private function estimateInputTokens(string $prompt, string $fileBody, array $history): int
-    {
-        $chars = mb_strlen($prompt) + mb_strlen($fileBody);
-        foreach ($history as $item) {
-            if (is_array($item)) {
-                $chars += mb_strlen((string) ($item['text'] ?? ''));
-            }
-        }
-        // Conservative estimate: 1 token ≈ 3.5 chars (over-estimate so we don't under-charge).
-        return (int) max(1, ceil($chars / 3.5));
-    }
-
-    private function enforceChatRateLimit(Request $request, int $userId, string $plan): ?JsonResponse
-    {
-        $perMinute = (int) config("billing.plans.{$plan}.rate_per_minute", 12);
-        $perHour = (int) config("billing.plans.{$plan}.rate_per_hour", 200);
-        $perIp = self::CHAT_PER_IP_PER_MINUTE;
-
-        $perMinuteKey = "chat:user:{$userId}:1m";
-        $perHourKey = "chat:user:{$userId}:1h";
-        $perIpKey = 'chat:ip:' . sha1((string) $request->ip()) . ':1m';
-
-        $limits = [
-            [$perMinuteKey, $perMinute, 60, 'You are sending messages too fast. Wait a moment and try again.'],
-            [$perHourKey, $perHour, 3600, 'Hourly chat limit reached. Try again later.'],
-            [$perIpKey, $perIp, 60, 'Too many chat requests from this network. Wait a moment and try again.'],
-        ];
-
-        foreach ($limits as [$key, $max, $window, $message]) {
-            if (RateLimiter::tooManyAttempts($key, $max)) {
-                $retry = RateLimiter::availableIn($key);
-                return $this->json([
-                    'ok' => false,
-                    'error' => $message,
-                    'retryAfter' => $retry,
-                ], 429);
-            }
-            RateLimiter::hit($key, $window);
-        }
-
-        return null;
-    }
-
-    private function resolveSkill(string $id): ?array
-    {
-        foreach ((array) config('skills.list', []) as $skill) {
-            if (($skill['id'] ?? null) === $id) {
-                return $skill;
-            }
-        }
-        return null;
-    }
-
-    private function normalizeReasoningEffort(string $value): string
-    {
-        $value = strtolower(trim($value));
-        return in_array($value, ['none', 'low', 'medium', 'high', 'xhigh'], true) ? $value : 'medium';
-    }
-
-    private function buildReasoningPayload(string $effort, int $maxOutputTokens): ?array
-    {
-        if ($effort === 'none') {
-            return ['exclude' => true];
-        }
-        if ($effort === 'xhigh') {
-            return [
-                'effort' => 'high',
-                'max_tokens' => max($maxOutputTokens * 4, 8000),
-            ];
-        }
-        return ['effort' => $effort];
-    }
-
-    private function resolveMaxTokens(string $prompt, ?array $skill): int
-    {
-        $mode = $skill['mode'] ?? null;
-        if ($mode === 'build' || ($mode === null && $this->isBuildPrompt($prompt))) {
-            return 3000;
-        }
-        return 800;
-    }
-
-    private function extractRunnableApp(string $reply): array
-    {
-        if (! preg_match('/<vibyra-app(?:\s+title="([^"]*)")?\s*>([\s\S]*?)<\/vibyra-app>/i', $reply, $match)) {
-            return [$reply, null];
-        }
-
-        $title = trim($match[1] ?? '') ?: 'Generated app';
-        $html = trim($match[2] ?? '');
-        if ($html === '') {
-            return [$reply, null];
-        }
-
-        $cleanedReply = trim(preg_replace('/<vibyra-app[\s\S]*?<\/vibyra-app>/i', '', $reply));
-        if ($cleanedReply === '') {
-            $cleanedReply = "I built `{$title}` — tap the preview below to run it.";
-        }
-
-        return [$cleanedReply, [
-            'id' => Str::uuid()->toString(),
-            'title' => $title,
-            'html' => $this->ensureContentSecurityPolicy($html),
-        ]];
-    }
-
-    private function ensureContentSecurityPolicy(string $html): string
-    {
-        if (stripos($html, 'http-equiv="Content-Security-Policy"') !== false) {
-            return $html;
-        }
-
-        $csp = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com;\">";
-
-        if (stripos($html, '<head>') !== false) {
-            return preg_replace('/<head>/i', "<head>\n{$csp}", $html, 1);
-        }
-        if (stripos($html, '<html') !== false) {
-            return preg_replace('/<html([^>]*)>/i', "<html$1>\n<head>{$csp}</head>", $html, 1);
-        }
-        return "<!doctype html><html><head>{$csp}</head><body>{$html}</body></html>";
-    }
 }

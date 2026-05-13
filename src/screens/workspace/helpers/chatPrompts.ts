@@ -1,4 +1,4 @@
-import { Project } from "../../../types/domain";
+export { currentProjectReply, desktopConnectionRequiredReply } from "./chatProjectReplies";
 import { normalizeAgentUrl } from "../../../utils/network";
 
 export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {
@@ -198,16 +198,3 @@ export function bareNameCandidate(prompt: string): string | null {
   const stripped = stripFiller(prompt.trim()).replace(/[?.!,;:]+$/g, "").trim();
   return isBareName(prompt) ? stripped : null;
 }
-
-export function currentProjectReply(project: Project, selectedFileName: string) {
-  const cleanName = project.name.trim() || "this project";
-  const cleanPath = project.path.trim();
-  const file = selectedFileName && selectedFileName !== "No files" ? ` The selected file is ${selectedFileName}.` : "";
-  return `You are currently in ${cleanName}${cleanPath ? ` at ${cleanPath}` : ""}.${file}`;
-}
-
-export function desktopConnectionRequiredReply(searchQuery: string) {
-  const target = searchQuery ? ` for "${searchQuery}"` : "";
-  return `I can search your desktop${target}, but only when Vibyra Desktop is connected. Open Vibyra Desktop on your PC, pair this app, then send this again.`;
-}
-

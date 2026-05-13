@@ -4,19 +4,22 @@ import { Ionicons } from "@expo/vector-icons";
 import { useCommunityPage } from "../hooks/useCommunityPage";
 import { styles } from "../styles";
 import type { CommunityFilter, CommunityPost } from "../types";
-import { CommunityOpenedAppPage, CommunityPostCard, CommunityPostDetail } from "./index";
+import { CommunityPostCard } from "./chunk13";
+import { CommunityPostDetail } from "./chunk14";
+import { CommunityOpenedAppPage } from "./chunk15";
 
 export function CommunityPage({
-  authToken, currentUserName, openedPostId, onOpenApp, onSelectPost, selectedPost
+  authToken, currentUserName, openedPostId, onLevelActivity, onOpenApp, onSelectPost, selectedPost
 }: {
   authToken: string;
   currentUserName: string;
   openedPostId: string | null;
   onOpenApp: (postId: string) => void;
+  onLevelActivity?: (action: string, contextId: string, meta?: Record<string, unknown>) => void;
   onSelectPost: (post: CommunityPost | null) => void;
   selectedPost: CommunityPost | null;
 }) {
-  const c = useCommunityPage(authToken, currentUserName, onOpenApp);
+  const c = useCommunityPage(authToken, currentUserName, onOpenApp, onLevelActivity);
 
   if (selectedPost) {
     const added = c.commentsByPostId[selectedPost.id] ?? [];
@@ -26,7 +29,8 @@ export function CommunityPage({
       <CommunityPostDetail
         addedComments={added}
         bookmarked={c.bookmarkedPostIds.includes(selectedPost.id)}
-        commentCount={selectedPost.comments + added.length}
+        canComment={Boolean(authToken)}
+        commentCount={Math.max(selectedPost.comments, added.length)}
         commentDraft={c.commentDraftsByPostId[selectedPost.id] ?? ""}
         commentError={c.commentErrorsByPostId[selectedPost.id] ?? ""}
         commentPosting={Boolean(c.commentPostingByPostId[selectedPost.id])}
@@ -66,13 +70,28 @@ export function CommunityPage({
       </View>
 
       <View style={styles.communityFeed}>
-        {c.filteredPosts.length ? c.filteredPosts.map((post) => (
+        {c.feedLoading ? (
+          <View style={styles.communityEmptyState}>
+            <Ionicons name="cloud-download-outline" color="#9D80FF" size={30} />
+            <Text style={styles.communityEmptyTitle}>Loading Community</Text>
+            <Text style={styles.communityEmptyText}>Checking for published apps...</Text>
+          </View>
+        ) : c.feedError ? (
+          <View style={styles.communityEmptyState}>
+            <Ionicons name="warning-outline" color="#FFB4C1" size={30} />
+            <Text style={styles.communityEmptyTitle}>Community unavailable</Text>
+            <Text style={styles.communityEmptyText}>{c.feedError}</Text>
+            <Pressable onPress={c.reloadCommunityFeed} style={styles.communityFilterButton}>
+              <Ionicons name="refresh" color="#B4B1C9" size={22} />
+            </Pressable>
+          </View>
+        ) : c.filteredPosts.length ? c.filteredPosts.map((post) => (
           <CommunityPostCard
             key={post.id}
             bookmarked={c.bookmarkedPostIds.includes(post.id)}
             liked={c.likedPostIds.includes(post.id)}
             post={post}
-            commentCount={post.comments + (c.commentsByPostId[post.id]?.length ?? 0)}
+            commentCount={Math.max(post.comments, c.commentsByPostId[post.id]?.length ?? 0)}
             onOpen={() => onSelectPost(post)}
             onToggleBookmark={() => c.toggleBookmark(post.id)}
             onToggleLike={() => c.toggleLike(post.id)}

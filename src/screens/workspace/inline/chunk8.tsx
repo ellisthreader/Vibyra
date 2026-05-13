@@ -1,21 +1,94 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../../../styles/theme";
 import { useAppContext } from "../../../context/AppContext";
 import { useThemedColor } from "../../../context/PreferencesContext";
+import { generatePublishAsset, publishProject as publishCommunityProject } from "../../../utils/communityApi";
+import { pickPreviewHtml } from "../../../utils/files";
 import { projectFilterModes } from "../data/pages";
 import { ProjectsPageProps, useProjectsPage } from "../hooks/useProjectsPage";
 import { styles } from "../styles";
-import { ProjectCard, ProjectDeleteConfirmModal, ProjectFilterMenuItem } from "./index";
+import { ProjectDisplay } from "../types";
+import { ProjectCard } from "./chunk20";
+import { ProjectDeleteConfirmModal, ProjectFilterMenuItem } from "./chunk21";
 import { FolderBrowserModal } from "./FolderBrowserModal";
+import { ProjectPublishModal } from "./ProjectPublishModal";
 
 export function ProjectsPage(props: ProjectsPageProps) {
   const p = useProjectsPage(props);
   const app = useAppContext();
   const browsePcIconColor = useThemedColor("#E8E2FF");
   const [pcBrowserOpen, setPcBrowserOpen] = useState(false);
+  const [publishError, setPublishError] = useState("");
+  const [publishTarget, setPublishTarget] = useState<ProjectDisplay | null>(null);
+  const [generatingAsset, setGeneratingAsset] = useState<"logo" | "screenshot" | null>(null);
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    if (!props.publishProjectId) return;
+    const project = p.displayProjects.find((item) => item.id === props.publishProjectId || item.sourceProject?.id === props.publishProjectId);
+    if (!project) return;
+    setPublishError("");
+    setPublishTarget(project);
+    props.onPublishRequestHandled?.();
+  }, [p.displayProjects, props]);
+
+  async function submitPublish(payload: { description: string; logoImageUrl: string; screenshotUrls: string[]; tags: string[]; title: string; visibility: "public" | "unlisted" | "private" }) {
+    if (!publishTarget) return;
+    if (!app.authToken) {
+      setPublishError("Log in before publishing a project.");
+      return;
+    }
+    setPublishing(true);
+    setPublishError("");
+    try {
+      if (publishTarget.sourceProject && !app.projects.some((item) => item.id === publishTarget.id)) {
+        await app.adoptProject(publishTarget.sourceProject);
+      }
+      const files = await app.selectProject(publishTarget.id, { startPreview: false });
+      const previewHtml = pickPreviewHtml(files, false);
+      const result = await publishCommunityProject({
+        authToken: app.authToken,
+        description: payload.description,
+        logoImageUrl: payload.logoImageUrl,
+        previewHtml,
+        projectId: publishTarget.id,
+        screenshotUrls: payload.screenshotUrls,
+        stack: publishTarget.stack,
+        tags: payload.tags,
+        title: payload.title,
+        visibility: payload.visibility
+      });
+      if (result.reviewStatus && result.reviewStatus !== "approved") return setPublishError("Submitted for review. It will appear in Community after approval.");
+      if (payload.visibility !== "public" || result.isPublic === false) return setPublishError(`Saved as ${payload.visibility}. It will not appear in Community.`);
+      setPublishTarget(null);
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : "Project could not be published.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleGenerateAsset(kind: "logo" | "screenshot", payload: { description: string; prompt: string; title: string }) {
+    if (!app.authToken) {
+      setPublishError("Log in before generating publish images.");
+      return null;
+    }
+    setGeneratingAsset(kind);
+    setPublishError("");
+    try {
+      const result = await generatePublishAsset({ authToken: app.authToken, kind, ...payload });
+      if (result.user) app.applyRemoteUserFromIap(result.user);
+      return result.imageUrl;
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : `${kind} could not be generated.`);
+      return null;
+    } finally {
+      setGeneratingAsset(null);
+    }
+  }
 
   return (
     <View style={styles.projectsScreen}>
@@ -73,6 +146,11 @@ export function ProjectsPage(props: ProjectsPageProps) {
             onDelete={() => p.requestDeleteProject(project)}
             onMore={() => p.toggleProjectMenu(project.id)}
             onOpen={() => p.openProject(project)}
+            onPublish={() => {
+              if (p.menuProjectId === project.id) p.toggleProjectMenu(project.id);
+              setPublishError("");
+              setPublishTarget(project);
+            }}
             onStartRename={() => p.startRenameProject(project)}
             onSubmitRename={() => p.submitRenameProject(project.id)}
             layout={p.projectLayout}
@@ -89,14 +167,27 @@ export function ProjectsPage(props: ProjectsPageProps) {
         ) : null}
       </View>
       <ProjectDeleteConfirmModal onCancel={p.cancelDeleteProject} onConfirm={p.confirmDeleteProject} project={p.deleteTarget} />
+      <ProjectPublishModal
+        busy={publishing}
+        error={publishError}
+        generating={generatingAsset}
+        onClose={() => { if (!publishing) setPublishTarget(null); }}
+        onGenerateAsset={handleGenerateAsset}
+        onPublish={submitPublish}
+        project={publishTarget}
+      />
       <FolderBrowserModal
         browseDesktopPath={app.browseDesktopPath}
         label="Browse PC"
         onClose={() => setPcBrowserOpen(false)}
         onSelect={async (folder) => {
           setPcBrowserOpen(false);
-          await app.adoptProject(folder);
+          const shouldAnalyze = folder.source === "desktop" && !app.chatProjects[folder.id]?.brief;
+          if (shouldAnalyze) app.addProjectBriefSetupMessage(folder);
           props.onOpenProjectPreview(folder.id, folder.name);
+          const analyzed = shouldAnalyze ? await app.analyzeDesktopProject(folder) : folder;
+          await app.adoptProject(analyzed);
+          if (shouldAnalyze) app.updateProjectBriefSetupMessage(analyzed);
         }}
         visible={pcBrowserOpen}
       />

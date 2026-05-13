@@ -1,0 +1,182 @@
+:root {
+  color-scheme: dark;
+  --bg: #050508;
+  --panel: #101014;
+  --panel-strong: #17131f;
+  --surface: #09070e;
+  --line: #252033;
+  --line-strong: #3a2a55;
+  --text: #ffffff;
+  --muted: #b8afca;
+  --subtle: #8d849f;
+  --violet: #7b2cff;
+  --pink: #ff35c8;
+  --amber: #ffb84d;
+  --green: #22c55e;
+  --red: #ef4444;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, rgba(123, 44, 255, 0.28), transparent 34%), var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+main {
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.shell {
+  display: grid;
+  gap: 16px;
+  margin: 0 auto;
+  max-width: 1120px;
+}
+
+.topbar {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding-bottom: 18px;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.brand img {
+  height: 68px;
+  object-fit: contain;
+  width: 68px;
+}
+
+.kicker {
+  color: var(--pink);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+h1, h2, p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(30px, 5vw, 52px);
+  font-weight: 950;
+  line-height: 1;
+  margin-top: 4px;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.status {
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 10px 13px;
+}
+
+.status.info { background: rgba(59, 130, 246, 0.14); color: #60a5fa; }
+.status.warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.status.success { background: rgba(34, 197, 94, 0.14); color: #74f3a1; }
+.status.error { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(360px, 1.18fr);
+}
+
+.panel {
+  background: rgba(16, 16, 20, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.pair-code {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  color: var(--amber);
+  display: grid;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: clamp(38px, 8vw, 66px);
+  font-weight: 950;
+  justify-content: center;
+  letter-spacing: 0.16em;
+  margin: 18px 0;
+  min-height: 154px;
+  padding-left: 0.16em;
+}
+
+.copy {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 760;
+  line-height: 1.55;
+}
+
+.approval {
+  background: var(--panel-strong);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  margin-top: 18px;
+  padding: 16px;
+}
+
+.approval-top {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.approval-dot {
+  background: rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 12px;
+  color: #fbbf24;
+  display: grid;
+  flex: 0 0 auto;
+  font-size: 22px;
+  height: 44px;
+  place-items: center;
+  width: 44px;
+}
+
+.approval-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 16px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  min-height: 46px;
+  padding: 0 16px;
+}

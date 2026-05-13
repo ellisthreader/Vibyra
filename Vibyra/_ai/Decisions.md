@@ -1,5 +1,7 @@
 # Decisions
 
+Deep reference: do not read this file end-to-end by default. Use `rg` for a feature, date, route, or file path, then read only the matching decision section. New durable facts should usually go into the smallest focused note first; add a decision entry only for cross-cutting choices that need rationale.
+
 ## 2026-05-09: Language — Real i18n Layer (Manual Translation Tables, Hermes-Safe Date/Number Formatting)
 
 Decision: Language now actually translates UI text and formats dates/numbers per language without depending on `Intl.DateTimeFormat`/`Intl.NumberFormat` (which silently fall back to en-US on most React Native Hermes builds because only en-US ICU data is bundled). New module `src/context/translations.ts` ships:

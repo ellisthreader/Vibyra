@@ -8,9 +8,11 @@ import { openDesktopWindow } from "./lib/window.mjs";
 appState.server = createServer(handle);
 
 appState.server.listen(PORT, "0.0.0.0", async () => {
-  await discoverProjects();
   startDiscoveryBroadcast();
   openDesktopWindow();
+  void discoverProjects().catch((error) => {
+    console.error(error instanceof Error ? error.message : "Project discovery failed");
+  });
   console.log("Vibyra Desktop is running");
   console.log(`Pair code: ${PAIR_CODE}`);
   console.log(`Desktop screen: http://127.0.0.1:${PORT}/desktop`);

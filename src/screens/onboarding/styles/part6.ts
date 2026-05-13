@@ -14,25 +14,44 @@ export const part6 = {
     fontSize: 15,
     fontWeight: "800",
     lineHeight: 21,
-    marginTop: 10
+    marginTop: 10,
+    maxWidth: 320
   },
   frequencyOption: {
     alignItems: "center",
-    backgroundColor: "rgba(8, 7, 28, 0.62)",
-    borderColor: "rgba(171, 100, 255, 0.38)",
-    borderRadius: 20,
-    borderWidth: 1.4,
-    height: 128,
+    backgroundColor: "rgba(5, 9, 20, 0.72)",
+    borderColor: "rgba(171, 100, 255, 0.32)",
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 132,
     justifyContent: "center",
     overflow: "hidden",
-    paddingHorizontal: 12,
-    paddingTop: 18,
+    paddingHorizontal: 10,
+    paddingTop: 12,
     position: "relative",
     shadowColor: "#8C2DFF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.34,
-    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.05,
+    shadowRadius: 9,
     width: "100%"
+  },
+  frequencyOptionCheck: {
+    alignItems: "center",
+    backgroundColor: "#C77DFF",
+    borderColor: "rgba(255, 211, 255, 0.72)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 23,
+    justifyContent: "center",
+    position: "absolute",
+    right: 12,
+    shadowColor: "#C77DFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.24,
+    shadowRadius: 5,
+    top: 12,
+    width: 23,
+    zIndex: 2
   },
   frequencyOptionGrid: {
     alignSelf: "stretch",
@@ -42,15 +61,15 @@ export const part6 = {
     rowGap: 14
   },
   frequencyOptionIcon: {
-    height: 54,
+    height: 56,
     marginBottom: 12,
-    width: 54
+    width: 56
   },
   frequencyOptionMotion: {
     shadowColor: "#A741FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
     width: "48%"
   },
   frequencyOptionPressed: {
@@ -58,20 +77,19 @@ export const part6 = {
     transform: [{ scale: 0.985 }]
   },
   frequencyOptionSelected: {
-    backgroundColor: "rgba(20, 9, 48, 0.78)",
-    borderColor: "rgba(216, 134, 255, 0.95)",
-    shadowOpacity: 0.5,
-    shadowRadius: 28
+    backgroundColor: "rgba(8, 18, 34, 0.86)",
+    borderColor: "rgba(216, 134, 255, 0.72)",
+    shadowColor: "#C77DFF",
+    shadowOpacity: 0.08,
+    shadowRadius: 10
   },
   frequencyOptionTitle: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900",
-    lineHeight: 21,
+    lineHeight: 20,
     textAlign: "center",
-    textShadowColor: "rgba(255, 255, 255, 0.18)",
-    textShadowOffset: { width: 0, height: 6 },
-    textShadowRadius: 12
+    textShadow: "0px 3px 7px rgba(181, 92, 255, 0.06)"
   },
   frequencyProgressWrap: {
     paddingHorizontal: 4,
@@ -85,19 +103,17 @@ export const part6 = {
   },
   frequencySelectedGlow: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(151, 54, 255, 0.12)",
-    borderRadius: 20
+    backgroundColor: "rgba(151, 54, 255, 0.04)",
+    borderRadius: 18
   },
   frequencyTitle: {
     color: colors.text,
-    fontSize: 34,
+    fontSize: 33,
     fontWeight: "900",
     letterSpacing: 0,
     lineHeight: 41,
     maxWidth: 330,
-    textShadowColor: "rgba(255, 255, 255, 0.2)",
-    textShadowOffset: { width: 0, height: 8 },
-    textShadowRadius: 16
+    textShadow: "0px 8px 18px rgba(181, 92, 255, 0.2)"
   },
   flow: {
     flex: 1,
@@ -128,6 +144,8 @@ export const part6 = {
     paddingTop: 0
   },
   flowMoment: {
+    justifyContent: "space-between",
+    overflow: "hidden",
     paddingBottom: 0,
     paddingHorizontal: 0,
     paddingTop: 0

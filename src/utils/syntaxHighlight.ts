@@ -25,13 +25,15 @@ export const SYNTAX_COLORS: Record<TokenKind, string> = {
   default: "#E5E2F0",
 };
 
-type Family = "js" | "json" | "py" | "plain";
+type Family = "js" | "json" | "py" | "css" | "html" | "plain";
 
 const FAMILY_BY_LANG: Record<string, Family> = {
   ts: "js", tsx: "js", typescript: "js",
   js: "js", jsx: "js", javascript: "js", mjs: "js", cjs: "js",
   json: "json", jsonc: "json",
   py: "py", python: "py",
+  css: "css", scss: "css", less: "css",
+  html: "html", htm: "html", xml: "html", svg: "html",
 };
 
 const JS_KEYWORDS = new Set([
@@ -64,6 +66,8 @@ export function tokenize(code: string, lang: string): SyntaxToken[] {
     case "js": return tokenizeJs(code);
     case "json": return tokenizeJson(code);
     case "py": return tokenizePy(code);
+    case "css": return tokenizeCss(code);
+    case "html": return tokenizeHtml(code);
     default: return [{ text: code, kind: "default" }];
   }
 }
@@ -125,6 +129,38 @@ function tokenizePy(code: string): SyntaxToken[] {
       else if (/^[A-Z]/.test(text)) kind = "type";
       tokens.push({ text, kind });
     } else if (punct) tokens.push({ text, kind: "punctuation" });
+    else tokens.push({ text, kind: "default" });
+  }
+  return tokens;
+}
+
+function tokenizeCss(code: string): SyntaxToken[] {
+  const re = /(\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(#(?:[0-9a-f]{3,8})\b)|(\b\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw|s|ms)?\b)|(--?[A-Za-z_][\w-]*)(?=\s*:)|([.#]?[A-Za-z_][\w-]*)|([{}()[\]:;,>+~*=])|(\s+)|([\s\S])/giy;
+  const tokens: SyntaxToken[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(code)) !== null) {
+    const [text, comment, str, hex, num, prop, ident, punct] = m;
+    if (comment) tokens.push({ text, kind: "comment" });
+    else if (str || hex) tokens.push({ text, kind: "string" });
+    else if (num) tokens.push({ text, kind: "number" });
+    else if (prop) tokens.push({ text, kind: "property" });
+    else if (ident) tokens.push({ text, kind: text.startsWith(".") || text.startsWith("#") ? "function" : "default" });
+    else if (punct) tokens.push({ text, kind: "punctuation" });
+    else tokens.push({ text, kind: "default" });
+  }
+  return tokens;
+}
+
+function tokenizeHtml(code: string): SyntaxToken[] {
+  const re = /(<!--[\s\S]*?-->)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\/?[A-Za-z][\w:-]*)|([<>/=])|(\s+)|([\s\S])/gy;
+  const tokens: SyntaxToken[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(code)) !== null) {
+    const [text, comment, str, tag, punct] = m;
+    if (comment) tokens.push({ text, kind: "comment" });
+    else if (str) tokens.push({ text, kind: "string" });
+    else if (tag) tokens.push({ text, kind: text.startsWith("/") ? "punctuation" : "type" });
+    else if (punct) tokens.push({ text, kind: "punctuation" });
     else tokens.push({ text, kind: "default" });
   }
   return tokens;

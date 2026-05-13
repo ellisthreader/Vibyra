@@ -13,10 +13,10 @@ export const syncFeatures: Array<{
     title: "Instant handoff",
     body: "Switch devices in a second.",
     icon: "swap-horizontal-outline",
-    color: "#8AF7FF",
-    backgroundColor: "rgba(46, 235, 255, 0.08)",
-    borderColor: "rgba(138, 247, 255, 0.42)",
-    iconBackgroundColor: "rgba(46, 235, 255, 0.14)"
+    color: "#C77DFF",
+    backgroundColor: "rgba(151, 54, 255, 0.09)",
+    borderColor: "rgba(216, 134, 255, 0.42)",
+    iconBackgroundColor: "rgba(151, 54, 255, 0.16)"
   },
   {
     title: "Live Sync",

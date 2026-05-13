@@ -38,6 +38,7 @@ return [
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => env('OPENROUTER_API_URL', 'https://openrouter.ai/api/v1/chat/completions'),
+        'image_model' => env('OPENROUTER_IMAGE_MODEL', 'openai/gpt-5-image'),
     ],
 
     'openai' => [
