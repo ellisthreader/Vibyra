@@ -13,16 +13,33 @@ class CreditDeductor
     }
 
     /**
-     * Reset the user's daily counter if the reset window has elapsed.
+     * Reset the user's daily / 5-hour burst / weekly counters if their
+     * respective windows have elapsed.
      */
     public function maybeResetDaily(User $user): void
     {
-        $reset = $user->daily_credits_reset_at;
-        if (! $reset || $reset->isPast()) {
-            $user->forceFill([
-                'daily_credits_used' => 0,
-                'daily_credits_reset_at' => now()->addDay()->startOfDay(),
-            ])->save();
+        $dirty = [];
+
+        $dailyReset = $user->daily_credits_reset_at;
+        if (! $dailyReset || $dailyReset->isPast()) {
+            $dirty['daily_credits_used'] = 0;
+            $dirty['daily_credits_reset_at'] = now()->addDay()->startOfDay();
+        }
+
+        $burstReset = $user->burst_credits_reset_at;
+        if (! $burstReset || $burstReset->isPast()) {
+            $dirty['burst_credits_used'] = 0;
+            $dirty['burst_credits_reset_at'] = now()->addHours(5);
+        }
+
+        $weeklyReset = $user->weekly_credits_reset_at;
+        if (! $weeklyReset || $weeklyReset->isPast()) {
+            $dirty['weekly_credits_used'] = 0;
+            $dirty['weekly_credits_reset_at'] = now()->addWeek();
+        }
+
+        if (! empty($dirty)) {
+            $user->forceFill($dirty)->save();
         }
     }
 
@@ -30,6 +47,18 @@ class CreditDeductor
     {
         $plan = $user->plan ?: 'free';
         return (int) config("billing.plans.{$plan}.daily_credit_cap", 5);
+    }
+
+    public function burstCap(User $user): int
+    {
+        $plan = $user->plan ?: 'free';
+        return (int) config("billing.plans.{$plan}.burst_credit_cap", 0);
+    }
+
+    public function weeklyCap(User $user): int
+    {
+        $plan = $user->plan ?: 'free';
+        return (int) config("billing.plans.{$plan}.weekly_credit_cap", 0);
     }
 
     /**
@@ -56,11 +85,15 @@ class CreditDeductor
                 'credits_balance' => $newBalance,
                 'credits_used' => (int) $fresh->credits_used + $credits,
                 'daily_credits_used' => (int) $fresh->daily_credits_used + $credits,
+                'burst_credits_used' => (int) $fresh->burst_credits_used + $credits,
+                'weekly_credits_used' => (int) $fresh->weekly_credits_used + $credits,
             ])->save();
 
             $user->credits_balance = $newBalance;
             $user->credits_used = $fresh->credits_used;
             $user->daily_credits_used = $fresh->daily_credits_used;
+            $user->burst_credits_used = $fresh->burst_credits_used;
+            $user->weekly_credits_used = $fresh->weekly_credits_used;
 
             return CreditLedger::create([
                 'user_id' => $user->id,
@@ -107,10 +140,14 @@ class CreditDeductor
                 'credits_balance' => $newBalance,
                 'credits_used' => (int) $fresh->credits_used + $credits,
                 'daily_credits_used' => (int) $fresh->daily_credits_used + $credits,
+                'burst_credits_used' => (int) $fresh->burst_credits_used + $credits,
+                'weekly_credits_used' => (int) $fresh->weekly_credits_used + $credits,
             ])->save();
             $user->credits_balance = $newBalance;
             $user->credits_used = $fresh->credits_used;
             $user->daily_credits_used = $fresh->daily_credits_used;
+            $user->burst_credits_used = $fresh->burst_credits_used;
+            $user->weekly_credits_used = $fresh->weekly_credits_used;
 
             return CreditLedger::create([
                 'user_id' => $user->id,
@@ -132,11 +169,17 @@ class CreditDeductor
                 'credits_used' => 0,
                 'daily_credits_used' => 0,
                 'daily_credits_reset_at' => now()->addDay()->startOfDay(),
+                'burst_credits_used' => 0,
+                'burst_credits_reset_at' => now()->addHours(5),
+                'weekly_credits_used' => 0,
+                'weekly_credits_reset_at' => now()->addWeek(),
                 'plan_renews_at' => now()->addMonth(),
             ])->save();
             $user->credits_balance = $monthlyAllowance;
             $user->credits_used = 0;
             $user->daily_credits_used = 0;
+            $user->burst_credits_used = 0;
+            $user->weekly_credits_used = 0;
             $user->plan_renews_at = $fresh->plan_renews_at;
 
             return CreditLedger::create([

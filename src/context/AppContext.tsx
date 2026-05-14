@@ -10,6 +10,7 @@ import { useAppState } from "./useAppState";
 import { useAuthContextActions } from "./useAuthContextActions";
 import { useDesktopUrlPromotion } from "./useDesktopUrlPromotion";
 import { useEditPermissionActions } from "./useEditPermissionActions";
+import { makeNextDebugLevel } from "./debugLevelProgress";
 import { useLiveSync } from "./useLiveSync";
 import { useLocalChatActions } from "./useLocalChatActions";
 import { useLogActions } from "./useLogActions";
@@ -67,6 +68,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
     },
+    debugLevelUp: () => setters.setLevelProgress(makeNextDebugLevel),
     revertPreviewCode: (messageId) => {
       setters.setChatThreads((threads) => Object.fromEntries(Object.entries(threads).map(([projectId, messages]) => [
         projectId,
@@ -127,10 +129,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     disconnectDesktop
   ]);
 
-  return <AppContext.Provider value={value}>
-    {children}
-    <LevelUpNotification enabled={state.authenticated && state.persistenceReady} levelProgress={state.levelProgress} />
-  </AppContext.Provider>;
+  return <AppContext.Provider value={value}>{children}<LevelUpNotification enabled={state.authenticated && state.persistenceReady} levelProgress={state.levelProgress} /></AppContext.Provider>;
 }
 
 function useDisconnectDesktop(store: ReturnType<typeof useAppState>, logs: ReturnType<typeof useLogActions>) {

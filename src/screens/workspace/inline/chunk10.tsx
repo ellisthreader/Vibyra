@@ -9,6 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
 import { AppWebView } from "../../../components/AppWebView";
 import { colors } from "../../../styles/theme";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -35,6 +36,8 @@ export function ModelMenuRow({
 }) {
   const locked = isModelLockedForPlan(model, accountPlan);
   const lockInfo = locked ? modelLockReason(model) : null;
+  const lockIconColor = useThemedColor("#C9C2D6");
+  const checkIconColor = useThemedColor("#7CF1B3");
 
   return (
     <Pressable
@@ -50,11 +53,11 @@ export function ModelMenuRow({
       {model.badge ? <Text style={styles.chatModelBadge}>{model.badge}</Text> : null}
       {locked && lockInfo ? (
         <View style={styles.chatModelLockPill}>
-          <Ionicons name="lock-closed" color="#C9C2D6" size={11} />
+          <Ionicons name="lock-closed" color={lockIconColor} size={11} />
           <Text style={styles.chatModelLockText}>{lockInfo.label}</Text>
         </View>
       ) : null}
-      {selected ? <Ionicons name="checkmark" color="#7CF1B3" size={18} /> : null}
+      {selected ? <Ionicons name="checkmark" color={checkIconColor} size={18} /> : null}
     </Pressable>
   );
 }
@@ -83,10 +86,11 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
   onOpenTokens: () => void;
   percentRemaining: number;
 }) {
+  const warningIconColor = useThemedColor("#FFF200");
   return (
     <View style={styles.lowCreditsCard}>
       <View style={styles.lowCreditsIcon}>
-        <Ionicons name="flash" color="#FFF200" size={20} />
+        <Ionicons name="flash" color={warningIconColor} size={20} />
       </View>
       <View style={styles.lowCreditsCopy}>
         <Text style={styles.lowCreditsTitle}>Credits are running low</Text>
@@ -100,6 +104,11 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
 }
 
 export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (prompt: string) => void }) {
+  const prefs = usePreferences();
+  const suggestionIconColor = useThemedColor("#D7C4FF");
+  const suggestionGradient = prefs.effectiveScheme === "light"
+    ? ["rgba(109, 59, 255, 0.12)", "rgba(79, 70, 229, 0.08)"] as const
+    : ["rgba(142, 60, 255, 0.32)", "rgba(93, 36, 216, 0.18)"] as const;
   const opacity = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(12)).current;
   const orbPulse = useRef(new Animated.Value(0)).current;
@@ -139,12 +148,12 @@ export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (promp
           >
             <View style={styles.chatSuggestionIconPlate}>
               <LinearGradient
-                colors={["rgba(142, 60, 255, 0.32)", "rgba(93, 36, 216, 0.18)"]}
+                colors={suggestionGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
-              <Ionicons name={suggestion.icon} color="#D7C4FF" size={18} />
+              <Ionicons name={suggestion.icon} color={suggestionIconColor} size={18} />
             </View>
             <Text numberOfLines={2} style={styles.chatSuggestionTitle}>{suggestion.title}</Text>
             <Text numberOfLines={3} style={styles.chatSuggestionDescription}>{suggestion.description}</Text>
@@ -164,11 +173,13 @@ export function ChatWelcomeGlyph() {
 }
 
 export function ModelProviderIcon({ compact, provider }: { compact?: boolean; provider: ChatModelProvider }) {
+  const autoIconColor = useThemedColor("#EDE9FF");
+  const geminiIconColor = useThemedColor("#8EA0FF");
   const config = {
-    auto: { color: "#EDE9FF", icon: "sparkles-outline" as const },
+    auto: { color: autoIconColor, icon: "sparkles-outline" as const },
     claude: { color: "#D97757", icon: "sunny-outline" as const },
     openai: { color: "#10A37F", icon: "aperture-outline" as const },
-    gemini: { color: "#8EA0FF", icon: "diamond-outline" as const }
+    gemini: { color: geminiIconColor, icon: "diamond-outline" as const }
   }[provider];
   const logoSource = provider === "openai" || provider === "gemini" ? providerLogoSources[provider] : null;
 

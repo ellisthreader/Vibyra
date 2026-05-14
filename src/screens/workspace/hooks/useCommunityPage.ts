@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchCommunityProjects, likeCommunityProject, postCommunityComment, unlikeCommunityProject } from "../../../utils/communityApi";
 import { communityPosts } from "../data/community";
 import { loadCommunityComments, loadCommunityCommentsAsync, saveCommunityComments } from "../inline";
@@ -22,7 +22,12 @@ export function useCommunityPage(
   const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
   const [openedPostIds, setOpenedPostIds] = useState<string[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>(communityPosts);
+  const postsRef = useRef(posts);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +51,9 @@ export function useCommunityPage(
       })
       .catch((error) => {
         if (!cancelled) {
-          setFeedError(error instanceof Error ? error.message : "Community could not be loaded.");
-          setPosts([]);
+          const fallbackPosts = postsRef.current.length > 0 ? postsRef.current : communityPosts;
+          setPosts(fallbackPosts);
+          setFeedError(fallbackPosts.length > 0 ? "" : communityFeedError(error));
         }
       })
       .finally(() => { if (!cancelled) setFeedLoading(false); });
@@ -76,9 +82,12 @@ export function useCommunityPage(
         post.id === id ? { ...post, likes: Math.max(0, post.likes + (liked ? -1 : 1)) } : post
       )));
       void (liked ? unlikeCommunityProject(authToken, id) : likeCommunityProject(authToken, id))
-        .then((result) => setPosts((items) => items.map((post) => (
-          post.id === id ? { ...post, likes: result.likes } : post
-        ))))
+        .then((result) => {
+          setPosts((items) => items.map((post) => (
+            post.id === id ? { ...post, likes: result.likes } : post
+          )));
+          if (!liked) onLevelActivity?.("community_like", `community-like:${id}`, { postId: id });
+        })
         .catch(() => {
           setLikedPostIds((current) => liked ? [...current, id] : current.filter((x) => x !== id));
           setPosts((items) => items.map((post) => (
@@ -86,7 +95,6 @@ export function useCommunityPage(
           )));
         });
       if (liked) return c.filter((x) => x !== id);
-      onLevelActivity?.("community_like", `community-like:${id}`, { postId: id });
       return [...c, id];
     });
   }, [authToken, onLevelActivity]);
@@ -141,4 +149,12 @@ export function useCommunityPage(
     searchQuery, setSearchQuery,
     filteredPosts, toggleBookmark, toggleLike, openApp, addComment, cycleFilter, setCommentDraft
   };
+}
+
+function communityFeedError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (message.toLowerCase().includes("could not reach vibyra")) {
+    return "Community is waiting for the Vibyra backend. Start the backend, then refresh.";
+  }
+  return message || "Community could not be loaded.";
 }

@@ -85,8 +85,9 @@ trait ProjectPreview
 
     private function previewEntryPath(array $project): string
     {
-        foreach (['index.html', 'dist/index.html', 'build/index.html', 'public/index.html', 'web/index.html', 'out/index.html', '.output/public/index.html', 'www/index.html', 'app/index.html', 'client/dist/index.html', 'frontend/dist/index.html', 'apps/web/dist/index.html', 'packages/web/dist/index.html', 'storybook-static/index.html', 'docs/index.html', 'game/index.html', 'demo/index.html'] as $candidate) {
-            if ($this->safePreviewFile($project, $candidate)) {
+        foreach (['dist/index.html', 'build/index.html', 'out/index.html', '.output/public/index.html', 'public/index.html', 'web/index.html', 'www/index.html', 'client/dist/index.html', 'frontend/dist/index.html', 'apps/web/dist/index.html', 'packages/web/dist/index.html', 'storybook-static/index.html', 'docs/index.html', 'game/index.html', 'demo/index.html', 'app/index.html', 'index.html'] as $candidate) {
+            $filePath = $this->safePreviewFile($project, $candidate);
+            if ($filePath && ! $this->isSourceOnlyPreviewHtml(File::get($filePath), $candidate)) {
                 return $candidate;
             }
         }
@@ -126,7 +127,7 @@ trait ProjectPreview
             'gif' => 'image/gif',
             'html', 'htm' => 'text/html; charset=UTF-8',
             'jpeg', 'jpg' => 'image/jpeg',
-            'js', 'mjs' => 'application/javascript; charset=UTF-8',
+            'js', 'jsx', 'mjs', 'ts', 'tsx' => 'application/javascript; charset=UTF-8',
             'json' => 'application/json; charset=UTF-8',
             'png' => 'image/png',
             'svg' => 'image/svg+xml; charset=UTF-8',
@@ -146,10 +147,21 @@ trait ProjectPreview
         return preg_replace_callback('/\b(src|href)=(["\'])(?!https?:|data:|mailto:|tel:|#)([^"\']+)\2/i', function (array $match) use ($entryBase, $rootBase): string {
             $value = (string) $match[3];
             $cleaned = preg_replace('/^\.?\//', '', $value) ?: '';
-            $base = str_starts_with($value, '/') ? $rootBase : $entryBase;
+            $base = str_starts_with($value, '/') && $entryBase !== $rootBase ? $entryBase : (str_starts_with($value, '/') ? $rootBase : $entryBase);
 
             return $match[1].'="'.$base.$cleaned.'"';
         }, $html) ?? $html;
+    }
+
+    private function isSourceOnlyPreviewHtml(string $html, string $entryPath): bool
+    {
+        if ($entryPath !== 'index.html') {
+            return false;
+        }
+
+        return preg_match('/<script\b[^>]*\bsrc=["\'](?:\.?\/)?src\/(?:main|index|app)\.(?:jsx?|tsx?)["\']/i', $html) === 1
+            || preg_match('/<script\b[^>]*\btype=["\']module["\'][^>]*\bsrc=["\'](?:\.?\/)?src\//i', $html) === 1
+            || preg_match('/@vite\/client|vite\/client/i', $html) === 1;
     }
 
     private function previewUrl(string $projectId, string $token): string

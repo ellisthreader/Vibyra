@@ -229,6 +229,61 @@ class VibyraAppApiTest extends TestCase
         $this->assertStringNotContainsString('```bash', $reply);
     }
 
+    public function test_build_preview_reply_replaces_localhost_guidance_with_phone_preview_copy(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'Open http://localhost:8000 in your browser. <vibyra-app title="Todo"><!doctype html><html><body>Todo</body></html></vibyra-app>'],
+                ]],
+            ]),
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-phone@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat', [
+            'mode' => 'build',
+            'model' => 'gpt-5.4-mini',
+            'project' => 'Todo App',
+            'prompt' => 'Create a todo app',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('reply', 'Ready to preview on your phone. Tap the Live Preview card below to open it in Vibyra.')
+            ->assertJsonPath('app.title', 'Todo');
+    }
+
+    public function test_explicit_backend_setup_can_still_mention_localhost(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'Start the backend, then open http://127.0.0.1:8000/api/skills to verify it.'],
+                ]],
+            ]),
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-backend@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat', [
+            'mode' => 'chat',
+            'model' => 'gpt-5.4-mini',
+            'project' => 'Vibyra',
+            'prompt' => 'How do I check the backend setup locally?',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('reply', 'Start the backend, then open http://127.0.0.1:8000/api/skills to verify it.');
+    }
+
     public function test_preview_change_prompt_uses_build_mode(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);
@@ -258,6 +313,34 @@ class VibyraAppApiTest extends TestCase
             return $request['max_completion_tokens'] === 3000
                 && str_contains($request['messages'][0]['content'], 'Return only the <vibyra-app> block.');
         });
+    }
+
+    public function test_build_preview_rejects_unbundled_local_script_entry(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => '<vibyra-app title="Broken"><!doctype html><html><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html></vibyra-app>'],
+                ]],
+            ]),
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-invalid-preview@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat', [
+            'mode' => 'build',
+            'model' => 'gpt-5.4-mini',
+            'project' => 'Broken Preview',
+            'prompt' => 'Create a React preview',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('app', null)
+            ->assertJsonPath('reply', 'I could not attach a runnable phone preview because it referenced an unbundled local script (`/src/main.jsx`). Ask me to rebuild it as one self-contained HTML preview.');
     }
 
     public function test_level_activity_awards_idempotent_xp_and_milestone_credits(): void
@@ -516,5 +599,42 @@ class VibyraAppApiTest extends TestCase
                 File::put($statePath, $originalState);
             }
         }
+    }
+
+    public function test_chat_stream_rejects_missing_auth(): void
+    {
+        $this->postJson('/api/chat/stream', ['prompt' => 'Hi'])
+            ->assertUnauthorized();
+    }
+
+    public function test_chat_stream_rejects_empty_prompt(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Stream User',
+            'email' => 'stream@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/stream', ['prompt' => ''], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Ask Vibyra something first.');
+    }
+
+    public function test_chat_stream_rejects_unsupported_plan_model(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Stream User',
+            'email' => 'streamer@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/stream', [
+            'prompt' => 'Hello',
+            'model' => 'claude-opus-4',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(403)
+            ->assertJsonPath('plan', 'free');
     }
 }

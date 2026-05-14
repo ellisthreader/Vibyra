@@ -10,6 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -21,6 +22,8 @@ import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 
 export function BottomNav(props: { activePage: DashboardPage; onChange: (page: DashboardPage) => void }) {
+  const activeIconColor = useThemedColor("#A95BFF");
+  const inactiveIconColor = useThemedColor("#A8A7BA");
   return (
     <View style={styles.bottomNav}>
       {pages.map((page) => {
@@ -31,7 +34,7 @@ export function BottomNav(props: { activePage: DashboardPage; onChange: (page: D
             onPress={() => props.onChange(page.key)}
             style={[styles.bottomNavItem, active ? styles.bottomNavItemActive : null]}
           >
-            <Ionicons name={page.icon} color={active ? "#A95BFF" : "#A8A7BA"} size={24} />
+            <Ionicons name={page.icon} color={active ? activeIconColor : inactiveIconColor} size={24} />
             <Text numberOfLines={1} style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
               {page.key === "dashboard" ? "Home" : page.key === "profile" ? "Profile" : page.label.replace("AI ", "")}
             </Text>
@@ -41,4 +44,3 @@ export function BottomNav(props: { activePage: DashboardPage; onChange: (page: D
     </View>
   );
 }
-

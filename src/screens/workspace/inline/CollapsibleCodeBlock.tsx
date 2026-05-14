@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { diffCounts, SYNTAX_COLORS, tokenize } from "../../../utils/syntaxHighlight";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
+import { diffCounts, SYNTAX_COLOR_SCHEMES, tokenize } from "../../../utils/syntaxHighlight";
 import { styles } from "../styles";
 
 export function CollapsibleCodeBlock({ language, filename, code, streaming, initialExpanded = false }: {
@@ -11,6 +12,8 @@ export function CollapsibleCodeBlock({ language, filename, code, streaming, init
   streaming: boolean;
   initialExpanded?: boolean;
 }) {
+  const prefs = usePreferences();
+  const chevronColor = useThemedColor("#9E98AD");
   const [expanded, setExpanded] = useState(initialExpanded);
   const headerLabel = filename || (language ? language.toLowerCase() : "code");
   const detectedLanguage = language || extensionFor(filename);
@@ -28,7 +31,7 @@ export function CollapsibleCodeBlock({ language, filename, code, streaming, init
         onPress={() => setExpanded((prev) => !prev)}
         style={styles.messageCodeBlockHeader}
       >
-        <Ionicons name={expanded ? "chevron-down" : "chevron-forward"} size={14} color="#9E98AD" />
+        <Ionicons name={expanded ? "chevron-down" : "chevron-forward"} size={14} color={chevronColor} />
         <Text style={styles.messageCodeBlockLang} numberOfLines={1}>{headerLabel}</Text>
         <View style={styles.messageCodeBlockCounts}>
           {counts.added > 0 ? <Text style={styles.messageCodeBlockAdded}>+{counts.added}</Text> : null}
@@ -39,7 +42,7 @@ export function CollapsibleCodeBlock({ language, filename, code, streaming, init
       {expanded ? (
         <View style={styles.messageCodeBlockBody}>
           <Text style={styles.messageCodeBlockText}>
-            {tokens.map((token, index) => <Text key={index} style={{ color: SYNTAX_COLORS[token.kind] }}>{token.text}</Text>)}
+            {tokens.map((token, index) => <Text key={index} style={{ color: SYNTAX_COLOR_SCHEMES[prefs.effectiveScheme][token.kind] }}>{token.text}</Text>)}
           </Text>
         </View>
       ) : null}

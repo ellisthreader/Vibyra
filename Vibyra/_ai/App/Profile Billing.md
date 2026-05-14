@@ -16,7 +16,7 @@ Read this for mobile billing UI, profile sheets, IAP/Stripe entry points, and mo
 
 Mobile IAP uses `expo-iap` SKUs `app.vibyra.membership.{plan}.{cycle}`. On purchase success, `usePricingPurchase` posts the receipt to the backend with `reportIapReceipt`, applies returned user state via `app.applyRemoteUserFromIap`, then runs `finishTransaction`. If receipt POST fails, abort so paid-but-unrecorded purchases are not lost.
 
-Web/Desktop Stripe uses backend checkout helpers outside the mobile Profile surface. Mobile Profile `BillingSheet.tsx` is a shipped-safe plan overview: plan cards are disabled, no Stripe checkout or external billing URLs are opened, and payment management is shown as unavailable until an IAP-backed mobile billing flow is wired.
+Web/Desktop Stripe uses backend checkout helpers outside the mobile Profile surface. Mobile Profile `BillingSheet.tsx` is a shipped-safe plan overview: plan cards remain non-purchasing (`onSelect` is a no-op for non-current tiers, no Stripe checkout or external billing URLs are opened) until an IAP-backed mobile billing flow is wired. The earlier "Mobile upgrades and payment management are not available in this build" disclaimer was removed; cards no longer render dimmed and the footer is a single subtle "Cancel anytime · Plan access syncs to your account" line.
 
 ## Profile Tab
 
@@ -38,6 +38,30 @@ Plan ladder in `profile/types.ts::PLAN_TIERS` mirrors `backend/config/billing.ph
 
 The Profile hero owns the level summary and level-map modal in `src/screens/workspace/inline/profile/ProfileHero.tsx`. The modal header applies safe-area top padding for mobile, and the map initially renders a six-level window around the current level; users must tap Show full map before the full roadmap is rendered.
 
-Global mobile level-up notifications live in `src/components/LevelUpNotification.tsx` and are mounted by `AppProvider`. The host watches authenticated `levelProgress.level` increases after persistence is ready, so `/api/chat`, IAP/session user refreshes, and `/api/level/activity` updates share one top-of-screen celebration without firing on initial account restore.
+Level-map vibecoding rank names live in `src/screens/workspace/inline/profile/levelTitles.ts` and render in `ProfileLevelProgressModal.tsx`. The hero shows the current rank; map rows only show a rank label on exact unlock levels, not on every level. Keep names maker/build/prompt themed, such as Prompt Tuner, Professional Prompter, Senior Vibecoder, and Master Vibecoder.
+
+Global mobile level-up notifications live in `src/components/LevelUpNotification.tsx` and are mounted by `AppProvider`. The host watches authenticated `levelProgress.level` increases after persistence is ready, renders below the mobile safe-area top inset, and reads the current level-map node to say when credit rewards were earned. `/api/chat`, IAP/session user refreshes, and `/api/level/activity` updates share one top-of-screen celebration without firing on initial account restore.
+
+Level-up notification colors are explicit per scheme in `src/components/LevelUpNotificationTheme.ts`; keep the component wired to `PreferencesContext.effectiveScheme` because it does not use the workspace style transformer.
+
+For local notification testing, Profile hero shows a non-production `Test level up` button that calls `AppContext.debugLevelUp()`. This only mutates local `levelProgress` via `src/context/debugLevelProgress.ts`; it does not call backend level activity or grant credits.
 
 Profile readiness release stance: mobile Profile billing is a plan overview only and does not open Stripe/external checkout; Refer & earn is hidden until referral API data exists; notification, biometric lock, and analytics controls are informational/unavailable rather than local-only toggles; avatar photo picking requires the explicit photo-library usage strings in `app.json`.
+
+## BillingSheet Layout
+
+`BillingSheet.tsx` wraps the page body in a `ScrollView` (not a flex container) so the four `BillingFeaturedPlan` cards have intrinsic height instead of competing for vertical space. `BillingPlanPager` no longer uses `flex: 1`; it just renders a vertical stack with `gap: 12`.
+
+Page order is: header (back + title + tokens chip) → billing cycle toggle → four plan cards → footer block. There is no longer a "Current plan" hero card at the top — `CurrentPlanCard.tsx` was deleted because the current plan is already indicated by the green "Current" chip on the matching `BillingFeaturedPlan`, so the hero was redundant and stole vertical space on phones.
+
+Each `BillingFeaturedPlan` card head is `icon | name+tokens column | price block` and the name row uses `flexWrap: "wrap"` so the "Most Popular" / "Recommended" ribbon drops below the plan name on narrow phones instead of overlapping the price column. A 1px divider sits between the head and the perks list. Perks allow up to 2 lines so credit/budget descriptions are not truncated on small widths. The current-plan chip is a green pill aligned to the right under the price column.
+
+When tweaking plan card visuals: do not reintroduce `flex: 1` / `minHeight` on `featuredPlanWrap` or `featuredPlanCard` — that was the original source of the squashed-perk overlap on phone, and the layout now relies on intrinsic card heights inside the page-level `ScrollView`.
+
+## Manage Subscription Link
+
+`BillingSheet.tsx` renders a centred "Manage your subscription" hyperlink under the "Cancel anytime · Plan access syncs to your account" line. It opens the platform-correct subscription management URL via `Linking.openURL`:
+- iOS: `https://apps.apple.com/account/subscriptions`
+- Android: `https://play.google.com/store/account/subscriptions`
+
+This is the compliance hook required by App Store Review Guideline 3.1.2 (auto-renewing subscriptions must expose a functional link to subscription management) and the Google Play Payments policy (cancel path must be reachable). Apple/Google handle the actual cancel flow — the app only needs to provide the link. Do not replace this with an in-app cancel UI: it would not be authoritative against the platform receipt and could fail review.

@@ -16,7 +16,8 @@ Read this for slash popover behavior, local commands, and AI skills.
 Local-only commands execute client-side without `/api/chat`, credits, or OpenRouter streaming.
 
 - `/open`: opens `FolderBrowserModal`; selected folder is adopted and `selectedChatId` becomes `project-<folder.id>`.
-- `/test`: opens latest displayable preview; falls back to active project's `index.html` or desktop preview URL.
+- `/preview`: opens the active project's runnable Live Preview without `/api/chat`; it prefers the latest displayable chat preview, then project files, then a desktop preview URL only when the URL serves a real static/browser entry.
+- `/test`: alias for `/preview`.
 - `/new`: clears current chat and returns to detached chat.
 - `/clear`: clears current project chat.
 - `/help`: streams local help copy.
@@ -29,7 +30,7 @@ Local-only commands execute client-side without `/api/chat`, credits, or OpenRou
 
 `ChatComposer` intercepts send through `handleStart`: local commands run and clear the composer; everything else goes through `useWorkspacePromptActions.onStartChat` before any AI request can start.
 
-Project/folder chat activation is slash-only. After local command interception, `useWorkspacePromptActions.onStartChat` keeps detached startup chat active, but once `selectedChatId` starts with `project-` it checks `mergeChatSkills(state.chatSkills)` and only sends known slash skills to `startAgent`; non-slash project-chat text gets a local idle notice via `addLocalChatNotice` with `file: null`, so no AI typing row or accidental selected-file label appears.
+Project/folder chat uses the selected AI agent for normal text. Slash skills such as `/plan`, `/debug`, `/design`, and `/explain` are explicit Vibyra workflow activations layered on top of the same `startAgent` path. Do not add local Vibyra notices in project chat; non-AI local command handling belongs in `ChatComposer` or a command-specific helper.
 
 ## Local AI Skills
 

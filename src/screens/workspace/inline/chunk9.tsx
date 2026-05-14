@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from "react-native";
-import type { ChatMessage, DesktopBrowseListing, DesktopConnectionPrompt, FileEntry, GeneratedApp, ModelKey, Project, ReasoningEffort } from "../../../types/domain";
+import type { ChatMessage, DesktopBrowseListing, DesktopConnectionPrompt, FileEntry, GeneratedApp, ModelKey, Project, ProjectBrief, ReasoningEffort } from "../../../types/domain";
 import { ChatSkill } from "../../../utils/appApi";
 import { useAppContext } from "../../../context/AppContext";
+import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { styles } from "../styles";
 import { ChatEmptyState } from "./chunk10";
 import { MessageBubble } from "./chunk23";
@@ -57,7 +58,8 @@ export function AIChatPage(props: {
   const selectedFilePath = appCtx.selectedFile.id !== "empty" ? appCtx.selectedFile.path : "";
   const needsFileBrief = Boolean(project?.briefRequiredFilePath && project.briefRequiredFilePath === selectedFilePath);
   const desktopDisconnected = project?.source === "desktop" && !appCtx.connection;
-  const setupRequired = Boolean(projectId && !desktopDisconnected && ((project?.briefRequired && !project.brief) || needsFileBrief));
+  const confirmedSetup = props.chatMessages.some((message) => message.projectBriefSetup?.projectId === projectId && message.projectBriefSetup.status === "confirmed");
+  const setupRequired = Boolean(projectId && !desktopDisconnected && !confirmedSetup && ((project?.briefRequired && !project.brief) || needsFileBrief));
   const hasProjectBriefPrompt = props.chatMessages.some((message) => message.projectBriefSetup?.projectId === projectId);
   const setupFormOpen = setupRequired && (manualBriefProjectId === projectId || !hasProjectBriefPrompt);
   const setupSubject = needsFileBrief ? `New file: ${appCtx.selectedFile.name}` : project?.name;
@@ -91,10 +93,11 @@ export function AIChatPage(props: {
     followIfAtBottom(true);
   }, [hasConversation, latestMessage?.role, latestMessageKey, followIfAtBottom, scrollToBottom]);
 
-  const confirmProjectBrief = useCallback((confirmProjectId: string) => {
+  const confirmProjectBrief = useCallback((confirmProjectId: string, detectedBrief?: ProjectBrief) => {
     const target = appCtx.projects.find((item) => item.id === confirmProjectId) ?? appCtx.chatProjects[confirmProjectId];
-    if (!target?.detectedBrief) return;
-    appCtx.saveProjectBrief(confirmProjectId, target.detectedBrief);
+    const brief = detectedBrief ?? target?.detectedBrief;
+    if (!brief) return;
+    appCtx.saveProjectBrief(confirmProjectId, brief);
     setManualBriefProjectId(null);
     setTimeout(() => appCtx.selectProject(confirmProjectId), 0);
   }, [appCtx]);
@@ -156,6 +159,7 @@ export function AIChatPage(props: {
       </View>
       <FolderBrowserModal
         browseDesktopPath={props.onBrowseDesktopPath}
+        initialPath={project?.path}
         onClose={() => setFolderBrowserRecovery(null)}
         onSelect={(folder) => {
           if (!folderBrowserRecovery) return;
@@ -166,16 +170,14 @@ export function AIChatPage(props: {
       />
       <FolderBrowserModal
         browseDesktopPath={props.onBrowseDesktopPath}
+        initialPath={project?.path}
         onClose={() => setCommandFolderOpen(false)}
         onSelect={async (folder) => {
           setCommandFolderOpen(false);
           try {
             props.setSelectedChatId(`project-${folder.id}`);
-            const shouldAnalyze = folder.source === "desktop" && !appCtx.chatProjects[folder.id]?.brief;
-            if (shouldAnalyze) appCtx.addProjectBriefSetupMessage(folder);
-            const analyzed = shouldAnalyze ? await appCtx.analyzeDesktopProject(folder) : folder;
+            const analyzed = await runFirstOpenDesktopAnalysis(appCtx, folder);
             await appCtx.adoptProject(analyzed);
-            if (shouldAnalyze) appCtx.updateProjectBriefSetupMessage(analyzed);
             appCtx.addLocalChatReply("/open", `Opened folder **${folder.name}**.`, { project: folder, projectId: folder.id, chatProjectId: folder.id, file: null });
           } catch {
             appCtx.addLocalChatReply("/open", `I couldn't open **${folder.name}**. Check that Vibyra Desktop can still read that folder.`);

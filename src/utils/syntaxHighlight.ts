@@ -25,6 +25,24 @@ export const SYNTAX_COLORS: Record<TokenKind, string> = {
   default: "#E5E2F0",
 };
 
+export const LIGHT_SYNTAX_COLORS: Record<TokenKind, string> = {
+  keyword: "#7C3AED",
+  string: "#B45309",
+  number: "#047857",
+  comment: "#6B7280",
+  function: "#1D4ED8",
+  type: "#0F766E",
+  property: "#B45309",
+  boolean: "#2563EB",
+  punctuation: "#4B5563",
+  default: "#111827",
+};
+
+export const SYNTAX_COLOR_SCHEMES = {
+  dark: SYNTAX_COLORS,
+  light: LIGHT_SYNTAX_COLORS
+};
+
 type Family = "js" | "json" | "py" | "css" | "html" | "plain";
 
 const FAMILY_BY_LANG: Record<string, Family> = {

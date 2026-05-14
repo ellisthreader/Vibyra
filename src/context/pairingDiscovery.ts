@@ -7,8 +7,10 @@ import {
   ApprovalResult,
   HealthResult,
   HEALTH_SCAN_BATCH_SIZE,
+  LAN_APPROVAL_STATUS_TIMEOUT_MS,
   LAN_HEALTH_TIMEOUT_MS,
   LAN_PAIR_TIMEOUT_MS,
+  RELAY_APPROVAL_STATUS_TIMEOUT_MS,
   RELAY_HEALTH_TIMEOUT_MS,
   RELAY_PAIR_TIMEOUT_MS,
   firstMatching
@@ -107,7 +109,7 @@ export async function waitForDesktopApproval(
           url,
           `/pair/status?requestId=${encodeURIComponent(requestId)}`,
           {},
-          url.startsWith("https://") ? 2500 : 1200
+          url.startsWith("https://") ? RELAY_APPROVAL_STATUS_TIMEOUT_MS : LAN_APPROVAL_STATUS_TIMEOUT_MS
         );
         foundStatusRoute = true;
         if (result.status === "approved" && result.token) return { ...result, projects: result.projects ?? [], events: result.events ?? [] };

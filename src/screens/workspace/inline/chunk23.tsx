@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Animated, Image, Platform, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ImageStyle } from "react-native";
-import type { ChatMessage, FileEntry, GeneratedApp, Project } from "../../../types/domain";
+import type { ChatMessage, FileEntry, GeneratedApp, Project, ProjectBrief } from "../../../types/domain";
 import { normalizeAgentReply } from "../../../utils/files";
 import { vibyraLogo } from "../data/assets";
 import { chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { AgentRunProgressText } from "./AgentRunProgressText";
-import { AgentBusyCard } from "./AgentBusyCard";
+import { LiveCodeActivityCard } from "./LiveCodeActivityCard";
 import { RichMessageText } from "./chunk24";
 import { AppPreviewCard, TypingIndicator } from "./AppPreviewCards";
 import { AppPreviewModal } from "./AppPreviewModal";
@@ -29,7 +29,7 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
   onAcceptFolderProposal?: (proposalId: string, folder: Project) => void;
   onBrowseFolderRecovery?: (recovery: NonNullable<ChatMessage["folderRecovery"]>) => void;
   onChangeProjectBrief?: (projectId: string) => void;
-  onConfirmProjectBrief?: (projectId: string) => void;
+  onConfirmProjectBrief?: (projectId: string, brief: ProjectBrief) => void;
   onConnectDesktop?: (messageId: string, prompt: NonNullable<ChatMessage["desktopConnection"]>) => void;
   onDismissFolderProposal?: (proposalId: string) => void;
   onScanForDesktop?: (messageId: string, prompt: NonNullable<ChatMessage["desktopConnection"]>) => void;
@@ -86,7 +86,9 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
         {isThinking ? (
           message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
         ) : <RichMessageText text={visibleText} />}
-        {message.agentBusy ? <AgentBusyCard busy={message.agentBusy} /> : null}
+        {!user && message.runStatus?.status === "running" && visibleText.trim().length > 0 ? (
+          <LiveCodeActivityCard text={visibleText} />
+        ) : null}
         {previewApp && onOpenApp ? <AppPreviewCard app={previewApp} onOpen={onOpenApp} /> : null}
         {message.codeChanges?.length && message.editApproval === "pending" && message.codeProjectId ? (
           <EditPermissionCard busy={editPermissionBusy} changes={message.codeChanges} projectName={projectName} onAllow={() => handleApproveEdits(false)} onAllowAlways={() => handleApproveEdits(true)} onDeny={handleDenyEdits} />

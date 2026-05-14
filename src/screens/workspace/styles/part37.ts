@@ -1,12 +1,10 @@
 export const part37 = {
   featuredPlanWrap: {
-    borderRadius: 18,
-    flex: 1,
-    minHeight: 118,
+    borderRadius: 20,
     position: "relative" as const
   },
   featuredPlanGlow: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1.5,
     bottom: -2,
     left: -2,
@@ -15,28 +13,26 @@ export const part37 = {
     top: -2
   },
   featuredPlanCard: {
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
-    flex: 1,
     overflow: "hidden" as const
   },
   featuredPlanInner: {
-    flex: 1,
-    gap: 10,
+    gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14
+    paddingVertical: 16
   },
   featuredPlanHead: {
-    alignItems: "flex-start" as const,
+    alignItems: "center" as const,
     flexDirection: "row" as const,
-    gap: 11
+    gap: 12
   },
   featuredPlanIcon: {
     alignItems: "center" as const,
-    borderRadius: 10,
-    height: 36,
+    borderRadius: 12,
+    height: 40,
     justifyContent: "center" as const,
-    width: 36
+    width: 40
   },
   featuredPlanHeadCopy: {
     flex: 1,
@@ -46,17 +42,18 @@ export const part37 = {
   featuredPlanNameRow: {
     alignItems: "center" as const,
     flexDirection: "row" as const,
-    gap: 8
+    flexWrap: "wrap" as const,
+    gap: 6
   },
   featuredPlanName: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "900" as const,
     letterSpacing: -0.2
   },
   featuredPlanRibbon: {
     alignItems: "center" as const,
-    borderRadius: 6,
+    borderRadius: 7,
     flexDirection: "row" as const,
     gap: 3,
     paddingHorizontal: 7,
@@ -73,9 +70,10 @@ export const part37 = {
     fontSize: 12,
     fontWeight: "700" as const
   },
-  featuredPlanRight: {
+  featuredPlanPriceBlock: {
     alignItems: "flex-end" as const,
-    gap: 4
+    flexShrink: 0,
+    gap: 2
   },
   featuredPlanPriceRow: {
     alignItems: "baseline" as const,
@@ -83,40 +81,47 @@ export const part37 = {
   },
   featuredPlanPrice: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "900" as const,
-    letterSpacing: -0.4
+    letterSpacing: -0.6
   },
   featuredPlanCadence: {
     color: "#9C97AE",
     fontSize: 12,
-    fontWeight: "700" as const
+    fontWeight: "700" as const,
+    marginLeft: 1
   },
   featuredPlanAnnualNote: {
     color: "#FFD166",
     fontSize: 10.5,
-    fontWeight: "800" as const
+    fontWeight: "800" as const,
+    textAlign: "right" as const
   },
   featuredPlanCurrentChip: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderColor: "rgba(255, 255, 255, 0.22)",
-    borderRadius: 7,
+    alignSelf: "flex-end" as const,
+    backgroundColor: "rgba(74, 222, 128, 0.14)",
+    borderColor: "rgba(74, 222, 128, 0.36)",
+    borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row" as const,
     gap: 4,
+    marginTop: 2,
     paddingHorizontal: 9,
     paddingVertical: 3
   },
   featuredPlanCurrentChipText: {
-    color: "#E8E2F7",
-    fontSize: 11,
-    fontWeight: "900" as const
+    color: "#4ADE80",
+    fontSize: 10.5,
+    fontWeight: "900" as const,
+    letterSpacing: 0.3
+  },
+  featuredPlanDivider: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    height: 1
   },
   featuredPlanPerks: {
-    flex: 1,
-    gap: 6,
-    justifyContent: "center" as const
+    gap: 8
   },
   featuredPlanPerk: {
     alignItems: "center" as const,
@@ -124,10 +129,10 @@ export const part37 = {
     gap: 8
   },
   featuredPlanPerkText: {
-    color: "rgba(255, 255, 255, 0.86)",
+    color: "rgba(255, 255, 255, 0.88)",
     flex: 1,
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: "600" as const,
-    lineHeight: 16
+    lineHeight: 17
   }
 } as const;

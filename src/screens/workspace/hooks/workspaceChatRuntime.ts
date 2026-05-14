@@ -1,9 +1,12 @@
 import { useCallback } from "react";
-import { DesktopConnectionPrompt, GeneratedApp, Project } from "../../../types/domain";
+import { ChatMessage, DesktopConnectionPrompt, GeneratedApp, Project } from "../../../types/domain";
 import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
 import { findIndexHtmlBody } from "../../../utils/files";
 import { projectPreviewUrl } from "../helpers/chatPrompts";
+import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
+import { previewAppFromMessage } from "../inline/chatPreviewFallback";
 import { WorkspaceState } from "./useWorkspaceState";
+import { desktopPreviewLooksRunnable } from "./workspacePreviewProbe";
 
 export function makeStubProject(id: string): Project {
   return { id, name: id, path: "", stack: "", updated: "" };
@@ -74,7 +77,10 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     const selectedChatProjectId = s.selectedChatId?.startsWith("project-") ? s.selectedChatId.replace("project-", "") : null;
     const targetProject = project
       ?? (selectedChatProjectId
-        ? (app.projects.find((item) => item.id === selectedChatProjectId) ?? app.chatProjects[selectedChatProjectId] ?? makeStubProject(selectedChatProjectId))
+        ? (app.projects.find((item) => item.id === selectedChatProjectId)
+          ?? app.chatProjects[selectedChatProjectId]
+          ?? (app.selectedProject.id === selectedChatProjectId ? app.selectedProject : undefined)
+          ?? makeStubProject(selectedChatProjectId))
         : app.selectedProject);
     return {
       project: targetProject,
@@ -96,31 +102,36 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     return true;
   }, [desktopPreviewApp, s]);
 
-  const openRunnablePreview = useCallback(async () => {
+  const runnablePreviewApp = useCallback(async (): Promise<GeneratedApp | null> => {
     const target = activeProjectTarget();
     const currentThread = s.selectedChatId
       ? (s.selectedChatId.startsWith("project-") ? (app.chatThreads[target.chatProjectId] ?? []) : s.visibleChatMessages)
       : s.newChatMessages;
     const existing = latestDisplayableApp(currentThread);
-    if (existing) {
-      s.setPreviewApp(existing);
-      return true;
-    }
+    if (existing) return existing;
 
     const known = app.projects.some((p) => p.id === target.projectId);
     const loadedFiles = known ? await app.selectProject(target.projectId) : [];
     const filesForPreview = loadedFiles.length > 0 ? loadedFiles : app.files;
     const html = findIndexHtmlBody(filesForPreview);
     const desktopUrl = app.connection && known ? projectPreviewUrl(app.connection.url, target.projectId, app.connection.token) : undefined;
-    if (!html && !desktopUrl) return false;
-    s.setPreviewApp({
+    if (desktopUrl && await desktopPreviewLooksRunnable(desktopUrl)) {
+      return { id: `test-preview-${target.projectId}`, title: target.project.name, url: desktopUrl };
+    }
+    if (!html) return null;
+    return {
       id: `test-preview-${target.projectId}`,
       title: target.project.name,
       ...(html ? { html } : {}),
-      ...(desktopUrl ? { url: desktopUrl } : {})
-    });
-    return true;
+    };
   }, [activeProjectTarget, app, s]);
+
+  const openRunnablePreview = useCallback(async () => {
+    const preview = await runnablePreviewApp();
+    if (!preview) return false;
+    s.setPreviewApp(preview);
+    return true;
+  }, [runnablePreviewApp, s]);
 
   const openProjectPreview = useCallback(async (projectId: string, projectName: string) => {
     const known = app.projects.some((p) => p.id === projectId);
@@ -129,7 +140,7 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     app.rememberProject(knownProject.name === projectName ? knownProject : { ...knownProject, name: projectName });
     openProjectChat(projectId, projectName);
     if (knownProject.source === "desktop" && !app.connection) {
-      app.addLocalDesktopConnectionPrompt(`Open ${projectName}`, { reason: "desktop-browse", query: knownProject.name || projectName }, {
+      app.addLocalDesktopConnectionPrompt(`Open ${projectName}`, { projectId, reason: "desktop-browse", query: knownProject.name || projectName }, {
         project: knownProject,
         projectId,
         chatProjectId: projectId,
@@ -138,10 +149,8 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
       return;
     }
     if (knownProject.source === "desktop" && !app.chatProjects[projectId]?.brief) {
-      app.addProjectBriefSetupMessage(knownProject);
-      const analyzed = await app.analyzeDesktopProject(knownProject);
+      const analyzed = await runFirstOpenDesktopAnalysis(app, knownProject);
       await app.adoptProject(analyzed);
-      app.updateProjectBriefSetupMessage(analyzed);
       return;
     }
 
@@ -153,10 +162,10 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     if (project) openProjectChat(project.id, app.chatTitles[project.id] ?? project.name);
   }, [app, openProjectChat]);
 
-  return { activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, addDetachedDesktopConnectionPrompt, addDetachedUserMessage, createProjectAndOpenChat, desktopPreviewApp, openProjectChat, openProjectPreview, openRunnablePreview, showDesktopPreview };
+  return { activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, addDetachedDesktopConnectionPrompt, addDetachedUserMessage, createProjectAndOpenChat, desktopPreviewApp, openProjectChat, openProjectPreview, openRunnablePreview, runnablePreviewApp, showDesktopPreview };
 }
 
-function latestDisplayableApp(...groups: Array<GeneratedApp | null | undefined | { app?: GeneratedApp }[]>) {
+function latestDisplayableApp(...groups: Array<GeneratedApp | null | undefined | Array<Pick<ChatMessage, "app" | "id" | "text">>>) {
   for (const group of groups) {
     if (!group) continue;
     if (!Array.isArray(group)) {
@@ -164,7 +173,8 @@ function latestDisplayableApp(...groups: Array<GeneratedApp | null | undefined |
       continue;
     }
     for (let i = group.length - 1; i >= 0; i -= 1) {
-      const app = group[i]?.app;
+      const message = group[i];
+      const app = message?.app ?? (message ? previewAppFromMessage(message.id, message.text) : null);
       if (isDisplayableApp(app)) return app;
     }
   }

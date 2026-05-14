@@ -60,6 +60,8 @@ export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visibl
   onSave: () => void;
   visible: boolean;
 }) {
+  const editIconColor = useThemedColor("#DCD7EA");
+  const placeholderColor = useThemedColor("#8F8A9E");
   return (
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={visible}>
       <View style={styles.renameChatOverlay}>
@@ -67,7 +69,7 @@ export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visibl
         <View style={styles.renameChatDialog}>
           <View style={styles.renameChatHeader}>
             <View style={styles.renameChatIcon}>
-              <Ionicons name="create-outline" color="#DCD7EA" size={22} />
+              <Ionicons name="create-outline" color={editIconColor} size={22} />
             </View>
             <View style={styles.renameChatCopy}>
               <Text style={styles.renameChatTitle}>Rename chat</Text>
@@ -79,7 +81,7 @@ export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visibl
             onChangeText={onChangeDraft}
             onSubmitEditing={onSave}
             placeholder="Chat title"
-            placeholderTextColor="#8F8A9E"
+            placeholderTextColor={placeholderColor}
             returnKeyType="done"
             style={styles.renameChatInput}
             value={draft}

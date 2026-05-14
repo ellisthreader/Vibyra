@@ -4,10 +4,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../../../styles/theme";
 import { useAppContext } from "../../../context/AppContext";
-import { useThemedColor } from "../../../context/PreferencesContext";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { generatePublishAsset, publishProject as publishCommunityProject } from "../../../utils/communityApi";
 import { pickPreviewHtml } from "../../../utils/files";
 import { projectFilterModes } from "../data/pages";
+import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { ProjectsPageProps, useProjectsPage } from "../hooks/useProjectsPage";
 import { styles } from "../styles";
 import { ProjectDisplay } from "../types";
@@ -19,7 +20,12 @@ import { ProjectPublishModal } from "./ProjectPublishModal";
 export function ProjectsPage(props: ProjectsPageProps) {
   const p = useProjectsPage(props);
   const app = useAppContext();
+  const prefs = usePreferences();
   const browsePcIconColor = useThemedColor("#E8E2FF");
+  const searchIconColor = useThemedColor("#8E8AA3");
+  const filterIconColor = useThemedColor(p.filterMenuOpen ? "#F1ECFF" : "#B4B1C9");
+  const emptyIconColor = useThemedColor("#8E8AA3");
+  const createGradient = prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#6630FF", "#7433FF", "#6425E6"] as const;
   const [pcBrowserOpen, setPcBrowserOpen] = useState(false);
   const [publishError, setPublishError] = useState("");
   const [publishTarget, setPublishTarget] = useState<ProjectDisplay | null>(null);
@@ -94,7 +100,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
     <View style={styles.projectsScreen}>
       <View style={styles.projectsHero}>
         <Pressable style={({ pressed }) => [styles.projectsCreateButton, pressed ? styles.projectsCreateButtonPressed : null]} onPress={p.createProject}>
-          <LinearGradient colors={["#6630FF", "#7433FF", "#6425E6"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.projectsCreateGradient}>
+          <LinearGradient colors={createGradient} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={styles.projectsCreateGradient}>
             <Ionicons name="add" color={colors.text} size={p.projectLayout.createIconSize} />
             <Text numberOfLines={1} style={styles.projectsCreateText}>Create Project</Text>
           </LinearGradient>
@@ -109,13 +115,13 @@ export function ProjectsPage(props: ProjectsPageProps) {
 
       <View style={[styles.projectsSearchRow, p.filterMenuOpen ? styles.projectsSearchRowMenuOpen : null]}>
         <View style={styles.projectsSearchBar}>
-          <Ionicons name="search-outline" color="#8E8AA3" size={22} />
-          <TextInput value={props.projectSearch} onChangeText={props.onSearch} placeholder="Search projects..." placeholderTextColor="#8E8AA3" style={styles.projectsSearchInput} />
+          <Ionicons name="search-outline" color={searchIconColor} size={22} />
+          <TextInput value={props.projectSearch} onChangeText={props.onSearch} placeholder="Search projects..." placeholderTextColor={searchIconColor} style={styles.projectsSearchInput} />
         </View>
         {props.connected ? (
           <View style={styles.projectsFilterWrap}>
             <Pressable style={[styles.projectsFilterButton, p.filterMode !== "All" ? styles.projectsFilterButtonActive : null]} onPress={p.toggleFilterMenu}>
-              <Ionicons name="options-outline" color={p.filterMenuOpen ? "#F1ECFF" : "#B4B1C9"} size={22} />
+              <Ionicons name="options-outline" color={filterIconColor} size={22} />
             </Pressable>
             {p.filterMenuOpen ? (
               <View style={styles.projectsFilterMenu}>
@@ -161,7 +167,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         ))}
         {p.displayProjects.length === 0 ? (
           <View style={styles.projectsEmptyState}>
-            <Ionicons name="folder-open-outline" color="#8E8AA3" size={24} />
+            <Ionicons name="folder-open-outline" color={emptyIconColor} size={24} />
             <Text style={styles.projectsEmptyText}>No projects match this view.</Text>
           </View>
         ) : null}
@@ -182,12 +188,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
         onClose={() => setPcBrowserOpen(false)}
         onSelect={async (folder) => {
           setPcBrowserOpen(false);
-          const shouldAnalyze = folder.source === "desktop" && !app.chatProjects[folder.id]?.brief;
-          if (shouldAnalyze) app.addProjectBriefSetupMessage(folder);
           props.onOpenProjectPreview(folder.id, folder.name);
-          const analyzed = shouldAnalyze ? await app.analyzeDesktopProject(folder) : folder;
+          const analyzed = await runFirstOpenDesktopAnalysis(app, folder);
           await app.adoptProject(analyzed);
-          if (shouldAnalyze) app.updateProjectBriefSetupMessage(analyzed);
         }}
         visible={pcBrowserOpen}
       />

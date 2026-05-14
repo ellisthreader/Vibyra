@@ -4,6 +4,7 @@ import { editPermissionStyles as styles } from "./EditPermissionCard.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { CodeChange } from "../../../types/domain";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 
 export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllowAlways, onDeny }: {
   changes: CodeChange[];
@@ -13,6 +14,23 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
   onAllowAlways: () => void;
   onDeny: () => void;
 }) {
+  const prefs = usePreferences();
+  const fileIconColor = useThemedColor("#BFAEFF");
+  const addColor = useThemedColor("#4EC07A");
+  const delColor = useThemedColor("#F26A6A");
+  const denyColor = useThemedColor("#FFB3B3");
+  const light = prefs.effectiveScheme === "light";
+  const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border } : null;
+  const bgGradient = light ? ["rgba(109, 59, 255, 0.08)", "rgba(18, 128, 92, 0.06)"] as const : ["rgba(142, 60, 255, 0.18)", "rgba(78, 192, 122, 0.10)"] as const;
+  const iconGradient = light ? ["#7C3AED", "#6D3BFF"] as const : ["#8E3CFF", "#5D24D8"] as const;
+  const fileListStyle = light ? { backgroundColor: prefs.colors.elevated, borderColor: prefs.colors.border } : null;
+  const titleStyle = light ? { color: prefs.colors.text } : null;
+  const kickerStyle = light ? { color: prefs.colors.accent } : null;
+  const filePathStyle = light ? { color: prefs.colors.text } : null;
+  const moreLabelStyle = light ? { color: prefs.colors.muted } : null;
+  const totalChipStyle = light ? { backgroundColor: prefs.colors.elevated } : null;
+  const denyStyle = light ? { backgroundColor: prefs.colors.errorSoft, borderColor: "rgba(217, 45, 80, 0.24)" } : null;
+  const allowStyle = light ? { backgroundColor: prefs.colors.successSoft, borderColor: "rgba(18, 128, 92, 0.24)" } : null;
   const opacity = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(10)).current;
   const pulse = useRef(new Animated.Value(0)).current;
@@ -40,9 +58,9 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
   const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.85] });
 
   return (
-    <Animated.View style={[styles.card, { opacity, transform: [{ translateY: lift }] }]}>
+    <Animated.View style={[styles.card, cardStyle, { opacity, transform: [{ translateY: lift }] }]}>
       <LinearGradient
-        colors={["rgba(142, 60, 255, 0.18)", "rgba(78, 192, 122, 0.10)"]}
+        colors={bgGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -51,7 +69,7 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
         <View style={styles.iconWrap}>
           <Animated.View style={[styles.iconRing, { opacity: ringOpacity }]} />
           <LinearGradient
-            colors={["#8E3CFF", "#5D24D8"]}
+            colors={iconGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconCore}
@@ -60,38 +78,38 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
           </LinearGradient>
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.kicker}>Permission required</Text>
-          <Text style={styles.title}>
+          <Text style={[styles.kicker, kickerStyle]}>Permission required</Text>
+          <Text style={[styles.title, titleStyle]}>
             Allow Vibyra to edit {visible.length} file{visible.length === 1 ? "" : "s"}
             {projectName ? ` in ${projectName}` : ""}?
           </Text>
         </View>
       </View>
 
-      <View style={styles.fileList}>
+      <View style={[styles.fileList, fileListStyle]}>
         {previewFiles.map((change) => (
           <View key={change.id} style={styles.fileRow}>
-            <Ionicons name="document-text-outline" color="#BFAEFF" size={13} />
-            <Text numberOfLines={1} style={styles.filePath}>
+            <Ionicons name="document-text-outline" color={fileIconColor} size={13} />
+            <Text numberOfLines={1} style={[styles.filePath, filePathStyle]}>
               {(change.file.replace(/\\/g, "/").split("/").pop()) || change.file}
             </Text>
-            <Text style={styles.fileAdd}>+{change.additions}</Text>
-            <Text style={styles.fileDel}>-{change.deletions}</Text>
+            <Text style={[styles.fileAdd, { color: addColor }]}>+{change.additions}</Text>
+            <Text style={[styles.fileDel, { color: delColor }]}>-{change.deletions}</Text>
           </View>
         ))}
         {remaining > 0 ? (
-          <Text style={styles.moreLabel}>+ {remaining} more file{remaining === 1 ? "" : "s"}</Text>
+          <Text style={[styles.moreLabel, moreLabelStyle]}>+ {remaining} more file{remaining === 1 ? "" : "s"}</Text>
         ) : null}
       </View>
 
       <View style={styles.totalsRow}>
-        <View style={styles.totalChip}>
-          <Ionicons name="add-circle" color="#4EC07A" size={12} />
-          <Text style={styles.totalAdd}>{totalAdd} added</Text>
+        <View style={[styles.totalChip, totalChipStyle]}>
+          <Ionicons name="add-circle" color={addColor} size={12} />
+          <Text style={[styles.totalAdd, { color: addColor }]}>{totalAdd} added</Text>
         </View>
-        <View style={styles.totalChip}>
-          <Ionicons name="remove-circle" color="#F26A6A" size={12} />
-          <Text style={styles.totalDel}>{totalDel} removed</Text>
+        <View style={[styles.totalChip, totalChipStyle]}>
+          <Ionicons name="remove-circle" color={delColor} size={12} />
+          <Text style={[styles.totalDel, { color: delColor }]}>{totalDel} removed</Text>
         </View>
       </View>
 
@@ -100,16 +118,16 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
           accessibilityLabel="Deny edits"
           disabled={busy}
           onPress={onDeny}
-          style={({ pressed }) => [styles.btn, styles.btnDeny, pressed && styles.btnPressed, busy && styles.btnDisabled]}
+          style={({ pressed }) => [styles.btn, styles.btnDeny, denyStyle, pressed && styles.btnPressed, busy && styles.btnDisabled]}
         >
-          <Ionicons name="close" color="#FFB3B3" size={14} />
-          <Text style={styles.btnDenyText}>No</Text>
+          <Ionicons name="close" color={denyColor} size={14} />
+          <Text style={[styles.btnDenyText, { color: denyColor }]}>No</Text>
         </Pressable>
         <Pressable
           accessibilityLabel="Allow these edits once"
           disabled={busy}
           onPress={onAllow}
-          style={({ pressed }) => [styles.btn, styles.btnAllow, pressed && styles.btnPressed, busy && styles.btnDisabled]}
+          style={({ pressed }) => [styles.btn, styles.btnAllow, allowStyle, pressed && styles.btnPressed, busy && styles.btnDisabled]}
         >
           <Ionicons name="checkmark" color="#FFFFFF" size={14} />
           <Text style={styles.btnAllowText}>Allow</Text>
@@ -133,4 +151,3 @@ export function EditPermissionCard({ changes, projectName, busy, onAllow, onAllo
     </Animated.View>
   );
 }
-

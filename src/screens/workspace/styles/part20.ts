@@ -222,6 +222,13 @@ export const part20 = {
     fontWeight: "800",
     lineHeight: 15
   },
+  profileLevelMapRank: {
+    color: "#DDBBFF",
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 16,
+    marginTop: 1
+  },
   profileLevelMapFooter: {
     alignItems: "center",
     borderTopColor: "rgba(221, 187, 255, 0.12)",
@@ -455,6 +462,13 @@ export const part20 = {
     lineHeight: 17,
     marginTop: 2
   },
+  profileLevelModalRank: {
+    color: "#DDBBFF",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 18,
+    marginTop: 2
+  },
   profileLevelModalReward: {
     alignItems: "center",
     alignSelf: "flex-start",
@@ -508,7 +522,6 @@ export const part20 = {
     minHeight: 38
   },
   profileRowActive: {
-    backgroundColor: "rgba(126, 72, 255, 0.035)"
   },
   profileRowBadge: {
     backgroundColor: "rgba(45, 177, 106, 0.2)",

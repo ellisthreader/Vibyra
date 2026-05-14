@@ -12,15 +12,29 @@ export async function browseDesktopPath(path) {
     return { current: null, parentPath: null, entries: roots.map((project) => ({ ...project, kind: "folder" })) };
   }
 
-  if (!(await isDirectory(targetPath))) throw new Error("Folder is not available");
-  const current = await projectFromPath(targetPath);
-  const entries = await browseChildren(targetPath);
+  const folderPath = await folderPathForBrowse(targetPath);
+  if (!folderPath) throw new Error("Folder is not available");
+  const current = await projectFromPath(folderPath);
+  const entries = await browseChildren(folderPath);
   cacheProjects([current, ...entries.filter((entry) => entry.kind === "folder")]);
   return {
     current,
-    parentPath: await isDirectory(dirname(targetPath)) ? dirname(targetPath) : null,
+    parentPath: await isDirectory(dirname(folderPath)) ? dirname(folderPath) : null,
     entries
   };
+}
+
+async function folderPathForBrowse(targetPath) {
+  try {
+    const info = await stat(targetPath);
+    if (info.isDirectory()) return targetPath;
+    if (info.isFile()) {
+      const parentPath = dirname(targetPath);
+      return await isDirectory(parentPath) ? parentPath : null;
+    }
+  } catch {
+  }
+  return null;
 }
 
 async function browseRoots() {

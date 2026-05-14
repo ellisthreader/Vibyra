@@ -34,6 +34,7 @@ export function ProfileHero({ onOpenBilling }: {
   const nextReward = level.nextReward
     ? `Reward at level ${level.nextReward.level}`
     : "Top level rewards claimed";
+  const showDebugLevelButton = process.env.NODE_ENV !== "production";
 
   async function changeProfilePicture() {
     try {
@@ -117,6 +118,12 @@ export function ProfileHero({ onOpenBilling }: {
           <Ionicons name="map-outline" color="#EDE9FF" size={18} />
         </Pressable>
       </View>
+      {showDebugLevelButton ? (
+        <Pressable accessibilityLabel="Test level up notification" onPress={app.debugLevelUp} style={styles.profilePlanBadge}>
+          <Ionicons name="arrow-up-circle" color="#C259FF" size={16} />
+          <Text style={styles.profilePlanBadgeText}>Test level up</Text>
+        </Pressable>
+      ) : null}
       <ProfileLevelProgressModal
         dailyCap={level.dailyXpCap ?? 500}
         formatNumber={prefs.formatNumber}

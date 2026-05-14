@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Linking, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../../../context/AppContext";
@@ -7,8 +7,13 @@ import { usePreferences } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { BillingCycleToggle } from "./BillingCycleToggle";
 import { BillingPlanPager } from "./BillingPlanPager";
-import { CurrentPlanCard } from "./CurrentPlanCard";
 import { BillingCycle, PlanKey, nextRecommendedTier } from "./types";
+
+const MANAGE_SUBSCRIPTION_URL = Platform.select({
+  ios: "https://apps.apple.com/account/subscriptions",
+  android: "https://play.google.com/store/account/subscriptions",
+  default: "https://apps.apple.com/account/subscriptions"
+}) as string;
 
 export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const app = useAppContext();
@@ -36,9 +41,11 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
           </View>
         </View>
 
-        <View style={{ flex: 1, gap: 12, paddingHorizontal: 18, paddingBottom: 16 }}>
-          <CurrentPlanCard />
-
+        <ScrollView
+          contentContainerStyle={{ gap: 14, paddingHorizontal: 18, paddingBottom: Math.max(insets.bottom + 18, 24), paddingTop: 8 }}
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+        >
           <BillingCycleToggle cycle={cycle} onChange={setCycle} />
 
           <BillingPlanPager
@@ -49,17 +56,22 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
             disabled
           />
 
-          <View style={{ alignItems: "center", gap: 4 }}>
-            <View style={styles.billingFooter}>
-              <Ionicons name="information-circle" color="#5E8BFF" size={16} />
-              <Text style={[styles.billingFooterText, { flex: 1, textAlign: "center" }]}>Mobile upgrades and payment management are not available in this build.</Text>
+          <View style={{ alignItems: "center", gap: 8, marginTop: 4 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center" }}>
+              <Ionicons name="shield-checkmark" color="#7A7390" size={12} />
+              <Text style={{ color: "#7A7390", fontSize: 11, fontWeight: "700" }}>Cancel anytime · Plan access syncs to your account</Text>
             </View>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-              <Ionicons name="lock-closed" color="#5C5870" size={10} />
-              <Text style={{ color: "#5C5870", fontSize: 10, fontWeight: "700" }}>Plan access updates after your account syncs.</Text>
-            </View>
+            <Pressable
+              accessibilityRole="link"
+              hitSlop={10}
+              onPress={() => { Linking.openURL(MANAGE_SUBSCRIPTION_URL).catch(() => {}); }}
+            >
+              <Text style={{ color: "#9C8BFF", fontSize: 12, fontWeight: "800", textDecorationLine: "underline" }}>
+                Manage your subscription
+              </Text>
+            </Pressable>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );

@@ -100,6 +100,28 @@ trait ChatEndpoint
             ], 429);
         }
 
+        $burstCap = $deductor->burstCap($user);
+        if ($burstCap > 0 && (int) $user->burst_credits_used + $estimatedCredits > $burstCap) {
+            return $this->json([
+                'ok' => false,
+                'error' => '5-hour burst cap reached. Take a short break — your burst window resets every 5 hours.',
+                'burstCap' => $burstCap,
+                'burstCreditsUsed' => (int) $user->burst_credits_used,
+                'burstCreditsResetAt' => optional($user->burst_credits_reset_at)->toIso8601String(),
+            ], 429);
+        }
+
+        $weeklyCap = $deductor->weeklyCap($user);
+        if ($weeklyCap > 0 && (int) $user->weekly_credits_used + $estimatedCredits > $weeklyCap) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'Weekly AI usage cap reached. The cap resets every 7 days; upgrade your plan for more headroom.',
+                'weeklyCap' => $weeklyCap,
+                'weeklyCreditsUsed' => (int) $user->weekly_credits_used,
+                'weeklyCreditsResetAt' => optional($user->weekly_credits_reset_at)->toIso8601String(),
+            ], 429);
+        }
+
         $apiKey = (string) config('services.openrouter.key');
         if ($apiKey === '') {
             return $this->json(['ok' => false, 'error' => 'OpenRouter is not configured on the Vibyra backend.'], 500);
@@ -142,7 +164,7 @@ trait ChatEndpoint
             $reply = 'I received an empty response from the selected model.';
         }
         [$replyText, $app] = $this->extractRunnableApp($reply, $agentMode);
-        $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode);
+        $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode, $app !== null);
 
         $usage = $response->json('usage') ?? [];
         $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
@@ -166,6 +188,7 @@ trait ChatEndpoint
             $reference,
             ['model' => $modelKey, 'credits' => abs($ledger->credits_delta)],
         );
+        $user = $user->fresh() ?? $user;
 
         return $this->json([
             'ok' => true,

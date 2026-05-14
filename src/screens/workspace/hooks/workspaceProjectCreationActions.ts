@@ -20,14 +20,6 @@ export async function handleChatProjectCreation(
     return true;
   }
   runtime.openProjectChat(project.id, app.chatTitles[project.id] ?? project.name);
-  app.addLocalChatNotice(prompt, project.briefRequired && !project.brief
-    ? `Created **${project.name}**. Choose the project setup below, then use **/** when you want Vibyra to build or edit it.`
-    : `Created **${project.name}**. Use **/** when you want Vibyra to build or edit it.`, {
-    project,
-    projectId: project.id,
-    chatProjectId: project.id,
-    file: null
-  });
   app.setTaskText(intent.seedPrompt ?? "");
   return true;
 }

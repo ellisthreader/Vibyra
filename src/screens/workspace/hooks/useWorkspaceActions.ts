@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import type { DesktopConnectionPrompt } from "../../../types/domain";
 import { makeId, wait } from "../../../utils/ids";
+import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
@@ -21,7 +22,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
   const rememberDesktopIntent = useCallback((messageId?: string, connectionPrompt?: DesktopConnectionPrompt) => {
     const query = connectionPrompt?.query?.trim() ?? "";
     if (!query || !messageId) return;
-    const projectId = sourceProjectId(s);
+    const projectId = connectionPrompt?.projectId ?? sourceProjectId(s);
     const action = connectionPrompt?.reason === "desktop-browse" && projectId ? "analyze-project" : "search";
     updateConnectionStage(messageId, "pair", projectId);
     s.setPendingDesktopFolderIntent({ action, query, detached: !projectId, messageId, ...(projectId ? { projectId } : {}) });
@@ -61,6 +62,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
     s.setPcSwitcherVisible(false);
     s.setActivePage("chat");
     if (intent.detached) s.setSelectedChatId(null);
+    else if (intent.projectId) s.setSelectedChatId(`project-${intent.projectId}`);
     updateConnectionStage(intent.messageId, "open", intent.projectId);
     void (intent.action === "analyze-project" ? analyzeConnectedProject(intent) : replaceConnectionWithFolderProposal(intent));
   }, [app.connection, s, s.pendingDesktopFolderIntent, updateConnectionStage]);
@@ -73,10 +75,8 @@ export function useWorkspaceActions(s: WorkspaceState) {
       return;
     }
     replaceConnectionWithReply(intent, `Connected to your PC. Checking the framework and app type for **${project.name}**...`);
-    app.addProjectBriefSetupMessage(project);
-    const analyzed = await app.analyzeDesktopProject(project);
+    const analyzed = await runFirstOpenDesktopAnalysis(app, project);
     await app.adoptProject(analyzed);
-    app.updateProjectBriefSetupMessage(analyzed);
   }
 
   async function replaceConnectionWithFolderProposal(intent: NonNullable<WorkspaceState["pendingDesktopFolderIntent"]>) {
@@ -139,13 +139,13 @@ export function useWorkspaceActions(s: WorkspaceState) {
   const submitPreviewEdit = useCallback(async (prompt: string) => {
     const target = runtime.activeProjectTarget();
     runtime.openProjectChat(target.chatProjectId, target.project.name);
-    await app.startAgent(target, prompt);
+    return app.startAgent(target, prompt);
   }, [app, runtime]);
 
   const openTestPreview = useCallback(async (userText: string) => {
     if (await runtime.openRunnablePreview()) return;
     const target = runtime.activeProjectTarget();
-    app.addLocalChatReply(userText, `I couldn't find a runnable preview for **${target.project.name}** yet. Build something first, then run **/test** again.`, target);
+    app.addLocalChatReply(userText, `I couldn't find a runnable preview for **${target.project.name}** yet. Build something first, then run **/preview** again.`, target);
   }, [app, runtime]);
 
   const openRenameChat = useCallback(() => {

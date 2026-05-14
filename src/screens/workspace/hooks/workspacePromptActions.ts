@@ -1,12 +1,12 @@
 import { useCallback, useRef } from "react";
 import { GeneratedApp, Project } from "../../../types/domain";
-import { ChatSkill } from "../../../utils/appApi";
-import { mergeChatSkills } from "../../../utils/chatSkills";
 import { bareNameCandidate, currentProjectReply, extractFileName, extractFolderName, isCurrentProjectQuestion, isFindFolderIntent, isOpenFileIntent, isProjectLookupOnly } from "../helpers/chatPrompts";
 import { folderContentsReply, projectFilesReply } from "../helpers/chatProjectReplies";
-import { bareNameClarifyReply, confusionReply, detachedFallbackReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isPreviewTroubleIntent, isSmallTalk, isViewPreviewIntent, previewNeedsProjectReply, previewNotConnectedReply, previewOpeningReply, previewTroubleReply, smallTalkReply } from "../helpers/chatReplies";
+import { bareNameClarifyReply, confusionReply, detachedFallbackReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isSmallTalk, smallTalkReply } from "../helpers/chatReplies";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
+import { handleWorkspacePreviewIntent } from "./workspacePreviewActions";
+import { isKnownAiSkillCommand, isProjectFilesQuestion } from "./workspacePromptPredicates";
 import { handlePublishCommand } from "./workspacePublishCommand";
 import { handleChatProjectCreation } from "./workspaceProjectCreationActions";
 
@@ -83,12 +83,12 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
-        if (!isKnownAiSkillCommand(prompt, app.chatSkills)) {
-          resetFolderState();
-          app.addLocalChatNotice(prompt, projectChatIdleReply(), { ...projectTarget, file: null });
+        if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
+        if (isPreviewFixPrompt(prompt)) {
+          await app.startAgent(projectTarget, prompt);
           return;
         }
-        if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
+        if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
         await app.startAgent(projectTarget, prompt);
         return;
       }
@@ -107,7 +107,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       if (await handleRecovery(prompt, detached, reply, runFolderSearch)) return;
       if (await handleProjectFilesQuestion(prompt, detached, reply)) return;
       if (handleProjectQuestion(prompt, detached, reply)) return;
-      if (/^The runnable preview for .+ crashed\.|Captured preview diagnostics:/i.test(prompt)) {
+      if (isPreviewFixPrompt(prompt)) {
         s.setSelectedChatId(`project-${app.selectedProject.id}`); await app.startAgent(runtime.activeProjectTarget(), prompt); return;
       }
 
@@ -131,7 +131,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         await runFolderSearch(prompt, extractedName, isProjectLookupOnly(prompt), detached);
         return;
       }
-      if (handlePreviewIntent(prompt, detached, reply)) return;
+      if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
       handleDetachedFallback(prompt);
     } finally {
       setTimeout(() => { submitLockRef.current = false; }, 750);
@@ -179,17 +179,6 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     return true;
   }
 
-  function handlePreviewIntent(prompt: string, detached: boolean, reply: (r: string, project?: Project, preview?: GeneratedApp) => void) {
-    const wantsPreview = isViewPreviewIntent(prompt) || isPreviewTroubleIntent(prompt);
-    if (!wantsPreview) return false;
-    if (detached) { runtime.addDetachedChatReply(prompt, previewNeedsProjectReply()); return true; }
-    const target = runtime.activeProjectTarget();
-    if (!app.connection) { reply(previewNotConnectedReply(target.project.name), target.project); return true; }
-    const text = isViewPreviewIntent(prompt) ? previewOpeningReply(target.project.name) : previewTroubleReply(target.project.name);
-    reply(text, target.project, runtime.desktopPreviewApp(target.projectId, target.project.name) ?? undefined);
-    return true;
-  }
-
   function handleDetachedFallback(prompt: string) {
     const bare = bareNameCandidate(prompt);
     if (!bare) { runtime.addDetachedChatReply(prompt, detachedFallbackReply()); return; }
@@ -214,18 +203,6 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   }
 }
 
-function isKnownAiSkillCommand(prompt: string, skills: ChatSkill[]) {
-  const match = prompt.trim().match(/^\/(\w+)(?:\s+[\s\S]*)?$/);
-  if (!match) return false;
-  const id = match[1].toLowerCase();
-  return mergeChatSkills(skills).some((skill) => skill.id === id);
-}
-
-function projectChatIdleReply() {
-  return "I’m here in this project chat. Use **/** to choose how you want Vibyra to help.";
-}
-
-function isProjectFilesQuestion(prompt: string) {
-  const text = prompt.toLowerCase(), asks = /\b(?:what|which|list|show|tell\s+me|see|exist|inside|contents?)\b/.test(text);
-  return asks && /\b(?:files?|folder|directory|dir|inside)\b/.test(text) && !/\b(?:build|create|change|fix|update|edit|refactor|implement|make|design|write|generate|remove|delete)\b/.test(text);
+function isPreviewFixPrompt(prompt: string): boolean {
+  return /^The runnable preview for .+ crashed\.|Captured preview diagnostics:/i.test(prompt);
 }

@@ -4,19 +4,18 @@ import { communityDetailAccent, communityDetailAccentDark } from "../data/commun
 
 export const part32 = {
   runningProjectsEmptyText: {
-    color: "#BFB7D0",
-    fontSize: 13,
+    color: "#B8B4C4",
+    fontSize: 15,
     fontWeight: "800",
-    lineHeight: 18,
-    marginTop: 5,
+    lineHeight: 23,
     textAlign: "center"
   },
   runningProjectsEmptyTitle: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "900",
     letterSpacing: 0,
-    lineHeight: 22,
+    lineHeight: 30,
     textAlign: "center"
   },
   runningProjectsList: {
@@ -31,6 +30,11 @@ export const part32 = {
   },
   runningProjectsPanel: {
     gap: 14
+  },
+  runningProjectsPanelEmpty: {
+    flex: 1,
+    justifyContent: "center",
+    paddingBottom: 96
   },
   runningProjectTask: {
     color: "#B8B4C4",

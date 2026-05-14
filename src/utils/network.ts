@@ -88,17 +88,24 @@ export class TimeoutError extends Error {
 export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000) {
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
+  let timedOut = false;
+  let timeoutError: TimeoutError | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeout = setTimeout(() => {
-      controller.abort();
+      timedOut = true;
       const seconds = Math.max(1, Math.round(timeoutMs / 1000));
-      reject(new TimeoutError(`Request timed out after ${seconds}s`, timeoutMs));
+      timeoutError = new TimeoutError(`Request timed out after ${seconds}s`, timeoutMs);
+      controller.abort();
+      reject(timeoutError);
     }, timeoutMs);
   });
 
   try {
     return await Promise.race([
-      fetch(url, { ...options, signal: controller.signal }),
+      fetch(url, { ...options, signal: controller.signal }).catch((error) => {
+        if (timedOut && timeoutError) throw timeoutError;
+        throw error;
+      }),
       timeoutPromise
     ]);
   } finally {

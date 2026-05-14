@@ -13,11 +13,17 @@ Read this for streaming text, assistant message rendering, code block display, a
 
 ## Streaming
 
-`streamChatText` tokenizes reply text into word/whitespace chunks, waits 15-45ms between chunks, and appends `TYPING_CURSOR` on non-final partials.
+Cloud chat sends now hit `POST /api/chat/stream` (SSE), not `/api/chat`. The legacy JSON endpoint stays for fallback / tests. Backend trait: `backend/app/Http/Controllers/Concerns/ChatStreamEndpoint.php`. It validates auth, plan, prompt, credits up front (returns JSON 4xx on failure), then opens a Symfony `StreamedResponse` that proxies OpenRouter's SSE: `event: chunk` carries `{delta}`, `event: final` carries the full ChatResponse-shaped payload (reply, app, credits, level activity, user), `event: error` carries `{error}`. Guzzle is used raw inside the stream closure because Laravel's HTTP facade buffers; `Http::fake` cannot intercept it. After streaming completes, credits and level activity are recorded the same way the non-streaming endpoint does.
 
-Call sites: `useAgentActions.streamAssistantMessage`, `AppContext.addLocalChatReply`, `addLocalChatProposal`, and `useWorkspaceActions.addDetachedChatReply`.
+Frontend SSE consumer: `appApiStreamChat` in `src/utils/appApi.ts` uses `/api/chat/stream` only on web, where `response.body.getReader()` is available. On iOS/Android it deliberately falls back to `/api/chat` because Expo native fetch may not expose `Response.body`; this avoids the "streaming response has no body" failure and prevents duplicate fallback requests. Web streaming parses SSE blocks, invokes `onChunk(delta)` for each chunk, and resolves with the `final` payload. `useAgentActions.startAgent` cloud branch uses it; `useAgentChatMessages.appendStreamingDelta` mutates the in-flight assistant message text in place (collapsing the initial "Working on it..." placeholder on the first chunk). On completion, `useAgentResultHandlers.finishStreamedOpenRouterAgent` writes the canonical post-processed reply, applies app/codeChanges metadata, and flips `runStatus.status` to `complete`.
 
-`TypingIndicator` shows only while message text is exactly `Working on it...`. Pending assistant rows carry `ChatMessage.runStatus`; while pending, `AgentRunProgressText` renders elapsed time, safe step labels, and a compact active-file card for code-generation prompts. This progress is runtime-only and disappears when final text starts streaming.
+The local-only `streamChatText` (word-by-word fake stream) is still used for non-cloud paths: desktop agent results, local proposals/replies, detached chat replies.
+
+`TypingIndicator` shows only while message text is exactly `Working on it...`. Pending assistant rows carry `ChatMessage.runStatus`; while pending, `AgentRunProgressText` renders elapsed time, safe step labels, and a compact active-file card for code-generation prompts. This progress is runtime-only and disappears as soon as the first stream delta arrives.
+
+`LiveCodeActivityCard` (`src/screens/workspace/inline/LiveCodeActivityCard.tsx`) renders below the assistant message while `runStatus.status === "running"` and text has streamed content. It parses the accumulated text for the trailing unclosed ``` fence, infers a file name from the fence info line or comment headers (`// path.ext`, `# path.ext`, etc.), and shows "Generating <filename> · N lines" with a pulsing icon. The card vanishes once the fence closes or the run completes. Use this instead of any new "AI request in progress" cards.
+
+Decision (2026-05-13): build-mode progress should read as the simple "Thinking" then "Building" sequence. Backend busy fallbacks still use `AgentBusyCard`, but it must stay visually aligned with `AgentRunProgressText` and avoid the heavier "AI request in progress" card treatment, "previous AI request" copy, or backend-lock wording. Busy fallbacks are failed/blocked prompts, not queued thinking states, so they must show "Run blocked" plus retry guidance and active-run context.
 
 ## Code Blocks
 
@@ -38,6 +44,8 @@ Chat targets a Claude-Code-remote feel in Vibyra's purple palette. `MessageBubbl
 Motion should stay subtle: 240-420ms timings, max 12px lift, max 6% scale pulses. Avoid showy glow trails or animated gradient borders.
 
 Use the chat box-token system: radii `999` pills, `12` inline tools/small panels, `14` cards/popovers, `18` composer only. Purple borders use alphas `0.18`, `0.24`, `0.32`; popovers use `#13131F`; message-stream cards use `rgba(15, 17, 26, 0.92)`.
+
+Inline action cards that define local `StyleSheet.create` colors do not pass through the workspace `themeTransform`; give them explicit dark/light palettes. Current shared palette: `src/screens/workspace/inline/chatActionCardTheme.ts`, used by `DesktopConnectionCard.tsx` and `FolderCards.tsx`.
 
 The composer keeps attach, model selector, effort picker, and send button in one compact toolbar. It intentionally does not render a detached/project context strip.
 

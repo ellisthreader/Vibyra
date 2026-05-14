@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { MutableRefObject } from "react";
 import { FolderRecovery, Project } from "../../../types/domain";
+import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
 
@@ -16,7 +17,7 @@ export function useWorkspaceFolderActions(
   const acceptFolderConfirm = useCallback(async (folder: Project) => {
     s.setFolderConfirm(null);
     s.setSelectedChatId(`project-${folder.id}`);
-    const analyzed = await analyzeIfNeeded(app, folder);
+    const analyzed = await runFirstOpenDesktopAnalysis(app, folder);
     await app.adoptProject(analyzed);
     if (!analyzed.briefRequired || analyzed.brief) await app.startAgent(runtime.activeProjectTarget(analyzed));
   }, [app, runtime, s]);
@@ -28,13 +29,13 @@ export function useWorkspaceFolderActions(
       app.addLocalChatReply("Open folder", `Opened folder **${folder.name}**.`, target);
       s.setNewChatMessages([]);
       s.setSelectedChatId(`project-${folder.id}`);
-      const analyzed = await analyzeIfNeeded(app, folder);
+      const analyzed = await runFirstOpenDesktopAnalysis(app, folder);
       await app.adoptProject(analyzed);
       return;
     }
     app.resolveFolderProposal(proposalId, "accepted", sourceProjectId(s));
     s.setSelectedChatId(`project-${folder.id}`);
-    const analyzed = await analyzeIfNeeded(app, folder);
+    const analyzed = await runFirstOpenDesktopAnalysis(app, folder);
     await app.adoptProject(analyzed);
   }, [app, runtime, s]);
 
@@ -112,12 +113,4 @@ export function useWorkspaceFolderActions(
 
 function sourceProjectId(s: WorkspaceState) {
   return s.selectedChatId?.startsWith("project-") ? s.selectedChatId.replace("project-", "") : s.app.selectedProject.id;
-}
-
-async function analyzeIfNeeded(app: WorkspaceState["app"], folder: Project) {
-  if (folder.source !== "desktop" || app.chatProjects[folder.id]?.brief) return folder;
-  app.addProjectBriefSetupMessage(folder);
-  const analyzed = await app.analyzeDesktopProject(folder);
-  app.updateProjectBriefSetupMessage(analyzed);
-  return analyzed;
 }

@@ -15,6 +15,8 @@ When adding a third caller, reuse this modal — do not inline a copy. The modal
 
 Browse/file GET requests use route-specific timeouts in `useRequests.ts` and may retry safe GETs across `connection.connectionUrls` when the paired desktop URL is stale. When a fallback URL succeeds, `useRequests.ts` notifies `useDesktopUrlPromotion.ts`, which promotes that URL into `connection.url`, `agentUrl`, and the matching remembered desktop so the next POST does not target a stale primary. `useDesktopFolders.ts` maps browse timeouts to modal recovery copy.
 
+Pairing scans rely on `src/utils/network.ts::fetchWithTimeout` to normalize its own `AbortController.abort()` into `TimeoutError`. If React Native or browser fetch surfaces "signal aborted without reason" while the desktop is open, inspect that helper first; user-facing pairing copy should not expose platform abort wording. LAN pair probes in `src/context/pairingHelpers.ts` intentionally use a longer budget than health probes because Expo fetch over Wi-Fi can take more than one second even when the desktop bridge is reachable.
+
 Desktop tokens are persisted by the desktop bridge, but an older process-local token can still be stale after upgrading/restarting. `useLiveSync.ts` treats a 401 / missing desktop token as a disconnected session and clears `connection`/`paired`, so the UI no longer says connected while browse routes reject auth.
 
 The PC switcher exposes Disconnect PC. It calls `AppContext.disconnectDesktop`, which clears the active connection/session, preview, and loaded files while keeping remembered desktops for later reconnect. For valid active sessions it also posts authenticated `POST /desktop/disconnect` so the desktop shell immediately stops showing a connected phone.

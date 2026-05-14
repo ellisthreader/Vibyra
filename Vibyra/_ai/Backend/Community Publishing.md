@@ -17,6 +17,8 @@ Laravel owns public published project data through `published_projects`, `publis
 
 Routes: `GET /api/community/projects`, `GET /api/community/projects/{slug}/preview`, `POST /api/projects/publish`, `POST /api/community/projects/{slug}/comments`, and `POST /api/community/projects/{slug}/reaction`.
 
+The mobile community page loads `GET /api/community/projects` through `src/screens/workspace/hooks/useCommunityPage.ts` and `src/utils/communityApi.ts`. The feed should keep any current/local posts if Laravel is temporarily unreachable instead of clearing to an empty hard-error state; the public community feed has a longer app API timeout in `src/utils/appApi.ts` because cold local Laravel startup can take several seconds.
+
 ## Safety
 
 Published project visibility requires `visibility = public` and `review_status = approved`.

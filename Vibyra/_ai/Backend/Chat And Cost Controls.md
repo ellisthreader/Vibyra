@@ -23,6 +23,8 @@ Read this for `/api/chat`, OpenRouter request shape, skills, mode resolution, re
 
 Build-mode replies should return only a `<vibyra-app title="Name">...</vibyra-app>` block. Chat-mode strips any accidental runnable app block and returns plain conversation.
 
+Runnable preview prompts must keep core app logic self-contained for phone iframe/WebView `srcdoc` previews: no external script CDNs, ESM imports, or CDN framework globals for new standalone builds. Use inline browser-native canvas/WebGL/CSS/SVG for games/3D, and require guarded inline fallbacks if a browser library is unavoidable. Relevant files: `backend/app/Http/Controllers/Concerns/ChatPrompting.php`, `backend/app/Services/Concerns/OpenAiStreaming.php`.
+
 ## Skills
 
 `backend/config/skills.php` is the skill registry. `GET /api/skills` returns public-safe fields. `ChatEndpoint::chat` reads `skill`, resolves it, applies `prompt_template`, and appends `system_prompt_addon`.

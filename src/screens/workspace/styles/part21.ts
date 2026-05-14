@@ -113,8 +113,6 @@ export const part21 = {
     paddingHorizontal: 9
   },
   profileTabActive: {
-    backgroundColor: "rgba(38, 84, 65, 0.36)",
-    borderColor: "rgba(102, 224, 158, 0.54)"
   },
   profileTabs: {
     flexDirection: "row",
@@ -128,7 +126,6 @@ export const part21 = {
     fontWeight: "900"
   },
   profileTabTextActive: {
-    color: "#DDFCEB"
   },
   profileUsageDivider: {
     backgroundColor: "rgba(125, 120, 142, 0.25)",

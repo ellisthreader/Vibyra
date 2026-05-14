@@ -16,7 +16,7 @@ export function AppPreviewMiniChat({
   app: GeneratedApp;
   bottomOffset: number;
   onOpenChange?: (open: boolean) => void;
-  onSubmit: (prompt: string) => Promise<void> | void;
+  onSubmit: (prompt: string) => Promise<boolean> | boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "../../styles";
 import type { LevelMapNode, LevelProgress } from "../../../../utils/appApi";
+import { levelRankFor, levelRankUnlockFor } from "./levelTitles";
 
 export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, levelMap, levelPercent, nextReward, onClose, visible }: {
   dailyCap: number;
@@ -21,6 +22,7 @@ export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, level
   const mapWindow = useMemo(() => getLevelMapWindow(levelMap, level.level, 6), [level.level, levelMap]);
   const visibleLevelMap = fullMapOpen ? levelMap : mapWindow.nodes;
   const hiddenLevelCount = Math.max(0, levelMap.length - visibleLevelMap.length);
+  const currentRank = levelRankFor(level.level);
 
   useEffect(() => {
     if (!visible) {
@@ -55,6 +57,7 @@ export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, level
               <View style={styles.profileLevelCopy}>
                 <Text style={styles.profileLevelModalKicker}>Current level</Text>
                 <Text style={styles.profileLevelModalTitle}>Level {level.level}</Text>
+                <Text style={styles.profileLevelModalRank}>{currentRank.name}</Text>
                 <Text style={styles.profileLevelModalMeta}>{formatNumber(level.currentLevelXp)} / {formatNumber(level.nextLevelXp)} XP to next level</Text>
               </View>
             </View>
@@ -143,11 +146,7 @@ function getLevelMapWindow(levelMap: LevelMapNode[], currentLevel: number, size:
   };
 }
 
-function LevelStat({ icon, label, value }: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
+function LevelStat({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
   return (
     <View style={styles.profileLevelStat}>
       <Ionicons name={icon} color="#DDBBFF" size={15} />
@@ -157,16 +156,12 @@ function LevelStat({ icon, label, value }: {
   );
 }
 
-function LevelMapRow({ first, formatNumber, last, node }: {
-  first: boolean;
-  formatNumber: (value: number) => string;
-  last: boolean;
-  node: LevelMapNode;
-}) {
+function LevelMapRow({ first, formatNumber, last, node }: { first: boolean; formatNumber: (value: number) => string; last: boolean; node: LevelMapNode }) {
   const current = node.status === "current";
   const complete = node.status === "complete";
   const icon = complete ? "checkmark" : current ? "radio-button-on" : "lock-closed";
   const tint = complete ? "#56E6A5" : current ? "#F23ACD" : "#8E89A3";
+  const rankUnlock = levelRankUnlockFor(node.level);
 
   return (
     <View style={styles.profileLevelMapRow}>
@@ -183,6 +178,7 @@ function LevelMapRow({ first, formatNumber, last, node }: {
       </View>
       <View style={styles.profileLevelMapBody}>
         <Text style={[styles.profileLevelMapTitle, current ? styles.profileLevelMapTitleCurrent : null]}>Level {node.level}</Text>
+        {rankUnlock ? <Text style={styles.profileLevelMapRank} numberOfLines={1}>{rankUnlock.name}</Text> : null}
         <Text style={styles.profileLevelMapMeta}>{formatNumber(node.xpTotalRequired)} XP needed</Text>
       </View>
       {node.rewardCredits > 0 ? (

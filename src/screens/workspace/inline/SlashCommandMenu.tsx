@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "../../../styles/theme";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { ChatSkill } from "../../../utils/appApi";
 import type { ChatCommand } from "../data/chatCommands";
 
@@ -13,27 +14,40 @@ type Props = {
 };
 
 export function SlashCommandMenu({ commands, skills, onSelectCommand, onSelectSkill }: Props) {
+  const prefs = usePreferences();
+  const commandIconColor = useThemedColor("#B084FF");
+  const skillIconColor = useThemedColor("#FDE68A");
+  const menuStyle = prefs.effectiveScheme === "light"
+    ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border, shadowColor: prefs.colors.shadow }
+    : null;
+  const headingStyle = prefs.effectiveScheme === "light" ? { color: prefs.colors.dim } : null;
+  const slashStyle = prefs.effectiveScheme === "light" ? { color: prefs.colors.accent } : null;
+  const labelStyle = prefs.effectiveScheme === "light" ? { color: prefs.colors.text } : null;
+  const descriptionStyle = prefs.effectiveScheme === "light" ? { color: prefs.colors.muted } : null;
+  const commandIconWrapStyle = prefs.effectiveScheme === "light" ? { backgroundColor: prefs.colors.accentSoft } : null;
+  const skillIconWrapStyle = prefs.effectiveScheme === "light" ? { backgroundColor: prefs.colors.warningSoft } : null;
+  const rowPressedStyle = prefs.effectiveScheme === "light" ? { backgroundColor: prefs.colors.accentSoft } : styles.rowPressed;
   if (commands.length === 0 && skills.length === 0) return null;
   return (
-    <View style={styles.menu}>
+    <View style={[styles.menu, menuStyle]}>
       {commands.length > 0 ? (
         <View>
-          <Text style={styles.heading}>Commands</Text>
+          <Text style={[styles.heading, headingStyle]}>Commands</Text>
           {commands.map((command) => (
             <Pressable
               key={command.id}
               onPress={() => onSelectCommand(command)}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              style={({ pressed }) => [styles.row, pressed && rowPressedStyle]}
             >
-              <View style={[styles.iconWrap, styles.iconWrapCommand]}>
-                <Ionicons name={command.icon} color="#B084FF" size={16} />
+              <View style={[styles.iconWrap, styles.iconWrapCommand, commandIconWrapStyle]}>
+                <Ionicons name={command.icon} color={commandIconColor} size={16} />
               </View>
               <View style={styles.rowBody}>
                 <View style={styles.rowMain}>
-                  <Text style={styles.slash}>{command.slash}</Text>
-                  <Text style={styles.label}>{command.label}</Text>
+                  <Text style={[styles.slash, slashStyle]}>{command.slash}</Text>
+                  <Text style={[styles.label, labelStyle]}>{command.label}</Text>
                 </View>
-                <Text numberOfLines={1} style={styles.description}>{command.description}</Text>
+                <Text numberOfLines={1} style={[styles.description, descriptionStyle]}>{command.description}</Text>
               </View>
             </Pressable>
           ))}
@@ -41,23 +55,23 @@ export function SlashCommandMenu({ commands, skills, onSelectCommand, onSelectSk
       ) : null}
       {skills.length > 0 ? (
         <View style={commands.length > 0 ? styles.skillsBlock : undefined}>
-          <Text style={styles.heading}>Skills</Text>
+          <Text style={[styles.heading, headingStyle]}>Skills</Text>
           {skills.map((skill) => (
             <Pressable
               key={skill.id}
               onPress={() => onSelectSkill(skill)}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              style={({ pressed }) => [styles.row, pressed && rowPressedStyle]}
             >
-              <View style={[styles.iconWrap, styles.iconWrapSkill]}>
-                <Ionicons name="sparkles-outline" color="#FDE68A" size={16} />
+              <View style={[styles.iconWrap, styles.iconWrapSkill, skillIconWrapStyle]}>
+                <Ionicons name="sparkles-outline" color={skillIconColor} size={16} />
               </View>
               <View style={styles.rowBody}>
                 <View style={styles.rowMain}>
-                  <Text style={styles.slash}>{skill.slash}</Text>
-                  <Text style={styles.label}>{skill.label}</Text>
+                  <Text style={[styles.slash, slashStyle]}>{skill.slash}</Text>
+                  <Text style={[styles.label, labelStyle]}>{skill.label}</Text>
                 </View>
                 {skill.description ? (
-                  <Text numberOfLines={1} style={styles.description}>{skill.description}</Text>
+                  <Text numberOfLines={1} style={[styles.description, descriptionStyle]}>{skill.description}</Text>
                 ) : null}
               </View>
             </Pressable>

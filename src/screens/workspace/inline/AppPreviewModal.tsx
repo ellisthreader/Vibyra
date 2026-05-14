@@ -19,7 +19,7 @@ export function AppPreviewModal({
 }: {
   app: GeneratedApp | null;
   onClose: () => void;
-  onSubmitAiPrompt: (prompt: string) => Promise<void> | void;
+  onSubmitAiPrompt: (prompt: string) => Promise<boolean> | boolean;
 }) {
   const insets = useSafeAreaInsets();
   const [reloadKey, setReloadKey] = useState(0);
@@ -33,11 +33,13 @@ export function AppPreviewModal({
   const modelKey = appCtx.selectedChatModel || appCtx.selectedModel;
   const modelLabel = chatModelOptions.find((model) => model.key === modelKey)?.label ?? String(modelKey || "AI");
 
+  const appFingerprint = `${app?.id ?? ""}:${app?.html?.length ?? 0}:${app?.url ?? ""}`;
+
   useEffect(() => {
     if (app) setReloadKey(0);
     setMiniChatOpen(false);
     setPreviewErrors([]);
-  }, [app?.id]);
+  }, [appFingerprint]);
 
   useEffect(() => () => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
@@ -79,9 +81,15 @@ export function AppPreviewModal({
     setEditDoneMessage(doneMessageForPrompt(prompt));
     setEditStatus("running");
     try {
-      await onSubmitAiPrompt(prompt);
+      const started = await onSubmitAiPrompt(prompt);
+      if (!started) {
+        setEditStatus("error");
+        statusTimerRef.current = setTimeout(() => setEditStatus("idle"), 3600);
+        return false;
+      }
       setEditStatus("done");
       statusTimerRef.current = setTimeout(() => setEditStatus("idle"), 2600);
+      return true;
     } catch (error) {
       setEditStatus("error");
       statusTimerRef.current = setTimeout(() => setEditStatus("idle"), 3600);
@@ -103,7 +111,7 @@ export function AppPreviewModal({
             <Text style={styles.appModalLabel}>App preview</Text>
             <Text numberOfLines={1} style={styles.appModalTitle}>{previewApp.title}</Text>
           </View>
-          <Pressable onPress={() => setReloadKey((k) => k + 1)} style={styles.appModalIconButton}>
+          <Pressable onPress={() => { setPreviewErrors([]); setReloadKey((k) => k + 1); }} style={styles.appModalIconButton}>
             <Ionicons name="refresh" color="#FFFFFF" size={20} />
           </Pressable>
         </View>

@@ -35,19 +35,6 @@ export function useLocalChatActions(store: Store) {
     setters.setTaskText("");
   }
 
-  function addLocalChatNotice(prompt: string, reply: string, target?: AgentStartTarget) {
-    const { projectId, file } = resolveChatTarget(target);
-    setters.setChatThreads((current) => ({
-      ...current,
-      [projectId]: [
-        ...(current[projectId] ?? []),
-        { id: makeId("chat-user"), role: "user", text: prompt, file },
-        { id: makeId("chat-assistant"), role: "assistant", text: reply, file }
-      ]
-    }));
-    setters.setTaskText("");
-  }
-
   function addLocalChatReply(prompt: string, reply: string, target?: AgentStartTarget, app?: ChatResponse["app"] | GeneratedApp) {
     const { projectId, file } = resolveChatTarget(target);
     const assistantId = makeId("chat-assistant");
@@ -70,6 +57,18 @@ export function useLocalChatActions(store: Store) {
         };
       });
     });
+  }
+
+  function addLocalChatNotice(_prompt: string, reply: string, target?: AgentStartTarget) {
+    const { projectId, file } = resolveChatTarget(target);
+    setters.setChatThreads((current) => ({
+      ...current,
+      [projectId]: [
+        ...(current[projectId] ?? []),
+        { id: makeId("chat-assistant"), role: "assistant", text: reply, file }
+      ]
+    }));
+    setters.setTaskText("");
   }
 
   function addLocalChatProposal(

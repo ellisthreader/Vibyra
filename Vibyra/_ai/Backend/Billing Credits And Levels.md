@@ -19,6 +19,8 @@ Plans: Free, Starter, Builder, Pro. Annual pricing is monthly x 10 with +10% cre
 
 `userPayload` exposes `plan`, `planBillingCycle`, `planRenewsAt`, `creditsBalance`, `creditsUsed`, `dailyCreditsUsed`, `dailyCreditsCap`, `monthlyCredits`, and `allowedModelTiers`.
 
+New auth accounts must start on the Free plan with `billing.plans.free.monthly_credits`; paid plan credits should only come from IAP/Stripe/topup paths.
+
 ## Payment Paths
 
 Mobile IAP: `expo-iap` purchase -> `reportIapReceipt` -> `/api/billing/iap-receipt` -> `IapReceiptVerifier` -> idempotent `iap_receipts` row -> subscription/topup credit writes.
@@ -31,10 +33,12 @@ Stripe web/desktop: `/api/billing/checkout` returns Checkout URL, `/api/billing/
 
 `CreditDeductor` is the only writer for `credits_balance`. Chat spend, topups, refunds, refreshes, and level rewards all go through it and write `credit_ledger` rows transactionally.
 
-Daily caps use `users.daily_credits_used` and `daily_credits_reset_at`. `plan_renews_at` is the next refresh due date. Billing provider records `stripe` or `iap-apple` / `iap-google`.
+Daily caps use `users.daily_credits_used` and `daily_credits_reset_at`; 5-hour burst and weekly caps use `users.burst_credits_used`, `burst_credits_reset_at`, `weekly_credits_used`, and `weekly_credits_reset_at`. If live SQLite reports a missing burst/weekly cap column, run pending backend migrations against `backend/database/database.sqlite`. `plan_renews_at` is the next refresh due date. Billing provider records `stripe` or `iap-apple` / `iap-google`.
 
 ## Levels
 
 Backend owns XP/levels and exposes `userPayload.level`. `backend/config/levels.php` defines supported actions and conservative milestone credit rewards.
 
 Daily login XP is recorded during session payload creation. Coding chat completion is awarded inside `ChatEndpoint` after credit charge. Desktop-originated coding and community activity are reported by mobile with the user bearer token; the desktop bridge must not write billing/level rewards directly.
+
+When `/api/chat` crosses a level milestone, `LevelProgression` grants `level_reward` credits through `CreditDeductor`, then `ChatEndpoint` must refresh the `User` before returning `creditsBalance` and `user`; mobile should prefer returned `user.creditsBalance` when present. Regression coverage: `VibyraAppApiTest::test_chat_level_reward_is_returned_in_account_balance`.

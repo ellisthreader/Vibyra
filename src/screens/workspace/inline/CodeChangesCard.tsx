@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { CodeChange, FileEntry } from "../../../types/domain";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { CollapsibleCodeBlock } from "./CollapsibleCodeBlock";
 
 export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, onUndo, projectId, undoneIds, variant = "applied" }: {
@@ -15,6 +16,23 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
   undoneIds: string[];
   variant?: "pending" | "applied" | "preview";
 }) {
+  const prefs = usePreferences();
+  const warningIconColor = useThemedColor("#FFD166");
+  const fileIconColor = useThemedColor("#BFAEFF");
+  const actionIconColor = useThemedColor("#F3EEFF");
+  const disabledIconColor = useThemedColor("#777186");
+  const light = prefs.effectiveScheme === "light";
+  const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border } : null;
+  const actionStyle = light ? { backgroundColor: prefs.colors.elevated, borderColor: prefs.colors.border } : null;
+  const activeActionStyle = light ? { backgroundColor: prefs.colors.accentSoft, borderColor: prefs.colors.borderStrong } : null;
+  const actionTextStyle = light ? { color: prefs.colors.text } : null;
+  const fileNameStyle = light ? { color: prefs.colors.text } : null;
+  const kickerStyle = light ? { color: prefs.colors.accent } : null;
+  const titleStyle = light ? { color: prefs.colors.text } : null;
+  const pendingStyle = light ? { color: prefs.colors.muted } : null;
+  const undoneStyle = light ? { color: prefs.colors.warning } : null;
+  const fileIconStyle = light ? { backgroundColor: prefs.colors.accentSoft } : null;
+  const headerGradient = light ? ["#7C3AED", "#6D3BFF"] as const : ["#8E3CFF", "#5D24D8"] as const;
   const [expandedPath, setExpandedPath] = useState("");
   const visibleChanges = changes.filter((change) => !change.file.includes(".vibyra-agent/runs/"));
   if (visibleChanges.length === 0) return null;
@@ -23,14 +41,14 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
 
   const isPreview = variant === "preview";
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, cardStyle]}>
       <View style={styles.header}>
-        <LinearGradient colors={["#8E3CFF", "#5D24D8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
+        <LinearGradient colors={headerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerIcon}>
           <Ionicons name="git-compare-outline" color="#FFFFFF" size={20} />
         </LinearGradient>
         <View style={styles.headerBody}>
-          <Text style={styles.kicker}>{variant === "pending" ? "Review before apply" : isPreview ? "Generated code" : "Code changes"}</Text>
-          <Text style={styles.title}>{visibleChanges.length} file{visibleChanges.length === 1 ? "" : "s"} {variant === "pending" || isPreview ? "ready" : "changed"}</Text>
+          <Text style={[styles.kicker, kickerStyle]}>{variant === "pending" ? "Review before apply" : isPreview ? "Generated code" : "Code changes"}</Text>
+          <Text style={[styles.title, titleStyle]}>{visibleChanges.length} file{visibleChanges.length === 1 ? "" : "s"} {variant === "pending" || isPreview ? "ready" : "changed"}</Text>
         </View>
         <ChangeCounts additions={totalAdditions} deletions={totalDeletions} />
       </View>
@@ -42,30 +60,30 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
         return (
           <View key={change.id} style={styles.changeGroup}>
             <View style={styles.row}>
-              <View style={styles.fileIcon}>
-                <Ionicons name={undone ? "return-up-back-outline" : expanded ? "code-slash-outline" : "document-text-outline"} color={undone ? "#FFD166" : "#BFAEFF"} size={16} />
+              <View style={[styles.fileIcon, fileIconStyle]}>
+                <Ionicons name={undone ? "return-up-back-outline" : expanded ? "code-slash-outline" : "document-text-outline"} color={undone ? warningIconColor : fileIconColor} size={16} />
               </View>
               <View style={styles.fileMain}>
-                <Text numberOfLines={1} style={styles.fileName}>{fileName(change.file)}</Text>
+                <Text numberOfLines={1} style={[styles.fileName, fileNameStyle]}>{fileName(change.file)}</Text>
                 <View style={styles.fileStatsRow}>
                   <ChangeCounts additions={change.additions} deletions={change.deletions} compact />
-                  {undone ? <Text style={styles.undoneText}>undone</Text> : null}
+                  {undone ? <Text style={[styles.undoneText, undoneStyle]}>undone</Text> : null}
                 </View>
               </View>
-              <Pressable disabled={!file} onPress={() => file && setExpandedPath(expanded ? "" : file.path)} style={({ pressed }) => [styles.actionButton, expanded ? styles.actionButtonActive : null, pressed && file ? styles.actionPressed : null, !file ? styles.actionDisabled : null]}>
-                <Text style={styles.actionText}>{expanded ? "Hide" : "Review"}</Text>
+              <Pressable disabled={!file} onPress={() => file && setExpandedPath(expanded ? "" : file.path)} style={({ pressed }) => [styles.actionButton, actionStyle, expanded ? [styles.actionButtonActive, activeActionStyle] : null, pressed && file ? styles.actionPressed : null, !file ? styles.actionDisabled : null]}>
+                <Text style={[styles.actionText, actionTextStyle]}>{expanded ? "Hide" : "Review"}</Text>
               </Pressable>
               {variant === "applied" ? (
-                <Pressable disabled={!canUndo} onPress={() => projectId && file && onUndo?.(projectId, messageId, change.id, file)} style={({ pressed }) => [styles.revertButton, pressed && canUndo ? styles.actionPressed : null, !canUndo ? styles.actionDisabled : null]}>
-                  <Ionicons name="arrow-undo-outline" color={canUndo ? "#F3EEFF" : "#777186"} size={14} />
-                  <Text style={[styles.revertText, !canUndo ? styles.revertTextDisabled : null]}>Revert</Text>
+                <Pressable disabled={!canUndo} onPress={() => projectId && file && onUndo?.(projectId, messageId, change.id, file)} style={({ pressed }) => [styles.revertButton, actionStyle, pressed && canUndo ? styles.actionPressed : null, !canUndo ? styles.actionDisabled : null]}>
+                  <Ionicons name="arrow-undo-outline" color={canUndo ? actionIconColor : disabledIconColor} size={14} />
+                  <Text style={[styles.revertText, actionTextStyle, !canUndo ? styles.revertTextDisabled : null]}>Revert</Text>
                 </Pressable>
               ) : isPreview ? (
-                <Pressable accessibilityLabel="Revert generated preview code" disabled={!onPreviewRevert} onPress={() => onPreviewRevert?.(messageId)} style={({ pressed }) => [styles.previewRevertButton, pressed && onPreviewRevert ? styles.actionPressed : null, !onPreviewRevert ? styles.actionDisabled : null]}>
-                  <Ionicons name="return-up-back-outline" color={onPreviewRevert ? "#F3EEFF" : "#777186"} size={15} />
+                <Pressable accessibilityLabel="Revert generated preview code" disabled={!onPreviewRevert} onPress={() => onPreviewRevert?.(messageId)} style={({ pressed }) => [styles.previewRevertButton, actionStyle, pressed && onPreviewRevert ? styles.actionPressed : null, !onPreviewRevert ? styles.actionDisabled : null]}>
+                  <Ionicons name="return-up-back-outline" color={onPreviewRevert ? actionIconColor : disabledIconColor} size={15} />
                 </Pressable>
               ) : (
-                <Text style={styles.pendingText}>pending</Text>
+                <Text style={[styles.pendingText, pendingStyle]}>pending</Text>
               )}
             </View>
             {expanded && file ? (
@@ -81,11 +99,14 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
 }
 
 function ChangeCounts({ additions, deletions, compact = false }: { additions: number; deletions: number; compact?: boolean }) {
+  const addColor = useThemedColor("#4EC07A");
+  const deleteColor = useThemedColor("#F26A6A");
+  const slashColor = useThemedColor("#7F798F");
   return (
     <View style={[styles.counts, compact ? styles.countsCompact : null]}>
-      <Text style={[styles.countAdd, compact ? styles.countCompactText : null]}>+{additions}</Text>
-      <Text style={[styles.countSlash, compact ? styles.countCompactText : null]}>/</Text>
-      <Text style={[styles.countDelete, compact ? styles.countCompactText : null]}>-{deletions}</Text>
+      <Text style={[styles.countAdd, { color: addColor }, compact ? styles.countCompactText : null]}>+{additions}</Text>
+      <Text style={[styles.countSlash, { color: slashColor }, compact ? styles.countCompactText : null]}>/</Text>
+      <Text style={[styles.countDelete, { color: deleteColor }, compact ? styles.countCompactText : null]}>-{deletions}</Text>
     </View>
   );
 }

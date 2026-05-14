@@ -6,6 +6,7 @@ import { ChatSkill } from "../../../utils/appApi";
 import { colors } from "../../../styles/theme";
 import { ModelKey, ReasoningEffort } from "../../../types/domain";
 import { useAppContext } from "../../../context/AppContext";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { ChatCommand, chatCommandHelpReply, filterChatCommands, matchChatCommand } from "../data/chatCommands";
 import { chatModelOptions } from "../data/chatModels";
 import { mergeChatSkills } from "../../../utils/chatSkills";
@@ -43,6 +44,15 @@ export function ChatComposer(props: ChatComposerProps) {
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
   const appCtx = useAppContext();
+  const prefs = usePreferences();
+  const placeholderColor = useThemedColor("#8F8A9E");
+  const toolIconColor = useThemedColor("#B9B5C8");
+  const effortIconColor = useThemedColor("#D7C4FF");
+  const chevronColor = useThemedColor("#9F99B6");
+  const lockedIconColor = useThemedColor("#AAA6BC");
+  const sendGradient = props.agentRequesting
+    ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
+    : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
   const selectedChatModel = getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel);
   const currentModel = chatModelOptions.find((model) => model.key === selectedChatModel) ?? chatModelOptions[0];
   const slashMatch = props.taskText.match(/^\/(\w*)$/);
@@ -98,7 +108,7 @@ export function ChatComposer(props: ChatComposerProps) {
           value={props.taskText}
           onChangeText={props.setTaskText}
           placeholder="Type a note, or use / to activate Vibyra..."
-          placeholderTextColor="#8F8A9E"
+          placeholderTextColor={placeholderColor}
           multiline
           onFocus={() => setComposerFocused(true)}
           onBlur={() => setComposerFocused(false)}
@@ -106,7 +116,7 @@ export function ChatComposer(props: ChatComposerProps) {
         />
         <View style={styles.chatComposerBottom}>
           <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
-            <Ionicons name="attach-outline" color="#B9B5C8" size={20} />
+            <Ionicons name="attach-outline" color={toolIconColor} size={20} />
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.chatModelButton, styles.chatModelButtonToolbar, pressed && { opacity: 0.85 }]}
@@ -114,16 +124,16 @@ export function ChatComposer(props: ChatComposerProps) {
           >
             <ModelProviderIcon provider={currentModel.provider} compact />
             <Text numberOfLines={1} style={styles.chatModelButtonText}>{currentModel.label}</Text>
-            {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color="#AAA6BC" size={12} /> : null}
-            <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color="#9F99B6" size={13} />
+            {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color={lockedIconColor} size={12} /> : null}
+            <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color={chevronColor} size={13} />
           </Pressable>
           <Pressable onPress={() => { setEffortMenuOpen((open) => !open); setModelMenuOpen(false); }} style={({ pressed }) => [styles.chatEffortPill, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}>
-            <Ionicons name="flash-outline" color="#D7C4FF" size={14} />
+            <Ionicons name="flash-outline" color={effortIconColor} size={14} />
             <Text style={styles.chatEffortPillLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
-            <Ionicons name={effortMenuOpen ? "chevron-down" : "chevron-up"} color="#9F99B6" size={13} />
+            <Ionicons name={effortMenuOpen ? "chevron-down" : "chevron-up"} color={chevronColor} size={13} />
           </Pressable>
           <Pressable style={({ pressed }) => [styles.chatSendButton, pressed && styles.chatSendButtonPressed]} onPress={props.agentRequesting ? undefined : handleStart}>
-            <LinearGradient colors={props.agentRequesting ? ["#282B34", "#1A1C25"] : ["#A368FF", "#5D24D8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chatSendGradient}>
+            <LinearGradient colors={sendGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chatSendGradient}>
               <Ionicons name={props.agentRequesting ? "pause" : "arrow-up"} color={colors.text} size={22} />
             </LinearGradient>
           </Pressable>

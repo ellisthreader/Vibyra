@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthEndpoints;
 use App\Http\Controllers\Concerns\ChatEndpoint;
+use App\Http\Controllers\Concerns\ChatStreamEndpoint;
 use App\Http\Controllers\Concerns\ChatModelMap;
 use App\Http\Controllers\Concerns\ChatPrompting;
 use App\Http\Controllers\Concerns\CommunityAssetGeneration;
@@ -20,6 +21,7 @@ class VibyraAppController extends Controller
 {
     use AuthEndpoints;
     use ChatEndpoint;
+    use ChatStreamEndpoint;
     use ChatModelMap;
     use ChatPrompting;
     use CommunityAssetGeneration;

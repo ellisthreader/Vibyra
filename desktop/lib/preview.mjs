@@ -66,7 +66,10 @@ export function previewUrl(projectId, token) {
 
 async function previewEntryPath(project) {
   for (const candidate of STATIC_PREVIEW_ENTRIES) {
-    if (await safeProjectFile(project.path, candidate)) return candidate;
+    const filePath = await safeProjectFile(project.path, candidate);
+    if (!filePath) continue;
+    const html = await readFile(filePath, "utf8");
+    if (!isSourceOnlyPreviewHtml(html, candidate)) return candidate;
   }
 
   return "";
@@ -90,13 +93,21 @@ async function safeProjectFile(projectPath, relativePath) {
 
 function rewritePreviewHtml(html, { entryDirectory, projectId, token }) {
   const rootBase = previewUrl(projectId, token);
-  const entryBase = `${rootBase}${entryDirectory ? `${entryDirectory.replace(/^\/+|\/+$/g, "")}/` : ""}`;
+  const normalizedEntryDirectory = entryDirectory ? entryDirectory.replace(/^\/+|\/+$/g, "") : "";
+  const entryBase = `${rootBase}${normalizedEntryDirectory ? `${normalizedEntryDirectory}/` : ""}`;
 
   return html.replace(/\b(src|href)=["'](?!https?:|data:|mailto:|tel:|#)([^"']+)["']/gi, (_match, attr, value) => {
     const cleaned = String(value).replace(/^\.?\//, "");
-    const base = String(value).startsWith("/") ? rootBase : entryBase;
+    const base = normalizedEntryDirectory && String(value).startsWith("/") ? entryBase : (String(value).startsWith("/") ? rootBase : entryBase);
     return `${attr}="${base}${cleaned}"`;
   });
+}
+
+function isSourceOnlyPreviewHtml(html, entryPath) {
+  if (entryPath !== "index.html") return false;
+  return /<script\b[^>]*\bsrc=["'](?:\.?\/)?src\/(?:main|index|app)\.(?:jsx?|tsx?)["']/i.test(html)
+    || /<script\b[^>]*\btype=["']module["'][^>]*\bsrc=["'](?:\.?\/)?src\//i.test(html)
+    || /@vite\/client|vite\/client/i.test(html);
 }
 
 function contentTypeFor(filePath) {
@@ -106,10 +117,14 @@ function contentTypeFor(filePath) {
     ".html": "text/html; charset=utf-8",
     ".jpeg": "image/jpeg",
     ".jpg": "image/jpeg",
+    ".jsx": "application/javascript; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".png": "image/png",
     ".svg": "image/svg+xml; charset=utf-8",
+    ".ts": "application/javascript; charset=utf-8",
+    ".tsx": "application/javascript; charset=utf-8",
     ".webp": "image/webp",
     ".woff": "font/woff",
     ".woff2": "font/woff2"

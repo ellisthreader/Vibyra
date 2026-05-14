@@ -3,13 +3,13 @@ import type { useWorkspace } from "../hooks/useWorkspace";
 export function directoryForChat(selectedChatId: string | null, app: ReturnType<typeof useWorkspace>["app"]) {
   if (!selectedChatId?.startsWith("project-")) return undefined;
   const projectId = selectedChatId.replace("project-", "");
-  return app.projects.find((item) => item.id === projectId)?.path
-    ?? app.chatProjects[projectId]?.path
-    ?? directoryName(app.selectedFile.path);
+  const project = app.projects.find((item) => item.id === projectId)
+    ?? app.chatProjects[projectId]
+    ?? (app.selectedProject.id === projectId ? app.selectedProject : undefined);
+  return project?.name || folderName(project?.path);
 }
 
-function directoryName(path: string) {
-  const normalized = path.replace(/\\/g, "/");
-  const parts = normalized.split("/").filter(Boolean);
-  return parts.length <= 1 ? (normalized || "No directory") : parts.slice(0, -1).join("/");
+function folderName(path?: string) {
+  const value = path?.replace(/\\/g, "/").split("/").filter(Boolean).pop();
+  return value && value !== "~" ? value : undefined;
 }

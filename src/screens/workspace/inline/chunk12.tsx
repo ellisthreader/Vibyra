@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { useCommunityPage } from "../hooks/useCommunityPage";
 import { styles } from "../styles";
 import type { CommunityFilter, CommunityPost } from "../types";
@@ -20,6 +21,10 @@ export function CommunityPage({
   selectedPost: CommunityPost | null;
 }) {
   const c = useCommunityPage(authToken, currentUserName, onOpenApp, onLevelActivity);
+  const searchIconColor = useThemedColor("#8E8AA3");
+  const filterIconColor = useThemedColor("#B4B1C9");
+  const accentIconColor = useThemedColor("#9D80FF");
+  const errorIconColor = useThemedColor("#FFB4C1");
 
   if (selectedPost) {
     const added = c.commentsByPostId[selectedPost.id] ?? [];
@@ -61,28 +66,28 @@ export function CommunityPage({
 
       <View style={styles.communitySearchRow}>
         <View style={styles.communitySearchBar}>
-          <Ionicons name="search-outline" color="#8E8AA3" size={22} />
-          <TextInput value={c.searchQuery} onChangeText={c.setSearchQuery} placeholder="Search projects, builders, tags..." placeholderTextColor="#8E8AA3" style={styles.communitySearchInput} />
+          <Ionicons name="search-outline" color={searchIconColor} size={22} />
+          <TextInput value={c.searchQuery} onChangeText={c.setSearchQuery} placeholder="Search projects, builders, tags..." placeholderTextColor={searchIconColor} style={styles.communitySearchInput} />
         </View>
         <Pressable accessibilityLabel="Cycle community filter" style={styles.communityFilterButton} onPress={c.cycleFilter}>
-          <Ionicons name="options-outline" color="#B4B1C9" size={22} />
+          <Ionicons name="options-outline" color={filterIconColor} size={22} />
         </Pressable>
       </View>
 
       <View style={styles.communityFeed}>
         {c.feedLoading ? (
           <View style={styles.communityEmptyState}>
-            <Ionicons name="cloud-download-outline" color="#9D80FF" size={30} />
+            <Ionicons name="cloud-download-outline" color={accentIconColor} size={30} />
             <Text style={styles.communityEmptyTitle}>Loading Community</Text>
             <Text style={styles.communityEmptyText}>Checking for published apps...</Text>
           </View>
         ) : c.feedError ? (
           <View style={styles.communityEmptyState}>
-            <Ionicons name="warning-outline" color="#FFB4C1" size={30} />
+            <Ionicons name="warning-outline" color={errorIconColor} size={30} />
             <Text style={styles.communityEmptyTitle}>Community unavailable</Text>
             <Text style={styles.communityEmptyText}>{c.feedError}</Text>
             <Pressable onPress={c.reloadCommunityFeed} style={styles.communityFilterButton}>
-              <Ionicons name="refresh" color="#B4B1C9" size={22} />
+              <Ionicons name="refresh" color={filterIconColor} size={22} />
             </Pressable>
           </View>
         ) : c.filteredPosts.length ? c.filteredPosts.map((post) => (
@@ -98,7 +103,7 @@ export function CommunityPage({
           />
         )) : (
           <View style={styles.communityEmptyState}>
-            <Ionicons name="search-outline" color="#9D80FF" size={30} />
+            <Ionicons name="search-outline" color={accentIconColor} size={30} />
             <Text style={styles.communityEmptyTitle}>No apps found</Text>
             <Text style={styles.communityEmptyText}>Try a different search or filter.</Text>
           </View>

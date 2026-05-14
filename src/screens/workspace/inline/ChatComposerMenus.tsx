@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ReasoningEffort } from "../../../types/domain";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { chatModelGroups, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { ModelMenuRow } from "./chunk10";
@@ -37,6 +38,8 @@ export function ModelMenu(props: { open: boolean; accountPlan: string; selected:
 }
 
 export function EffortMenu(props: { open: boolean; selected: ReasoningEffort; onSelect: (effort: ReasoningEffort) => void }) {
+  const activeIconColor = useThemedColor("#D7C4FF");
+  const inactiveIconColor = useThemedColor("#8F8A9E");
   if (!props.open) return null;
   return (
     <View style={styles.chatEffortMenu}>
@@ -52,7 +55,7 @@ export function EffortMenu(props: { open: boolean; selected: ReasoningEffort; on
               pressed && { opacity: 0.85 }
             ]}
           >
-            <Ionicons name={option.icon} color={active ? "#D7C4FF" : "#8F8A9E"} size={16} />
+            <Ionicons name={option.icon} color={active ? activeIconColor : inactiveIconColor} size={16} />
             <Text style={[styles.chatEffortMenuLabel, active && styles.chatEffortMenuLabelActive]}>{option.label}</Text>
             <Text style={styles.chatEffortMenuHint}>{option.hint}</Text>
           </Pressable>

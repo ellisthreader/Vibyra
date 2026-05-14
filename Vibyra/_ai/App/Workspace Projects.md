@@ -28,9 +28,15 @@ Opening a remembered desktop project while Vibyra Desktop is disconnected must s
 
 The desktop analyzer is local-only: `desktop/lib/projectAnalysis.mjs` shallow-scans prioritized project files, `projectAnalysisPurpose.mjs` scores page/content purpose signals above folder names, and `projectAnalysisBrief.mjs` infers framework metadata. Mobile renders `analysis.evidence` as purpose signals and optional `analysis.techEvidence` as tech signals.
 
+First-open desktop folder analysis is centralized in `src/screens/workspace/helpers/desktopFolderAnalysis.ts`. All mobile folder-open entry points should call `runFirstOpenDesktopAnalysis()` before `adoptProject()` so the chat setup card always leaves "Analyzing" and becomes either detected findings or a manual-classification fallback.
+
+Disconnected desktop-folder resume stores `projectId` on the `DesktopConnectionPrompt` and `useWorkspaceActions` restores `selectedChatId` to `project-<id>` after pairing. Do not infer the target only from current UI state; otherwise the framework/app-type confirmation card can be written off-screen.
+
+The project-brief confirmation card passes the detected `ProjectBrief` directly to `confirmProjectBrief`; do not make Confirm rediscover the brief from project state only. `AIChatPage` also treats a `projectBriefSetup.status === "confirmed"` card as enough to re-enable the composer if project metadata is one render behind.
+
 The Projects tab `Open` action must anchor `selectedChatId` to `project-<id>` before/while selecting the project. Otherwise the user can reopen a project visually but land in detached chat where prompts are consumed by local fallback replies.
 
-Chat-side project opens must not automatically open or start live preview. `selectProject(projectId, { startPreview: false })` loads files and selects the project without calling `/preview/start`, and `adoptProject(project)` defaults to that chat-safe behavior. Keep preview startup behind explicit preview actions such as `/test` / `openRunnablePreview` or direct `selectProject()` calls that omit `startPreview: false`.
+Chat-side project opens must not automatically open or start live preview. `selectProject(projectId, { startPreview: false })` loads files and selects the project without calling `/preview/start`, and `adoptProject(project)` defaults to that chat-safe behavior. Keep preview startup behind explicit preview actions such as `/preview` (`/test` alias) / `openRunnablePreview` or direct `selectProject()` calls that omit `startPreview: false`.
 
 The Projects tab must not fabricate branch names or random lifecycle states. `useProjectsPage` should derive display status from real source only (`On PC` for `pc`/`desktop`, `On mobile` for mobile), treat `desktop` as a PC source for filtering, and avoid screen-only rename/archive/delete mutations until those actions have persistent backing.
 
@@ -60,9 +66,11 @@ Detached folder proposals must be written to `newChatMessages`, not `app.chatThr
 
 Folder proposal cards expose Open folder, Not now, and Wrong folder. Wrong folder appends a visible recovery card with Browse PC and Auto search PC, and stores a short-lived recovery ref so the next correction (for example `no test1`) runs replacement search.
 
-Browse PC opens `FolderBrowserModal` in `chunk9.tsx`, backed by `app.browseDesktopPath`. It shows PC roots, parent path, and child folders/files, and selects a folder via `acceptFolderProposal`.
+Browse PC opens `FolderBrowserModal` in `chunk9.tsx`, backed by `app.browseDesktopPath`. It shows PC roots or a supplied project-root `initialPath`, parent path, and child folders/files, and selects a folder via `acceptFolderProposal`.
 
 `/open` and Browse PC share `useDesktopFolders.browseDesktopPath`; desktop browse requires the paired bearer token, and the hook maps transport/auth/missing-folder failures to friendly modal copy before rethrowing.
+
+Project chat directory and agent target resolution must stay anchored to the opened project root, not the selected file path. `chatDirectory.ts`, `workspaceChatRuntime.ts`, and `agentActionHelpers.ts` may fall back to `selectedProject` when ids match, but must not derive the chat/project root from `selectedFile.path`. Chat and Browse PC UI labels should display folder/project names instead of absolute home-directory paths such as `/Users/...`, `/home/...`, or `~/Desktop/Vibyra Projects/...`; keep full paths internal for desktop requests only.
 
 `useWorkspaceActions.onStartChat` uses `submitLockRef` to dedupe local submits, including desktop folder searches that do not set `agentRequesting`.
 

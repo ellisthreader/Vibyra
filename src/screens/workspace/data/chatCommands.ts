@@ -37,6 +37,14 @@ export const chatCommands: ChatCommand[] = [
     kind: "clear"
   },
   {
+    id: "preview",
+    slash: "/preview",
+    label: "Live preview",
+    description: "Open this project's runnable preview",
+    icon: "play-circle-outline",
+    kind: "test"
+  },
+  {
     id: "test",
     slash: "/test",
     label: "Open preview",
@@ -58,7 +66,8 @@ export const chatCommandHelpReply = [
   "Here are the chat commands you can use:",
   "",
   "• **/open** — Browse and open a project folder",
-  "• **/test** — Open this project's preview",
+  "• **/preview** — Open this project's live preview",
+  "• **/test** — Alias for /preview",
   "• **/new** — Start a fresh conversation",
   "• **/clear** — Remove messages from this chat",
   "• **/help** — Show this list again",

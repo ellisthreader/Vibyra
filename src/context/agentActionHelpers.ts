@@ -24,6 +24,7 @@ export function resolveAgentTarget(
     ?? (explicitProjectId
       ? (state.projects.find((item) => item.id === explicitProjectId)
         ?? state.chatProjects[explicitProjectId]
+        ?? (explicitProjectId === state.selectedProjectId ? derived.selectedProject : undefined)
         ?? makeStubProject(explicitProjectId))
       : derived.selectedProject);
   const projectId = explicitProjectId ?? project.id;

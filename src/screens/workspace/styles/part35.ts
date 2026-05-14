@@ -45,8 +45,6 @@ export const part35 = {
     paddingVertical: 13
   },
   profileChoiceRowActive: {
-    backgroundColor: "rgba(139, 53, 255, 0.18)",
-    borderColor: "rgba(194, 89, 255, 0.6)"
   },
   profileChoiceCopy: {
     flex: 1,

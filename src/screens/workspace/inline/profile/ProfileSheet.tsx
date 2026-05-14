@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../../../styles/theme";
+import { useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 
 export function ProfileSheet({ visible, onClose, icon, kicker, title, children }: {
@@ -14,6 +15,8 @@ export function ProfileSheet({ visible, onClose, icon, kicker, title, children }
   children: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const accentColor = useThemedColor("#C259FF");
+  const closeColor = useThemedColor(colors.text);
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <View style={styles.profileSheetOverlay}>
@@ -22,14 +25,14 @@ export function ProfileSheet({ visible, onClose, icon, kicker, title, children }
           <View style={styles.profileSheetHandle} />
           <View style={styles.profileSheetHeader}>
             <View style={styles.profileSheetHeaderIcon}>
-              <Ionicons name={icon} color="#C259FF" size={22} />
+              <Ionicons name={icon} color={accentColor} size={22} />
             </View>
             <View style={styles.profileSheetHeaderCopy}>
               <Text style={styles.profileSheetKicker}>{kicker}</Text>
               <Text numberOfLines={1} style={styles.profileSheetTitle}>{title}</Text>
             </View>
             <Pressable accessibilityLabel="Close" onPress={onClose} style={styles.profileSheetClose}>
-              <Ionicons name="close" color={colors.text} size={20} />
+              <Ionicons name="close" color={closeColor} size={20} />
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={styles.profileSheetBody} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>

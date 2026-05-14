@@ -64,6 +64,53 @@ const ACCENTS: Record<PlanKey, Accent> = {
   }
 };
 
+const LIGHT_ACCENTS: Record<PlanKey, Accent> = {
+  free: {
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(218, 221, 232, 0.95)",
+    glowBorder: "rgba(109, 59, 255, 0.18)",
+    iconBg: "rgba(18, 128, 92, 0.1)",
+    iconColor: "#12805C",
+    ribbonBg: "rgba(109, 59, 255, 0.08)",
+    ribbonBorder: "rgba(109, 59, 255, 0.18)",
+    ribbonText: "#5B2BE8",
+    ribbonIcon: "#5B2BE8"
+  },
+  starter: {
+    cardBg: "#F7F3FF",
+    cardBorder: "rgba(109, 59, 255, 0.34)",
+    glowBorder: "rgba(109, 59, 255, 0.34)",
+    iconBg: "rgba(109, 59, 255, 0.1)",
+    iconColor: "#6D3BFF",
+    ribbonBg: "rgba(109, 59, 255, 0.12)",
+    ribbonBorder: "rgba(109, 59, 255, 0.24)",
+    ribbonText: "#5B2BE8",
+    ribbonIcon: "#5B2BE8"
+  },
+  builder: {
+    cardBg: "#F5F8FF",
+    cardBorder: "rgba(37, 99, 235, 0.28)",
+    glowBorder: "rgba(37, 99, 235, 0.3)",
+    iconBg: "rgba(37, 99, 235, 0.1)",
+    iconColor: "#2563EB",
+    ribbonBg: "rgba(37, 99, 235, 0.1)",
+    ribbonBorder: "rgba(37, 99, 235, 0.22)",
+    ribbonText: "#2563EB",
+    ribbonIcon: "#2563EB"
+  },
+  pro: {
+    cardBg: "#FFFBEB",
+    cardBorder: "rgba(183, 121, 31, 0.28)",
+    glowBorder: "rgba(183, 121, 31, 0.34)",
+    iconBg: "rgba(183, 121, 31, 0.12)",
+    iconColor: "#B7791F",
+    ribbonBg: "rgba(183, 121, 31, 0.12)",
+    ribbonBorder: "rgba(183, 121, 31, 0.24)",
+    ribbonText: "#92400E",
+    ribbonIcon: "#92400E"
+  }
+};
+
 const CHECK_COLOR = "#4ADE80";
 
 export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, disabled, isCurrent, isRecommended }: {
@@ -75,7 +122,8 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, d
   isCurrent?: boolean;
   isRecommended?: boolean;
 }) {
-  const { t } = usePreferences();
+  const prefs = usePreferences();
+  const { t } = prefs;
   const isAnnual = cycle === "annual";
   const displayPrice = isAnnual ? tier.annualPrice : tier.price;
   const displayCadence = (isAnnual ? tier.annualCadence : tier.cadence).replace("per ", "");
@@ -87,8 +135,9 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, d
     : (ribbonLabel ?? (isRecommended && !isCurrent ? t("billing.recommended") : null));
   const showRibbon = !!computedRibbon && !isCurrent;
   const showGlow = isRecommended && !isCurrent;
-  const accent = ACCENTS[tier.key];
+  const accent = prefs.effectiveScheme === "light" ? LIGHT_ACCENTS[tier.key] : ACCENTS[tier.key];
   const currentChipIconColor = useThemedColor("#E8E2F7");
+  const checkColor = useThemedColor(CHECK_COLOR);
 
   const glow = useRef(new Animated.Value(0)).current;
   const press = useRef(new Animated.Value(1)).current;
@@ -123,17 +172,17 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, d
         onPressIn={pressIn}
         onPressOut={pressOut}
         onPress={() => onSelect(tier.key, cycle)}
-        style={[styles.featuredPlanCard, { backgroundColor: accent.cardBg, borderColor: accent.cardBorder }, disabled && !isCurrent ? { opacity: 0.62 } : null]}
+        style={[styles.featuredPlanCard, { backgroundColor: accent.cardBg, borderColor: accent.cardBorder }]}
       >
         <View style={styles.featuredPlanInner}>
           <View style={styles.featuredPlanHead}>
             <View style={[styles.featuredPlanIcon, { backgroundColor: accent.iconBg }]}>
-              <Ionicons name={tier.pillIcon} color={accent.iconColor} size={20} />
+              <Ionicons name={tier.pillIcon} color={accent.iconColor} size={22} />
             </View>
 
             <View style={styles.featuredPlanHeadCopy}>
               <View style={styles.featuredPlanNameRow}>
-                <Text style={styles.featuredPlanName}>{tier.name}</Text>
+                <Text style={styles.featuredPlanName} numberOfLines={1}>{tier.name}</Text>
                 {showRibbon ? (
                   <View style={[styles.featuredPlanRibbon, { backgroundColor: accent.ribbonBg, borderColor: accent.ribbonBorder, borderWidth: 1 }]}>
                     <Ionicons name="sparkles" color={accent.ribbonIcon} size={9} />
@@ -144,7 +193,7 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, d
               <Text style={styles.featuredPlanTokens} numberOfLines={1}>{displayTokens}</Text>
             </View>
 
-            <View style={styles.featuredPlanRight}>
+            <View style={styles.featuredPlanPriceBlock}>
               <View style={styles.featuredPlanPriceRow}>
                 <Text style={styles.featuredPlanPrice}>{displayPrice}</Text>
                 <Text style={styles.featuredPlanCadence}>/{displayCadence}</Text>
@@ -159,11 +208,13 @@ export function BillingFeaturedPlan({ tier, cycle = "monthly", onSelect, busy, d
             </View>
           </View>
 
+          <View style={styles.featuredPlanDivider} />
+
           <View style={styles.featuredPlanPerks}>
             {tier.perks.map((perk) => (
               <View key={perk} style={styles.featuredPlanPerk}>
-                <Ionicons name="checkmark-circle" color={CHECK_COLOR} size={14} />
-                <Text style={styles.featuredPlanPerkText} numberOfLines={1}>{perk}</Text>
+                <Ionicons name="checkmark-circle" color={checkColor} size={14} />
+                <Text style={styles.featuredPlanPerkText} numberOfLines={2}>{perk}</Text>
               </View>
             ))}
           </View>

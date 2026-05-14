@@ -25,6 +25,8 @@ Read this for project discovery, arbitrary folder browse/search, project ids, an
 
 Manual folder selection uses authenticated `GET /desktop/browse?path=...`, backed by `projectBrowse.mjs`. With no path, it returns common roots. With a path, it returns current folder, parent path, and visible child files/folders; browsed folders are cached as projects.
 
+`/desktop/browse` normalizes an existing file path back to its containing folder before listing. This prevents file-scoped mobile chat context from making Browse PC treat a selected file as the folder root.
+
 Root listing must normalize candidates with `candidates.map((path) => resolve(path))`, not `candidates.map(resolve)`, because `Array.map` passes extra args that make `node:path.resolve` throw.
 
 Authenticated `GET /desktop/search?q=...` finds arbitrary folders as well as marker-based projects. It ranks cached/discovered projects, then shallow-scans common folders for matching directory names and caches matches so `/files?projectId=...` can open them.
@@ -40,5 +42,7 @@ Desktop `/agents/start` accepts `projectPath` alongside `projectId`; Node and La
 ## Preview
 
 `preview.mjs` serves static browser entries from `previewResolver.mjs` (`index.html`, `dist/`, `build/`, `out/`, `.output/public/`, app/client/frontend builds, docs/demo/game exports). If none exists, it returns a phone-viewable analyzed-project fallback instead of a blank/no-entry shell.
+
+Preview entry selection prefers built/browser output (`dist/index.html`, `build/index.html`, `out/index.html`, etc.) before root `index.html`, and skips root Vite/source-only entries that reference `/src/main.jsx`, module source entries, or Vite client scripts. When serving nested built entries, absolute `/assets/...` references are rewritten relative to that entry directory so `dist/index.html` loads `dist/assets/...` instead of project-root `assets/...`.
 
 Preview startup must not silently run framework dev servers. Dynamic stacks such as Laravel, Django, Next, Expo, Flutter, Unity, and Godot show typed readiness guidance until a real browser entry or approved runtime exists.

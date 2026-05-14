@@ -4,17 +4,15 @@ namespace App\Http\Controllers\Concerns;
 
 trait ChatReplyGuard
 {
-    private function guardedChatReply(string $prompt, string $reply, string $projectFiles, bool $buildMode): string
+    private function guardedChatReply(string $prompt, string $reply, string $projectFiles, bool $buildMode, bool $hasPreviewApp = false): string
     {
-        if ($buildMode || trim($projectFiles) === '' || ! $this->isStyleAnalysisPrompt($prompt)) {
-            return $reply;
+        $guarded = $reply;
+
+        if (! $buildMode && trim($projectFiles) !== '' && $this->isStyleAnalysisPrompt($prompt) && $this->looksLikeShellCommandAnswer($reply)) {
+            $guarded = $this->styleSummaryFromProjectFiles($projectFiles);
         }
 
-        if (! $this->looksLikeShellCommandAnswer($reply)) {
-            return $reply;
-        }
-
-        return $this->styleSummaryFromProjectFiles($projectFiles);
+        return $this->mobilePreviewGuidance($prompt, $guarded, $buildMode, $hasPreviewApp);
     }
 
     private function isStyleAnalysisPrompt(string $prompt): bool
@@ -36,6 +34,43 @@ trait ChatReplyGuard
         }
 
         return $commandLines > 0;
+    }
+
+    private function mobilePreviewGuidance(string $prompt, string $reply, bool $buildMode, bool $hasPreviewApp): string
+    {
+        if (trim($reply) === '' || $this->isLocalDevelopmentPrompt($prompt) || ! $this->mentionsLocalhostPreview($reply)) {
+            return $reply;
+        }
+
+        if ($hasPreviewApp) {
+            return 'Ready to preview on your phone. Tap the Live Preview card below to open it in Vibyra.';
+        }
+
+        if ($buildMode || $this->isPreviewPrompt($prompt)) {
+            return 'I could not attach a runnable phone preview from that response. Ask me to rebuild it, and I will return an in-app Live Preview instead of desktop localhost steps.';
+        }
+
+        return preg_replace(
+            '/(?:open|visit|go to|navigate to|load|view|preview|run|check)\b[^.\n]*(?:localhost|127\.0\.0\.1|0\.0\.0\.0)[^.\n]*(?:[.\n]|$)/i',
+            'Open it from the in-app Live Preview card instead.',
+            $reply
+        ) ?: $reply;
+    }
+
+    private function mentionsLocalhostPreview(string $reply): bool
+    {
+        return (bool) preg_match('/\b(?:localhost|127\.0\.0\.1|0\.0\.0\.0)\b/i', $reply)
+            && (bool) preg_match('/\b(?:open|visit|go to|navigate to|load|view|preview|browser|url|http:\/\/|https:\/\/)\b/i', $reply);
+    }
+
+    private function isLocalDevelopmentPrompt(string $prompt): bool
+    {
+        return (bool) preg_match('/\b(?:backend|api|server|localhost|127\.0\.0\.1|port|terminal|command|npm|composer|artisan|expo|dev\s+server|environment|env|setup|install|run\s+locally|local\s+development)\b/i', $prompt);
+    }
+
+    private function isPreviewPrompt(string $prompt): bool
+    {
+        return (bool) preg_match('/\b(?:app|website|web\s*site|site|page|preview|live\s+preview|open|view|show|launch|run|phone|mobile|device)\b/i', $prompt);
     }
 
     private function styleSummaryFromProjectFiles(string $projectFiles): string

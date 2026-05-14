@@ -80,38 +80,32 @@ export const part31 = {
   },
   runningProjectsEmpty: {
     alignItems: "center",
-    backgroundColor: "rgba(7, 10, 20, 0.82)",
-    borderColor: "rgba(118, 74, 202, 0.34)",
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 10,
+    alignSelf: "center",
+    gap: 18,
     justifyContent: "center",
-    minHeight: 132,
-    overflow: "hidden",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    position: "relative",
-    shadowColor: "#7F24FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0
+    maxWidth: 330,
+    minHeight: 470,
+    paddingHorizontal: 18,
+    width: "100%"
   },
   runningProjectsEmptyButton: {
-    borderRadius: 12,
-    marginTop: 2,
+    borderRadius: 17,
+    alignSelf: "center",
+    marginTop: 3,
     overflow: "hidden",
     shadowColor: "#9631FF",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.26,
-    shadowRadius: 16
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.36,
+    shadowRadius: 20,
+    width: 260
   },
   runningProjectsEmptyButtonGradient: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
     justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: 15
+    minHeight: 50,
+    paddingHorizontal: 18
   },
   runningProjectsEmptyButtonPressed: {
     opacity: 0.86,
@@ -119,13 +113,20 @@ export const part31 = {
   },
   runningProjectsEmptyButtonText: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "900",
-    lineHeight: 17
+    lineHeight: 20
   },
   runningProjectsEmptyCopy: {
     alignItems: "center",
-    maxWidth: 250
+    gap: 9,
+    maxWidth: 300
+  },
+  runningProjectsEmptyImage: {
+    height: 188,
+    marginBottom: 8,
+    marginTop: 12,
+    width: 222
   },
   runningProjectsEmptyIcon: {
     alignItems: "center",

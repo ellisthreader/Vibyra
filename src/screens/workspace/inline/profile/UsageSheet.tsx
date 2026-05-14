@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppContext } from "../../../../context/AppContext";
-import { usePreferences } from "../../../../context/PreferencesContext";
+import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { formatPlanLabel } from "../index";
 
@@ -20,6 +20,12 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
 }) {
   const app = useAppContext();
   const prefs = usePreferences();
+  const flashColor = useThemedColor("#FFD166");
+  const infoColor = useThemedColor("#7DA3FF");
+  const accentColor = useThemedColor("#C259FF");
+  const mutedIconColor = useThemedColor("#9C97AE");
+  const emptyIconColor = useThemedColor("#5C5870");
+  const ctaIconColor = prefs.effectiveScheme === "light" ? "#FFFFFF" : "#1A0E33";
   const allowance = Math.max(app.creditsBalance + app.creditsUsed, 1);
   const usedPercent = Math.min(100, Math.round((app.creditsUsed / allowance) * 100));
   const planLabel = formatPlanLabel(app.accountPlan);
@@ -57,7 +63,7 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
           </Pressable>
           <Text style={styles.billingHeaderTitle}>{prefs.t("usage.title")}</Text>
           <View style={styles.billingHeaderTokens}>
-            <Ionicons name="flash" color="#FFD166" size={13} />
+            <Ionicons name="flash" color={flashColor} size={13} />
             <Text style={styles.billingHeaderTokensText}>{prefs.formatNumber(app.creditsBalance)} {prefs.t("billing.tokens")}</Text>
           </View>
         </View>
@@ -88,9 +94,9 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
           </View>
 
           <View style={styles.usageStatsRow}>
-            <StatTile icon="folder-open" tint="#7DA3FF" tintBg="rgba(120, 160, 255, 0.16)" value={app.projects.length} label={prefs.t("usage.projects")} />
-            <StatTile icon="chatbubbles" tint="#C259FF" tintBg="rgba(194, 89, 255, 0.18)" value={recentChats.reduce((n, c) => n + c.count, 0)} label={prefs.t("usage.messages")} />
-            <StatTile icon="diamond" tint="#FACC15" tintBg="rgba(250, 204, 21, 0.16)" value={planLabel.replace(" Plan", "")} label={prefs.t("profile.currentPlan")} />
+            <StatTile icon="folder-open" tint={infoColor} tintBg="rgba(120, 160, 255, 0.16)" value={app.projects.length} label={prefs.t("usage.projects")} />
+            <StatTile icon="chatbubbles" tint={accentColor} tintBg="rgba(194, 89, 255, 0.18)" value={recentChats.reduce((n, c) => n + c.count, 0)} label={prefs.t("usage.messages")} />
+            <StatTile icon="diamond" tint={flashColor} tintBg="rgba(250, 204, 21, 0.16)" value={planLabel.replace(" Plan", "")} label={prefs.t("profile.currentPlan")} />
           </View>
 
           <View>
@@ -99,13 +105,13 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
               {recentProjects.length > 0 ? <Text style={styles.usageSectionMeta}>{recentProjects.length} of {app.projects.length}</Text> : null}
             </View>
             {recentProjects.length === 0 ? (
-              <EmptyHint icon="folder-open-outline" text={prefs.t("usage.noProjects")} />
+              <EmptyHint icon="folder-open-outline" iconColor={emptyIconColor} text={prefs.t("usage.noProjects")} />
             ) : (
               <View style={styles.usageListCard}>
                 {recentProjects.map((project, i) => (
                   <View key={project.id} style={[styles.usageListRow, i === recentProjects.length - 1 ? styles.usageListRowLast : null]}>
                     <View style={[styles.usageListIcon, { backgroundColor: "rgba(120, 160, 255, 0.16)" }]}>
-                      <Ionicons name="folder" color="#7DA3FF" size={16} />
+                      <Ionicons name="folder" color={infoColor} size={16} />
                     </View>
                     <View style={styles.usageListBody}>
                       <Text numberOfLines={1} style={styles.usageListTitle}>{project.name}</Text>
@@ -113,7 +119,7 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
                     </View>
                     {project.source ? (
                       <View style={styles.usageListChip}>
-                        <Ionicons name={SOURCE_ICON[project.source] ?? "globe-outline"} color="#9C97AE" size={12} />
+                        <Ionicons name={SOURCE_ICON[project.source] ?? "globe-outline"} color={mutedIconColor} size={12} />
                         <Text style={styles.usageListChipText}>{project.source}</Text>
                       </View>
                     ) : null}
@@ -129,20 +135,20 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
               {recentChats.length > 0 ? <Text style={styles.usageSectionMeta}>{recentChats.length} {prefs.t("usage.active")}</Text> : null}
             </View>
             {recentChats.length === 0 ? (
-              <EmptyHint icon="chatbubbles-outline" text={prefs.t("usage.noChats")} />
+              <EmptyHint icon="chatbubbles-outline" iconColor={emptyIconColor} text={prefs.t("usage.noChats")} />
             ) : (
               <View style={styles.usageListCard}>
                 {recentChats.map((chat, i) => (
                   <View key={chat.projectId} style={[styles.usageListRow, i === recentChats.length - 1 ? styles.usageListRowLast : null]}>
                     <View style={[styles.usageListIcon, { backgroundColor: "rgba(194, 89, 255, 0.18)" }]}>
-                      <Ionicons name={chat.role === "assistant" ? "sparkles" : "chatbubble-ellipses"} color="#C259FF" size={15} />
+                      <Ionicons name={chat.role === "assistant" ? "sparkles" : "chatbubble-ellipses"} color={accentColor} size={15} />
                     </View>
                     <View style={styles.usageListBody}>
                       <Text numberOfLines={1} style={styles.usageListTitle}>{chat.projectName}</Text>
                       <Text numberOfLines={1} style={styles.usageListSub}>{chat.preview}</Text>
                     </View>
                     <View style={styles.usageListChip}>
-                      <Ionicons name="layers-outline" color="#9C97AE" size={12} />
+                      <Ionicons name="layers-outline" color={mutedIconColor} size={12} />
                       <Text style={styles.usageListChipText}>{chat.count}</Text>
                     </View>
                   </View>
@@ -152,9 +158,9 @@ export function UsageSheet({ visible, onClose, onUpgrade }: {
           </View>
 
           <Pressable onPress={onUpgrade} style={styles.usagePrimaryCta}>
-            <Ionicons name={onFree ? "rocket" : "settings-outline"} color="#1A0E33" size={18} />
+            <Ionicons name={onFree ? "rocket" : "settings-outline"} color={ctaIconColor} size={18} />
             <Text style={styles.usagePrimaryCtaText}>{onFree ? prefs.t("usage.upgradePlan") : prefs.t("usage.managePlan")}</Text>
-            <Ionicons name="arrow-forward" color="#1A0E33" size={16} />
+            <Ionicons name="arrow-forward" color={ctaIconColor} size={16} />
           </Pressable>
         </ScrollView>
       </View>
@@ -180,10 +186,10 @@ function StatTile({ icon, tint, tintBg, value, label }: {
   );
 }
 
-function EmptyHint({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
+function EmptyHint({ icon, iconColor, text }: { icon: keyof typeof Ionicons.glyphMap; iconColor: string; text: string }) {
   return (
     <View style={styles.usageEmptyCard}>
-      <Ionicons name={icon} color="#5C5870" size={22} />
+      <Ionicons name={icon} color={iconColor} size={22} />
       <Text style={styles.usageEmptyText}>{text}</Text>
     </View>
   );

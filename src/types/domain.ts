@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { AgentBusyInfo } from "./agentStatus";
 import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
@@ -99,6 +100,7 @@ export type FolderRecovery = {
 };
 
 export type DesktopConnectionPrompt = {
+  projectId?: string;
   query?: string;
   reason: "desktop-search" | "desktop-browse" | "desktop-agent";
   stage?: "connect" | "pair" | "open";
@@ -132,22 +134,6 @@ export type ChatRunStatus = {
   route: "desktop" | "cloud";
   mode: "build" | "chat";
   status: "running" | "complete" | "failed";
-};
-
-export type AgentBusyInfo = {
-  reason?: "active-run" | "lock" | string;
-  runId?: string | null;
-  title?: string | null;
-  model?: string | null;
-  projectId?: string | null;
-  projectName?: string | null;
-  projectPath?: string | null;
-  state?: string | null;
-  progress?: number | null;
-  file?: string | null;
-  startedAt?: string | null;
-  updatedAt?: string | null;
-  elapsedSeconds?: number | null;
 };
 
 export type GeneratedApp = {

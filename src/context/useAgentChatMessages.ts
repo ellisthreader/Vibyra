@@ -1,11 +1,12 @@
 import { MutableRefObject } from "react";
-import type { Agent, AgentBusyInfo, ChatMessage, ChatRunStatus, LogEvent } from "../types/domain";
+import type { Agent, ChatMessage, ChatRunStatus, LogEvent } from "../types/domain";
 import { streamChatText } from "../utils/chatStream";
 import { makeId } from "../utils/ids";
 import { ChatResponse } from "../utils/appApi";
-import { agentBusyInfoFromError, userFacingAgentError } from "./agentErrors";
+import { userFacingAgentError } from "./agentErrors";
 import { ResolvedAgentTarget } from "./agentActionHelpers";
 import { useAppState } from "./useAppState";
+import { isStaleBusyAssistantText } from "../utils/chatThreads";
 
 type Store = ReturnType<typeof useAppState>;
 type Logs = {
@@ -39,7 +40,7 @@ export function useAgentChatMessages(
     const startedAt = Date.now();
     const status = runStatus ? { ...runStatus, startedAt, status: "running" as const } : undefined;
     updateChatMessages(target.chatProjectId, (current) => [
-      ...current,
+      ...withoutTrailingBusyRetry(current, prompt, file),
       { id: userMessageId, role: "user", text: prompt, file },
       {
         id: assistantMessageId,
@@ -61,28 +62,8 @@ export function useAgentChatMessages(
     setters.setBuildState("failed");
     setters.setPreviewState("live");
     const rawMessage = error instanceof Error ? error.message : "Agent task failed";
-    const busyInfo = agentBusyInfoFromError(error) ?? fallbackBusyInfo(rawMessage, target, agent);
     logs.appendLog(rawMessage, "AI Chat", "error");
-    updateAssistantMessage(target, assistantMessageId, userFacingAgentError(rawMessage), undefined, "failed", busyInfo);
-  }
-
-  function fallbackBusyInfo(message: string, target: ResolvedAgentTarget, agent: Agent): AgentBusyInfo | undefined {
-    if (!message.toLowerCase().includes("already running")) return undefined;
-    return {
-      reason: "unreported",
-      runId: null,
-      title: agent.title,
-      model: agent.model,
-      projectId: target.projectId,
-      projectName: target.project.name,
-      projectPath: target.project.path,
-      state: "running",
-      progress: null,
-      file: target.file?.path ?? null,
-      startedAt: null,
-      updatedAt: null,
-      elapsedSeconds: null
-    };
+    updateAssistantMessage(target, assistantMessageId, userFacingAgentError(rawMessage), undefined, "failed");
   }
 
   function updateAssistantMessage(
@@ -90,8 +71,7 @@ export function useAgentChatMessages(
     messageId: string,
     text: string,
     app?: ChatResponse["app"],
-    runStatus?: ChatRunStatus["status"],
-    agentBusy?: ChatMessage["agentBusy"]
+    runStatus?: ChatRunStatus["status"]
   ) {
     updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
       if (message.id !== messageId) return message;
@@ -102,9 +82,6 @@ export function useAgentChatMessages(
       }
       if (runStatus && next.runStatus) {
         next.runStatus = { ...next.runStatus, status: runStatus, completedAt: Date.now() };
-      }
-      if (agentBusy) {
-        next.agentBusy = agentBusy;
       }
       return next;
     }));
@@ -145,5 +122,54 @@ export function useAgentChatMessages(
     });
   }
 
-  return { appendPendingChat, failAgent, streamAssistantMessage };
+  function appendStreamingDelta(target: ResolvedAgentTarget, messageId: string, delta: string) {
+    if (!delta) return;
+    updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
+      if (message.id !== messageId) return message;
+      const previous = message.text === "Working on it..." ? "" : message.text;
+      return { ...message, text: previous + delta };
+    }));
+  }
+
+  function finalizeStreamedAssistantMessage(
+    target: ResolvedAgentTarget,
+    messageId: string,
+    finalText: string,
+    app?: ChatResponse["app"],
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+  ) {
+    updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
+      if (message.id !== messageId) return message;
+      const next: ChatMessage = { ...message, text: finalText };
+      if (app !== undefined) {
+        if (app) next.app = app;
+        else delete next.app;
+      }
+      if (metadata) {
+        next.codeChanges = metadata.codeChanges;
+        next.codeFiles = metadata.codeFiles;
+        next.codeProjectId = metadata.codeProjectId;
+        if (metadata.editApproval !== undefined) next.editApproval = metadata.editApproval;
+        if (metadata.pendingApplyId !== undefined) next.pendingApplyId = metadata.pendingApplyId;
+      }
+      if (next.runStatus) {
+        next.runStatus = { ...next.runStatus, status: "complete", completedAt: Date.now() };
+      }
+      return next;
+    }));
+  }
+
+  return { appendPendingChat, failAgent, streamAssistantMessage, appendStreamingDelta, finalizeStreamedAssistantMessage };
+}
+
+function withoutTrailingBusyRetry(messages: ChatMessage[], _prompt: string, _file?: string) {
+  if (messages.length < 2) return messages;
+  const user = messages[messages.length - 2];
+  const assistant = messages[messages.length - 1];
+  if (user.role !== "user" || assistant.role !== "assistant") return messages;
+  return isRetryableBusyAssistant(assistant) ? messages.slice(0, -2) : messages;
+}
+
+function isRetryableBusyAssistant(message: ChatMessage) {
+  return Boolean(message.agentBusy) || isStaleBusyAssistantText(message.text);
 }

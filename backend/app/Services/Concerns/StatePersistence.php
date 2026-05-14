@@ -173,10 +173,12 @@ trait StatePersistence
     {
         $output = trim((string) shell_exec("hostname -I 2>/dev/null"));
         $addresses = array_values(array_filter(explode(' ', $output)));
+        $appUrlPort = parse_url((string) config('app.url', ''), PHP_URL_PORT);
+        $port = (int) ($appUrlPort ?: env('VIBYRA_BACKEND_PORT', 8000));
 
         return collect($addresses)
             ->filter(fn ($address) => filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4))
-            ->map(fn ($address) => 'http://'.$address.':4317')
+            ->map(fn ($address) => 'http://'.$address.':'.$port)
             ->values()
             ->all();
     }

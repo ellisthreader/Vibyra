@@ -12,7 +12,7 @@ const CONFUSION_RE = /^(?:i\s*(?:do\s*n'?t|don'?t|dont|do\s+not)\s*(?:get|unders
 const HELP_RE = /^(?:help(?:\s+me)?|what\s+can\s+you\s+do|what\s+do\s+you\s+do|how\s+(?:do|does|can)\s+(?:i|this|it)\s+(?:work|use)|how\s+do\s+i\s+(?:start|use|begin|get\s+started)|how\s+does\s+this\s+work|what\s+is\s+this|tutorial|guide|commands?|options?)[\s?!.]*$/i;
 
 const VIEW_VERB = String.raw`(?:view|see|show(?:\s+me)?|open(?:\s+up)?|preview|launch|run|load|check\s+out|pull\s+up|bring\s+up)`;
-const VIEW_TARGET = String.raw`(?:website|web\s*site|webpage|web\s*page|site|page|app|preview|index\.html|html|build|live\s+preview|live\s+site)`;
+const VIEW_TARGET = String.raw`(?:website|web\s*site|webpage|web\s*page|site|page|app|preview|index\.html|html|build|code|live\s+preview|live\s+site)`;
 const VIEW_INTENT_RE = new RegExp(String.raw`\b${VIEW_VERB}\b[\s\S]{0,30}?\b${VIEW_TARGET}\b`, "i");
 const VIEW_ON_DEVICE_RE = /\b(?:view|see|show|open|preview|launch|run|load|check\s+out|pull\s+up|bring\s+up)\b[\s\S]{0,30}?\b(?:on\s+(?:my\s+)?(?:phone|device|mobile)|in\s+(?:my\s+)?browser|in\s+a\s+browser)\b/i;
 
@@ -117,7 +117,7 @@ export function previewNotConnectedReply(projectName: string): string {
 }
 
 export function previewNeedsProjectReply(): string {
-  return "To preview a website I need a project attached to this chat. Open one from the **Projects** tab first, then ask me to view it.";
+  return "To open a runnable preview I need a project attached to this chat. Open one from the **Projects** tab first, then ask me to preview it.";
 }
 
 export function bareNameClarifyReply(name: string): string {

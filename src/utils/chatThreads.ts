@@ -1,5 +1,17 @@
 import { ChatMessage } from "../types/domain";
 
+const STALE_BUSY_FRAGMENTS = [
+  "already running",
+  "still finishing the current run",
+  "desktop ai worker is still cleaning up",
+  "desktop ai worker is cleaning up"
+];
+
+export function isStaleBusyAssistantText(text: string): boolean {
+  const lower = text.toLowerCase();
+  return STALE_BUSY_FRAGMENTS.some((fragment) => lower.includes(fragment));
+}
+
 export function normalizeChatThreads(value: unknown): Record<string, ChatMessage[]> {
   if (!value || typeof value !== "object") return {};
 
@@ -24,9 +36,23 @@ export function normalizeChatThreads(value: unknown): Record<string, ChatMessage
       .filter((message): message is ChatMessage => Boolean(message))
       .slice(-80);
 
-    if (normalized.length > 0) threads[projectId] = normalized;
+    const swept = stripBusyFailures(normalized);
+    if (swept.length > 0) threads[projectId] = swept;
     return threads;
   }, {});
+}
+
+function stripBusyFailures(messages: ChatMessage[]): ChatMessage[] {
+  const drop = new Set<number>();
+  messages.forEach((message, index) => {
+    if (message.role !== "assistant") return;
+    if (!isStaleBusyAssistantText(message.text)) return;
+    drop.add(index);
+    const prior = messages[index - 1];
+    if (prior && prior.role === "user") drop.add(index - 1);
+  });
+  if (drop.size === 0) return messages;
+  return messages.filter((_, index) => !drop.has(index));
 }
 
 export function normalizeChatTitles(value: unknown): Record<string, string> {

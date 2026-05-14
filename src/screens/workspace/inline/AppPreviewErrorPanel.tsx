@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-n
 import { Ionicons } from "@expo/vector-icons";
 import type { PreviewRuntimeError } from "../../../components/AppWebView";
 import type { GeneratedApp } from "../../../types/domain";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 
 export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: {
   bottomOffset: number;
@@ -10,6 +11,20 @@ export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: 
   onAskAi: () => void;
   onDismiss: () => void;
 }) {
+  const prefs = usePreferences();
+  const warningColor = useThemedColor("#FFD166");
+  const warningTextColor = useThemedColor("#FFF4C7");
+  const closeColor = useThemedColor("#D9D4E8");
+  const light = prefs.effectiveScheme === "light";
+  const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: "rgba(183, 121, 31, 0.28)", shadowColor: prefs.colors.shadow } : null;
+  const titleStyle = light ? { color: prefs.colors.warning } : null;
+  const metaStyle = light ? { color: prefs.colors.muted } : null;
+  const summaryStyle = light ? { color: prefs.colors.text } : null;
+  const messageBoxStyle = light ? { backgroundColor: prefs.colors.elevated } : null;
+  const diagnosticStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border } : null;
+  const messageStyle = light ? { color: prefs.colors.text } : null;
+  const secondaryStyle = light ? { backgroundColor: prefs.colors.warningSoft, borderColor: "rgba(183, 121, 31, 0.2)" } : null;
+  const askStyle = light ? { backgroundColor: prefs.colors.accent } : null;
   const [expanded, setExpanded] = useState(false);
   const latest = errors[errors.length - 1];
   const orderedErrors = useMemo(() => [...errors].reverse(), [errors]);
@@ -17,43 +32,43 @@ export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: 
   const location = formatLocation(latest, " · ");
   const summary = firstLine(latest.message || latest.stack || "Preview runtime error");
   return (
-    <View style={[previewErrorStyles.card, expanded ? previewErrorStyles.cardExpanded : null, { bottom: bottomOffset }]}>
+    <View style={[previewErrorStyles.card, cardStyle, expanded ? previewErrorStyles.cardExpanded : null, { bottom: bottomOffset }]}>
       <View style={previewErrorStyles.header}>
         <View style={previewErrorStyles.icon}>
-          <Ionicons name="warning-outline" color="#FFD166" size={17} />
+          <Ionicons name="warning-outline" color={warningColor} size={17} />
         </View>
         <View style={previewErrorStyles.titleWrap}>
-          <Text style={previewErrorStyles.title}>Preview error</Text>
-          <Text numberOfLines={1} style={previewErrorStyles.meta}>{location || latest.type}{errors.length > 1 ? ` · ${errors.length} captured` : ""}</Text>
+          <Text style={[previewErrorStyles.title, titleStyle]}>Preview error</Text>
+          <Text numberOfLines={1} style={[previewErrorStyles.meta, metaStyle]}>{location || latest.type}{errors.length > 1 ? ` · ${errors.length} captured` : ""}</Text>
         </View>
         <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8} style={previewErrorStyles.detailButton}>
-          <Text style={previewErrorStyles.detailText}>{expanded ? "Hide" : "Details"}</Text>
-          <Ionicons name={expanded ? "chevron-down" : "chevron-up"} color="#FFF4C7" size={15} />
+          <Text style={[previewErrorStyles.detailText, { color: warningTextColor }]}>{expanded ? "Hide" : "Details"}</Text>
+          <Ionicons name={expanded ? "chevron-down" : "chevron-up"} color={warningTextColor} size={15} />
         </Pressable>
         <Pressable onPress={onDismiss} hitSlop={8} style={previewErrorStyles.dismiss}>
-          <Ionicons name="close" color="#D9D4E8" size={18} />
+          <Ionicons name="close" color={closeColor} size={18} />
         </Pressable>
       </View>
-      <Text numberOfLines={expanded ? 2 : 1} style={previewErrorStyles.summary}>{summary}</Text>
+      <Text numberOfLines={expanded ? 2 : 1} style={[previewErrorStyles.summary, summaryStyle]}>{summary}</Text>
       {expanded ? (
-        <ScrollView style={previewErrorStyles.messageBox} contentContainerStyle={previewErrorStyles.messageContent}>
+        <ScrollView style={[previewErrorStyles.messageBox, messageBoxStyle]} contentContainerStyle={previewErrorStyles.messageContent}>
           {orderedErrors.map((item, index) => (
-            <View key={`${item.type}-${item.message}-${item.line ?? ""}-${index}`} style={previewErrorStyles.diagnostic}>
+            <View key={`${item.type}-${item.message}-${item.line ?? ""}-${index}`} style={[previewErrorStyles.diagnostic, diagnosticStyle]}>
               <View style={previewErrorStyles.diagnosticHeader}>
                 <Text style={previewErrorStyles.badge}>{item.type}</Text>
-                <Text numberOfLines={1} style={previewErrorStyles.diagnosticMeta}>{formatLocation(item, " · ") || `Captured ${orderedErrors.length - index}`}</Text>
+                <Text numberOfLines={1} style={[previewErrorStyles.diagnosticMeta, metaStyle]}>{formatLocation(item, " · ") || `Captured ${orderedErrors.length - index}`}</Text>
               </View>
-              <Text selectable style={previewErrorStyles.message}>{item.stack || item.message}</Text>
+              <Text selectable style={[previewErrorStyles.message, messageStyle]}>{item.stack || item.message}</Text>
             </View>
           ))}
         </ScrollView>
       ) : null}
       <View style={previewErrorStyles.actions}>
-        <Pressable onPress={() => setExpanded((v) => !v)} style={({ pressed }) => [previewErrorStyles.secondaryButton, pressed ? previewErrorStyles.askButtonPressed : null]}>
-          <Ionicons name={expanded ? "contract-outline" : "expand-outline"} color="#FFF4C7" size={15} />
-          <Text style={previewErrorStyles.secondaryText}>{expanded ? "Collapse" : "Expand"}</Text>
+        <Pressable onPress={() => setExpanded((v) => !v)} style={({ pressed }) => [previewErrorStyles.secondaryButton, secondaryStyle, pressed ? previewErrorStyles.askButtonPressed : null]}>
+          <Ionicons name={expanded ? "contract-outline" : "expand-outline"} color={warningTextColor} size={15} />
+          <Text style={[previewErrorStyles.secondaryText, { color: warningTextColor }]}>{expanded ? "Collapse" : "Expand"}</Text>
         </Pressable>
-        <Pressable onPress={onAskAi} style={({ pressed }) => [previewErrorStyles.askButton, pressed ? previewErrorStyles.askButtonPressed : null]}>
+        <Pressable onPress={onAskAi} style={({ pressed }) => [previewErrorStyles.askButton, askStyle, pressed ? previewErrorStyles.askButtonPressed : null]}>
           <Ionicons name="sparkles-outline" color="#FFFFFF" size={15} />
           <Text style={previewErrorStyles.askText}>Ask AI to fix</Text>
         </Pressable>
@@ -71,11 +86,14 @@ export function buildFixPrompt(app: GeneratedApp, errors: PreviewRuntimeError[])
       error.stack ? `Stack:\n${error.stack}` : ""
     ].filter(Boolean).join("\n");
   }).join("\n\n");
+  const html = app.html?.trim();
   return [
     `The runnable preview for "${app.title}" crashed. Please fix the generated app so it runs on phone preview.`,
+    "Return a corrected complete self-contained <vibyra-app> preview with inline <style> and inline <script>. Do not reference local files such as main.jsx, /src/main.jsx, App.jsx, style.css, or Vite/React entry files.",
     "",
     "Captured preview diagnostics:",
     diagnostics,
+    html ? "\nCurrent generated preview HTML:\n```html\n".concat(html.slice(0, 12000), html.length > 12000 ? "\n<!-- truncated -->" : "", "\n```") : "",
     "",
     "Keep the same app idea and return the corrected complete files or runnable preview."
   ].filter(Boolean).join("\n");

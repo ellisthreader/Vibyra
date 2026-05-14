@@ -36,6 +36,7 @@ Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
 Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOnboarding']);
 Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);
+Route::post('/api/chat/stream', [VibyraAppController::class, 'chatStream']);
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
 Route::get('/api/community/projects', [VibyraAppController::class, 'communityProjects']);

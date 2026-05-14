@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
+import { darkColors, lightColors } from "../styles/theme";
 import { AppearanceMode } from "../screens/workspace/inline/profile/types";
 import { themedColor } from "../screens/workspace/styles/themeTransform";
 import { readStorageItem, readStorageItemSync, writeStorageItem } from "../utils/nativeStorage";
@@ -52,6 +53,7 @@ export type PreferencesValue = {
   formatNumber: (value: number) => string;
   formatDate: (value: Date | string | number) => string;
   t: (key: string) => string;
+  colors: typeof darkColors;
 };
 
 const PreferencesContext = createContext<PreferencesValue | null>(null);
@@ -109,7 +111,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     effectiveScheme,
     formatNumber,
     formatDate,
-    t
+    t,
+    colors: effectiveScheme === "light" ? lightColors : darkColors
   };
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
@@ -126,5 +129,5 @@ export function useThemedColor(color: string): string {
   return themedColor(color, effectiveScheme);
 }
 
-export const LIGHT_SHELL_BG = "#F3F1F8";
-export const DARK_SHELL_BG = "#07070A";
+export const LIGHT_SHELL_BG = lightColors.background;
+export const DARK_SHELL_BG = darkColors.background;

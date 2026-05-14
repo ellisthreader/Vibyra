@@ -152,6 +152,15 @@ trait ChatEndpointHelpers
             return [$reply, null];
         }
 
+        $validationError = $this->previewHtmlValidationError($html);
+        if ($validationError !== null) {
+            $cleanedReply = trim(preg_replace('/<vibyra-app[\s\S]*?<\/vibyra-app>/i', '', $reply));
+            return [
+                $cleanedReply !== '' ? $cleanedReply : "I could not attach a runnable phone preview because {$validationError}. Ask me to rebuild it as one self-contained HTML preview.",
+                null,
+            ];
+        }
+
         $cleanedReply = trim(preg_replace('/<vibyra-app[\s\S]*?<\/vibyra-app>/i', '', $reply));
         if ($cleanedReply === '') {
             $cleanedReply = "I built `{$title}` — tap the preview below to run it.";
@@ -179,5 +188,26 @@ trait ChatEndpointHelpers
             return preg_replace('/<html([^>]*)>/i', "<html$1>\n<head>{$csp}</head>", $html, 1);
         }
         return "<!doctype html><html><head>{$csp}</head><body>{$html}</body></html>";
+    }
+
+    private function previewHtmlValidationError(string $html): ?string
+    {
+        if (preg_match('/<script\b[^>]*\bsrc\s*=\s*["\'](?!https?:|data:|blob:|\/\/|about:)([^"\']+)["\']/i', $html, $match) === 1) {
+            return 'it referenced an unbundled local script (`'.e($match[1]).'`)';
+        }
+
+        if (preg_match('/<script\b[^>]*\btype\s*=\s*["\']module["\'][^>]*\bsrc\s*=\s*["\']([^"\']+)["\']/i', $html, $match) === 1) {
+            return 'it referenced a module entry file (`'.e($match[1]).'`) instead of inline JavaScript';
+        }
+
+        if (preg_match('/<script\b[^>]*\btype\s*=\s*["\']module["\'][^>]*>[\s\S]*?\bimport\s+(?:[({*]|\w)/i', $html) === 1) {
+            return 'it used module imports that cannot run as a self-contained phone preview';
+        }
+
+        if (preg_match('/<link\b(?=[^>]*\brel\s*=\s*["\']?(?:stylesheet|modulepreload|preload))[^>]*\bhref\s*=\s*["\'](?!https?:|data:|\/\/|about:)([^"\']+)["\']/i', $html, $match) === 1) {
+            return 'it referenced an unbundled local stylesheet or preload (`'.e($match[1]).'`)';
+        }
+
+        return null;
     }
 }

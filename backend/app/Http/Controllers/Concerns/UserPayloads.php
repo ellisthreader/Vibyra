@@ -73,6 +73,14 @@ trait UserPayloads
             'level' => app(LevelProgression::class)->payload($user),
             'dailyCreditsUsed' => (int) ($user->daily_credits_used ?? 0),
             'dailyCreditsCap' => (int) ($planConfig['daily_credit_cap'] ?? 0),
+            'dailyCreditsResetAt' => optional($user->daily_credits_reset_at)->toIso8601String(),
+            'burstCreditsUsed' => (int) ($user->burst_credits_used ?? 0),
+            'burstCreditsCap' => (int) ($planConfig['burst_credit_cap'] ?? 0),
+            'burstCreditsResetAt' => optional($user->burst_credits_reset_at)->toIso8601String(),
+            'burstWindowHours' => 5,
+            'weeklyCreditsUsed' => (int) ($user->weekly_credits_used ?? 0),
+            'weeklyCreditsCap' => (int) ($planConfig['weekly_credit_cap'] ?? 0),
+            'weeklyCreditsResetAt' => optional($user->weekly_credits_reset_at)->toIso8601String(),
             'monthlyCredits' => (int) ($cycle === 'annual'
                 ? ($planConfig['annual_credits'] ?? $planConfig['monthly_credits'] ?? 0)
                 : ($planConfig['monthly_credits'] ?? 0)),

@@ -10,6 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -60,8 +61,23 @@ export function ProjectCard({
   const draft = status === "Draft";
   const archived = status === "Archived";
   const sourceIcon = status === "On PC" ? "desktop-outline" : status === "On mobile" ? "phone-portrait-outline" : null;
-  const projectAccent = activeStatus ? "#59E8A0" : published ? "#BE62FF" : archived ? "#AAA6BC" : draft ? "#DAD6F6" : "#DAD6F6";
-  const titleDot = activeStatus ? "#3CD783" : published ? "#B869FF" : archived ? "#6F6A80" : "#8F8AA3";
+  const prefs = usePreferences();
+  const activeAccent = useThemedColor("#59E8A0");
+  const publishedAccent = useThemedColor("#BE62FF");
+  const archivedAccent = useThemedColor("#AAA6BC");
+  const draftAccent = useThemedColor("#DAD6F6");
+  const activeDot = useThemedColor("#3CD783");
+  const publishedDot = useThemedColor("#B869FF");
+  const archivedDot = useThemedColor("#6F6A80");
+  const draftDot = useThemedColor("#8F8AA3");
+  const sourceIconColor = useThemedColor("#DDBBFF");
+  const placeholderColor = useThemedColor("#858197");
+  const moreIconColor = useThemedColor(menuOpen ? "#F1ECFF" : "#858197");
+  const footerIconColor = useThemedColor("#AAA6BC");
+  const renameCancelIconColor = useThemedColor("#BEB9D4");
+  const openGradient = prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF"] as const : ["#6E31FF", "#5624E6"] as const;
+  const projectAccent = activeStatus ? activeAccent : published ? publishedAccent : archived ? archivedAccent : draftAccent;
+  const titleDot = activeStatus ? activeDot : published ? publishedDot : archived ? archivedDot : draftDot;
 
   return (
     <View style={[
@@ -88,7 +104,7 @@ export function ProjectCard({
                 onChangeText={onChangeRename}
                 onSubmitEditing={onSubmitRename}
                 placeholder="Project name"
-                placeholderTextColor="#858197"
+                placeholderTextColor={placeholderColor}
                 returnKeyType="done"
                 selectTextOnFocus
                 style={styles.projectRenameInput}
@@ -108,7 +124,7 @@ export function ProjectCard({
         <View style={styles.projectCardRight}>
           {sourceIcon ? (
             <View style={styles.projectSourcePill}>
-              <Ionicons name={sourceIcon} color="#DDBBFF" size={16} />
+              <Ionicons name={sourceIcon} color={sourceIconColor} size={16} />
             </View>
           ) : (
             <Text style={[
@@ -121,7 +137,7 @@ export function ProjectCard({
             ]}>{status}</Text>
           )}
           <Pressable hitSlop={8} onPress={onMore} style={styles.projectMoreButton}>
-            <Ionicons name="ellipsis-vertical" color={menuOpen ? "#F1ECFF" : "#858197"} size={18} />
+            <Ionicons name="ellipsis-vertical" color={moreIconColor} size={18} />
           </Pressable>
         </View>
       </View>
@@ -141,14 +157,14 @@ export function ProjectCard({
       <View style={[styles.projectCardFooter, layout.footerStyle]}>
         <View style={layout.footerDetailsStyle}>
           <View style={styles.projectFooterMeta}>
-            <Ionicons name="calendar-outline" color="#AAA6BC" size={15} />
+            <Ionicons name="calendar-outline" color={footerIconColor} size={15} />
             <Text numberOfLines={1} style={styles.projectFooterText}>{project.updated}</Text>
           </View>
         </View>
         <View style={layout.footerActionsStyle}>
           <Pressable style={styles.projectOpenButton} onPress={onOpen}>
             <LinearGradient
-              colors={["#6E31FF", "#5624E6"]}
+              colors={openGradient}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={[styles.projectOpenGradient, layout.openGradientStyle]}
@@ -164,7 +180,7 @@ export function ProjectCard({
           ) : null}
           {renaming ? (
             <Pressable style={styles.projectRenameCancelButton} onPress={onCancelRename}>
-              <Ionicons name="close" color="#BEB9D4" size={18} />
+              <Ionicons name="close" color={renameCancelIconColor} size={18} />
             </Pressable>
           ) : null}
         </View>

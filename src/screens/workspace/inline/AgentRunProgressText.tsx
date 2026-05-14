@@ -16,7 +16,7 @@ export function AgentRunProgressText({ status }: { status: ChatRunStatus }) {
   const elapsedSeconds = Math.max(0, Math.floor(((status.completedAt ?? now) - status.startedAt) / 1000));
   const steps = useMemo(() => runSteps(status), [status.mode, status.route]);
   const activeIndex = Math.min(steps.length - 1, Math.floor(elapsedSeconds / 4));
-  const title = activeIndex < 2 ? "Thinking" : "Working";
+  const title = activeIndex < 2 ? "Thinking" : status.mode === "build" ? "Building" : "Working";
   const editActivity = (status.mode === "build" || status.activeFile) && activeIndex >= 2
     ? liveEditActivity(status.activeFile, elapsedSeconds)
     : null;

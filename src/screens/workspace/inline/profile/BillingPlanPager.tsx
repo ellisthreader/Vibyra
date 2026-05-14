@@ -12,7 +12,7 @@ export function BillingPlanPager({ cycle, currentKey, recommendedKey, onSelect, 
   disabled?: boolean;
 }) {
   return (
-    <View style={{ flex: 1, gap: 10 }}>
+    <View style={{ gap: 12 }}>
       {PLAN_TIERS.map((tier) => (
         <BillingFeaturedPlan
           key={tier.key}

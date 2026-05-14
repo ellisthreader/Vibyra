@@ -1,13 +1,11 @@
 const STATIC_PREVIEW_ENTRIES = [
-  "index.html",
   "dist/index.html",
   "build/index.html",
-  "public/index.html",
-  "web/index.html",
   "out/index.html",
   ".output/public/index.html",
+  "public/index.html",
+  "web/index.html",
   "www/index.html",
-  "app/index.html",
   "client/dist/index.html",
   "frontend/dist/index.html",
   "apps/web/dist/index.html",
@@ -15,7 +13,9 @@ const STATIC_PREVIEW_ENTRIES = [
   "storybook-static/index.html",
   "docs/index.html",
   "game/index.html",
-  "demo/index.html"
+  "demo/index.html",
+  "app/index.html",
+  "index.html"
 ];
 
 const PREVIEW_HINTS = {

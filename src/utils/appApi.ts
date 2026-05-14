@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { assertBackendReachableBeforeChat } from "./appApiReachability";
 import { fetchWithTimeout, getExpoHost, normalizeAgentUrl, TimeoutError } from "./network";
 
 export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
@@ -97,6 +98,9 @@ export async function appApiRequest<T>(
 
   let response: Response;
   try {
+    if (endpoint === "/api/chat" && !backendKnownOnline) {
+      await assertBackendReachableBeforeChat(getAppApiUrl(), markBackendOnline, markBackendOffline);
+    }
     response = await fetchWithTimeout(url, {
       ...options,
       headers
@@ -138,7 +142,134 @@ export async function appApiRequest<T>(
 function requestTimeoutFor(endpoint: string) {
   if (endpoint === "/api/chat") return 120000;
   if (endpoint === "/api/community/assets/generate") return 100000;
+  if (endpoint === "/api/community/projects") return 30000;
   return 15000;
+}
+
+export type ChatStreamCallbacks = {
+  onChunk?: (delta: string) => void;
+};
+
+export async function appApiStreamChat<T = unknown>(
+  body: unknown,
+  token: string,
+  callbacks: ChatStreamCallbacks = {}
+): Promise<T> {
+  if (!supportsStreamingChatResponse()) {
+    return appApiRequest<T>("/api/chat", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }, token);
+  }
+
+  const url = `${getAppApiUrl()}/api/chat/stream`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180000);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "text/event-stream",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+  } catch (error) {
+    clearTimeout(timeout);
+    const reason = error instanceof Error ? error.message : "unknown error";
+    markBackendOffline();
+    throw new Error(`Could not reach Vibyra at ${url}. ${reason}. Start the backend with npm run backend or npm run dev; if it is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
+  }
+
+  if (response.status >= 500) markBackendOffline();
+  else markBackendOnline();
+
+  if (!response.ok) {
+    clearTimeout(timeout);
+    const text = await response.text().catch(() => "");
+    let parsed: ApiErrorPayload = {};
+    try {
+      parsed = text ? JSON.parse(text) as ApiErrorPayload : {};
+    } catch {
+      parsed = { error: text };
+    }
+    throw new AppApiError(
+      parsed.error || parsed.message || `Request failed with ${response.status}`,
+      response.status,
+      "/api/chat/stream",
+      parsed
+    );
+  }
+
+  if (!response.body) {
+    clearTimeout(timeout);
+    throw new Error("Vibyra streaming response has no body. Update Expo or fall back to /api/chat.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalPayload: T | null = null;
+  let streamError: string | null = null;
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let separatorIndex: number;
+      while ((separatorIndex = buffer.indexOf("\n\n")) !== -1) {
+        const rawEvent = buffer.slice(0, separatorIndex);
+        buffer = buffer.slice(separatorIndex + 2);
+        const { event, data } = parseSseBlock(rawEvent);
+        if (!data) continue;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          continue;
+        }
+        if (event === "chunk") {
+          const delta = typeof (parsed as { delta?: unknown }).delta === "string"
+            ? (parsed as { delta: string }).delta
+            : "";
+          if (delta) callbacks.onChunk?.(delta);
+        } else if (event === "final") {
+          finalPayload = parsed as T;
+        } else if (event === "error") {
+          streamError = typeof (parsed as { error?: unknown }).error === "string"
+            ? (parsed as { error: string }).error
+            : "Streaming error";
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeout);
+    try { reader.releaseLock(); } catch { /* ignore */ }
+  }
+
+  if (streamError) throw new Error(streamError);
+  if (!finalPayload) throw new Error("Vibyra streaming ended without a final payload. Try again.");
+  return finalPayload;
+}
+
+function supportsStreamingChatResponse() {
+  return Platform.OS === "web";
+}
+
+function parseSseBlock(block: string): { event: string; data: string } {
+  let event = "message";
+  const dataLines: string[] = [];
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+  }
+  return { event, data: dataLines.join("\n") };
 }
 
 export function isAppSessionExpiredError(error: unknown) {

@@ -10,6 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
+import { usePreferences } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -30,25 +31,29 @@ export function RunningProjectsPanel({ buildingCount, onCreateBuild, queuedCount
     projectName: string;
   }>;
 }) {
+  const prefs = usePreferences();
   const hasRunning = runningProjects.length > 0;
   const inProgress = runningProjects.filter((item) => item.agent.state === "running");
   const queued = runningProjects.filter((item) => item.agent.state === "waiting");
 
-  return (
-    <View style={styles.runningProjectsPanel}>
-      <View style={styles.homeQueueStats}>
-        <View style={styles.homeQueueStat}>
-          <Text style={styles.homeQueueStatValue}>{buildingCount}</Text>
-          <Text style={styles.homeQueueStatLabel}>Building</Text>
-        </View>
-        <View style={styles.homeQueueStat}>
-          <Text style={[styles.homeQueueStatValue, styles.homeQueueStatValueQueued]}>{queuedCount}</Text>
-          <Text style={[styles.homeQueueStatLabel, styles.homeQueueStatLabelQueued]}>Queued</Text>
-        </View>
-      </View>
+  const emptyCtaGradient = prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#7C2DFF", "#AA35FF", "#6C22E8"] as const;
 
-      <View style={styles.runningProjectsList}>
-        {hasRunning ? (
+  return (
+    <View style={[styles.runningProjectsPanel, !hasRunning ? styles.runningProjectsPanelEmpty : null]}>
+      {hasRunning ? (
+        <>
+          <View style={styles.homeQueueStats}>
+            <View style={styles.homeQueueStat}>
+              <Text style={styles.homeQueueStatValue}>{buildingCount}</Text>
+              <Text style={styles.homeQueueStatLabel}>Building</Text>
+            </View>
+            <View style={styles.homeQueueStat}>
+              <Text style={[styles.homeQueueStatValue, styles.homeQueueStatValueQueued]}>{queuedCount}</Text>
+              <Text style={[styles.homeQueueStatLabel, styles.homeQueueStatLabelQueued]}>Queued</Text>
+            </View>
+          </View>
+
+          <View style={styles.runningProjectsList}>
           <ScrollView
             contentContainerStyle={styles.runningProjectsScrollContent}
             nestedScrollEnabled
@@ -68,29 +73,28 @@ export function RunningProjectsPanel({ buildingCount, onCreateBuild, queuedCount
               </View>
             ) : null}
           </ScrollView>
-        ) : (
-          <View style={styles.runningProjectsEmpty}>
-            <View style={styles.runningProjectsEmptyIcon}>
-              <Ionicons name="sparkles-outline" color="#DDBBFF" size={24} />
-            </View>
-            <View style={styles.runningProjectsEmptyCopy}>
-              <Text style={styles.runningProjectsEmptyTitle}>No active builds</Text>
-              <Text style={styles.runningProjectsEmptyText}>Start a chat when you are ready to build.</Text>
-            </View>
-            <Pressable style={({ pressed }) => [styles.runningProjectsEmptyButton, pressed ? styles.runningProjectsEmptyButtonPressed : null]} onPress={onCreateBuild}>
-              <LinearGradient
-                colors={["#7C2DFF", "#AA35FF", "#6C22E8"]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.runningProjectsEmptyButtonGradient}
-              >
-                <Ionicons name="add" color={colors.text} size={18} />
-                <Text style={styles.runningProjectsEmptyButtonText}>Create your first build</Text>
-              </LinearGradient>
-            </Pressable>
           </View>
-        )}
-      </View>
+        </>
+      ) : (
+        <View style={styles.runningProjectsEmpty}>
+          <Image source={projectsFoldersHero} style={styles.runningProjectsEmptyImage} resizeMode="contain" />
+          <View style={styles.runningProjectsEmptyCopy}>
+            <Text style={styles.runningProjectsEmptyTitle}>Nothing is being built yet</Text>
+            <Text style={styles.runningProjectsEmptyText}>Create your first build and get started{"\n"}with Vibyra.</Text>
+          </View>
+          <Pressable style={({ pressed }) => [styles.runningProjectsEmptyButton, pressed ? styles.runningProjectsEmptyButtonPressed : null]} onPress={onCreateBuild}>
+            <LinearGradient
+              colors={emptyCtaGradient}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.runningProjectsEmptyButtonGradient}
+            >
+              <Ionicons name="add" color={colors.text} size={24} />
+              <Text style={styles.runningProjectsEmptyButtonText}>Create your first build</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }

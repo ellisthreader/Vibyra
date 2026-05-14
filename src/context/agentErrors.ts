@@ -1,4 +1,4 @@
-import type { AgentBusyInfo } from "../types/domain";
+import type { AgentBusyInfo } from "../types/agentStatus";
 
 export function userFacingAgentError(message: string) {
   const lower = message.toLowerCase();
@@ -24,8 +24,8 @@ export function userFacingAgentError(message: string) {
   if (lower.includes("http 502") || lower.includes("bad gateway")) {
     return "The desktop AI service failed while starting the run. Check the Vibyra Desktop/backend logs, then try again.";
   }
-  if (lower.includes("already running")) {
-    return "A previous AI request is still finishing on the backend. Wait a few seconds, then send again.";
+  if (lower.includes("desktop ai worker is still cleaning up")) {
+    return "The desktop AI worker is cleaning up the last run. Wait a few seconds, then send again.";
   }
   if (lower.includes("duplicate") || lower.includes("already sent")) {
     return "That exact prompt was just sent. Change the prompt a little before running it again.";
@@ -34,7 +34,7 @@ export function userFacingAgentError(message: string) {
     return message;
   }
   if (lower.includes("failed to fetch") || lower.includes("could not reach")) {
-    return "I could not reach Vibyra from the app. Check that the backend and desktop bridge are running on your LAN, then try again.";
+    return "I could not reach Vibyra from the app. On iPhone: open Settings → Privacy & Security → Local Network and make sure Expo Go (or your dev client) is enabled. Also confirm you are on the same Wi-Fi as the laptop running the backend.";
   }
   if (lower.includes("not enough credits") || lower.includes("out of free credits") || lower.includes("out of credits")) {
     return "You're out of credits for this request. Open Account → Billing to top up or upgrade your plan.";
@@ -57,9 +57,10 @@ export function agentBusyInfoFromError(error: unknown): AgentBusyInfo | undefine
   const run = record.activeAgentRun && typeof record.activeAgentRun === "object"
     ? record.activeAgentRun as Record<string, unknown>
     : {};
-  if (!record.busyReason && Object.keys(run).length === 0) return undefined;
+  if (!hasMeaningfulRun(run)) return undefined;
   return {
     reason: typeof record.busyReason === "string" ? record.busyReason : undefined,
+    message: stringOrNull(record.error) || stringOrNull(record.message),
     runId: stringOrNull(run.id),
     title: stringOrNull(run.title),
     model: stringOrNull(run.model),
@@ -73,6 +74,14 @@ export function agentBusyInfoFromError(error: unknown): AgentBusyInfo | undefine
     updatedAt: stringOrNull(run.updatedAt),
     elapsedSeconds: numberOrNull(run.elapsedSeconds)
   };
+}
+
+function hasMeaningfulRun(run: Record<string, unknown>) {
+  return ["id", "title", "projectId", "projectName", "projectPath", "startedAt", "updatedAt", "progress"].some((key) => {
+    const value = run[key];
+    if (typeof value === "number") return Number.isFinite(value);
+    return typeof value === "string" && value.trim() !== "";
+  });
 }
 
 function stringOrNull(value: unknown) {

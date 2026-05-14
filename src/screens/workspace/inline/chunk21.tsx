@@ -10,6 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -26,9 +27,10 @@ export function ProjectMenuItem({ danger, icon, label, onPress }: {
   label: string;
   onPress: () => void;
 }) {
+  const itemIconColor = useThemedColor(danger ? "#FF7F96" : "#E8E1FF");
   return (
     <Pressable style={({ pressed }) => [styles.projectMenuItem, pressed ? styles.projectMenuItemPressed : null]} onPress={onPress}>
-      <Ionicons name={icon} color={danger ? "#FF7F96" : "#E8E1FF"} size={17} />
+      <Ionicons name={icon} color={itemIconColor} size={17} />
       <Text style={[styles.projectMenuItemText, danger ? styles.projectMenuItemTextDanger : null]}>{label}</Text>
     </Pressable>
   );
@@ -39,10 +41,11 @@ export function ProjectFilterMenuItem({ active, label, onPress }: {
   label: typeof projectFilterModes[number];
   onPress: () => void;
 }) {
+  const checkColor = useThemedColor("#E8E1FF");
   return (
     <Pressable style={({ pressed }) => [styles.projectsFilterMenuItem, active ? styles.projectsFilterMenuItemActive : null, pressed ? styles.projectsFilterMenuItemPressed : null]} onPress={onPress}>
       <Text style={[styles.projectsFilterMenuText, active ? styles.projectsFilterMenuTextActive : null]}>{label}</Text>
-      {active ? <Ionicons name="checkmark" color="#E8E1FF" size={15} /> : null}
+      {active ? <Ionicons name="checkmark" color={checkColor} size={15} /> : null}
     </Pressable>
   );
 }
@@ -53,13 +56,16 @@ export function FolderConfirmModal({ confirm, onAccept, onCancel, onSkip }: {
   onCancel: () => void;
   onSkip: () => void | Promise<void>;
 }) {
+  const modalIconColor = useThemedColor("#A88BFF");
+  const folderIconColor = useThemedColor("#E8E1FF");
+  const folderMetaColor = useThemedColor("#9892B5");
   return (
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={confirm !== null}>
       <View style={styles.projectDeleteOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
         <View style={styles.projectDeleteDialog}>
           <View style={styles.projectDeleteIcon}>
-            <Ionicons name="folder-open-outline" color="#A88BFF" size={24} />
+            <Ionicons name="folder-open-outline" color={modalIconColor} size={24} />
           </View>
           <Text style={styles.projectDeleteTitle}>Open this folder on your PC?</Text>
           <Text style={styles.projectDeleteBody}>
@@ -72,12 +78,12 @@ export function FolderConfirmModal({ confirm, onAccept, onCancel, onSkip }: {
                 style={({ pressed }) => [styles.projectMenuItem, pressed ? styles.projectMenuItemPressed : null, { borderRadius: 12, paddingVertical: 12 }]}
                 onPress={() => onAccept(folder)}
               >
-                <Ionicons name="folder-outline" color="#E8E1FF" size={18} />
+                <Ionicons name="folder-outline" color={folderIconColor} size={18} />
                 <View style={{ flex: 1 }}>
                   <Text numberOfLines={1} style={styles.projectMenuItemText}>{folder.name}</Text>
-                  <Text numberOfLines={1} style={[styles.projectMenuItemText, { color: "#9892B5", fontSize: 11, marginTop: 2 }]}>{folder.path}</Text>
+                  <Text numberOfLines={1} style={[styles.projectMenuItemText, { color: folderMetaColor, fontSize: 11, marginTop: 2 }]}>{folder.path}</Text>
                 </View>
-                <Ionicons name="chevron-forward" color="#9892B5" size={16} />
+                <Ionicons name="chevron-forward" color={folderMetaColor} size={16} />
               </Pressable>
             ))}
           </View>
@@ -100,13 +106,14 @@ export function ProjectDeleteConfirmModal({ onCancel, onConfirm, project }: {
   onConfirm: () => void;
   project: ProjectDisplay | null;
 }) {
+  const deleteIconColor = useThemedColor("#FF8CA0");
   return (
     <Modal animationType="fade" onRequestClose={onCancel} transparent visible={project !== null}>
       <View style={styles.projectDeleteOverlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
         <View style={styles.projectDeleteDialog}>
           <View style={styles.projectDeleteIcon}>
-            <Ionicons name="trash-outline" color="#FF8CA0" size={24} />
+            <Ionicons name="trash-outline" color={deleteIconColor} size={24} />
           </View>
           <Text style={styles.projectDeleteTitle}>Delete project?</Text>
           <Text style={styles.projectDeleteBody}>
@@ -125,4 +132,3 @@ export function ProjectDeleteConfirmModal({ onCancel, onConfirm, project }: {
     </Modal>
   );
 }
-

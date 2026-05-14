@@ -37,6 +37,7 @@ export const part8 = {
     flexGrow: 1,
     gap: 4,
     paddingBottom: 14,
+    paddingHorizontal: 8,
     paddingTop: 14
   },
   chatWelcomeBlock: {

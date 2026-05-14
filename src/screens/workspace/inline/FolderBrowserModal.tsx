@@ -4,8 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../../../styles/theme";
 import type { DesktopBrowseEntry, DesktopBrowseListing, Project } from "../../../types/domain";
 
-export function FolderBrowserModal({ browseDesktopPath, label, onClose, onSelect, visible }: {
+export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onClose, onSelect, visible }: {
   browseDesktopPath: (path?: string) => Promise<DesktopBrowseListing>;
+  initialPath?: string;
   label?: string;
   onClose: () => void;
   onSelect: (folder: Project) => void;
@@ -38,8 +39,8 @@ export function FolderBrowserModal({ browseDesktopPath, label, onClose, onSelect
   useEffect(() => {
     if (!visible) return;
     setQuery("");
-    openPath(undefined);
-  }, [visible]);
+    openPath(initialPath);
+  }, [initialPath, openPath, visible]);
 
   const visibleEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -70,7 +71,7 @@ export function FolderBrowserModal({ browseDesktopPath, label, onClose, onSelect
 
         <View style={folderBrowserStyles.pathBar}>
           <Ionicons name="desktop-outline" color="#B084FF" size={15} />
-          <Text numberOfLines={1} style={folderBrowserStyles.pathText}>{listing.current?.path ?? "Your PC"}</Text>
+          <Text numberOfLines={1} style={folderBrowserStyles.pathText}>{listing.current?.name ?? "Your PC"}</Text>
         </View>
 
         <View style={folderBrowserStyles.searchRow}>
@@ -134,7 +135,7 @@ export function FolderBrowserModal({ browseDesktopPath, label, onClose, onSelect
                     </View>
                     <View style={folderBrowserStyles.rowText}>
                       <Text numberOfLines={1} style={folderBrowserStyles.rowName}>{entry.name}</Text>
-                      <Text numberOfLines={1} style={folderBrowserStyles.rowPath}>{entry.path}</Text>
+                      <Text numberOfLines={1} style={folderBrowserStyles.rowPath}>{entry.kind === "folder" ? "Folder" : "File"}</Text>
                     </View>
                     {folder ? <Ionicons name="chevron-forward" color="#8F8A9E" size={16} /> : <Text style={folderBrowserStyles.fileChip}>File</Text>}
                   </Pressable>

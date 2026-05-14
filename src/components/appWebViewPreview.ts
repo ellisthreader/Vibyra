@@ -1,4 +1,5 @@
 import { PHASER_PATCH_SCRIPT } from "./appWebViewPhaserPatch";
+import { FRAMEWORK_RUNTIME_SCRIPT, normalizeFrameworkScripts } from "./appWebViewFrameworkScripts";
 import { replaceMissingAssets } from "./appWebViewHtmlAssets";
 
 export type PreviewRuntimeError = { column?: number; line?: number; message: string; source?: string; stack?: string; type: "console" | "error" | "resource" | "unhandledrejection" | "webview" };
@@ -152,6 +153,7 @@ export const ERROR_CAPTURE_SCRIPT = `
     if (isRelevant(message)) send({ type: "console", message: message });
     return originalWarn.apply(console, arguments);
   };
+  ${FRAMEWORK_RUNTIME_SCRIPT}
   ${PHASER_PATCH_SCRIPT}
   true;
 })();
@@ -172,10 +174,12 @@ export function parsePreviewError(data: unknown): PreviewRuntimeError | null {
   };
 }
 
-export function preparePreviewHtml(html: string) { return replaceMissingAssets(html); }
+export function preparePreviewHtml(html: string) {
+  return removeUnresolvableInlineResources(normalizeFrameworkScripts(replaceMissingAssets(html)));
+}
 
 export function prepareSrcDocHtml(html: string): string {
-  let next = replaceMissingAssets(html).replace(RELATIVE_SCRIPT_RE, "").replace(RELATIVE_LINK_RE, "");
+  let next = preparePreviewHtml(html);
   if (!/<base\b/i.test(next)) {
     if (/<head[^>]*>/i.test(next)) {
       next = next.replace(/<head([^>]*)>/i, `<head$1>${BASE_TAG}${ERROR_CAPTURE_SCRIPT_TAG}`);
@@ -188,6 +192,10 @@ export function prepareSrcDocHtml(html: string): string {
     next = next.replace(/<head([^>]*)>/i, `<head$1>${ERROR_CAPTURE_SCRIPT_TAG}`);
   }
   return next;
+}
+
+function removeUnresolvableInlineResources(html: string) {
+  return html.replace(RELATIVE_SCRIPT_RE, "").replace(RELATIVE_LINK_RE, "");
 }
 
 function previewErrorType(value: unknown): PreviewRuntimeError["type"] {

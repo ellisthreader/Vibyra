@@ -1,6 +1,7 @@
 import { FileEntry, LogEvent } from "../types/domain";
 import { dedupeFiles } from "../utils/files";
 import { AgentStartResult } from "./agentTypes";
+import { previewAppForAgentResult } from "./agentPreviewHelpers";
 import { useAppState } from "./useAppState";
 
 type Store = ReturnType<typeof useAppState>;
@@ -86,6 +87,8 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
   }
 
   function markAllowed(messageId: string, projectId: string, result: AgentStartResult) {
+    const project = state.chatProjects[projectId] ?? state.projects.find((item) => item.id === projectId);
+    const app = previewAppForAgentResult(state.connection, projectId, project?.name ?? "Preview", result);
     setters.setChatThreads((current) => {
       const thread = current[projectId];
       if (!thread) return current;
@@ -94,7 +97,7 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
         [projectId]: thread.map((item) => {
           if (item.id !== messageId) return item;
           const { pendingApplyId: _pendingApplyId, ...rest } = item;
-          return { ...rest, codeChanges: result.changes, codeFiles: result.files, editApproval: "allowed" };
+          return { ...rest, codeChanges: result.changes, codeFiles: result.files, editApproval: "allowed", ...(app ? { app } : {}) };
         })
       };
     });

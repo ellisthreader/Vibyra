@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { LogEvent } from "../types/domain";
-import { appApiRequest, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
+import { appApiRequest, appApiStreamChat, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
 import { impact } from "../utils/haptics";
 import { useAppState } from "./useAppState";
 import { AgentStartResult, calculatePromptMoney, roundMoney } from "./agentTypes";
@@ -34,7 +34,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
 
   async function startAgent(target?: AgentStartTarget, promptOverride?: string) {
     const trimmed = (promptOverride ?? state.taskText).trim();
-    if (!trimmed || state.agentRequesting || agentRequestingRef.current) return;
+    if (!trimmed || state.agentRequesting || agentRequestingRef.current) return false;
 
     if (streamingRef.current) {
       streamingRef.current();
@@ -109,7 +109,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
           })
         });
         results.finishRealAgent(chatTarget, result, optimisticAgent.id, assistantMessageId);
-        return;
+        return true;
       }
 
       if (!state.authToken) {
@@ -125,37 +125,39 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       const historyCharCap = buildMode ? 1200 : 600;
       const history = state.chatThreads[chatTarget.chatProjectId] ?? [];
 
-      const result = await appApiRequest<ChatResponse>("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({
-          fileBody,
-          filePath,
-          history: history
-            .filter((message) => message.id !== "welcome" && message.text.trim() && message.text !== "Working on it...")
-            .slice(-historyWindow)
-            .map((message) => ({
-              role: message.role,
-              text: (message.role === "assistant" ? normalizeAgentReply(message.text) : message.text).slice(0, historyCharCap)
-            })),
-          model: selectedModel,
-          mode: runMode,
-          project: chatTarget.project.name,
-          projectFiles: await projectFileContext(filesInActiveProject, intentText, state.connection ? async (path) => (
-            await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
-          ).file : undefined, state.connection ? async (query) => (
-            await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
-          ).files ?? [] : undefined),
-          prompt,
-          reasoningEffort: state.reasoningEffort,
-          skill: skillId ?? ""
-        })
-      }, state.authToken);
-      results.finishOpenRouterAgent(messageTarget, result, optimisticAgent.id, assistantMessageId);
+      const streamBody = {
+        fileBody,
+        filePath,
+        history: history
+          .filter((message) => message.id !== "welcome" && message.text.trim() && message.text !== "Working on it...")
+          .slice(-historyWindow)
+          .map((message) => ({
+            role: message.role,
+            text: (message.role === "assistant" ? normalizeAgentReply(message.text) : message.text).slice(0, historyCharCap)
+          })),
+        model: selectedModel,
+        mode: runMode,
+        project: chatTarget.project.name,
+        projectFiles: await projectFileContext(filesInActiveProject, intentText, state.connection ? async (path) => (
+          await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
+        ).file : undefined, state.connection ? async (query) => (
+          await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
+        ).files ?? [] : undefined),
+        prompt,
+        reasoningEffort: state.reasoningEffort,
+        skill: skillId ?? ""
+      };
+      const result = await appApiStreamChat<ChatResponse>(streamBody, state.authToken, {
+        onChunk: (delta) => messages.appendStreamingDelta(messageTarget, assistantMessageId, delta)
+      });
+      results.finishStreamedOpenRouterAgent(messageTarget, result, optimisticAgent.id, assistantMessageId);
+      return true;
     } catch (error) {
       if (isAppSessionExpiredError(error)) {
         authSession?.expireSession("Your Vibyra login needs refreshing before AI chat can continue.");
       }
       messages.failAgent(messageTarget, optimisticAgent, assistantMessageId, error);
+      return false;
     } finally {
       agentRequestingRef.current = false;
       setters.setAgentRequesting(false);
@@ -168,11 +170,13 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
 function shouldUseBuildChatMode(text: string, skillMode?: string) {
   if (skillMode === "build") return true;
   const prompt = text.trim().toLowerCase();
+  if (/^the runnable preview for .+ crashed\./i.test(prompt) || /\bcaptured preview diagnostics:/i.test(prompt)) return true;
   const buildVerb = "(build|create|make|generate|design|prototype)";
   const target = "\\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen|preview)\\b";
   return (new RegExp(`^(please\\s+|pls\\s+)?${buildVerb}\\b.*${target}`).test(prompt)
     || new RegExp(`^(can|could|would)\\s+(you|u)\\s+${buildVerb}\\b.*${target}`).test(prompt)
-    || new RegExp(`^(i\\s+want\\s+you\\s+to|i\\s+need\\s+you\\s+to|need\\s+you\\s+to)\\s+${buildVerb}\\b.*${target}`).test(prompt));
+    || new RegExp(`^(i\\s+want\\s+you\\s+to|i\\s+need\\s+you\\s+to|need\\s+you\\s+to)\\s+${buildVerb}\\b.*${target}`).test(prompt)
+    || /\b(?:fix|repair|debug|resolve)\b[\s\S]{0,80}\b(?:preview|app|site|website|page|html|screen|ui)\b/.test(prompt));
 }
 
 function shouldUseAdviceContext(text: string, skillMode?: string) {

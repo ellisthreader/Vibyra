@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { colors } from "../../../styles/theme";
 import type { ChatMessage } from "../../../types/domain";
+import { useChatActionCardPalette } from "./chatActionCardTheme";
 
 type Prompt = NonNullable<ChatMessage["desktopConnection"]>;
+type Palette = ReturnType<typeof useChatActionCardPalette>;
 
 export function DesktopConnectionCard({ prompt, onConnect, onScan }: {
   prompt: Prompt;
@@ -15,6 +16,7 @@ export function DesktopConnectionCard({ prompt, onConnect, onScan }: {
   const [connecting, setConnecting] = useState(false);
   const pulse = useRef(new Animated.Value(0)).current;
   const sweep = useRef(new Animated.Value(0)).current;
+  const palette = useChatActionCardPalette();
   const query = prompt.query?.trim();
   const stage = prompt.stage ?? (connecting ? "pair" : "connect");
   const pairActive = stage === "pair" || stage === "open";
@@ -54,6 +56,8 @@ export function DesktopConnectionCard({ prompt, onConnect, onScan }: {
   };
 
   const ringStyle = {
+    backgroundColor: palette.ringBg,
+    borderColor: palette.ringBorder,
     opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.48, 0] }),
     transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) }]
   };
@@ -62,19 +66,19 @@ export function DesktopConnectionCard({ prompt, onConnect, onScan }: {
   };
 
   return (
-    <View style={styles.card}>
-      <Animated.View pointerEvents="none" style={[styles.sweep, beamStyle]} />
+    <View style={[styles.card, { backgroundColor: palette.cardBg, borderColor: palette.cardBorder }]}>
+      <Animated.View pointerEvents="none" style={[styles.sweep, { backgroundColor: palette.sweep }, beamStyle]} />
       <View style={styles.header}>
         <View style={styles.iconWrap}>
           <Animated.View style={[styles.ring, ringStyle]} />
-          <LinearGradient colors={["#B084FF", "#8E3CFF", "#5D24D8"]} style={styles.icon}>
+          <LinearGradient colors={palette.iconGradient} style={styles.icon}>
             <Ionicons name="desktop-outline" color="#FFFFFF" size={22} />
           </LinearGradient>
         </View>
         <View style={styles.copy}>
-          <Text style={styles.kicker}>PC connection needed</Text>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.kicker, { color: palette.kicker }]}>PC connection needed</Text>
+          <Text style={[styles.title, { color: palette.text }]}>{title}</Text>
+          <Text style={[styles.subtitle, { color: palette.body }]}>
             {opensKnownProject
               ? "After pairing, Vibyra will check the framework and app type automatically."
               : query ? "After pairing, Vibyra will continue this request and show the same folder confirmation UI." : "Pair Vibyra Desktop to browse and open folders from chat."}
@@ -82,45 +86,60 @@ export function DesktopConnectionCard({ prompt, onConnect, onScan }: {
         </View>
       </View>
 
-      <View style={styles.flow}>
-        <Step active icon="phone-portrait-outline" text="Phone" />
-        <FlowLine />
-        <Step active={pairActive} icon="wifi-outline" text="Pair" />
-        <FlowLine />
-        <Step active={openActive} icon="folder-open-outline" text={query ? "Open" : "Browse"} />
+      <View style={[styles.flow, { backgroundColor: palette.panelBg, borderColor: palette.panelBorder }]}>
+        <Step active icon="phone-portrait-outline" palette={palette} text="Phone" />
+        <FlowLine palette={palette} />
+        <Step active={pairActive} icon="wifi-outline" palette={palette} text="Pair" />
+        <FlowLine palette={palette} />
+        <Step active={openActive} icon="folder-open-outline" palette={palette} text={query ? "Open" : "Browse"} />
       </View>
 
       <View style={styles.actions}>
-        <ActionButton icon="search-outline" text="Scan Wi-Fi" tone="ghost" onPress={() => { setConnecting(true); onScan?.(prompt); }} />
-        <ActionButton icon="desktop-outline" text={actionText} tone="primary" onPress={handleConnect} />
+        <ActionButton icon="search-outline" palette={palette} text="Scan Wi-Fi" tone="ghost" onPress={() => { setConnecting(true); onScan?.(prompt); }} />
+        <ActionButton icon="desktop-outline" palette={palette} text={actionText} tone="primary" onPress={handleConnect} />
       </View>
     </View>
   );
 }
 
-function Step({ active, icon, text }: { active?: boolean; icon: keyof typeof Ionicons.glyphMap; text: string }) {
+function Step({ active, icon, palette, text }: { active?: boolean; icon: keyof typeof Ionicons.glyphMap; palette: Palette; text: string }) {
   return (
-    <View style={[styles.step, active ? styles.stepActive : null]}>
-      <Ionicons name={icon} color={active ? "#FFFFFF" : "#D7C4FF"} size={13} />
-      <Text style={[styles.stepText, active ? styles.stepTextActive : null]}>{text}</Text>
+    <View style={[
+      styles.step,
+      { borderColor: palette.stepBorder },
+      active ? { backgroundColor: palette.stepActiveBg, borderColor: palette.stepActiveBorder } : null
+    ]}>
+      <Ionicons name={icon} color={active ? palette.primaryText : palette.kicker} size={13} />
+      <Text style={[styles.stepText, { color: active ? palette.primaryText : palette.buttonGhostText }]}>{text}</Text>
     </View>
   );
 }
 
-function FlowLine() {
-  return <View style={styles.flowLine} />;
+function FlowLine({ palette }: { palette: Palette }) {
+  return <View style={[styles.flowLine, { backgroundColor: palette.flowLine }]} />;
 }
 
-function ActionButton({ icon, text, tone, onPress }: {
+function ActionButton({ icon, palette, text, tone, onPress }: {
   icon: keyof typeof Ionicons.glyphMap;
+  palette: Palette;
   text: string;
   tone: "ghost" | "primary";
   onPress: () => void;
 }) {
+  const primary = tone === "primary";
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.button, tone === "primary" ? styles.buttonPrimary : styles.buttonGhost, pressed ? styles.buttonPressed : null]}>
-      <Ionicons name={icon} color={tone === "primary" ? "#FFFFFF" : "#D5D0E6"} size={14} />
-      <Text style={tone === "primary" ? styles.buttonPrimaryText : styles.buttonGhostText}>{text}</Text>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        primary
+          ? [styles.buttonPrimary, { backgroundColor: palette.buttonPrimary, shadowColor: palette.buttonPrimary }]
+          : { backgroundColor: palette.buttonGhostBg, borderColor: palette.buttonGhostBorder, borderWidth: 1 },
+        pressed ? styles.buttonPressed : null
+      ]}
+    >
+      <Ionicons name={icon} color={primary ? palette.primaryText : palette.buttonGhostText} size={14} />
+      <Text style={[primary ? styles.buttonPrimaryText : styles.buttonGhostText, { color: primary ? palette.primaryText : palette.buttonGhostText }]}>{text}</Text>
     </Pressable>
   );
 }
@@ -128,25 +147,22 @@ function ActionButton({ icon, text, tone, onPress }: {
 const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" },
   button: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 38, paddingHorizontal: 13, paddingVertical: 9 },
-  buttonGhost: { backgroundColor: "rgba(255,255,255,0.045)", borderColor: "rgba(255,255,255,0.14)", borderWidth: 1 },
-  buttonGhostText: { color: "#D5D0E6", fontSize: 13, fontWeight: "800" },
+  buttonGhostText: { fontSize: 13, fontWeight: "800" },
   buttonPressed: { opacity: 0.84, transform: [{ scale: 0.98 }] },
-  buttonPrimary: { backgroundColor: "#8E3CFF", shadowColor: "#8E3CFF", shadowOpacity: 0.3, shadowRadius: 12 },
-  buttonPrimaryText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
-  card: { backgroundColor: "rgba(15, 17, 26, 0.94)", borderColor: "rgba(176, 132, 255, 0.3)", borderRadius: 14, borderWidth: 1, gap: 13, marginTop: 10, overflow: "hidden", padding: 14 },
+  buttonPrimary: { shadowOpacity: 0.3, shadowRadius: 12 },
+  buttonPrimaryText: { fontSize: 13, fontWeight: "900" },
+  card: { borderRadius: 14, borderWidth: 1, gap: 13, marginTop: 10, overflow: "hidden", padding: 14 },
   copy: { flex: 1, minWidth: 0 },
-  flow: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.035)", borderColor: "rgba(176,132,255,0.12)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 7, padding: 8 },
-  flowLine: { backgroundColor: "rgba(176,132,255,0.28)", flex: 1, height: 1, minWidth: 10 },
+  flow: { alignItems: "center", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 7, padding: 8 },
+  flowLine: { flex: 1, height: 1, minWidth: 10 },
   header: { alignItems: "center", flexDirection: "row", gap: 12 },
   icon: { alignItems: "center", borderRadius: 15, height: 46, justifyContent: "center", width: 46 },
   iconWrap: { alignItems: "center", height: 54, justifyContent: "center", width: 54 },
-  kicker: { color: "#D7C4FF", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
-  ring: { backgroundColor: "rgba(142,60,255,0.24)", borderColor: "rgba(215,196,255,0.34)", borderRadius: 999, borderWidth: 1, height: 46, position: "absolute", width: 46 },
-  step: { alignItems: "center", borderColor: "rgba(176,132,255,0.2)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 27, paddingHorizontal: 9 },
-  stepActive: { backgroundColor: "rgba(142,60,255,0.72)", borderColor: "rgba(215,196,255,0.42)" },
-  stepText: { color: "#D5D0E6", fontSize: 11, fontWeight: "800" },
-  stepTextActive: { color: "#FFFFFF" },
-  subtitle: { color: "#AFA9C2", fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 4 },
-  sweep: { backgroundColor: "rgba(215,196,255,0.12)", bottom: -20, position: "absolute", top: -20, width: 58 },
-  title: { color: colors.text, fontSize: 16, fontWeight: "900", marginTop: 2 }
+  kicker: { fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
+  ring: { borderRadius: 999, borderWidth: 1, height: 46, position: "absolute", width: 46 },
+  step: { alignItems: "center", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 27, paddingHorizontal: 9 },
+  stepText: { fontSize: 11, fontWeight: "800" },
+  subtitle: { fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 4 },
+  sweep: { bottom: -20, position: "absolute", top: -20, width: 58 },
+  title: { fontSize: 16, fontWeight: "900", marginTop: 2 }
 });

@@ -1,9 +1,9 @@
-import { ChatMessage, FileEntry, LogEvent } from "../types/domain";
+import { ChatMessage, LogEvent } from "../types/domain";
 import { appApiRequest, ChatResponse, LevelActivityResponse } from "../utils/appApi";
 import { dedupeFiles, formatAssistantReply } from "../utils/files";
-import { normalizeAgentUrl } from "../utils/network";
 import { AgentStartResult } from "./agentTypes";
 import { ResolvedAgentTarget } from "./agentActionHelpers";
+import { previewAppForAgentResult } from "./agentPreviewHelpers";
 import { useAppState } from "./useAppState";
 
 type Store = ReturnType<typeof useAppState>;
@@ -16,6 +16,13 @@ type Messages = {
     target: ResolvedAgentTarget,
     messageId: string,
     fullText: string,
+    app?: ChatResponse["app"],
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+  ) => void;
+  finalizeStreamedAssistantMessage: (
+    target: ResolvedAgentTarget,
+    messageId: string,
+    finalText: string,
     app?: ChatResponse["app"],
     metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
   ) => void;
@@ -48,7 +55,7 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
       target,
       assistantMessageId,
       formatAssistantReply(result.reply, result.changes),
-      desktopPreviewApp(target, result),
+      previewAppForAgentResult(state.connection, target.projectId, target.project.name, result),
       {
         codeChanges: result.changes,
         codeFiles: result.files,
@@ -98,11 +105,9 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     )));
     setters.setBuildState(result.app ? "passed" : "idle");
     setters.setPreviewState(result.app ? "delivered" : "live");
-    setters.setCreditsBalance(result.creditsBalance);
-    setters.setCreditsUsed(result.creditsUsed);
-    if (result.user?.level) {
-      setters.setLevelProgress(result.user.level);
-    }
+    setters.setCreditsBalance(result.user?.creditsBalance ?? result.creditsBalance);
+    setters.setCreditsUsed(result.user?.creditsUsed ?? result.creditsUsed);
+    if (result.user?.level) setters.setLevelProgress(result.user.level);
     if (result.title) {
       setters.setChatTitles((current) => ({
         ...current,
@@ -117,32 +122,37 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     messages.streamAssistantMessage(target, assistantMessageId, result.reply, result.app ?? null, previewCodeMetadata(result.app ?? null));
   }
 
-  function desktopPreviewApp(target: ResolvedAgentTarget, result: AgentStartResult): ChatResponse["app"] {
-    const html = previewHtmlFromFiles(result.files);
-    if (!state.connection && !html) return null;
-    if (!html && !result.preview.url) return null;
-    return {
-      id: `${result.agent.id}-preview`,
-      title: result.preview.title || target.project.name,
-      ...(html ? { html } : {}),
-      ...(state.connection && result.preview.url ? { url: absoluteDesktopUrl(state.connection.url, result.preview.url) } : {})
-    };
+  function finishStreamedOpenRouterAgent(
+    target: ResolvedAgentTarget,
+    result: ChatResponse,
+    optimisticAgentId: string,
+    assistantMessageId: string
+  ) {
+    setters.setAgents((current) => current.map((agent) => (
+      agent.id === optimisticAgentId
+        ? { ...agent, state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
+        : agent
+    )));
+    setters.setBuildState(result.app ? "passed" : "idle");
+    setters.setPreviewState(result.app ? "delivered" : "live");
+    setters.setCreditsBalance(result.user?.creditsBalance ?? result.creditsBalance);
+    setters.setCreditsUsed(result.user?.creditsUsed ?? result.creditsUsed);
+    if (result.user?.level) setters.setLevelProgress(result.user.level);
+    if (result.title) {
+      setters.setChatTitles((current) => ({
+        ...current,
+        [target.chatProjectId]: result.title ?? current[target.chatProjectId] ?? target.project.name
+      }));
+    }
+    logs.appendLogs([
+      { source: "OpenRouter", message: `Model replied with ${result.model}`, tone: "success" },
+      { source: "Credits", message: `${result.creditCost} credit${result.creditCost === 1 ? "" : "s"} used`, tone: "info" }
+    ]);
+    logs.advanceWorkflow(12);
+    messages.finalizeStreamedAssistantMessage(target, assistantMessageId, result.reply, result.app ?? null, previewCodeMetadata(result.app ?? null));
   }
 
-  return { finishRealAgent, finishOpenRouterAgent };
-}
-
-function previewHtmlFromFiles(files: FileEntry[]) {
-  const htmlFile = files.find((file) => {
-    const path = file.path.toLowerCase();
-    return path.endsWith("/index.html") || path === "index.html" || (file.name.toLowerCase() === "index.html" && file.language === "html");
-  });
-  return htmlFile?.body?.trim() || "";
-}
-
-function absoluteDesktopUrl(baseUrl: string, path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${normalizeAgentUrl(baseUrl)}${path.startsWith("/") ? path : `/${path}`}`;
+  return { finishRealAgent, finishOpenRouterAgent, finishStreamedOpenRouterAgent };
 }
 
 function previewCodeMetadata(app: ChatResponse["app"]): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval"> | undefined {

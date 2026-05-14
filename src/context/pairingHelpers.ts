@@ -2,10 +2,12 @@ import { LogEvent, Project, RememberedDesktop } from "../types/domain";
 
 export const HEALTH_SCAN_BATCH_SIZE = 48;
 export const PAIR_SCAN_BATCH_SIZE = 48;
-export const LAN_HEALTH_TIMEOUT_MS = 600;
+export const LAN_HEALTH_TIMEOUT_MS = 1200;
 export const RELAY_HEALTH_TIMEOUT_MS = 1400;
-export const LAN_PAIR_TIMEOUT_MS = 900;
+export const LAN_PAIR_TIMEOUT_MS = 3000;
 export const RELAY_PAIR_TIMEOUT_MS = 3500;
+export const LAN_APPROVAL_STATUS_TIMEOUT_MS = 2500;
+export const RELAY_APPROVAL_STATUS_TIMEOUT_MS = 3500;
 export const APPROVAL_POLL_MS = 500;
 export const APPROVAL_TIMEOUT_MS = 90_000;
 export const DISCOVERY_SCAN_TIMEOUT_MS = 90_000;

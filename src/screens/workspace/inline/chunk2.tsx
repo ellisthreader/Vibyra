@@ -10,6 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -53,6 +54,9 @@ export function TopBar({
   tokenBalance: number;
 }) {
   const title = getTopBarTitle(activePage);
+  const mutedIconColor = useThemedColor("#A9A6BE");
+  const editIconColor = useThemedColor("#DCD7EA");
+  const dangerIconColor = useThemedColor("#FF9DAE");
 
   if (activePage === "chat") {
     return (
@@ -68,10 +72,10 @@ export function TopBar({
         </View>
         <View style={styles.chatTopActions}>
           <Pressable accessibilityLabel="Rename chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onRenameChat}>
-            <Ionicons name="create-outline" color="#DCD7EA" size={20} />
+            <Ionicons name="create-outline" color={editIconColor} size={20} />
           </Pressable>
           <Pressable accessibilityLabel="Delete chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onDeleteChat}>
-            <Ionicons name="trash-outline" color="#FF9DAE" size={20} />
+            <Ionicons name="trash-outline" color={dangerIconColor} size={20} />
           </Pressable>
         </View>
       </View>
@@ -126,7 +130,7 @@ export function TopBar({
           </View>
           <View style={styles.topTitleRow}>
             <Text numberOfLines={1} style={styles.topTitle}>{machineName}</Text>
-            <Ionicons name="chevron-down" color="#A9A6BE" size={16} />
+            <Ionicons name="chevron-down" color={mutedIconColor} size={16} />
           </View>
         </View>
       </Pressable>
