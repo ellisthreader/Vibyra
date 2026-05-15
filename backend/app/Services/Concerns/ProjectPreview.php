@@ -17,11 +17,11 @@ trait ProjectPreview
             );
         }
 
-        $project = $this->projectByExactId($state, $projectId);
+        $project = $this->projectById($state, $projectId);
         if (! $project) {
             $state['projects'] = $this->discoverProjects();
             $this->write($state);
-            $project = $this->projectByExactId($state, $projectId);
+            $project = $this->projectById($state, $projectId);
         }
 
         if (! $project) {
@@ -59,10 +59,13 @@ trait ProjectPreview
 
         $contentType = $this->previewContentType($filePath);
         $body = File::get($filePath);
+        $mountDirectory = $this->previewMountDirectory($entryPath);
 
         if (str_starts_with($contentType, 'text/html')) {
-            $entryDirectory = dirname($requestedPath !== '' ? $relativePath : $entryPath);
-            $body = $this->rewritePreviewHtml($body, $project['id'], $token, $entryDirectory === '.' ? '' : $entryDirectory);
+            $documentDirectory = $requestedPath !== '' ? dirname($relativePath) : $mountDirectory;
+            $body = $this->rewritePreviewHtml($body, $project['id'], $token, $documentDirectory === '.' ? '' : $documentDirectory, $mountDirectory);
+        } elseif (str_starts_with($contentType, 'text/css')) {
+            $body = $this->rewritePreviewCss($body, $project['id'], $token, $mountDirectory);
         }
 
         return [
@@ -70,17 +73,6 @@ trait ProjectPreview
             'contentType' => $contentType,
             'status' => 200,
         ];
-    }
-
-    private function projectByExactId(array $state, string $projectId): ?array
-    {
-        foreach ($state['projects'] as $project) {
-            if (($project['id'] ?? '') === $projectId) {
-                return $project;
-            }
-        }
-
-        return null;
     }
 
     private function previewEntryPath(array $project): string
@@ -97,8 +89,13 @@ trait ProjectPreview
 
     private function safePreviewFile(array $project, string $relativePath): ?string
     {
-        $root = realpath((string) $project['path']);
-        if (! $root) {
+        $projectPath = trim((string) ($project['path'] ?? ''));
+        if ($projectPath === '') {
+            return null;
+        }
+
+        $root = realpath($projectPath);
+        if (! $root || ! is_dir($root)) {
             return null;
         }
 
@@ -124,13 +121,19 @@ trait ProjectPreview
     {
         return match (strtolower(pathinfo($filePath, PATHINFO_EXTENSION))) {
             'css' => 'text/css; charset=UTF-8',
+            'avif' => 'image/avif',
+            'bmp' => 'image/bmp',
             'gif' => 'image/gif',
             'html', 'htm' => 'text/html; charset=UTF-8',
+            'ico' => 'image/x-icon',
             'jpeg', 'jpg' => 'image/jpeg',
             'js', 'jsx', 'mjs', 'ts', 'tsx' => 'application/javascript; charset=UTF-8',
             'json' => 'application/json; charset=UTF-8',
+            'map' => 'application/json; charset=UTF-8',
             'png' => 'image/png',
             'svg' => 'image/svg+xml; charset=UTF-8',
+            'wasm' => 'application/wasm',
+            'webmanifest' => 'application/manifest+json; charset=UTF-8',
             'webp' => 'image/webp',
             'woff' => 'font/woff',
             'woff2' => 'font/woff2',
@@ -138,30 +141,72 @@ trait ProjectPreview
         };
     }
 
-    private function rewritePreviewHtml(string $html, string $projectId, string $token, string $entryDirectory): string
+    private function previewMountDirectory(string $entryPath): string
+    {
+        $directory = $entryPath !== '' ? dirname($entryPath) : '';
+
+        return $directory === '.' ? '' : $directory;
+    }
+
+    private function rewritePreviewHtml(string $html, string $projectId, string $token, string $documentDirectory, string $mountDirectory): string
     {
         $rootBase = $this->previewUrl($projectId, $token);
-        $entryDirectory = trim($entryDirectory, '/');
-        $entryBase = $rootBase.($entryDirectory !== '' ? $entryDirectory.'/' : '');
+        $documentBase = $this->previewBase($rootBase, $documentDirectory);
+        $mountBase = $this->previewBase($rootBase, $mountDirectory);
 
-        return preg_replace_callback('/\b(src|href)=(["\'])(?!https?:|data:|mailto:|tel:|#)([^"\']+)\2/i', function (array $match) use ($entryBase, $rootBase): string {
+        return preg_replace_callback('/\b(src|href)=(["\'])(?!https?:|\/\/|data:|mailto:|tel:|#)([^"\']+)\2/i', function (array $match) use ($documentBase, $mountBase): string {
             $value = (string) $match[3];
             $cleaned = preg_replace('/^\.?\//', '', $value) ?: '';
-            $base = str_starts_with($value, '/') && $entryBase !== $rootBase ? $entryBase : (str_starts_with($value, '/') ? $rootBase : $entryBase);
+            $base = str_starts_with($value, '/') ? $mountBase : $documentBase;
 
             return $match[1].'="'.$base.$cleaned.'"';
         }, $html) ?? $html;
     }
 
+    private function rewritePreviewCss(string $css, string $projectId, string $token, string $mountDirectory): string
+    {
+        $mountBase = $this->previewBase($this->previewUrl($projectId, $token), $mountDirectory);
+        $css = preg_replace_callback('/url\(\s*(["\']?)(?!https?:|\/\/|data:|mailto:|tel:|#)([^"\')]+)\1\s*\)/i', function (array $match) use ($mountBase): string {
+            $value = trim((string) $match[2]);
+            if (! str_starts_with($value, '/')) {
+                return 'url('.$match[1].$value.$match[1].')';
+            }
+
+            return 'url('.$match[1].$mountBase.ltrim($value, '/').$match[1].')';
+        }, $css) ?? $css;
+
+        return preg_replace_callback('/@import\s+(["\'])(?!https?:|\/\/|data:|#)([^"\']+)\1/i', function (array $match) use ($mountBase): string {
+            $value = trim((string) $match[2]);
+            if (! str_starts_with($value, '/')) {
+                return '@import '.$match[1].$value.$match[1];
+            }
+
+            return '@import '.$match[1].$mountBase.ltrim($value, '/').$match[1];
+        }, $css) ?? $css;
+    }
+
+    private function previewBase(string $rootBase, string $directory): string
+    {
+        $directory = trim($directory, '/');
+
+        return $rootBase.($directory !== '' ? $directory.'/' : '');
+    }
+
     private function isSourceOnlyPreviewHtml(string $html, string $entryPath): bool
     {
-        if ($entryPath !== 'index.html') {
-            return false;
+        preg_match_all('/<script\b[^>]*>/i', $html, $matches);
+        foreach ($matches[0] ?? [] as $tag) {
+            preg_match('/\bsrc=["\']([^"\']+)["\']/i', $tag, $srcMatch);
+            $src = preg_replace('/^\.?\//', '', (string) ($srcMatch[1] ?? '')) ?: '';
+            if (preg_match('/^src\/[^?#]+\.(?:jsx?|tsx?)(?:[?#].*)?$/i', $src) === 1) {
+                return true;
+            }
+            if (preg_match('/\btype=["\']module["\']/i', $tag) === 1 && str_starts_with(strtolower($src), 'src/')) {
+                return true;
+            }
         }
 
-        return preg_match('/<script\b[^>]*\bsrc=["\'](?:\.?\/)?src\/(?:main|index|app)\.(?:jsx?|tsx?)["\']/i', $html) === 1
-            || preg_match('/<script\b[^>]*\btype=["\']module["\'][^>]*\bsrc=["\'](?:\.?\/)?src\//i', $html) === 1
-            || preg_match('/@vite\/client|vite\/client/i', $html) === 1;
+        return preg_match('/@vite\/client|vite\/client/i', $html) === 1;
     }
 
     private function previewUrl(string $projectId, string $token): string
@@ -173,7 +218,7 @@ trait ProjectPreview
     {
         $extension = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?: $path, PATHINFO_EXTENSION));
 
-        return in_array($extension, ['gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'], true);
+        return in_array($extension, ['avif', 'bmp', 'gif', 'ico', 'jpeg', 'jpg', 'png', 'svg', 'webp'], true);
     }
 
     private function missingPreviewImageSvg(): string

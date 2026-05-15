@@ -343,6 +343,343 @@ class VibyraAppApiTest extends TestCase
             ->assertJsonPath('reply', 'I could not attach a runnable phone preview because it referenced an unbundled local script (`/src/main.jsx`). Ask me to rebuild it as one self-contained HTML preview.');
     }
 
+    public function test_project_preview_rewrites_nested_entry_assets_to_entry_root(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath.'/dist/assets');
+            File::put($projectPath.'/dist/index.html', '<!doctype html><html><head><link href="./style.css?v=1#sheet" rel="stylesheet"></head><body><script src="/assets/app.js?v=2"></script></body></html>');
+            File::put($projectPath.'/dist/assets/app.js', 'console.log("preview asset");');
+            File::put($projectPath.'/dist/style.css', implode("\n", [
+                '@import "/reset.css";',
+                'body { background-image: url("/assets/bg.png?v=3#hero"); color: red; }',
+                ".icon { background: url('./assets/icon.svg'); }",
+                ".external { background: url('//cdn.example.com/image.png'); }",
+            ]));
+            File::put($projectPath.'/dist/reset.css', 'html { min-height: 100%; }');
+            File::put($projectPath.'/dist/assets/bg.png', 'png');
+            File::put($projectPath.'/dist/assets/icon.svg', '<svg></svg>');
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => $projectId,
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => $projectId,
+                    'name' => 'testing-preview-project',
+                    'path' => $projectPath,
+                    'stack' => 'Node / React',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $response->assertOk();
+            $body = $response->getContent();
+            $base = '/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/';
+            $this->assertStringContainsString('src="'.$base.'dist/assets/app.js?v=2"', $body);
+            $this->assertStringContainsString('href="'.$base.'dist/style.css?v=1#sheet"', $body);
+
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/dist/assets/app.js')
+                ->assertOk()
+                ->assertSee('console.log("preview asset");', false);
+
+            $css = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/dist/style.css?v=1');
+            $css->assertOk();
+            $this->assertStringContainsString('@import "'.$base.'dist/reset.css"', $css->getContent());
+            $this->assertStringContainsString('url("'.$base.'dist/assets/bg.png?v=3#hero")', $css->getContent());
+            $this->assertStringContainsString("url('./assets/icon.svg')", $css->getContent());
+            $this->assertStringContainsString("url('//cdn.example.com/image.png')", $css->getContent());
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_keeps_root_entry_absolute_assets_at_project_root(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-root-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath.'/assets');
+            File::put($projectPath.'/index.html', '<!doctype html><html><body><script src="/assets/app.js"></script></body></html>');
+            File::put($projectPath.'/assets/app.js', 'console.log("root preview asset");');
+            File::put($projectPath.'/module.wasm', 'wasm');
+            File::put($projectPath.'/favicon.ico', 'ico');
+            File::put($projectPath.'/site.webmanifest', '{}');
+            File::put($projectPath.'/app.js.map', '{}');
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => $projectId,
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => $projectId,
+                    'name' => 'testing-root-preview-project',
+                    'path' => $projectPath,
+                    'stack' => 'HTML',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $response->assertOk();
+            $base = '/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/';
+            $this->assertStringContainsString('src="'.$base.'assets/app.js"', $response->getContent());
+
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/assets/app.js')
+                ->assertOk()
+                ->assertSee('console.log("root preview asset");', false);
+
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/module.wasm')
+                ->assertOk()
+                ->assertHeader('Content-Type', 'application/wasm');
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/favicon.ico')
+                ->assertOk()
+                ->assertHeader('Content-Type', 'image/x-icon');
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/site.webmanifest')
+                ->assertOk()
+                ->assertHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/app.js.map')
+                ->assertOk()
+                ->assertHeader('Content-Type', 'application/json; charset=UTF-8');
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_skips_source_only_vite_root_entry(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-source-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath.'/src');
+            File::put($projectPath.'/index.html', '<!doctype html><html><body><script data-entry="app" type="module" src="/src/custom-entry.tsx"></script></body></html>');
+            File::put($projectPath.'/src/custom-entry.tsx', 'console.log("source only");');
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => $projectId,
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => $projectId,
+                    'name' => 'testing-source-preview-project',
+                    'path' => $projectPath,
+                    'stack' => 'Node / React',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $response->assertOk();
+            $this->assertStringContainsString('Project analyzed', $response->getContent());
+            $this->assertStringNotContainsString('custom-entry', $response->getContent());
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_skips_source_only_vite_entry_in_web_root(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-web-source-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath.'/web/src');
+            File::put($projectPath.'/web/index.html', '<!doctype html><html><body><script type="module" src="/src/main.tsx"></script></body></html>');
+            File::put($projectPath.'/web/src/main.tsx', 'console.log("source only");');
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => $projectId,
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => $projectId,
+                    'name' => 'testing-web-source-preview-project',
+                    'path' => $projectPath,
+                    'stack' => 'Node / React',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $response->assertOk();
+            $this->assertStringContainsString('Project analyzed', $response->getContent());
+            $this->assertStringNotContainsString('main.tsx', $response->getContent());
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_rejects_empty_project_paths_and_traversal(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $token = 'test-preview-token';
+
+        try {
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => 'empty-project',
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => 'empty-project',
+                    'name' => 'empty-project',
+                    'path' => '',
+                    'stack' => 'Project',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $this->get('/preview/project/empty-project/'.rawurlencode($token).'/composer.json')
+                ->assertNotFound()
+                ->assertSee('Preview file missing', false);
+            $this->get('/preview/project/empty-project/'.rawurlencode($token).'/..%2Fcomposer.json')
+                ->assertNotFound()
+                ->assertSee('Preview file missing', false);
+        } finally {
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_supports_trusted_encoded_folder_ids_after_start_preview(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-encoded-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath.'/assets');
+            File::put($projectPath.'/index.html', '<!doctype html><html><body><script src="/assets/app.js"></script></body></html>');
+            File::put($projectPath.'/assets/app.js', 'console.log("encoded preview");');
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => null,
+                'latestPreview' => null,
+                'projects' => [],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $start = $this->postJson('/preview/start', ['projectId' => $projectId], ['Authorization' => "Bearer {$token}"]);
+            $start->assertOk()->assertJsonPath('preview.url', '/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/')
+                ->assertOk()
+                ->assertSee('assets/app.js', false);
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
     public function test_level_activity_awards_idempotent_xp_and_milestone_credits(): void
     {
         $signup = $this->postJson('/api/auth/signup', [

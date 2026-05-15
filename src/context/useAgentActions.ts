@@ -56,7 +56,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
     setters.setAgentRequesting(true);
     const intentText = skill ? userText : trimmed;
     const buildMode = shouldUseBuildChatMode(intentText, skill?.mode);
-    const desktopAgentMode = false;
+    const desktopAgentMode = shouldUseDesktopAgentMode(intentText, skillId, skill?.mode, buildMode, state.connection, chatTarget.project.path);
     const runMode = desktopAgentMode || buildMode ? "build" : "chat";
     const fileContextEnabled = shouldAttachFileContext(intentText, chatTarget.file);
     const messageTarget = fileContextEnabled ? chatTarget : { ...chatTarget, file: null };
@@ -97,13 +97,33 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
 
     try {
       if (state.connection && desktopAgentMode) {
+        const filesInActiveProject = chatTarget.projectId === state.selectedProjectId ? state.files : [];
+        const history = state.chatThreads[chatTarget.chatProjectId] ?? [];
+        const projectFiles = await projectFileContext(filesInActiveProject, intentText, async (path) => (
+          await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
+        ).file, async (query) => (
+          await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
+        ).files ?? []);
         const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
           method: "POST",
           body: JSON.stringify({
             apply: state.editApprovals[chatTarget.projectId] === "always",
+            history: history
+              .filter((message) => message.id !== "welcome" && message.text.trim() && message.text !== "Working on it...")
+              .slice(-6)
+              .map((message) => ({
+                role: message.role,
+                text: (message.role === "assistant" ? normalizeAgentReply(message.text) : message.text).slice(0, 1600)
+              })),
             model: selectedModel,
             projectId: chatTarget.projectId,
+            projectFiles,
             projectPath: chatTarget.project.path,
+            selectedFile: chatTarget.file && fileContextEnabled ? {
+              path: chatTarget.file.path,
+              language: chatTarget.file.language,
+              body: (chatTarget.file.body || "").slice(0, 12000)
+            } : null,
             prompt,
             reasoningEffort: state.reasoningEffort
           })
@@ -201,4 +221,23 @@ function inferLiveEditFile(selectedPath: string | undefined, text: string) {
   if (/\b(css|styles?|theme|layout|spacing|color|visual|polish)\b/.test(prompt)) return "App.css";
   if (/\b(html|landing|website|site|page)\b/.test(prompt)) return "index.html";
   return "App.js";
+}
+
+function shouldUseDesktopAgentMode(
+  text: string,
+  skillId: string | undefined,
+  skillMode: string | undefined,
+  buildMode: boolean,
+  connection: Store["state"]["connection"],
+  projectPath: string | undefined
+) {
+  if (!connection || !projectPath) return false;
+  if (skillId && ["explain", "plan", "review", "publish", "ship"].includes(skillId)) return false;
+  if (buildMode || skillMode === "build") return true;
+  if (skillId && ["debug", "fix", "refactor", "style", "design"].includes(skillId)) return true;
+
+  const prompt = text.trim().toLowerCase();
+  const editVerb = "\\b(add|build|change|create|delete|design|edit|fix|generate|implement|make|modify|polish|refactor|remove|repair|replace|rewrite|update)\\b";
+  const localTarget = "\\b(app|bug|code|component|css|error|file|function|html|issue|layout|page|preview|screen|site|style|test|ui|website)\\b";
+  return new RegExp(editVerb).test(prompt) && new RegExp(localTarget).test(prompt);
 }

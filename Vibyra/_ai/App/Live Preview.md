@@ -52,7 +52,7 @@ Opening a file from chat is not a preview action. `workspacePromptActions.runFil
 
 `isViewPreviewIntent` in `chatReplies.ts` matches preview/open/view/run wording around website/site/page/app/preview/index.html/html/build plus phrases like "open it on my phone" and bare `preview`.
 
-In project chat, preview intent routes through `handleWorkspacePreviewIntent()` before `app.startAgent`. It calls `openRunnablePreview()` so explicit preview/open-on-phone prompts use the same modal path as `/preview` and Live Preview card taps. If no runnable preview exists, it reports that instead of attaching the desktop analyzed-project fallback. In detached chat, it uses `previewNeedsProjectReply()`.
+In project chat, preview intent routes through `handleWorkspacePreviewIntent()` before `app.startAgent`. It calls `openRunnablePreview()` so explicit preview/open-on-phone prompts use the same modal path as `/preview` and Live Preview card taps. If no runnable preview exists, it reports that instead of attaching the desktop analyzed-project fallback. Natural-language terminal parsing must not intercept phone/browser preview phrasing such as "run the build on my phone"; those prompts stay on the preview path. In detached chat, preview intent should run before folder/file lookup and use `previewNeedsProjectReply()`.
 
 This branch must run before `app.startAgent`; otherwise prompts such as "open the app on my phone" can be mis-treated as code edits.
 

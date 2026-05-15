@@ -46,14 +46,18 @@ export async function serveProjectPreview(res, url) {
 
   const contentType = contentTypeFor(filePath);
   let content = await readFile(filePath);
+  const mountDirectory = previewMountDirectory(entryPath);
 
   if (contentType.startsWith("text/html")) {
-    const entryDirectory = requestedPath ? dirname(relativePath) : dirname(entryPath);
+    const documentDirectory = requestedPath ? dirname(relativePath) : mountDirectory;
     content = Buffer.from(rewritePreviewHtml(content.toString("utf8"), {
-      entryDirectory: entryDirectory === "." ? "" : entryDirectory,
+      documentDirectory: documentDirectory === "." ? "" : documentDirectory,
+      mountDirectory,
       projectId,
       token: TOKEN
     }));
+  } else if (contentType.startsWith("text/css")) {
+    content = Buffer.from(rewritePreviewCss(content.toString("utf8"), { mountDirectory, projectId, token: TOKEN }));
   }
 
   res.writeHead(200, headers(contentType));
@@ -91,30 +95,62 @@ async function safeProjectFile(projectPath, relativePath) {
   }
 }
 
-function rewritePreviewHtml(html, { entryDirectory, projectId, token }) {
-  const rootBase = previewUrl(projectId, token);
-  const normalizedEntryDirectory = entryDirectory ? entryDirectory.replace(/^\/+|\/+$/g, "") : "";
-  const entryBase = `${rootBase}${normalizedEntryDirectory ? `${normalizedEntryDirectory}/` : ""}`;
+function previewMountDirectory(entryPath) {
+  const directory = entryPath ? dirname(entryPath) : "";
+  return directory === "." ? "" : directory;
+}
 
-  return html.replace(/\b(src|href)=["'](?!https?:|data:|mailto:|tel:|#)([^"']+)["']/gi, (_match, attr, value) => {
+function rewritePreviewHtml(html, { documentDirectory, mountDirectory, projectId, token }) {
+  const rootBase = previewUrl(projectId, token);
+  const normalizedDocumentDirectory = documentDirectory ? documentDirectory.replace(/^\/+|\/+$/g, "") : "";
+  const documentBase = `${rootBase}${normalizedDocumentDirectory ? `${normalizedDocumentDirectory}/` : ""}`;
+  const mountBase = previewBase(rootBase, mountDirectory);
+
+  return html.replace(/\b(src|href)=["'](?!https?:|\/\/|data:|mailto:|tel:|#)([^"']+)["']/gi, (_match, attr, value) => {
     const cleaned = String(value).replace(/^\.?\//, "");
-    const base = normalizedEntryDirectory && String(value).startsWith("/") ? entryBase : (String(value).startsWith("/") ? rootBase : entryBase);
+    const base = String(value).startsWith("/") ? mountBase : documentBase;
     return `${attr}="${base}${cleaned}"`;
   });
 }
 
+function rewritePreviewCss(css, { mountDirectory, projectId, token }) {
+  const mountBase = previewBase(previewUrl(projectId, token), mountDirectory);
+  return css
+    .replace(/url\(\s*(["']?)(?!https?:|\/\/|data:|mailto:|tel:|#)([^"')]+)\1\s*\)/gi, (_match, quote, value) => {
+      const raw = String(value).trim();
+      if (!raw.startsWith("/")) return `url(${quote}${raw}${quote})`;
+      return `url(${quote}${mountBase}${raw.replace(/^\/+/, "")}${quote})`;
+    })
+    .replace(/@import\s+(["'])(?!https?:|\/\/|data:|#)([^"']+)\1/gi, (_match, quote, value) => {
+      const raw = String(value).trim();
+      if (!raw.startsWith("/")) return `@import ${quote}${raw}${quote}`;
+      return `@import ${quote}${mountBase}${raw.replace(/^\/+/, "")}${quote}`;
+    });
+}
+
+function previewBase(rootBase, directory) {
+  const normalized = directory ? directory.replace(/^\/+|\/+$/g, "") : "";
+  return `${rootBase}${normalized ? `${normalized}/` : ""}`;
+}
+
 function isSourceOnlyPreviewHtml(html, entryPath) {
-  if (entryPath !== "index.html") return false;
-  return /<script\b[^>]*\bsrc=["'](?:\.?\/)?src\/(?:main|index|app)\.(?:jsx?|tsx?)["']/i.test(html)
-    || /<script\b[^>]*\btype=["']module["'][^>]*\bsrc=["'](?:\.?\/)?src\//i.test(html)
+  const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
+  return scriptTags.some((tag) => {
+    const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1]?.replace(/^\.?\//, "") ?? "";
+    return /^src\/[^?#]+\.(?:jsx?|tsx?)(?:[?#].*)?$/i.test(src)
+      || (/\btype=["']module["']/i.test(tag) && /^src\//i.test(src));
+  })
     || /@vite\/client|vite\/client/i.test(html);
 }
 
 function contentTypeFor(filePath) {
   const types = {
+    ".avif": "image/avif",
+    ".bmp": "image/bmp",
     ".css": "text/css; charset=utf-8",
     ".gif": "image/gif",
     ".html": "text/html; charset=utf-8",
+    ".ico": "image/x-icon",
     ".jpeg": "image/jpeg",
     ".jpg": "image/jpeg",
     ".jsx": "application/javascript; charset=utf-8",
@@ -125,9 +161,12 @@ function contentTypeFor(filePath) {
     ".svg": "image/svg+xml; charset=utf-8",
     ".ts": "application/javascript; charset=utf-8",
     ".tsx": "application/javascript; charset=utf-8",
+    ".wasm": "application/wasm",
+    ".webmanifest": "application/manifest+json; charset=utf-8",
     ".webp": "image/webp",
     ".woff": "font/woff",
-    ".woff2": "font/woff2"
+    ".woff2": "font/woff2",
+    ".map": "application/json; charset=utf-8"
   };
 
   return types[extname(filePath).toLowerCase()] ?? "application/octet-stream";
@@ -135,7 +174,7 @@ function contentTypeFor(filePath) {
 
 function isPreviewImagePath(path) {
   const cleanPath = String(path).split("?")[0];
-  return [".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"].includes(extname(cleanPath).toLowerCase());
+  return [".avif", ".bmp", ".gif", ".ico", ".jpeg", ".jpg", ".png", ".svg", ".webp"].includes(extname(cleanPath).toLowerCase());
 }
 
 function missingPreviewImageSvg() {

@@ -31,7 +31,7 @@ export async function projectFileContext(
 
   const base = files
     .filter((file) => file.id !== "empty" && file.path && !isRunArtifact(file))
-    .slice(0, 100)
+    .slice(0, 300)
     .map((file) => ({
       path: file.path,
       language: file.language || "",
@@ -59,7 +59,7 @@ export async function projectFileContext(
 async function readOptionalProjectContext(prompt: string, fetchProjectContext?: ProjectContextFetcher) {
   try {
     const files = await fetchProjectContext?.(prompt);
-    return Array.isArray(files) ? files.filter((file) => file.path).slice(0, 100) : [];
+    return Array.isArray(files) ? files.filter((file) => file.path).slice(0, 300) : [];
   } catch {
     return [];
   }

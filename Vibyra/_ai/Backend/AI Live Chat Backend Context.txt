@@ -1,0 +1,288 @@
+Vibyra AI live chat backend context
+Last reviewed: 2026-05-14
+
+Purpose
+This is a future-agent handoff for the mobile app AI live chat system, focused on the Laravel backend. It covers the cloud chat route that the mobile app uses for normal AI chat and runnable phone previews. It intentionally does not go deep on frontend rendering beyond the request/response contract.
+
+2026-05-14 update
+- Normal Q&A/advice still uses cloud `/api/chat` and `/api/chat/stream`.
+- When the phone is paired to Vibyra Desktop, explicit local build/edit/fix/refactor/debug/style/preview prompts now route through desktop `/agents/start` instead of the cloud chat preview generator.
+- Desktop `/agents/start` reads workspace instructions/context and stages model-returned file replacements behind the existing apply/discard permission flow.
+- Natural-language terminal requests are intercepted in the mobile workspace prompt handler before AI chat and use `/commands/run` with approval for install/dev/build/test commands.
+- Project preview asset rewriting is aligned between Node Desktop and Laravel: nested build entries like `dist/index.html` mount the entry directory as the static root, so `/assets/app.js` rewrites to `/preview/project/{projectId}/{token}/dist/assets/app.js`; root `index.html` keeps `/assets/app.js` at the project root. CSS `url(...)`/`@import` root-absolute assets are rewritten to the same mount root, source-only `/src/...` module entries are skipped in all preview candidate roots, common static asset MIME types are mapped, empty project paths are rejected, and trusted encoded folder ids preview after `/preview/start`.
+
+Start here
+- Route table: backend/routes/web.php
+- App controller shell: backend/app/Http/Controllers/VibyraAppController.php
+- Main JSON endpoint: backend/app/Http/Controllers/Concerns/ChatEndpoint.php
+- SSE endpoint: backend/app/Http/Controllers/Concerns/ChatStreamEndpoint.php
+- Shared chat helpers: backend/app/Http/Controllers/Concerns/ChatEndpointHelpers.php
+- Prompt construction: backend/app/Http/Controllers/Concerns/ChatPrompting.php
+- Reply post-processing: backend/app/Http/Controllers/Concerns/ChatReplyGuard.php
+- Skill registry: backend/config/skills.php
+- Billing/model/caps source of truth: backend/config/billing.php
+- Credit math/writes: backend/app/Services/Billing/CreditCalculator.php and CreditDeductor.php
+- Account payload/session auth: backend/app/Http/Controllers/Concerns/UserPayloads.php and AuthEndpoints.php
+- Main tests: backend/tests/Feature/VibyraAppApiTest.php
+
+High-level backend shape
+- The mobile app cloud chat is owned by VibyraAppController, not VibyraDesktopController.
+- Public routes:
+  - POST /api/chat -> ChatEndpoint::chat. Non-streaming JSON path, still used as native mobile fallback and in many tests.
+  - POST /api/chat/stream -> ChatStreamEndpoint::chatStream. SSE path, currently used by web only.
+  - GET /api/skills -> VibyraAppController::skills. Returns public-safe slash skill metadata.
+- Both chat endpoints share the same validation, mode resolution, prompt construction, OpenRouter request shape, runnable-preview extraction, credit deduction, and level progression behavior.
+- The cloud chat path is separate from the desktop-agent path (/agents/start). `useAgentActions` routes normal Q&A/advice to cloud `/api/chat`, while explicit build/edit/fix/refactor/debug/style/preview prompts on a paired desktop project use desktop `/agents/start`.
+
+Mobile caller contract
+- Main caller: src/context/useAgentActions.ts.
+- The mobile app builds a request body with:
+  - prompt: final user prompt, optionally wrapped by project brief and local slash skill prefix.
+  - model: selected chat model key, for example gpt-5.4-mini.
+  - reasoningEffort: none, low, medium, high, or xhigh.
+  - mode: chat or build.
+  - skill: server skill id or empty string.
+  - project: current project name.
+  - filePath and fileBody when the prompt is explicitly scoped to the selected file.
+  - projectFiles: up to 100 file entries with path, language, loaded, and optional snippet.
+  - history: recent chat items with role and text.
+- appApiStreamChat in src/utils/appApi.ts uses /api/chat/stream only on web. On iOS/Android it deliberately falls back to /api/chat because native Expo fetch may not expose Response.body.
+- Streaming events:
+  - event: chunk with data {"delta":"..."}.
+  - event: final with the same ChatResponse-shaped payload as /api/chat.
+  - event: error with data {"error":"..."}.
+
+Auth/session behavior
+- Chat endpoints require an app session bearer token, resolved by UserPayloads::authenticatedUser().
+- Signup/login create a random 72-character token, store only token_hash in vibyra_sessions, and return the raw token once.
+- Missing token returns 401 "Missing app session token."
+- Unknown/expired token returns 401 "Your session expired. Please log in again."
+- authenticatedUser updates vibyra_sessions.last_used_at on each protected request.
+- Signup initializes free users with plan free, monthly cycle, plan_renews_at one month out, monthly free credits, empty remembered_desktops, and empty app_state.
+
+Endpoint preflight sequence
+Both /api/chat and /api/chat/stream follow this order before OpenRouter:
+1. Authenticate app bearer token.
+2. Resolve plan from user.plan, defaulting to free.
+3. Hit rate limits by user per minute, user per hour, and IP per minute.
+4. Trim prompt and resolve optional server skill by id.
+5. Normalize model key to auto if missing/unknown.
+6. Enforce plan model tier with CreditCalculator::planAllowsModel().
+7. Reject empty prompt.
+8. Enforce prompt <= 8000 chars.
+9. Enforce fileBody <= 20000 chars.
+10. Convert projectFiles into compact prompt context, capped to 12000 chars.
+11. Enforce history is an array and <= 20 items.
+12. Reset daily, burst, and weekly counters if their windows elapsed.
+13. Resolve chat/build mode and max output tokens.
+14. Estimate input tokens and estimated credits.
+15. Reject insufficient balance with 402.
+16. Enforce daily, 5-hour burst, and weekly credit caps.
+17. Require services.openrouter.key / OPENROUTER_API_KEY.
+18. Build reasoning payload and call OpenRouter.
+
+Rate limits
+- Implemented in ChatEndpointHelpers::enforceChatRateLimit().
+- Per-plan user limits come from config/billing.php:
+  - free: 6/min, 60/hour.
+  - starter: 12/min, 200/hour.
+  - builder: 20/min, 600/hour.
+  - pro: 40/min, 1500/hour.
+- IP limit is fixed at 30/min.
+- RateLimiter::hit happens before prompt validation, so malformed or empty requests still consume attempts.
+
+Model and plan access
+- The active source of truth for cloud chat model keys is backend/config/billing.php "models".
+- CreditCalculator resolves a model key to an OpenRouter slug and tier.
+- Plan allowed_tiers in backend/config/billing.php gates access.
+- Current tiers:
+  - free plan allows free and budget.
+  - starter/builder/pro allow free, budget, balanced, and premium.
+- Unknown model keys silently coerce to auto.
+- ChatModelMap.php still exists and is mixed into VibyraAppController, but cloud chat now uses CreditCalculator and config/billing.php. Treat ChatModelMap::creditCost as vestigial for current cloud chat work unless you confirm another endpoint uses it.
+
+OpenRouter request shape
+- Config:
+  - services.openrouter.key from OPENROUTER_API_KEY.
+  - services.openrouter.url defaults to https://openrouter.ai/api/v1/chat/completions.
+- JSON endpoint uses Laravel Http::timeout(90)->acceptJson()->withToken().
+- Stream endpoint uses raw Guzzle with stream true because Laravel Http buffers and cannot proxy SSE cleanly.
+- Shared payload fields:
+  - model: resolved OpenRouter slug.
+  - messages: built by ChatPrompting::chatMessages().
+  - temperature: 0.25.
+  - max_completion_tokens: 800 for chat mode, 3000 for build mode.
+  - usage: { include: true } so OpenRouter returns usage/cost.
+  - reasoning: optional payload from reasoningEffort.
+- Streaming adds stream: true and sends Accept: text/event-stream.
+- Headers include Authorization Bearer, HTTP-Referer from app.url, and X-Title Vibyra.
+
+Reasoning effort
+- normalizeReasoningEffort accepts none, low, medium, high, xhigh; unknown becomes medium.
+- none sends {"exclude": true}.
+- low/medium/high send {"effort": value}.
+- xhigh sends effort high plus max_tokens = max(max_completion_tokens * 4, 8000).
+
+Prompt construction
+- ChatPrompting::chatMessages() builds:
+  - system message from systemPrompt(buildMode).
+  - trimmed chat history.
+  - final user message with optional skill template and context.
+- Chat history window:
+  - chat mode: last 3 messages, 600 chars each.
+  - build mode: last 4 messages, 1200 chars each.
+- Context added to the user message:
+  - Project: project name.
+  - Project files: compact file list plus snippets when projectFiles exists.
+  - Answer rule telling the model to answer from context and not return bash/grep/rg/npm commands unless explicitly requested.
+  - File filePath: first 1200 chars of fileBody when filePath and fileBody are present.
+- projectFilesContext() keeps up to 100 entries. Paths are limited to 180 chars, snippets to 1200 chars each, and the combined block to 12000 chars.
+
+Mode resolution
+- Backend build mode is authoritative when a server skill has mode build.
+- Otherwise request mode chat/build is honored.
+- If mode is absent, isBuildPrompt() detects build/create/make/generate/design/prototype plus app/tool/page/game/site/etc.
+- Chat mode uses a concise coding-assistant system prompt and 800 output tokens.
+- Build mode uses a runnable app prompt and 3000 output tokens.
+
+Build mode / runnable preview behavior
+- Build-mode model output should be exactly:
+  <vibyra-app title="Short Name"><!doctype html><html>...</html></vibyra-app>
+- extractRunnableApp() only extracts apps when agentMode/buildMode is true.
+- In chat mode, accidental <vibyra-app> blocks are stripped and app is null.
+- Extracted app payload:
+  - id: generated UUID.
+  - title: title attribute or "Generated app".
+  - html: app HTML after ensureContentSecurityPolicy().
+- If extracted HTML references unbundled local scripts, module entry files/imports, or unbundled local styles/preloads, the backend rejects the app attachment and returns a rebuild hint.
+- ensureContentSecurityPolicy() injects a permissive CSP for inline phone previews if the HTML has none.
+- ChatReplyGuard rewrites localhost/browser preview instructions into in-app Live Preview guidance unless the user explicitly asked about backend/local dev setup.
+- If a valid app is attached and the reply mentions localhost, the final reply becomes "Ready to preview on your phone. Tap the Live Preview card below to open it in Vibyra."
+
+Slash skills
+- Remote skill registry lives in backend/config/skills.php.
+- GET /api/skills exposes only id, slash, label, description, category, and mode.
+- ChatEndpoint reads request skill id, applies prompt_template through ChatPrompting::applySkillTemplate(), and appends system_prompt_addon.
+- Current server skills:
+  - explain, debug, refactor, fix: chat mode.
+  - publish: chat mode.
+  - build, style: build mode.
+- Frontend also has local skills in src/utils/chatSkills.ts. When a local skill id duplicates a remote skill id, mergeChatSkills prefers the local skill.
+
+Credits and caps
+- CreditCalculator estimates cost before OpenRouter and computes final actual cost after OpenRouter.
+- Estimate uses fallback pricing from billing.fallback_pricing_per_million_usd and the requested max output token cap.
+- Actual cost uses OpenRouter usage.cost when present, otherwise fallback pricing with actual/estimated token counts.
+- credits = ceil(openrouter_usd * 100 * effective_multiplier), minimum 1.
+- effective_multiplier starts from billing.models[model].multiplier and may stack:
+  - long-context multiplier 1.25 at >= 100000 total tokens.
+  - agent/build-mode multiplier 1.20.
+- CreditDeductor::chargeForChat() is the only writer for chat spend. It uses DB::transaction and User::lockForUpdate(), writes credit_ledger, and updates:
+  - credits_balance.
+  - credits_used.
+  - daily_credits_used.
+  - burst_credits_used.
+  - weekly_credits_used.
+- Counters reset in maybeResetDaily():
+  - daily resets at next start of day.
+  - burst resets after 5 hours.
+  - weekly resets after 1 week.
+- Caps from billing.plans:
+  - free: daily 5, burst 3, weekly 25.
+  - starter: daily 100, burst 60, weekly 350.
+  - builder: daily 360, burst 220, weekly 1260.
+  - pro: daily 900, burst 550, weekly 3150.
+- Important behavior: the preflight balance/cap check happens before the OpenRouter call, while actual deduction happens after. Concurrent requests can both pass preflight; lockForUpdate prevents negative balances, but chargeForChat clamps balance to zero rather than rejecting on the second post-call deduction.
+
+Credit ledger persistence
+- Migration: backend/database/migrations/2026_05_08_000002_create_credit_ledger_table.php.
+- Relevant fields:
+  - kind, model_key, model_slug.
+  - openrouter_micro_usd.
+  - input_tokens, output_tokens.
+  - multiplier_x100.
+  - signed credits_delta.
+  - credits_balance_after.
+  - reference.
+  - meta JSON.
+- Unique index on user_id + reference.
+- Chat references use chat:UUID, so normal chat charges are not idempotent across retries.
+
+Level progression side effect
+- After successful chat credit deduction, both endpoints call LevelProgression::record().
+- Chat mode action: cloud_chat_completed.
+- Build mode action: coding_agent_completed.
+- Context id is the same chat:UUID reference used for the credit ledger.
+- XP config is in backend/config/levels.php:
+  - cloud_chat_completed: 40 XP.
+  - coding_agent_completed: 80 XP.
+- Level rewards grant credits through CreditDeductor::grant(), also in the ledger.
+- Response includes levelActivity and user payload with fresh level/credit fields.
+
+Response contract
+/api/chat returns JSON:
+- ok: true.
+- reply: post-processed assistant text.
+- app: null or { id, title, html }.
+- title: suggested chat title.
+- model: OpenRouter slug.
+- modelKey: requested/normalized Vibyra model key.
+- creditCost: positive credits charged.
+- creditsBalance and creditsUsed.
+- dailyCreditsUsed and dailyCreditsCap.
+- levelActivity.
+- user: full RemoteUser payload.
+
+/api/chat/stream returns:
+- Preflight failures are normal JSON 4xx/5xx responses before streaming starts.
+- Once streaming starts, it emits chunk/final/error SSE events.
+- final payload matches the JSON ChatResponse contract.
+
+Error responses to remember
+- 401 missing app token or expired session.
+- 403 plan does not include this model, with requiredTier and plan.
+- 413 prompt too long or file context too large.
+- 422 empty prompt or malformed/oversized history.
+- 429 rate limit, daily cap, burst cap, or weekly cap.
+- 402 insufficient credits.
+- 500 OpenRouter not configured.
+- 502 could not reach OpenRouter on non-streaming endpoint.
+- Streaming OpenRouter failures are event: error after headers have been sent.
+
+Testing coverage
+- Main file: backend/tests/Feature/VibyraAppApiTest.php.
+- Existing tests cover:
+  - signup/session state.
+  - /api/chat OpenRouter request shape and credit deduction.
+  - chat-mode follow-up stripping accidental preview app.
+  - projectFiles prompt context and snippet inclusion.
+  - color/theme command-answer guard.
+  - localhost guidance rewriting for phone previews.
+  - backend setup prompts can still mention localhost.
+  - build prompt choosing build mode and app extraction.
+  - invalid unbundled script entry rejecting preview attachment.
+  - no OpenAI moderation call for cloud chat.
+  - /api/chat/stream missing auth, empty prompt, unsupported plan model.
+- Happy-path SSE streaming is not fully feature-tested with Http::fake because ChatStreamEndpoint uses raw Guzzle inside StreamedResponse.
+
+Operational notes
+- Local API default is http://127.0.0.1:8000 on web, or Expo host LAN IP port 8000 on native unless EXPO_PUBLIC_API_URL is set.
+- Start backend with npm run backend or npm run dev.
+- Quick liveness probe: GET /api/skills should return {"ok":true,"skills":[...]}.
+- If mobile says it cannot reach Vibyra, check backend process and EXPO_PUBLIC_API_URL first.
+- Chat itself intentionally does not call OpenAI moderation; tests assert this. Moderation is used on auth names, community content, and other surfaces.
+
+Likely change points
+- Add or change a model: edit backend/config/billing.php models and fallback_pricing_per_million_usd, then mirror frontend model tier data in src/screens/workspace/data/chatModels.ts.
+- Change plan access/caps/rate limits: edit backend/config/billing.php.
+- Change prompt behavior: edit ChatPrompting.php and add/update VibyraAppApiTest coverage.
+- Change preview extraction or CSP rules: edit ChatEndpointHelpers.php and tests.
+- Change credit charge math: edit CreditCalculator.php/CreditDeductor.php and billing tests.
+- Change streamed response behavior: edit ChatStreamEndpoint.php and appApiStreamChat parser together.
+
+Known caveats / risks
+- Cloud chat has two endpoints with duplicated preflight logic. Keep ChatEndpoint and ChatStreamEndpoint behavior in sync.
+- ChatStreamEndpoint happy path is harder to test because it bypasses Laravel Http fake.
+- While streaming, frontend may receive raw chunks before backend final post-processing strips app blocks or rewrites guidance; final payload is canonical.
+- ChatModelMap.php can mislead future work because current cloud chat resolves models from CreditCalculator/config/billing.php.
+- The stream path does not use appApiRequest's assertBackendReachableBeforeChat preflight; it directly fetches /api/chat/stream and marks backend offline on failure.

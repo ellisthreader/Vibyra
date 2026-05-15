@@ -27,7 +27,7 @@ trait ChatEndpointHelpers
     private function projectFilesContext(array $files): string
     {
         $lines = [];
-        foreach (array_slice($files, 0, 100) as $item) {
+        foreach (array_slice($files, 0, 300) as $item) {
             $path = is_array($item) ? trim((string) ($item['path'] ?? '')) : trim((string) $item);
             if ($path === '') {
                 continue;
@@ -49,7 +49,7 @@ trait ChatEndpointHelpers
             }
         }
 
-        return Str::limit(implode("\n", $lines), 12000, '');
+        return Str::limit(implode("\n", $lines), 20000, '');
     }
 
     private function enforceChatRateLimit(Request $request, int $userId, string $plan): ?JsonResponse

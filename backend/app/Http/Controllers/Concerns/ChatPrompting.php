@@ -23,7 +23,7 @@ trait ChatPrompting
 
         if ($projectFiles !== '') {
             $context[] = "Project files:\n{$projectFiles}";
-            $context[] = "Answer rule: use the project files and snippets above to give the user a direct answer. Do not respond with bash, grep, find, rg, npm, or terminal commands unless the user explicitly asks for commands.";
+            $context[] = "Answer rule: treat the listed files as the selected project's folder map, use the whole project shape first, then use snippets for detail. Do not respond with bash, grep, find, rg, npm, or terminal commands unless the user explicitly asks for commands.";
         }
 
         if ($filePath !== '' && $fileBody !== '') {

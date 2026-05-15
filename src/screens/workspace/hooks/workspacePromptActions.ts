@@ -9,13 +9,16 @@ import { handleWorkspacePreviewIntent } from "./workspacePreviewActions";
 import { isKnownAiSkillCommand, isProjectFilesQuestion } from "./workspacePromptPredicates";
 import { handlePublishCommand } from "./workspacePublishCommand";
 import { handleChatProjectCreation } from "./workspaceProjectCreationActions";
+import { commandOutputReply, isTerminalApproval, isTerminalDenial, needsTerminalApproval, parseTerminalCommandIntent } from "./workspaceTerminalCommands";
 
 type Runtime = ReturnType<typeof useWorkspaceChatRuntime>;
+type ReplyFn = (reply: string, project?: Project, preview?: GeneratedApp) => void;
 
 export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   const { app } = s;
   const awaitingFolderNameRef = useRef(false);
   const folderRecoveryRef = useRef(false);
+  const pendingTerminalRef = useRef<{ command: string; projectId: string } | null>(null);
   const submitLockRef = useRef(false);
 
   const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
@@ -83,6 +86,12 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
+        if (await handleTerminalFollowUp(prompt, projectTarget, reply)) return;
+        const terminalCommand = parseTerminalCommandIntent(prompt);
+        if (terminalCommand) {
+          await handleTerminalCommand(prompt, terminalCommand, projectTarget, reply);
+          return;
+        }
         if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
         if (isPreviewFixPrompt(prompt)) {
           await app.startAgent(projectTarget, prompt);
@@ -110,6 +119,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       if (isPreviewFixPrompt(prompt)) {
         s.setSelectedChatId(`project-${app.selectedProject.id}`); await app.startAgent(runtime.activeProjectTarget(), prompt); return;
       }
+      if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
 
       const findIntent = isFindFolderIntent(prompt);
       const fileIntent = isOpenFileIntent(prompt);
@@ -131,7 +141,6 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         await runFolderSearch(prompt, extractedName, isProjectLookupOnly(prompt), detached);
         return;
       }
-      if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
       handleDetachedFallback(prompt);
     } finally {
       setTimeout(() => { submitLockRef.current = false; }, 750);
@@ -188,6 +197,42 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   }
 
   function resetFolderState() { folderRecoveryRef.current = false; awaitingFolderNameRef.current = false; }
+
+  async function handleTerminalFollowUp(prompt: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
+    const pending = pendingTerminalRef.current;
+    if (!pending || pending.projectId !== target.projectId) return false;
+    if (isTerminalDenial(prompt)) {
+      pendingTerminalRef.current = null;
+      reply(`Cancelled \`${pending.command}\`.`);
+      return true;
+    }
+    if (!isTerminalApproval(prompt)) return false;
+    pendingTerminalRef.current = null;
+    await runApprovedTerminalCommand(prompt, pending.command, target, reply);
+    return true;
+  }
+
+  async function handleTerminalCommand(prompt: string, command: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
+    if (!app.connection) {
+      addDesktopConnectionPrompt(prompt, "", false);
+      return;
+    }
+    if (needsTerminalApproval(command)) {
+      pendingTerminalRef.current = { command, projectId: target.projectId };
+      reply(`Approve running \`${command}\` in **${target.project.name}**? Reply yes to run it or no to cancel.`);
+      return;
+    }
+    await runApprovedTerminalCommand(prompt, command, target, reply);
+  }
+
+  async function runApprovedTerminalCommand(prompt: string, command: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
+    try {
+      const result = await app.runTerminalCommand(command, target);
+      reply(commandOutputReply(result.command, result.ok, result.output), target.project);
+    } catch (error) {
+      reply(error instanceof Error ? error.message : `Could not run \`${command}\`.`, target.project);
+    }
+  }
 
   const resumeFolderSearch = useCallback(async (query: string, detached: boolean) => {
     const trimmed = query.trim(); if (!trimmed || !app.connection) return;

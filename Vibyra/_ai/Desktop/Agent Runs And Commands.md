@@ -17,15 +17,19 @@ There are two desktop-agent implementations:
 - Node desktop bridge (`desktop/lib/agent.mjs`) uses a local run path and does not call OpenRouter.
 - Laravel desktop route (`VibyraDesktopController::startAgent`) is the OpenRouter-backed desktop agent path.
 
-Node desktop `/agents/start` is not a real AI generator. Do not use it for arbitrary app/site/game creation or add local template fallbacks that pretend to satisfy user prompts. It should own pairing, folders, files, preview serving, and apply/discard of real pending edits.
+Node desktop `/agents/start` is now the paired-phone local workspace execution path for explicit build/edit/fix/debug/refactor/style/preview prompts. It calls OpenRouter using `OPENROUTER_API_KEY` from the process, `backend/.env`, or `.env`, reads root `AGENTS.md` / `.agents/AGENTS.md`, merges `/desktop/context` snippets, selected-file context, and recent chat history, then asks the model for a fenced JSON `{ "files": [...] }` payload with complete relative file replacements.
 
-`desktop/lib/agent.mjs` writes `.vibyra-agent/runs/<run-id>.md`, updates preview/app state, returns run metadata to the phone, and can write compact Obsidian run notes with frontmatter tags `vibyra/run` and `generated`.
+Do not add local template fallbacks that pretend to satisfy user prompts. If OpenRouter returns no valid file edits, `/agents/start` returns a completed no-edit result and writes nothing.
+
+`desktop/lib/agent.mjs` stages generated file replacements as pending changes, writes `.vibyra-agent/runs/<run-id>.md` only when edits are applied, updates preview/app state after apply, returns run metadata to the phone, and can write compact Obsidian run notes with frontmatter tags `vibyra/run` and `generated`.
 
 ## Permission Gate
 
 `/agents/start` accepts `apply`. With `apply: false`, it returns pending changes plus `pendingApplyId` without committing file edits. `/agents/apply` commits the pending run and `/agents/discard` drops it.
 
 Mobile sends `apply: true` only for project-scoped Allow always.
+
+Generated file paths are constrained to relative paths under the approved project root. Absolute paths, `..`, `.git`, `.expo`, `.vibyra-agent`, `node_modules`, and `vendor` are rejected.
 
 ## Vault Lookup
 

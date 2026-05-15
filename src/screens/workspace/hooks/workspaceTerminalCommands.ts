@@ -6,6 +6,7 @@ export type SupportedTerminalCommand = typeof TERMINAL_COMMANDS[number];
 export function parseTerminalCommandIntent(prompt: string): SupportedTerminalCommand | null {
   const text = prompt.trim().toLowerCase();
   if (!/\b(run|execute|terminal|command|shell)\b/.test(text)) return null;
+  if (/\b(?:preview|live\s+preview|on\s+(?:my\s+)?(?:phone|device|mobile)|in\s+(?:my\s+)?browser|in\s+a\s+browser)\b/.test(text)) return null;
   const quoted = prompt.match(/[`"']([^`"']{3,80})[`"']/)?.[1]?.trim().toLowerCase();
   const source = quoted || text.replace(/^(please|pls|can you|could you|would you|vibyra)\s+/i, "");
   if (/\b(run|execute)\b.*\btests?\b/.test(source)) return "npm test";

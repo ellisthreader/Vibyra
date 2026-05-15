@@ -5,8 +5,8 @@ import { discoverProjects, projectById } from "./projects.mjs";
 const SKIP_DIRS = new Set([".expo", ".git", ".next", ".output", ".vibyra-agent", "backend/vendor", "build", "coverage", "dist", "node_modules", "vendor"]);
 const TEXT_EXTS = new Set([".cjs", ".css", ".env", ".html", ".js", ".json", ".jsx", ".less", ".md", ".mjs", ".php", ".py", ".scss", ".sass", ".svelte", ".toml", ".ts", ".tsx", ".txt", ".vue", ".yaml", ".yml"]);
 const TEXT_NAMES = new Set(["Dockerfile", "Gemfile", "Makefile", "Procfile"]);
-const MAX_CANDIDATES = 420;
-const MAX_CONTEXT_FILES = 100;
+const MAX_CANDIDATES = 800;
+const MAX_CONTEXT_FILES = 300;
 const MAX_SNIPPETS = 16;
 const MAX_READ_BYTES = 220_000;
 
@@ -18,7 +18,7 @@ export async function promptProjectContext(projectId, prompt = "") {
   const snippetPaths = new Set(ranked.slice(0, MAX_SNIPPETS).map((item) => item.path));
   const context = [];
 
-  for (const item of ranked.slice(0, MAX_CONTEXT_FILES)) {
+  for (const item of files.slice(0, MAX_CONTEXT_FILES)) {
     const entry = { path: item.path, language: item.language, loaded: false };
     if (snippetPaths.has(item.path)) {
       const snippet = await snippetFor(project.path, item.path, prompt);
