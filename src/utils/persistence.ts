@@ -9,6 +9,7 @@ export type PersistedSession = {
   authToken: string;
   installId: string;
   onboardingComplete: boolean;
+  pcSetupComplete: boolean;
   selectedChatModel: string;
   rememberedDesktops: RememberedDesktop[];
   user: PersistedUser | null;
@@ -38,6 +39,7 @@ export function createEmptyPersistedSession(): PersistedSession {
     authToken: "",
     installId: makeInstallId(),
     onboardingComplete: false,
+    pcSetupComplete: false,
     selectedChatModel: "gpt-5.4-mini",
     rememberedDesktops: [],
     user: null
@@ -59,6 +61,7 @@ export async function savePersistedSession(session: PersistedSession) {
       authToken: session.authToken,
       installId: session.installId,
       onboardingComplete: session.onboardingComplete,
+      pcSetupComplete: session.pcSetupComplete,
       selectedChatModel: session.selectedChatModel,
       rememberedDesktops: normalizeDesktops(session.rememberedDesktops),
       user: normalizeUser(session.user)
@@ -79,6 +82,7 @@ function parsePersistedSession(raw: string): PersistedSession {
     authToken: String(parsed.authToken ?? ""),
     installId: String(parsed.installId ?? "") || makeInstallId(),
     onboardingComplete: Boolean(user?.onboardingComplete ?? parsed.onboardingComplete),
+    pcSetupComplete: Boolean(parsed.pcSetupComplete),
     selectedChatModel: String(parsed.selectedChatModel ?? "gpt-5.4-mini"),
     rememberedDesktops: user?.rememberedDesktops ?? normalizeDesktops(parsed.rememberedDesktops),
     user

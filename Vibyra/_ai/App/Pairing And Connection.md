@@ -37,7 +37,10 @@ For future deep diagnosis of "connected but cannot browse/open files" failures, 
 - `src/context/pairingHelpers.ts`
 - `src/utils/network.ts`
 - `src/utils/persistence.ts`
-- `src/screens/onboarding/steps/ConnectStepTwo.tsx`
+- `src/screens/welcome/WelcomeConnectScreen.tsx`
+- `src/screens/welcome/steps/StepSetup.tsx`
+- `src/screens/welcome/steps/StepApprove.tsx`
+- `src/screens/welcome/hooks/useWelcomeFlow.ts`
 
 ## Pairing Flow
 
@@ -45,7 +48,29 @@ For future deep diagnosis of "connected but cannot browse/open files" failures, 
 
 Auto Find no longer depends on or displays a pair code from `/health`. Nearby desktop candidates are discovered by `/health`/UDP, and tapping one sends a code-less `{ autoPair: true }` pairing request to `/pair`; the desktop still requires local approval before returning a token. Manual pairing by code remains the fallback when discovery cannot find the PC.
 
-Connection UI should stay simple: Automatic and Manual tabs. Automatic finds nearby PCs and tapping one sends the desktop approval request; Manual only asks for the desktop code and then waits for PC approval. Keep this pattern in both onboarding (`ConnectStepTwo.tsx`) and the workspace PC switcher (`chunk4.tsx`).
+Connection UI should stay simple: Automatic and Manual tabs. Automatic finds nearby PCs and tapping one sends the desktop approval request; Manual only asks for the desktop code and then waits for PC approval. Keep this pattern in both onboarding (`src/screens/welcome/steps/StepSetup.tsx`, the "Find my PC" / "Use a code" tabs) and the workspace PC switcher (`chunk4.tsx`).
+
+## Welcome + PC Setup Flow (post-paywall gate)
+
+Post-paywall, onboarding routes into `src/screens/welcome/WelcomeConnectScreen.tsx`. The screen has 4 sub-steps driven by `useWelcomeFlow`:
+
+1. **Hero** (`StepHero.tsx`) — animated logo, personalized greeting, "Let's get started" CTA, "Skip for now" pill.
+2. **Setup** (`StepSetup.tsx`) — combined download-prompt + radar discovery + tap-to-pair list. "Find my PC" (auto) / "Use a code" (manual) tabs. Reuses `app.discoverPairableDesktops`, `app.pairMachineAt`, `app.pairMachine`.
+3. **Approve** (`StepApprove.tsx`) — handshake glyph + "Tap Allow on your computer" copy. After 30s, shows "Try a different PC" link back to Setup. Confirmation sheet shown here on skip.
+4. **Connected** (`StepConnected.tsx`) — sparkle burst + spring checkmark, auto-advances after 2.4s.
+
+### Routing gate is local-only
+
+Two flags gate entry to the workspace:
+
+- `onboardingComplete` (cloud-synced) — flipped after the quiz/paywall.
+- `pcSetupComplete` (**local-only**, persisted to `PersistedSession` but stripped from `PersistedUser` so backend cannot flip it).
+
+`App.tsx`: `if (!app.onboardingComplete || !app.pcSetupComplete) return <OnboardingScreen>`. `OnboardingScreen` initial step is `7` (WelcomeConnect) when onboarding is complete but PC setup is not — so IAP receipts that flip `onboardingComplete` server-side can never bypass the PC pairing UX. `signOut` resets both flags. `WelcomeConnectScreen` calls `app.completePcSetup()` on successful pair OR confirmed skip.
+
+### Reduce Motion + a11y
+
+All animation hooks (`useFloatLoop`, `useRadarPulse`, `useEntrance`, particle/sparkle drivers) short-circuit when `AccessibilityInfo.isReduceMotionEnabled()` returns true. `StepIndicator` is `accessibilityRole="progressbar"`. Each step announces itself via `AccessibilityInfo.announceForAccessibility` on entry. Hardware back: Hero exits; Setup→Hero; Approve→skip-confirm; Connected disabled.
 
 Pair-by-code discovery should prioritize POST `/pair` probes over a full `/health` pre-scan. `src/context/pairingScans.ts::scanPairByCode` prepends remembered desktop URLs and known `connectionUrls`, then scans LAN candidates in larger batches with short LAN timeouts; after a pair request succeeds it performs one `/health` call only to recover alternate connection URLs. This keeps manual "Finding Vibyra Desktop" fast without changing approval or token handoff.
 

@@ -22,13 +22,13 @@ import { PricingScreen } from "./onboarding/steps/PricingScreen";
 import { ProfileGeneratingScreen } from "./onboarding/steps/ProfileGeneratingScreen";
 import { QuestionMomentScreen } from "./onboarding/steps/QuestionMomentScreen";
 import { QuestionScreen } from "./onboarding/steps/QuestionScreen";
-import { SetupScreen } from "./onboarding/steps/SetupScreen";
+import { WelcomeConnectScreen } from "./welcome/WelcomeConnectScreen";
 import { UsageSlider } from "./onboarding/steps/UsageSlider";
 
 export function OnboardingScreen() {
   const app = useAppContext();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<OnboardingStep>(() => app.onboardingComplete ? 7 : 0);
+  const [step, setStep] = useState<OnboardingStep>(() => (app.onboardingComplete && !app.pcSetupComplete) ? 7 : 0);
   const [momentStep, setMomentStep] = useState<QuizStep | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [profileGenerating, setProfileGenerating] = useState(false);
@@ -180,7 +180,7 @@ export function OnboardingScreen() {
             )}
           </View>
         ) : (
-          <SetupScreen />
+          <WelcomeConnectScreen />
         )}
       </LinearGradient>
     </SafeAreaView>

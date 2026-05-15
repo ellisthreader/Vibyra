@@ -82,12 +82,17 @@ export function useAuthContextActions(store: Store, logs: Logs) {
       });
   }
 
+  function completePcSetup() {
+    setters.setPcSetupComplete(true);
+  }
+
   function signOut() {
     setters.setAuthenticated(false);
     setters.setAuthToken("");
     setters.setAccountId(null);
     setters.setAuthPassword("");
     setters.setOnboardingComplete(false);
+    setters.setPcSetupComplete(false);
     setters.setChatThreads({});
     setters.setChatTitles({});
     setters.setChatProjects({});
@@ -127,6 +132,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   return {
     authenticateWith,
     completeOnboarding,
+    completePcSetup,
     applyRemoteUserFromIap: applyRemoteUser,
     expireSession,
     signOut,

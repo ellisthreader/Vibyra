@@ -38,6 +38,7 @@ export type AppState = {
   creditsBalance: number;
   creditsUsed: number;
   onboardingComplete: boolean;
+  pcSetupComplete: boolean;
   paired: boolean;
   agentUrl: string;
   pairCode: string;
@@ -113,6 +114,7 @@ export type AgentStartTarget = {
 export type AppActions = {
   authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => Promise<void>;
   completeOnboarding: () => void;
+  completePcSetup: () => void;
   applyRemoteUserFromIap: (user: import("../utils/appApi").RemoteUser) => void;
   expireSession: (message?: string) => void;
   confirmPhonePermission: () => void;

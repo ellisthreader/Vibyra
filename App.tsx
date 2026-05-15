@@ -24,7 +24,7 @@ function AppContent() {
     return <AuthScreen key={prefs.effectiveScheme} />;
   }
 
-  if (!app.onboardingComplete) {
+  if (!app.onboardingComplete || !app.pcSetupComplete) {
     return <OnboardingScreen key={prefs.effectiveScheme} />;
   }
 
