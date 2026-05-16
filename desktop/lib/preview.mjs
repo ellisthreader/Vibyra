@@ -2,7 +2,8 @@ import { dirname, extname, relative, resolve } from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { headers } from "./http.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
-import { STATIC_PREVIEW_ENTRIES, analyzedProjectPreviewHtml } from "./previewResolver.mjs";
+import { runningProjectDevServerUrl } from "./previewDevServer.mjs";
+import { STATIC_PREVIEW_ENTRIES, analyzedProjectPreviewHtml, isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
 import { appState, TOKEN } from "./state.mjs";
 
 export async function serveProjectPreview(res, url) {
@@ -28,6 +29,11 @@ export async function serveProjectPreview(res, url) {
   const relativePath = requestedPath || entryPath;
 
   if (!relativePath) {
+    const devServerUrl = await runningProjectDevServerUrl(project, url.host);
+    if (devServerUrl) {
+      redirect(res, devServerUrl);
+      return;
+    }
     sendHtml(res, 200, analyzedProjectPreviewHtml(project));
     return;
   }
@@ -66,6 +72,12 @@ export async function serveProjectPreview(res, url) {
 
 export function previewUrl(projectId, token) {
   return `/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
+}
+
+export async function resolvedPreviewUrl(project, requestHost, token = TOKEN) {
+  if (!project) return null;
+  if (await previewEntryPath(project)) return previewUrl(project.id, token);
+  return await runningProjectDevServerUrl(project, requestHost) ?? previewUrl(project.id, token);
 }
 
 async function previewEntryPath(project) {
@@ -133,16 +145,6 @@ function previewBase(rootBase, directory) {
   return `${rootBase}${normalized ? `${normalized}/` : ""}`;
 }
 
-function isSourceOnlyPreviewHtml(html, entryPath) {
-  const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
-  return scriptTags.some((tag) => {
-    const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1]?.replace(/^\.?\//, "") ?? "";
-    return /^src\/[^?#]+\.(?:jsx?|tsx?)(?:[?#].*)?$/i.test(src)
-      || (/\btype=["']module["']/i.test(tag) && /^src\//i.test(src));
-  })
-    || /@vite\/client|vite\/client/i.test(html);
-}
-
 function contentTypeFor(filePath) {
   const types = {
     ".avif": "image/avif",
@@ -184,6 +186,11 @@ function missingPreviewImageSvg() {
 function sendHtml(res, status, html) {
   res.writeHead(status, headers("text/html; charset=utf-8"));
   res.end(html);
+}
+
+function redirect(res, location) {
+  res.writeHead(302, { ...headers("text/plain; charset=utf-8"), Location: location });
+  res.end(`Redirecting to ${location}`);
 }
 
 function previewShell(title, message) {

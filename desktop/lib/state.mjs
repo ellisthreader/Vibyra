@@ -17,6 +17,7 @@ export const appState = {
   pendingPair: null,
   selectedProjectId: null,
   latestPreview: null,
+  previewServers: {},
   activeAgentRun: null,
   pendingAgentApplies: {},
   cachedProjects: [],

@@ -1,0 +1,200 @@
+Codex VS Code plugin analysis
+=============================
+
+Plain English summary
+---------------------
+The Codex VS Code plugin puts the Codex coding agent directly inside VS Code
+and VS Code-compatible editors. It is not just a chatbot beside the code. It is
+a local agent surface that can see the current workspace, inspect files, edit
+files, run commands, show diffs, and continue work from local or cloud Codex
+tasks.
+
+The important idea is this:
+
+Codex works well in VS Code because the editor gives it strong local context
+and the Codex runtime gives it controlled tool access. It can read the folder,
+see open files and selected code, follow repo instructions, search the project,
+make patches, run validation commands, and then report exactly what changed.
+
+What the plugin does
+--------------------
+1. Adds a Codex panel inside the editor.
+   In VS Code, Codex appears in the sidebar. The user chats with it without
+   leaving the project.
+
+2. Uses editor context.
+   Codex can use open files, selected code, and explicit file references such
+   as @example.tsx. This means the user can write shorter prompts because Codex
+   already knows what file or code region is relevant.
+
+3. Uses the same agent/config family as Codex CLI.
+   The IDE extension shares behavior with Codex CLI, including models,
+   reasoning effort, approval modes, sandboxing, AGENTS.md instructions, and
+   the ~/.codex/config.toml configuration model.
+
+4. Reads and edits the local workspace.
+   In normal Agent mode, Codex can read files, make edits, and run commands
+   inside the working directory. It asks for approval when it needs to work
+   outside that boundary or access the network.
+
+5. Supports multiple working styles.
+   - Chat: discuss, explain, and plan without making changes.
+   - Agent: read, edit, and run commands in the workspace with approvals for
+     higher-risk actions.
+   - Agent Full Access: broader access, including network access, with less
+     approval friction. This is powerful but riskier.
+
+6. Can delegate work to Codex cloud.
+   A task can start locally in the IDE, move to the cloud for longer work, then
+   come back to the IDE for review, local testing, follow-up edits, and applying
+   diffs.
+
+How it usually has the right context
+------------------------------------
+Codex does not rely on one giant pasted prompt. It builds context from several
+layers:
+
+1. The active workspace/folder.
+   The opened project folder gives Codex a filesystem boundary and a source of
+   truth. It can search the tree, inspect package files, read source files, and
+   compare edits against the actual working copy.
+
+2. Open files and selections.
+   The editor tells Codex what the user is looking at. If a specific function
+   is selected, Codex can treat that as the starting point instead of guessing.
+
+3. Explicit @file references.
+   The user can tag files in the prompt. This removes ambiguity and forces
+   Codex to inspect the intended files.
+
+4. Repo instructions from AGENTS.md.
+   Codex reads AGENTS.md before doing work. It can combine global instructions
+   from ~/.codex with project instructions from the repository and nested
+   directories. This is how it learns local rules such as test commands, code
+   style, architecture boundaries, and files to avoid.
+
+5. Tool-based discovery.
+   Instead of assuming the codebase shape, Codex can run targeted searches,
+   inspect file slices, read config files, and follow imports. Good results
+   come from repeatedly checking the actual project state.
+
+6. Conversation memory within the session.
+   Follow-up prompts keep the same task context. When cloud tasks are opened
+   back in the IDE, Codex can retain the conversation context so local follow-up
+   work does not start from zero.
+
+Why it gets changes right
+-------------------------
+The main advantage is that Codex can close the loop:
+
+1. It reads the real files before editing.
+2. It makes focused patches against the current working copy.
+3. It can inspect the diff after editing.
+4. It can run tests, typechecks, linters, build commands, or app-specific
+   commands when available.
+5. It reports changed files and validation results.
+6. It works inside the same folder the developer is using, so the result is
+   immediately visible in git, VS Code, and the running app.
+
+This is different from a normal chatbot. A normal chatbot can suggest code, but
+it does not automatically know the full project state or verify the edit.
+Codex can use the folder, the shell, patches, and validation commands to turn a
+request into a checked change.
+
+Folder access model
+-------------------
+The default local model is controlled access, not unlimited access.
+
+In Agent mode:
+- Codex can read files in the workspace.
+- Codex can edit files in the workspace.
+- Codex can run commands in the workspace.
+- Codex must ask for approval to edit outside the workspace.
+- Codex must ask for approval to access the network unless configured
+  otherwise.
+
+The sandbox is the technical boundary. Approval mode is the policy for when the
+agent must stop and ask the user. Together they let Codex move quickly on normal
+project work while still stopping before higher-risk actions.
+
+Important: "full folder access" means access to the folder opened as the
+workspace, subject to sandbox and approval settings. It should not be treated as
+unrestricted machine access unless the user deliberately enables a full-access
+mode.
+
+How the plugin knows what to change
+-----------------------------------
+A typical successful Codex edit follows this flow:
+
+1. User asks for a change in natural language.
+2. Codex combines the prompt with editor context, selected code, open files, and
+   repo instructions.
+3. Codex searches or reads the smallest relevant source files.
+4. Codex identifies existing patterns and local architecture.
+5. Codex edits files with a patch.
+6. Codex checks the diff and, where practical, runs validation.
+7. Codex explains what changed and what was or was not tested.
+
+Design lessons for Vibyra
+-------------------------
+If we want Vibyra to feel like the Codex VS Code plugin, the core design should
+copy these principles:
+
+1. Make the local project folder the primary context.
+   The agent should receive a real project root, not just pasted snippets.
+
+2. Keep an explicit workspace boundary.
+   The agent should be able to read and edit inside the approved project folder,
+   but anything outside it should require approval.
+
+3. Capture user focus.
+   Open file, selected file, selected code, active preview, current route, and
+   recently viewed project files should all become structured context.
+
+4. Use project instructions.
+   Support AGENTS.md or a Vibyra equivalent so each project can tell the agent
+   how to navigate, test, and obey local standards.
+
+5. Prefer tool discovery over guessing.
+   Give the agent safe read/search tools, diff tools, and file-slice reads so it
+   can inspect the real codebase before making changes.
+
+6. Use patches and reviewable diffs.
+   Every code change should be visible as a pending diff before or after apply,
+   depending on the user's permission mode.
+
+7. Validate changes locally.
+   The agent should be able to run allowed commands such as tests, typechecks,
+   builds, or preview checks, with approval for commands that install packages,
+   access the network, or mutate broader system state.
+
+8. Keep apply/discard clear.
+   Vibyra should preserve the Codex pattern of showing pending changes, letting
+   the user apply or discard them, and recording run artifacts.
+
+9. Preserve session context.
+   Follow-up prompts should remember the previous files, decisions, errors,
+   commands, and diffs. The user should not have to repeat the whole task.
+
+10. Do not fake success.
+    If the agent could not read a file, run a command, install a package, or
+    verify the app, it should say that plainly.
+
+Best simple mental model
+------------------------
+The Codex VS Code plugin is:
+
+"A controlled local coding agent inside the editor that uses the open project
+folder, editor focus, repo instructions, shell tools, patches, diffs, approvals,
+and validation commands to make real code changes safely."
+
+Official source URLs checked
+----------------------------
+- https://developers.openai.com/codex/ide
+- https://developers.openai.com/codex/ide/features
+- https://developers.openai.com/codex/ide/settings
+- https://developers.openai.com/codex/guides/agents-md
+- https://developers.openai.com/codex/concepts/sandboxing
+- https://developers.openai.com/codex/agent-approvals-security
+- https://developers.openai.com/codex/cli
+- https://openai.com/index/introducing-upgrades-to-codex/

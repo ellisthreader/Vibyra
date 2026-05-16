@@ -1,6 +1,7 @@
 import { readBody, send } from "./http.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
-import { previewUrl } from "./preview.mjs";
+import { resolvedPreviewUrl } from "./preview.mjs";
+import { startProjectDevServer } from "./previewDevServer.mjs";
 import {
   activePairedDevice,
   appState,
@@ -96,9 +97,10 @@ export async function startPreview(req, res) {
   const body = await readBody(req);
   appState.selectedProjectId = String(body.projectId ?? "");
   const project = projectById(appState.selectedProjectId);
+  const url = project ? await resolvedPreviewUrl(project, req.headers.host, TOKEN) : null;
   appState.latestPreview = {
     state: "live",
-    url: project ? previewUrl(project.id, TOKEN) : null,
+    url,
     title: project?.name ?? "Project",
     message: "Live preview stream started",
     capturedAt: new Date().toISOString()
@@ -106,4 +108,22 @@ export async function startPreview(req, res) {
   const log = event("Preview", `Live preview started for ${project?.name ?? "project"}`, "success");
   pushEvents([log]);
   send(res, 200, { preview: appState.latestPreview, events: [log] });
+}
+
+export async function startPreviewServer(req, res) {
+  const body = await readBody(req);
+  appState.selectedProjectId = String(body.projectId ?? "");
+  const project = projectById(appState.selectedProjectId);
+  if (!project) throw new Error("No project selected for preview.");
+  const result = await startProjectDevServer(project, req.headers.host);
+  appState.latestPreview = {
+    state: "live",
+    url: result.url,
+    title: project.name,
+    message: result.started ? "Desktop preview started" : "Desktop preview already running",
+    capturedAt: new Date().toISOString()
+  };
+  const log = event("Preview", `${result.started ? "Started" : "Found"} live preview for ${project.name}`, "success");
+  pushEvents([log]);
+  send(res, 200, { command: result.command, events: [log], preview: appState.latestPreview });
 }

@@ -44,6 +44,16 @@ const PREVIEW_HINTS = {
 
 export { STATIC_PREVIEW_ENTRIES };
 
+export function isSourceOnlyPreviewHtml(html) {
+  const scriptTags = html.match(/<script\b[^>]*>/gi) ?? [];
+  return scriptTags.some((tag) => {
+    const src = tag.match(/\bsrc=["']([^"']+)["']/i)?.[1]?.replace(/^\.?\//, "") ?? "";
+    return /^src\/[^?#]+\.(?:jsx?|tsx?)(?:[?#].*)?$/i.test(src)
+      || (/\btype=["']module["']/i.test(tag) && /^src\//i.test(src));
+  })
+    || /@vite\/client|vite\/client/i.test(html);
+}
+
 export function analyzedProjectPreviewHtml(project) {
   const brief = project.detectedBrief ?? project.brief ?? {};
   const frameworkId = brief.frameworkId || "";

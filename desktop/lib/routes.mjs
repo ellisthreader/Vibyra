@@ -16,7 +16,8 @@ import {
   isAuthed,
   pairDevice,
   pairStatus,
-  startPreview
+  startPreview,
+  startPreviewServer
 } from "./pairingHandlers.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -175,6 +176,10 @@ async function handleAuthedRoutes(req, res, url) {
   }
   if (req.method === "POST" && url.pathname === "/preview/start") {
     await startPreview(req, res);
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/preview/start-server") {
+    await startPreviewServer(req, res);
     return true;
   }
   if (req.method === "POST" && url.pathname === "/agents/start") {
