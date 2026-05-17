@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { headers } from "./http.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
 import { runningProjectDevServerUrl } from "./previewDevServer.mjs";
-import { STATIC_PREVIEW_ENTRIES, analyzedProjectPreviewHtml, isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
+import { STATIC_PREVIEW_ENTRIES, isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
 import { appState, TOKEN } from "./state.mjs";
 
 export async function serveProjectPreview(res, url) {
@@ -34,7 +34,7 @@ export async function serveProjectPreview(res, url) {
       redirect(res, devServerUrl);
       return;
     }
-    sendHtml(res, 200, analyzedProjectPreviewHtml(project));
+    sendHtml(res, 404, previewShell("No runnable preview found", "Vibyra could not find a built browser entry or verified running dev server for this folder."));
     return;
   }
 
@@ -70,18 +70,96 @@ export async function serveProjectPreview(res, url) {
   res.end(content);
 }
 
+export async function servePreviewServerProxy(res, url) {
+  const match = url.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)\/?(.*)$/);
+  if (!match || decodeURIComponent(match[2]) !== TOKEN) {
+    sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
+    return;
+  }
+
+  const projectId = decodeURIComponent(match[1]);
+  const tracked = appState.previewServers[projectId];
+  const targetBase = normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url));
+  if (!targetBase) {
+    sendHtml(res, 404, previewShell("Preview server not running", "Start the desktop preview server again from Vibyra."));
+    return;
+  }
+
+  const requestedPath = decodeURIComponent(match[3] ?? "").replace(/^\/+/, "");
+  const target = new URL(requestedPath, `${targetBase.toString().replace(/\/+$/, "")}/`);
+  target.search = url.search;
+  await proxyPreviewResponse(res, target, {
+    proxyBase: previewServerProxyUrl(projectId, TOKEN),
+    token: TOKEN
+  });
+}
+
+export async function servePreviewUrlProxy(res, url) {
+  const match = url.pathname.match(/^\/preview\/proxy-url\/([^/]+)\/?$/);
+  if (!match || decodeURIComponent(match[1]) !== TOKEN) {
+    sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
+    return;
+  }
+
+  const target = normalizeProxyTargetUrl(safeUrl(url.searchParams.get("url")));
+  if (!target) {
+    sendHtml(res, 400, previewShell("Preview asset unavailable", "Vibyra could not resolve that preview asset."));
+    return;
+  }
+
+  await proxyPreviewResponse(res, target, {
+    externalProxy: true,
+    proxyBase: previewExternalUrl(target, TOKEN),
+    token: TOKEN
+  });
+}
+
+export async function servePreviewRefererAsset(res, url, referer) {
+  const previewRef = previewReferenceFromReferer(referer, url);
+  if (!previewRef || !canProxyPreviewFallbackPath(url.pathname)) return false;
+
+  const requestedPath = `${url.pathname}${url.search}`;
+
+  if (previewRef.kind === "project") {
+    const synthetic = new URL(
+      `/preview/project/${encodeURIComponent(previewRef.projectId)}/${encodeURIComponent(TOKEN)}${requestedPath}`,
+      url
+    );
+    await serveProjectPreview(res, synthetic);
+    return true;
+  }
+
+  const target = previewRef.kind === "external"
+    ? new URL(requestedPath, previewRef.target)
+    : previewTargetFromProject(previewRef.projectId, requestedPath);
+  if (!target) return false;
+
+  await proxyPreviewResponse(res, target, {
+    externalProxy: previewRef.kind === "external",
+    proxyBase: previewRef.kind === "external" ? previewExternalUrl(target, TOKEN) : previewServerProxyUrl(previewRef.projectId, TOKEN),
+    token: TOKEN
+  });
+  return true;
+}
+
 export function previewUrl(projectId, token) {
   return `/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
+}
+
+export function previewServerProxyUrl(projectId, token) {
+  return `/preview/server/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
 }
 
 export async function resolvedPreviewUrl(project, requestHost, token = TOKEN) {
   if (!project) return null;
   if (await previewEntryPath(project)) return previewUrl(project.id, token);
-  return await runningProjectDevServerUrl(project, requestHost) ?? previewUrl(project.id, token);
+  return await runningProjectDevServerUrl(project, requestHost) ?? null;
 }
 
 async function previewEntryPath(project) {
+  const skipStaticEntries = await shouldSkipStaticPreviewEntries(project.path);
   for (const candidate of STATIC_PREVIEW_ENTRIES) {
+    if (skipStaticEntries) continue;
     const filePath = await safeProjectFile(project.path, candidate);
     if (!filePath) continue;
     const html = await readFile(filePath, "utf8");
@@ -89,6 +167,22 @@ async function previewEntryPath(project) {
   }
 
   return "";
+}
+
+async function shouldSkipStaticPreviewEntries(projectPath) {
+  const composer = await readProjectText(projectPath, "composer.json");
+  const packageText = await readProjectText(projectPath, "package.json");
+  return /laravel\\?\/framework/i.test(composer) && /laravel-vite-plugin/i.test(packageText);
+}
+
+async function readProjectText(projectPath, relativePath) {
+  const filePath = await safeProjectFile(projectPath, relativePath);
+  if (!filePath) return "";
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
 }
 
 async function safeProjectFile(projectPath, relativePath) {
@@ -118,10 +212,26 @@ function rewritePreviewHtml(html, { documentDirectory, mountDirectory, projectId
   const documentBase = `${rootBase}${normalizedDocumentDirectory ? `${normalizedDocumentDirectory}/` : ""}`;
   const mountBase = previewBase(rootBase, mountDirectory);
 
-  return html.replace(/\b(src|href)=["'](?!https?:|\/\/|data:|mailto:|tel:|#)([^"']+)["']/gi, (_match, attr, value) => {
-    const cleaned = String(value).replace(/^\.?\//, "");
-    const base = String(value).startsWith("/") ? mountBase : documentBase;
-    return `${attr}="${base}${cleaned}"`;
+  return html
+    .replace(/\b(src|href)=["'](?!https?:|\/\/|data:|mailto:|tel:|#)([^"']+)["']/gi, (_match, attr, value) => {
+      return `${attr}="${rewritePreviewHtmlReference(value, { documentBase, mountBase })}"`;
+    })
+    .replace(/\bstyle=(["'])(.*?)\1/gi, (_match, quote, value) => {
+      return `style=${quote}${rewritePreviewInlineStyle(value, { documentBase, mountBase })}${quote}`;
+    });
+}
+
+function rewritePreviewHtmlReference(value, { documentBase, mountBase }) {
+  const raw = String(value).trim();
+  if (!raw || /^(?:https?:|\/\/|data:|mailto:|tel:|#)/i.test(raw)) return raw;
+  const cleaned = raw.replace(/^\.?\//, "");
+  const base = raw.startsWith("/") ? mountBase : documentBase;
+  return `${base}${cleaned}`;
+}
+
+function rewritePreviewInlineStyle(style, { documentBase, mountBase }) {
+  return String(style).replace(/url\(\s*(["']?)(?!https?:|\/\/|data:|mailto:|tel:|#)([^"')]+)\1\s*\)/gi, (_match, quote, value) => {
+    return `url(${quote}${rewritePreviewHtmlReference(value, { documentBase, mountBase })}${quote})`;
   });
 }
 
@@ -138,6 +248,213 @@ function rewritePreviewCss(css, { mountDirectory, projectId, token }) {
       if (!raw.startsWith("/")) return `@import ${quote}${raw}${quote}`;
       return `@import ${quote}${mountBase}${raw.replace(/^\/+/, "")}${quote}`;
     });
+}
+
+async function proxyPreviewResponse(res, target, { externalProxy = false, proxyBase, token }) {
+  try {
+    const upstream = await fetch(target);
+    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+    const status = upstream.status;
+    const isText = /^text\/|javascript|json|xml|svg/i.test(contentType);
+    if (!isText) {
+      const body = Buffer.from(await upstream.arrayBuffer());
+      res.writeHead(status, headers(contentType));
+      res.end(body);
+      return;
+    }
+
+    let body = await upstream.text();
+    if (/text\/html/i.test(contentType)) {
+      body = rewriteProxyHtml(body, { externalProxy, proxyBase, target, token });
+    } else if (/text\/css/i.test(contentType)) {
+      body = rewriteProxyCss(body, { externalProxy, proxyBase, target, token });
+    } else if (/javascript/i.test(contentType)) {
+      body = rewriteProxyJavaScript(body, { externalProxy, proxyBase, target, token });
+    }
+    res.writeHead(status, headers(contentType));
+    res.end(body);
+  } catch {
+    sendHtml(res, 502, previewShell("Preview server unavailable", "The desktop preview server stopped responding. Start the preview again from Vibyra."));
+  }
+}
+
+function rewriteProxyHtml(html, { externalProxy, proxyBase, target, token }) {
+  const rewriteOptions = { externalProxy, proxyBase, target, token };
+  return html
+    .replace(/(<script\b(?![^>]*\bsrc=)[^>]*>)([\s\S]*?)(<\/script>)/gi, (_match, open, script, close) => {
+      if (!shouldRewriteInlineScript(open)) return `${open}${script}${close}`;
+      return `${open}${rewriteProxyJavaScript(script, rewriteOptions)}${close}`;
+    })
+    .replace(/\b(src|href)=["']([^"']+)["']/gi, (_match, attr, value) => {
+      return `${attr}="${rewriteProxyReference(value, rewriteOptions)}"`;
+    })
+    .replace(/\bstyle=(["'])(.*?)\1/gi, (_match, quote, value) => {
+      return `style=${quote}${rewriteProxyStyleUrls(value, rewriteOptions)}${quote}`;
+    });
+}
+
+function shouldRewriteInlineScript(openTag) {
+  const tag = String(openTag || "");
+  if (/\btype=(["'])(?:application\/json|importmap)\1/i.test(tag)) return false;
+  return true;
+}
+
+function rewriteProxyCss(css, { externalProxy, proxyBase, target, token }) {
+  return css
+    .replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/gi, (_match, quote, value) => {
+      return `url(${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote})`;
+    })
+    .replace(/@import\s+(["'])([^"']+)\1/gi, (_match, quote, value) => {
+      return `@import ${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote}`;
+    });
+}
+
+function rewriteProxyStyleUrls(style, { externalProxy, proxyBase, target, token }) {
+  return String(style).replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/gi, (_match, quote, value) => {
+    return `url(${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote})`;
+  });
+}
+
+function rewriteProxyJavaScript(js, { externalProxy, proxyBase, target, token }) {
+  const rewritten = js
+    .replace(/(["'`])((?:https?:\/\/)(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[[^\]]+\]|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[0-1])\.\d+\.\d+)[^"'`]+)\1/gi, (_match, quote, value) => {
+      return `${quote}${previewExternalUrl(safeUrl(value), token)}${quote}`;
+    })
+    .replace(/\b((?:import|export)\s+(?:[^"'`]*?\s+from\s*)?)(["'`])((?:\/(?!\/))[^"'`]+)\2/g, (_match, prefix, quote, value) => {
+      return `${prefix}${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote}`;
+    })
+    .replace(/\b(import\s*\(\s*)(["'`])((?:\/(?!\/))[^"'`]+)\2/g, (_match, prefix, quote, value) => {
+      return `${prefix}${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote}`;
+    })
+    .replace(/(["'`])(\/(?!\/)[^"'`]+?\.(?:avif|bmp|gif|glb|gltf|ico|jpe?g|json|m4v|mov|mp3|mp4|ogg|otf|pdf|png|svg|ttf|wasm|wav|webm|webp|woff2?)(?:[?#][^"'`]*)?)\1/gi, (_match, quote, value) => {
+      return `${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote}`;
+    })
+    .replace(/url\(\s*(["']?)(\/(?!\/)[^"')]+?\.(?:avif|bmp|gif|glb|gltf|ico|jpe?g|json|m4v|mov|mp3|mp4|ogg|otf|pdf|png|svg|ttf|wasm|wav|webm|webp|woff2?)(?:[?#][^"')]*)?)\1\s*\)/gi, (_match, quote, value) => {
+      return `url(${quote}${rewriteProxyReference(value, { externalProxy, proxyBase, target, token })}${quote})`;
+    });
+  return rewriteViteClientHmrForPreview(rewritten, { target });
+}
+
+function rewriteViteClientHmrForPreview(js, { target }) {
+  if (target?.pathname !== "/@vite/client") return js;
+  return js.replace(
+    /transport\.connect\(createHMRHandler\(handleMessage\)\);\s*setupForwardConsoleHandler\(transport, forwardConsole\);/,
+    [
+      'if (!import.meta.url.includes("/preview/proxy-url/")) {',
+      'transport.connect(createHMRHandler(handleMessage));',
+      'setupForwardConsoleHandler(transport, forwardConsole);',
+      '}'
+    ].join("\n")
+  );
+}
+
+function previewReferenceFromReferer(referer, requestUrl) {
+  const raw = String(referer || "").trim();
+  if (!raw) return null;
+
+  let refUrl;
+  try {
+    refUrl = new URL(raw, requestUrl);
+  } catch {
+    return null;
+  }
+
+  let match = refUrl.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)(?:\/|$)/);
+  if (match && decodeURIComponent(match[2]) === TOKEN) {
+    return { kind: "server", projectId: decodeURIComponent(match[1]) };
+  }
+
+  match = refUrl.pathname.match(/^\/preview\/project\/([^/]+)\/([^/]+)(?:\/|$)/);
+  if (match && decodeURIComponent(match[2]) === TOKEN) {
+    return { kind: "project", projectId: decodeURIComponent(match[1]) };
+  }
+
+  match = refUrl.pathname.match(/^\/preview\/proxy-url\/([^/]+)(?:\/|$)/);
+  if (match && decodeURIComponent(match[1]) === TOKEN) {
+    const target = normalizeProxyTargetUrl(safeUrl(refUrl.searchParams.get("url")));
+    return target ? { kind: "external", target } : null;
+  }
+
+  return null;
+}
+
+function canProxyPreviewFallbackPath(pathname) {
+  const path = String(pathname || "/");
+  return !path.startsWith("/preview/")
+    && !path.startsWith("/desktop/")
+    && !path.startsWith("/app-assets/")
+    && path !== "/desktop"
+    && path !== "/health"
+    && path !== "/pair"
+    && path !== "/pair/status";
+}
+
+function previewTargetFromProject(projectId, requestedPath) {
+  const tracked = appState.previewServers[projectId];
+  const targetBase = normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url));
+  if (!targetBase) return null;
+  return new URL(String(requestedPath || "/"), `${targetBase.toString().replace(/\/+$/, "")}/`);
+}
+
+function rewriteProxyReference(value, { externalProxy = false, proxyBase, target, token }) {
+  const raw = String(value).trim();
+  if (!raw || /^(?:data:|blob:|mailto:|tel:|#)/i.test(raw)) return raw;
+  if (raw.startsWith("/preview/")) return raw;
+  if (/^https?:\/\//i.test(raw)) {
+    const parsed = safeUrl(raw);
+    return parsed && isLocalPreviewHost(parsed.hostname) ? previewExternalUrl(parsed, token) : raw;
+  }
+  if (raw.startsWith("//")) {
+    const parsed = safeUrl(`${target.protocol}${raw}`);
+    return parsed && isLocalPreviewHost(parsed.hostname) ? previewExternalUrl(parsed, token) : raw;
+  }
+  if (externalProxy) {
+    try {
+      return previewExternalUrl(new URL(raw, target), token);
+    } catch {
+      return raw;
+    }
+  }
+  if (raw.startsWith("/")) return `${proxyBase}${raw.replace(/^\/+/, "")}`;
+  try {
+    const resolved = new URL(raw, target);
+    return `${proxyBase}${resolved.pathname.replace(/^\/+/, "")}${resolved.search}${resolved.hash}`;
+  } catch {
+    return raw;
+  }
+}
+
+function previewExternalUrl(target, token) {
+  const normalized = normalizeProxyTargetUrl(target);
+  if (!normalized) return "";
+  return `/preview/proxy-url/${encodeURIComponent(token)}/?url=${encodeURIComponent(normalized.toString())}`;
+}
+
+function safeUrl(value) {
+  try {
+    return new URL(String(value ?? ""));
+  } catch {
+    return null;
+  }
+}
+
+function isLocalPreviewHost(hostname) {
+  const host = String(hostname ?? "").trim().toLowerCase().replace(/^\[|\]$/g, "");
+  return host === "localhost"
+    || host === "0.0.0.0"
+    || host === "127.0.0.1"
+    || host === "::1"
+    || /^127\./.test(host)
+    || /^10\./.test(host)
+    || /^192\.168\./.test(host)
+    || /^172\.(?:1[6-9]|2\d|3[0-1])\./.test(host);
+}
+
+function normalizeProxyTargetUrl(target) {
+  if (!target) return null;
+  const next = new URL(target.toString());
+  if (isLocalPreviewHost(next.hostname)) next.hostname = "127.0.0.1";
+  return next;
 }
 
 function previewBase(rootBase, directory) {

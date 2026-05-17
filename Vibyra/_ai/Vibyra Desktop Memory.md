@@ -27,7 +27,7 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 
 - desktop UI: `/desktop`, `/desktop/state`, `/desktop/approve`, `/desktop/deny`, `/desktop/quit`;
 - pairing: `/health`, `/pair`, `/pair/status`, `/preview/project/...`;
-- authenticated: `/projects`, `/events`, `/preview/start`, `/agents/start`, `/commands/run`.
+- authenticated: `/projects`, `/events`, `/preview/start`, `/preview/start-server`, `/agents/start`, `/commands/run`.
 
 Authenticated routes require `Authorization: Bearer ${TOKEN}`.
 

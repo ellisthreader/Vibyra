@@ -26,6 +26,7 @@ const ROUTE_TIMEOUTS = [
   { matches: (endpoint: string) => endpoint === "/agents/apply", timeoutMs: 30000 },
   { matches: (endpoint: string) => endpoint === "/agents/discard", timeoutMs: 10000 },
   { matches: (endpoint: string) => endpoint === "/commands/run", timeoutMs: 25000 },
+  { matches: (endpoint: string) => endpoint === "/preview/start-server", timeoutMs: 90000 },
   { matches: (endpoint: string) => endpoint.startsWith("/desktop/browse"), timeoutMs: 15000 },
   { matches: (endpoint: string) => endpoint.startsWith("/desktop/context"), timeoutMs: 20000 },
   { matches: (endpoint: string) => endpoint.startsWith("/desktop/folders"), timeoutMs: 15000 },
@@ -97,6 +98,7 @@ function agentRequestUrls(endpoint: string, options: RequestInit, connection: Ag
 
 function canTryConnectionFallback(endpoint: string, options: RequestInit) {
   const method = String(options.method ?? "GET").toUpperCase();
+  if (method === "POST" && endpoint === "/preview/start-server") return true;
   return method === "GET" && (
     endpoint.startsWith("/desktop/browse") ||
     endpoint.startsWith("/desktop/context") ||

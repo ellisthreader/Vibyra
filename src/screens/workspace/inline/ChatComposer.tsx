@@ -48,7 +48,6 @@ export function ChatComposer(props: ChatComposerProps) {
   const placeholderColor = useThemedColor("#8F8A9E");
   const toolIconColor = useThemedColor("#B9B5C8");
   const effortIconColor = useThemedColor("#D7C4FF");
-  const chevronColor = useThemedColor("#9F99B6");
   const lockedIconColor = useThemedColor("#AAA6BC");
   const sendGradient = props.agentRequesting
     ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
@@ -118,20 +117,25 @@ export function ChatComposer(props: ChatComposerProps) {
           <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
             <Ionicons name="attach-outline" color={toolIconColor} size={20} />
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.chatModelButton, styles.chatModelButtonToolbar, pressed && { opacity: 0.85 }]}
-            onPress={() => { setModelMenuOpen((open) => !open); setEffortMenuOpen(false); }}
-          >
-            <ModelProviderIcon provider={currentModel.provider} compact />
-            <Text numberOfLines={1} style={styles.chatModelButtonText}>{currentModel.label}</Text>
-            {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color={lockedIconColor} size={12} /> : null}
-            <Ionicons name={modelMenuOpen ? "chevron-down" : "chevron-up"} color={chevronColor} size={13} />
-          </Pressable>
-          <Pressable onPress={() => { setEffortMenuOpen((open) => !open); setModelMenuOpen(false); }} style={({ pressed }) => [styles.chatEffortPill, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}>
-            <Ionicons name="flash-outline" color={effortIconColor} size={14} />
-            <Text style={styles.chatEffortPillLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
-            <Ionicons name={effortMenuOpen ? "chevron-down" : "chevron-up"} color={chevronColor} size={13} />
-          </Pressable>
+          <View style={styles.chatModelEffortControl}>
+            <Pressable
+              accessibilityLabel="Choose AI model"
+              style={({ pressed }) => [styles.chatModelLogoButton, pressed && { opacity: 0.82 }]}
+              onPress={() => { setModelMenuOpen((open) => !open); setEffortMenuOpen(false); }}
+            >
+              <ModelProviderIcon provider={currentModel.provider} compact />
+              {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color={lockedIconColor} size={11} /> : null}
+            </Pressable>
+            <View style={styles.chatModelEffortDivider} />
+            <Pressable
+              accessibilityLabel="Choose reasoning effort"
+              onPress={() => { setEffortMenuOpen((open) => !open); setModelMenuOpen(false); }}
+              style={({ pressed }) => [styles.chatEffortInlineButton, pressed && { opacity: 0.82 }]}
+            >
+              <Ionicons name="flash-outline" color={effortIconColor} size={13} />
+              <Text style={styles.chatEffortInlineLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
+            </Pressable>
+          </View>
           <Pressable style={({ pressed }) => [styles.chatSendButton, pressed && styles.chatSendButtonPressed]} onPress={props.agentRequesting ? undefined : handleStart}>
             <LinearGradient colors={sendGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.chatSendGradient}>
               <Ionicons name={props.agentRequesting ? "pause" : "arrow-up"} color={colors.text} size={22} />

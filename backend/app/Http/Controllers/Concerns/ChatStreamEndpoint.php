@@ -71,7 +71,8 @@ trait ChatStreamEndpoint
 
         $chatMode = $this->resolveChatMode($request, $prompt, $skill);
         $maxOutputTokens = $this->resolveMaxTokens($request, $prompt, $skill);
-        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles);
+        $learningContext = $this->chatLearningContext($user, $request, $prompt, $chatMode);
+        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext);
         $agentMode = $chatMode === 'build';
 
         $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
@@ -125,7 +126,7 @@ trait ChatStreamEndpoint
         $reasoningEffort = $this->normalizeReasoningEffort((string) $request->input('reasoningEffort', 'medium'));
         $reasoningPayload = $this->buildReasoningPayload($reasoningEffort, $maxOutputTokens);
 
-        $messages = $this->chatMessages($request, $prompt, $skill);
+        $messages = $this->chatMessages($request, $prompt, $skill, $learningContext);
         $payload = [
             'model' => $openRouterModel,
             'messages' => $messages,
@@ -140,7 +141,7 @@ trait ChatStreamEndpoint
 
         return new StreamedResponse(function () use (
             $payload, $apiKey, $user, $deductor, $calc, $modelKey, $openRouterModel,
-            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles
+            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles, $chatMode
         ) {
             @ini_set('output_buffering', '0');
             @ini_set('zlib.output_compression', '0');
@@ -255,6 +256,7 @@ trait ChatStreamEndpoint
                     $reference,
                     ['model' => $modelKey, 'credits' => abs($ledger->credits_delta)],
                 );
+                $this->rememberChatLearningOutcome($user, $request, $prompt, $replyText, $app, $modelKey, $chatMode, $reference);
                 $user = $user->fresh() ?? $user;
 
                 $emit('final', [
@@ -264,6 +266,7 @@ trait ChatStreamEndpoint
                     'title' => $this->suggestChatTitle($request, $prompt, $replyText),
                     'model' => $openRouterModel,
                     'modelKey' => $modelKey,
+                    'chatReference' => $reference,
                     'creditCost' => abs($ledger->credits_delta),
                     'creditsBalance' => $user->credits_balance,
                     'creditsUsed' => $user->credits_used,

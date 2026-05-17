@@ -159,15 +159,18 @@ trait ProjectFileState
     {
         $state = $this->read();
         $project = $this->projectById($state, $projectId);
+        $previewUrl = $project && $this->previewEntryPath($project) !== ''
+            ? $this->previewUrl($project['id'], $state['token'])
+            : null;
         $state['selectedProjectId'] = $projectId;
         $state['latestPreview'] = [
             'state' => 'live',
-            'url' => $project ? $this->previewUrl($project['id'], $state['token']) : null,
+            'url' => $previewUrl,
             'title' => $project['name'] ?? 'Project',
-            'message' => 'Live preview stream started',
+            'message' => $previewUrl ? 'Live preview stream started' : 'No runnable preview is available for this folder yet.',
             'capturedAt' => now()->toISOString(),
         ];
-        $event = $this->event('Preview', 'Live preview started for '.($project['name'] ?? 'project'), 'success');
+        $event = $this->event('Preview', $previewUrl ? 'Live preview started for '.($project['name'] ?? 'project') : 'No runnable preview found for '.($project['name'] ?? 'project'), $previewUrl ? 'success' : 'warning');
         array_unshift($state['events'], $event);
         $state['events'] = array_slice($state['events'], 0, 50);
         $this->write($state);

@@ -132,16 +132,19 @@ trait AgentExecution
         ];
 
         $state['selectedProjectId'] = $project['id'];
+        $previewUrl = $this->previewEntryPath($project) !== ''
+            ? $this->previewUrl($project['id'], $state['token'])
+            : null;
         $state['latestPreview'] = [
-            'state' => 'delivered',
-            'url' => $this->previewUrl($project['id'], $state['token']),
+            'state' => $previewUrl ? 'delivered' : 'live',
+            'url' => $previewUrl,
             'title' => $project['name'],
-            'message' => 'Updated preview captured from Vibyra Desktop',
+            'message' => $previewUrl ? 'Updated preview captured from Vibyra Desktop' : 'No runnable browser preview found for this project yet.',
             'capturedAt' => now()->toISOString(),
         ];
 
         $newEvents = [
-            $this->event('Preview', 'Updated preview delivered to iPhone', 'success'),
+            $this->event('Preview', $previewUrl ? 'Updated preview delivered to iPhone' : 'No runnable browser preview found for this project yet', $previewUrl ? 'success' : 'warning'),
             $this->event('Agent', 'Captured refreshed project preview', 'success'),
             $this->event('Dev Server', 'Project reloaded after local apply', 'success'),
             $this->event(

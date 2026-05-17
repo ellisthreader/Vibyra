@@ -68,7 +68,7 @@ export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onT
           event.stopPropagation();
           onOpen();
         }}>
-          <Text style={styles.communityPostOpenText}>Open</Text>
+          <Text style={styles.communityPostOpenText}>View</Text>
         </Pressable>
         <Pressable style={styles.communityBookmark} onPress={(event) => {
           event.stopPropagation();

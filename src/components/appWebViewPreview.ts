@@ -1,8 +1,7 @@
 import { PHASER_PATCH_SCRIPT } from "./appWebViewPhaserPatch";
 import { FRAMEWORK_RUNTIME_SCRIPT, normalizeFrameworkScripts } from "./appWebViewFrameworkScripts";
 import { replaceMissingAssets } from "./appWebViewHtmlAssets";
-
-export type PreviewRuntimeError = { column?: number; line?: number; message: string; source?: string; stack?: string; type: "console" | "error" | "resource" | "unhandledrejection" | "webview" };
+export { parsePreviewError, type PreviewRuntimeError } from "./appWebViewPreviewErrors";
 
 const RELATIVE_SCRIPT_RE = /<script\b([^>]*)\bsrc\s*=\s*("|')(?!https?:|data:|blob:|\/\/|about:)([^"']*?)\2([^>]*)>\s*<\/script>/gi;
 const RELATIVE_LINK_RE = /<link\b([^>]*?)\bhref\s*=\s*("|')(?!https?:|data:|\/\/|about:)([^"']*?)\2([^>]*)>/gi;
@@ -161,19 +160,6 @@ export const ERROR_CAPTURE_SCRIPT = `
 
 const ERROR_CAPTURE_SCRIPT_TAG = `<script>${ERROR_CAPTURE_SCRIPT}</script>`;
 
-export function parsePreviewError(data: unknown): PreviewRuntimeError | null {
-  if (!data || typeof data !== "object" || (data as { source?: unknown }).source !== "vibyra-preview-error") return null;
-  const payload = data as Record<string, unknown>;
-  return {
-    column: numeric(payload.column),
-    line: numeric(payload.line),
-    message: String(payload.message || "Preview runtime error"),
-    source: payload.file ? String(payload.file) : undefined,
-    stack: payload.stack ? String(payload.stack) : undefined,
-    type: previewErrorType(payload.type)
-  };
-}
-
 export function preparePreviewHtml(html: string) {
   return removeUnresolvableInlineResources(normalizeFrameworkScripts(replaceMissingAssets(html)));
 }
@@ -197,9 +183,3 @@ export function prepareSrcDocHtml(html: string): string {
 function removeUnresolvableInlineResources(html: string) {
   return html.replace(RELATIVE_SCRIPT_RE, "").replace(RELATIVE_LINK_RE, "");
 }
-
-function previewErrorType(value: unknown): PreviewRuntimeError["type"] {
-  return value === "console" || value === "resource" || value === "unhandledrejection" ? value : "error";
-}
-
-function numeric(value: unknown) { const next = Number(value); return Number.isFinite(next) && next > 0 ? next : undefined; }

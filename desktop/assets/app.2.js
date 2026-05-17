@@ -9,7 +9,12 @@ function renderPairModal() {
 }
 function openTokenModal() { nodes.tokenModal.classList.add("open"); renderTokenModal(); }
 function closeTokenModal() { nodes.tokenModal.classList.remove("open"); }
-function renderTokenModal() { nodes.tokenBody.innerHTML = `<section class="panel welcome"><div><p class="kicker">Account</p><h1>Managed on phone</h1><p class="body-copy">Vibyra Desktop does not cache token balances, billing status, or account identity. Open the signed-in mobile app for live account data.</p></div><div class="metric-row"><div class="metric"><strong>${(currentState.projects || []).length}</strong><span>local projects</span></div><div class="metric"><strong>${currentState.pairedDevice ? "1" : "0"}</strong><span>paired phones</span></div></div></section>`; }
+function renderTokenModal() {
+  const user = typeof desktopAuthUser === "function" ? desktopAuthUser() : null;
+  const name = user?.name || currentState.desktopAccount?.name || "Desktop account";
+  const plan = user?.plan || currentState.desktopAccount?.plan || "free";
+  nodes.tokenBody.innerHTML = `<section class="panel welcome"><div><p class="kicker">Account</p><h1>${escapeHtml(name)}</h1><p class="body-copy">This desktop session is only used to verify pairing. Billing, credits, and live account data stay managed by the phone app.</p></div><div class="metric-row"><div class="metric"><strong>${escapeHtml(plan)}</strong><span>plan</span></div><div class="metric"><strong>${currentState.pairedDevice ? "1" : "0"}</strong><span>paired phones</span></div></div></section>`;
+}
 function sendChat() {
   const input = document.getElementById("chat-input");
   const text = input.value.trim();
@@ -27,7 +32,7 @@ function sendChat() {
 }
 function setPage(page) { activePage = page; localStorage.setItem("vibyra.desktop.page", page); render(); }
 function bindJumps() { document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.jump))); }
-function pageTitle(page) { return page === "dashboard" ? "Home" : page === "projects" ? "Projects" : page === "chat" ? "AI Chat" : page === "community" ? "Community" : page === "billing" ? "Plan & Billing" : "Profile"; }
+function pageTitle(page) { return page === "dashboard" ? "Builds" : page === "projects" ? "Projects" : "New chat"; }
 function statusTone() {
   if (currentState.pendingPair && currentState.pendingPair.status === "pending") return "warning";
   if (currentState.pendingPair && currentState.pendingPair.status === "denied") return "offline";
@@ -50,35 +55,22 @@ function filteredProjects() {
     return filterOk && queryOk;
   });
 }
-function homeAction(iconName, label, meta, page) { return `<button class="action-card" type="button" data-jump="${page}"><span class="action-card-top"><span class="action-icon">${icon(iconName)}</span>${icon("chevron")}</span><span><h3>${escapeHtml(label)}</h3><p>${escapeHtml(meta)}</p></span></button>`; }
-function codeHero() {
-  return `<div class="code-hero" aria-hidden="true"><span class="spark spark-one">✦</span><span class="spark spark-two">✦</span><span class="spark spark-three">✦</span><div class="code-window"><div class="window-top"><i></i><i></i><i></i><span></span></div><div class="window-body"><div class="code-mark">&lt;/&gt;</div><div class="code-grid"><b></b><b></b><b></b><b></b><b></b><b></b></div></div></div><div class="code-base"></div><div class="code-cube"></div></div>`;
+function summaryTile(iconName, value, label) {
+  return `<div class="summary-tile"><span class="summary-icon">${icon(iconName)}</span><div><strong>${escapeHtml(value)}</strong><p>${escapeHtml(label)}</p></div></div>`;
 }
-function statCard(iconName, value, label, status, tone = "") {
-  return `<div class="stat-card ${tone}"><span class="stat-icon">${icon(iconName)}</span><div><strong>${escapeHtml(value)}</strong><p>${escapeHtml(label)}</p>${status ? `<small><span class="dot"></span>${escapeHtml(status)}</small>` : ""}</div>${tone === "health" ? icon("chevron") : ""}</div>`;
-}
-function buildRows() {
-  return liveBuildRows().map((item) => `<article class="build-row ${item.isRunning ? "is-running" : ""}"><span class="build-icon ${escapeAttribute(item.tone)}">${icon(item.icon)}</span><div class="build-copy"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.subtitle)}</p></div><div class="build-state"><span class="build-status ${escapeAttribute(item.tone)}"><span class="status-light"></span>${escapeHtml(item.status)}</span><time class="build-time">${escapeHtml(buildTimeLabel(item))}</time></div><button class="more-button" type="button" aria-label="Build actions">${icon("menu")}</button></article>`).join("");
+function buildRows(rows = liveBuildRows()) {
+  return rows.map((item) => `<article class="build-row ${item.isRunning ? "is-running" : ""}"><span class="build-icon ${escapeAttribute(item.tone)}">${icon(item.icon)}</span><div class="build-copy"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.subtitle)}</p></div><div class="build-state"><span class="build-status ${escapeAttribute(item.tone)}"><span class="status-light"></span>${escapeHtml(item.status)}</span><time class="build-time">${escapeHtml(buildTimeLabel(item))}</time></div><button class="more-button" type="button" aria-label="Build actions">${icon("menu")}</button></article>`).join("");
 }
 function liveBuildRows() {
   const run = currentState.activeAgentRun || {};
   const runProject = (currentState.projects || []).find((project) => project.id === run.projectId);
-  const rows = run.id ? [{
+  return run.id ? [{
     icon: run.state === "waiting" ? "clock" : "pulse", tone: run.state === "waiting" ? "purple" : "green", status: run.state === "waiting" ? "Waiting" : "Building",
     title: runProject?.name || currentState.latestPreview?.title || "Active build",
     subtitle: run.title || run.file || "Local desktop task",
     startedAt: runStartedAt(run), timeVerb: run.state === "waiting" ? "Waiting" : "Running",
     isRunning: run.state !== "waiting"
   }] : [];
-  return [...rows, ...fallbackBuildRows()].sort((a, b) => Number(b.isRunning) - Number(a.isRunning)).slice(0, 3);
-}
-function fallbackBuildRows() {
-  const projects = currentState.projects || [];
-  return [
-    { icon: "clock", tone: "purple", status: "Waiting", title: projects[0]?.name || "LaunchPad SaaS", subtitle: "Build login flow", startedAt: Date.now() - 8 * 60000, timeVerb: "Waiting", isRunning: false },
-    { icon: "bolt", tone: "green", status: "Building", title: projects[1]?.name || "Client Portal", subtitle: "Run tests and fix failures", startedAt: Date.now() - 14 * 60000, timeVerb: "Running", isRunning: true },
-    { icon: "cube", tone: "purple", status: "Waiting", title: projects[2]?.name || "Design System", subtitle: "Prepare component pass", startedAt: Date.now() - 22 * 60000, timeVerb: "Waiting", isRunning: false }
-  ];
 }
 function runStartedAt(run) {
   const idTime = Number(String(run.id || "").replace(/\D/g, ""));
@@ -94,24 +86,13 @@ function formatDuration(ms) {
   const rest = minutes % 60;
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
-function homeActivityRows() {
-  const rows = [
-    { message: "Vibyra Phone approved in Vibyra Desktop", source: "Pairing", tone: "success", time: "2m ago" },
-    { message: "Vibyra Phone is asking to pair", source: "Pairing", tone: "warning", time: "5m ago" },
-    { message: "Vibyra Phone approved in Vibyra Desktop", source: "Pairing", tone: "success", time: "12m ago" },
-    { message: "Vibyra Phone is asking to pair", source: "Pairing", tone: "warning", time: "20m ago" },
-    { message: "Vibyra Phone is asking to pair", source: "Pairing", tone: "warning", time: "35m ago" }
-  ];
-  return rows.map((event, index) => `<div class="activity-row"><span class="activity-dot" style="background:${toneColor(event.tone)}"></span><div><h3>${escapeHtml(event.message || "Desktop event")}</h3><p>${escapeHtml(event.source || "Desktop")}</p></div><time>${escapeHtml(event.time && event.time !== "Now" ? event.time : `${index * 7 + 2}m ago`)}</time></div>`).join("");
+function emptyBuildState() {
+  return `<div class="empty-build"><span class="empty-icon">${icon("pulse")}</span><h2>No active builds</h2><p class="body-copy">Start from Chat when you want Vibyra to work on a project.</p><button class="primary-button" type="button" data-jump="chat">${icon("plus")}New chat</button></div>`;
 }
-function pendingPairCard() { const pair = currentState.pendingPair || {}; return `<div class="project-card active"><div class="project-top"><div><p class="project-name">${escapeHtml(pair.deviceName || "Vibyra Phone")}</p><p class="project-path">Waiting for desktop approval</p></div><span class="tag">pending</span></div><div class="project-footer"><span class="body-copy">Pairing request</span><button class="primary-button" type="button" onclick="document.getElementById('pair-modal').classList.add('open'); renderPairModal();">Review</button></div></div>`; }
 function projectCard(project, index) { const active = selectedProjectId ? selectedProjectId === project.id : index === 0; return `<article class="project-card ${active ? "active" : ""}"><div class="project-top"><div style="display:flex;gap:12px;min-width:0;"><span class="project-icon">${icon("folder")}</span><div><p class="project-name">${escapeHtml(project.name || "Project")}</p><p class="project-path">${escapeHtml(project.path || "")}</p></div></div><span class="tag">${escapeHtml(displayProjectSource(project))}</span></div><div class="project-footer"><span class="body-copy">${escapeHtml(project.stack || "Project")}</span><button class="secondary-button compact-button" type="button" data-project-chat="${escapeAttribute(project.id)}">${icon("chat")}Chat</button></div></article>`; }
-function chatEmptyState() { return `<div class="chat-empty"><img class="chat-glyph" src="/app-assets/ai-chat-glyph-focused.png" alt="" /><p class="kicker">Vibyra AI</p><h1>How can I help you build today?</h1><p class="body-copy">Ask anything, edit code, or describe an idea - I'll handle the rest.</p><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p></button>`).join("")}</div></div>`; }
+function chatEmptyState() { return `<div class="chat-empty"><p class="kicker">Vibyra Desktop</p><h1>What are we building?</h1><p class="body-copy">Ask about a project, attach context, or pair your phone to let Vibyra work on local files.</p><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p></button>`).join("")}</div></div>`; }
 function messageRow(message) { const assistant = message.role === "assistant"; return `<div class="message ${assistant ? "assistant" : "user"}"><div class="avatar">${assistant ? "V" : "U"}</div><div><div class="message-author">${assistant ? "Vibyra AI" : "You"}</div><div class="message-body">${escapeHtml(message.text)}</div></div></div>`; }
-function communityCard(post) { return `<article class="community-card"><div style="display:flex;gap:13px;align-items:center;"><div class="community-logo" style="background:${escapeAttribute(post.accent)}">${escapeHtml(post.title.charAt(0).toUpperCase())}</div><div><p class="community-title">${escapeHtml(post.title)}</p><p class="community-meta">by ${escapeHtml(post.user)} - ${escapeHtml(post.tag)}</p></div></div><p class="body-copy">${escapeHtml(post.description)}</p><div class="filter-row">${post.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div><div class="community-actions"><span class="community-meta">${post.likes} likes - ${post.comments} comments</span><button class="secondary-button compact-button" type="button" data-community-open="${escapeAttribute(post.id)}">Open app</button></div></article>`; }
-function settingsGroup(title, rows) { return `<section class="settings-group"><p class="group-title">${escapeHtml(title)}</p>${rows.map((row) => `<button class="setting-row ${profileRow === row ? "active" : ""}" data-setting="${escapeAttribute(row)}" type="button"><span class="profile-icon">${icon(row === "Billing & subscription" ? "card" : row === "Appearance" ? "palette" : row === "Log out" ? "logout" : "user")}</span><span class="setting-label">${escapeHtml(row)}</span>${row === "Appearance" ? `<span class="setting-value">Dark</span>` : row === "Language" ? `<span class="setting-value">English</span>` : ""}${icon("chevron")}</button>`).join("")}</section>`; }
 function eventRows(events) { if (!events.length) return `<div class="empty">Nothing yet.</div>`; return events.map((event) => `<div class="event-row"><span class="event-dot" style="background:${toneColor(event.tone)}"></span><div><p class="event-message">${escapeHtml(event.message || "Desktop event")}</p><p class="event-source">${escapeHtml(event.source || "Desktop")}</p></div></div>`).join(""); }
-function urlRows(urls) { if (!urls.length) return `<div class="empty">No local network address found yet.</div>`; return urls.map((url) => `<div class="url-row"><p class="url-text">${escapeHtml(url)}</p></div>`).join(""); }
 function toneColor(tone) { return tone === "success" ? "#37D67A" : tone === "warning" ? "#FFB347" : tone === "error" ? "#FF5D7A" : "#6D3BFF"; }
 function icon(name) {
   const paths = {
@@ -173,16 +154,4 @@ function bindChatTools() {
   });
   document.getElementById("cycle-effort")?.addEventListener("click", () => { chatEffortIndex = (chatEffortIndex + 1) % chatEfforts.length; renderChat(); });
   document.getElementById("cycle-model")?.addEventListener("click", () => { chatModelIndex = (chatModelIndex + 1) % chatModels.length; renderChat(); });
-}
-function bindCommunityActions() {
-  document.querySelectorAll("[data-community-open]").forEach((button) => button.addEventListener("click", () => {
-    const post = communityPosts.find((item) => item.id === button.dataset.communityOpen);
-    if (!post) return;
-    chatMessages.push({ role: "assistant", text: `${post.title} opened from Community. Pair your phone before remixing it into a local project.` });
-    setPage("chat");
-  }));
-}
-function handleCreateProject() {
-  chatMessages.push({ role: "assistant", text: "Project creation is managed from the paired phone so Vibyra can ask before writing files on this desktop." });
-  setPage("chat");
 }

@@ -60,7 +60,13 @@ export async function findDesktopByCode(
   return null;
 }
 
-export async function requestPairAtUrl(requests: Requests, url: string, code: string, requestId = makePairRequestId()) {
+export async function requestPairAtUrl(
+  requests: Requests,
+  url: string,
+  code: string,
+  requestId = makePairRequestId(),
+  accountId?: number | null
+) {
   try {
     const normalizedCode = code.trim().toUpperCase();
     const result = await requests.desktopRequest<PairResponse>(
@@ -71,6 +77,7 @@ export async function requestPairAtUrl(requests: Requests, url: string, code: st
         body: JSON.stringify({
           deviceName: "Vibyra Phone",
           requestId,
+          ...(accountId ? { accountId } : {}),
           ...(normalizedCode ? { code: normalizedCode } : { autoPair: true })
         })
       },

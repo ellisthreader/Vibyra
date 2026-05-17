@@ -13,6 +13,18 @@ const PROFILES = [
     markers: [/\/_app\/immutable\//i, /\bdata-sveltekit-/i, /\b__sveltekit\b/i]
   },
   {
+    id: "laravel-vite",
+    label: "Laravel + Vite",
+    packages: ["laravel-vite-plugin"],
+    scripts: ["dev"],
+    pattern: /^vite(?:\s|$)/i,
+    args: ["--host", "0.0.0.0"],
+    portArg: "--port",
+    defaultPorts: VITE_PORTS,
+    viteClient: true,
+    laravelBackend: true
+  },
+  {
     id: "vite",
     label: "Vite",
     packages: ["vite"],

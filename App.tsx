@@ -14,6 +14,15 @@ import { setStylesScheme } from "./src/screens/workspace/styles";
 function AppContent() {
   const app = useAppContext();
   const prefs = usePreferences();
+
+  // FORCE_LOGOUT_ONCE: temporary — clears persisted session on app boot so the login screen shows.
+  // Remove this effect once you've reached the Google/Apple/email screen.
+  React.useEffect(() => {
+    if (app.persistenceReady && app.authenticated) {
+      app.signOut();
+    }
+  }, [app.persistenceReady]);
+
   if (!app.persistenceReady || !prefs.preferencesReady) return null;
 
   setStylesScheme(prefs.effectiveScheme);
@@ -24,7 +33,9 @@ function AppContent() {
     return <AuthScreen key={prefs.effectiveScheme} />;
   }
 
-  if (!app.onboardingComplete || !app.pcSetupComplete) {
+  // QUIZ_TEMP_DISABLED: original gate was `!app.onboardingComplete || !app.pcSetupComplete`.
+  // While the quiz is bypassed we only gate on PC setup so fresh users land directly on WelcomeConnect.
+  if (!app.pcSetupComplete) {
     return <OnboardingScreen key={prefs.effectiveScheme} />;
   }
 

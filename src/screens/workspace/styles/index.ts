@@ -43,7 +43,18 @@ import { part41 } from "./part41";
 import { part42 } from "./part42";
 import { part43 } from "./part43";
 import { part44 } from "./part44";
+import { part45 } from "./part45";
 import { part46 } from "./part46";
+import { part47 } from "./part47";
+import { part48 } from "./part48";
+import { part49 } from "./part49";
+import { part50 } from "./part50";
+import { part51 } from "./part51";
+import { part52 } from "./part52";
+import { part53 } from "./part53";
+import { part54 } from "./part54";
+import { part55 } from "./part55";
+import { part56 } from "./part56";
 import { transformStyleMap } from "./themeTransform";
 
 const rawDark = {
@@ -52,7 +63,7 @@ const rawDark = {
   ...part17, ...part18, ...part19, ...part20, ...part21, ...part22, ...part23, ...part24,
   ...part25, ...part26, ...part27, ...part28, ...part29, ...part30, ...part31, ...part32,
   ...part33, ...part34, ...part35, ...part36, ...part37, ...part38, ...part39,
-  ...part40, ...part41, ...part42, ...part43, ...part44, ...part46
+  ...part40, ...part41, ...part42, ...part43, ...part44, ...part45, ...part46, ...part47, ...part48, ...part49, ...part50, ...part51, ...part52, ...part53, ...part54, ...part55, ...part56
 } as Record<string, Record<string, unknown>>;
 
 const rawLight = transformStyleMap(rawDark);

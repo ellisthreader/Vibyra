@@ -43,10 +43,10 @@ export function TokenBalancePill({ compact, onOpenTokens, tokenBalance }: {
 
 export function getTopBarTitle(page: DashboardPage) {
   if (page === "projects") return "Projects";
-  if (page === "community") return "Community";
+  if (page === "community") return "Explore";
   if (page === "profile") return "Profile";
   if (page === "chat") return "AI Chat";
-  return "Home";
+  return "Active builds";
 }
 
 export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {

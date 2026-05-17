@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 trait ChatPrompting
 {
-    private function chatMessages(Request $request, string $prompt, ?array $skill = null): array
+    private function chatMessages(Request $request, string $prompt, ?array $skill = null, string $learningContext = ''): array
     {
         $project = trim((string) $request->input('project', ''));
         $filePath = trim((string) $request->input('filePath', ''));
@@ -28,6 +28,10 @@ trait ChatPrompting
 
         if ($filePath !== '' && $fileBody !== '') {
             $context[] = "File {$filePath}:\n".Str::limit($fileBody, 1200, '');
+        }
+
+        if ($learningContext !== '') {
+            $context[] = $learningContext;
         }
 
         $contextText = $context ? "\n\n".implode("\n\n", $context) : '';

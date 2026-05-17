@@ -84,6 +84,12 @@ export function useAuthContextActions(store: Store, logs: Logs) {
 
   function completePcSetup() {
     setters.setPcSetupComplete(true);
+    setters.setPcSetupSkipped(false);
+  }
+
+  function skipPcSetup() {
+    setters.setPcSetupComplete(true);
+    setters.setPcSetupSkipped(true);
   }
 
   function signOut() {
@@ -93,6 +99,16 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setAuthPassword("");
     setters.setOnboardingComplete(false);
     setters.setPcSetupComplete(false);
+    setters.setPcSetupSkipped(false);
+    setters.setPaired(false);
+    setters.setPendingPhoneApproval(null);
+    setters.setPairing(false);
+    setters.setPairingError("");
+    setters.setPairingMessage("");
+    setters.setAgentUrl("");
+    setters.setPairCode("");
+    setters.setHealthMessage("");
+    setters.setCheckingHealth(false);
     setters.setChatThreads({});
     setters.setChatTitles({});
     setters.setChatProjects({});
@@ -103,6 +119,28 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setLogs([]);
     setters.setFiles([]);
     setters.setChanges([]);
+  }
+
+  function clearCache() {
+    setters.setPaired(false);
+    setters.setPendingPhoneApproval(null);
+    setters.setConnection(null);
+    setters.setRememberedDesktops([]);
+    setters.setProjects([]);
+    setters.setSelectedProjectId("");
+    setters.setAgents([]);
+    setters.setLogs([]);
+    setters.setFiles([]);
+    setters.setChanges([]);
+    setters.setSelectedFileId("empty");
+    setters.setBuildState("idle");
+    setters.setPreviewState("offline");
+    setters.setChatThreads({});
+    setters.setChatTitles({});
+    setters.setChatProjects({});
+    setters.setEditApprovals({});
+    setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
+    logs.appendLog("Cached projects, chats, files, and desktop sessions cleared on this device.", "Profile", "success");
   }
 
   function expireSession(message = "Your Vibyra login needs refreshing. Log in again to continue.") {
@@ -133,7 +171,9 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     authenticateWith,
     completeOnboarding,
     completePcSetup,
+    skipPcSetup,
     applyRemoteUserFromIap: applyRemoteUser,
+    clearCache,
     expireSession,
     signOut,
     updateProfile

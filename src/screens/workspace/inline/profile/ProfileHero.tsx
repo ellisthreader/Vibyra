@@ -17,7 +17,6 @@ export function ProfileHero({ onOpenBilling }: {
   const [levelModalVisible, setLevelModalVisible] = useState(false);
   const editIconColor = useThemedColor("#E8E2F7");
   const profileName = app.authName.trim() || "Not signed in";
-  const profileEmail = app.authEmail || "Sign in to sync account data";
   const profileInitial = profileName.charAt(0).toUpperCase() || "V";
   const planLabel = formatPlanLabel(app.accountPlan);
   const level = app.levelProgress ?? {
@@ -34,7 +33,6 @@ export function ProfileHero({ onOpenBilling }: {
   const nextReward = level.nextReward
     ? `Reward at level ${level.nextReward.level}`
     : "Top level rewards claimed";
-  const showDebugLevelButton = process.env.NODE_ENV !== "production";
 
   async function changeProfilePicture() {
     try {
@@ -66,10 +64,10 @@ export function ProfileHero({ onOpenBilling }: {
   }
 
   return (
-    <View style={styles.profileHeroCard}>
-      <View style={styles.profileHeroTop}>
+    <View style={[styles.profileHeroCard, styles.profileHeroCardCompact]}>
+      <View style={[styles.profileHeroTop, styles.profileHeroTopCompact]}>
         <View style={styles.profileAvatarWrap}>
-          <View style={styles.profileAvatarLarge}>
+          <View style={[styles.profileAvatarLarge, styles.profileAvatarLargeCompact]}>
             {app.profileImageUri ? (
               <Image source={{ uri: app.profileImageUri }} style={styles.profileAvatarImage} />
             ) : (
@@ -80,50 +78,42 @@ export function ProfileHero({ onOpenBilling }: {
             accessibilityLabel="Change profile picture"
             hitSlop={12}
             onPress={changeProfilePicture}
-            style={styles.profileAvatarEditButton}
+            style={[styles.profileAvatarEditButton, styles.profileAvatarEditButtonCompact]}
           >
-            <Ionicons name="image-outline" color={editIconColor} size={18} />
+            <Ionicons name="image-outline" color={editIconColor} size={15} />
           </Pressable>
         </View>
         <View style={styles.profileSummaryCopy}>
-          <Text style={styles.profileSummaryName}>{profileName}</Text>
-          <Text style={styles.profileSummaryEmail}>{profileEmail}</Text>
-          <Pressable onPress={onOpenBilling} style={styles.profilePlanBadge}>
-            <Ionicons name="diamond" color="#C259FF" size={16} />
-            <Text style={styles.profilePlanBadgeText}>{planLabel}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.profileLevelShell}>
-        <View style={styles.profileLevelPanel}>
-          <View style={styles.profileLevelTop}>
-            <Ionicons name="sparkles" color="#C259FF" size={20} />
-            <View style={styles.profileLevelCopy}>
-              <Text style={styles.profileLevelTitle}>Level {level.level}</Text>
-              <Text style={styles.profileLevelMeta}>
-                {prefs.formatNumber(level.currentLevelXp)} / {prefs.formatNumber(level.nextLevelXp)} XP
-              </Text>
+          <Text numberOfLines={1} style={styles.profileSummaryName}>{profileName}</Text>
+          <View style={[styles.profileLevelShell, styles.profileLevelShellCompact, styles.profileLevelShellInline]}>
+            <View style={styles.profileLevelPanel}>
+              <View style={styles.profileLevelTop}>
+                <Ionicons name="sparkles" color="#C259FF" size={20} />
+                <View style={styles.profileLevelCopy}>
+                  <Text style={styles.profileLevelTitle}>Level {level.level}</Text>
+                  <Text style={styles.profileLevelMeta}>
+                    {prefs.formatNumber(level.currentLevelXp)} / {prefs.formatNumber(level.nextLevelXp)} XP
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.profileLevelTrack}>
+                <View style={[styles.profileLevelFill, { width: `${Math.max(levelPercent, 3)}%` }]} />
+              </View>
             </View>
-          </View>
-          <View style={styles.profileLevelTrack}>
-            <View style={[styles.profileLevelFill, { width: `${Math.max(levelPercent, 3)}%` }]} />
+            <Pressable
+              accessibilityLabel="Open level map"
+              onPress={() => setLevelModalVisible(true)}
+              style={styles.profileLevelExpandRail}
+            >
+              <Ionicons name="map-outline" color="#EDE9FF" size={18} />
+            </Pressable>
           </View>
         </View>
-        <Pressable
-          accessibilityLabel="Open level map"
-          onPress={() => setLevelModalVisible(true)}
-          style={styles.profileLevelExpandRail}
-        >
-          <Ionicons name="map-outline" color="#EDE9FF" size={18} />
+        <Pressable onPress={onOpenBilling} style={[styles.profilePlanBadge, styles.profilePlanBadgeTopRight]}>
+          <Ionicons name="diamond" color="#C259FF" size={16} />
+          <Text style={styles.profilePlanBadgeText}>{planLabel}</Text>
         </Pressable>
       </View>
-      {showDebugLevelButton ? (
-        <Pressable accessibilityLabel="Test level up notification" onPress={app.debugLevelUp} style={styles.profilePlanBadge}>
-          <Ionicons name="arrow-up-circle" color="#C259FF" size={16} />
-          <Text style={styles.profilePlanBadgeText}>Test level up</Text>
-        </Pressable>
-      ) : null}
       <ProfileLevelProgressModal
         dailyCap={level.dailyXpCap ?? 500}
         formatNumber={prefs.formatNumber}

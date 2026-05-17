@@ -26,57 +26,72 @@ export function TopBar({
   activePage,
   chatDirectory,
   chatTitle,
-  compact,
+  chatHasConversation,
+  chatStarred,
   communitySubPageTitle,
   isConnected,
-  machineName,
-  onBackFromChat,
   onBackFromCommunity,
+  onChatHelp,
   onDeleteChat,
-  onOpenPcSwitcher,
-  onOpenTokens,
+  onOpenAccount,
+  onOpenMenu,
+  onOpenPreview,
   onRenameChat,
-  tokenBalance
+  onToggleStarChat,
 }: {
   activePage: DashboardPage;
   chatDirectory?: string;
   chatTitle: string;
-  compact: boolean;
+  chatHasConversation: boolean;
+  chatStarred: boolean;
   communitySubPageTitle: string;
   isConnected: boolean;
-  machineName: string;
-  onBackFromChat: () => void;
   onBackFromCommunity: () => void;
+  onChatHelp: () => void;
   onDeleteChat: () => void;
-  onOpenPcSwitcher: () => void;
-  onOpenTokens: () => void;
+  onOpenAccount: () => void;
+  onOpenMenu: () => void;
+  onOpenPreview: () => void;
   onRenameChat: () => void;
-  tokenBalance: number;
+  onToggleStarChat: () => void;
 }) {
   const title = getTopBarTitle(activePage);
-  const mutedIconColor = useThemedColor("#A9A6BE");
-  const editIconColor = useThemedColor("#DCD7EA");
-  const dangerIconColor = useThemedColor("#FF9DAE");
+  const accountIconColor = useThemedColor("#F6F2FF");
+  const previewIconColor = useThemedColor("#7CF1B3");
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
+
+  const runChatMenuAction = (action: () => void) => {
+    setChatMenuOpen(false);
+    action();
+  };
 
   if (activePage === "chat") {
     return (
-      <View style={[styles.topBar, styles.chatTopBar]}>
+      <View style={[styles.topBar, styles.chatTopBar, styles.chatIconOnlyTopBar]}>
         <View style={styles.chatTopLeft}>
-          <Pressable accessibilityLabel="Back to home" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onBackFromChat}>
-            <Ionicons name="chevron-back" color={colors.text} size={24} />
+          <Pressable accessibilityLabel="Open workspace menu" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onOpenMenu}>
+            <Ionicons name="menu" color={colors.text} size={24} />
           </Pressable>
-        </View>
-        <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
-          <Text numberOfLines={1} style={styles.chatTopTitle}>{chatTitle}</Text>
-          {chatDirectory ? <Text numberOfLines={1} style={styles.chatTopDirectory}>{chatDirectory}</Text> : null}
         </View>
         <View style={styles.chatTopActions}>
-          <Pressable accessibilityLabel="Rename chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onRenameChat}>
-            <Ionicons name="create-outline" color={editIconColor} size={20} />
+          <Pressable accessibilityLabel="Open live preview" style={({ pressed }) => [styles.previewTopButton, pressed && { opacity: 0.72, transform: [{ scale: 0.96 }] }]} onPress={onOpenPreview}>
+            <Ionicons name="play" color={previewIconColor} size={18} />
           </Pressable>
-          <Pressable accessibilityLabel="Delete chat" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onDeleteChat}>
-            <Ionicons name="trash-outline" color={dangerIconColor} size={20} />
-          </Pressable>
+          {chatHasConversation ? (
+            <View style={styles.chatMoreMenuWrap}>
+              <Pressable accessibilityLabel="Open chat options" style={({ pressed }) => [styles.chatMoreButton, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]} onPress={() => setChatMenuOpen((open) => !open)}>
+                <Ionicons name="ellipsis-horizontal" color="#F6F2FF" size={21} />
+              </Pressable>
+              {chatMenuOpen ? (
+                <View style={styles.chatOptionsMenu}>
+                  <ChatOptionsRow icon={chatStarred ? "star" : "star-outline"} label={chatStarred ? "Starred" : "Star"} tone="star" onPress={() => runChatMenuAction(onToggleStarChat)} />
+                  <ChatOptionsRow icon="create-outline" label="Rename" tone="rename" onPress={() => runChatMenuAction(onRenameChat)} />
+                  <ChatOptionsRow icon="help-circle-outline" label="Help" tone="help" onPress={() => runChatMenuAction(onChatHelp)} />
+                  <ChatOptionsRow icon="trash-outline" label="Delete" tone="delete" onPress={() => runChatMenuAction(onDeleteChat)} />
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </View>
     );
@@ -94,7 +109,9 @@ export function TopBar({
           <Text numberOfLines={1} style={styles.chatTopTitle}>{communitySubPageTitle}</Text>
         </View>
         <View style={styles.chatTopActions}>
-          <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
+          <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
+            <Ionicons name="person" color={accountIconColor} size={18} />
+          </Pressable>
         </View>
       </View>
     );
@@ -103,11 +120,16 @@ export function TopBar({
   if (activePage !== "dashboard") {
     return (
       <View style={styles.topBar}>
+        <Pressable accessibilityLabel="Open workspace menu" style={styles.chatTopIconButton} onPress={onOpenMenu}>
+          <Ionicons name="menu" color={colors.text} size={24} />
+        </Pressable>
         <View style={styles.pageTopTitleBlock}>
           <Text numberOfLines={1} style={styles.pageTopTitle}>{title}</Text>
         </View>
         <View style={styles.topRight}>
-          <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
+          <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
+            <Ionicons name="person" color={accountIconColor} size={18} />
+          </Pressable>
         </View>
       </View>
     );
@@ -117,26 +139,49 @@ export function TopBar({
     <View style={styles.topBar}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Change connected PC"
+        accessibilityLabel="Open workspace menu"
         hitSlop={8}
-        onPress={onOpenPcSwitcher}
+        onPress={onOpenMenu}
         style={({ pressed }) => [styles.topLeft, pressed ? styles.topLeftPressed : null]}
       >
-        <VibyraLogo compact style={styles.dashboardLogo as ImageStyle} />
+        <View style={styles.chatTopIconButton}>
+          <Ionicons name="menu" color={colors.text} size={24} />
+        </View>
         <View style={styles.topMachineCopy}>
           <View style={styles.topConnectionRow}>
             <View style={[styles.statusDot, isConnected ? null : styles.statusDotOffline]} />
-            <Text style={styles.topKicker}>{isConnected ? "Connected to PC" : "Not connected"}</Text>
+            <Text style={styles.topKicker}>{isConnected ? "Connected" : "Not connected"}</Text>
           </View>
           <View style={styles.topTitleRow}>
-            <Text numberOfLines={1} style={styles.topTitle}>{machineName}</Text>
-            <Ionicons name="chevron-down" color={mutedIconColor} size={16} />
+            <Text numberOfLines={1} style={styles.topTitle}>Active builds</Text>
           </View>
         </View>
       </Pressable>
       <View style={styles.topRight}>
-        <TokenBalancePill compact={compact} onOpenTokens={onOpenTokens} tokenBalance={tokenBalance} />
+        <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
+          <Ionicons name="person" color={accountIconColor} size={18} />
+        </Pressable>
       </View>
     </View>
+  );
+}
+
+function ChatOptionsRow({ icon, label, onPress, tone }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+  tone: "star" | "rename" | "help" | "delete";
+}) {
+  const color = {
+    star: "#FFD76A",
+    rename: "#A88BFF",
+    help: "#B9B5C8",
+    delete: "#FF9DAE"
+  }[tone];
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.chatOptionsRow, pressed ? styles.chatOptionsRowPressed : null]}>
+      <Ionicons name={icon} color={color} size={18} />
+      <Text style={[styles.chatOptionsLabel, tone === "delete" ? styles.chatOptionsLabelDelete : null]}>{label}</Text>
+    </Pressable>
   );
 }

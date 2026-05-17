@@ -19,6 +19,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   const awaitingFolderNameRef = useRef(false);
   const folderRecoveryRef = useRef(false);
   const pendingTerminalRef = useRef<{ command: string; projectId: string } | null>(null);
+  const pendingPreviewServerRef = useRef<{ projectId: string } | null>(null);
   const submitLockRef = useRef(false);
 
   const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
@@ -86,6 +87,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
+        if (await handlePreviewServerFollowUp(prompt, projectTarget, reply)) return;
         if (await handleTerminalFollowUp(prompt, projectTarget, reply)) return;
         const terminalCommand = parseTerminalCommandIntent(prompt);
         if (terminalCommand) {
@@ -97,7 +99,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
           await app.startAgent(projectTarget, prompt);
           return;
         }
-        if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
+        if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime, onNeedsServerApproval: rememberPreviewServerApproval })) return;
         await app.startAgent(projectTarget, prompt);
         return;
       }
@@ -119,7 +121,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       if (isPreviewFixPrompt(prompt)) {
         s.setSelectedChatId(`project-${app.selectedProject.id}`); await app.startAgent(runtime.activeProjectTarget(), prompt); return;
       }
-      if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime })) return;
+      if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime, onNeedsServerApproval: rememberPreviewServerApproval })) return;
 
       const findIntent = isFindFolderIntent(prompt);
       const fileIntent = isOpenFileIntent(prompt);
@@ -212,6 +214,22 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     return true;
   }
 
+  async function handlePreviewServerFollowUp(prompt: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
+    const pending = pendingPreviewServerRef.current;
+    if (!pending || pending.projectId !== target.projectId) return false;
+    if (isTerminalDenial(prompt)) {
+      pendingPreviewServerRef.current = null;
+      reply("Cancelled preview server start.", target.project);
+      return true;
+    }
+    if (!isTerminalApproval(prompt)) return false;
+    pendingPreviewServerRef.current = null;
+    app.addLocalUserMessage(prompt, target);
+    app.addLocalChatNotice("", `Starting the desktop preview server for **${target.project.name}**...`, target);
+    void runApprovedPreviewServer(target);
+    return true;
+  }
+
   async function handleTerminalCommand(prompt: string, command: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
     if (!app.connection) {
       addDesktopConnectionPrompt(prompt, "", false);
@@ -232,6 +250,19 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     } catch (error) {
       reply(error instanceof Error ? error.message : `Could not run \`${command}\`.`, target.project);
     }
+  }
+
+  async function runApprovedPreviewServer(target: ReturnType<Runtime["activeProjectTarget"]>) {
+    try {
+      const preview = await app.startPreviewServer(target.projectId, target.project.name);
+      app.addLocalChatNotice("", `Preview is ready for **${target.project.name}**. Tap the Live Preview card to open it.`, target, preview);
+    } catch (error) {
+      app.addLocalChatNotice("", error instanceof Error ? error.message : "Could not start the preview server.", target);
+    }
+  }
+
+  function rememberPreviewServerApproval(target: ReturnType<Runtime["activeProjectTarget"]>) {
+    pendingPreviewServerRef.current = { projectId: target.projectId };
   }
 
   const resumeFolderSearch = useCallback(async (query: string, detached: boolean) => {

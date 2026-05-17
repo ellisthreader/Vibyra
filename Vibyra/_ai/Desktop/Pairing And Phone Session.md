@@ -36,3 +36,5 @@ LAN connection URLs should include only physical phone-reachable addresses. `sta
 The desktop server binds to `0.0.0.0` so phones can reach LAN pairing routes, but route trust is split. Keep minimal discovery/pairing routes such as `/health`, `/pair`, and `/pair/status` LAN-reachable; desktop UI/control routes such as `/desktop`, `/desktop/state`, `/desktop/approve`, `/desktop/deny`, `/desktop/quit`, and desktop asset routes are loopback-only through `desktop/lib/desktopUiAuth.mjs`.
 
 `/health` and UDP discovery do not expose `PAIR_CODE`. `/pair` accepts either the manually typed desktop code or `{ autoPair: true }`, then the local desktop user must approve before the phone receives a bearer token.
+
+Desktop pairing is also account-gated. The static desktop shell verifies the real backend account token through loopback-only `POST /desktop/session`, stores only public account identity in process state, and LAN `/pair` rejects requests whose `accountId` does not match the verified desktop account. Health/discovery routes must not expose account identity.

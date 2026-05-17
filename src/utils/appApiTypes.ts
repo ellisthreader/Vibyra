@@ -108,6 +108,7 @@ export type ChatResponse = {
   title?: string;
   model: string;
   modelKey?: string;
+  chatReference?: string;
   creditCost: number;
   creditsBalance: number;
   creditsUsed: number;

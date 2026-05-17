@@ -5,9 +5,9 @@ export function projectPreviewUrl(baseUrl: string, projectId: string, token: str
   return `${normalizeAgentUrl(baseUrl)}/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
 }
 
-const FIND_VERBS = String.raw`(?:find|open|locate|use|switch(?:\s+to)?|select|go(?:\s+to)?|work\s+(?:on|in|with)|connect(?:\s+to)?|attach(?:\s+to)?|load|pick|choose|show(?:\s+me)?|view|get|grab|link(?:\s+to)?|hook\s+up|set\s+up|set|pull\s+up|bring\s+up|jump\s+(?:to|into)|head\s+(?:to|into))`;
+const FIND_VERBS = String.raw`(?:find|open|oepn|opne|opem|opn|oen|locate|use|switch(?:\s+to)?|select|go(?:\s+to)?|work\s+(?:on|in|with)|connect(?:\s+to)?|attach(?:\s+to)?|load|pick|choose|show(?:\s+me)?|view|get|grab|link(?:\s+to)?|hook\s+up|set\s+up|set|pull\s+up|bring\s+up|jump\s+(?:to|into)|head\s+(?:to|into))`;
 
-const FOLDER_NOUN = String.raw`(?:folders?|fold(?:re|r)|fodlers?|folers?|floders?|repos?(?:itory|itories)?|projec?ts?|projcts?|projets?|director(?:y|ies)|diretor(?:y|ies)|directr(?:y|ies)|dirs?|apps?|codebases?|workspaces?|desktop|pc|computer|machine|src|source)`;
+const FOLDER_NOUN = String.raw`(?:folders?|forlders?|folderrs?|foders?|flder|fold(?:re|r)|fodlers?|folers?|floders?|repos?(?:itory|itories)?|projec?ts?|projcts?|projets?|prjects?|proejcts?|director(?:y|ies)|diretor(?:y|ies)|directr(?:y|ies)|dirs?|apps?|codebases?|workspaces?|desktop|pc|computer|machine|src|source)`;
 
 const FILE_NOUN = String.raw`(?:files?|fiels?|path)`;
 

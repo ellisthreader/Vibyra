@@ -1,6 +1,6 @@
 import type { AgentConnection, FileEntry } from "../types/domain";
 import type { ChatResponse } from "../utils/appApi";
-import { normalizeAgentUrl } from "../utils/network";
+import { absoluteDesktopPreviewUrl } from "../utils/previewUrls";
 import type { AgentStartResult } from "./agentTypes";
 
 export function previewAppForAgentResult(
@@ -12,14 +12,16 @@ export function previewAppForAgentResult(
   if (!shouldAttachPreviewForAgentResult(result)) return null;
   const html = previewHtmlFromFiles(result.files);
   const canUseDesktopUrl = Boolean(connection && result.preview.url);
-  const inlineHtml = html && !(canUseDesktopUrl && hasLocalScriptOrStylesheet(html)) ? html : "";
+  const needsDesktopUrl = Boolean(html && hasLocalScriptOrStylesheet(html));
+  if (needsDesktopUrl && !canUseDesktopUrl) return null;
+  const inlineHtml = html && !needsDesktopUrl ? html : "";
   if (!connection && !html) return null;
   if (!html && !result.preview.url) return null;
   return {
     id: `${result.agent.id}-preview`,
     title: result.preview.title || projectName,
     ...(inlineHtml ? { html: inlineHtml } : {}),
-    ...(connection && result.preview.url ? { url: absoluteDesktopUrl(connection.url, result.preview.url) } : {})
+    ...(connection && result.preview.url ? { url: absoluteDesktopPreviewUrl(connection.url, result.preview.url) } : {})
   };
 }
 
@@ -57,9 +59,4 @@ function isNonPreviewPath(path: string) {
 function hasLocalScriptOrStylesheet(html: string) {
   return /<script\b[^>]*\bsrc\s*=\s*["'](?!https?:|data:|blob:|\/\/|about:)[^"']+["']/i.test(html)
     || /<link\b(?=[^>]*\brel\s*=\s*["']?(?:stylesheet|modulepreload|preload))(?=[^>]*\bhref\s*=\s*["'](?!https?:|data:|\/\/|about:))[^>]*>/i.test(html);
-}
-
-function absoluteDesktopUrl(baseUrl: string, path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${normalizeAgentUrl(baseUrl)}${path.startsWith("/") ? path : `/${path}`}`;
 }

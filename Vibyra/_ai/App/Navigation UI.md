@@ -13,13 +13,17 @@ Read this for high-level app UI entry points, bottom nav routing, and broad visu
 - `src/styles/theme.ts`
 - `src/components/`
 
-## Bottom Nav
+## Chat-First Shell
 
-The five tabs are configured in `src/screens/workspace/data/pages.ts`: `dashboard` (Home), `projects`, `chat` (AI Chat), `community`, and `profile`.
+The workspace defaults to `chat` in `src/screens/workspace/hooks/useWorkspaceState.ts`. Primary chrome is intentionally ChatGPT-like: `TopBar` opens a left workspace menu from the menu icon and an account menu from the avatar button. `BottomNav` remains exported for legacy use, but the active workspace shell no longer renders it.
 
-Each tab maps to a top-level page component exported from `src/screens/workspace/inline/index.ts`: DashboardHome, ProjectsPage, AIChatPage, CommunityPage, and ProfilePage.
+`PrimaryMenuSheet` and `AccountMenuSheet` live in `src/screens/workspace/inline/WorkspaceMenus.tsx`. Projects, Explore/Community, and Account are reached from the left workspace menu; Profile, Billing, Appearance, Security, Credits, and Log out are reached from the account menu. Profile and Community should not be added back to primary navigation unless the product direction changes. The top-right chrome button is contextual: on chat it is a play/preview action calling `openRunnablePreview`; on non-chat pages it opens the account menu.
 
-`BottomNav` lives in `chunk1.tsx` and renders from the `pages` array.
+The legacy `pages` array in `src/screens/workspace/data/pages.ts` is limited to chat, projects, and active builds; profile/community are secondary destinations.
+
+Community is user-facing as "Explore" in top-level chrome while retaining `community` route/state keys internally.
+
+Once a chat has messages, the chat-only top-right overflow menu shows Star, Rename, Help, and Delete actions; keep this menu small and iOS-popover-like.
 
 ## Chat Entry
 
@@ -34,6 +38,8 @@ Decision (2026-05-09, updated 2026-05-11): top-level pages render header *action
 Use `src/styles/theme.ts` first for shared colors, spacing, typography, and component style direction. Read screen/style chunks only for the area being changed.
 
 Auth/login first page: `src/screens/AuthScreen.tsx` owns the front-page login layout; `src/screens/auth/styles.ts` owns the shared auth surface styles. The "Continue with email" expansion uses a compact scrollable state with automatic scroll-to-bottom so the full email panel remains visible on short iPhone screens.
+
+Welcome PC setup starts at `src/screens/welcome/WelcomeConnectScreen.tsx`; Step 2 is `steps/StepSetup.tsx`, with the simple logo-to-PC morph in `hooks/useLogoMorph.ts` and setup-specific styles in `styles/welcome6.ts`. The welcome flow uses `src/assets/welcome-connect-background.png` through `components/ConstellationBackdrop.tsx`, but Step 2 specifically uses the GPT-generated `src/assets/welcome-setup-background.png`; keep both centers dark for text readability. Keep the one-minute "keep Vibyra Desktop open" scan help on Step 2 while the retry loop continues.
 
 Onboarding quiz slides share the generated `src/assets/onboarding-quiz-background.png` backdrop through `src/screens/onboarding/components/Backdrop.tsx`; answer icons render directly on the cards without inner icon boxes, with restrained purple selected states in `src/screens/onboarding/styles/part6.ts` and `src/screens/onboarding/steps/FrequencyQuestionScreen.tsx`. The "Start anywhere. Continue Everywhere." moment screen uses its own generated `src/assets/onboarding-moment-background.png` via `momentBackdrop` in `src/screens/onboarding/data/options.ts`; `OnboardingScreen.tsx` renders it behind the full moment flow so progress, content, and bottom nav share one continuous background, while `OnboardingNav.tsx` reuses the quiz/art button treatment for moment Back/Continue. Keep the moment hero image free of extra glow-circle backing layers, and keep the result/builder-profile hero icon free of glow/ring backing layers.
 

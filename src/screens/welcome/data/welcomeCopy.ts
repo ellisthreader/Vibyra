@@ -1,36 +1,34 @@
 export const welcomeCopy = {
   hero: {
     eyebrow: "WELCOME TO VIBYRA",
-    titlePrefix: "Hi",
-    titleSuffix: "let's get started",
-    body: "Build, control, and preview your PC straight from your phone. We'll wire it up in under a minute.",
-    cta: "Let's get started",
-    skip: "Skip for now"
+    welcome: "Welcome,",
+    welcomeFallback: "Welcome to Vibyra",
+    tagline: "Let's get started",
+    cta: "Next",
+    skip: "Skip"
+  },
+  download: {
+    eyebrow: "STEP 1",
+    title: "Download Vibyra Desktop",
+    body: "Open this link on your computer to install the desktop app.",
+    url: "vibyra.ai",
+    urlHelper: "Open on your computer",
+    cta: "Next"
   },
   setup: {
-    eyebrow: "STEP 1",
-    title: "Connect your PC",
-    body: "Open Vibyra Desktop on your computer at vibyra.ai — we'll scan for it on your Wi-Fi.",
-    autoSearching: "Searching for nearby PCs...",
-    autoFound: "Tap your PC to request approval",
-    autoEmpty: "No PCs found yet. Make sure Vibyra Desktop is open.",
-    autoRetry: "Search again",
-    manualLabel: "Or enter the code from your PC",
-    manualPlaceholder: "ABC123",
-    manualCta: "Connect with code",
-    autoTab: "Find my PC",
-    manualTab: "Use a code",
-    skip: "Skip for now"
+    eyebrow: "STEP 2",
+    title: "Finding your PC",
+    body: "Keep Vibyra Desktop open on your computer. We'll connect automatically when it appears."
   },
   approve: {
-    eyebrow: "STEP 2",
-    title: "Approve on your PC",
-    body: "We sent a request to your computer. Tap Allow there to finish pairing.",
-    waiting: "Waiting for your computer...",
-    confirmCta: "Confirm on phone",
-    timeoutHelp: "Didn't see the prompt? Make sure Vibyra Desktop is open.",
+    eyebrow: "STEP 3",
+    title: "Approve this connection",
+    body: "Your PC has approved the request. Finish approval here to link your phone and desktop.",
+    waiting: "Finishing secure approval...",
+    confirmCta: "Confirm connection",
+    timeoutHelp: "Still waiting? Keep Vibyra Desktop open.",
     timeoutRetry: "Try a different PC",
-    skip: "Skip for now"
+    skip: "Skip"
   },
   connected: {
     eyebrow: "ALL SET",

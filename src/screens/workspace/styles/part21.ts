@@ -11,7 +11,11 @@ export const part21 = {
     lineHeight: 17
   },
   profileScreen: {
-    gap: 5
+    flex: 1,
+    flexGrow: 1,
+    gap: 18,
+    justifyContent: "flex-start",
+    paddingBottom: 116
   },
   profileSection: {
     gap: 0

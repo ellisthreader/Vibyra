@@ -190,6 +190,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
     disconnectPc,
     navigatePage,
     openProjectPreview: runtime.openProjectPreview,
+    openRunnablePreview: runtime.openRunnablePreview,
     openTestPreview,
     createProjectAndOpenChat: runtime.createProjectAndOpenChat,
     onStartChat: prompt.onStartChat,

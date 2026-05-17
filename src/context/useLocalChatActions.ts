@@ -59,13 +59,13 @@ export function useLocalChatActions(store: Store) {
     });
   }
 
-  function addLocalChatNotice(_prompt: string, reply: string, target?: AgentStartTarget) {
+  function addLocalChatNotice(_prompt: string, reply: string, target?: AgentStartTarget, app?: ChatResponse["app"] | GeneratedApp) {
     const { projectId, file } = resolveChatTarget(target);
     setters.setChatThreads((current) => ({
       ...current,
       [projectId]: [
         ...(current[projectId] ?? []),
-        { id: makeId("chat-assistant"), role: "assistant", text: reply, file }
+        { id: makeId("chat-assistant"), role: "assistant", text: reply, file, ...(app ? { app } : {}) }
       ]
     }));
     setters.setTaskText("");

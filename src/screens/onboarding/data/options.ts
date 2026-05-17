@@ -2,6 +2,8 @@ import { ImageSourcePropType } from "react-native";
 import { Answers, BuilderIdentity, QuizStep, UsageDepth, UsageFrequency } from "../types";
 
 export const connectBackdrop = require("../../../assets/front-page-nebula.png");
+export const welcomeConnectBackdrop = require("../../../assets/welcome-connect-background.png");
+export const welcomeSetupBackdrop = require("../../../assets/welcome-setup-background.png");
 export const frequencyBackdrop = require("../../../assets/onboarding-quiz-background.png");
 export const momentBackdrop = require("../../../assets/onboarding-moment-background.png");
 export const resultBackdrop = require("../../../assets/onboarding-quiz-background.png");

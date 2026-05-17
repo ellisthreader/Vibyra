@@ -2,11 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { DashboardPage } from "../types";
 
 export const pages: Array<{ key: DashboardPage; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
-  { key: "dashboard", label: "Dashboard", icon: "grid-outline" },
+  { key: "chat", label: "Chat", icon: "chatbubble-ellipses-outline" },
   { key: "projects", label: "Projects", icon: "folder-open-outline" },
-  { key: "chat", label: "AI Chat", icon: "chatbubble-ellipses-outline" },
-  { key: "community", label: "Community", icon: "people-outline" },
-  { key: "profile", label: "Profile", icon: "person-circle-outline" }
+  { key: "dashboard", label: "Builds", icon: "pulse-outline" }
 ];
 
 export const projectStatuses = ["Active", "Draft", "Published"] as const;

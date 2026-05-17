@@ -2,16 +2,16 @@ import { useCallback } from "react";
 import { ChatMessage, DesktopConnectionPrompt, GeneratedApp, Project } from "../../../types/domain";
 import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
 import { findIndexHtmlBody } from "../../../utils/files";
+import { hasLocalPreviewDependencies } from "../../../utils/previewHtml";
+import { resolveRunnableDesktopPreviewUrl } from "../../../utils/previewUrls";
 import { projectPreviewUrl } from "../helpers/chatPrompts";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { previewAppFromMessage } from "../inline/chatPreviewFallback";
 import { WorkspaceState } from "./useWorkspaceState";
-import { desktopPreviewLooksRunnable } from "./workspacePreviewProbe";
 
 export function makeStubProject(id: string): Project {
   return { id, name: id, path: "", stack: "", updated: "" };
 }
-
 export function useWorkspaceChatRuntime(s: WorkspaceState) {
   const { app } = s;
 
@@ -107,23 +107,24 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     const currentThread = s.selectedChatId
       ? (s.selectedChatId.startsWith("project-") ? (app.chatThreads[target.chatProjectId] ?? []) : s.visibleChatMessages)
       : s.newChatMessages;
-    const existing = latestDisplayableApp(currentThread);
-    if (existing) return existing;
-
     const known = app.projects.some((p) => p.id === target.projectId);
     const loadedFiles = known ? await app.selectProject(target.projectId) : [];
     const filesForPreview = loadedFiles.length > 0 ? loadedFiles : app.files;
-    const html = findIndexHtmlBody(filesForPreview);
+    const fileHtml = findIndexHtmlBody(filesForPreview);
+    const html = fileHtml && !hasLocalPreviewDependencies(fileHtml) ? fileHtml : "";
     const desktopUrl = app.connection && known ? projectPreviewUrl(app.connection.url, target.projectId, app.connection.token) : undefined;
-    if (desktopUrl && await desktopPreviewLooksRunnable(desktopUrl)) {
-      return { id: `test-preview-${target.projectId}`, title: target.project.name, url: desktopUrl };
+    const resolvedDesktopUrl = desktopUrl ? await resolveRunnableDesktopPreviewUrl(desktopUrl) : null;
+    if (resolvedDesktopUrl) {
+      return { id: `test-preview-${target.projectId}`, title: target.project.name, url: resolvedDesktopUrl };
     }
-    if (!html) return null;
-    return {
+    if (html) return {
       id: `test-preview-${target.projectId}`,
       title: target.project.name,
       ...(html ? { html } : {}),
     };
+
+    if (known && app.connection) return null;
+    return latestDisplayableApp(currentThread);
   }, [activeProjectTarget, app, s]);
 
   const openRunnablePreview = useCallback(async () => {
@@ -164,7 +165,6 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
 
   return { activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, addDetachedDesktopConnectionPrompt, addDetachedUserMessage, createProjectAndOpenChat, desktopPreviewApp, openProjectChat, openProjectPreview, openRunnablePreview, runnablePreviewApp, showDesktopPreview };
 }
-
 function latestDisplayableApp(...groups: Array<GeneratedApp | null | undefined | Array<Pick<ChatMessage, "app" | "id" | "text">>>) {
   for (const group of groups) {
     if (!group) continue;

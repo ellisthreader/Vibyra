@@ -1,4 +1,5 @@
 const authKey = "vibyra.desktop.auth";
+const installKey = "vibyra.desktop.install";
 let authMode = "signup";
 const authNodes = {
   email: document.getElementById("desktop-auth-email"),
@@ -13,7 +14,13 @@ const authNodes = {
 initDesktopAuth();
 
 function initDesktopAuth() {
-  if (desktopAuthUser()) document.body.classList.add("desktop-authenticated");
+  const session = desktopAuthSession();
+  if (session?.token && session.user) {
+    document.body.classList.add("desktop-authenticated");
+    syncDesktopSession(session.token).catch((error) => {
+      showAuthError(error instanceof Error ? error.message : "Desktop could not verify this Vibyra account session.");
+    });
+  }
   bindDesktopAuth();
   setAuthMode(authMode);
 }
@@ -27,11 +34,9 @@ function bindDesktopAuth() {
     clearAuthError();
   });
   document.querySelectorAll("[data-auth-social]").forEach((button) => {
-    button.addEventListener("click", () => completeDesktopAuth({
-      email: `${button.dataset.authSocial}@vibyra.local`,
-      method: button.dataset.authSocial,
-      name: button.dataset.authSocial === "apple" ? "Apple User" : "Google User"
-    }));
+    button.addEventListener("click", () => {
+      showAuthError("Use email on desktop so Vibyra can match this computer to the same signed-in phone account.");
+    });
   });
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
@@ -65,7 +70,7 @@ function setAuthMode(mode) {
   validateAuthForm();
 }
 
-function submitDesktopEmailAuth(event) {
+async function submitDesktopEmailAuth(event) {
   event.preventDefault();
   const email = authNodes.email.value.trim();
   const password = authNodes.password.value;
@@ -82,14 +87,35 @@ function submitDesktopEmailAuth(event) {
     showAuthError("Enter your name to create an account.");
     return;
   }
-  completeDesktopAuth({ email, method: "email", name: name || email.split("@")[0] || "Vibyra User" });
+  authNodes.submit.disabled = true;
+  authNodes.submit.textContent = authMode === "signup" ? "Creating..." : "Logging in...";
+  try {
+    const result = await requestAppAuth(authMode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
+      email,
+      installId: desktopInstallId(),
+      ...(authMode === "signup" ? { name } : {}),
+      password
+    });
+    await completeDesktopAuth(result.token, result.user);
+  } catch (error) {
+    showAuthError(error instanceof Error ? error.message : "Could not sign in to Vibyra.");
+  } finally {
+    validateAuthForm();
+    authNodes.submit.textContent = authMode === "signup" ? "Create account" : "Log in";
+  }
 }
 
-function completeDesktopAuth(user) {
+async function completeDesktopAuth(token, user) {
+  if (!token || !user?.id) throw new Error("Vibyra did not return a valid account session.");
+  await syncDesktopSession(token);
   localStorage.setItem(authKey, JSON.stringify({
-    email: user.email,
-    method: user.method,
-    name: user.name,
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      plan: user.plan || "free"
+    },
     signedInAt: new Date().toISOString()
   }));
   document.body.classList.add("desktop-authenticated");
@@ -98,6 +124,10 @@ function completeDesktopAuth(user) {
 }
 
 function desktopAuthUser() {
+  return desktopAuthSession()?.user || null;
+}
+
+function desktopAuthSession() {
   try {
     return JSON.parse(localStorage.getItem(authKey) || "null");
   } catch {
@@ -106,6 +136,7 @@ function desktopAuthUser() {
 }
 
 function desktopSignOut() {
+  fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
   localStorage.removeItem(authKey);
   document.body.classList.remove("desktop-authenticated");
   authNodes.form?.classList.remove("open");
@@ -118,6 +149,51 @@ function validateAuthForm() {
   const passwordOk = authNodes.password.value.length >= 6;
   const nameOk = authMode === "login" || authNodes.name.value.trim().length > 0;
   authNodes.submit.disabled = !(emailOk && passwordOk && nameOk);
+}
+
+async function requestAppAuth(endpoint, payload) {
+  const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || result.message || "Could not sign in to Vibyra.");
+  return result;
+}
+
+async function syncDesktopSession(token) {
+  const response = await fetch("/desktop/session", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`
+    }
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    localStorage.removeItem(authKey);
+    document.body.classList.remove("desktop-authenticated");
+    throw new Error(result.error || "Desktop could not verify this Vibyra account session.");
+  }
+}
+
+function appApiBaseUrl() {
+  const configured = window.VIBYRA_API_URL || localStorage.getItem("vibyra.api.url");
+  if (configured) return String(configured).replace(/\/+$/, "");
+  return `${window.location.protocol}//${window.location.hostname || "127.0.0.1"}:8000`;
+}
+
+function desktopInstallId() {
+  let id = localStorage.getItem(installKey);
+  if (!id) {
+    id = `desktop-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(installKey, id);
+  }
+  return id;
 }
 
 function showAuthError(message) {

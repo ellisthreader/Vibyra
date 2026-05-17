@@ -46,28 +46,49 @@ export const welcome2 = {
     top: 0,
     width: 60
   },
-  skipPill: {
+  skipGhost: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(20, 14, 50, 0.6)",
-    borderColor: "rgba(180, 140, 255, 0.32)",
+    backgroundColor: "transparent" as const,
+    borderColor: "rgba(232, 218, 255, 0.32)",
     borderRadius: 999,
     borderWidth: 1,
-    flexDirection: "row" as const,
-    gap: 6,
-    height: 44,
-    minWidth: 120,
-    paddingHorizontal: 18,
-    justifyContent: "center" as const
-  },
-  skipPillText: {
-    color: "rgba(232, 218, 255, 0.92)",
-    fontSize: 13,
-    fontWeight: "800" as const
-  },
-  skipPillTop: {
+    height: 36,
+    justifyContent: "center" as const,
+    minWidth: 88,
+    paddingHorizontal: 16,
     position: "absolute" as const,
     right: 16,
-    top: 16,
-    zIndex: 5
+    zIndex: 10
+  },
+  skipGhostPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(232, 218, 255, 0.5)"
+  },
+  skipGhostText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "600" as const,
+    letterSpacing: 0.3
+  },
+  ghostBtn: {
+    alignItems: "center" as const,
+    alignSelf: "stretch" as const,
+    backgroundColor: "transparent" as const,
+    borderColor: "rgba(232, 218, 255, 0.32)",
+    borderRadius: 18,
+    borderWidth: 1,
+    justifyContent: "center" as const,
+    minHeight: 56,
+    paddingHorizontal: 24
+  },
+  ghostBtnPressed: {
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderColor: "rgba(232, 218, 255, 0.5)"
+  },
+  ghostBtnText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "600" as const,
+    letterSpacing: 0.4
   }
 };

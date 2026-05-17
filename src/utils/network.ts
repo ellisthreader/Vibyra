@@ -21,6 +21,8 @@ export function getDefaultAgentUrl() {
     return normalizeAgentUrl(process.env.EXPO_PUBLIC_DESKTOP_URL);
   }
 
+  if (Platform.OS === "web") return "http://127.0.0.1:4317";
+
   const host = getExpoHost();
   return host ? `http://${host}:4317` : "http://127.0.0.1:4317";
 }
@@ -29,15 +31,18 @@ export async function getDesktopCandidates(seedUrl: string) {
   const expoHost = getExpoHost();
   const seedHost = getUrlHost(seedUrl);
   const deviceHost = await getDeviceIpAddress();
-  const hosts = uniqueValues([deviceHost, expoHost, seedHost].filter(isIpv4Address));
+  const hosts = uniqueValues([deviceHost, expoHost, seedHost].filter(isPrivateIpv4Address));
+  const explicitDesktopUrl = normalizeAgentUrl(process.env.EXPO_PUBLIC_DESKTOP_URL ?? "");
   const urls = uniqueValues([
-    normalizeAgentUrl(process.env.EXPO_PUBLIC_DESKTOP_URL ?? ""),
+    Platform.OS === "web" ? "http://127.0.0.1:4317" : ""
+  ]);
+  if (explicitDesktopUrl) urls.push(explicitDesktopUrl);
+  urls.push(...filterDesktopProbeUrls([
     normalizeAgentUrl(seedUrl),
     expoHost ? `http://${expoHost}:4317` : "",
     seedHost ? `http://${seedHost}:4317` : "",
-    DESKTOP_RELAY_URL,
-    Platform.OS === "web" ? "http://127.0.0.1:4317" : ""
-  ]);
+    DESKTOP_RELAY_URL
+  ]));
 
   hosts.forEach((hostAddress) => {
     const subnetMatch = hostAddress.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.(\d{1,3})$/);
@@ -74,7 +79,7 @@ export async function getDesktopCandidates(seedUrl: string) {
 }
 
 export function appendDesktopCandidates(candidates: string[], urls: string[] = []) {
-  const normalized = urls.map(normalizeAgentUrl);
+  const normalized = filterDesktopProbeUrls(urls.map(normalizeAgentUrl));
   return uniqueValues([...normalized, ...candidates]);
 }
 
@@ -127,6 +132,34 @@ function getUrlHost(value: string) {
 
 function isIpv4Address(value: string) {
   return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(value);
+}
+
+function isPrivateIpv4Address(value: string) {
+  if (!isIpv4Address(value)) return false;
+  const [first, second] = value.split(".").map(Number);
+  return first === 10
+    || first === 127
+    || first === 192 && second === 168
+    || first === 172 && second >= 16 && second <= 31
+    || first === 169 && second === 254;
+}
+
+function filterDesktopProbeUrls(urls: string[]) {
+  return urls.filter((url) => {
+    try {
+      const parsed = new URL(normalizeAgentUrl(url));
+      if (parsed.protocol === "https:") return true;
+      if (parsed.protocol !== "http:") return false;
+      return isLocalDesktopHost(parsed.hostname);
+    } catch {
+      return false;
+    }
+  });
+}
+
+function isLocalDesktopHost(host: string) {
+  const normalized = host.toLowerCase();
+  return normalized === "localhost" || isPrivateIpv4Address(normalized);
 }
 
 async function getDeviceIpAddress() {

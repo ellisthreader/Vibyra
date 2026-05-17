@@ -37,7 +37,8 @@ trait ProjectPreview
 
         if ($relativePath === '') {
             return $this->previewHtmlResponse(
-                $this->previewShell($project['name'], 'Project analyzed. A built browser entry was not found yet, so Vibyra is showing this phone-viewable project preview immediately.')
+                $this->previewShell('No runnable preview found', 'Vibyra could not find a built browser entry for this folder.'),
+                404
             );
         }
 
@@ -77,6 +78,10 @@ trait ProjectPreview
 
     private function previewEntryPath(array $project): string
     {
+        if ($this->shouldSkipStaticPreviewEntries($project)) {
+            return '';
+        }
+
         foreach (['dist/index.html', 'build/index.html', 'out/index.html', '.output/public/index.html', 'public/index.html', 'web/index.html', 'www/index.html', 'client/dist/index.html', 'frontend/dist/index.html', 'apps/web/dist/index.html', 'packages/web/dist/index.html', 'storybook-static/index.html', 'docs/index.html', 'game/index.html', 'demo/index.html', 'app/index.html', 'index.html'] as $candidate) {
             $filePath = $this->safePreviewFile($project, $candidate);
             if ($filePath && ! $this->isSourceOnlyPreviewHtml(File::get($filePath), $candidate)) {
@@ -85,6 +90,19 @@ trait ProjectPreview
         }
 
         return '';
+    }
+
+    private function shouldSkipStaticPreviewEntries(array $project): bool
+    {
+        $composerPath = $this->safePreviewFile($project, 'composer.json');
+        $packagePath = $this->safePreviewFile($project, 'package.json');
+
+        if (! $composerPath || ! $packagePath) {
+            return false;
+        }
+
+        return preg_match('/laravel\\\\?\/framework/i', File::get($composerPath)) === 1
+            && str_contains(File::get($packagePath), 'laravel-vite-plugin');
     }
 
     private function safePreviewFile(array $project, string $relativePath): ?string

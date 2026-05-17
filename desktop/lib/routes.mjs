@@ -2,13 +2,14 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAgentTask, applyAgentTask, discardAgentTask, runCommand } from "./agent.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
+import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { createProjectFile, listProjectFiles, readProjectFile } from "./files.mjs";
 import { readBody, send, sendFile } from "./http.mjs";
 import { analyzeDesktopProject, browseDesktopPath, createDesktopProject, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { appState, disconnectPhone, event, markPhoneConnected, publicState, pushEvents } from "./state.mjs";
-import { serveProjectPreview } from "./preview.mjs";
+import { servePreviewRefererAsset, servePreviewServerProxy, servePreviewUrlProxy, serveProjectPreview } from "./preview.mjs";
 import {
   approvePairing,
   denyPairing,
@@ -40,7 +41,8 @@ export async function handle(req, res) {
     if (await handleAuthedRoutes(req, res, url)) return;
     send(res, 404, { ok: false, error: "Unknown Vibyra Desktop route" });
   } catch (error) {
-    send(res, 500, { ok: false, error: error instanceof Error ? error.message : "Desktop app error" });
+    const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 500;
+    send(res, status >= 400 && status < 600 ? status : 500, { ok: false, error: error instanceof Error ? error.message : "Desktop app error" });
   }
 }
 
@@ -85,6 +87,19 @@ async function handleDesktopRoutes(req, res, url) {
     appState.server?.close(() => process.exit(0));
     return true;
   }
+  if (req.method === "POST" && url.pathname === "/desktop/session") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const token = bearerToken(req.headers.authorization);
+    const account = await verifyAndSetDesktopAccount(token);
+    send(res, 200, { ok: true, user: account });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/session/clear") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    clearDesktopAccount();
+    send(res, 200, { ok: true });
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/desktop") {
     if (!authorizeDesktopUi(req, res, false)) return true;
     await sendFile(res, join(desktopDir, "app.html"));
@@ -108,6 +123,11 @@ async function handleDesktopRoutes(req, res, url) {
   return false;
 }
 
+function bearerToken(header) {
+  const value = String(header || "");
+  return value.toLowerCase().startsWith("bearer ") ? value.slice(7).trim() : "";
+}
+
 function authorizePhone(req, res) {
   if (!isAuthed(req)) { send(res, 401, { ok: false, error: "Missing or invalid desktop token" }); return false; }
   markPhoneConnected();
@@ -118,6 +138,17 @@ async function handlePairingRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/health") { send(res, 200, healthPayload()); return true; }
   if (req.method === "GET" && url.pathname.startsWith("/preview/project/")) {
     await serveProjectPreview(res, url);
+    return true;
+  }
+  if (req.method === "GET" && url.pathname.startsWith("/preview/server/")) {
+    await servePreviewServerProxy(res, url);
+    return true;
+  }
+  if (req.method === "GET" && url.pathname.startsWith("/preview/proxy-url/")) {
+    await servePreviewUrlProxy(res, url);
+    return true;
+  }
+  if (req.method === "GET" && await servePreviewRefererAsset(res, url, req.headers.referer || req.headers.referrer)) {
     return true;
   }
   if (req.method === "POST" && url.pathname === "/pair") { await pairDevice(req, res); return true; }
@@ -183,11 +214,11 @@ async function handleAuthedRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && url.pathname === "/agents/start") {
-    send(res, 200, await startAgentTask(await readBody(req)));
+    send(res, 200, await startAgentTask({ ...(await readBody(req)), requestHost: req.headers.host }));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/agents/apply") {
-    send(res, 200, await applyAgentTask(await readBody(req)));
+    send(res, 200, await applyAgentTask({ ...(await readBody(req)), requestHost: req.headers.host }));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/agents/discard") {

@@ -47,8 +47,8 @@ export function ProfileSettingsGroup({ activeLabel, onSelect, rows, title }: {
 }) {
   return (
     <View style={styles.profileSection}>
-      <Text style={styles.profileGroupTitle}>{title}</Text>
-      <View style={styles.profileGroup}>
+      {title ? <Text style={[styles.profileGroupTitle, styles.profileGroupTitleCompact]}>{title}</Text> : null}
+      <View style={[styles.profileGroup, styles.profileGroupGrid]}>
         {rows.map((row, index) => {
           const rowKey = row.key ?? row.label;
           const active = activeLabel === rowKey;
@@ -58,13 +58,14 @@ export function ProfileSettingsGroup({ activeLabel, onSelect, rows, title }: {
               onPress={() => onSelect(rowKey)}
               style={({ pressed }) => [
                 styles.profileRow,
+                styles.profileRowGrid,
                 index === rows.length - 1 ? styles.profileRowLast : null,
                 active ? styles.profileRowActive : null,
                 pressed ? styles.profileRowPressed : null
               ]}
             >
               <View style={[styles.profileRowIcon, row.danger ? styles.profileRowIconDanger : null]}>
-                <Ionicons name={row.icon} color={row.danger ? "#FF465C" : "#B953FF"} size={23} />
+                <Ionicons name={row.icon} color={row.danger ? "#FF465C" : "#B953FF"} size={18} />
               </View>
               <Text numberOfLines={1} style={[styles.profileRowLabel, row.danger ? styles.profileRowLabelDanger : null]}>{row.label}</Text>
               {row.value ? <Text numberOfLines={1} style={styles.profileRowValue}>{row.value}</Text> : null}

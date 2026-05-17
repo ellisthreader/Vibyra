@@ -1,12 +1,19 @@
-import { PreviewState, Project, FileEntry, LogEvent } from "../types/domain";
+import { GeneratedApp, PreviewState, Project, FileEntry, LogEvent } from "../types/domain";
 import { dedupeFiles, mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
+import { resolveReachableDesktopPreviewUrl } from "../utils/previewUrls";
 import { useDesktopFolders } from "./useDesktopFolders";
+import { DesktopRequestError } from "./useRequests";
 import { useWorkspaceFileActions } from "./useWorkspaceFileActions";
 import { ProjectCreateResult, makeLocalProject } from "./workspaceTypes";
 import { WorkspaceLogs, WorkspaceRequests, WorkspaceStore } from "./workspaceActionTypes";
 
 type ProjectOpenOptions = { startPreview?: boolean };
+type PreviewServerResult = {
+  command: string;
+  events: LogEvent[];
+  preview: { state: PreviewState; title?: string | null; url?: string | null };
+};
 
 export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRequests, logs: WorkspaceLogs) {
   const { state, setters } = store;
@@ -123,6 +130,35 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     await selectProject(remembered.id, remembered, options);
   }
 
+  async function startPreviewServer(projectId: string, projectName?: string): Promise<GeneratedApp> {
+    const connection = state.connection;
+    if (!connection) throw new Error("Connect Vibyra Desktop before starting a preview server.");
+    const result = await requestPreviewServerStart(projectId);
+    setters.setPreviewState(result.preview.state);
+    logs.appendLogs(result.events);
+    const url = await resolveReachableDesktopPreviewUrl(connection, result.preview.url);
+    if (!url) throw new Error("Vibyra Desktop started the preview server, but this phone could not load the preview route or its scripts. Restart Vibyra Desktop, reconnect this phone, then try Preview again.");
+    return {
+      id: `desktop-dev-preview-${projectId}-${Date.now()}`,
+      title: result.preview.title || projectName || "Live preview",
+      url
+    };
+  }
+
+  async function requestPreviewServerStart(projectId: string): Promise<PreviewServerResult> {
+    try {
+      return await requests.agentRequest<PreviewServerResult>("/preview/start-server", {
+        method: "POST",
+        body: JSON.stringify({ projectId })
+      });
+    } catch (error) {
+      if (error instanceof DesktopRequestError && error.status === 404 && /unknown vibyra desktop route/i.test(error.message)) {
+        throw new Error("Vibyra Desktop is still running an older bridge that cannot start previews from your phone yet. Quit and reopen Vibyra Desktop, reconnect this phone, then try Preview again.");
+      }
+      throw error;
+    }
+  }
+
   return {
     adoptProject,
     rememberProject,
@@ -132,6 +168,7 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     loadProjectFilesWithConnection: fileActions.loadProjectFilesWithConnection,
     selectFile: fileActions.selectFile,
     selectProject,
+    startPreviewServer,
     ...desktopFolders
   };
 }

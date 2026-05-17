@@ -2,6 +2,21 @@
 
 Deep reference: do not read this file end-to-end by default. Use `rg` for a feature, date, route, or file path, then read only the matching decision section. New durable facts should usually go into the smallest focused note first; add a decision entry only for cross-cutting choices that need rationale.
 
+## 2026-05-16: Quiz Temporarily Disabled — Onboarding Routes Straight To Welcome+Connect
+
+Decision: The onboarding quiz (FrequencyQuestion / QuestionScreen × 2 / UsageSlider / IdentityQuestion / ProfileGenerating + InsightScreen / PricingScreen — steps 0–6) is bypassed in routing while still living in `src/screens/onboarding/**`. Every authenticated user with `pcSetupComplete = false` lands directly on the Welcome+Connect flow shipped in commit `2b2140b` (`src/screens/welcome/WelcomeConnectScreen.tsx`, step 7 of the existing OnboardingScreen state machine). Two coordinated edits, each carrying a `// QUIZ_TEMP_DISABLED:` comment that quotes the original line for trivial revert:
+
+1. `App.tsx` — gate became `if (!app.pcSetupComplete) return <OnboardingScreen/>`. Original line: `if (!app.onboardingComplete || !app.pcSetupComplete)`.
+2. `src/screens/OnboardingScreen.tsx` — initial step hardcoded to `useState<OnboardingStep>(7)`. Original initialiser: `() => (app.onboardingComplete && !app.pcSetupComplete) ? 7 : 0`.
+
+The App.tsx gate change (dropping the `onboardingComplete` check) is what prevents the loop: `WelcomeConnectScreen` only calls `app.completePcSetup()` on finish/skip, so `onboardingComplete` stays `false`. Without the gate change a fresh user would finish Welcome+Connect, pcSetupComplete would flip true, but the original `!onboardingComplete` clause would re-trap them in OnboardingScreen and bounce back to step 0.
+
+File(s): `App.tsx` (routing gate), `src/screens/OnboardingScreen.tsx` (initial step). Quiz components in `src/screens/onboarding/steps/**` and `src/screens/onboarding/components/**` left intact and importable.
+
+Reason: User explicitly asked to temporarily disable the quiz so the new Welcome+Connect flow is the first thing every fresh sign-in sees. The login screen (`AuthScreen` with Google/Apple/email) was called out as already-perfect and must stay untouched. Keeping the quiz code in-tree (vs. deleting it) preserves the per-persona pricing recommendation logic in `onboarding/persona.ts` and the persona models in `onboarding/data/personas.ts` for the eventual re-enable.
+
+How to apply: To revert, `rg "QUIZ_TEMP_DISABLED"` and restore the lines quoted in each marker comment — that's the whole revert. While disabled, do NOT add new state that assumes a fresh user has answered the quiz (`answers`, `persona`, `personaModel` in `OnboardingScreen` are still computed but only ever from `initialAnswers` because the user can't advance past step 7). Do NOT call `app.completeOnboarding()` from WelcomeConnect — the App.tsx gate no longer depends on it, and calling it would persist a misleading "onboarded" state to the backend that complicates re-enabling the quiz later.
+
 ## 2026-05-09: Language — Real i18n Layer (Manual Translation Tables, Hermes-Safe Date/Number Formatting)
 
 Decision: Language now actually translates UI text and formats dates/numbers per language without depending on `Intl.DateTimeFormat`/`Intl.NumberFormat` (which silently fall back to en-US on most React Native Hermes builds because only en-US ICU data is bundled). New module `src/context/translations.ts` ships:

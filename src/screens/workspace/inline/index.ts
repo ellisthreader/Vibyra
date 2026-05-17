@@ -1,4 +1,5 @@
 export { BottomNav } from "./chunk1";
+export { AccountMenuSheet, PrimaryMenuSheet } from "./WorkspaceMenus";
 export { TopBar } from "./chunk2";
 export { TokenBalancePill, getTopBarTitle, projectPreviewUrl, RenameChatModal, getDesktopStatusLabel, getDesktopStatusStyle } from "./chunk3";
 export { PcSwitcherSheet } from "./chunk4";

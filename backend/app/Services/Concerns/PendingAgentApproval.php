@@ -81,7 +81,9 @@ trait PendingAgentApproval
 
     private function deliveredPreview(array $project, array $state): array
     {
-        return ['state' => 'delivered', 'url' => $this->previewUrl($project['id'], $state['token']), 'title' => $project['name'], 'message' => 'Updated preview captured from Vibyra Desktop', 'capturedAt' => now()->toISOString()];
+        $url = $this->previewEntryPath($project) !== '' ? $this->previewUrl($project['id'], $state['token']) : null;
+
+        return ['state' => $url ? 'delivered' : 'live', 'url' => $url, 'title' => $project['name'], 'message' => $url ? 'Updated preview captured from Vibyra Desktop' : 'No runnable browser preview found for this project yet.', 'capturedAt' => now()->toISOString()];
     }
 
     private function agentResult(string $runId, array $pending, array $project, string $path, array $files, ?array $artifact, array $events, array $preview): array

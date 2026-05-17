@@ -3,9 +3,11 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { isViteOutputUrl, portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
 import { choosePreviewPort } from "./previewPortAllocator.mjs";
+import { isLaravelViteProject, startLaravelViteDevServer } from "./previewLaravelDevServer.mjs";
 import { devServerPortsFromPackage, npmRunArgs, npmRunEnv, previewCommand, previewFrameworkProfile } from "./previewFrameworkProfiles.mjs";
 import { isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
-import { appState } from "./state.mjs";
+import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
+import { appState, publicHostFromRequestHost } from "./state.mjs";
 
 export const PREVIEW_DEV_COMMAND = "npm run dev -- --host 0.0.0.0";
 
@@ -33,10 +35,23 @@ export async function runningProjectDevServerUrl(project, requestHost) {
 
 export async function startProjectDevServer(project, requestHost, options = {}) {
   const existingUrl = await runningProjectDevServerUrl(project, requestHost);
-  if (existingUrl) return { command: PREVIEW_DEV_COMMAND, started: false, url: existingUrl };
+  if (existingUrl) {
+    const tracked = appState.previewServers[project.id];
+    if (tracked) {
+      tracked.url = existingUrl;
+      tracked.proxyTargetUrl = tracked.proxyTargetUrl || loopbackBaseForUrl(existingUrl);
+    } else {
+      trackPreviewServer(project.id, { command: PREVIEW_DEV_COMMAND, proxyTargetUrl: loopbackBaseForUrl(existingUrl), startedAt: new Date().toISOString(), url: existingUrl });
+    }
+    return { command: PREVIEW_DEV_COMMAND, started: false, url: existingUrl };
+  }
 
   const context = await startablePreviewContext(project);
   if (!context) throw new Error("This project does not expose a recognized web dev script that Vibyra can start safely. Add a standard package.json script for Vite, SvelteKit, Next.js, Astro, Nuxt, Angular, Vue CLI, Create React App, or Remix Vite, then try Preview again.");
+
+  if (await isLaravelViteProject(project.path, context.packageText, context.profile)) {
+    return startLaravelViteDevServer(project, requestHost, context, options);
+  }
 
   stopTrackedPreviewServer(project.id);
   context.launchPort = options.port ?? await choosePreviewPort(context.packageText, context.profile);
@@ -44,6 +59,7 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
   const executable = process.platform === "win32" ? "npm.cmd" : "npm";
   const child = spawn(executable, npmRunArgs(context.profile, context.launchPort), {
     cwd: project.path,
+    detached: process.platform !== "win32",
     env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, context.launchPort), ...(options.env ?? {}) },
     stdio: ["ignore", "pipe", "pipe"]
   });
@@ -53,24 +69,21 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
   };
   child.stdout?.on("data", capture);
   child.stderr?.on("data", capture);
-  appState.previewServers[project.id] = { command: context.command, process: child, startedAt: new Date().toISOString() };
-  child.on("exit", () => {
-    if (appState.previewServers[project.id]?.process === child) delete appState.previewServers[project.id];
-  });
+  trackPreviewServer(project.id, { command: context.command, process: child, startedAt: new Date().toISOString() });
 
   const url = await waitForProjectDevServer(project, requestHost, context, () => output, options.timeoutMs ?? 30000);
-  if (url) return { command: context.command, started: true, url };
+  if (url) {
+    const tracked = appStatePreviewServer(project.id);
+    if (tracked) {
+      tracked.url = url;
+      tracked.proxyTargetUrl = loopbackBaseForUrl(url);
+    }
+    return { command: context.command, started: true, url };
+  }
 
   stopTrackedPreviewServer(project.id);
   const reason = output.trim() ? ` Last output: ${output.trim().slice(-900)}` : "";
   throw new Error(`Vibyra could not verify the dev server after starting it.${reason}`);
-}
-
-function stopTrackedPreviewServer(projectId) {
-  const tracked = appState.previewServers[projectId];
-  if (!tracked?.process) return;
-  try { tracked.process.kill(); } catch {}
-  delete appState.previewServers[projectId];
 }
 
 async function waitForProjectDevServer(project, requestHost, context, output, timeoutMs) {
@@ -95,9 +108,10 @@ async function launchedDevServerUrl(context, requestHost, output) {
     if (context.localScripts.length > 0 && !rootMatchesProject(localRoot, context.localScripts)) continue;
     if (!await profileServerLooksReady(localBase, context.profile, localRoot)) continue;
 
-    for (const publicBase of publicDevServerBases(port, requestHost, output, publicDevServerBase(port, requestHost))) {
+    for (const rawPublicBase of publicDevServerBases(port, requestHost, output, publicDevServerBase(port, requestHost))) {
+      const publicBase = normalizePublicDevServerBase(rawPublicBase, requestHost);
       if (isLoopbackHost(publicBase)) return publicBase;
-      if (isViteOutputUrl(publicBase, output)) return publicBase;
+      if (isViteOutputUrl(rawPublicBase, output) && !isBindAllHost(rawPublicBase)) return publicBase;
       const publicRoot = await fetchText(`${publicBase}/`);
       if (publicRoot && await profileServerLooksReady(publicBase, context.profile, publicRoot)) return publicBase;
     }
@@ -160,12 +174,44 @@ async function profileServerLooksReady(baseUrl, profile, rootHtml = "") {
   return !profile?.viteClient || await viteClientLooksReady(baseUrl);
 }
 function publicDevServerBase(port, requestHost) {
-  return `http://${String(requestHost ?? "").split(":")[0] || "127.0.0.1"}:${port}`;
+  return `http://${publicHostFromRequestHost(requestHost)}:${port}`;
+}
+
+function normalizePublicDevServerBase(baseUrl, requestHost) {
+  try {
+    const parsed = new URL(baseUrl);
+    if (isBindAllHost(parsed.hostname)) parsed.hostname = publicHostFromRequestHost(requestHost);
+    return parsed.toString().replace(/\/+$/, "");
+  } catch {
+    return baseUrl;
+  }
+}
+
+function loopbackBaseForUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//127.0.0.1:${parsed.port}`;
+  } catch {
+    return url;
+  }
+}
+
+function appStatePreviewServer(projectId) {
+  return appState.previewServers[projectId] ?? null;
 }
 function isLoopbackHost(baseUrl) {
   try {
     const host = new URL(baseUrl).hostname;
     return host === "127.0.0.1" || host === "localhost" || host === "::1";
+  } catch {
+    return false;
+  }
+}
+
+function isBindAllHost(baseUrl) {
+  try {
+    const host = new URL(baseUrl).hostname;
+    return host === "0.0.0.0" || host === "::";
   } catch {
     return false;
   }

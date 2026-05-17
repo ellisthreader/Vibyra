@@ -37,6 +37,22 @@ export const welcome1 = {
   titleAccent: {
     color: "#C66BFF"
   },
+  welcomeLine: {
+    color: colors.text,
+    fontSize: 40,
+    fontWeight: "800" as const,
+    letterSpacing: 0,
+    lineHeight: 46,
+    textAlign: "center" as const
+  },
+  tagline: {
+    color: "#C8A8FF",
+    fontSize: 22,
+    fontWeight: "600" as const,
+    letterSpacing: -0.2,
+    lineHeight: 28,
+    textAlign: "center" as const
+  },
   body1: {
     color: "rgba(226, 219, 255, 0.78)",
     fontSize: 15,
@@ -69,5 +85,39 @@ export const welcome1 = {
     fontWeight: "700" as const,
     marginTop: 4,
     textAlign: "center" as const
+  },
+  downloadLottieWrap: {
+    alignItems: "center" as const,
+    height: 200,
+    justifyContent: "center" as const,
+    marginVertical: 8,
+    width: "100%" as const
+  },
+  downloadLottie: {
+    height: 200,
+    width: 200
+  },
+  downloadUrl: {
+    color: "#C8A8FF",
+    fontSize: 26,
+    fontWeight: "700" as const,
+    letterSpacing: -0.3,
+    textAlign: "center" as const,
+    textDecorationLine: "underline" as const,
+    textDecorationColor: "rgba(200, 168, 255, 0.4)" as const
+  },
+  downloadHelper: {
+    color: "rgba(226, 219, 255, 0.6)",
+    fontSize: 13,
+    fontWeight: "500" as const,
+    letterSpacing: 0.2,
+    marginTop: 6,
+    textAlign: "center" as const
+  },
+  typewriterRow: {
+    alignItems: "center" as const,
+    flexDirection: "row" as const,
+    justifyContent: "center" as const,
+    minHeight: 46
   }
 };

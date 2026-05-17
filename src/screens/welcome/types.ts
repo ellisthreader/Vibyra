@@ -1,9 +1,10 @@
-export type WelcomeStep = "hero" | "setup" | "approve" | "connected";
+export type WelcomeStep = "hero" | "download" | "setup" | "approve" | "connected";
 
 export type WelcomeFlow = {
   step: WelcomeStep;
   advance: (next: WelcomeStep) => void;
   goToHero: () => void;
+  goToDownload: () => void;
   goToSetup: () => void;
   goToApprove: () => void;
   goToConnected: () => void;

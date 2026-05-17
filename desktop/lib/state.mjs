@@ -12,6 +12,7 @@ export const PHONE_SESSION_TIMEOUT_MS = 30000;
 
 export const appState = {
   server: null,
+  desktopAccount: null,
   pairedDevice: null,
   phoneSession: null,
   pendingPair: null,
@@ -65,7 +66,7 @@ export function lanAddresses() {
   for (const [name, entries] of Object.entries(networkInterfaces())) {
     if (virtualInterfacePattern.test(name)) continue;
     for (const item of entries ?? []) {
-      if (item && item.family === "IPv4" && !item.internal) addresses.push(item.address);
+      if (item && item.family === "IPv4" && !item.internal && isPhoneReachableHost(item.address)) addresses.push(item.address);
     }
   }
 
@@ -74,6 +75,12 @@ export function lanAddresses() {
 
 export function connectionUrls() {
   return lanAddresses().map((address) => `http://${address}:${PORT}`);
+}
+
+export function publicHostFromRequestHost(requestHost) {
+  const host = hostnameFromRequestHost(requestHost);
+  if (isLoopbackHost(host)) return host === "localhost" ? "127.0.0.1" : host;
+  return isPhoneReachableHost(host) ? host : lanAddresses()[0] ?? "127.0.0.1";
 }
 
 export function markPhoneConnected(deviceName = appState.pairedDevice || approvedPairDeviceName() || "Vibyra Phone") {
@@ -120,6 +127,7 @@ export function publicState() {
     pairCode: PAIR_CODE,
     pairedDevice,
     pendingPair: appState.pendingPair,
+    desktopAccount: appState.desktopAccount,
     latestPreview: appState.latestPreview,
     activeAgentRun: appState.activeAgentRun,
     events: appState.events,
@@ -134,4 +142,32 @@ export function pushEvents(events) {
 
 function approvedPairDeviceName() {
   return appState.pendingPair?.status === "approved" ? appState.pendingPair.deviceName : null;
+}
+
+function hostnameFromRequestHost(requestHost) {
+  const value = String(requestHost ?? "").trim();
+  if (!value) return "";
+  try {
+    return new URL(/^https?:\/\//i.test(value) ? value : `http://${value}`).hostname;
+  } catch {
+    return value.split(":")[0] ?? "";
+  }
+}
+
+function isPhoneReachableHost(hostname) {
+  const host = String(hostname ?? "").trim().toLowerCase().replace(/^\[|\]$/g, "");
+  return Boolean(host)
+    && host !== "0.0.0.0"
+    && host !== "::"
+    && host !== "::1"
+    && host !== "localhost"
+    && host !== "255.255.255.255"
+    && !/^127\./.test(host)
+    && !/^169\.254\./.test(host)
+    && !/^fe80:/i.test(host);
+}
+
+function isLoopbackHost(hostname) {
+  const host = String(hostname ?? "").trim().toLowerCase().replace(/^\[|\]$/g, "");
+  return host === "localhost" || host === "::1" || /^127\./.test(host);
 }

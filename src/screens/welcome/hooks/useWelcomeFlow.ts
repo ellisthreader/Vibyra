@@ -26,8 +26,9 @@ export function useWelcomeFlow(): WelcomeFlow {
     announced.current = step;
     const labels: Record<WelcomeStep, string> = {
       hero: "Welcome to Vibyra. Let's get started.",
-      setup: "Step 1. Connect your PC.",
-      approve: "Step 2. Approve the connection on your computer.",
+      download: "Step 1. Download Vibyra Desktop on your computer.",
+      setup: "Step 2. Connect your PC.",
+      approve: "Step 3. Confirm the connection on your phone.",
       connected: "All set. You're connected."
     };
     AccessibilityInfo.announceForAccessibility(labels[step]);
@@ -41,6 +42,10 @@ export function useWelcomeFlow(): WelcomeFlow {
         return true;
       }
       if (step === "setup") {
+        setStep("download");
+        return true;
+      }
+      if (step === "download") {
         setStep("hero");
         return true;
       }
@@ -57,17 +62,19 @@ export function useWelcomeFlow(): WelcomeFlow {
   const cancelSkip = useCallback(() => setSkipPromptOpen(false), []);
   const confirmSkip = useCallback(() => {
     setSkipPromptOpen(false);
-    app.completePcSetup();
+    if (app.connection || app.pendingPhoneApproval || app.paired) app.disconnectDesktop();
+    app.skipPcSetup();
   }, [app]);
 
   const advance = useCallback((next: WelcomeStep) => setStep(next), []);
   const goToHero = useCallback(() => setStep("hero"), []);
+  const goToDownload = useCallback(() => setStep("download"), []);
   const goToSetup = useCallback(() => setStep("setup"), []);
   const goToApprove = useCallback(() => setStep("approve"), []);
   const goToConnected = useCallback(() => setStep("connected"), []);
 
   return {
-    step, advance, goToHero, goToSetup, goToApprove, goToConnected,
+    step, advance, goToHero, goToDownload, goToSetup, goToApprove, goToConnected,
     requestSkip, cancelSkip, confirmSkip, finish, skipPromptOpen
   };
 }

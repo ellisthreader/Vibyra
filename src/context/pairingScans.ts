@@ -82,7 +82,8 @@ export async function scanPairByCode(
   agentUrl: string,
   code: string,
   setHealthMessage: (message: string) => void,
-  rememberedDesktops: RememberedDesktop[] = []
+  rememberedDesktops: RememberedDesktop[] = [],
+  accountId?: number | null
 ) {
   const deadline = Date.now() + DISCOVERY_SCAN_TIMEOUT_MS;
   const candidates = appendDesktopCandidates(
@@ -101,7 +102,7 @@ export async function scanPairByCode(
       break;
     }
     const group = candidates.slice(index, index + PAIR_SCAN_BATCH_SIZE);
-    const results = group.map((url) => requestPairAtUrl(requests, url, code, requestId));
+    const results = group.map((url) => requestPairAtUrl(requests, url, code, requestId, accountId));
     const paired = await firstMatching(results, (result) => result.type === "paired");
     if (paired?.type === "paired") {
       const health = await checkHealth(paired.url, code);

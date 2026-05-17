@@ -37,6 +37,12 @@ Expanded code uses `tokenize(code, language)` with JS/TS, JSON, Python, CSS, and
 
 If `streamChatText`'s cursor changes, update `TYPING_CURSOR_CHARS` in `chunk24.tsx`.
 
+## Feedback Integration
+
+Assistant rows render through `MessageBubble` in `src/screens/workspace/inline/chunk23.tsx`, with the list wiring in `src/screens/workspace/inline/chunk9.tsx`. App-side `ChatMessage` has local `id`, `runStatus`, `editApproval`, and `pendingApplyId`; backend `ChatResponse` now exposes `chatReference`, but the UI should persist it onto the assistant `ChatMessage` before adding visible worked/did-not-work controls.
+
+`src/utils/chatFeedback.ts` provides the app-side future POST helper for `POST /api/chat/learning/feedback`; it requires `chatReference` so UI cannot accidentally submit local-only message ids as durable learning signals.
+
 ## Visual System
 
 Chat targets a Claude-Code-remote feel in Vibyra's purple palette. `MessageBubble` renders user and assistant text free-flowing; user prompts do not get a boxed surface.

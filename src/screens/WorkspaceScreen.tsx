@@ -2,12 +2,13 @@ import React, { useEffect } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import {
   AIChatPage,
+  AccountMenuSheet,
   AppPreviewModal,
-  BottomNav,
   CommunityPage,
   DashboardHome,
   FolderConfirmModal,
   PcSwitcherSheet,
+  PrimaryMenuSheet,
   ProfilePage,
   ProjectsPage,
   RenameChatModal,
@@ -18,12 +19,22 @@ import {
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
 import { directoryForChat } from "./workspace/helpers/chatDirectory";
 import { styles } from "./workspace/styles";
+import { chatCommandHelpReply } from "./workspace/data/chatCommands";
 
 export function WorkspaceScreen() {
   const w = useWorkspace();
   const { app, activePage, height, insets } = w;
   const chatDirectory = directoryForChat(w.selectedChatId, app);
+  const chatHasConversation = w.visibleChatMessages.length > 0;
   const latestRunnablePreview = [...w.visibleChatMessages].reverse().find((message) => message.app)?.app;
+  const recentChats = Object.entries(app.chatThreads)
+    .filter(([, messages]) => messages.length > 0)
+    .slice(-5)
+    .reverse()
+    .map(([projectId]) => ({
+      id: `project-${projectId}`,
+      title: app.chatTitles[projectId] ?? app.chatProjects[projectId]?.name ?? "Project chat"
+    }));
 
   useEffect(() => {
     if (!w.previewApp || !latestRunnablePreview || w.previewApp.id === latestRunnablePreview.id) return;
@@ -37,18 +48,23 @@ export function WorkspaceScreen() {
           <TopBar
             activePage={activePage}
             chatDirectory={chatDirectory}
+            chatHasConversation={chatHasConversation}
+            chatStarred={Boolean(w.starredChatKeys[w.chatTitleKey])}
             chatTitle={w.chatTitle}
-            compact={w.compact}
             communitySubPageTitle={w.selectedCommunityPost ? formatCommunityTitle(w.selectedCommunityPost.title) : ""}
             isConnected={w.isConnected}
-            machineName={w.connectedMachineName}
-            onBackFromChat={() => { w.setSelectedChatId(null); w.setActivePage("dashboard"); }}
             onBackFromCommunity={w.backFromCommunitySubPage}
+            onChatHelp={() => {
+              const projectId = w.selectedChatId?.startsWith("project-") ? w.selectedChatId.replace("project-", "") : "";
+              if (projectId) app.addLocalChatReply("/help", chatCommandHelpReply, { projectId, chatProjectId: projectId, project: app.projects.find((p) => p.id === projectId) ?? app.chatProjects[projectId], file: null });
+              else w.setNewChatMessages((messages) => [...messages, { id: `help-user-${Date.now()}`, role: "user", text: "/help" }, { id: `help-assistant-${Date.now()}`, role: "assistant", text: chatCommandHelpReply }]);
+            }}
             onDeleteChat={w.deleteCurrentChat}
-            onOpenPcSwitcher={w.openPcSwitcher}
-            onOpenTokens={() => w.setTokenSheetVisible(true)}
+            onOpenAccount={() => w.setAccountMenuVisible(true)}
+            onOpenMenu={() => w.setPrimaryMenuVisible(true)}
+            onOpenPreview={() => { void w.openRunnablePreview(); }}
             onRenameChat={w.openRenameChat}
-            tokenBalance={w.tokenBalance}
+            onToggleStarChat={() => w.setStarredChatKeys((current) => ({ ...current, [w.chatTitleKey]: !current[w.chatTitleKey] }))}
           />
           {activePage === "chat" ? (
             <View style={styles.chatPageHost}>
@@ -100,8 +116,8 @@ export function WorkspaceScreen() {
                 activePage === "profile" ? styles.profileContent : null,
                 { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : 72), 0) }
               ]}
-              bounces={activePage === "projects" ? w.projectsCanScroll : activePage !== "profile"}
-              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : activePage === "community" ? true : activePage !== "dashboard" && activePage !== "profile"}
+              bounces={activePage === "projects" ? w.projectsCanScroll : activePage !== "dashboard"}
+              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : activePage === "community" || activePage === "profile" ? true : activePage !== "dashboard"}
               showsVerticalScrollIndicator={false}
             >
               {activePage === "dashboard" ? (
@@ -143,7 +159,30 @@ export function WorkspaceScreen() {
             </ScrollView>
           )}
         </View>
-        {activePage === "chat" ? null : <BottomNav activePage={activePage} onChange={w.navigatePage} />}
+        <PrimaryMenuSheet
+          activeBuildCount={app.activeAgents.filter((agent) => agent.state === "running" || agent.state === "waiting").length}
+          activePage={activePage}
+          connected={w.isConnected}
+          machineName={w.connectedMachineName}
+          onClose={() => w.setPrimaryMenuVisible(false)}
+          onConnectPc={() => { w.setPrimaryMenuVisible(false); w.openPcSwitcher(); }}
+          onNavigate={(page) => { w.setPrimaryMenuVisible(false); w.navigatePage(page); }}
+          onNewChat={() => { w.setPrimaryMenuVisible(false); w.navigatePage("chat"); }}
+          onOpenAccount={() => { w.setPrimaryMenuVisible(false); w.setAccountMenuVisible(true); }}
+          onOpenRecentChat={(chatId) => { w.setPrimaryMenuVisible(false); w.setSelectedChatId(chatId); w.setActivePage("chat"); }}
+          projectCount={app.projects.length}
+          recentChats={recentChats}
+          visible={w.primaryMenuVisible}
+        />
+        <AccountMenuSheet
+          name={app.authName}
+          onClose={() => w.setAccountMenuVisible(false)}
+          onOpenTokens={() => { w.setAccountMenuVisible(false); w.setTokenSheetVisible(true); }}
+          onTab={(tab) => { w.setAccountMenuVisible(false); w.setSettingsTab(tab); w.setActivePage("profile"); }}
+          plan={app.accountPlan}
+          tokenBalance={w.tokenBalance}
+          visible={w.accountMenuVisible}
+        />
         <PcSwitcherSheet
           candidates={w.desktopCandidates}
           connectedUrl={app.connection?.url}

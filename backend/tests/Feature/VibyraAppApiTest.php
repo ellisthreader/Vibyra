@@ -192,6 +192,51 @@ class VibyraAppApiTest extends TestCase
         });
     }
 
+    public function test_chat_reuses_relevant_learning_memory(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $sentMessages = [];
+        Http::fake(function ($request) use (&$sentMessages) {
+            $sentMessages[] = $request['messages'];
+
+            return Http::response([
+                'choices' => [[
+                    'message' => ['content' => count($sentMessages) === 1
+                        ? 'The fix was to inline the script and avoid local preview files.'
+                        : 'Use the previous inline-script fix here.'],
+                ]],
+            ]);
+        });
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-learning@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+        $headers = ['Authorization' => "Bearer {$token}"];
+
+        $this->postJson('/api/chat', [
+            'mode' => 'chat',
+            'model' => 'gpt-5.4-mini',
+            'project' => 'Preview App',
+            'prompt' => 'Fix the blank preview error caused by a local script file.',
+        ], $headers)->assertOk();
+
+        $this->assertDatabaseCount('chat_learning_memories', 1);
+
+        $this->postJson('/api/chat', [
+            'mode' => 'chat',
+            'model' => 'gpt-5.4-mini',
+            'project' => 'Preview App',
+            'prompt' => 'The preview is blank again with a script error, how do we fix it?',
+        ], $headers)->assertOk();
+
+        $secondUserMessage = $sentMessages[1][array_key_last($sentMessages[1])]['content'];
+        $this->assertStringContainsString('Relevant past Vibyra learning:', $secondUserMessage);
+        $this->assertStringContainsString('Fix the blank preview error caused by a local script file.', $secondUserMessage);
+        $this->assertStringContainsString('inline the script', $secondUserMessage);
+    }
+
     public function test_colour_scheme_question_replaces_shell_commands_with_direct_answer(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);
@@ -526,9 +571,64 @@ class VibyraAppApiTest extends TestCase
 
             $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
 
-            $response->assertOk();
-            $this->assertStringContainsString('Project analyzed', $response->getContent());
+            $response->assertNotFound();
+            $this->assertStringContainsString('No runnable preview found', $response->getContent());
             $this->assertStringNotContainsString('custom-entry', $response->getContent());
+        } finally {
+            File::deleteDirectory($projectPath);
+            if ($originalState === null) {
+                File::delete($statePath);
+            } else {
+                File::put($statePath, $originalState);
+            }
+        }
+    }
+
+    public function test_project_preview_does_not_serve_stray_root_index_for_laravel_vite_projects(): void
+    {
+        $statePath = storage_path('app/vibyra/state.json');
+        $originalState = File::exists($statePath) ? File::get($statePath) : null;
+        $projectPath = storage_path('app/testing-laravel-static-preview-project');
+        $token = 'test-preview-token';
+        $projectId = rtrim(strtr(base64_encode($projectPath), '+/', '-_'), '=');
+
+        try {
+            File::deleteDirectory($projectPath);
+            File::ensureDirectoryExists($projectPath);
+            File::put($projectPath.'/index.html', '<!doctype html><html><body>Generated placeholder menu</body></html>');
+            File::put($projectPath.'/composer.json', json_encode(['require' => ['laravel/framework' => '^13.0']]));
+            File::put($projectPath.'/package.json', json_encode([
+                'scripts' => ['dev' => 'vite'],
+                'devDependencies' => ['laravel-vite-plugin' => 'latest', 'vite' => 'latest'],
+            ]));
+            File::ensureDirectoryExists(dirname($statePath));
+            File::put($statePath, json_encode([
+                'machineName' => 'Test Desktop',
+                'pairCode' => 'ABC123',
+                'token' => $token,
+                'startedAt' => now()->toISOString(),
+                'pairedDevice' => 'Test Phone',
+                'pendingPair' => null,
+                'activeAgentRun' => null,
+                'pendingAgentApplies' => [],
+                'selectedProjectId' => $projectId,
+                'latestPreview' => null,
+                'projects' => [[
+                    'id' => $projectId,
+                    'name' => 'testing-laravel-static-preview-project',
+                    'path' => $projectPath,
+                    'stack' => 'Laravel / React',
+                    'updated' => 'Now',
+                    'source' => 'desktop',
+                ]],
+                'events' => [],
+            ], JSON_PRETTY_PRINT));
+
+            $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
+
+            $response->assertNotFound();
+            $this->assertStringContainsString('No runnable preview found', $response->getContent());
+            $this->assertStringNotContainsString('Generated placeholder menu', $response->getContent());
         } finally {
             File::deleteDirectory($projectPath);
             if ($originalState === null) {
@@ -577,8 +677,8 @@ class VibyraAppApiTest extends TestCase
 
             $response = $this->get('/preview/project/'.rawurlencode($projectId).'/'.rawurlencode($token).'/');
 
-            $response->assertOk();
-            $this->assertStringContainsString('Project analyzed', $response->getContent());
+            $response->assertNotFound();
+            $this->assertStringContainsString('No runnable preview found', $response->getContent());
             $this->assertStringNotContainsString('main.tsx', $response->getContent());
         } finally {
             File::deleteDirectory($projectPath);

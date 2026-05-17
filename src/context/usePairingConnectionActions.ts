@@ -89,7 +89,7 @@ export function usePairingConnectionActions(
     const requestId = `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
     for (const candidateUrl of urls) {
-      const pair = await requestPairAtUrl(requests, candidateUrl, code, requestId);
+      const pair = await requestPairAtUrl(requests, candidateUrl, code, requestId, state.accountId);
       if (pair.type === "paired") return { ...pair, connectionUrls: urls };
       lastFailure = pair;
     }
@@ -115,6 +115,7 @@ export function usePairingConnectionActions(
     }]));
     setters.setPendingPhoneApproval(null);
     setters.setPaired(true);
+    setters.setPcSetupSkipped(false);
     logs.appendLog(`Secure session established with ${result.machineName}`, "Pairing", "success");
     impact(Haptics.ImpactFeedbackStyle.Medium);
 

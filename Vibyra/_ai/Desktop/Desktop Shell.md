@@ -18,7 +18,7 @@ Read this for `/desktop`, desktop visual work, static shell assets, auth gate, a
 
 `Vibyra/_ai/Desktop App Implementation Spec.md` and `Vibyra/_ai/Mobile App Desktop Recreation Spec.md` are deep references only. Use them when recreating broad desktop screens, not for routine bridge/debug tasks.
 
-`/desktop` serves `desktop/app.html`, a static Vibyra shell with left rail, top bar, Dashboard, Projects, AI Chat, Community, Profile, pairing modal, token modal, and responsive mobile dock. `desktop/index.html` remains the legacy bridge screen.
+`/desktop` serves `desktop/app.html`, a static Vibyra shell with a Chat-first layout, compact left rail, top bar, Projects, Builds, pairing modal, account/token modal, and responsive mobile dock. `desktop/index.html` remains the legacy bridge screen.
 
 `desktop/lib/routes.mjs` serves mobile app imagery under `/app-assets/...` from `src/assets/` so the shell can reuse app assets.
 
@@ -30,9 +30,13 @@ Wording is desktop-owned and phone-facing: connection status says `Connected to 
 
 `/desktop` loads a mobile-auth-style front screen before the shell. The local desktop session is visual-only and stored in `localStorage` under `vibyra.desktop.auth`; billing/token balances still require real mobile account data.
 
-## Home And Projects
+## Chat, Builds, And Projects
 
-Desktop Home live builds are compact list rows, not progress estimates. Show running rows above waiting rows, with duration and a three-dot action. Do not show bars, token counts, percentages, or predicted completion. `/desktop/state` exposes lightweight `activeAgentRun` metadata for this.
+The desktop shell defaults to `chat`, mirroring the phone app's Chat-first direction. Keep primary rail destinations to Chat, Projects, and Builds; keep profile/billing/account details in the account modal instead of rail tabs unless real desktop account APIs require a fuller page.
+
+Desktop visual overrides should use the mobile dark palette from `src/styles/theme.ts`: `#07070A` background, `#12121A` surfaces, `#160D2A` tint, and `#6D3BFF`/`#8B5CFF` purple accents. Keep the palette restrained and clean; do not reintroduce glow-heavy dashboard styling or fake marketing panels.
+
+The Builds page must use real `/desktop/state` data only. Show `activeAgentRun` as compact rows with duration and a three-dot action. Do not show fake project counts, fake event counts, fallback build rows, progress bars, token counts, percentages, or predicted completion.
 
 Projects layout should match the full-width screenshot style: toolbar below top bar, three-card grid on wide screens, 176px cards, 16px padding, about 14px column gap and 16px row gap, active card with purple border.
 

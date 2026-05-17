@@ -1,125 +1,138 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Pressable, Text, TextInput, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Text, View } from "react-native";
+import { VibyraLogo } from "../../../components/VibyraLogo";
 import { useAppContext } from "../../../context/AppContext";
-import { colors } from "../../../styles/theme";
-import { RememberedDesktop } from "../../../types/domain";
-import { PrimaryButton } from "../components/PrimaryButton";
-import { RadarPulse } from "../components/RadarPulse";
-import { SkipPill } from "../components/SkipPill";
 import { welcomeCopy } from "../data/welcomeCopy";
-import { useEntrance } from "../hooks/useEntrance";
+import { useLogoMorph } from "../hooks/useLogoMorph";
+import { useSetupIntro } from "../hooks/useSetupIntro";
+import { useTypewriter } from "../hooks/useTypewriter";
 import { WelcomeFlow } from "../types";
 import { styles } from "../styles";
 
-export function StepSetup({ flow }: { flow: WelcomeFlow }) {
-  const app = useAppContext();
-  const entrance = useEntrance("setup");
-  const [mode, setMode] = useState<"auto" | "manual">("auto");
-  const [found, setFound] = useState<RememberedDesktop[]>(app.rememberedDesktops);
-  const startedRef = useRef(false);
+const RETRY_MS = 4000;
+const ACCOUNT_RETRY_MS = 15000;
+const SLOW_SCAN_MS = 60000;
+const slowScanMessage = "Still looking for your computer. Keep Vibyra Desktop open, leave the pairing screen visible, and make sure this phone is on the same Wi-Fi.";
+const accountErrorMessage = "Log in to Vibyra Desktop with the same account as your phone.";
 
-  const runDiscovery = useCallback(async () => {
-    if (app.checkingHealth) return;
-    setFound([]);
-    const results = await app.discoverPairableDesktops();
-    setFound(results);
-  }, [app]);
+export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
+  const app = useAppContext();
+  const intro = useSetupIntro();
+  const morph = useLogoMorph();
+  const typed = useTypewriter(welcomeCopy.setup.title, { startDelay: 500, charDelay: 55, blinkAfter: 2 });
+  const [slowScan, setSlowScan] = useState(false);
+  const [accountError, setAccountError] = useState("");
+  const pairingRef = useRef(false);
+  const accountRetryAtRef = useRef(0);
+  const appRef = useRef(app);
+  appRef.current = app;
 
   useEffect(() => {
-    if (mode !== "auto" || startedRef.current) return;
-    startedRef.current = true;
-    void runDiscovery();
-  }, [mode, runDiscovery]);
+    if (app.paired) {
+      setAccountError("");
+      accountRetryAtRef.current = 0;
+      return;
+    }
 
-  const onPick = (desktop: RememberedDesktop) => {
-    void app.pairMachineAt(desktop.url, desktop.pairCode);
-  };
+    if (isAccountPairingError(app.pairingError)) {
+      setAccountError(accountErrorMessage);
+      accountRetryAtRef.current = Date.now() + ACCOUNT_RETRY_MS;
+    }
+  }, [app.paired, app.pairingError]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    const slowScanTimer = setTimeout(() => {
+      if (!cancelled && !pairingRef.current) setSlowScan(true);
+    }, SLOW_SCAN_MS);
+
+    const sweep = async () => {
+      if (cancelled || pairingRef.current) return;
+      const accountRetryInMs = accountRetryAtRef.current - Date.now();
+      if (accountRetryInMs > 0) {
+        retry = setTimeout(sweep, accountRetryInMs);
+        return;
+      }
+
+      const results = await appRef.current.discoverPairableDesktops();
+      if (cancelled || pairingRef.current) return;
+      const reachable = results.filter((d) => d.status === "online" || d.status === "current");
+      if (reachable.length > 0) setSlowScan(false);
+      for (const target of reachable) {
+        if (cancelled || pairingRef.current) return;
+        const paired = await appRef.current.pairMachineAt(target.url, target.pairCode);
+        if (paired) {
+          pairingRef.current = true;
+          return;
+        }
+      }
+      retry = setTimeout(sweep, RETRY_MS);
+    };
+
+    void sweep();
+    return () => {
+      cancelled = true;
+      if (retry) clearTimeout(retry);
+      clearTimeout(slowScanTimer);
+    };
+  }, []);
+  const displayError = accountError || simplePairingError(app.pairingError);
 
   return (
-    <Animated.View style={[{ flex: 1, opacity: entrance.opacity, transform: [{ translateY: entrance.translateY }], gap: 12 }]}>
-      <SkipPill floating onPress={flow.requestSkip} />
-      <View style={[styles.header, { marginTop: 12 }]}>
-        <Text style={styles.eyebrow}>{welcomeCopy.setup.eyebrow}</Text>
-        <Text style={styles.title}>{welcomeCopy.setup.title}</Text>
-        <Text style={styles.body1}>{welcomeCopy.setup.body}</Text>
-      </View>
-      <RadarPulse active={mode === "auto" && app.checkingHealth} />
-      <View style={styles.modeTabs}>
-        {(["auto", "manual"] as const).map((value) => {
-          const active = mode === value;
-          return (
-            <Pressable accessibilityRole="button" key={value} onPress={() => setMode(value)} style={[styles.modeTab, active ? styles.modeTabActive : null]}>
-              <Ionicons accessible={false} color={active ? colors.text : colors.muted} name={value === "auto" ? "wifi-outline" : "keypad-outline"} size={15} />
-              <Text style={[styles.modeTabText, active ? styles.modeTabTextActive : null]}>{value === "auto" ? welcomeCopy.setup.autoTab : welcomeCopy.setup.manualTab}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      {mode === "auto" ? <AutoPane app={app} found={found} run={runDiscovery} onPick={onPick} /> : <ManualPane />}
-      {app.pairingError ? <Text style={styles.errorText}>{app.pairingError}</Text> : null}
-    </Animated.View>
-  );
-}
-
-function AutoPane({ app, found, run, onPick }: { app: ReturnType<typeof useAppContext>; found: RememberedDesktop[]; run: () => void; onPick: (d: RememberedDesktop) => void }) {
-  const empty = !app.checkingHealth && found.length === 0;
-  return (
-    <View>
-      {app.checkingHealth ? (
-        <View style={styles.searchingRow}>
-          <Text style={styles.searchingText}>{welcomeCopy.setup.autoSearching}</Text>
+    <View style={{ flex: 1 }}>
+      <View style={styles.centerStack}>
+        <Animated.Text style={[styles.eyebrow, { opacity: intro.eyebrow.opacity }]}>
+          {welcomeCopy.setup.eyebrow}
+        </Animated.Text>
+        <View style={styles.setupTitleRow}>
+          <Text style={styles.setupTitle}>{typed.value}</Text>
+          {!typed.done ? (
+            <View style={[styles.typewriterCaret, typed.caretVisible ? null : styles.typewriterCaretHidden]} />
+          ) : null}
         </View>
-      ) : null}
-      {found.length > 0 ? (
-        <View style={styles.desktopList}>
-          {found.map((desktop) => (
-            <Pressable accessibilityRole="button" disabled={app.pairing || desktop.status === "offline"} key={desktop.url} onPress={() => onPick(desktop)} style={[styles.desktopRow, desktop.status === "offline" ? { opacity: 0.5 } : null]}>
-              <Ionicons accessible={false} color="#D8A6FF" name="desktop-outline" size={20} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.desktopName}>{desktop.machineName}</Text>
-                <Text style={styles.desktopStatus}>{statusLabel(desktop.status)}</Text>
-              </View>
-              <Ionicons accessible={false} color="#D8A6FF" name="chevron-forward" size={16} />
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      {empty ? <Text style={styles.helpText}>{welcomeCopy.setup.autoEmpty}</Text> : null}
-      <View style={{ marginTop: 14 }}>
-        <PrimaryButton disabled={app.checkingHealth} iconName="search" label={welcomeCopy.setup.autoRetry} onPress={run} />
+        <Animated.View
+          style={[
+            styles.morphWrap,
+            { opacity: intro.ring.opacity, transform: [{ scale: intro.ring.scale }] }
+          ]}
+        >
+          <Animated.View style={[styles.morphIconLayer, { opacity: morph.logoOpacity, transform: [{ scale: morph.logoScale }] }]}>
+            <VibyraLogo compact />
+          </Animated.View>
+          <Animated.View style={[styles.morphIconLayer, { opacity: morph.desktopOpacity, transform: [{ scale: morph.desktopScale }] }]}>
+            <Ionicons accessible={false} color="#E8DBFF" name="desktop-outline" size={64} />
+          </Animated.View>
+        </Animated.View>
+        <Animated.View
+          style={{ opacity: intro.helper.opacity, transform: [{ translateY: intro.helper.translateY }] }}
+        >
+          <Text style={styles.setupBody}>{welcomeCopy.setup.body}</Text>
+          {slowScan && !displayError ? <Text style={styles.setupScanHelp}>{slowScanMessage}</Text> : null}
+          {displayError ? <Text style={styles.errorText}>{displayError}</Text> : null}
+        </Animated.View>
       </View>
     </View>
   );
 }
 
-function ManualPane() {
-  const app = useAppContext();
-  return (
-    <View style={{ gap: 12 }}>
-      <Text style={styles.helpText}>{welcomeCopy.setup.manualLabel}</Text>
-      <TextInput
-        accessibilityLabel="6 character pairing code"
-        autoCapitalize="characters"
-        autoComplete="one-time-code"
-        autoCorrect={false}
-        maxLength={6}
-        onChangeText={(value) => app.setPairCode(value.toUpperCase())}
-        onSubmitEditing={() => void app.pairMachine()}
-        placeholder={welcomeCopy.setup.manualPlaceholder}
-        placeholderTextColor={colors.dim}
-        returnKeyType="done"
-        style={styles.codeInput}
-        value={app.pairCode}
-      />
-      <PrimaryButton disabled={app.pairing} iconName="link-outline" label={app.pairing ? "Connecting..." : welcomeCopy.setup.manualCta} onPress={() => void app.pairMachine()} />
-    </View>
-  );
+function simplePairingError(message: string) {
+  if (!message) return "";
+  if (isAccountPairingError(message)) return accountErrorMessage;
+  if (message.toLowerCase().includes("denied")) return "Pairing was denied on your computer.";
+  if (message.toLowerCase().includes("offline") || message.toLowerCase().includes("could not reach")) {
+    return "Could not reach Vibyra Desktop.";
+  }
+  return "Could not connect to Vibyra Desktop.";
 }
 
-function statusLabel(status: RememberedDesktop["status"]) {
-  if (status === "current") return "Connected now";
-  if (status === "online") return "Available nearby";
-  if (status === "checking") return "Checking...";
-  return "Remembered, offline";
+function isAccountPairingError(message: string) {
+  const lower = message.toLowerCase();
+  return Boolean(message) && (
+    lower.includes("same account")
+    || lower.includes("different vibyra account")
+    || lower.includes("desktop account")
+    || lower.includes("phone account identity")
+  );
 }

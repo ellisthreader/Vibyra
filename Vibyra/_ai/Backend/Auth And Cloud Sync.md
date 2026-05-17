@@ -17,6 +17,8 @@ Bearer tokens are issued at login/signup. `authenticatedUser($request)` resolves
 
 App-session expiry should return the user to login without wiping local workspace/chat state. Keep this separate from desktop bearer-token expiry, which should only disconnect the paired PC.
 
+If mobile web login fails with `POST http://<LAN-IP>:8000/api/auth/login net::ERR_CONNECTION_REFUSED`, check whether the Laravel backend is listening on port 8000. From the repo root, `npm run backend` starts `php artisan serve --host=0.0.0.0 --port=8000`, matching `EXPO_PUBLIC_API_URL`.
+
 ## Session State
 
 `POST /api/session/state` accepts `{ onboardingComplete, rememberedDesktops, appState }` and persists per user.

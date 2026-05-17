@@ -57,10 +57,15 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
   }
 
   async function pairMachine() {
+    if (!state.accountId) {
+      setters.setPairingError("Log in to Vibyra on this phone before pairing Desktop.");
+      return false;
+    }
+
     const code = state.pairCode.trim().toUpperCase();
     if (code.length < 4) {
       setters.setPairingError("Enter the code shown in Vibyra Desktop.");
-      return;
+      return false;
     }
 
     setters.setPairing(true);
@@ -70,7 +75,7 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
 
     setters.setCheckingHealth(true);
     try {
-      const pair = await scanPairByCode(requests, state.agentUrl, code, setters.setHealthMessage, state.rememberedDesktops);
+      const pair = await scanPairByCode(requests, state.agentUrl, code, setters.setHealthMessage, state.rememberedDesktops, state.accountId);
       setters.setCheckingHealth(false);
       setters.setPairingMessage("Awaiting approval from PC application");
       const result = pair.result.status === "pending" && pair.result.requestId
@@ -87,10 +92,12 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
       });
       setters.setPairingMessage("Desktop approved. Allow this phone to control your coding machine.");
       impact(Haptics.ImpactFeedbackStyle.Medium);
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Pairing failed";
       setters.setPairingError(`${message}. Keep Vibyra Desktop open and use the code shown there.`);
       setters.setPairingMessage("Open Vibyra Desktop and type the code shown there.");
+      return false;
     } finally {
       setters.setCheckingHealth(false);
       setters.setPairing(false);
@@ -98,6 +105,11 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
   }
 
   async function pairMachineAt(url: string, code: string) {
+    if (!state.accountId) {
+      setters.setPairingError("Log in to Vibyra on this phone before pairing Desktop.");
+      return false;
+    }
+
     const normalizedCode = code.trim().toUpperCase();
 
     setters.setPairing(true);
@@ -124,9 +136,11 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
       });
       setters.setPairingMessage("Desktop approved. Confirm this phone to finish connecting.");
       impact(Haptics.ImpactFeedbackStyle.Medium);
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Pairing failed";
       setters.setPairingError(`${message}. Keep Vibyra Desktop open and approve the request.`);
+      return false;
     } finally {
       setters.setPairing(false);
     }

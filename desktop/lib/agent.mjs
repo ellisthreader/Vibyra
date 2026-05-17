@@ -4,7 +4,8 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { allowedCommands, appState, event, pushEvents } from "./state.mjs";
 import { projectById } from "./projects.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
-import { prepareObsidianRun, previewUrl } from "./agentTemplates.mjs";
+import { prepareObsidianRun } from "./agentTemplates.mjs";
+import { resolvedPreviewUrl } from "./preview.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 
 const MAX_GENERATED_FILES = 12;
@@ -19,7 +20,8 @@ export async function startAgentTask({
   apply = false,
   projectFiles = [],
   selectedFile = null,
-  history = []
+  history = [],
+  requestHost = ""
 }) {
   const project = await resolveAgentProject(projectId, projectPath);
   if (!project) throw new Error("No project selected");
@@ -71,7 +73,8 @@ export async function startAgentTask({
       generatedFiles,
       obsidianRun,
       summary,
-      responseText
+      responseText,
+      requestHost
     });
 
     appState.activeAgentRun = { ...appState.activeAgentRun, progress: 92, file: generatedFiles.length ? "Reviewing generated edits" : "No file edits returned", updatedAt: new Date().toISOString() };
@@ -108,10 +111,10 @@ export async function startAgentTask({
   }
 }
 
-export async function applyAgentTask({ runId }) {
+export async function applyAgentTask({ runId, requestHost = "" }) {
   const plan = appState.pendingAgentApplies?.[runId];
   if (!plan) throw new Error("No pending agent edits found");
-  return await applyAgentPlan(plan);
+  return await applyAgentPlan({ ...plan, requestHost: requestHost || plan.requestHost });
 }
 
 export function discardAgentTask({ runId }) {
@@ -132,7 +135,8 @@ function makeAgentApplyPlan({
   generatedFiles,
   obsidianRun,
   summary,
-  responseText
+  responseText,
+  requestHost = ""
 }) {
   const editChanges = generatedFiles.map((file, index) => ({
     id: `${runId}-change-${index}`,
@@ -171,6 +175,7 @@ function makeAgentApplyPlan({
     obsidianRun,
     summary,
     responseText,
+    requestHost,
     changes,
     files,
     visibleEditCount: editChanges.length
@@ -197,14 +202,10 @@ async function applyAgentPlan(plan) {
   appState.activeAgentRun = { ...appState.activeAgentRun, progress: 82, updatedAt: new Date().toISOString() };
 
   appState.selectedProjectId = project.id;
-  appState.latestPreview = {
-    state: "delivered", url: previewUrl(project.id), title: project.name,
-    message: "Updated preview captured from Vibyra Desktop",
-    capturedAt: new Date().toISOString()
-  };
+  appState.latestPreview = await previewPayloadForProject(project, plan.requestHost);
 
   const newEvents = [
-    event("Preview", "Updated preview delivered to iPhone", "success"),
+    event("Preview", appState.latestPreview.url ? "Updated preview delivered to iPhone" : "No runnable browser preview found for this project yet", appState.latestPreview.url ? "success" : "warning"),
     event("Agent", generatedFiles.length ? `Applied ${generatedFiles.length} generated file edit(s)` : "Saved agent trace without file edits", generatedFiles.length ? "success" : "info"),
     event("Dev Server", "Project reloaded after local apply", "success"),
     event("Agent", `Applied generated run artifact at ${outputPath}`, "info"),
@@ -452,7 +453,7 @@ function agentResultFromPlan(plan, status, events) {
     files: plan.files,
     reply: status === "pending" ? `${agentReply(plan)}\n\nVibyra is waiting for your permission before editing files on this computer.` : agentReply(plan),
     events,
-    preview: { state: "live", url: previewUrl(plan.project.id), title: plan.project.name },
+    preview: { state: "live", url: null, title: plan.project.name },
     buildState: "idle",
     pendingApplyId: status === "pending" ? plan.runId : undefined
   };
@@ -465,8 +466,19 @@ function noEditAgentResult(plan, events) {
     files: [],
     reply: `I inspected the local workspace, but the model did not return valid file edits.\n\n${String(plan.responseText ?? "").slice(0, 2400)}`,
     events,
-    preview: { state: "live", url: previewUrl(plan.project.id), title: plan.project.name },
+    preview: { state: "live", url: null, title: plan.project.name },
     buildState: "idle"
+  };
+}
+
+async function previewPayloadForProject(project, requestHost) {
+  const url = await resolvedPreviewUrl(project, requestHost);
+  return {
+    state: url ? "delivered" : "live",
+    url,
+    title: project.name,
+    message: url ? "Updated preview captured from Vibyra Desktop" : "No runnable browser preview found for this project yet.",
+    capturedAt: new Date().toISOString()
   };
 }
 

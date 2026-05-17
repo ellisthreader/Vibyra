@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 trait ChatEndpointHelpers
 {
     use ChatReplyGuard;
+    use ChatLearningMemory;
 
     private function estimateInputTokens(string $prompt, string $fileBody, array $history, string $projectFiles = ''): int
     {
@@ -196,6 +197,13 @@ trait ChatEndpointHelpers
             return 'it referenced an unbundled local script (`'.e($match[1]).'`)';
         }
 
+        if (preg_match('/<script\b[^>]*\bsrc\s*=\s*["\']([^"\']+)["\']/i', $html, $match) === 1) {
+            $scriptError = $this->previewExternalResourceValidationError($match[1], 'script');
+            if ($scriptError !== null) {
+                return $scriptError;
+            }
+        }
+
         if (preg_match('/<script\b[^>]*\btype\s*=\s*["\']module["\'][^>]*\bsrc\s*=\s*["\']([^"\']+)["\']/i', $html, $match) === 1) {
             return 'it referenced a module entry file (`'.e($match[1]).'`) instead of inline JavaScript';
         }
@@ -208,6 +216,58 @@ trait ChatEndpointHelpers
             return 'it referenced an unbundled local stylesheet or preload (`'.e($match[1]).'`)';
         }
 
+        if (preg_match('/<link\b(?=[^>]*\brel\s*=\s*["\']?(?:stylesheet|modulepreload|preload))[^>]*\bhref\s*=\s*["\']([^"\']+)["\']/i', $html, $match) === 1) {
+            $linkError = $this->previewExternalResourceValidationError($match[1], 'stylesheet or preload');
+            if ($linkError !== null) {
+                return $linkError;
+            }
+        }
+
         return null;
+    }
+
+    private function previewExternalResourceValidationError(string $url, string $kind): ?string
+    {
+        $value = trim($url);
+        if ($value === '' || preg_match('/^(?:data|blob|about):/i', $value) === 1) {
+            return null;
+        }
+
+        if (preg_match('/(?:^|\/)@vite\/client(?:[?#]|$)/i', $value) === 1
+            || preg_match('/(?:^|\/)(?:src|resources\/js)\/[^?#]+\.(?:jsx?|tsx?)(?:[?#].*)?$/i', $value) === 1) {
+            return 'it referenced a Vite source '.$kind.' (`'.e($value).'`) instead of inline preview code';
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return null;
+        }
+
+        if ($this->isLocalPreviewHost($host)) {
+            return 'it referenced a local dev-server '.$kind.' (`'.e($value).'`) that phone preview cannot load';
+        }
+
+        return null;
+    }
+
+    private function isLocalPreviewHost(string $host): bool
+    {
+        $host = trim(strtolower($host), '[]');
+        if (in_array($host, ['localhost', '0.0.0.0', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+        if (preg_match('/^127\./', $host) === 1) {
+            return true;
+        }
+        if (preg_match('/^10\./', $host) === 1) {
+            return true;
+        }
+        if (preg_match('/^192\.168\./', $host) === 1) {
+            return true;
+        }
+        if (preg_match('/^172\.(1[6-9]|2\d|3[0-1])\./', $host) === 1) {
+            return true;
+        }
+        return false;
     }
 }

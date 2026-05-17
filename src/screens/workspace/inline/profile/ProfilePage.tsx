@@ -12,6 +12,8 @@ import { NotificationsSheet } from "./NotificationsSheet";
 import { AppearanceSheet } from "./AppearanceSheet";
 import { SecuritySheet } from "./SecuritySheet";
 import { LanguageSheet } from "./LanguageSheet";
+import { ClearCacheSheet } from "./ClearCacheSheet";
+import { ReferSheet } from "./ReferSheet";
 import { HelpSheet } from "./HelpSheet";
 import { SupportSheet } from "./SupportSheet";
 import { TermsSheet } from "./TermsSheet";
@@ -50,7 +52,8 @@ export function ProfilePage({ activeTab, onTabChange }: {
         rows={[
           { key: "Profile information", icon: "person-outline", label: t("profile.row.profileInformation") },
           { key: "Billing & subscription", icon: "card-outline", label: t("profile.row.billing") },
-          { key: "Usage & history", icon: "time-outline", label: t("profile.row.usage") }
+          { key: "Usage & history", icon: "time-outline", label: t("profile.row.usage") },
+          { key: "Refer & earn", icon: "gift-outline", label: t("profile.row.refer") }
         ]}
       />
 
@@ -72,19 +75,33 @@ export function ProfilePage({ activeTab, onTabChange }: {
         title={t("profile.support")}
         rows={[
           { key: "Help center", icon: "help-circle-outline", label: t("profile.row.help") },
+          { key: "FAQs", icon: "book-outline", label: t("profile.row.faq") },
           { key: "Contact support", icon: "chatbubble-outline", label: t("profile.row.contact") },
-          { key: "Terms of service", icon: "document-text-outline", label: t("profile.row.terms") },
-          { key: "Log out", danger: true, icon: "log-out-outline", label: t("profile.row.logout") }
+          { key: "Terms of service", icon: "document-text-outline", label: t("profile.row.terms") }
         ]}
       />
+
+      <View style={styles.profileFooterActions}>
+        <ProfileSettingsGroup
+          activeLabel={selectedRow}
+          onSelect={selectRow}
+          title=""
+          rows={[
+            { key: "Clear cache", danger: true, icon: "trash-outline", label: t("profile.row.clearCache") },
+            { key: "Log out", danger: true, icon: "log-out-outline", label: t("profile.row.logout") }
+          ]}
+        />
+      </View>
 
       <EditProfileSheet visible={sheets.isOpen("edit")} onClose={sheets.close} />
       <BillingSheet visible={sheets.isOpen("billing")} onClose={sheets.close} />
       <UsageSheet visible={sheets.isOpen("usage")} onClose={sheets.close} onUpgrade={() => sheets.open("billing")} />
+      <ReferSheet visible={sheets.isOpen("refer")} onClose={sheets.close} />
       <NotificationsSheet visible={sheets.isOpen("notifications")} onClose={sheets.close} />
       <AppearanceSheet visible={sheets.isOpen("appearance")} onClose={sheets.close} sheets={sheets} />
       <SecuritySheet visible={sheets.isOpen("security")} onClose={sheets.close} />
       <LanguageSheet visible={sheets.isOpen("language")} onClose={sheets.close} sheets={sheets} />
+      <ClearCacheSheet visible={sheets.isOpen("cache")} onCancel={sheets.close} />
       <HelpSheet visible={sheets.isOpen("help")} onClose={sheets.close} onOpenSupport={() => sheets.open("support")} />
       <SupportSheet visible={sheets.isOpen("support")} onClose={sheets.close} />
       <TermsSheet visible={sheets.isOpen("terms")} onClose={sheets.close} />

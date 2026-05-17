@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { WelcomeStep } from "../types";
 import { styles } from "../styles";
 
-const STEPS: WelcomeStep[] = ["hero", "setup", "approve", "connected"];
+const STEPS: WelcomeStep[] = ["hero", "download", "setup", "approve", "connected"];
 
 export function StepIndicator({ step }: { step: WelcomeStep }) {
   const index = STEPS.indexOf(step);

@@ -28,7 +28,9 @@ import { UsageSlider } from "./onboarding/steps/UsageSlider";
 export function OnboardingScreen() {
   const app = useAppContext();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<OnboardingStep>(() => (app.onboardingComplete && !app.pcSetupComplete) ? 7 : 0);
+  // QUIZ_TEMP_DISABLED: original initialiser was `() => (app.onboardingComplete && !app.pcSetupComplete) ? 7 : 0`.
+  // Quiz steps 0–6 are kept in-tree but unreachable; every user starts on WelcomeConnect (step 7).
+  const [step, setStep] = useState<OnboardingStep>(7);
   const [momentStep, setMomentStep] = useState<QuizStep | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [profileGenerating, setProfileGenerating] = useState(false);

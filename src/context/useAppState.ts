@@ -27,6 +27,7 @@ export function useAppState() {
   const [creditsUsed, setCreditsUsed] = useState(persistedSession.user?.creditsUsed ?? 0);
   const [onboardingComplete, setOnboardingComplete] = useState(persistedSession.onboardingComplete);
   const [pcSetupComplete, setPcSetupComplete] = useState(persistedSession.pcSetupComplete);
+  const [pcSetupSkipped, setPcSetupSkipped] = useState(persistedSession.pcSetupSkipped);
   const [paired, setPaired] = useState(false);
   const [agentUrl, setAgentUrl] = useState(getDefaultAgentUrl);
   const [pairCode, setPairCode] = useState("");
@@ -84,6 +85,7 @@ export function useAppState() {
         setCreditsUsed(session.user?.creditsUsed ?? 0);
         setOnboardingComplete(session.onboardingComplete);
         setPcSetupComplete(session.pcSetupComplete);
+        setPcSetupSkipped(session.pcSetupSkipped);
         setRememberedDesktops(session.rememberedDesktops);
         setSelectedChatModel(session.selectedChatModel);
         setSelectedModel(persisted.selectedModel);
@@ -126,6 +128,7 @@ export function useAppState() {
       installId,
       onboardingComplete,
       pcSetupComplete,
+      pcSetupSkipped,
       selectedChatModel,
       rememberedDesktops,
       user: accountId ? {
@@ -150,7 +153,7 @@ export function useAppState() {
   }, [
     accountId, accountPlan, authEmail, authName, authToken, chatThreads, chatTitles, chatProjects,
     editApprovals, creditsBalance, creditsUsed, installId, levelProgress, onboardingComplete,
-    pcSetupComplete, persistenceReady, profileImageUri, promptMoney, rememberedDesktops, selectedChatModel, selectedModel
+    pcSetupComplete, pcSetupSkipped, persistenceReady, profileImageUri, promptMoney, rememberedDesktops, selectedChatModel, selectedModel
   ]);
 
   const derived: AppDerivedState = useMemo(() => {
@@ -171,7 +174,7 @@ export function useAppState() {
       persistenceReady, authenticated, authToken, installId, accountId, accountPlan, authMode,
       levelProgress,
       authName, authEmail, authPassword, profileImageUri, creditsBalance, creditsUsed, onboardingComplete,
-      pcSetupComplete, paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
+      pcSetupComplete, pcSetupSkipped, paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
       healthMessage, checkingHealth, pendingPhoneApproval, connection, rememberedDesktops,
       machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
@@ -182,7 +185,7 @@ export function useAppState() {
     setters: {
       setAuthenticated, setAuthToken, setAccountId, setAccountPlan, setAuthMode,
       setLevelProgress, setAuthName, setAuthEmail, setAuthPassword, setProfileImageUri, setCreditsBalance, setCreditsUsed,
-      setOnboardingComplete, setPcSetupComplete, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
+      setOnboardingComplete, setPcSetupComplete, setPcSetupSkipped, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
       setPairingMessage, setHealthMessage, setCheckingHealth, setPendingPhoneApproval, setConnection,
       setRememberedDesktops, setMachineName, setProjects,
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,

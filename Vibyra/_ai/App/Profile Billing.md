@@ -44,9 +44,9 @@ Global mobile level-up notifications live in `src/components/LevelUpNotification
 
 Level-up notification colors are explicit per scheme in `src/components/LevelUpNotificationTheme.ts`; keep the component wired to `PreferencesContext.effectiveScheme` because it does not use the workspace style transformer.
 
-For local notification testing, Profile hero shows a non-production `Test level up` button that calls `AppContext.debugLevelUp()`. This only mutates local `levelProgress` via `src/context/debugLevelProgress.ts`; it does not call backend level activity or grant credits.
+`ProfilePage.tsx` uses full-width horizontal setting rows grouped under Account, Preferences, and Support, with larger gaps between category groups. Profile scrolling is enabled in `WorkspaceScreen.tsx`; do not force every Profile action above the fold. The shared `TopBar` is hidden on Profile so the profile hero starts at the top of the workspace content instead of sitting below a separate "Profile" header. `ProfileHero.tsx` does not show the email line; the level bar sits under the user name, and the plan badge stays at the hero row's top-right. `Clear cache` and `Log out` stay in a separate action row rendered immediately below Support, not as a pinned footer. `ClearCacheSheet.tsx` confirms before calling `AppContext.clearCache()`, which clears cached chats/projects/files/desktop sessions/logs/edit approvals while keeping the signed-in account, plan, credits, and profile. Do not re-add non-production level-up test buttons to the profile surface.
 
-Profile readiness release stance: mobile Profile billing is a plan overview only and does not open Stripe/external checkout; Refer & earn is hidden until referral API data exists; notification, biometric lock, and analytics controls are informational/unavailable rather than local-only toggles; avatar photo picking requires the explicit photo-library usage strings in `app.json`.
+Profile readiness release stance: mobile Profile billing is a plan overview only and does not open Stripe/external checkout; Refer & earn opens an unavailable-state sheet until referral API data exists; notification, biometric lock, and analytics controls are informational/unavailable rather than local-only toggles; avatar photo picking requires the explicit photo-library usage strings in `app.json`.
 
 ## BillingSheet Layout
 

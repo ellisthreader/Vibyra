@@ -22,6 +22,8 @@ Keep detached chat regex-driven to avoid per-message model spend. Project-attach
 
 Natural-language folder opens render a folder proposal card first, even for one match. `/open` is the direct manual browse path.
 
+Folder intent parsing in `chatPrompts.ts` recognizes common open/folder typos such as `oepn folder ...`; closest-folder guessing belongs to the desktop `/desktop/search` scorer, not an LLM call. Parser regression coverage lives in `src/screens/workspace/helpers/chatPrompts.intent.test.mjs`.
+
 When desktop search/browse intent cannot run because `app.connection` is missing, render `DesktopConnectionCard` with Connect PC / Scan Wi-Fi actions. Those actions preserve the original message id and pending folder intent until pairing/search completes.
 
 Accepting a folder proposal from detached chat must immediately `rememberProject`, seed/select `project-<folder.id>`, clear detached messages, then load files. Otherwise the UI can say "Opened" while the next prompt still routes as detached chat.

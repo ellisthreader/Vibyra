@@ -8,21 +8,31 @@ import { styles } from "../styles";
 export function HandshakeGlyph({ awaiting }: { awaiting: boolean }) {
   const reduced = useReduceMotion();
   const beam = useRef(new Animated.Value(0)).current;
+  const iconPulse = useRef(new Animated.Value(0)).current;
   const shieldScale = useRef(new Animated.Value(awaiting ? 1 : 0.6)).current;
   const shieldOpacity = useRef(new Animated.Value(awaiting ? 1 : 0)).current;
 
   useEffect(() => {
     if (reduced) {
       beam.setValue(0.6);
+      iconPulse.setValue(1);
       return;
     }
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(beam, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
-      Animated.timing(beam, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation })
+      Animated.timing(beam, { toValue: 1, duration: 1050, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+      Animated.timing(beam, { toValue: 0, duration: 1050, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation })
+    ]));
+    const iconLoop = Animated.loop(Animated.sequence([
+      Animated.timing(iconPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation }),
+      Animated.timing(iconPulse, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.cubic), useNativeDriver: supportsNativeAnimation })
     ]));
     loop.start();
-    return () => loop.stop();
-  }, [beam, reduced]);
+    iconLoop.start();
+    return () => {
+      loop.stop();
+      iconLoop.stop();
+    };
+  }, [beam, iconPulse, reduced]);
 
   useEffect(() => {
     Animated.parallel([
@@ -32,20 +42,22 @@ export function HandshakeGlyph({ awaiting }: { awaiting: boolean }) {
   }, [awaiting, shieldOpacity, shieldScale]);
 
   const beamOpacity = beam.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
+  const beamScale = beam.interpolate({ inputRange: [0, 1], outputRange: [0.68, 1] });
+  const iconScale = iconPulse.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.04] });
 
   return (
-    <View>
+    <View style={styles.approvalVisual}>
       <Animated.View style={[styles.shieldFloat, { opacity: shieldOpacity, transform: [{ scale: shieldScale }] }]}>
-        <Ionicons color="#37D67A" name="shield-checkmark" size={28} />
+        <Ionicons color="#37D67A" name="shield-checkmark" size={34} />
       </Animated.View>
       <View accessible={false} style={styles.handshakeWrap}>
-        <View style={styles.glyph}>
-          <Ionicons color="#D8BCFF" name="phone-portrait-outline" size={36} />
-        </View>
-        <Animated.View style={[styles.glyphBeam, { opacity: beamOpacity }]} />
-        <View style={styles.glyph}>
-          <Ionicons color="#D8BCFF" name="desktop-outline" size={36} />
-        </View>
+        <Animated.View style={[styles.glyph, { transform: [{ scale: iconScale }] }]}>
+          <Ionicons color="#E8DBFF" name="phone-portrait-outline" size={58} />
+        </Animated.View>
+        <Animated.View style={[styles.glyphBeam, { opacity: beamOpacity, transform: [{ scaleX: beamScale }] }]} />
+        <Animated.View style={[styles.glyph, { transform: [{ scale: iconScale }] }]}>
+          <Ionicons color="#E8DBFF" name="desktop-outline" size={58} />
+        </Animated.View>
       </View>
     </View>
   );

@@ -3,6 +3,7 @@ import { basename, isAbsolute, join, resolve } from "node:path";
 import { readdir } from "node:fs/promises";
 import { appState } from "./state.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
+import { folderNameSearchScore, projectSearchScore } from "./searchScoring.mjs";
 
 export { browseDesktopPath } from "./projectBrowse.mjs";
 export { createDesktopProject } from "./projectCreate.mjs";
@@ -94,19 +95,6 @@ async function maybeAddProject(path, seen, projects) {
   projects.push(await projectFromPath(path));
 }
 
-function projectSearchScore(project, needle) {
-  const name = project.name.toLowerCase();
-  const path = project.path.toLowerCase();
-  const stack = project.stack.toLowerCase();
-
-  if (name === needle) return 100;
-  if (name.startsWith(needle)) return 80;
-  if (name.includes(needle)) return 60;
-  if (path.includes(needle)) return 40;
-  if (stack.includes(needle)) return 20;
-  return 0;
-}
-
 async function searchFoldersByName(needle, seenIds) {
   const roots = Array.from(new Set([
     process.cwd(),
@@ -142,7 +130,7 @@ async function scanFolderMatches(root, needle, state, depth) {
   for (const child of children.slice(0, 120)) {
     if (!child.isDirectory() || shouldSkipFolder(child.name)) continue;
     const childPath = join(root, child.name);
-    if (child.name.toLowerCase().includes(needle)) {
+    if (folderNameSearchScore(child.name, needle) > 0) {
       try {
         const project = await projectFromPath(childPath);
         if (!state.seenIds.has(project.id)) {

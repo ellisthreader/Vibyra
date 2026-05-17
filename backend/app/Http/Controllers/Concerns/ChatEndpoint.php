@@ -76,7 +76,8 @@ trait ChatEndpoint
 
         $chatMode = $this->resolveChatMode($request, $prompt, $skill);
         $maxOutputTokens = $this->resolveMaxTokens($request, $prompt, $skill);
-        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles);
+        $learningContext = $this->chatLearningContext($user, $request, $prompt, $chatMode);
+        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext);
         $agentMode = $chatMode === 'build';
 
         $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
@@ -133,7 +134,7 @@ trait ChatEndpoint
         try {
             $payload = [
                 'model' => $openRouterModel,
-                'messages' => $this->chatMessages($request, $prompt, $skill),
+                'messages' => $this->chatMessages($request, $prompt, $skill, $learningContext),
                 'temperature' => 0.25,
                 'max_completion_tokens' => $maxOutputTokens,
                 'usage' => ['include' => true],
@@ -188,6 +189,7 @@ trait ChatEndpoint
             $reference,
             ['model' => $modelKey, 'credits' => abs($ledger->credits_delta)],
         );
+        $this->rememberChatLearningOutcome($user, $request, $prompt, $replyText, $app, $modelKey, $chatMode, $reference);
         $user = $user->fresh() ?? $user;
 
         return $this->json([
@@ -197,6 +199,7 @@ trait ChatEndpoint
             'title' => $this->suggestChatTitle($request, $prompt, $replyText),
             'model' => $openRouterModel,
             'modelKey' => $modelKey,
+            'chatReference' => $reference,
             'creditCost' => abs($ledger->credits_delta),
             'creditsBalance' => $user->credits_balance,
             'creditsUsed' => $user->credits_used,

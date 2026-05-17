@@ -1,6 +1,7 @@
 import { readBody, send } from "./http.mjs";
+import { sameAccountPairCheck } from "./desktopAccount.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
-import { resolvedPreviewUrl } from "./preview.mjs";
+import { previewServerProxyUrl, resolvedPreviewUrl } from "./preview.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
 import {
   activePairedDevice,
@@ -33,6 +34,11 @@ export function healthPayload() {
 
 export async function approvePairing() {
   if (!appState.pendingPair) return;
+  if (!appState.desktopAccount?.id) {
+    appState.pendingPair = { ...appState.pendingPair, status: "denied" };
+    pushEvents([event("Pairing", "Pairing denied because Vibyra Desktop is not signed in", "error")]);
+    return;
+  }
   const pendingPair = appState.pendingPair;
   appState.pendingPair = { ...pendingPair, status: "approved" };
   await discoverProjects();
@@ -47,6 +53,12 @@ export function denyPairing() {
 
 export async function pairDevice(req, res) {
   const body = await readBody(req);
+  const accountCheck = sameAccountPairCheck(body);
+  if (!accountCheck.ok) {
+    send(res, accountCheck.status, { ok: false, error: accountCheck.error });
+    return;
+  }
+
   const code = String(body.code ?? "").trim().toUpperCase();
   const autoPair = body.autoPair === true;
   if (!autoPair && code !== PAIR_CODE) {
@@ -69,6 +81,7 @@ export async function pairDevice(req, res) {
   appState.pendingPair = {
     id: requestId || `pair-${Date.now()}`,
     clientRequestId: requestId || null,
+    accountId: appState.desktopAccount.id,
     deviceName: String(body.deviceName ?? "iPhone"),
     requestedAt: new Date().toISOString(),
     status: "pending"
@@ -80,6 +93,10 @@ export async function pairDevice(req, res) {
 export async function pairStatus(res, requestId) {
   if (!appState.pendingPair || appState.pendingPair.id !== requestId) {
     send(res, 404, { ok: false, error: "Pair request not found" });
+    return;
+  }
+  if (appState.pendingPair.accountId !== appState.desktopAccount?.id) {
+    send(res, 403, { ok: false, status: "denied", error: "Desktop account changed before pairing completed" });
     return;
   }
   if (appState.pendingPair.status === "approved") {
@@ -102,10 +119,10 @@ export async function startPreview(req, res) {
     state: "live",
     url,
     title: project?.name ?? "Project",
-    message: "Live preview stream started",
+    message: url ? "Live preview stream started" : "No runnable preview is available for this folder yet.",
     capturedAt: new Date().toISOString()
   };
-  const log = event("Preview", `Live preview started for ${project?.name ?? "project"}`, "success");
+  const log = event("Preview", url ? `Live preview started for ${project?.name ?? "project"}` : `No runnable preview found for ${project?.name ?? "project"}`, url ? "success" : "warning");
   pushEvents([log]);
   send(res, 200, { preview: appState.latestPreview, events: [log] });
 }
@@ -115,10 +132,11 @@ export async function startPreviewServer(req, res) {
   appState.selectedProjectId = String(body.projectId ?? "");
   const project = projectById(appState.selectedProjectId);
   if (!project) throw new Error("No project selected for preview.");
-  const result = await startProjectDevServer(project, req.headers.host);
+  const result = await startProjectDevServer(project, req.headers.host, { timeoutMs: 80000 });
+  const url = previewServerProxyUrl(project.id, TOKEN);
   appState.latestPreview = {
     state: "live",
-    url: result.url,
+    url,
     title: project.name,
     message: result.started ? "Desktop preview started" : "Desktop preview already running",
     capturedAt: new Date().toISOString()

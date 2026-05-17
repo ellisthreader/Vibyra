@@ -1,38 +1,58 @@
 import { colors } from "../../../styles/theme";
 
 export const welcome5 = {
+  approvalStep: {
+    flex: 1,
+    gap: 18,
+    justifyContent: "center" as const,
+    paddingBottom: 18
+  },
+  approvalAction: {
+    alignSelf: "stretch" as const,
+    marginTop: 4
+  },
+  approvalVisual: {
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    marginVertical: 6
+  },
   handshakeWrap: {
     alignItems: "center" as const,
     flexDirection: "row" as const,
-    gap: 18,
+    gap: 20,
     justifyContent: "center" as const,
-    paddingVertical: 18
+    minHeight: 116,
+    paddingVertical: 16
   },
   glyph: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(143, 50, 255, 0.22)",
-    borderColor: "rgba(176, 95, 255, 0.6)",
-    borderRadius: 22,
-    borderWidth: 1.5,
-    height: 78,
+    height: 76,
     justifyContent: "center" as const,
-    width: 78
+    shadowColor: "#D8BCFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    width: 76
   },
   glyphBeam: {
-    backgroundColor: "rgba(199, 130, 255, 0.7)",
+    backgroundColor: "rgba(216, 188, 255, 0.78)",
     borderRadius: 999,
-    height: 6,
-    shadowColor: "#C672FF",
+    height: 3,
+    shadowColor: "#D8BCFF",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    width: 64
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
+    width: 96
   },
   shieldFloat: {
     alignItems: "center" as const,
-    height: 36,
+    height: 42,
     justifyContent: "center" as const,
-    marginBottom: 4
+    marginBottom: -2,
+    shadowColor: "#37D67A",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 14
   },
   burstWrap: {
     alignItems: "center" as const,

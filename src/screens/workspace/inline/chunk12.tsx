@@ -67,7 +67,7 @@ export function CommunityPage({
       <View style={styles.communitySearchRow}>
         <View style={styles.communitySearchBar}>
           <Ionicons name="search-outline" color={searchIconColor} size={22} />
-          <TextInput value={c.searchQuery} onChangeText={c.setSearchQuery} placeholder="Search projects, builders, tags..." placeholderTextColor={searchIconColor} style={styles.communitySearchInput} />
+          <TextInput value={c.searchQuery} onChangeText={c.setSearchQuery} placeholder="Search apps, builders, tags" placeholderTextColor={searchIconColor} style={styles.communitySearchInput} />
         </View>
         <Pressable accessibilityLabel="Cycle community filter" style={styles.communityFilterButton} onPress={c.cycleFilter}>
           <Ionicons name="options-outline" color={filterIconColor} size={22} />
@@ -78,13 +78,13 @@ export function CommunityPage({
         {c.feedLoading ? (
           <View style={styles.communityEmptyState}>
             <Ionicons name="cloud-download-outline" color={accentIconColor} size={30} />
-            <Text style={styles.communityEmptyTitle}>Loading Community</Text>
+            <Text style={styles.communityEmptyTitle}>Loading Explore</Text>
             <Text style={styles.communityEmptyText}>Checking for published apps...</Text>
           </View>
         ) : c.feedError ? (
           <View style={styles.communityEmptyState}>
             <Ionicons name="warning-outline" color={errorIconColor} size={30} />
-            <Text style={styles.communityEmptyTitle}>Community unavailable</Text>
+            <Text style={styles.communityEmptyTitle}>Explore unavailable</Text>
             <Text style={styles.communityEmptyText}>{c.feedError}</Text>
             <Pressable onPress={c.reloadCommunityFeed} style={styles.communityFilterButton}>
               <Ionicons name="refresh" color={filterIconColor} size={22} />

@@ -14,7 +14,9 @@ export function useWorkspaceState() {
   const { height, width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const compact = width < 420;
-  const [activePage, setActivePage] = useState<DashboardPage>("dashboard");
+  const [activePage, setActivePage] = useState<DashboardPage>("chat");
+  const [primaryMenuVisible, setPrimaryMenuVisible] = useState(false);
+  const [accountMenuVisible, setAccountMenuVisible] = useState(false);
   const [desktopCandidates, setDesktopCandidates] = useState<DesktopCandidate[]>(app.rememberedDesktops);
   const [pcSwitcherVisible, setPcSwitcherVisible] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -23,6 +25,7 @@ export function useWorkspaceState() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newChatMessages, setNewChatMessages] = useState<ChatMessage[]>([]);
   const [chatTitleOverrides, setChatTitleOverrides] = useState<Record<string, string>>({});
+  const [starredChatKeys, setStarredChatKeys] = useState<Record<string, boolean>>({});
   const [renameChatVisible, setRenameChatVisible] = useState(false);
   const [renameChatDraft, setRenameChatDraft] = useState("");
   const [projectChatTitles, setProjectChatTitles] = useState<Record<string, string>>({});
@@ -57,11 +60,11 @@ export function useWorkspaceState() {
 
   const isConnected = Boolean(app.connection);
   const lastRememberedDesktop = app.rememberedDesktops.find((d) => d.lastConnectedAt) ?? app.rememberedDesktops[0];
-  const connectedMachineName = app.connection?.machineName ?? lastRememberedDesktop?.machineName ?? app.machineName;
+  const connectedMachineName = app.connection?.machineName ?? "Connect PC";
   const autoReconnectAttempted = useRef(false);
 
   useEffect(() => {
-    if (isConnected || autoReconnectAttempted.current || !lastRememberedDesktop?.lastConnectedAt) return;
+    if (app.pcSetupSkipped || isConnected || autoReconnectAttempted.current || !lastRememberedDesktop?.lastConnectedAt) return;
     autoReconnectAttempted.current = true;
     let cancelled = false;
     (async () => {
@@ -90,6 +93,8 @@ export function useWorkspaceState() {
   return {
     app, height, insets, compact,
     activePage, setActivePage,
+    primaryMenuVisible, setPrimaryMenuVisible,
+    accountMenuVisible, setAccountMenuVisible,
     desktopCandidates, setDesktopCandidates,
     pcSwitcherVisible, setPcSwitcherVisible,
     projectSearch, setProjectSearch,
@@ -98,6 +103,7 @@ export function useWorkspaceState() {
     selectedChatId, setSelectedChatId,
     newChatMessages, setNewChatMessages,
     chatTitleOverrides, setChatTitleOverrides,
+    starredChatKeys, setStarredChatKeys,
     renameChatVisible, setRenameChatVisible,
     renameChatDraft, setRenameChatDraft,
     projectChatTitles, setProjectChatTitles,

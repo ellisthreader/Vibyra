@@ -1,46 +1,55 @@
 import React from "react";
-import { Animated, Text, View } from "react-native";
-import { VibyraLogo } from "../../../components/VibyraLogo";
+import { Animated, Pressable, View } from "react-native";
 import { useAppContext } from "../../../context/AppContext";
-import { PrimaryButton } from "../components/PrimaryButton";
-import { SkipPill } from "../components/SkipPill";
 import { welcomeCopy } from "../data/welcomeCopy";
-import { useEntrance } from "../hooks/useEntrance";
-import { useFloatLoop } from "../hooks/useFloatLoop";
+import { useHeroIntro } from "../hooks/useHeroIntro";
 import { WelcomeFlow } from "../types";
 import { styles } from "../styles";
 
 export function StepHero({ flow }: { flow: WelcomeFlow }) {
   const app = useAppContext();
-  const float = useFloatLoop();
-  const entrance = useEntrance("hero");
+  const intro = useHeroIntro();
   const firstName = pickFirstName(app.authName);
+  const welcomeLine = firstName ? `${welcomeCopy.hero.welcome} ${firstName}` : welcomeCopy.hero.welcomeFallback;
 
   return (
-    <Animated.View style={[{ flex: 1, opacity: entrance.opacity, transform: [{ translateY: entrance.translateY }] }]}>
+    <View style={{ flex: 1 }}>
       <View style={styles.centerStack}>
-        <Animated.View style={[styles.logoFloat, { transform: [{ translateY: float }] }]}>
-          <VibyraLogo />
-        </Animated.View>
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>{welcomeCopy.hero.eyebrow}</Text>
-          <Text style={styles.title}>
-            {welcomeCopy.hero.titlePrefix} {firstName ? <Text style={styles.titleAccent}>{firstName}</Text> : null}
-            {firstName ? "," : ""} {welcomeCopy.hero.titleSuffix}
-          </Text>
-          <Text style={styles.body1}>{welcomeCopy.hero.body}</Text>
-        </View>
+        <Animated.Text
+          style={[
+            styles.welcomeLine,
+            { opacity: intro.welcome.opacity, transform: [{ translateY: intro.welcome.translateY }, { scale: intro.welcome.scale }] }
+          ]}
+        >
+          {welcomeLine}
+        </Animated.Text>
+        <Animated.Text
+          style={[
+            styles.tagline,
+            { opacity: intro.tagline.opacity, transform: [{ translateY: intro.tagline.translateY }] }
+          ]}
+        >
+          {welcomeCopy.hero.tagline}
+        </Animated.Text>
       </View>
-      <View style={styles.bottomStack}>
-        <PrimaryButton
-          accessibilityHint="Begins the PC connection flow"
-          iconName="sparkles"
-          label={welcomeCopy.hero.cta}
-          onPress={flow.goToSetup}
-        />
-        <SkipPill onPress={flow.requestSkip} />
-      </View>
-    </Animated.View>
+      <Animated.View
+        style={{
+          alignSelf: "stretch",
+          opacity: intro.cta.opacity,
+          transform: [{ translateY: intro.cta.translateY }]
+        }}
+      >
+        <Pressable
+          accessibilityHint="Continue to download Vibyra Desktop"
+          accessibilityLabel={welcomeCopy.hero.cta}
+          accessibilityRole="button"
+          onPress={flow.goToDownload}
+          style={({ pressed }) => [styles.ghostBtn, pressed ? styles.ghostBtnPressed : null]}
+        >
+          <Animated.Text style={styles.ghostBtnText}>{welcomeCopy.hero.cta}</Animated.Text>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
