@@ -104,7 +104,7 @@ export type SkillsResponse = {
 export type ChatResponse = {
   ok: boolean;
   reply: string;
-  app?: { id: string; title: string; html?: string; url?: string } | null;
+  app?: { id: string; title: string; html?: string; projectId?: string; source?: "generated" | "desktop"; url?: string } | null;
   title?: string;
   model: string;
   modelKey?: string;

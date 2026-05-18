@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { LogEvent } from "../types/domain";
-import { appApiRequest, appApiStreamChat, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
+import type { AgentStartOptions } from "../types/chatTools";
+import { appApiStreamChat, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
 import { impact } from "../utils/haptics";
 import { useAppState } from "./useAppState";
 import { AgentStartResult, calculatePromptMoney, roundMoney } from "./agentTypes";
@@ -13,6 +14,7 @@ import { applyLocalSkillPrompt, mergeChatSkills } from "../utils/chatSkills";
 import { normalizeAgentReply } from "../utils/files";
 import { withProjectBriefPrompt } from "../utils/projectBriefs";
 import { projectFileContext, shouldAttachFileContext, type ProjectFileContext } from "./agentContextPayload";
+import { makeId } from "../utils/ids";
 type Store = ReturnType<typeof useAppState>;
 type Requests = {
   agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
@@ -32,7 +34,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
   const messages = useAgentChatMessages(store, logs, streamingRef);
   const results = useAgentResultHandlers(store, logs, messages);
 
-  async function startAgent(target?: AgentStartTarget, promptOverride?: string) {
+  async function startAgent(target?: AgentStartTarget, promptOverride?: string, options: AgentStartOptions = {}) {
     const trimmed = (promptOverride ?? state.taskText).trim();
     if (!trimmed || state.agentRequesting || agentRequestingRef.current) return false;
 
@@ -41,22 +43,30 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       streamingRef.current = null;
     }
 
-    const skillMatch = trimmed.match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
+    const skillMatch = options.skillId ? null : trimmed.match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
     const allSkills = mergeChatSkills(state.chatSkills);
-    const skill = skillMatch ? allSkills.find((s) => s.id === skillMatch[1].toLowerCase()) : undefined;
-    const skillId = skill?.id;
-    const userText = skill ? (skillMatch?.[2] ?? "").trim() : trimmed;
+    const requestedSkill = options.skillId?.trim().toLowerCase();
+    const skill = requestedSkill
+      ? allSkills.find((s) => s.id === requestedSkill) ?? { id: requestedSkill, slash: `/${requestedSkill}`, label: requestedSkill, description: "", category: "tool", mode: "chat" as const }
+      : skillMatch ? allSkills.find((s) => s.id === skillMatch[1].toLowerCase()) : undefined;
+    const skillId = requestedSkill || skill?.id;
+    const userText = skill && skillMatch ? (skillMatch?.[2] ?? "").trim() : trimmed;
     const visibleText = skill
-      ? (userText ? `${skill.slash} ${userText}` : skill.slash)
+      ? (skillMatch ? (userText ? `${skill.slash} ${userText}` : skill.slash) : trimmed)
       : trimmed;
 
     const chatTarget = resolveAgentTarget(state, derived, target);
     const selectedModel = state.selectedChatModel || state.selectedModel;
-    agentRequestingRef.current = true;
-    setters.setAgentRequesting(true);
     const intentText = skill ? userText : trimmed;
     const buildMode = shouldUseBuildChatMode(intentText, skill?.mode);
     const desktopAgentMode = shouldUseDesktopAgentMode(intentText, skillId, skill?.mode, buildMode, state.connection, chatTarget.project.path);
+    const pendingEdit = desktopAgentMode ? pendingProjectEdit(state.chatThreads[chatTarget.chatProjectId] ?? []) : null;
+    if (pendingEdit) {
+      appendPendingEditReminder(chatTarget.chatProjectId, visibleText, pendingEdit.file);
+      return false;
+    }
+    agentRequestingRef.current = true;
+    setters.setAgentRequesting(true);
     const runMode = desktopAgentMode || buildMode ? "build" : "chat";
     const fileContextEnabled = shouldAttachFileContext(intentText, chatTarget.file);
     const messageTarget = fileContextEnabled ? chatTarget : { ...chatTarget, file: null };
@@ -70,7 +80,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
     });
     const optimisticAgent = makeOptimisticAgent(chatTarget, visibleText, selectedModel);
     const richContextMode = buildMode || shouldUseAdviceContext(intentText, skill?.mode);
-    const promptBody = skill
+    const promptBody = skill && !requestedSkill
       ? ("promptPrefix" in skill ? applyLocalSkillPrompt(skill, userText) : (userText || skill.label))
       : trimmed;
     const shouldScopeToFile = Boolean(chatTarget.file && fileContextEnabled && !desktopAgentMode && !buildMode);
@@ -185,11 +195,33 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
   }
 
   return { startAgent };
+
+  function appendPendingEditReminder(projectId: string, prompt: string, file?: string) {
+    setters.setChatThreads((current) => ({
+      ...current,
+      [projectId]: [
+        ...(current[projectId] ?? []),
+        { id: makeId("chat-user"), role: "user", text: prompt, file },
+        {
+          id: makeId("chat-assistant"),
+          role: "assistant",
+          text: "There are generated edits waiting for your approval. Review the pending code changes card, then choose Allow, Allow always, or No before I start another run.",
+          file
+        }
+      ]
+    }));
+    setters.setTaskText("");
+  }
+}
+
+function pendingProjectEdit(messages: Store["state"]["chatMessages"]) {
+  return [...messages].reverse().find((message) => message.editApproval === "pending" && Boolean(message.pendingApplyId)) ?? null;
 }
 
 function shouldUseBuildChatMode(text: string, skillMode?: string) {
   if (skillMode === "build") return true;
   const prompt = text.trim().toLowerCase();
+  if (/^the live preview for .+ crashed while running the existing project\./i.test(prompt)) return false;
   if (/^the runnable preview for .+ crashed\./i.test(prompt) || /\bcaptured preview diagnostics:/i.test(prompt)) return true;
   const buildVerb = "(build|create|make|generate|design|prototype)";
   const target = "\\b(app|tool|page|tracker|dashboard|calculator|game|ui|widget|landing|form|site|website|screen|preview)\\b";
@@ -232,7 +264,8 @@ function shouldUseDesktopAgentMode(
   projectPath: string | undefined
 ) {
   if (!connection || !projectPath) return false;
-  if (skillId && ["explain", "plan", "review", "publish", "ship"].includes(skillId)) return false;
+  if (/^the runnable preview for .+ crashed\./i.test(text.trim())) return false;
+  if (skillId && ["analyze", "explain", "plan", "research", "review", "publish", "ship", "web"].includes(skillId)) return false;
   if (buildMode || skillMode === "build") return true;
   if (skillId && ["debug", "fix", "refactor", "style", "design"].includes(skillId)) return true;
 

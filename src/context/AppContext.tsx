@@ -61,6 +61,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     ...authActions,
     ...editActions,
     ...localChatActions,
+    addLocalGeneratedImage: localChatActions.addLocalGeneratedImage,
     ...terminal,
     ...projectBriefActions,
     disconnectDesktop,

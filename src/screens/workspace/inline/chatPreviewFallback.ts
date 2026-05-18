@@ -15,6 +15,7 @@ export function previewAppFromMessage(messageId: string, text: string): Generate
   if (html?.code.trim()) {
     return {
       id: `${messageId}-preview-fallback`,
+      source: "generated",
       title: previewTitle(html.filename),
       html: previewHtmlFromBlocks(html, blocks)
     };
@@ -26,6 +27,7 @@ export function previewAppFromMessage(messageId: string, text: string): Generate
 
   return {
     id: `${messageId}-preview-fallback`,
+    source: "generated",
     title: previewTitle(appCode.filename),
     html: reactPreviewHtml(appCode.code, css?.code ?? "")
   };

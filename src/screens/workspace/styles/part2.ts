@@ -66,10 +66,8 @@ export const part2 = {
   },
   chatComposerTool: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
-    borderColor: "rgba(176, 132, 255, 0.18)",
-    borderRadius: 12,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderRadius: 999,
     height: 36,
     justifyContent: "center",
     width: 36

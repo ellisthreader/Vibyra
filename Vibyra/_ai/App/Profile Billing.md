@@ -28,6 +28,8 @@ Every settings row and the plan badge are wired to bottom-sheet modals. The avat
 
 Profile avatar uploads are handled in `ProfileHero.tsx` with `expo-image-picker` from the pencil/image button next to the avatar. The selected local URI is stored as `profileImageUri` in app-state persistence through `useAppState` / `appStatePersistence`; it is not posted to `/api/account/profile`, which remains name/email only.
 
+Avatar display uses `src/screens/workspace/inline/AccountAvatar.tsx`: if `profileImageUri` exists, render the photo directly with no decorative border/background; otherwise render a Google-style colored circle using the first letter of the user's name. Keep the top account button, account menu, and Profile hero on this shared behavior.
+
 ## Plans And Model Gating
 
 Plan ladder in `profile/types.ts::PLAN_TIERS` mirrors `backend/config/billing.php`. Onboarding pricing has separate data in `src/screens/onboarding/data/plans.ts`; keep both in sync.

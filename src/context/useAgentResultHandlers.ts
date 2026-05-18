@@ -119,7 +119,8 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
       { source: "Credits", message: `${result.creditCost} credit${result.creditCost === 1 ? "" : "s"} used`, tone: "info" }
     ]);
     logs.advanceWorkflow(12);
-    messages.streamAssistantMessage(target, assistantMessageId, result.reply, result.app ?? null, previewCodeMetadata(result.app ?? null));
+    const app = generatedPreviewApp(result.app ?? null);
+    messages.streamAssistantMessage(target, assistantMessageId, result.reply, app, previewCodeMetadata(app));
   }
 
   function finishStreamedOpenRouterAgent(
@@ -149,7 +150,8 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
       { source: "Credits", message: `${result.creditCost} credit${result.creditCost === 1 ? "" : "s"} used`, tone: "info" }
     ]);
     logs.advanceWorkflow(12);
-    messages.finalizeStreamedAssistantMessage(target, assistantMessageId, result.reply, result.app ?? null, previewCodeMetadata(result.app ?? null));
+    const app = generatedPreviewApp(result.app ?? null);
+    messages.finalizeStreamedAssistantMessage(target, assistantMessageId, result.reply, app, previewCodeMetadata(app));
   }
 
   return { finishRealAgent, finishOpenRouterAgent, finishStreamedOpenRouterAgent };
@@ -167,6 +169,11 @@ function previewCodeMetadata(app: ChatResponse["app"]): Pick<ChatMessage, "codeC
     codeProjectId: undefined,
     editApproval: "allowed"
   };
+}
+
+function generatedPreviewApp(app: ChatResponse["app"]): ChatResponse["app"] {
+  if (!app) return app;
+  return { source: "generated", ...app };
 }
 
 function countLines(value: string) {

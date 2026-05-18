@@ -194,6 +194,8 @@ export function useWorkspaceActions(s: WorkspaceState) {
     openTestPreview,
     createProjectAndOpenChat: runtime.createProjectAndOpenChat,
     onStartChat: prompt.onStartChat,
+    onApprovePreviewServerStart: prompt.approvePreviewServerStart,
+    onDenyPreviewServerStart: prompt.denyPreviewServerStart,
     submitPreviewEdit,
     ...folderActions,
     openRenameChat,

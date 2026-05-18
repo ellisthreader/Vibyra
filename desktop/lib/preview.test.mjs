@@ -4,6 +4,7 @@ import { chmod, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { Readable } from "node:stream";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl, servePreviewRefererAsset, servePreviewServerProxy, servePreviewUrlProxy, serveProjectPreview } from "./preview.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
@@ -449,6 +450,7 @@ test("started preview servers are proxied through the desktop bridge", async () 
 
     const response = await requestPreviewServerProxy(project);
     assert.equal(response.status, 200);
+    assert.match(response.body, /vibyra-preview-runtime-error/);
     assert.match(response.body, new RegExp(`${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}assets/app\\.js`));
     assert.match(response.body, new RegExp(`url\\('${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}hero-neon-background\\.png'\\)`));
     assert.match(response.body, /\/preview\/proxy-url\//);
@@ -469,6 +471,74 @@ test("started preview servers are proxied through the desktop bridge", async () 
     delete appState.previewServers[project.id];
     await app.close();
     await vite.close();
+    await cleanup();
+  }
+});
+
+test("preview server proxy injects runtime error overlay once before app scripts", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-runtime-overlay-");
+  const app = await makeRouteServer({
+    "/": {
+      contentType: "text/html; charset=utf-8",
+      body: [
+        "<!doctype html><html><head>",
+        '<script>window.__headScript = true;</script>',
+        '<script type="module" src="/assets/app.js"></script>',
+        "</head><body><div id=\"app\"></div></body></html>"
+      ].join("")
+    }
+  });
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${app.port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${app.port}`
+    };
+
+    const response = await requestPreviewServerProxy(project);
+    assert.equal(response.status, 200);
+    assert.equal((response.body.match(/__vibyraPreviewRuntimeErrorOverlay/g) ?? []).length, 2);
+    assert.ok(response.body.indexOf("__vibyraPreviewRuntimeErrorOverlay") < response.body.indexOf("__headScript"));
+    assert.match(response.body, /Preview runtime error/);
+    assert.match(response.body, /__vibyraPreviewFetchOverlay/);
+    assert.match(response.body, /__vibyraPreviewXhrOverlay/);
+    assert.match(response.body, /responseDiagnosticText/);
+    assert.match(response.body, /querySelectorAll\(selector\)/);
+  } finally {
+    delete appState.previewServers[project.id];
+    await app.close();
+    await cleanup();
+  }
+});
+
+test("preview server proxy renders HTTP error pages as visible diagnostics", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-http-error-");
+  const app = await makeRouteServer({
+    "/login": {
+      contentType: "text/html; charset=utf-8",
+      status: 419,
+      body: "<!doctype html><html><head><title>Page Expired</title></head><body><h1>Page Expired</h1><p>CSRF token mismatch.</p></body></html>"
+    }
+  });
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${app.port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${app.port}`
+    };
+
+    const response = await requestPreviewServerProxy(project, "login");
+    assert.equal(response.status, 419);
+    assert.match(response.body, /vibyra-preview-http-error/);
+    assert.match(response.body, /Preview HTTP error/);
+    assert.match(response.body, /HTTP 419/);
+    assert.match(response.body, /CSRF token mismatch/);
+    assert.match(response.body, /responseDiagnosticText/);
+  } finally {
+    delete appState.previewServers[project.id];
+    await app.close();
     await cleanup();
   }
 });
@@ -548,6 +618,33 @@ test("Laravel Vite proxy keeps app routes and public media on the preview server
   }
 });
 
+test("external preview proxy turns Vite module 500 HTML into executable diagnostics", async () => {
+  const vite = await makeRouteServer({
+    "/resources/js/app.tsx": {
+      contentType: "application/octet-stream",
+      status: 500,
+      body: viteErrorHtml({
+        message: 'Failed to resolve import "./Components/App" from "resources/js/app.tsx". Does the file exist?',
+        id: "/tmp/example/resources/js/app.tsx",
+        frame: '3  |  import { App } from "./Components/App";\n   |                       ^',
+        plugin: "vite:import-analysis"
+      })
+    }
+  });
+  try {
+    const js = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/resources/js/app.tsx`);
+    assert.equal(js.status, 200);
+    assert.equal(js.headers["Content-Type"], "application/javascript; charset=utf-8");
+    assert.match(js.body, /vibyra-preview-error/);
+    assert.match(js.body, /Preview module failed/);
+    assert.match(js.body, /Failed to resolve import/);
+    assert.match(js.body, /postMessage/);
+    assert.match(js.body, /export \{\};/);
+  } finally {
+    await vite.close();
+  }
+});
+
 test("preview server proxy rewrites runtime root asset strings in JavaScript", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-js-assets-");
   const app = await makeRouteServer({
@@ -611,11 +708,234 @@ test("preview referer fallback proxies root app paths before phone auth", async 
     assert.equal(route.status, 200);
     assert.match(route.body, /Projects route/);
 
-    const untrusted = await requestPreviewRefererAsset("/AllIn1.glb", "http://vibyra.test/");
-    assert.equal(untrusted.served, false);
+    const untrustedRoute = await requestPreviewRefererAsset("/desktop/state", "http://vibyra.test/");
+    assert.equal(untrustedRoute.served, false);
   } finally {
     delete appState.previewServers[project.id];
     await app.close();
+    await cleanup();
+  }
+});
+
+test("active preview fallback proxies root build chunks and public media without a preview referer", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-root-assets-");
+  const app = await makeRouteServer({
+    "/build/assets/HomeLanding-DXTU5TCo.js": {
+      contentType: "application/javascript; charset=utf-8",
+      body: 'import "/build/assets/jsx-runtime-DTJ6URaS.js"; window.__page = true;'
+    },
+    "/build/assets/jsx-runtime-DTJ6URaS.js": {
+      contentType: "application/javascript; charset=utf-8",
+      body: "window.__jsx = true;"
+    },
+    "/images/aromatic-crispy-duck-sample.png": {
+      contentType: "image/png",
+      body: Buffer.from("png")
+    },
+    "/projects": {
+      contentType: "text/html; charset=utf-8",
+      body: "<!doctype html><html><body>Projects route</body></html>"
+    }
+  });
+  const previousSelectedProjectId = appState.selectedProjectId;
+  try {
+    appState.selectedProjectId = project.id;
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${app.port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${app.port}`
+    };
+
+    const chunk = await requestPreviewRefererAsset("/build/assets/HomeLanding-DXTU5TCo.js", "");
+    assert.equal(chunk.status, 200);
+    assert.match(chunk.body, /\/preview\/server\/.+\/build\/assets\/jsx-runtime-DTJ6URaS\.js/);
+
+    const nested = await requestPreviewRefererAsset("/build/assets/jsx-runtime-DTJ6URaS.js", "http://vibyra.test/build/assets/HomeLanding-DXTU5TCo.js");
+    assert.equal(nested.status, 200);
+    assert.match(nested.body, /__jsx/);
+
+    const image = await requestPreviewRefererAsset("/images/aromatic-crispy-duck-sample.png", "");
+    assert.equal(image.status, 200);
+    assert.equal(image.headers["Content-Type"], "image/png");
+    assert.equal(image.body, "png");
+
+    const route = await requestPreviewRefererAsset("/projects", "");
+    assert.equal(route.served, false);
+  } finally {
+    appState.selectedProjectId = previousSelectedProjectId;
+    delete appState.previewServers[project.id];
+    await app.close();
+    await cleanup();
+  }
+});
+
+test("preview server proxy forwards Inertia login requests with body, cookies, and rewritten redirects", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-inertia-login-");
+  const received = {};
+  const app = createServer((req, res) => {
+    if (req.url === "/login" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => { body += String(chunk); });
+      req.on("end", () => {
+        received.method = req.method;
+        received.body = body;
+        received.cookie = req.headers.cookie;
+        received.contentType = req.headers["content-type"];
+        received.inertia = req.headers["x-inertia"];
+        received.csrf = req.headers["x-xsrf-token"];
+        received.origin = req.headers.origin;
+        received.referer = req.headers.referer;
+        received.forwardedHost = req.headers["x-forwarded-host"];
+        received.forwardedPrefix = req.headers["x-forwarded-prefix"];
+        res.writeHead(303, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Location": "/dashboard",
+          "Set-Cookie": [
+            "hke_session=abc; Path=/; HttpOnly; SameSite=Lax",
+            "XSRF-TOKEN=csrf-token; Path=/; Domain=127.0.0.1; Secure; SameSite=None"
+          ],
+          "X-Inertia": "true"
+        });
+        res.end("");
+      });
+      return;
+    }
+    if (req.url === "/external-redirect") {
+      res.writeHead(409, {
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Inertia-Location": "/billing"
+      });
+      res.end("");
+      return;
+    }
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("missing");
+  });
+  await new Promise((resolve) => app.listen(0, "127.0.0.1", resolve));
+  const address = app.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${port}`
+    };
+
+    const response = await requestPreviewServerProxy(project, "login", "vibyra.test", {
+      body: "_token=csrf&email=test%40example.com&password=secret",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "cookie": "XSRF-TOKEN=csrf; hke_session=old",
+        "origin": "http://vibyra.test",
+        "referer": `http://vibyra.test${previewServerProxyUrl(project.id, TOKEN)}login`,
+        "x-inertia": "true",
+        "x-requested-with": "XMLHttpRequest",
+        "x-xsrf-token": "csrf"
+      },
+      method: "POST"
+    });
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.Location, `${previewServerProxyUrl(project.id, TOKEN)}dashboard`);
+    assert.deepEqual(response.headers["Set-Cookie"], [
+      `hke_session=abc; HttpOnly; SameSite=Lax; Path=${previewServerProxyUrl(project.id, TOKEN)}`,
+      `XSRF-TOKEN=csrf-token; SameSite=Lax; Path=${previewServerProxyUrl(project.id, TOKEN)}`
+    ]);
+    assert.equal(response.headers["x-inertia"], "true");
+    assert.equal(received.method, "POST");
+    assert.equal(received.body, "_token=csrf&email=test%40example.com&password=secret");
+    assert.equal(received.cookie, "XSRF-TOKEN=csrf; hke_session=old");
+    assert.equal(received.contentType, "application/x-www-form-urlencoded");
+    assert.equal(received.inertia, "true");
+    assert.equal(received.csrf, "csrf");
+    assert.equal(received.origin, `http://127.0.0.1:${port}`);
+    assert.equal(received.referer, `http://127.0.0.1:${port}/login`);
+    assert.equal(received.forwardedHost, "vibyra.test");
+    assert.equal(received.forwardedPrefix, previewServerProxyUrl(project.id, TOKEN));
+
+    const inertiaRedirect = await requestPreviewServerProxy(project, "external-redirect", "vibyra.test", {
+      headers: { "x-inertia": "true" }
+    });
+    assert.equal(inertiaRedirect.status, 409);
+    assert.equal(inertiaRedirect.headers["X-Inertia-Location"], `${previewServerProxyUrl(project.id, TOKEN)}billing`);
+  } finally {
+    delete appState.previewServers[project.id];
+    await new Promise((resolve) => app.close(resolve));
+    await cleanup();
+  }
+});
+
+test("preview server proxy rewrites browser form actions into the tokenized preview route", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-form-action-");
+  const app = await makeRouteServer({
+    "/login": {
+      contentType: "text/html; charset=utf-8",
+      body: '<!doctype html><html><body><form action="/login" method="post"><button formaction="/logout">Out</button></form></body></html>'
+    }
+  });
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${app.port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${app.port}`
+    };
+
+    const response = await requestPreviewServerProxy(project, "login");
+    assert.equal(response.status, 200);
+    assert.match(response.body, new RegExp(`action="${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}login"`));
+    assert.match(response.body, new RegExp(`formaction="${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}logout"`));
+    assert.match(response.body, /previewRequestUrl/);
+  } finally {
+    delete appState.previewServers[project.id];
+    await app.close();
+    await cleanup();
+  }
+});
+
+test("trusted preview referer can proxy root form posts before phone auth", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-root-post-");
+  const received = {};
+  const app = createServer((req, res) => {
+    if (req.url === "/login" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => { body += String(chunk); });
+      req.on("end", () => {
+        received.body = body;
+        received.cookie = req.headers.cookie;
+        res.writeHead(303, { "Content-Type": "text/html; charset=utf-8", "Location": "/dashboard" });
+        res.end("");
+      });
+      return;
+    }
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("missing");
+  });
+  await new Promise((resolve) => app.listen(0, "127.0.0.1", resolve));
+  const address = app.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${port}`
+    };
+
+    const referer = `http://vibyra.test${previewServerProxyUrl(project.id, TOKEN)}login`;
+    const response = await requestPreviewRefererAsset("/login", referer, "vibyra.test", {
+      body: "_token=csrf",
+      headers: { "content-type": "application/x-www-form-urlencoded", "cookie": "XSRF-TOKEN=csrf; hke_session=old" },
+      method: "POST"
+    });
+    assert.equal(response.status, 303);
+    assert.equal(response.headers.Location, `${previewServerProxyUrl(project.id, TOKEN)}dashboard`);
+    assert.equal(received.body, "_token=csrf");
+    assert.equal(received.cookie, "XSRF-TOKEN=csrf; hke_session=old");
+  } finally {
+    delete appState.previewServers[project.id];
+    await new Promise((resolve) => app.close(resolve));
     await cleanup();
   }
 });
@@ -862,7 +1182,7 @@ async function makeRouteServer(routes) {
       res.end("missing");
       return;
     }
-    res.writeHead(200, { "Content-Type": route.contentType });
+    res.writeHead(route.status ?? 200, { "Content-Type": route.contentType });
     res.end(route.body);
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -871,6 +1191,26 @@ async function makeRouteServer(routes) {
     port: typeof address === "object" && address ? address.port : 0,
     close: () => new Promise((resolve) => server.close(resolve))
   };
+}
+
+function viteErrorHtml(error) {
+  return `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <title>Error</title>
+            <script type="module">
+              const error = ${JSON.stringify({ ...error, stack: "at transform", loc: { file: error.id, line: 3, column: 20 } })}
+              try {
+                const { ErrorOverlay } = await import("/@vite/client")
+                document.body.appendChild(new ErrorOverlay(error))
+              } catch {}
+            </script>
+          </head>
+          <body></body>
+        </html>
+      `;
 }
 
 async function makeFakeNpm() {
@@ -982,9 +1322,9 @@ async function requestPreview(project, path = "", { cacheProject = true, host = 
   }
 }
 
-async function requestPreviewServerProxy(project, path = "", host = "vibyra.test") {
+async function requestPreviewServerProxy(project, path = "", host = "vibyra.test", reqOptions = {}) {
   const url = new URL(`${previewServerProxyUrl(project.id, TOKEN)}${path}`, `http://${host}`);
-  return await requestPreviewRoute(url, servePreviewServerProxy);
+  return await requestPreviewRoute(url, servePreviewServerProxy, reqOptions);
 }
 
 async function requestPreviewUrlProxy(target, host = "vibyra.test") {
@@ -996,14 +1336,16 @@ async function requestPreviewProxyPath(path, host = "vibyra.test") {
   return await requestPreviewRoute(new URL(path, `http://${host}`), servePreviewUrlProxy);
 }
 
-async function requestPreviewRefererAsset(path, referer, host = "vibyra.test") {
-  const response = await requestPreviewRoute(new URL(path, `http://${host}`), (res, url) => {
-    return servePreviewRefererAsset(res, url, referer);
-  });
+async function requestPreviewRefererAsset(path, referer, host = "vibyra.test", reqOptions = {}) {
+  const response = await requestPreviewRoute(new URL(path, `http://${host}`), (reqOrRes, resOrUrl, maybeUrl) => (
+    maybeUrl
+      ? servePreviewRefererAsset(reqOrRes, resOrUrl, maybeUrl, referer)
+      : servePreviewRefererAsset(reqOrRes, resOrUrl, referer)
+  ), reqOptions);
   return { ...response, served: response.status !== 0 };
 }
 
-async function requestPreviewRoute(url, handler) {
+async function requestPreviewRoute(url, handler, reqOptions = {}) {
   const response = { status: 0, headers: {}, body: "" };
   const res = {
     writeHead(status, headers) {
@@ -1014,6 +1356,13 @@ async function requestPreviewRoute(url, handler) {
       response.body = Buffer.isBuffer(body) ? body.toString("utf8") : String(body ?? "");
     }
   };
+  if (reqOptions.method || reqOptions.headers || reqOptions.body !== undefined) {
+    const req = Readable.from(reqOptions.body !== undefined ? [Buffer.from(String(reqOptions.body))] : []);
+    req.method = reqOptions.method ?? "GET";
+    req.headers = { host: url.host, ...(reqOptions.headers ?? {}) };
+    await handler(req, res, url);
+    return response;
+  }
   await handler(res, url);
   return response;
 }

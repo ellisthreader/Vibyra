@@ -20,6 +20,9 @@ import { useWorkspace } from "./workspace/hooks/useWorkspace";
 import { directoryForChat } from "./workspace/helpers/chatDirectory";
 import { styles } from "./workspace/styles";
 import { chatCommandHelpReply } from "./workspace/data/chatCommands";
+import { findIndexHtmlBody } from "../utils/files";
+import { hasLocalPreviewDependencies } from "../utils/previewHtml";
+import type { FileEntry, GeneratedApp } from "../types/domain";
 
 export function WorkspaceScreen() {
   const w = useWorkspace();
@@ -27,6 +30,9 @@ export function WorkspaceScreen() {
   const chatDirectory = directoryForChat(w.selectedChatId, app);
   const chatHasConversation = w.visibleChatMessages.length > 0;
   const latestRunnablePreview = [...w.visibleChatMessages].reverse().find((message) => message.app)?.app;
+  const selectedChatProjectId = w.selectedChatId?.startsWith("project-") ? w.selectedChatId.replace("project-", "") : "";
+  const chatHasRunnablePreview = isDisplayablePreview(latestRunnablePreview);
+  const projectChatHasRunnableFiles = Boolean(selectedChatProjectId && app.selectedProject.id === selectedChatProjectId && hasRunnableLoadedFilePreview(app.files));
   const recentChats = Object.entries(app.chatThreads)
     .filter(([, messages]) => messages.length > 0)
     .slice(-5)
@@ -47,6 +53,8 @@ export function WorkspaceScreen() {
         <View style={styles.main}>
           <TopBar
             activePage={activePage}
+            accountName={app.authName}
+            canOpenPreview={chatHasRunnablePreview || projectChatHasRunnableFiles}
             chatDirectory={chatDirectory}
             chatHasConversation={chatHasConversation}
             chatStarred={Boolean(w.starredChatKeys[w.chatTitleKey])}
@@ -65,6 +73,7 @@ export function WorkspaceScreen() {
             onOpenPreview={() => { void w.openRunnablePreview(); }}
             onRenameChat={w.openRenameChat}
             onToggleStarChat={() => w.setStarredChatKeys((current) => ({ ...current, [w.chatTitleKey]: !current[w.chatTitleKey] }))}
+            profileImageUri={app.profileImageUri}
           />
           {activePage === "chat" ? (
             <View style={styles.chatPageHost}>
@@ -89,6 +98,8 @@ export function WorkspaceScreen() {
                 creditsLow={w.creditsLow}
                 creditPercentRemaining={w.creditPercentRemaining}
                 onOpenTokens={() => w.setTokenSheetVisible(true)}
+                onApprovePreviewServerStart={w.onApprovePreviewServerStart}
+                onDenyPreviewServerStart={w.onDenyPreviewServerStart}
                 onStart={w.onStartChat}
                 onTestPreviewCommand={w.openTestPreview}
                 selectedChatId={w.selectedChatId}
@@ -180,6 +191,7 @@ export function WorkspaceScreen() {
           onOpenTokens={() => { w.setAccountMenuVisible(false); w.setTokenSheetVisible(true); }}
           onTab={(tab) => { w.setAccountMenuVisible(false); w.setSettingsTab(tab); w.setActivePage("profile"); }}
           plan={app.accountPlan}
+          profileImageUri={app.profileImageUri}
           tokenBalance={w.tokenBalance}
           visible={w.accountMenuVisible}
         />
@@ -230,4 +242,13 @@ export function WorkspaceScreen() {
       </View>
     </KeyboardAvoidingView>
   );
+}
+
+function isDisplayablePreview(app: GeneratedApp | null | undefined) {
+  return Boolean(app?.html?.trim() || app?.url?.trim());
+}
+
+function hasRunnableLoadedFilePreview(files: FileEntry[]) {
+  const html = findIndexHtmlBody(files);
+  return Boolean(html?.trim() && !hasLocalPreviewDependencies(html));
 }

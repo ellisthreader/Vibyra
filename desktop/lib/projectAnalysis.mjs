@@ -1,11 +1,12 @@
 import { extname, join, relative } from "node:path";
 import { readFile, readdir } from "node:fs/promises";
 import { detectBrief, techEvidence } from "./projectAnalysisBrief.mjs";
-import { cleanText, formatDescriptionSummary, readPackageMetadata, readTextMetadata } from "./projectAnalysisMetadata.mjs";
+import { cleanText, formatDescriptionSummary, readPackageMetadata, readTextMetadata, selectProjectTitle } from "./projectAnalysisMetadata.mjs";
 import { detectProjectPurpose } from "./projectAnalysisPurpose.mjs";
 
 const SKIP_DIRS = new Set([".git", ".expo", ".next", ".vibyra-agent", "build", "dist", "node_modules", "vendor"]);
 const TEXT_EXTS = new Set([".css", ".gd", ".html", ".js", ".jsx", ".json", ".md", ".php", ".ts", ".tsx", ".vue", ".svelte", ".yaml", ".yml"]);
+export const PROJECT_ANALYSIS_VERSION = 2;
 
 export async function analyzeProjectPath(rootPath, rootEntries = []) {
   const startPath = await projectRootPath(rootPath, rootEntries);
@@ -128,7 +129,7 @@ async function inspectFile(path, rel, name, state) {
 }
 
 function summarize(scan, detectedBrief, purpose) {
-  const title = scan.titles.find((value) => value && value !== scan.rootName) ?? scan.titles.find(Boolean);
+  const title = selectProjectTitle(scan.titles, scan.rootName);
   const description = scan.descriptions.find(Boolean);
   const summary = description
     ? formatDescriptionSummary(title, description)
@@ -139,6 +140,7 @@ function summarize(scan, detectedBrief, purpose) {
     ? [...scan.descriptionEvidence, ...(purpose?.evidence ?? [])]
     : purpose?.evidence?.length ? purpose.evidence : scan.evidence;
   return {
+    analyzerVersion: PROJECT_ANALYSIS_VERSION,
     confidence: purpose?.confidence ?? (detectedBrief ? "medium" : "low"),
     evidence: Array.from(new Set(evidence)).slice(0, 8),
     filesSampled: scan.files,

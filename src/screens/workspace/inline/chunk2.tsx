@@ -20,10 +20,13 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
+import { AccountAvatar } from "./AccountAvatar";
 import { TokenBalancePill, getTopBarTitle } from "./chunk3";
 
 export function TopBar({
   activePage,
+  accountName,
+  canOpenPreview,
   chatDirectory,
   chatTitle,
   chatHasConversation,
@@ -38,8 +41,11 @@ export function TopBar({
   onOpenPreview,
   onRenameChat,
   onToggleStarChat,
+  profileImageUri,
 }: {
   activePage: DashboardPage;
+  accountName: string;
+  canOpenPreview: boolean;
   chatDirectory?: string;
   chatTitle: string;
   chatHasConversation: boolean;
@@ -54,9 +60,9 @@ export function TopBar({
   onOpenPreview: () => void;
   onRenameChat: () => void;
   onToggleStarChat: () => void;
+  profileImageUri: string;
 }) {
   const title = getTopBarTitle(activePage);
-  const accountIconColor = useThemedColor("#F6F2FF");
   const previewIconColor = useThemedColor("#7CF1B3");
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
 
@@ -74,9 +80,11 @@ export function TopBar({
           </Pressable>
         </View>
         <View style={styles.chatTopActions}>
-          <Pressable accessibilityLabel="Open live preview" style={({ pressed }) => [styles.previewTopButton, pressed && { opacity: 0.72, transform: [{ scale: 0.96 }] }]} onPress={onOpenPreview}>
-            <Ionicons name="play" color={previewIconColor} size={18} />
-          </Pressable>
+          {canOpenPreview ? (
+            <Pressable accessibilityLabel="Open live preview" style={({ pressed }) => [styles.previewTopButton, pressed && { opacity: 0.72, transform: [{ scale: 0.96 }] }]} onPress={onOpenPreview}>
+              <Ionicons name="play" color={previewIconColor} size={18} />
+            </Pressable>
+          ) : null}
           {chatHasConversation ? (
             <View style={styles.chatMoreMenuWrap}>
               <Pressable accessibilityLabel="Open chat options" style={({ pressed }) => [styles.chatMoreButton, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]} onPress={() => setChatMenuOpen((open) => !open)}>
@@ -110,7 +118,7 @@ export function TopBar({
         </View>
         <View style={styles.chatTopActions}>
           <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-            <Ionicons name="person" color={accountIconColor} size={18} />
+            <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
           </Pressable>
         </View>
       </View>
@@ -128,7 +136,7 @@ export function TopBar({
         </View>
         <View style={styles.topRight}>
           <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-            <Ionicons name="person" color={accountIconColor} size={18} />
+            <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
           </Pressable>
         </View>
       </View>
@@ -159,7 +167,7 @@ export function TopBar({
       </Pressable>
       <View style={styles.topRight}>
         <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-          <Ionicons name="person" color={accountIconColor} size={18} />
+          <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
         </Pressable>
       </View>
     </View>

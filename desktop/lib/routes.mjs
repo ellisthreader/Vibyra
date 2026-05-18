@@ -140,7 +140,7 @@ async function handlePairingRoutes(req, res, url) {
     await serveProjectPreview(res, url);
     return true;
   }
-  if (req.method === "GET" && url.pathname.startsWith("/preview/server/")) {
+  if (url.pathname.startsWith("/preview/server/")) {
     await servePreviewServerProxy(req, res, url);
     return true;
   }
@@ -148,7 +148,7 @@ async function handlePairingRoutes(req, res, url) {
     await servePreviewUrlProxy(req, res, url);
     return true;
   }
-  if (req.method === "GET" && await servePreviewRefererAsset(res, url, req.headers.referer || req.headers.referrer)) {
+  if (await servePreviewRefererAsset(req, res, url, req.headers.referer || req.headers.referrer)) {
     return true;
   }
   if (req.method === "POST" && url.pathname === "/pair") { await pairDevice(req, res); return true; }

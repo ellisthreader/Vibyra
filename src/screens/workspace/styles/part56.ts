@@ -10,45 +10,30 @@ export const part56 = {
   },
   chatEffortInlineLabel: {
     color: "#DAD6E7",
-    fontSize: 12.5,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
     lineHeight: 16
   },
   chatModelEffortControl: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
-    borderColor: "rgba(176, 132, 255, 0.16)",
-    borderRadius: 13,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 0,
+    borderWidth: 0,
     flexDirection: "row",
-    gap: 7,
-    height: 36,
+    gap: 5,
+    height: 34,
     overflow: "hidden",
-    paddingHorizontal: 10
-  },
-  chatModelEffortChoice: {
-    alignItems: "center",
-    borderColor: "rgba(176, 132, 255, 0.14)",
-    borderRadius: 9,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    minHeight: 30,
-    paddingHorizontal: 8
-  },
-  chatModelEffortChoiceActive: {
-    backgroundColor: "rgba(176, 132, 255, 0.16)",
-    borderColor: "rgba(176, 132, 255, 0.36)"
+    paddingHorizontal: 4
   },
   chatModelEffortChoices: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6
   },
   chatModelEffortChoiceText: {
     color: "#C9C2D6",
-    fontSize: 11,
-    fontWeight: "900",
+    fontSize: 10.5,
+    fontWeight: "800",
     lineHeight: 14
   },
   chatModelEffortChoiceTextActive: {
@@ -60,13 +45,10 @@ export const part56 = {
     width: 1
   },
   chatModelEffortHeader: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(176, 132, 255, 0.16)",
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 9,
+    gap: 12,
     marginBottom: 4,
-    padding: 9
+    paddingHorizontal: 2,
+    paddingVertical: 4
   },
   chatModelEffortHeaderTop: {
     alignItems: "center",
@@ -85,6 +67,80 @@ export const part56 = {
     fontSize: 13,
     fontWeight: "900",
     lineHeight: 17
+  },
+  chatModelEffortLabelHit: {
+    alignItems: "center",
+    minWidth: 48
+  },
+  chatModelEffortLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  chatModelEffortSlider: {
+    gap: 7
+  },
+  chatModelEffortStop: {
+    backgroundColor: "#4D465B",
+    borderRadius: 999,
+    height: 7,
+    width: 7
+  },
+  chatModelEffortStopActive: {
+    backgroundColor: "#D7C4FF"
+  },
+  chatModelEffortStopHit: {
+    alignItems: "center",
+    height: 24,
+    justifyContent: "center",
+    width: 42
+  },
+  chatModelEffortStops: {
+    alignItems: "center",
+    bottom: -9,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    left: -18,
+    position: "absolute",
+    right: -18
+  },
+  chatModelEffortThumb: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D7C4FF",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 18,
+    marginLeft: -9,
+    marginTop: -8,
+    position: "absolute",
+    top: "50%",
+    width: 18
+  },
+  chatModelEffortTrack: {
+    backgroundColor: "rgba(255, 255, 255, 0.13)",
+    borderRadius: 999,
+    height: 3,
+    marginHorizontal: 18,
+    marginTop: 6,
+    position: "relative"
+  },
+  chatModelEffortTrackFill: {
+    backgroundColor: "#D7C4FF",
+    borderRadius: 999,
+    height: 3
+  },
+  chatModelInlineDivider: {
+    color: "#766F84",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 16
+  },
+  chatModelInlineLabel: {
+    color: "#E9E4F2",
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16,
+    maxWidth: 112
   },
   chatModelLogoButton: {
     alignItems: "center",

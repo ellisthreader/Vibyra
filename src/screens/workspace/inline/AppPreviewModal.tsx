@@ -9,8 +9,9 @@ import type { GeneratedApp } from "../../../types/domain";
 import { styles } from "../styles";
 import { chatModelOptions } from "../data/chatModels";
 import { AppPreviewEditStatus, PreviewEditStatus } from "./AppPreviewEditStatus";
-import { PreviewErrorPanel, buildFixPrompt } from "./AppPreviewErrorPanel";
+import { PreviewErrorPanel } from "./AppPreviewErrorPanel";
 import { AppPreviewMiniChat } from "./AppPreviewMiniChat";
+import { buildFixPrompt } from "./previewFixPrompt";
 
 export function AppPreviewModal({
   app,
@@ -63,8 +64,8 @@ export function AppPreviewModal({
 
   function handlePreviewError(error: PreviewRuntimeError) {
     setPreviewErrors((current) => {
-      const signature = `${error.type}:${error.message}:${error.line ?? ""}:${error.column ?? ""}`;
-      const alreadyCaptured = current.some((item) => `${item.type}:${item.message}:${item.line ?? ""}:${item.column ?? ""}` === signature);
+      const signature = `${error.type}:${error.message}:${error.source ?? ""}:${error.line ?? ""}:${error.column ?? ""}`;
+      const alreadyCaptured = current.some((item) => `${item.type}:${item.message}:${item.source ?? ""}:${item.line ?? ""}:${item.column ?? ""}` === signature);
       if (alreadyCaptured) return current;
       return [...current, error].slice(-8);
     });

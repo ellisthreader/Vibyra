@@ -37,6 +37,14 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
           type: "webview"
         });
       }}
+      onHttpError={(event) => {
+        onPreviewError?.({
+          message: `Preview request failed: HTTP ${event.nativeEvent.statusCode}`,
+          source: event.nativeEvent.url,
+          stack: event.nativeEvent.description,
+          type: "webview"
+        });
+      }}
       allowsInlineMediaPlayback
       mediaPlaybackRequiresUserAction
       setSupportMultipleWindows={false}

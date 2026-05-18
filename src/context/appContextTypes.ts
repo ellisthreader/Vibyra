@@ -16,9 +16,12 @@ import {
   PreviewState,
   Project,
   ProjectBrief,
+  PreviewServerPhase,
+  PreviewServerPrompt,
   RememberedDesktop,
   ReasoningEffort
 } from "../types/domain";
+import type { AgentStartOptions } from "../types/chatTools";
 
 export type ProjectOpenOptions = { startPreview?: boolean };
 
@@ -129,13 +132,16 @@ export type AppActions = {
   createProject: (name?: string) => Promise<Project | null>;
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
-  selectProject: (projectId: string, options?: ProjectOpenOptions) => Promise<FileEntry[]>;
-  startPreviewServer: (projectId: string, projectName?: string) => Promise<GeneratedApp>;
-  startAgent: (target?: AgentStartTarget, promptOverride?: string) => Promise<boolean>;
+  selectProject: (projectId: string, projectOrOptions?: Project | ProjectOpenOptions, options?: ProjectOpenOptions) => Promise<FileEntry[]>;
+  startPreviewServer: (projectId: string, projectName?: string, onProgress?: (phase: PreviewServerPhase, detail?: string) => void) => Promise<GeneratedApp>;
+  startAgent: (target?: AgentStartTarget, promptOverride?: string, options?: AgentStartOptions) => Promise<boolean>;
   clearCurrentChat: (projectId?: string) => void;
   addLocalUserMessage: (prompt: string, target?: AgentStartTarget) => void;
   addLocalChatNotice: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
   addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
+  addLocalGeneratedImage: (prompt: string, image: import("../types/chatTools").GeneratedImage, target?: AgentStartTarget) => void;
+  addLocalPreviewServerPrompt: (prompt: string, target?: AgentStartTarget) => string;
+  updatePreviewServerMessage: (messageId: string, projectId: string, update: Partial<PreviewServerPrompt>, app?: GeneratedApp) => void;
   addLocalChatProposal: (prompt: string, reply: string, matches: Project[], target?: AgentStartTarget, query?: string) => { proposalProjectId: string };
   addLocalDesktopConnectionPrompt: (prompt: string, connectionPrompt: DesktopConnectionPrompt, target?: AgentStartTarget) => void;
   addLocalFolderRecovery: (prompt: string, reply: string, recovery: FolderRecovery, target?: AgentStartTarget) => void;

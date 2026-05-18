@@ -55,7 +55,7 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
         logs.appendLog(error instanceof Error ? error.message : "Could not discard pending edits", "Edit Permission", "warning");
       }
     }
-    markDenied(messageId, projectId);
+    markDenied(messageId, projectId, message?.pendingApplyId);
     if (message?.pendingApplyId) return;
     const files = message?.codeFiles ?? [];
     for (const change of message?.codeChanges ?? []) {
@@ -78,7 +78,7 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
       setters.setChanges(result.changes);
       setters.setFiles((current) => dedupeFiles([...result.files, ...current]));
       logs.appendLogs(result.events);
-      markAllowed(messageId, projectId, result);
+      markAllowed(messageId, projectId, pendingApplyId, result);
       return true;
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Could not apply pending edits", "Edit Permission", "error");
@@ -86,7 +86,7 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
     }
   }
 
-  function markAllowed(messageId: string, projectId: string, result: AgentStartResult) {
+  function markAllowed(messageId: string, projectId: string, pendingApplyId: string, result: AgentStartResult) {
     const project = state.chatProjects[projectId] ?? state.projects.find((item) => item.id === projectId);
     const app = previewAppForAgentResult(state.connection, projectId, project?.name ?? "Preview", result);
     setters.setChatThreads((current) => {
@@ -95,7 +95,7 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
       return {
         ...current,
         [projectId]: thread.map((item) => {
-          if (item.id !== messageId) return item;
+          if (item.id !== messageId && item.pendingApplyId !== pendingApplyId) return item;
           const { pendingApplyId: _pendingApplyId, ...rest } = item;
           return { ...rest, codeChanges: result.changes, codeFiles: result.files, editApproval: "allowed", ...(app ? { app } : {}) };
         })
@@ -103,14 +103,14 @@ export function useEditPermissionActions(store: Store, requests: Requests, logs:
     });
   }
 
-  function markDenied(messageId: string, projectId: string) {
+  function markDenied(messageId: string, projectId: string, pendingApplyId?: string) {
     setters.setChatThreads((current) => {
       const thread = current[projectId];
       if (!thread) return current;
       return {
         ...current,
         [projectId]: thread.map((message) => {
-          if (message.id !== messageId) return message;
+          if (message.id !== messageId && (!pendingApplyId || message.pendingApplyId !== pendingApplyId)) return message;
           const { pendingApplyId: _pendingApplyId, ...rest } = message;
           return { ...rest, editApproval: "denied" };
         })

@@ -92,7 +92,7 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
 
   const desktopPreviewApp = useCallback((projectId: string, projectName: string): GeneratedApp | null => {
     if (!app.connection) return null;
-    return { id: `desktop-preview-${projectId}`, title: projectName, url: projectPreviewUrl(app.connection.url, projectId, app.connection.token) };
+    return { id: `desktop-preview-${projectId}`, projectId, source: "desktop", title: projectName, url: projectPreviewUrl(app.connection.url, projectId, app.connection.token) };
   }, [app.connection]);
 
   const showDesktopPreview = useCallback((project: Project) => {
@@ -115,10 +115,12 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     const desktopUrl = app.connection && known ? projectPreviewUrl(app.connection.url, target.projectId, app.connection.token) : undefined;
     const resolvedDesktopUrl = desktopUrl ? await resolveRunnableDesktopPreviewUrl(desktopUrl) : null;
     if (resolvedDesktopUrl) {
-      return { id: `test-preview-${target.projectId}`, title: target.project.name, url: resolvedDesktopUrl };
+      return { id: `test-preview-${target.projectId}`, projectId: target.projectId, source: "desktop", title: target.project.name, url: resolvedDesktopUrl };
     }
     if (html) return {
       id: `test-preview-${target.projectId}`,
+      projectId: target.projectId,
+      source: "desktop",
       title: target.project.name,
       ...(html ? { html } : {}),
     };

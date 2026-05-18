@@ -1,4 +1,5 @@
 import { DesktopConnectionPrompt, GeneratedApp, Project } from "../types/domain";
+import type { GeneratedImage } from "../types/chatTools";
 import { ChatResponse } from "../utils/appApi";
 import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
 import { isRunArtifact } from "../utils/files";
@@ -69,6 +70,62 @@ export function useLocalChatActions(store: Store) {
       ]
     }));
     setters.setTaskText("");
+  }
+
+  function addLocalGeneratedImage(prompt: string, image: GeneratedImage, target?: AgentStartTarget) {
+    const { projectId, file } = resolveChatTarget(target);
+    setters.setChatThreads((current) => ({
+      ...current,
+      [projectId]: [
+        ...(current[projectId] ?? []),
+        { id: makeId("chat-user"), role: "user", text: prompt, file },
+        { id: makeId("chat-assistant"), role: "assistant", text: `Created **${image.title}**.`, file, generatedImage: image }
+      ]
+    }));
+    setters.setTaskText("");
+  }
+
+  function addLocalPreviewServerPrompt(prompt: string, target?: AgentStartTarget) {
+    const { projectId, file } = resolveChatTarget(target);
+    const messageId = makeId("preview-server");
+    const projectName = target?.project?.name
+      ?? state.projects.find((project) => project.id === projectId)?.name
+      ?? state.chatProjects[projectId]?.name
+      ?? "this project";
+    setters.setChatThreads((current) => ({
+      ...current,
+      [projectId]: [
+        ...(current[projectId] ?? []),
+        { id: makeId("chat-user"), role: "user", text: prompt, file },
+        {
+          id: messageId,
+          role: "assistant",
+          text: `Start preview server for ${projectName}`,
+          file,
+          previewServer: {
+            id: messageId,
+            projectId,
+            projectName,
+            status: "approval",
+            phase: "waiting-approval"
+          }
+        }
+      ]
+    }));
+    setters.setTaskText("");
+    return messageId;
+  }
+
+  function updatePreviewServerMessage(messageId: string, projectId: string, update: Parameters<AppContextValue["updatePreviewServerMessage"]>[2], app?: ChatResponse["app"] | GeneratedApp) {
+    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => {
+      if (!message.previewServer) return message;
+      return {
+        ...message,
+        text: previewServerText(message.previewServer.projectName, update.status ?? message.previewServer.status),
+        previewServer: { ...message.previewServer, ...update },
+        ...(app ? { app } : {})
+      };
+    }));
   }
 
   function addLocalChatProposal(
@@ -201,6 +258,9 @@ export function useLocalChatActions(store: Store) {
     addLocalUserMessage,
     addLocalChatNotice,
     addLocalChatReply,
+    addLocalGeneratedImage,
+    addLocalPreviewServerPrompt,
+    updatePreviewServerMessage,
     addLocalChatProposal,
     addLocalDesktopConnectionPrompt,
     addLocalFolderRecovery,
@@ -209,6 +269,14 @@ export function useLocalChatActions(store: Store) {
     updateDesktopConnectionPrompt,
     updateFolderProposal
   };
+}
+
+function previewServerText(projectName: string, status: NonNullable<AppContextValue["chatMessages"][number]["previewServer"]>["status"]) {
+  if (status === "ready") return `Preview is ready for ${projectName}`;
+  if (status === "failed") return `Preview failed for ${projectName}`;
+  if (status === "cancelled") return `Preview start cancelled for ${projectName}`;
+  if (status === "starting") return `Starting preview server for ${projectName}`;
+  return `Start preview server for ${projectName}`;
 }
 
 function updateThreadMessage(current: Record<string, AppContextValue["chatMessages"]>, projectId: string, messageId: string, update: (message: AppContextValue["chatMessages"][number]) => AppContextValue["chatMessages"][number]) {

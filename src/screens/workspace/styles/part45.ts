@@ -6,7 +6,7 @@ export const part45 = {
     width: 26
   },
   profileAvatarLargeCompact: {
-    borderWidth: 2,
+    borderWidth: 0,
     height: 46,
     width: 46
   },

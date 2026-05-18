@@ -53,6 +53,10 @@ Use the chat box-token system: radii `999` pills, `12` inline tools/small panels
 
 Inline action cards that define local `StyleSheet.create` colors do not pass through the workspace `themeTransform`; give them explicit dark/light palettes. Current shared palette: `src/screens/workspace/inline/chatActionCardTheme.ts`, used by `DesktopConnectionCard.tsx` and `FolderCards.tsx`.
 
+Preview server startup approval and progress render through `ChatMessage.previewServer` and `PreviewServerActivityCard.tsx` instead of plain assistant text. Keep it compact, terminal-like, and aligned with the shared chat action card palette. The terminal lines must reflect real app phases reported by `app.startPreviewServer()` and stop animating once the card reaches ready, failed, or cancelled.
+
+Edit permission prompts should use the same shared chat action palette via `EditPermissionCard.tsx`; avoid green/purple gradient chrome, large glowing permission art, or separate pending code-change cards below it. Keep the card clean with file rows, inline Review/Hide code expansion before approval, and simple No / Allow / Always allow actions. The full `CodeChangesCard` should appear only after edits are approved/applied.
+
 The composer keeps attach, model selector, effort picker, and send button in one compact toolbar. It intentionally does not render a detached/project context strip.
 
 Assistant bubble identity is stored per assistant `ChatMessage.assistantModel`, not derived from the current model menu. Generated app replies render `AppPreviewCard`; `chatPreviewFallback.ts` builds a client-side preview app from fenced JSX/HTML when backend metadata is missing.

@@ -19,6 +19,8 @@ export function previewAppForAgentResult(
   if (!html && !result.preview.url) return null;
   return {
     id: `${result.agent.id}-preview`,
+    projectId,
+    source: "desktop",
     title: result.preview.title || projectName,
     ...(inlineHtml ? { html: inlineHtml } : {}),
     ...(connection && result.preview.url ? { url: absoluteDesktopPreviewUrl(connection.url, result.preview.url) } : {})

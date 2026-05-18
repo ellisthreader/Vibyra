@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, View } from "react-native";
+import type { ChatStartOptions } from "../../../types/chatTools";
 import type { ChatMessage, DesktopBrowseListing, DesktopConnectionPrompt, FileEntry, GeneratedApp, ModelKey, Project, ProjectBrief, ReasoningEffort } from "../../../types/domain";
 import { ChatSkill } from "../../../utils/appApi";
 import { useAppContext } from "../../../context/AppContext";
+import { hasFreshProjectBriefAnalysis } from "../../../context/projectBriefSetup";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { styles } from "../styles";
 import { ChatEmptyState } from "./chunk10";
@@ -33,7 +35,9 @@ export function AIChatPage(props: {
   onWrongFolderProposal: (proposalId: string, folder: Project, query: string) => void;
   projectName?: string;
   onOpenTokens: () => void;
-  onStart: () => void;
+  onApprovePreviewServerStart: () => void;
+  onDenyPreviewServerStart: () => void;
+  onStart: (options?: ChatStartOptions) => void;
   onTestPreviewCommand: (userText: string) => void;
   projectChatTitles: Record<string, string>;
   reasoningEffort: ReasoningEffort;
@@ -65,6 +69,7 @@ export function AIChatPage(props: {
   const setupSubject = needsFileBrief ? `New file: ${appCtx.selectedFile.name}` : project?.name;
   const messageListRef = useRef<ScrollView | null>(null);
   const shouldFollowChatRef = useRef(true);
+  const staleAnalysisRefreshRef = useRef<Record<string, boolean>>({});
   const latestMessage = props.chatMessages[props.chatMessages.length - 1];
   const latestMessageKey = latestMessage ? `${latestMessage.id}:${latestMessage.text.length}` : "";
 
@@ -93,6 +98,13 @@ export function AIChatPage(props: {
     followIfAtBottom(true);
   }, [hasConversation, latestMessage?.role, latestMessageKey, followIfAtBottom, scrollToBottom]);
 
+  useEffect(() => {
+    if (!projectId || !project) return;
+    if (project.brief || hasFreshProjectBriefAnalysis(project)) { delete staleAnalysisRefreshRef.current[projectId]; return; }
+    if (project.source !== "desktop" || staleAnalysisRefreshRef.current[projectId]) return;
+    staleAnalysisRefreshRef.current[projectId] = true;
+    void appCtx.selectProject(projectId, { startPreview: false });
+  }, [appCtx, project, projectId]);
   const confirmProjectBrief = useCallback((confirmProjectId: string, detectedBrief?: ProjectBrief) => {
     const target = appCtx.projects.find((item) => item.id === confirmProjectId) ?? appCtx.chatProjects[confirmProjectId];
     const brief = detectedBrief ?? target?.detectedBrief;
@@ -129,6 +141,8 @@ export function AIChatPage(props: {
                 onChangeProjectBrief={setManualBriefProjectId}
                 onConfirmProjectBrief={confirmProjectBrief}
                 onConnectDesktop={props.onConnectDesktop}
+                onApprovePreviewServerStart={props.onApprovePreviewServerStart}
+                onDenyPreviewServerStart={props.onDenyPreviewServerStart}
                 onDismissFolderProposal={props.onDismissFolderProposal}
                 onScanForDesktop={props.onScanForDesktop}
                 onSearchFolderProposal={props.onSearchFolderProposal}

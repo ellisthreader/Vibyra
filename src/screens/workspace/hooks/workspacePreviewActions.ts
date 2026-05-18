@@ -5,7 +5,7 @@ import type { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
 
 type Runtime = ReturnType<typeof useWorkspaceChatRuntime>;
 type PreviewReply = (reply: string, project?: Project, preview?: GeneratedApp) => void;
-type PreviewStartApproval = (target: ReturnType<Runtime["activeProjectTarget"]>) => void;
+type PreviewStartApproval = (target: ReturnType<Runtime["activeProjectTarget"]>, messageId: string) => void;
 
 export async function handleWorkspacePreviewIntent({
   app,
@@ -40,7 +40,7 @@ export async function handleWorkspacePreviewIntent({
     reply(previewNotConnectedReply(target.project.name), target.project);
     return true;
   }
-  onNeedsServerApproval?.(target);
-  reply(`I couldn't find a running preview for **${target.project.name}** yet. I can ask Vibyra Desktop to start a phone-viewable web preview on your PC, then open it here. Reply yes to start it or no to cancel.`, target.project);
+  const messageId = app.addLocalPreviewServerPrompt(prompt, target);
+  onNeedsServerApproval?.(target, messageId);
   return true;
 }

@@ -127,8 +127,12 @@ export async function servePreviewUrlProxy(reqOrRes, resOrUrl, maybeUrl) {
   });
 }
 
-export async function servePreviewRefererAsset(res, url, referer) {
-  const previewRef = previewReferenceFromReferer(referer, url);
+export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer, maybeReferer) {
+  const req = maybeReferer === undefined ? null : reqOrRes;
+  const res = maybeReferer === undefined ? reqOrRes : resOrUrl;
+  const url = maybeReferer === undefined ? resOrUrl : urlOrReferer;
+  const referer = maybeReferer === undefined ? urlOrReferer : maybeReferer;
+  const previewRef = previewReferenceFromReferer(referer, url) ?? activePreviewAssetReference(url.pathname);
   if (!previewRef || !canProxyPreviewFallbackPath(url.pathname)) return false;
 
   const requestedPath = `${url.pathname}${url.search}`;
@@ -150,7 +154,8 @@ export async function servePreviewRefererAsset(res, url, referer) {
   await proxyPreviewResponse(res, target, {
     externalProxy: previewRef.kind === "external",
     proxyBase: previewRef.kind === "external" ? previewExternalUrl(target, TOKEN) : previewServerProxyUrl(previewRef.projectId, TOKEN),
-    token: TOKEN
+    token: TOKEN,
+    req
   });
   return true;
 }
@@ -270,12 +275,22 @@ function rewritePreviewCss(css, { mountDirectory, projectId, token }) {
 
 async function proxyPreviewResponse(res, target, { externalProxy = false, proxyBase, token, req = null }) {
   try {
-    const upstream = await fetch(target, { headers: proxyRequestHeaders(req) });
+    const requestInit = await proxyRequestInit(req, target, proxyBase);
+    const upstream = await fetch(target, requestInit);
     const contentType = upstream.headers.get("content-type") || "application/octet-stream";
     const status = upstream.status;
+    if (shouldConvertViteModuleError(target, status)) {
+      const body = await upstream.text();
+      const viteError = viteModuleErrorFromHtml(body, target);
+      if (viteError) {
+        res.writeHead(200, headers("application/javascript; charset=utf-8"));
+        res.end(viteModuleErrorJavaScript(viteError));
+        return;
+      }
+    }
     const isText = /^text\/|javascript|json|xml|svg/i.test(contentType);
-    const responseHeaders = proxyResponseHeaders(upstream, contentType);
     const proxyContext = previewProxyContext(target, token);
+    const responseHeaders = proxyResponseHeaders(upstream, contentType, { externalProxy, proxyBase, target, token, proxyContext });
     if (!isText) {
       const body = Buffer.from(await upstream.arrayBuffer());
       res.writeHead(status, responseHeaders);
@@ -286,6 +301,7 @@ async function proxyPreviewResponse(res, target, { externalProxy = false, proxyB
     let body = await upstream.text();
     if (/text\/html/i.test(contentType)) {
       body = rewriteProxyHtml(body, { externalProxy, proxyBase, target, token, proxyContext });
+      if (status >= 400) body = injectProxyHttpErrorOverlay(body, { status, target });
     } else if (/text\/css/i.test(contentType)) {
       body = rewriteProxyCss(body, { externalProxy, proxyBase, target, token, proxyContext });
     } else if (/javascript/i.test(contentType)) {
@@ -298,46 +314,395 @@ async function proxyPreviewResponse(res, target, { externalProxy = false, proxyB
   }
 }
 
-function proxyRequestHeaders(req) {
+function shouldConvertViteModuleError(target, status) {
+  return status >= 500 && status <= 599 && isDevSourceModulePath(target?.pathname);
+}
+
+function isDevSourceModulePath(pathname) {
+  return /^\/(?:@fs\/|src\/|resources\/|app\/|pages\/|components\/)/i.test(String(pathname || ""))
+    && /\.(?:jsx?|tsx?|mjs|vue|svelte)(?:[?#]|$)/i.test(String(pathname || ""));
+}
+
+function viteModuleErrorFromHtml(body, target) {
+  const html = String(body || "");
+  if (!/<html[\s>]/i.test(html) || !/ErrorOverlay|vite:/i.test(html)) return null;
+  const error = parseViteErrorObject(html);
+  const message = String(error?.message || `Vite failed to load ${target.pathname}`);
+  return {
+    file: String(error?.id || error?.loc?.file || target.pathname),
+    frame: String(error?.frame || ""),
+    message,
+    plugin: String(error?.plugin || ""),
+    stack: String(error?.stack || "")
+  };
+}
+
+function parseViteErrorObject(html) {
+  const marker = "const error = ";
+  const start = html.indexOf(marker);
+  if (start < 0) return null;
+  const end = html.indexOf("\n              try", start);
+  if (end < 0) return null;
+  try {
+    return JSON.parse(html.slice(start + marker.length, end).trim());
+  } catch {
+    return null;
+  }
+}
+
+function viteModuleErrorJavaScript(error) {
+  const message = error.plugin ? `${error.plugin}: ${error.message}` : error.message;
+  const detail = [message, error.file, error.frame, error.stack].filter(Boolean).join("\n\n");
+  return [
+    "const error = ".concat(JSON.stringify({ ...error, message }), ";"),
+    "const detail = ".concat(JSON.stringify(detail), ";"),
+    "function send(payload) {",
+    "  try {",
+    "    const next = Object.assign({ source: 'vibyra-preview-error' }, payload);",
+    "    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(next));",
+    "    else if (window.parent) window.parent.postMessage(next, '*');",
+    "  } catch (_) {}",
+    "}",
+    "function render() {",
+    "  const root = document.body || document.documentElement;",
+    "  if (!root || document.getElementById('vibyra-vite-module-error')) return;",
+    "  const wrap = document.createElement('main');",
+    "  wrap.id = 'vibyra-vite-module-error';",
+    "  wrap.style.cssText = 'box-sizing:border-box;min-height:100vh;margin:0;padding:24px;background:#0b0d17;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;display:flex;align-items:center;justify-content:center;';",
+    "  wrap.innerHTML = ".concat(JSON.stringify(viteErrorOverlayHtml(message, detail)), ";"),
+    "  root.appendChild(wrap);",
+    "}",
+    "send({ type: 'resource', message: 'Vite preview module failed: ' + error.message, file: error.file, stack: detail });",
+    "if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render, { once: true });",
+    "else render();",
+    "console.error('Vite preview module failed:', error);",
+    "export {};",
+    ""
+  ].join("\n");
+}
+
+function viteErrorOverlayHtml(message, detail) {
+  return [
+    "<section style=\"box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)\">",
+    "<p style=\"margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em\">Preview module failed</p>",
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">${escapeHtml(message)}</h1>`,
+    `<pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">${escapeHtml(detail)}</pre>`,
+    "</section>"
+  ].join("");
+}
+
+async function proxyRequestInit(req, target, proxyBase) {
+  if (!req) return { headers: proxyRequestHeaders(req, target, proxyBase), redirect: "manual" };
+  const method = String(req.method || "GET").toUpperCase();
+  const init = {
+    headers: proxyRequestHeaders(req, target, proxyBase),
+    method,
+    redirect: "manual"
+  };
+  if (!["GET", "HEAD"].includes(method)) {
+    init.body = await readRawRequestBody(req);
+  }
+  return init;
+}
+
+function proxyRequestHeaders(req, target, proxyBase) {
   const source = req?.headers ?? {};
-  const allowed = ["accept", "cookie", "x-inertia", "x-inertia-version", "x-requested-with", "x-xsrf-token"];
+  const allowed = [
+    "accept",
+    "accept-language",
+    "content-type",
+    "cookie",
+    "x-csrf-token",
+    "x-inertia",
+    "x-inertia-version",
+    "x-requested-with",
+    "x-xsrf-token"
+  ];
   const next = {};
   for (const name of allowed) {
     const value = source[name];
     if (typeof value === "string") next[name] = value;
   }
+  if (req && target) {
+    if (typeof source.origin === "string") next.origin = target.origin;
+    if (typeof source.referer === "string" || typeof source.referrer === "string") {
+      next.referer = previewRefererToTarget(source.referer || source.referrer, req, target);
+    }
+    if (typeof source.host === "string") next["x-forwarded-host"] = source.host;
+    next["x-forwarded-proto"] = "http";
+    next["x-forwarded-prefix"] = previewCookiePath(proxyBase);
+  }
   return next;
 }
 
-function proxyResponseHeaders(upstream, contentType) {
+function previewRefererToTarget(referer, req, target) {
+  try {
+    const parsed = new URL(String(referer || ""), `http://${req.headers.host || "localhost"}`);
+    const match = parsed.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)\/?(.*)$/);
+    if (!match || decodeURIComponent(match[2]) !== TOKEN) return target.toString();
+    const upstream = new URL(decodeURIComponent(match[3] || ""), `${target.origin}/`);
+    upstream.search = parsed.search;
+    upstream.hash = parsed.hash;
+    return upstream.toString();
+  } catch {
+    return target.toString();
+  }
+}
+
+function readRawRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (chunk) => {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      size += buffer.length;
+      if (size > 10_000_000) {
+        reject(new Error("Preview request body too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(buffer);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
+function proxyResponseHeaders(upstream, contentType, rewriteOptions) {
   const next = headers(contentType);
-  for (const name of ["vary", "x-inertia", "x-inertia-location"]) {
+  for (const name of ["vary", "x-inertia"]) {
     const value = upstream.headers.get(name);
     if (value) next[name] = value;
   }
+  const location = upstream.headers.get("location");
+  if (location) next.Location = rewriteProxyReference(location, rewriteOptions);
+  const inertiaLocation = upstream.headers.get("x-inertia-location");
+  if (inertiaLocation) next["X-Inertia-Location"] = rewriteProxyReference(inertiaLocation, rewriteOptions);
   const cookies = upstream.headers.getSetCookie?.() ?? [];
-  if (cookies.length > 0) next["Set-Cookie"] = cookies;
+  if (cookies.length > 0) next["Set-Cookie"] = cookies.map((cookie) => rewritePreviewCookie(cookie, rewriteOptions));
   else {
     const cookie = upstream.headers.get("set-cookie");
-    if (cookie) next["Set-Cookie"] = cookie;
+    if (cookie) next["Set-Cookie"] = rewritePreviewCookie(cookie, rewriteOptions);
   }
   return next;
+}
+
+function rewritePreviewCookie(cookie, { proxyBase }) {
+  const parts = String(cookie || "").split(";").map((part) => part.trim()).filter(Boolean);
+  const pair = parts.shift();
+  if (!pair) return cookie;
+
+  const next = [pair];
+  let hasSameSite = false;
+  for (const part of parts) {
+    if (/^domain=/i.test(part) || /^path=/i.test(part) || /^secure$/i.test(part)) continue;
+    if (/^samesite=/i.test(part)) {
+      hasSameSite = true;
+      next.push(/^samesite=none$/i.test(part) ? "SameSite=Lax" : part);
+      continue;
+    }
+    next.push(part);
+  }
+  next.push(`Path=${previewCookiePath(proxyBase)}`);
+  if (!hasSameSite) next.push("SameSite=Lax");
+  return next.join("; ");
+}
+
+function previewCookiePath(proxyBase) {
+  const match = String(proxyBase || "").match(/^(\/preview\/server\/[^/]+\/[^/]+\/?)/);
+  if (!match) return "/";
+  return match[1].endsWith("/") ? match[1] : `${match[1]}/`;
 }
 
 function rewriteProxyHtml(html, { externalProxy, proxyBase, target, token, proxyContext }) {
   const rewriteOptions = { externalProxy, proxyBase, target, token, proxyContext };
-  return html
+  return injectProxyRuntimeErrorOverlay(html)
     .replace(/(<script\b(?![^>]*\bsrc=)[^>]*>)([\s\S]*?)(<\/script>)/gi, (_match, open, script, close) => {
       if (!shouldRewriteInlineScript(open)) return `${open}${script}${close}`;
       return `${open}${rewriteProxyJavaScript(script, rewriteOptions)}${close}`;
     })
-    .replace(/\b(src|href)=["']([^"']+)["']/gi, (_match, attr, value) => {
+    .replace(/\b(src|href|action|formaction)=["']([^"']+)["']/gi, (_match, attr, value) => {
       return `${attr}="${rewriteProxyReference(value, rewriteOptions)}"`;
     })
     .replace(/\bstyle=(["'])(.*?)\1/gi, (_match, quote, value) => {
       return `style=${quote}${rewriteProxyStyleUrls(value, rewriteOptions)}${quote}`;
     });
 }
+
+function injectProxyRuntimeErrorOverlay(html) {
+  const source = String(html || "");
+  if (source.includes("vibyra-preview-runtime-error")) return source;
+  const tag = `<script>${PROXY_RUNTIME_ERROR_SCRIPT}</script>`;
+  if (/<head[^>]*>/i.test(source)) return source.replace(/<head([^>]*)>/i, `<head$1>${tag}`);
+  if (/<html[^>]*>/i.test(source)) return source.replace(/<html([^>]*)>/i, `<html$1><head>${tag}</head>`);
+  return `${tag}${source}`;
+}
+
+function injectProxyHttpErrorOverlay(html, { status, target }) {
+  const body = String(html || "");
+  if (/\bid=["']vibyra-preview-http-error["']/i.test(body)) return body;
+  const message = `Preview request failed: HTTP ${status}`;
+  const detail = `${target.pathname}${target.search}\n\n${body.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 1200)}`;
+  const overlay = [
+    '<main id="vibyra-preview-http-error" style="box-sizing:border-box;min-height:100vh;margin:0;padding:24px;background:#0b0d17;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;">',
+    '<section style="box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)">',
+    '<p style="margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em">Preview HTTP error</p>',
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">${escapeHtml(message)}</h1>`,
+    `<pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">${escapeHtml(detail)}</pre>`,
+    "</section></main>"
+  ].join("");
+  if (/<body[^>]*>/i.test(body)) return body.replace(/<body([^>]*)>/i, `<body$1>${overlay}`);
+  return `${overlay}${body}`;
+}
+
+const PROXY_RUNTIME_ERROR_SCRIPT = `
+(function () {
+  if (window.__vibyraPreviewRuntimeErrorOverlay) return;
+  window.__vibyraPreviewRuntimeErrorOverlay = true;
+  function text(value) {
+    return String(value || "").replace(/[&<>"]/g, function (ch) {
+      return ch === "&" ? "&amp;" : ch === "<" ? "&lt;" : ch === ">" ? "&gt;" : "&quot;";
+    });
+  }
+  function detailFrom(event) {
+    var error = event && event.error;
+    var reason = event && event.reason;
+    var message = event && event.message || reason && reason.message || error && error.message || String(reason || "Preview runtime error");
+    var stack = error && error.stack || reason && reason.stack || "";
+    var file = event && event.filename || "";
+    var line = event && event.lineno ? "line " + event.lineno : "";
+    return { message: String(message || "Preview runtime error"), stack: String(stack || ""), file: String(file || ""), line: line };
+  }
+  function report(payload) {
+    try {
+      var next = { source: "vibyra-preview-error", type: payload.type || "error", message: payload.message, file: payload.file, stack: payload.stack, status: payload.status };
+      if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(next));
+      else if (window.parent) window.parent.postMessage(next, "*");
+    } catch (_) {}
+  }
+  function previewBasePath() {
+    var match = String(location.pathname || "").match(/^(\\/preview\\/server\\/[^\\/]+\\/[^\\/]+\\/?)/);
+    if (!match) return "";
+    return match[1].charAt(match[1].length - 1) === "/" ? match[1] : match[1] + "/";
+  }
+  function previewRequestUrl(value) {
+    var raw = String(value || "");
+    var base = previewBasePath();
+    if (!base || !raw || /^(?:data:|blob:|mailto:|tel:|#)/i.test(raw) || raw.indexOf("/preview/") === 0) return value;
+    if (raw.charAt(0) === "/") return base + raw.replace(/^\\/+/, "");
+    try {
+      var parsed = new URL(raw, location.href);
+      if (parsed.origin === location.origin && parsed.pathname.indexOf("/preview/") !== 0) {
+        return base + parsed.pathname.replace(/^\\/+/, "") + parsed.search + parsed.hash;
+      }
+    } catch (_) {}
+    return value;
+  }
+  function previewRequestInput(input) {
+    if (typeof input === "string") return previewRequestUrl(input);
+    try {
+      if (typeof Request !== "undefined" && input instanceof Request) {
+        var nextUrl = previewRequestUrl(input.url);
+        return nextUrl === input.url ? input : new Request(nextUrl, input);
+      }
+    } catch (_) {}
+    return input;
+  }
+  function render(payload) {
+    if (!payload || !payload.message || document.getElementById("vibyra-preview-runtime-error")) return;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var wrap = document.createElement("main");
+    wrap.id = "vibyra-preview-runtime-error";
+    wrap.style.cssText = "box-sizing:border-box;min-height:100vh;margin:0;padding:24px;background:#0b0d17;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;";
+    var detail = [payload.file, payload.line, payload.stack].filter(Boolean).join("\\n\\n");
+    wrap.innerHTML = '<section style="box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)"><p style="margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em">Preview runtime error</p><h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">' + text(payload.message) + '</h1><pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">' + text(detail || payload.message) + '</pre></section>';
+    root.appendChild(wrap);
+  }
+  function requestFailure(url, status, body) {
+    var detail = responseDiagnosticText(body);
+    var payload = {
+      type: "resource",
+      message: "Preview request failed: HTTP " + status,
+      file: String(url || ""),
+      status: status,
+      stack: [String(url || ""), detail].filter(Boolean).join("\\n\\n")
+    };
+    report(payload);
+    render(payload);
+  }
+  function responseDiagnosticText(body) {
+    var raw = String(body || "");
+    if (/<[a-z][\\s\\S]*>/i.test(raw) && window.DOMParser) {
+      try {
+        var doc = new DOMParser().parseFromString(raw, "text/html");
+        ["#vibyra-preview-http-error", "#vibyra-preview-runtime-error", "#vibyra-vite-module-error", "script", "style", "noscript"].forEach(function (selector) {
+          Array.prototype.forEach.call(doc.querySelectorAll(selector), function (node) { node.remove(); });
+        });
+        var title = doc.querySelector("title");
+        var root = doc.body || doc.documentElement;
+        var htmlText = ((title && title.textContent ? title.textContent + "\\n" : "") + (root && root.textContent || ""));
+        return htmlText.replace(/\\s+/g, " ").trim().slice(0, 1200);
+      } catch (_) {}
+    }
+    return raw.replace(/\\s+/g, " ").trim().slice(0, 1200);
+  }
+  if (window.fetch && !window.__vibyraPreviewFetchOverlay) {
+    window.__vibyraPreviewFetchOverlay = true;
+    var originalFetch = window.fetch;
+    window.fetch = function (input) {
+      var args = Array.prototype.slice.call(arguments);
+      args[0] = previewRequestInput(args[0]);
+      var url = typeof args[0] === "string" ? args[0] : args[0] && args[0].url;
+      return originalFetch.apply(this, args).then(function (response) {
+        if (response && response.status >= 400) {
+          try {
+            response.clone().text().then(function (body) { requestFailure(url || response.url, response.status, body); }, function () { requestFailure(url || response.url, response.status, ""); });
+          } catch (_) {
+            requestFailure(url || response.url, response.status, "");
+          }
+        }
+        return response;
+      });
+    };
+  }
+  if (window.XMLHttpRequest && !window.__vibyraPreviewXhrOverlay) {
+    window.__vibyraPreviewXhrOverlay = true;
+    var OriginalXhr = window.XMLHttpRequest;
+    window.XMLHttpRequest = function () {
+      var xhr = new OriginalXhr();
+      var url = "";
+      var originalOpen = xhr.open;
+      xhr.open = function (method, nextUrl) {
+        var args = Array.prototype.slice.call(arguments);
+        args[1] = previewRequestUrl(nextUrl);
+        url = args[1];
+        return originalOpen.apply(xhr, args);
+      };
+      xhr.addEventListener("load", function () {
+        if (xhr.status >= 400) requestFailure(url || xhr.responseURL, xhr.status, xhr.responseText || "");
+      });
+      return xhr;
+    };
+    window.XMLHttpRequest.prototype = OriginalXhr.prototype;
+  }
+  function handle(event, type) {
+    var payload = detailFrom(event);
+    payload.type = type;
+    report(payload);
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { render(payload); }, { once: true });
+    else render(payload);
+  }
+  document.addEventListener("submit", function (event) {
+    var form = event && event.target;
+    if (!form || !form.getAttribute) return;
+    var action = form.getAttribute("action");
+    if (action) form.setAttribute("action", previewRequestUrl(action));
+  }, true);
+  window.addEventListener("error", function (event) { if (!event.target || event.target === window) handle(event, "error"); }, true);
+  window.addEventListener("unhandledrejection", function (event) { handle(event, "unhandledrejection"); });
+})();
+`;
 
 function shouldRewriteInlineScript(openTag) {
   const tag = String(openTag || "");
@@ -436,6 +801,27 @@ function canProxyPreviewFallbackPath(pathname) {
     && path !== "/health"
     && path !== "/pair"
     && path !== "/pair/status";
+}
+
+function activePreviewAssetReference(pathname) {
+  if (!isRootPreviewAssetPath(pathname)) return null;
+  const projectId = activePreviewProjectId();
+  return projectId ? { kind: "server", projectId } : null;
+}
+
+function activePreviewProjectId() {
+  const selected = appState.selectedProjectId;
+  if (selected && trackedPreviewTarget(selected)) return selected;
+  const running = Object.entries(appState.previewServers)
+    .filter(([, tracked]) => normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url)));
+  return running.length === 1 ? running[0][0] : null;
+}
+
+function isRootPreviewAssetPath(pathname) {
+  const path = String(pathname || "/").split(/[?#]/)[0];
+  if (!path.startsWith("/")) return false;
+  if (/^\/(?:build\/assets|assets|images|img|fonts|font|media|videos|video|storage)\//i.test(path)) return true;
+  return /\.(?:avif|bmp|css|gif|glb|gltf|ico|jpe?g|js|json|m4v|map|mjs|mov|mp3|mp4|ogg|otf|pdf|png|svg|ttf|wasm|wav|webmanifest|webm|webp|woff2?)$/i.test(path);
 }
 
 function trackedPreviewTarget(projectId) {

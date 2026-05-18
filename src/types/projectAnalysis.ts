@@ -1,6 +1,7 @@
 import type { ProjectBrief } from "./domain";
 
 export type ProjectAnalysis = {
+  analyzerVersion?: number;
   confidence: "low" | "medium" | "high";
   evidence: string[];
   filesSampled: number;

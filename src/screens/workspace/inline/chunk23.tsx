@@ -16,13 +16,15 @@ import { CodeChangesCard } from "./CodeChangesCard";
 import { DesktopConnectionCard } from "./DesktopConnectionCard";
 import { EditPermissionCard } from "./EditPermissionCard";
 import { FolderProposalCard, FolderRecoveryCard } from "./FolderCards";
+import { GeneratedImageCard } from "./GeneratedImageCard";
+import { PreviewServerActivityCard } from "./PreviewServerActivityCard";
 import { ProjectBriefConfirmationCard } from "./ProjectBriefConfirmationCard";
 import { previewAppFromMessage } from "./chatPreviewFallback";
 import { ModelProviderIcon } from "./chunk10";
 
 export { AppPreviewCard, AppPreviewModal, TypingIndicator };
 
-export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onChangeProjectBrief, onConfirmProjectBrief, onConnectDesktop, onDismissFolderProposal, onScanForDesktop, onSearchFolderProposal, onUndoCodeChange, onRevertPreviewCode, onWrongFolderProposal, onApproveEdits, onDenyEdits }: {
+export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderProposal, onBrowseFolderRecovery, onChangeProjectBrief, onConfirmProjectBrief, onConnectDesktop, onApprovePreviewServerStart, onDenyPreviewServerStart, onDismissFolderProposal, onScanForDesktop, onSearchFolderProposal, onUndoCodeChange, onRevertPreviewCode, onWrongFolderProposal, onApproveEdits, onDenyEdits }: {
   message: ChatMessage;
   projectName?: string;
   onOpenApp?: (app: GeneratedApp) => void;
@@ -31,6 +33,8 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
   onChangeProjectBrief?: (projectId: string) => void;
   onConfirmProjectBrief?: (projectId: string, brief: ProjectBrief) => void;
   onConnectDesktop?: (messageId: string, prompt: NonNullable<ChatMessage["desktopConnection"]>) => void;
+  onApprovePreviewServerStart?: () => void;
+  onDenyPreviewServerStart?: () => void;
   onDismissFolderProposal?: (proposalId: string) => void;
   onScanForDesktop?: (messageId: string, prompt: NonNullable<ChatMessage["desktopConnection"]>) => void;
   onSearchFolderProposal?: (proposalId: string, query: string, excludeProjectId?: string) => void;
@@ -85,16 +89,16 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
         {message.file ? <Text numberOfLines={1} style={styles.messageFile}>{message.file}</Text> : null}
         {isThinking ? (
           message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
+        ) : message.previewServer ? (
+          <PreviewServerActivityCard previewServer={message.previewServer} onApprove={onApprovePreviewServerStart} onDeny={onDenyPreviewServerStart} />
         ) : <RichMessageText text={visibleText} />}
+        {!user && message.generatedImage ? <GeneratedImageCard image={message.generatedImage} /> : null}
         {!user && message.runStatus?.status === "running" && visibleText.trim().length > 0 ? (
           <LiveCodeActivityCard text={visibleText} />
         ) : null}
         {previewApp && onOpenApp ? <AppPreviewCard app={previewApp} onOpen={onOpenApp} /> : null}
         {message.codeChanges?.length && message.editApproval === "pending" && message.codeProjectId ? (
-          <EditPermissionCard busy={editPermissionBusy} changes={message.codeChanges} projectName={projectName} onAllow={() => handleApproveEdits(false)} onAllowAlways={() => handleApproveEdits(true)} onDeny={handleDenyEdits} />
-        ) : null}
-        {message.codeChanges?.length && message.editApproval === "pending" ? (
-          <CodeChangesCard changes={message.codeChanges} files={message.codeFiles ?? []} messageId={message.id} projectId={message.codeProjectId} undoneIds={message.undoneChangeIds ?? []} variant="pending" />
+          <EditPermissionCard busy={editPermissionBusy} changes={message.codeChanges} files={message.codeFiles ?? []} projectName={projectName} onAllow={() => handleApproveEdits(false)} onAllowAlways={() => handleApproveEdits(true)} onDeny={handleDenyEdits} />
         ) : null}
         {message.codeChanges?.length && message.editApproval === "denied" ? <EditDeniedCard /> : null}
         {message.codeChanges?.length && message.editApproval === "allowed" ? (

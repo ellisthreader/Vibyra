@@ -1,10 +1,10 @@
 export const part52 = {
   accountTopButton: {
     alignItems: "center",
-    backgroundColor: "rgba(124, 241, 179, 0.12)",
-    borderColor: "rgba(124, 241, 179, 0.22)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
     height: 38,
     justifyContent: "center",
     width: 38

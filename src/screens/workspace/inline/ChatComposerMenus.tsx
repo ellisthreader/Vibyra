@@ -1,17 +1,15 @@
-import React from "react";
-import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useMemo, useState } from "react";
+import { LayoutChangeEvent, PanResponder, Pressable, Text, View } from "react-native";
 import { ReasoningEffort } from "../../../types/domain";
-import { useThemedColor } from "../../../context/PreferencesContext";
 import { chatModelGroups, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { ModelMenuRow } from "./chunk10";
 
-const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hint: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: "low", label: "Low", short: "Low", hint: "Fast • cheap", icon: "battery-half-outline" },
-  { value: "medium", label: "Medium", short: "Med", hint: "Balanced", icon: "flash-outline" },
-  { value: "high", label: "High", short: "High", hint: "Deeper reasoning", icon: "sparkles-outline" },
-  { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Maximum reasoning", icon: "rocket-outline" },
+const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hint: string }[] = [
+  { value: "low", label: "Low", short: "Low", hint: "Fast" },
+  { value: "medium", label: "Medium", short: "Med", hint: "Balanced" },
+  { value: "high", label: "High", short: "High", hint: "Deeper" },
+  { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Maximum" },
 ];
 
 export function ModelMenu(props: {
@@ -23,8 +21,6 @@ export function ModelMenu(props: {
   onSelectEffort: (effort: ReasoningEffort) => void;
   onUpgrade: () => void;
 }) {
-  const activeIconColor = useThemedColor("#D7C4FF");
-  const inactiveIconColor = useThemedColor("#8F8A9E");
   const selectedModel = chatModelOptions.find((model) => model.key === props.selected) ?? chatModelOptions[0];
   if (!props.open) return null;
   return (
@@ -34,25 +30,7 @@ export function ModelMenu(props: {
           <Text numberOfLines={1} style={styles.chatModelEffortTitle}>{selectedModel.label}</Text>
           <Text style={styles.chatModelEffortMeta}>Effort</Text>
         </View>
-        <View style={styles.chatModelEffortChoices}>
-          {EFFORT_OPTIONS.map((option) => {
-            const active = props.reasoningEffort === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => props.onSelectEffort(option.value)}
-                style={({ pressed }) => [
-                  styles.chatModelEffortChoice,
-                  active && styles.chatModelEffortChoiceActive,
-                  pressed && { opacity: 0.85 }
-                ]}
-              >
-                <Ionicons name={option.icon} color={active ? activeIconColor : inactiveIconColor} size={13} />
-                <Text style={[styles.chatModelEffortChoiceText, active && styles.chatModelEffortChoiceTextActive]}>{option.short}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <EffortSlider value={props.reasoningEffort} onChange={props.onSelectEffort} />
       </View>
       {chatModelGroups.map((group) => (
         <View key={group.title || "auto"} style={styles.chatModelGroup}>
@@ -69,6 +47,55 @@ export function ModelMenu(props: {
           ))}
         </View>
       ))}
+    </View>
+  );
+}
+
+function EffortSlider({ onChange, value }: { onChange: (effort: ReasoningEffort) => void; value: ReasoningEffort }) {
+  const [width, setWidth] = useState(0);
+  const activeIndex = Math.max(0, EFFORT_OPTIONS.findIndex((option) => option.value === value));
+  const progress = EFFORT_OPTIONS.length > 1 ? activeIndex / (EFFORT_OPTIONS.length - 1) : 0;
+
+  const selectFromX = (x: number) => {
+    if (!width) return;
+    const clamped = Math.max(0, Math.min(width, x));
+    const index = Math.round((clamped / width) * (EFFORT_OPTIONS.length - 1));
+    onChange(EFFORT_OPTIONS[index].value);
+  };
+  const panResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: (event) => selectFromX(event.nativeEvent.locationX),
+    onPanResponderMove: (event) => selectFromX(event.nativeEvent.locationX)
+  }), [width, onChange]);
+
+  return (
+    <View style={styles.chatModelEffortSlider}>
+      <View
+        {...panResponder.panHandlers}
+        onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
+        style={styles.chatModelEffortTrack}
+      >
+        <View style={[styles.chatModelEffortTrackFill, { width: `${progress * 100}%` }]} />
+        <View style={[styles.chatModelEffortThumb, { left: `${progress * 100}%` }]} />
+        <View style={styles.chatModelEffortStops}>
+          {EFFORT_OPTIONS.map((option, index) => {
+            const active = index <= activeIndex;
+            return (
+              <Pressable key={option.value} onPress={() => onChange(option.value)} style={styles.chatModelEffortStopHit}>
+                <View style={[styles.chatModelEffortStop, active && styles.chatModelEffortStopActive]} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+      <View style={styles.chatModelEffortLabels}>
+        {EFFORT_OPTIONS.map((option) => (
+          <Pressable key={option.value} onPress={() => onChange(option.value)} style={styles.chatModelEffortLabelHit}>
+            <Text style={[styles.chatModelEffortChoiceText, value === option.value && styles.chatModelEffortChoiceTextActive]}>{option.short}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }

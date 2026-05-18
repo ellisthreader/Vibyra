@@ -16,7 +16,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocalNetworkUsageDescription": "Vibyra connects to the desktop app on your local Wi-Fi network.",
-        "NSPhotoLibraryUsageDescription": "Vibyra lets you choose images for your profile picture and project publishing.",
+        "NSCameraUsageDescription": "Vibyra lets you take photos to add context to chat and project publishing.",
+        "NSPhotoLibraryUsageDescription": "Vibyra lets you choose images for chat, your profile picture, and project publishing.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         }
@@ -34,7 +35,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Vibyra lets you choose images for your profile picture and project publishing."
+          "cameraPermission": "Vibyra lets you take photos to add context to chat and project publishing.",
+          "photosPermission": "Vibyra lets you choose images for chat, your profile picture, and project publishing."
         }
       ],
       "expo-iap",

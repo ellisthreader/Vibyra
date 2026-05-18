@@ -26,6 +26,8 @@ export async function startAgentTask({
   const project = await resolveAgentProject(projectId, projectPath);
   if (!project) throw new Error("No project selected");
   if (appState.activeAgentRun) throw new Error("An AI task is already running. Wait for it to finish before sending another prompt.");
+  const existingPending = pendingApplyForProject(project.id);
+  if (existingPending) throw new Error("Generated edits are already waiting for approval in this project. Apply or discard them before starting another AI run.");
   const request = String(prompt ?? "").trim();
   if (request.length < 3) throw new Error("Enter a prompt before starting the desktop AI agent.");
 
@@ -114,7 +116,12 @@ export async function startAgentTask({
 export async function applyAgentTask({ runId, requestHost = "" }) {
   const plan = appState.pendingAgentApplies?.[runId];
   if (!plan) throw new Error("No pending agent edits found");
-  return await applyAgentPlan({ ...plan, requestHost: requestHost || plan.requestHost });
+  try {
+    return await applyAgentPlan({ ...plan, requestHost: requestHost || plan.requestHost });
+  } catch (error) {
+    appState.activeAgentRun = null;
+    throw error;
+  }
 }
 
 export function discardAgentTask({ runId }) {
@@ -192,6 +199,7 @@ async function applyAgentPlan(plan) {
 
   await mkdir(outputDir, { recursive: true });
   if (obsidianRun) await mkdir(obsidianRun.outputDir, { recursive: true });
+  await assertGeneratedFilesUnchanged(project, generatedFiles);
   for (const file of generatedFiles) {
     const fullPath = await safeProjectPath(project, file.path, { mustExist: false });
     await mkdir(dirname(fullPath), { recursive: true });
@@ -226,6 +234,23 @@ async function applyAgentPlan(plan) {
     preview: appState.latestPreview,
     buildState: "passed"
   };
+}
+
+async function assertGeneratedFilesUnchanged(project, generatedFiles) {
+  for (const file of generatedFiles) {
+    const fullPath = await safeProjectPath(project, file.path, { mustExist: false });
+    const current = await readOptionalText(fullPath);
+    if (file.previousBody === null && current !== null) {
+      throw new Error(`Cannot apply pending edits because ${file.path} was created after the AI run. Discard this run and ask Vibyra to regenerate the change.`);
+    }
+    if (file.previousBody !== null && current !== file.previousBody) {
+      throw new Error(`Cannot apply pending edits because ${file.path} changed after the AI run. Discard this run and ask Vibyra to regenerate the change.`);
+    }
+  }
+}
+
+function pendingApplyForProject(projectId) {
+  return Object.values(appState.pendingAgentApplies ?? {}).find((plan) => plan?.project?.id === projectId) ?? null;
 }
 
 async function readOptionalText(path) {
@@ -274,6 +299,7 @@ async function generateAgentResponse({ project, prompt, model, reasoningEffort, 
       content: [
         "You are Vibyra, a controlled local coding agent connected to the user's approved desktop workspace.",
         "Inspect the provided project context and return complete file replacements only for files that must change.",
+        "For preview HTTP errors, especially Laravel/Inertia 419, verify route, middleware, session, CSRF/XSRF, cookie, redirect, and proxy evidence before choosing files to edit. Treat the active editor file as a hint, not as proof that it is related.",
         "Never write outside the project root. Use relative paths only. Do not include absolute paths, ../ segments, node_modules, vendor, .git, .expo, or .vibyra-agent.",
         "When files should change, return this exact JSON in a fenced json block: {\"files\":[{\"path\":\"relative/path.ext\",\"content\":\"complete file contents\"}]}",
         "If no file edit is needed, return {\"files\":[]} and a short explanation."
@@ -422,7 +448,7 @@ function formatContextFiles(files) {
 
 function formatSelectedFile(file) {
   if (!file?.path || !file?.body) return "";
-  return `Selected file ${file.path}:\n${String(file.body).slice(0, 12000)}`;
+  return `Active editor hint ${file.path} (verify it is relevant before editing):\n${String(file.body).slice(0, 12000)}`;
 }
 
 function historyMessages(history) {

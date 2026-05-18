@@ -18,7 +18,7 @@ export async function promptProjectContext(projectId, prompt = "") {
   const snippetPaths = new Set(ranked.slice(0, MAX_SNIPPETS).map((item) => item.path));
   const context = [];
 
-  for (const item of files.slice(0, MAX_CONTEXT_FILES)) {
+  for (const item of ranked.slice(0, MAX_CONTEXT_FILES)) {
     const entry = { path: item.path, language: item.language, loaded: false };
     if (snippetPaths.has(item.path)) {
       const snippet = await snippetFor(project.path, item.path, prompt);
@@ -84,12 +84,14 @@ function scoreFile(file, prompt) {
   const name = basename(path);
   const ext = extname(path);
   const frontendIntent = /\b(frontend|ui|screen|page|component|react|vue|svelte|html|colou?r|palette|theme|style|css|branding|design system|visual)\b/.test(text);
+  const laravelHttpError = isLaravelHttpErrorPrompt(text);
   let score = 0;
 
   if (isRootConfig(path)) score += 18;
   if (/\b(colou?r|palette|theme|style|css|branding|design system|visual)\b/.test(text)) score += styleScore(path, ext);
   if (frontendIntent) score += frontendScore(path, ext);
   if (/\b(api|route|controller|backend|server|database|model|auth)\b/.test(text)) score += backendScore(path, ext);
+  if (laravelHttpError) score += laravelHttpErrorScore(path);
   if (/\b(test|spec|bug|failing|error)\b/.test(text)) score += testScore(path);
 
   for (const token of promptTokens(text)) {
@@ -98,7 +100,7 @@ function scoreFile(file, prompt) {
   }
 
   if (path.includes("node_modules/") || path.includes("vendor/")) score -= 100;
-  if (frontendIntent && isBackendOnlyPath(path)) score -= 70;
+  if (frontendIntent && isBackendOnlyPath(path) && !laravelHttpError) score -= 70;
   return score;
 }
 
@@ -161,6 +163,24 @@ function backendScore(path, ext) {
 
 function testScore(path) {
   return /\b(test|tests|spec|__tests__)\b/.test(path) ? 36 : 0;
+}
+
+function isLaravelHttpErrorPrompt(text) {
+  return /\b(?:laravel|inertia|csrf|xsrf|session|sanctum|419|page expired|login|auth|middleware|cookie|cookies)\b/.test(text)
+    && /\b(?:http|preview|request|post|form|route|redirect|csrf|xsrf|session|419|login|page expired)\b/.test(text);
+}
+
+function laravelHttpErrorScore(path) {
+  if (/^routes\/(?:web|api)\.php$/.test(path)) return 120;
+  if (/^bootstrap\/app\.php$/.test(path)) return 95;
+  if (/^app\/http\/middleware\//.test(path)) return 90;
+  if (/^config\/(?:session|sanctum|cors|app|auth)\.php$/.test(path)) return 86;
+  if (/^app\/http\/controllers\/auth\//.test(path)) return 82;
+  if (/^app\/http\/requests\/auth\//.test(path)) return 78;
+  if (/^resources\/js\/(?:app|bootstrap)\.[jt]sx?$/.test(path)) return 72;
+  if (/^resources\/views\/.*\.(?:blade\.php|php)$/.test(path)) return 64;
+  if (/(login|auth|csrf|xsrf|session|middleware|inertia|sanctum)/.test(path)) return 45;
+  return 0;
 }
 
 function isRootConfig(path) {

@@ -138,6 +138,9 @@ trait ChatStreamEndpoint
         if ($reasoningPayload !== null) {
             $payload['reasoning'] = $reasoningPayload;
         }
+        if ($this->shouldUseWebPlugin($skill)) {
+            $payload['plugins'] = [['id' => 'web']];
+        }
 
         return new StreamedResponse(function () use (
             $payload, $apiKey, $user, $deductor, $calc, $modelKey, $openRouterModel,

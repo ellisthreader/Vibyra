@@ -3,8 +3,10 @@ import { dedupeFiles, mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
 import { resolveReachableDesktopPreviewUrl } from "../utils/previewUrls";
 import { useDesktopFolders } from "./useDesktopFolders";
+import { useFirstOpenProjectBrief } from "./useFirstOpenProjectBrief";
 import { DesktopRequestError } from "./useRequests";
 import { useWorkspaceFileActions } from "./useWorkspaceFileActions";
+import { mergeRememberedProject } from "./workspaceProjectMemory";
 import { ProjectCreateResult, makeLocalProject } from "./workspaceTypes";
 import { WorkspaceLogs, WorkspaceRequests, WorkspaceStore } from "./workspaceActionTypes";
 
@@ -19,6 +21,7 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
   const { state, setters } = store;
   const desktopFolders = useDesktopFolders(Boolean(state.connection), requests, logs);
   const fileActions = useWorkspaceFileActions(store, requests, logs);
+  const firstOpenBrief = useFirstOpenProjectBrief(store, desktopFolders);
 
   async function createProject(name?: string): Promise<Project | null> {
     impact();
@@ -60,9 +63,10 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     const projectOverride = isProject(projectOverrideOrOptions) ? projectOverrideOrOptions : undefined;
     const options = isProject(projectOverrideOrOptions) ? maybeOptions : projectOverrideOrOptions;
     const startPreview = options?.startPreview !== false;
-    const project = projectOverride ?? state.projects.find((item) => item.id === projectId);
+    const project = await firstOpenBrief.prepareFirstOpenProject(projectOverride ?? state.projects.find((item) => item.id === projectId));
     impact();
     setters.setSelectedProjectId(projectId);
+    if (project) firstOpenBrief.rememberPreparedProject(project);
     logs.advanceWorkflow(5);
     if (startPreview) setters.setPreviewState("live");
     logs.appendLogs(startPreview
@@ -76,7 +80,7 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     try {
       const files = await fileActions.loadProjectFiles(projectId);
       if (!startPreview) return files;
-      const setupProject = projectOverride ?? state.chatProjects[projectId] ?? project;
+      const setupProject = project ?? state.chatProjects[projectId];
       if (setupProject?.briefRequired && !setupProject.brief) {
         logs.appendLog(`Choose the project type for ${setupProject.name} before starting preview.`, "Projects", "info");
         return files;
@@ -119,7 +123,8 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
   }
 
   async function adoptProject(project: Project, options: ProjectOpenOptions = { startPreview: false }): Promise<void> {
-    const remembered = mergeRememberedProject(state.chatProjects[project.id], project);
+    const prepared = await firstOpenBrief.prepareFirstOpenProject(project) ?? project;
+    const remembered = mergeRememberedProject(state.chatProjects[prepared.id], prepared);
     setters.setProjects((current) => {
       if (current.some((existing) => existing.id === project.id)) {
         return current.map((existing) => existing.id === project.id ? mergeRememberedProject(existing, remembered) : existing);
@@ -130,16 +135,22 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     await selectProject(remembered.id, remembered, options);
   }
 
-  async function startPreviewServer(projectId: string, projectName?: string): Promise<GeneratedApp> {
+  async function startPreviewServer(projectId: string, projectName?: string, onProgress?: (phase: import("../types/domain").PreviewServerPhase, detail?: string) => void): Promise<GeneratedApp> {
     const connection = state.connection;
     if (!connection) throw new Error("Connect Vibyra Desktop before starting a preview server.");
+    onProgress?.("requesting-desktop", "POST /preview/start-server");
     const result = await requestPreviewServerStart(projectId);
     setters.setPreviewState(result.preview.state);
     logs.appendLogs(result.events);
+    onProgress?.("starting-server", result.preview.title || projectName || "Desktop preview route");
+    onProgress?.("verifying-phone", result.preview.url ?? undefined);
     const url = await resolveReachableDesktopPreviewUrl(connection, result.preview.url);
     if (!url) throw new Error("Vibyra Desktop started the preview server, but this phone could not load the preview route or its scripts. Restart Vibyra Desktop, reconnect this phone, then try Preview again.");
+    onProgress?.("ready", url);
     return {
       id: `desktop-dev-preview-${projectId}-${Date.now()}`,
+      projectId,
+      source: "desktop",
       title: result.preview.title || projectName || "Live preview",
       url
     };
@@ -175,24 +186,4 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
 
 function isProject(value: Project | ProjectOpenOptions | undefined): value is Project {
   return Boolean(value && "id" in value);
-}
-
-function mergeRememberedProject(existing: Project | undefined, incoming: Project): Project {
-  if (!existing) return incoming;
-  const savedBrief = existing.brief;
-  return {
-    ...incoming,
-    ...existing,
-    name: incoming.name || existing.name,
-    path: incoming.path || existing.path,
-    source: incoming.source ?? existing.source,
-    updated: incoming.updated || existing.updated,
-    analysis: incoming.analysis ?? existing.analysis,
-    stack: savedBrief ? existing.stack : incoming.stack || existing.stack,
-    brief: savedBrief ?? incoming.brief,
-    detectedBrief: savedBrief ? (existing.detectedBrief ?? incoming.detectedBrief) : (incoming.detectedBrief ?? existing.detectedBrief),
-    briefRequired: savedBrief ? false : (incoming.briefRequired ?? existing.briefRequired),
-    briefRequiredFilePath: savedBrief ? undefined : (incoming.briefRequiredFilePath ?? existing.briefRequiredFilePath),
-    briefedFilePaths: existing.briefedFilePaths ?? incoming.briefedFilePaths
-  };
 }

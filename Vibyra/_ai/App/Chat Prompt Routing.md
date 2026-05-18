@@ -44,6 +44,8 @@ Keep the frontend `isBuildPrompt` regex aligned with backend `ChatPrompting::isB
 
 New projects can require a first-run brief before the composer appears. `ProjectBriefSetup` asks product type, supports **Other**, then asks framework/stack with recommended/custom paths.
 
+Desktop folder first-open setup is enforced in app context, not only the chat folder proposal UI. `useFirstOpenProjectBrief.ts` runs before `adoptProject` / `selectProject`, adds or updates the project-brief setup chat card, preserves confirmed briefs via `workspaceProjectMemory.ts`, and blocks preview startup until the project purpose/framework is confirmed. Shared setup-card helpers live in `projectBriefSetup.ts`; chat UI helpers such as `desktopFolderAnalysis.ts` should reuse them instead of rebuilding message state.
+
 `saveProjectBrief` stores `Project.brief`, clears `briefRequired` / `briefRequiredFilePath`, records `briefedFilePaths` only for a real selected file, and sets chat title to `<type> · <framework>`. Project-level completion must not assume `derived.selectedFile` exists.
 
 `useAgentActions.startAgent` wraps prompts with the project brief and instructs the model to plan/review internally while prioritizing code/project output over conversational explanation.

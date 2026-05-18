@@ -10,6 +10,7 @@ Read this first for mobile AI chat work. Use it as a router; open only one subto
 - `src/context/useAppState.ts`
 - `src/screens/workspace/inline/chunk9.tsx`
 - `src/screens/workspace/inline/chunk23.tsx`
+- `src/screens/workspace/inline/ChatAttachmentSheet.tsx`
 - `src/screens/workspace/inline/SlashCommandMenu.tsx`
 - `src/screens/workspace/data/chatCommands.ts`
 - `src/utils/chatStream.ts`
@@ -33,7 +34,11 @@ Project chat context should be explicit. Detached chat is a separate thread; pro
 
 Project chats with `briefRequired` must never render an empty required-setup state. `src/screens/workspace/inline/chunk9.tsx` shows `ProjectBriefSetup` automatically when setup is required and the thread does not already contain a project brief setup/analysis prompt; otherwise the composer is hidden with visible confirmation/setup UI.
 
-The composer keeps file upload and AI controls grouped on the left side of the input footer. `src/screens/workspace/inline/ChatComposer.tsx` opens one combined model/effort dropdown; `ChatComposerMenus.tsx` keeps the selected model title at the top and lets users pick reasoning effort there before choosing a model row.
+The composer keeps attachment and AI controls grouped on the left side of the input footer. `src/screens/workspace/inline/ChatComposer.tsx` opens one combined model/effort dropdown; `ChatComposerMenus.tsx` keeps the selected model title at the top and lets users pick reasoning effort there before choosing a model row.
+
+The attach button opens `src/screens/workspace/inline/ChatAttachmentSheet.tsx`, a bottom sheet that starts around half-screen and expands taller when the user scrolls the action list. Camera/photos use `expo-image-picker`, files use `expo-document-picker`, and selected assets currently append contextual text to the composer because the chat send path does not yet carry binary attachment payloads. Keep mobile permission copy aligned in `app.json` when adding new picker actions.
+
+Attachment tool rows use structured modes from `src/types/chatTools.ts`, not visible slash text. `ChatComposer.tsx` stores the selected mode and passes it through `ChatStartOptions`; `workspacePromptActions.ts` maps research/web/analyze to backend skill IDs and create-image to the existing `/api/community/assets/generate` path, rendering the result with `GeneratedImageCard.tsx`. Backend skill definitions live in `backend/config/skills.php`; research/web enable the OpenRouter `web` plugin in `ChatEndpoint.php` and `ChatStreamEndpoint.php` via `ChatEndpointHelpers::shouldUseWebPlugin`.
 
 ## Error Copy
 

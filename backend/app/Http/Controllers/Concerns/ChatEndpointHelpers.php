@@ -116,6 +116,10 @@ trait ChatEndpointHelpers
 
     private function resolveChatMode(Request $request, string $prompt, ?array $skill): string
     {
+        if (preg_match('/^the live preview for .+ crashed while running the existing project\./i', trim($prompt))) {
+            return 'chat';
+        }
+
         if (($skill['mode'] ?? null) === 'build') {
             return 'build';
         }
@@ -133,7 +137,16 @@ trait ChatEndpointHelpers
         if ($this->resolveChatMode($request, $prompt, $skill) === 'build') {
             return 3000;
         }
+        $skillTokens = (int) ($skill['max_tokens'] ?? 0);
+        if ($skillTokens > 0) {
+            return max(800, min($skillTokens, 3000));
+        }
         return 800;
+    }
+
+    private function shouldUseWebPlugin(?array $skill): bool
+    {
+        return (bool) ($skill['web_plugin'] ?? false);
     }
 
     private function extractRunnableApp(string $reply, bool $allowApp = true): array

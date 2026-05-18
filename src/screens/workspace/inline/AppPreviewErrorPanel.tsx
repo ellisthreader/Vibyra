@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { PreviewRuntimeError } from "../../../components/AppWebView";
-import type { GeneratedApp } from "../../../types/domain";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 
 export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: {
@@ -75,28 +74,6 @@ export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: 
       </View>
     </View>
   );
-}
-
-export function buildFixPrompt(app: GeneratedApp, errors: PreviewRuntimeError[]) {
-  const diagnostics = errors.map((error, index) => {
-    const location = formatLocation(error, ", ");
-    return [
-      `${index + 1}. ${error.type}: ${error.message}`,
-      location ? `Location: ${location}` : "",
-      error.stack ? `Stack:\n${error.stack}` : ""
-    ].filter(Boolean).join("\n");
-  }).join("\n\n");
-  const html = app.html?.trim();
-  return [
-    `The runnable preview for "${app.title}" crashed. Please fix the generated app so it runs on phone preview.`,
-    "Return a corrected complete self-contained <vibyra-app> preview with inline <style> and inline <script>. Do not reference local files such as main.jsx, /src/main.jsx, App.jsx, style.css, or Vite/React entry files.",
-    "",
-    "Captured preview diagnostics:",
-    diagnostics,
-    html ? "\nCurrent generated preview HTML:\n```html\n".concat(html.slice(0, 12000), html.length > 12000 ? "\n<!-- truncated -->" : "", "\n```") : "",
-    "",
-    "Keep the same app idea and return the corrected complete files or runnable preview."
-  ].filter(Boolean).join("\n");
 }
 
 function firstLine(value: string) {

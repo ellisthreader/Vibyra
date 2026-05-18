@@ -142,6 +142,9 @@ trait ChatEndpoint
             if ($reasoningPayload !== null) {
                 $payload['reasoning'] = $reasoningPayload;
             }
+            if ($this->shouldUseWebPlugin($skill)) {
+                $payload['plugins'] = [['id' => 'web']];
+            }
 
             $response = Http::timeout(90)
                 ->acceptJson()

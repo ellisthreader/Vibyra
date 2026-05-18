@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Animated, Modal, Platform, Pressable, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppWebView } from "../../../components/AppWebView";
 import type { GeneratedApp } from "../../../types/domain";
 import { styles } from "../styles";
 
@@ -54,38 +52,5 @@ export function AppPreviewCard({ app, onOpen }: { app: GeneratedApp; onOpen: (ap
         <Ionicons name="chevron-forward" color="#C9C2D6" size={18} />
       </View>
     </Pressable>
-  );
-}
-
-export function AppPreviewModal({ app, onClose }: { app: GeneratedApp | null; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    if (app) setReloadKey(0);
-  }, [app?.id]);
-
-  if (!app) return null;
-
-  return (
-    <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
-      <View style={[styles.appModalScreen, { paddingTop: insets.top }]}>
-        <View style={styles.appModalHeader}>
-          <Pressable onPress={onClose} style={styles.appModalIconButton}>
-            <Ionicons name="close" color="#FFFFFF" size={22} />
-          </Pressable>
-          <View style={styles.appModalTitleStack}>
-            <Text style={styles.appModalLabel}>Vibyra preview</Text>
-            <Text numberOfLines={1} style={styles.appModalTitle}>{app.title}</Text>
-          </View>
-          <Pressable onPress={() => setReloadKey((key) => key + 1)} style={styles.appModalIconButton}>
-            <Ionicons name="refresh" color="#FFFFFF" size={20} />
-          </Pressable>
-        </View>
-        <View style={styles.appModalWebContainer}>
-          <AppWebView html={app.html} url={app.url} reloadKey={reloadKey} style={styles.appModalWebView} />
-        </View>
-      </View>
-    </Modal>
   );
 }

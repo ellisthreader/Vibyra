@@ -51,8 +51,8 @@ export function desktopPreviewUrlCandidates(connection: DesktopPreviewConnection
 export async function resolveRunnableDesktopPreviewUrl(url: string) {
   try {
     const response = await fetchWithTimeout(url, {}, 2500);
-    if (!response.ok) return null;
     const html = await response.text();
+    if (!response.ok && !isDesktopPreviewDiagnosticHtml(url, response.status, html)) return null;
     if (/\bProject analyzed\b/i.test(html)) return null;
     if (!/<!doctype\s+html|<html\b|<body\b|<script\b/i.test(html)) return null;
     const resolvedUrl = response.url || url;
@@ -62,12 +62,20 @@ export async function resolveRunnableDesktopPreviewUrl(url: string) {
   }
 }
 
+function isDesktopPreviewDiagnosticHtml(url: string, status: number, html: string) {
+  if (status < 400 || !/\/preview\/server\//i.test(url)) return false;
+  return /\bvibyra-preview-http-error\b|Preview HTTP error|Preview request failed: HTTP/i.test(html);
+}
+
 async function referencedAssetsLookRunnable(baseUrl: string, html: string) {
   const urls = referencedPreviewAssetUrls(baseUrl, html).slice(0, 8);
   for (const url of urls) {
     try {
       const response = await fetchWithTimeout(url, { method: "GET" }, 2500);
-      if (!response.ok) return false;
+      if (!response.ok) {
+        if (isDevSourceModuleFailure(url, response.status)) continue;
+        return false;
+      }
       const contentType = response.headers.get("content-type") ?? "";
       if (/\.(?:jsx?|tsx?|mjs)(?:[?#]|$)/i.test(url) && !/(?:javascript|text\/plain|application\/octet-stream)/i.test(contentType)) return false;
     } catch {
@@ -94,6 +102,24 @@ function referencedPreviewAssetUrls(baseUrl: string, html: string) {
   collect(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi);
   collect(/<link\b(?=[^>]*\brel\s*=\s*["']?(?:stylesheet|modulepreload|preload))[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi);
   return uniqueValues(urls);
+}
+
+function isDevSourceModuleFailure(url: string, status: number) {
+  if (status < 500 || status > 599) return false;
+  return previewAssetPaths(url).some((path) => {
+    return /^\/(?:@fs\/|src\/|resources\/|app\/|pages\/|components\/)/i.test(path)
+      && /\.(?:jsx?|tsx?|mjs|vue|svelte)(?:[?#]|$)/i.test(path);
+  });
+}
+
+function previewAssetPaths(url: string) {
+  const paths: string[] = [];
+  const parsed = safeUrl(url);
+  if (!parsed) return paths;
+  paths.push(parsed.pathname);
+  const target = safeUrl(parsed.searchParams.get("url") ?? "");
+  if (target) paths.push(target.pathname);
+  return paths;
 }
 
 function safeUrl(value: string) {

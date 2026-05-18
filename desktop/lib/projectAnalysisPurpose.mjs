@@ -3,10 +3,11 @@ const CATEGORY_RULES = [
     label: "a restaurant ordering and operations platform",
     kindId: "custom",
     kindLabel: "Restaurant platform",
-    threshold: 9,
+    threshold: 10,
+    requiredEvidence: ["food or venue terms"],
     rules: [
-      rule(/\b(menu|menus|dish|dishes|restaurant|takeaway|allergen|allergens)\b/g, 3, "menu/dishes"),
-      rule(/\b(cart|checkout|till|kitchen|orders?|payment|staff|reports?)\b/g, 2, "orders/operations"),
+      rule(/\b(restaurant|restaurants|cafe|cafes|bistro|takeaway|dining|food|foods|meal|meals|dish|dishes|cuisine|allergen|allergens|chef|chefs)\b/g, 4, "food or venue terms"),
+      rule(/\b(reservations?|table booking|kitchen|menus?|till|orders?|payment|staff|reports?)\b/g, 2, "restaurant operations"),
       rule(/\b(delivery drivers?|driver locations?|live orders?|settle payment|kitchen status)\b/g, 4, "delivery and kitchen workflow")
     ]
   },
@@ -45,8 +46,11 @@ const CATEGORY_RULES = [
     label: "a portfolio website",
     kindId: "website",
     kindLabel: "Portfolio website",
-    threshold: 6,
-    rules: [rule(/\b(portfolio|case study|resume|about me|selected work)\b/g, 3, "portfolio copy")]
+    threshold: 8,
+    rules: [
+      rule(/\b(portfolio|case stud(?:y|ies)|resume|curriculum vitae|selected work|my work)\b/g, 5, "portfolio copy"),
+      rule(/\b(projects?|skills?|experience|about me|contact|hire me|github|linkedin|testimonials?)\b/g, 2, "portfolio sections")
+    ]
   },
   {
     label: "an AI tool",
@@ -69,11 +73,12 @@ const CATEGORY_RULES = [
 
 export function detectProjectPurpose(scan) {
   const contentText = scan.snippets.join("\n").slice(0, 50000).toLowerCase();
+  const descriptionText = (scan.descriptions ?? []).join(" ").toLowerCase();
   const pathText = scan.evidence.join(" ").toLowerCase();
   const titleText = scan.titles.slice(1).join(" ").toLowerCase();
   const rootText = String(scan.rootName ?? "").toLowerCase();
   const results = CATEGORY_RULES
-    .map((category) => scoreCategory(category, contentText, pathText, titleText, rootText))
+    .map((category) => scoreCategory(category, contentText, descriptionText, pathText, titleText, rootText))
     .filter((result) => result.score >= result.threshold && hasRequiredEvidence(result))
     .sort((a, b) => b.score - a.score);
 
@@ -89,18 +94,19 @@ export function detectProjectPurpose(scan) {
 }
 
 export function purposeFromText(text) {
-  return detectProjectPurpose({ evidence: [], rootName: "", snippets: [text], titles: [] })?.label ?? "";
+  return detectProjectPurpose({ descriptions: [], evidence: [], rootName: "", snippets: [text], titles: [] })?.label ?? "";
 }
 
-function scoreCategory(category, contentText, pathText, titleText, rootText) {
+function scoreCategory(category, contentText, descriptionText, pathText, titleText, rootText) {
   let score = 0;
   const evidence = [];
   for (const item of category.rules) {
-    const contentHits = countMatches(contentText, item.pattern);
-    const titleHits = countMatches(titleText, item.pattern);
-    const pathHits = countMatches(pathText, item.pattern);
-    const rootHits = countMatches(rootText, item.pattern);
-    const weighted = (contentHits * item.weight) + (titleHits * 2) + (pathHits * 0.5) + (rootHits * 0.25);
+    const contentHits = cappedMatches(contentText, item.pattern, 8);
+    const descriptionHits = cappedMatches(descriptionText, item.pattern, 4);
+    const titleHits = cappedMatches(titleText, item.pattern, 3);
+    const pathHits = cappedMatches(pathText, item.pattern, 4);
+    const rootHits = cappedMatches(rootText, item.pattern, 2);
+    const weighted = (contentHits * item.weight) + (descriptionHits * item.weight * 3) + (titleHits * 3) + (pathHits * 0.5) + (rootHits * 0.25);
     if (weighted > 0) {
       score += weighted;
       if (!evidence.includes(item.evidence)) evidence.push(item.evidence);
@@ -114,9 +120,9 @@ function hasRequiredEvidence(result) {
     || result.requiredEvidence.some((evidence) => result.evidence.includes(evidence));
 }
 
-function countMatches(text, pattern) {
+function cappedMatches(text, pattern, max) {
   pattern.lastIndex = 0;
-  return Array.from(text.matchAll(pattern)).length;
+  return Math.min(Array.from(text.matchAll(pattern)).length, max);
 }
 
 function rule(pattern, weight, evidence) {

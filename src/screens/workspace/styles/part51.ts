@@ -7,16 +7,16 @@ export const part51 = {
   },
   workspaceConnectionLabel: {
     color: "#B9B5C8",
-    fontSize: 12,
+    fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,
     textTransform: "uppercase"
   },
   workspaceConnectionName: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "900",
-    lineHeight: 21,
+    lineHeight: 18,
     marginTop: 1
   },
   workspaceMenuDivider: {
@@ -72,18 +72,18 @@ export const part51 = {
   workspaceMenuRowLabel: {
     color: "#F7F3FF",
     flex: 1,
-    fontSize: 16.5,
+    fontSize: 14,
     fontWeight: "800",
-    lineHeight: 21
+    lineHeight: 18
   },
   workspaceMenuRowMeta: {
     color: "#B9B5C8",
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "900"
   },
   workspaceMenuSectionLabel: {
     color: "#8F8A9E",
-    fontSize: 12,
+    fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,
     marginLeft: 10,

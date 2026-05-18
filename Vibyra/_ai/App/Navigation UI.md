@@ -17,13 +17,15 @@ Read this for high-level app UI entry points, bottom nav routing, and broad visu
 
 The workspace defaults to `chat` in `src/screens/workspace/hooks/useWorkspaceState.ts`. Primary chrome is intentionally ChatGPT-like: `TopBar` opens a left workspace menu from the menu icon and an account menu from the avatar button. `BottomNav` remains exported for legacy use, but the active workspace shell no longer renders it.
 
-`PrimaryMenuSheet` and `AccountMenuSheet` live in `src/screens/workspace/inline/WorkspaceMenus.tsx`. Projects, Explore/Community, and Account are reached from the left workspace menu; Profile, Billing, Appearance, Security, Credits, and Log out are reached from the account menu. Profile and Community should not be added back to primary navigation unless the product direction changes. The top-right chrome button is contextual: on chat it is a play/preview action calling `openRunnablePreview`; on non-chat pages it opens the account menu.
+`PrimaryMenuSheet` and `AccountMenuSheet` live in `src/screens/workspace/inline/WorkspaceMenus.tsx`. Projects, Explore/Community, and Account are reached from the left workspace menu; Profile, Billing, Appearance, Security, Credits, and Log out are reached from the account menu. Profile and Community should not be added back to primary navigation unless the product direction changes. The top-right chrome button is contextual: on chat it is a play/preview action calling `openRunnablePreview` only when the active chat has a displayable preview or the active project chat has loaded runnable file content; brand-new/empty chats should leave that corner blank. On non-chat pages it opens the account menu.
 
 The legacy `pages` array in `src/screens/workspace/data/pages.ts` is limited to chat, projects, and active builds; profile/community are secondary destinations.
 
 Community is user-facing as "Explore" in top-level chrome while retaining `community` route/state keys internally.
 
 Once a chat has messages, the chat-only top-right overflow menu shows Star, Rename, Help, and Delete actions; keep this menu small and iOS-popover-like.
+
+The composer model/effort trigger should stay simple and text-only. Do not wrap effort in a heavy boxed chip or add effort icons; the open model menu uses a thin horizontal effort track with draggable/tappable stops.
 
 ## Chat Entry
 

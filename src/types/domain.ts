@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { AgentBusyInfo } from "./agentStatus";
+import type { GeneratedImage } from "./chatTools";
 import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
@@ -114,6 +115,7 @@ export type ChatMessage = {
   assistantModel?: string;
   runStatus?: ChatRunStatus;
   app?: GeneratedApp;
+  generatedImage?: GeneratedImage;
   codeChanges?: CodeChange[];
   codeFiles?: FileEntry[];
   codeProjectId?: string;
@@ -124,7 +126,19 @@ export type ChatMessage = {
   folderRecovery?: FolderRecovery;
   projectBriefSetup?: ProjectBriefSetupPrompt;
   desktopConnection?: DesktopConnectionPrompt;
+  previewServer?: PreviewServerPrompt;
   agentBusy?: AgentBusyInfo;
+};
+
+export type PreviewServerPhase = "waiting-approval" | "requesting-desktop" | "starting-server" | "verifying-phone" | "ready" | "failed" | "cancelled";
+
+export type PreviewServerPrompt = {
+  id: string;
+  projectId: string;
+  projectName: string;
+  status: "approval" | "starting" | "ready" | "failed" | "cancelled";
+  phase: PreviewServerPhase;
+  detail?: string;
 };
 
 export type ChatRunStatus = {
@@ -140,6 +154,8 @@ export type GeneratedApp = {
   id: string;
   title: string;
   html?: string;
+  projectId?: string;
+  source?: "generated" | "desktop";
   url?: string;
 };
 

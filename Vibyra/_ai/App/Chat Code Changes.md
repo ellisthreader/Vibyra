@@ -21,6 +21,8 @@ Pending messages render `EditPermissionCard` with No, Allow, and Allow always. T
 
 Desktop `/agents/start` honors `apply: false` by returning pending changes plus `pendingApplyId` without writing project files. `AppContext.approveEdits` calls `/agents/apply`; `denyEdits` calls `/agents/discard`. `apply: true` is sent only for project-level Allow always.
 
+If a project has an unresolved pending `pendingApplyId`, `useAgentActions.startAgent` must not launch another desktop edit run for that project. It should add a reminder to use the existing approval card. Applying or denying pending edits should resolve every chat message that references the same `pendingApplyId`, and desktop apply must reject stale plans when target files changed after generation.
+
 `editApprovals` persists in app state and cloud sync. Approval is per-project, not global.
 
 ## Changed Files Card

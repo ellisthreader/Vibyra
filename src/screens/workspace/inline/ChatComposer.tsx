@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChatSkill } from "../../../utils/appApi";
 import { colors } from "../../../styles/theme";
+import type { ChatStartOptions, ChatToolMode } from "../../../types/chatTools";
 import { ModelKey, ReasoningEffort } from "../../../types/domain";
 import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
@@ -11,8 +12,10 @@ import { ChatCommand, chatCommandHelpReply, filterChatCommands, matchChatCommand
 import { chatModelOptions } from "../data/chatModels";
 import { mergeChatSkills } from "../../../utils/chatSkills";
 import { styles } from "../styles";
-import { LowCreditsWarning, ModelProviderIcon, getUnlockedInitialChatModel, isModelLockedForPlan } from "./chunk10";
+import { LowCreditsWarning, getUnlockedInitialChatModel, isModelLockedForPlan } from "./chunk10";
 import { ModelMenu, effortShortLabel } from "./ChatComposerMenus";
+import { ChatAttachmentSheet } from "./ChatAttachmentSheet";
+import { chatToolLabels } from "./chatAttachmentTools";
 import { BillingSheet } from "./profile/BillingSheet";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 
@@ -27,7 +30,7 @@ type ChatComposerProps = {
   onOpenFolderCommand: () => void;
   onTestPreviewCommand: (userText: string) => void;
   onOpenTokens: () => void;
-  onStart: () => void;
+  onStart: (options?: ChatStartOptions) => void;
   reasoningEffort: ReasoningEffort;
   selectedChatModel: string;
   selectedModel: ModelKey;
@@ -39,6 +42,8 @@ type ChatComposerProps = {
 };
 
 export function ChatComposer(props: ChatComposerProps) {
+  const [attachmentSheetOpen, setAttachmentSheetOpen] = useState(false);
+  const [activeTool, setActiveTool] = useState<ChatToolMode | null>(null);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
@@ -46,8 +51,6 @@ export function ChatComposer(props: ChatComposerProps) {
   const prefs = usePreferences();
   const placeholderColor = useThemedColor("#8F8A9E");
   const toolIconColor = useThemedColor("#B9B5C8");
-  const effortIconColor = useThemedColor("#D7C4FF");
-  const lockedIconColor = useThemedColor("#AAA6BC");
   const sendGradient = props.agentRequesting
     ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
     : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
@@ -92,7 +95,25 @@ export function ChatComposer(props: ChatComposerProps) {
       runCommand(parsed.command, parsed.args);
       return;
     }
-    props.onStart();
+    props.onStart(activeTool ? { tool: activeTool } : undefined);
+    setActiveTool(null);
+  }
+
+  function openAttachmentSheet() {
+    Keyboard.dismiss();
+    setModelMenuOpen(false);
+    setAttachmentSheetOpen(true);
+  }
+
+  function selectAttachmentPrompt(prompt: string) {
+    const current = props.taskText.trim();
+    props.setTaskText(current ? `${current}\n${prompt}` : prompt);
+    setAttachmentSheetOpen(false);
+  }
+
+  function selectAttachmentTool(tool: ChatToolMode) {
+    setActiveTool(tool);
+    setAttachmentSheetOpen(false);
   }
 
   return (
@@ -109,6 +130,17 @@ export function ChatComposer(props: ChatComposerProps) {
         onUpgrade={() => { setModelMenuOpen(false); setBillingSheetOpen(true); }}
       />
       <View style={[styles.chatComposer, composerFocused && styles.chatComposerFocused]}>
+        {activeTool ? (
+          <View style={styles.chatToolPillRow}>
+            <View style={styles.chatToolPill}>
+              <Ionicons name={activeTool === "image" ? "image-outline" : activeTool === "web" ? "globe-outline" : activeTool === "analyze" ? "document-text-outline" : "search-outline"} color="#F7F3FF" size={14} />
+              <Text numberOfLines={1} style={styles.chatToolPillText}>{chatToolLabels[activeTool]}</Text>
+              <Pressable accessibilityLabel="Clear selected chat tool" onPress={() => setActiveTool(null)} style={styles.chatToolPillClear}>
+                <Ionicons name="close" color="#BDB5CE" size={14} />
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
         <TextInput
           value={props.taskText}
           onChangeText={props.setTaskText}
@@ -121,7 +153,11 @@ export function ChatComposer(props: ChatComposerProps) {
         />
         <View style={styles.chatComposerBottom}>
           <View style={styles.chatComposerTools}>
-            <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
+            <Pressable
+              accessibilityLabel="Open attachments and tools"
+              onPress={openAttachmentSheet}
+              style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}
+            >
               <Ionicons name="attach-outline" color={toolIconColor} size={20} />
             </Pressable>
             <Pressable
@@ -129,10 +165,8 @@ export function ChatComposer(props: ChatComposerProps) {
               onPress={() => setModelMenuOpen((open) => !open)}
               style={({ pressed }) => [styles.chatModelEffortControl, pressed && { opacity: 0.82 }]}
             >
-              <ModelProviderIcon provider={currentModel.provider} compact />
-              {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color={lockedIconColor} size={11} /> : null}
-              <View style={styles.chatModelEffortDivider} />
-              <Ionicons name="flash-outline" color={effortIconColor} size={13} />
+              <Text numberOfLines={1} style={styles.chatModelInlineLabel}>{currentModel.label}</Text>
+              <Text style={styles.chatModelInlineDivider}>/</Text>
               <Text style={styles.chatEffortInlineLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
             </Pressable>
           </View>
@@ -143,6 +177,12 @@ export function ChatComposer(props: ChatComposerProps) {
           </Pressable>
         </View>
       </View>
+      <ChatAttachmentSheet
+        visible={attachmentSheetOpen}
+        onClose={() => setAttachmentSheetOpen(false)}
+        onSelectPrompt={selectAttachmentPrompt}
+        onSelectTool={selectAttachmentTool}
+      />
       <BillingSheet visible={billingSheetOpen} onClose={() => setBillingSheetOpen(false)} />
     </View>
   );

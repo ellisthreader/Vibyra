@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Image, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useAppContext } from "../../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { formatPlanLabel } from "../index";
+import { AccountAvatar } from "../AccountAvatar";
 import type { LevelMapNode } from "../../../../utils/appApi";
 import { ProfileLevelProgressModal } from "./ProfileLevelProgressModal";
 
@@ -17,7 +18,6 @@ export function ProfileHero({ onOpenBilling }: {
   const [levelModalVisible, setLevelModalVisible] = useState(false);
   const editIconColor = useThemedColor("#E8E2F7");
   const profileName = app.authName.trim() || "Not signed in";
-  const profileInitial = profileName.charAt(0).toUpperCase() || "V";
   const planLabel = formatPlanLabel(app.accountPlan);
   const level = app.levelProgress ?? {
     currentLevelXp: 0,
@@ -68,11 +68,7 @@ export function ProfileHero({ onOpenBilling }: {
       <View style={[styles.profileHeroTop, styles.profileHeroTopCompact]}>
         <View style={styles.profileAvatarWrap}>
           <View style={[styles.profileAvatarLarge, styles.profileAvatarLargeCompact]}>
-            {app.profileImageUri ? (
-              <Image source={{ uri: app.profileImageUri }} style={styles.profileAvatarImage} />
-            ) : (
-              <Text style={styles.profileAvatarLargeText}>{profileInitial}</Text>
-            )}
+            <AccountAvatar imageUri={app.profileImageUri} name={profileName} size={46} textSize={20} />
           </View>
           <Pressable
             accessibilityLabel="Change profile picture"

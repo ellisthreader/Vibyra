@@ -1,5 +1,8 @@
 import { useCallback, useRef } from "react";
 import { GeneratedApp, Project } from "../../../types/domain";
+import type { ChatToolMode, GeneratedImage } from "../../../types/chatTools";
+import { chatToolSkillId, type ChatStartOptions } from "../../../types/chatTools";
+import { generatePublishAsset } from "../../../utils/communityApi";
 import { bareNameCandidate, currentProjectReply, extractFileName, extractFolderName, isCurrentProjectQuestion, isFindFolderIntent, isOpenFileIntent, isProjectLookupOnly } from "../helpers/chatPrompts";
 import { folderContentsReply, projectFilesReply } from "../helpers/chatProjectReplies";
 import { bareNameClarifyReply, confusionReply, detachedFallbackReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isSmallTalk, smallTalkReply } from "../helpers/chatReplies";
@@ -19,7 +22,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   const awaitingFolderNameRef = useRef(false);
   const folderRecoveryRef = useRef(false);
   const pendingTerminalRef = useRef<{ command: string; projectId: string } | null>(null);
-  const pendingPreviewServerRef = useRef<{ projectId: string } | null>(null);
+  const pendingPreviewServerRef = useRef<{ projectId: string; messageId: string } | null>(null);
   const submitLockRef = useRef(false);
 
   const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
@@ -73,8 +76,10 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     reply(`Opened ${file.path} in ${target.project.name}.`, target.project);
   }, [app, runtime, s]);
 
-  const onStartChat = useCallback(async (promptOverride?: string) => {
-    const prompt = (promptOverride ?? app.taskText).trim();
+  const onStartChat = useCallback(async (promptOverride?: string | ChatStartOptions) => {
+    const rawPrompt = typeof promptOverride === "string" ? promptOverride : app.taskText;
+    const tool = typeof promptOverride === "object" ? promptOverride?.tool : undefined;
+    const prompt = rawPrompt.trim();
     if (!prompt || submitLockRef.current) return;
     submitLockRef.current = true;
     const projectChat = Boolean(s.selectedChatId?.startsWith("project-"));
@@ -87,6 +92,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
+        if (tool && await handleToolMode(prompt, tool, false, projectTarget, reply)) return;
         if (await handlePreviewServerFollowUp(prompt, projectTarget, reply)) return;
         if (await handleTerminalFollowUp(prompt, projectTarget, reply)) return;
         const terminalCommand = parseTerminalCommandIntent(prompt);
@@ -104,6 +110,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         return;
       }
 
+      if (tool && await handleToolMode(prompt, tool, true, runtime.activeProjectTarget(), reply)) return;
       if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
       if (isKnownAiSkillCommand(prompt, app.chatSkills)) {
         runtime.addDetachedChatReply(prompt, "Open a project chat first, then use that slash command there.");
@@ -148,6 +155,62 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       setTimeout(() => { submitLockRef.current = false; }, 750);
     }
   }, [app, runtime, runFileOpen, runFolderSearch, s]);
+
+  async function handleToolMode(
+    prompt: string,
+    tool: ChatToolMode,
+    detached: boolean,
+    target: ReturnType<Runtime["activeProjectTarget"]>,
+    reply: ReplyFn
+  ) {
+    if (tool === "image") {
+      await createImage(prompt, detached, target, reply);
+      return true;
+    }
+    if (tool === "analyze" && detached) {
+      reply("Open a project chat first so I can analyze that app's files.");
+      return true;
+    }
+    const skillId = chatToolSkillId(tool);
+    if (!skillId) return false;
+    await app.startAgent(target, prompt, { skillId });
+    return true;
+  }
+
+  async function createImage(prompt: string, detached: boolean, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
+    if (!app.authToken) {
+      reply("Log in before generating images.");
+      return;
+    }
+    try {
+      const result = await generatePublishAsset({
+        authToken: app.authToken,
+        description: target.project.name,
+        kind: "screenshot",
+        prompt,
+        title: target.project.name || "Vibyra image"
+      });
+      if (result.user) app.applyRemoteUserFromIap(result.user);
+      const image: GeneratedImage = {
+        id: `generated-image-${Date.now()}`,
+        provider: result.provider,
+        title: "Generated image",
+        url: result.imageUrl
+      };
+      detached ? addDetachedGeneratedImage(prompt, image) : app.addLocalGeneratedImage(prompt, image, target);
+    } catch (error) {
+      reply(error instanceof Error ? error.message : "Image generation failed. Try again.");
+    }
+  }
+
+  function addDetachedGeneratedImage(prompt: string, image: GeneratedImage) {
+    s.setNewChatMessages((current) => [
+      ...current,
+      { id: `new-chat-user-${Date.now()}`, role: "user", text: prompt },
+      { id: `new-chat-assistant-${Date.now()}`, role: "assistant", text: `Created **${image.title}**.`, generatedImage: image }
+    ]);
+    app.setTaskText("");
+  }
 
   function handleDetachedStarter(prompt: string) {
     if (isConfusion(prompt)) { resetFolderState(); runtime.addDetachedChatReply(prompt, confusionReply()); return true; }
@@ -218,16 +281,33 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     const pending = pendingPreviewServerRef.current;
     if (!pending || pending.projectId !== target.projectId) return false;
     if (isTerminalDenial(prompt)) {
-      pendingPreviewServerRef.current = null;
-      reply("Cancelled preview server start.", target.project);
+      applyPreviewServerDecision(prompt, target, false);
       return true;
     }
     if (!isTerminalApproval(prompt)) return false;
+    applyPreviewServerDecision(prompt, target, true);
+    return true;
+  }
+
+  function applyPreviewServerDecision(prompt: string, target: ReturnType<Runtime["activeProjectTarget"]>, approved: boolean) {
+    const pending = pendingPreviewServerRef.current;
+    if (!pending || pending.projectId !== target.projectId) return;
     pendingPreviewServerRef.current = null;
     app.addLocalUserMessage(prompt, target);
-    app.addLocalChatNotice("", `Starting the desktop preview server for **${target.project.name}**...`, target);
-    void runApprovedPreviewServer(target);
-    return true;
+    if (!approved) {
+      app.updatePreviewServerMessage(pending.messageId, pending.projectId, {
+        status: "cancelled",
+        phase: "cancelled",
+        detail: "Cancelled by user"
+      });
+      return;
+    }
+    app.updatePreviewServerMessage(pending.messageId, pending.projectId, {
+      status: "starting",
+      phase: "requesting-desktop",
+      detail: "Sending request to Vibyra Desktop"
+    });
+    void runApprovedPreviewServer(target, pending.messageId);
   }
 
   async function handleTerminalCommand(prompt: string, command: string, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
@@ -252,17 +332,31 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     }
   }
 
-  async function runApprovedPreviewServer(target: ReturnType<Runtime["activeProjectTarget"]>) {
+  async function runApprovedPreviewServer(target: ReturnType<Runtime["activeProjectTarget"]>, messageId: string) {
     try {
-      const preview = await app.startPreviewServer(target.projectId, target.project.name);
-      app.addLocalChatNotice("", `Preview is ready for **${target.project.name}**. Tap the Live Preview card to open it.`, target, preview);
+      const preview = await app.startPreviewServer(target.projectId, target.project.name, (phase, detail) => {
+        app.updatePreviewServerMessage(messageId, target.projectId, {
+          status: phase === "ready" ? "ready" : "starting",
+          phase,
+          detail
+        });
+      });
+      app.updatePreviewServerMessage(messageId, target.projectId, {
+        status: "ready",
+        phase: "ready",
+        detail: "Phone preview route verified"
+      }, preview);
     } catch (error) {
-      app.addLocalChatNotice("", error instanceof Error ? error.message : "Could not start the preview server.", target);
+      app.updatePreviewServerMessage(messageId, target.projectId, {
+        status: "failed",
+        phase: "failed",
+        detail: error instanceof Error ? error.message : "Could not start the preview server."
+      });
     }
   }
 
-  function rememberPreviewServerApproval(target: ReturnType<Runtime["activeProjectTarget"]>) {
-    pendingPreviewServerRef.current = { projectId: target.projectId };
+  function rememberPreviewServerApproval(target: ReturnType<Runtime["activeProjectTarget"]>, messageId: string) {
+    pendingPreviewServerRef.current = { projectId: target.projectId, messageId };
   }
 
   const resumeFolderSearch = useCallback(async (query: string, detached: boolean) => {
@@ -270,7 +364,13 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     resetFolderState(); await runFolderSearch(`Search PC for ${trimmed}`, trimmed, true, detached);
   }, [app.connection, runFolderSearch]);
 
-  return { onStartChat, folderRecoveryRef, resumeFolderSearch };
+  return {
+    onStartChat,
+    folderRecoveryRef,
+    resumeFolderSearch,
+    approvePreviewServerStart: () => applyPreviewServerDecision("yes", runtime.activeProjectTarget(), true),
+    denyPreviewServerStart: () => applyPreviewServerDecision("no", runtime.activeProjectTarget(), false)
+  };
 
   function addDesktopConnectionPrompt(prompt: string, query: string, detached: boolean) {
     const connectionPrompt = { reason: "desktop-search" as const, ...(query ? { query } : {}) };
@@ -279,6 +379,6 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   }
 }
 
-function isPreviewFixPrompt(prompt: string): boolean {
-  return /^The runnable preview for .+ crashed\.|Captured preview diagnostics:/i.test(prompt);
+export function isPreviewFixPrompt(prompt: string): boolean {
+  return /^The (?:runnable|live) preview for .+ crashed\b|Captured preview diagnostics:/i.test(prompt);
 }

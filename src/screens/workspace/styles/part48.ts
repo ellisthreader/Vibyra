@@ -1,12 +1,13 @@
 export const part48 = {
   accountAvatarLarge: {
     alignItems: "center",
-    backgroundColor: "rgba(139, 53, 255, 0.22)",
-    borderColor: "rgba(221, 187, 255, 0.22)",
-    borderRadius: 18,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 999,
+    borderWidth: 0,
     height: 52,
     justifyContent: "center",
+    overflow: "hidden",
     width: 52
   },
   accountAvatarText: {
@@ -59,10 +60,10 @@ export const part48 = {
   },
   accountTopButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderColor: "rgba(176, 132, 255, 0.16)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
     height: 38,
     justifyContent: "center",
     width: 38

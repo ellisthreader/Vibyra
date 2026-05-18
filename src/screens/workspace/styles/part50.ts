@@ -53,8 +53,8 @@ export const part50 = {
   },
   workspaceMenuTitle: {
     color: "#FFFFFF",
-    fontSize: 30,
+    fontSize: 25,
     fontWeight: "900",
-    lineHeight: 34
+    lineHeight: 29
   }
 } as const;

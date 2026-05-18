@@ -34,12 +34,12 @@ export async function runningProjectDevServerUrl(project, requestHost) {
 }
 
 export async function startProjectDevServer(project, requestHost, options = {}) {
-  const existingUrl = await runningProjectDevServerUrl(project, requestHost);
+  const existingUrl = options.reuseExisting ? await runningProjectDevServerUrl(project, requestHost) : null;
   if (existingUrl) {
     const tracked = appState.previewServers[project.id];
     if (tracked) {
       tracked.url = existingUrl;
-      tracked.proxyTargetUrl = tracked.proxyTargetUrl || loopbackBaseForUrl(existingUrl);
+      tracked.proxyTargetUrl = loopbackBaseForUrl(existingUrl);
     } else {
       trackPreviewServer(project.id, { command: PREVIEW_DEV_COMMAND, proxyTargetUrl: loopbackBaseForUrl(existingUrl), startedAt: new Date().toISOString(), url: existingUrl });
     }

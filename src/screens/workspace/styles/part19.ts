@@ -158,17 +158,13 @@ export const part19 = {
   },
   profileAvatarLarge: {
     alignItems: "center",
-    backgroundColor: "rgba(64, 24, 112, 0.82)",
-    borderColor: "#A84BFF",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 3,
+    borderWidth: 0,
     height: 64,
     justifyContent: "center",
     overflow: "hidden",
-    shadowColor: "#8F35FF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 12,
     width: 64
   },
   profileAvatarImage: {

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { styles } from "../styles";
 import type { DashboardPage, SettingsTab } from "../types";
+import { AccountAvatar } from "./AccountAvatar";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -110,6 +111,7 @@ export function AccountMenuSheet({
   onOpenTokens,
   onTab,
   plan,
+  profileImageUri,
   tokenBalance,
   visible
 }: {
@@ -118,6 +120,7 @@ export function AccountMenuSheet({
   onOpenTokens: () => void;
   onTab: (tab: SettingsTab) => void;
   plan: string;
+  profileImageUri: string;
   tokenBalance: number;
   visible: boolean;
 }) {
@@ -137,7 +140,7 @@ export function AccountMenuSheet({
         <View style={[styles.accountMenuPanel, { marginTop: Math.max(insets.top + 8, 12) }]}>
           <View style={styles.accountMenuHeader}>
             <View style={styles.accountAvatarLarge}>
-              <Text style={styles.accountAvatarText}>{(name.trim().charAt(0) || "V").toUpperCase()}</Text>
+              <AccountAvatar imageUri={profileImageUri} name={name} size={52} textSize={21} />
             </View>
             <View style={styles.accountMenuCopy}>
               <Text numberOfLines={1} style={styles.accountMenuName}>{name.trim() || "Account"}</Text>
