@@ -12,7 +12,7 @@ import { chatModelOptions } from "../data/chatModels";
 import { mergeChatSkills } from "../../../utils/chatSkills";
 import { styles } from "../styles";
 import { LowCreditsWarning, ModelProviderIcon, getUnlockedInitialChatModel, isModelLockedForPlan } from "./chunk10";
-import { EffortMenu, ModelMenu, effortShortLabel } from "./ChatComposerMenus";
+import { ModelMenu, effortShortLabel } from "./ChatComposerMenus";
 import { BillingSheet } from "./profile/BillingSheet";
 import { SlashCommandMenu } from "./SlashCommandMenu";
 
@@ -40,7 +40,6 @@ type ChatComposerProps = {
 
 export function ChatComposer(props: ChatComposerProps) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
-  const [effortMenuOpen, setEffortMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
   const appCtx = useAppContext();
@@ -99,9 +98,16 @@ export function ChatComposer(props: ChatComposerProps) {
   return (
     <View style={[styles.chatComposerShell, { paddingBottom: Math.max(props.bottomInset, 8) }]}>
       {props.creditsLow ? <LowCreditsWarning onOpenTokens={props.onOpenTokens} percentRemaining={props.creditPercentRemaining} /> : null}
-      <ModelMenu open={modelMenuOpen} accountPlan={props.accountPlan} selected={selectedChatModel} onSelect={selectModel} onUpgrade={() => { setModelMenuOpen(false); setBillingSheetOpen(true); }} />
       {slashMenuOpen ? <SlashCommandMenu commands={filteredCommands} skills={filteredSkills} onSelectCommand={(c) => runCommand(c, "")} onSelectSkill={(s) => props.setTaskText(`${s.slash} `)} /> : null}
-      <EffortMenu open={effortMenuOpen} selected={props.reasoningEffort} onSelect={(effort) => { props.setReasoningEffort(effort); setEffortMenuOpen(false); }} />
+      <ModelMenu
+        open={modelMenuOpen}
+        accountPlan={props.accountPlan}
+        selected={selectedChatModel}
+        reasoningEffort={props.reasoningEffort}
+        onSelect={selectModel}
+        onSelectEffort={props.setReasoningEffort}
+        onUpgrade={() => { setModelMenuOpen(false); setBillingSheetOpen(true); }}
+      />
       <View style={[styles.chatComposer, composerFocused && styles.chatComposerFocused]}>
         <TextInput
           value={props.taskText}
@@ -114,24 +120,18 @@ export function ChatComposer(props: ChatComposerProps) {
           style={styles.chatComposerInput}
         />
         <View style={styles.chatComposerBottom}>
-          <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
-            <Ionicons name="attach-outline" color={toolIconColor} size={20} />
-          </Pressable>
-          <View style={styles.chatModelEffortControl}>
+          <View style={styles.chatComposerTools}>
+            <Pressable style={({ pressed }) => [styles.chatComposerTool, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}>
+              <Ionicons name="attach-outline" color={toolIconColor} size={20} />
+            </Pressable>
             <Pressable
-              accessibilityLabel="Choose AI model"
-              style={({ pressed }) => [styles.chatModelLogoButton, pressed && { opacity: 0.82 }]}
-              onPress={() => { setModelMenuOpen((open) => !open); setEffortMenuOpen(false); }}
+              accessibilityLabel="Choose AI model and reasoning effort"
+              onPress={() => setModelMenuOpen((open) => !open)}
+              style={({ pressed }) => [styles.chatModelEffortControl, pressed && { opacity: 0.82 }]}
             >
               <ModelProviderIcon provider={currentModel.provider} compact />
               {isModelLockedForPlan(currentModel, props.accountPlan) ? <Ionicons name="lock-closed" color={lockedIconColor} size={11} /> : null}
-            </Pressable>
-            <View style={styles.chatModelEffortDivider} />
-            <Pressable
-              accessibilityLabel="Choose reasoning effort"
-              onPress={() => { setEffortMenuOpen((open) => !open); setModelMenuOpen(false); }}
-              style={({ pressed }) => [styles.chatEffortInlineButton, pressed && { opacity: 0.82 }]}
-            >
+              <View style={styles.chatModelEffortDivider} />
               <Ionicons name="flash-outline" color={effortIconColor} size={13} />
               <Text style={styles.chatEffortInlineLabel}>{effortShortLabel(props.reasoningEffort)}</Text>
             </Pressable>

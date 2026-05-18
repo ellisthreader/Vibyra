@@ -4,11 +4,13 @@
 
 The Expo app reads `EXPO_PUBLIC_API_URL` from root `.env`; for LAN/device testing it should point to the dev machine on Laravel's API port, e.g. `http://192.168.1.109:8000`. The backend MUST be running before the app boots — otherwise the AI chat fails silently: foreground `/api/chat` POSTs reject with `Could not reach Vibyra at http://…:8000/api/chat`, the chat bubble shows the mapped "I could not reach Vibyra from the app." reply via `userFacingAgentError`, and the browser logs `ERR_CONNECTION_REFUSED` natively (not suppressible — see backend-offline gate decision).
 
-One command to run both processes (Laravel + Expo) with `Ctrl+C` killing both:
+Default command to run both processes (Laravel + Expo) with `Ctrl+C` killing both:
 
 ```bash
-npm run dev
+npm start
 ```
+
+`npm start` delegates to `npm run dev`. `scripts/start-dev.sh` refreshes root `.env` `EXPO_PUBLIC_API_URL` from the machine's current LAN IP, starts Laravel on `0.0.0.0:8000`, waits for `http://127.0.0.1:8000/api/skills`, then starts Expo so auth calls do not race a cold backend or stale LAN address.
 
 Or split across two terminals:
 
@@ -17,7 +19,7 @@ Or split across two terminals:
 npm run backend
 
 # terminal 2 — Expo
-npm start
+npx expo start --host lan
 ```
 
 Manual fallback if scripts fail or you want a fully detached server:
@@ -36,6 +38,20 @@ curl -s http://127.0.0.1:8000/api/skills | head -c 80
 If signup/login shows "Could not reach Vibyra" or `failed to fetch`, check backend liveness before editing auth code. The app uses `EXPO_PUBLIC_API_URL` from root `.env`; both `http://127.0.0.1:8000/api/skills` and the configured LAN URL should answer while developing on web/device.
 
 If the browser reports `AppEntry.bundle` 500 plus strict MIME refusal because the script response is `application/json`, fetch the bundle URL directly and read Metro's JSON error body. This is usually a build/resolver error, not a MIME problem. For `UnableToResolveError`, verify imported files exist, especially `src/context/translations.ts` versus `src/context/i18n/*.ts`. After creating a missing module, restart Expo if Metro keeps serving the stale resolver miss, then verify the bundle returns `Content-Type: application/javascript`.
+
+If Expo/Metro crashes with `ENOSPC: System limit for number of file watchers reached, watch '/home/taylor/Desktop/SaaS'`, raise Linux inotify limits before restarting Expo:
+
+```bash
+sudo sysctl -w fs.inotify.max_user_watches=1048576 fs.inotify.max_user_instances=1024
+```
+
+Check current values with:
+
+```bash
+sysctl fs.inotify.max_user_watches fs.inotify.max_user_instances
+```
+
+If the fix should survive reboot, add the same values to a root-owned file under `/etc/sysctl.d/` and reload with `sudo sysctl --system`.
 
 Useful checks:
 

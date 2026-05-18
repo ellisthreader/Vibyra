@@ -114,8 +114,8 @@ export async function appApiRequest<T>(
     const aborted = reason.toLowerCase().includes("abort");
     if (!aborted && !timedOut) markBackendOffline();
     throw new Error(timedOut || aborted
-      ? `Could not reach Vibyra (timed out at ${url}). Start the backend with npm run backend or npm run dev, and check EXPO_PUBLIC_API_URL points to this machine's LAN IP.`
-      : `Could not reach Vibyra at ${url}. ${reason}. Start the backend with npm run backend or npm run dev; if it is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
+      ? `Could not reach Vibyra (timed out at ${url}). Start Vibyra with npm start, and check EXPO_PUBLIC_API_URL points to this machine's LAN IP.`
+      : `Could not reach Vibyra at ${url}. ${reason}. Start Vibyra with npm start; if the backend is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
   }
 
   if (response.status >= 500) {
@@ -182,7 +182,7 @@ export async function appApiStreamChat<T = unknown>(
     clearTimeout(timeout);
     const reason = error instanceof Error ? error.message : "unknown error";
     markBackendOffline();
-    throw new Error(`Could not reach Vibyra at ${url}. ${reason}. Start the backend with npm run backend or npm run dev; if it is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
+    throw new Error(`Could not reach Vibyra at ${url}. ${reason}. Start Vibyra with npm start; if the backend is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
   }
 
   if (response.status >= 500) markBackendOffline();

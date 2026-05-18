@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
 import { choosePreviewPort } from "./previewPortAllocator.mjs";
 import { npmRunArgs, npmRunEnv, previewCommand } from "./previewFrameworkProfiles.mjs";
+import { laravelHttpFailure, laravelPreviewEnv } from "./previewLaravelDiagnostics.mjs";
 import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
 import { appState, publicHostFromRequestHost } from "./state.mjs";
 
@@ -21,10 +22,11 @@ export async function startLaravelViteDevServer(project, requestHost, context, o
   const vitePort = options.port ?? await choosePreviewPort(context.packageText, context.profile);
   const laravelPort = options.laravelPort ?? await choosePreviewPort("", { defaultPorts: LARAVEL_PORTS });
   const npmExecutable = process.platform === "win32" ? "npm.cmd" : "npm";
+  const phpEnv = { ...process.env, ...await laravelPreviewEnv(project.path), ...(options.env ?? {}) };
   const php = spawn("php", ["artisan", "serve", "--host", "0.0.0.0", "--port", String(laravelPort)], {
     cwd: project.path,
     detached: process.platform !== "win32",
-    env: { ...process.env, ...(options.env ?? {}) },
+    env: phpEnv,
     stdio: ["ignore", "pipe", "pipe"]
   });
   const npm = spawn(npmExecutable, npmRunArgs(context.profile, vitePort), {
@@ -70,14 +72,14 @@ async function waitForLaravelVite(project, requestHost, laravelPort, vitePort, o
       fetchProbe(`http://127.0.0.1:${laravelPort}/`, { htmlOnly: true })
     ]);
     if (localRoot && !localRoot.ok) {
-      return { failure: `Laravel returned HTTP ${localRoot.status} for /. Check ${project.path}/storage/logs/laravel.log for the application error.` };
+      return { failure: await laravelHttpFailure(project.path, localRoot.status, "/") };
     }
     if (viteReady && localRoot?.body) {
       const publicBase = publicLaravelBase(laravelPort, requestHost);
       if (isLoopbackHost(publicBase)) return { url: publicBase };
       const publicRoot = await fetchProbe(`${publicBase}/`, { htmlOnly: true });
       if (publicRoot && !publicRoot.ok) {
-        return { failure: `Laravel returned HTTP ${publicRoot.status} for ${publicBase}/. Check ${project.path}/storage/logs/laravel.log for the application error.` };
+        return { failure: await laravelHttpFailure(project.path, publicRoot.status, `${publicBase}/`) };
       }
       if (publicRoot?.body) return { url: publicBase };
     }

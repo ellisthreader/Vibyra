@@ -14,10 +14,46 @@ const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hi
   { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Maximum reasoning", icon: "rocket-outline" },
 ];
 
-export function ModelMenu(props: { open: boolean; accountPlan: string; selected: string; onSelect: (model: (typeof chatModelOptions)[number]) => void; onUpgrade: () => void }) {
+export function ModelMenu(props: {
+  open: boolean;
+  accountPlan: string;
+  selected: string;
+  reasoningEffort: ReasoningEffort;
+  onSelect: (model: (typeof chatModelOptions)[number]) => void;
+  onSelectEffort: (effort: ReasoningEffort) => void;
+  onUpgrade: () => void;
+}) {
+  const activeIconColor = useThemedColor("#D7C4FF");
+  const inactiveIconColor = useThemedColor("#8F8A9E");
+  const selectedModel = chatModelOptions.find((model) => model.key === props.selected) ?? chatModelOptions[0];
   if (!props.open) return null;
   return (
     <View style={styles.chatModelMenu}>
+      <View style={styles.chatModelEffortHeader}>
+        <View style={styles.chatModelEffortHeaderTop}>
+          <Text numberOfLines={1} style={styles.chatModelEffortTitle}>{selectedModel.label}</Text>
+          <Text style={styles.chatModelEffortMeta}>Effort</Text>
+        </View>
+        <View style={styles.chatModelEffortChoices}>
+          {EFFORT_OPTIONS.map((option) => {
+            const active = props.reasoningEffort === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => props.onSelectEffort(option.value)}
+                style={({ pressed }) => [
+                  styles.chatModelEffortChoice,
+                  active && styles.chatModelEffortChoiceActive,
+                  pressed && { opacity: 0.85 }
+                ]}
+              >
+                <Ionicons name={option.icon} color={active ? activeIconColor : inactiveIconColor} size={13} />
+                <Text style={[styles.chatModelEffortChoiceText, active && styles.chatModelEffortChoiceTextActive]}>{option.short}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
       {chatModelGroups.map((group) => (
         <View key={group.title || "auto"} style={styles.chatModelGroup}>
           {group.title ? <Text style={styles.chatModelGroupTitle}>{group.title}</Text> : null}
@@ -33,34 +69,6 @@ export function ModelMenu(props: { open: boolean; accountPlan: string; selected:
           ))}
         </View>
       ))}
-    </View>
-  );
-}
-
-export function EffortMenu(props: { open: boolean; selected: ReasoningEffort; onSelect: (effort: ReasoningEffort) => void }) {
-  const activeIconColor = useThemedColor("#D7C4FF");
-  const inactiveIconColor = useThemedColor("#8F8A9E");
-  if (!props.open) return null;
-  return (
-    <View style={styles.chatEffortMenu}>
-      {EFFORT_OPTIONS.map((option) => {
-        const active = props.selected === option.value;
-        return (
-          <Pressable
-            key={option.value}
-            onPress={() => props.onSelect(option.value)}
-            style={({ pressed }) => [
-              styles.chatEffortMenuRow,
-              active && styles.chatEffortMenuRowActive,
-              pressed && { opacity: 0.85 }
-            ]}
-          >
-            <Ionicons name={option.icon} color={active ? activeIconColor : inactiveIconColor} size={16} />
-            <Text style={[styles.chatEffortMenuLabel, active && styles.chatEffortMenuLabelActive]}>{option.label}</Text>
-            <Text style={styles.chatEffortMenuHint}>{option.hint}</Text>
-          </Pressable>
-        );
-      })}
     </View>
   );
 }

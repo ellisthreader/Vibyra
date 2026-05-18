@@ -321,6 +321,9 @@ test("approved preview server start runs Laravel PHP and Vite asset servers", as
   try {
     await writeFile(join(project.path, "artisan"), "");
     await writeFile(join(project.path, "composer.json"), JSON.stringify({ require: { "laravel/framework": "^13.0" } }));
+    await mkdir(join(project.path, "database"), { recursive: true });
+    await writeFile(join(project.path, "database", "database.sqlite"), "");
+    await writeFile(join(project.path, ".env"), "DB_CONNECTION=mysql\nDB_HOST=mysql\nSESSION_DRIVER=database\n");
     await writeFile(join(project.path, "package.json"), JSON.stringify({
       scripts: { dev: "vite" },
       devDependencies: { vite: "latest", "laravel-vite-plugin": "latest" }
@@ -330,6 +333,7 @@ test("approved preview server start runs Laravel PHP and Vite asset servers", as
       env: {
         PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_LARAVEL_HTML: laravelHtml,
+        VIBYRA_FAKE_LARAVEL_REQUIRE_SQLITE_FALLBACK: "1",
         VIBYRA_FAKE_VITE_HTML: "<!doctype html><html><body>Vite assets only</body></html>"
       },
       laravelPort,
@@ -394,6 +398,8 @@ test("approved Laravel preview startup rejects application error pages", async (
   try {
     await writeFile(join(project.path, "artisan"), "");
     await writeFile(join(project.path, "composer.json"), JSON.stringify({ require: { "laravel/framework": "^13.0" } }));
+    await mkdir(join(project.path, "storage", "logs"), { recursive: true });
+    await writeFile(join(project.path, "storage", "logs", "laravel.log"), "local.ERROR: SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo for mysql failed: Name or service not known\n");
     await writeFile(join(project.path, "package.json"), JSON.stringify({
       scripts: { dev: "vite" },
       devDependencies: { vite: "latest", "laravel-vite-plugin": "latest" }
@@ -411,7 +417,7 @@ test("approved Laravel preview startup rejects application error pages", async (
         port: vitePort,
         timeoutMs: 6000
       }),
-      /Laravel returned HTTP 500/
+      /DB_HOST=mysql/
     );
   } finally {
     killTrackedPreview(project.id);
@@ -459,6 +465,81 @@ test("started preview servers are proxied through the desktop bridge", async () 
     const external = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/@vite/client`);
     assert.equal(external.status, 200);
     assert.match(external.body, /__vite/);
+  } finally {
+    delete appState.previewServers[project.id];
+    await app.close();
+    await vite.close();
+    await cleanup();
+  }
+});
+
+test("static preview links fall forward to a tracked preview server", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-project-fallback-");
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: "http://127.0.0.1:8001",
+      startedAt: new Date().toISOString(),
+      url: "http://192.168.1.20:8001"
+    };
+
+    const response = await requestPreview(project);
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.Location, previewServerProxyUrl(project.id, TOKEN));
+  } finally {
+    delete appState.previewServers[project.id];
+    await cleanup();
+  }
+});
+
+test("Laravel Vite proxy keeps app routes and public media on the preview server", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-laravel-vite-proxy-");
+  const appRoutes = {
+    "/": {
+      contentType: "text/html; charset=utf-8",
+      body: ""
+    },
+    "/videos/logo.mp4": { contentType: "video/mp4", body: Buffer.from("mp4") }
+  };
+  const app = await makeRouteServer(appRoutes);
+  appRoutes["/"].body = [
+    "<!doctype html><html><head>",
+    `<script type="text/javascript">const Ziggy={"url":"http:\\/\\/127.0.0.1:${app.port}","port":${app.port}}; const menu = "http://127.0.0.1:${app.port}/menu";</script>`,
+    "</head><body>Laravel</body></html>"
+  ].join("");
+  const vite = await makeRouteServer({
+    "/resources/js/app.tsx": {
+      contentType: "application/javascript; charset=utf-8",
+      body: [
+        'import "/resources/js/bootstrap.ts";',
+        'const logo = "/videos/logo.mp4";'
+      ].join("\n")
+    },
+    "/resources/js/bootstrap.ts": { contentType: "application/javascript; charset=utf-8", body: "window.__bootstrap = true;" }
+  });
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${app.port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${app.port}`,
+      viteProxyTargetUrl: `http://0.0.0.0:${vite.port}`
+    };
+
+    const html = await requestPreviewServerProxy(project);
+    assert.equal(html.status, 200);
+    assert.match(html.body, new RegExp(`"url":"${escapeRegExp(previewServerProxyUrl(project.id, TOKEN).replace(/\/$/, ""))}"`));
+    assert.doesNotMatch(html.body, new RegExp(`127\\.0\\.0\\.1:${app.port}`));
+
+    const js = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/resources/js/app.tsx`);
+    assert.equal(js.status, 200);
+    assert.match(js.body, new RegExp(`${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}videos/logo\\.mp4`));
+    assert.match(js.body, /%2Fresources%2Fjs%2Fbootstrap\.ts/);
+
+    const media = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/videos/logo.mp4`);
+    assert.equal(media.status, 200);
+    assert.equal(media.headers["Content-Type"], "video/mp4");
+    assert.equal(media.body, "mp4");
   } finally {
     delete appState.previewServers[project.id];
     await app.close();
@@ -837,7 +918,8 @@ async function makeFakePhp() {
     "const portArgIndex = process.argv.lastIndexOf('--port');",
     "const port = Number(process.env.VIBYRA_FAKE_LARAVEL_PORT || process.argv[portArgIndex + 1]);",
     "const html = process.env.VIBYRA_FAKE_LARAVEL_HTML || '<!doctype html><html><body>Laravel</body></html>';",
-    "const status = Number(process.env.VIBYRA_FAKE_LARAVEL_STATUS || 200);",
+    "const fallbackOk = !process.env.VIBYRA_FAKE_LARAVEL_REQUIRE_SQLITE_FALLBACK || (process.env.DB_CONNECTION === 'sqlite' && /database[\\\\/]database\\.sqlite$/.test(process.env.DB_DATABASE || '') && process.env.SESSION_DRIVER === 'file');",
+    "const status = Number(process.env.VIBYRA_FAKE_LARAVEL_STATUS || (fallbackOk ? 200 : 500));",
     "const delay = Number(process.env.VIBYRA_FAKE_LARAVEL_DELAY_MS || 0);",
     "const server = createServer((req, res) => {",
     "  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8' });",

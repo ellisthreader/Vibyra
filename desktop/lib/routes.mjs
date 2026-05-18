@@ -141,11 +141,11 @@ async function handlePairingRoutes(req, res, url) {
     return true;
   }
   if (req.method === "GET" && url.pathname.startsWith("/preview/server/")) {
-    await servePreviewServerProxy(res, url);
+    await servePreviewServerProxy(req, res, url);
     return true;
   }
   if (req.method === "GET" && url.pathname.startsWith("/preview/proxy-url/")) {
-    await servePreviewUrlProxy(res, url);
+    await servePreviewUrlProxy(req, res, url);
     return true;
   }
   if (req.method === "GET" && await servePreviewRefererAsset(res, url, req.headers.referer || req.headers.referrer)) {

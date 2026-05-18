@@ -33,6 +33,8 @@ Project chat context should be explicit. Detached chat is a separate thread; pro
 
 Project chats with `briefRequired` must never render an empty required-setup state. `src/screens/workspace/inline/chunk9.tsx` shows `ProjectBriefSetup` automatically when setup is required and the thread does not already contain a project brief setup/analysis prompt; otherwise the composer is hidden with visible confirmation/setup UI.
 
+The composer keeps file upload and AI controls grouped on the left side of the input footer. `src/screens/workspace/inline/ChatComposer.tsx` opens one combined model/effort dropdown; `ChatComposerMenus.tsx` keeps the selected model title at the top and lets users pick reasoning effort there before choosing a model row.
+
 ## Error Copy
 
 Chat should not show raw transport/provider errors like `HTTP 401`, `502 Bad Gateway`, or `Failed to fetch`. `src/context/agentErrors.ts` maps desktop/backend failures to user-facing recovery text while raw messages stay in logs.
