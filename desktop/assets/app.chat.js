@@ -1,3 +1,15 @@
+class DesktopChatError extends Error {
+  constructor(message, details = {}) {
+    super(message);
+    this.name = "DesktopChatError";
+    this.status = details.status || 0;
+    this.code = details.code || "";
+    this.resetAt = details.resetAt || "";
+    this.burstCreditsResetAt = details.burstCreditsResetAt || "";
+    this.weeklyCreditsResetAt = details.weeklyCreditsResetAt || "";
+  }
+}
+
 async function requestDesktopChat(payload) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 130000);
@@ -13,7 +25,11 @@ async function requestDesktopChat(payload) {
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result.ok === false) {
-      throw new Error(result.error || result.message || "Vibyra AI could not complete this chat.");
+      throw new DesktopChatError(result.error || result.message || "Vibyra AI could not complete this chat.", {
+        ...result,
+        status: response.status,
+        resetAt: result.resetAt || result.burstCreditsResetAt || result.weeklyCreditsResetAt || ""
+      });
     }
     return result;
   } catch (error) {

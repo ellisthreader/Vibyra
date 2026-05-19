@@ -1,4 +1,5 @@
 import { lightColors } from "../../../styles/theme";
+import { StyleSheet } from "react-native";
 
 type RGBA = { r: number; g: number; b: number; a: number };
 
@@ -107,6 +108,9 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#07070A": LIGHT_BACKGROUND,
   "#080A12": LIGHT_BACKGROUND,
   "#0B0D17": LIGHT_BACKGROUND,
+  "#0B0C12": LIGHT_BACKGROUND,
+  "#080911": LIGHT_BACKGROUND,
+  "#0B0913": LIGHT_SURFACE,
   "#0C0B18": LIGHT_SURFACE,
   "#0C0E14": LIGHT_SURFACE,
   "#0C0F1C": LIGHT_SURFACE,
@@ -114,6 +118,7 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#101219": LIGHT_SURFACE,
   "#12121A": LIGHT_SURFACE,
   "#13131F": LIGHT_SURFACE,
+  "#151621": LIGHT_SURFACE,
   "#FFFFFF": LIGHT_TEXT,
   "#F9F6FF": LIGHT_TEXT,
   "#F3F1FA": LIGHT_TEXT,
@@ -125,6 +130,13 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#E8E1FF": LIGHT_ACCENT_HOVER,
   "#EDE9FF": LIGHT_ACCENT_HOVER,
   "#DCD7EA": LIGHT_MUTED,
+  "#DDD6F0": LIGHT_MUTED,
+  "#D8D2E8": LIGHT_MUTED,
+  "#D5D0E6": LIGHT_MUTED,
+  "#D3CCE4": LIGHT_MUTED,
+  "#D2CBE2": LIGHT_MUTED,
+  "#CFC7E6": LIGHT_MUTED,
+  "#C8C1D8": LIGHT_MUTED,
   "#DAD6EA": LIGHT_MUTED,
   "#DAD6E7": LIGHT_MUTED,
   "#DAD6F6": LIGHT_MUTED,
@@ -135,6 +147,7 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#BAB5CA": LIGHT_MUTED,
   "#B8B4C4": LIGHT_MUTED,
   "#B8B8C8": LIGHT_MUTED,
+  "#B8B1C8": LIGHT_MUTED,
   "#B7B3C4": LIGHT_MUTED,
   "#B6B3C6": LIGHT_MUTED,
   "#B5B0CA": LIGHT_MUTED,
@@ -152,6 +165,8 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#9C97AE": LIGHT_MUTED,
   "#8F8A9E": LIGHT_DIM,
   "#8F8B9F": LIGHT_DIM,
+  "#8D879D": LIGHT_DIM,
+  "#8D879C": LIGHT_DIM,
   "#8E8AA3": LIGHT_DIM,
   "#858197": LIGHT_DIM,
   "#7A7A8C": LIGHT_DIM,
@@ -159,9 +174,13 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#6E6982": LIGHT_DIM,
   "#5C5870": LIGHT_DIM,
   "#5C5470": LIGHT_DIM,
+  "#827C92": LIGHT_DIM,
+  "#7F788F": LIGHT_DIM,
   "#A95BFF": LIGHT_ACCENT,
+  "#A855FF": LIGHT_ACCENT,
   "#B64FFF": LIGHT_ACCENT,
   "#B084FF": LIGHT_ACCENT,
+  "#B970FF": LIGHT_ACCENT,
   "#BE62FF": LIGHT_MAGENTA,
   "#C259FF": LIGHT_MAGENTA,
   "#DDFCEB": LIGHT_SUCCESS,
@@ -181,6 +200,7 @@ const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#FFE89A": LIGHT_WARNING,
   "#FFF4C7": LIGHT_WARNING,
   "#FFD166": LIGHT_WARNING,
+  "#FFE1A3": LIGHT_WARNING,
   "#FACC15": LIGHT_WARNING,
   "#FFB4C1": LIGHT_ERROR,
   "#FF9DAE": LIGHT_ERROR,
@@ -334,6 +354,37 @@ export function transformStyleMap(map: Record<string, Record<string, unknown>>):
     out[key] = transformStyleObject(map[key]);
   }
   return out;
+}
+
+let activeScheme: "dark" | "light" = "dark";
+
+export function setThemeTransformScheme(scheme: "dark" | "light") {
+  activeScheme = scheme;
+}
+
+export function createThemedStyleSheet<T extends Record<string, Record<string, unknown>>>(raw: T): any {
+  const darkSheet = StyleSheet.create(raw as any);
+  const lightSheet = StyleSheet.create(transformStyleMap(raw) as any);
+
+  return new Proxy({} as T, {
+    get(_, key: string) {
+      const sheet = activeScheme === "light" ? lightSheet : darkSheet;
+      return (sheet as Record<string, unknown>)[key] as T[keyof T];
+    },
+    has(_, key: string) {
+      return key in (activeScheme === "light" ? lightSheet : darkSheet);
+    },
+    ownKeys() {
+      return Object.keys(activeScheme === "light" ? lightSheet : darkSheet);
+    },
+    getOwnPropertyDescriptor(_, key: string) {
+      const sheet = activeScheme === "light" ? lightSheet : darkSheet;
+      if (key in sheet) {
+        return { enumerable: true, configurable: true, value: (sheet as Record<string, unknown>)[key] };
+      }
+      return undefined;
+    }
+  });
 }
 
 export function themedColor(color: string, scheme: "light" | "dark"): string {

@@ -5,8 +5,10 @@ import { fetchWithTimeout, getExpoHost, normalizeAgentUrl, TimeoutError } from "
 export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, ReferralSummary, ReferralSummaryResponse, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
 
 type ApiErrorPayload = {
+  burstCreditsResetAt?: string;
   error?: string;
   message?: string;
+  weeklyCreditsResetAt?: string;
 };
 
 export class AppApiError extends Error {

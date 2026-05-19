@@ -1,6 +1,11 @@
 import type { AgentBusyInfo } from "../types/agentStatus";
+import { setChatUsageLimitFromError, usageLimitMessage } from "./chatUsageLimit";
 
-export function userFacingAgentError(message: string) {
+export function userFacingAgentError(error: unknown) {
+  const limit = setChatUsageLimitFromError(error);
+  if (limit) return usageLimitMessage(limit);
+
+  const message = error instanceof Error ? error.message : String(error || "Agent task failed");
   const lower = message.toLowerCase();
 
   if (lower.includes("your session expired") || lower.includes("missing app session token")) {
@@ -39,8 +44,14 @@ export function userFacingAgentError(message: string) {
   if (lower.includes("not enough credits") || lower.includes("out of free credits") || lower.includes("out of credits")) {
     return "You're out of credits for this request. Open Account → Billing to top up or upgrade your plan.";
   }
-  if (lower.includes("daily ai usage cap")) {
-    return "You've hit today's AI usage cap. The cap resets every 24 hours, or upgrade your plan for a higher cap.";
+  if (lower.includes("5-hour") || lower.includes("burst cap") || lower.includes("burst window")) {
+    return "5-hour limit reached. Take a short break. Your burst window resets every 5 hours.";
+  }
+  if (lower.includes("weekly ai usage cap")) {
+    return "Weekly AI usage cap reached. The cap resets every 7 days.";
+  }
+  if (lower.includes("chat limit reached") || lower.includes("rate limit")) {
+    return "AI chat limit reached. Wait a moment, then try again.";
   }
   if (lower.includes("plan does not include this model")) {
     return "Your current plan doesn't include this model. Pick a model included in your plan, or upgrade in Account → Billing.";

@@ -6,9 +6,18 @@ cd "$(dirname "$0")"
 PORT="${VIBYRA_AGENT_PORT:-4317}"
 APP_URL="http://127.0.0.1:${PORT}/desktop"
 CHROME_PROFILE="$HOME/.vibyra-desktop-window"
+ELECTRON_BIN=""
+
+if [ -x "node_modules/.bin/electron" ]; then
+  ELECTRON_BIN="node_modules/.bin/electron"
+elif [ -x "../codingterminal/node_modules/.bin/electron" ]; then
+  ELECTRON_BIN="../codingterminal/node_modules/.bin/electron"
+fi
 
 open_window() {
-  if command -v google-chrome >/dev/null 2>&1; then
+  if [ -n "$ELECTRON_BIN" ] && [ -f "desktop/electron-main.cjs" ]; then
+    ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >/dev/null 2>&1 &
+  elif command -v google-chrome >/dev/null 2>&1; then
     google-chrome --app="$APP_URL" --class=VibyraDesktop --user-data-dir="$CHROME_PROFILE" --window-size=1040,760 >/dev/null 2>&1 &
   elif command -v chromium >/dev/null 2>&1; then
     chromium --app="$APP_URL" --class=VibyraDesktop --window-size=1040,760 >/dev/null 2>&1 &

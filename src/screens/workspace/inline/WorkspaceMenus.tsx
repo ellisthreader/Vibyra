@@ -27,7 +27,7 @@ export function PrimaryMenuSheet({
   onConnectPc,
   onNavigate,
   onNewChat,
-  onOpenAccount,
+  onOpenProfile,
   onOpenRecentChat,
   onRenameChat,
   projectCount,
@@ -42,7 +42,7 @@ export function PrimaryMenuSheet({
   onConnectPc: () => void;
   onNavigate: (page: DashboardPage) => void;
   onNewChat: () => void;
-  onOpenAccount: () => void;
+  onOpenProfile: () => void;
   onOpenRecentChat: (chatId: string) => void;
   onRenameChat?: () => void;
   projectCount: number;
@@ -50,12 +50,14 @@ export function PrimaryMenuSheet({
   visible: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const closeIconColor = useThemedColor("#B8B8C8");
+  const chevronColor = useThemedColor("#8F94A3");
   const rows: MenuRow[] = [
     { icon: "create-outline", label: "New chat", onPress: onNewChat, active: activePage === "chat" },
     { icon: "folder-open-outline", label: "Projects", meta: `${projectCount}`, onPress: () => onNavigate("projects"), active: activePage === "projects" },
     { icon: "pulse-outline", label: "Active builds", meta: `${activeBuildCount}`, onPress: () => onNavigate("dashboard"), active: activePage === "dashboard" },
     { icon: "compass-outline", label: "Explore", onPress: () => onNavigate("community"), active: activePage === "community" },
-    { icon: "person-circle-outline", label: "Account", onPress: onOpenAccount, active: activePage === "profile" }
+    { icon: "person-circle-outline", label: "Account", onPress: onOpenProfile, active: activePage === "profile" }
   ];
 
   return (
@@ -68,7 +70,7 @@ export function PrimaryMenuSheet({
               <Text style={styles.workspaceMenuTitle}>Vibyra</Text>
             </View>
             <Pressable accessibilityLabel="Close menu" style={styles.workspaceMenuIconButton} onPress={onClose}>
-              <Ionicons name="close" color="#F6F2FF" size={20} />
+              <Ionicons name="close" color={closeIconColor} size={20} />
             </Pressable>
           </View>
 
@@ -78,7 +80,7 @@ export function PrimaryMenuSheet({
               <Text style={styles.workspaceConnectionLabel}>{connected ? "Connected" : "Not connected"}</Text>
               <Text numberOfLines={1} style={styles.workspaceConnectionName}>{machineName}</Text>
             </View>
-            <Ionicons name="chevron-forward" color="#AFA7C2" size={18} />
+            <Ionicons name="chevron-forward" color={chevronColor} size={18} />
           </Pressable>
 
           <View style={styles.workspaceMenuList}>
@@ -157,7 +159,7 @@ export function AccountMenuSheet({
 }
 
 function WorkspaceMenuRow({ row }: { row: MenuRow }) {
-  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : "#D7C4FF");
+  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : row.active ? "#F6F2FF" : "#A6ABB8");
   return (
     <Pressable
       onPress={row.onPress}
@@ -168,13 +170,14 @@ function WorkspaceMenuRow({ row }: { row: MenuRow }) {
         pressed ? styles.workspaceMenuRowPressed : null
       ]}
     >
+      <View style={[styles.workspaceMenuActiveRail, row.active ? styles.workspaceMenuActiveRailVisible : null]} />
       {row.icon ? (
         <View style={[styles.workspaceMenuRowIcon, row.active ? styles.workspaceMenuRowIconActive : null]}>
           <Ionicons name={row.icon} color={iconColor} size={20} />
         </View>
       ) : null}
-      <Text numberOfLines={1} style={[styles.workspaceMenuRowLabel, row.danger ? styles.workspaceMenuRowLabelDanger : null]}>{row.label}</Text>
-      {row.meta ? <Text numberOfLines={1} style={styles.workspaceMenuRowMeta}>{row.meta}</Text> : null}
+      <Text numberOfLines={1} style={[styles.workspaceMenuRowLabel, row.active ? styles.workspaceMenuRowLabelActive : null, row.danger ? styles.workspaceMenuRowLabelDanger : null]}>{row.label}</Text>
+      {row.meta ? <Text numberOfLines={1} style={[styles.workspaceMenuRowMeta, row.active ? styles.workspaceMenuRowMetaActive : null]}>{row.meta}</Text> : null}
     </Pressable>
   );
 }

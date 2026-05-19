@@ -32,7 +32,7 @@ export function useAgentChatMessages(
     target: ResolvedAgentTarget,
     prompt: string,
     assistantModel?: string,
-    runStatus?: Pick<ChatRunStatus, "route" | "mode" | "activeFile">
+    runStatus?: Pick<ChatRunStatus, "route" | "mode" | "activeFile" | "tool">
   ) {
     const userMessageId = makeId("chat-user");
     const assistantMessageId = makeId("chat-assistant");
@@ -63,7 +63,7 @@ export function useAgentChatMessages(
     setters.setPreviewState("live");
     const rawMessage = error instanceof Error ? error.message : "Agent task failed";
     logs.appendLog(rawMessage, "AI Chat", "error");
-    updateAssistantMessage(target, assistantMessageId, userFacingAgentError(rawMessage), undefined, "failed");
+    updateAssistantMessage(target, assistantMessageId, userFacingAgentError(error), undefined, "failed");
   }
 
   function updateAssistantMessage(

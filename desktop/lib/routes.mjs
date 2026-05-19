@@ -1,6 +1,7 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAgentTask, applyAgentTask, discardAgentTask, runCommand } from "./agent.mjs";
+import { handleAiTerminalRoutes } from "./aiTerminals.mjs";
 import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
@@ -45,7 +46,14 @@ export async function handle(req, res) {
     send(res, 404, { ok: false, error: "Unknown Vibyra Desktop route" });
   } catch (error) {
     const status = error && typeof error === "object" && "status" in error ? Number(error.status) : 500;
-    send(res, status >= 400 && status < 600 ? status : 500, { ok: false, error: error instanceof Error ? error.message : "Desktop app error" });
+    const body = { ok: false, error: error instanceof Error ? error.message : "Desktop app error" };
+    if (error && typeof error === "object") {
+      if ("code" in error && error.code) body.code = String(error.code);
+      if ("resetAt" in error && error.resetAt) body.resetAt = String(error.resetAt);
+      if ("burstCreditsResetAt" in error && error.burstCreditsResetAt) body.burstCreditsResetAt = String(error.burstCreditsResetAt);
+      if ("weeklyCreditsResetAt" in error && error.weeklyCreditsResetAt) body.weeklyCreditsResetAt = String(error.weeklyCreditsResetAt);
+    }
+    send(res, status >= 400 && status < 600 ? status : 500, body);
   }
 }
 
@@ -81,6 +89,10 @@ async function handleDesktopRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await sendDesktopChat(await readBody(req)));
     return true;
+  }
+  if (url.pathname === "/desktop/terminals" || url.pathname.startsWith("/desktop/terminals/")) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    if (await handleAiTerminalRoutes(req, res, url)) return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/preview") {
     if (!authorizeDesktopUi(req, res)) return true;

@@ -6,21 +6,21 @@ export const part51 = {
     width: 10
   },
   workspaceConnectionLabel: {
-    color: "#CFC0FF",
+    color: "#9EA3B2",
     fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,
     textTransform: "uppercase"
   },
   workspaceConnectionName: {
-    color: "#FFFFFF",
+    color: "#F4F6FB",
     fontSize: 14,
     fontWeight: "900",
     lineHeight: 18,
     marginTop: 1
   },
   workspaceMenuDivider: {
-    backgroundColor: "rgba(176, 132, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     height: 1,
     marginVertical: 4
   },
@@ -32,10 +32,10 @@ export const part51 = {
   },
   workspaceMenuIconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(109, 59, 255, 0.14)",
-    borderColor: "rgba(176, 132, 255, 0.24)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
     height: 40,
     justifyContent: "center",
     width: 40
@@ -44,49 +44,67 @@ export const part51 = {
     gap: 7
   },
   workspaceMenuPanel: {
-    backgroundColor: "rgba(18, 12, 32, 0.99)",
-    borderColor: "rgba(176, 132, 255, 0.30)",
+    backgroundColor: "rgba(8, 10, 18, 0.99)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     borderRightWidth: 1,
     borderTopRightRadius: 24,
     borderBottomRightRadius: 24,
     gap: 16,
     minHeight: "100%",
     paddingBottom: 24,
-    paddingHorizontal: 16,
-    shadowColor: "#6D3BFF",
+    paddingHorizontal: 12,
+    shadowColor: "#000000",
     shadowOffset: { width: 10, height: 0 },
-    shadowOpacity: 0.26,
-    shadowRadius: 22,
+    shadowOpacity: 0.32,
+    shadowRadius: 24,
     width: 300
+  },
+  workspaceMenuActiveRail: {
+    backgroundColor: "transparent",
+    borderRadius: 999,
+    height: 22,
+    left: 0,
+    position: "absolute",
+    width: 3
+  },
+  workspaceMenuActiveRailVisible: {
+    backgroundColor: "#8B5CFF"
   },
   workspaceMenuRowIcon: {
     alignItems: "center",
-    height: 31,
+    height: 30,
     justifyContent: "center",
-    width: 31
+    width: 30
   },
   workspaceMenuRowIconActive: {
     backgroundColor: "transparent",
     borderRadius: 11
   },
   workspaceMenuRowLabel: {
-    color: "#F7F3FF",
+    color: "#D5D9E4",
     flex: 1,
     fontSize: 14,
     fontWeight: "800",
     lineHeight: 18
   },
   workspaceMenuRowMeta: {
-    color: "#CFC0FF",
+    color: "#8F94A3",
     fontSize: 11,
     fontWeight: "900"
   },
+  workspaceMenuRowLabelActive: {
+    color: "#FFFFFF",
+    fontWeight: "900"
+  },
+  workspaceMenuRowMetaActive: {
+    color: "#C8CBD6"
+  },
   workspaceMenuSectionLabel: {
-    color: "#BFAEFF",
+    color: "#8F94A3",
     fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,
-    marginLeft: 10,
+    marginLeft: 4,
     textTransform: "uppercase"
   }
 } as const;

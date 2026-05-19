@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Keyboard, Modal, Pressable, Text, View } from "react-native";
+import { Animated, Easing, Keyboard, Modal, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AppWebView } from "../../../components/AppWebView";
 import { useAppContext } from "../../../context/AppContext";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { PreviewRuntimeError } from "../../../components/AppWebView";
 import type { GeneratedApp } from "../../../types/domain";
 import { styles } from "../styles";
@@ -23,24 +24,37 @@ export function AppPreviewModal({
   onSubmitAiPrompt: (prompt: string) => Promise<boolean> | boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const [reloadKey, setReloadKey] = useState(0);
   const [editStatus, setEditStatus] = useState<PreviewEditStatus>("idle");
   const [editDoneMessage, setEditDoneMessage] = useState("");
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [miniChatOpen, setMiniChatOpen] = useState(false);
   const [previewErrors, setPreviewErrors] = useState<PreviewRuntimeError[]>([]);
+  const entrance = useRef(new Animated.Value(0)).current;
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appCtx = useAppContext();
   const modelKey = appCtx.selectedChatModel || appCtx.selectedModel;
   const modelLabel = chatModelOptions.find((model) => model.key === modelKey)?.label ?? String(modelKey || "AI");
+  const headerIconColor = useThemedColor("#FFFFFF");
 
   const appFingerprint = `${app?.id ?? ""}:${app?.html?.length ?? 0}:${app?.url ?? ""}`;
 
   useEffect(() => {
-    if (app) setReloadKey(0);
+    if (!app) return;
+    setReloadKey(0);
     setMiniChatOpen(false);
     setPreviewErrors([]);
-  }, [appFingerprint]);
+    entrance.setValue(0);
+    Animated.spring(entrance, {
+      toValue: 1,
+      damping: 22,
+      mass: 0.92,
+      overshootClamping: true,
+      stiffness: 135,
+      useNativeDriver: true
+    }).start();
+  }, [app, appFingerprint, entrance]);
 
   useEffect(() => () => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
@@ -74,7 +88,16 @@ export function AppPreviewModal({
   function askAiToFix() {
     if (!latestError) return;
     appCtx.setTaskText(buildFixPrompt(previewApp, previewErrors));
-    onClose();
+    closePreview();
+  }
+
+  function closePreview() {
+    Animated.timing(entrance, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true
+    }).start(() => onClose());
   }
 
   async function submitAiPrompt(prompt: string) {
@@ -99,21 +122,25 @@ export function AppPreviewModal({
   }
 
   const previewBottomOffset = 18 + keyboardInset;
-  const errorBottomOffset = keyboardInset + (miniChatOpen ? 224 : 88);
+  const errorBottomOffset = keyboardInset + (miniChatOpen ? 168 : 88);
+  const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [-Math.min(height, 920), 0] });
+  const opacity = entrance.interpolate({ inputRange: [0, 0.22, 1], outputRange: [0, 0.98, 1] });
+  const scale = entrance.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] });
 
   return (
-    <Modal animationType="slide" presentationStyle="fullScreen" visible onRequestClose={onClose}>
-      <View style={[styles.appModalScreen, { paddingTop: insets.top }]}>
+    <Modal animationType="none" presentationStyle="overFullScreen" transparent visible onRequestClose={closePreview}>
+      <View style={styles.appModalBackdrop}>
+        <Animated.View style={[styles.appModalScreen, { paddingTop: insets.top, opacity, transform: [{ translateY }, { scale }] }]}>
         <View style={styles.appModalHeader}>
-          <Pressable onPress={onClose} style={styles.appModalIconButton}>
-            <Ionicons name="close" color="#FFFFFF" size={22} />
+          <Pressable onPress={closePreview} style={styles.appModalIconButton}>
+            <Ionicons name="close" color={headerIconColor} size={22} />
           </Pressable>
           <View style={styles.appModalTitleStack}>
             <Text style={styles.appModalLabel}>App preview</Text>
             <Text numberOfLines={1} style={styles.appModalTitle}>{previewApp.title}</Text>
           </View>
           <Pressable onPress={() => { setPreviewErrors([]); setReloadKey((k) => k + 1); }} style={styles.appModalIconButton}>
-            <Ionicons name="refresh" color="#FFFFFF" size={20} />
+            <Ionicons name="refresh" color={headerIconColor} size={20} />
           </Pressable>
         </View>
         <View style={styles.appModalWebContainer}>
@@ -135,6 +162,7 @@ export function AppPreviewModal({
             onSubmit={submitAiPrompt}
           />
         </View>
+        </Animated.View>
       </View>
     </Modal>
   );

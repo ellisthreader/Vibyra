@@ -38,6 +38,14 @@ Runnable preview prompts must keep core app logic self-contained for phone ifram
 
 To add a skill, edit `backend/config/skills.php` only. Required fields: `id`, `slash`, `label`, `description`, `category`, `mode`, `prompt_template`.
 
+Some skills also pin a backend-only `model_key`. Both `ChatEndpoint::chat` and `ChatStreamEndpoint::chatStream` call `ChatEndpointHelpers::effectiveChatModelKey()` after skill resolution and before plan/credit checks. This means tool skills are billed, gated, sent to OpenRouter, stored in chat learning, and surfaced in the response using their effective model key, while `requestedModelKey` records the user's originally selected chat model. Current specialized routes:
+
+- `research` -> `tool-deep-research` -> `openai/o3-deep-research` with OpenRouter `openrouter:web_search` server tool.
+- `web` -> `tool-web-search` -> `openai/gpt-5.5` with OpenRouter `openrouter:web_search` server tool.
+- `analyze` -> `tool-analyze-files` -> `openai/gpt-5.5` without web search.
+
+Keep those tool model keys in `backend/config/billing.php` so plan gating and fallback credit estimates remain aligned with the actual OpenRouter slug.
+
 ## Cost Controls
 
 OpenRouter request safeguards:
@@ -47,7 +55,7 @@ OpenRouter request safeguards:
 - Per-plan user rate limits from `billing.plans.{plan}` plus global per-IP 30/min.
 - Model access by tier through `CreditCalculator::planAllowsModel`.
 - Real-usage credit metering via `usage: { include: true }` and `CreditDeductor::chargeForChat`.
-- Daily soft caps per plan through `daily_credits_used` / `daily_credits_reset_at`.
+- Chat preflight enforces credit balance, 5-hour burst cap, and weekly cap. It does not enforce the legacy daily credit cap for `/api/chat` or `/api/chat/stream`; daily counters may still be tracked for account/history data.
 
 `CreditDeductor::chargeForChat` is the only chat credit writer. It uses `lockForUpdate` and inserts a ledger row in the same transaction.
 

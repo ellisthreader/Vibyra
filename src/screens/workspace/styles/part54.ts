@@ -1,6 +1,7 @@
 export const part54 = {
   chatIconOnlyTopBar: {
-    backgroundColor: "transparent",
+    backgroundColor: "#080A12",
+    borderBottomColor: "transparent",
     borderBottomWidth: 0,
     minHeight: 44,
     paddingBottom: 0,

@@ -61,6 +61,10 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   if (!response.ok || result?.ok === false) {
     const error = new Error(result?.error || result?.message || "Vibyra AI could not complete this chat.");
     error.status = response.status || 500;
+    error.code = result?.code || "";
+    error.resetAt = result?.burstCreditsResetAt || result?.weeklyCreditsResetAt || "";
+    error.burstCreditsResetAt = result?.burstCreditsResetAt || "";
+    error.weeklyCreditsResetAt = result?.weeklyCreditsResetAt || "";
     throw error;
   }
   if (result?.user) syncDesktopAccountFromUser(result.user);

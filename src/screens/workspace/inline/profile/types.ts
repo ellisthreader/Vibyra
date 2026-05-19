@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 export type SheetKind =
   | "edit" | "billing" | "usage" | "refer" | "notifications" | "appearance"
-  | "security" | "language" | "cache" | "help" | "support" | "terms" | "logout";
+  | "security" | "language" | "cache" | "help" | "support" | "terms" | "logout" | "deleteAccount";
 
 export type AppearanceMode = "dark" | "auto" | "light";
 
@@ -92,7 +92,8 @@ export const PROFILE_ROW_TO_SHEET: Record<string, SheetKind> = {
   "Help center": "help",
   "Contact support": "support",
   "Terms of service": "terms",
-  "Log out": "logout"
+  "Log out": "logout",
+  "Delete account": "deleteAccount"
 };
 
 export function appearanceLabel(mode: AppearanceMode) {

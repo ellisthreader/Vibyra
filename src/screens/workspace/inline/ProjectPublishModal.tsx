@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View 
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { colors } from "../../../styles/theme";
 import { ProjectDisplay } from "../types";
 import { addUniqueTag, defaultTags, inferCategory, publishTags, PUBLISH_CATEGORIES, VISIBILITY_OPTIONS, VisibilityKey } from "./ProjectPublishModal.data";
@@ -38,6 +39,13 @@ export function ProjectPublishModal({
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<"public" | "unlisted" | "private">("public");
   const insets = useSafeAreaInsets();
+  const closeIcon = useThemedColor("#D8D2E8");
+  const placeholderColor = useThemedColor("#827C92");
+  const chevronColor = useThemedColor("#B8B1C8");
+  const accentIcon = useThemedColor("#B970FF");
+  const mutedIcon = useThemedColor("#D3CCE4");
+  const chipCloseIcon = useThemedColor("#DDD6F0");
+  const addIcon = useThemedColor("#D2CBE2");
 
   useEffect(() => {
     setTitle(project?.name ?? "");
@@ -59,7 +67,7 @@ export function ProjectPublishModal({
       <View style={modalStyles.page}>
         <View style={[modalStyles.header, { paddingTop: Math.max(insets.top + 4, 14) }]}>
           <Pressable accessibilityLabel="Close publish page" disabled={busy} hitSlop={12} onPress={onClose} style={modalStyles.headerButton}>
-            <Ionicons name="close" color="#D8D2E8" size={28} />
+            <Ionicons name="close" color={closeIcon} size={28} />
           </Pressable>
           <Text style={modalStyles.headerTitle}>Publish</Text>
           <View style={modalStyles.headerButton} />
@@ -77,22 +85,22 @@ export function ProjectPublishModal({
             />
 
             <FieldLabel label="Project name" />
-            <TextInput editable={!busy} onChangeText={setTitle} placeholder="Project name" placeholderTextColor="#827C92" style={modalStyles.input} value={title} />
+            <TextInput editable={!busy} onChangeText={setTitle} placeholder="Project name" placeholderTextColor={placeholderColor} style={modalStyles.input} value={title} />
 
             <FieldLabel label="Project description" />
-            <TextInput editable={!busy} multiline onChangeText={setDescription} placeholder="Describe what this project does" placeholderTextColor="#827C92" style={[modalStyles.input, modalStyles.textarea]} value={description} />
+            <TextInput editable={!busy} multiline onChangeText={setDescription} placeholder="Describe what this project does" placeholderTextColor={placeholderColor} style={[modalStyles.input, modalStyles.textarea]} value={description} />
 
             <FieldLabel label="Primary category" />
             <Pressable disabled={busy} onPress={() => setCategoryOpen((value) => !value)} style={modalStyles.select}>
               <Text style={modalStyles.selectText}>{category}</Text>
-              <Ionicons name={categoryOpen ? "chevron-up" : "chevron-down"} color="#B8B1C8" size={20} />
+              <Ionicons name={categoryOpen ? "chevron-up" : "chevron-down"} color={chevronColor} size={20} />
             </Pressable>
             {categoryOpen ? (
               <View style={modalStyles.categoryMenu}>
                 {PUBLISH_CATEGORIES.map((item) => (
                   <Pressable key={item} disabled={busy} onPress={() => { setCategory(item); setCategoryOpen(false); }} style={modalStyles.categoryOption}>
                     <Text style={[modalStyles.categoryText, item === category ? modalStyles.categoryTextActive : null]}>{item}</Text>
-                    {item === category ? <Ionicons name="checkmark" color="#B970FF" size={17} /> : null}
+                    {item === category ? <Ionicons name="checkmark" color={accentIcon} size={17} /> : null}
                   </Pressable>
                 ))}
               </View>
@@ -104,7 +112,7 @@ export function ProjectPublishModal({
                 <View key={tag} style={modalStyles.tagChip}>
                   <Text style={modalStyles.tagText}>{tag}</Text>
                   <Pressable disabled={busy} onPress={() => setTags((current) => current.filter((item) => item !== tag))}>
-                    <Ionicons name="close" color="#DDD6F0" size={15} />
+                    <Ionicons name="close" color={chipCloseIcon} size={15} />
                   </Pressable>
                 </View>
               ))}
@@ -120,7 +128,7 @@ export function ProjectPublishModal({
                       setTagInputOpen(false);
                     }}
                     placeholder="Tag"
-                    placeholderTextColor="#827C92"
+                    placeholderTextColor={placeholderColor}
                     style={modalStyles.tagInput}
                     value={tagDraft}
                   />
@@ -129,12 +137,12 @@ export function ProjectPublishModal({
                     setTagDraft("");
                     setTagInputOpen(false);
                   }}>
-                    <Ionicons name="checkmark" color="#DCCBFF" size={18} />
+                    <Ionicons name="checkmark" color={accentIcon} size={18} />
                   </Pressable>
                 </View>
               ) : (
                 <Pressable disabled={busy || tags.length >= 8} onPress={() => setTagInputOpen(true)} style={modalStyles.addTag}>
-                  <Ionicons name="add" color="#D2CBE2" size={18} />
+                  <Ionicons name="add" color={addIcon} size={18} />
                   <Text style={modalStyles.addTagText}>Add tag</Text>
                 </Pressable>
               )}
@@ -160,7 +168,7 @@ export function ProjectPublishModal({
                   onPress={() => setVisibility(option.key)}
                   style={[modalStyles.visibilityCard, visibility === option.key ? modalStyles.visibilityCardActive : null]}
                 >
-                  <Ionicons name={option.icon} color={visibility === option.key ? "#B970FF" : "#D3CCE4"} size={30} />
+                  <Ionicons name={option.icon} color={visibility === option.key ? accentIcon : mutedIcon} size={30} />
                   <Text style={modalStyles.visibilityTitle}>{option.title}</Text>
                   <View style={[modalStyles.radio, visibility === option.key ? modalStyles.radioActive : null]}>
                     {visibility === option.key ? <View style={modalStyles.radioDot} /> : null}
@@ -179,7 +187,7 @@ export function ProjectPublishModal({
               >
                 <LinearGradient colors={["#7028FF", "#8B35FF", "#6D35FF"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={modalStyles.primaryGradient} />
                 {busy ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="cloud-upload-outline" color={colors.text} size={22} />}
-                <Text style={modalStyles.primaryText}>{busy ? "Publishing" : "Publish"}</Text>
+                <Text style={[modalStyles.primaryText, { color: "#FFFFFF" }]}>{busy ? "Publishing" : "Publish"}</Text>
               </Pressable>
             </View>
           </View>
@@ -189,6 +197,4 @@ export function ProjectPublishModal({
   );
 }
 
-function FieldLabel({ label }: { label: string }) {
-  return <Text style={modalStyles.label}>{label}</Text>;
-}
+function FieldLabel({ label }: { label: string }) { return <Text style={modalStyles.label}>{label}</Text>; }

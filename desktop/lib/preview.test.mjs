@@ -312,6 +312,79 @@ test("approved preview server start supports Next dev scripts", async () => {
   }
 });
 
+const FRAMEWORK_DEV_SERVER_CASES = [
+  {
+    label: "SvelteKit",
+    packageJson: { scripts: { dev: "svelte-kit dev" }, devDependencies: { "@sveltejs/kit": "latest", vite: "latest" } },
+    html: "<!doctype html><html><body><div data-sveltekit-hydrate=\"x\"></div><script>window.__sveltekit = true;</script></body></html>",
+    command: (port) => `npm run dev -- --host 0.0.0.0 --port ${port}`
+  },
+  {
+    label: "Astro",
+    packageJson: { scripts: { dev: "astro dev" }, devDependencies: { astro: "latest" } },
+    html: "<!doctype html><html><body><astro-island uid=\"1\"></astro-island><main data-astro-cid>Astro</main></body></html>",
+    command: (port) => `npm run dev -- --host 0.0.0.0 --port ${port}`
+  },
+  {
+    label: "Nuxt",
+    packageJson: { scripts: { dev: "nuxi dev" }, dependencies: { nuxt: "latest" } },
+    html: "<!doctype html><html><body><div id=\"__nuxt\"></div><script>window.__NUXT__ = {};</script></body></html>",
+    command: (port) => `npm run dev -- --host 0.0.0.0 --port ${port}`
+  },
+  {
+    label: "Angular",
+    packageJson: { scripts: { start: "ng serve" }, dependencies: { "@angular/core": "latest" }, devDependencies: { "@angular/cli": "latest" } },
+    html: "<!doctype html><html><body><app-root ng-version=\"17.0.0\"></app-root></body></html>",
+    command: (port) => `npm run start -- --host 0.0.0.0 --port ${port}`
+  },
+  {
+    label: "Vue CLI",
+    packageJson: { scripts: { serve: "vue-cli-service serve" }, devDependencies: { "@vue/cli-service": "latest" } },
+    html: "<!doctype html><html><body><div id=\"app\"></div><script src=\"/js/app.js\"></script></body></html>",
+    command: (port) => `npm run serve -- --host 0.0.0.0 --port ${port}`
+  },
+  {
+    label: "Create React App",
+    packageJson: { scripts: { start: "react-scripts start" }, dependencies: { "react-scripts": "latest" } },
+    html: "<!doctype html><html><body><div id=\"root\"></div><script src=\"/static/js/main.js\"></script></body></html>",
+    command: (port) => `HOST=0.0.0.0 PORT=${port} npm run start`
+  },
+  {
+    label: "Remix Vite",
+    packageJson: { scripts: { dev: "remix vite:dev" }, devDependencies: { "@remix-run/dev": "latest", vite: "latest" } },
+    html: "<!doctype html><html><body><script>window.__remixContext = {};</script><script src=\"/build/entry.client.js\"></script></body></html>",
+    command: (port) => `npm run dev -- --host 0.0.0.0 --port ${port}`
+  }
+];
+
+for (const scenario of FRAMEWORK_DEV_SERVER_CASES) {
+  test(`approved preview server start supports ${scenario.label} dev scripts`, async () => {
+    const { project, cleanup } = await makeProject(`vibyra-preview-start-${scenario.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-`);
+    const fakeNpm = await makeFakeNpm();
+    const port = await findFreePort();
+    try {
+      await writeFile(join(project.path, "package.json"), JSON.stringify(scenario.packageJson));
+
+      const result = await startProjectDevServer(project, "127.0.0.1:4317", {
+        env: {
+          PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+          VIBYRA_FAKE_PREVIEW_HTML: scenario.html,
+          VIBYRA_FAKE_PREVIEW_PORT: String(port)
+        },
+        port,
+        timeoutMs: 6000
+      });
+      assert.equal(result.command, scenario.command(port));
+      assert.equal(result.started, true);
+      assert.equal(result.url, `http://127.0.0.1:${port}`);
+    } finally {
+      killTrackedPreview(project.id);
+      await fakeNpm.cleanup();
+      await cleanup();
+    }
+  });
+}
+
 test("approved preview server start runs Laravel PHP and Vite asset servers", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-start-laravel-");
   const fakeNpm = await makeFakeNpm();
@@ -1236,6 +1309,73 @@ test("desktop preview blocks project traversal and returns placeholder images fo
       assert.equal(image.headers["Content-Type"], "image/svg+xml; charset=utf-8");
       assert.match(image.body, /Image asset not included/);
     }
+  } finally {
+    await cleanup();
+  }
+});
+
+test("desktop preview serves static game exports with 3D, media, and WASM assets", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-static-game-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "game", "assets"), { recursive: true });
+    await mkdir(join(project.path, "game", "models"), { recursive: true });
+    await mkdir(join(project.path, "game", "audio"), { recursive: true });
+    await mkdir(join(project.path, "game", "textures"), { recursive: true });
+    await mkdir(join(project.path, "game", "video"), { recursive: true });
+    await writeFile(join(project.path, "game", "index.html"), [
+      "<!doctype html><html><head>",
+      "<link rel=\"preload\" href=\"/models/level.glb\" as=\"fetch\">",
+      "</head><body><canvas id=\"game\"></canvas>",
+      "<script type=\"module\" src=\"/assets/game.js\"></script>",
+      "</body></html>"
+    ].join(""));
+    await writeFile(join(project.path, "game", "assets", "game.js"), [
+      "const model = \"/models/level.glb\";",
+      "const texture = \"/textures/sky.webp\";",
+      "const wasm = \"/assets/engine.wasm\";"
+    ].join("\n"));
+    await writeFile(join(project.path, "game", "models", "level.glb"), "glb");
+    await writeFile(join(project.path, "game", "models", "scene.gltf"), "{}");
+    await writeFile(join(project.path, "game", "audio", "theme.mp3"), "mp3");
+    await writeFile(join(project.path, "game", "assets", "engine.wasm"), "wasm");
+    await writeFile(join(project.path, "game", "textures", "sky.webp"), "webp");
+    await writeFile(join(project.path, "game", "video", "intro.webm"), "webm");
+
+    const response = await requestPreview(project);
+    const base = `/preview/project/${encodeURIComponent(project.id)}/${encodeURIComponent(TOKEN)}/`;
+    assert.equal(response.status, 200);
+    assert.match(response.body, new RegExp(`${escapeRegExp(base)}game/assets/game\\.js`));
+    assert.match(response.body, new RegExp(`${escapeRegExp(base)}game/models/level\\.glb`));
+
+    assert.equal((await requestPreview(project, "game/models/level.glb")).headers["Content-Type"], "model/gltf-binary");
+    assert.equal((await requestPreview(project, "game/models/scene.gltf")).headers["Content-Type"], "model/gltf+json; charset=utf-8");
+    assert.equal((await requestPreview(project, "game/audio/theme.mp3")).headers["Content-Type"], "audio/mpeg");
+    assert.equal((await requestPreview(project, "game/video/intro.webm")).headers["Content-Type"], "video/webm");
+    assert.equal((await requestPreview(project, "game/assets/engine.wasm")).headers["Content-Type"], "application/wasm");
+
+    appState.cachedProjects = [project];
+    const referer = `http://vibyra.test${base}game/assets/game.js`;
+    const runtimeModel = await requestPreviewRefererAsset("/models/level.glb", referer);
+    assert.equal(runtimeModel.status, 200);
+    assert.equal(runtimeModel.headers["Content-Type"], "model/gltf-binary");
+    assert.equal(runtimeModel.body, "glb");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("desktop preview returns no runnable preview for Lua-only app folders", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-lua-only-");
+  try {
+    await writeFile(join(project.path, "main.lua"), "function love.draw() love.graphics.print(\"hello\") end");
+    await writeFile(join(project.path, "conf.lua"), "function love.conf(t) t.window.title = \"Game\" end");
+
+    const response = await requestPreview(project);
+    assert.equal(response.status, 404);
+    assert.match(response.body, /No runnable preview found/);
+    assert.doesNotMatch(response.body, /love\.draw|main\.lua/);
   } finally {
     await cleanup();
   }

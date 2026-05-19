@@ -143,4 +143,57 @@ export const part2 = {
     position: "relative",
     zIndex: 10
   },
+  chatComposerStatusRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 36
+  },
+  chatLimitNotice: {
+    alignItems: "flex-start",
+    backgroundColor: "rgba(15, 17, 26, 0.96)",
+    borderColor: "rgba(255, 209, 102, 0.28)",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11
+  },
+  chatLimitNoticeIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 209, 102, 0.12)",
+    borderColor: "rgba(255, 209, 102, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+  chatLimitNoticeCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0
+  },
+  chatLimitNoticeTitle: {
+    color: "#FFF7E8",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 18
+  },
+  chatLimitNoticeBody: {
+    color: "#D9CFBD",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17
+  },
+  chatLimitNoticeDismiss: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    marginTop: -1,
+    width: 28
+  },
 } as const;

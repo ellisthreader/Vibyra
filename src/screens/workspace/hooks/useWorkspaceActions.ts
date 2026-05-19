@@ -6,6 +6,7 @@ import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
 import { useWorkspaceFolderActions } from "./workspaceFolderActions";
+import { useWorkspacePreviewLauncher } from "./workspacePreviewLauncher";
 import { useWorkspacePromptActions } from "./workspacePromptActions";
 
 export function useWorkspaceActions(s: WorkspaceState) {
@@ -13,6 +14,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
   const runtime = useWorkspaceChatRuntime(s);
   const prompt = useWorkspacePromptActions(s, runtime);
   const folderActions = useWorkspaceFolderActions(s, runtime, prompt.folderRecoveryRef);
+  const previewLauncher = useWorkspacePreviewLauncher(s, runtime);
 
   const updateConnectionStage = useCallback((messageId: string, stage: NonNullable<DesktopConnectionPrompt["stage"]>, projectId?: string) => {
     const update = { stage };
@@ -142,12 +144,6 @@ export function useWorkspaceActions(s: WorkspaceState) {
     return app.startAgent(target, prompt);
   }, [app, runtime]);
 
-  const openTestPreview = useCallback(async (userText: string) => {
-    if (await runtime.openRunnablePreview()) return;
-    const target = runtime.activeProjectTarget();
-    app.addLocalChatReply(userText, `I couldn't find a runnable preview for **${target.project.name}** yet. Build something first, then run **/preview** again.`, target);
-  }, [app, runtime]);
-
   const openRenameChat = useCallback(() => {
     s.setRenameChatDraft(s.chatTitle);
     s.setRenameChatVisible(true);
@@ -190,8 +186,8 @@ export function useWorkspaceActions(s: WorkspaceState) {
     disconnectPc,
     navigatePage,
     openProjectPreview: runtime.openProjectPreview,
-    openRunnablePreview: runtime.openRunnablePreview,
-    openTestPreview,
+    openRunnablePreview: previewLauncher.openPreview,
+    openTestPreview: previewLauncher.openPreview,
     createProjectAndOpenChat: runtime.createProjectAndOpenChat,
     onStartChat: prompt.onStartChat,
     onApprovePreviewServerStart: prompt.approvePreviewServerStart,

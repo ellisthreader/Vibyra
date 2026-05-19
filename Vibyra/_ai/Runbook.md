@@ -117,3 +117,5 @@ Its standard workflow is:
 `VibyraObsiden` lives at `.agents/skills/VibyraObsiden/SKILL.md`. Use it whenever repo work should consume and maintain the Obsidian memory layer. It encodes the rule that durable architecture, workflow, route/API, permission, validation, debugging, and local-skill changes must be written to the smallest relevant note before final response.
 
 `vibyra-desktop-connection-diagnostics` lives at `.agents/skills/vibyra-desktop-connection-diagnostics/SKILL.md`. Use it for phone-to-desktop pairing hangs, "Finding Vibyra Desktop", "Desktop lost the pairing request", stale remembered desktop tokens, Browse PC or `/open` timeouts, and connected-but-authenticated-route failures. It encodes the proven checks for idempotent `/pair` request IDs, approval UI visibility, fallback URL promotion, explicit stale-token deletion, and live-sync tolerance.
+
+`plan` lives at `.agents/skills/plan/SKILL.md`. Use it for broad or multi-step work where Codex should restate the goal, make and review a practical plan, simplify the plan before editing, implement in scoped steps, verify, and update durable memory or skills.

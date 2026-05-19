@@ -1,6 +1,7 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import type { GeneratedImage } from "../../../types/chatTools";
+import { createThemedStyleSheet } from "../styles/themeTransform";
 
 export function GeneratedImageCard({ image }: { image: GeneratedImage }) {
   return (
@@ -14,7 +15,7 @@ export function GeneratedImageCard({ image }: { image: GeneratedImage }) {
   );
 }
 
-const cardStyles = StyleSheet.create({
+const cardStyles = createThemedStyleSheet({
   card: {
     backgroundColor: "rgba(255,255,255,0.055)",
     borderColor: "rgba(255,255,255,0.1)",

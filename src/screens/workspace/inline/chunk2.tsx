@@ -64,6 +64,7 @@ export function TopBar({
 }) {
   const title = getTopBarTitle(activePage);
   const previewIconColor = useThemedColor("#7CF1B3");
+  const topIconColor = useThemedColor("#F6F2FF");
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
 
   const runChatMenuAction = (action: () => void) => {
@@ -76,7 +77,7 @@ export function TopBar({
       <View style={[styles.topBar, styles.chatTopBar, styles.chatIconOnlyTopBar]}>
         <View style={styles.chatTopLeft}>
           <Pressable accessibilityLabel="Open workspace menu" style={({ pressed }) => [styles.chatTopIconButton, pressed && { opacity: 0.65, transform: [{ scale: 0.94 }] }]} onPress={onOpenMenu}>
-            <Ionicons name="menu" color={colors.text} size={24} />
+            <Ionicons name="menu" color={topIconColor} size={23} />
           </Pressable>
         </View>
         <View style={styles.chatTopActions}>
@@ -88,7 +89,7 @@ export function TopBar({
           {chatHasConversation ? (
             <View style={styles.chatMoreMenuWrap}>
               <Pressable accessibilityLabel="Open chat options" style={({ pressed }) => [styles.chatMoreButton, pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] }]} onPress={() => setChatMenuOpen((open) => !open)}>
-                <Ionicons name="ellipsis-horizontal" color="#F6F2FF" size={21} />
+                <Ionicons name="ellipsis-horizontal" color={topIconColor} size={21} />
               </Pressable>
               {chatMenuOpen ? (
                 <View style={styles.chatOptionsMenu}>
@@ -134,11 +135,17 @@ export function TopBar({
         <View style={styles.pageTopTitleBlock}>
           <Text numberOfLines={1} style={styles.pageTopTitle}>{title}</Text>
         </View>
-        <View style={styles.topRight}>
-          <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-            <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
-          </Pressable>
-        </View>
+        {activePage === "profile" ? (
+          <View style={styles.topRight}>
+            <View style={styles.accountTopButton} />
+          </View>
+        ) : (
+          <View style={styles.topRight}>
+            <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
+              <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   }

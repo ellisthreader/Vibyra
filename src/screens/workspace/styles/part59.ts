@@ -1,106 +1,66 @@
 import { colors } from "../../../styles/theme";
 
 export const part59 = {
-  referralIntro: {
-    color: "#D8D2EA",
-    fontSize: 14,
-    fontWeight: "700" as const,
-    lineHeight: 20
-  },
   referralHero: {
-    backgroundColor: "rgba(12, 14, 25, 0.96)",
-    borderColor: "rgba(56, 189, 248, 0.3)",
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 13,
-    overflow: "hidden" as const,
-    padding: 16
-  },
-  referralHeroTop: {
-    alignItems: "flex-start" as const,
-    flexDirection: "row" as const,
-    gap: 12,
-    justifyContent: "space-between" as const
-  },
-  referralHeroCopy: {
-    flex: 1,
-    minWidth: 0
-  },
-  referralEyebrow: {
-    color: "#7DD3FC",
-    fontSize: 11,
-    fontWeight: "900" as const,
-    textTransform: "uppercase" as const
-  },
-  referralHeroTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "900" as const,
-    lineHeight: 25,
-    marginTop: 3
-  },
-  referralCodeBox: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(56, 189, 248, 0.11)",
-    borderColor: "rgba(56, 189, 248, 0.24)",
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingHorizontal: 13,
-    paddingVertical: 9
+    gap: 8,
+    paddingVertical: 6
+  },
+  referralLoading: {
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    minHeight: 120
   },
   referralCodeText: {
     color: colors.text,
-    fontSize: 24,
+    fontSize: 34,
     fontWeight: "900" as const,
-    letterSpacing: 0
+    letterSpacing: 0,
+    textAlign: "center" as const
   },
   referralLink: {
     color: "#9C97AE",
     fontSize: 12,
-    fontWeight: "700" as const
-  },
-  referralRewards: {
-    flexDirection: "row" as const,
-    gap: 8
-  },
-  referralRewardPill: {
-    backgroundColor: "rgba(255, 209, 102, 0.12)",
-    borderColor: "rgba(255, 209, 102, 0.24)",
-    borderRadius: 13,
-    borderWidth: 1,
-    flex: 1,
-    gap: 2,
-    padding: 10
-  },
-  referralRewardValue: {
-    color: "#FFD166",
-    fontSize: 18,
-    fontWeight: "900" as const
-  },
-  referralRewardLabel: {
-    color: "#D8D2EA",
-    fontSize: 11,
-    fontWeight: "800" as const,
-    lineHeight: 15
+    fontWeight: "700" as const,
+    maxWidth: "100%" as const,
+    textAlign: "center" as const
   },
   referralActions: {
+    alignItems: "center" as const,
     flexDirection: "row" as const,
-    gap: 10
+    gap: 20,
+    justifyContent: "center" as const,
+    paddingTop: 4
+  },
+  referralActionButton: {
+    alignItems: "center" as const,
+    flexDirection: "row" as const,
+    gap: 7,
+    minHeight: 34,
+    paddingHorizontal: 4,
+    paddingVertical: 4
+  },
+  referralActionButtonPressed: {
+    opacity: 0.65
+  },
+  referralActionText: {
+    color: "#C7B6FF",
+    fontSize: 14,
+    fontWeight: "900" as const
   },
   referralStats: {
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderTopWidth: 1,
     flexDirection: "row" as const,
     gap: 8,
-    paddingTop: 12
+    paddingTop: 8
   },
   referralStat: {
+    alignItems: "center" as const,
     flex: 1,
     gap: 2
   },
   referralStatValue: {
     color: colors.text,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "900" as const
   },
   referralStatLabel: {
@@ -108,11 +68,5 @@ export const part59 = {
     fontSize: 10,
     fontWeight: "900" as const,
     textTransform: "uppercase" as const
-  },
-  referralFinePrint: {
-    color: "#8F89A3",
-    fontSize: 11,
-    fontWeight: "700" as const,
-    lineHeight: 16
   }
 } as const;

@@ -39,6 +39,12 @@
           "photosPermission": "Vibyra lets you choose images for chat, your profile picture, and project publishing."
         }
       ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Vibyra to use Face ID to unlock the app."
+        }
+      ],
       "expo-iap",
       [
         "expo-build-properties",

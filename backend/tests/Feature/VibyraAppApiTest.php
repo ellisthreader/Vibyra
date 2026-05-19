@@ -48,6 +48,30 @@ class VibyraAppApiTest extends TestCase
             ->assertJsonPath('user.rememberedDesktops.0.pairCode', 'ABCD12');
     }
 
+    public function test_delete_account_requires_password_and_removes_user_session(): void
+    {
+        $token = $this->postJson("/api/auth/signup", [
+            "name" => "Delete Me",
+            "email" => "delete-me@example.com",
+            "password" => "secret123",
+        ])->assertCreated()->json("token");
+
+        $headers = ["Authorization" => "Bearer " . $token];
+
+        $this->deleteJson("/api/account", ["password" => "wrong-password"], $headers)
+            ->assertUnauthorized()
+            ->assertJsonPath("error", "Password is incorrect.");
+
+        $this->assertDatabaseHas("users", ["email" => "delete-me@example.com"]);
+
+        $this->deleteJson("/api/account", ["password" => "secret123"], $headers)
+            ->assertOk()
+            ->assertJsonPath("ok", true);
+
+        $this->assertDatabaseMissing("users", ["email" => "delete-me@example.com"]);
+        $this->assertSame(0, DB::table("vibyra_sessions")->count());
+    }
+
     public function test_referral_signup_grants_invite_code_and_signup_rewards(): void
     {
         $referrerToken = $this->postJson('/api/auth/signup', [
@@ -219,6 +243,144 @@ class VibyraAppApiTest extends TestCase
                 && str_contains($messages[0]['content'], 'Be direct and concise')
                 && ! str_contains($messages[0]['content'], 'Return only the <vibyra-app> block.');
         });
+    }
+
+    public function test_chat_sends_image_attachments_as_openrouter_content_parts(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'The screenshot shows a login form.'],
+                ]],
+            ]),
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex.image-chat@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $image = 'data:image/png;base64,'.base64_encode("\x89PNG\r\n\x1a\nfake-png");
+
+        $this->postJson('/api/chat', [
+            'prompt' => 'What is in this image?',
+            'model' => 'gpt-5.4-mini',
+            'imageAttachments' => [[
+                'url' => $image,
+                'name' => 'login.png',
+                'mimeType' => 'image/png',
+            ]],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('reply', 'The screenshot shows a login form.');
+
+        Http::assertSent(function ($request) use ($image) {
+            $content = $request['messages'][1]['content'] ?? null;
+
+            return is_array($content)
+                && ($content[0]['type'] ?? null) === 'text'
+                && str_contains($content[0]['text'] ?? '', 'What is in this image?')
+                && ($content[1]['type'] ?? null) === 'image_url'
+                && ($content[1]['image_url']['url'] ?? null) === $image
+                && ($content[1]['image_url']['detail'] ?? null) === 'auto';
+        });
+    }
+
+    public function test_chat_rejects_invalid_image_attachment_data(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake();
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex.bad-image-chat@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat', [
+            'prompt' => 'What is in this image?',
+            'model' => 'gpt-5.4-mini',
+            'imageAttachments' => [[
+                'url' => 'data:image/svg+xml;base64,'.base64_encode('<svg></svg>'),
+            ]],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(422)
+            ->assertJsonPath('ok', false);
+
+        Http::assertNothingSent();
+    }
+
+    public function test_chat_skills_use_their_specialized_openrouter_models(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $payloads = [];
+        Http::fake(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'choices' => [[
+                    'message' => ['content' => 'Specialized answer.'],
+                ]],
+            ]);
+        });
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-specialized-tools@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+        User::where('email', 'alex-specialized-tools@example.com')->update([
+            'plan' => 'starter',
+            'credits_balance' => 500,
+        ]);
+
+        foreach (['research', 'web', 'analyze'] as $skill) {
+            $this->postJson('/api/chat', [
+                'prompt' => "Run {$skill}.",
+                'skill' => $skill,
+                'model' => 'gpt-5.4-mini',
+                'projectFiles' => [['path' => 'src/App.tsx', 'snippet' => 'export function App() {}']],
+            ], ['Authorization' => "Bearer {$token}"])
+                ->assertOk()
+                ->assertJsonPath('reply', 'Specialized answer.');
+        }
+
+        $this->assertSame('openai/o3-deep-research', $payloads[0]['model'] ?? null);
+        $this->assertSame('openrouter:web_search', $payloads[0]['tools'][0]['type'] ?? null);
+        $this->assertSame('auto', $payloads[0]['tools'][0]['parameters']['engine'] ?? null);
+        $this->assertSame(2400, $payloads[0]['max_completion_tokens'] ?? null);
+
+        $this->assertSame('openai/gpt-5.5', $payloads[1]['model'] ?? null);
+        $this->assertSame('openrouter:web_search', $payloads[1]['tools'][0]['type'] ?? null);
+
+        $this->assertSame('openai/gpt-5.5', $payloads[2]['model'] ?? null);
+        $this->assertArrayNotHasKey('tools', $payloads[2]);
+        $this->assertSame(1800, $payloads[2]['max_completion_tokens'] ?? null);
+    }
+
+    public function test_premium_tool_skill_is_gated_by_effective_model_tier(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake();
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-free-specialized-tools@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat', [
+            'prompt' => 'Research the latest release.',
+            'skill' => 'research',
+            'model' => 'gpt-5.4-mini',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(403)
+            ->assertJsonPath('requiredTier', 'premium')
+            ->assertJsonPath('plan', 'free');
+
+        Http::assertNothingSent();
     }
 
     public function test_chat_includes_project_file_map_for_folder_context(): void
@@ -1150,5 +1312,28 @@ class VibyraAppApiTest extends TestCase
         ], ['Authorization' => "Bearer {$token}"])
             ->assertStatus(403)
             ->assertJsonPath('plan', 'free');
+    }
+
+    public function test_chat_stream_gates_premium_tool_skill_by_effective_model_tier(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake();
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Stream User',
+            'email' => 'stream-tool@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/stream', [
+            'prompt' => 'Research current pricing.',
+            'skill' => 'research',
+            'model' => 'gpt-5.4-mini',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(403)
+            ->assertJsonPath('requiredTier', 'premium')
+            ->assertJsonPath('plan', 'free');
+
+        Http::assertNothingSent();
     }
 }

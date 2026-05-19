@@ -5,14 +5,22 @@ export type SupportedTerminalCommand = typeof TERMINAL_COMMANDS[number];
 
 export function parseTerminalCommandIntent(prompt: string): SupportedTerminalCommand | null {
   const text = prompt.trim().toLowerCase();
-  if (!/\b(run|execute|terminal|command|shell)\b/.test(text)) return null;
   if (/\b(?:preview|live\s+preview|on\s+(?:my\s+)?(?:phone|device|mobile)|in\s+(?:my\s+)?browser|in\s+a\s+browser)\b/.test(text)) return null;
   const quoted = prompt.match(/[`"']([^`"']{3,80})[`"']/)?.[1]?.trim().toLowerCase();
   const source = quoted || text.replace(/^(please|pls|can you|could you|would you|vibyra)\s+/i, "");
+  const directCommand = TERMINAL_COMMANDS.find((command) => source.replace(/[.!?]+$/g, "").startsWith(command));
+  if (!directCommand && !/\b(run|execute|terminal|command|shell)\b/.test(text)) return null;
   if (/\b(run|execute)\b.*\btests?\b/.test(source)) return "npm test";
   if (/\b(run|execute)\b.*\bbuild\b/.test(source)) return "npm run build";
   if (/\b(run|start)\b.*\b(dev|server)\b/.test(source)) return "npm run dev";
-  return TERMINAL_COMMANDS.find((command) => source.includes(command)) ?? null;
+  return directCommand ?? TERMINAL_COMMANDS.find((command) => source.includes(command)) ?? null;
+}
+
+export function isUnsupportedTerminalCommandIntent(prompt: string) {
+  const text = prompt.trim().toLowerCase();
+  if (!/\b(run|execute|terminal|command|shell)\b/.test(text)) return false;
+  if (parseTerminalCommandIntent(prompt)) return false;
+  return /\b(?:npm|pnpm|yarn|bun|node|php|composer|artisan|python|pip|git|cargo|go|ruby|rails|docker|make)\b/.test(text);
 }
 
 export function needsTerminalApproval(command: string) {

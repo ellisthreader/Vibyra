@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { createThemedStyleSheet } from "../styles/themeTransform";
 
 type ActiveBlock = {
   language: string;
@@ -122,7 +123,7 @@ function extensionForLanguage(language: string): string {
   }
 }
 
-const styles = StyleSheet.create({
+const styles = createThemedStyleSheet({
   card: {
     alignItems: "center",
     backgroundColor: "rgba(15, 17, 26, 0.86)",

@@ -20,22 +20,28 @@ export function FolderProposalCard({ proposal, onAccept, onDismiss, onWrong }: {
 
   return (
     <View style={[styles.card, { backgroundColor: palette.cardBg, borderColor: palette.cardBorder }]}>
-      <View style={styles.kickerRow}>
-        <View style={[styles.kickerPill, { backgroundColor: palette.kickerBg, borderColor: palette.kickerBorder }]}>
-          <Ionicons name="sparkles-outline" color={palette.kicker} size={12} />
-          <Text style={[styles.kickerText, { color: palette.kicker }]}>Desktop match</Text>
+      <View style={styles.topRow}>
+        <View style={styles.statusLabel}>
+          <Ionicons name="folder-open-outline" color={palette.iconColor} size={15} />
+          <Text style={[styles.statusText, { color: palette.kicker }]}>Found folder</Text>
         </View>
-        <Text style={[styles.matchCount, { color: palette.muted }]}>{proposal.matches.length > 1 ? `${proposal.selectedIndex + 1} of ${proposal.matches.length}` : "Best match"}</Text>
+        <Text style={[styles.matchCount, { color: palette.muted }]}>
+          {proposal.matches.length > 1 ? `${proposal.selectedIndex + 1} of ${proposal.matches.length}` : "Best match"}
+        </Text>
       </View>
-      <FolderHeader folder={folder} palette={palette} />
+
+      <FolderSummary folder={folder} palette={palette} />
       {proposal.error ? <StatusBox palette={palette} text={proposal.error} /> : null}
+
       {resolved ? (
-        <Text style={[styles.status, { color: palette.muted }]}>{proposal.status === "accepted" ? `Opened ${folder.name}` : "Dismissed"}</Text>
+        <Text style={[styles.resolvedText, { color: palette.muted }]}>{proposal.status === "accepted" ? `Opened ${folder.name}` : "Dismissed"}</Text>
       ) : (
-        <View style={styles.actions}>
-          <CardButton icon="help-circle-outline" palette={palette} text="Wrong folder" tone="ghost" onPress={() => onWrong?.(proposal.id, folder, query)} />
-          <CardButton palette={palette} text="Not now" tone="quiet" onPress={() => onDismiss?.(proposal.id)} />
-          <CardButton icon="arrow-forward" palette={palette} text="Open folder" tone="primary" onPress={() => onAccept?.(proposal.id, folder)} />
+        <View style={styles.actionStack}>
+          <ActionButton icon="arrow-forward" palette={palette} text="Open folder" tone="primary" onPress={() => onAccept?.(proposal.id, folder)} />
+          <View style={styles.secondaryActions}>
+            <TextAction palette={palette} text="Wrong folder" onPress={() => onWrong?.(proposal.id, folder, query)} />
+            <TextAction muted palette={palette} text="Not now" onPress={() => onDismiss?.(proposal.id)} />
+          </View>
         </View>
       )}
     </View>
@@ -50,89 +56,113 @@ export function FolderRecoveryCard({ recovery, onBrowse, onSearch }: {
   const palette = useChatActionCardPalette();
   return (
     <View style={[styles.card, { backgroundColor: palette.cardBg, borderColor: palette.cardBorder }]}>
-      <View style={styles.header}>
-        <View style={[styles.iconSmall, { backgroundColor: palette.iconBg }]}>
-          <Ionicons name="search-outline" color={palette.iconColor} size={16} />
-        </View>
-        <View style={styles.headerText}>
-          <Text style={[styles.recoveryTitle, { color: palette.text }]}>Find the right folder</Text>
-          <Text style={[styles.recoverySubtitle, { color: palette.body }]}>Choose how Vibyra should search your PC.</Text>
+      <View style={styles.topRow}>
+        <View style={styles.statusLabel}>
+          <Ionicons name="search-outline" color={palette.iconColor} size={15} />
+          <Text style={[styles.statusText, { color: palette.kicker }]}>Find the right folder</Text>
         </View>
       </View>
-      <View style={styles.actions}>
-        <CardButton icon="folder-open-outline" palette={palette} text="Browse PC" tone="ghost" onPress={() => onBrowse?.(recovery)} />
-        <CardButton icon="sparkles-outline" palette={palette} text="Auto search PC" tone="primary" onPress={() => onSearch?.(recovery.proposalId, recovery.query, recovery.excludedProjectId)} />
+      <Text style={[styles.recoveryCopy, { color: palette.body }]}>Search again, or browse your PC manually.</Text>
+      <View style={styles.actionStack}>
+        <ActionButton icon="sparkles-outline" palette={palette} text="Auto search PC" tone="primary" onPress={() => onSearch?.(recovery.proposalId, recovery.query, recovery.excludedProjectId)} />
+        <ActionButton icon="folder-open-outline" palette={palette} text="Browse PC" tone="ghost" onPress={() => onBrowse?.(recovery)} />
       </View>
     </View>
   );
 }
 
-function FolderHeader({ folder, palette }: { folder: Project; palette: Palette }) {
+function FolderSummary({ folder, palette }: { folder: Project; palette: Palette }) {
+  const stack = folder.stack?.trim();
   return (
-    <>
-      <View style={styles.header}>
-        <View style={[styles.icon, { backgroundColor: palette.iconBg }]}><Ionicons name="folder-open-outline" color={palette.iconColor} size={18} /></View>
-        <View style={styles.headerText}>
-          <Text numberOfLines={1} style={[styles.name, { color: palette.text }]}>{folder.name}</Text>
-          <Text numberOfLines={1} style={[styles.path, { color: palette.body }]}>{folder.path}</Text>
-        </View>
+    <View style={styles.folderRow}>
+      <View style={[styles.folderIcon, { backgroundColor: palette.iconBg }]}>
+        <Ionicons name="folder" color={palette.iconColor} size={18} />
       </View>
-      <View style={styles.metaRow}>
-        <Meta icon="cube-outline" palette={palette} text={folder.stack || "Project"} />
-        <Meta icon="desktop-outline" palette={palette} text="PC" />
+      <View style={styles.folderCopy}>
+        <Text numberOfLines={1} style={[styles.folderName, { color: palette.text }]}>{folder.name}</Text>
+        <Text numberOfLines={1} style={[styles.folderPath, { color: palette.body }]}>{shortPath(folder.path)}</Text>
+        <Text numberOfLines={1} style={[styles.folderMeta, { color: palette.muted }]}>{stack ? `${stack} on PC` : "Project on PC"}</Text>
       </View>
-    </>
+    </View>
   );
 }
 
-function Meta({ icon, palette, text }: { icon: keyof typeof Ionicons.glyphMap; palette: Palette; text: string }) {
-  return <View style={[styles.metaChip, { backgroundColor: palette.chipBg, borderColor: palette.chipBorder }]}><Ionicons name={icon} color={palette.iconColor} size={12} /><Text numberOfLines={1} style={[styles.metaText, { color: palette.buttonGhostText }]}>{text}</Text></View>;
-}
-
 function StatusBox({ palette, text }: { palette: Palette; text: string }) {
-  return <View style={[styles.errorBox, { backgroundColor: palette.errorBg, borderColor: palette.errorBorder }]}><Ionicons name="alert-circle-outline" color={palette.errorText} size={14} /><Text style={[styles.errorText, { color: palette.errorText }]}>{text}</Text></View>;
+  return (
+    <View style={[styles.errorBox, { backgroundColor: palette.errorBg, borderColor: palette.errorBorder }]}>
+      <Ionicons name="alert-circle-outline" color={palette.errorText} size={14} />
+      <Text style={[styles.errorText, { color: palette.errorText }]}>{text}</Text>
+    </View>
+  );
 }
 
-function CardButton({ icon, palette, text, tone, onPress }: { icon?: keyof typeof Ionicons.glyphMap; palette: Palette; text: string; tone: "ghost" | "quiet" | "primary"; onPress: () => void }) {
+function ActionButton({ icon, palette, text, tone, onPress }: {
+  icon?: keyof typeof Ionicons.glyphMap;
+  palette: Palette;
+  text: string;
+  tone: "ghost" | "primary";
+  onPress: () => void;
+}) {
   const primary = tone === "primary";
-  const buttonStyle = primary
-    ? { backgroundColor: palette.buttonPrimary }
-    : tone === "quiet"
-      ? { backgroundColor: palette.buttonQuietBg }
-      : { backgroundColor: palette.buttonGhostBg, borderColor: palette.buttonGhostBorder, borderWidth: 1 };
-  const textStyle = tone === "primary" ? styles.buttonPrimaryText : tone === "quiet" ? styles.buttonQuietText : styles.buttonGhostText;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.button, buttonStyle, pressed && styles.buttonPressed]}>
-      {icon ? <Ionicons name={icon} color={primary ? palette.primaryText : palette.buttonGhostText} size={13} /> : null}
-      <Text style={[textStyle, { color: primary ? palette.primaryText : tone === "quiet" ? palette.buttonQuietText : palette.buttonGhostText }]}>{text}</Text>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.actionButton,
+        primary
+          ? { backgroundColor: palette.buttonPrimary }
+          : { backgroundColor: palette.buttonGhostBg, borderColor: palette.buttonGhostBorder, borderWidth: 1 },
+        pressed && styles.pressed
+      ]}
+    >
+      {icon ? <Ionicons name={icon} color={primary ? palette.primaryText : palette.buttonGhostText} size={14} /> : null}
+      <Text style={[styles.actionText, { color: primary ? palette.primaryText : palette.buttonGhostText }]}>{text}</Text>
     </Pressable>
   );
 }
 
+function TextAction({ muted, palette, text, onPress }: {
+  muted?: boolean;
+  palette: Palette;
+  text: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.textAction, pressed && styles.pressed]}>
+      <Text style={[styles.textActionLabel, { color: muted ? palette.muted : palette.buttonGhostText }]}>{text}</Text>
+    </Pressable>
+  );
+}
+
+function shortPath(path?: string) {
+  if (!path) return "Desktop folder";
+  const normalized = path.replace(/\\/g, "/").replace(/^~\//, "");
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length <= 2) return normalized;
+  return `.../${parts.slice(-2).join("/")}`;
+}
+
 const styles = StyleSheet.create({
-  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" },
-  button: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 36, paddingHorizontal: 12, paddingVertical: 9 },
-  buttonGhostText: { fontSize: 13, fontWeight: "700" },
-  buttonPressed: { opacity: 0.85 },
-  buttonPrimaryText: { fontSize: 13, fontWeight: "800" },
-  buttonQuietText: { fontSize: 13, fontWeight: "700" },
+  actionButton: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 },
+  actionStack: { gap: 7, marginTop: 1 },
+  actionText: { fontSize: 13, fontWeight: "800" },
   card: { borderRadius: 14, borderWidth: 1, gap: 10, marginTop: 10, padding: 14 },
   errorBox: { alignItems: "center", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, padding: 9 },
   errorText: { flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 },
-  header: { alignItems: "center", flexDirection: "row", gap: 10 },
-  headerText: { flex: 1, minWidth: 0 },
-  icon: { alignItems: "center", borderRadius: 12, height: 40, justifyContent: "center", width: 40 },
-  iconSmall: { alignItems: "center", borderRadius: 10, height: 34, justifyContent: "center", width: 34 },
-  kickerPill: { alignItems: "center", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 9, paddingVertical: 5 },
-  kickerRow: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "space-between" },
-  kickerText: { fontSize: 11, fontWeight: "800" },
+  folderCopy: { flex: 1, minWidth: 0 },
+  folderIcon: { alignItems: "center", borderRadius: 12, height: 38, justifyContent: "center", width: 38 },
+  folderMeta: { fontSize: 11, fontWeight: "700", marginTop: 4 },
+  folderName: { fontSize: 16, fontWeight: "900", lineHeight: 21 },
+  folderPath: { fontSize: 12, fontWeight: "600", marginTop: 1 },
+  folderRow: { alignItems: "center", flexDirection: "row", gap: 10 },
   matchCount: { fontSize: 11, fontWeight: "700" },
-  metaChip: { alignItems: "center", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 26, paddingHorizontal: 9 },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  metaText: { fontSize: 11, fontWeight: "800", maxWidth: 150 },
-  name: { fontSize: 16, fontWeight: "900" },
-  path: { fontSize: 12, marginTop: 2 },
-  recoverySubtitle: { fontSize: 12, fontWeight: "700", marginTop: 2 },
-  recoveryTitle: { fontSize: 15, fontWeight: "900" },
-  status: { fontSize: 12, fontStyle: "italic" }
+  pressed: { opacity: 0.84 },
+  recoveryCopy: { fontSize: 13, fontWeight: "600", lineHeight: 18 },
+  resolvedText: { fontSize: 12, fontWeight: "700" },
+  secondaryActions: { alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center" },
+  statusLabel: { alignItems: "center", flexDirection: "row", gap: 6 },
+  statusText: { fontSize: 11, fontWeight: "800" },
+  textAction: { alignItems: "center", borderRadius: 999, flex: 1, justifyContent: "center", minHeight: 34, paddingHorizontal: 10 },
+  textActionLabel: { fontSize: 12, fontWeight: "800" },
+  topRow: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "space-between" }
 });

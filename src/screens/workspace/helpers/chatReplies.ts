@@ -1,15 +1,18 @@
-const GREETING_RE = /^(?:hi+|hello+|hey+|yo+|sup|hiya|howdy|morning|afternoon|evening|gm|gn|good\s+(?:morning|afternoon|evening|day))[\s!.?…]*$/i;
+const ADDRESS_RE = String.raw`(?:vibyra|vib|assistant|ai|mate|buddy|there)`;
+const GREETING_TOKEN = String.raw`(?:hi+|hello+|hey+|yo+|sup|hiya|howdy|bonjour|hola|morning|afternoon|evening|gm|gn|good\s+(?:morning|afternoon|evening|day))`;
+const CHAT_LEAD = String.raw`(?:${GREETING_TOKEN}[\s,!.?…-]+)?`;
+const GREETING_RE = new RegExp(String.raw`^(?:${GREETING_TOKEN}(?:[\s,!.?…-]+(?:${GREETING_TOKEN}|${ADDRESS_RE}))*|${ADDRESS_RE}[\s,!.?…-]+${GREETING_TOKEN})[\s!.?…]*$`, "i");
 
-const SMALL_TALK_TOKEN = String.raw`(?:thanks?|thank\s*you|thank\s*u|tysm|ty|thx|tnx|cheers|appreciate(?:d|\s+it)?|cool|nice|great|awesome|perfect|lovely|got\s+it|gotcha|sounds?\s+good|ok+|okay|okie|kk|k|mk|alright|alrighty|all\s+right|aight|right|sure|nvm|never\s*mind|fine|good|all\s+good|im\s+good|i'?m\s+good|we'?re\s+good|we\s+good|you'?re\s+good|it'?s\s+(?:fine|cool|ok(?:ay)?|all\s+good|good)|its\s+(?:fine|cool|ok(?:ay)?|good)|that'?s\s+(?:fine|ok(?:ay)?|cool|good)|forget\s+it|drop\s+it|skip\s+it|leave\s+it|no\s+worries|no\s+worry|no\s+thanks?|no\s+thank\s*you|no\s+prob(?:lem|s)?|no\s+need(?:ed)?|not\s+needed|don'?t\s+worry|dont\s+worry|bye|byebye|bye\s+bye|cya|see\s+ya|see\s+you|later|peace|good\s*bye|goodbye|not\s+now|maybe\s+later|next\s+time|i'?ll\s+come\s+back\s+later|ill\s+come\s+back\s+later|then)`;
+const SMALL_TALK_TOKEN = String.raw`(?:thanks?|thank\s*you|thank\s*u|tysm|ty|thx|tnx|thnks|cheers|appreciate(?:d|\s+it)?|cool|nice|great|awesome|perfect|lovely|got\s+it|gotcha|sounds?\s+good|ok+|okay|okie|kk|k|mk|alright|alrighty|all\s+right|aight|right|yes|yep|yup|yeah|ya|sure|fine|good|all\s+good|im\s+good|i'?m\s+good|we'?re\s+good|we\s+good|you'?re\s+good|it'?s\s+(?:fine|cool|ok(?:ay)?|all\s+good|good)|its\s+(?:fine|cool|ok(?:ay)?|good)|that'?s\s+(?:fine|ok(?:ay)?|cool|good)|nvm|never\s*mind|forget\s+it|drop\s+it|skip\s+it|leave\s+it|no\s+worries|no\s+worry|no\s+thanks?|no\s+thank\s*you|no\s+prob(?:lem|s)?|no\s+need(?:ed)?|not\s+needed|don'?t\s+worry|dont\s+worry|bye|byebye|bye\s+bye|cya|see\s+ya|see\s+you|later|peace|good\s*bye|goodbye|not\s+now|maybe\s+later|next\s+time|i'?ll\s+come\s+back\s+later|ill\s+come\s+back\s+later|then)`;
 const SMALL_TALK_TRAIL = String.raw`[\s!.?,…:;)(\-]*`;
 const SMALL_TALK_SEP = String.raw`[\s,!.?…:;)(\-]+`;
 const SMALL_TALK_TOKENS_RE = new RegExp(`^${SMALL_TALK_TRAIL}(?:${SMALL_TALK_TOKEN})(?:${SMALL_TALK_SEP}(?:${SMALL_TALK_TOKEN}))*${SMALL_TALK_TRAIL}$`, "i");
 
 const SMALL_TALK_LEAD_RE = /^(?:(?:ok+|okay|kk|alright|all\s+right|aight|right|cool|nice|hmm+|um|uh|well|so|actually|just|maybe|please|pls|plz|yeah|yep|yup|ya|nah|nope|no|hey|hi|hello)[\s,!.?-]+)+/i;
 
-const CONFUSION_RE = /^(?:i\s*(?:do\s*n'?t|don'?t|dont|do\s+not)\s*(?:get|understand|follow|know\s+what(?:'?s|\s+is)?(?:\s+(?:going\s+on|happening))?)|i'?m\s+(?:lost|confused|stuck)|confused|lost|huh\??|wat\??|wut\??|wha+t\??|sorry,?\s*what|no\s+idea|what\s+does\s+(?:that|this)\s+mean|i\s+don'?t\s+understand|\?+)[\s!.?…]*$/i;
+const CONFUSION_RE = /^(?:i\s*(?:do\s*n'?t|don'?t|dont|do\s+not)\s*(?:get|understand|follow|know\s+what(?:'?s|\s+is)?(?:\s+(?:going\s+on|happening|to\s+do))?)|i'?m\s+(?:lost|confused|stuck)|this\s+is\s+confusing|idk|i\s+don'?t\s+know|what\s+now|now\s+what|what\s+do\s+i\s+do|where\s+do\s+i\s+start|confused|lost|stuck|huh\??|wat\??|wut\??|wha+t\??|sorry,?\s*what|no\s+idea|what\s+does\s+(?:that|this)\s+mean|i\s+don'?t\s+understand|\?+)[\s!.?…]*$/i;
 
-const HELP_RE = /^(?:help(?:\s+me)?|what\s+can\s+you\s+do|what\s+do\s+you\s+do|how\s+(?:do|does|can)\s+(?:i|this|it)\s+(?:work|use)|how\s+do\s+i\s+(?:start|use|begin|get\s+started)|how\s+does\s+this\s+work|what\s+is\s+this|tutorial|guide|commands?|options?)[\s?!.]*$/i;
+const HELP_RE = new RegExp(String.raw`^${CHAT_LEAD}(?:help(?:\s+me)?|can\s+you\s+help(?:\s+me)?|could\s+you\s+help(?:\s+me)?|i\s+need\s+help|need\s+help|what\s+can\s+(?:you|vibyra)\s+do|what\s+do\s+(?:you|vibyra)\s+do|how\s+(?:do|does|can)\s+(?:i|this|it|vibyra)\s+(?:work|use)|how\s+do\s+i\s+(?:start|use|begin|get\s+started)|how\s+does\s+this\s+work|what\s+is\s+this|show\s+me\s+around|walk\s+me\s+through\s+this|tutorial|guide|commands?|options?|start|lets?\s+go|get\s+started)(?:\s+(?:lol|pls|please))?[\s?!.]*$`, "i");
 
 const VIEW_VERB = String.raw`(?:view|see|show(?:\s+me)?|open(?:\s+up)?|preview|launch|run|load|check\s+out|pull\s+up|bring\s+up)`;
 const VIEW_TARGET = String.raw`(?:website|web\s*site|webpage|web\s*page|site|page|app|preview|index\.html|html|build|code|live\s+preview|live\s+site)`;
@@ -29,11 +32,11 @@ const CAN_I_PROJECT_RE = new RegExp(
 );
 
 export function isGreeting(prompt: string): boolean {
-  return GREETING_RE.test(prompt.trim());
+  return GREETING_RE.test(normalizeConversationalPrompt(prompt));
 }
 
 export function isSmallTalk(prompt: string): boolean {
-  const text = prompt.trim();
+  const text = normalizeConversationalPrompt(prompt);
   if (!text) return false;
   if (SMALL_TALK_TOKENS_RE.test(text)) return true;
   const stripped = text.replace(SMALL_TALK_LEAD_RE, "").trim();
@@ -42,7 +45,7 @@ export function isSmallTalk(prompt: string): boolean {
 }
 
 export function isConfusion(prompt: string): boolean {
-  const trimmed = prompt.trim();
+  const trimmed = normalizeConversationalPrompt(prompt);
   if (!trimmed) return false;
   if (CONFUSION_RE.test(trimmed)) return true;
   if (/^\?+$/.test(trimmed)) return true;
@@ -50,7 +53,7 @@ export function isConfusion(prompt: string): boolean {
 }
 
 export function isHelpRequest(prompt: string): boolean {
-  return HELP_RE.test(prompt.trim());
+  return HELP_RE.test(normalizeConversationalPrompt(prompt));
 }
 
 export function isCreateProjectIntent(prompt: string): boolean {
@@ -63,11 +66,15 @@ export function isCreateProjectIntent(prompt: string): boolean {
 }
 
 export function greetingReply(): string {
-  return "Hey! Want to jump into a project? Pick one from the Projects tab, or tell me a folder name on your PC (like `open folder test1`) and I'll go find it.";
+  return "Hey, I'm here. Want to jump into a project? Pick one from the Projects tab, or tell me a folder name on your PC, like `open folder test1`.";
 }
 
 export function smallTalkReply(): string {
-  return "All good — whenever you're ready, open a project from the Projects tab or ask me to find a folder on your PC.";
+  return "All good. Whenever you're ready, open a project from the Projects tab or ask me to find a folder on your PC.";
+}
+
+export function projectSmallTalkReply(): string {
+  return "All good. Send the next change, question, preview request, or command when you're ready.";
 }
 
 export function confusionReply(): string {
@@ -83,7 +90,7 @@ export function createProjectReply(): string {
 }
 
 export function detachedFallbackReply(): string {
-  return "I didn't quite catch that. You can:\n• Open a project from the **Projects** tab.\n• Say `open folder <name>` to find a folder on your PC.\n• Ask `where am I?` or `help` to see what I can do.";
+  return "I can help, but I need a project or folder first. You can:\n• Open a project from the **Projects** tab.\n• Say `open folder <name>` to find a folder on your PC.\n• Ask `help` or `what can you do?` for the quick guide.";
 }
 
 export function isViewPreviewIntent(prompt: string): boolean {
@@ -122,4 +129,13 @@ export function previewNeedsProjectReply(): string {
 
 export function bareNameClarifyReply(name: string): string {
   return `Did you mean a folder called \`${name}\`? Say \`open folder ${name}\` and I'll look on your PC.`;
+}
+
+function normalizeConversationalPrompt(prompt: string): string {
+  return prompt
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(new RegExp(String.raw`^(?:${ADDRESS_RE})[\s,!.?…-]+`, "i"), "")
+    .replace(new RegExp(String.raw`[\s,!.?…-]+(?:${ADDRESS_RE})$`, "i"), "")
+    .trim();
 }

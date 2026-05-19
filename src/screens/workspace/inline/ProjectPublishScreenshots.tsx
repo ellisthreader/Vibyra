@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { colors } from "../../../styles/theme";
 import { ProjectDisplay } from "../types";
 import { PUBLISH_ASSET_CREDIT_COST } from "./ProjectPublishModal.data";
@@ -18,6 +19,7 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
   urls: string[];
 }) {
   const [attachError, setAttachError] = useState("");
+  const addIcon = useThemedColor("#D2CBE2");
 
   function add(image: string) {
     setUrls((current) => appendScreenshot(current, image));
@@ -93,7 +95,7 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
         {urls.length < 4 ? (
           <>
             <Pressable disabled={busy} onPress={attachScreenshot} style={modalStyles.screenshotAdd}>
-              <Ionicons name="image-outline" color="#D2CBE2" size={18} />
+              <Ionicons name="image-outline" color={addIcon} size={18} />
               <Text style={modalStyles.addTagText}>Add</Text>
             </Pressable>
             <Pressable disabled={busy || generating} onPress={confirmGenerateScreenshot} style={modalStyles.screenshotAddAi}>

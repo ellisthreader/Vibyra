@@ -203,6 +203,7 @@ function desktopSignOut() {
   fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
   localStorage.removeItem(authKey);
   document.body.classList.remove("desktop-authenticated");
+  if (typeof renderTopbar === "function") renderTopbar();
   document.getElementById("token-modal")?.classList.remove("open");
   authNodes.form?.classList.remove("open");
   document.getElementById("desktop-auth")?.classList.remove("email-open");

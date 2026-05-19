@@ -11,9 +11,40 @@ const PREFS_KEY = "vibyra.prefs.v1";
 type StoredPrefs = {
   appearance: AppearanceMode;
   language: string;
+  notifications: NotificationPreferences;
+  improveVibyra: boolean;
+  appLockEnabled: boolean;
 };
 
-const defaults: StoredPrefs = { appearance: "dark", language: "English" };
+export type NotificationPreferenceKey = keyof NotificationPreferences;
+
+export type NotificationPreferences = {
+  buildUpdates: boolean;
+  chatReplies: boolean;
+  productUpdates: boolean;
+};
+
+const defaultNotifications: NotificationPreferences = {
+  buildUpdates: true,
+  chatReplies: true,
+  productUpdates: false
+};
+
+const defaults: StoredPrefs = {
+  appearance: "dark",
+  language: "English",
+  notifications: defaultNotifications,
+  improveVibyra: false,
+  appLockEnabled: false
+};
+
+function parseNotifications(raw: Partial<NotificationPreferences> | undefined): NotificationPreferences {
+  return {
+    buildUpdates: typeof raw?.buildUpdates === "boolean" ? raw.buildUpdates : defaultNotifications.buildUpdates,
+    chatReplies: typeof raw?.chatReplies === "boolean" ? raw.chatReplies : defaultNotifications.chatReplies,
+    productUpdates: typeof raw?.productUpdates === "boolean" ? raw.productUpdates : defaultNotifications.productUpdates
+  };
+}
 
 function parsePrefs(raw: string | null): StoredPrefs {
   try {
@@ -21,7 +52,9 @@ function parsePrefs(raw: string | null): StoredPrefs {
     const parsed = JSON.parse(raw) as Partial<StoredPrefs>;
     const appearance: AppearanceMode = parsed.appearance === "light" || parsed.appearance === "auto" ? parsed.appearance : "dark";
     const language = typeof parsed.language === "string" && parsed.language.trim() ? parsed.language : "English";
-    return { appearance, language };
+    const improveVibyra = typeof parsed.improveVibyra === "boolean" ? parsed.improveVibyra : false;
+    const appLockEnabled = typeof parsed.appLockEnabled === "boolean" ? parsed.appLockEnabled : false;
+    return { appearance, language, notifications: parseNotifications(parsed.notifications), improveVibyra, appLockEnabled };
   } catch {
     return defaults;
   }
@@ -49,6 +82,12 @@ export type PreferencesValue = {
   setAppearance: (mode: AppearanceMode) => void;
   language: string;
   setLanguage: (lang: string) => void;
+  notifications: NotificationPreferences;
+  setNotificationPreference: (key: NotificationPreferenceKey, value: boolean) => void;
+  improveVibyra: boolean;
+  setImproveVibyra: (value: boolean) => void;
+  appLockEnabled: boolean;
+  setAppLockEnabled: (value: boolean) => void;
   effectiveScheme: "dark" | "light";
   formatNumber: (value: number) => string;
   formatDate: (value: Date | string | number) => string;
@@ -63,6 +102,9 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [appearance, setAppearanceState] = useState<AppearanceMode>(initial.appearance);
   const [language, setLanguageState] = useState<string>(initial.language);
+  const [notifications, setNotifications] = useState<NotificationPreferences>(initial.notifications);
+  const [improveVibyra, setImproveVibyraState] = useState<boolean>(initial.improveVibyra);
+  const [appLockEnabled, setAppLockEnabledState] = useState<boolean>(initial.appLockEnabled);
   const systemScheme = useColorScheme();
 
   useEffect(() => {
@@ -72,6 +114,9 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         if (cancelled) return;
         setAppearanceState(prefs.appearance);
         setLanguageState(prefs.language);
+        setNotifications(prefs.notifications);
+        setImproveVibyraState(prefs.improveVibyra);
+        setAppLockEnabledState(prefs.appLockEnabled);
       })
       .finally(() => {
         if (!cancelled) setPreferencesReady(true);
@@ -81,11 +126,16 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!preferencesReady) return;
-    void savePrefs({ appearance, language });
-  }, [appearance, language, preferencesReady]);
+    void savePrefs({ appearance, language, notifications, improveVibyra, appLockEnabled });
+  }, [appearance, language, notifications, improveVibyra, appLockEnabled, preferencesReady]);
 
   const setAppearance = useCallback((mode: AppearanceMode) => setAppearanceState(mode), []);
   const setLanguage = useCallback((lang: string) => setLanguageState(lang), []);
+  const setNotificationPreference = useCallback((key: NotificationPreferenceKey, next: boolean) => {
+    setNotifications((current) => ({ ...current, [key]: next }));
+  }, []);
+  const setImproveVibyra = useCallback((next: boolean) => setImproveVibyraState(next), []);
+  const setAppLockEnabled = useCallback((next: boolean) => setAppLockEnabledState(next), []);
 
   const effectiveScheme: "dark" | "light" = useMemo(() => {
     if (appearance === "auto") return systemScheme === "light" ? "light" : "dark";
@@ -108,6 +158,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     setAppearance,
     language,
     setLanguage,
+    notifications,
+    setNotificationPreference,
+    improveVibyra,
+    setImproveVibyra,
+    appLockEnabled,
+    setAppLockEnabled,
     effectiveScheme,
     formatNumber,
     formatDate,

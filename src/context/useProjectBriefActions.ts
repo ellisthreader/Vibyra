@@ -1,5 +1,6 @@
 import type { ProjectBrief } from "../types/domain";
 import { projectBriefStack, projectBriefTitle } from "../utils/projectBriefs";
+import { makeBriefMemoryText } from "../utils/projectMemory";
 import { useAppState } from "./useAppState";
 
 export function useProjectBriefActions(store: ReturnType<typeof useAppState>) {
@@ -29,6 +30,21 @@ export function useProjectBriefActions(store: ReturnType<typeof useAppState>) {
       }
     }));
     setters.setChatTitles((current) => ({ ...current, [projectId]: title }));
+    setters.setProjectMemories((current) => {
+      const now = new Date().toISOString();
+      const memoryText = makeBriefMemoryText(brief.kindLabel, brief.frameworkLabel, brief.frameworkDescription);
+      const existingEntries = current[projectId]?.entries ?? [];
+      return {
+        ...current,
+        [projectId]: {
+          entries: [
+            { id: `brief-${projectId}`, text: memoryText, source: "brief" as const, createdAt: now },
+            ...existingEntries.filter((entry) => entry.source !== "brief")
+          ].slice(0, 8),
+          updatedAt: now
+        }
+      };
+    });
     setters.setChatThreads((current) => ({
       ...current,
       [projectId]: (current[projectId] ?? []).map((message) => message.id === setupMessageId(projectId) ? {

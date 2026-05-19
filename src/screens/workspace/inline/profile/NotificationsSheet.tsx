@@ -1,26 +1,42 @@
 import React from "react";
-import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../../../styles/theme";
+import { Text } from "react-native";
+import { usePreferences, type NotificationPreferenceKey } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
+import { ToggleRow } from "./ToggleRow";
 
 export function NotificationsSheet({ visible, onClose }: {
   visible: boolean;
   onClose: () => void;
 }) {
+  const prefs = usePreferences();
+  const setPreference = (key: NotificationPreferenceKey) => (value: boolean) => prefs.setNotificationPreference(key, value);
+
   return (
     <ProfileSheet visible={visible} onClose={onClose} icon="notifications-outline" kicker="Preferences" title="Notifications">
-      <Text style={styles.profileSheetText}>
-        Notification preferences are not connected to account settings yet.
-      </Text>
-      <Text style={styles.profileSheetMuted}>
-        Vibyra will keep using the device and system notification settings already granted to the app.
-      </Text>
-      <View style={styles.profileSheetSecondary}>
-        <Ionicons name="notifications-off-outline" color={colors.text} size={18} />
-        <Text style={styles.profileSheetSecondaryText}>Controls unavailable</Text>
-      </View>
+      <Text style={styles.profileSheetText}>Choose which updates Vibyra should surface while you work.</Text>
+      <ToggleRow
+        icon="construct-outline"
+        onChange={setPreference("buildUpdates")}
+        subtitle="Agent starts, completions, failures, and queued build changes."
+        title="Build updates"
+        value={prefs.notifications.buildUpdates}
+      />
+      <ToggleRow
+        icon="chatbubble-ellipses-outline"
+        onChange={setPreference("chatReplies")}
+        subtitle="New assistant replies and important chat activity."
+        title="Chat replies"
+        value={prefs.notifications.chatReplies}
+      />
+      <ToggleRow
+        icon="sparkles-outline"
+        onChange={setPreference("productUpdates")}
+        subtitle="Occasional Vibyra feature, credit, and membership updates."
+        title="Product updates"
+        value={prefs.notifications.productUpdates}
+      />
+      <Text style={styles.profileSheetMuted}>System-level notification permissions are still controlled by your device settings.</Text>
     </ProfileSheet>
   );
 }

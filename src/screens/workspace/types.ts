@@ -2,7 +2,7 @@ import { ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
 import { ModelKey, Project, RememberedDesktop } from "../../types/domain";
 
 export type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile";
-export type SettingsTab = "profile" | "billing" | "preferences" | "security";
+export type SettingsTab = "profile" | "billing" | "preferences" | "security" | "usage";
 export type DesktopCandidate = RememberedDesktop;
 
 export type ChatModelProvider = "auto" | "claude" | "openai" | "gemini";

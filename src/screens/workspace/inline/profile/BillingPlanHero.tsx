@@ -1,8 +1,8 @@
-import React from "react";
-import { Image, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Image, Text, View } from "react-native";
 import { usePreferences } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
-import { BillingCycle, PlanKey, PlanTier } from "./types";
+import { BillingCycle, PLAN_ORDER, PLAN_TIERS, PlanKey, PlanTier } from "./types";
 import { getDisplayPrice } from "./billingUtils";
 
 const PLAN_ART: Record<PlanKey, number> = {
@@ -27,14 +27,73 @@ export function BillingPlanHero({
   tier: PlanTier;
 }) {
   const prefs = usePreferences();
+  const progress = useRef(new Animated.Value(1)).current;
+  const lastTierKey = useRef<PlanKey>(tier.key);
+  const [previous, setPrevious] = useState<{ cycle: BillingCycle; direction: number; tier: PlanTier } | null>(null);
+  const light = prefs.effectiveScheme === "light";
+
+  useEffect(() => {
+    if (lastTierKey.current === tier.key) return;
+    const fromIndex = PLAN_ORDER.indexOf(lastTierKey.current);
+    const toIndex = PLAN_ORDER.indexOf(tier.key);
+    setPrevious({ cycle, direction: toIndex >= fromIndex ? 1 : -1, tier: getTierByKey(lastTierKey.current) });
+    lastTierKey.current = tier.key;
+    progress.setValue(0);
+    const animation = Animated.timing(progress, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    });
+    animation.start(({ finished }) => {
+      if (finished) setPrevious(null);
+    });
+    return () => animation.stop();
+  }, [cycle, progress, tier.key]);
+
+  const direction = previous?.direction ?? 1;
+  const enteringStyle = {
+    opacity: progress.interpolate({ inputRange: [0, 0.22, 1], outputRange: [0, 1, 1] }),
+    transform: [
+      { perspective: 900 },
+      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [direction * 46, 0] }) },
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.965, 1] }) },
+      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: [`${direction * -7}deg`, "0deg"] }) }
+    ]
+  };
+  const exitingStyle = previous ? {
+    opacity: progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 0.2, 0] }),
+    transform: [
+      { perspective: 900 },
+      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, direction * -34] }) },
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 8] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.975] }) },
+      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: ["0deg", `${direction * 5}deg`] }) }
+    ]
+  } : null;
+  return (
+    <View style={[styles.billingPlanHero, { backgroundColor: light ? prefs.colors.surface : "#0B0B12" }]}>
+      {previous ? (
+        <Animated.View pointerEvents="none" style={[styles.billingPlanHeroLayer, exitingStyle]}>
+          <BillingPlanHeroLayer cycle={previous.cycle} tier={previous.tier} />
+        </Animated.View>
+      ) : null}
+      <Animated.View style={[styles.billingPlanHeroLayer, previous ? enteringStyle : null]}>
+        <BillingPlanHeroLayer cycle={cycle} tier={tier} />
+      </Animated.View>
+    </View>
+  );
+}
+
+function BillingPlanHeroLayer({ cycle, tier }: { cycle: BillingCycle; tier: PlanTier }) {
   const display = getDisplayPrice(tier, cycle);
   const creditValue = display.tokens.replace(" credits / month", "").replace(" credits/month", "");
-  const light = prefs.effectiveScheme === "light";
   const accent = PLAN_ACCENTS[tier.key];
   const bullets = getHeroBullets(tier.key, creditValue);
 
   return (
-    <View style={[styles.billingPlanHero, { backgroundColor: light ? prefs.colors.surface : "#0B0B12" }]}>
+    <View style={styles.billingPlanHeroLayerInner}>
       <Image source={PLAN_ART[tier.key]} resizeMode="cover" style={styles.billingPlanHeroImage} />
       <View style={styles.billingPlanHeroShade} />
 
@@ -59,6 +118,10 @@ export function BillingPlanHero({
       </View>
     </View>
   );
+}
+
+function getTierByKey(key: PlanKey) {
+  return PLAN_TIERS.find((item) => item.key === key) ?? PLAN_TIERS[0];
 }
 
 function HeroBullet({ accent, text, textColor }: { accent: string; text: string; textColor: string }) {

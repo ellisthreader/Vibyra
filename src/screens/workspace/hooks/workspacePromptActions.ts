@@ -3,16 +3,19 @@ import { GeneratedApp, Project } from "../../../types/domain";
 import type { ChatToolMode, GeneratedImage } from "../../../types/chatTools";
 import { chatToolSkillId, type ChatStartOptions } from "../../../types/chatTools";
 import { generatePublishAsset } from "../../../utils/communityApi";
+import { appApiStreamChat, type ChatResponse } from "../../../utils/appApi";
+import { makeId } from "../../../utils/ids";
+import { userFacingAgentError } from "../../../context/agentErrors";
 import { bareNameCandidate, currentProjectReply, extractFileName, extractFolderName, isCurrentProjectQuestion, isFindFolderIntent, isOpenFileIntent, isProjectLookupOnly } from "../helpers/chatPrompts";
 import { folderContentsReply, projectFilesReply } from "../helpers/chatProjectReplies";
-import { bareNameClarifyReply, confusionReply, detachedFallbackReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isSmallTalk, smallTalkReply } from "../helpers/chatReplies";
+import { bareNameClarifyReply, confusionReply, detachedFallbackReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isSmallTalk, projectSmallTalkReply, smallTalkReply } from "../helpers/chatReplies";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
 import { handleWorkspacePreviewIntent } from "./workspacePreviewActions";
 import { isKnownAiSkillCommand, isProjectFilesQuestion } from "./workspacePromptPredicates";
 import { handlePublishCommand } from "./workspacePublishCommand";
 import { handleChatProjectCreation } from "./workspaceProjectCreationActions";
-import { commandOutputReply, isTerminalApproval, isTerminalDenial, needsTerminalApproval, parseTerminalCommandIntent } from "./workspaceTerminalCommands";
+import { commandOutputReply, isTerminalApproval, isTerminalDenial, isUnsupportedTerminalCommandIntent, needsTerminalApproval, parseTerminalCommandIntent, unsupportedTerminalReply } from "./workspaceTerminalCommands";
 
 type Runtime = ReturnType<typeof useWorkspaceChatRuntime>;
 type ReplyFn = (reply: string, project?: Project, preview?: GeneratedApp) => void;
@@ -77,8 +80,9 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   }, [app, runtime, s]);
 
   const onStartChat = useCallback(async (promptOverride?: string | ChatStartOptions) => {
-    const rawPrompt = typeof promptOverride === "string" ? promptOverride : app.taskText;
+    const rawPrompt = typeof promptOverride === "string" ? promptOverride : (promptOverride?.prompt ?? app.taskText);
     const tool = typeof promptOverride === "object" ? promptOverride?.tool : undefined;
+    const imageAttachments = typeof promptOverride === "object" ? (promptOverride?.imageAttachments ?? []) : [];
     const prompt = rawPrompt.trim();
     if (!prompt || submitLockRef.current) return;
     submitLockRef.current = true;
@@ -92,7 +96,11 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
-        if (tool && await handleToolMode(prompt, tool, false, projectTarget, reply)) return;
+        if (tool && await handleToolMode(prompt, tool, false, projectTarget, reply, imageAttachments)) return;
+        if (imageAttachments.length > 0) {
+          await app.startAgent(projectTarget, prompt, { imageAttachments });
+          return;
+        }
         if (await handlePreviewServerFollowUp(prompt, projectTarget, reply)) return;
         if (await handleTerminalFollowUp(prompt, projectTarget, reply)) return;
         const terminalCommand = parseTerminalCommandIntent(prompt);
@@ -100,17 +108,38 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
           await handleTerminalCommand(prompt, terminalCommand, projectTarget, reply);
           return;
         }
+        if (isUnsupportedTerminalCommandIntent(prompt)) {
+          reply(unsupportedTerminalReply(), projectTarget.project);
+          return;
+        }
+        const projectFileIntent = isOpenFileIntent(prompt);
+        const projectFileName = extractFileName(prompt);
+        if (projectFileIntent) {
+          if (!projectFileName) reply("Which file should I open? Send the exact file name or path, like `App.tsx`.", projectTarget.project);
+          else await runFileOpen(prompt, projectFileName, false);
+          return;
+        }
         if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
+        if (await handleProjectFilesQuestion(prompt, false, reply)) return;
+        if (handleProjectQuestion(prompt, false, reply)) return;
         if (isPreviewFixPrompt(prompt)) {
           await app.startAgent(projectTarget, prompt);
           return;
         }
         if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime, onNeedsServerApproval: rememberPreviewServerApproval })) return;
+        if (isGreeting(prompt)) { reply(greetingReply(), projectTarget.project); return; }
+        if (isSmallTalk(prompt)) { reply(projectSmallTalkReply(), projectTarget.project); return; }
+        if (isConfusion(prompt)) { reply(confusionReply(), projectTarget.project); return; }
+        if (isHelpRequest(prompt)) { reply(helpReply(), projectTarget.project); return; }
         await app.startAgent(projectTarget, prompt);
         return;
       }
 
-      if (tool && await handleToolMode(prompt, tool, true, runtime.activeProjectTarget(), reply)) return;
+      if (tool && await handleToolMode(prompt, tool, true, runtime.activeProjectTarget(), reply, imageAttachments)) return;
+      if (imageAttachments.length > 0) {
+        reply("Open a project chat first so I can use images with the AI chat.");
+        return;
+      }
       if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
       if (isKnownAiSkillCommand(prompt, app.chatSkills)) {
         runtime.addDetachedChatReply(prompt, "Open a project chat first, then use that slash command there.");
@@ -161,7 +190,8 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     tool: ChatToolMode,
     detached: boolean,
     target: ReturnType<Runtime["activeProjectTarget"]>,
-    reply: ReplyFn
+    reply: ReplyFn,
+    imageAttachments: ChatStartOptions["imageAttachments"] = []
   ) {
     if (tool === "image") {
       await createImage(prompt, detached, target, reply);
@@ -173,8 +203,91 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     }
     const skillId = chatToolSkillId(tool);
     if (!skillId) return false;
-    await app.startAgent(target, prompt, { skillId });
+    if (detached) {
+      await runDetachedCloudTool(prompt, tool, skillId);
+      return true;
+    }
+    await app.startAgent(target, prompt, { imageAttachments, skillId });
     return true;
+  }
+
+  async function runDetachedCloudTool(prompt: string, tool: Exclude<ChatToolMode, "image">, skillId: string) {
+    if (!app.authToken) {
+      runtime.addDetachedChatReply(prompt, "Log in or create an account to use Vibyra AI chat.");
+      return;
+    }
+    const assistantId = addDetachedToolPending(prompt, tool);
+    try {
+      const result = await appApiStreamChat<ChatResponse>({
+        history: s.newChatMessages
+          .filter((message) => message.text.trim() && message.text !== "Working on it...")
+          .slice(-3)
+          .map((message) => ({ role: message.role, text: message.text.slice(0, 600) })),
+        model: app.selectedChatModel || app.selectedModel,
+        mode: "chat",
+        prompt,
+        reasoningEffort: app.reasoningEffort,
+        skill: skillId
+      }, app.authToken, {
+        onChunk: (delta) => appendDetachedToolDelta(assistantId, delta)
+      });
+      if (result.user) app.applyRemoteUserFromIap(result.user);
+      finishDetachedTool(assistantId, result);
+    } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes("session")) app.expireSession("Your Vibyra login needs refreshing before AI chat can continue.");
+      failDetachedTool(assistantId, userFacingAgentError(error));
+    }
+  }
+
+  function addDetachedToolPending(prompt: string, tool: Exclude<ChatToolMode, "image">) {
+    const assistantId = makeId("new-chat-assistant");
+    s.setNewChatMessages((current) => [
+      ...current,
+      { id: makeId("new-chat-user"), role: "user", text: prompt },
+      {
+        id: assistantId,
+        role: "assistant",
+        text: "Working on it...",
+        assistantModel: app.selectedChatModel || app.selectedModel,
+        runStatus: { route: "cloud", mode: "chat", status: "running", tool, startedAt: Date.now() }
+      }
+    ]);
+    app.setTaskText("");
+    return assistantId;
+  }
+
+  function appendDetachedToolDelta(messageId: string, delta: string) {
+    if (!delta) return;
+    s.setNewChatMessages((current) => current.map((message) => {
+      if (message.id !== messageId) return message;
+      const previous = message.text === "Working on it..." ? "" : message.text;
+      return { ...message, text: previous + delta };
+    }));
+  }
+
+  function finishDetachedTool(messageId: string, result: ChatResponse) {
+    s.setNewChatMessages((current) => current.map((message) => (
+      message.id === messageId
+        ? {
+          ...message,
+          text: result.reply || message.text,
+          creditCost: result.creditCost,
+          runStatus: message.runStatus ? { ...message.runStatus, status: "complete", completedAt: Date.now() } : message.runStatus
+        }
+        : message
+    )));
+  }
+
+  function failDetachedTool(messageId: string, error: string) {
+    s.setNewChatMessages((current) => current.map((message) => (
+      message.id === messageId
+        ? {
+          ...message,
+          text: error,
+          runStatus: message.runStatus ? { ...message.runStatus, status: "failed", completedAt: Date.now() } : message.runStatus
+        }
+        : message
+    )));
   }
 
   async function createImage(prompt: string, detached: boolean, target: ReturnType<Runtime["activeProjectTarget"]>, reply: ReplyFn) {
@@ -182,6 +295,9 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       reply("Log in before generating images.");
       return;
     }
+    const pendingMessageId = detached
+      ? addDetachedImageGenerationPending(prompt)
+      : app.addLocalImageGenerationPending(prompt, target);
     try {
       const result = await generatePublishAsset({
         authToken: app.authToken,
@@ -197,19 +313,52 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         title: "Generated image",
         url: result.imageUrl
       };
-      detached ? addDetachedGeneratedImage(prompt, image) : app.addLocalGeneratedImage(prompt, image, target);
+      detached ? finishDetachedGeneratedImage(pendingMessageId, image) : app.finishLocalGeneratedImage(pendingMessageId, image, target);
     } catch (error) {
-      reply(error instanceof Error ? error.message : "Image generation failed. Try again.");
+      const message = error instanceof Error ? error.message : "Image generation failed. Try again.";
+      detached ? failDetachedImageGeneration(pendingMessageId, message) : app.failLocalImageGeneration(pendingMessageId, message, target);
     }
   }
 
-  function addDetachedGeneratedImage(prompt: string, image: GeneratedImage) {
+  function addDetachedImageGenerationPending(prompt: string) {
+    const assistantId = makeId("new-chat-assistant");
     s.setNewChatMessages((current) => [
       ...current,
-      { id: `new-chat-user-${Date.now()}`, role: "user", text: prompt },
-      { id: `new-chat-assistant-${Date.now()}`, role: "assistant", text: `Created **${image.title}**.`, generatedImage: image }
+      { id: makeId("new-chat-user"), role: "user", text: prompt },
+      {
+        id: assistantId,
+        role: "assistant",
+        text: "Working on it...",
+        runStatus: { route: "cloud", mode: "chat", status: "running", tool: "image", startedAt: Date.now() }
+      }
     ]);
     app.setTaskText("");
+    return assistantId;
+  }
+
+  function finishDetachedGeneratedImage(messageId: string, image: GeneratedImage) {
+    s.setNewChatMessages((current) => current.map((message) => (
+      message.id === messageId
+        ? {
+          ...message,
+          text: `Created **${image.title}**.`,
+          generatedImage: image,
+          runStatus: message.runStatus ? { ...message.runStatus, status: "complete", completedAt: Date.now() } : message.runStatus
+        }
+        : message
+    )));
+  }
+
+  function failDetachedImageGeneration(messageId: string, error: string) {
+    s.setNewChatMessages((current) => current.map((message) => (
+      message.id === messageId
+        ? {
+          ...message,
+          text: error,
+          runStatus: message.runStatus ? { ...message.runStatus, status: "failed", completedAt: Date.now() } : message.runStatus
+        }
+        : message
+    )));
   }
 
   function handleDetachedStarter(prompt: string) {
@@ -221,6 +370,11 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
   async function handleRecovery(prompt: string, detached: boolean, reply: (r: string) => void, search: typeof runFolderSearch) {
     const waiting = folderRecoveryRef.current || awaitingFolderNameRef.current;
     if (!waiting) return false;
+    if (isFolderRecoveryCancel(prompt)) {
+      resetFolderState();
+      reply("Got it - cancelled.");
+      return true;
+    }
     const name = extractFolderName(prompt) ?? (folderRecoveryRef.current ? bareNameCandidate(prompt) : prompt.replace(/^(?:yes|yeah|yep|ok(?:ay)?|sure|please)\b\s*/i, "").trim());
     if (!name || name.length > 40 || !/^[a-z0-9][\w.-]*$/i.test(name)) { reply(folderRecoveryRef.current ? "Type just the folder name, or use Manual search / Auto search PC." : "Type just the folder name, like `test1`. (Or say \"cancel\" to drop it.)"); return true; }
     if (/^cancel$/i.test(name)) { resetFolderState(); reply("Got it — cancelled."); return true; }
@@ -377,6 +531,10 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     if (detached) runtime.addDetachedDesktopConnectionPrompt(prompt, connectionPrompt);
     else app.addLocalDesktopConnectionPrompt(prompt, connectionPrompt, runtime.activeProjectTarget());
   }
+}
+
+function isFolderRecoveryCancel(prompt: string) {
+  return /^(?:cancel(?:\s+it)?|stop|nah|nope|no|nvm|never\s*mind|forget\s+it|drop\s+it|skip\s+it|leave\s+it)\b/i.test(prompt.trim());
 }
 
 export function isPreviewFixPrompt(prompt: string): boolean {

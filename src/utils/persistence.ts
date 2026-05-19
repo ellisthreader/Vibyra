@@ -27,6 +27,14 @@ export type PersistedUser = {
   creditsUsed: number;
   dailyCreditsUsed: number;
   dailyCreditsCap: number;
+  dailyCreditsResetAt: string | null;
+  burstCreditsUsed: number;
+  burstCreditsCap: number;
+  burstCreditsResetAt: string | null;
+  burstWindowHours: number;
+  weeklyCreditsUsed: number;
+  weeklyCreditsCap: number;
+  weeklyCreditsResetAt: string | null;
   monthlyCredits: number;
   allowedModelTiers: string[];
   level?: LevelProgress;
@@ -157,6 +165,14 @@ function normalizeUser(value: unknown): PersistedUser | null {
     creditsUsed: normalizeNumber(user.creditsUsed, 0),
     dailyCreditsUsed: normalizeNumber((user as { dailyCreditsUsed?: unknown }).dailyCreditsUsed, 0),
     dailyCreditsCap: normalizeNumber((user as { dailyCreditsCap?: unknown }).dailyCreditsCap, 0),
+    dailyCreditsResetAt: normalizeNullableString((user as { dailyCreditsResetAt?: unknown }).dailyCreditsResetAt),
+    burstCreditsUsed: normalizeNumber((user as { burstCreditsUsed?: unknown }).burstCreditsUsed, 0),
+    burstCreditsCap: normalizeNumber((user as { burstCreditsCap?: unknown }).burstCreditsCap, 0),
+    burstCreditsResetAt: normalizeNullableString((user as { burstCreditsResetAt?: unknown }).burstCreditsResetAt),
+    burstWindowHours: normalizeNumber((user as { burstWindowHours?: unknown }).burstWindowHours, 5),
+    weeklyCreditsUsed: normalizeNumber((user as { weeklyCreditsUsed?: unknown }).weeklyCreditsUsed, 0),
+    weeklyCreditsCap: normalizeNumber((user as { weeklyCreditsCap?: unknown }).weeklyCreditsCap, 0),
+    weeklyCreditsResetAt: normalizeNullableString((user as { weeklyCreditsResetAt?: unknown }).weeklyCreditsResetAt),
     monthlyCredits: normalizeNumber((user as { monthlyCredits?: unknown }).monthlyCredits, 0),
     allowedModelTiers,
     level: normalizeLevelProgress((user as { level?: unknown }).level),
@@ -169,6 +185,10 @@ function normalizeUser(value: unknown): PersistedUser | null {
 function normalizeNumber(value: unknown, fallback: number) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
+}
+
+function normalizeNullableString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 function makeInstallId() {

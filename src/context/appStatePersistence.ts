@@ -1,6 +1,7 @@
 import { Project } from "../types/domain";
 import { PersistedSession } from "../utils/persistence";
 import { normalizeChatThreads, normalizeChatTitles } from "../utils/chatThreads";
+import { normalizeProjectMemories } from "../utils/projectMemory";
 import { AppState } from "./appContextTypes";
 
 export const emptyPromptMoney: AppState["promptMoney"] = {
@@ -16,7 +17,9 @@ export function getPersistedAppState(session: PersistedSession) {
     chatThreads: normalizeChatThreads(appState.chatThreads),
     chatTitles: normalizeChatTitles(appState.chatTitles),
     chatProjects: normalizeChatProjects(appState.chatProjects),
+    projectMemories: normalizeProjectMemories(appState.projectMemories),
     editApprovals: normalizeEditApprovals(appState.editApprovals),
+    desktopPermissionMode: normalizeDesktopPermissionMode(appState.desktopPermissionMode),
     selectedModel: normalizeSelectedModel(appState.selectedModel),
     profileImageUri: normalizeProfileImageUri(appState.profileImageUri),
     promptMoney: normalizePromptMoney(appState.promptMoney)
@@ -55,6 +58,11 @@ function normalizeEditApprovals(value: unknown): Record<string, "always"> {
   if (!value || typeof value !== "object") return {};
   const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v === "always");
   return Object.fromEntries(entries) as Record<string, "always">;
+}
+
+function normalizeDesktopPermissionMode(value: unknown): AppState["desktopPermissionMode"] {
+  if (value === "read" || value === "auto") return value;
+  return "ask";
 }
 
 function normalizeProfileImageUri(value: unknown) {

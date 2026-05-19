@@ -31,6 +31,8 @@ Route::post('/commands/run', [VibyraDesktopController::class, 'runCommand']);
 
 Route::post('/api/auth/signup', [VibyraAppController::class, 'signup']);
 Route::post('/api/auth/login', [VibyraAppController::class, 'login']);
+Route::post('/api/account/profile', [VibyraAppController::class, 'updateAccountProfile']);
+Route::delete('/api/account', [VibyraAppController::class, 'deleteAccount']);
 Route::get('/api/session', [VibyraAppController::class, 'session']);
 Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
 Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOnboarding']);

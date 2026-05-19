@@ -92,5 +92,18 @@ export const part34 = {
     flexDirection: "column" as const,
     gap: 10,
     marginTop: 4
+  },
+  securityRowMeta: {
+    color: "#C7B6FF",
+    fontSize: 11,
+    fontWeight: "900" as const
+  },
+  securityRowPressed: {
+    opacity: 0.72
+  },
+  securityRowTitleLine: {
+    alignItems: "center" as const,
+    flexDirection: "row" as const,
+    gap: 8
   }
 } as const;

@@ -78,7 +78,7 @@ export const chatCommandHelpReply = [
 export function matchChatCommand(text: string): { command: ChatCommand; args: string } | null {
   const match = text.trim().match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
   if (!match) return null;
-  const id = match[1].toLowerCase();
+  const id = match[1].toLowerCase() === "prewview" ? "preview" : match[1].toLowerCase();
   const command = chatCommands.find((c) => c.id === id);
   if (!command) return null;
   return { command, args: (match[2] ?? "").trim() };

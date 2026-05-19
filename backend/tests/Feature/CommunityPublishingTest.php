@@ -208,7 +208,7 @@ class CommunityPublishingTest extends TestCase
         config([
             'services.openai.key' => 'test-openai-key',
             'services.openrouter.key' => 'test-openrouter-key',
-            'services.openrouter.image_model' => 'openai/gpt-5-image',
+            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
         ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response([
@@ -251,7 +251,7 @@ class CommunityPublishingTest extends TestCase
             ->assertJson(fn ($json) => $json->where('ok', true)->whereType('imageUrl', 'string')->etc());
 
         Http::assertSent(fn ($request) => $request->url() === 'https://openrouter.ai/api/v1/chat/completions'
-            && $request['model'] === 'openai/gpt-5-image'
+            && $request['model'] === 'openai/gpt-5.4-image-2'
             && $request['modalities'] === ['image']
             && $request['image_config']['aspect_ratio'] === '1:1');
     }
@@ -261,7 +261,7 @@ class CommunityPublishingTest extends TestCase
         config([
             'services.openai.key' => 'test-openai-key',
             'services.openrouter.key' => 'test-openrouter-key',
-            'services.openrouter.image_model' => 'openai/gpt-5-image',
+            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
         ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response([
@@ -304,9 +304,53 @@ class CommunityPublishingTest extends TestCase
             ->assertJson(fn ($json) => $json->where('ok', true)->whereType('imageUrl', 'string')->etc());
 
         Http::assertSent(fn ($request) => $request->url() === 'https://openrouter.ai/api/v1/chat/completions'
-            && $request['model'] === 'openai/gpt-5-image'
+            && $request['model'] === 'openai/gpt-5.4-image-2'
             && $request['modalities'] === ['image']
             && $request['image_config']['aspect_ratio'] === '16:9');
+    }
+
+    public function test_publish_asset_generation_accepts_gpt_image_base64_response(): void
+    {
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'services.openrouter.key' => 'test-openrouter-key',
+            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
+        ]);
+        Http::fake([
+            'https://api.openai.com/v1/moderations' => Http::response([
+                'results' => [[
+                    'flagged' => false,
+                    'categories' => [],
+                    'category_scores' => [],
+                ]],
+            ]),
+            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
+                'choices' => [[
+                    'message' => [
+                        'content' => [[
+                            'type' => 'image',
+                            'b64_json' => base64_encode('generated-image'),
+                        ]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $signup = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex.b64-image@example.com',
+            'password' => 'secret123',
+        ])->assertCreated();
+        $token = $signup->json('token');
+
+        $this->postJson('/api/community/assets/generate', [
+            'kind' => 'screenshot',
+            'title' => 'Client Portal',
+            'description' => 'A dashboard for client onboarding.',
+            'prompt' => 'polished app screen',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('imageUrl', 'data:image/png;base64,'.base64_encode('generated-image'));
     }
 
     public function test_publish_asset_generation_requires_openrouter_configuration_without_charging(): void

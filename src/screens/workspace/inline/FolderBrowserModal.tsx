@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemedColor } from "../../../context/PreferencesContext";
+import { createThemedStyleSheet } from "../styles/themeTransform";
 import { colors } from "../../../styles/theme";
 import type { DesktopBrowseEntry, DesktopBrowseListing, Project } from "../../../types/domain";
 
@@ -16,6 +18,13 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const accentIcon = useThemedColor("#B084FF");
+  const closeIcon = useThemedColor("#FFFFFF");
+  const mutedIcon = useThemedColor("#A29CB8");
+  const dimIcon = useThemedColor("#8F8A9E");
+  const toolbarIcon = useThemedColor("#D5D0E6");
+  const warningIcon = useThemedColor("#FFD166");
+  const placeholderColor = useThemedColor("#7F788F");
 
   const browseRef = useRef(browseDesktopPath);
   browseRef.current = browseDesktopPath;
@@ -44,10 +53,8 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
 
   const visibleEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return listing.entries
-      .filter((entry) => !needle || entry.name.toLowerCase().includes(needle) || entry.path.toLowerCase().includes(needle));
+    return listing.entries.filter((entry) => !needle || entry.name.toLowerCase().includes(needle) || entry.path.toLowerCase().includes(needle));
   }, [listing.entries, query]);
-
   const projectFromEntry = useCallback((entry: DesktopBrowseEntry): Project => {
     const { kind, ...project } = entry;
     return { ...project, stack: project.stack || "Folder", updated: project.updated || "Now", source: project.source ?? "desktop" };
@@ -58,30 +65,30 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
       <View style={folderBrowserStyles.screen}>
         <View style={folderBrowserStyles.header}>
           <Pressable onPress={onClose} style={folderBrowserStyles.iconButton}>
-            <Ionicons name="close" color="#FFFFFF" size={22} />
+            <Ionicons name="close" color={closeIcon} size={22} />
           </Pressable>
           <View style={folderBrowserStyles.titleStack}>
             <Text style={folderBrowserStyles.label}>{label ?? "Manual PC browse"}</Text>
             <Text numberOfLines={1} style={folderBrowserStyles.title}>{listing.current?.name ?? "Choose a location"}</Text>
           </View>
           <Pressable onPress={() => openPath(listing.current?.path)} style={folderBrowserStyles.iconButton}>
-            <Ionicons name="refresh" color="#FFFFFF" size={20} />
+            <Ionicons name="refresh" color={closeIcon} size={20} />
           </Pressable>
         </View>
 
         <View style={folderBrowserStyles.pathBar}>
-          <Ionicons name="desktop-outline" color="#B084FF" size={15} />
+          <Ionicons name="desktop-outline" color={accentIcon} size={15} />
           <Text numberOfLines={1} style={folderBrowserStyles.pathText}>{listing.current?.name ?? "Your PC"}</Text>
         </View>
 
         <View style={folderBrowserStyles.searchRow}>
-          <Ionicons name="search-outline" color="#A29CB8" size={16} />
+          <Ionicons name="search-outline" color={mutedIcon} size={16} />
           <TextInput
             autoCapitalize="none"
             autoCorrect={false}
             onChangeText={setQuery}
             placeholder="Search visible folders"
-            placeholderTextColor="#7F788F"
+            placeholderTextColor={placeholderColor}
             style={folderBrowserStyles.searchInput}
             value={query}
           />
@@ -93,30 +100,24 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
             onPress={() => listing.parentPath ? openPath(listing.parentPath) : undefined}
             style={({ pressed }) => [folderBrowserStyles.toolbarButton, !listing.parentPath && folderBrowserStyles.disabled, pressed && folderBrowserStyles.pressed]}
           >
-            <Ionicons name="arrow-up" color="#D5D0E6" size={14} />
+            <Ionicons name="arrow-up" color={toolbarIcon} size={14} />
             <Text style={folderBrowserStyles.toolbarText}>Up</Text>
           </Pressable>
           {listing.current ? (
-            <Pressable
-              onPress={() => listing.current ? onSelect(listing.current) : undefined}
-              style={({ pressed }) => [folderBrowserStyles.selectCurrentButton, pressed && folderBrowserStyles.pressed]}
-            >
+            <Pressable onPress={() => listing.current ? onSelect(listing.current) : undefined} style={({ pressed }) => [folderBrowserStyles.selectCurrentButton, pressed && folderBrowserStyles.pressed]}>
               <Ionicons name="checkmark" color="#FFFFFF" size={15} />
-              <Text style={folderBrowserStyles.selectCurrentText}>Select this folder</Text>
+              <Text style={[folderBrowserStyles.selectCurrentText, { color: "#FFFFFF" }]}>Select this folder</Text>
             </Pressable>
           ) : null}
         </View>
 
         {error ? (
-          <View style={folderBrowserStyles.errorBox}>
-            <Ionicons name="alert-circle-outline" color="#FFD166" size={15} />
-            <Text style={folderBrowserStyles.errorText}>{error}</Text>
-          </View>
+          <View style={folderBrowserStyles.errorBox}><Ionicons name="alert-circle-outline" color={warningIcon} size={15} /><Text style={folderBrowserStyles.errorText}>{error}</Text></View>
         ) : null}
 
         {loading ? (
           <View style={folderBrowserStyles.loading}>
-            <ActivityIndicator color="#B084FF" />
+            <ActivityIndicator color={accentIcon} />
             <Text style={folderBrowserStyles.loadingText}>Reading folders...</Text>
           </View>
         ) : (
@@ -131,13 +132,13 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
                     style={({ pressed }) => [folderBrowserStyles.rowMain, !folder && folderBrowserStyles.fileRow, pressed && folderBrowserStyles.rowPressed]}
                   >
                     <View style={folder ? folderBrowserStyles.folderIcon : folderBrowserStyles.fileIcon}>
-                      <Ionicons name={folder ? "folder-outline" : "document-outline"} color={folder ? "#B084FF" : "#A29CB8"} size={18} />
+                      <Ionicons name={folder ? "folder-outline" : "document-outline"} color={folder ? accentIcon : mutedIcon} size={18} />
                     </View>
                     <View style={folderBrowserStyles.rowText}>
                       <Text numberOfLines={1} style={folderBrowserStyles.rowName}>{entry.name}</Text>
                       <Text numberOfLines={1} style={folderBrowserStyles.rowPath}>{entry.kind === "folder" ? "Folder" : "File"}</Text>
                     </View>
-                    {folder ? <Ionicons name="chevron-forward" color="#8F8A9E" size={16} /> : <Text style={folderBrowserStyles.fileChip}>File</Text>}
+                    {folder ? <Ionicons name="chevron-forward" color={dimIcon} size={16} /> : <Text style={folderBrowserStyles.fileChip}>File</Text>}
                   </Pressable>
                   {folder ? (
                     <Pressable onPress={() => onSelect(projectFromEntry(entry))} style={({ pressed }) => [folderBrowserStyles.rowSelect, pressed && folderBrowserStyles.pressed]}>
@@ -157,7 +158,7 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
   );
 }
 
-const folderBrowserStyles = StyleSheet.create({
+const folderBrowserStyles = createThemedStyleSheet({
   screen: { backgroundColor: "#0B0C12", flex: 1, padding: 16, paddingTop: 18 },
   header: { alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 },
   iconButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 18, height: 36, justifyContent: "center", width: 36 },

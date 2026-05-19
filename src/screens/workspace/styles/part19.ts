@@ -4,20 +4,21 @@ import { communityDetailAccent, communityDetailAccentDark } from "../data/commun
 
 export const part19 = {
   appModalLabel: {
-    color: "#B49CFF",
-    fontSize: 11,
+    color: "#9E98B1",
+    fontSize: 10,
     fontWeight: "900",
-    letterSpacing: 0.6,
+    letterSpacing: 0,
     textTransform: "uppercase"
   },
   appModalTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: "#F7F3FF",
+    fontSize: 15,
     fontWeight: "900",
-    marginTop: 2
+    lineHeight: 19,
+    marginTop: 1
   },
   appModalWebContainer: {
-    backgroundColor: "#0B0D17",
+    backgroundColor: "#FFFFFF",
     flex: 1
   },
   appModalWebView: {

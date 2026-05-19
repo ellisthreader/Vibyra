@@ -27,17 +27,34 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setAuthEmail(normalized.email);
     setters.setCreditsBalance(normalized.creditsBalance);
     setters.setCreditsUsed(normalized.creditsUsed);
+    setters.setDailyCreditsUsed(normalized.dailyCreditsUsed);
+    setters.setDailyCreditsCap(normalized.dailyCreditsCap);
+    setters.setDailyCreditsResetAt(normalized.dailyCreditsResetAt);
+    setters.setBurstCreditsUsed(normalized.burstCreditsUsed);
+    setters.setBurstCreditsCap(normalized.burstCreditsCap);
+    setters.setBurstCreditsResetAt(normalized.burstCreditsResetAt);
+    setters.setBurstWindowHours(normalized.burstWindowHours);
+    setters.setWeeklyCreditsUsed(normalized.weeklyCreditsUsed);
+    setters.setWeeklyCreditsCap(normalized.weeklyCreditsCap);
+    setters.setWeeklyCreditsResetAt(normalized.weeklyCreditsResetAt);
     setters.setOnboardingComplete(normalized.onboardingComplete);
     setters.setRememberedDesktops(normalized.rememberedDesktops);
     const selectedChatModel = normalized.appState?.selectedChatModel;
     if (typeof selectedChatModel === "string" && selectedChatModel) {
       setters.setSelectedChatModel(selectedChatModel);
     }
+    const desktopPermissionMode = normalized.appState?.desktopPermissionMode;
+    if (desktopPermissionMode === "read" || desktopPermissionMode === "ask" || desktopPermissionMode === "auto") {
+      setters.setDesktopPermissionMode(desktopPermissionMode);
+    }
     if (normalized.appState?.chatThreads && typeof normalized.appState.chatThreads === "object") {
       setters.setChatThreads(normalized.appState.chatThreads as AppContextValue["chatThreads"]);
     }
     if (normalized.appState?.chatTitles && typeof normalized.appState.chatTitles === "object") {
       setters.setChatTitles(normalized.appState.chatTitles as AppContextValue["chatTitles"]);
+    }
+    if (normalized.appState?.projectMemories && typeof normalized.appState.projectMemories === "object") {
+      setters.setProjectMemories(normalized.appState.projectMemories as AppContextValue["projectMemories"]);
     }
     if (normalized.appState?.chatProjects && typeof normalized.appState.chatProjects === "object") {
       const restored = normalized.appState.chatProjects as AppContextValue["chatProjects"];
@@ -115,6 +132,8 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setChatThreads({});
     setters.setChatTitles({});
     setters.setChatProjects({});
+    setters.setProjectMemories({});
+    setters.setDesktopPermissionMode("ask");
     setters.setConnection(null);
     setters.setRememberedDesktops([]);
     setters.setProjects([]);
@@ -141,7 +160,9 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setChatThreads({});
     setters.setChatTitles({});
     setters.setChatProjects({});
+    setters.setProjectMemories({});
     setters.setEditApprovals({});
+    setters.setDesktopPermissionMode("ask");
     setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
     logs.appendLog("Cached projects, chats, files, and desktop sessions cleared on this device.", "Profile", "success");
   }

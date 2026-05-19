@@ -1,8 +1,10 @@
 const emptyState = { machineName: "Vibyra Desktop", pairCode: "------", pairedDevice: null, pendingPair: null, latestPreview: null, events: [], projects: [], connectionUrls: [] };
 const pages = [
   { key: "chat", label: "Chat", icon: "chat" },
+  { key: "terminals", label: "Terminals", icon: "terminal" },
   { key: "projects", label: "Projects", icon: "folder" },
-  { key: "dashboard", label: "Builds", icon: "pulse" }
+  { key: "dashboard", label: "Builds", icon: "pulse" },
+  { key: "profile", label: "Profile", icon: "user", hidden: true }
 ];
 const suggestions = [
   { title: "Fix a bug", description: "Find and resolve issues", icon: "tool", prompt: "Find and fix the main bug in this project." },
@@ -46,6 +48,7 @@ const chatSkills = [
   { id: "fix", slash: "/fix", icon: "bolt", label: "Fix", description: "Apply a targeted fix", mode: "chat" },
   { id: "refactor", slash: "/refactor", icon: "code", label: "Refactor", description: "Clean up readability", mode: "chat" }
 ];
+window.vibyraDesktopChatConfig = { chatModelGroups, chatModels, chatEfforts, chatSkills };
 const storedPage = localStorage.getItem("vibyra.desktop.page");
 const desktopChatsKey = "vibyra.desktop.recentChats";
 const activeChatKey = "vibyra.desktop.activeChat";
@@ -61,15 +64,19 @@ let chatMessages = activeChatId ? messagesForChat(activeChatId) : [];
 let chatAttachments = [];
 let chatDraft = localStorage.getItem("vibyra.desktop.chatDraft") || "";
 let chatSending = false;
+let chatNotice = null;
 let activeChatTool = "";
 let activeChatSkill = "";
 let selectedChatModel = chatModels.some((model) => model.key === localStorage.getItem("vibyra.desktop.chatModel")) ? localStorage.getItem("vibyra.desktop.chatModel") : "auto";
 let reasoningEffort = chatEfforts.some((effort) => effort.value === localStorage.getItem("vibyra.desktop.reasoningEffort")) ? localStorage.getItem("vibyra.desktop.reasoningEffort") : "medium";
 let railCollapsed = localStorage.getItem(railCollapsedKey) === "true";
 let openChatMenu = "";
+let modelMenuGroup = "";
 let topbarChatMenuOpen = false;
+let topbarAccountMenuOpen = false;
 let selectedProjectId = localStorage.getItem("vibyra.desktop.project") || "";
 let openedPairRequestId = "";
+let tokenModalView = "profile";
 const nodes = {
   content: document.getElementById("content"),
   mobileDock: document.getElementById("mobile-dock"),
@@ -80,18 +87,33 @@ const nodes = {
   railStatus: document.getElementById("rail-status"),
   tokenBody: document.getElementById("token-modal-body"),
   tokenModal: document.getElementById("token-modal"),
-  topbar: document.getElementById("topbar")
+  topbar: document.getElementById("topbar"),
+  chromePage: document.getElementById("desktop-chrome-page"),
+  chromeActions: document.getElementById("desktop-chrome-actions"),
+  chromeStatus: document.getElementById("desktop-chrome-status")
 };
 document.getElementById("close-pair").innerHTML = icon("close");
 document.getElementById("close-token").innerHTML = icon("close");
 document.getElementById("rail-collapse").innerHTML = icon("chevron");
 document.getElementById("rail-expand").innerHTML = icon("chevron");
+document.querySelector("[data-window-action='minimize']")?.replaceChildren(svgFromHtml(icon("minus")));
+document.querySelector("[data-window-action='maximize']")?.replaceChildren(svgFromHtml(icon("square")));
+document.querySelector("[data-window-action='close']")?.replaceChildren(svgFromHtml(icon("close")));
 document.getElementById("close-pair").addEventListener("click", closePairModal);
 document.getElementById("close-token").addEventListener("click", closeTokenModal);
 nodes.pairModal.addEventListener("click", (event) => { if (event.target === nodes.pairModal) closePairModal(); });
 nodes.tokenModal.addEventListener("click", (event) => { if (event.target === nodes.tokenModal) closeTokenModal(); });
-document.getElementById("rail-collapse")?.addEventListener("click", () => setRailCollapsed(true));
+document.addEventListener("click", (event) => {
+  if (!topbarAccountMenuOpen && !topbarChatMenuOpen) return;
+  if (event.target.closest(".topbar-menu-wrap")) return;
+  topbarAccountMenuOpen = false;
+  topbarChatMenuOpen = false;
+  renderTopbar();
+});
+document.getElementById("rail-collapse")?.addEventListener("click", () => setRailCollapsed(!railCollapsed));
 document.getElementById("rail-expand")?.addEventListener("click", () => setRailCollapsed(false));
+document.querySelectorAll("[data-window-action]").forEach((button) => button.addEventListener("click", () => handleWindowAction(button.dataset.windowAction)));
+if (window.vibyraDesktopWindow?.isElectron) document.body.classList.add("electron-shell");
 applyRailState();
 renderNav();
 loadDesktopProjects();
@@ -152,10 +174,15 @@ function render() {
   renderNav();
   renderRecentChats();
   renderTopbar();
-  nodes.content.className = activePage === "chat" ? "content chat-content" : "content";
+  nodes.content.className = activePage === "chat" ? "content chat-content" : activePage === "terminals" ? "content terminal-content" : activePage === "profile" ? "content profile-content" : "content";
   if (activePage === "chat") renderChat();
+  if (activePage === "terminals") {
+    if (typeof renderTerminalsPage === "function") renderTerminalsPage();
+    else nodes.content.innerHTML = `<section class="terminal-page"><div class="terminal-empty">Loading terminals...</div></section>`;
+  }
   if (activePage === "projects") renderProjects();
   if (activePage === "dashboard") renderDashboard();
+  if (activePage === "profile" && typeof renderProfile === "function") renderProfile();
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open")) renderTokenModal();
@@ -165,36 +192,79 @@ function setRailCollapsed(value) {
   localStorage.setItem(railCollapsedKey, railCollapsed ? "true" : "false");
   applyRailState();
 }
+function svgFromHtml(markup) {
+  const template = document.createElement("template");
+  template.innerHTML = markup.trim();
+  return template.content.firstElementChild;
+}
+function handleWindowAction(action) {
+  const controls = window.vibyraDesktopWindow;
+  if (!controls?.isElectron) return;
+  if (action === "minimize") controls.minimize?.();
+  if (action === "maximize") controls.maximize?.();
+  if (action === "close") controls.close?.();
+}
+function isElectronShell() {
+  return Boolean(window.vibyraDesktopWindow?.isElectron);
+}
 function applyRailState() {
   document.querySelector(".app")?.classList.toggle("rail-collapsed", railCollapsed);
+  const label = railCollapsed ? "Expand sidebar" : "Collapse sidebar";
+  const button = document.getElementById("rail-collapse");
+  if (button) {
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+  }
 }
 function renderNav() {
-  const html = pages.map((page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`).join("");
+  const html = pages.filter((page) => !page.hidden).map((page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`).join("");
   nodes.railNav.innerHTML = html;
   nodes.mobileDock.innerHTML = html;
   document.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
 }
 function renderTopbar() {
+  if (!document.body.classList.contains("desktop-authenticated")) {
+    if (nodes.chromePage) nodes.chromePage.innerHTML = "";
+    if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
+    if (nodes.chromeStatus) nodes.chromeStatus.textContent = "";
+    if (nodes.topbar) nodes.topbar.innerHTML = "";
+    return;
+  }
   const connected = Boolean(currentState.pairedDevice);
   const selected = currentProject();
   const projectCount = filteredProjects().length;
   if (activePage !== "chat") topbarChatMenuOpen = false;
-  const title = activePage === "chat" ? activeChatTitle() : pageTitle(activePage);
+  const terminalPage = activePage === "terminals";
+  const title = activePage === "chat" ? activeChatTitle() : terminalPage ? "" : pageTitle(activePage);
   const subtitle = activePage === "chat"
     ? chatDirectoryLabel(selected)
     : activePage === "projects"
       ? `${projectCount} project${projectCount === 1 ? "" : "s"}`
-      : statusLabel();
+      : terminalPage ? "" : statusLabel();
   const showNewChat = activePage === "chat" && !isBlankNewChat();
   const account = currentAccount();
   const avatarUrl = accountImageUrl(account, account);
   const avatarName = account.name || "Vibyra User";
   const avatar = avatarUrl ? `<img src="${escapeAttribute(avatarUrl)}" alt="" />` : escapeHtml(accountInitials(avatarName));
-  nodes.topbar.innerHTML = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div><div class="top-title"><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div><div class="top-actions">${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<button class="token-pill account-avatar-button" id="open-token" type="button" aria-label="Account and membership" title="Account and membership"><span class="topbar-avatar">${avatar}</span></button></div>`;
+  const terminalTopbar = terminalPage && typeof terminalTopbarHtml === "function" ? terminalTopbarHtml() : "";
+  const left = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div>`;
+  const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
+  const actions = `${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
+  if (isElectronShell()) {
+    nodes.topbar.innerHTML = "";
+    if (nodes.chromePage) nodes.chromePage.innerHTML = center;
+    if (nodes.chromeActions) nodes.chromeActions.innerHTML = `${left}<div class="top-actions">${actions}</div>`;
+    if (nodes.chromeStatus) nodes.chromeStatus.textContent = statusLabel();
+  } else {
+    if (nodes.chromePage) nodes.chromePage.innerHTML = "";
+    if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
+    nodes.topbar.innerHTML = `${left}${center}<div class="top-actions">${actions}</div>`;
+  }
   document.getElementById("open-pair")?.addEventListener("click", openPairModal);
   document.getElementById("clear-chat")?.addEventListener("click", startNewChat);
-  document.getElementById("open-token")?.addEventListener("click", openTokenModal);
-  document.getElementById("open-chat-actions")?.addEventListener("click", () => { topbarChatMenuOpen = !topbarChatMenuOpen; renderTopbar(); });
+  document.getElementById("open-account-menu")?.addEventListener("click", (event) => { event.stopPropagation(); topbarAccountMenuOpen = !topbarAccountMenuOpen; topbarChatMenuOpen = false; renderTopbar(); });
+  document.querySelectorAll("[data-account-action]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); handleAccountAction(button.dataset.accountAction); }));
+  document.getElementById("open-chat-actions")?.addEventListener("click", (event) => { event.stopPropagation(); topbarChatMenuOpen = !topbarChatMenuOpen; topbarAccountMenuOpen = false; renderTopbar(); });
   document.querySelectorAll("[data-chat-action]").forEach((button) => button.addEventListener("click", () => handleChatAction(button.dataset.chatAction)));
 }
 function renderRecentChats() {
@@ -207,7 +277,7 @@ function renderRecentChats() {
 function renderRailStatus() {
   const paired = Boolean(currentState.pairedDevice);
   const pending = currentState.pendingPair && currentState.pendingPair.status === "pending";
-  nodes.railStatus.innerHTML = `<button class="rail-status-card ${pending ? "pending" : ""}" type="button" id="rail-pair"><span class="rail-status-top"><span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span><span>${pending ? "Approval needed" : statusLabel()}</span></span><span class="rail-status-main"><span class="rail-phone-icon">${icon(pending ? "clock" : paired ? "phone" : "link")}</span><span><strong>${pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone"}</strong><small>${pending ? "A phone is waiting for access." : paired ? currentState.pairedDevice : "Connect to browse and build."}</small></span></span></button>`;
+  nodes.railStatus.innerHTML = `<button class="rail-status-card ${pending ? "pending" : ""}" type="button" id="rail-pair" aria-label="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}" title="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}"><span class="rail-status-top"><span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span><span>${pending ? "Approval needed" : statusLabel()}</span></span><span class="rail-status-main"><span class="rail-phone-icon">${icon(pending ? "clock" : paired ? "phone" : "link")}</span><span><strong>${pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone"}</strong><small>${pending ? "A phone is waiting for access." : paired ? currentState.pairedDevice : "Connect to browse and build."}</small></span></span></button>`;
   document.getElementById("rail-pair")?.addEventListener("click", openPairModal);
 }
 function renderDashboard() {
@@ -232,15 +302,17 @@ function renderChat() {
   const restoreFocus = document.activeElement === previousInput;
   const cursor = restoreFocus ? previousInput.selectionStart : chatDraft.length;
   const runCard = activeRunCard();
-  nodes.content.innerHTML = `<section class="chat-page"><div class="chat-scroll" id="chat-scroll">${chatMessages.length || runCard ? `<div class="messages">${chatMessages.map(messageRow).join("")}${runCard}</div>` : chatEmptyState()}</div><div class="composer-shell"><div class="composer"><div class="composer-context">${projectContextChip()}${attachmentChips()}${toolChip()}${skillChip()}</div><textarea id="chat-input" placeholder="Message Vibyra..." rows="1">${escapeHtml(chatDraft)}</textarea>${slashMenu()}<input id="chat-attach" type="file" accept="*/*" multiple hidden /><div class="composer-bottom"><div class="composer-tools"><div class="tool-menu-wrap"><button class="icon-tool" id="open-attach-menu" type="button" aria-label="Attach context" title="Attach context">${icon("paperclip")}</button>${openChatMenu === "attach" ? attachMenu() : ""}</div><div class="tool-menu-wrap"><button class="tool-pill quiet" id="open-model-menu" type="button">${icon("sparkles")}<span>${escapeHtml(currentChatModel().label)}</span>${icon("chevron-down")}</button>${openChatMenu === "model" ? modelMenu() : ""}</div><div class="tool-menu-wrap"><button class="tool-pill quiet" id="open-effort-menu" type="button">${icon("bolt")}<span>${escapeHtml(currentEffort().short)}</span>${icon("chevron-down")}</button>${openChatMenu === "effort" ? effortMenu() : ""}</div></div><button class="send-button" id="send-chat" type="button" aria-label="Send message" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button></div></div></div></section>`;
+  nodes.content.innerHTML = `<section class="chat-page"><div class="chat-scroll" id="chat-scroll">${chatMessages.length || runCard ? `<div class="messages">${chatMessages.map(messageRow).join("")}${runCard}</div>` : chatEmptyState()}</div><div class="composer-shell">${chatNoticeBanner()}<div class="composer"><div class="composer-context">${projectContextChip()}${attachmentChips()}${toolChip()}${skillChip()}</div><textarea id="chat-input" placeholder="Message Vibyra..." rows="1">${escapeHtml(chatDraft)}</textarea>${slashMenu()}<input id="chat-attach" type="file" accept="*/*" multiple hidden /><div class="composer-bottom"><div class="composer-tools"><div class="tool-menu-wrap"><button class="icon-tool" id="open-attach-menu" type="button" aria-label="Attach context" title="Attach context">${icon("paperclip")}</button>${openChatMenu === "attach" ? attachMenu() : ""}</div><div class="tool-menu-wrap"><button class="tool-pill quiet" id="open-model-menu" type="button">${icon("sparkles")}<span>${escapeHtml(currentChatModel().label)}</span>${icon("chevron-down")}</button>${openChatMenu === "model" ? modelMenu() : ""}</div><div class="tool-menu-wrap"><button class="tool-pill quiet" id="open-effort-menu" type="button">${icon("bolt")}<span>${escapeHtml(currentEffort().short)}</span>${icon("chevron-down")}</button>${openChatMenu === "effort" ? effortMenu() : ""}</div></div><button class="send-button" id="send-chat" type="button" aria-label="Send message" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button></div></div></div></section>`;
   document.querySelectorAll("[data-suggestion]").forEach((button) => button.addEventListener("click", () => { const input = document.getElementById("chat-input"); input.value = button.dataset.suggestion; chatDraft = input.value; localStorage.setItem("vibyra.desktop.chatDraft", chatDraft); input.focus(); renderSendState(); }));
   document.getElementById("clear-project")?.addEventListener("click", () => { selectedProjectId = ""; localStorage.removeItem("vibyra.desktop.project"); render(); });
   document.getElementById("clear-attachments")?.addEventListener("click", () => { chatAttachments = []; renderChat(); });
   document.getElementById("clear-tool")?.addEventListener("click", () => { activeChatTool = ""; renderChat(); });
   document.getElementById("clear-skill")?.addEventListener("click", () => { activeChatSkill = ""; renderChat(); });
+  document.getElementById("dismiss-chat-notice")?.addEventListener("click", () => { chatNotice = null; renderChat(); });
   document.getElementById("open-attach-menu")?.addEventListener("click", () => toggleChatMenu("attach"));
   document.getElementById("open-model-menu")?.addEventListener("click", () => toggleChatMenu("model"));
   document.getElementById("open-effort-menu")?.addEventListener("click", () => toggleChatMenu("effort"));
+  document.querySelectorAll("[data-model-group]").forEach((button) => button.addEventListener("click", () => selectModelMenuGroup(button.dataset.modelGroup)));
   document.querySelectorAll("[data-model]").forEach((button) => button.addEventListener("click", () => selectChatModel(button.dataset.model)));
   document.querySelectorAll("[data-effort]").forEach((button) => button.addEventListener("click", () => { reasoningEffort = button.dataset.effort; localStorage.setItem("vibyra.desktop.reasoningEffort", reasoningEffort); openChatMenu = ""; renderChat(); }));
   document.querySelectorAll("[data-attach-kind]").forEach((button) => button.addEventListener("click", () => openAttachmentPicker(button.dataset.attachKind)));

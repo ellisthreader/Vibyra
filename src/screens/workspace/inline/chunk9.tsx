@@ -36,6 +36,7 @@ export function AIChatPage(props: {
   onWrongFolderProposal: (proposalId: string, folder: Project, query: string) => void;
   projectName?: string;
   onOpenTokens: () => void;
+  onOpenPcConnection: () => void;
   onApprovePreviewServerStart: () => void;
   onDenyPreviewServerStart: () => void;
   onStart: (options?: ChatStartOptions) => void;
@@ -67,6 +68,9 @@ export function AIChatPage(props: {
   const setupRequired = Boolean(projectId && !desktopDisconnected && !confirmedSetup && ((project?.briefRequired && !project.brief) || needsFileBrief));
   const hasProjectBriefPrompt = props.chatMessages.some((message) => message.projectBriefSetup?.projectId === projectId);
   const setupFormOpen = setupRequired && (manualBriefProjectId === projectId || !hasProjectBriefPrompt);
+  const visibleSetupMessages = manualBriefProjectId === projectId
+    ? props.chatMessages.filter((message) => message.projectBriefSetup?.projectId !== projectId)
+    : props.chatMessages;
   const setupSubject = needsFileBrief ? `New file: ${appCtx.selectedFile.name}` : project?.name;
   const messageListRef = useRef<ScrollView | null>(null);
   const shouldFollowChatRef = useRef(true);
@@ -132,7 +136,7 @@ export function AIChatPage(props: {
             showsVerticalScrollIndicator={false}
             style={styles.chatMessageList}
           >
-            {props.chatMessages.map((message) => (
+            {visibleSetupMessages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}

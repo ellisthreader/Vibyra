@@ -3,6 +3,7 @@ import { Animated, Image, Platform, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ImageStyle } from "react-native";
 import type { ChatMessage, FileEntry, GeneratedApp, Project, ProjectBrief } from "../../../types/domain";
+import { isChatUsageLimitText } from "../../../context/chatUsageLimit";
 import { normalizeAgentReply } from "../../../utils/files";
 import { vibyraLogo } from "../data/assets";
 import { chatModelOptions } from "../data/chatModels";
@@ -13,6 +14,7 @@ import { RichMessageText } from "./chunk24";
 import { AppPreviewCard, TypingIndicator } from "./AppPreviewCards";
 import { AppPreviewModal } from "./AppPreviewModal";
 import { CodeChangesCard } from "./CodeChangesCard";
+import { ChatToolActivityCard } from "./ChatToolActivityCard";
 import { DesktopConnectionCard } from "./DesktopConnectionCard";
 import { EditPermissionCard } from "./EditPermissionCard";
 import { FolderProposalCard, FolderRecoveryCard } from "./FolderCards";
@@ -75,6 +77,8 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
     void onDenyEdits(message.id, message.codeProjectId).finally(() => setEditPermissionBusy(false));
   }, [message.codeProjectId, message.id, onDenyEdits]);
 
+  if (!user && message.runStatus?.status === "failed" && isChatUsageLimitText(visibleText)) return null;
+
   return (
     <Animated.View style={[styles.messageRow, user ? styles.messageRowUser : styles.messageRowAssistant, { opacity, transform: [{ translateY }] }]}>
       <View style={[styles.messageAvatar, user ? styles.messageAvatarUser : styles.messageAvatarAssistant]}>
@@ -88,7 +92,9 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
         <Text style={[styles.messageAuthor, !user && styles.messageAuthorAssistant]}>{user ? "You" : assistantName}</Text>
         {message.file ? <Text numberOfLines={1} style={styles.messageFile}>{message.file}</Text> : null}
         {isThinking ? (
-          message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
+          message.runStatus?.status === "running" && message.runStatus.tool ? (
+            <ChatToolActivityCard status={message.runStatus} />
+          ) : message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
         ) : message.previewServer ? (
           <PreviewServerActivityCard previewServer={message.previewServer} onApprove={onApprovePreviewServerStart} onDeny={onDenyPreviewServerStart} />
         ) : <RichMessageText text={visibleText} />}

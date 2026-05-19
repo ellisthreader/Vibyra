@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import * as Haptics from "expo-haptics";
 import { LogEvent } from "../types/domain";
-import type { AgentStartOptions } from "../types/chatTools";
+import type { AgentStartOptions, ChatToolMode } from "../types/chatTools";
 import { appApiStreamChat, ChatResponse, isAppSessionExpiredError } from "../utils/appApi";
 import { impact } from "../utils/haptics";
 import { useAppState } from "./useAppState";
@@ -10,9 +10,11 @@ import type { AgentStartTarget } from "./appContextTypes";
 import { makeOptimisticAgent, resolveAgentTarget } from "./agentActionHelpers";
 import { useAgentChatMessages } from "./useAgentChatMessages";
 import { useAgentResultHandlers } from "./useAgentResultHandlers";
+import { chatUsageLimitBlockMessage } from "./chatUsageLimit";
 import { applyLocalSkillPrompt, mergeChatSkills } from "../utils/chatSkills";
 import { normalizeAgentReply } from "../utils/files";
 import { withProjectBriefPrompt } from "../utils/projectBriefs";
+import { withProjectMemoryPrompt } from "../utils/projectMemory";
 import { projectFileContext, shouldAttachFileContext, type ProjectFileContext } from "./agentContextPayload";
 import { makeId } from "../utils/ids";
 type Store = ReturnType<typeof useAppState>;
@@ -37,6 +39,11 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
   async function startAgent(target?: AgentStartTarget, promptOverride?: string, options: AgentStartOptions = {}) {
     const trimmed = (promptOverride ?? state.taskText).trim();
     if (!trimmed || state.agentRequesting || agentRequestingRef.current) return false;
+    const limitBlock = chatUsageLimitBlockMessage();
+    if (limitBlock) {
+      logs.appendLog(limitBlock, "AI Chat", "warning");
+      return false;
+    }
 
     if (streamingRef.current) {
       streamingRef.current();
@@ -51,6 +58,13 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       : skillMatch ? allSkills.find((s) => s.id === skillMatch[1].toLowerCase()) : undefined;
     const skillId = requestedSkill || skill?.id;
     const userText = skill && skillMatch ? (skillMatch?.[2] ?? "").trim() : trimmed;
+    const imageAttachments = (options.imageAttachments ?? []).slice(0, 3).map((attachment) => ({
+      url: attachment.dataUrl,
+      name: attachment.name,
+      mimeType: attachment.mimeType,
+      ...(attachment.width ? { width: attachment.width } : {}),
+      ...(attachment.height ? { height: attachment.height } : {})
+    }));
     const visibleText = skill
       ? (skillMatch ? (userText ? `${skill.slash} ${userText}` : skill.slash) : trimmed)
       : trimmed;
@@ -59,7 +73,8 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
     const selectedModel = state.selectedChatModel || state.selectedModel;
     const intentText = skill ? userText : trimmed;
     const buildMode = shouldUseBuildChatMode(intentText, skill?.mode);
-    const desktopAgentMode = shouldUseDesktopAgentMode(intentText, skillId, skill?.mode, buildMode, state.connection, chatTarget.project.path);
+    const desktopAgentMode = imageAttachments.length === 0 && state.desktopPermissionMode !== "read"
+      && shouldUseDesktopAgentMode(intentText, skillId, skill?.mode, buildMode, state.connection, chatTarget.project.path);
     const pendingEdit = desktopAgentMode ? pendingProjectEdit(state.chatThreads[chatTarget.chatProjectId] ?? []) : null;
     if (pendingEdit) {
       appendPendingEditReminder(chatTarget.chatProjectId, visibleText, pendingEdit.file);
@@ -76,7 +91,8 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
     const assistantMessageId = messages.appendPendingChat(messageTarget, visibleText, selectedModel, {
       route: state.connection && desktopAgentMode ? "desktop" : "cloud",
       mode: runMode,
-      activeFile: liveEditFile
+      activeFile: liveEditFile,
+      tool: toolFromSkill(skillId)
     });
     const optimisticAgent = makeOptimisticAgent(chatTarget, visibleText, selectedModel);
     const richContextMode = buildMode || shouldUseAdviceContext(intentText, skill?.mode);
@@ -90,7 +106,8 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
     const projectBrief = state.chatProjects[chatTarget.chatProjectId]?.brief
       ?? state.chatProjects[chatTarget.projectId]?.brief
       ?? chatTarget.project.brief;
-    const prompt = withProjectBriefPrompt(projectBrief, scopedPrompt);
+    const projectMemory = state.projectMemories[chatTarget.chatProjectId] ?? state.projectMemories[chatTarget.projectId];
+    const prompt = withProjectMemoryPrompt(projectMemory, withProjectBriefPrompt(projectBrief, scopedPrompt));
     const earned = calculatePromptMoney(trimmed);
 
     impact(Haptics.ImpactFeedbackStyle.Medium);
@@ -117,7 +134,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
         const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
           method: "POST",
           body: JSON.stringify({
-            apply: state.editApprovals[chatTarget.projectId] === "always",
+            apply: state.desktopPermissionMode === "auto" || state.editApprovals[chatTarget.projectId] === "always",
             history: history
               .filter((message) => message.id !== "welcome" && message.text.trim() && message.text !== "Working on it...")
               .slice(-6)
@@ -165,6 +182,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
             role: message.role,
             text: (message.role === "assistant" ? normalizeAgentReply(message.text) : message.text).slice(0, historyCharCap)
           })),
+        imageAttachments,
         model: selectedModel,
         mode: runMode,
         project: chatTarget.project.name,
@@ -229,6 +247,11 @@ function shouldUseBuildChatMode(text: string, skillMode?: string) {
     || new RegExp(`^(can|could|would)\\s+(you|u)\\s+${buildVerb}\\b.*${target}`).test(prompt)
     || new RegExp(`^(i\\s+want\\s+you\\s+to|i\\s+need\\s+you\\s+to|need\\s+you\\s+to)\\s+${buildVerb}\\b.*${target}`).test(prompt)
     || /\b(?:fix|repair|debug|resolve)\b[\s\S]{0,80}\b(?:preview|app|site|website|page|html|screen|ui)\b/.test(prompt));
+}
+
+function toolFromSkill(skillId?: string): ChatToolMode | undefined {
+  if (skillId === "research" || skillId === "web" || skillId === "analyze") return skillId;
+  return undefined;
 }
 
 function shouldUseAdviceContext(text: string, skillMode?: string) {

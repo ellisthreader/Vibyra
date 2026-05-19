@@ -27,6 +27,7 @@
     "expo-iap": "^4.2.3",
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
+    "expo-local-authentication": "~17.0.8",
     "expo-network": "~8.0.8",
     "expo-status-bar": "~3.0.9",
     "lottie-react-native": "~7.3.1",

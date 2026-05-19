@@ -85,6 +85,46 @@ export function useLocalChatActions(store: Store) {
     setters.setTaskText("");
   }
 
+  function addLocalImageGenerationPending(prompt: string, target?: AgentStartTarget) {
+    const { projectId, file } = resolveChatTarget(target);
+    const assistantId = makeId("chat-assistant");
+    setters.setChatThreads((current) => ({
+      ...current,
+      [projectId]: [
+        ...(current[projectId] ?? []),
+        { id: makeId("chat-user"), role: "user", text: prompt, file },
+        {
+          id: assistantId,
+          role: "assistant",
+          text: "Working on it...",
+          file,
+          runStatus: { route: "cloud", mode: "chat", status: "running", tool: "image", startedAt: Date.now() }
+        }
+      ]
+    }));
+    setters.setTaskText("");
+    return assistantId;
+  }
+
+  function finishLocalGeneratedImage(messageId: string, image: GeneratedImage, target?: AgentStartTarget) {
+    const { projectId } = resolveChatTarget(target);
+    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => ({
+      ...message,
+      text: `Created **${image.title}**.`,
+      generatedImage: image,
+      runStatus: message.runStatus ? { ...message.runStatus, status: "complete", completedAt: Date.now() } : message.runStatus
+    })));
+  }
+
+  function failLocalImageGeneration(messageId: string, error: string, target?: AgentStartTarget) {
+    const { projectId } = resolveChatTarget(target);
+    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => ({
+      ...message,
+      text: error,
+      runStatus: message.runStatus ? { ...message.runStatus, status: "failed", completedAt: Date.now() } : message.runStatus
+    })));
+  }
+
   function addLocalPreviewServerPrompt(prompt: string, target?: AgentStartTarget) {
     const { projectId, file } = resolveChatTarget(target);
     const messageId = makeId("preview-server");
@@ -259,6 +299,9 @@ export function useLocalChatActions(store: Store) {
     addLocalChatNotice,
     addLocalChatReply,
     addLocalGeneratedImage,
+    addLocalImageGenerationPending,
+    finishLocalGeneratedImage,
+    failLocalImageGeneration,
     addLocalPreviewServerPrompt,
     updatePreviewServerMessage,
     addLocalChatProposal,

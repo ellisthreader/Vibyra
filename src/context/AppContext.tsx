@@ -15,11 +15,11 @@ import { useLocalChatActions } from "./useLocalChatActions";
 import { useLogActions } from "./useLogActions";
 import { usePairingActions } from "./usePairingActions";
 import { useProjectBriefActions } from "./useProjectBriefActions";
+import { useProjectMemoryActions } from "./useProjectMemoryActions";
 import { useProjectBriefChatActions } from "./useProjectBriefChatActions";
 import { useRequests } from "./useRequests";
 import { useTerminalCommandActions } from "./useTerminalCommandActions";
 import { useWorkspaceActions } from "./useWorkspaceActions";
-
 const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: PropsWithChildren) {
   const store = useAppState();
@@ -43,6 +43,7 @@ export function AppProvider({ children }: PropsWithChildren) {
   const agent = useAgentActions(store, requests, logs, authActions);
   const localChatActions = useLocalChatActions(store);
   const terminal = useTerminalCommandActions(store, requests, logs);
+  const projectMemoryActions = useProjectMemoryActions(store);
   const projectBriefActions = { ...useProjectBriefActions(store), ...useProjectBriefChatActions(store) };
   const editActions = useEditPermissionActions(store, requests, logs, { undoCodeChange: workspace.undoCodeChange });
   const handleLiveConnectionLost = useCallback(() => disconnectDesktop({
@@ -64,6 +65,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     addLocalGeneratedImage: localChatActions.addLocalGeneratedImage,
     ...terminal,
     ...projectBriefActions,
+    ...projectMemoryActions,
     disconnectDesktop,
     resetPromptMoney: () => {
       setters.setPromptMoney({ total: 0, count: 0, lastEarned: 0, longestPromptLength: 0 });
@@ -109,6 +111,16 @@ export function AppProvider({ children }: PropsWithChildren) {
     setSelectedModel: setters.setSelectedModel,
     setSelectedChatModel: setters.setSelectedChatModel,
     setReasoningEffort: setters.setReasoningEffort,
+    setDesktopPermissionMode: (mode, projectId) => {
+      setters.setDesktopPermissionMode(mode);
+      if (!projectId) return;
+      setters.setEditApprovals((current) => {
+        const next = { ...current };
+        if (mode === "auto") next[projectId] = "always";
+        else delete next[projectId];
+        return next;
+      });
+    },
     setTaskText: setters.setTaskText,
     setNewFilePath: setters.setNewFilePath,
     ...pairing,
@@ -123,6 +135,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     localChatActions,
     terminal,
     projectBriefActions,
+    projectMemoryActions,
     pairing,
     workspace,
     agent,
@@ -131,7 +144,6 @@ export function AppProvider({ children }: PropsWithChildren) {
 
   return <AppContext.Provider value={value}>{children}<LevelUpNotification enabled={state.authenticated && state.persistenceReady} levelProgress={state.levelProgress} /></AppContext.Provider>;
 }
-
 function useDisconnectDesktop(store: ReturnType<typeof useAppState>, logs: ReturnType<typeof useLogActions>) {
   const { state, setters } = store;
   return useCallback((options: { clearRememberedToken?: boolean; healthMessage?: string; logMessage?: string; notifyDesktop?: boolean; rememberedStatus?: RememberedDesktop["status"] } = {}) => {
@@ -163,7 +175,6 @@ function useDisconnectDesktop(store: ReturnType<typeof useAppState>, logs: Retur
     logs.appendLog(options.logMessage ?? "Phone disconnected from Vibyra Desktop.", "Desktop", "warning");
   }, [logs, setters, state.connection]);
 }
-
 async function notifyDesktopDisconnect(connection: AgentConnection) {
   const urls = uniqueValues([connection.url, ...(connection.connectionUrls ?? [])].map(normalizeAgentUrl));
   for (const url of urls) {
@@ -177,11 +188,9 @@ async function notifyDesktopDisconnect(connection: AgentConnection) {
     }
   }
 }
-
 function uniqueValues(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
-
 function useLoadSkills(setChatSkills: ReturnType<typeof useAppState>["setters"]["setChatSkills"]) {
   useEffect(() => {
     let cancelled = false;
@@ -191,7 +200,6 @@ function useLoadSkills(setChatSkills: ReturnType<typeof useAppState>["setters"][
     return () => { cancelled = true; };
   }, [setChatSkills]);
 }
-
 export function useAppContext() {
   const value = useContext(AppContext);
   if (!value) throw new Error("useAppContext must be used inside AppProvider");

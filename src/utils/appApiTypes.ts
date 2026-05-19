@@ -10,6 +10,14 @@ export type RemoteUser = {
   level?: LevelProgress;
   dailyCreditsUsed?: number;
   dailyCreditsCap?: number;
+  dailyCreditsResetAt?: string | null;
+  burstCreditsUsed?: number;
+  burstCreditsCap?: number;
+  burstCreditsResetAt?: string | null;
+  burstWindowHours?: number;
+  weeklyCreditsUsed?: number;
+  weeklyCreditsCap?: number;
+  weeklyCreditsResetAt?: string | null;
   monthlyCredits?: number;
   allowedModelTiers?: string[];
   onboardingComplete: boolean;

@@ -1,18 +1,18 @@
 export const part49 = {
   accountMenuPanel: {
     alignSelf: "flex-end",
-    backgroundColor: "rgba(18, 12, 32, 0.98)",
-    borderColor: "rgba(176, 132, 255, 0.32)",
-    borderRadius: 18,
+    backgroundColor: "rgba(8, 10, 18, 0.99)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 16,
     borderWidth: 1,
-    gap: 10,
-    marginRight: 10,
-    padding: 10,
-    shadowColor: "#6D3BFF",
-    shadowOffset: { width: 0, height: 12 },
+    gap: 12,
+    marginRight: 12,
+    padding: 12,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.28,
     shadowRadius: 22,
-    width: 276
+    width: 292
   },
   accountTopButton: {
     alignItems: "center",
@@ -55,6 +55,13 @@ export const part49 = {
   communityFeed: {
     flex: 1,
     gap: 8
+  },
+  communityLoadingPage: {
+    borderColor: "rgba(255, 255, 255, 0.075)",
+    borderRadius: 14,
+    borderWidth: 1,
+    minHeight: 280,
+    overflow: "hidden"
   },
   communityFilterButton: {
     alignItems: "center",

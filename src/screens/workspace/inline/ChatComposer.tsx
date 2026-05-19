@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChatSkill } from "../../../utils/appApi";
 import { colors } from "../../../styles/theme";
-import type { ChatStartOptions, ChatToolMode } from "../../../types/chatTools";
-import { ModelKey, ReasoningEffort } from "../../../types/domain";
+import type { ChatImageAttachment, ChatStartOptions, ChatToolMode } from "../../../types/chatTools";
+import { ChatMessage, ModelKey, ReasoningEffort } from "../../../types/domain";
 import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { ChatCommand, chatCommandHelpReply, filterChatCommands, matchChatCommand } from "../data/chatCommands";
@@ -16,17 +16,24 @@ import { LowCreditsWarning, getUnlockedInitialChatModel, isModelLockedForPlan } 
 import { ModelMenu, effortShortLabel } from "./ChatComposerMenus";
 import { ChatAttachmentSheet } from "./ChatAttachmentSheet";
 import { chatToolLabels } from "./chatAttachmentTools";
+import { ChatImageAttachmentPills } from "./ChatImageAttachmentPills";
+import { ChatUsageLimitNotice } from "./ChatUsageLimitNotice";
 import { BillingSheet } from "./profile/BillingSheet";
 import { SlashCommandMenu } from "./SlashCommandMenu";
+import { ProjectMemoryBar } from "./ProjectMemoryBar";
+import { PcPermissionControl } from "./PcPermissionControl";
 
 type ChatComposerProps = {
   accountPlan: string;
   agentRequesting: boolean;
   bottomInset: number;
+  chatMessages: ChatMessage[];
   chatSkills: ChatSkill[];
   creditPercentRemaining: number;
   creditsLow: boolean;
   onNewChat: () => void;
+  onOpenPcConnection: () => void;
+  projectId?: string;
   onOpenFolderCommand: () => void;
   onTestPreviewCommand: (userText: string) => void;
   onOpenTokens: () => void;
@@ -44,6 +51,7 @@ type ChatComposerProps = {
 export function ChatComposer(props: ChatComposerProps) {
   const [attachmentSheetOpen, setAttachmentSheetOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<ChatToolMode | null>(null);
+  const [imageAttachments, setImageAttachments] = useState<ChatImageAttachment[]>([]);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
@@ -93,10 +101,23 @@ export function ChatComposer(props: ChatComposerProps) {
     const parsed = matchChatCommand(props.taskText);
     if (parsed) {
       runCommand(parsed.command, parsed.args);
+      setActiveTool(null);
+      setImageAttachments([]);
       return;
     }
-    props.onStart(activeTool ? { tool: activeTool } : undefined);
+    const fallbackPrompt = !props.taskText.trim() && imageAttachments.length > 0
+      ? "Describe this image and explain what matters for my request."
+      : !props.taskText.trim() && activeTool === "image"
+        ? "Create a polished image for this project."
+        : undefined;
+    if (!props.taskText.trim() && !fallbackPrompt) return;
+    props.onStart(activeTool || imageAttachments.length > 0 || fallbackPrompt ? {
+      ...(fallbackPrompt ? { prompt: fallbackPrompt } : {}),
+      ...(activeTool ? { tool: activeTool } : {}),
+      ...(imageAttachments.length > 0 ? { imageAttachments } : {})
+    } : undefined);
     setActiveTool(null);
+    setImageAttachments([]);
   }
 
   function openAttachmentSheet() {
@@ -116,8 +137,14 @@ export function ChatComposer(props: ChatComposerProps) {
     setAttachmentSheetOpen(false);
   }
 
+  function selectImageAttachment(attachment: ChatImageAttachment) {
+    setImageAttachments((current) => [...current, attachment].slice(-3));
+    setAttachmentSheetOpen(false);
+  }
+
   return (
     <View style={[styles.chatComposerShell, { paddingBottom: Math.max(props.bottomInset, 8) }]}>
+      <ChatUsageLimitNotice messages={props.chatMessages} />
       {props.creditsLow ? <LowCreditsWarning onOpenTokens={props.onOpenTokens} percentRemaining={props.creditPercentRemaining} /> : null}
       {slashMenuOpen ? <SlashCommandMenu commands={filteredCommands} skills={filteredSkills} onSelectCommand={(c) => runCommand(c, "")} onSelectSkill={(s) => props.setTaskText(`${s.slash} `)} /> : null}
       <ModelMenu
@@ -141,6 +168,7 @@ export function ChatComposer(props: ChatComposerProps) {
             </View>
           </View>
         ) : null}
+        <ChatImageAttachmentPills attachments={imageAttachments} onRemove={(id) => setImageAttachments((current) => current.filter((item) => item.id !== id))} />
         <TextInput
           value={props.taskText}
           onChangeText={props.setTaskText}
@@ -177,9 +205,11 @@ export function ChatComposer(props: ChatComposerProps) {
           </Pressable>
         </View>
       </View>
+      <View style={styles.chatComposerStatusRow}><PcPermissionControl onOpenConnect={props.onOpenPcConnection} projectId={props.projectId} /><ProjectMemoryBar chatMessages={props.chatMessages} projectId={props.projectId} taskText={props.taskText} /></View>
       <ChatAttachmentSheet
         visible={attachmentSheetOpen}
         onClose={() => setAttachmentSheetOpen(false)}
+        onSelectImageAttachment={selectImageAttachment}
         onSelectPrompt={selectAttachmentPrompt}
         onSelectTool={selectAttachmentTool}
       />

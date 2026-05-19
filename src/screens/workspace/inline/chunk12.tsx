@@ -1,7 +1,8 @@
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemedColor } from "../../../context/PreferencesContext";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
+import { LoadingScreen } from "../../../components/LoadingScreen";
 import { useCommunityPage } from "../hooks/useCommunityPage";
 import { styles } from "../styles";
 import type { CommunityFilter, CommunityPost } from "../types";
@@ -21,6 +22,7 @@ export function CommunityPage({
   selectedPost: CommunityPost | null;
 }) {
   const c = useCommunityPage(authToken, currentUserName, onOpenApp, onLevelActivity);
+  const prefs = usePreferences();
   const searchIconColor = useThemedColor("#8E8AA3");
   const filterIconColor = useThemedColor("#B4B1C9");
   const accentIconColor = useThemedColor("#9D80FF");
@@ -76,11 +78,7 @@ export function CommunityPage({
 
       <View style={styles.communityFeed}>
         {c.feedLoading ? (
-          <View style={styles.communityEmptyState}>
-            <Ionicons name="cloud-download-outline" color={accentIconColor} size={30} />
-            <Text style={styles.communityEmptyTitle}>Loading Explore</Text>
-            <Text style={styles.communityEmptyText}>Checking for published apps...</Text>
-          </View>
+          <LoadingScreen colors={prefs.colors} compact message="Checking for published apps." scheme={prefs.effectiveScheme} style={styles.communityLoadingPage} title="Loading Explore" />
         ) : c.feedError ? (
           <View style={styles.communityEmptyState}>
             <Ionicons name="warning-outline" color={errorIconColor} size={30} />

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AccountEndpoints;
 use App\Http\Controllers\Concerns\AuthEndpoints;
 use App\Http\Controllers\Concerns\ChatEndpoint;
 use App\Http\Controllers\Concerns\ChatLearningFeedback;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 
 class VibyraAppController extends Controller
 {
+    use AccountEndpoints;
     use AuthEndpoints;
     use ChatEndpoint;
     use ChatLearningFeedback;

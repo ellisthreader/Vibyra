@@ -18,18 +18,25 @@ import { HelpSheet } from "./HelpSheet";
 import { SupportSheet } from "./SupportSheet";
 import { TermsSheet } from "./TermsSheet";
 import { LogoutSheet } from "./LogoutSheet";
+import { DeleteAccountSheet } from "./DeleteAccountSheet";
 import { useProfileSheets } from "./useProfileSheets";
 import { PROFILE_ROW_TO_SHEET, appearanceLabel } from "./types";
 
-export function ProfilePage({ activeTab, onTabChange }: {
+export function ProfilePage({ activeTab, activeTabRequestId, onTabChange }: {
   activeTab: SettingsTab;
+  activeTabRequestId: number;
   onTabChange: (tab: SettingsTab) => void;
 }) {
   const sheets = useProfileSheets();
   const { t } = usePreferences();
   const [selectedRow, setSelectedRow] = useState(getProfileRowForTab(activeTab));
 
-  useEffect(() => { setSelectedRow(getProfileRowForTab(activeTab)); }, [activeTab]);
+  useEffect(() => {
+    const row = getProfileRowForTab(activeTab);
+    setSelectedRow(row);
+    const kind = PROFILE_ROW_TO_SHEET[row];
+    if (activeTab !== "profile" && kind) sheets.open(kind);
+  }, [activeTab, activeTabRequestId, sheets.open]);
 
   const selectRow = useCallback((label: string) => {
     setSelectedRow(label);
@@ -88,7 +95,8 @@ export function ProfilePage({ activeTab, onTabChange }: {
           title=""
           rows={[
             { key: "Clear cache", danger: true, icon: "trash-outline", label: t("profile.row.clearCache") },
-            { key: "Log out", danger: true, icon: "log-out-outline", label: t("profile.row.logout") }
+            { key: "Log out", danger: true, icon: "log-out-outline", label: t("profile.row.logout") },
+            { key: "Delete account", danger: true, icon: "person-remove-outline", label: t("profile.row.deleteAccount") }
           ]}
         />
       </View>
@@ -106,12 +114,14 @@ export function ProfilePage({ activeTab, onTabChange }: {
       <SupportSheet visible={sheets.isOpen("support")} onClose={sheets.close} />
       <TermsSheet visible={sheets.isOpen("terms")} onClose={sheets.close} />
       <LogoutSheet visible={sheets.isOpen("logout")} onCancel={sheets.close} />
+      <DeleteAccountSheet visible={sheets.isOpen("deleteAccount")} onCancel={sheets.close} />
     </View>
   );
 }
 
 export function getProfileRowForTab(tab: SettingsTab) {
   if (tab === "billing") return "Billing & subscription";
+  if (tab === "usage") return "Usage & history";
   if (tab === "preferences") return "Appearance";
   if (tab === "security") return "Privacy & security";
   return "Profile information";
@@ -119,7 +129,8 @@ export function getProfileRowForTab(tab: SettingsTab) {
 
 export function getProfileTabForRow(label: string): SettingsTab | null {
   if (label === "Profile information") return "profile";
-  if (label === "Billing & subscription" || label === "Usage & history") return "billing";
+  if (label === "Billing & subscription") return "billing";
+  if (label === "Usage & history") return "usage";
   if (label === "Notifications" || label === "Appearance" || label === "Language") return "preferences";
   if (label === "Privacy & security") return "security";
   return null;

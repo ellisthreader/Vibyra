@@ -1,4 +1,3 @@
-import { StyleSheet } from "react-native";
 import { part1 } from "./part1";
 import { part2 } from "./part2";
 import { part3 } from "./part3";
@@ -58,7 +57,8 @@ import { part56 } from "./part56";
 import { part57 } from "./part57";
 import { part58 } from "./part58";
 import { part59 } from "./part59";
-import { transformStyleMap } from "./themeTransform";
+import { part60 } from "./part60";
+import { createThemedStyleSheet, setThemeTransformScheme } from "./themeTransform";
 
 const rawDark = {
   ...part1, ...part2, ...part3, ...part4, ...part5, ...part6, ...part7, ...part8,
@@ -66,36 +66,11 @@ const rawDark = {
   ...part17, ...part18, ...part19, ...part20, ...part21, ...part22, ...part23, ...part24,
   ...part25, ...part26, ...part27, ...part28, ...part29, ...part30, ...part31, ...part32,
   ...part33, ...part34, ...part35, ...part36, ...part37, ...part38, ...part39,
-  ...part40, ...part41, ...part42, ...part43, ...part44, ...part45, ...part46, ...part47, ...part48, ...part49, ...part50, ...part51, ...part52, ...part53, ...part54, ...part55, ...part56, ...part57, ...part58, ...part59
+  ...part40, ...part41, ...part42, ...part43, ...part44, ...part45, ...part46, ...part47, ...part48, ...part49, ...part50, ...part51, ...part52, ...part53, ...part54, ...part55, ...part56, ...part57, ...part58, ...part59, ...part60
 } as Record<string, Record<string, unknown>>;
 
-const rawLight = transformStyleMap(rawDark);
-
-const darkSheet = StyleSheet.create(rawDark as any);
-const lightSheet = StyleSheet.create(rawLight as any);
-
-let activeScheme: "dark" | "light" = "dark";
-
 export function setStylesScheme(scheme: "dark" | "light") {
-  activeScheme = scheme;
+  setThemeTransformScheme(scheme);
 }
 
-export const styles: any = new Proxy({} as Record<string, unknown>, {
-  get(_, key: string) {
-    const sheet = activeScheme === "light" ? lightSheet : darkSheet;
-    return (sheet as Record<string, unknown>)[key];
-  },
-  has(_, key: string) {
-    return key in (activeScheme === "light" ? lightSheet : darkSheet);
-  },
-  ownKeys() {
-    return Object.keys(activeScheme === "light" ? lightSheet : darkSheet);
-  },
-  getOwnPropertyDescriptor(_, key: string) {
-    const sheet = activeScheme === "light" ? lightSheet : darkSheet;
-    if (key in sheet) {
-      return { enumerable: true, configurable: true, value: (sheet as Record<string, unknown>)[key] };
-    }
-    return undefined;
-  }
-});
+export const styles: any = createThemedStyleSheet(rawDark);

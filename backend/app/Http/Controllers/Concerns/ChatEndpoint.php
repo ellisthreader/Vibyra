@@ -39,9 +39,13 @@ trait ChatEndpoint
         $calc = app(CreditCalculator::class);
         $deductor = app(CreditDeductor::class);
 
-        $modelKey = trim((string) $request->input('model', 'auto')) ?: 'auto';
+        $requestedModelKey = trim((string) $request->input('model', 'auto')) ?: 'auto';
+        if (! $calc->modelConfig($requestedModelKey)) {
+            $requestedModelKey = 'auto';
+        }
+        $modelKey = $this->effectiveChatModelKey($requestedModelKey, $skill);
         if (! $calc->modelConfig($modelKey)) {
-            $modelKey = 'auto';
+            $modelKey = $requestedModelKey;
         }
         if (! $calc->planAllowsModel($plan, $modelKey)) {
             return $this->json([
@@ -71,13 +75,14 @@ trait ChatEndpoint
         if ($history !== null && (! is_array($history) || count($history) > self::CHAT_HISTORY_MAX_ITEMS)) {
             return $this->json(['ok' => false, 'error' => 'Chat history payload is malformed or too large.'], 422);
         }
+        $imageAttachments = $this->chatImageAttachments($request);
 
         $deductor->maybeResetDaily($user);
 
         $chatMode = $this->resolveChatMode($request, $prompt, $skill);
         $maxOutputTokens = $this->resolveMaxTokens($request, $prompt, $skill);
         $learningContext = $this->chatLearningContext($user, $request, $prompt, $chatMode);
-        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext);
+        $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext, $imageAttachments);
         $agentMode = $chatMode === 'build';
 
         $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
@@ -89,16 +94,6 @@ trait ChatEndpoint
                 'creditsUsed' => $user->credits_used,
                 'estimatedCredits' => $estimatedCredits,
             ], 402);
-        }
-
-        $dailyCap = $deductor->dailyCap($user);
-        if ($dailyCap > 0 && (int) $user->daily_credits_used + $estimatedCredits > $dailyCap) {
-            return $this->json([
-                'ok' => false,
-                'error' => 'Daily AI usage cap reached. The cap resets every 24 hours; upgrade your plan for a higher cap.',
-                'dailyCap' => $dailyCap,
-                'dailyCreditsUsed' => (int) $user->daily_credits_used,
-            ], 429);
         }
 
         $burstCap = $deductor->burstCap($user);
@@ -134,7 +129,7 @@ trait ChatEndpoint
         try {
             $payload = [
                 'model' => $openRouterModel,
-                'messages' => $this->chatMessages($request, $prompt, $skill, $learningContext),
+                'messages' => $this->chatMessages($request, $prompt, $skill, $learningContext, $imageAttachments),
                 'temperature' => 0.25,
                 'max_completion_tokens' => $maxOutputTokens,
                 'usage' => ['include' => true],
@@ -142,8 +137,9 @@ trait ChatEndpoint
             if ($reasoningPayload !== null) {
                 $payload['reasoning'] = $reasoningPayload;
             }
-            if ($this->shouldUseWebPlugin($skill)) {
-                $payload['plugins'] = [['id' => 'web']];
+            $webSearchTools = $this->webSearchTools($skill);
+            if ($webSearchTools !== []) {
+                $payload['tools'] = $webSearchTools;
             }
 
             $response = Http::timeout(90)
@@ -202,12 +198,13 @@ trait ChatEndpoint
             'title' => $this->suggestChatTitle($request, $prompt, $replyText),
             'model' => $openRouterModel,
             'modelKey' => $modelKey,
+            'requestedModelKey' => $requestedModelKey,
             'chatReference' => $reference,
             'creditCost' => abs($ledger->credits_delta),
             'creditsBalance' => $user->credits_balance,
             'creditsUsed' => $user->credits_used,
             'dailyCreditsUsed' => $user->daily_credits_used,
-            'dailyCreditsCap' => $dailyCap,
+            'dailyCreditsCap' => $deductor->dailyCap($user),
             'levelActivity' => $levelActivity,
             'user' => $this->userPayload($user),
         ]);

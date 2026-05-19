@@ -11,19 +11,17 @@ export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: 
   onDismiss: () => void;
 }) {
   const prefs = usePreferences();
-  const warningColor = useThemedColor("#FFD166");
-  const warningTextColor = useThemedColor("#FFF4C7");
-  const closeColor = useThemedColor("#D9D4E8");
+  const accentColor = useThemedColor("#8E3CFF");
+  const warningColor = useThemedColor("#FF5F76");
+  const closeColor = useThemedColor("#C8C1D8");
   const light = prefs.effectiveScheme === "light";
-  const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: "rgba(183, 121, 31, 0.28)", shadowColor: prefs.colors.shadow } : null;
-  const titleStyle = light ? { color: prefs.colors.warning } : null;
+  const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border, shadowColor: prefs.colors.shadow } : null;
+  const titleStyle = light ? { color: prefs.colors.text } : null;
   const metaStyle = light ? { color: prefs.colors.muted } : null;
   const summaryStyle = light ? { color: prefs.colors.text } : null;
-  const messageBoxStyle = light ? { backgroundColor: prefs.colors.elevated } : null;
-  const diagnosticStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border } : null;
+  const detailStyle = light ? { backgroundColor: prefs.colors.elevated, borderColor: prefs.colors.border } : null;
   const messageStyle = light ? { color: prefs.colors.text } : null;
-  const secondaryStyle = light ? { backgroundColor: prefs.colors.warningSoft, borderColor: "rgba(183, 121, 31, 0.2)" } : null;
-  const askStyle = light ? { backgroundColor: prefs.colors.accent } : null;
+  const fixStyle = light ? { backgroundColor: prefs.colors.accent } : null;
   const [expanded, setExpanded] = useState(false);
   const latest = errors[errors.length - 1];
   const orderedErrors = useMemo(() => [...errors].reverse(), [errors]);
@@ -32,46 +30,42 @@ export function PreviewErrorPanel({ bottomOffset, errors, onAskAi, onDismiss }: 
   const summary = firstLine(latest.message || latest.stack || "Preview runtime error");
   return (
     <View style={[previewErrorStyles.card, cardStyle, expanded ? previewErrorStyles.cardExpanded : null, { bottom: bottomOffset }]}>
-      <View style={previewErrorStyles.header}>
-        <View style={previewErrorStyles.icon}>
-          <Ionicons name="warning-outline" color={warningColor} size={17} />
+      <View style={previewErrorStyles.topRow}>
+        <View style={previewErrorStyles.iconHalo}>
+          <View style={[previewErrorStyles.icon, { borderColor: warningColor }]}>
+            <Text style={[previewErrorStyles.iconMark, { color: warningColor }]}>!</Text>
+          </View>
         </View>
-        <View style={previewErrorStyles.titleWrap}>
-          <Text style={[previewErrorStyles.title, titleStyle]}>Preview error</Text>
-          <Text numberOfLines={1} style={[previewErrorStyles.meta, metaStyle]}>{location || latest.type}{errors.length > 1 ? ` · ${errors.length} captured` : ""}</Text>
+        <View style={previewErrorStyles.copy}>
+          <Text numberOfLines={1} style={[previewErrorStyles.title, titleStyle]}>Preview crashed</Text>
+          <Text numberOfLines={expanded ? 2 : 1} style={[previewErrorStyles.summary, summaryStyle]}>{summary}</Text>
+          {location || errors.length > 1 ? (
+            <Text numberOfLines={1} style={[previewErrorStyles.meta, metaStyle]}>{location || latest.type}{errors.length > 1 ? ` · ${errors.length} captured` : ""}</Text>
+          ) : null}
         </View>
-        <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={8} style={previewErrorStyles.detailButton}>
-          <Text style={[previewErrorStyles.detailText, { color: warningTextColor }]}>{expanded ? "Hide" : "Details"}</Text>
-          <Ionicons name={expanded ? "chevron-down" : "chevron-up"} color={warningTextColor} size={15} />
+      </View>
+      <View style={previewErrorStyles.actions}>
+        <Pressable onPress={onAskAi} style={({ pressed }) => [previewErrorStyles.fixButton, fixStyle, pressed ? previewErrorStyles.pressed : null]}>
+          <Ionicons name="sparkles-outline" color="#FFFFFF" size={20} />
+          <Text style={previewErrorStyles.fixText}>Fix with AI</Text>
         </Pressable>
-        <Pressable onPress={onDismiss} hitSlop={8} style={previewErrorStyles.dismiss}>
-          <Ionicons name="close" color={closeColor} size={18} />
+        <Pressable accessibilityLabel={expanded ? "Hide preview error details" : "Show preview error details"} onPress={() => setExpanded((v) => !v)} hitSlop={8} style={previewErrorStyles.secondaryButton}>
+          <Text style={[previewErrorStyles.secondaryText, { color: accentColor }]}>{expanded ? "Hide details" : "Details"}</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="Dismiss preview error" onPress={onDismiss} hitSlop={8} style={previewErrorStyles.iconButton}>
+          <Ionicons name="close" color={closeColor} size={23} />
         </Pressable>
       </View>
-      <Text numberOfLines={expanded ? 2 : 1} style={[previewErrorStyles.summary, summaryStyle]}>{summary}</Text>
       {expanded ? (
-        <ScrollView style={[previewErrorStyles.messageBox, messageBoxStyle]} contentContainerStyle={previewErrorStyles.messageContent}>
+        <ScrollView style={[previewErrorStyles.details, detailStyle]} contentContainerStyle={previewErrorStyles.detailContent}>
           {orderedErrors.map((item, index) => (
-            <View key={`${item.type}-${item.message}-${item.line ?? ""}-${index}`} style={[previewErrorStyles.diagnostic, diagnosticStyle]}>
-              <View style={previewErrorStyles.diagnosticHeader}>
-                <Text style={previewErrorStyles.badge}>{item.type}</Text>
-                <Text numberOfLines={1} style={[previewErrorStyles.diagnosticMeta, metaStyle]}>{formatLocation(item, " · ") || `Captured ${orderedErrors.length - index}`}</Text>
-              </View>
+            <View key={`${item.type}-${item.message}-${item.line ?? ""}-${index}`} style={previewErrorStyles.diagnostic}>
+              <Text numberOfLines={1} style={[previewErrorStyles.diagnosticMeta, metaStyle]}>{item.type}{formatLocation(item, " · ") ? ` · ${formatLocation(item, " · ")}` : ""}</Text>
               <Text selectable style={[previewErrorStyles.message, messageStyle]}>{item.stack || item.message}</Text>
             </View>
           ))}
         </ScrollView>
       ) : null}
-      <View style={previewErrorStyles.actions}>
-        <Pressable onPress={() => setExpanded((v) => !v)} style={({ pressed }) => [previewErrorStyles.secondaryButton, secondaryStyle, pressed ? previewErrorStyles.askButtonPressed : null]}>
-          <Ionicons name={expanded ? "contract-outline" : "expand-outline"} color={warningTextColor} size={15} />
-          <Text style={[previewErrorStyles.secondaryText, { color: warningTextColor }]}>{expanded ? "Collapse" : "Expand"}</Text>
-        </Pressable>
-        <Pressable onPress={onAskAi} style={({ pressed }) => [previewErrorStyles.askButton, askStyle, pressed ? previewErrorStyles.askButtonPressed : null]}>
-          <Ionicons name="sparkles-outline" color="#FFFFFF" size={15} />
-          <Text style={previewErrorStyles.askText}>Ask AI to fix</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -85,62 +79,48 @@ function formatLocation(error: PreviewRuntimeError, separator: string) {
 }
 
 const previewErrorStyles = StyleSheet.create({
-  actions: { alignItems: "center", flexDirection: "row", gap: 9, marginTop: 12 },
-  askButton: {
-    alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 12,
-    flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 10
-  },
-  askButtonPressed: { opacity: 0.78 },
-  askText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
-  badge: {
-    backgroundColor: "rgba(255, 209, 102, 0.14)", borderColor: "rgba(255, 209, 102, 0.28)",
-    borderRadius: 999, borderWidth: 1, color: "#FFF4C7", fontSize: 10,
-    fontWeight: "900", overflow: "hidden", paddingHorizontal: 7, paddingVertical: 3,
-    textTransform: "uppercase"
-  },
   card: {
-    backgroundColor: "rgba(10, 12, 20, 0.97)", borderColor: "rgba(255, 209, 102, 0.34)",
-    borderRadius: 18, borderWidth: 1, left: 14, maxHeight: "52%",
-    padding: 13, position: "absolute", right: 14, shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 18 }, shadowOpacity: 0.3, shadowRadius: 28, zIndex: 12
+    backgroundColor: "rgba(6, 8, 18, 0.96)", borderColor: "rgba(142,60,255,0.55)",
+    borderRadius: 20, borderWidth: 1, left: 16, maxHeight: "52%", padding: 14,
+    position: "absolute", right: 16, shadowColor: "#000000", shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24, shadowRadius: 20, zIndex: 12
   },
-  cardExpanded: { maxHeight: "72%" },
-  detailButton: {
-    alignItems: "center", backgroundColor: "rgba(255, 209, 102, 0.1)",
-    borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 7
+  cardExpanded: { maxHeight: "68%" },
+  actions: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 14 },
+  copy: { flex: 1, minWidth: 0 },
+  detailContent: { gap: 9, padding: 9 },
+  details: {
+    backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 10, borderWidth: 1, marginTop: 10, maxHeight: 220
   },
-  detailText: { color: "#FFF4C7", fontSize: 11, fontWeight: "900" },
-  diagnostic: {
-    backgroundColor: "rgba(255,255,255,0.045)", borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 12, borderWidth: 1, padding: 10
+  diagnostic: { gap: 6 },
+  diagnosticMeta: { color: "#A7A1B7", fontSize: 11, fontWeight: "700" },
+  fixButton: {
+    alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 14, flex: 1.15, flexDirection: "row", gap: 8,
+    justifyContent: "center", minHeight: 48, minWidth: 118, paddingHorizontal: 14
   },
-  diagnosticHeader: { alignItems: "center", flexDirection: "row", gap: 8, marginBottom: 8 },
-  diagnosticMeta: { color: "#AAA6BC", flex: 1, fontSize: 11, fontWeight: "700", minWidth: 0 },
-  dismiss: { alignItems: "center", height: 28, justifyContent: "center", width: 28 },
-  header: { alignItems: "center", flexDirection: "row", gap: 9 },
-  icon: {
-    alignItems: "center", backgroundColor: "rgba(255, 209, 102, 0.12)",
-    borderRadius: 999, height: 30, justifyContent: "center", width: 30
+  fixText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
+  icon: { alignItems: "center", borderRadius: 999, borderWidth: 2.5, height: 40, justifyContent: "center", width: 40 },
+  iconButton: {
+    alignItems: "center", backgroundColor: "rgba(255,255,255,0.035)", borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14, borderWidth: 1, height: 48, justifyContent: "center", width: 48
   },
+  iconHalo: { alignItems: "center", backgroundColor: "rgba(255,95,118,0.13)", borderRadius: 999, height: 60, justifyContent: "center", width: 60 },
+  iconMark: { fontSize: 25, fontWeight: "900", lineHeight: 28 },
   message: {
-    color: "#F3EEFF",
+    color: "#EEE8FA",
     fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
     fontSize: 11,
     lineHeight: 16
   },
-  messageContent: { gap: 9, padding: 10 },
-  messageBox: {
-    backgroundColor: "rgba(2, 4, 12, 0.62)", borderRadius: 14,
-    marginTop: 10, maxHeight: 230
-  },
-  meta: { color: "#AAA6BC", fontSize: 11, fontWeight: "700", marginTop: 1 },
+  meta: { color: "#A7A1B7", fontSize: 10.5, fontWeight: "700", marginTop: 4 },
+  pressed: { opacity: 0.78 },
+  summary: { color: "#D7D0E8", fontSize: 13, fontWeight: "700", lineHeight: 19, marginTop: 5 },
+  title: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" },
   secondaryButton: {
-    alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(255,255,255,0.1)", borderRadius: 12, borderWidth: 1,
-    flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 10
+    alignItems: "center", backgroundColor: "rgba(255,255,255,0.035)", borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 14, borderWidth: 1, flex: 0.7, justifyContent: "center", minHeight: 48, minWidth: 70, paddingHorizontal: 12
   },
-  secondaryText: { color: "#FFF4C7", fontSize: 13, fontWeight: "900" },
-  summary: { color: "#F7F2FF", fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 9 },
-  title: { color: "#FFD166", fontSize: 14, fontWeight: "900" },
-  titleWrap: { flex: 1, minWidth: 0 }
+  secondaryText: { fontSize: 14, fontWeight: "900" },
+  topRow: { alignItems: "center", flexDirection: "row", gap: 12 }
 });

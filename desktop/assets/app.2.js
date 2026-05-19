@@ -3,11 +3,28 @@ function closePairModal() { nodes.pairModal.classList.remove("open"); }
 function renderPairModal() {
   const pending = currentState.pendingPair && currentState.pendingPair.status === "pending";
   const paired = Boolean(currentState.pairedDevice);
-  nodes.pairBody.innerHTML = `<section class="pair-simple"><div class="pair-code-card"><p class="kicker">Pair code</p><div class="pair-code">${escapeHtml(currentState.pairCode || "------")}</div><p class="body-copy">Open Vibyra on your phone and enter this code.</p></div>${pending ? `<div class="nearby-phone-card pending"><span class="nearby-phone-icon">${icon("phone")}</span><div><p class="kicker">Nearby phone</p><h2>${escapeHtml(currentState.pendingPair.deviceName || "Vibyra Phone")}</h2><p class="body-copy">Approve only if this is your phone.</p></div><div class="approval-actions"><button class="danger-button" id="deny-pair" type="button" ${posting ? "disabled" : ""}>Deny</button><button class="primary-button" id="approve-pair" type="button" ${posting ? "disabled" : ""}>Allow</button></div></div>` : `<div class="nearby-phone-card"><span class="nearby-phone-icon">${icon(paired ? "phone" : "search")}</span><span><p class="kicker">${paired ? "Connected phone" : "Nearby phones"}</p><h2>${escapeHtml(paired ? currentState.pairedDevice : "Waiting for phone")}</h2><p class="body-copy">${paired ? "Your phone can use this desktop bridge." : "Pairing requests will appear here automatically."}</p></span></div>`}</section>`;
+  if (paired) {
+    nodes.pairBody.innerHTML = `<section class="pair-v2 pair-v2-paired"><span class="pair-v2-check" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7.5"/></svg></span><p class="pair-v2-connected">Connected to ${escapeHtml(currentState.pairedDevice)}</p><button type="button" class="pair-v2-unpair" id="unpair-device">Unpair</button></section>`;
+    document.getElementById("unpair-device")?.addEventListener("click", () => post("/desktop/disconnect"));
+    return;
+  }
+  const code = String(currentState.pairCode || "------");
+  const codeReady = code && code !== "------";
+  nodes.pairBody.innerHTML = `<section class="pair-v2"><button type="button" class="pair-v2-code" id="copy-pair-code" data-copy-pair-code aria-label="Copy pair code" ${codeReady ? "" : "disabled"}><span class="pair-v2-code-text">${escapeHtml(code)}</span><span class="pair-v2-copied" aria-hidden="true">Copied</span></button><p class="pair-v2-status"><span class="pair-v2-dot" aria-hidden="true"></span><span>Waiting for your phone…</span></p><p class="pair-v2-hint">Open Vibyra on your phone and enter this code.</p>${pending ? `<div class="pair-v2-approval"><span class="pair-v2-approval-icon">${icon("phone")}</span><div class="pair-v2-approval-copy"><strong>${escapeHtml(currentState.pendingPair.deviceName || "Vibyra Phone")}</strong><span>Approve only if this is your phone.</span></div><div class="pair-v2-approval-actions"><button class="danger-button" id="deny-pair" type="button" ${posting ? "disabled" : ""}>Deny</button><button class="primary-button" id="approve-pair" type="button" ${posting ? "disabled" : ""}>Allow</button></div></div>` : ""}</section>`;
   document.getElementById("approve-pair")?.addEventListener("click", () => post("/desktop/approve"));
   document.getElementById("deny-pair")?.addEventListener("click", () => post("/desktop/deny"));
+  const copyButton = document.getElementById("copy-pair-code");
+  copyButton?.addEventListener("click", async () => {
+    if (!codeReady) return;
+    try { await navigator.clipboard.writeText(code); } catch {}
+    copyButton.classList.add("is-copied");
+    setTimeout(() => copyButton.classList.remove("is-copied"), 1500);
+  });
 }
-function openTokenModal() {
+const tokenModalViews = ["profile", "plans", "help"];
+const tokenModalTitles = { profile: "Profile", plans: "Plans", help: "Help" };
+function openTokenModal(view) {
+  tokenModalView = tokenModalViews.includes(view) ? view : "profile";
   nodes.tokenModal.classList.add("open");
   renderTokenModal();
   if (typeof refreshDesktopAccountSession === "function") {
@@ -16,21 +33,102 @@ function openTokenModal() {
       .catch(() => {});
   }
 }
-function closeTokenModal() { nodes.tokenModal.classList.remove("open"); }
+function closeTokenModal() {
+  nodes.tokenModal.classList.remove("open");
+  tokenModalView = "profile";
+}
+function setTokenModalView(view) {
+  tokenModalView = tokenModalViews.includes(view) ? view : "profile";
+  renderTokenModal();
+}
+function handleAccountAction(action) {
+  topbarAccountMenuOpen = false;
+  if (action === "upgrade") {
+    renderTopbar();
+    const tier = currentPlanTier();
+    if (tier.key === "free") openTokenModal("plans");
+    else manageDesktopBilling();
+    return;
+  }
+  if (action === "profile") {
+    if (typeof setProfileFocus === "function") setProfileFocus("");
+    setPage("profile");
+    return;
+  }
+  if (action === "settings") {
+    if (typeof setProfileFocus === "function") setProfileFocus("preferences");
+    setPage("profile");
+    return;
+  }
+  if (action === "help") {
+    renderTopbar();
+    openTokenModal("help");
+    return;
+  }
+  if (action === "logout") {
+    renderTopbar();
+    if (typeof desktopSignOut === "function") desktopSignOut();
+  }
+}
+function accountMenu() {
+  const account = currentAccount();
+  const user = typeof desktopAuthUser === "function" ? desktopAuthUser() : null;
+  const tier = currentPlanTier();
+  const cycle = account.planBillingCycle === "annual" ? "annual" : "monthly";
+  const planLabel = `${tier.name}${cycle === "annual" && tier.key !== "free" ? " annual" : ""} plan`;
+  const avatarSrc = accountImageUrl(user, account);
+  const initials = accountInitials(account.name);
+  const avatar = avatarSrc
+    ? `<img class="account-menu-avatar" src="${escapeAttribute(avatarSrc)}" alt="" />`
+    : `<span class="account-menu-avatar account-menu-avatar--initials" aria-hidden="true">${escapeHtml(initials)}</span>`;
+  const upgradeLabel = tier.key === "free" ? "Upgrade plan" : "Manage billing";
+  return `<div class="topbar-menu account-menu" role="menu">
+    <div class="account-menu-identity">${avatar}<div class="account-menu-copy"><strong>${escapeHtml(account.name || "Desktop account")}</strong><span>${escapeHtml(planLabel)}</span></div></div>
+    <div class="account-menu-section">
+      <button type="button" data-account-action="upgrade">${icon("bolt")}<span>${escapeHtml(upgradeLabel)}</span></button>
+    </div>
+    <div class="account-menu-section">
+      <button type="button" data-account-action="profile">${icon("user")}<span>Profile</span></button>
+      <button type="button" data-account-action="settings">${icon("palette")}<span>Settings</span></button>
+      <button type="button" data-account-action="help">${icon("help")}<span>Help</span></button>
+    </div>
+    <div class="account-menu-section">
+      <button class="danger" type="button" data-account-action="logout">${icon("logout")}<span>Log out</span></button>
+    </div>
+  </div>`;
+}
 function renderTokenModal() {
   const account = currentAccount();
+  const user = typeof desktopAuthUser === "function" ? desktopAuthUser() : null;
   const tier = currentPlanTier();
   const cycle = account.planBillingCycle === "annual" ? "annual" : "monthly";
   const allowance = Number(account.monthlyCredits || (cycle === "annual" ? tier.annualCredits : tier.monthlyCredits));
-  const balance = Number(account.creditsBalance ?? allowance);
   const used = Number(account.creditsUsed ?? 0);
   const dailyCap = Number(account.dailyCreditsCap || tier.dailyCap || 0);
   const dailyUsed = Number(account.dailyCreditsUsed || 0);
   const planLabel = `${tier.name}${cycle === "annual" && tier.key !== "free" ? " annual" : ""}`;
-  const manageLabel = tier.key === "free" ? "Upgrade plan" : "Manage billing";
-  nodes.tokenBody.innerHTML = `<section class="membership-hero"><div><p class="kicker">Membership</p><h1>${escapeHtml(account.name || "Desktop account")}</h1><p class="body-copy">${escapeHtml(account.email || "Signed in on this desktop")}</p><span class="membership-pill">${icon("sparkles")}${escapeHtml(planLabel)}</span></div><div class="membership-balance"><strong>${formatCredits(balance)}</strong><span>credits left</span></div></section><section class="membership-metrics"><div><strong>${formatCredits(allowance)}</strong><span>monthly credits</span></div><div><strong>${formatCredits(used)}</strong><span>credits used</span></div><div><strong>${dailyCap ? `${formatCredits(dailyUsed)} / ${formatCredits(dailyCap)}` : "None"}</strong><span>daily cap</span></div><div><strong>${escapeHtml(tier.modelAccess)}</strong><span>models</span></div></section><section class="membership-plans">${planTiers.map((plan) => planCard(plan, tier.key, cycle)).join("")}</section><section class="settings-group account-actions"><p class="group-title">Account</p><button class="setting-row" data-billing-manage type="button"><span class="setting-label">${escapeHtml(manageLabel)}</span><span class="setting-value">${tier.key === "free" ? "Open checkout" : "Stripe portal"}</span>${icon("arrow")}</button><button class="setting-row danger-setting" data-setting="Log out" type="button"><span class="setting-label">Log out</span><span class="setting-value">Change account</span>${icon("logout")}</button></section>`;
+  const modalEl = nodes.tokenModal.querySelector(".modal");
+  if (modalEl) modalEl.classList.toggle("modal--narrow", tokenModalView !== "plans");
+  const titleEl = document.getElementById("token-title");
+  if (titleEl) titleEl.textContent = tokenModalTitles[tokenModalView] || "Profile";
+  if (tokenModalView === "plans") {
+    nodes.tokenBody.innerHTML = `<button class="plans-back" type="button" data-token-view="profile" aria-label="Back to profile">${icon("chevron")}<span>Back</span></button><section class="membership-plans">${planTiers.map((plan) => planCard(plan, tier.key, cycle)).join("")}</section>`;
+  } else if (tokenModalView === "help") {
+    nodes.tokenBody.innerHTML = `<section class="account-help"><p class="credits-line">Need a hand?</p><a class="account-help-link" href="mailto:support@vibyra.app?subject=Vibyra%20Desktop%20support" target="_blank" rel="noopener">${icon("send")}<span>Email support@vibyra.app</span></a><p class="credits-daily">For account, billing, and personalization, open Vibyra on your phone.</p></section>`;
+  } else {
+    const avatarSrc = accountImageUrl(user, account);
+    const initials = accountInitials(account.name);
+    const avatar = avatarSrc
+      ? `<img class="account-avatar" src="${escapeAttribute(avatarSrc)}" alt="" />`
+      : `<span class="account-avatar account-avatar--initials" aria-hidden="true">${escapeHtml(initials)}</span>`;
+    const pct = allowance > 0 ? Math.min(100, Math.max(0, Math.round((used / allowance) * 100))) : 0;
+    const barClass = allowance > 0 ? "credits-bar" : "credits-bar credits-bar--empty";
+    const dailyShow = dailyCap > 0 && dailyUsed / dailyCap > 0.8;
+    const dailyLine = dailyShow ? `<p class="credits-daily">Daily cap: ${formatCredits(dailyUsed)} / ${formatCredits(dailyCap)}</p>` : "";
+    nodes.tokenBody.innerHTML = `<section class="account-identity">${avatar}<div class="account-identity-copy"><strong>${escapeHtml(account.name || "Desktop account")}</strong><span>${escapeHtml(planLabel)}</span></div></section><section class="account-credits"><p class="credits-line"><span>${formatCredits(used)} of ${formatCredits(allowance)} monthly credits</span></p><div class="${barClass}"><span style="width:${pct}%"></span></div>${dailyLine}</section>`;
+  }
+  document.querySelectorAll("[data-token-view]").forEach((button) => button.addEventListener("click", () => setTokenModalView(button.dataset.tokenView)));
   document.querySelectorAll("[data-billing-plan]").forEach((button) => button.addEventListener("click", () => startDesktopBilling(button.dataset.billingPlan)));
-  document.querySelector("[data-billing-manage]")?.addEventListener("click", () => tier.key === "free" ? startDesktopBilling("starter") : manageDesktopBilling());
 }
 function planCard(plan, currentKey, cycle) {
   const active = plan.key === currentKey;
@@ -205,12 +303,37 @@ function currentChatModel() {
   return modelLocked(selected) ? (chatModels.find((model) => model.key === firstUnlockedModel()) || chatModels[0]) : selected;
 }
 function currentEffort() { return chatEfforts.find((effort) => effort.value === reasoningEffort) || chatEfforts[1]; }
+function modelGroupKey(group) {
+  return group?.options?.find((model) => model.provider !== "auto")?.provider || "auto";
+}
+function providerGroupLabel(group) {
+  const key = modelGroupKey(group);
+  if (key === "openai") return "OpenAI";
+  if (key === "claude") return "Claude";
+  if (key === "gemini") return "Gemini";
+  return group?.title || "Auto";
+}
+function modelGroupForModel(model) {
+  const group = chatModelGroups.find((item) => item.options.some((option) => option.key === model?.key));
+  return modelGroupKey(group);
+}
+function activeModelGroup() {
+  const groups = chatModelGroups.filter((group) => modelGroupKey(group) !== "auto");
+  const selected = modelMenuGroup || modelGroupForModel(currentChatModel());
+  if (selected === "auto") return groups.find((group) => modelGroupKey(group) === "openai") || groups[0] || chatModelGroups[0];
+  return groups.find((group) => modelGroupKey(group) === selected) || groups[0] || chatModelGroups[0];
+}
+function selectModelMenuGroup(groupKey) {
+  modelMenuGroup = groupKey || "";
+  openChatMenu = "model";
+  renderChat();
+}
 function selectChatModel(modelKey) {
   const model = chatModels.find((item) => item.key === modelKey);
   if (!model) return;
   if (modelLocked(model)) {
     openChatMenu = "";
-    openTokenModal();
+    openTokenModal("plans");
     return;
   }
   selectedChatModel = model.key;
@@ -299,7 +422,18 @@ function attachMenu() {
   const toolRows = chatAttachmentTools.map((tool) => `<button class="attach-menu-row ${activeChatTool === tool.tool ? "active" : ""}" type="button" data-chat-tool="${escapeAttribute(tool.tool)}"><span class="attach-row-icon">${icon(tool.icon)}</span><span><strong>${escapeHtml(tool.label)}</strong><small>${escapeHtml(tool.description)}</small></span></button>`).join("");
   return `<div class="composer-menu attach-menu">${primaryRows}${toolRows}${chatAttachments.length || activeChatTool ? `<button class="attach-menu-row attach-clear" type="button" data-attach-kind="clear">${icon("close")}<span><strong>Clear</strong><small>Remove staged context</small></span></button>` : ""}</div>`;
 }
-function modelMenu() { return `<div class="composer-menu model-menu">${chatModelGroups.map((group) => `<section>${group.title ? `<p>${escapeHtml(group.title)}</p>` : ""}${group.options.map((model) => { const locked = modelLocked(model); const selected = currentChatModel().key === model.key; return `<button class="${selected ? "active" : ""} ${locked ? "locked" : ""}" type="button" data-model="${escapeAttribute(model.key)}">${providerLogo(model.provider)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(locked ? `${modelTier(model)} · upgrade` : model.provider === "auto" ? "Vibyra chooses" : model.provider)}</small></span>${locked ? `<em class="lock-tag">${icon("lock")}Upgrade</em>` : model.badge ? `<em>${escapeHtml(model.badge)}</em>` : ""}</button>`; }).join("")}</section>`).join("")}</div>`; }
+function modelMenu() {
+  const autoModel = chatModels.find((model) => model.provider === "auto");
+  const groups = chatModelGroups.filter((group) => modelGroupKey(group) !== "auto");
+  const activeGroup = activeModelGroup();
+  const activeKey = modelGroupKey(activeGroup);
+  const modelButton = (model, extraClass = "") => {
+    const locked = modelLocked(model);
+    const selected = currentChatModel().key === model.key;
+    return `<button class="${extraClass} ${selected ? "active" : ""} ${locked ? "locked" : ""}" type="button" data-model="${escapeAttribute(model.key)}">${providerLogo(model.provider)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(locked ? `${modelTier(model)} · upgrade` : model.provider === "auto" ? "Vibyra chooses" : providerGroupLabel({ options: [model] }))}</small></span>${locked ? `<em class="lock-tag">${icon("lock")}Upgrade</em>` : model.badge ? `<em>${escapeHtml(model.badge)}</em>` : ""}</button>`;
+  };
+  return `<div class="composer-menu model-menu model-picker">${autoModel ? `<div class="model-picker-current">${modelButton(autoModel, "model-auto-row")}</div>` : ""}<div class="model-provider-tabs" role="tablist" aria-label="Model providers">${groups.map((group) => `<button class="${activeKey === modelGroupKey(group) ? "active" : ""}" type="button" data-model-group="${escapeAttribute(modelGroupKey(group))}" aria-pressed="${activeKey === modelGroupKey(group) ? "true" : "false"}">${providerLogo(modelGroupKey(group))}<span>${escapeHtml(providerGroupLabel(group))}</span></button>`).join("")}</div><section class="model-picker-options" aria-label="${escapeAttribute(providerGroupLabel(activeGroup))} models">${activeGroup.options.map((model) => modelButton(model)).join("")}</section></div>`;
+}
 function effortMenu() { return `<div class="composer-menu effort-menu">${chatEfforts.map((effort) => `<button class="${reasoningEffort === effort.value ? "active" : ""}" type="button" data-effort="${escapeAttribute(effort.value)}"><span><strong>${escapeHtml(effort.label)}</strong><small>${escapeHtml(effort.hint)}</small></span></button>`).join("")}</div>`; }
 function providerLogo(provider) {
   if (provider === "openai") return `<span class="provider-logo openai"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/OpenAI_logo_2025_%28symbol%29.svg/250px-OpenAI_logo_2025_%28symbol%29.svg.png" alt="" /></span>`;
@@ -369,6 +503,7 @@ async function sendChat() {
   if (chatSending) return;
   const input = document.getElementById("chat-input");
   const rawText = input.value.trim();
+  chatNotice = null;
   const slashSkill = rawText.match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
   if (slashSkill) {
     const skill = chatSkills.find((item) => item.id === slashSkill[1].toLowerCase());
@@ -443,13 +578,46 @@ async function sendChat() {
     pendingMessage.pending = false;
     updateActiveChatTitle(result.title, rawText);
   } catch (error) {
-    pendingMessage.text = error instanceof Error ? error.message : "Vibyra AI chat failed. Try again.";
-    pendingMessage.pending = false;
+    if (isChatUsageLimitError(error)) {
+      const pendingIndex = chatMessages.indexOf(pendingMessage);
+      if (pendingIndex >= 0) chatMessages.splice(pendingIndex, 1);
+      chatNotice = chatUsageLimitNotice(error);
+    } else {
+      pendingMessage.text = error instanceof Error ? error.message : "Vibyra AI chat failed. Try again.";
+      pendingMessage.pending = false;
+    }
   } finally {
     chatSending = false;
     saveActiveChat(rawText);
     render();
   }
+}
+function isChatUsageLimitError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return Number(error?.status) === 429 || message.includes("cap reached") || message.includes("usage limit") || message.includes("rate limit");
+}
+function chatUsageLimitNotice(error) {
+  const message = String(error?.message || "").trim();
+  const lower = message.toLowerCase();
+  const title = lower.includes("5-hour") || lower.includes("burst") ? "5-hour limit reached" : "AI limit reached";
+  return {
+    title,
+    message: humanChatLimitMessage(message),
+    resetAt: error?.resetAt || error?.burstCreditsResetAt || error?.weeklyCreditsResetAt || ""
+  };
+}
+function humanChatLimitMessage(message) {
+  const lower = message.toLowerCase();
+  if (lower.includes("5-hour") || lower.includes("burst")) {
+    return "Take a short break. Your burst window resets every 5 hours.";
+  }
+  if (lower.includes("daily")) {
+    return "Your daily AI usage cap has been reached. It resets every 24 hours.";
+  }
+  if (lower.includes("weekly")) {
+    return "Your weekly AI usage cap has been reached. It resets every 7 days.";
+  }
+  return message || "You have reached your AI usage limit. Try again later.";
 }
 function chatHelpText() {
   return [
@@ -474,7 +642,7 @@ function updateActiveChatTitle(title, seedText) {
 }
 function setPage(page) { activePage = page; topbarChatMenuOpen = false; localStorage.setItem("vibyra.desktop.page", page); render(); }
 function bindJumps() { document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.jump))); }
-function pageTitle(page) { return page === "dashboard" ? "Builds" : page === "projects" ? "Projects" : "New chat"; }
+function pageTitle(page) { return page === "dashboard" ? "Builds" : page === "projects" ? "Projects" : page === "terminals" ? "Terminals" : page === "profile" ? "Profile" : "New chat"; }
 function statusTone() {
   if (currentState.pendingPair && currentState.pendingPair.status === "pending") return "warning";
   if (currentState.pendingPair && currentState.pendingPair.status === "denied") return "offline";
@@ -533,6 +701,17 @@ function emptyBuildState() {
 }
 function projectCard(project, index) { const active = selectedProjectId ? selectedProjectId === project.id : index === 0; return `<article class="project-card ${active ? "active" : ""}"><div class="project-top"><div style="display:flex;gap:12px;min-width:0;"><span class="project-icon">${icon("folder")}</span><div><p class="project-name">${escapeHtml(project.name || "Project")}</p><p class="project-path">${escapeHtml(project.path || "")}</p></div></div><span class="tag">${escapeHtml(displayProjectSource(project))}</span></div><div class="project-footer"><span class="body-copy">${escapeHtml(project.stack || "Project")}</span><button class="secondary-button compact-button" type="button" data-project-chat="${escapeAttribute(project.id)}">${icon("chat")}Chat</button></div></article>`; }
 function chatEmptyState() { const project = currentProject(); const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?"; return `<div class="chat-empty">${project ? `<p class="kicker">${escapeHtml(project.name)}</p>` : ""}<h1>${escapeHtml(title)}</h1><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><span>${escapeHtml(item.title)}</span></button>`).join("")}</div></div>`; }
+function chatNoticeBanner() {
+  if (!chatNotice) return "";
+  const resetLabel = chatNotice.resetAt ? formatResetTime(chatNotice.resetAt) : "";
+  const reset = resetLabel ? `<time>${escapeHtml(resetLabel)}</time>` : "";
+  return `<aside class="chat-limit-notice" role="status"><span class="chat-limit-icon">${icon("alert")}</span><div><strong>${escapeHtml(chatNotice.title || "AI limit reached")}</strong><p>${escapeHtml(chatNotice.message || "Try again later.")}</p>${reset}</div><button id="dismiss-chat-notice" type="button" aria-label="Dismiss notice">${icon("close")}</button></aside>`;
+}
+function formatResetTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `Resets ${date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`;
+}
 function messageRow(message, index) {
   const assistant = message.role === "assistant";
   const image = normalizeChatImage(message.image);
@@ -582,12 +761,14 @@ function icon(name) {
     clock: '<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v6l4 2"/>',
     bolt: '<path d="M13 2 4 14h7l-1 8 10-13h-7z"/>',
     desktop: '<path d="M3 5h18v12H3zM9 21h6M12 17v4"/>',
+    terminal: '<path d="M4 5h16v14H4zM8 9l3 3-3 3M13 15h4"/>',
     "image-stack": '<path d="M5 6h14v12H5zM8 10h.01M5 16l4-4 3 3 2-2 5 5M3 10V4h13"/>',
     image: '<path d="M4 5h16v14H4zM8 10h.01M4 17l5-5 4 4 2-2 5 5"/>',
     globe: '<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.6 9h16.8M3.6 15h16.8M12 3c2 2.4 3 5.4 3 9s-1 6.6-3 9M12 3c-2 2.4-3 5.4-3 9s1 6.6 3 9"/>',
     document: '<path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/>',
     play: '<path d="M8 5v14l11-7z"/>',
     help: '<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.8 9a2.4 2.4 0 0 1 4.6 1c0 1.8-2.4 2-2.4 3.6M12 17h.01"/>',
+    alert: '<path d="M12 9v4M12 17h.01M10.3 4.3 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"/>',
     search: '<path d="M10.5 18a7.5 7.5 0 1 1 5.3-12.8A7.5 7.5 0 0 1 10.5 18zM16 16l5 5"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
@@ -610,6 +791,8 @@ function icon(name) {
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
     diamond: '<path d="M12 3 21 9l-9 12L3 9z"/>',
     calendar: '<path d="M5 4h14v16H5zM8 2v4M16 2v4M5 9h14"/>',
+    minus: '<path d="M5 12h14"/>',
+    square: '<path d="M7 7h10v10H7z"/>',
     palette: '<path d="M12 3a9 9 0 0 0 0 18h1.5a2 2 0 0 0 1.5-3.3 1.5 1.5 0 0 1 1.1-2.7H18a6 6 0 0 0 0-12zM7.5 10h.01M10 7h.01M14 7h.01M16.5 10h.01"/>',
     logout: '<path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9"/>'
   };

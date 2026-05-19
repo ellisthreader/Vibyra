@@ -80,6 +80,20 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
 - Show active desktop agent runs from real state as compact rows, not predicted progress, token counts, percentages, or fallback build rows.
 - Keep account/billing details in the account modal unless a real desktop account API requires more.
 
+## AI Terminals
+
+AI terminals should feel like calm model workspaces, not a dashboard of configuration cards.
+
+- Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
+- Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
+- When no terminals exist, show a simple setup panel that asks how many terminals to open, supports a custom count up to 12, previews the selected count, and lets the user pick from the same OpenRouter/chat model set used by desktop chat.
+- Keep grid mode available as an explicit layout toggle for users who want multiple terminals visible at once.
+- Support up to 12 terminals through tabs/status dots, not by forcing 12 fully-expanded control cards into the first view.
+- New terminal creation should offer the same chat/OpenRouter model picker with provider logos, not local skill presets.
+- Hide model, effort, project, and close controls inside a compact settings popover per terminal. Do not show every dropdown on every terminal by default.
+- In terminal output, prioritize readable monospace content with minimal prompts (`$`, `vibyra`) and generous spacing. Avoid large empty-state icons, heavy nested borders, or repeated labels.
+- Use restrained status: a small dot for idle/running and a subtle active tab/surface treatment. Avoid progress dashboards, bright badges, and per-card metadata clutter.
+
 ## Projects
 
 - Projects should keep the full-width shell style: toolbar below the top bar and a compact card grid.

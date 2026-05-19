@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { colors } from "../../../styles/theme";
 import { PUBLISH_ASSET_CREDIT_COST } from "./ProjectPublishModal.data";
 import { modalStyles } from "./ProjectPublishModal.styles";
@@ -18,6 +19,9 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [attachError, setAttachError] = useState("");
+  const accentIcon = useThemedColor("#B970FF");
+  const actionIcon = useThemedColor("#D2CBE2");
+  const placeholderColor = useThemedColor("#827C92");
 
   async function attachImage() {
     setAttachError("");
@@ -78,12 +82,12 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={modalStyles.iconImage} />
         ) : (
-          <Ionicons name="cube-outline" color="#B970FF" size={30} />
+          <Ionicons name="cube-outline" color={accentIcon} size={30} />
         )}
       </View>
       <View style={modalStyles.iconActions}>
         <Pressable disabled={busy} onPress={attachImage} style={modalStyles.iconAction}>
-          <Ionicons name="image-outline" color={colors.text} size={17} />
+          <Ionicons name="image-outline" color={actionIcon} size={17} />
         </Pressable>
         <Pressable disabled={busy || generating} onPress={() => setAiOpen((value) => !value)} style={[modalStyles.iconAction, modalStyles.iconActionAi]}>
           {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={colors.text} size={15} />}
@@ -96,7 +100,7 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
             editable={!busy}
             onChangeText={setAiPrompt}
             placeholder="Describe the icon you want AI to generate"
-            placeholderTextColor="#827C92"
+            placeholderTextColor={placeholderColor}
             style={modalStyles.iconInput}
             value={aiPrompt}
           />

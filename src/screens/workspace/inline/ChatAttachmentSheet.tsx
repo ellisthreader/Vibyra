@@ -4,7 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { ChatToolMode } from "../../../types/chatTools";
+import { usePreferences } from "../../../context/PreferencesContext";
+import type { ChatImageAttachment, ChatToolMode } from "../../../types/chatTools";
 import { styles } from "../styles";
 import { chatToolDescriptions, chatToolLabels } from "./chatAttachmentTools";
 
@@ -30,24 +31,31 @@ const TOOL_ACTIONS: Array<{ icon: IconName; tool: ChatToolMode }> = [
   { icon: "document-text-outline", tool: "analyze" }
 ];
 
+const MAX_IMAGE_DATA_URL_CHARS = 4_500_000;
+
 export function ChatAttachmentSheet({
   onClose,
+  onSelectImageAttachment,
   onSelectPrompt,
   onSelectTool,
   visible
 }: {
   onClose: () => void;
+  onSelectImageAttachment: (attachment: ChatImageAttachment) => void;
   onSelectPrompt: (prompt: string) => void;
   onSelectTool: (tool: ChatToolMode) => void;
   visible: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const prefs = usePreferences();
   const { height } = useWindowDimensions();
   const [busyAction, setBusyAction] = React.useState("");
   const [scrollExpansion, setScrollExpansion] = React.useState(0);
   const compactHeight = Math.min(Math.round(height * 0.52), height - Math.max(insets.top + 24, 48));
   const expandedHeight = Math.min(Math.round(height * 0.82), height - Math.max(insets.top + 24, 48));
   const sheetHeight = Math.round(compactHeight + ((expandedHeight - compactHeight) * scrollExpansion));
+  const primaryIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#F7F3FF";
+  const toolIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#ECE8F8";
 
   React.useEffect(() => {
     if (!visible) setScrollExpansion(0);
@@ -108,14 +116,30 @@ export function ChatAttachmentSheet({
       }
 
       const result = source === "camera"
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.86 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.86 });
+        ? await ImagePicker.launchCameraAsync({ base64: true, mediaTypes: ["images"], quality: 0.82 })
+        : await ImagePicker.launchImageLibraryAsync({ base64: true, mediaTypes: ["images"], quality: 0.82 });
       if (result.canceled) return;
 
       const asset = result.assets[0];
+      if (!asset?.base64) {
+        Alert.alert("Image unavailable", "That image could not be attached. Try a different image.");
+        return;
+      }
       const name = asset?.fileName || asset?.uri?.split("/").pop() || "selected image";
-      const size = asset?.width && asset?.height ? ` ${asset.width}x${asset.height}` : "";
-      onSelectPrompt(`${action.prompt}\nSelected image: ${name}${size}.`);
+      const mimeType = asset.mimeType || "image/jpeg";
+      const dataUrl = `data:${mimeType};base64,${asset.base64}`;
+      if (dataUrl.length > MAX_IMAGE_DATA_URL_CHARS) {
+        Alert.alert("Image too large", "Choose a smaller image so Vibyra can send it to chat.");
+        return;
+      }
+      onSelectImageAttachment({
+        id: `image-${Date.now()}-${Math.round(Math.random() * 1000)}`,
+        dataUrl,
+        name,
+        mimeType,
+        ...(asset.width ? { width: asset.width } : {}),
+        ...(asset.height ? { height: asset.height } : {})
+      });
     } catch {
       Alert.alert(`${action.label} unavailable`, `Vibyra could not open ${action.label.toLowerCase()} on this device.`);
     } finally {
@@ -140,9 +164,9 @@ export function ChatAttachmentSheet({
               >
                 <View style={styles.chatAttachmentPrimaryIcon}>
                   {busyAction === action.label ? (
-                    <ActivityIndicator color="#F7F3FF" size="small" />
+                    <ActivityIndicator color={primaryIconColor} size="small" />
                   ) : (
-                    <Ionicons name={action.icon} color="#F7F3FF" size={26} />
+                    <Ionicons name={action.icon} color={primaryIconColor} size={26} />
                   )}
                 </View>
                 <Text numberOfLines={1} style={styles.chatAttachmentPrimaryLabel}>{action.label}</Text>
@@ -164,7 +188,7 @@ export function ChatAttachmentSheet({
                 style={({ pressed }) => [styles.chatAttachmentToolRow, pressed ? styles.chatAttachmentPressed : null]}
               >
                 <View style={styles.chatAttachmentToolIcon}>
-                  <Ionicons name={action.icon} color="#ECE8F8" size={24} />
+                  <Ionicons name={action.icon} color={toolIconColor} size={24} />
                 </View>
                 <View style={styles.chatAttachmentToolCopy}>
                   <Text numberOfLines={1} style={styles.chatAttachmentToolLabel}>{chatToolLabels[action.tool]}</Text>

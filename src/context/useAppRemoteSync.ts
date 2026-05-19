@@ -5,7 +5,7 @@ import { useSessionValidation } from "./useSessionValidation";
 type RemoteSyncState = Pick<AppContextValue,
   "authenticated" | "authToken" | "persistenceReady" | "onboardingComplete" |
   "rememberedDesktops" | "chatThreads" | "chatTitles" | "chatProjects" |
-  "promptMoney" | "selectedChatModel" | "selectedModel"
+  "projectMemories" | "promptMoney" | "desktopPermissionMode" | "selectedChatModel" | "selectedModel"
 >;
 
 type AuthActions = Pick<AppContextValue, "applyRemoteUserFromIap" | "expireSession">;
@@ -21,7 +21,9 @@ export function useAppRemoteSync(state: RemoteSyncState, logs: Parameters<typeof
     chatThreads: state.chatThreads,
     chatTitles: state.chatTitles,
     chatProjects: state.chatProjects,
+    projectMemories: state.projectMemories,
     promptMoney: state.promptMoney,
+    desktopPermissionMode: state.desktopPermissionMode,
     selectedChatModel: state.selectedChatModel,
     selectedModel: state.selectedModel
   }, logs, expireAiSession);

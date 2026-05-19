@@ -32,7 +32,7 @@ class CommunityAssetGenerator
                     'X-Title' => 'Vibyra',
                 ])
                 ->post((string) config('services.openrouter.url'), [
-                    'model' => (string) config('services.openrouter.image_model', 'openai/gpt-image-1'),
+                    'model' => (string) config('services.openrouter.image_model', 'openai/gpt-5.4-image-2'),
                     'messages' => [[
                         'role' => 'user',
                         'content' => trim($brief."\nProject: {$title}\nDescription: {$description}\nUser direction: {$prompt}"),
@@ -73,6 +73,10 @@ class CommunityAssetGenerator
             if (! array_key_exists($key, $value)) continue;
             $image = $this->extractImageUrl($value[$key]);
             if ($image !== '') return $image;
+        }
+        foreach (['b64_json', 'b64Json'] as $key) {
+            $raw = $value[$key] ?? null;
+            if (is_string($raw) && $raw !== '') return 'data:image/png;base64,'.$raw;
         }
 
         foreach ($value as $item) {

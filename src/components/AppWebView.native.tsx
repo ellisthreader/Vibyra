@@ -1,5 +1,6 @@
 import React from "react";
-import { ActivityIndicator, StyleProp, View, ViewStyle, StyleSheet } from "react-native";
+import { StyleProp, ViewStyle, StyleSheet } from "react-native";
+import { LoadingScreen } from "./LoadingScreen";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import {
   ERROR_CAPTURE_SCRIPT,
@@ -51,9 +52,7 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
       mixedContentMode="always"
       startInLoadingState
       renderLoading={() => (
-        <View style={styles.loader}>
-          <ActivityIndicator color="#8E3CFF" size="large" />
-        </View>
+        <LoadingScreen compact message="Loading preview." style={styles.loader} title="Opening app" />
       )}
     />
   );

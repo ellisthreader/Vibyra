@@ -1,7 +1,8 @@
 import { StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
+import { createThemedStyleSheet } from "../styles/themeTransform";
 
-export const modalStyles = StyleSheet.create({
+export const modalStyles = createThemedStyleSheet({
   actions: { flexDirection: "row", gap: 12, marginTop: 10, width: "100%" },
   addTag: { alignItems: "center", borderColor: "rgba(207,199,230,0.58)", borderRadius: 999, borderStyle: "dashed", borderWidth: 1.2, flexDirection: "row", gap: 6, minHeight: 31, paddingHorizontal: 11 },
   addTagText: { color: "#CFC7E6", fontSize: 14, fontWeight: "800" },

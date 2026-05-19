@@ -41,7 +41,7 @@ If local/dev logs show `SQLSTATE` missing `users.referral_code` or the `referral
 
 `CreditDeductor` is the only writer for `credits_balance`. Chat spend, topups, refunds, refreshes, and level rewards all go through it and write `credit_ledger` rows transactionally.
 
-Daily caps use `users.daily_credits_used` and `daily_credits_reset_at`; 5-hour burst and weekly caps use `users.burst_credits_used`, `burst_credits_reset_at`, `weekly_credits_used`, and `weekly_credits_reset_at`. If live SQLite reports a missing burst/weekly cap column, run pending backend migrations against `backend/database/database.sqlite`. `plan_renews_at` is the next refresh due date. Billing provider records `stripe` or `iap-apple` / `iap-google`.
+Daily counters use `users.daily_credits_used` and `daily_credits_reset_at`, but AI chat no longer enforces a visible daily cap. 5-hour burst and weekly caps use `users.burst_credits_used`, `burst_credits_reset_at`, `weekly_credits_used`, and `weekly_credits_reset_at` and are the enforced chat quota windows. If live SQLite reports a missing burst/weekly cap column, run pending backend migrations against `backend/database/database.sqlite`. `plan_renews_at` is the next refresh due date. Billing provider records `stripe` or `iap-apple` / `iap-google`.
 
 ## Levels
 

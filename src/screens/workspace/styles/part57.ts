@@ -126,6 +126,51 @@ export const part57 = {
     minHeight: 62,
     paddingHorizontal: 2
   },
+  chatImageAttachmentCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  chatImageAttachmentMeta: {
+    color: "#8F8A9E",
+    fontSize: 10.5,
+    fontWeight: "800",
+    lineHeight: 13
+  },
+  chatImageAttachmentName: {
+    color: "#F7F3FF",
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 15
+  },
+  chatImageAttachmentPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(190, 183, 211, 0.16)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    maxWidth: "100%",
+    minHeight: 42,
+    paddingHorizontal: 7,
+    paddingVertical: 6
+  },
+  chatImageAttachmentRemove: {
+    alignItems: "center",
+    height: 24,
+    justifyContent: "center",
+    width: 24
+  },
+  chatImageAttachmentRow: {
+    gap: 8,
+    marginBottom: 10
+  },
+  chatImageAttachmentThumb: {
+    backgroundColor: "#151722",
+    borderRadius: 8,
+    height: 30,
+    width: 30
+  },
   chatToolPill: {
     alignItems: "center",
     alignSelf: "flex-start",

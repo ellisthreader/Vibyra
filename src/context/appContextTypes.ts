@@ -16,10 +16,12 @@ import {
   PreviewState,
   Project,
   ProjectBrief,
+  ProjectMemory,
   PreviewServerPhase,
   PreviewServerPrompt,
   RememberedDesktop,
-  ReasoningEffort
+  ReasoningEffort,
+  DesktopPermissionMode
 } from "../types/domain";
 import type { AgentStartOptions } from "../types/chatTools";
 
@@ -41,6 +43,16 @@ export type AppState = {
   profileImageUri: string;
   creditsBalance: number;
   creditsUsed: number;
+  dailyCreditsUsed: number;
+  dailyCreditsCap: number;
+  dailyCreditsResetAt: string | null;
+  burstCreditsUsed: number;
+  burstCreditsCap: number;
+  burstCreditsResetAt: string | null;
+  burstWindowHours: number;
+  weeklyCreditsUsed: number;
+  weeklyCreditsCap: number;
+  weeklyCreditsResetAt: string | null;
   onboardingComplete: boolean;
   pcSetupComplete: boolean;
   pcSetupSkipped: boolean;
@@ -54,6 +66,7 @@ export type AppState = {
   checkingHealth: boolean;
   pendingPhoneApproval: PairApprovalPayload | null;
   connection: AgentConnection | null;
+  desktopPermissionMode: DesktopPermissionMode;
   rememberedDesktops: RememberedDesktop[];
   machineName: string;
   projects: Project[];
@@ -78,6 +91,7 @@ export type AppState = {
   chatSkills: import("../utils/appApi").ChatSkill[];
   chatProjects: Record<string, Project>;
   editApprovals: Record<string, "always">;
+  projectMemories: Record<string, ProjectMemory>;
   newFilePath: string;
   command: string;
   promptMoney: {
@@ -106,6 +120,7 @@ export type AppSetters = {
   setSelectedModel: (model: ModelKey) => void;
   setSelectedChatModel: (model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
+  setDesktopPermissionMode: (mode: DesktopPermissionMode, projectId?: string) => void;
   setTaskText: (task: string) => void;
   setNewFilePath: (path: string) => void;
 };
@@ -142,6 +157,9 @@ export type AppActions = {
   addLocalChatNotice: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
   addLocalChatReply: (prompt: string, reply: string, target?: AgentStartTarget, app?: GeneratedApp) => void;
   addLocalGeneratedImage: (prompt: string, image: import("../types/chatTools").GeneratedImage, target?: AgentStartTarget) => void;
+  addLocalImageGenerationPending: (prompt: string, target?: AgentStartTarget) => string;
+  finishLocalGeneratedImage: (messageId: string, image: import("../types/chatTools").GeneratedImage, target?: AgentStartTarget) => void;
+  failLocalImageGeneration: (messageId: string, error: string, target?: AgentStartTarget) => void;
   addLocalPreviewServerPrompt: (prompt: string, target?: AgentStartTarget) => string;
   updatePreviewServerMessage: (messageId: string, projectId: string, update: Partial<PreviewServerPrompt>, app?: GeneratedApp) => void;
   addLocalChatProposal: (prompt: string, reply: string, matches: Project[], target?: AgentStartTarget, query?: string) => { proposalProjectId: string };
@@ -166,6 +184,8 @@ export type AppActions = {
   saveProjectBrief: (projectId: string, brief: ProjectBrief) => void;
   addProjectBriefSetupMessage: (project: Project) => void;
   updateProjectBriefSetupMessage: (project: Project) => void;
+  rememberProjectMemory: (projectId: string, text: string) => void;
+  forgetProjectMemory: (projectId: string, entryId: string) => void;
   approveEdits: (messageId: string, projectId: string, alwaysAllow: boolean) => Promise<void>;
   denyEdits: (messageId: string, projectId: string) => Promise<void>;
   signOut: () => void;

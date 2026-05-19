@@ -6,6 +6,7 @@ import { useAppContext } from "../../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import type { ChatMessage } from "../../../../types/domain";
+import { UsageLimitsSection } from "./UsageLimitsSection";
 
 const COLLAPSED_HISTORY_COUNT = 3;
 
@@ -86,6 +87,8 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
               </Text>
             </View>
           </View>
+
+          <UsageLimitsSection />
 
           <View style={styles.usageFlatSection}>
             <View style={styles.usageSectionHeader}>

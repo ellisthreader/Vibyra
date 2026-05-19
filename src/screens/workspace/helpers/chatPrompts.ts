@@ -7,7 +7,7 @@ export function projectPreviewUrl(baseUrl: string, projectId: string, token: str
 
 const FIND_VERBS = String.raw`(?:find|open|oepn|opne|opem|opn|oen|locate|use|switch(?:\s+to)?|select|go(?:\s+to)?|work\s+(?:on|in|with)|connect(?:\s+to)?|attach(?:\s+to)?|load|pick|choose|show(?:\s+me)?|view|get|grab|link(?:\s+to)?|hook\s+up|set\s+up|set|pull\s+up|bring\s+up|jump\s+(?:to|into)|head\s+(?:to|into))`;
 
-const FOLDER_NOUN = String.raw`(?:folders?|forlders?|folderrs?|foders?|flder|fold(?:re|r)|fodlers?|folers?|floders?|repos?(?:itory|itories)?|projec?ts?|projcts?|projets?|prjects?|proejcts?|director(?:y|ies)|diretor(?:y|ies)|directr(?:y|ies)|dirs?|apps?|codebases?|workspaces?|desktop|pc|computer|machine|src|source)`;
+const FOLDER_NOUN = String.raw`(?:folders?|forlders?|folderrs?|foders?|flder|foler|fold(?:re|r)|fodlers?|folers?|floders?|repos?(?:itory|itories)?|projec?ts?|projcts?|projets?|prjects?|proejcts?|director(?:y|ies)|diretor(?:y|ies)|directr(?:y|ies)|dirs?|apps?|codebases?|workspaces?|desktop|pc|computer|machine|src|source)`;
 
 const FILE_NOUN = String.raw`(?:files?|fiels?|path)`;
 
@@ -161,9 +161,10 @@ export function isFindFolderIntent(prompt: string): boolean {
 export function isOpenFileIntent(prompt: string): boolean {
   const text = prompt.toLowerCase();
   const hasOpenVerb = /\b(open|find|locate|select|use|show|view)\b/.test(text);
-  const mentionsFile = /\b(file|path)\b/.test(text) || /[a-z0-9][\w./ -]*\.[a-z0-9]{1,12}\b/i.test(prompt);
+  const mentionsNamedFile = /[a-z0-9][\w./ -]*\.[a-z0-9]{1,12}\b/i.test(prompt);
+  const mentionsFile = /\b(file|path)\b/.test(text) || mentionsNamedFile;
   const mentionsLocalMachine = /\b(pc|desktop|computer|machine|project|repo|repository|folder|workspace)\b/.test(text);
-  return hasOpenVerb && mentionsFile && mentionsLocalMachine;
+  return hasOpenVerb && mentionsFile && (mentionsLocalMachine || mentionsNamedFile);
 }
 
 export function isProjectLookupOnly(prompt: string) {
@@ -175,6 +176,8 @@ export function isProjectLookupOnly(prompt: string) {
 
 export function isCurrentProjectQuestion(prompt: string) {
   const text = prompt.toLowerCase().trim();
+  if (/^where\s+am\s+i(?:\s+(?:rn|right\s+now|now|currently))?\??$/i.test(text)) return true;
+  if (/^(?:what|where)\s+(?:is|are)\s+(?:this|here|we|we\s+in)\??$/i.test(text)) return true;
   const asksWhere = /\b(where|what|which|are we|we are|currently|current|selected)\b/.test(text);
   const mentionsWorkspace = /\b(file|folder|project|repo|repository|directory|workspace|app)\b/.test(text);
   const asksForCodeWork = /\b(build|add|create|change|fix|update|edit|refactor|implement|make|design|write|code|generate|remove|delete)\b/.test(text);

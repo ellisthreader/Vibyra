@@ -22,11 +22,11 @@ export const part48 = {
   accountMenuHeader: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12,
-    paddingBottom: 8
+    gap: 10,
+    paddingBottom: 10
   },
   accountMenuName: {
-    color: "#F7F3FF",
+    color: "#F4F6FB",
     fontSize: 17,
     fontWeight: "900",
     lineHeight: 21
@@ -37,22 +37,22 @@ export const part48 = {
   },
   accountMenuPanel: {
     alignSelf: "flex-end",
-    backgroundColor: "rgba(8, 10, 18, 0.98)",
-    borderColor: "rgba(176, 132, 255, 0.18)",
-    borderRadius: 18,
+    backgroundColor: "rgba(8, 10, 18, 0.99)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 16,
     borderWidth: 1,
     gap: 12,
     marginRight: 12,
     marginTop: 12,
     padding: 12,
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.34,
-    shadowRadius: 24,
-    width: 286
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 22,
+    width: 292
   },
   accountMenuPlan: {
-    color: "#D7C4FF",
+    color: "#9EA3B2",
     fontSize: 12,
     fontWeight: "800",
     marginTop: 2,

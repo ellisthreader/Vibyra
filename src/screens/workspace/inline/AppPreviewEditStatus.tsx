@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Animated, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
+import { createThemedStyleSheet } from "../styles/themeTransform";
 
 export type PreviewEditStatus = "idle" | "running" | "done" | "error";
 
@@ -19,6 +21,7 @@ export function AppPreviewEditStatus({
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.96)).current;
   const translateY = useRef(new Animated.Value(-8)).current;
+  const iconColor = useThemedColor("#FFFFFF");
   const phases = useMemo(() => [
     "Reading your prompt",
     `Running ${modelLabel}`,
@@ -67,8 +70,8 @@ export function AppPreviewEditStatus({
       error ? statusStyles.pillError : null,
       { opacity, transform: [{ translateY }, { scale }] }
     ]}>
-      {running ? <ActivityIndicator color="#FFFFFF" size="small" /> : (
-        <Ionicons name={error ? "alert-circle-outline" : "checkmark-circle"} color="#FFFFFF" size={19} />
+      {running ? <ActivityIndicator color={iconColor} size="small" /> : (
+        <Ionicons name={error ? "alert-circle-outline" : "checkmark-circle"} color={iconColor} size={19} />
       )}
       <Animated.View style={statusStyles.textStack}>
         <Text numberOfLines={1} style={statusStyles.title}>{title}</Text>
@@ -78,7 +81,7 @@ export function AppPreviewEditStatus({
   );
 }
 
-const statusStyles = StyleSheet.create({
+const statusStyles = createThemedStyleSheet({
   pill: {
     alignItems: "center",
     alignSelf: "center",

@@ -87,6 +87,9 @@ return [
         'gemini-2.5-pro' => ['slug' => 'google/gemini-2.5-pro', 'tier' => 'premium', 'multiplier' => 1.35],
         'gemini-2.5-flash' => ['slug' => 'google/gemini-2.5-flash', 'tier' => 'budget', 'multiplier' => 1.0],
         'gemini-2.0-flash' => ['slug' => 'google/gemini-2.0-flash-001', 'tier' => 'budget', 'multiplier' => 1.0],
+        'tool-deep-research' => ['slug' => 'openai/o3-deep-research', 'tier' => 'premium', 'multiplier' => 1.6],
+        'tool-web-search' => ['slug' => 'openai/gpt-5.5', 'tier' => 'premium', 'multiplier' => 1.4],
+        'tool-analyze-files' => ['slug' => 'openai/gpt-5.5', 'tier' => 'premium', 'multiplier' => 1.4],
     ],
 
     // OpenRouter input/output USD per 1M tokens. Used when the API response
@@ -97,6 +100,10 @@ return [
         'openai/gpt-4o' => ['input' => 5.00, 'output' => 15.00],
         'openai/gpt-4o-mini' => ['input' => 0.20, 'output' => 0.80],
         'openai/gpt-4.1' => ['input' => 3.00, 'output' => 12.00],
+        'openai/o3-deep-research' => ['input' => 10.00, 'output' => 40.00],
+        'openai/gpt-4o-search-preview' => ['input' => 2.50, 'output' => 10.00],
+        'openai/gpt-5.5' => ['input' => 5.00, 'output' => 30.00],
+        'openai/gpt-5.2' => ['input' => 1.75, 'output' => 14.00],
         'anthropic/claude-opus-4' => ['input' => 15.00, 'output' => 75.00],
         'anthropic/claude-sonnet-4' => ['input' => 3.00, 'output' => 15.00],
         'anthropic/claude-3.5-haiku' => ['input' => 0.80, 'output' => 4.00],

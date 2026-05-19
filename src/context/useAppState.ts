@@ -4,7 +4,7 @@ import { getDefaultAgentUrl } from "../utils/network";
 import { isRunArtifact } from "../utils/files";
 import { createEmptyPersistedSession, loadPersistedSession, savePersistedSession } from "../utils/persistence";
 import { AppDerivedState, AppState } from "./appContextTypes";
-import { ChatMessage, ReasoningEffort } from "../types/domain";
+import { ChatMessage, DesktopPermissionMode, ReasoningEffort } from "../types/domain";
 import { emptyChatMessages, emptyFile, emptyProject } from "./appStateDefaults";
 import { getPersistedAppState } from "./appStatePersistence";
 
@@ -26,6 +26,16 @@ export function useAppState() {
   const [profileImageUri, setProfileImageUri] = useState(initialAppState.profileImageUri);
   const [creditsBalance, setCreditsBalance] = useState(persistedSession.user?.creditsBalance ?? 0);
   const [creditsUsed, setCreditsUsed] = useState(persistedSession.user?.creditsUsed ?? 0);
+  const [dailyCreditsUsed, setDailyCreditsUsed] = useState(persistedSession.user?.dailyCreditsUsed ?? 0);
+  const [dailyCreditsCap, setDailyCreditsCap] = useState(persistedSession.user?.dailyCreditsCap ?? 0);
+  const [dailyCreditsResetAt, setDailyCreditsResetAt] = useState<string | null>(persistedSession.user?.dailyCreditsResetAt ?? null);
+  const [burstCreditsUsed, setBurstCreditsUsed] = useState(persistedSession.user?.burstCreditsUsed ?? 0);
+  const [burstCreditsCap, setBurstCreditsCap] = useState(persistedSession.user?.burstCreditsCap ?? 0);
+  const [burstCreditsResetAt, setBurstCreditsResetAt] = useState<string | null>(persistedSession.user?.burstCreditsResetAt ?? null);
+  const [burstWindowHours, setBurstWindowHours] = useState(persistedSession.user?.burstWindowHours ?? 5);
+  const [weeklyCreditsUsed, setWeeklyCreditsUsed] = useState(persistedSession.user?.weeklyCreditsUsed ?? 0);
+  const [weeklyCreditsCap, setWeeklyCreditsCap] = useState(persistedSession.user?.weeklyCreditsCap ?? 0);
+  const [weeklyCreditsResetAt, setWeeklyCreditsResetAt] = useState<string | null>(persistedSession.user?.weeklyCreditsResetAt ?? null);
   const [onboardingComplete, setOnboardingComplete] = useState(persistedSession.onboardingComplete);
   const [pcSetupComplete, setPcSetupComplete] = useState(persistedSession.pcSetupComplete);
   const [pcSetupSkipped, setPcSetupSkipped] = useState(persistedSession.pcSetupSkipped);
@@ -39,6 +49,7 @@ export function useAppState() {
   const [checkingHealth, setCheckingHealth] = useState(false);
   const [pendingPhoneApproval, setPendingPhoneApproval] = useState<AppState["pendingPhoneApproval"]>(null);
   const [connection, setConnection] = useState<AppState["connection"]>(null);
+  const [desktopPermissionMode, setDesktopPermissionMode] = useState<DesktopPermissionMode>(initialAppState.desktopPermissionMode);
   const [rememberedDesktops, setRememberedDesktops] = useState<AppState["rememberedDesktops"]>(persistedSession.rememberedDesktops);
   const [machineName, setMachineName] = useState("Vibyra Desktop");
   const [projects, setProjects] = useState(starterProjects);
@@ -65,6 +76,7 @@ export function useAppState() {
 
   const [chatSkills, setChatSkills] = useState<import("../utils/appApi").ChatSkill[]>([]);
   const [chatProjects, setChatProjects] = useState<Record<string, import("../types/domain").Project>>(initialAppState.chatProjects);
+  const [projectMemories, setProjectMemories] = useState<Record<string, import("../types/domain").ProjectMemory>>(initialAppState.projectMemories);
   const [editApprovals, setEditApprovals] = useState<Record<string, "always">>(initialAppState.editApprovals);
 
   useEffect(() => {
@@ -84,15 +96,27 @@ export function useAppState() {
         setProfileImageUri(persisted.profileImageUri);
         setCreditsBalance(session.user?.creditsBalance ?? 0);
         setCreditsUsed(session.user?.creditsUsed ?? 0);
+        setDailyCreditsUsed(session.user?.dailyCreditsUsed ?? 0);
+        setDailyCreditsCap(session.user?.dailyCreditsCap ?? 0);
+        setDailyCreditsResetAt(session.user?.dailyCreditsResetAt ?? null);
+        setBurstCreditsUsed(session.user?.burstCreditsUsed ?? 0);
+        setBurstCreditsCap(session.user?.burstCreditsCap ?? 0);
+        setBurstCreditsResetAt(session.user?.burstCreditsResetAt ?? null);
+        setBurstWindowHours(session.user?.burstWindowHours ?? 5);
+        setWeeklyCreditsUsed(session.user?.weeklyCreditsUsed ?? 0);
+        setWeeklyCreditsCap(session.user?.weeklyCreditsCap ?? 0);
+        setWeeklyCreditsResetAt(session.user?.weeklyCreditsResetAt ?? null);
         setOnboardingComplete(session.onboardingComplete);
         setPcSetupComplete(session.pcSetupComplete);
         setPcSetupSkipped(session.pcSetupSkipped);
         setRememberedDesktops(session.rememberedDesktops);
         setSelectedChatModel(session.selectedChatModel);
+        setDesktopPermissionMode(persisted.desktopPermissionMode);
         setSelectedModel(persisted.selectedModel);
         setChatThreads(persisted.chatThreads);
         setChatTitles(persisted.chatTitles);
         setChatProjects(persisted.chatProjects);
+        setProjectMemories(persisted.projectMemories);
         setEditApprovals(persisted.editApprovals);
         setPromptMoney(persisted.promptMoney);
       })
@@ -141,20 +165,29 @@ export function useAppState() {
         planRenewsAt: null,
         creditsBalance,
         creditsUsed,
-        dailyCreditsUsed: 0,
-        dailyCreditsCap: 0,
+        dailyCreditsUsed,
+        dailyCreditsCap,
+        dailyCreditsResetAt,
+        burstCreditsUsed,
+        burstCreditsCap,
+        burstCreditsResetAt,
+        burstWindowHours,
+        weeklyCreditsUsed,
+        weeklyCreditsCap,
+        weeklyCreditsResetAt,
         monthlyCredits: 0,
         allowedModelTiers: [],
         level: levelProgress,
         onboardingComplete,
         rememberedDesktops,
-        appState: { chatThreads, chatTitles, chatProjects, editApprovals, profileImageUri, selectedModel, selectedChatModel, promptMoney }
+        appState: { chatThreads, chatTitles, chatProjects, projectMemories, editApprovals, profileImageUri, selectedModel, selectedChatModel, desktopPermissionMode, promptMoney }
       } : null
     });
   }, [
     accountId, accountPlan, authEmail, authName, authToken, chatThreads, chatTitles, chatProjects,
-    editApprovals, creditsBalance, creditsUsed, installId, levelProgress, onboardingComplete,
-    pcSetupComplete, pcSetupSkipped, persistenceReady, profileImageUri, promptMoney, rememberedDesktops, selectedChatModel, selectedModel
+    projectMemories, editApprovals, creditsBalance, creditsUsed, dailyCreditsUsed, dailyCreditsCap, dailyCreditsResetAt,
+    burstCreditsUsed, burstCreditsCap, burstCreditsResetAt, burstWindowHours, weeklyCreditsUsed, weeklyCreditsCap, weeklyCreditsResetAt, installId, levelProgress, onboardingComplete,
+    pcSetupComplete, pcSetupSkipped, persistenceReady, profileImageUri, promptMoney, rememberedDesktops, selectedChatModel, selectedModel, desktopPermissionMode
   ]);
 
   const derived: AppDerivedState = useMemo(() => {
@@ -174,25 +207,28 @@ export function useAppState() {
     state: {
       persistenceReady, authenticated, authToken, installId, accountId, accountPlan, authMode,
       levelProgress,
-      authName, authEmail, authPassword, authReferralCode, profileImageUri, creditsBalance, creditsUsed, onboardingComplete,
+      authName, authEmail, authPassword, authReferralCode, profileImageUri, creditsBalance, creditsUsed, dailyCreditsUsed, dailyCreditsCap,
+      dailyCreditsResetAt, burstCreditsUsed, burstCreditsCap, burstCreditsResetAt, burstWindowHours, weeklyCreditsUsed, weeklyCreditsCap, weeklyCreditsResetAt, onboardingComplete,
       pcSetupComplete, pcSetupSkipped, paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
-      healthMessage, checkingHealth, pendingPhoneApproval, connection, rememberedDesktops,
+      healthMessage, checkingHealth, pendingPhoneApproval, connection, desktopPermissionMode, rememberedDesktops,
       machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
       workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
-      chatSkills, chatProjects, editApprovals, newFilePath, command, promptMoney
+      chatSkills, chatProjects, projectMemories, editApprovals, newFilePath, command, promptMoney
     },
     derived,
     setters: {
       setAuthenticated, setAuthToken, setAccountId, setAccountPlan, setAuthMode,
       setLevelProgress, setAuthName, setAuthEmail, setAuthPassword, setAuthReferralCode, setProfileImageUri, setCreditsBalance, setCreditsUsed,
+      setDailyCreditsUsed, setDailyCreditsCap, setDailyCreditsResetAt, setBurstCreditsUsed, setBurstCreditsCap, setBurstCreditsResetAt,
+      setBurstWindowHours, setWeeklyCreditsUsed, setWeeklyCreditsCap, setWeeklyCreditsResetAt,
       setOnboardingComplete, setPcSetupComplete, setPcSetupSkipped, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
-      setPairingMessage, setHealthMessage, setCheckingHealth, setPendingPhoneApproval, setConnection,
+      setPairingMessage, setHealthMessage, setCheckingHealth, setPendingPhoneApproval, setConnection, setDesktopPermissionMode,
       setRememberedDesktops, setMachineName, setProjects,
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState, setPreviewState, setWorkflowIndex,
       setLastPrompt, setAgentRequesting, setTaskText, setChatMessages, setChatThreads, setChatTitles,
-      setChatSkills, setChatProjects, setEditApprovals, setNewFilePath, setCommand, setPromptMoney
+      setChatSkills, setChatProjects, setProjectMemories, setEditApprovals, setNewFilePath, setCommand, setPromptMoney
     }
   };
 }

@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { AgentBusyInfo } from "./agentStatus";
-import type { GeneratedImage } from "./chatTools";
+import type { ChatToolMode, GeneratedImage } from "./chatTools";
 import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
 export type BuildState = "idle" | "building" | "passed" | "failed";
 export type ModelKey = "gpt-5.5" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5-codex";
 export type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh";
+export type DesktopPermissionMode = "read" | "ask" | "auto";
 export type PreviewState = "offline" | "live" | "refreshing" | "delivered";
 
 export type ProjectSource = "pc" | "mobile" | "desktop";
@@ -17,6 +18,18 @@ export type ProjectBrief = {
   frameworkId: string;
   frameworkLabel: string;
   frameworkDescription: string;
+};
+
+export type ProjectMemoryEntry = {
+  id: string;
+  text: string;
+  source: "brief" | "user";
+  createdAt: string;
+};
+
+export type ProjectMemory = {
+  entries: ProjectMemoryEntry[];
+  updatedAt: string;
 };
 
 export type Project = {
@@ -148,6 +161,7 @@ export type ChatRunStatus = {
   route: "desktop" | "cloud";
   mode: "build" | "chat";
   status: "running" | "complete" | "failed";
+  tool?: ChatToolMode;
 };
 
 export type GeneratedApp = {

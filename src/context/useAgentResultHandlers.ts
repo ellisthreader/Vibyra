@@ -1,5 +1,5 @@
 import { ChatMessage, LogEvent } from "../types/domain";
-import { appApiRequest, ChatResponse, LevelActivityResponse } from "../utils/appApi";
+import { appApiRequest, ChatResponse, LevelActivityResponse, RemoteUser } from "../utils/appApi";
 import { dedupeFiles, formatAssistantReply } from "../utils/files";
 import { AgentStartResult } from "./agentTypes";
 import { ResolvedAgentTarget } from "./agentActionHelpers";
@@ -79,8 +79,7 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
       }, state.authToken)
         .then((levelResult) => {
           if (levelResult.user) {
-            setters.setCreditsBalance(levelResult.user.creditsBalance);
-            setters.setCreditsUsed(levelResult.user.creditsUsed);
+            applyUsagePayload(levelResult.user);
             setters.setLevelProgress(levelResult.user.level);
           } else if (levelResult.level) {
             setters.setLevelProgress(levelResult.level);
@@ -105,8 +104,11 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     )));
     setters.setBuildState(result.app ? "passed" : "idle");
     setters.setPreviewState(result.app ? "delivered" : "live");
-    setters.setCreditsBalance(result.user?.creditsBalance ?? result.creditsBalance);
-    setters.setCreditsUsed(result.user?.creditsUsed ?? result.creditsUsed);
+    if (result.user) applyUsagePayload(result.user);
+    else {
+      setters.setCreditsBalance(result.creditsBalance);
+      setters.setCreditsUsed(result.creditsUsed);
+    }
     if (result.user?.level) setters.setLevelProgress(result.user.level);
     if (result.title) {
       setters.setChatTitles((current) => ({
@@ -136,8 +138,11 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     )));
     setters.setBuildState(result.app ? "passed" : "idle");
     setters.setPreviewState(result.app ? "delivered" : "live");
-    setters.setCreditsBalance(result.user?.creditsBalance ?? result.creditsBalance);
-    setters.setCreditsUsed(result.user?.creditsUsed ?? result.creditsUsed);
+    if (result.user) applyUsagePayload(result.user);
+    else {
+      setters.setCreditsBalance(result.creditsBalance);
+      setters.setCreditsUsed(result.creditsUsed);
+    }
     if (result.user?.level) setters.setLevelProgress(result.user.level);
     if (result.title) {
       setters.setChatTitles((current) => ({
@@ -155,6 +160,21 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
   }
 
   return { finishRealAgent, finishOpenRouterAgent, finishStreamedOpenRouterAgent };
+
+  function applyUsagePayload(user: RemoteUser) {
+    setters.setCreditsBalance(user.creditsBalance);
+    setters.setCreditsUsed(user.creditsUsed);
+    setters.setDailyCreditsUsed(user.dailyCreditsUsed ?? 0);
+    setters.setDailyCreditsCap(user.dailyCreditsCap ?? 0);
+    setters.setDailyCreditsResetAt(user.dailyCreditsResetAt ?? null);
+    setters.setBurstCreditsUsed(user.burstCreditsUsed ?? 0);
+    setters.setBurstCreditsCap(user.burstCreditsCap ?? 0);
+    setters.setBurstCreditsResetAt(user.burstCreditsResetAt ?? null);
+    setters.setBurstWindowHours(user.burstWindowHours ?? 5);
+    setters.setWeeklyCreditsUsed(user.weeklyCreditsUsed ?? 0);
+    setters.setWeeklyCreditsCap(user.weeklyCreditsCap ?? 0);
+    setters.setWeeklyCreditsResetAt(user.weeklyCreditsResetAt ?? null);
+  }
 }
 
 function chatResponseMetadata(app: ChatResponse["app"], creditCost: number): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "creditCost"> {

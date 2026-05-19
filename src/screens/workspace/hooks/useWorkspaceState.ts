@@ -22,6 +22,7 @@ export function useWorkspaceState() {
   const [projectSearch, setProjectSearch] = useState("");
   const [switcherScanning, setSwitcherScanning] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
+  const [settingsTabRequestId, setSettingsTabRequestId] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newChatMessages, setNewChatMessages] = useState<ChatMessage[]>([]);
   const [chatTitleOverrides, setChatTitleOverrides] = useState<Record<string, string>>({});
@@ -99,7 +100,7 @@ export function useWorkspaceState() {
     pcSwitcherVisible, setPcSwitcherVisible,
     projectSearch, setProjectSearch,
     switcherScanning, setSwitcherScanning,
-    settingsTab, setSettingsTab,
+    settingsTab, setSettingsTab, settingsTabRequestId, setSettingsTabRequestId,
     selectedChatId, setSelectedChatId,
     newChatMessages, setNewChatMessages,
     chatTitleOverrides, setChatTitleOverrides,

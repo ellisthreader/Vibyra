@@ -31,8 +31,10 @@ export function WorkspaceScreen() {
   const chatHasConversation = w.visibleChatMessages.length > 0;
   const latestRunnablePreview = [...w.visibleChatMessages].reverse().find((message) => message.app)?.app;
   const selectedChatProjectId = w.selectedChatId?.startsWith("project-") ? w.selectedChatId.replace("project-", "") : "";
+  const selectedChatProject = selectedChatProjectId ? (app.projects.find((project) => project.id === selectedChatProjectId) ?? app.chatProjects[selectedChatProjectId]) : null;
   const chatHasRunnablePreview = isDisplayablePreview(latestRunnablePreview);
   const projectChatHasRunnableFiles = Boolean(selectedChatProjectId && app.selectedProject.id === selectedChatProjectId && hasRunnableLoadedFilePreview(app.files));
+  const projectChatCanStartPreview = Boolean(selectedChatProjectId && selectedChatProject && app.connection);
   const recentChats = Object.entries(app.chatThreads)
     .filter(([, messages]) => messages.length > 0)
     .slice(-5)
@@ -43,7 +45,7 @@ export function WorkspaceScreen() {
     }));
 
   useEffect(() => {
-    if (!w.previewApp || !latestRunnablePreview || w.previewApp.id === latestRunnablePreview.id) return;
+    if (!w.previewApp || !latestRunnablePreview || previewFingerprint(w.previewApp) === previewFingerprint(latestRunnablePreview)) return;
     w.setPreviewApp(latestRunnablePreview);
   }, [latestRunnablePreview, w.previewApp, w.setPreviewApp]);
 
@@ -54,7 +56,7 @@ export function WorkspaceScreen() {
           <TopBar
             activePage={activePage}
             accountName={app.authName}
-            canOpenPreview={chatHasRunnablePreview || projectChatHasRunnableFiles}
+            canOpenPreview={chatHasRunnablePreview || projectChatHasRunnableFiles || projectChatCanStartPreview}
             chatDirectory={chatDirectory}
             chatHasConversation={chatHasConversation}
             chatStarred={Boolean(w.starredChatKeys[w.chatTitleKey])}
@@ -70,7 +72,7 @@ export function WorkspaceScreen() {
             onDeleteChat={w.deleteCurrentChat}
             onOpenAccount={() => w.setAccountMenuVisible(true)}
             onOpenMenu={() => w.setPrimaryMenuVisible(true)}
-            onOpenPreview={() => { void w.openRunnablePreview(); }}
+            onOpenPreview={() => { void w.openRunnablePreview("/preview"); }}
             onRenameChat={w.openRenameChat}
             onToggleStarChat={() => w.setStarredChatKeys((current) => ({ ...current, [w.chatTitleKey]: !current[w.chatTitleKey] }))}
             profileImageUri={app.profileImageUri}
@@ -98,6 +100,7 @@ export function WorkspaceScreen() {
                 creditsLow={w.creditsLow}
                 creditPercentRemaining={w.creditPercentRemaining}
                 onOpenTokens={() => w.setTokenSheetVisible(true)}
+                onOpenPcConnection={() => w.openPcSwitcher()}
                 onApprovePreviewServerStart={w.onApprovePreviewServerStart}
                 onDenyPreviewServerStart={w.onDenyPreviewServerStart}
                 onStart={w.onStartChat}
@@ -165,7 +168,7 @@ export function WorkspaceScreen() {
                 />
               ) : null}
               {activePage === "profile" ? (
-                <ProfilePage activeTab={w.settingsTab} onTabChange={w.setSettingsTab} />
+                <ProfilePage activeTab={w.settingsTab} activeTabRequestId={w.settingsTabRequestId} onTabChange={w.setSettingsTab} />
               ) : null}
             </ScrollView>
           )}
@@ -179,7 +182,7 @@ export function WorkspaceScreen() {
           onConnectPc={() => { w.setPrimaryMenuVisible(false); w.openPcSwitcher(); }}
           onNavigate={(page) => { w.setPrimaryMenuVisible(false); w.navigatePage(page); }}
           onNewChat={() => { w.setPrimaryMenuVisible(false); w.navigatePage("chat"); }}
-          onOpenAccount={() => { w.setPrimaryMenuVisible(false); w.setAccountMenuVisible(true); }}
+          onOpenProfile={() => { w.setPrimaryMenuVisible(false); w.setSettingsTab("profile"); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
           onOpenRecentChat={(chatId) => { w.setPrimaryMenuVisible(false); w.setSelectedChatId(chatId); w.setActivePage("chat"); }}
           projectCount={app.projects.length}
           recentChats={recentChats}
@@ -188,8 +191,8 @@ export function WorkspaceScreen() {
         <AccountMenuSheet
           name={app.authName}
           onClose={() => w.setAccountMenuVisible(false)}
-          onOpenTokens={() => { w.setAccountMenuVisible(false); w.setTokenSheetVisible(true); }}
-          onTab={(tab) => { w.setAccountMenuVisible(false); w.setSettingsTab(tab); w.setActivePage("profile"); }}
+          onOpenTokens={() => { w.setAccountMenuVisible(false); w.setSettingsTab("usage"); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
+          onTab={(tab) => { w.setAccountMenuVisible(false); w.setSettingsTab(tab); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
           plan={app.accountPlan}
           profileImageUri={app.profileImageUri}
           tokenBalance={w.tokenBalance}
@@ -219,7 +222,7 @@ export function WorkspaceScreen() {
         />
         <TokenMembershipSheet
           onClose={() => w.setTokenSheetVisible(false)}
-          onManage={() => { w.setTokenSheetVisible(false); w.setActivePage("profile"); w.setSettingsTab("billing"); }}
+          onManage={() => { w.setTokenSheetVisible(false); w.setActivePage("profile"); w.setSettingsTab("billing"); w.setSettingsTabRequestId((id) => id + 1); }}
           plan={app.accountPlan}
           tokenBalance={w.tokenBalance}
           tokensUsed={app.creditsUsed}
@@ -246,6 +249,17 @@ export function WorkspaceScreen() {
 
 function isDisplayablePreview(app: GeneratedApp | null | undefined) {
   return Boolean(app?.html?.trim() || app?.url?.trim());
+}
+
+function previewFingerprint(app: GeneratedApp) {
+  return [
+    app.id,
+    app.projectId ?? "",
+    app.source ?? "",
+    app.title,
+    app.url ?? "",
+    app.html ?? ""
+  ].join("\u0000");
 }
 
 function hasRunnableLoadedFilePreview(files: FileEntry[]) {

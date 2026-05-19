@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleProp, View, ViewStyle, StyleSheet } from "react-native";
 import { parsePreviewError, prepareSrcDocHtml, PreviewRuntimeError } from "./appWebViewPreview";
+import { LoadingScreen } from "./LoadingScreen";
 
 export type { PreviewRuntimeError };
 
@@ -15,6 +16,11 @@ export type AppWebViewProps = {
 export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppWebViewProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const safeHtml = html ? prepareSrcDocHtml(html) : undefined;
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+  }, [reloadKey, safeHtml, url]);
 
   useEffect(() => {
     if (!onPreviewError) return undefined;
@@ -34,10 +40,12 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
         ref={iframeRef}
         src={safeHtml ? undefined : url}
         srcDoc={safeHtml}
+        onLoad={() => setLoading(false)}
         sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals"
         style={iframeStyle}
         title="App preview"
       />
+      {loading ? <LoadingScreen compact message="Loading preview." style={styles.loader} title="Opening app" /> : null}
     </View>
   );
 }
@@ -55,5 +63,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0D17",
     flex: 1,
     overflow: "hidden"
+  },
+  loader: {
+    ...StyleSheet.absoluteFillObject
   }
 });

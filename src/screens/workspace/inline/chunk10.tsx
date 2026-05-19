@@ -9,6 +9,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
 import { AppWebView } from "../../../components/AppWebView";
 import { colors } from "../../../styles/theme";
+import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
@@ -19,6 +20,7 @@ import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDar
 import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
+import { chatEmptyTitle } from "./chatEmptyTitles";
 import { ClaudeLogo } from "./chunk11";
 
 export function ModelMenuRow({
@@ -104,7 +106,9 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
 }
 
 export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (prompt: string) => void }) {
+  const app = useAppContext();
   const prefs = usePreferences();
+  const title = useMemo(() => chatEmptyTitle(app.authName), [app.authName]);
   const suggestionIconColor = useThemedColor("#D7C4FF");
   const suggestionGradient = prefs.effectiveScheme === "light"
     ? ["rgba(109, 59, 255, 0.12)", "rgba(79, 70, 229, 0.08)"] as const
@@ -136,9 +140,7 @@ export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (promp
       <Animated.View style={[styles.chatWelcomeGlyph, { pointerEvents: "none", transform: [{ scale: orbScale }], opacity: orbGlow }]}>
         <Image resizeMode="contain" source={aiChatGlyph} style={styles.chatWelcomeGlyphImage as ImageStyle} />
       </Animated.View>
-      <Text style={styles.chatWelcomeKicker}>Vibyra AI</Text>
-      <Text style={styles.chatWelcomeTitle}>How can I help you build today?</Text>
-      <Text style={styles.chatWelcomeSubtle}>Ask anything, edit code, or describe an idea — I'll handle the rest.</Text>
+      <Text style={styles.chatWelcomeTitle}>{title}</Text>
       <View style={styles.chatSuggestionGrid}>
         {chatSuggestions.map((suggestion) => (
           <Pressable
@@ -175,13 +177,14 @@ export function ChatWelcomeGlyph() {
 export function ModelProviderIcon({ compact, provider }: { compact?: boolean; provider: ChatModelProvider }) {
   const autoIconColor = useThemedColor("#EDE9FF");
   const geminiIconColor = useThemedColor("#8EA0FF");
+  const openAiIconColor = useThemedColor("#10A37F");
   const config = {
     auto: { color: autoIconColor, icon: "sparkles-outline" as const },
     claude: { color: "#D97757", icon: "sunny-outline" as const },
-    openai: { color: "#10A37F", icon: "aperture-outline" as const },
+    openai: { color: openAiIconColor, icon: "aperture-outline" as const },
     gemini: { color: geminiIconColor, icon: "diamond-outline" as const }
   }[provider];
-  const logoSource = provider === "openai" || provider === "gemini" ? providerLogoSources[provider] : null;
+  const logoSource = provider === "gemini" ? providerLogoSources[provider] : null;
 
   return (
     <View style={[

@@ -138,8 +138,9 @@ export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer,
   const requestedPath = `${url.pathname}${url.search}`;
 
   if (previewRef.kind === "project") {
+    const projectPath = await projectPreviewRefererPath(previewRef.projectId, requestedPath);
     const synthetic = new URL(
-      `/preview/project/${encodeURIComponent(previewRef.projectId)}/${encodeURIComponent(TOKEN)}${requestedPath}`,
+      `/preview/project/${encodeURIComponent(previewRef.projectId)}/${encodeURIComponent(TOKEN)}${projectPath}`,
       url
     );
     await serveProjectPreview(res, synthetic);
@@ -158,6 +159,15 @@ export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer,
     req
   });
   return true;
+}
+
+async function projectPreviewRefererPath(projectId, requestedPath) {
+  const project = findProjectById(projectId);
+  const entryPath = project ? await previewEntryPath(project) : "";
+  const mountDirectory = previewMountDirectory(entryPath);
+  const cleanPath = String(requestedPath || "/").replace(/^\/+/, "");
+  if (!mountDirectory || cleanPath.startsWith(`${mountDirectory}/`)) return `/${cleanPath}`;
+  return `/${mountDirectory}/${cleanPath}`;
 }
 
 export function previewUrl(projectId, token) {
@@ -392,12 +402,43 @@ function viteModuleErrorJavaScript(error) {
 }
 
 function viteErrorOverlayHtml(message, detail) {
+  return previewCrashPanelHtml({
+    detail,
+    eyebrow: "Preview module failed",
+    message,
+    title: "Preview crashed"
+  });
+}
+
+function previewCrashScreenHtml({ detail, eyebrow, message, title }) {
   return [
-    "<section style=\"box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)\">",
-    "<p style=\"margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em\">Preview module failed</p>",
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">${escapeHtml(message)}</h1>`,
-    `<pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">${escapeHtml(detail)}</pre>`,
-    "</section>"
+    '<main id="vibyra-preview-http-error" style="box-sizing:border-box;min-height:100vh;margin:0;padding:clamp(16px,5vw,32px);background:radial-gradient(circle at 50% 22%,rgba(80,35,145,.18),transparent 46%),#030511;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;overflow:auto;">',
+    previewCrashPanelHtml({ detail, eyebrow, message, title }),
+    "</main>"
+  ].join("");
+}
+
+function previewCrashPanelHtml({ detail, eyebrow, message, title }) {
+  const resolvedDetail = detail || message;
+  return [
+    '<section style="box-sizing:border-box;width:min(640px,calc(100vw - 40px));min-height:min(430px,calc(100vh - 96px));max-height:calc(100vh - 40px);display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(142,60,255,.52);border-radius:22px;background:rgba(8,10,22,.96);padding:clamp(22px,5vw,36px);box-shadow:0 18px 54px rgba(0,0,0,.34);overflow:hidden">',
+    '<div style="box-sizing:border-box;width:100%;margin:0 auto">',
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;color:#ff5f76;font-size:13px;font-weight:900;letter-spacing:.01em;text-transform:uppercase">',
+    '<span aria-hidden="true" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid #ff5f76;border-radius:999px;font-size:18px;line-height:1">!</span>',
+    '<span>' + escapeHtml(eyebrow) + '</span>',
+    '</div>',
+    '<h1 style="margin:0 0 20px;font-size:clamp(30px,6vw,42px);line-height:1.05;color:#fff;font-weight:900;letter-spacing:0">' + escapeHtml(title) + '</h1>',
+    '<div style="height:1px;background:rgba(255,255,255,.14);margin:0 0 20px"></div>',
+    '<p style="margin:0;color:#d8d2e4;font-size:clamp(15px,3.2vw,18px);font-weight:500;line-height:1.55;word-break:break-word">' + escapeHtml(message) + '</p>',
+    '<details style="margin-top:24px;color:#f7f3ff">',
+    '<summary style="box-sizing:border-box;cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;width:100%;min-height:58px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035);padding:0 16px;font-size:15px;font-weight:900">',
+    '<span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:rgba(142,60,255,.14);color:#b064ff;font-size:13px;font-weight:900">&lt;/&gt;</span>',
+    '<span style="flex:1">Show technical details</span><span aria-hidden="true" style="color:#d8d2e4;font-size:18px">&#8964;</span>',
+    '</summary>',
+    '<pre style="box-sizing:border-box;max-height:min(28vh,220px);overflow:auto;margin:12px 0 0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#eee8fa;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">' + escapeHtml(resolvedDetail) + '</pre>',
+    '</details>',
+    '</div>',
+    '</section>'
   ].join("");
 }
 
@@ -601,14 +642,12 @@ function injectProxyHttpErrorOverlay(html, { status, target }) {
   if (/\bid=["']vibyra-preview-http-error["']/i.test(body)) return body;
   const message = `Preview request failed: HTTP ${status}`;
   const detail = `${target.pathname}${target.search}\n\n${body.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?<\/style>/gi, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 1200)}`;
-  const overlay = [
-    '<main id="vibyra-preview-http-error" style="box-sizing:border-box;min-height:100vh;margin:0;padding:24px;background:#0b0d17;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;">',
-    '<section style="box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)">',
-    '<p style="margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em">Preview HTTP error</p>',
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">${escapeHtml(message)}</h1>`,
-    `<pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">${escapeHtml(detail)}</pre>`,
-    "</section></main>"
-  ].join("");
+  const overlay = previewCrashScreenHtml({
+    detail,
+    eyebrow: "Preview HTTP error",
+    message,
+    title: "Preview request failed"
+  });
   if (/<body[^>]*>/i.test(body)) return body.replace(/<body([^>]*)>/i, `<body$1>${overlay}`);
   return `${overlay}${body}`;
 }
@@ -672,9 +711,9 @@ const PROXY_RUNTIME_ERROR_SCRIPT = `
     if (!root) return;
     var wrap = document.createElement("main");
     wrap.id = "vibyra-preview-runtime-error";
-    wrap.style.cssText = "box-sizing:border-box;min-height:100vh;margin:0;padding:24px;background:#0b0d17;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;";
+    wrap.style.cssText = "box-sizing:border-box;min-height:100vh;margin:0;padding:clamp(16px,5vw,32px);background:radial-gradient(circle at 50% 22%,rgba(80,35,145,.18),transparent 46%),#030511;color:#f7f3ff;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;overflow:auto;";
     var detail = [payload.file, payload.line, payload.stack].filter(Boolean).join("\\n\\n");
-    wrap.innerHTML = '<section style="box-sizing:border-box;width:min(760px,100%);border:1px solid rgba(255,209,102,.34);border-radius:16px;background:#11131f;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)"><p style="margin:0 0 8px;color:#ffd166;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.04em">Preview runtime error</p><h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;color:#fff4c7">' + text(payload.message) + '</h1><pre style="box-sizing:border-box;max-height:58vh;overflow:auto;margin:0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#f3eeff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">' + text(detail || payload.message) + '</pre></section>';
+    wrap.innerHTML = '<section style="box-sizing:border-box;width:min(640px,calc(100vw - 40px));min-height:min(430px,calc(100vh - 96px));max-height:calc(100vh - 40px);display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(142,60,255,.52);border-radius:22px;background:rgba(8,10,22,.96);padding:clamp(22px,5vw,36px);box-shadow:0 18px 54px rgba(0,0,0,.34);overflow:hidden"><div style="box-sizing:border-box;width:100%;margin:0 auto"><div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;color:#ff5f76;font-size:13px;font-weight:900;letter-spacing:.01em;text-transform:uppercase"><span aria-hidden="true" style="box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:2px solid #ff5f76;border-radius:999px;font-size:18px;line-height:1">!</span><span>PREVIEW RUNTIME ERROR</span></div><h1 style="margin:0 0 20px;font-size:clamp(30px,6vw,42px);line-height:1.05;color:#fff;font-weight:900;letter-spacing:0">Preview crashed</h1><div style="height:1px;background:rgba(255,255,255,.14);margin:0 0 20px"></div><p style="margin:0;color:#d8d2e4;font-size:clamp(15px,3.2vw,18px);font-weight:500;line-height:1.55;word-break:break-word">' + text(payload.message) + '</p><details style="margin-top:24px;color:#f7f3ff"><summary style="box-sizing:border-box;cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;width:100%;min-height:58px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.035);padding:0 16px;font-size:15px;font-weight:900"><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:rgba(142,60,255,.14);color:#b064ff;font-size:13px;font-weight:900">&lt;/&gt;</span><span style="flex:1">Show technical details</span><span aria-hidden="true" style="color:#d8d2e4;font-size:18px">&#8964;</span></summary><pre style="box-sizing:border-box;max-height:min(28vh,220px);overflow:auto;margin:12px 0 0;white-space:pre-wrap;background:#070911;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;color:#eee8fa;font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">' + text(detail || payload.message) + '</pre></details></div></section>';
     root.appendChild(wrap);
   }
   function requestFailure(url, status, body) {
@@ -1027,6 +1066,8 @@ function contentTypeFor(filePath) {
     ".bmp": "image/bmp",
     ".css": "text/css; charset=utf-8",
     ".gif": "image/gif",
+    ".glb": "model/gltf-binary",
+    ".gltf": "model/gltf+json; charset=utf-8",
     ".html": "text/html; charset=utf-8",
     ".ico": "image/x-icon",
     ".jpeg": "image/jpeg",
@@ -1035,12 +1076,20 @@ function contentTypeFor(filePath) {
     ".js": "application/javascript; charset=utf-8",
     ".mjs": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
+    ".m4v": "video/x-m4v",
+    ".mov": "video/quicktime",
+    ".mp3": "audio/mpeg",
+    ".mp4": "video/mp4",
+    ".ogg": "audio/ogg",
+    ".otf": "font/otf",
     ".png": "image/png",
     ".svg": "image/svg+xml; charset=utf-8",
+    ".ttf": "font/ttf",
     ".ts": "application/javascript; charset=utf-8",
     ".tsx": "application/javascript; charset=utf-8",
     ".wasm": "application/wasm",
     ".webmanifest": "application/manifest+json; charset=utf-8",
+    ".webm": "video/webm",
     ".webp": "image/webp",
     ".woff": "font/woff",
     ".woff2": "font/woff2",

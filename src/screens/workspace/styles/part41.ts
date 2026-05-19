@@ -66,24 +66,32 @@ export const part41 = {
   },
   appModalScreen: {
     backgroundColor: "#02030C",
+    flex: 1,
+    overflow: "hidden"
+  },
+  appModalBackdrop: {
+    backgroundColor: "#02030C",
     flex: 1
   },
   appModalHeader: {
     alignItems: "center",
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
-    borderBottomWidth: 1,
+    backgroundColor: "#02030C",
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
+    minHeight: 58,
+    paddingBottom: 10,
     paddingHorizontal: 14,
-    paddingVertical: 10
+    paddingTop: 8
   },
   appModalIconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderRadius: 12,
-    height: 36,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 38,
     justifyContent: "center",
-    width: 36
+    width: 38
   },
   appModalTitleStack: {
     flex: 1,
