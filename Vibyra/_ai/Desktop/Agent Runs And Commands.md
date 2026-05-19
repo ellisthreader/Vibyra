@@ -33,6 +33,12 @@ Mobile sends `apply: true` only for project-scoped Allow always.
 
 Generated file paths are constrained to relative paths under the approved project root. Absolute paths, `..`, `.git`, `.expo`, `.vibyra-agent`, `node_modules`, and `vendor` are rejected.
 
+## Multi-Agent State
+
+Node desktop bridge uses `desktop/lib/agentRunState.mjs` plus `appState.agentRuns` for run-scoped progress. `/desktop/state` and `/events` expose `agentRuns` and keep `activeAgentRun` as a derived compatibility field. `/agents/start` still returns the existing phone response shape, but no longer blocks on a single global active run.
+
+Concurrent running/applying runs are capped by `desktopAccount.maxConcurrentAgents` when present, clamped to the local MVP ceiling of 12; otherwise the local cap is 12. Waiting pending-apply runs do not count against the active cap, but `desktop/lib/agent.mjs` keeps the per-project pending apply lock and rechecks before storing generated edits so two pending approvals cannot conflict in the same project.
+
 ## Vault Lookup
 
 Vault lookup order:

@@ -289,11 +289,11 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     return true;
   }
 
-  function applyPreviewServerDecision(prompt: string, target: ReturnType<Runtime["activeProjectTarget"]>, approved: boolean) {
+  function applyPreviewServerDecision(prompt: string | null, target: ReturnType<Runtime["activeProjectTarget"]>, approved: boolean) {
     const pending = pendingPreviewServerRef.current;
     if (!pending || pending.projectId !== target.projectId) return;
     pendingPreviewServerRef.current = null;
-    app.addLocalUserMessage(prompt, target);
+    if (prompt?.trim()) app.addLocalUserMessage(prompt, target);
     if (!approved) {
       app.updatePreviewServerMessage(pending.messageId, pending.projectId, {
         status: "cancelled",
@@ -368,8 +368,8 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     onStartChat,
     folderRecoveryRef,
     resumeFolderSearch,
-    approvePreviewServerStart: () => applyPreviewServerDecision("yes", runtime.activeProjectTarget(), true),
-    denyPreviewServerStart: () => applyPreviewServerDecision("no", runtime.activeProjectTarget(), false)
+    approvePreviewServerStart: () => applyPreviewServerDecision(null, runtime.activeProjectTarget(), true),
+    denyPreviewServerStart: () => applyPreviewServerDecision(null, runtime.activeProjectTarget(), false)
   };
 
   function addDesktopConnectionPrompt(prompt: string, query: string, detached: boolean) {

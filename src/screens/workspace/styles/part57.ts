@@ -11,7 +11,7 @@ export const part57 = {
   },
   chatAttachmentHandle: {
     alignSelf: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    backgroundColor: "#080A12",
     borderRadius: 999,
     height: 4,
     marginBottom: 10,
@@ -37,22 +37,25 @@ export const part57 = {
     borderRadius: 18,
     borderWidth: 1,
     flex: 1,
-    gap: 10,
+    gap: 8,
     justifyContent: "center",
-    minHeight: 94,
-    minWidth: 0
+    minHeight: 88,
+    minWidth: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 12
   },
   chatAttachmentPrimaryIcon: {
     alignItems: "center",
-    height: 36,
+    height: 32,
     justifyContent: "center",
-    width: 36
+    width: 32
   },
   chatAttachmentPrimaryLabel: {
-    color: "#F7F3FF",
-    fontSize: 15,
-    fontWeight: "900",
-    lineHeight: 19
+    color: "#EEEAF8",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 17,
+    textAlign: "center"
   },
   chatAttachmentPrimaryRow: {
     borderBottomColor: "rgba(255, 255, 255, 0.08)",
@@ -70,8 +73,8 @@ export const part57 = {
     top: 0
   },
   chatAttachmentSheet: {
-    backgroundColor: "#101017",
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "#080A12",
+    borderColor: "transparent",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderWidth: 1,
@@ -94,21 +97,21 @@ export const part57 = {
   },
   chatAttachmentToolDescription: {
     color: "#8F8A9E",
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: "700",
-    lineHeight: 18
+    lineHeight: 16
   },
   chatAttachmentToolIcon: {
     alignItems: "center",
-    height: 40,
+    height: 36,
     justifyContent: "center",
-    width: 40
+    width: 34
   },
   chatAttachmentToolLabel: {
     color: "#F4F0FF",
-    fontSize: 17,
+    fontSize: 15.5,
     fontWeight: "900",
-    lineHeight: 22
+    lineHeight: 20
   },
   chatAttachmentToolList: {
     gap: 6,
@@ -119,9 +122,9 @@ export const part57 = {
     alignItems: "center",
     borderRadius: 14,
     flexDirection: "row",
-    gap: 12,
-    minHeight: 70,
-    paddingHorizontal: 8
+    gap: 9,
+    minHeight: 62,
+    paddingHorizontal: 2
   },
   chatToolPill: {
     alignItems: "center",

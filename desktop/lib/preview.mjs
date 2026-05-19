@@ -94,7 +94,7 @@ export async function servePreviewServerProxy(reqOrRes, resOrUrl, maybeUrl) {
     return;
   }
 
-  const requestedPath = decodeURIComponent(match[3] ?? "").replace(/^\/+/, "");
+  const requestedPath = normalizePreviewServerRequestedPath(match[3] ?? "", projectId, TOKEN);
   const target = new URL(requestedPath, `${targetBase.toString().replace(/\/+$/, "")}/`);
   target.search = url.search;
   await proxyPreviewResponse(res, target, {
@@ -166,6 +166,16 @@ export function previewUrl(projectId, token) {
 
 export function previewServerProxyUrl(projectId, token) {
   return `/preview/server/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
+}
+
+function normalizePreviewServerRequestedPath(rawPath, projectId, token) {
+  let requestedPath = decodeURIComponent(rawPath ?? "").replace(/^\/+/, "");
+  for (let index = 0; index < 4; index += 1) {
+    const match = requestedPath.match(/^preview\/server\/([^/]+)\/([^/]+)\/?(.*)$/);
+    if (!match || decodeURIComponent(match[1]) !== projectId || decodeURIComponent(match[2]) !== token) break;
+    requestedPath = decodeURIComponent(match[3] ?? "").replace(/^\/+/, "");
+  }
+  return requestedPath;
 }
 
 export async function resolvedPreviewUrl(project, requestHost, token = TOKEN) {
@@ -288,7 +298,7 @@ async function proxyPreviewResponse(res, target, { externalProxy = false, proxyB
         return;
       }
     }
-    const isText = /^text\/|javascript|json|xml|svg/i.test(contentType);
+    const isText = isMutableProxyContent(contentType);
     const proxyContext = previewProxyContext(target, token);
     const responseHeaders = proxyResponseHeaders(upstream, contentType, { externalProxy, proxyBase, target, token, proxyContext });
     if (!isText) {
@@ -412,6 +422,8 @@ function proxyRequestHeaders(req, target, proxyBase) {
     "accept-language",
     "content-type",
     "cookie",
+    "if-range",
+    "range",
     "x-csrf-token",
     "x-inertia",
     "x-inertia-version",
@@ -501,6 +513,10 @@ function proxyResponseHeaders(upstream, contentType, rewriteOptions) {
     const value = upstream.headers.get(name);
     if (value) next[name] = value;
   }
+  for (const name of mediaResponseHeaderNames(contentType, upstream)) {
+    const value = upstream.headers.get(name);
+    if (value) next[canonicalHeaderName(name)] = value;
+  }
   const location = upstream.headers.get("location");
   if (location) next.Location = rewriteProxyReference(location, rewriteOptions);
   const inertiaLocation = upstream.headers.get("x-inertia-location");
@@ -512,6 +528,21 @@ function proxyResponseHeaders(upstream, contentType, rewriteOptions) {
     if (cookie) next["Set-Cookie"] = rewritePreviewCookie(cookie, rewriteOptions);
   }
   return next;
+}
+
+function mediaResponseHeaderNames(contentType, upstream) {
+  if (isMutableProxyContent(contentType)) return ["cache-control", "etag", "last-modified"];
+  const names = ["accept-ranges", "cache-control", "content-disposition", "content-range", "etag", "last-modified"];
+  if (!upstream.headers.get("content-encoding")) names.push("content-length");
+  return names;
+}
+
+function isMutableProxyContent(contentType) {
+  return /^text\/|javascript|json|xml|svg/i.test(String(contentType || ""));
+}
+
+function canonicalHeaderName(name) {
+  return String(name).split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1).toLowerCase() : part).join("-");
 }
 
 function rewritePreviewCookie(cookie, { proxyBase }) {

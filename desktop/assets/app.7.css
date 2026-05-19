@@ -308,6 +308,7 @@ body { background: linear-gradient(180deg, #08070d 0%, var(--bg) 48%, #0d0d12 10
 .suggestion h3, .suggestion p { display: none; }
 .messages { align-self: end; gap: 18px; padding-bottom: 10px; }
 .message { display: flex; }
+.message.assistant { align-items: flex-start; gap: 10px; justify-content: flex-start; }
 .message.user { justify-content: flex-end; }
 .message-card { max-width: min(680px, 88%); }
 .user .message-card {
@@ -316,7 +317,25 @@ body { background: linear-gradient(180deg, #08070d 0%, var(--bg) 48%, #0d0d12 10
   border-radius: 16px 16px 5px 16px;
   padding: 11px 13px;
 }
-.assistant .message-card { max-width: 100%; padding: 2px 0; width: 100%; }
+.assistant .message-card { flex: 1 1 auto; max-width: min(638px, calc(100% - 44px)); min-width: 0; padding: 2px 0; width: auto; }
+.message-avatar {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 36px;
+  height: 36px;
+  justify-content: center;
+  overflow: hidden;
+  width: 36px;
+}
+.message-avatar img {
+  display: block;
+  height: 31px;
+  object-fit: contain;
+  width: 31px;
+}
 .message-author { color: #918ca1; font-size: 11px; font-weight: 640; margin-bottom: 5px; }
 .assistant .message-author { color: #b9a7f6; }
 .message-body { color: #f1eef8; font-size: 15px; font-weight: 450; line-height: 24px; overflow-wrap: anywhere; white-space: pre-wrap; }
@@ -1276,4 +1295,65 @@ body { background: linear-gradient(180deg, #08070d 0%, var(--bg) 48%, #0d0d12 10
     min-width: 36px;
     padding: 0;
   }
+}
+
+.rail-collapse-button,
+.rail-expand-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #9f98ad;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+.rail-collapse-button:hover,
+.rail-expand-button:hover {
+  background: rgba(255, 255, 255, 0.055);
+  color: #f1eef8;
+}
+.rail-collapse-button svg,
+.rail-expand-button svg {
+  height: 16px;
+  width: 16px;
+}
+.rail-collapse-button svg {
+  transform: rotate(180deg);
+}
+.rail-logo .rail-collapse-button {
+  margin-left: auto;
+}
+.rail-expand-button {
+  left: 16px;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  top: 16px;
+  transform: translateX(-6px);
+  transition: opacity 140ms ease, transform 140ms ease, background 140ms ease, color 140ms ease;
+  z-index: 70;
+}
+.app {
+  transition: grid-template-columns 180ms ease;
+}
+.app.rail-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+.app.rail-collapsed .rail {
+  border-right: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-left: 0;
+  padding-right: 0;
+  pointer-events: none;
+}
+.app.rail-collapsed .rail-expand-button {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+.app.rail-collapsed .topbar {
+  padding-left: 58px;
 }

@@ -41,6 +41,28 @@ test("desktop project preview fix prompt targets existing project files", async 
   assert.doesNotMatch(prompt, /<script/);
 });
 
+test("desktop Vite import crash prompt does not include unrelated Laravel 419 triage", async () => {
+  const { buildFixPrompt } = await loadPreviewFixPrompt();
+  const prompt = buildFixPrompt({
+    id: "desktop-preview-project",
+    projectId: "project-1",
+    source: "desktop",
+    title: "HongKongExpress-new",
+    url: "http://127.0.0.1:4317/preview/server/project/token/"
+  }, [{
+    type: "resource",
+    message: 'Vite preview module failed: vite:import-analysis: Failed to resolve import "@inertiajs/inertia-react" from "resources/js/app.tsx". Does the file exist?',
+    source: "/resources/js/app.tsx",
+    stack: 'Failed to resolve import "@inertiajs/inertia-react" from "resources/js/app.tsx"'
+  }]);
+
+  assert.match(prompt, /Captured preview diagnostics/);
+  assert.match(prompt, /@inertiajs\/inertia-react/);
+  assert.doesNotMatch(prompt, /Laravel\/Inertia HTTP 419/);
+  assert.doesNotMatch(prompt, /CSRF\/XSRF/);
+  assert.doesNotMatch(prompt, /preview proxy transport/);
+});
+
 test("generated preview fix prompt keeps self-contained vibyra app contract", async () => {
   const { buildFixPrompt } = await loadPreviewFixPrompt();
   const prompt = buildFixPrompt({

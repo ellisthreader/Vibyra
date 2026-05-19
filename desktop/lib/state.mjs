@@ -1,6 +1,7 @@
 import { networkInterfaces, hostname, homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
 
 export const PORT = Number(process.env.VIBYRA_AGENT_PORT ?? 4317);
 export const PAIR_CODE = process.env.VIBYRA_PAIR_CODE ?? makePairCode();
@@ -20,7 +21,7 @@ export const appState = {
   selectedProjectId: null,
   latestPreview: null,
   previewServers: {},
-  activeAgentRun: null,
+  agentRuns: {},
   pendingAgentApplies: {},
   cachedProjects: [],
   events: [
@@ -130,7 +131,8 @@ export function publicState() {
     pendingPair: appState.pendingPair,
     desktopAccount: appState.desktopAccount,
     latestPreview: appState.latestPreview,
-    activeAgentRun: appState.activeAgentRun,
+    agentRuns: listAgentRuns(appState),
+    activeAgentRun: currentAgentRun(appState),
     events: appState.events,
     connectionUrls: connectionUrls(),
     projects: appState.cachedProjects

@@ -1,6 +1,7 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAgentTask, applyAgentTask, discardAgentTask, runCommand } from "./agent.mjs";
+import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
 import { openDesktopPreview } from "./desktopPreview.mjs";
@@ -218,7 +219,8 @@ async function handleAuthedRoutes(req, res, url) {
       events: appState.events,
       preview: appState.latestPreview,
       selectedProjectId: appState.selectedProjectId,
-      activeAgentRun: appState.activeAgentRun
+      agentRuns: listAgentRuns(appState),
+      activeAgentRun: currentAgentRun(appState)
     });
     return true;
   }

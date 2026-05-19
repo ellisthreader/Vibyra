@@ -49,6 +49,7 @@ const chatSkills = [
 const storedPage = localStorage.getItem("vibyra.desktop.page");
 const desktopChatsKey = "vibyra.desktop.recentChats";
 const activeChatKey = "vibyra.desktop.activeChat";
+const railCollapsedKey = "vibyra.desktop.railCollapsed";
 let currentState = emptyState;
 let activePage = pages.some((page) => page.key === storedPage) ? storedPage : "dashboard";
 let projectQuery = "";
@@ -64,6 +65,7 @@ let activeChatTool = "";
 let activeChatSkill = "";
 let selectedChatModel = chatModels.some((model) => model.key === localStorage.getItem("vibyra.desktop.chatModel")) ? localStorage.getItem("vibyra.desktop.chatModel") : "auto";
 let reasoningEffort = chatEfforts.some((effort) => effort.value === localStorage.getItem("vibyra.desktop.reasoningEffort")) ? localStorage.getItem("vibyra.desktop.reasoningEffort") : "medium";
+let railCollapsed = localStorage.getItem(railCollapsedKey) === "true";
 let openChatMenu = "";
 let topbarChatMenuOpen = false;
 let selectedProjectId = localStorage.getItem("vibyra.desktop.project") || "";
@@ -82,10 +84,15 @@ const nodes = {
 };
 document.getElementById("close-pair").innerHTML = icon("close");
 document.getElementById("close-token").innerHTML = icon("close");
+document.getElementById("rail-collapse").innerHTML = icon("chevron");
+document.getElementById("rail-expand").innerHTML = icon("chevron");
 document.getElementById("close-pair").addEventListener("click", closePairModal);
 document.getElementById("close-token").addEventListener("click", closeTokenModal);
 nodes.pairModal.addEventListener("click", (event) => { if (event.target === nodes.pairModal) closePairModal(); });
 nodes.tokenModal.addEventListener("click", (event) => { if (event.target === nodes.tokenModal) closeTokenModal(); });
+document.getElementById("rail-collapse")?.addEventListener("click", () => setRailCollapsed(true));
+document.getElementById("rail-expand")?.addEventListener("click", () => setRailCollapsed(false));
+applyRailState();
 renderNav();
 loadDesktopProjects();
 refresh();
@@ -141,6 +148,7 @@ async function post(path) {
 }
 function render() {
   if (!pages.some((page) => page.key === activePage)) activePage = "chat";
+  applyRailState();
   renderNav();
   renderRecentChats();
   renderTopbar();
@@ -151,6 +159,14 @@ function render() {
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open")) renderTokenModal();
+}
+function setRailCollapsed(value) {
+  railCollapsed = Boolean(value);
+  localStorage.setItem(railCollapsedKey, railCollapsed ? "true" : "false");
+  applyRailState();
+}
+function applyRailState() {
+  document.querySelector(".app")?.classList.toggle("rail-collapsed", railCollapsed);
 }
 function renderNav() {
   const html = pages.map((page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`).join("");

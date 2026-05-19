@@ -1,12 +1,15 @@
 import { exec } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { allowedCommands, appState, event, pushEvents } from "./state.mjs";
+import { assertCanStartAgentRun, putAgentRun, removeAgentRun, updateAgentRun } from "./agentRunState.mjs";
 import { projectById } from "./projects.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
 import { prepareObsidianRun } from "./agentTemplates.mjs";
 import { resolvedPreviewUrl } from "./preview.mjs";
+import { diagnosePreviewRepairPrompt } from "./previewErrorDiagnostics.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 
 const MAX_GENERATED_FILES = 12;
@@ -28,29 +31,28 @@ export async function startAgentTask({
 }) {
   const project = await resolveAgentProject(projectId, projectPath);
   if (!project) throw new Error("No project selected");
-  if (appState.activeAgentRun) throw new Error("An AI task is already running. Wait for it to finish before sending another prompt.");
+  assertCanStartAgentRun(appState);
   const existingPending = pendingApplyForProject(project.id);
   if (existingPending) throw new Error("Generated edits are already waiting for approval in this project. Apply or discard them before starting another AI run.");
   const request = String(prompt ?? "").trim();
   if (request.length < 3) throw new Error("Enter a prompt before starting the desktop AI agent.");
 
-  const runId = `run-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+  const runId = `run-${Date.now()}-${randomUUID().slice(0, 8)}`;
   const outputDir = join(project.path, ".vibyra-agent", "runs");
   const outputPath = join(outputDir, `${runId}.md`);
   const modelKey = normalizeModel(model);
   const effort = normalizeReasoningEffort(reasoningEffort);
 
-  appState.activeAgentRun = {
+  putAgentRun(appState, {
     id: runId,
     projectId: project.id,
+    projectName: project.name,
     model: modelKey,
     title: request,
     state: "running",
     progress: 18,
-    file: "Reading workspace context",
-    startedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+    file: "Reading workspace context"
+  });
 
   const startEvent = event("Agent", "Reading workspace files before editing", "info");
   pushEvents([startEvent]);
@@ -63,7 +65,8 @@ export async function startAgentTask({
       reasoningEffort: effort,
       projectFiles,
       selectedFile,
-      history
+      history,
+      runId
     });
     const generatedFiles = await normalizeGeneratedFiles(project, extractGeneratedFiles(responseText));
     const obsidianRun = await prepareObsidianRun({ project, runId, prompt: request, model: modelKey });
@@ -82,10 +85,10 @@ export async function startAgentTask({
       requestHost
     });
 
-    appState.activeAgentRun = { ...appState.activeAgentRun, progress: 92, file: generatedFiles.length ? "Reviewing generated edits" : "No file edits returned", updatedAt: new Date().toISOString() };
+    updateAgentRun(appState, runId, { progress: 92, file: generatedFiles.length ? "Reviewing generated edits" : "No file edits returned" });
 
     if (generatedFiles.length === 0) {
-      appState.activeAgentRun = null;
+      removeAgentRun(appState, runId);
       const events = [
         event("Agent", "No valid file edits were returned; no local files were changed", "warning"),
         event(modelKey, "OpenRouter response ready", "info")
@@ -95,8 +98,10 @@ export async function startAgentTask({
     }
 
     if (!apply) {
+      const latestPending = pendingApplyForProject(project.id);
+      if (latestPending) throw new Error("Generated edits are already waiting for approval in this project. Apply or discard them before starting another AI run.");
       appState.pendingAgentApplies[runId] = plan;
-      appState.activeAgentRun = null;
+      updateAgentRun(appState, runId, { state: "waiting", progress: 92, file: "Awaiting edit permission", pendingApplyId: runId });
       const events = [
         event("Agent", `Prepared ${generatedFiles.length} generated file edit(s) for approval`, "warning"),
         event(modelKey, "OpenRouter response ready", "info")
@@ -105,11 +110,9 @@ export async function startAgentTask({
       return agentResultFromPlan(plan, "pending", events);
     }
 
-    const result = await applyAgentPlan(plan);
-    appState.activeAgentRun = null;
-    return result;
+    return await applyAgentPlan(plan);
   } catch (error) {
-    appState.activeAgentRun = null;
+    removeAgentRun(appState, runId);
     const message = error instanceof Error ? error.message : "Desktop agent failed";
     pushEvents([event("Agent", message, "error")]);
     throw error;
@@ -122,7 +125,7 @@ export async function applyAgentTask({ runId, requestHost = "" }) {
   try {
     return await applyAgentPlan({ ...plan, requestHost: requestHost || plan.requestHost });
   } catch (error) {
-    appState.activeAgentRun = null;
+    updateAgentRun(appState, runId, { state: "waiting", progress: 92, file: "Apply failed", error: error instanceof Error ? error.message : "Apply failed" });
     throw error;
   }
 }
@@ -130,6 +133,7 @@ export async function applyAgentTask({ runId, requestHost = "" }) {
 export function discardAgentTask({ runId }) {
   if (!runId || !appState.pendingAgentApplies?.[runId]) return { ok: true };
   delete appState.pendingAgentApplies[runId];
+  removeAgentRun(appState, runId);
   const log = event("Agent", "Discarded pending edits before applying them", "info");
   pushEvents([log]);
   return { ok: true, events: [log] };
@@ -194,11 +198,16 @@ function makeAgentApplyPlan({
 
 async function applyAgentPlan(plan) {
   const { runId, project, prompt, model, outputDir, outputPath, generatedFiles, obsidianRun, summary } = plan;
-  appState.activeAgentRun = {
-    id: runId, projectId: project.id, model, title: prompt,
-    state: "running", progress: 48, file: outputPath,
-    updatedAt: new Date().toISOString()
-  };
+  updateAgentRun(appState, runId, { state: "applying", progress: 48, file: outputPath, error: null }) ?? putAgentRun(appState, {
+    id: runId,
+    projectId: project.id,
+    projectName: project.name,
+    model,
+    title: prompt,
+    state: "applying",
+    progress: 48,
+    file: outputPath
+  });
 
   await mkdir(outputDir, { recursive: true });
   if (obsidianRun) await mkdir(obsidianRun.outputDir, { recursive: true });
@@ -210,7 +219,7 @@ async function applyAgentPlan(plan) {
   }
   await writeFile(outputPath, summary, "utf8");
   if (obsidianRun) await writeFile(obsidianRun.outputPath, obsidianRun.summary, "utf8");
-  appState.activeAgentRun = { ...appState.activeAgentRun, progress: 82, updatedAt: new Date().toISOString() };
+  updateAgentRun(appState, runId, { progress: 82 });
 
   appState.selectedProjectId = project.id;
   appState.latestPreview = await previewPayloadForProject(project, plan.requestHost);
@@ -225,8 +234,8 @@ async function applyAgentPlan(plan) {
     event("Backend", `Prompt sent to ${model}`, "info")
   ];
   delete appState.pendingAgentApplies[runId];
+  removeAgentRun(appState, runId);
   pushEvents(newEvents);
-  appState.activeAgentRun = null;
 
   return {
     agent: { id: runId, title: prompt, model, projectId: project.id, state: "complete", progress: 100, file: outputPath },
@@ -289,19 +298,22 @@ async function resolveAgentProject(projectId, projectPath) {
   return await projectFromPath(String(projectPath));
 }
 
-async function generateAgentResponse({ project, prompt, model, reasoningEffort, projectFiles, selectedFile, history }) {
+async function generateAgentResponse({ project, prompt, model, reasoningEffort, projectFiles, selectedFile, history, runId }) {
   const apiKey = await openRouterConfigValue("OPENROUTER_API_KEY");
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is not configured for Vibyra Desktop.");
 
   const instructions = await readProjectInstructions(project.path);
-  const desktopContext = await promptProjectContext(project.id, prompt).catch(() => ({ files: [] }));
-  const contextFiles = mergeContextFiles(projectFiles, desktopContext.files ?? []);
+  const previewDiagnosis = await diagnosePreviewRepairPrompt(project, prompt).catch(() => null);
+  const contextQuery = previewDiagnosis?.contextQuery || prompt;
+  const desktopContext = await promptProjectContext(project.id, contextQuery).catch(() => ({ files: [] }));
+  const contextFiles = mergeContextFiles(previewDiagnosis?.files ?? [], projectFiles, desktopContext.files ?? []);
   const messages = [
     {
       role: "system",
       content: [
         "You are Vibyra, a controlled local coding agent connected to the user's approved desktop workspace.",
         "Inspect the provided project context and return complete file replacements only for files that must change.",
+        "Before editing after a preview crash, classify the concrete error from diagnostics. For Vite import/dependency errors, inspect package.json and all matching source imports, then fix that dependency/API mismatch as one class of problem.",
         "For preview HTTP errors, especially Laravel/Inertia 419, verify route, middleware, session, CSRF/XSRF, cookie, redirect, and proxy evidence before choosing files to edit. Treat the active editor file as a hint, not as proof that it is related.",
         "Never write outside the project root. Use relative paths only. Do not include absolute paths, ../ segments, node_modules, vendor, .git, .expo, or .vibyra-agent.",
         "When files should change, return this exact JSON in a fenced json block: {\"files\":[{\"path\":\"relative/path.ext\",\"content\":\"complete file contents\"}]}",
@@ -315,6 +327,7 @@ async function generateAgentResponse({ project, prompt, model, reasoningEffort, 
         `Project: ${project.name}`,
         `Project path: ${project.path}`,
         instructions ? `Project instructions:\n${instructions}` : "Project instructions: none found at AGENTS.md.",
+        previewDiagnosis?.summary ? `Deterministic preview diagnosis:\n${previewDiagnosis.summary}` : "",
         `Workspace context:\n${formatContextFiles(contextFiles)}`,
         formatSelectedFile(selectedFile),
         `User request:\n${prompt}`
@@ -332,7 +345,7 @@ async function generateAgentResponse({ project, prompt, model, reasoningEffort, 
   const reasoning = reasoningPayload(reasoningEffort);
   if (reasoning) payload.reasoning = reasoning;
 
-  appState.activeAgentRun = { ...appState.activeAgentRun, progress: 54, file: "Generating file edits", updatedAt: new Date().toISOString() };
+  updateAgentRun(appState, runId, { progress: 54, file: "Generating file edits" });
   const response = await fetch(await openRouterConfigValue("OPENROUTER_API_URL") || "https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {

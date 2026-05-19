@@ -6,6 +6,7 @@ import { ChatSkill } from "../../../utils/appApi";
 import { useAppContext } from "../../../context/AppContext";
 import { hasFreshProjectBriefAnalysis } from "../../../context/projectBriefSetup";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
+import { projectBriefStack } from "../../../utils/projectBriefs";
 import { styles } from "../styles";
 import { ChatEmptyState } from "./chunk10";
 import { MessageBubble } from "./chunk23";
@@ -109,9 +110,10 @@ export function AIChatPage(props: {
     const target = appCtx.projects.find((item) => item.id === confirmProjectId) ?? appCtx.chatProjects[confirmProjectId];
     const brief = detectedBrief ?? target?.detectedBrief;
     if (!brief) return;
+    const confirmedProject = target ? confirmedBriefProject(target, brief) : undefined;
     appCtx.saveProjectBrief(confirmProjectId, brief);
     setManualBriefProjectId(null);
-    setTimeout(() => appCtx.selectProject(confirmProjectId), 0);
+    setTimeout(() => appCtx.selectProject(confirmProjectId, confirmedProject), 0);
   }, [appCtx]);
 
   return (
@@ -156,7 +158,12 @@ export function AIChatPage(props: {
             {setupFormOpen ? (
               <ProjectBriefSetup
                 projectName={setupSubject}
-                onComplete={(brief) => { appCtx.saveProjectBrief(projectId, brief); setManualBriefProjectId(null); setTimeout(() => appCtx.selectProject(projectId), 0); }}
+                onComplete={(brief) => {
+                  const confirmedProject = project ? confirmedBriefProject(project, brief) : undefined;
+                  appCtx.saveProjectBrief(projectId, brief);
+                  setManualBriefProjectId(null);
+                  setTimeout(() => appCtx.selectProject(projectId, confirmedProject), 0);
+                }}
               />
             ) : null}
           </ScrollView>
@@ -201,4 +208,14 @@ export function AIChatPage(props: {
       />
     </View>
   );
+}
+
+function confirmedBriefProject(project: Project, brief: ProjectBrief): Project {
+  return {
+    ...project,
+    brief,
+    briefRequired: false,
+    briefRequiredFilePath: undefined,
+    stack: projectBriefStack(brief)
+  };
 }

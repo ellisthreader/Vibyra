@@ -1,50 +1,39 @@
 (() => {
-  const starts = [
-    "How can I help",
-    "What should we build",
-    "What are we making",
-    "What can we improve",
-    "What should we fix",
-    "What needs attention",
-    "Where should we start",
-    "What are we exploring",
-    "What should we design",
-    "What should we clean up",
-    "What should we rethink",
-    "What should we test",
-    "What should we polish",
-    "What are we planning",
-    "What should we review",
-    "What idea are we shaping"
-  ];
-	  const endings = [
-	    "today?",
-	    "this {part}?",
-	    "right now?",
-	    "next?",
-	    "together?",
-    "in this project?",
-    "for your app?",
-    "before we continue?",
-	    "while we are here?",
-	    "for this {part}?",
-	    "to get moving?",
-	    "to make this better?",
-	    "for the next update?"
-  ];
   const greetings = [
-    "Hello {name}, what should we build?",
-    "Hi {name}, how can I help today?",
-    "Ready when you are, {name}.",
-    "Good {part}, {name}. What is next?",
-    "Let's build something useful, {name}.",
-    "What are we improving today, {name}?",
-    "What needs a hand, {name}?",
-    "Where should we begin, {name}?",
-    "What are we making better, {name}?",
-    "What should we work on, {name}?"
+    "Hello{nameSuffix}.",
+    "Hi{nameSuffix}.",
+    "Hey{nameSuffix}.",
+    "Welcome back{nameSuffix}.",
+    "Good {part}{nameSuffix}.",
+    "Nice to see you{nameSuffix}.",
+    "Ready when you are{nameSuffix}.",
+    "I'm here{nameSuffix}.",
+    "Vibyra is ready{nameSuffix}.",
+    "Back in Vibyra{nameSuffix}.",
+    "Workspace ready{nameSuffix}.",
+    "All set{nameSuffix}.",
+    "Welcome{nameSuffix}.",
+    "Desktop ready{nameSuffix}.",
+    "Chat is ready{nameSuffix}.",
+    "Vibyra is here{nameSuffix}."
   ];
-  const titles = starts.flatMap((start) => endings.map((ending) => `${start} ${ending}`)).concat(greetings);
+  const notes = [
+    "Ready to help.",
+    "Send a task.",
+    "Start anywhere.",
+    "Pick a project.",
+    "Tell me what you need.",
+    "Drop in an idea.",
+    "Let's begin.",
+    "Your chat is open.",
+    "Share the next step.",
+    "I'm ready.",
+    "Bring the context.",
+    "Start fresh.",
+    "Ask anything.",
+    "Message to begin."
+  ];
+  const titles = greetings.flatMap((greeting) => notes.map((note) => `${greeting} ${note}`));
   const key = "vibyra.desktop.chatTitleRotation";
   const day = new Date().toISOString().slice(0, 10);
   const daySeed = Array.from(day).reduce((total, char) => total + char.charCodeAt(0), 0);
@@ -65,8 +54,9 @@
   window.vibyraChatEmptyTitle = () => personalize(titles[index] || "How can I help today?");
 
   function personalize(title) {
-    if (!name && title.includes("{name}")) return "How can I help today?";
-    return title.replaceAll("{name}", name).replaceAll("{part}", part);
+    return title
+      .replaceAll("{nameSuffix}", name ? `, ${name}` : "")
+      .replaceAll("{part}", part);
   }
 
   function firstName() {

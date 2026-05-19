@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -44,12 +44,20 @@ export function ChatAttachmentSheet({
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [busyAction, setBusyAction] = React.useState("");
-  const [expanded, setExpanded] = React.useState(false);
-  const sheetHeight = Math.min(Math.round(height * (expanded ? 0.82 : 0.52)), height - Math.max(insets.top + 24, 48));
+  const [scrollExpansion, setScrollExpansion] = React.useState(0);
+  const compactHeight = Math.min(Math.round(height * 0.52), height - Math.max(insets.top + 24, 48));
+  const expandedHeight = Math.min(Math.round(height * 0.82), height - Math.max(insets.top + 24, 48));
+  const sheetHeight = Math.round(compactHeight + ((expandedHeight - compactHeight) * scrollExpansion));
 
   React.useEffect(() => {
-    if (!visible) setExpanded(false);
+    if (!visible) setScrollExpansion(0);
   }, [visible]);
+
+  function handleToolScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    const offsetY = Math.max(event.nativeEvent.contentOffset.y, 0);
+    const nextExpansion = Math.min(offsetY / 180, 1);
+    setScrollExpansion((current) => (Math.abs(current - nextExpansion) < 0.04 ? current : nextExpansion));
+  }
 
   async function selectPrimaryAction(action: AttachmentAction) {
     if (action.kind === "camera") {
@@ -121,11 +129,6 @@ export function ChatAttachmentSheet({
         <Pressable accessibilityLabel="Close attachment menu" onPress={onClose} style={styles.chatAttachmentScrim} />
         <View style={[styles.chatAttachmentSheet, { height: sheetHeight, paddingBottom: Math.max(insets.bottom + 12, 20) }]}>
           <View style={styles.chatAttachmentHandle} />
-          <View style={styles.chatAttachmentHeader}>
-            <Pressable accessibilityLabel="Close attachment menu" onPress={onClose} style={styles.chatAttachmentClose}>
-              <Ionicons name="close" color="#F7F3FF" size={19} />
-            </Pressable>
-          </View>
 
           <View style={styles.chatAttachmentPrimaryRow}>
             {PRIMARY_ACTIONS.map((action) => (
@@ -139,7 +142,7 @@ export function ChatAttachmentSheet({
                   {busyAction === action.label ? (
                     <ActivityIndicator color="#F7F3FF" size="small" />
                   ) : (
-                    <Ionicons name={action.icon} color="#F7F3FF" size={30} />
+                    <Ionicons name={action.icon} color="#F7F3FF" size={26} />
                   )}
                 </View>
                 <Text numberOfLines={1} style={styles.chatAttachmentPrimaryLabel}>{action.label}</Text>
@@ -150,7 +153,7 @@ export function ChatAttachmentSheet({
           <ScrollView
             contentContainerStyle={styles.chatAttachmentToolList}
             keyboardShouldPersistTaps="handled"
-            onScrollBeginDrag={() => setExpanded(true)}
+            onScroll={handleToolScroll}
             scrollEventThrottle={16}
             showsVerticalScrollIndicator
           >
@@ -167,7 +170,6 @@ export function ChatAttachmentSheet({
                   <Text numberOfLines={1} style={styles.chatAttachmentToolLabel}>{chatToolLabels[action.tool]}</Text>
                   <Text numberOfLines={1} style={styles.chatAttachmentToolDescription}>{chatToolDescriptions[action.tool]}</Text>
                 </View>
-                <Ionicons name="chevron-forward" color="#8F8A9E" size={18} />
               </Pressable>
             ))}
           </ScrollView>

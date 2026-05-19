@@ -8,14 +8,15 @@ export function buildFixPrompt(app: GeneratedApp, errors: PreviewRuntimeError[])
 }
 
 function buildProjectPreviewFixPrompt(app: GeneratedApp, errors: PreviewRuntimeError[]) {
+  const diagnostics = formatDiagnostics(errors);
   return [
     `The live preview for "${app.title}" crashed while running the existing project. Fix the selected project files so the real app runs on phone preview.`,
     "Do not return a self-contained <vibyra-app>. Do not create an unrelated root index.html, static replacement page, or throwaway preview file. Keep the existing framework and product, inspect the relevant project files, and return normal code changes for this project.",
-    "For Laravel/Inertia HTTP 419 errors, triage both sides before editing: the target project CSRF/session flow and the Vibyra Desktop preview proxy route `/preview/server/{project}/{token}/`. Check form/action URLs, POST body forwarding, session and XSRF cookies, X-CSRF/X-XSRF/Inertia headers, Origin/Referer behavior, middleware, redirects, and cookie path rewriting. Do not patch unrelated project code when the evidence points to preview proxy transport.",
+    hasLaravelHttpDiagnostic(errors) ? "For Laravel/Inertia HTTP 419 errors, triage both sides before editing: the target project CSRF/session flow and the Vibyra Desktop preview proxy route `/preview/server/{project}/{token}/`. Check form/action URLs, POST body forwarding, session and XSRF cookies, X-CSRF/X-XSRF/Inertia headers, Origin/Referer behavior, middleware, redirects, and cookie path rewriting. Do not patch unrelated project code when the evidence points to preview proxy transport." : "",
     app.url ? `Preview URL: ${app.url}` : "",
     "",
     "Captured preview diagnostics:",
-    formatDiagnostics(errors),
+    diagnostics,
     "",
     "Keep the same app and fix the real cause in the existing project."
   ].filter(Boolean).join("\n");
@@ -73,6 +74,15 @@ function sanitizeDiagnosticText(value: string) {
     .trim();
   const detail = [title.replace(/\s+/g, " ").trim(), text].filter(Boolean).join("\n");
   return detail.slice(0, 1800);
+}
+
+function hasLaravelHttpDiagnostic(errors: PreviewRuntimeError[]) {
+  const text = errors.map((error) => [
+    error.message,
+    error.stack,
+    error.source
+  ].filter(Boolean).join(" ")).join(" ").toLowerCase();
+  return /\b(?:http\s*)?419\b|page expired|csrf|xsrf|session cookie|csrf token mismatch/.test(text);
 }
 
 function formatLocation(error: PreviewRuntimeError, separator: string) {

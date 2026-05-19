@@ -55,6 +55,10 @@ Inline action cards that define local `StyleSheet.create` colors do not pass thr
 
 Preview server startup approval and progress render through `ChatMessage.previewServer` and `PreviewServerActivityCard.tsx` instead of plain assistant text. Keep it compact, terminal-like, and aligned with the shared chat action card palette. The terminal lines must reflect real app phases reported by `app.startPreviewServer()` and stop animating once the card reaches ready, failed, or cancelled.
 
+Preview server approval buttons mutate the existing `previewServer` card directly and do not add synthetic `yes`/`no` user chat messages. Typed yes/no follow-ups still remain valid chat messages. The post-approval terminal view should fill the whole card surface, not render as a smaller nested panel. Relevant files: `src/screens/workspace/hooks/workspacePromptActions.ts`, `src/screens/workspace/inline/PreviewServerActivityCard.tsx`.
+
+The preview-start terminal card should feel like a real terminal: command/response lines with a blinking typed cursor on the active line. Do not add scanning beams, sweep overlays, or decorative progress animations.
+
 Edit permission prompts should use the same shared chat action palette via `EditPermissionCard.tsx`; avoid green/purple gradient chrome, large glowing permission art, or separate pending code-change cards below it. Keep the card clean with file rows, inline Review/Hide code expansion before approval, and simple No / Allow / Always allow actions. The full `CodeChangesCard` should appear only after edits are approved/applied.
 
 The composer keeps attach, model selector, effort picker, and send button in one compact toolbar. It intentionally does not render a detached/project context strip.
