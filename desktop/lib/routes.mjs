@@ -2,6 +2,8 @@ import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { startAgentTask, applyAgentTask, discardAgentTask, runCommand } from "./agent.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
+import { sendDesktopChat } from "./desktopChat.mjs";
+import { openDesktopPreview } from "./desktopPreview.mjs";
 import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { createProjectFile, listProjectFiles, readProjectFile } from "./files.mjs";
@@ -67,6 +69,21 @@ async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/state") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, publicState());
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/projects") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { projects: await discoverProjects() });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/chat") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await sendDesktopChat(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/preview") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await openDesktopPreview(await readBody(req), req.headers.host));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/approve") {

@@ -112,7 +112,7 @@ export type ChatMessage = {
   role: "assistant" | "user";
   text: string;
   file?: string;
-  assistantModel?: string;
+  assistantModel?: string; creditCost?: number;
   runStatus?: ChatRunStatus;
   app?: GeneratedApp;
   generatedImage?: GeneratedImage;

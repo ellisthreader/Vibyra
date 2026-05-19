@@ -95,7 +95,7 @@ export const part47 = {
     paddingHorizontal: 10
   },
   workspaceMenuRowActive: {
-    backgroundColor: "rgba(139, 53, 255, 0.26)"
+    backgroundColor: "transparent"
   },
   workspaceMenuRowDanger: {
     backgroundColor: "rgba(255, 93, 122, 0.06)"
@@ -107,7 +107,7 @@ export const part47 = {
     width: 28
   },
   workspaceMenuRowIconActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "transparent",
     borderRadius: 10
   },
   workspaceMenuRowLabel: {

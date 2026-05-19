@@ -107,8 +107,8 @@ export const part20 = {
   profileLevelExpandRail: {
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 48,
-    width: 28
+    minHeight: 22,
+    width: 24
   },
   profileLevelExpanded: {
     gap: 12,
@@ -122,13 +122,29 @@ export const part20 = {
   },
   profileLevelHelpButton: {
     alignItems: "center",
-    backgroundColor: "rgba(15, 15, 24, 0.92)",
-    borderColor: "rgba(139, 92, 255, 0.22)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
     height: 36,
     justifyContent: "center",
     width: 36
+  },
+  profileLevelHelpBody: {
+    gap: 7,
+    paddingTop: 10
+  },
+  profileLevelHelpBullet: {
+    backgroundColor: "#C259FF",
+    borderRadius: 999,
+    height: 5,
+    marginTop: 6,
+    width: 5
+  },
+  profileLevelHelpBulletRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 9
   },
   profileLevelHelpIcon: {
     alignItems: "center",
@@ -141,27 +157,16 @@ export const part20 = {
     width: 30
   },
   profileLevelHelpPanel: {
-    backgroundColor: "rgba(42, 42, 50, 0.98)",
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(15, 15, 24, 0.7)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 10,
     borderWidth: 1,
-    elevation: 12,
-    gap: 10,
-    padding: 12,
-    position: "absolute",
-    right: 56,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 24,
-    top: 58,
-    width: 282,
-    zIndex: 40
+    padding: 13
   },
   profileLevelHelpRow: {
-    alignItems: "flex-start",
+    alignItems: "center",
     flexDirection: "row",
-    gap: 10
+    justifyContent: "space-between"
   },
   profileLevelHelpText: {
     color: "#C8C3D3",
@@ -198,9 +203,9 @@ export const part20 = {
     lineHeight: 16
   },
   profileLevelMap: {
-    backgroundColor: "rgba(15, 15, 24, 0.92)",
-    borderColor: "rgba(139, 92, 255, 0.18)",
-    borderRadius: 8,
+    backgroundColor: "rgba(15, 15, 24, 0.62)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 10,
     borderWidth: 1,
     overflow: "hidden"
   },
@@ -253,26 +258,26 @@ export const part20 = {
   },
   profileLevelMapNode: {
     alignItems: "center",
-    backgroundColor: "rgba(30, 31, 48, 0.92)",
-    borderColor: "rgba(142, 137, 163, 0.38)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
     borderRadius: 999,
     borderWidth: 1,
-    height: 24,
+    height: 22,
     justifyContent: "center",
-    width: 24
+    width: 22
   },
   profileLevelMapNodeComplete: {
-    backgroundColor: "#8B5CFF",
-    borderColor: "#8B5CFF"
+    backgroundColor: "#56E6A5",
+    borderColor: "#56E6A5"
   },
   profileLevelMapNodeCurrent: {
-    backgroundColor: "#C259FF",
-    borderColor: "#C259FF"
+    backgroundColor: "#DDBBFF",
+    borderColor: "#DDBBFF"
   },
   profileLevelMapReward: {
     alignItems: "center",
-    backgroundColor: "rgba(139, 53, 255, 0.16)",
-    borderColor: "rgba(194, 89, 255, 0.3)",
+    backgroundColor: "rgba(194, 89, 255, 0.12)",
+    borderColor: "rgba(194, 89, 255, 0.22)",
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -305,9 +310,12 @@ export const part20 = {
   profileLevelMapRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 10,
-    minHeight: 58,
-    paddingHorizontal: 10
+    gap: 11,
+    minHeight: 56,
+    paddingHorizontal: 12
+  },
+  profileLevelMapRowCurrent: {
+    backgroundColor: "rgba(221, 187, 255, 0.06)"
   },
   profileLevelMapTitle: {
     color: "#DAD6F6",
@@ -320,10 +328,10 @@ export const part20 = {
   },
   profileLevelMapToggle: {
     alignItems: "center",
-    backgroundColor: "rgba(139, 53, 255, 0.2)",
-    borderColor: "rgba(194, 89, 255, 0.34)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0,
     flexDirection: "row",
     gap: 6,
     minHeight: 34,
@@ -336,10 +344,10 @@ export const part20 = {
   },
   profileLevelPanel: {
     flex: 1,
-    gap: 5,
+    justifyContent: "center",
     overflow: "hidden",
     paddingHorizontal: 0,
-    paddingVertical: 3
+    paddingVertical: 0
   },
   profileLevelReward: {
     color: "#FFD166",
@@ -409,8 +417,9 @@ export const part20 = {
   profileLevelTop: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
-    minWidth: 0
+    gap: 7,
+    minWidth: 0,
+    paddingRight: 2
   },
   profileLevelTrack: {
     backgroundColor: "rgba(125, 120, 142, 0.2)",
@@ -419,7 +428,7 @@ export const part20 = {
     overflow: "hidden"
   },
   profileLevelModalContent: {
-    gap: 14,
+    gap: 12,
     paddingBottom: 28,
     paddingHorizontal: 18
   },
@@ -434,13 +443,13 @@ export const part20 = {
     width: 56
   },
   profileLevelModalHero: {
-    backgroundColor: "rgba(15, 15, 24, 0.92)",
-    borderColor: "rgba(139, 92, 255, 0.18)",
-    borderRadius: 8,
+    backgroundColor: "rgba(15, 15, 24, 0.72)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 10,
     borderWidth: 1,
-    gap: 14,
+    gap: 8,
     overflow: "hidden",
-    padding: 16
+    padding: 15
   },
   profileLevelModalHeroTop: {
     alignItems: "center",
@@ -448,10 +457,10 @@ export const part20 = {
     gap: 13
   },
   profileLevelModalKicker: {
-    color: "#DDBBFF",
+    color: "#9C97AE",
     fontSize: 10,
     fontWeight: "900",
-    letterSpacing: 0.6,
+    letterSpacing: 0,
     lineHeight: 13,
     textTransform: "uppercase"
   },
@@ -467,7 +476,7 @@ export const part20 = {
     fontSize: 14,
     fontWeight: "900",
     lineHeight: 18,
-    marginTop: 2
+    marginTop: -2
   },
   profileLevelModalReward: {
     alignItems: "center",
@@ -483,17 +492,17 @@ export const part20 = {
     paddingVertical: 8
   },
   profileLevelModalRewardText: {
-    color: "#DDBBFF",
+    color: "#AFA8C4",
     flexShrink: 1,
-    fontSize: 13,
-    fontWeight: "900",
-    lineHeight: 17
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 16
   },
   profileLevelModalTitle: {
     color: colors.text,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "900",
-    lineHeight: 33
+    lineHeight: 34
   },
   profilePlanBadge: {
     alignItems: "center",

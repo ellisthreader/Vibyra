@@ -13,8 +13,10 @@ export function EmailAuthForm({
   onModeChange,
   onNameChange,
   onPasswordChange,
+  onReferralCodeChange,
   onSubmit,
   password,
+  referralCode,
   scale
 }: {
   busy: boolean;
@@ -26,8 +28,10 @@ export function EmailAuthForm({
   onModeChange: (mode: "login" | "signup") => void;
   onNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onReferralCodeChange: (value: string) => void;
   onSubmit: () => void | Promise<void>;
   password: string;
+  referralCode: string;
   scale: number;
 }) {
   const inputHeight = Math.max(46, 50 * scale);
@@ -81,6 +85,17 @@ export function EmailAuthForm({
         style={[emailStyles.emailInput, { height: inputHeight }]}
         value={password}
       />
+      {mode === "signup" ? (
+        <TextInput
+          autoCapitalize="characters"
+          autoComplete="off"
+          onChangeText={onReferralCodeChange}
+          placeholder="Invite code (optional)"
+          placeholderTextColor="#8F84A8"
+          style={[emailStyles.emailInput, { height: inputHeight }]}
+          value={referralCode}
+        />
+      ) : null}
       {error ? <Text style={styles.authError}>{error}</Text> : null}
       <Pressable
         disabled={!canSubmit || busy}

@@ -157,7 +157,7 @@ export function AccountMenuSheet({
 }
 
 function WorkspaceMenuRow({ row }: { row: MenuRow }) {
-  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : row.active ? "#FFFFFF" : "#D5CEE4");
+  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : "#D7C4FF");
   return (
     <Pressable
       onPress={row.onPress}

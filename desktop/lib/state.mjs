@@ -13,6 +13,7 @@ export const PHONE_SESSION_TIMEOUT_MS = 30000;
 export const appState = {
   server: null,
   desktopAccount: null,
+  desktopAccountToken: null,
   pairedDevice: null,
   phoneSession: null,
   pendingPair: null,

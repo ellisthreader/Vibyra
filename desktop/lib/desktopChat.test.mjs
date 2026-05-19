@@ -1,0 +1,122 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { appState } from "./state.mjs";
+import { sendDesktopChat } from "./desktopChat.mjs";
+
+test("desktop chat requires a verified desktop account session", async () => {
+  resetDesktopChatState();
+
+  await assert.rejects(
+    () => sendDesktopChat({ prompt: "Hello" }, fakeChatResponse({ ok: true, reply: "Hi" })),
+    /Log in to Vibyra Desktop/
+  );
+});
+
+test("desktop chat sends a desktop-surface cloud chat payload", async () => {
+  resetDesktopChatState();
+  appState.desktopAccountToken = "account-token";
+  let requestBody = null;
+
+  const result = await sendDesktopChat({
+    attachments: ["README.md"],
+    history: [{ role: "user", text: "Earlier" }],
+    mode: "chat",
+    model: "gpt-5.4-mini",
+    prompt: "Explain this project",
+    reasoningEffort: "xhigh",
+    skill: "review",
+    tool: "analyze"
+  }, async (url, options) => {
+    assert.equal(String(url).endsWith("/api/chat"), true);
+    assert.equal(options.headers.Authorization, "Bearer account-token");
+    requestBody = JSON.parse(options.body);
+    return jsonResponse({
+      ok: true,
+      reply: "Desktop answer",
+      modelKey: "gpt-5.4-mini",
+      app: { title: "Generated preview", html: "<main>Preview</main>" }
+    });
+  });
+
+  assert.equal(result.reply, "Desktop answer");
+  assert.deepEqual(result.app, { title: "Generated preview", url: "", html: "<main>Preview</main>" });
+  assert.equal(requestBody.surface, "desktop");
+  assert.equal(requestBody.mode, "chat");
+  assert.equal(requestBody.model, "gpt-5.4-mini");
+  assert.equal(requestBody.reasoningEffort, "xhigh");
+  assert.equal(requestBody.skill, "review");
+  assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
+  assert.match(requestBody.prompt, /Attached local context names: README\.md/);
+});
+
+test("desktop chat refreshes account membership from backend user payload", async () => {
+  resetDesktopChatState();
+  appState.desktopAccount = { id: 4, email: "user@example.test", name: "User", plan: "free" };
+  appState.desktopAccountToken = "account-token";
+
+  await sendDesktopChat({ model: "gpt-5.4-mini", prompt: "Hello" }, async () => jsonResponse({
+    ok: true,
+    reply: "Hi",
+    user: {
+      id: 4,
+      email: "user@example.test",
+      name: "User",
+      plan: "builder",
+      planBillingCycle: "annual",
+      creditsBalance: 1900,
+      creditsUsed: 80,
+      monthlyCredits: 1980,
+      dailyCreditsCap: 360,
+      allowedModelTiers: ["free", "budget", "balanced", "premium"]
+    }
+  }));
+
+  assert.equal(appState.desktopAccount.plan, "builder");
+  assert.equal(appState.desktopAccount.planBillingCycle, "annual");
+  assert.equal(appState.desktopAccount.creditsBalance, 1900);
+  assert.equal(appState.desktopAccount.monthlyCredits, 1980);
+  assert.deepEqual(appState.desktopAccount.allowedModelTiers, ["free", "budget", "balanced", "premium"]);
+});
+
+test("desktop chat ignores mobile-only tools and unsupported skills", async () => {
+  resetDesktopChatState();
+  appState.desktopAccountToken = "account-token";
+  let requestBody = null;
+  let requestUrl = "";
+
+  const result = await sendDesktopChat({
+    prompt: "A purple app icon",
+    skill: "publish",
+    tool: "image"
+  }, async (url, options) => {
+    requestUrl = String(url);
+    assert.equal(requestUrl.endsWith("/api/chat"), true);
+    assert.equal(options.headers.Authorization, "Bearer account-token");
+    requestBody = JSON.parse(options.body);
+    return jsonResponse({ ok: true, reply: "Desktop answer" });
+  });
+
+  assert.equal(requestBody.skill, "");
+  assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
+  assert.equal(result.reply, "Desktop answer");
+});
+
+function fakeChatResponse(payload) {
+  return async () => jsonResponse(payload);
+}
+
+function jsonResponse(payload, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() {
+      return payload;
+    }
+  };
+}
+
+function resetDesktopChatState() {
+  appState.desktopAccount = null;
+  appState.desktopAccountToken = null;
+  appState.cachedProjects = [];
+}

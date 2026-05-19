@@ -16,6 +16,8 @@ initDesktopAuth();
 function initDesktopAuth() {
   const session = desktopAuthSession();
   if (session?.token && session.user) {
+    localStorage.setItem("vibyra.desktop.page", "dashboard");
+    if (typeof activePage !== "undefined") activePage = "dashboard";
     document.body.classList.add("desktop-authenticated");
     syncDesktopSession(session.token).catch((error) => {
       showAuthError(error instanceof Error ? error.message : "Desktop could not verify this Vibyra account session.");
@@ -28,6 +30,7 @@ function initDesktopAuth() {
 function bindDesktopAuth() {
   authNodes.showEmail?.addEventListener("click", () => {
     authNodes.form.classList.toggle("open");
+    document.getElementById("desktop-auth")?.classList.toggle("email-open", authNodes.form.classList.contains("open"));
     authNodes.showEmail.querySelector("strong").textContent = authNodes.form.classList.contains("open")
       ? "Hide email form"
       : "Continue with email";
@@ -107,17 +110,10 @@ async function submitDesktopEmailAuth(event) {
 
 async function completeDesktopAuth(token, user) {
   if (!token || !user?.id) throw new Error("Vibyra did not return a valid account session.");
-  await syncDesktopSession(token);
-  localStorage.setItem(authKey, JSON.stringify({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      plan: user.plan || "free"
-    },
-    signedInAt: new Date().toISOString()
-  }));
+  const syncedUser = await syncDesktopSession(token);
+  localStorage.setItem("vibyra.desktop.page", "dashboard");
+  storeDesktopAuthSession(token, syncedUser || user);
+  if (typeof activePage !== "undefined") activePage = "dashboard";
   document.body.classList.add("desktop-authenticated");
   clearAuthError();
   if (typeof render === "function") render();
@@ -135,11 +131,82 @@ function desktopAuthSession() {
   }
 }
 
+function storeDesktopAuthSession(token, user) {
+  if (!token || !user?.id) return;
+  const session = desktopAuthSession() || {};
+  localStorage.setItem(authKey, JSON.stringify({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      plan: user.plan || "free",
+      planBillingCycle: user.planBillingCycle || "monthly",
+      planRenewsAt: user.planRenewsAt || null,
+      creditsBalance: Number(user.creditsBalance) || 0,
+      creditsUsed: Number(user.creditsUsed) || 0,
+      monthlyCredits: Number(user.monthlyCredits) || 0,
+      dailyCreditsUsed: Number(user.dailyCreditsUsed) || 0,
+      dailyCreditsCap: Number(user.dailyCreditsCap) || 0,
+      weeklyCreditsUsed: Number(user.weeklyCreditsUsed) || 0,
+      weeklyCreditsCap: Number(user.weeklyCreditsCap) || 0,
+      allowedModelTiers: Array.isArray(user.allowedModelTiers) ? user.allowedModelTiers : undefined,
+      level: user.level || user.levelProgress || null,
+      profileImageUri: user.profileImageUri || user.profileImageUrl || user.avatarUrl || user.avatar || ""
+    },
+    signedInAt: session.signedInAt || new Date().toISOString()
+  }));
+}
+
+async function refreshDesktopAccountSession() {
+  const token = desktopAuthSession()?.token;
+  return token ? syncDesktopSession(token) : null;
+}
+
+async function startDesktopBillingCheckout(plan, cycle = "monthly") {
+  const planKey = String(plan || "starter").toLowerCase();
+  if (!["starter", "builder", "pro"].includes(planKey)) return;
+  await requestDesktopBilling("/api/billing/checkout", { kind: "subscription", plan: planKey, cycle });
+}
+
+async function openDesktopBillingPortal() {
+  await requestDesktopBilling("/api/billing/portal", {});
+}
+
+async function requestDesktopBilling(endpoint, payload) {
+  const token = desktopAuthSession()?.token;
+  if (!token) {
+    showAuthError("Log in again to manage membership.");
+    return;
+  }
+  try {
+    const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result?.ok === false || !result?.url) {
+      throw new Error(result?.error || result?.message || "Could not open billing.");
+    }
+    window.open(result.url, "_blank", "noopener");
+  } catch (error) {
+    showAuthError(error instanceof Error ? error.message : "Could not open billing.");
+  }
+}
+
 function desktopSignOut() {
   fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
   localStorage.removeItem(authKey);
   document.body.classList.remove("desktop-authenticated");
+  document.getElementById("token-modal")?.classList.remove("open");
   authNodes.form?.classList.remove("open");
+  document.getElementById("desktop-auth")?.classList.remove("email-open");
+  if (authNodes.password) authNodes.password.value = "";
   authNodes.showEmail.querySelector("strong").textContent = "Continue with email";
   setAuthMode("signup");
 }
@@ -179,6 +246,13 @@ async function syncDesktopSession(token) {
     document.body.classList.remove("desktop-authenticated");
     throw new Error(result.error || "Desktop could not verify this Vibyra account session.");
   }
+  if (result?.user) {
+    storeDesktopAuthSession(token, result.user);
+    if (typeof currentState !== "undefined") {
+      currentState = { ...currentState, desktopAccount: result.user };
+    }
+  }
+  return result?.user || null;
 }
 
 function appApiBaseUrl() {

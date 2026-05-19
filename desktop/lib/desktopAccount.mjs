@@ -1,6 +1,6 @@
 import { appState, event, pushEvents } from "./state.mjs";
 
-const API_URL = normalizeApiUrl(process.env.VIBYRA_API_URL || process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:8000");
+const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || process.env.VIBYRA_API_URL || "http://127.0.0.1:8000");
 
 export async function verifyAndSetDesktopAccount(token, fetchImpl = fetch) {
   const authToken = String(token || "").trim();
@@ -36,12 +36,14 @@ export async function verifyAndSetDesktopAccount(token, fetchImpl = fetch) {
     appState.phoneSession = null;
   }
   appState.desktopAccount = account;
+  appState.desktopAccountToken = authToken;
   pushEvents([event("Account", `${account.name || account.email || "Account"} signed in on Vibyra Desktop`, "success")]);
   return account;
 }
 
 export function clearDesktopAccount() {
   appState.desktopAccount = null;
+  appState.desktopAccountToken = null;
   appState.pendingPair = null;
   appState.pairedDevice = null;
   appState.phoneSession = null;
@@ -74,13 +76,46 @@ export function normalizedAccountId(value) {
 function publicAccount(user) {
   const id = normalizedAccountId(user?.id);
   if (id === null) return null;
+  const plan = String(user?.plan || "free");
+  const cycle = String(user?.planBillingCycle || user?.plan_billing_cycle || "monthly");
   return {
     id,
     email: String(user?.email || ""),
     name: String(user?.name || ""),
-    plan: String(user?.plan || "free"),
+    plan,
+    planBillingCycle: cycle,
+    planRenewsAt: user?.planRenewsAt || user?.plan_renews_at || null,
+    creditsBalance: numberOrZero(user?.creditsBalance ?? user?.credits_balance),
+    creditsUsed: numberOrZero(user?.creditsUsed ?? user?.credits_used),
+    monthlyCredits: numberOrZero(user?.monthlyCredits ?? user?.monthly_credits),
+    dailyCreditsUsed: numberOrZero(user?.dailyCreditsUsed ?? user?.daily_credits_used),
+    dailyCreditsCap: numberOrZero(user?.dailyCreditsCap ?? user?.daily_credit_cap),
+    weeklyCreditsUsed: numberOrZero(user?.weeklyCreditsUsed ?? user?.weekly_credits_used),
+    weeklyCreditsCap: numberOrZero(user?.weeklyCreditsCap ?? user?.weekly_credit_cap),
+    allowedModelTiers: Array.isArray(user?.allowedModelTiers) ? user.allowedModelTiers.map(String) : allowedTiersForPlan(plan),
+    level: user?.level || user?.levelProgress || null,
+    profileImageUri: String(user?.profileImageUri || user?.profileImageUrl || user?.avatarUrl || user?.avatar || ""),
     signedInAt: new Date().toISOString()
   };
+}
+
+export function syncDesktopAccountFromUser(user) {
+  const account = publicAccount(user);
+  if (account && (!appState.desktopAccount?.id || appState.desktopAccount.id === account.id)) {
+    appState.desktopAccount = account;
+  }
+  return account;
+}
+
+function numberOrZero(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function allowedTiersForPlan(plan) {
+  return String(plan || "free").toLowerCase() === "free"
+    ? ["free", "budget"]
+    : ["free", "budget", "balanced", "premium"];
 }
 
 async function readJson(response) {

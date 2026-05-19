@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import { assertBackendReachableBeforeChat } from "./appApiReachability";
 import { fetchWithTimeout, getExpoHost, normalizeAgentUrl, TimeoutError } from "./network";
 
-export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
+export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, ReferralSummary, ReferralSummaryResponse, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
 
 type ApiErrorPayload = {
   error?: string;

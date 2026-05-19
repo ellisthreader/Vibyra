@@ -76,6 +76,27 @@ export type BillingPlansResponse = {
 export type CheckoutResponse = { ok: true; url: string };
 export type IapReceiptResponse = { ok: true; user?: RemoteUser; idempotent?: boolean };
 
+export type ReferralSummary = {
+  code: string;
+  link: string;
+  rewards: {
+    referred_signup_credits: number;
+    referrer_signup_credits: number;
+    referred_paid_credits: number;
+    referrer_paid_credits: number;
+  };
+  stats: {
+    signedUp: number;
+    paid: number;
+    earnedCredits: number;
+  };
+};
+
+export type ReferralSummaryResponse = {
+  ok: true;
+  referral: ReferralSummary;
+};
+
 export type AuthResponse = {
   ok: boolean;
   token: string;

@@ -84,25 +84,20 @@ export function ProfileHero({ onOpenBilling }: {
           <View style={[styles.profileLevelShell, styles.profileLevelShellCompact, styles.profileLevelShellInline]}>
             <View style={styles.profileLevelPanel}>
               <View style={styles.profileLevelTop}>
-                <Ionicons name="sparkles" color="#C259FF" size={20} />
-                <View style={styles.profileLevelCopy}>
-                  <Text style={styles.profileLevelTitle}>Level {level.level}</Text>
-                  <Text style={styles.profileLevelMeta}>
-                    {prefs.formatNumber(level.currentLevelXp)} / {prefs.formatNumber(level.nextLevelXp)} XP
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.profileLevelTrack}>
-                <View style={[styles.profileLevelFill, { width: `${Math.max(levelPercent, 3)}%` }]} />
+                <Text style={styles.profileLevelTitle}>Level {level.level}</Text>
+                <Pressable
+                  accessibilityLabel="Open level map"
+                  hitSlop={8}
+                  onPress={() => setLevelModalVisible(true)}
+                  style={styles.profileLevelExpandRail}
+                >
+                  <Ionicons name="map-outline" color="#EDE9FF" size={17} />
+                </Pressable>
+                <Text style={styles.profileLevelMeta}>
+                  {prefs.formatNumber(level.currentLevelXp)} / {prefs.formatNumber(level.nextLevelXp)} XP
+                </Text>
               </View>
             </View>
-            <Pressable
-              accessibilityLabel="Open level map"
-              onPress={() => setLevelModalVisible(true)}
-              style={styles.profileLevelExpandRail}
-            >
-              <Ionicons name="map-outline" color="#EDE9FF" size={18} />
-            </Pressable>
           </View>
         </View>
         <Pressable onPress={onOpenBilling} style={[styles.profilePlanBadge, styles.profilePlanBadgeTopRight]}>
@@ -111,7 +106,6 @@ export function ProfileHero({ onOpenBilling }: {
         </Pressable>
       </View>
       <ProfileLevelProgressModal
-        dailyCap={level.dailyXpCap ?? 500}
         formatNumber={prefs.formatNumber}
         level={level}
         levelMap={levelMap}

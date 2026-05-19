@@ -84,6 +84,7 @@ export const part21 = {
   },
   profileSummaryCopy: {
     flex: 1,
+    justifyContent: "center",
     minWidth: 0
   },
   profileSummaryEmail: {

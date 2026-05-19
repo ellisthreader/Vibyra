@@ -26,7 +26,7 @@ export const part48 = {
     paddingBottom: 8
   },
   accountMenuName: {
-    color: "#FFFFFF",
+    color: "#F7F3FF",
     fontSize: 17,
     fontWeight: "900",
     lineHeight: 21
@@ -52,7 +52,7 @@ export const part48 = {
     width: 286
   },
   accountMenuPlan: {
-    color: "#B9B5C8",
+    color: "#D7C4FF",
     fontSize: 12,
     fontWeight: "800",
     marginTop: 2,

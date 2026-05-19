@@ -37,6 +37,7 @@ export type AppState = {
   authName: string;
   authEmail: string;
   authPassword: string;
+  authReferralCode: string;
   profileImageUri: string;
   creditsBalance: number;
   creditsUsed: number;
@@ -99,6 +100,7 @@ export type AppSetters = {
   setAuthName: (name: string) => void;
   setAuthEmail: (email: string) => void;
   setAuthPassword: (password: string) => void;
+  setAuthReferralCode: (code: string) => void;
   setAgentUrl: (url: string) => void;
   setPairCode: (code: string) => void;
   setSelectedModel: (model: ModelKey) => void;

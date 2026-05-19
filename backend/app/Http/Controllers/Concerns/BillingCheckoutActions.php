@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\Referrals\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -140,6 +141,7 @@ trait BillingCheckoutActions
 
     private function applySubscription(User $user, string $plan, string $cycle, string $provider, ?string $subscriptionId = null): void
     {
+        $wasPaid = $user->plan !== 'free';
         $allowance = $this->allowanceFor($plan, $cycle);
         $user->forceFill([
             'plan' => $plan,
@@ -149,6 +151,9 @@ trait BillingCheckoutActions
             'billing_provider' => $provider,
         ])->save();
         $this->deductor->refresh($user, $allowance, ['source' => $provider, 'plan' => $plan, 'cycle' => $cycle]);
+        if (! $wasPaid && $plan !== 'free') {
+            app(ReferralService::class)->recordPaidConversion($user, $plan, $provider);
+        }
     }
 
     private function allowanceFor(string $plan, string $cycle): int

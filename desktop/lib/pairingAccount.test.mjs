@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Readable } from "node:stream";
 import { appState, TOKEN } from "./state.mjs";
+import { verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { pairDevice, pairStatus } from "./pairingHandlers.mjs";
 
 test("pairing rejects LAN requests before desktop account verification", async () => {
@@ -11,6 +12,32 @@ test("pairing rejects LAN requests before desktop account verification", async (
   assert.equal(res.status, 403);
   assert.match(res.body.error, /Log in to Vibyra Desktop/);
   assert.equal(appState.pendingPair, null);
+});
+
+test("desktop account verification keeps billing and model tier fields", async () => {
+  resetPairingState();
+
+  const account = await verifyAndSetDesktopAccount("session-token", async () => jsonResponse({
+    user: {
+      id: 3,
+      email: "member@example.test",
+      name: "Member",
+      plan: "starter",
+      planBillingCycle: "annual",
+      creditsBalance: 520,
+      creditsUsed: 30,
+      monthlyCredits: 550,
+      dailyCreditsCap: 100,
+      allowedModelTiers: ["free", "budget", "balanced", "premium"]
+    }
+  }));
+
+  assert.equal(account.plan, "starter");
+  assert.equal(account.planBillingCycle, "annual");
+  assert.equal(account.creditsBalance, 520);
+  assert.equal(account.monthlyCredits, 550);
+  assert.deepEqual(account.allowedModelTiers, ["free", "budget", "balanced", "premium"]);
+  assert.equal(appState.desktopAccountToken, "session-token");
 });
 
 test("pairing rejects phones signed into a different account", async () => {
@@ -80,6 +107,16 @@ function makeRes() {
     },
     end(payload) {
       this.body = JSON.parse(payload);
+    }
+  };
+}
+
+function jsonResponse(payload, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() {
+      return payload;
     }
   };
 }

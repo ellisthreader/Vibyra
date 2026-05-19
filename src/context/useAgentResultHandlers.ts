@@ -17,14 +17,14 @@ type Messages = {
     messageId: string,
     fullText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
   ) => void;
   finalizeStreamedAssistantMessage: (
     target: ResolvedAgentTarget,
     messageId: string,
     finalText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
   ) => void;
 };
 
@@ -120,7 +120,7 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     ]);
     logs.advanceWorkflow(12);
     const app = generatedPreviewApp(result.app ?? null);
-    messages.streamAssistantMessage(target, assistantMessageId, result.reply, app, previewCodeMetadata(app));
+    messages.streamAssistantMessage(target, assistantMessageId, result.reply, app, chatResponseMetadata(app, result.creditCost));
   }
 
   function finishStreamedOpenRouterAgent(
@@ -151,10 +151,15 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     ]);
     logs.advanceWorkflow(12);
     const app = generatedPreviewApp(result.app ?? null);
-    messages.finalizeStreamedAssistantMessage(target, assistantMessageId, result.reply, app, previewCodeMetadata(app));
+    messages.finalizeStreamedAssistantMessage(target, assistantMessageId, result.reply, app, chatResponseMetadata(app, result.creditCost));
   }
 
   return { finishRealAgent, finishOpenRouterAgent, finishStreamedOpenRouterAgent };
+}
+
+function chatResponseMetadata(app: ChatResponse["app"], creditCost: number): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "creditCost"> {
+  const preview = previewCodeMetadata(app);
+  return preview ? { ...preview, creditCost } : { creditCost };
 }
 
 function previewCodeMetadata(app: ChatResponse["app"]): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval"> | undefined {

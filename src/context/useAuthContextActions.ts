@@ -58,15 +58,18 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     accountStatus?: "existing" | "new"
   ) {
     const existingAccount = accountStatus === "existing" || (accountStatus === undefined && state.authMode === "login");
+    const referralCode = !existingAccount ? state.authReferralCode.trim() : "";
     const payload = method === "email"
       ? { email: state.authEmail.trim(), installId: state.installId, name: state.authName.trim(), password: state.authPassword }
       : { installId: state.installId, name: state.authName.trim() || providerDisplayName(method), provider: method, providerId: state.installId };
+    const body = referralCode ? { ...payload, referralCode } : payload;
     const endpoint = method === "email" && !existingAccount ? "/api/auth/signup" : "/api/auth/login";
-    const result = await appApiRequest<AuthResponse>(endpoint, { method: "POST", body: JSON.stringify(payload) });
+    const result = await appApiRequest<AuthResponse>(endpoint, { method: "POST", body: JSON.stringify(body) });
 
     applyAuthenticatedUser(result.token, result.user);
     setters.setAuthenticated(true);
     setters.setAuthPassword("");
+    setters.setAuthReferralCode("");
   }
 
   function completeOnboarding() {

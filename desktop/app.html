@@ -29,13 +29,13 @@
           <div class="auth-features" aria-label="Vibyra features">
             <div><div class="auth-feature-icon">{ }</div><strong>Beautiful</strong><p>by design</p></div>
             <i></i>
-            <div><div class="auth-feature-icon">F</div><strong>Fast</strong><p>by nature</p></div>
+            <div><div class="auth-feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 10-13h-7z" /></svg></div><strong>Fast</strong><p>by nature</p></div>
             <i></i>
-            <div><div class="auth-feature-icon">C</div><strong>Code</strong><p>anywhere</p></div>
+            <div><div class="auth-feature-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" /><path d="M3.6 9h16.8M3.6 15h16.8M12 3c2.1 2.2 3.2 5.2 3.2 9S14.1 18.8 12 21M12 3C9.9 5.2 8.8 8.2 8.8 12s1.1 6.8 3.2 9" /></svg></div><strong>Code</strong><p>anywhere</p></div>
           </div>
-          <button class="auth-choice" data-auth-social="google" type="button"><span class="google-mark">G</span><strong>Continue with Google</strong></button>
-          <button class="auth-choice" data-auth-social="apple" type="button"><span class="apple-mark">A</span><strong>Continue with Apple</strong></button>
-          <button class="auth-choice" id="show-email-auth" type="button"><span>@</span><strong>Continue with email</strong></button>
+          <button class="auth-choice" data-auth-social="google" type="button"><span class="auth-provider-icon google-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.49 12.27c0-.84-.08-1.65-.21-2.43H12v4.6h6.45a5.52 5.52 0 0 1-2.39 3.62v3.01h3.88c2.27-2.09 3.55-5.17 3.55-8.8Z" /><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.93l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.72-4.95H1.27v3.1A11.99 11.99 0 0 0 12 24Z" /><path fill="#FBBC05" d="M5.28 14.26A7.21 7.21 0 0 1 4.9 12c0-.78.13-1.54.38-2.26v-3.1H1.27A11.93 11.93 0 0 0 0 12c0 1.94.46 3.78 1.27 5.36l4.01-3.1Z" /><path fill="#EA4335" d="M12 4.79c1.76 0 3.34.61 4.59 1.8l3.43-3.43A11.46 11.46 0 0 0 12 0 11.99 11.99 0 0 0 1.27 6.64l4.01 3.1C6.23 6.9 8.88 4.79 12 4.79Z" /></svg></span><strong>Continue with Google</strong></button>
+          <button class="auth-choice" data-auth-social="apple" type="button"><span class="auth-provider-icon apple-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.7 13.1c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.2.8s-1.7-.8-2.8-.7c-1.4 0-2.7.8-3.5 2.1-1.5 2.7-.4 6.6 1.1 8.7.7 1 1.6 2.2 2.7 2.1 1.1 0 1.5-.7 2.8-.7s1.7.7 2.8.7c1.2 0 1.9-1.1 2.6-2.1.8-1.2 1.1-2.3 1.1-2.4 0 0-2.4-.9-2.4-3.6ZM14.7 6.9c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.6.7-1 1.6-.9 2.6 1 0 1.9-.5 2.5-1.2Z" /></svg></span><strong>Continue with Apple</strong></button>
+          <button class="auth-choice" id="show-email-auth" type="button"><span class="auth-provider-icon email-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" /><path d="m4 7 8 6 8-6" /></svg></span><strong>Continue with email</strong></button>
           <form id="desktop-email-auth" class="email-auth" autocomplete="on">
             <div class="email-mode-row">
               <button class="email-mode active" data-auth-mode="signup" type="button">Sign up</button>
@@ -58,6 +58,7 @@
       <aside class="rail">
         <div class="rail-logo"><span><img src="/app-assets/vibyra.png" alt="" /></span><strong>Vibyra</strong></div>
         <nav id="rail-nav" class="nav" aria-label="Main navigation"></nav>
+        <section id="rail-recents" class="rail-recents" aria-label="Recent chats"></section>
         <div id="rail-status" class="rail-status"><span class="dot offline"></span><span>Waiting</span></div>
       </aside>
       <main class="main">
@@ -78,12 +79,14 @@
     <div id="token-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="token-title">
       <section class="modal">
         <div class="modal-header">
-          <div><p class="kicker">Membership</p><h2 id="token-title" class="page-title">Token balance</h2></div>
+          <div><p class="kicker">Membership</p><h2 id="token-title" class="page-title">Account</h2></div>
           <button id="close-token" class="icon-button" type="button" aria-label="Close token modal"></button>
         </div>
         <div id="token-modal-body"></div>
       </section>
     </div>
+    <script src="/desktop/assets/app.chat-titles.js"></script>
+    <script src="/desktop/assets/app.chat.js"></script>
     <script src="/desktop/assets/app.2.js"></script>
     <script src="/desktop/assets/app.1.js"></script>
     <script src="/desktop/assets/app.auth.js"></script>

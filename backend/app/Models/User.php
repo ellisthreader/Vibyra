@@ -33,6 +33,7 @@ use Illuminate\Notifications\Notifiable;
     'stripe_customer_id',
     'stripe_subscription_id',
     'billing_provider',
+    'referral_code',
     'onboarding_complete',
     'remembered_desktops',
     'app_state',

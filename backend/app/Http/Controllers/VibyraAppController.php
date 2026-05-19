@@ -12,6 +12,7 @@ use App\Http\Controllers\Concerns\CommunityAssetGeneration;
 use App\Http\Controllers\Concerns\CommunityPublishMedia;
 use App\Http\Controllers\Concerns\CommunityPublishing;
 use App\Http\Controllers\Concerns\LevelEndpoints;
+use App\Http\Controllers\Concerns\ReferralEndpoints;
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Services\Community\ProjectSafetyReview;
 use App\Services\ContentModeration;
@@ -30,6 +31,7 @@ class VibyraAppController extends Controller
     use CommunityPublishMedia;
     use CommunityPublishing;
     use LevelEndpoints;
+    use ReferralEndpoints;
     use UserPayloads;
 
     private const FREE_CREDITS = 50;

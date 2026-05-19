@@ -6,7 +6,7 @@ export const part51 = {
     width: 10
   },
   workspaceConnectionLabel: {
-    color: "#B9B5C8",
+    color: "#CFC0FF",
     fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,
@@ -20,7 +20,7 @@ export const part51 = {
     marginTop: 1
   },
   workspaceMenuDivider: {
-    backgroundColor: "rgba(255, 255, 255, 0.09)",
+    backgroundColor: "rgba(176, 132, 255, 0.16)",
     height: 1,
     marginVertical: 4
   },
@@ -32,8 +32,8 @@ export const part51 = {
   },
   workspaceMenuIconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(109, 59, 255, 0.14)",
+    borderColor: "rgba(176, 132, 255, 0.24)",
     borderRadius: 999,
     borderWidth: 1,
     height: 40,
@@ -44,8 +44,8 @@ export const part51 = {
     gap: 7
   },
   workspaceMenuPanel: {
-    backgroundColor: "rgba(9, 10, 15, 0.99)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(18, 12, 32, 0.99)",
+    borderColor: "rgba(176, 132, 255, 0.30)",
     borderRightWidth: 1,
     borderTopRightRadius: 24,
     borderBottomRightRadius: 24,
@@ -53,10 +53,10 @@ export const part51 = {
     minHeight: "100%",
     paddingBottom: 24,
     paddingHorizontal: 16,
-    shadowColor: "#000000",
+    shadowColor: "#6D3BFF",
     shadowOffset: { width: 10, height: 0 },
-    shadowOpacity: 0.24,
-    shadowRadius: 18,
+    shadowOpacity: 0.26,
+    shadowRadius: 22,
     width: 300
   },
   workspaceMenuRowIcon: {
@@ -66,7 +66,7 @@ export const part51 = {
     width: 31
   },
   workspaceMenuRowIconActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.11)",
+    backgroundColor: "transparent",
     borderRadius: 11
   },
   workspaceMenuRowLabel: {
@@ -77,12 +77,12 @@ export const part51 = {
     lineHeight: 18
   },
   workspaceMenuRowMeta: {
-    color: "#B9B5C8",
+    color: "#CFC0FF",
     fontSize: 11,
     fontWeight: "900"
   },
   workspaceMenuSectionLabel: {
-    color: "#8F8A9E",
+    color: "#BFAEFF",
     fontSize: 10.5,
     fontWeight: "900",
     letterSpacing: 0,

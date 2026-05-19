@@ -103,6 +103,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     setAuthName: setters.setAuthName,
     setAuthEmail: setters.setAuthEmail,
     setAuthPassword: setters.setAuthPassword,
+    setAuthReferralCode: setters.setAuthReferralCode,
     setAgentUrl: setters.setAgentUrl,
     setPairCode: setters.setPairCode,
     setSelectedModel: setters.setSelectedModel,

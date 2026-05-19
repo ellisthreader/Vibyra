@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
 use App\Services\LevelProgression;
+use App\Services\Referrals\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,7 @@ trait AuthEndpoints
         $email = $this->normalizeEmail($request->input('email'));
         $password = (string) $request->input('password', '');
         $name = trim((string) $request->input('name', ''));
+        $referralCode = $this->referralCodeFromRequest($request);
 
         if (! $email || strlen($password) < 6) {
             return $this->json(['ok' => false, 'error' => 'Enter a valid email and a password with at least 6 characters.'], 422);
@@ -23,6 +25,10 @@ trait AuthEndpoints
 
         if (User::where('email', $email)->exists()) {
             return $this->json(['ok' => false, 'error' => 'An account already exists for that email. Log in instead.'], 409);
+        }
+
+        if ($referralCode && ! app(ReferralService::class)->referrerFor($referralCode)) {
+            return $this->json(['ok' => false, 'error' => 'That invite code was not found. Check it and try again.'], 422);
         }
 
         $this->moderation->assertLocalTextAllowed($name, 'auth.name');
@@ -42,6 +48,8 @@ trait AuthEndpoints
             'remembered_desktops' => [],
             'app_state' => [],
         ]);
+        app(ReferralService::class)->registerSignup($user, $referralCode);
+        $user = $user->fresh() ?? $user;
 
         return $this->json($this->sessionPayload($request, $user), 201);
     }
@@ -65,6 +73,11 @@ trait AuthEndpoints
 
         $user = User::where('provider', $provider)->where('provider_id', $providerId)->first();
         if (! $user) {
+            $referralCode = $this->referralCodeFromRequest($request);
+            if ($referralCode && ! app(ReferralService::class)->referrerFor($referralCode)) {
+                return $this->json(['ok' => false, 'error' => 'That invite code was not found. Check it and try again.'], 422);
+            }
+
             $fallbackEmail = sprintf('%s.%s@vibyra.local', $provider, substr(hash('sha256', $providerId), 0, 12));
             $email = $this->normalizeEmail($request->input('email')) ?: $fallbackEmail;
             $name = trim((string) $request->input('name', '')) ?: ucfirst($provider).' User';
@@ -89,6 +102,8 @@ trait AuthEndpoints
                 'remembered_desktops' => [],
                 'app_state' => [],
             ]);
+            app(ReferralService::class)->registerSignup($user, $referralCode);
+            $user = $user->fresh() ?? $user;
         }
 
         return $this->json($this->sessionPayload($request, $user));
@@ -153,5 +168,12 @@ trait AuthEndpoints
     private function recordDailyLogin(User $user): void
     {
         app(LevelProgression::class)->record($user, 'daily_login', 'daily-login:' . now()->toDateString());
+    }
+
+    private function referralCodeFromRequest(Request $request): string
+    {
+        return app(ReferralService::class)->normalizeCode(
+            $request->input('referralCode', $request->input('ref', ''))
+        );
     }
 }

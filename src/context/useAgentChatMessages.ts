@@ -92,7 +92,7 @@ export function useAgentChatMessages(
     messageId: string,
     fullText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
   ) {
     if (streamingRef.current) {
       streamingRef.current();
@@ -110,6 +110,7 @@ export function useAgentChatMessages(
           next.codeChanges = metadata.codeChanges;
           next.codeFiles = metadata.codeFiles;
           next.codeProjectId = metadata.codeProjectId;
+          if (metadata.creditCost !== undefined) next.creditCost = metadata.creditCost;
           if (metadata.editApproval !== undefined) next.editApproval = metadata.editApproval;
           if (metadata.pendingApplyId !== undefined) next.pendingApplyId = metadata.pendingApplyId;
         }
@@ -136,7 +137,7 @@ export function useAgentChatMessages(
     messageId: string,
     finalText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
   ) {
     updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
       if (message.id !== messageId) return message;
@@ -149,6 +150,7 @@ export function useAgentChatMessages(
         next.codeChanges = metadata.codeChanges;
         next.codeFiles = metadata.codeFiles;
         next.codeProjectId = metadata.codeProjectId;
+        if (metadata.creditCost !== undefined) next.creditCost = metadata.creditCost;
         if (metadata.editApproval !== undefined) next.editApproval = metadata.editApproval;
         if (metadata.pendingApplyId !== undefined) next.pendingApplyId = metadata.pendingApplyId;
       }

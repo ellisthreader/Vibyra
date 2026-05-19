@@ -21,6 +21,10 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 - Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`
 - Agent runs, apply/discard, safe commands, run artifacts: `Desktop/Agent Runs And Commands.md`
 
+## Local Skills
+
+- Use `.agents/skills/VibyraDesktopFrontendDesign/SKILL.md` for desktop frontend design work: mobile-inspired dark UI, minimal topbar/sidebar chrome, auth welcome polish, logo handling, recent chats, and responsive screenshot checks.
+
 ## Route Groups
 
 `desktop/lib/routes.mjs` splits requests into:

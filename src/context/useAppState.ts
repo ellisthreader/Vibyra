@@ -22,6 +22,7 @@ export function useAppState() {
   const [authName, setAuthName] = useState(persistedSession.user?.name ?? "");
   const [authEmail, setAuthEmail] = useState(persistedSession.user?.email ?? "");
   const [authPassword, setAuthPassword] = useState("");
+  const [authReferralCode, setAuthReferralCode] = useState("");
   const [profileImageUri, setProfileImageUri] = useState(initialAppState.profileImageUri);
   const [creditsBalance, setCreditsBalance] = useState(persistedSession.user?.creditsBalance ?? 0);
   const [creditsUsed, setCreditsUsed] = useState(persistedSession.user?.creditsUsed ?? 0);
@@ -173,7 +174,7 @@ export function useAppState() {
     state: {
       persistenceReady, authenticated, authToken, installId, accountId, accountPlan, authMode,
       levelProgress,
-      authName, authEmail, authPassword, profileImageUri, creditsBalance, creditsUsed, onboardingComplete,
+      authName, authEmail, authPassword, authReferralCode, profileImageUri, creditsBalance, creditsUsed, onboardingComplete,
       pcSetupComplete, pcSetupSkipped, paired, agentUrl, pairCode, pairing, pairingError, pairingMessage,
       healthMessage, checkingHealth, pendingPhoneApproval, connection, rememberedDesktops,
       machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
@@ -184,7 +185,7 @@ export function useAppState() {
     derived,
     setters: {
       setAuthenticated, setAuthToken, setAccountId, setAccountPlan, setAuthMode,
-      setLevelProgress, setAuthName, setAuthEmail, setAuthPassword, setProfileImageUri, setCreditsBalance, setCreditsUsed,
+      setLevelProgress, setAuthName, setAuthEmail, setAuthPassword, setAuthReferralCode, setProfileImageUri, setCreditsBalance, setCreditsUsed,
       setOnboardingComplete, setPcSetupComplete, setPcSetupSkipped, setPaired, setAgentUrl, setPairCode, setPairing, setPairingError,
       setPairingMessage, setHealthMessage, setCheckingHealth, setPendingPhoneApproval, setConnection,
       setRememberedDesktops, setMachineName, setProjects,

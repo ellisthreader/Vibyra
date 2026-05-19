@@ -6,8 +6,7 @@ import { styles } from "../../styles";
 import type { LevelMapNode, LevelProgress } from "../../../../utils/appApi";
 import { levelRankFor, levelRankUnlockFor } from "./levelTitles";
 
-export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, levelMap, levelPercent, nextReward, onClose, visible }: {
-  dailyCap: number;
+export function ProfileLevelProgressModal({ formatNumber, level, levelMap, levelPercent, nextReward, onClose, visible }: {
   formatNumber: (value: number) => string;
   level: LevelProgress;
   levelMap: LevelMapNode[];
@@ -40,46 +39,24 @@ export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, level
           </Pressable>
           <Text style={styles.billingHeaderTitle}>Level map</Text>
           <Pressable accessibilityLabel="How leveling works" onPress={() => setHelpOpen((value) => !value)} style={styles.profileLevelHelpButton}>
-            <Ionicons name="help-circle-outline" color="#DDBBFF" size={21} />
+            <Ionicons name="help-circle-outline" color="#DDBBFF" size={20} />
           </Pressable>
-          <View style={styles.profileLevelHeaderBadge}>
-            <Ionicons name="sparkles" color="#C259FF" size={13} />
-            <Text style={styles.profileLevelHeaderBadgeText}>Level {level.level}</Text>
-          </View>
         </View>
-        {helpOpen ? <LevelHelpPanel top={Math.max(insets.top + 62, 76)} /> : null}
         <ScrollView contentContainerStyle={styles.profileLevelModalContent} showsVerticalScrollIndicator={false}>
           <View style={styles.profileLevelModalHero}>
-            <View style={styles.profileLevelModalHeroTop}>
-              <View style={styles.profileLevelModalEmblem}>
-                <Ionicons name="sparkles" color="#C259FF" size={28} />
-              </View>
-              <View style={styles.profileLevelCopy}>
-                <Text style={styles.profileLevelModalKicker}>Current level</Text>
-                <Text style={styles.profileLevelModalTitle}>Level {level.level}</Text>
-                <Text style={styles.profileLevelModalRank}>{currentRank.name}</Text>
-                <Text style={styles.profileLevelModalMeta}>{formatNumber(level.currentLevelXp)} / {formatNumber(level.nextLevelXp)} XP to next level</Text>
-              </View>
-            </View>
+            <Text style={styles.profileLevelModalKicker}>Current level</Text>
+            <Text style={styles.profileLevelModalTitle}>Level {level.level}</Text>
+            <Text style={styles.profileLevelModalRank}>{currentRank.name}</Text>
+            <Text style={styles.profileLevelModalMeta}>{formatNumber(level.currentLevelXp)} / {formatNumber(level.nextLevelXp)} XP to next level</Text>
             <View style={styles.profileLevelTrack}>
               <View style={[styles.profileLevelFill, { width: `${Math.max(levelPercent, 3)}%` }]} />
             </View>
-            <View style={styles.profileLevelModalReward}>
-              <Ionicons name="gift-outline" color="#C259FF" size={16} />
-              <Text style={styles.profileLevelModalRewardText}>{nextReward}</Text>
-            </View>
-          </View>
-          <View style={styles.profileLevelStatsRow}>
-            <LevelStat icon="flame" label="Total XP" value={formatNumber(level.xpTotal)} />
-            <LevelStat icon="trophy" label="Progress" value={`${levelPercent}%`} />
-            <LevelStat icon="shield-checkmark" label="Daily cap" value={formatNumber(dailyCap)} />
+            <Text style={styles.profileLevelModalRewardText}>{nextReward}</Text>
           </View>
           <View style={styles.profileLevelMap}>
-            {visibleLevelMap.map((node, index) => (
+            {visibleLevelMap.map((node) => (
               <LevelMapRow
                 key={`${node.level}-${node.xpTotalRequired}`}
-                first={!fullMapOpen && mapWindow.startsAfterFirst && index === 0 ? false : index === 0}
-                last={!fullMapOpen && mapWindow.endsBeforeLast && index === visibleLevelMap.length - 1 ? false : index === visibleLevelMap.length - 1}
                 node={node}
                 formatNumber={formatNumber}
               />
@@ -88,42 +65,43 @@ export function ProfileLevelProgressModal({ dailyCap, formatNumber, level, level
               <View style={styles.profileLevelMapFooter}>
                 <Text style={styles.profileLevelMapFooterText}>{hiddenLevelCount} more levels hidden</Text>
                 <Pressable accessibilityLabel="Expand full level map" onPress={() => setFullMapOpen(true)} style={styles.profileLevelMapToggle}>
-                  <Ionicons name="chevron-down" color="#EDE9FF" size={15} />
                   <Text style={styles.profileLevelMapToggleText}>Show full map</Text>
+                  <Ionicons name="chevron-down" color="#EDE9FF" size={15} />
                 </Pressable>
               </View>
             ) : levelMap.length > mapWindow.nodes.length ? (
               <Pressable accessibilityLabel="Collapse level map" onPress={() => setFullMapOpen(false)} style={styles.profileLevelMapCollapse}>
+                <Text style={styles.profileLevelMapToggleText}>Show nearby levels</Text>
                 <Ionicons name="chevron-up" color="#EDE9FF" size={15} />
-                <Text style={styles.profileLevelMapToggleText}>Show 6 levels</Text>
               </Pressable>
             ) : null}
           </View>
+          <Pressable accessibilityLabel="How XP works" onPress={() => setHelpOpen((value) => !value)} style={styles.profileLevelHelpPanel}>
+            <View style={styles.profileLevelHelpRow}>
+              <Text style={styles.profileLevelHelpTitle}>How XP works</Text>
+              <Ionicons name={helpOpen ? "chevron-up" : "chevron-down"} color="#DDBBFF" size={17} />
+            </View>
+            {helpOpen ? <LevelHelpPanel /> : null}
+          </Pressable>
         </ScrollView>
       </View>
     </Modal>
   );
 }
 
-function LevelHelpPanel({ top }: { top: number }) {
-  const rows: Array<{ icon: keyof typeof Ionicons.glyphMap; title: string; text: string }> = [
-    { icon: "calendar-clear-outline", title: "Daily login", text: "Open Vibyra each day for bonus XP." },
-    { icon: "terminal-outline", title: "Build with AI", text: "Prompts, chats, and completed desktop runs add XP." },
-    { icon: "chatbubbles-outline", title: "Community", text: "Likes, comments, posts, and app opens help you level up." },
-    { icon: "gift-outline", title: "Rewards", text: "Milestone levels unlock rewards shown on the roadmap." }
+function LevelHelpPanel() {
+  const rows = [
+    "Daily app use adds bonus XP.",
+    "Prompts, chats, and completed builds add XP.",
+    "Milestone levels can unlock credit rewards."
   ];
 
   return (
-    <View style={[styles.profileLevelHelpPanel, { top }]}>
-      {rows.map((row) => (
-        <View key={row.title} style={styles.profileLevelHelpRow}>
-          <View style={styles.profileLevelHelpIcon}>
-            <Ionicons name={row.icon} color="#C259FF" size={15} />
-          </View>
-          <View style={styles.profileLevelCopy}>
-            <Text style={styles.profileLevelHelpTitle}>{row.title}</Text>
-            <Text style={styles.profileLevelHelpText}>{row.text}</Text>
-          </View>
+    <View style={styles.profileLevelHelpBody}>
+      {rows.map((text) => (
+        <View key={text} style={styles.profileLevelHelpBulletRow}>
+          <View style={styles.profileLevelHelpBullet} />
+          <Text style={styles.profileLevelHelpText}>{text}</Text>
         </View>
       ))}
     </View>
@@ -131,50 +109,28 @@ function LevelHelpPanel({ top }: { top: number }) {
 }
 
 function getLevelMapWindow(levelMap: LevelMapNode[], currentLevel: number, size: number) {
-  if (levelMap.length <= size) {
-    return { endsBeforeLast: false, nodes: levelMap, startsAfterFirst: false };
-  }
+  if (levelMap.length <= size) return { nodes: levelMap };
 
   const currentIndex = Math.max(0, levelMap.findIndex((node) => node.level === currentLevel));
   const start = Math.max(0, Math.min(currentIndex - 2, levelMap.length - size));
-  const end = start + size;
-
-  return {
-    endsBeforeLast: end < levelMap.length,
-    nodes: levelMap.slice(start, end),
-    startsAfterFirst: start > 0
-  };
+  return { nodes: levelMap.slice(start, start + size) };
 }
 
-function LevelStat({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
-  return (
-    <View style={styles.profileLevelStat}>
-      <Ionicons name={icon} color="#DDBBFF" size={15} />
-      <Text style={styles.profileLevelStatValue}>{value}</Text>
-      <Text style={styles.profileLevelStatLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function LevelMapRow({ first, formatNumber, last, node }: { first: boolean; formatNumber: (value: number) => string; last: boolean; node: LevelMapNode }) {
+function LevelMapRow({ formatNumber, node }: { formatNumber: (value: number) => string; node: LevelMapNode }) {
   const current = node.status === "current";
   const complete = node.status === "complete";
   const icon = complete ? "checkmark" : current ? "radio-button-on" : "lock-closed";
-  const tint = complete ? "#56E6A5" : current ? "#F23ACD" : "#8E89A3";
+  const tint = complete ? "#56E6A5" : current ? "#F2E9FF" : "#8E89A3";
   const rankUnlock = levelRankUnlockFor(node.level);
 
   return (
-    <View style={styles.profileLevelMapRow}>
-      <View style={styles.profileLevelMapRoute}>
-        <View style={[styles.profileLevelMapLine, first ? styles.profileLevelMapLineHidden : null]} />
-        <View style={[
-          styles.profileLevelMapNode,
-          complete ? styles.profileLevelMapNodeComplete : null,
-          current ? styles.profileLevelMapNodeCurrent : null
-        ]}>
-          <Ionicons name={icon} color={current || complete ? "#090912" : tint} size={13} />
-        </View>
-        <View style={[styles.profileLevelMapLine, last ? styles.profileLevelMapLineHidden : null]} />
+    <View style={[styles.profileLevelMapRow, current ? styles.profileLevelMapRowCurrent : null]}>
+      <View style={[
+        styles.profileLevelMapNode,
+        complete ? styles.profileLevelMapNodeComplete : null,
+        current ? styles.profileLevelMapNodeCurrent : null
+      ]}>
+        <Ionicons name={icon} color={current || complete ? "#090912" : tint} size={12} />
       </View>
       <View style={styles.profileLevelMapBody}>
         <Text style={[styles.profileLevelMapTitle, current ? styles.profileLevelMapTitleCurrent : null]}>Level {node.level}</Text>
@@ -186,9 +142,7 @@ function LevelMapRow({ first, formatNumber, last, node }: { first: boolean; form
           <Ionicons name="gift-outline" color="#C259FF" size={11} />
           <Text style={styles.profileLevelMapRewardText}>Reward</Text>
         </View>
-      ) : (
-        <Text style={styles.profileLevelMapNoReward}>XP</Text>
-      )}
+      ) : null}
     </View>
   );
 }

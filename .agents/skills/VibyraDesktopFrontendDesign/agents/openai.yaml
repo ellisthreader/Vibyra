@@ -1,0 +1,3 @@
+display_name: VibyraDesktopFrontendDesign
+short_description: Applies Vibyra desktop frontend rules for simple, mobile-inspired AI app UI.
+default_prompt: Use the Vibyra desktop frontend design rules for this task: keep the UI minimal and mobile-inspired, avoid unnecessary boxes and labels, preserve the logo, simplify topbar/sidebar chrome, and verify responsive screenshots.

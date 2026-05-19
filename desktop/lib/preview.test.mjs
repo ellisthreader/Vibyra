@@ -866,6 +866,59 @@ test("preview server proxy forwards Inertia login requests with body, cookies, a
   }
 });
 
+test("preview server proxy derives decoded Laravel XSRF header from preview cookies", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-xsrf-cookie-");
+  const received = {};
+  const app = createServer((req, res) => {
+    if (req.url === "/login" && req.method === "POST") {
+      received.csrf = req.headers["x-xsrf-token"];
+      res.writeHead(204, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("");
+      return;
+    }
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("missing");
+  });
+  await new Promise((resolve) => app.listen(0, "127.0.0.1", resolve));
+  const address = app.address();
+  const port = typeof address === "object" && address ? address.port : 0;
+  try {
+    appState.previewServers[project.id] = {
+      command: "test preview",
+      proxyTargetUrl: `http://0.0.0.0:${port}`,
+      startedAt: new Date().toISOString(),
+      url: `http://192.168.1.20:${port}`
+    };
+
+    const response = await requestPreviewServerProxy(project, "login", "vibyra.test", {
+      body: "{}",
+      headers: {
+        "content-type": "application/json",
+        "cookie": "XSRF-TOKEN=csrf%3Dtoken; hke_session=old"
+      },
+      method: "POST"
+    });
+    assert.equal(response.status, 204);
+    assert.equal(received.csrf, "csrf=token");
+
+    const encodedHeader = await requestPreviewServerProxy(project, "login", "vibyra.test", {
+      body: "{}",
+      headers: {
+        "content-type": "application/json",
+        "cookie": "XSRF-TOKEN=ignored",
+        "x-xsrf-token": "header%3Dtoken"
+      },
+      method: "POST"
+    });
+    assert.equal(encodedHeader.status, 204);
+    assert.equal(received.csrf, "header=token");
+  } finally {
+    delete appState.previewServers[project.id];
+    await new Promise((resolve) => app.close(resolve));
+    await cleanup();
+  }
+});
+
 test("preview server proxy rewrites browser form actions into the tokenized preview route", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-form-action-");
   const app = await makeRouteServer({

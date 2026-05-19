@@ -81,8 +81,13 @@ function EffortSlider({ onChange, value }: { onChange: (effort: ReasoningEffort)
         <View style={styles.chatModelEffortStops}>
           {EFFORT_OPTIONS.map((option, index) => {
             const active = index <= activeIndex;
+            const stopPosition = `${(index / (EFFORT_OPTIONS.length - 1)) * 100}%`;
             return (
-              <Pressable key={option.value} onPress={() => onChange(option.value)} style={styles.chatModelEffortStopHit}>
+              <Pressable
+                key={option.value}
+                onPress={() => onChange(option.value)}
+                style={[styles.chatModelEffortStopHit, { left: stopPosition }]}
+              >
                 <View style={[styles.chatModelEffortStop, active && styles.chatModelEffortStopActive]} />
               </Pressable>
             );

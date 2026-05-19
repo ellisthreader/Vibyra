@@ -16,7 +16,7 @@ Read this for mobile billing UI, profile sheets, IAP/Stripe entry points, and mo
 
 Mobile IAP uses `expo-iap` SKUs `app.vibyra.membership.{plan}.{cycle}`. On purchase success, `usePricingPurchase` posts the receipt to the backend with `reportIapReceipt`, applies returned user state via `app.applyRemoteUserFromIap`, then runs `finishTransaction`. If receipt POST fails, abort so paid-but-unrecorded purchases are not lost.
 
-Web/Desktop Stripe uses backend checkout helpers outside the mobile Profile surface. Mobile Profile `BillingSheet.tsx` is a shipped-safe plan overview: plan cards remain non-purchasing (`onSelect` is a no-op for non-current tiers, no Stripe checkout or external billing URLs are opened) until an IAP-backed mobile billing flow is wired. The earlier "Mobile upgrades and payment management are not available in this build" disclaimer was removed; cards no longer render dimmed and the footer is a single subtle "Cancel anytime · Plan access syncs to your account" line.
+Profile `BillingSheet.tsx` uses `useProfileBillingPurchase.ts` for native iOS/Android subscriptions through `expo-iap`; on success it posts the receipt with `reportIapReceipt` and applies the returned user state. On web only, paid tiers call the backend Stripe helper `startStripeCheckout(authToken, { kind: "subscription", plan, cycle })` and open the returned URL with `Linking.openURL`. Current/free management calls `openBillingPortal(authToken)` when signed in, with platform subscription URLs as fallback. Onboarding still uses the separate `usePricingPurchase` flow because it also completes onboarding after purchase.
 
 ## Profile Tab
 
@@ -24,9 +24,11 @@ Profile components live in `src/screens/workspace/inline/profile/`; `chunk18.tsx
 
 Every settings row and the plan badge are wired to bottom-sheet modals. The avatar image button opens the media library directly. The dedicated profile `BillingSheet` is distinct from the global `TokenMembershipSheet`; the token sheet is reachable via the header tokens button and chat low-credit nudge, not Profile.
 
+`UsageSheet.tsx` should stay a simple usage utility, not a mini billing dashboard: header back + title only, one remaining-token hero with the manage/upgrade link inline, two compact counters, and one segmented History list for Projects or Chats. Keep rows plain with small icons and text; avoid reintroducing boxed source chips, a plan stat tile, duplicate header token pills, or separate recent-project/recent-chat card stacks.
+
 `AppContext` exposes `signOut()` and `updateProfile({ name, email, machineName, profileImageUri })` for Profile. Toggle/appearance/language state is local-only unless wired to persistence.
 
-Profile avatar uploads are handled in `ProfileHero.tsx` with `expo-image-picker` from the pencil/image button next to the avatar. The selected local URI is stored as `profileImageUri` in app-state persistence through `useAppState` / `appStatePersistence`; it is not posted to `/api/account/profile`, which remains name/email only.
+Profile avatar uploads are handled in `ProfileHero.tsx` with `expo-image-picker` from the pencil/image button next to the avatar. The selected local URI is stored as `profileImageUri` in app-state persistence through `useAppState` / `appStatePersistence`; it is not posted to `/api/account/profile`, which remains name/email only. Keep the profile hero's level summary as a plain inline row under the user name: level, map icon button directly beside the level label, then current/next XP text; do not box it or add a hero progress bar.
 
 Avatar display uses `src/screens/workspace/inline/AccountAvatar.tsx`: if `profileImageUri` exists, render the photo directly with no decorative border/background; otherwise render a Google-style colored circle using the first letter of the user's name. Keep the top account button, account menu, and Profile hero on this shared behavior.
 
@@ -38,7 +40,7 @@ Plan ladder in `profile/types.ts::PLAN_TIERS` mirrors `backend/config/billing.ph
 
 `agentErrors.ts` maps credit, daily cap, and model-plan errors to Account/Billing nudges.
 
-The Profile hero owns the level summary and level-map modal in `src/screens/workspace/inline/profile/ProfileHero.tsx`. The modal header applies safe-area top padding for mobile, and the map initially renders a six-level window around the current level; users must tap Show full map before the full roadmap is rendered.
+The Profile hero owns the level summary and level-map modal in `src/screens/workspace/inline/profile/ProfileHero.tsx`. The modal header applies safe-area top padding for mobile, and the map initially renders a six-level window around the current level; users must tap Show full map before the full roadmap is rendered. Keep the level-map page simple: compact current-level summary, thin progress bar, quiet roadmap rows, reward chips only on reward levels, and an inline expandable "How XP works" section instead of floating help or stat cards.
 
 Level-map vibecoding rank names live in `src/screens/workspace/inline/profile/levelTitles.ts` and render in `ProfileLevelProgressModal.tsx`. The hero shows the current rank; map rows only show a rank label on exact unlock levels, not on every level. Keep names maker/build/prompt themed, such as Prompt Tuner, Professional Prompter, Senior Vibecoder, and Master Vibecoder.
 
@@ -48,22 +50,22 @@ Level-up notification colors are explicit per scheme in `src/components/LevelUpN
 
 `ProfilePage.tsx` uses full-width horizontal setting rows grouped under Account, Preferences, and Support, with larger gaps between category groups. Profile scrolling is enabled in `WorkspaceScreen.tsx`; do not force every Profile action above the fold. The shared `TopBar` is hidden on Profile so the profile hero starts at the top of the workspace content instead of sitting below a separate "Profile" header. `ProfileHero.tsx` does not show the email line; the level bar sits under the user name, and the plan badge stays at the hero row's top-right. `Clear cache` and `Log out` stay in a separate action row rendered immediately below Support, not as a pinned footer. `ClearCacheSheet.tsx` confirms before calling `AppContext.clearCache()`, which clears cached chats/projects/files/desktop sessions/logs/edit approvals while keeping the signed-in account, plan, credits, and profile. Do not re-add non-production level-up test buttons to the profile surface.
 
-Profile readiness release stance: mobile Profile billing is a plan overview only and does not open Stripe/external checkout; Refer & earn opens an unavailable-state sheet until referral API data exists; notification, biometric lock, and analytics controls are informational/unavailable rather than local-only toggles; avatar photo picking requires the explicit photo-library usage strings in `app.json`.
+Profile readiness release stance: notification, biometric lock, and analytics controls are informational/unavailable rather than local-only toggles; avatar photo picking requires the explicit photo-library usage strings in `app.json`.
+
+Refer & earn is backed by `GET /api/referrals/me` through `src/utils/referralsApi.ts`. `ReferSheet.tsx` fetches the authenticated user's invite code/link, uses React Native `Share` for link/code sharing, and displays signed-up/paid/earned stats. Email signup exposes an optional invite-code field via `authReferralCode`; backend signup also accepts `referralCode`/`ref`.
 
 ## BillingSheet Layout
 
-`BillingSheet.tsx` wraps the page body in a `ScrollView` (not a flex container) so the four `BillingFeaturedPlan` cards have intrinsic height instead of competing for vertical space. `BillingPlanPager` no longer uses `flex: 1`; it just renders a vertical stack with `gap: 12`.
+`BillingSheet.tsx` now owns the selected plan state. Page order is: header (back + title + tokens chip) → selected-plan artwork hero (`BillingPlanHero`) → billing cycle toggle → compact plan options (`BillingPlanOption`) → sticky footer CTA. The selected-plan hero uses the GPT-generated `src/assets/billing-plans/{free,starter,builder,pro}-card.png` assets at 1430x1100, and `part58.ts` enforces the same `1430 / 1100` hero `aspectRatio` so the card does not drift from the art. `BillingPlanHero` keeps text in an absolute overlay (`billingPlanHeroContent`) so content cannot force the art card taller and stretch the image; the hero title sits at the top, plan benefits render as plain bullet rows instead of stat boxes, and copy should use the selected membership accent. Keep the lower-left area of any future replacements dark and low-detail because the price and benefit bullets overlay there.
 
-Page order is: header (back + title + tokens chip) → billing cycle toggle → four plan cards → footer block. There is no longer a "Current plan" hero card at the top — `CurrentPlanCard.tsx` was deleted because the current plan is already indicated by the green "Current" chip on the matching `BillingFeaturedPlan`, so the hero was redundant and stole vertical space on phones.
+`billingUtils.ts` normalizes account plan strings and centralizes display price/tokens for monthly versus annual billing. `BillingFeaturedPlan` and `BillingPlanPager` remain in the folder as older card-style components, but the active billing sheet uses the hero-plus-options layout.
 
-Each `BillingFeaturedPlan` card head is `icon | name+tokens column | price block` and the name row uses `flexWrap: "wrap"` so the "Most Popular" / "Recommended" ribbon drops below the plan name on narrow phones instead of overlapping the price column. A 1px divider sits between the head and the perks list. Perks allow up to 2 lines so credit/budget descriptions are not truncated on small widths. The current-plan chip is a green pill aligned to the right under the price column.
-
-When tweaking plan card visuals: do not reintroduce `flex: 1` / `minHeight` on `featuredPlanWrap` or `featuredPlanCard` — that was the original source of the squashed-perk overlap on phone, and the layout now relies on intrinsic card heights inside the page-level `ScrollView`.
+Keep billing source files under the repo's 200-line guideline. Put new billing-specific shared styles in `src/screens/workspace/styles/part58.ts` rather than expanding older billing style chunks.
 
 ## Manage Subscription Link
 
-`BillingSheet.tsx` renders a centred "Manage your subscription" hyperlink under the "Cancel anytime · Plan access syncs to your account" line. It opens the platform-correct subscription management URL via `Linking.openURL`:
+`BillingSheet.tsx` keeps platform subscription management URLs as a fallback path:
 - iOS: `https://apps.apple.com/account/subscriptions`
 - Android: `https://play.google.com/store/account/subscriptions`
 
-This is the compliance hook required by App Store Review Guideline 3.1.2 (auto-renewing subscriptions must expose a functional link to subscription management) and the Google Play Payments policy (cancel path must be reachable). Apple/Google handle the actual cancel flow — the app only needs to provide the link. Do not replace this with an in-app cancel UI: it would not be authoritative against the platform receipt and could fail review.
+This is the compliance hook required by App Store Review Guideline 3.1.2 (auto-renewing subscriptions must expose a functional link to subscription management) and the Google Play Payments policy (cancel path must be reachable). Apple/Google handle the actual cancel flow — the app only needs to provide a reachable path. Do not replace this with an in-app cancel UI: it would not be authoritative against the platform receipt and could fail review.

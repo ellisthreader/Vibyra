@@ -423,6 +423,8 @@ function proxyRequestHeaders(req, target, proxyBase) {
     const value = source[name];
     if (typeof value === "string") next[name] = value;
   }
+  const xsrfToken = previewXsrfHeader(next["x-xsrf-token"], next.cookie);
+  if (xsrfToken) next["x-xsrf-token"] = xsrfToken;
   if (req && target) {
     if (typeof source.origin === "string") next.origin = target.origin;
     if (typeof source.referer === "string" || typeof source.referrer === "string") {
@@ -433,6 +435,31 @@ function proxyRequestHeaders(req, target, proxyBase) {
     next["x-forwarded-prefix"] = previewCookiePath(proxyBase);
   }
   return next;
+}
+
+function previewXsrfHeader(headerValue, cookieHeader) {
+  const value = typeof headerValue === "string" && headerValue.trim()
+    ? headerValue
+    : cookieHeaderValue(cookieHeader, "XSRF-TOKEN");
+  return value ? decodeCookieValue(value) : "";
+}
+
+function cookieHeaderValue(header, name) {
+  for (const part of String(header || "").split(";")) {
+    const trimmed = part.trim();
+    const separator = trimmed.indexOf("=");
+    if (separator <= 0) continue;
+    if (trimmed.slice(0, separator) === name) return trimmed.slice(separator + 1);
+  }
+  return "";
+}
+
+function decodeCookieValue(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function previewRefererToTarget(referer, req, target) {

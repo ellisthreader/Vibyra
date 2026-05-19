@@ -32,22 +32,27 @@ export const part45 = {
     paddingTop: 4
   },
   profileHeroTopCompact: {
-    alignItems: "flex-start",
-    gap: 12,
+    alignItems: "center",
+    gap: 14,
     paddingHorizontal: 2
   },
   profileLevelShellCompact: {
-    paddingBottom: 1,
-    paddingTop: 1
+    paddingBottom: 0,
+    paddingTop: 0
   },
   profileLevelShellInline: {
+    alignSelf: "stretch",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 0,
+    borderWidth: 0,
     gap: 6,
-    marginTop: 5,
+    marginTop: 4,
     paddingHorizontal: 0
   },
   profilePlanBadgeTopRight: {
     alignSelf: "flex-start",
-    marginTop: 0
+    marginTop: 2
   },
   profileRowGrid: {
     borderRadius: 0,

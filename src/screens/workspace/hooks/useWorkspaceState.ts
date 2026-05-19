@@ -14,7 +14,7 @@ export function useWorkspaceState() {
   const { height, width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const compact = width < 420;
-  const [activePage, setActivePage] = useState<DashboardPage>("chat");
+  const [activePage, setActivePage] = useState<DashboardPage>("dashboard");
   const [primaryMenuVisible, setPrimaryMenuVisible] = useState(false);
   const [accountMenuVisible, setAccountMenuVisible] = useState(false);
   const [desktopCandidates, setDesktopCandidates] = useState<DesktopCandidate[]>(app.rememberedDesktops);

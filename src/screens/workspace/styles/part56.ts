@@ -32,9 +32,9 @@ export const part56 = {
   },
   chatModelEffortChoiceText: {
     color: "#C9C2D6",
-    fontSize: 10.5,
-    fontWeight: "800",
-    lineHeight: 14
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 16
   },
   chatModelEffortChoiceTextActive: {
     color: "#FFFFFF"
@@ -70,20 +70,22 @@ export const part56 = {
   },
   chatModelEffortLabelHit: {
     alignItems: "center",
-    minWidth: 48
+    flex: 1,
+    minHeight: 24,
+    minWidth: 52
   },
   chatModelEffortLabels: {
     flexDirection: "row",
     justifyContent: "space-between"
   },
   chatModelEffortSlider: {
-    gap: 7
+    gap: 9
   },
   chatModelEffortStop: {
     backgroundColor: "#4D465B",
     borderRadius: 999,
-    height: 7,
-    width: 7
+    height: 8,
+    width: 8
   },
   chatModelEffortStopActive: {
     backgroundColor: "#D7C4FF"
@@ -92,41 +94,42 @@ export const part56 = {
     alignItems: "center",
     height: 24,
     justifyContent: "center",
+    marginLeft: -21,
+    position: "absolute",
     width: 42
   },
   chatModelEffortStops: {
     alignItems: "center",
-    bottom: -9,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    left: -18,
+    bottom: -10,
+    height: 24,
+    left: 0,
     position: "absolute",
-    right: -18
+    right: 0
   },
   chatModelEffortThumb: {
     backgroundColor: "#FFFFFF",
     borderColor: "#D7C4FF",
     borderRadius: 999,
     borderWidth: 2,
-    height: 18,
-    marginLeft: -9,
-    marginTop: -8,
+    height: 20,
+    marginLeft: -10,
+    marginTop: -10,
     position: "absolute",
     top: "50%",
-    width: 18
+    width: 20
   },
   chatModelEffortTrack: {
     backgroundColor: "rgba(255, 255, 255, 0.13)",
     borderRadius: 999,
-    height: 3,
-    marginHorizontal: 18,
+    height: 4,
+    marginHorizontal: 20,
     marginTop: 6,
     position: "relative"
   },
   chatModelEffortTrackFill: {
     backgroundColor: "#D7C4FF",
     borderRadius: 999,
-    height: 3
+    height: 4
   },
   chatModelInlineDivider: {
     color: "#766F84",

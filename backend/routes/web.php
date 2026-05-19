@@ -39,6 +39,7 @@ Route::post('/api/chat', [VibyraAppController::class, 'chat']);
 Route::post('/api/chat/stream', [VibyraAppController::class, 'chatStream']);
 Route::post('/api/chat/learning/feedback', [VibyraAppController::class, 'chatLearningFeedback']);
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
+Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
 Route::get('/api/community/projects', [VibyraAppController::class, 'communityProjects']);
 Route::get('/api/community/projects/{slug}/preview', [VibyraAppController::class, 'communityProjectPreview']);

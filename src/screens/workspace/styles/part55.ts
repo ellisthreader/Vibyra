@@ -1,7 +1,7 @@
 export const part55 = {
   chatMoreButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.035)",
+    backgroundColor: "transparent",
     borderRadius: 12,
     height: 38,
     justifyContent: "center",

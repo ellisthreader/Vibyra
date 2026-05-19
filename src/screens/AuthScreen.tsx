@@ -166,8 +166,10 @@ export function AuthScreen() {
                 onModeChange={app.setAuthMode}
                 onNameChange={app.setAuthName}
                 onPasswordChange={app.setAuthPassword}
+                onReferralCodeChange={app.setAuthReferralCode}
                 onSubmit={submitEmailAuth}
                 password={app.authPassword}
+                referralCode={app.authReferralCode}
                 scale={fitScale}
               />
             ) : authError ? (

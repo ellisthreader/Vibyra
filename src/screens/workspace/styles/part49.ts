@@ -1,17 +1,17 @@
 export const part49 = {
   accountMenuPanel: {
     alignSelf: "flex-end",
-    backgroundColor: "rgba(9, 10, 15, 0.98)",
-    borderColor: "rgba(255, 255, 255, 0.09)",
+    backgroundColor: "rgba(18, 12, 32, 0.98)",
+    borderColor: "rgba(176, 132, 255, 0.32)",
     borderRadius: 18,
     borderWidth: 1,
     gap: 10,
     marginRight: 10,
     padding: 10,
-    shadowColor: "#000000",
+    shadowColor: "#6D3BFF",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.24,
-    shadowRadius: 18,
+    shadowOpacity: 0.28,
+    shadowRadius: 22,
     width: 276
   },
   accountTopButton: {

@@ -13,11 +13,13 @@ Read this for high-level app UI entry points, bottom nav routing, and broad visu
 - `src/styles/theme.ts`
 - `src/components/`
 
-## Chat-First Shell
+## Post-Login Shell
 
-The workspace defaults to `chat` in `src/screens/workspace/hooks/useWorkspaceState.ts`. Primary chrome is intentionally ChatGPT-like: `TopBar` opens a left workspace menu from the menu icon and an account menu from the avatar button. `BottomNav` remains exported for legacy use, but the active workspace shell no longer renders it.
+After authentication, `App.tsx` goes straight to `WorkspaceScreen`; it does not gate on the old onboarding quiz or Welcome PC setup flow. The workspace defaults to `dashboard` in `src/screens/workspace/hooks/useWorkspaceState.ts`. Primary chrome is intentionally ChatGPT-like: `TopBar` opens a left workspace menu from the menu icon and an account menu from the avatar button. `BottomNav` remains exported for legacy use, but the active workspace shell no longer renders it.
 
 `PrimaryMenuSheet` and `AccountMenuSheet` live in `src/screens/workspace/inline/WorkspaceMenus.tsx`. Projects, Explore/Community, and Account are reached from the left workspace menu; Profile, Billing, Appearance, Security, Credits, and Log out are reached from the account menu. Profile and Community should not be added back to primary navigation unless the product direction changes. The top-right chrome button is contextual: on chat it is a play/preview action calling `openRunnablePreview` only when the active chat has a displayable preview or the active project chat has loaded runnable file content; brand-new/empty chats should leave that corner blank. On non-chat pages it opens the account menu.
+
+Chat chrome should stay transparent and icon-only on the mobile chat screen: keep the top navbar surface invisible while preserving the corner menu, preview, and overflow icons. The left workspace menu's connected PC row should read as a plain status/action row, not a purple boxed card. The selected workspace menu item should not receive a colored active background or icon plate.
 
 The legacy `pages` array in `src/screens/workspace/data/pages.ts` is limited to chat, projects, and active builds; profile/community are secondary destinations.
 
@@ -48,6 +50,8 @@ Onboarding quiz slides share the generated `src/assets/onboarding-quiz-backgroun
 The onboarding paywall uses the generated `src/assets/onboarding-pricing-background.png` image in `src/screens/onboarding/steps/PricingScreen.tsx`; keep the Starter/Builder/Pro selector as large full-width cards/pills for phone readability.
 
 Top-level non-chat tabs use a shared 18px content gutter from `WorkspaceScreen`/`styles/part16.ts`; tab-specific content should avoid adding extra horizontal padding unless a nested component needs it. The Dashboard home page intentionally avoids a top welcome/status panel and should remain queue-first and minimal. Relevant files: `src/screens/WorkspaceScreen.tsx`, `src/screens/workspace/inline/chunk6.tsx`, `src/screens/workspace/inline/chunk7.tsx`, `src/screens/workspace/inline/HomeBuildCard.tsx`, `src/screens/workspace/styles/part16.ts`, `src/screens/workspace/styles/part31.ts`, `src/screens/workspace/styles/part32.ts`.
+
+Profile Usage & history is a flat full-screen page owned by `src/screens/workspace/inline/profile/UsageSheet.tsx` with styles in `src/screens/workspace/styles/part39.ts`. Keep the top token summary minimal, avoid redundant stat counters, keep projects and chats on one scroll page rather than tabs/cards, use a purple-only icon/accent language, and keep recent projects/chats expandable instead of showing long lists by default. Chat rows show per-chat token use from summed assistant `ChatMessage.creditCost` when present, falling back to a text-length estimate only for older local threads.
 
 Home readiness fixes: `HomeBuildCard.tsx` must use real agent progress/model/file metadata, not hard-coded timing or queue position. `chunk6.tsx` and `chunk7.tsx` render all running/queued builds inside a bounded scroll area while the count tiles show full totals. When there are no active builds, `chunk7.tsx` hides the queue tiles and uses a centered empty state with `projectsFoldersHero`, the "Nothing is being built yet" headline, and the Create your first build CTA.
 
