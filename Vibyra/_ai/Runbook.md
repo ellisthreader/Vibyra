@@ -12,6 +12,8 @@ npm start
 
 `npm start` delegates to `npm run dev`. `scripts/start-dev.sh` refreshes root `.env` `EXPO_PUBLIC_API_URL` from the machine's current LAN IP, starts Laravel on `0.0.0.0:8000`, waits for `http://127.0.0.1:8000/api/skills`, then starts Expo so auth calls do not race a cold backend or stale LAN address.
 
+As of 2026-05-20, `scripts/start-dev.sh` prefers the active default-route IPv4 address before falling back to `hostname -I`. Do not reject all `172.16.0.0/12` addresses as Docker-only; phone hotspots can use addresses such as `172.20.10.2`, and Expo login must use that Wi-Fi/LAN URL instead of a virtual bridge address.
+
 Or split across two terminals:
 
 ```bash
@@ -113,6 +115,8 @@ Its standard workflow is:
 - split providers, hooks, routes, components, and styles by real ownership
 - enforce no app source file over 200 lines, excluding generated folders such as `tmp`, `node_modules`, `backend/vendor`, `.git`, `.expo`, and `.vibyra-agent`
 - validate with `npm run typecheck`, `node --check` for changed desktop JS/MJS, and `php -l` for changed PHP
+
+`VibyraRefactor` lives at `.agents/skills/VibyraRefactor/SKILL.md`. Use it when the task is primarily safe code cleanup: oversized files, messy organization, too many parameters, weak typing, missing contexts/hooks/modules, or a no-source-file-over-250-lines gate. It exists because broad refactors must not be declared complete until the final line gate is clean and validation commands have clean exit codes. It also records the lessons from the May 2026 refactor: check the full source scope, investigate non-zero test exits even when assertions pass, delete empty placeholder tests after splitting, and state generated/cache/temp/vendor exclusions explicitly.
 
 `VibyraObsiden` lives at `.agents/skills/VibyraObsiden/SKILL.md`. Use it whenever repo work should consume and maintain the Obsidian memory layer. It encodes the rule that durable architecture, workflow, route/API, permission, validation, debugging, and local-skill changes must be written to the smallest relevant note before final response.
 

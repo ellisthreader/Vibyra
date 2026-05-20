@@ -1,0 +1,122 @@
+.build-status,
+.event-dot {
+  background: var(--surface-accent-soft);
+  color: var(--surface-accent);
+}
+
+.build-icon.purple,
+.build-status.purple {
+  background: var(--surface-accent-soft);
+  color: var(--surface-accent);
+}
+
+.build-icon.green,
+.build-row.is-running .build-icon.green,
+.build-status.success,
+.build-status.green,
+.event-dot.success,
+.event-dot[style*="#37D67A"] {
+  background: var(--surface-success-soft);
+  color: var(--surface-success);
+}
+
+.build-status.warning,
+.event-dot.warning,
+.event-dot[style*="#FFB347"] {
+  background: var(--surface-warning-soft);
+  color: var(--surface-warning);
+}
+
+.build-status.error,
+.event-dot.error,
+.build-status.danger,
+.event-dot.danger,
+.event-dot[style*="#FF5D7A"] {
+  background: var(--surface-danger-soft);
+  color: var(--surface-danger);
+}
+
+.event-dot[style*="#37D67A"],
+.event-dot[style*="#FFB347"],
+.event-dot[style*="#FF5D7A"] {
+  background-color: currentColor !important;
+}
+
+.credits-bar {
+  background: var(--surface-line-soft);
+}
+
+.credits-bar > span {
+  background: var(--surface-accent);
+}
+
+.credits-bar--empty > span {
+  background: var(--surface-line);
+}
+
+.pair-v2-code,
+.pair-v2-connected,
+.pair-v2-approval-copy strong,
+.account-identity-copy strong,
+.membership-plan strong,
+.membership-plan p,
+.profile-detail-head h1,
+.profile-section-title,
+.profile-section-identity strong,
+.profile-identity-copy h2,
+.profile-info-tile strong,
+.profile-plan-panel h2,
+.profile-usage-line strong,
+.profile-action-copy strong,
+.profile-referral-code strong,
+.profile-stat-grid strong,
+.profile-select-row span {
+  color: var(--surface-text);
+}
+
+.pair-v2-dot,
+.pair-v2-dot::after {
+  background: var(--surface-accent);
+}
+
+.pair-v2-approval {
+  background: transparent;
+  border-color: var(--surface-border);
+}
+
+.pair-v2-check {
+  background: var(--surface-success-soft);
+  color: var(--surface-success);
+}
+
+body[data-desktop-theme="light"] .modal-backdrop {
+  background: rgba(20, 16, 32, 0.28);
+}
+
+body[data-desktop-theme="light"] .profile-field select,
+body[data-desktop-theme="light"] .profile-select-row select {
+  color-scheme: light;
+}
+
+body[data-desktop-theme="light"] .profile-field select option,
+body[data-desktop-theme="light"] .profile-select-row select option {
+  background: var(--color-elevated, #fff);
+  color: var(--surface-text);
+}
+
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] .modal-backdrop {
+    background: rgba(20, 16, 32, 0.28);
+  }
+
+  body[data-desktop-theme="auto"] .profile-field select,
+  body[data-desktop-theme="auto"] .profile-select-row select {
+    color-scheme: light;
+  }
+
+  body[data-desktop-theme="auto"] .profile-field select option,
+  body[data-desktop-theme="auto"] .profile-select-row select option {
+    background: var(--color-elevated, #fff);
+    color: var(--surface-text);
+  }
+}

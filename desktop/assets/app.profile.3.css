@@ -1,0 +1,178 @@
+.profile-form h2,
+.profile-referral-panel h2,
+.profile-danger-panel h2,
+.profile-info-panel h2,
+.profile-choice-list h2,
+.profile-faq-list h2 {
+  margin: 0;
+}
+.profile-referral-panel p,
+.profile-danger-panel p,
+.profile-info-panel p,
+.profile-faq-list p {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 520;
+  line-height: 20px;
+  margin: 0;
+}
+.profile-field { display: grid; gap: 7px; }
+.profile-field span { color: var(--muted); font-size: 12px; font-weight: 680; letter-spacing: 0.02em; }
+.profile-field input {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  color: var(--text);
+  font: inherit;
+  min-height: 42px;
+  outline: 0;
+  padding: 0 12px;
+  width: 100%;
+}
+.profile-field input:focus { border-color: var(--line-strong); box-shadow: 0 0 0 3px rgba(109, 59, 255, 0.12); }
+.profile-inline-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-status { color: var(--muted); font-size: 12px; font-weight: 560; margin: 0; }
+.profile-status--danger { color: var(--danger); }
+.profile-referral-code { border-bottom: 1px solid rgba(255, 255, 255, 0.06); border-top: 1px solid rgba(255, 255, 255, 0.06); display: grid; gap: 5px; padding: 14px 0; }
+.profile-referral-code strong { color: var(--text); font-size: 26px; font-weight: 760; letter-spacing: 0.04em; line-height: 32px; }
+.profile-referral-code span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-stat-grid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.profile-stat-grid--wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.profile-stat-grid span { border-top: 1px solid rgba(255, 255, 255, 0.07); color: var(--muted); display: grid; font-size: 12px; font-weight: 560; gap: 5px; min-width: 0; padding-top: 12px; }
+.profile-stat-grid strong { color: var(--text); font-size: 18px; font-weight: 720; line-height: 22px; }
+.profile-choice-row,
+.profile-toggle-row { align-items: center; background: transparent; border: 0; border-radius: 7px; color: var(--text); display: grid; gap: 14px; min-height: 58px; padding: 8px 0; text-align: left; width: 100%; }
+.profile-choice-row { grid-template-columns: 36px minmax(0, 1fr) 24px; }
+.profile-toggle-row { grid-template-columns: 46px minmax(0, 1fr); }
+.profile-choice-row + .profile-choice-row,
+.profile-toggle-row + .profile-toggle-row { border-top: 1px solid rgba(255, 255, 255, 0.055); }
+.profile-choice-row:hover .profile-row-icon,
+.profile-toggle-row:hover .profile-action-copy strong { color: var(--accent-2); }
+.profile-choice-row.active .profile-row-icon,
+.profile-choice-check { color: var(--accent-2); }
+.profile-choice-check svg { height: 18px; width: 18px; }
+.profile-toggle { background: rgba(255, 255, 255, 0.12); border-radius: 999px; display: inline-flex; height: 24px; padding: 3px; transition: background-color 120ms ease; width: 42px; }
+.profile-toggle span { background: rgba(255, 255, 255, 0.84); border-radius: 999px; display: block; height: 18px; transform: translateX(0); transition: transform 120ms ease; width: 18px; }
+.profile-toggle-row.is-on .profile-toggle { background: var(--accent); }
+.profile-toggle-row.is-on .profile-toggle span { transform: translateX(18px); }
+.profile-faq-list article { border-top: 1px solid rgba(255, 255, 255, 0.06); display: grid; gap: 5px; padding-top: 13px; }
+.profile-danger-panel { border-color: rgba(255, 93, 122, 0.18); }
+@media (max-width: 720px) {
+  .profile-stat-grid,
+  .profile-stat-grid--wide { grid-template-columns: 1fr; }
+  .profile-inline-actions { align-items: stretch; flex-direction: column; }
+  .profile-inline-actions > button { width: 100%; }
+}
+
+.profile-identity-panel--editor {
+  align-items: center;
+  grid-template-columns: 82px minmax(0, 1fr);
+}
+.profile-form--general {
+  gap: 16px;
+}
+.profile-form--general .profile-field {
+  grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+  align-items: center;
+}
+.profile-form--general .profile-field--wide {
+  align-items: start;
+}
+.profile-field select,
+.profile-field textarea,
+.profile-select-row select {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  color: var(--text);
+  color-scheme: dark;
+  font: inherit;
+  outline: 0;
+  width: 100%;
+}
+.profile-field select,
+.profile-select-row select {
+  min-height: 42px;
+  padding: 0 12px;
+}
+.profile-field select option,
+.profile-select-row select option {
+  background: #12121a;
+  color: #f4f1ff;
+}
+body[data-desktop-theme="light"] .profile-field select,
+body[data-desktop-theme="light"] .profile-select-row select {
+  color-scheme: light;
+}
+body[data-desktop-theme="light"] .profile-field select option,
+body[data-desktop-theme="light"] .profile-select-row select option {
+  background: #f7f5ff;
+  color: #181421;
+}
+.profile-field textarea {
+  line-height: 20px;
+  min-height: 104px;
+  padding: 11px 12px;
+  resize: vertical;
+}
+.profile-field input:focus,
+.profile-field select:focus,
+.profile-field textarea:focus,
+.profile-select-row select:focus {
+  border-color: var(--line-strong);
+  box-shadow: 0 0 0 3px rgba(109, 59, 255, 0.12);
+}
+.profile-settings-list {
+  gap: 0;
+}
+.profile-settings-list h2 {
+  margin-bottom: 4px;
+}
+.profile-select-row {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+  min-height: 58px;
+  padding: 8px 0;
+}
+.profile-select-row span {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+}
+.profile-settings-list .profile-toggle-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+body[data-chat-font="vibyra-serif"] .chat-page,
+body[data-chat-font="vibyra-serif"] .profile-detail {
+  font-family: Georgia, "Times New Roman", serif;
+}
+body[data-chat-font="system"] .chat-page,
+body[data-chat-font="system"] .profile-detail {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body[data-chat-font="mono"] .chat-page,
+body[data-chat-font="mono"] .profile-detail {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] .profile-field select,
+  body[data-desktop-theme="auto"] .profile-select-row select {
+    color-scheme: light;
+  }
+  body[data-desktop-theme="auto"] .profile-field select option,
+  body[data-desktop-theme="auto"] .profile-select-row select option {
+    background: #f7f5ff;
+    color: #181421;
+  }
+}
+@media (max-width: 720px) {
+  .profile-identity-panel--editor,
+  .profile-form--general .profile-field,
+  .profile-select-row {
+    grid-template-columns: 1fr;
+  }
+}
+

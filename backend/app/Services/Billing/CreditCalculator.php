@@ -42,8 +42,8 @@ class CreditCalculator
     public function estimateUsd(string $modelKey, int $inputTokens, int $outputTokens): float
     {
         $slug = $this->resolveSlug($modelKey);
-        $pricing = (array) config("billing.fallback_pricing_per_million_usd.{$slug}",
-            (array) config('billing.fallback_pricing_per_million_usd.default', ['input' => 1.0, 'output' => 3.0]));
+        $fallbackPricing = (array) config('billing.fallback_pricing_per_million_usd', []);
+        $pricing = (array) ($fallbackPricing[$slug] ?? $fallbackPricing['default'] ?? ['input' => 1.0, 'output' => 3.0]);
         $inputUsd = ($inputTokens / 1_000_000) * (float) ($pricing['input'] ?? 1.0);
         $outputUsd = ($outputTokens / 1_000_000) * (float) ($pricing['output'] ?? 3.0);
         return max(0.0, $inputUsd + $outputUsd);

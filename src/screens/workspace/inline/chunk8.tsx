@@ -9,46 +9,49 @@ import { generatePublishAsset, publishProject as publishCommunityProject } from 
 import { pickPreviewHtml } from "../../../utils/files";
 import { projectFilterModes } from "../data/pages";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
+import { useProjectPublishStatuses } from "../hooks/useProjectPublishStatuses";
 import { ProjectsPageProps, useProjectsPage } from "../hooks/useProjectsPage";
 import { styles } from "../styles";
 import { ProjectDisplay } from "../types";
 import { ProjectCard } from "./chunk20";
 import { ProjectDeleteConfirmModal, ProjectFilterMenuItem } from "./chunk21";
 import { FolderBrowserModal } from "./FolderBrowserModal";
-import { ProjectPublishModal } from "./ProjectPublishModal";
-
+import { ProjectPublishModal } from "./ProjectPublishModal"; import { ProjectPublishNotice } from "./ProjectPublishNotice";
+import { publishResultFromOutcome, type PublishFlowResult } from "./ProjectPublishResult";
 export function ProjectsPage(props: ProjectsPageProps) {
   const p = useProjectsPage(props);
   const app = useAppContext();
   const prefs = usePreferences();
+  const publishStatuses = useProjectPublishStatuses(app.authToken);
   const browsePcIconColor = useThemedColor("#E8E2FF");
   const searchIconColor = useThemedColor("#8E8AA3");
   const filterIconColor = useThemedColor(p.filterMenuOpen ? "#F1ECFF" : "#B4B1C9");
-  const emptyIconColor = useThemedColor("#8E8AA3");
   const createGradient = prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#6630FF", "#7433FF", "#6425E6"] as const;
   const [pcBrowserOpen, setPcBrowserOpen] = useState(false);
   const [publishError, setPublishError] = useState("");
+  const [publishResult, setPublishResult] = useState<PublishFlowResult>(null);
   const [publishTarget, setPublishTarget] = useState<ProjectDisplay | null>(null);
   const [generatingAsset, setGeneratingAsset] = useState<"logo" | "screenshot" | null>(null);
   const [publishing, setPublishing] = useState(false);
-
   useEffect(() => {
     if (!props.publishProjectId) return;
     const project = p.displayProjects.find((item) => item.id === props.publishProjectId || item.sourceProject?.id === props.publishProjectId);
     if (!project) return;
     setPublishError("");
+    setPublishResult(null);
     setPublishTarget(project);
     props.onPublishRequestHandled?.();
   }, [p.displayProjects, props]);
-
   async function submitPublish(payload: { description: string; logoImageUrl: string; screenshotUrls: string[]; tags: string[]; title: string; visibility: "public" | "unlisted" | "private" }) {
     if (!publishTarget) return;
     if (!app.authToken) {
+      setPublishResult(null);
       setPublishError("Log in before publishing a project.");
       return;
     }
     setPublishing(true);
     setPublishError("");
+    setPublishResult(null);
     try {
       if (publishTarget.sourceProject && !app.projects.some((item) => item.id === publishTarget.id)) {
         await app.adoptProject(publishTarget.sourceProject);
@@ -67,23 +70,25 @@ export function ProjectsPage(props: ProjectsPageProps) {
         title: payload.title,
         visibility: payload.visibility
       });
-      if (result.reviewStatus && result.reviewStatus !== "approved") return setPublishError("Submitted for review. It will appear in Community after approval.");
-      if (payload.visibility !== "public" || result.isPublic === false) return setPublishError(`Saved as ${payload.visibility}. It will not appear in Community.`);
-      setPublishTarget(null);
+      publishStatuses.upsert(result.publishStatus);
+      setPublishResult(publishResultFromOutcome(result.outcome));
     } catch (error) {
+      setPublishResult(null);
+      void publishStatuses.refresh();
       setPublishError(error instanceof Error ? error.message : "Project could not be published.");
     } finally {
       setPublishing(false);
     }
   }
-
   async function handleGenerateAsset(kind: "logo" | "screenshot", payload: { description: string; prompt: string; title: string }) {
     if (!app.authToken) {
+      setPublishResult(null);
       setPublishError("Log in before generating publish images.");
       return null;
     }
     setGeneratingAsset(kind);
     setPublishError("");
+    setPublishResult(null);
     try {
       const result = await generatePublishAsset({ authToken: app.authToken, kind, ...payload });
       if (result.user) app.applyRemoteUserFromIap(result.user);
@@ -95,7 +100,6 @@ export function ProjectsPage(props: ProjectsPageProps) {
       setGeneratingAsset(null);
     }
   }
-
   return (
     <View style={styles.projectsScreen}>
       <View style={styles.projectsHero}>
@@ -112,7 +116,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
           </Pressable>
         ) : null}
       </View>
-
+      <ProjectPublishNotice notice={publishTarget ? null : publishResult} onDone={() => setPublishResult(null)} />
       <View style={[styles.projectsSearchRow, p.filterMenuOpen ? styles.projectsSearchRowMenuOpen : null]}>
         <View style={styles.projectsSearchBar}>
           <Ionicons name="search-outline" color={searchIconColor} size={22} />
@@ -133,13 +137,11 @@ export function ProjectsPage(props: ProjectsPageProps) {
           </View>
         ) : null}
       </View>
-
       {props.connected ? (
         <Text style={styles.projectsFilterLabel}>
           Showing {p.filterMode === "All" ? "all" : p.filterMode === "PC" ? "PC" : "mobile"} projects
         </Text>
       ) : null}
-
       <View style={styles.projectsList}>
         {p.displayProjects.map((project, index) => (
           <ProjectCard
@@ -155,33 +157,27 @@ export function ProjectsPage(props: ProjectsPageProps) {
             onPublish={() => {
               if (p.menuProjectId === project.id) p.toggleProjectMenu(project.id);
               setPublishError("");
+              setPublishResult(null);
               setPublishTarget(project);
             }}
             onStartRename={() => p.startRenameProject(project)}
             onSubmitRename={() => p.submitRenameProject(project.id)}
             layout={p.projectLayout}
             project={project}
+            publishStatus={publishStatuses.items[project.sourceProject?.id ?? project.id]}
             renameValue={p.renameDraft}
             renaming={p.renamingProjectId === project.id}
           />
         ))}
         {p.displayProjects.length === 0 ? (
           <View style={styles.projectsEmptyState}>
-            <Ionicons name="folder-open-outline" color={emptyIconColor} size={24} />
+            <Ionicons name="folder-open-outline" color={searchIconColor} size={24} />
             <Text style={styles.projectsEmptyText}>No projects match this view.</Text>
           </View>
         ) : null}
       </View>
       <ProjectDeleteConfirmModal onCancel={p.cancelDeleteProject} onConfirm={p.confirmDeleteProject} project={p.deleteTarget} />
-      <ProjectPublishModal
-        busy={publishing}
-        error={publishError}
-        generating={generatingAsset}
-        onClose={() => { if (!publishing) setPublishTarget(null); }}
-        onGenerateAsset={handleGenerateAsset}
-        onPublish={submitPublish}
-        project={publishTarget}
-      />
+      <ProjectPublishModal busy={publishing} error={publishError} generating={generatingAsset} onClose={() => { if (!publishing) { setPublishError(""); setPublishResult(null); setPublishTarget(null); } }} onGenerateAsset={handleGenerateAsset} onPublish={submitPublish} onResultComplete={() => { setPublishError(""); setPublishTarget(null); }} project={publishTarget} publishStatus={publishTarget ? publishStatuses.items[publishTarget.sourceProject?.id ?? publishTarget.id] : null} result={publishResult} />
       <FolderBrowserModal
         browseDesktopPath={app.browseDesktopPath}
         label="Browse PC"

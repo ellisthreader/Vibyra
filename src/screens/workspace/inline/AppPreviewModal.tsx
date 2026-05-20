@@ -8,7 +8,7 @@ import { useThemedColor } from "../../../context/PreferencesContext";
 import type { PreviewRuntimeError } from "../../../components/AppWebView";
 import type { GeneratedApp } from "../../../types/domain";
 import { styles } from "../styles";
-import { chatModelOptions } from "../data/chatModels";
+import { chatModelOptionFor } from "../data/chatModels";
 import { AppPreviewEditStatus, PreviewEditStatus } from "./AppPreviewEditStatus";
 import { PreviewErrorPanel } from "./AppPreviewErrorPanel";
 import { AppPreviewMiniChat } from "./AppPreviewMiniChat";
@@ -35,7 +35,7 @@ export function AppPreviewModal({
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appCtx = useAppContext();
   const modelKey = appCtx.selectedChatModel || appCtx.selectedModel;
-  const modelLabel = chatModelOptions.find((model) => model.key === modelKey)?.label ?? String(modelKey || "AI");
+  const modelLabel = chatModelOptionFor(modelKey)?.label ?? String(modelKey || "AI");
   const headerIconColor = useThemedColor("#FFFFFF");
 
   const appFingerprint = `${app?.id ?? ""}:${app?.html?.length ?? 0}:${app?.url ?? ""}`;

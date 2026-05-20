@@ -79,7 +79,7 @@ return [
             'category' => 'research',
             'mode' => 'chat',
             'model_key' => 'tool-deep-research',
-            'max_tokens' => 2400,
+            'max_tokens' => 16000,
             'web_plugin' => true,
             'prompt_template' => "Do deep research before answering. Use current web results where helpful, compare sources, and separate confirmed facts from inferences. User request: {{prompt}}",
             'system_prompt_addon' => 'Cite source names or URLs when web results are available. Be explicit about uncertainty.',

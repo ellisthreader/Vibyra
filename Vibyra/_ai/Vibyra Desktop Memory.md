@@ -42,3 +42,11 @@ Desktop bridge source follows the 200-line app-source standard. Keep `desktop/li
 ## Token Hint
 
 For desktop tasks, read this index plus exactly one focused desktop note, then inspect only the route/helper files named there.
+
+## Refactor Ownership
+
+Desktop UI/static/session routes live in desktop/lib/desktopRoutes.mjs, with desktop/lib/routes.mjs kept as the HTTP dispatcher for desktop, pairing, and authenticated phone routes.
+
+Desktop agent orchestration is split by concern: agent.mjs coordinates runs and safe commands; agentApply.mjs owns pending/apply result shaping and file writes; agentPrompting.mjs builds the OpenRouter request; agentGeneratedFiles.mjs validates generated file paths/content; agentConfig.mjs owns OpenRouter env lookup.
+
+The static desktop shell keeps classic browser scripts but splits them by load-order ownership from desktop/app.html: state/shell/pages/boot, chat store/actions/send/render helpers/icons, profile state/render/actions, auth state/UI/session/billing/helpers/boot, and terminal state/store/render/controls/send/models/boot. Preserve script order when editing these files.

@@ -1,0 +1,156 @@
+.content.chat-content {
+  display: grid;
+  height: calc(100vh - var(--chrome-height, 0px) - 54px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.electron-shell .content.chat-content {
+  height: calc(100vh - var(--chrome-height, 0px));
+  height: calc(100dvh - var(--chrome-height, 0px));
+}
+
+.chat-page {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chat-scroll {
+  align-content: end;
+  display: grid;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chat-empty,
+.messages,
+.chat-limit-notice,
+.composer {
+  box-sizing: border-box;
+  max-width: 860px;
+  min-width: 0;
+  width: 100%;
+}
+
+.messages {
+  display: grid;
+  margin: 0 auto;
+}
+
+.message,
+.message-card,
+.message-body,
+.generated-app-card,
+.generated-image-card,
+.run-card {
+  min-width: 0;
+}
+
+.composer-shell {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  z-index: 5;
+}
+
+.composer {
+  margin: 0 auto;
+}
+
+.composer-menu,
+.slash-menu,
+.attach-menu,
+.model-menu,
+.effort-menu {
+  z-index: 220;
+}
+
+.content.terminal-content {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.terminal-page,
+.terminal-stage,
+.terminal-focus,
+.terminal-tile,
+.terminal-pty-lines,
+.terminal-xterm {
+  min-height: 0;
+  min-width: 0;
+}
+
+.terminal-stage,
+.terminal-focus {
+  height: 100%;
+}
+
+.terminal-focus {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.terminal-focus.has-notice {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.terminal-tile {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.terminal-tile.has-notice {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.terminal-pty-lines {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.terminal-pty-unavailable {
+  overflow: auto;
+  padding: 18px 20px !important;
+}
+
+.terminal-xterm {
+  background: #08080c;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.terminal-xterm .xterm {
+  height: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.terminal-xterm .xterm-screen,
+.terminal-xterm .xterm-viewport {
+  height: 100%;
+}
+
+.terminal-xterm .xterm-viewport {
+  background: #08080c !important;
+}
+
+.terminal-xterm .xterm-rows {
+  letter-spacing: 0;
+}
+
+@media (max-width: 720px) {
+  .content.chat-content {
+    height: calc(100vh - var(--chrome-height, 0px));
+    height: calc(100dvh - var(--chrome-height, 0px));
+  }
+}

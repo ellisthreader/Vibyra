@@ -1,0 +1,61 @@
+.slash-menu {
+  overflow: auto;
+  padding: 8px;
+  position: absolute;
+  right: 10px;
+  z-index: 75;
+}
+.slash-menu section { display: grid; gap: 4px; }
+.slash-menu section + section {
+  border-top: 1px solid rgba(151, 161, 190, 0.12);
+  padding-top: 7px;
+}
+.slash-menu button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #f1eef8;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  min-height: 46px;
+  padding: 8px 10px;
+  text-align: left;
+  width: 100%;
+}
+.slash-menu button:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(151, 161, 190, 0.16);
+}
+.slash-menu svg { color: #cfc4ff; height: 17px; width: 17px; }
+.slash-menu strong { display: block; font-size: 13px; font-weight: 760; line-height: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slash-menu strong b { color: #f1eef8; font-weight: 640; }
+.slash-menu small { color: #9f98ad; display: block; font-size: 12px; font-weight: 520; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.provider-logo { align-items: center; background: rgba(255, 255, 255, 0.06); border-radius: 10px; display: flex; height: 34px; justify-content: center; overflow: hidden; width: 34px; }
+.provider-logo img { height: 21px; object-fit: contain; width: 21px; }
+.provider-logo svg { height: 22px; width: 22px; }
+.provider-logo.claude { background: rgba(218, 119, 86, 0.14); }
+.provider-logo.claude svg { fill: #d97757; stroke: #d97757; stroke-linecap: round; stroke-width: 10; }
+.provider-logo.openai { background: rgba(255, 255, 255, 0.9); }
+.provider-logo.gemini { background: rgba(255, 255, 255, 0.08); }
+.provider-logo.auto { color: #cfc4ff; }
+.effort-menu { gap: 6px; }
+.effort-menu button {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 54px;
+  padding: 10px 12px;
+}
+.effort-menu strong {
+  font-size: 14px;
+  line-height: 18px;
+  white-space: normal;
+}
+.effort-menu small {
+  font-size: 12px;
+  line-height: 16px;
+  text-transform: none;
+}
+.send-button { background: #ffffff; color: #07070a; height: 36px; width: 36px; }
+.send-button:disabled { background: rgba(255, 255, 255, 0.08); color: #777282; cursor: default; opacity: 1; }
+.projects-page, .builds-page { padding: 26px 32px 42px; }

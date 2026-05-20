@@ -9,9 +9,15 @@ cd "$ROOT_DIR"
 
 detect_lan_ip() {
   local ip
+  ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }' || true)"
+  case "$ip" in
+    ""|127.*|169.254.*) ;;
+    *) printf "%s\n" "$ip"; return 0 ;;
+  esac
+
   for ip in $(hostname -I 2>/dev/null); do
     case "$ip" in
-      127.*|169.254.*|172.1[7-9].*|172.2[0-9].*|172.3[0-1].*|*:*) continue ;;
+      127.*|169.254.*|*:*) continue ;;
       *) printf "%s\n" "$ip"; return 0 ;;
     esac
   done

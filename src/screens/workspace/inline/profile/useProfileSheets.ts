@@ -1,10 +1,17 @@
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { usePreferences } from "../../../../context/PreferencesContext";
 import { SheetKind } from "./types";
 
-export function useProfileSheets() {
+export function useProfileSheets(initialSheet: SheetKind | null = null, requestId = 0) {
   const prefs = usePreferences();
-  const [activeSheet, setActiveSheet] = useState<SheetKind | null>(null);
+  const lastRequestId = useRef(requestId);
+  const [activeSheet, setActiveSheet] = useState<SheetKind | null>(initialSheet);
+
+  useLayoutEffect(() => {
+    if (lastRequestId.current === requestId) return;
+    lastRequestId.current = requestId;
+    setActiveSheet(initialSheet);
+  }, [initialSheet, requestId]);
 
   const open = useCallback((kind: SheetKind) => setActiveSheet(kind), []);
   const close = useCallback(() => setActiveSheet(null), []);

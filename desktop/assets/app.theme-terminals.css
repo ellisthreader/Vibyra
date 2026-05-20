@@ -1,0 +1,258 @@
+body {
+  --terminal-bg: var(--color-background, #07070a);
+  --terminal-surface: var(--color-surface, #0b0b10);
+  --terminal-elevated: var(--color-elevated, #12121a);
+  --terminal-hover: var(--color-hover, rgba(255, 255, 255, 0.045));
+  --terminal-border: var(--color-line-soft, rgba(151, 161, 190, 0.12));
+  --terminal-border-strong: var(--color-line, rgba(151, 161, 190, 0.18));
+  --terminal-text: var(--color-text, #f1eef8);
+  --terminal-copy: var(--color-muted, #cdc6dc);
+  --terminal-muted: var(--color-muted, #aaa3b8);
+  --terminal-dim: var(--color-dim, #918ca1);
+  --terminal-accent: var(--color-accent, #8b5cff);
+  --terminal-accent-soft: var(--color-accent-soft, rgba(139, 92, 255, 0.13));
+  --terminal-accent-border: rgba(139, 92, 255, 0.36);
+  --terminal-shadow: rgba(0, 0, 0, 0.42);
+  --terminal-warning-bg: rgba(255, 183, 77, 0.08);
+  --terminal-warning-border: rgba(255, 192, 97, 0.14);
+}
+
+.terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.12); --terminal-accent-border: rgba(255, 155, 106, 0.32); }
+.terminal-provider-openai { --terminal-accent: #69d6c7; --terminal-accent-soft: rgba(105, 214, 199, 0.12); --terminal-accent-border: rgba(105, 214, 199, 0.32); }
+.terminal-provider-gemini { --terminal-accent: #6aa8ff; --terminal-accent-soft: rgba(106, 168, 255, 0.12); --terminal-accent-border: rgba(106, 168, 255, 0.34); }
+.terminal-provider-auto { --terminal-accent: #b9a7f6; --terminal-accent-soft: rgba(139, 92, 255, 0.13); --terminal-accent-border: rgba(139, 92, 255, 0.34); }
+
+.terminal-page,
+.terminal-setup { background: var(--terminal-bg); }
+.terminal-focus,
+.terminal-tile,
+.terminal-setup-panel { background: var(--terminal-surface); border-color: var(--terminal-border); }
+.terminal-lines { background: var(--terminal-bg); }
+.terminal-composer,
+.terminal-agent-row button,
+.terminal-agent-option,
+.terminal-composer-wrap,
+.terminal-layout-preview { background: var(--terminal-surface); border-color: var(--terminal-border); }
+.terminal-menu,
+.terminal-model-picker,
+.terminal-command-menu { background: var(--terminal-elevated); border-color: var(--terminal-border-strong); box-shadow: 0 18px 48px var(--terminal-shadow); }
+
+.terminal-focus-head,
+.terminal-tile-head,
+.terminal-notice,
+.terminal-banner-divider,
+.terminal-gemini-footer { border-color: var(--terminal-border); }
+.terminal-name,
+.terminal-agent-row button,
+.terminal-agent-option,
+.terminal-agent-row strong,
+.terminal-agent-option strong,
+.terminal-custom-count input,
+.terminal-tile-head > button:first-child,
+.terminal-banner-title,
+.terminal-banner-meta strong,
+.terminal-command-option,
+.terminal-model-select,
+.terminal-count-row button,
+.terminal-model-row button,
+.terminal-custom-count,
+.terminal-settings-menu select,
+.terminal-close-row { color: var(--terminal-text); }
+.terminal-line pre,
+.terminal-pty-lines pre,
+.terminal-banner,
+.terminal-banner-meta,
+.terminal-banner-tips,
+.terminal-line.user pre { color: var(--terminal-copy); }
+.terminal-meta-chip,
+.terminal-agent-row small,
+.terminal-agent-option small,
+.terminal-pty-composer,
+.terminal-pty-composer span:last-child,
+.terminal-model-empty,
+.terminal-model-select small,
+.terminal-model-row small,
+.terminal-model-option small,
+.terminal-command-option span,
+.terminal-banner-tip,
+.terminal-banner-path,
+.terminal-gemini-footer,
+.terminal-custom-count span { color: var(--terminal-dim); }
+
+.terminal-add,
+.terminal-layout-button,
+.terminal-settings-button,
+.terminal-tab,
+.terminal-tab-close,
+.terminal-model-badge,
+.terminal-model-lock,
+.terminal-model-search { color: var(--terminal-muted); }
+.terminal-add:hover,
+.terminal-layout-button:hover,
+.terminal-settings-button:hover,
+.terminal-tab:hover,
+.terminal-tab-close:hover,
+.terminal-close-row:hover,
+.terminal-settings-menu label:hover,
+.terminal-model-select:hover,
+.terminal-count-row button:hover,
+.terminal-model-row button:hover,
+.terminal-custom-count:hover,
+.terminal-model-option:hover,
+.terminal-command-option:hover,
+.terminal-command-option.active { background: var(--terminal-hover); color: var(--terminal-text); }
+
+.terminal-tab.active,
+.terminal-agent-row button.active,
+.terminal-agent-option.active,
+.terminal-count-row button.active,
+.terminal-model-row button.active,
+.terminal-model-option.active,
+.terminal-model-option.active:hover,
+.terminal-layout-preview span.active {
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+  color: var(--terminal-text);
+}
+.terminal-tile.active,
+.terminal-composer textarea:focus { border-color: var(--terminal-accent-border); }
+.terminal-prompt,
+.terminal-composer-prompt,
+.terminal-assistant-token,
+.terminal-meta-chip svg,
+.terminal-settings-menu label,
+.terminal-close-row svg,
+.terminal-custom-count svg,
+.terminal-command-option strong,
+.terminal-line.todo li::before { color: var(--terminal-accent); }
+.terminal-provider-claude .terminal-prompt,
+.terminal-provider-claude .terminal-assistant-token,
+.terminal-provider-openai .terminal-prompt,
+.terminal-provider-openai .terminal-assistant-token,
+.terminal-provider-gemini .terminal-prompt,
+.terminal-provider-gemini .terminal-assistant-token,
+.terminal-provider-auto .terminal-prompt,
+.terminal-provider-auto .terminal-assistant-token {
+  color: var(--terminal-accent);
+}
+.terminal-line.shell pre,
+.terminal-line.tool pre,
+.terminal-line.diff pre,
+.terminal-line.mention pre,
+.terminal-line.approval pre,
+.terminal-line.review pre,
+.terminal-block,
+.terminal-cli-box,
+.terminal-banner-tips kbd,
+.terminal-model-search,
+.terminal-model-select,
+.terminal-count-row button,
+.terminal-model-row button,
+.terminal-custom-count,
+.terminal-layout-preview,
+.terminal-layout-preview span { border-color: var(--terminal-border); }
+.terminal-line.shell pre,
+.terminal-line.tool pre,
+.terminal-line.diff pre,
+.terminal-block,
+.terminal-model-search,
+.terminal-layout-preview span { background: color-mix(in srgb, var(--terminal-elevated) 72%, transparent); }
+.terminal-line.shell pre,
+.terminal-line.tool pre,
+.terminal-line.diff pre,
+.terminal-line.mention pre,
+.terminal-line.approval pre,
+.terminal-line.review pre,
+.terminal-block,
+.terminal-cli-box,
+.terminal-claude-side,
+.terminal-banner-greeting,
+.terminal-banner-codex .terminal-banner-tip strong,
+.terminal-claude-side strong,
+.terminal-line.shell pre strong,
+.terminal-line.tool pre strong,
+.terminal-block strong {
+  color: var(--terminal-text);
+}
+.terminal-line.system pre,
+.terminal-line.help li,
+.terminal-claude-side span {
+  color: var(--terminal-muted);
+}
+.terminal-cwd-row,
+.terminal-gemini-footer {
+  color: var(--terminal-dim);
+}
+.terminal-composer textarea { color: var(--terminal-text); }
+.terminal-composer textarea::placeholder,
+.terminal-model-search input::placeholder { color: var(--terminal-dim); }
+.terminal-notice { background: var(--terminal-warning-bg); border-color: var(--terminal-warning-border); color: var(--terminal-text); }
+
+body[data-desktop-theme="light"] {
+  --terminal-bg: #f7f8fb;
+  --terminal-surface: #ffffff;
+  --terminal-elevated: #ffffff;
+  --terminal-hover: rgba(24, 31, 44, 0.055);
+  --terminal-border: rgba(33, 42, 60, 0.12);
+  --terminal-border-strong: rgba(33, 42, 60, 0.18);
+  --terminal-text: #171923;
+  --terminal-copy: #303646;
+  --terminal-muted: #555e70;
+  --terminal-dim: #6e7686;
+  --terminal-accent: #6842d8;
+  --terminal-accent-soft: rgba(109, 59, 255, 0.09);
+  --terminal-accent-border: rgba(109, 59, 255, 0.24);
+  --terminal-shadow: rgba(29, 36, 54, 0.14);
+  --terminal-warning-bg: rgba(174, 111, 0, 0.08);
+  --terminal-warning-border: rgba(174, 111, 0, 0.18);
+}
+body[data-desktop-theme="light"] .terminal-provider-claude { --terminal-accent: #c7652d; --terminal-accent-soft: rgba(255, 155, 106, 0.13); --terminal-accent-border: rgba(199, 101, 45, 0.26); }
+body[data-desktop-theme="light"] .terminal-provider-openai { --terminal-accent: #16836f; --terminal-accent-soft: rgba(22, 131, 111, 0.1); --terminal-accent-border: rgba(22, 131, 111, 0.24); }
+body[data-desktop-theme="light"] .terminal-provider-gemini { --terminal-accent: #246edb; --terminal-accent-soft: rgba(36, 110, 219, 0.1); --terminal-accent-border: rgba(36, 110, 219, 0.24); }
+body[data-desktop-theme="light"] .terminal-provider-auto { --terminal-accent: #6842d8; --terminal-accent-soft: rgba(109, 59, 255, 0.1); --terminal-accent-border: rgba(109, 59, 255, 0.24); }
+
+body[data-desktop-theme="light"] .terminal-banner-art.provider-openai { color: #16836f; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-claude { color: #c7652d; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-gemini { color: #246edb; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-auto { color: #6842d8; }
+body[data-desktop-theme="light"] .terminal-inline-command { color: #1d6fa7; }
+body[data-desktop-theme="light"] .terminal-inline-mention { color: #315fc1; }
+body[data-desktop-theme="light"] .terminal-inline-shell,
+body[data-desktop-theme="light"] .terminal-banner-box { color: #16764e; }
+body[data-desktop-theme="light"] .terminal-settings-menu option,
+body[data-desktop-theme="light"] .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
+
+@media (prefers-color-scheme: light) {
+  body:not([data-desktop-theme="dark"]) {
+    --terminal-bg: #f7f8fb;
+    --terminal-surface: #ffffff;
+    --terminal-elevated: #ffffff;
+    --terminal-hover: rgba(24, 31, 44, 0.055);
+    --terminal-border: rgba(33, 42, 60, 0.12);
+    --terminal-border-strong: rgba(33, 42, 60, 0.18);
+    --terminal-text: #171923;
+    --terminal-copy: #303646;
+    --terminal-muted: #555e70;
+    --terminal-dim: #6e7686;
+    --terminal-accent: #6842d8;
+    --terminal-accent-soft: rgba(109, 59, 255, 0.09);
+    --terminal-accent-border: rgba(109, 59, 255, 0.24);
+    --terminal-shadow: rgba(29, 36, 54, 0.14);
+    --terminal-warning-bg: rgba(174, 111, 0, 0.08);
+    --terminal-warning-border: rgba(174, 111, 0, 0.18);
+  }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-claude { --terminal-accent: #c7652d; --terminal-accent-soft: rgba(255, 155, 106, 0.13); --terminal-accent-border: rgba(199, 101, 45, 0.26); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-openai { --terminal-accent: #16836f; --terminal-accent-soft: rgba(22, 131, 111, 0.1); --terminal-accent-border: rgba(22, 131, 111, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-gemini { --terminal-accent: #246edb; --terminal-accent-soft: rgba(36, 110, 219, 0.1); --terminal-accent-border: rgba(36, 110, 219, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-auto { --terminal-accent: #6842d8; --terminal-accent-soft: rgba(109, 59, 255, 0.1); --terminal-accent-border: rgba(109, 59, 255, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-openai { color: #16836f; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-claude { color: #c7652d; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-gemini { color: #246edb; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-auto { color: #6842d8; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-command { color: #1d6fa7; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-mention { color: #315fc1; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-shell,
+  body:not([data-desktop-theme="dark"]) .terminal-banner-box { color: #16764e; }
+  body:not([data-desktop-theme="dark"]) .terminal-settings-menu option,
+  body:not([data-desktop-theme="dark"]) .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
+}

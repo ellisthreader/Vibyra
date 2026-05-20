@@ -30,6 +30,44 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow: hidden;
 }
+body[data-desktop-theme="light"] {
+  --bg: #f7f5ff;
+  --shell: #ffffff;
+  --panel: rgba(255, 255, 255, 0.86);
+  --panel-strong: rgba(255, 255, 255, 0.96);
+  --line: rgba(42, 36, 63, 0.14);
+  --line-strong: rgba(109, 59, 255, 0.42);
+  --text: #17131f;
+  --muted: #625c70;
+  --subtle: #787184;
+  --dim: #8b8494;
+  background: #f7f5ff;
+  color-scheme: light;
+}
+body[data-desktop-theme="light"] .app {
+  background: #f7f5ff;
+}
+body[data-desktop-theme="light"] .rail {
+  background: #ffffff;
+}
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] {
+    --bg: #f7f5ff;
+    --shell: #ffffff;
+    --panel: rgba(255, 255, 255, 0.86);
+    --panel-strong: rgba(255, 255, 255, 0.96);
+    --line: rgba(42, 36, 63, 0.14);
+    --line-strong: rgba(109, 59, 255, 0.42);
+    --text: #17131f;
+    --muted: #625c70;
+    --subtle: #787184;
+    --dim: #8b8494;
+    background: #f7f5ff;
+    color-scheme: light;
+  }
+  body[data-desktop-theme="auto"] .app { background: #f7f5ff; }
+  body[data-desktop-theme="auto"] .rail { background: #ffffff; }
+}
 button, input, textarea { font: inherit; }
 button { border: 0; cursor: pointer; }
 button:disabled { cursor: wait; opacity: 0.62; }

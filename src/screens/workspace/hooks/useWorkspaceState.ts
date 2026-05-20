@@ -5,6 +5,7 @@ import { useAppContext } from "../../../context/AppContext";
 import { ChatMessage, GeneratedApp, Project } from "../../../types/domain";
 import { previousChats } from "../data/pages";
 import { CommunityPost, DashboardPage, DesktopCandidate, SettingsTab } from "../types";
+import { isDetachedChatId } from "./workspaceDetachedChats";
 
 export type WorkspaceState = ReturnType<typeof useWorkspaceState>;
 type PendingDesktopFolderIntent = { action: "analyze-project" | "search"; query: string; detached: boolean; messageId: string; projectId?: string };
@@ -81,12 +82,14 @@ export function useWorkspaceState() {
   const creditsLow = creditAllowance > 0 && tokenBalance / creditAllowance < 0.1;
   const activeChat = previousChats.find((c) => c.id === selectedChatId);
   const selectedChatProjectId = selectedChatId?.startsWith("project-") ? selectedChatId.replace("project-", "") : null;
+  const selectedDetachedChatId = isDetachedChatId(selectedChatId) ? selectedChatId! : null;
   const projectChatTitle = selectedChatProjectId ? app.chatTitles[selectedChatProjectId] ?? projectChatTitles[selectedChatId ?? ""] : undefined;
   const currentProjectChatId = `project-${app.selectedProject.id}`;
   const chatTitleKey = selectedChatId ?? "new-chat";
-  const chatTitle = chatTitleOverrides[chatTitleKey] ?? activeChat?.title ?? projectChatTitle ?? "New chat";
+  const detachedChatTitle = selectedDetachedChatId ? app.detachedChatTitles[selectedDetachedChatId] : undefined;
+  const chatTitle = chatTitleOverrides[chatTitleKey] ?? activeChat?.title ?? projectChatTitle ?? detachedChatTitle ?? "New chat";
   const visibleChatMessages = selectedChatId
-    ? (selectedChatProjectId ? (app.chatThreads[selectedChatProjectId] ?? []) : app.chatMessages)
+    ? (selectedChatProjectId ? (app.chatThreads[selectedChatProjectId] ?? []) : selectedDetachedChatId ? (app.detachedChatThreads[selectedDetachedChatId] ?? []) : app.chatMessages)
     : newChatMessages;
 
   useEffect(() => { if (app.rememberedDesktops.length > 0) setDesktopCandidates(app.rememberedDesktops); }, [app.rememberedDesktops]);

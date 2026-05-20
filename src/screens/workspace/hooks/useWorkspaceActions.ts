@@ -5,6 +5,7 @@ import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { DashboardPage, DesktopCandidate } from "../types";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
+import { isDetachedChatId } from "./workspaceDetachedChats";
 import { useWorkspaceFolderActions } from "./workspaceFolderActions";
 import { useWorkspacePreviewLauncher } from "./workspacePreviewLauncher";
 import { useWorkspacePromptActions } from "./workspacePromptActions";
@@ -18,9 +19,10 @@ export function useWorkspaceActions(s: WorkspaceState) {
 
   const updateConnectionStage = useCallback((messageId: string, stage: NonNullable<DesktopConnectionPrompt["stage"]>, projectId?: string) => {
     const update = { stage };
-    if (!projectId) s.setNewChatMessages((c) => c.map((m) => m.id === messageId && m.desktopConnection ? { ...m, desktopConnection: { ...m.desktopConnection, ...update } } : m));
+    if (!projectId && isDetachedChatId(s.selectedChatId)) runtime.updateDetachedMessage(s.selectedChatId!, messageId, (m) => m.desktopConnection ? { ...m, desktopConnection: { ...m.desktopConnection, ...update } } : m);
+    else if (!projectId) s.setNewChatMessages((c) => c.map((m) => m.id === messageId && m.desktopConnection ? { ...m, desktopConnection: { ...m.desktopConnection, ...update } } : m));
     else app.updateDesktopConnectionPrompt(messageId, update, projectId);
-  }, [app, s]);
+  }, [app, runtime, s]);
   const rememberDesktopIntent = useCallback((messageId?: string, connectionPrompt?: DesktopConnectionPrompt) => {
     const query = connectionPrompt?.query?.trim() ?? "";
     if (!query || !messageId) return;
@@ -63,7 +65,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
     s.setPendingDesktopFolderIntent(null);
     s.setPcSwitcherVisible(false);
     s.setActivePage("chat");
-    if (intent.detached) s.setSelectedChatId(null);
+    if (intent.detached && !isDetachedChatId(s.selectedChatId)) s.setSelectedChatId(null);
     else if (intent.projectId) s.setSelectedChatId(`project-${intent.projectId}`);
     updateConnectionStage(intent.messageId, "open", intent.projectId);
     void (intent.action === "analyze-project" ? analyzeConnectedProject(intent) : replaceConnectionWithFolderProposal(intent));
@@ -93,7 +95,11 @@ export function useWorkspaceActions(s: WorkspaceState) {
       ? `I found ${matches.length} folders matching "${intent.query}". Open ${top.name}?`
       : `Found ${top.name} on your desktop. Open it for this chat?`;
     if (intent.detached) {
-      s.setNewChatMessages((c) => c.map((m) => {
+      if (isDetachedChatId(s.selectedChatId)) runtime.updateDetachedMessage(s.selectedChatId!, intent.messageId, (m) => {
+        const { desktopConnection: _desktopConnection, ...rest } = m;
+        return { ...rest, text: reply, folderProposal: { id: makeId("proposal"), status: "pending", matches, selectedIndex: 0, query: intent.query } };
+      });
+      else s.setNewChatMessages((c) => c.map((m) => {
         if (m.id !== intent.messageId) return m;
         const { desktopConnection: _desktopConnection, ...rest } = m;
         return { ...rest, text: reply, folderProposal: { id: makeId("proposal"), status: "pending", matches, selectedIndex: 0, query: intent.query } };
@@ -105,7 +111,11 @@ export function useWorkspaceActions(s: WorkspaceState) {
 
   function replaceConnectionWithReply(intent: NonNullable<WorkspaceState["pendingDesktopFolderIntent"]>, reply: string) {
     if (intent.detached) {
-      s.setNewChatMessages((c) => c.map((m) => {
+      if (isDetachedChatId(s.selectedChatId)) runtime.updateDetachedMessage(s.selectedChatId!, intent.messageId, (m) => {
+        const { desktopConnection: _desktopConnection, ...rest } = m;
+        return { ...rest, text: reply };
+      });
+      else s.setNewChatMessages((c) => c.map((m) => {
         if (m.id !== intent.messageId) return m;
         const { desktopConnection: _desktopConnection, ...rest } = m;
         return { ...rest, text: reply };
@@ -154,6 +164,7 @@ export function useWorkspaceActions(s: WorkspaceState) {
     if (next) {
       s.setChatTitleOverrides((c) => ({ ...c, [s.chatTitleKey]: next }));
       if (s.selectedChatId?.startsWith("project-")) s.setProjectChatTitles((c) => ({ ...c, [s.selectedChatId!]: next }));
+      if (isDetachedChatId(s.selectedChatId)) app.setDetachedChatTitles((c) => ({ ...c, [s.selectedChatId!]: next }));
     }
     s.setRenameChatVisible(false);
   }, [s]);
@@ -166,6 +177,16 @@ export function useWorkspaceActions(s: WorkspaceState) {
       return;
     }
     s.setChatTitleOverrides((c) => { const n = { ...c }; delete n[s.chatTitleKey]; return n; });
+    if (isDetachedChatId(s.selectedChatId)) {
+      const chatId = s.selectedChatId;
+      app.setDetachedChatThreads((current) => { const next = { ...current }; delete next[chatId]; return next; });
+      app.setDetachedChatTitles((current) => { const next = { ...current }; delete next[chatId]; return next; });
+      app.setDetachedChatUpdatedAt((current) => { const next = { ...current }; delete next[chatId]; return next; });
+      s.setSelectedChatId(null);
+      s.setNewChatMessages([]);
+      app.setTaskText("");
+      return;
+    }
     s.setProjectChatTitles((c) => { const n = { ...c }; delete n[s.selectedChatId!]; return n; });
     app.clearCurrentChat(s.selectedChatId.replace("project-", ""));
   }, [app, s]);

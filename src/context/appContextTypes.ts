@@ -88,6 +88,9 @@ export type AppState = {
   chatMessages: ChatMessage[];
   chatThreads: Record<string, ChatMessage[]>;
   chatTitles: Record<string, string>;
+  detachedChatThreads: Record<string, ChatMessage[]>;
+  detachedChatTitles: Record<string, string>;
+  detachedChatUpdatedAt: Record<string, number>;
   chatSkills: import("../utils/appApi").ChatSkill[];
   chatProjects: Record<string, Project>;
   editApprovals: Record<string, "always">;
@@ -122,6 +125,9 @@ export type AppSetters = {
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setDesktopPermissionMode: (mode: DesktopPermissionMode, projectId?: string) => void;
   setTaskText: (task: string) => void;
+  setDetachedChatThreads: (update: Record<string, ChatMessage[]> | ((current: Record<string, ChatMessage[]>) => Record<string, ChatMessage[]>)) => void;
+  setDetachedChatTitles: (update: Record<string, string> | ((current: Record<string, string>) => Record<string, string>)) => void;
+  setDetachedChatUpdatedAt: (update: Record<string, number> | ((current: Record<string, number>) => Record<string, number>)) => void;
   setNewFilePath: (path: string) => void;
 };
 

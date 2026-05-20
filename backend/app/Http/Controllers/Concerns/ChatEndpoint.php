@@ -43,6 +43,12 @@ trait ChatEndpoint
         if (! $calc->modelConfig($requestedModelKey)) {
             $requestedModelKey = 'auto';
         }
+        if ($this->requestedToolOnlyModelWithoutMatchingSkill($requestedModelKey, $skill, $calc)) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'This model is only available through its chat tool.',
+            ], 422);
+        }
         $modelKey = $this->effectiveChatModelKey($requestedModelKey, $skill);
         if (! $calc->modelConfig($modelKey)) {
             $modelKey = $requestedModelKey;
@@ -124,25 +130,18 @@ trait ChatEndpoint
         }
 
         $reasoningEffort = $this->normalizeReasoningEffort((string) $request->input('reasoningEffort', 'medium'));
-        $reasoningPayload = $this->buildReasoningPayload($reasoningEffort, $maxOutputTokens);
+        $reasoningPayload = $this->buildReasoningPayload($reasoningEffort, $maxOutputTokens, $openRouterModel);
 
         try {
-            $payload = [
-                'model' => $openRouterModel,
-                'messages' => $this->chatMessages($request, $prompt, $skill, $learningContext, $imageAttachments),
-                'temperature' => 0.25,
-                'max_completion_tokens' => $maxOutputTokens,
-                'usage' => ['include' => true],
-            ];
-            if ($reasoningPayload !== null) {
-                $payload['reasoning'] = $reasoningPayload;
-            }
-            $webSearchTools = $this->webSearchTools($skill);
-            if ($webSearchTools !== []) {
-                $payload['tools'] = $webSearchTools;
-            }
+            $payload = $this->openRouterChatPayload(
+                $openRouterModel,
+                $this->chatMessages($request, $prompt, $skill, $learningContext, $imageAttachments),
+                $maxOutputTokens,
+                $reasoningPayload,
+                $skill
+            );
 
-            $response = Http::timeout(90)
+            $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel))
                 ->acceptJson()
                 ->withToken($apiKey)
                 ->withHeaders([
@@ -159,14 +158,40 @@ trait ChatEndpoint
             return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
         }
 
-        $reply = (string) ($response->json('choices.0.message.content') ?? '');
+        $decoded = $response->json();
+        $reply = is_array($decoded) ? $this->openRouterCompletionContent($decoded) : '';
+        if ($reply === '' && is_array($decoded)) {
+            $retryPayload = $this->openRouterEmptyCompletionRetryPayload($payload);
+            if ($retryPayload !== null) {
+                try {
+                    $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel))
+                        ->acceptJson()
+                        ->withToken($apiKey)
+                        ->withHeaders([
+                            'HTTP-Referer' => (string) config('app.url', 'http://localhost'),
+                            'X-Title' => 'Vibyra',
+                        ])
+                        ->post((string) config('services.openrouter.url'), $retryPayload);
+                } catch (Throwable) {
+                    return $this->json(['ok' => false, 'error' => 'Could not reach OpenRouter. Please try again.'], 502);
+                }
+
+                if (! $response->successful()) {
+                    $message = $response->json('error.message') ?: $response->json('message') ?: 'OpenRouter could not complete the Deep Research retry.';
+                    return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
+                }
+
+                $decoded = $response->json();
+                $reply = is_array($decoded) ? $this->openRouterCompletionContent($decoded) : '';
+            }
+        }
         if ($reply === '') {
-            $reply = 'I received an empty response from the selected model.';
+            return $this->json(['ok' => false, 'error' => 'OpenRouter completed without answer content. No Vibyra credits were charged for this empty completion.'], 502);
         }
         [$replyText, $app] = $this->extractRunnableApp($reply, $agentMode);
         $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode, $app !== null);
 
-        $usage = $response->json('usage') ?? [];
+        $usage = is_array($decoded) ? ($decoded['usage'] ?? []) : [];
         $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
         $outputTokens = (int) ($usage['completion_tokens'] ?? 0);
         $openRouterUsd = isset($usage['cost']) ? (float) $usage['cost'] : null;

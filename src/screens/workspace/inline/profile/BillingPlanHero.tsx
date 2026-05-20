@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Animated, Easing, Image, Text, View } from "react-native";
 import { usePreferences } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
@@ -29,19 +29,19 @@ export function BillingPlanHero({
   const prefs = usePreferences();
   const progress = useRef(new Animated.Value(1)).current;
   const lastTierKey = useRef<PlanKey>(tier.key);
-  const [previous, setPrevious] = useState<{ cycle: BillingCycle; direction: number; tier: PlanTier } | null>(null);
+  const [previous, setPrevious] = useState<{ direction: number; tier: PlanTier } | null>(null);
   const light = prefs.effectiveScheme === "light";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (lastTierKey.current === tier.key) return;
     const fromIndex = PLAN_ORDER.indexOf(lastTierKey.current);
     const toIndex = PLAN_ORDER.indexOf(tier.key);
-    setPrevious({ cycle, direction: toIndex >= fromIndex ? 1 : -1, tier: getTierByKey(lastTierKey.current) });
+    setPrevious({ direction: toIndex >= fromIndex ? 1 : -1, tier: getTierByKey(lastTierKey.current) });
     lastTierKey.current = tier.key;
     progress.setValue(0);
     const animation = Animated.timing(progress, {
       toValue: 1,
-      duration: 520,
+      duration: 460,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true
     });
@@ -49,74 +49,88 @@ export function BillingPlanHero({
       if (finished) setPrevious(null);
     });
     return () => animation.stop();
-  }, [cycle, progress, tier.key]);
+  }, [progress, tier.key]);
 
   const direction = previous?.direction ?? 1;
   const enteringStyle = {
-    opacity: progress.interpolate({ inputRange: [0, 0.22, 1], outputRange: [0, 1, 1] }),
+    opacity: progress.interpolate({ inputRange: [0, 0.24, 1], outputRange: [0, 1, 1] }),
     transform: [
       { perspective: 900 },
-      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [direction * 46, 0] }) },
-      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) },
-      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.965, 1] }) },
-      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: [`${direction * -7}deg`, "0deg"] }) }
+      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [direction * 34, 0] }) },
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.975, 1] }) },
+      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: [`${direction * -4}deg`, "0deg"] }) }
     ]
   };
   const exitingStyle = previous ? {
-    opacity: progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 0.2, 0] }),
+    opacity: progress.interpolate({ inputRange: [0, 0.74, 1], outputRange: [1, 0.18, 0] }),
     transform: [
       { perspective: 900 },
-      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, direction * -34] }) },
-      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 8] }) },
-      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.975] }) },
-      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: ["0deg", `${direction * 5}deg`] }) }
+      { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, direction * -24] }) },
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 6] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.982] }) },
+      { rotateY: progress.interpolate({ inputRange: [0, 1], outputRange: ["0deg", `${direction * 3}deg`] }) }
+    ]
+  } : null;
+  const copyStyle = previous ? {
+    opacity: progress.interpolate({ inputRange: [0, 0.18, 1], outputRange: [0, 0.88, 1] }),
+    transform: [
+      { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) },
+      { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.992, 1] }) }
     ]
   } : null;
   return (
     <View style={[styles.billingPlanHero, { backgroundColor: light ? prefs.colors.surface : "#0B0B12" }]}>
       {previous ? (
         <Animated.View pointerEvents="none" style={[styles.billingPlanHeroLayer, exitingStyle]}>
-          <BillingPlanHeroLayer cycle={previous.cycle} tier={previous.tier} />
+          <BillingPlanHeroArtLayer tier={previous.tier} />
         </Animated.View>
       ) : null}
       <Animated.View style={[styles.billingPlanHeroLayer, previous ? enteringStyle : null]}>
-        <BillingPlanHeroLayer cycle={cycle} tier={tier} />
+        <BillingPlanHeroArtLayer tier={tier} />
+      </Animated.View>
+      <Animated.View pointerEvents="none" style={[styles.billingPlanHeroContent, copyStyle]}>
+        <BillingPlanHeroCopy cycle={cycle} tier={tier} />
       </Animated.View>
     </View>
   );
 }
 
-function BillingPlanHeroLayer({ cycle, tier }: { cycle: BillingCycle; tier: PlanTier }) {
+function BillingPlanHeroArtLayer({ tier }: { tier: PlanTier }) {
+  return (
+    <View style={styles.billingPlanHeroLayerInner}>
+      <Image source={PLAN_ART[tier.key]} resizeMode="cover" style={styles.billingPlanHeroImage} />
+      <View style={styles.billingPlanHeroShade} />
+    </View>
+  );
+}
+
+function BillingPlanHeroCopy({ cycle, tier }: { cycle: BillingCycle; tier: PlanTier }) {
   const display = getDisplayPrice(tier, cycle);
   const creditValue = display.tokens.replace(" credits / month", "").replace(" credits/month", "");
   const accent = PLAN_ACCENTS[tier.key];
   const bullets = getHeroBullets(tier.key, creditValue);
 
   return (
-    <View style={styles.billingPlanHeroLayerInner}>
-      <Image source={PLAN_ART[tier.key]} resizeMode="cover" style={styles.billingPlanHeroImage} />
-      <View style={styles.billingPlanHeroShade} />
-
-      <View style={styles.billingPlanHeroContent}>
-        <View style={styles.billingPlanHeroTop}>
-          <View style={styles.billingPlanHeroTitleBlock}>
-            <Text style={[styles.billingPlanHeroName, { color: accent.soft }]}>{tier.name}</Text>
-            <Text style={[styles.billingPlanHeroTagline, { color: accent.dim }]}>{tier.tagline}</Text>
-          </View>
-        </View>
-
-        <View style={styles.billingPlanHeroBody}>
-          <View style={styles.billingPlanHeroPriceRow}>
-            <Text style={[styles.billingPlanHeroPrice, { color: accent.soft }]}>{display.price}</Text>
-            <Text style={[styles.billingPlanHeroCadence, { color: accent.dim }]}>/{display.cadence}</Text>
-          </View>
-
-          <View style={styles.billingPlanHeroBullets}>
-            {bullets.map((bullet) => <HeroBullet key={bullet} accent={accent.main} text={bullet} textColor={accent.dim} />)}
-          </View>
+    <>
+      <View style={styles.billingPlanHeroTop}>
+        <View style={styles.billingPlanHeroTitleBlock}>
+          <Text style={[styles.billingPlanHeroName, { color: accent.soft }]}>{tier.name}</Text>
+          <Text style={[styles.billingPlanHeroTagline, { color: accent.dim }]}>{tier.tagline}</Text>
         </View>
       </View>
-    </View>
+
+      <View style={styles.billingPlanHeroBody}>
+        <View style={styles.billingPlanHeroPriceRow}>
+          <Text style={[styles.billingPlanHeroPrice, { color: accent.soft }]}>{display.price}</Text>
+          <Text style={[styles.billingPlanHeroCadence, { color: accent.dim }]}>/{display.cadence}</Text>
+        </View>
+
+        <View style={styles.billingPlanHeroBullets}>
+          {bullets.map((bullet) => <HeroBullet key={bullet} accent={accent.main} text={bullet} textColor={accent.dim} />)}
+        </View>
+      </View>
+    </>
   );
 }
 

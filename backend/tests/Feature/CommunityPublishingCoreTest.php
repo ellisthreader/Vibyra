@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-class CommunityPublishingTest extends TestCase
+class CommunityPublishingCoreTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -24,7 +24,6 @@ class CommunityPublishingTest extends TestCase
             ]),
         ]);
     }
-
     public function test_user_can_publish_project_and_community_can_read_it(): void
     {
         $this->fakeCleanModeration();
@@ -76,6 +75,28 @@ class CommunityPublishingTest extends TestCase
 
         Http::assertSent(fn ($request) => collect($request['input'] ?? [])
             ->contains(fn ($item) => ($item['type'] ?? null) === 'image_url'));
+    }
+
+    public function test_publish_retries_do_not_hit_old_global_hourly_limit(): void
+    {
+        $this->fakeCleanModeration();
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Retry Publisher',
+            'email' => 'retry.publisher@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+
+        $headers = ['Authorization' => "Bearer {$token}"];
+        for ($i = 0; $i < 6; $i++) {
+            $this->postJson('/api/projects/publish', [
+                'projectId' => 'retry-project',
+                'title' => 'Retry Project '.$i,
+                'description' => 'A clean project publish retry.',
+                'stack' => 'React',
+                'previewHtml' => '<!doctype html><html><body><h1>Retry</h1></body></html>',
+            ], $headers)->assertSuccessful();
+        }
     }
 
     public function test_publish_with_unsafe_preview_is_denied_and_hidden(): void
@@ -201,192 +222,5 @@ class CommunityPublishingTest extends TestCase
         $this->assertContains('openai_key', $codes);
         $this->assertContains('private_image_host', $codes);
         Http::assertNothingSent();
-    }
-
-    public function test_user_can_generate_publish_assets_for_credits(): void
-    {
-        config([
-            'services.openai.key' => 'test-openai-key',
-            'services.openrouter.key' => 'test-openrouter-key',
-            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
-        ]);
-        Http::fake([
-            'https://api.openai.com/v1/moderations' => Http::response([
-                'results' => [[
-                    'flagged' => false,
-                    'categories' => [],
-                    'category_scores' => [],
-                ]],
-            ]),
-            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
-                'choices' => [[
-                    'message' => [
-                        'images' => [[
-                            'image_url' => ['url' => 'data:image/png;base64,'.base64_encode('generated-logo')],
-                        ]],
-                    ],
-                ]],
-            ]),
-        ]);
-
-        $signup = $this->postJson('/api/auth/signup', [
-            'name' => 'Alex Carter',
-            'email' => 'alex.assets@example.com',
-            'password' => 'secret123',
-        ])->assertCreated();
-        $token = $signup->json('token');
-        $startCredits = (int) $signup->json('user.creditsBalance');
-
-        $this->postJson('/api/community/assets/generate', [
-            'kind' => 'logo',
-            'title' => 'Client Portal',
-            'description' => 'A dashboard for client onboarding.',
-            'prompt' => 'clean purple mark',
-        ], ['Authorization' => "Bearer {$token}"])
-            ->assertOk()
-            ->assertJsonPath('kind', 'logo')
-            ->assertJsonPath('creditCost', 2)
-            ->assertJsonPath('creditsBalance', $startCredits - 2)
-            ->assertJsonPath('provider', 'openrouter')
-            ->assertJson(fn ($json) => $json->where('ok', true)->whereType('imageUrl', 'string')->etc());
-
-        Http::assertSent(fn ($request) => $request->url() === 'https://openrouter.ai/api/v1/chat/completions'
-            && $request['model'] === 'openai/gpt-5.4-image-2'
-            && $request['modalities'] === ['image']
-            && $request['image_config']['aspect_ratio'] === '1:1');
-    }
-
-    public function test_user_can_generate_publish_screenshots_for_credits(): void
-    {
-        config([
-            'services.openai.key' => 'test-openai-key',
-            'services.openrouter.key' => 'test-openrouter-key',
-            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
-        ]);
-        Http::fake([
-            'https://api.openai.com/v1/moderations' => Http::response([
-                'results' => [[
-                    'flagged' => false,
-                    'categories' => [],
-                    'category_scores' => [],
-                ]],
-            ]),
-            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
-                'choices' => [[
-                    'message' => [
-                        'images' => [[
-                            'imageUrl' => ['url' => 'data:image/png;base64,'.base64_encode('generated-screenshot')],
-                        ]],
-                    ],
-                ]],
-            ]),
-        ]);
-
-        $signup = $this->postJson('/api/auth/signup', [
-            'name' => 'Alex Carter',
-            'email' => 'alex.screenshots@example.com',
-            'password' => 'secret123',
-        ])->assertCreated();
-        $token = $signup->json('token');
-        $startCredits = (int) $signup->json('user.creditsBalance');
-
-        $this->postJson('/api/community/assets/generate', [
-            'kind' => 'screenshot',
-            'title' => 'Client Portal',
-            'description' => 'A dashboard for client onboarding.',
-            'prompt' => 'polished app screen',
-        ], ['Authorization' => "Bearer {$token}"])
-            ->assertOk()
-            ->assertJsonPath('kind', 'screenshot')
-            ->assertJsonPath('creditCost', 4)
-            ->assertJsonPath('creditsBalance', $startCredits - 4)
-            ->assertJsonPath('provider', 'openrouter')
-            ->assertJson(fn ($json) => $json->where('ok', true)->whereType('imageUrl', 'string')->etc());
-
-        Http::assertSent(fn ($request) => $request->url() === 'https://openrouter.ai/api/v1/chat/completions'
-            && $request['model'] === 'openai/gpt-5.4-image-2'
-            && $request['modalities'] === ['image']
-            && $request['image_config']['aspect_ratio'] === '16:9');
-    }
-
-    public function test_publish_asset_generation_accepts_gpt_image_base64_response(): void
-    {
-        config([
-            'services.openai.key' => 'test-openai-key',
-            'services.openrouter.key' => 'test-openrouter-key',
-            'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
-        ]);
-        Http::fake([
-            'https://api.openai.com/v1/moderations' => Http::response([
-                'results' => [[
-                    'flagged' => false,
-                    'categories' => [],
-                    'category_scores' => [],
-                ]],
-            ]),
-            'https://openrouter.ai/api/v1/chat/completions' => Http::response([
-                'choices' => [[
-                    'message' => [
-                        'content' => [[
-                            'type' => 'image',
-                            'b64_json' => base64_encode('generated-image'),
-                        ]],
-                    ],
-                ]],
-            ]),
-        ]);
-
-        $signup = $this->postJson('/api/auth/signup', [
-            'name' => 'Alex Carter',
-            'email' => 'alex.b64-image@example.com',
-            'password' => 'secret123',
-        ])->assertCreated();
-        $token = $signup->json('token');
-
-        $this->postJson('/api/community/assets/generate', [
-            'kind' => 'screenshot',
-            'title' => 'Client Portal',
-            'description' => 'A dashboard for client onboarding.',
-            'prompt' => 'polished app screen',
-        ], ['Authorization' => "Bearer {$token}"])
-            ->assertOk()
-            ->assertJsonPath('imageUrl', 'data:image/png;base64,'.base64_encode('generated-image'));
-    }
-
-    public function test_publish_asset_generation_requires_openrouter_configuration_without_charging(): void
-    {
-        config(['services.openai.key' => 'test-openai-key', 'services.openrouter.key' => null]);
-        Http::fake([
-            'https://api.openai.com/v1/moderations' => Http::response([
-                'results' => [[
-                    'flagged' => false,
-                    'categories' => [],
-                    'category_scores' => [],
-                ]],
-            ]),
-        ]);
-
-        $signup = $this->postJson('/api/auth/signup', [
-            'name' => 'Alex Carter',
-            'email' => 'alex.no-image-key@example.com',
-            'password' => 'secret123',
-        ])->assertCreated();
-        $token = $signup->json('token');
-        $startCredits = (int) $signup->json('user.creditsBalance');
-
-        $this->postJson('/api/community/assets/generate', [
-            'kind' => 'logo',
-            'title' => 'Client Portal',
-            'description' => 'A dashboard for client onboarding.',
-            'prompt' => 'clean purple mark',
-        ], ['Authorization' => "Bearer {$token}"])
-            ->assertStatus(502)
-            ->assertJsonPath('ok', false)
-            ->assertJsonPath('error', 'OpenRouter image generation is not configured. Set OPENROUTER_API_KEY to generate publish images.');
-
-        $this->assertDatabaseHas('users', [
-            'email' => 'alex.no-image-key@example.com',
-            'credits_balance' => $startCredits,
-        ]);
     }
 }

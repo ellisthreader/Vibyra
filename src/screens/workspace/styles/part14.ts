@@ -84,40 +84,64 @@ export const part14 = {
   communityPrimaryOpenButton: {
     borderRadius: 10,
     flex: 1,
-    height: 46,
+    height: 44,
     minWidth: 0,
     overflow: "hidden"
   },
   communityPrimaryOpenGradient: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12,
+    gap: 9,
     height: "100%",
     justifyContent: "center",
     paddingHorizontal: 14
   },
   communityPrimaryOpenText: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900"
   },
   communitySmallAction: {
     alignItems: "center",
-    backgroundColor: "rgba(12, 15, 24, 0.5)",
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(255, 255, 255, 0.09)",
     borderRadius: 10,
     borderWidth: 1,
-    flexDirection: "row",
-    gap: 7,
-    height: 46,
+    height: 44,
     justifyContent: "center",
-    minWidth: 78,
-    paddingHorizontal: 10
+    width: 44
   },
   communitySmallActionText: {
     color: colors.text,
     fontSize: 14,
     fontWeight: "900"
+  },
+  communityLikeButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderColor: "rgba(255, 255, 255, 0.09)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    height: 44,
+    justifyContent: "center",
+    minWidth: 56,
+    paddingHorizontal: 10
+  },
+  communityDetailActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
+  communityDetailIconText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  communityAboutBlock: {
+    gap: 8,
+    paddingTop: 0
   },
   communityPictureCard: {
     backgroundColor: "rgba(16, 18, 30, 0.78)",

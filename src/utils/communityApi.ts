@@ -11,8 +11,37 @@ export type PublishProjectResponse = {
   isPublic?: boolean;
   ok: boolean;
   project: CommunityPost;
+  publishStatus?: ProjectPublishStatus;
   reviewStatus?: string;
   safetyFindings?: string[];
+};
+
+export type PublishProjectVisibility = "public" | "unlisted" | "private";
+export type ProjectPublishStatus = {
+  isPublic?: boolean;
+  project?: CommunityPost;
+  reviewReason?: string | null;
+  reviewStatus?: string;
+  safetyFindings?: unknown[];
+  sourceProjectId: string;
+  title?: string;
+  updatedAt?: string | null;
+  visibility?: PublishProjectVisibility;
+};
+export type PublishProjectOutcome = "published" | "under_review" | "private" | "unlisted";
+export type PublishProjectResult = {
+  isPublic?: boolean;
+  outcome: PublishProjectOutcome;
+  project: CommunityPost;
+  publishStatus?: ProjectPublishStatus;
+  reviewStatus?: string;
+  safetyFindings?: string[];
+  visibility: PublishProjectVisibility;
+};
+
+export type ProjectPublishStatusesResponse = {
+  ok: boolean;
+  projects: ProjectPublishStatus[];
 };
 
 export type CommunityCommentResponse = {
@@ -59,6 +88,11 @@ export async function fetchCommunityProjects() {
   };
 }
 
+export async function fetchProjectPublishStatuses(authToken: string) {
+  const result = await appApiRequest<ProjectPublishStatusesResponse>("/api/projects/publish-status", {}, authToken);
+  return (result.projects ?? []).map((status) => normalizePublishStatus(status)).filter(Boolean) as ProjectPublishStatus[];
+}
+
 export async function publishProject(payload: {
   authToken: string;
   description: string;
@@ -69,14 +103,23 @@ export async function publishProject(payload: {
   stack: string;
   tags: string[];
   title: string;
-  visibility?: "public" | "unlisted" | "private";
-}) {
+  visibility?: PublishProjectVisibility;
+}): Promise<PublishProjectResult> {
   const { authToken, ...body } = payload;
   const result = await appApiRequest<PublishProjectResponse>("/api/projects/publish", {
     method: "POST",
     body: JSON.stringify(body)
   }, authToken);
-  return normalizeCommunityPost(result.project);
+  const visibility = body.visibility ?? "public";
+  return {
+    isPublic: result.isPublic,
+    outcome: publishOutcome(visibility, result),
+    project: normalizeCommunityPost(result.project),
+    publishStatus: normalizePublishStatus(result.publishStatus),
+    reviewStatus: result.reviewStatus,
+    safetyFindings: result.safetyFindings,
+    visibility
+  };
 }
 
 export async function generatePublishAsset(payload: {
@@ -118,7 +161,22 @@ export async function unlikeCommunityProject(authToken: string, postId: string) 
   );
 }
 
+function normalizePublishStatus(status?: ProjectPublishStatus) {
+  if (!status) return undefined;
+  return {
+    ...status,
+    project: status.project ? normalizeCommunityPost(status.project) : status.project
+  };
+}
+
 function absoluteApiUrl(url: string) {
   if (!url || /^https?:\/\//i.test(url)) return url;
   return `${getAppApiUrl()}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
+function publishOutcome(visibility: PublishProjectVisibility, result: PublishProjectResponse): PublishProjectOutcome {
+  if (result.reviewStatus && result.reviewStatus !== "approved") return "under_review";
+  if (visibility === "private") return "private";
+  if (visibility === "unlisted") return "unlisted";
+  return result.isPublic === false ? "under_review" : "published";
 }

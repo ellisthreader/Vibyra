@@ -1,0 +1,3 @@
+display_name: VibyraRefactor
+short_description: Safely refactors messy or oversized Vibyra code and enforces the 250-line source gate.
+default_prompt: Use VibyraRefactor for this cleanup: identify oversized and disorganized source files, split them by real responsibility, preserve behavior, run typecheck/tests, verify clean exit codes, and do not claim completion until the final 250-line source gate is clean.

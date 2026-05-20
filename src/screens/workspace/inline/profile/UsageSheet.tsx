@@ -44,8 +44,19 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
         tokens: threadTokenUsage(thread)
       });
     }
+    for (const [chatId, thread] of Object.entries(app.detachedChatThreads)) {
+      if (!thread || thread.length === 0) continue;
+      const last = thread[thread.length - 1];
+      items.push({
+        projectId: chatId,
+        projectName: app.detachedChatTitles[chatId] || "New chat",
+        preview: (last.text || "").trim().slice(0, 80) || "(empty message)",
+        role: last.role,
+        tokens: threadTokenUsage(thread)
+      });
+    }
     return items.reverse();
-  }, [app.chatProjects, app.chatThreads, app.chatTitles, projectNames]);
+  }, [app.chatProjects, app.chatThreads, app.chatTitles, app.detachedChatThreads, app.detachedChatTitles, projectNames]);
   const shownProjects = projectsExpanded ? recentProjects : recentProjects.slice(0, COLLAPSED_HISTORY_COUNT);
   const shownChats = chatsExpanded ? recentChats : recentChats.slice(0, COLLAPSED_HISTORY_COUNT);
 

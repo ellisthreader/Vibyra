@@ -4,8 +4,8 @@ import { useSessionValidation } from "./useSessionValidation";
 
 type RemoteSyncState = Pick<AppContextValue,
   "authenticated" | "authToken" | "persistenceReady" | "onboardingComplete" |
-  "rememberedDesktops" | "chatThreads" | "chatTitles" | "chatProjects" |
-  "projectMemories" | "promptMoney" | "desktopPermissionMode" | "selectedChatModel" | "selectedModel"
+  "rememberedDesktops" | "chatThreads" | "chatTitles" | "detachedChatThreads" | "detachedChatTitles" | "detachedChatUpdatedAt" | "chatProjects" |
+  "projectMemories" | "editApprovals" | "promptMoney" | "desktopPermissionMode" | "selectedChatModel" | "selectedModel"
 >;
 
 type AuthActions = Pick<AppContextValue, "applyRemoteUserFromIap" | "expireSession">;
@@ -20,8 +20,12 @@ export function useAppRemoteSync(state: RemoteSyncState, logs: Parameters<typeof
     rememberedDesktops: state.rememberedDesktops,
     chatThreads: state.chatThreads,
     chatTitles: state.chatTitles,
+    detachedChatThreads: state.detachedChatThreads,
+    detachedChatTitles: state.detachedChatTitles,
+    detachedChatUpdatedAt: state.detachedChatUpdatedAt,
     chatProjects: state.chatProjects,
     projectMemories: state.projectMemories,
+    editApprovals: state.editApprovals,
     promptMoney: state.promptMoney,
     desktopPermissionMode: state.desktopPermissionMode,
     selectedChatModel: state.selectedChatModel,

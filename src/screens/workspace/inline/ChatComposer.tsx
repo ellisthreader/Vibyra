@@ -5,11 +5,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ChatSkill } from "../../../utils/appApi";
 import { colors } from "../../../styles/theme";
 import type { ChatImageAttachment, ChatStartOptions, ChatToolMode } from "../../../types/chatTools";
+import { chatToolModelOverride } from "../../../types/chatTools";
 import { ChatMessage, ModelKey, ReasoningEffort } from "../../../types/domain";
 import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { ChatCommand, chatCommandHelpReply, filterChatCommands, matchChatCommand } from "../data/chatCommands";
-import { chatModelOptions } from "../data/chatModels";
+import { chatModelOptionFor, chatModelOptions } from "../data/chatModels";
 import { mergeChatSkills } from "../../../utils/chatSkills";
 import { styles } from "../styles";
 import { LowCreditsWarning, getUnlockedInitialChatModel, isModelLockedForPlan } from "./chunk10";
@@ -51,6 +52,7 @@ type ChatComposerProps = {
 export function ChatComposer(props: ChatComposerProps) {
   const [attachmentSheetOpen, setAttachmentSheetOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<ChatToolMode | null>(null);
+  const [modelBeforeTool, setModelBeforeTool] = useState<string | null>(null);
   const [imageAttachments, setImageAttachments] = useState<ChatImageAttachment[]>([]);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
@@ -62,8 +64,12 @@ export function ChatComposer(props: ChatComposerProps) {
   const sendGradient = props.agentRequesting
     ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
     : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
-  const selectedChatModel = getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel);
-  const currentModel = chatModelOptions.find((model) => model.key === selectedChatModel) ?? chatModelOptions[0];
+  const slashToolMatch = props.taskText.trim().match(/^\/(research|web|analyze)(?:\s|\b)/i);
+  const slashTool = slashToolMatch?.[1]?.toLowerCase() as ChatToolMode | undefined;
+  const slashModelOverride = slashTool ? chatToolModelOverride(slashTool) : "";
+  const activeToolModel = chatToolModelOverride(activeTool) || slashModelOverride;
+  const selectedChatModel = activeToolModel || getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel);
+  const currentModel = chatModelOptionFor(selectedChatModel) ?? chatModelOptions[0];
   const slashMatch = props.taskText.match(/^\/(\w*)$/);
   const slashQuery = slashMatch?.[1] ?? "";
   const filteredSkills = useMemo(() => {
@@ -82,6 +88,11 @@ export function ChatComposer(props: ChatComposerProps) {
 
   function selectModel(model: (typeof chatModelOptions)[number]) {
     if (isModelLockedForPlan(model, props.accountPlan)) return;
+    const activeToolOverride = chatToolModelOverride(activeTool);
+    if (activeToolOverride && model.key !== activeToolOverride) {
+      setActiveTool(null);
+    }
+    setModelBeforeTool(null);
     props.setSelectedChatModel(model.key);
     if (model.modelKey) props.setSelectedModel(model.modelKey);
     setModelMenuOpen(false);
@@ -101,7 +112,7 @@ export function ChatComposer(props: ChatComposerProps) {
     const parsed = matchChatCommand(props.taskText);
     if (parsed) {
       runCommand(parsed.command, parsed.args);
-      setActiveTool(null);
+      clearActiveTool();
       setImageAttachments([]);
       return;
     }
@@ -111,12 +122,14 @@ export function ChatComposer(props: ChatComposerProps) {
         ? "Create a polished image for this project."
         : undefined;
     if (!props.taskText.trim() && !fallbackPrompt) return;
-    props.onStart(activeTool || imageAttachments.length > 0 || fallbackPrompt ? {
+    const modelOverride = chatToolModelOverride(activeTool) || slashModelOverride;
+    props.onStart(activeTool || modelOverride || imageAttachments.length > 0 || fallbackPrompt ? {
       ...(fallbackPrompt ? { prompt: fallbackPrompt } : {}),
       ...(activeTool ? { tool: activeTool } : {}),
+      ...(modelOverride ? { model: modelOverride } : {}),
       ...(imageAttachments.length > 0 ? { imageAttachments } : {})
     } : undefined);
-    setActiveTool(null);
+    clearActiveTool();
     setImageAttachments([]);
   }
 
@@ -132,7 +145,23 @@ export function ChatComposer(props: ChatComposerProps) {
     setAttachmentSheetOpen(false);
   }
 
+  function clearActiveTool() {
+    if (chatToolModelOverride(activeTool) && modelBeforeTool) {
+      props.setSelectedChatModel(modelBeforeTool);
+    }
+    setActiveTool(null);
+    setModelBeforeTool(null);
+  }
+
   function selectAttachmentTool(tool: ChatToolMode) {
+    const toolModel = chatToolModelOverride(tool);
+    if (toolModel) {
+      setModelBeforeTool((current) => current ?? props.selectedChatModel);
+      props.setSelectedChatModel(toolModel);
+    } else if (chatToolModelOverride(activeTool) && modelBeforeTool) {
+      props.setSelectedChatModel(modelBeforeTool);
+      setModelBeforeTool(null);
+    }
     setActiveTool(tool);
     setAttachmentSheetOpen(false);
   }
@@ -162,7 +191,7 @@ export function ChatComposer(props: ChatComposerProps) {
             <View style={styles.chatToolPill}>
               <Ionicons name={activeTool === "image" ? "image-outline" : activeTool === "web" ? "globe-outline" : activeTool === "analyze" ? "document-text-outline" : "search-outline"} color="#F7F3FF" size={14} />
               <Text numberOfLines={1} style={styles.chatToolPillText}>{chatToolLabels[activeTool]}</Text>
-              <Pressable accessibilityLabel="Clear selected chat tool" onPress={() => setActiveTool(null)} style={styles.chatToolPillClear}>
+              <Pressable accessibilityLabel="Clear selected chat tool" onPress={clearActiveTool} style={styles.chatToolPillClear}>
                 <Ionicons name="close" color="#BDB5CE" size={14} />
               </Pressable>
             </View>

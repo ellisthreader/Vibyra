@@ -1,0 +1,79 @@
+.desktop-auth {
+  color-scheme: dark;
+  --auth-bg: #07070A;
+  --auth-text: #FFFFFF;
+  --auth-muted: rgba(232, 224, 255, 0.72);
+  --auth-dim: rgba(232, 224, 255, 0.58);
+  --auth-accent: #8B5CFF;
+  --auth-accent-strong: #A855FF;
+  --auth-error: #FF8BA0;
+  background: var(--auth-bg);
+  color: var(--auth-text);
+}
+
+.auth-title-row h1,
+.auth-features strong,
+.auth-choice,
+.auth-choice strong {
+  color: var(--auth-text);
+}
+
+.auth-choice {
+  background: rgba(12, 5, 35, 0.34);
+  border-color: rgba(176, 70, 255, 0.82);
+}
+
+.auth-provider-icon {
+  color: var(--auth-accent-strong);
+}
+
+.auth-features p,
+.auth-legal {
+  color: var(--auth-muted);
+}
+
+.auth-feature-icon {
+  border-color: rgba(199, 98, 255, 0.42);
+  color: #C77AFF;
+}
+
+.email-auth,
+.email-auth input {
+  color: var(--auth-text);
+}
+
+.email-auth {
+  background: rgba(10, 5, 31, 0.72);
+  border-color: rgba(183, 80, 255, 0.46);
+}
+
+.email-auth input {
+  background: rgba(9, 5, 28, 0.72);
+  border-color: rgba(176, 80, 255, 0.34);
+  color-scheme: dark;
+}
+
+.email-auth input::placeholder {
+  color: var(--auth-dim);
+}
+
+.email-mode {
+  color: var(--auth-dim);
+}
+
+.email-mode.active,
+.email-submit {
+  color: #FFFFFF;
+}
+
+.email-submit:disabled {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.auth-error {
+  color: var(--auth-error);
+}
+
+.auth-legal button {
+  color: var(--auth-accent-strong);
+}

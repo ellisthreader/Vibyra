@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { View } from "react-native";
 import { styles } from "../../styles";
 import { usePreferences } from "../../../../context/PreferencesContext";
@@ -27,16 +27,15 @@ export function ProfilePage({ activeTab, activeTabRequestId, onTabChange }: {
   activeTabRequestId: number;
   onTabChange: (tab: SettingsTab) => void;
 }) {
-  const sheets = useProfileSheets();
   const { t } = usePreferences();
-  const [selectedRow, setSelectedRow] = useState(getProfileRowForTab(activeTab));
+  const requestedRow = useMemo(() => getProfileRowForTab(activeTab), [activeTab]);
+  const requestedSheet = activeTab === "profile" ? null : PROFILE_ROW_TO_SHEET[requestedRow] ?? null;
+  const sheets = useProfileSheets(requestedSheet, activeTabRequestId);
+  const [selectedRow, setSelectedRow] = useState(requestedRow);
 
-  useEffect(() => {
-    const row = getProfileRowForTab(activeTab);
-    setSelectedRow(row);
-    const kind = PROFILE_ROW_TO_SHEET[row];
-    if (activeTab !== "profile" && kind) sheets.open(kind);
-  }, [activeTab, activeTabRequestId, sheets.open]);
+  useLayoutEffect(() => {
+    setSelectedRow(requestedRow);
+  }, [requestedRow, activeTabRequestId]);
 
   const selectRow = useCallback((label: string) => {
     setSelectedRow(label);

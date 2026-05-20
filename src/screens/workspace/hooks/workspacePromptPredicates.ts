@@ -15,3 +15,11 @@ export function isProjectFilesQuestion(prompt: string) {
     && /\b(?:files?|folder|directory|dir|inside)\b/.test(text)
     && !/\b(?:build|create|change|fix|update|edit|refactor|implement|make|design|write|generate|remove|delete)\b/.test(text);
 }
+
+export function isFolderRecoveryCancel(prompt: string) {
+  return /^(?:cancel(?:\s+it)?|stop|nah|nope|no|nvm|never\s*mind|forget\s+it|drop\s+it|skip\s+it|leave\s+it)\b/i.test(prompt.trim());
+}
+
+export function isPreviewFixPrompt(prompt: string): boolean {
+  return /^The (?:runnable|live) preview for .+ crashed\b|Captured preview diagnostics:/i.test(prompt);
+}

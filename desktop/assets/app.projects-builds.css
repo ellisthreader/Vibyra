@@ -1,0 +1,133 @@
+.page-head { display: grid; gap: 8px; margin-bottom: 18px; max-width: 680px; }
+.page-head h1 { color: var(--text); font-size: 28px; font-weight: 760; line-height: 34px; }
+.toolbar { grid-template-columns: auto auto minmax(220px, 1fr) auto; }
+.primary-button { background: linear-gradient(135deg, var(--accent-2), var(--accent)); box-shadow: none; color: #ffffff; }
+.secondary-button, .danger-button { border-color: var(--line); }
+.primary-button, .secondary-button, .danger-button, .chip, .search { border-radius: 8px; }
+.chip.active { background: var(--accent-soft); border-color: var(--line-strong); box-shadow: none; color: var(--text); }
+.project-card, .community-card, .plan-card, .panel, .card {
+  background: var(--panel-strong);
+  border-color: var(--line);
+  border-radius: 8px;
+  box-shadow: none;
+}
+.project-card.active, .plan-card.featured { border-color: rgba(139, 92, 255, 0.56); box-shadow: none; }
+.summary-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 26px; }
+.summary-tile {
+  align-items: center;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  min-height: 74px;
+  padding: 14px;
+}
+.summary-icon, .empty-icon, .action-icon, .project-icon, .profile-icon {
+  background: var(--accent-soft);
+  border-color: var(--line);
+  border-radius: 8px;
+  color: #e7deff;
+}
+.summary-tile strong { color: var(--text); display: block; font-size: 17px; font-weight: 760; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.summary-tile p { color: var(--subtle); font-size: 12px; font-weight: 560; }
+.live-builds { padding-top: 0; }
+.builds-head, .activity-head { margin-bottom: 10px; }
+.builds-head h2, .activity-head h2 { font-size: 17px; font-weight: 720; }
+.text-link { color: #cdbbff; font-size: 13px; font-weight: 640; }
+.build-list { border-top: 1px solid var(--line); margin-bottom: 28px; }
+.build-row {
+  gap: 14px;
+  grid-template-columns: 44px minmax(0, 1fr) auto 32px;
+  min-height: 76px;
+}
+.build-icon { border-radius: 8px; height: 42px; width: 42px; }
+.build-icon svg { height: 22px; width: 22px; }
+.build-copy h3 { font-size: 15px; font-weight: 720; line-height: 20px; }
+.build-copy p { font-size: 13px; font-weight: 520; line-height: 18px; }
+.build-state { grid-column: 3; justify-self: end; }
+.build-status { border-radius: 999px; font-weight: 720; min-width: 0; padding: 7px 10px; }
+.build-time { font-size: 12px; font-weight: 560; }
+.more-button { grid-column: 4; }
+.empty-build {
+  background: var(--panel-strong);
+  border-color: var(--line);
+  border-radius: 8px;
+  min-height: 190px;
+}
+.empty-build:before { display: none; }
+.empty-build h2 { font-size: 18px; font-weight: 720; }
+.activity-panel { margin-top: 6px; }
+.activity-count { color: var(--subtle); font-size: 12px; font-weight: 640; }
+.activity-list { display: grid; gap: 8px; }
+.event-row, .url-row {
+  background: var(--panel-strong);
+  border-color: var(--line);
+  border-radius: 8px;
+}
+.modal { border-radius: 12px; box-shadow: none; }
+.account-identity {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+.account-avatar {
+  border-radius: 999px;
+  flex: 0 0 48px;
+  height: 48px;
+  object-fit: cover;
+  overflow: hidden;
+  width: 48px;
+}
+.account-avatar--initials {
+  align-items: center;
+  background: var(--accent-soft);
+  color: var(--text);
+  display: inline-flex;
+  font-size: 17px;
+  font-weight: 720;
+  justify-content: center;
+  letter-spacing: 0.02em;
+}
+.account-identity-copy { display: grid; gap: 2px; min-width: 0; }
+.account-identity-copy strong {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 20px;
+}
+.account-identity-copy span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 16px;
+}
+.account-credits { display: grid; gap: 12px; }
+.credits-line {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 620;
+  margin: 0;
+}
+.credits-bar {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  height: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+.credits-bar > span {
+  background: var(--accent);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+  transition: width 200ms ease;
+}
+.credits-bar--empty > span { background: rgba(255, 255, 255, 0.12); }
+.credits-daily {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 560;
+  margin: 0;
+}

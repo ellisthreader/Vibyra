@@ -7,6 +7,11 @@
     "userInterfaceStyle": "dark",
     "scheme": "vibyra",
     "icon": "./src/assets/vibyra.png",
+    "splash": {
+      "image": "./src/assets/vibyra.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#07070A"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],

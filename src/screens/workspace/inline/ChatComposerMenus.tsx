@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, PanResponder, Pressable, Text, View } from "react-native";
 import { ReasoningEffort } from "../../../types/domain";
-import { chatModelGroups, chatModelOptions } from "../data/chatModels";
+import { chatModelGroups, chatModelOptionFor, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { ModelMenuRow } from "./chunk10";
 
@@ -21,7 +21,7 @@ export function ModelMenu(props: {
   onSelectEffort: (effort: ReasoningEffort) => void;
   onUpgrade: () => void;
 }) {
-  const selectedModel = chatModelOptions.find((model) => model.key === props.selected) ?? chatModelOptions[0];
+  const selectedModel = chatModelOptionFor(props.selected) ?? chatModelOptions[0];
   if (!props.open) return null;
   return (
     <View style={styles.chatModelMenu}>

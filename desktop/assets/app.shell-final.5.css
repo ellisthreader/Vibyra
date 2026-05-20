@@ -1,0 +1,98 @@
+.app.rail-collapsed .rail .nav-button:after,
+.app.rail-collapsed .rail-status-card:before {
+  transition: opacity 120ms ease, transform 120ms ease;
+  white-space: nowrap;
+  z-index: 90;
+}
+
+.app.rail-collapsed .rail .nav-button:after {
+  content: attr(data-tooltip);
+}
+
+.app.rail-collapsed .rail-status-card:before {
+  content: attr(aria-label);
+}
+
+.app.rail-collapsed .rail .nav-button:hover:after,
+.app.rail-collapsed .rail-status-card:hover:before {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 1360px) {
+  .app { grid-template-columns: 216px minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 72px minmax(0, 1fr); }
+  .rail { height: calc(100vh - var(--chrome-height)); top: var(--chrome-height); }
+  .rail-logo strong,
+  .rail-logo .rail-collapse-button,
+  .rail-status-main small,
+  .rail-status-main strong,
+  .rail-status-top span:last-child {
+    display: none;
+  }
+  .rail-status-main {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    height: 54px;
+    min-height: 54px;
+    padding: 0 16px;
+  }
+  .content.chat-content {
+    height: calc(100vh - var(--chrome-height) - 54px);
+  }
+  .summary-grid,
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    padding-bottom: 80px;
+  }
+  .rail {
+    display: none;
+  }
+  .app.rail-collapsed {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .app.rail-collapsed .rail-expand-button {
+    display: none;
+  }
+  .main {
+    grid-column: 1;
+  }
+  .topbar {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    padding: 0 12px;
+  }
+  .projects-page,
+  .builds-page {
+    padding: 18px 14px 30px;
+  }
+  .chat-scroll {
+    padding: 22px 14px 8px;
+  }
+  .composer-shell {
+    padding: 10px 14px 14px;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .app.rail-collapsed .rail-logo .rail-collapse-button {
+    display: inline-flex;
+  }
+}

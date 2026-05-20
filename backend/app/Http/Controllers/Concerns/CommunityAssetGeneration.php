@@ -19,7 +19,7 @@ trait CommunityAssetGeneration
             return $this->json(['ok' => false, 'error' => 'Choose logo or screenshot generation.'], 422);
         }
 
-        $cost = $kind === 'screenshot' ? 4 : 2;
+        $cost = $kind === 'screenshot' ? 20 : 12;
         $title = Str::limit(trim((string) $request->input('title', 'Vibyra project')), 90, '');
         $description = Str::limit(trim((string) $request->input('description', '')), 420, '');
         $prompt = Str::limit(trim((string) $request->input('prompt', '')), 600, '');
@@ -29,7 +29,7 @@ trait CommunityAssetGeneration
 
         $credits->maybeResetDaily($user);
         if ((int) $user->credits_balance < $cost) {
-            return $this->json(['ok' => false, 'error' => "Generating this {$kind} costs {$cost} credits."], 402);
+            return $this->json(['ok' => false, 'error' => "Generating this {$kind} costs {$cost} tokens."], 402);
         }
         if ((int) $user->daily_credits_used + $cost > $credits->dailyCap($user)) {
             return $this->json(['ok' => false, 'error' => 'Daily credit cap reached. Try again tomorrow.'], 429);

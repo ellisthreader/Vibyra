@@ -57,7 +57,8 @@ export function event(source, message, tone = "info") {
     source,
     message,
     tone,
-    time: "Now"
+    time: "Now",
+    createdAt: new Date().toISOString()
   };
 }
 

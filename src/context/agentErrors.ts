@@ -39,7 +39,8 @@ export function userFacingAgentError(error: unknown) {
     return message;
   }
   if (lower.includes("failed to fetch") || lower.includes("could not reach")) {
-    return "I could not reach Vibyra from the app. On iPhone: open Settings → Privacy & Security → Local Network and make sure Expo Go (or your dev client) is enabled. Also confirm you are on the same Wi-Fi as the laptop running the backend.";
+    if (lower.includes("could not reach vibyra at") || lower.includes("timed out at")) return message;
+    return "I could not reach Vibyra from the app. Make sure the backend is running on port 8000 and Expo was restarted after EXPO_PUBLIC_API_URL changed. On iPhone, Local Network permission must also be enabled for Expo Go or your dev client.";
   }
   if (lower.includes("not enough credits") || lower.includes("out of free credits") || lower.includes("out of credits")) {
     return "You're out of credits for this request. Open Account → Billing to top up or upgrade your plan.";

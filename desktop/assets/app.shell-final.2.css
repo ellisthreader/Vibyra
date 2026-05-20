@@ -1,0 +1,221 @@
+.desktop-window-controls svg {
+  height: 17px;
+  width: 17px;
+}
+
+body.electron-shell .desktop-auth {
+  height: 100vh;
+  height: 100dvh;
+  inset: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.electron-shell .auth-bg {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+body.electron-shell .auth-content {
+  height: calc(100vh - var(--chrome-height));
+  height: calc(100dvh - var(--chrome-height));
+  margin-top: var(--chrome-height);
+  min-height: calc(100vh - var(--chrome-height));
+  min-height: calc(100dvh - var(--chrome-height));
+}
+
+body.electron-shell .topbar {
+  display: none;
+}
+
+body.electron-shell .content.chat-content {
+  height: calc(100vh - var(--chrome-height));
+}
+
+body.electron-shell .desktop-chrome .connection-chip,
+body.electron-shell .desktop-chrome .token-pill,
+body.electron-shell .desktop-chrome .icon-button {
+  height: 32px;
+  min-height: 32px;
+  width: 32px;
+}
+
+body.electron-shell .rail-logo {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  height: 38px;
+  justify-content: flex-start;
+  margin: 0 2px 18px;
+  position: static;
+  z-index: 2;
+}
+
+body.electron-shell .rail-logo span {
+  display: none;
+}
+
+body.electron-shell .rail-logo strong {
+  color: #f7f5ff;
+  display: block;
+  flex: 1 1 auto;
+  font-size: 18px;
+  font-weight: 730;
+  line-height: 24px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.electron-shell .rail-logo .rail-collapse-button {
+  flex: 0 0 28px;
+  margin: 0 0 0 auto;
+  order: 2;
+  position: static;
+}
+
+.rail {
+  background: #08080c;
+  border-right: 1px solid rgba(210, 214, 226, 0.065);
+  grid-column: 1;
+  grid-row: 1;
+  height: calc(100vh - var(--chrome-height));
+  padding: 10px;
+  top: var(--chrome-height);
+}
+
+.main {
+  background: #07070a;
+  grid-column: 2;
+  grid-row: 1;
+  height: calc(100vh - var(--chrome-height));
+  min-width: 0;
+}
+
+.rail-logo {
+  height: 32px;
+  margin: 0 6px 18px;
+}
+
+.rail-logo span {
+  flex: 0 0 28px;
+  height: 28px;
+  width: 28px;
+}
+
+.rail-logo img {
+  height: 28px;
+  width: 28px;
+}
+
+.rail-logo strong {
+  color: #f7f5ff;
+  font-size: 15px;
+  font-weight: 690;
+}
+
+.rail-collapse-button {
+  height: 26px;
+  width: 26px;
+}
+
+.rail .nav-button {
+  border-radius: 7px;
+  color: #aaa6b7;
+  font-size: 13px;
+  font-weight: 590;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+}
+
+.rail .nav-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.rail .nav-button:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: transparent;
+}
+
+.rail-section-head {
+  color: #716d80;
+  font-size: 10px;
+  font-weight: 680;
+  margin-top: 2px;
+  padding: 0 6px;
+}
+
+.rail-chat {
+  border-radius: 7px;
+  color: #9c97aa;
+  font-size: 12px;
+  height: 30px;
+  padding: 0 8px;
+}
+
+.rail-status-card {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 7px;
+  padding: 6px;
+}
+
+.rail-status-card:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.rail-status-top {
+  color: #858194;
+  font-size: 10px;
+  font-weight: 680;
+  text-transform: none;
+}
+
+.rail-status-main {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+.rail-phone-icon {
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 7px;
+  color: #c9c3dc;
+  height: 28px;
+  width: 28px;
+}
+
+.rail-status-main strong {
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 16px;
+}
+
+.rail-status-main small {
+  color: #7b778a;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 15px;
+}
+
+.topbar {
+  background: rgba(7, 7, 10, 0.86);
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  height: 54px;
+  padding: 0 22px;
+  position: sticky;
+  top: 0;
+}
+
+.top-title {
+  justify-items: center;
+}
+
+.top-title h1 {
+  color: #f7f5ff;
+}

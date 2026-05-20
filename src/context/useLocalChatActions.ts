@@ -1,4 +1,4 @@
-import { DesktopConnectionPrompt, GeneratedApp, Project } from "../types/domain";
+import { GeneratedApp, Project } from "../types/domain";
 import type { GeneratedImage } from "../types/chatTools";
 import { ChatResponse } from "../utils/appApi";
 import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
@@ -6,6 +6,8 @@ import { isRunArtifact } from "../utils/files";
 import { makeId } from "../utils/ids";
 import { useAppState } from "./useAppState";
 import type { AgentStartTarget, AppContextValue } from "./appContextTypes";
+import { createLocalChatDesktopActions } from "./localChatDesktopActions";
+import { updateThreadMessage } from "./localChatMessageHelpers";
 
 type Store = ReturnType<typeof useAppState>;
 
@@ -125,49 +127,6 @@ export function useLocalChatActions(store: Store) {
     })));
   }
 
-  function addLocalPreviewServerPrompt(prompt: string, target?: AgentStartTarget) {
-    const { projectId, file } = resolveChatTarget(target);
-    const messageId = makeId("preview-server");
-    const projectName = target?.project?.name
-      ?? state.projects.find((project) => project.id === projectId)?.name
-      ?? state.chatProjects[projectId]?.name
-      ?? "this project";
-    setters.setChatThreads((current) => ({
-      ...current,
-      [projectId]: [
-        ...(current[projectId] ?? []),
-        { id: makeId("chat-user"), role: "user", text: prompt, file },
-        {
-          id: messageId,
-          role: "assistant",
-          text: `Start preview server for ${projectName}`,
-          file,
-          previewServer: {
-            id: messageId,
-            projectId,
-            projectName,
-            status: "approval",
-            phase: "waiting-approval"
-          }
-        }
-      ]
-    }));
-    setters.setTaskText("");
-    return messageId;
-  }
-
-  function updatePreviewServerMessage(messageId: string, projectId: string, update: Parameters<AppContextValue["updatePreviewServerMessage"]>[2], app?: ChatResponse["app"] | GeneratedApp) {
-    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => {
-      if (!message.previewServer) return message;
-      return {
-        ...message,
-        text: previewServerText(message.previewServer.projectName, update.status ?? message.previewServer.status),
-        previewServer: { ...message.previewServer, ...update },
-        ...(app ? { app } : {})
-      };
-    }));
-  }
-
   function addLocalChatProposal(
     prompt: string,
     reply: string,
@@ -221,47 +180,8 @@ export function useLocalChatActions(store: Store) {
     setters.setTaskText("");
   }
 
-  function addLocalDesktopConnectionPrompt(
-    prompt: string,
-    connectionPrompt: DesktopConnectionPrompt,
-    target?: AgentStartTarget
-  ) {
-    const { projectId, file } = resolveChatTarget(target);
-    setters.setChatThreads((current) => ({
-      ...current,
-      [projectId]: [
-        ...(current[projectId] ?? []),
-        { id: makeId("chat-user"), role: "user", text: prompt, file },
-        {
-          id: makeId("chat-assistant"),
-          role: "assistant",
-          text: desktopConnectionReply(connectionPrompt),
-          file,
-          desktopConnection: connectionPrompt
-        }
-      ]
-    }));
-    setters.setTaskText("");
-  }
-
   function resolveFolderProposal(proposalId: string, status: "accepted" | "dismissed", projectId?: string) {
     updateFolderProposal(proposalId, { status }, projectId);
-  }
-
-  function updateDesktopConnectionPrompt(messageId: string, update: Partial<DesktopConnectionPrompt>, projectId = state.selectedProjectId) {
-    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => ({ ...message, desktopConnection: message.desktopConnection ? { ...message.desktopConnection, ...update } : message.desktopConnection })));
-  }
-
-  function replaceDesktopConnectionWithProposal(messageId: string, reply: string, matches: Project[], query: string, projectId = state.selectedProjectId) {
-    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => {
-      const { desktopConnection: _desktopConnection, ...rest } = message;
-      if (matches.length === 0) return { ...rest, text: reply };
-      return {
-        ...rest,
-        text: reply,
-        folderProposal: { id: makeId("proposal"), status: "pending", matches, selectedIndex: 0, query }
-      };
-    }));
   }
 
   function updateFolderProposal(
@@ -293,6 +213,15 @@ export function useLocalChatActions(store: Store) {
     return { projectId, file: targetFile?.path };
   }
 
+  const desktopActions = createLocalChatDesktopActions({
+    chatProjects: state.chatProjects,
+    projects: state.projects,
+    resolveChatTarget,
+    selectedProjectId: state.selectedProjectId,
+    setChatThreads: setters.setChatThreads,
+    setTaskText: setters.setTaskText
+  });
+
   return {
     clearCurrentChat,
     addLocalUserMessage,
@@ -302,42 +231,14 @@ export function useLocalChatActions(store: Store) {
     addLocalImageGenerationPending,
     finishLocalGeneratedImage,
     failLocalImageGeneration,
-    addLocalPreviewServerPrompt,
-    updatePreviewServerMessage,
+    addLocalPreviewServerPrompt: desktopActions.addLocalPreviewServerPrompt,
+    updatePreviewServerMessage: desktopActions.updatePreviewServerMessage,
     addLocalChatProposal,
-    addLocalDesktopConnectionPrompt,
+    addLocalDesktopConnectionPrompt: desktopActions.addLocalDesktopConnectionPrompt,
     addLocalFolderRecovery,
-    replaceDesktopConnectionWithProposal,
+    replaceDesktopConnectionWithProposal: desktopActions.replaceDesktopConnectionWithProposal,
     resolveFolderProposal,
-    updateDesktopConnectionPrompt,
+    updateDesktopConnectionPrompt: desktopActions.updateDesktopConnectionPrompt,
     updateFolderProposal
   };
-}
-
-function previewServerText(projectName: string, status: NonNullable<AppContextValue["chatMessages"][number]["previewServer"]>["status"]) {
-  if (status === "ready") return `Preview is ready for ${projectName}`;
-  if (status === "failed") return `Preview failed for ${projectName}`;
-  if (status === "cancelled") return `Preview start cancelled for ${projectName}`;
-  if (status === "starting") return `Starting preview server for ${projectName}`;
-  return `Start preview server for ${projectName}`;
-}
-
-function updateThreadMessage(current: Record<string, AppContextValue["chatMessages"]>, projectId: string, messageId: string, update: (message: AppContextValue["chatMessages"][number]) => AppContextValue["chatMessages"][number]) {
-  const thread = current[projectId];
-  if (!thread) return current;
-  return { ...current, [projectId]: thread.map((message) => (message.id === messageId ? update(message) : message)) };
-}
-
-function desktopConnectionReply(connectionPrompt: DesktopConnectionPrompt) {
-  if (connectionPrompt.reason === "desktop-agent") {
-    return "Connect Vibyra Desktop so I can create a project folder on your PC.";
-  }
-  if (connectionPrompt.reason === "desktop-browse") {
-    return connectionPrompt.query
-      ? `Connect Vibyra Desktop so I can open "${connectionPrompt.query}" from your PC.`
-      : "Connect Vibyra Desktop so I can open this PC project.";
-  }
-  return connectionPrompt.query
-    ? `Connect Vibyra Desktop so I can search your PC for "${connectionPrompt.query}".`
-    : "Connect Vibyra Desktop so I can search and open folders on your PC.";
 }

@@ -60,6 +60,7 @@ export function AIChatPage(props: {
   const appCtx = useAppContext();
   const hasConversation = props.chatMessages.length > 0;
   const projectId = props.selectedChatId?.startsWith("project-") ? props.selectedChatId.replace("project-", "") : "";
+  const composerProjectId = projectId || (appCtx.selectedProject.id !== "no-project" ? appCtx.selectedProject.id : undefined);
   const project = projectId ? (appCtx.projects.find((item) => item.id === projectId) ?? appCtx.chatProjects[projectId]) : undefined;
   const selectedFilePath = appCtx.selectedFile.id !== "empty" ? appCtx.selectedFile.path : "";
   const needsFileBrief = Boolean(project?.briefRequiredFilePath && project.briefRequiredFilePath === selectedFilePath);
@@ -179,6 +180,7 @@ export function AIChatPage(props: {
             {...props}
             onNewChat={() => { appCtx.clearCurrentChat(); props.setSelectedChatId(null); }}
             onOpenFolderCommand={() => setCommandFolderOpen(true)}
+            projectId={composerProjectId}
           />
         )}
       </View>

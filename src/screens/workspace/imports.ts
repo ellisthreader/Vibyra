@@ -37,6 +37,7 @@ export {
 } from "./data/assets";
 export {
   chatModelGroups,
+  chatModelOptionFor,
   chatModelOptions,
   providerLogoSources
 } from "./data/chatModels";

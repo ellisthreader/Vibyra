@@ -6,6 +6,7 @@ import { Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView,
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
+import { getAppApiUrl } from "../utils/appApi";
 import { AuthChoice } from "./auth/AuthChoice";
 import { EmailAuthForm } from "./auth/EmailAuthForm";
 import { FeatureStrip } from "./auth/FeatureStrip";
@@ -76,7 +77,7 @@ export function AuthScreen() {
     try {
       await app.authenticateWith(method, accountStatus);
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "Could not sign in. Try again.");
+      setAuthError(formatAuthError(error));
     } finally {
       setAuthBusy(null);
     }
@@ -193,4 +194,11 @@ export function AuthScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+function formatAuthError(error: unknown) {
+  const message = error instanceof Error ? error.message : "Could not sign in. Try again.";
+  if (!message.toLowerCase().includes("could not reach vibyra")) return message;
+
+  return `The login API at ${getAppApiUrl()} is not reachable from this app. If the backend is already running, update EXPO_PUBLIC_API_URL to this computer's current Wi-Fi/LAN IP and restart Expo.`;
 }

@@ -1,0 +1,106 @@
+.terminal-agent-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.terminal-agent-row button,
+.terminal-agent-option {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f7f4ff;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: left;
+}
+
+.terminal-agent-row button.active,
+.terminal-agent-option.active {
+  border-color: rgba(139, 92, 255, 0.75);
+  background: rgba(109, 59, 255, 0.16);
+}
+
+.terminal-agent-row button.unavailable,
+.terminal-agent-option.unavailable {
+  color: rgba(247, 244, 255, 0.46);
+}
+
+.terminal-agent-row button.unavailable small,
+.terminal-agent-option.unavailable small {
+  color: rgba(255, 192, 97, 0.78);
+}
+
+.terminal-agent-row strong,
+.terminal-agent-option strong,
+.terminal-agent-row small,
+.terminal-agent-option small {
+  display: block;
+  min-width: 0;
+}
+
+.terminal-agent-row small,
+.terminal-agent-option small {
+  color: rgba(247, 244, 255, 0.58);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.terminal-agent-menu {
+  min-width: 230px;
+  padding: 8px;
+}
+
+.terminal-agent-option {
+  display: block;
+  width: 100%;
+  margin: 0 0 6px;
+}
+
+.terminal-pty-lines {
+  cursor: text;
+  outline: none;
+}
+
+.terminal-pty-lines:focus {
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 255, 0.55);
+}
+
+.terminal-pty-lines pre {
+  min-height: 100%;
+  margin: 0;
+  white-space: pre;
+  overflow-wrap: normal;
+  color: #f7f4ff;
+}
+
+.terminal-pty-composer {
+  align-items: center;
+  color: rgba(247, 244, 255, 0.62);
+  min-height: 44px;
+}
+
+.terminal-pty-composer:focus {
+  border-color: rgba(139, 92, 255, 0.62);
+}
+
+.terminal-cwd-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  color: rgba(247, 244, 255, 0.66);
+  font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 8px 10px;
+}
+
+.terminal-cwd-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .terminal-agent-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -70,6 +70,9 @@ export function useAppState() {
   const [taskText, setTaskText] = useState("");
   const [chatThreads, setChatThreads] = useState<Record<string, ChatMessage[]>>(initialAppState.chatThreads);
   const [chatTitles, setChatTitles] = useState<Record<string, string>>(initialAppState.chatTitles);
+  const [detachedChatThreads, setDetachedChatThreads] = useState<Record<string, ChatMessage[]>>(initialAppState.detachedChatThreads);
+  const [detachedChatTitles, setDetachedChatTitles] = useState<Record<string, string>>(initialAppState.detachedChatTitles);
+  const [detachedChatUpdatedAt, setDetachedChatUpdatedAt] = useState<Record<string, number>>(initialAppState.detachedChatUpdatedAt);
   const [newFilePath, setNewFilePath] = useState("note.txt");
   const [command, setCommand] = useState("npm run build");
   const [promptMoney, setPromptMoney] = useState<AppState["promptMoney"]>(initialAppState.promptMoney);
@@ -115,6 +118,9 @@ export function useAppState() {
         setSelectedModel(persisted.selectedModel);
         setChatThreads(persisted.chatThreads);
         setChatTitles(persisted.chatTitles);
+        setDetachedChatThreads(persisted.detachedChatThreads);
+        setDetachedChatTitles(persisted.detachedChatTitles);
+        setDetachedChatUpdatedAt(persisted.detachedChatUpdatedAt);
         setChatProjects(persisted.chatProjects);
         setProjectMemories(persisted.projectMemories);
         setEditApprovals(persisted.editApprovals);
@@ -180,11 +186,11 @@ export function useAppState() {
         level: levelProgress,
         onboardingComplete,
         rememberedDesktops,
-        appState: { chatThreads, chatTitles, chatProjects, projectMemories, editApprovals, profileImageUri, selectedModel, selectedChatModel, desktopPermissionMode, promptMoney }
+        appState: { chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt, chatProjects, projectMemories, editApprovals, profileImageUri, selectedModel, selectedChatModel, desktopPermissionMode, promptMoney }
       } : null
     });
   }, [
-    accountId, accountPlan, authEmail, authName, authToken, chatThreads, chatTitles, chatProjects,
+    accountId, accountPlan, authEmail, authName, authToken, chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt, chatProjects,
     projectMemories, editApprovals, creditsBalance, creditsUsed, dailyCreditsUsed, dailyCreditsCap, dailyCreditsResetAt,
     burstCreditsUsed, burstCreditsCap, burstCreditsResetAt, burstWindowHours, weeklyCreditsUsed, weeklyCreditsCap, weeklyCreditsResetAt, installId, levelProgress, onboardingComplete,
     pcSetupComplete, pcSetupSkipped, persistenceReady, profileImageUri, promptMoney, rememberedDesktops, selectedChatModel, selectedModel, desktopPermissionMode
@@ -213,7 +219,7 @@ export function useAppState() {
       healthMessage, checkingHealth, pendingPhoneApproval, connection, desktopPermissionMode, rememberedDesktops,
       machineName, projects, selectedProjectId, selectedModel, selectedChatModel, reasoningEffort,
       agents, logs, files, changes, selectedFileId, buildState, previewState,
-      workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles,
+      workflowIndex, lastPrompt, agentRequesting, taskText, chatMessages, chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt,
       chatSkills, chatProjects, projectMemories, editApprovals, newFilePath, command, promptMoney
     },
     derived,
@@ -227,7 +233,7 @@ export function useAppState() {
       setRememberedDesktops, setMachineName, setProjects,
       setSelectedProjectId, setSelectedModel, setSelectedChatModel, setReasoningEffort, setAgents,
       setLogs, setFiles, setChanges, setSelectedFileId, setBuildState, setPreviewState, setWorkflowIndex,
-      setLastPrompt, setAgentRequesting, setTaskText, setChatMessages, setChatThreads, setChatTitles,
+      setLastPrompt, setAgentRequesting, setTaskText, setChatMessages, setChatThreads, setChatTitles, setDetachedChatThreads, setDetachedChatTitles, setDetachedChatUpdatedAt,
       setChatSkills, setChatProjects, setProjectMemories, setEditApprovals, setNewFilePath, setCommand, setPromptMoney
     }
   };

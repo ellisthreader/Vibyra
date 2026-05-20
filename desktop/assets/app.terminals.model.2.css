@@ -1,0 +1,94 @@
+.terminal-model-option {
+  border-radius: 7px;
+  box-shadow: none;
+  color: #eeeaf8;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(20px, auto);
+  min-height: 48px;
+  padding: 7px 8px;
+  text-align: left;
+  transition: background-color 110ms ease, box-shadow 110ms ease, color 110ms ease;
+  width: 100%;
+}
+.terminal-model-option:hover,
+.terminal-model-option.locked:hover {
+  background: rgba(255, 255, 255, 0.052);
+  border-color: transparent;
+  box-shadow: none;
+  color: #eeeaf8;
+}
+.terminal-model-option.locked {
+  color: #90889e;
+}
+.terminal-model-option.locked:hover {
+  color: #90889e;
+}
+.terminal-model-option.active,
+.terminal-model-option.active:hover {
+  background: rgba(109, 59, 255, 0.17);
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px rgba(109, 59, 255, 0.18);
+  color: #f8f6ff;
+}
+.terminal-model-option:focus-visible {
+  outline: 2px solid rgba(109, 59, 255, 0.52);
+  outline-offset: 2px;
+}
+.terminal-model-option span:nth-child(2) {
+  min-width: 0;
+}
+.terminal-model-option strong,
+.terminal-model-option small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-model-option strong {
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 17px;
+}
+.terminal-model-option small {
+  color: #918ca1;
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 15px;
+  margin-top: 1px;
+  text-transform: capitalize;
+}
+.terminal-model-option.active small {
+  color: #bdb3df;
+}
+.terminal-model-option .provider-logo {
+  border-radius: 8px;
+  height: 30px;
+  width: 30px;
+}
+.terminal-model-option .provider-logo img,
+.terminal-model-option .provider-logo svg {
+  height: 18px;
+  width: 18px;
+}
+.terminal-model-badge,
+.terminal-model-lock {
+  align-items: center;
+  color: #a9a3b8;
+  display: inline-flex;
+  font-style: normal;
+  justify-content: flex-end;
+}
+.terminal-model-badge {
+  font-size: 11px;
+  font-weight: 720;
+}
+.terminal-model-lock svg {
+  height: 14px;
+  width: 14px;
+}
+.terminal-model-option > i {
+  display: block;
+  height: 1px;
+  width: 20px;
+}

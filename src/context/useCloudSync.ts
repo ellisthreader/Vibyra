@@ -18,8 +18,12 @@ type Snapshot = {
   rememberedDesktops: RememberedDesktop[];
   chatThreads: unknown;
   chatTitles: unknown;
+  detachedChatThreads: unknown;
+  detachedChatTitles: unknown;
+  detachedChatUpdatedAt: unknown;
   chatProjects: Record<string, Project>;
   projectMemories: unknown;
+  editApprovals: unknown;
   promptMoney: unknown;
   desktopPermissionMode: string;
   selectedChatModel: string;
@@ -34,8 +38,12 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
     rememberedDesktops,
     chatThreads,
     chatTitles,
+    detachedChatThreads,
+    detachedChatTitles,
+    detachedChatUpdatedAt,
     chatProjects,
     projectMemories,
+    editApprovals,
     promptMoney,
     desktopPermissionMode,
     selectedChatModel,
@@ -61,7 +69,7 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
         body: JSON.stringify({
           onboardingComplete,
           rememberedDesktops: rememberedDesktops.map(({ token, ...desktop }) => desktop),
-          appState: { chatThreads, chatTitles, chatProjects, projectMemories, promptMoney, desktopPermissionMode, selectedChatModel, selectedModel }
+          appState: { chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt, chatProjects, projectMemories, editApprovals, promptMoney, desktopPermissionMode, selectedChatModel, selectedModel }
         })
       }, authToken, { background: true }).then(() => {
         nextAttemptAtRef.current = 0;
@@ -88,8 +96,12 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
     authenticated,
     chatThreads,
     chatTitles,
+    detachedChatThreads,
+    detachedChatTitles,
+    detachedChatUpdatedAt,
     chatProjects,
     projectMemories,
+    editApprovals,
     onboardingComplete,
     promptMoney,
     desktopPermissionMode,

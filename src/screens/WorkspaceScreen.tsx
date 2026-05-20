@@ -18,11 +18,9 @@ import {
 } from "./workspace/inline";
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
 import { directoryForChat } from "./workspace/helpers/chatDirectory";
+import { hasRunnableLoadedFilePreview, isDisplayablePreview, previewFingerprint } from "./workspace/helpers/previewDisplay";
+import { sendWorkspaceChatHelp, workspaceRecentChats } from "./workspace/helpers/chatHeaderActions";
 import { styles } from "./workspace/styles";
-import { chatCommandHelpReply } from "./workspace/data/chatCommands";
-import { findIndexHtmlBody } from "../utils/files";
-import { hasLocalPreviewDependencies } from "../utils/previewHtml";
-import type { FileEntry, GeneratedApp } from "../types/domain";
 
 export function WorkspaceScreen() {
   const w = useWorkspace();
@@ -35,14 +33,7 @@ export function WorkspaceScreen() {
   const chatHasRunnablePreview = isDisplayablePreview(latestRunnablePreview);
   const projectChatHasRunnableFiles = Boolean(selectedChatProjectId && app.selectedProject.id === selectedChatProjectId && hasRunnableLoadedFilePreview(app.files));
   const projectChatCanStartPreview = Boolean(selectedChatProjectId && selectedChatProject && app.connection);
-  const recentChats = Object.entries(app.chatThreads)
-    .filter(([, messages]) => messages.length > 0)
-    .slice(-5)
-    .reverse()
-    .map(([projectId]) => ({
-      id: `project-${projectId}`,
-      title: app.chatTitles[projectId] ?? app.chatProjects[projectId]?.name ?? "Project chat"
-    }));
+  const recentChats = workspaceRecentChats(app);
 
   useEffect(() => {
     if (!w.previewApp || !latestRunnablePreview || previewFingerprint(w.previewApp) === previewFingerprint(latestRunnablePreview)) return;
@@ -64,11 +55,7 @@ export function WorkspaceScreen() {
             communitySubPageTitle={w.selectedCommunityPost ? formatCommunityTitle(w.selectedCommunityPost.title) : ""}
             isConnected={w.isConnected}
             onBackFromCommunity={w.backFromCommunitySubPage}
-            onChatHelp={() => {
-              const projectId = w.selectedChatId?.startsWith("project-") ? w.selectedChatId.replace("project-", "") : "";
-              if (projectId) app.addLocalChatReply("/help", chatCommandHelpReply, { projectId, chatProjectId: projectId, project: app.projects.find((p) => p.id === projectId) ?? app.chatProjects[projectId], file: null });
-              else w.setNewChatMessages((messages) => [...messages, { id: `help-user-${Date.now()}`, role: "user", text: "/help" }, { id: `help-assistant-${Date.now()}`, role: "assistant", text: chatCommandHelpReply }]);
-            }}
+            onChatHelp={() => sendWorkspaceChatHelp(w)}
             onDeleteChat={w.deleteCurrentChat}
             onOpenAccount={() => w.setAccountMenuVisible(true)}
             onOpenMenu={() => w.setPrimaryMenuVisible(true)}
@@ -245,24 +232,4 @@ export function WorkspaceScreen() {
       </View>
     </KeyboardAvoidingView>
   );
-}
-
-function isDisplayablePreview(app: GeneratedApp | null | undefined) {
-  return Boolean(app?.html?.trim() || app?.url?.trim());
-}
-
-function previewFingerprint(app: GeneratedApp) {
-  return [
-    app.id,
-    app.projectId ?? "",
-    app.source ?? "",
-    app.title,
-    app.url ?? "",
-    app.html ?? ""
-  ].join("\u0000");
-}
-
-function hasRunnableLoadedFilePreview(files: FileEntry[]) {
-  const html = findIndexHtmlBody(files);
-  return Boolean(html?.trim() && !hasLocalPreviewDependencies(html));
 }

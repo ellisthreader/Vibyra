@@ -1,0 +1,357 @@
+# AI Terminal Provider CLI Research
+
+Date: 2026-05-20
+Scope: Vibyra desktop Terminals page (`desktop/assets/app.terminals.js`, `desktop/assets/app.terminals.css`, `desktop/lib/aiTerminals.mjs`).
+
+Purpose: implementation-ready research for making each AI provider terminal feel like its real CLI surface instead of one generic chat terminal.
+
+Parity requirement:
+Implement against the captured/documented evidence below, not against generic "AI terminal" taste. Where a real CLI exposes an exact visible string, marker, or command behavior, copy that behavior. Where the provider does not expose stable public source for a visual state, use the local capture or official screenshot as the acceptance target.
+
+Current local/latest versions checked:
+- Local Codex: `codex-cli 0.131.0`; latest npm: `@openai/codex 0.132.0`.
+- Local Claude Code: `2.1.143`; latest npm: `@anthropic-ai/claude-code 2.1.145`.
+- Gemini CLI not installed locally; latest npm: `@google/gemini-cli 0.42.0`.
+
+Evidence collected:
+- Local Claude Code TUI capture, 100x30 terminal: `script -q -c 'timeout 4s claude' /tmp/vibyra-claude.typescript`.
+- Local Codex TUI capture, 100x30 terminal: `script -q -c 'timeout 4s codex --no-alt-screen' /tmp/vibyra-codex.typescript`. This machine's Codex capture is dominated by the Linux sandbox/bubblewrap warning and permission tip; use the official splash image for normal initial layout.
+- Official Codex splash image: `https://raw.githubusercontent.com/openai/codex/main/.github/codex-cli-splash.png`, 1898x1190.
+- Gemini npm package unpacked from `@google/gemini-cli@0.42.0`; evidence files include `bundle/docs/assets/gemini-screenshot.png` (1089x582), `bundle/docs/reference/commands.md`, `bundle/docs/reference/keyboard-shortcuts.md`, `bundle/docs/cli/themes.md`, and `bundle/interactiveCli-*.js`.
+- Gemini interactive code confirms prompt placeholder, prompt markers, shell-mode status text, startup header logic, tips display, and footer/status content.
+
+Source files reviewed:
+- `desktop/assets/app.terminals.js`
+- `desktop/assets/app.terminals.css`
+- `desktop/lib/aiTerminals.mjs`
+- `desktop/assets/app.1.js`
+
+Existing Vibyra behavior:
+- Terminals are stored in `localStorage["vibyra.desktop.aiTerminals"]`.
+- Up to 12 terminals are supported.
+- `terminalBanner()` already branches by model provider: OpenAI, Gemini, Claude, Auto.
+- `terminalLine()` currently renders user messages with a generic `>` prompt and assistant output as a plain monospace block.
+- There is no provider-specific slash command parser yet.
+- Backend sends every prompt through `sendDesktopChat()` and does not know provider-specific terminal commands.
+
+Implementation target:
+Add a provider profile layer in `app.terminals.js`:
+- `terminalProviderProfile(terminal)` returns profile for `openai`, `claude`, `gemini`, or `auto`.
+- Profile owns `banner`, `promptToken`, `assistantPrefix`, `systemPrefix`, `commandRegistry`, `mentionSyntax`, `shellSyntax`, and `responseBlockTypes`.
+- Add `handleTerminalCommand(terminal, draft)` before `sendTerminal()` posts to backend.
+- Commands that change UI state should not be sent to the model.
+- Commands that are prompt skills, such as `/review`, can either create a local system line and call backend with a provider-specific prefix, or open a provider-style menu/placeholder until implemented.
+
+Shared terminal typography
+Use this baseline for all providers:
+- Font: inherit terminal monospace stack already used by `.terminal-lines`: `ui-monospace`, `JetBrains Mono`, `SFMono-Regular`, Menlo, Consolas, monospace.
+- Size: keep `13px` body and `22px` line-height for transcript readability.
+- Background: keep near-black `#07070b`.
+- User prompt/token column: fixed 14px column so transcripts do not shift.
+- Output should use `white-space: pre-wrap` and `overflow-wrap: anywhere`.
+- Slash commands, shell commands, and file mentions need visibly distinct spans, not plain assistant text.
+- Do not add fake editable prompts inside `.terminal-lines`; keep input only in `.terminal-composer`.
+
+Provider colors
+- Claude: warm orange/coral accent, currently `#ff9b6a`.
+- OpenAI/Codex: green accent, currently `#4ade80`.
+- Gemini: blue accent, currently `#6aa8ff`.
+- Auto/Vibyra: purple accent, currently `#b9a7f6`.
+
+Provider: Claude Code
+Real CLI/product cues:
+- Local capture shows a rounded box header: `Claude Code v2.1.143`.
+- Local capture shows a centered greeting (`Welcome back <name>!`) and Claude ASCII logo:
+```
+ ▐▛███▜▌
+▝▜█████▛▘
+  ▘▘ ▝▝
+```
+- Local capture shows model/plan/cwd metadata on one row below the logo, for example `<model> with <effort> effort · <plan> ·`, followed by account/org and cwd lines.
+- Local capture shows a right-hand column titled `Tips for getting started` and `What's new`, separated by horizontal rules, inside the same rounded box.
+- Local capture shows the input area as two horizontal separators with a `❯` prompt, inverse-highlight cursor on first placeholder character, and placeholder text like `Try "edit AppContext.tsx to..."`.
+- Local capture footer: `? for shortcuts · ← for agents` on the left and a mode/status cluster such as `◉ xhigh · /effort` on the right.
+- Official product examples also show a boxed "Welcome to Claude Code!" banner with a star symbol and prompt lines beginning with `>`.
+- Product examples show assistant/action rows prefixed with the filled circular marker `⏺`.
+- Tool invocation examples render as action text such as `Bash(...)...`, followed by shell output under an indented `⎿` marker.
+- Todo updates are a first-class visual pattern, shown as an "Update Todos" block with checkbox lines.
+- Claude Code commands are recognized only at the start of a message. Text after the command name is treated as arguments.
+- Quick syntax includes `/` at start for commands/skills, `!` at start for shell mode, and `@` for file path mention/autocomplete.
+
+Claude command set to model:
+- Core/session: `/clear [name]`, `/compact [instructions]`, `/resume [session]`, `/branch [name]`, `/exit`, `/quit`, `/rename [name]`.
+- Context/files: `/add-dir <path>`, `/memory`, `/context [all]`, `/init`, `@<file-or-path>`.
+- Model/mode: `/model [model]`, `/effort [level|auto]`, `/fast [on|off]`, `/plan [description]`, `/permissions`, `/sandbox`, `/tui [default|fullscreen]`, `/theme`.
+- Tools/integrations: `/mcp`, `/agents`, `/tasks`, `/background [prompt]`, `/hooks`, `/ide`, `/plugin`, `/reload-plugins`.
+- Review/workflows: `/diff`, `/review [PR]`, `/security-review`, `/simplify [focus]`, `/run`, `/verify`, `/batch <instruction>`, `/debug [description]`, `/doctor`.
+- Utility: `/help`, `/copy [N]`, `/usage`, `/cost`, `/stats`, `/feedback`, `/export [filename]`, `/terminal-setup`.
+- Removed/legacy note: `/vim` is removed in recent Claude Code docs; editor mode now lives under `/config`.
+
+Claude terminal rendering rules:
+- Banner must be a rounded box using `╭`, `╮`, `│`, `╰`, `╯`. In a full-width focus terminal, render a two-column interior: main welcome/logo/meta area and a tips/what's-new column. In grid tiles, collapse to the main area only.
+- Use the exact Claude ASCII logo above.
+- Title line: `Claude Code v<version>`.
+- Greeting: `Welcome back!` or `Welcome back <firstName>!` when an account first name exists. Never hardcode a personal email or organization.
+- Metadata order: `<model> with <effort> effort · <plan> ·`, then account/org if available, then cwd. Use Vibyra plan/project values as replacements.
+- Input placeholder: prefer `Try "edit <file> to..."` for empty Claude terminals.
+- User input prompt in composer and transcript: `❯` for active composer, `>` acceptable for historical transcript if space is tight.
+- Assistant narrative/tool prefix: `⏺`.
+- Shell output prefix: `⎿`.
+- Todos: render a dedicated todo block, not a normal paragraph.
+- Permission or mode changes should render as small system rows with Claude accent, not assistant replies.
+- Communication style: direct, collaborative, often action-first. Good simulated status lines:
+  - `⏺ I'll inspect the project structure first.`
+  - `⏺ Bash(npm test)...`
+  - `⎿ <command output>`
+  - `⏺ Done. Here's what changed:`
+
+Claude parser behavior:
+- `/clear` starts a new empty conversation and previous conversation remains resumable.
+- `/compact` summarizes current context, not a visual-only clear.
+- `/plan` changes the terminal to read-only planning mode until accepted.
+- `!<cmd>` should create a shell command block and require approval if Vibyra later supports local command execution.
+- `@` should open/insert a file mention, not send raw `@` text when a valid path is selected.
+
+Provider: OpenAI Codex CLI
+Real CLI/product cues:
+- Codex CLI runs as a full-screen terminal UI that can read, edit, run commands, show diffs, and ask for approvals inline.
+- It syntax-highlights markdown code blocks and diffs.
+- It has slash popup commands, `@` fuzzy file search/mentions, `!` shell command prefix, prompt history, queued input while work is running, and a configurable status line/title.
+- `/clear` starts a fresh chat; `Ctrl+L` only clears the visible screen.
+- `/copy` copies the latest completed output and can be triggered with `Ctrl+O`.
+- `/theme` previews/persists syntax themes.
+- `/permissions` switches approval mode.
+- `/review` opens local review presets and creates a dedicated review turn without touching files.
+- Official splash image shows a bordered status box near the top-left:
+```
+╭────────────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.0.0)                            │
+│                                                     │
+│ model:     gpt-5.2-codex medium    /model to change │
+│ directory: ~/code/codex/codex-rs                    │
+╰────────────────────────────────────────────────────╯
+```
+- Official splash then shows a single tip row: `Tip: Use /feedback to send logs to the maintainers when something looks off.`
+- User prompt row is a full-width darker input band starting with `›`.
+- Assistant reasoning/status rows in the screenshot start with a muted bullet `•`. Section headings like `Updated Plan` and `Explored` are bold; active checklist items use cyan text.
+
+Codex command set to model:
+- Session/navigation: `/clear`, `/new`, `/resume`, `/fork`, `/side`, `/exit`, `/quit`, `/raw`, `/copy`.
+- Model/mode: `/model`, `/fast`, `/personality`, `/plan`, `/goal`, `/permissions`, `/approve`, `/status`.
+- Context/mentions: `/mention`, `/ide`, `@<file-or-path>`.
+- Workflows: `/review`, `/diff`, `/compact`, `/skills`, `/agent`, `/apps`, `/plugins`, `/hooks`.
+- Config/diagnostics: `/init`, `/mcp`, `/logout`, `/feedback`, `/experimental`, `/debug-config`, `/statusline`, `/title`, `/theme`, `/keymap`, `/memories`.
+- Background/process: `/ps`, `/stop`.
+- Windows-only: `/sandbox-add-read-dir`.
+
+Codex terminal rendering rules:
+- Banner should look like a compact Codex status box, matching the current Vibyra `codexBanner()` direction. Keep it boxy and status-oriented.
+- Header text must be `>_ OpenAI Codex (v<version>)`.
+- Metadata row labels are lowercase and aligned: `model:` and `directory:`.
+- Include `/model to change` on the model row when width allows.
+- Tip row must begin with bold `Tip:` and use the exact style/content family from Codex; default copy can be `Use /feedback to send logs to the maintainers when something looks off.`
+- User composer/transcript prompt should be `›` for Codex, not generic `>`.
+- Assistant status/narration rows should use `•`.
+- Codex-specific transcript blocks should distinguish:
+  - plan text
+  - command proposals
+  - command output
+  - diff blocks
+  - approval prompts
+  - review findings
+- Use a header/footer-like metadata feel: model, reasoning, cwd/project, approval mode, context status.
+- Communication style: pragmatic, plan-first, explicit about actions and verification.
+- Review output should put findings first, with severity and file references when available.
+
+Codex parser behavior:
+- `/clear` clears transcript and starts a fresh chat.
+- `/model` opens provider model picker and can adjust reasoning.
+- `/permissions` opens approval mode picker.
+- `/review` should create a review preset picker or immediately send a review-style prompt.
+- `!<cmd>` should create a shell command block and respect approval/sandbox rules.
+- `@` should open fuzzy workspace file search and insert a mention token.
+- If a task is running, queued slash commands should be allowed for the next turn rather than discarded.
+
+Provider: Gemini CLI
+Real CLI/product cues:
+- Gemini CLI is documented as an interactive REPL for Gemini models.
+- Commands are prefixed with `/`, `@`, or `!`.
+- Slash commands control CLI/session state.
+- `@<path>` injects file or directory content into the prompt with git-aware filtering.
+- `!<shell_command>` executes a shell command and returns to Gemini CLI.
+- A lone `!` toggles shell mode; shell mode uses different coloring and a shell mode indicator.
+- Commands executed through `!` set `GEMINI_CLI=1` in the subprocess environment.
+- `/clear` clears the terminal screen and visible session history/scrollback.
+- `/chat` is an alias for `/resume`.
+- Packaged screenshot shows the startup logo as a large gradient `GEMINI` wordmark on black with a small Gemini icon to the left.
+- Startup tips are exact:
+```
+Tips for getting started:
+1. Ask questions, edit files, or run commands.
+2. Be specific for the best results.
+3. /help for more information.
+```
+- User prompt line in screenshot starts with `>`.
+- Model response line starts with `✦`.
+- Awaiting/idle status line starts with `✦ Awaiting your next command or request.`
+- Tool result boxes are bordered, full-width, and start with a green check plus tool name, for example `✓ WriteFile Writing to hello.py`.
+- Usage/context line example: `Using: 2 GEMINI.md files | 2 MCP servers`.
+- Input box is a blue bordered rectangle starting with `>`, with placeholder `Type your message or @path/to/file`.
+- Footer status shows cwd on the left, sandbox status in the center, and model/routing on the right. Screenshot example: `~\Desktop\Gemini` left, `no sandbox (see /docs)` center, `auto` right.
+- Interactive source confirms normal prompt marker `>`, shell mode prompt marker `!`, status text `Shell mode`, YOLO prompt marker `*`, and placeholder default `  Type your message or @path/to/file`.
+
+Gemini command set to model:
+- Session: `/about`, `/auth`, `/chat`, `/resume`, `/clear`, `/compress`, `/copy`, `/quit`, `/exit`, `/restore`, `/rewind`.
+- Context/files: `/directory add <path1>,<path2>`, `/directory show`, `/init`, `/memory list`, `/memory refresh`, `/memory show`, `@<path>`.
+- Model/mode: `/model manage`, `/model set <model-name> [--persist]`, `/plan`, `/plan copy`, `/permissions trust [path]`, `/theme`, `/vim`, `/settings`.
+- Tools/integrations: `/tools [desc]`, `/mcp`, `/ide`, `/extensions`, `/hooks`, `/commands`, `/skills`, `/agents`.
+- Diagnostics/account: `/stats`, `/stats session`, `/stats model`, `/stats tools`, `/privacy`, `/upgrade`, `/docs`, `/bug`.
+- Process/shell: `/shells`, `/bashes`, `!<shell_command>`, lone `!` shell mode.
+- Utility: `/help`, `/?`, `/editor`, `/terminal-setup`, `/setup-github`.
+
+Gemini terminal rendering rules:
+- Banner should be larger and more brand-like than Codex/Claude. Use the Gemini icon + `GEMINI` ASCII wordmark with a blue-to-purple-to-pink gradient. In grid tiles, collapse to icon + `Gemini CLI v<version>` plus tips hidden.
+- Startup tips must match the three lines above unless hidden by a compact grid state.
+- User prompt must be `>`.
+- Assistant/model response prefix must be `✦`.
+- Idle status prefix must be `✦`.
+- Tool-result block style: bordered rectangle, green check, bold tool display name, muted action/path text, then monospace content with line numbers where applicable.
+- Input/composer style must be a blue focused rectangle with `>` prompt and placeholder `Type your message or @path/to/file`.
+- Footer should expose cwd, sandbox status, and model/routing labels when space allows.
+- File/shell syntax must be visibly Gemini-specific:
+  - `@src/file.ts` as a blue mention chip/text span.
+  - `!npm test` as a blue shell command block.
+  - lone `!` toggles a persistent shell-mode row/state.
+- System rows should explicitly label actions such as memory refreshed, model set, tools listed, or shell mode enabled.
+- Communication style: tool-oriented and REPL-like. It should feel comfortable listing available tools, stats, model state, and filesystem context.
+
+Gemini parser behavior:
+- `/clear` clears visible transcript/scrollback.
+- `/compress` summarizes the whole chat context.
+- `/model set <name> [--persist]` updates terminal model and optionally localStorage default.
+- `/directory add` updates per-terminal extra context roots when implemented.
+- `/memory refresh` should reload/invalidate project memory context if Vibyra adds Gemini-style memory.
+- `@<path>` should stage file/folder context and show a tool-call status line.
+- `!` toggles shell mode. While shell mode is active, normal input should be treated as shell command text until `!` toggles back.
+
+Provider: Auto/Vibyra
+Use this only when provider is unknown or Auto model routing is selected.
+- Keep the existing Vibyra Desktop banner.
+- Keep compact `>` user prompt.
+- Supported local slash commands should remain the Vibyra desktop subset until provider is known: `/open`, `/new`, `/clear`, `/help`, `/plan`, `/debug`, `/review`, `/explain`, `/fix`, `/refactor`.
+- Do not expose provider-specific commands in Auto unless model/provider is resolved.
+
+Response block types to add
+Implement these renderer types so provider output can be realistic:
+- `system`: local CLI status, muted/accented, not assistant text.
+- `assistant`: normal model response.
+- `tool`: tool invocation row; Claude uses `⏺`, Codex uses a command/status block, Gemini uses tool list/status row.
+- `shell`: shell command proposal/execution and output.
+- `diff`: code diff block with Codex-style syntax highlighting.
+- `todo`: Claude-style todo update block.
+- `approval`: permission prompt block; do not fake approval as assistant prose.
+- `review`: findings-first review block.
+- `mention`: staged file/folder mention line.
+
+Suggested data shape
+Extend stored messages from `{ role, text }` to support typed blocks while preserving old messages. Add `profileVersion` so old persisted terminal messages can be migrated without breaking history:
+```
+{
+  role: "user" | "assistant" | "system",
+  type: "text" | "tool" | "shell" | "diff" | "todo" | "approval" | "review" | "mention",
+  text: string,
+  provider?: "claude" | "openai" | "gemini" | "auto",
+  meta?: {
+    command?: string,
+    args?: string,
+    status?: "pending" | "running" | "done" | "error",
+    path?: string,
+    exitCode?: number
+  },
+  profileVersion?: 1
+}
+```
+
+Exact provider profiles to implement
+`claude`:
+- `promptToken`: `❯`
+- `historyPromptToken`: `>`
+- `assistantToken`: `⏺`
+- `shellOutputToken`: `⎿`
+- `idlePlaceholder`: `Try "edit AppContext.tsx to..."`
+- `bannerTitle`: `Claude Code v<version>`
+- `accent`: `#ff9b6a`
+
+`openai`:
+- `promptToken`: `›`
+- `assistantToken`: `•`
+- `bannerTitle`: `>_ OpenAI Codex (v<version>)`
+- `tipPrefix`: `Tip:`
+- `accent`: cyan/teal for slash command links and active plan items; keep current green only for provider logo/status if desired.
+
+`gemini`:
+- `promptToken`: `>`
+- `shellPromptToken`: `!`
+- `yoloPromptToken`: `*`
+- `assistantToken`: `✦`
+- `idleToken`: `✦`
+- `idleText`: `Awaiting your next command or request.`
+- `placeholder`: `Type your message or @path/to/file`
+- `accent`: `#6aa8ff` plus blue-purple-pink logo gradient.
+
+Implementation steps
+1. Add provider profiles and command registries in `desktop/assets/app.terminals.js`.
+2. Replace hard-coded `terminalLine()` with provider-aware typed block rendering.
+3. Add `parseTerminalInput(terminal, draft)`:
+   - detects slash commands only when draft starts with `/`;
+   - detects Gemini/Codex/Claude `@` mentions;
+   - detects `!` shell syntax;
+   - returns `{ handled, messagesToAppend, backendPrompt, uiAction }`.
+4. Add local handlers for commands that already map to Vibyra UI:
+   - `/clear`, `/new`, `/model`, `/help`, `/review`, `/plan`.
+5. For unsupported but real provider commands, show a provider system line:
+   - `Command recognized but not available in Vibyra Desktop yet: /<command>`
+   This is better than sending the command to the model and pretending it worked.
+6. Add CSS classes:
+   - `.terminal-line.system`
+   - `.terminal-line.tool`
+   - `.terminal-line.shell`
+   - `.terminal-line.diff`
+   - `.terminal-line.todo`
+   - `.terminal-line.approval`
+   - `.terminal-line.review`
+   - `.terminal-provider-claude`, `.terminal-provider-openai`, `.terminal-provider-gemini`
+7. Keep backend changes minimal unless command execution/session persistence becomes server-owned. For now, client-side parsing is enough because the current backend only proxies chat.
+8. Add tests around command parsing as pure functions if extracted. At minimum run:
+   - `node --check desktop/assets/app.terminals.js`
+   - `node --check desktop/lib/aiTerminals.mjs`
+
+Acceptance checks for "100% enough to implement"
+- Claude terminal at 1360x820: startup box uses rounded border, Claude ASCII logo, greeting, metadata, tips/what's-new column, `❯` composer, and footer/status markers from local capture.
+- Codex terminal at 1360x820: startup status box matches official splash structure, uses `>_ OpenAI Codex`, aligned `model:`/`directory:` rows, `›` prompt band, `Tip:` row, and bullet-led plan/status blocks.
+- Gemini terminal at 1360x820: startup screen matches packaged screenshot structure: gradient `GEMINI` wordmark, exact three tips, `>` input box, `✦` response/idle marker, tool result box, usage/context line, cwd/sandbox/model footer.
+- Grid tiles: preserve each provider's tokens/colors but collapse large banners before they crowd content.
+- Slash command menus: command names and descriptions must be provider-scoped. Do not show Claude-only commands in Gemini, Gemini-only commands in Codex, or provider-specific commands in Auto.
+- `!` behavior: Gemini must support lone `!` shell-mode toggle; Codex/Claude should treat `!<cmd>` as shell command syntax but not enter Gemini-style persistent shell mode unless their real CLI behavior requires it.
+- `@` behavior: Gemini uses `read_many_files` semantics and git-aware filtering language; Codex uses fuzzy file search/mentions; Claude uses file path mention/autocomplete.
+- Unsupported-but-real commands render provider system rows instead of being sent as normal model prompts.
+
+Provider command precedence
+- If draft is empty: do nothing.
+- If terminal has Gemini shell mode enabled and draft is not `!`: treat as shell command.
+- If draft starts with `/`: parse provider command.
+- If draft starts with `!`: parse shell command/toggle.
+- If draft contains a valid provider mention token: render mention and include context in backend prompt when implemented.
+- Otherwise send normal prompt to backend.
+
+Source references
+- Claude Code CLI reference: https://code.claude.com/docs/en/cli-usage
+- Claude Code commands reference: https://code.claude.com/docs/en/commands
+- Claude Code interactive mode: https://code.claude.com/docs/en/interactive-mode
+- Claude Code product terminal examples: https://website.claude.com/product/claude-code
+- OpenAI Codex CLI overview/setup: https://developers.openai.com/codex/cli
+- OpenAI Codex CLI features: https://developers.openai.com/codex/cli/features
+- OpenAI Codex CLI slash commands: https://developers.openai.com/codex/cli/slash-commands
+- Google Gemini CLI docs: https://google-gemini.github.io/gemini-cli/docs/cli/
+- Google Gemini CLI commands reference: https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/commands.md
+- Google Gemini CLI themes reference: https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/themes.md

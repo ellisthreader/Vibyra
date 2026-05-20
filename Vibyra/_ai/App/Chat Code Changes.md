@@ -25,6 +25,8 @@ If a project has an unresolved pending `pendingApplyId`, `useAgentActions.startA
 
 `editApprovals` persists in app state and cloud sync. Approval is per-project, not global.
 
+The bottom-left PC permission control is owned by `src/screens/workspace/inline/PcPermissionControl.tsx` and receives its folder scope from `AIChatPage` in `src/screens/workspace/inline/chunk9.tsx`. Its user-facing options are Review First, Auto-Approve in This Folder, and Full Access. New projects/chats default to Review First unless the current project has `editApprovals[projectId] = "always"`. Full Access must show a centered confirmation modal with a short safety warning, then records approval only for that current project; global `desktopPermissionMode` is normalized to `"ask"` and must not make other projects auto-apply.
+
 ## Changed Files Card
 
 Desktop completions attach `codeChanges`, `codeFiles`, and `codeProjectId`. `MessageBubble` shows filename, `+/-` counts, Review expansion with syntax-highlighted `CollapsibleCodeBlock`, and Revert when `previousBody` exists.
@@ -44,3 +46,5 @@ Keep run artifacts in `app.files` because they are useful for changes cards and 
 ## Implementation Split
 
 `useAgentActions.ts` orchestrates prompt submission only. `agentActionHelpers.ts` owns target resolution and optimistic agent creation. `useAgentChatMessages.ts` owns pending rows, streaming, and failures. `useAgentResultHandlers.ts` owns desktop/OpenRouter success handling and approval metadata. Keep these files under 200 lines.
+
+Line-count refactor note: `useAgentActions.ts` delegates mode/tool decisions to `agentModeDecisions.ts`; `useLocalChatActions.ts` delegates desktop connection and preview-server local chat messages to `localChatDesktopActions.ts` / `localChatMessageHelpers.ts`; `utils/appApi.ts` owns JSON request/reachability while `utils/appApiStream.ts` owns SSE chat streaming. Workspace prompt routing is split so `workspacePromptActions.ts` coordinates only, with cloud/image tools in `workspaceToolActions.ts`, terminal/preview approvals in `workspaceCommandActions.ts`, project/detached replies in `workspacePromptReplyHandlers.ts`, and prompt predicates in `workspacePromptPredicates.ts`. `WorkspaceScreen.tsx` keeps header helpers in `workspace/helpers/chatHeaderActions.ts` and preview capability helpers in `workspace/helpers/previewDisplay.ts`.

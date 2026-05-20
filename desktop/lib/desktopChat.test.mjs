@@ -22,6 +22,7 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
     history: [{ role: "user", text: "Earlier" }],
     mode: "chat",
     model: "gpt-5.4-mini",
+    profileContext: { callName: "Ellis", work: "Founder", customInstructions: "Ask clarifying questions before detailed answers." },
     prompt: "Explain this project",
     reasoningEffort: "xhigh",
     skill: "review",
@@ -46,6 +47,10 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.equal(requestBody.reasoningEffort, "xhigh");
   assert.equal(requestBody.skill, "review");
   assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
+  assert.match(requestBody.prompt, /Desktop profile preferences:/);
+  assert.match(requestBody.prompt, /Call the user: Ellis/);
+  assert.match(requestBody.prompt, /User work: Founder/);
+  assert.match(requestBody.prompt, /User instructions: Ask clarifying questions before detailed answers\./);
   assert.match(requestBody.prompt, /Attached local context names: README\.md/);
 });
 

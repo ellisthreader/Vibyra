@@ -74,25 +74,25 @@ export const part49 = {
     width: 42
   },
   communityPostCard: {
-    backgroundColor: "rgba(10, 12, 18, 0.88)",
-    borderColor: "rgba(255, 255, 255, 0.075)",
-    borderRadius: 14,
+    backgroundColor: "rgba(10, 12, 18, 0.82)",
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 11,
-    minHeight: 132,
-    padding: 12
+    gap: 8,
+    minHeight: 112,
+    padding: 11
   },
   communityPostCardPressed: {
-    backgroundColor: "rgba(15, 17, 25, 0.94)",
-    opacity: 0.9,
-    transform: [{ scale: 0.992 }]
+    backgroundColor: "rgba(15, 17, 25, 0.9)",
+    opacity: 0.92,
+    transform: [{ scale: 0.994 }]
   },
   communityPostDescription: {
-    color: "#ABA7B6",
+    color: "#AFAAB8",
     fontSize: 12.5,
     fontWeight: "700",
-    lineHeight: 17,
-    marginTop: 3
+    lineHeight: 16,
+    marginTop: 2
   },
   communityPostOpenButton: {
     alignItems: "center",
@@ -115,6 +115,67 @@ export const part49 = {
     fontWeight: "900",
     letterSpacing: 0,
     lineHeight: 20
+  },
+  communityPostTop: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 10
+  },
+  communityPostTitleBlock: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 2
+  },
+  communityPostMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 8,
+    minHeight: 24
+  },
+  communityPostMetaStats: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginLeft: "auto"
+  },
+  communityPostStat: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    minHeight: 26
+  },
+  communityPostStatText: {
+    color: "#9F9AAD",
+    fontSize: 11.5,
+    fontWeight: "800"
+  },
+  communityPostStatLiked: {
+    color: "#FF8FB1"
+  },
+  communityMakerMiniName: {
+    color: "#C9C4D1",
+    flexShrink: 1,
+    fontSize: 11.5,
+    fontWeight: "800",
+    maxWidth: 104
+  },
+  communityMakerMiniTime: {
+    color: "#8F899B",
+    fontSize: 11,
+    fontWeight: "700"
+  },
+  communityBookmark: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
+    borderRadius: 999,
+    borderWidth: 0,
+    height: 36,
+    justifyContent: "center",
+    marginRight: -4,
+    marginTop: -4,
+    width: 36
   },
   communityScreen: {
     flex: 1,

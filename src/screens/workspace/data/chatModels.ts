@@ -1,3 +1,4 @@
+import { ANALYZE_FILES_MODEL_KEY, DEEP_RESEARCH_MODEL_KEY, WEB_SEARCH_MODEL_KEY } from "../../../types/chatTools";
 import { ChatModelOption } from "../types";
 
 export type ModelTier = "free" | "budget" | "balanced" | "premium";
@@ -10,6 +11,9 @@ export const modelTiers: Record<string, ModelTier> = {
   "gpt-5.4-mini": "budget",
   "gpt-5.4-nano": "budget",
   "gpt-5-codex": "premium",
+  "tool-deep-research": "budget",
+  "tool-web-search": "budget",
+  "tool-analyze-files": "budget",
   "claude-opus-4": "premium",
   "claude-sonnet-4": "balanced",
   "claude-3-5-haiku": "budget",
@@ -70,6 +74,19 @@ export function modelLockedForTiers(model: ChatModelOption, allowedTiers: ModelT
 }
 
 export const chatModelOptions = chatModelGroups.flatMap((group) => group.options);
+
+export const toolOnlyChatModelOptions: ChatModelOption[] = [
+  { key: DEEP_RESEARCH_MODEL_KEY, label: "Deep Research", provider: "gemini" },
+  { key: WEB_SEARCH_MODEL_KEY, label: "Agent Web Search", provider: "gemini" },
+  { key: ANALYZE_FILES_MODEL_KEY, label: "Analyze Files", provider: "gemini" }
+];
+
+export const chatModelLookupOptions = [...chatModelOptions, ...toolOnlyChatModelOptions];
+
+export function chatModelOptionFor(key: string | null | undefined): ChatModelOption | undefined {
+  if (!key) return undefined;
+  return chatModelLookupOptions.find((model) => model.key === key || model.modelKey === key);
+}
 
 export const providerLogoSources = {
   gemini: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/250px-Google_Gemini_icon_2025.svg.png",

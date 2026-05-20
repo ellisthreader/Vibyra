@@ -7,6 +7,7 @@ import { resolveRunnableDesktopPreviewUrl } from "../../../utils/previewUrls";
 import { projectPreviewUrl } from "../helpers/chatPrompts";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { previewAppFromMessage } from "../inline/chatPreviewFallback";
+import { useWorkspaceDetachedChats } from "./workspaceDetachedChats";
 import { WorkspaceState } from "./useWorkspaceState";
 
 export function makeStubProject(id: string): Project {
@@ -14,6 +15,7 @@ export function makeStubProject(id: string): Project {
 }
 export function useWorkspaceChatRuntime(s: WorkspaceState) {
   const { app } = s;
+  const detachedChats = useWorkspaceDetachedChats(s);
 
   const openProjectChat = useCallback((projectId: string, projectName: string) => {
     const chatId = `project-${projectId}`;
@@ -24,44 +26,40 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
 
   const addDetachedChatReply = useCallback((prompt: string, reply: string) => {
     const assistantId = `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-    s.setNewChatMessages((c) => [
-      ...c,
+    const chatId = detachedChats.appendDetachedMessages(prompt, [
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: prompt },
       { id: assistantId, role: "assistant", text: TYPING_CURSOR }
     ]);
     app.setTaskText("");
     streamChatText(reply, (text) => {
-      s.setNewChatMessages((c) => c.map((m) => (m.id === assistantId ? { ...m, text } : m)));
+      detachedChats.updateDetachedMessage(chatId, assistantId, (message) => ({ ...message, text }));
     });
-  }, [app, s]);
+  }, [app, detachedChats]);
 
   const addDetachedUserMessage = useCallback((prompt: string) => {
     const trimmed = prompt.trim();
     if (!trimmed) return;
-    s.setNewChatMessages((c) => [
-      ...c,
+    detachedChats.appendDetachedMessages(trimmed, [
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: trimmed }
     ]);
     app.setTaskText("");
-  }, [app, s]);
+  }, [app, detachedChats]);
 
   const addDetachedChatProposal = useCallback((prompt: string, reply: string, matches: Project[], query: string) => {
     const proposalId = `new-chat-proposal-${Date.now()}-${Math.round(Math.random() * 1000)}`;
     const assistantId = `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`;
-    s.setNewChatMessages((c) => [
-      ...c,
+    const chatId = detachedChats.appendDetachedMessages(prompt, [
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: prompt },
       { id: assistantId, role: "assistant", text: TYPING_CURSOR, folderProposal: { id: proposalId, status: "pending", matches, selectedIndex: 0, query } }
     ]);
     app.setTaskText("");
     streamChatText(reply, (text) => {
-      s.setNewChatMessages((c) => c.map((m) => (m.id === assistantId ? { ...m, text } : m)));
+      detachedChats.updateDetachedMessage(chatId, assistantId, (message) => ({ ...message, text }));
     });
-  }, [app, s]);
+  }, [app, detachedChats]);
 
   const addDetachedDesktopConnectionPrompt = useCallback((prompt: string, connectionPrompt: DesktopConnectionPrompt) => {
-    s.setNewChatMessages((c) => [
-      ...c,
+    detachedChats.appendDetachedMessages(prompt, [
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: prompt },
       {
         id: `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`,
@@ -71,7 +69,7 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
       }
     ]);
     app.setTaskText("");
-  }, [app, s]);
+  }, [app, detachedChats]);
 
   const activeProjectTarget = useCallback((project?: Project) => {
     const selectedChatProjectId = s.selectedChatId?.startsWith("project-") ? s.selectedChatId.replace("project-", "") : null;
@@ -165,7 +163,7 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     if (project) openProjectChat(project.id, app.chatTitles[project.id] ?? project.name);
   }, [app, openProjectChat]);
 
-  return { activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, addDetachedDesktopConnectionPrompt, addDetachedUserMessage, createProjectAndOpenChat, desktopPreviewApp, openProjectChat, openProjectPreview, openRunnablePreview, runnablePreviewApp, showDesktopPreview };
+  return { activeProjectTarget, addDetachedChatProposal, addDetachedChatReply, addDetachedDesktopConnectionPrompt, addDetachedUserMessage, appendDetachedMessages: detachedChats.appendDetachedMessages, createProjectAndOpenChat, desktopPreviewApp, openProjectChat, openProjectPreview, openRunnablePreview, runnablePreviewApp, showDesktopPreview, updateDetachedMessage: detachedChats.updateDetachedMessage };
 }
 function latestDisplayableApp(...groups: Array<GeneratedApp | null | undefined | Array<Pick<ChatMessage, "app" | "id" | "text">>>) {
   for (const group of groups) {

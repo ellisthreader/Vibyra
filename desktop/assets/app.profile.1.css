@@ -1,0 +1,221 @@
+.profile-content { padding: 0; }
+.profile-page--desktop {
+  align-items: start;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: 240px minmax(0, 760px);
+  justify-content: start;
+  margin: 0;
+  max-width: none;
+  padding: 30px 36px 44px clamp(56px, 7vw, 96px);
+  width: 100%;
+}
+.profile-detail {
+  align-content: start;
+  display: grid;
+  gap: 22px;
+  min-height: 560px;
+  min-width: 0;
+  width: 100%;
+}
+.profile-detail-head {
+  display: grid;
+  gap: 8px;
+  padding: 0 0 8px;
+}
+.profile-detail-head p {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  line-height: 15px;
+  margin: 0;
+  text-transform: uppercase;
+}
+.profile-detail-head h1 {
+  color: var(--text);
+  font-size: 34px;
+  font-weight: 720;
+  letter-spacing: 0;
+  line-height: 40px;
+  margin: 0;
+}
+.profile-detail-head span {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 520;
+  line-height: 22px;
+  max-width: 720px;
+}
+.profile-section-rail {
+  position: sticky;
+  top: 82px;
+}
+.profile-section-card {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  width: 240px;
+}
+.profile-section-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 720;
+  letter-spacing: 0;
+  line-height: 30px;
+  margin: 0 0 10px;
+}
+.profile-section-identity {
+  display: none;
+}
+.profile-section-identity div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.profile-section-identity strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 720;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-section-identity span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 540;
+  line-height: 15px;
+}
+.profile-section-list {
+  display: grid;
+  gap: 4px;
+}
+.profile-section-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  display: grid;
+  font-size: 15px;
+  font-weight: 650;
+  gap: 12px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  min-height: 42px;
+  padding: 0 11px;
+  text-align: left;
+  transition: background-color 120ms ease, color 120ms ease;
+  width: 100%;
+}
+.profile-section-button svg {
+  height: 19px;
+  width: 19px;
+}
+.profile-section-button:hover,
+.profile-section-button.active {
+  color: var(--text);
+}
+.profile-section-button:hover { background: rgba(255, 255, 255, 0.035); }
+.profile-section-button.active { background: rgba(109, 59, 255, 0.16); }
+.profile-section-button.active svg {
+  color: var(--accent-2);
+}
+.profile-nav-avatar,
+.profile-detail-avatar {
+  align-items: center;
+  background: rgba(109, 59, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-weight: 720;
+  justify-content: center;
+  object-fit: cover;
+  overflow: hidden;
+}
+.profile-nav-avatar {
+  font-size: 13px;
+  height: 34px;
+  width: 34px;
+}
+.profile-detail-avatar {
+  box-shadow: 0 0 0 4px rgba(109, 59, 255, 0.08);
+  font-size: 29px;
+  height: 82px;
+  width: 82px;
+}
+.profile-identity-panel,
+.profile-plan-panel,
+.profile-usage-panel,
+.profile-action-list,
+.profile-info-tile {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.profile-identity-panel {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0 0 24px;
+}
+.profile-identity-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.profile-identity-copy h2 {
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 720;
+  line-height: 34px;
+  margin: 0;
+}
+.profile-identity-copy p {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+.profile-identity-copy span {
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.profile-content-grid {
+  display: grid;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 0;
+}
+.profile-content-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.profile-info-tile {
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  min-height: 112px;
+  padding: 18px 0;
+  text-align: left;
+  transition: color 120ms ease;
+}
+.profile-info-tile + .profile-info-tile { padding-left: 18px; }
+.profile-info-tile:hover {
+  color: var(--accent-2);
+}
+.profile-info-tile span,
+.profile-plan-panel span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 620;
+}
+.profile-info-tile strong {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 720;
+}

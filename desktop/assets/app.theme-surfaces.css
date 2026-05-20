@@ -1,0 +1,241 @@
+body {
+  --surface-bg: var(--color-surface, var(--panel-strong, rgba(7, 9, 18, 0.92)));
+  --surface-elevated: var(--color-elevated, var(--panel-strong, rgba(7, 9, 18, 0.92)));
+  --surface-tint: var(--color-surface-tint, var(--accent-soft, rgba(109, 59, 255, 0.16)));
+  --surface-border: var(--color-border, var(--line));
+  --surface-border-strong: var(--color-border-strong, var(--line-strong));
+  --surface-text: var(--color-text, var(--text));
+  --surface-muted: var(--color-muted, var(--muted));
+  --surface-dim: var(--color-dim, var(--subtle));
+  --surface-accent: var(--color-accent, var(--accent));
+  --surface-accent-soft: var(--color-accent-soft, var(--accent-soft, rgba(109, 59, 255, 0.16)));
+  --surface-hover: var(--color-hover, rgba(255, 255, 255, 0.04));
+  --surface-line: var(--color-line, var(--line));
+  --surface-line-soft: var(--color-line-soft, rgba(255, 255, 255, 0.07));
+  --surface-line-accent: var(--color-line-accent, var(--line-strong));
+  --surface-success: var(--color-success, var(--success));
+  --surface-warning: var(--color-warning, var(--warning));
+  --surface-danger: var(--color-error, var(--danger));
+  --surface-success-soft: var(--color-success-soft, rgba(55, 214, 122, 0.14));
+  --surface-warning-soft: var(--color-warning-soft, rgba(255, 178, 31, 0.14));
+  --surface-danger-soft: var(--color-error-soft, rgba(255, 93, 122, 0.12));
+}
+
+.project-card,
+.community-card,
+.plan-card,
+.membership-plan,
+.summary-tile,
+.live-builds,
+.activity-panel,
+.empty-build,
+.event-row,
+.url-row,
+.panel,
+.card,
+.modal,
+.search,
+.chip,
+.account-help-link {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.modal { background: var(--surface-elevated); }
+.modal-backdrop { background: rgba(0, 0, 0, 0.56); }
+
+.primary-button {
+  background: var(--surface-accent);
+  color: #fff;
+}
+
+.secondary-button {
+  background: var(--surface-hover);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.danger-button {
+  background: var(--surface-danger-soft);
+  border-color: var(--surface-danger);
+  color: var(--surface-danger);
+}
+
+.chip { color: var(--surface-muted); }
+.chip.active,
+.project-card.active,
+.plan-card.featured,
+.membership-plan.active {
+  background: var(--surface-accent-soft);
+  border-color: var(--surface-line-accent);
+  box-shadow: none;
+  color: var(--surface-text);
+}
+
+.search input,
+.profile-field input,
+.profile-field select,
+.profile-field textarea,
+.profile-select-row select {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.search input::placeholder,
+.profile-field input::placeholder,
+.profile-field textarea::placeholder {
+  color: var(--surface-dim);
+}
+
+.search:focus-within,
+.profile-field input:focus,
+.profile-field select:focus,
+.profile-field textarea:focus,
+.profile-select-row select:focus {
+  border-color: var(--surface-border-strong);
+  box-shadow: 0 0 0 3px var(--surface-accent-soft);
+}
+
+.summary-icon,
+.empty-icon,
+.action-icon,
+.project-icon,
+.projects-phone-icon,
+.profile-icon,
+.pair-v2-approval-icon,
+.account-avatar--initials,
+.profile-nav-avatar,
+.profile-detail-avatar {
+  background: var(--surface-accent-soft);
+  border-color: var(--surface-border);
+  color: var(--surface-accent);
+}
+
+.project-path,
+.community-meta,
+.activity-count,
+.projects-phone-panel p,
+.credits-line,
+.credits-daily,
+.membership-plan small,
+.membership-plan ul,
+.profile-detail-head span,
+.profile-section-button,
+.profile-section-identity span,
+.profile-identity-copy p,
+.profile-info-tile span,
+.profile-info-tile small,
+.profile-plan-panel p,
+.profile-usage-panel p,
+.profile-usage-line span,
+.profile-action-copy small,
+.profile-row-icon,
+.profile-row-chevron,
+.profile-row-notice,
+.profile-referral-panel p,
+.profile-danger-panel p,
+.profile-info-panel p,
+.profile-faq-list p,
+.profile-field span,
+.profile-status,
+.pair-v2-status,
+.pair-v2-hint,
+.pair-v2-unpair {
+  color: var(--surface-muted);
+}
+
+.text-link,
+.projects-phone-link,
+.plans-link:hover,
+.plans-back:hover,
+.profile-detail-head p,
+.profile-identity-copy span,
+.profile-info-tile:hover,
+.profile-section-button.active svg,
+.profile-action-row:hover .profile-row-icon,
+.profile-choice-row:hover .profile-row-icon,
+.profile-toggle-row:hover .profile-action-copy strong,
+.profile-choice-row.active .profile-row-icon,
+.profile-choice-check,
+.account-help-link svg {
+  color: var(--surface-accent);
+}
+
+.projects-phone-panel h2 {
+  color: var(--surface-text);
+}
+
+.profile-section-button:hover,
+.profile-action-row:hover,
+.profile-choice-row:hover,
+.profile-toggle-row:hover {
+  background: var(--surface-hover);
+}
+
+.profile-section-button.active {
+  background: var(--surface-accent-soft);
+  border-color: var(--surface-line-accent);
+  color: var(--surface-text);
+}
+
+.profile-identity-panel,
+.profile-content-grid,
+.profile-plan-panel,
+.profile-usage-panel,
+.profile-action-list,
+.profile-form,
+.profile-referral-panel,
+.profile-danger-panel,
+.profile-info-panel,
+.profile-choice-list,
+.profile-faq-list,
+.profile-referral-code,
+.profile-stat-grid span,
+.profile-action-row + .profile-action-row,
+.profile-choice-row + .profile-choice-row,
+.profile-toggle-row + .profile-toggle-row,
+.profile-faq-list article,
+.profile-select-row,
+.profile-settings-list .profile-toggle-row,
+.project-footer,
+.community-actions,
+.build-list {
+  border-color: var(--surface-line-soft);
+}
+
+.profile-row-pill,
+.membership-plan em,
+.tag,
+.pair-v2-copied {
+  background: var(--surface-accent-soft);
+  border-color: var(--surface-border-strong);
+  color: var(--surface-accent);
+}
+
+.profile-toggle {
+  background: var(--surface-line);
+}
+
+.profile-toggle span {
+  background: var(--surface-elevated);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+.profile-toggle-row.is-on .profile-toggle {
+  background: var(--surface-accent);
+}
+
+.profile-action-row--danger .profile-row-icon,
+.profile-action-row--danger .profile-action-copy strong,
+.profile-status--danger,
+.danger-setting,
+.danger-setting .setting-value {
+  color: var(--surface-danger);
+}
+
+.profile-danger-panel,
+.danger-setting {
+  border-color: var(--surface-danger);
+}

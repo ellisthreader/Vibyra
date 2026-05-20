@@ -13,6 +13,7 @@ import { colors } from "../../../styles/theme";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
+import type { ProjectPublishStatus } from "../../../utils/communityApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
 import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
@@ -21,6 +22,7 @@ import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatu
 import { styles } from "../styles";
 import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
 import { ProjectMenuItem } from "./chunk21";
+import { publishStatusLabel } from "./ProjectPublishResult";
 
 export function ProjectCard({
   active,
@@ -36,6 +38,7 @@ export function ProjectCard({
   onStartRename,
   onSubmitRename,
   project,
+  publishStatus,
   renameValue,
   renaming
 }: {
@@ -52,6 +55,7 @@ export function ProjectCard({
   onStartRename: () => void;
   onSubmitRename: () => void;
   project: ProjectDisplay;
+  publishStatus?: ProjectPublishStatus | null;
   renameValue: string;
   renaming: boolean;
 }) {
@@ -61,6 +65,9 @@ export function ProjectCard({
   const draft = status === "Draft";
   const archived = status === "Archived";
   const sourceIcon = status === "On PC" ? "desktop-outline" : status === "On mobile" ? "phone-portrait-outline" : null;
+  const publishLabel = publishStatusLabel(publishStatus);
+  const publishDenied = publishStatus?.reviewStatus === "denied";
+  const publishApproved = publishStatus?.reviewStatus === "approved" && publishStatus?.visibility === "public";
   const prefs = usePreferences();
   const activeAccent = useThemedColor("#59E8A0");
   const publishedAccent = useThemedColor("#BE62FF");
@@ -122,6 +129,9 @@ export function ProjectCard({
           </View>
         </View>
         <View style={styles.projectCardRight}>
+          {publishLabel ? (
+            <Text style={[styles.projectStatusPill, layout.statusStyle, publishDenied ? styles.projectPublishStatusDenied : publishApproved ? styles.projectPublishStatusApproved : styles.projectPublishStatusPending]}>{publishLabel}</Text>
+          ) : null}
           {sourceIcon ? (
             <View style={styles.projectSourcePill}>
               <Ionicons name={sourceIcon} color={sourceIconColor} size={16} />

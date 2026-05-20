@@ -1,0 +1,147 @@
+body:has(.builds-page--screenshot) {
+  --build-bg: #f7f8fc;
+  --build-surface: #ffffff;
+  --build-line: #dfe3ec;
+  --build-line-soft: #e8ebf3;
+  --build-text: #111827;
+  --build-muted: #5e697d;
+  --build-subtle: #7a8496;
+  --build-accent: #6d3bff;
+  --build-accent-2: #7f4dff;
+  --build-accent-soft: #f0eaff;
+  --build-shadow: 0 2px 8px rgba(31, 41, 55, 0.08);
+  background: var(--build-bg);
+  color: var(--build-text);
+}
+
+body:has(.builds-page--screenshot) .app {
+  background: var(--build-bg);
+  grid-template-columns: 285px minmax(0, 1fr) !important;
+}
+
+body:has(.builds-page--screenshot) .main,
+body:has(.builds-page--screenshot) .content {
+  background: var(--build-bg);
+}
+
+body.electron-shell:has(.builds-page--screenshot) .desktop-chrome,
+body:has(.builds-page--screenshot) .topbar {
+  background: rgba(247, 248, 252, 0.94);
+  border-bottom: 1px solid var(--build-line-soft);
+  color: var(--build-text);
+  min-height: 60px;
+}
+
+body:has(.builds-page--screenshot) .desktop-chrome-page .top-title h1,
+body:has(.builds-page--screenshot) .top-title h1 {
+  color: var(--build-text);
+  font-size: 15px;
+  font-weight: 760;
+  line-height: 18px;
+}
+
+body:has(.builds-page--screenshot) .desktop-chrome-page .top-title p,
+body:has(.builds-page--screenshot) .top-title p {
+  align-items: center;
+  color: var(--build-muted);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 520;
+  gap: 6px;
+  justify-content: center;
+  line-height: 16px;
+}
+
+body:has(.builds-page--screenshot) .desktop-chrome-page .top-title p::before,
+body:has(.builds-page--screenshot) .top-title p::before {
+  background: #f97316;
+  border-radius: 999px;
+  content: "";
+  height: 9px;
+  width: 9px;
+}
+
+body:has(.builds-page--screenshot) .rail {
+  background: var(--build-surface) !important;
+  border-right: 1px solid var(--build-line-soft) !important;
+  color: var(--build-text);
+  padding: 24px 18px 38px;
+}
+
+body:has(.builds-page--screenshot) .rail-logo {
+  height: 38px;
+  margin: 0 6px 34px;
+}
+
+body:has(.builds-page--screenshot) .rail-logo strong {
+  color: var(--build-accent);
+  font-size: 24px;
+  font-weight: 780;
+}
+
+body:has(.builds-page--screenshot) .rail-logo .rail-collapse-button,
+body:has(.builds-page--screenshot) .connection-chip,
+body:has(.builds-page--screenshot) .token-pill,
+body:has(.builds-page--screenshot) .icon-button {
+  color: #1f2937;
+}
+
+body:has(.builds-page--screenshot) .rail .nav-button {
+  border: 0;
+  border-radius: 8px;
+  color: #4b5567;
+  font-size: 16px;
+  font-weight: 640;
+  height: 48px;
+  padding: 0 12px;
+  position: relative;
+}
+
+body:has(.builds-page--screenshot) .rail .nav-button.active {
+  background: var(--build-accent-soft) !important;
+  color: var(--build-accent) !important;
+}
+
+body:has(.builds-page--screenshot) .rail .nav-button.active::before {
+  background: var(--build-accent);
+  border-radius: 0 4px 4px 0;
+  content: "";
+  height: 32px;
+  left: -18px;
+  position: absolute;
+  width: 4px;
+}
+
+body:has(.builds-page--screenshot) .rail-section-head,
+body:has(.builds-page--screenshot) .rail-empty,
+body:has(.builds-page--screenshot) .rail-status-top,
+body:has(.builds-page--screenshot) .rail-status-main small {
+  color: var(--build-muted);
+}
+
+body:has(.builds-page--screenshot) .rail-status-card {
+  background: #f4f6fa !important;
+  border: 0 !important;
+  border-radius: 8px;
+  padding: 14px 12px;
+}
+
+.builds-page--screenshot {
+  background: var(--build-bg);
+  color: var(--build-text);
+  min-height: calc(100vh - 60px);
+  padding: 40px 40px 18px;
+}
+
+.builds-title-row {
+  align-items: start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+
+.builds-page--screenshot .page-head {
+  gap: 6px;
+  margin: 0;
+  max-width: none;
+}

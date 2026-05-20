@@ -4,6 +4,7 @@ import { FolderRecovery, Project } from "../../../types/domain";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
+import { isDetachedChatId } from "./workspaceDetachedChats";
 
 type Runtime = ReturnType<typeof useWorkspaceChatRuntime>;
 
@@ -23,7 +24,7 @@ export function useWorkspaceFolderActions(
   }, [app, runtime, s]);
 
   const acceptFolderProposal = useCallback(async (proposalId: string, folder: Project) => {
-    if (!s.selectedChatId) {
+    if (!s.selectedChatId || isDetachedChatId(s.selectedChatId)) {
       const target = { project: folder, projectId: folder.id, chatProjectId: folder.id, file: null };
       app.rememberProject(folder);
       app.addLocalChatReply("Open folder", `Opened folder **${folder.name}**.`, target);
@@ -40,8 +41,7 @@ export function useWorkspaceFolderActions(
   }, [app, runtime, s]);
 
   const addDetachedFolderRecovery = useCallback((recovery: FolderRecovery) => {
-    s.setNewChatMessages((current) => [
-      ...current,
+    runtime.appendDetachedMessages("Wrong folder", [
       { id: `new-chat-user-${Date.now()}-${Math.round(Math.random() * 1000)}`, role: "user", text: "Wrong folder" },
       {
         id: `new-chat-assistant-${Date.now()}-${Math.round(Math.random() * 1000)}`,
@@ -50,12 +50,12 @@ export function useWorkspaceFolderActions(
         folderRecovery: recovery
       }
     ]);
-  }, [s]);
+  }, [runtime]);
 
   const wrongFolderProposal = useCallback((proposalId: string, folder: Project, query: string) => {
     const recovery: FolderRecovery = { id: `folder-recovery-${Date.now()}-${Math.round(Math.random() * 1000)}`, proposalId, query: query.trim() || folder.name, excludedProjectId: folder.id };
     folderRecoveryRef.current = true;
-    if (!s.selectedChatId) { addDetachedFolderRecovery(recovery); return; }
+    if (!s.selectedChatId || isDetachedChatId(s.selectedChatId)) { addDetachedFolderRecovery(recovery); return; }
     app.addLocalFolderRecovery(
       "Wrong folder",
       "No problem. Should I search your PC again automatically, or do you want to type the folder name?",
@@ -67,7 +67,7 @@ export function useWorkspaceFolderActions(
   const searchFolderProposal = useCallback(async (_proposalId: string, query: string, excludeProjectId?: string) => {
     const trimmed = query.trim();
     if (!trimmed) return;
-    const detached = !s.selectedChatId;
+    const detached = !s.selectedChatId || isDetachedChatId(s.selectedChatId);
     const prompt = excludeProjectId ? "Auto search PC" : `Search PC for ${trimmed}`;
     const reply = (text: string) => detached ? runtime.addDetachedChatReply(prompt, text) : app.addLocalChatReply(prompt, text, runtime.activeProjectTarget());
     if (!app.connection) {
@@ -100,6 +100,17 @@ export function useWorkspaceFolderActions(
       s.setNewChatMessages((current) => current.map((message) => (
         message.folderProposal?.id === proposalId ? { ...message, folderProposal: { ...message.folderProposal, status: "dismissed" } } : message
       )));
+      return;
+    }
+    if (isDetachedChatId(s.selectedChatId)) {
+      const chatId = s.selectedChatId;
+      app.setDetachedChatThreads((current) => ({
+        ...current,
+        [chatId]: (current[chatId] ?? []).map((message) => (
+          message.folderProposal?.id === proposalId ? { ...message, folderProposal: { ...message.folderProposal, status: "dismissed" } } : message
+        ))
+      }));
+      app.setDetachedChatUpdatedAt((current) => ({ ...current, [chatId]: Date.now() }));
       return;
     }
     app.resolveFolderProposal(proposalId, "dismissed", sourceProjectId(s));

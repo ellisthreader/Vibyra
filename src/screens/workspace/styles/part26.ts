@@ -15,6 +15,18 @@ export const part26 = {
     backgroundColor: "rgba(42, 43, 58, 0.68)",
     color: "#C9C3D6"
   },
+  projectPublishStatusApproved: {
+    backgroundColor: "rgba(45, 177, 106, 0.18)",
+    color: "#75F0B1"
+  },
+  projectPublishStatusDenied: {
+    backgroundColor: "rgba(255, 107, 139, 0.16)",
+    color: "#FF9AAD"
+  },
+  projectPublishStatusPending: {
+    backgroundColor: "rgba(139, 53, 255, 0.18)",
+    color: "#D7C4FF"
+  },
   projectStatusPill: {
     borderRadius: 999,
     fontSize: 11,

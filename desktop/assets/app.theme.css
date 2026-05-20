@@ -1,0 +1,140 @@
+:root,
+body[data-desktop-theme="dark"],
+body[data-desktop-theme="auto"] {
+  color-scheme: dark;
+  --color-background: #07070A;
+  --color-surface: #12121A;
+  --color-elevated: #0D0D12;
+  --color-surface-tint: #160D2A;
+  --color-border: #232332;
+  --color-border-strong: #8B5CFF;
+  --color-text: #FFFFFF;
+  --color-muted: #B8B8C8;
+  --color-dim: #7A7A8C;
+  --color-accent: #6D3BFF;
+  --color-accent-hover: #8B5CFF;
+  --color-accent-soft: rgba(109, 59, 255, 0.18);
+  --color-magenta: #F23ACD;
+  --color-magenta-soft: rgba(242, 58, 205, 0.16);
+  --color-amber: #FFB347;
+  --color-amber-soft: rgba(255, 179, 71, 0.16);
+  --color-success: #37D67A;
+  --color-success-soft: rgba(55, 214, 122, 0.14);
+  --color-warning: #FFB347;
+  --color-warning-soft: rgba(255, 179, 71, 0.16);
+  --color-error: #FF5D7A;
+  --color-error-soft: rgba(255, 93, 122, 0.15);
+  --color-info: #4CA3FF;
+  --color-info-soft: rgba(76, 163, 255, 0.16);
+  --color-scrim: rgba(0, 0, 0, 0.62);
+  --color-shadow: #000000;
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-line-soft: rgba(255, 255, 255, 0.06);
+  --color-line-accent: rgba(139, 92, 255, 0.36);
+  --color-hover: rgba(255, 255, 255, 0.045);
+  --color-hover-strong: rgba(255, 255, 255, 0.08);
+}
+
+body[data-desktop-theme="light"] {
+  color-scheme: light;
+  --color-background: #F6F7FB;
+  --color-surface: #FFFFFF;
+  --color-elevated: #F0F2F7;
+  --color-surface-tint: #F7F3FF;
+  --color-border: #DADDE8;
+  --color-border-strong: #B8A7F7;
+  --color-text: #12131A;
+  --color-muted: #5F6473;
+  --color-dim: #8A90A0;
+  --color-accent: #6D3BFF;
+  --color-accent-hover: #5B2BE8;
+  --color-accent-soft: rgba(109, 59, 255, 0.1);
+  --color-magenta: #C026D3;
+  --color-magenta-soft: rgba(192, 38, 211, 0.1);
+  --color-amber: #B7791F;
+  --color-amber-soft: rgba(183, 121, 31, 0.12);
+  --color-success: #12805C;
+  --color-success-soft: rgba(18, 128, 92, 0.1);
+  --color-warning: #B7791F;
+  --color-warning-soft: rgba(183, 121, 31, 0.12);
+  --color-error: #D92D50;
+  --color-error-soft: rgba(217, 45, 80, 0.1);
+  --color-info: #2563EB;
+  --color-info-soft: rgba(37, 99, 235, 0.1);
+  --color-scrim: rgba(18, 19, 26, 0.38);
+  --color-shadow: rgba(28, 31, 42, 0.14);
+  --color-line: #DADDE8;
+  --color-line-soft: rgba(18, 19, 26, 0.08);
+  --color-line-accent: rgba(109, 59, 255, 0.22);
+  --color-hover: rgba(109, 59, 255, 0.06);
+  --color-hover-strong: rgba(109, 59, 255, 0.1);
+}
+
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] {
+    color-scheme: light;
+    --color-background: #F6F7FB;
+    --color-surface: #FFFFFF;
+    --color-elevated: #F0F2F7;
+    --color-surface-tint: #F7F3FF;
+    --color-border: #DADDE8;
+    --color-border-strong: #B8A7F7;
+    --color-text: #12131A;
+    --color-muted: #5F6473;
+    --color-dim: #8A90A0;
+    --color-accent: #6D3BFF;
+    --color-accent-hover: #5B2BE8;
+    --color-accent-soft: rgba(109, 59, 255, 0.1);
+    --color-magenta: #C026D3;
+    --color-magenta-soft: rgba(192, 38, 211, 0.1);
+    --color-amber: #B7791F;
+    --color-amber-soft: rgba(183, 121, 31, 0.12);
+    --color-success: #12805C;
+    --color-success-soft: rgba(18, 128, 92, 0.1);
+    --color-warning: #B7791F;
+    --color-warning-soft: rgba(183, 121, 31, 0.12);
+    --color-error: #D92D50;
+    --color-error-soft: rgba(217, 45, 80, 0.1);
+    --color-info: #2563EB;
+    --color-info-soft: rgba(37, 99, 235, 0.1);
+    --color-scrim: rgba(18, 19, 26, 0.38);
+    --color-shadow: rgba(28, 31, 42, 0.14);
+    --color-line: #DADDE8;
+    --color-line-soft: rgba(18, 19, 26, 0.08);
+    --color-line-accent: rgba(109, 59, 255, 0.22);
+    --color-hover: rgba(109, 59, 255, 0.06);
+    --color-hover-strong: rgba(109, 59, 255, 0.1);
+  }
+}
+
+:root,
+body[data-desktop-theme] {
+  --bg: var(--color-background);
+  --shell: var(--color-elevated);
+  --panel: var(--color-surface);
+  --panel-strong: var(--color-surface);
+  --line: var(--color-line);
+  --line-strong: var(--color-line-accent);
+  --text: var(--color-text);
+  --muted: var(--color-muted);
+  --subtle: var(--color-dim);
+  --dim: var(--color-dim);
+  --accent: var(--color-accent);
+  --accent-2: var(--color-accent-hover);
+  --accent-3: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --magenta: var(--color-magenta);
+  --token: var(--color-amber);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --amber: var(--color-amber);
+  --danger: var(--color-error);
+  --error: var(--color-error);
+  --info: var(--color-info);
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}

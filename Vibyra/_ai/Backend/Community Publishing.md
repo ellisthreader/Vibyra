@@ -15,7 +15,7 @@ Read this for published projects, comments, reactions, preview safety, and gener
 
 Laravel owns public published project data through `published_projects`, `published_project_comments`, and `published_project_reactions`.
 
-Routes: `GET /api/community/projects`, `GET /api/community/projects/{slug}/preview`, `POST /api/projects/publish`, `POST /api/community/projects/{slug}/comments`, and `POST /api/community/projects/{slug}/reaction`.
+Routes: `GET /api/community/projects`, `GET /api/community/projects/{slug}/preview`, `POST /api/projects/publish`, `POST /api/community/projects/{slug}/comments`, and `POST /api/community/projects/{slug}/reaction`. Publishing is rate-limited only after required fields are valid, scoped by user/IP/project id, and allows normal listing retries/updates without the old 3-per-hour global lockout.
 
 The mobile community page loads `GET /api/community/projects` through `src/screens/workspace/hooks/useCommunityPage.ts` and `src/utils/communityApi.ts`. The feed should keep any current/local posts if Laravel is temporarily unreachable instead of clearing to an empty hard-error state; the public community feed has a longer app API timeout in `src/utils/appApi.ts` because cold local Laravel startup can take several seconds.
 

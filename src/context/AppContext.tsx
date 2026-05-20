@@ -112,7 +112,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     setSelectedChatModel: setters.setSelectedChatModel,
     setReasoningEffort: setters.setReasoningEffort,
     setDesktopPermissionMode: (mode, projectId) => {
-      setters.setDesktopPermissionMode(mode);
+      setters.setDesktopPermissionMode("ask");
       if (!projectId) return;
       setters.setEditApprovals((current) => {
         const next = { ...current };
@@ -122,6 +122,9 @@ export function AppProvider({ children }: PropsWithChildren) {
       });
     },
     setTaskText: setters.setTaskText,
+    setDetachedChatThreads: setters.setDetachedChatThreads,
+    setDetachedChatTitles: setters.setDetachedChatTitles,
+    setDetachedChatUpdatedAt: setters.setDetachedChatUpdatedAt,
     setNewFilePath: setters.setNewFilePath,
     ...pairing,
     ...workspace,

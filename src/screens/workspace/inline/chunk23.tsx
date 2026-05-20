@@ -6,7 +6,7 @@ import type { ChatMessage, FileEntry, GeneratedApp, Project, ProjectBrief } from
 import { isChatUsageLimitText } from "../../../context/chatUsageLimit";
 import { normalizeAgentReply } from "../../../utils/files";
 import { vibyraLogo } from "../data/assets";
-import { chatModelOptions } from "../data/chatModels";
+import { chatModelOptionFor, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { AgentRunProgressText } from "./AgentRunProgressText";
 import { LiveCodeActivityCard } from "./LiveCodeActivityCard";
@@ -47,7 +47,7 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
   onDenyEdits?: (messageId: string, projectId: string) => Promise<void>;
 }) {
   const user = message.role === "user";
-  const assistantModel = chatModelOptions.find((model) => model.key === message.assistantModel) ?? chatModelOptions[0];
+  const assistantModel = chatModelOptionFor(message.assistantModel) ?? chatModelOptions[0];
   const assistantName = assistantModel.key === "auto" ? "Vibyra" : assistantModel.label;
   const isThinking = !user && message.text === "Working on it...";
   const visibleText = user ? message.text : normalizeAgentReply(message.text);

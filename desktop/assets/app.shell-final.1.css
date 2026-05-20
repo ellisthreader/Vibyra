@@ -1,0 +1,219 @@
+/* Simple desktop application shell */
+:root {
+  --chrome-height: 0px;
+  --bg: #07070a;
+  --shell: #0b0b10;
+  --panel: #101016;
+  --panel-strong: #121219;
+  --line: rgba(210, 214, 226, 0.09);
+  --line-strong: rgba(139, 92, 255, 0.36);
+  --text: #f6f4fb;
+  --muted: #b6b2c4;
+  --subtle: #858194;
+  --dim: #696579;
+  --accent: #6d3bff;
+  --accent-2: #8b5cff;
+  --accent-soft: rgba(109, 59, 255, 0.12);
+}
+
+body {
+  background: #07070a;
+}
+
+.app {
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.desktop-chrome {
+  display: none;
+}
+
+body.electron-shell {
+  --chrome-height: 54px;
+}
+
+body.electron-shell .app {
+  min-height: calc(100vh - var(--chrome-height));
+  grid-template-rows: minmax(0, 1fr);
+  margin-top: var(--chrome-height);
+}
+
+body.electron-shell .desktop-chrome {
+  -webkit-app-region: drag;
+  align-items: center;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: #f7f5ff;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  height: var(--chrome-height);
+  left: 0;
+  min-width: 0;
+  padding: 0 10px 0 12px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  user-select: none;
+  z-index: 220;
+}
+
+.desktop-chrome-drag {
+  align-items: center;
+  display: flex;
+  gap: 11px;
+  min-width: 0;
+}
+
+body.electron-shell .desktop-chrome-drag {
+  display: none;
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-chrome {
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-window-controls button {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-window-controls button:hover {
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-chrome-page,
+body:not(.desktop-authenticated).electron-shell .desktop-chrome-actions {
+  display: none;
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-chrome-right {
+  grid-column: 2;
+}
+
+.desktop-chrome-page {
+  -webkit-app-region: drag;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+}
+
+body.electron-shell .desktop-chrome-page {
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 360px));
+}
+
+.desktop-chrome-page .top-title {
+  max-width: min(520px, 100%);
+}
+
+.desktop-chrome-right,
+.desktop-chrome-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.desktop-chrome-actions {
+  -webkit-app-region: no-drag;
+}
+
+.desktop-chrome-actions .top-left,
+.desktop-chrome-actions .top-actions {
+  display: flex;
+}
+
+.desktop-chrome-actions .top-actions {
+  gap: 4px;
+}
+
+.desktop-chrome-logo {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  overflow: hidden;
+  width: 32px;
+}
+
+.desktop-chrome-logo img {
+  display: block;
+  height: 25px;
+  object-fit: contain;
+  width: 25px;
+}
+
+.desktop-chrome-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.desktop-chrome h1,
+.desktop-chrome p {
+  letter-spacing: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-chrome h1 {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 16px;
+}
+
+.desktop-chrome p {
+  color: #858194;
+  font-size: 11px;
+  font-weight: 520;
+  line-height: 14px;
+}
+
+.desktop-window-controls {
+  -webkit-app-region: no-drag;
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.desktop-window-controls button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: #9f9bad;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  width: 34px;
+}
+
+.desktop-window-controls button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.desktop-window-controls button[data-window-action="close"]:hover {
+  background: #d94155;
+  color: #ffffff;
+}

@@ -49,6 +49,7 @@ Route::post('/api/community/projects/{slug}/comments', [VibyraAppController::cla
 Route::post('/api/community/projects/{slug}/reaction', [VibyraAppController::class, 'reactToCommunityProject']);
 Route::delete('/api/community/projects/{slug}/reaction', [VibyraAppController::class, 'removeCommunityProjectReaction']);
 Route::post('/api/community/assets/generate', [VibyraAppController::class, 'generateCommunityAsset']);
+Route::get('/api/projects/publish-status', [VibyraAppController::class, 'publishedProjectStatuses']);
 Route::post('/api/projects/publish', [VibyraAppController::class, 'publishProject']);
 Route::get('/api/billing/plans', [BillingController::class, 'plans']);
 Route::post('/api/billing/checkout', [BillingController::class, 'checkout']);

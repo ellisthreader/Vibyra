@@ -10,7 +10,7 @@ export function useCommunityPage(
   onOpenAppCb: (id: string) => void,
   onLevelActivity?: (action: string, contextId: string, meta?: Record<string, unknown>) => void
 ) {
-  const [activeFilter, setActiveFilter] = useState<CommunityFilter>("All");
+  const [activeFilter, setActiveFilter] = useState<CommunityFilter>("Recent");
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
   const [commentDraftsByPostId, setCommentDraftsByPostId] = useState<Record<string, string>>({});
   const [commentErrorsByPostId, setCommentErrorsByPostId] = useState<Record<string, string>>({});
@@ -32,7 +32,9 @@ export function useCommunityPage(
   useEffect(() => {
     let cancelled = false;
     loadCommunityCommentsAsync()
-      .then((comments) => { if (!cancelled) setCommentsByPostId(comments); })
+      .then((comments) => {
+        if (!cancelled) setCommentsByPostId((current) => mergeCommunityComments(current, comments));
+      })
       .finally(() => { if (!cancelled) setCommentsReady(true); });
     return () => { cancelled = true; };
   }, []);
@@ -47,7 +49,7 @@ export function useCommunityPage(
       .then(({ comments, posts }) => {
         if (cancelled) return;
         setPosts(posts);
-        if (Object.keys(comments).length > 0) setCommentsByPostId((current) => ({ ...current, ...comments }));
+        if (Object.keys(comments).length > 0) setCommentsByPostId((current) => mergeCommunityComments(current, comments));
       })
       .catch((error) => {
         if (!cancelled) {
@@ -64,12 +66,24 @@ export function useCommunityPage(
 
   const filteredPosts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return posts.filter((post) => {
-      const matchesFilter = activeFilter === "All" || post.tag === activeFilter;
+    const matchesSearch = posts.filter((post) => {
       const searchable = [post.title, post.description, post.user, ...post.tags].join(" ").toLowerCase();
-      return matchesFilter && (!q || searchable.includes(q));
+      return !q || searchable.includes(q);
     });
+    if (activeFilter === "Popular") {
+      return [...matchesSearch].sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments));
+    }
+    if (activeFilter === "Featured") {
+      const featured = matchesSearch.filter((post) => post.tag === "Featured" || post.tags.includes("Featured"));
+      return featured.length > 0 ? featured : matchesSearch;
+    }
+    return matchesSearch;
   }, [activeFilter, posts, searchQuery]);
+
+  const hasFeaturedPosts = useMemo(
+    () => posts.some((post) => post.tag === "Featured" || post.tags.includes("Featured")),
+    [posts]
+  );
 
   const toggleBookmark = useCallback((id: string) => {
     setBookmarkedPostIds((c) => c.includes(id) ? c.filter((x) => x !== id) : [...c, id]);
@@ -131,24 +145,31 @@ export function useCommunityPage(
     setCommentPostingByPostId((c) => ({ ...c, [postId]: false }));
   }, [authToken, commentDraftsByPostId, currentUserName, onLevelActivity]);
 
-  const cycleFilter = useCallback(() => {
-    const filters: CommunityFilter[] = ["All", "Recent", "Popular", "Featured"];
-    const next = (filters.indexOf(activeFilter) + 1) % filters.length;
-    setActiveFilter(filters[next]);
-  }, [activeFilter]);
-
   const setCommentDraft = useCallback((postId: string, text: string) => {
     setCommentDraftsByPostId((c) => ({ ...c, [postId]: text }));
   }, []);
 
   return {
-    activeFilter, setActiveFilter,
+    activeFilter, setActiveFilter, hasFeaturedPosts, posts,
     bookmarkedPostIds, likedPostIds, openedPostIds,
     commentDraftsByPostId, commentErrorsByPostId, commentsByPostId, commentPostingByPostId,
     feedError, feedLoading, reloadCommunityFeed: loadCommunityFeed,
     searchQuery, setSearchQuery,
-    filteredPosts, toggleBookmark, toggleLike, openApp, addComment, cycleFilter, setCommentDraft
+    filteredPosts, toggleBookmark, toggleLike, openApp, addComment, setCommentDraft
   };
+}
+
+function mergeCommunityComments(
+  current: Record<string, CommunityComment[]>,
+  incoming: Record<string, CommunityComment[]>
+) {
+  const next = { ...current };
+  Object.entries(incoming).forEach(([postId, comments]) => {
+    const existing = next[postId] ?? [];
+    const seen = new Set(existing.map((comment) => comment.id));
+    next[postId] = [...existing, ...comments.filter((comment) => !seen.has(comment.id))];
+  });
+  return next;
 }
 
 function communityFeedError(error: unknown) {

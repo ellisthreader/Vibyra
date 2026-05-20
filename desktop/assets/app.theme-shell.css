@@ -1,0 +1,221 @@
+body {
+  --shell-bg: var(--color-background, var(--bg));
+  --shell-surface: var(--color-surface, var(--shell));
+  --shell-elevated: var(--color-elevated, var(--panel));
+  --shell-border: var(--color-border, var(--line));
+  --shell-border-soft: var(--color-line-soft, var(--line));
+  --shell-text: var(--color-text, var(--text));
+  --shell-muted: var(--color-muted, var(--muted));
+  --shell-dim: var(--color-dim, var(--subtle));
+  --shell-accent: var(--color-accent, var(--accent));
+  --shell-accent-soft: var(--color-accent-soft, var(--accent-soft));
+  --shell-hover: var(--color-hover, rgba(255, 255, 255, 0.055));
+}
+
+body,
+.app,
+.main,
+.chat-page {
+  background: var(--shell-bg);
+  color: var(--shell-text);
+}
+
+.rail,
+.app.rail-collapsed .rail {
+  background: var(--shell-surface);
+  border-right-color: var(--shell-border-soft);
+}
+
+body.electron-shell .desktop-chrome {
+  background: color-mix(in srgb, var(--shell-bg) 88%, transparent);
+  border-bottom-color: var(--shell-border-soft);
+  color: var(--shell-text);
+}
+
+.desktop-chrome h1,
+.desktop-chrome-page .top-title h1,
+.rail-logo strong,
+.top-title h1,
+.account-menu-copy strong {
+  color: var(--shell-text);
+}
+
+.desktop-chrome p,
+.top-title p,
+.rail-section-head,
+.rail-empty,
+.account-menu-copy span {
+  color: var(--shell-dim);
+}
+
+.rail .nav-button,
+.rail-chat,
+.rail-status-card,
+.rail-status-top,
+.rail-status-main strong,
+.rail-status-main small,
+.desktop-window-controls button,
+.connection-chip,
+.token-pill,
+.icon-button,
+.rail-collapse-button,
+.rail-expand-button {
+  color: var(--shell-muted);
+}
+
+.rail .nav-button.active:not(:hover),
+.rail-chat.active:not(:hover) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--shell-muted);
+}
+
+.rail .nav-button:hover,
+.rail-chat:hover,
+.rail-status-card:hover,
+.connection-chip:hover,
+.token-pill:hover,
+.icon-button:hover,
+.rail-collapse-button:hover,
+.rail-expand-button:hover,
+.desktop-window-controls button:hover {
+  background: var(--shell-hover);
+  border-color: transparent;
+  color: var(--shell-text);
+}
+
+.rail-status-card {
+  background: transparent;
+  border-color: transparent;
+}
+
+.rail-phone-icon,
+.summary-icon,
+.empty-icon,
+.action-icon,
+.project-icon,
+.profile-icon {
+  background: var(--shell-hover);
+  border-color: var(--shell-border-soft);
+  color: var(--shell-muted);
+}
+
+.connection-chip,
+.token-pill,
+.icon-button,
+.new-chat-button,
+.chat-actions-button {
+  background: transparent;
+  border-color: transparent;
+}
+
+.connection-chip .dot,
+.app.rail-collapsed .rail-status-top .dot {
+  border-color: var(--shell-bg);
+}
+
+.topbar,
+.composer-shell {
+  background: transparent;
+  border-color: transparent;
+}
+
+.topbar-menu,
+.app.rail-collapsed .rail .nav-button:after,
+.app.rail-collapsed .rail-status-card:before,
+.rail .nav-button:after,
+.rail-profile:after {
+  background: var(--shell-elevated);
+  border-color: var(--shell-border);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--shell-bg) 34%, transparent);
+  color: var(--shell-text);
+}
+
+.topbar-menu button,
+.account-menu-section button {
+  color: var(--shell-text);
+}
+
+.topbar-menu button:hover {
+  background: var(--shell-hover);
+}
+
+.account-menu-section + .account-menu-section,
+.modal,
+.membership-plan {
+  border-color: var(--shell-border);
+}
+
+.modal,
+.membership-plan,
+.topbar-avatar {
+  background: var(--shell-elevated);
+  color: var(--shell-text);
+}
+
+body[data-desktop-theme="light"] .desktop-chrome,
+body[data-desktop-theme="light"].electron-shell .desktop-chrome {
+  backdrop-filter: blur(18px);
+}
+
+body[data-desktop-theme="light"],
+body[data-desktop-theme="light"] .app,
+body[data-desktop-theme="light"] .main,
+body[data-desktop-theme="light"] .chat-page {
+  background: var(--shell-bg);
+}
+
+body[data-desktop-theme="light"] .rail {
+  background: var(--shell-surface);
+}
+
+body[data-desktop-theme="light"] .rail-logo strong,
+body[data-desktop-theme="light"].electron-shell .rail-logo strong {
+  color: var(--shell-text);
+}
+
+body[data-desktop-theme="light"] .topbar-avatar,
+body[data-desktop-theme="light"] .account-menu-avatar--initials {
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent);
+}
+
+body[data-desktop-theme="light"] .desktop-window-controls button[data-window-action="close"]:hover {
+  background: #d94155;
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] .desktop-chrome,
+  body[data-desktop-theme="auto"].electron-shell .desktop-chrome {
+    backdrop-filter: blur(18px);
+  }
+
+  body[data-desktop-theme="auto"],
+  body[data-desktop-theme="auto"] .app,
+  body[data-desktop-theme="auto"] .main,
+  body[data-desktop-theme="auto"] .chat-page {
+    background: var(--shell-bg);
+  }
+
+  body[data-desktop-theme="auto"] .rail {
+    background: var(--shell-surface);
+  }
+
+  body[data-desktop-theme="auto"] .rail-logo strong,
+  body[data-desktop-theme="auto"].electron-shell .rail-logo strong {
+    color: var(--shell-text);
+  }
+
+  body[data-desktop-theme="auto"] .topbar-avatar,
+  body[data-desktop-theme="auto"] .account-menu-avatar--initials {
+    background: var(--shell-accent-soft);
+    color: var(--shell-accent);
+  }
+
+  body[data-desktop-theme="auto"] .desktop-window-controls button[data-window-action="close"]:hover {
+    background: #d94155;
+    color: #ffffff;
+  }
+}

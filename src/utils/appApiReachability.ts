@@ -1,4 +1,5 @@
 import { fetchWithTimeout } from "./network";
+import { getBackendReachabilityMessage } from "./appApiMessages";
 
 const CHAT_PREFLIGHT_TIMEOUT_MS = 3500;
 
@@ -15,6 +16,6 @@ export async function assertBackendReachableBeforeChat(
   } catch (error) {
     onOffline();
     const reason = error instanceof Error ? error.message : "unknown error";
-    throw new Error(`Could not reach Vibyra at ${url} before starting AI chat. ${reason}. Start Vibyra with npm start; if the backend is already running, check EXPO_PUBLIC_API_URL in .env and restart Expo.`);
+    throw new Error(getBackendReachabilityMessage(url, reason));
   }
 }

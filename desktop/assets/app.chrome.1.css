@@ -1,0 +1,221 @@
+/* Desktop chrome polish */
+.app { grid-template-columns: 236px minmax(0, 1fr); }
+.rail {
+  background: rgba(11, 11, 16, 0.98);
+  padding: 18px 12px;
+}
+.rail-logo {
+  height: 34px;
+  margin: 0 8px 22px;
+}
+.rail-logo span {
+  flex: 0 0 34px;
+  height: 34px;
+  overflow: visible;
+  width: 34px;
+}
+.rail-logo img {
+  height: 34px;
+  left: 0;
+  object-fit: contain;
+  top: 0;
+  width: 34px;
+}
+.rail-logo strong {
+  font-size: 16px;
+  font-weight: 720;
+}
+.nav { gap: 3px; }
+.rail .nav-button {
+  border-color: transparent;
+  border-radius: 9px;
+  color: #a9a4b8;
+  font-weight: 620;
+  height: 40px;
+  position: relative;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.rail .nav-button:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(151, 161, 190, 0.08);
+  color: #f1eef8;
+}
+.rail .nav-button.active:not(:hover) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: #a9a4b8;
+}
+.rail .nav-button.active:before {
+  content: "";
+  display: none;
+}
+.rail-status-card {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  gap: 9px;
+  padding: 4px 6px;
+  position: relative;
+}
+.rail-status-card:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.rail-status-card:after {
+  display: none;
+}
+.rail-status-main small {
+  padding-right: 0;
+}
+.rail-recents {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  min-height: 0;
+  overflow: auto;
+}
+.rail-section-head {
+  align-items: center;
+  color: #777286;
+  display: flex;
+  font-size: 11px;
+  font-weight: 720;
+  justify-content: space-between;
+  line-height: 15px;
+  padding: 0 6px;
+}
+.rail-section-head button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #b8acd9;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+.rail-section-head button:hover {
+  background: transparent;
+  border-color: transparent;
+  color: #ffffff;
+}
+.rail-section-head svg {
+  height: 15px;
+  width: 15px;
+}
+.rail-chat-list {
+  display: grid;
+  gap: 3px;
+}
+.rail-chat {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #aaa4ba;
+  display: grid;
+  font-size: 12px;
+  font-weight: 590;
+  gap: 9px;
+  grid-template-columns: 16px minmax(0, 1fr);
+  height: 32px;
+  padding: 0 8px;
+  text-align: left;
+  width: 100%;
+}
+.rail-chat:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(151, 161, 190, 0.1);
+  color: #f1eef8;
+}
+.rail-chat.active:not(:hover) {
+  background: transparent;
+  border-color: transparent;
+  color: #aaa4ba;
+}
+.rail-chat svg {
+  height: 15px;
+  width: 15px;
+}
+.rail-chat span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-empty {
+  color: #777286;
+  font-size: 12px;
+  font-weight: 520;
+  line-height: 17px;
+  padding: 2px 8px;
+}
+.topbar {
+  backdrop-filter: none;
+  background: transparent;
+  border-bottom: 0;
+  height: 60px;
+  padding: 0 32px;
+}
+.top-actions {
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-width: 0;
+}
+.connection-chip,
+.token-pill,
+.icon-button {
+  transition: background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+.connection-chip,
+.token-pill {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 0;
+}
+.connection-chip {
+  color: #d8d0ec;
+  height: 36px;
+  justify-content: center;
+  min-width: 36px;
+  position: relative;
+  width: 36px;
+}
+.connection-chip > svg:first-child {
+  height: 18px;
+  width: 18px;
+}
+.connection-chip .dot {
+  border: 2px solid #0a0a0f;
+  bottom: 7px;
+  height: 9px;
+  position: absolute;
+  right: 7px;
+  width: 9px;
+}
+.connection-chip:hover,
+.token-pill:hover,
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: transparent;
+}
+.new-chat-button {
+  background: transparent;
+  border-color: transparent;
+}
+.new-chat-button:hover {
+  background: transparent;
+  color: #ffffff;
+}
+.chat-actions-button {
+  background: transparent;
+  border-color: transparent;
+}
+.chat-actions-button:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+.token-pill {
+}

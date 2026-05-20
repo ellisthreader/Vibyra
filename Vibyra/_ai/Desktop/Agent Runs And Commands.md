@@ -59,3 +59,12 @@ Vault lookup order:
 - `pytest`
 
 Mobile chat intercepts natural-language terminal requests before `/api/chat` in `workspacePromptActions.ts`. `git status` can run directly through `useTerminalCommandActions` and `/commands/run`; install/dev/build/test commands require an explicit yes/no follow-up in chat before execution. Unsupported commands return the allowlist instead of going to OpenRouter, so models should not answer "I cannot run terminal commands directly" for supported project commands.
+
+
+## PTY Desktop Terminals
+
+Desktop AI terminals now have a separate real terminal path from the legacy simulated chat-terminal route. /desktop/pty-terminals creates local-only PTY sessions for codex, claude, gemini, or a login shell; /desktop/pty-terminals/:id/socket streams input/output over a loopback-only WebSocket. The frontend override lives in desktop/assets/app.terminals-pty.js and keeps the existing terminal tabs/setup shell while routing keystrokes directly to the PTY. The existing /commands/run allowlisted buffered route remains unchanged for phone/mobile-approved safe commands.
+
+Start backend inspection at desktop/lib/ptyTerminals.mjs, desktop/lib/aiTerminalProcess.mjs, desktop/local-app.mjs, and desktop/lib/desktopRoutes.mjs; start UI inspection at desktop/assets/app.terminals-pty.js and desktop/assets/app.terminals.pty.css.
+
+PTY provider terminals resolve local CLIs before spawning. `desktop/lib/aiTerminalProcess.mjs` reports availability for Codex, Claude, Gemini, and Shell; `desktop/lib/ptyTerminals.mjs` returns `agents` from `/desktop/pty-terminals` and creates an `unavailable` terminal with an install/config hint instead of spawning a missing binary. Gemini can be supplied with `VIBYRA_GEMINI_CLI` or `GEMINI_CLI_PATH` when it is not on `PATH`. The browser PTY renderer uses `@xterm/xterm` loaded through `desktop/assets/vendor.xterm.js` and `desktop/assets/vendor.xterm.css`; live output is written directly into xterm and should not trigger full terminal page re-renders. `desktop/assets/app.runtime-fixes.css` loads last from `desktop/app.html` to pin chat/terminal heights, composer stacking, and xterm viewport sizing. `desktop/lib/ptyTerminals.mjs` must not inject local startup banners into PTY output, because provider CLIs like Claude need a clean terminal stream for 1:1 rendering.

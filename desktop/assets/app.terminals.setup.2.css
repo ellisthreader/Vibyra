@@ -1,0 +1,93 @@
+.terminal-custom-count input {
+  width: 54px;
+}
+.terminal-custom-count span {
+  color: #918ca1;
+  font-size: 12px;
+  font-weight: 650;
+}
+.terminal-preview-block {
+  min-width: 0;
+}
+.terminal-layout-preview {
+  align-content: start;
+  background: #08080c;
+  border: 1px solid rgba(151, 161, 190, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(var(--terminal-preview-cols), 38px);
+  justify-content: center;
+  min-height: 112px;
+  padding: 9px;
+}
+.terminal-layout-preview span {
+  background: #12121a;
+  border: 1px solid rgba(151, 161, 190, 0.12);
+  border-radius: 6px;
+  min-height: 24px;
+}
+.terminal-layout-preview span.active {
+  background: rgba(139, 92, 255, 0.18);
+  border-color: rgba(139, 92, 255, 0.36);
+}
+.terminal-start-button {
+  justify-self: start;
+  margin-top: 2px;
+}
+@media (max-width: 760px) {
+  .terminal-page {
+    padding: 0;
+  }
+  .content.terminal-content {
+    height: calc(100vh - 60px);
+  }
+  .terminal-focus-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .terminal-meta {
+    width: 100%;
+  }
+  .terminal-meta-chip {
+    max-width: 45%;
+  }
+  .terminal-focus .terminal-lines {
+    font-size: 13px;
+    line-height: 22px;
+    padding: 18px 16px 12px;
+  }
+  .terminal-focus .terminal-prompt,
+  .terminal-focus .terminal-line pre {
+    font-size: 13px;
+    line-height: 22px;
+  }
+  .terminal-focus .terminal-composer {
+    grid-template-columns: 14px minmax(0, 1fr);
+    padding: 10px 12px 10px 16px;
+  }
+  .terminal-focus .terminal-composer textarea {
+    font-size: 13px;
+    line-height: 20px;
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+  .terminal-focus   .terminal-setup-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .terminal-model-select-wrap .terminal-model-picker {
+    max-height: 260px;
+  }
+  .terminal-model-select-wrap .terminal-model-scroll {
+    max-height: 194px;
+  }
+  .terminal-layout-preview {
+    min-height: 78px;
+  }
+  .terminal-model-row button {
+    width: 100%;
+  }
+  .grid-mode .terminal-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

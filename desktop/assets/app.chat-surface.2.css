@@ -1,0 +1,222 @@
+.context-chip {
+  padding: 0 8px 0 10px;
+}
+.context-chip svg { height: 14px; width: 14px; }
+.context-chip button { align-items: center; background: transparent; color: #958fa4; display: flex; padding: 0; }
+.context-chip button svg { height: 13px; width: 13px; }
+.project-chip { border-color: rgba(139, 92, 255, 0.3); color: #e6ddff; }
+.composer textarea { font-size: 15px; font-weight: 450; line-height: 23px; max-height: 180px; min-height: 34px; padding: 4px 2px; resize: none; }
+.tool-pill, .icon-tool { background: transparent; border-color: var(--line); color: #dcd7eb; font-weight: 560; }
+.tool-pill.quiet { gap: 7px; min-height: 32px; max-width: 210px; }
+.tool-pill.quiet span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-pill.quiet svg:last-child { height: 14px; width: 14px; }
+.icon-tool { align-items: center; border: 1px solid var(--line); border-radius: 999px; display: flex; height: 32px; justify-content: center; width: 32px; }
+.icon-tool svg { height: 17px; width: 17px; }
+.tool-menu-wrap { position: relative; }
+.composer-menu {
+  background: linear-gradient(180deg, #1a1a24, #12121a);
+  border: 1px solid rgba(151, 161, 190, 0.22);
+  border-radius: 14px;
+  bottom: calc(100% + 9px);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+  display: grid;
+  gap: 9px;
+  left: 0;
+  max-height: min(430px, 58vh);
+  min-width: 230px;
+  overflow: auto;
+  padding: 10px;
+  position: absolute;
+  z-index: 80;
+}
+.model-menu { gap: 6px; max-height: min(620px, calc(100vh - 160px)); min-width: 360px; }
+.effort-menu { min-width: 226px; }
+.composer-menu section {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(151, 161, 190, 0.1);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  padding: 6px;
+}
+.composer-menu section:has(> button:only-child) { background: transparent; border-color: transparent; padding: 0; }
+.composer-menu p { color: #a8a2b8; font-size: 11px; font-weight: 760; letter-spacing: 0; padding: 3px 6px 4px; }
+.model-menu section {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  gap: 3px;
+  padding: 0;
+}
+.model-menu section + section {
+  border-top: 1px solid rgba(151, 161, 190, 0.12);
+  padding-top: 7px;
+}
+.model-menu p { padding: 2px 4px 3px; }
+.composer-menu button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #f1eef8;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  min-height: 50px;
+  padding: 9px 10px;
+  text-align: left;
+  width: 100%;
+}
+.composer-menu button:hover { background: rgba(255, 255, 255, 0.045); border-color: rgba(151, 161, 190, 0.18); }
+.composer-menu button.active {
+  background: linear-gradient(135deg, rgba(139, 92, 255, 0.2), rgba(109, 59, 255, 0.08));
+  border-color: rgba(139, 92, 255, 0.42);
+}
+.model-menu button {
+  border-color: transparent;
+  min-height: 46px;
+  padding: 8px;
+}
+.model-menu button:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: transparent;
+}
+.model-menu button.active {
+  background: rgba(139, 92, 255, 0.14);
+  border-color: transparent;
+}
+.model-menu button.locked {
+  color: #a9a2b8;
+}
+.model-menu button.locked .provider-logo {
+  opacity: 0.72;
+}
+.model-picker {
+  gap: 8px;
+  max-height: min(420px, calc(100vh - 160px));
+  min-width: min(360px, calc(100vw - 32px));
+  overflow: hidden;
+  width: 360px;
+}
+.model-picker-current {
+  display: grid;
+}
+.model-provider-tabs {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(151, 161, 190, 0.11);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px;
+}
+.model-provider-tabs button {
+  align-items: center;
+  border-radius: 7px;
+  display: flex;
+  gap: 6px;
+  grid-template-columns: none;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 8px;
+  text-align: center;
+}
+.model-provider-tabs button.active {
+  background: rgba(255, 255, 255, 0.08);
+}
+.model-provider-tabs .provider-logo {
+  border-radius: 6px;
+  height: 20px;
+  width: 20px;
+}
+.model-provider-tabs .provider-logo img,
+.model-provider-tabs .provider-logo svg {
+  height: 14px;
+  width: 14px;
+}
+.model-provider-tabs span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.model-picker-options {
+  display: grid;
+  gap: 3px;
+  max-height: 250px;
+  overflow: auto;
+  padding-right: 2px;
+}
+.model-menu .model-auto-row {
+  background: rgba(139, 92, 255, 0.08);
+}
+.composer-menu strong { display: block; font-size: 14px; font-weight: 680; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-menu small { color: #a29bad; display: block; font-size: 12px; font-weight: 520; line-height: 16px; margin-top: 1px; text-transform: capitalize; }
+.composer-menu em {
+  background: rgba(207, 196, 255, 0.1);
+  border: 1px solid rgba(207, 196, 255, 0.16);
+  border-radius: 999px;
+  color: #d9d0ff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 720;
+  padding: 4px 7px;
+}
+.composer-menu em.lock-tag {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+.composer-menu em.lock-tag svg {
+  height: 11px;
+  width: 11px;
+}
+.attach-menu {
+  background: #1b1b25;
+  border-color: rgba(151, 161, 190, 0.22);
+  border-radius: 14px;
+  gap: 2px;
+  max-height: min(430px, 58vh);
+  min-width: 320px;
+  padding: 8px;
+}
+.attach-menu .attach-menu-row {
+  align-items: center;
+  border: 0;
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 54px;
+  padding: 8px 10px;
+}
+.attach-menu .attach-menu-row:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: transparent;
+}
+.attach-row-icon {
+  align-items: center;
+  color: #ece8f8;
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+.attach-row-icon svg { height: 21px; width: 21px; }
+.attach-menu small { text-transform: none; }
+.attach-menu .attach-clear {
+  border-color: rgba(255, 93, 122, 0.16);
+  color: #ffd6df;
+}
+.tool-chip { border-color: rgba(139, 92, 255, 0.34); color: #eadfff; }
+.skill-chip { border-color: rgba(253, 230, 138, 0.26); color: #fff0c2; }
+.slash-menu {
+  background: linear-gradient(180deg, #1a1a24, #12121a);
+  border: 1px solid rgba(151, 161, 190, 0.2);
+  border-radius: 14px;
+  bottom: calc(100% + 10px);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
+  display: grid;
+  gap: 7px;
+  left: 10px;
+  max-height: min(360px, 42vh);
+}

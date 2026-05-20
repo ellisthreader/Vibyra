@@ -1,0 +1,222 @@
+.activity-list {
+}
+
+.event-row,
+.url-row {
+  background: #0d0d13;
+  border-color: rgba(255, 255, 255, 0.055);
+  border-radius: 7px;
+}
+
+.toolbar {
+  gap: 8px;
+  grid-template-columns: auto auto minmax(180px, 1fr) auto;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button,
+.chip,
+.search {
+  border-radius: 7px;
+}
+
+.primary-button {
+  background: #ffffff;
+  color: #08080c;
+}
+
+.secondary-button,
+.danger-button,
+.chip,
+.search {
+  background: #101016;
+  border-color: var(--line);
+}
+
+.chip {
+  color: #a6a1b4;
+  font-weight: 620;
+}
+
+.chip.active {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.11);
+  color: #f4f0fb;
+}
+
+.project-grid {
+  grid-template-columns: repeat(3, minmax(176px, 1fr));
+}
+
+.project-card,
+.community-card,
+.plan-card,
+.panel,
+.card {
+  background: #101016;
+  border-color: var(--line);
+  border-radius: 8px;
+}
+
+.project-card.active {
+  border-color: rgba(139, 92, 255, 0.62);
+}
+
+.project-name,
+.community-title {
+  font-size: 15px;
+  font-weight: 680;
+  line-height: 20px;
+}
+
+.project-path,
+.community-meta {
+  color: #898497;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  color: #c7c1d8;
+  font-weight: 620;
+}
+
+.modal,
+.membership-plan {
+  border-radius: 8px;
+}
+
+.app.rail-collapsed {
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.app.rail-collapsed .rail-expand-button {
+  display: none;
+}
+
+.app.rail-collapsed .rail {
+  background: #08080c;
+  border-right: 1px solid rgba(210, 214, 226, 0.065);
+  opacity: 1;
+  overflow: visible;
+  padding: 14px 8px;
+  pointer-events: auto;
+}
+
+.app.rail-collapsed .rail-logo {
+  align-items: center;
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  margin: 0 0 16px;
+  position: static;
+}
+
+.app.rail-collapsed .rail-logo span,
+.app.rail-collapsed .rail-logo strong,
+.app.rail-collapsed .rail-recents,
+.app.rail-collapsed .nav-button span,
+.app.rail-collapsed .rail-status-top span:last-child,
+.app.rail-collapsed .rail-status-main strong,
+.app.rail-collapsed .rail-status-main small {
+  display: none;
+}
+
+.app.rail-collapsed .rail-logo .rail-collapse-button {
+  margin: 0;
+  position: static;
+  transform: none;
+}
+
+.app.rail-collapsed .rail-logo .rail-collapse-button svg {
+  transform: none;
+}
+
+.app.rail-collapsed .nav {
+  gap: 6px;
+}
+
+.app.rail-collapsed .rail .nav-button,
+.app.rail-collapsed .rail-chat,
+.app.rail-collapsed .rail-status-card {
+  border-radius: 9px;
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  padding: 0;
+  width: 100%;
+}
+
+.app.rail-collapsed .rail .nav-button svg,
+.app.rail-collapsed .rail-chat svg {
+  height: 18px;
+  width: 18px;
+}
+
+.app.rail-collapsed .rail-status {
+  margin-top: auto;
+}
+
+.app.rail-collapsed .rail-status-card {
+  gap: 0;
+  min-height: 42px;
+  position: relative;
+}
+
+.app.rail-collapsed .rail-status-top {
+  display: flex;
+  height: 12px;
+  justify-content: center;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: -10px;
+  z-index: 2;
+}
+
+.app.rail-collapsed .rail-status-top .dot {
+  border: 2px solid #08080c;
+  height: 10px;
+  margin: 0;
+  width: 10px;
+}
+
+.app.rail-collapsed .rail-status-main {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.app.rail-collapsed .rail-status-main > span:not(.rail-phone-icon) {
+  display: none;
+}
+
+.app.rail-collapsed .rail-phone-icon {
+  background: rgba(255, 255, 255, 0.04);
+  height: 32px;
+  width: 32px;
+}
+
+.app.rail-collapsed .rail .nav-button:after,
+.app.rail-collapsed .rail-status-card:before {
+  background: #181820;
+  border: 1px solid rgba(151, 161, 190, 0.16);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  color: #f1eef8;
+  font-size: 12px;
+  font-weight: 640;
+  left: calc(100% + 10px);
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}

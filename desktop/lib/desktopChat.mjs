@@ -42,7 +42,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     mode,
     project: project?.name || "",
     projectFiles,
-    prompt: desktopPrompt(prompt, project, attachments),
+    prompt: desktopPrompt(prompt, project, attachments, body?.profileContext),
     reasoningEffort: normalizeReasoningEffort(body?.reasoningEffort),
     skill,
     surface: "desktop"
@@ -100,11 +100,25 @@ async function contextForProject(projectId, prompt) {
   }
 }
 
-function desktopPrompt(prompt, project, attachments) {
+function desktopPrompt(prompt, project, attachments, profileContext) {
   const context = [];
+  const profileLines = normalizeProfileContext(profileContext);
+  if (profileLines.length) context.push("Desktop profile preferences:", ...profileLines);
   if (project?.path) context.push(`Desktop project path: ${project.path}`);
   if (attachments.length) context.push(`Attached local context names: ${attachments.join(", ")}`);
   return context.length ? `${prompt}\n\n${context.join("\n")}` : prompt;
+}
+
+function normalizeProfileContext(profileContext) {
+  if (!profileContext || typeof profileContext !== "object") return [];
+  const callName = String(profileContext.callName || "").trim().slice(0, 80);
+  const work = String(profileContext.work || "").trim().slice(0, 120);
+  const customInstructions = String(profileContext.customInstructions || "").trim().slice(0, 1200);
+  return [
+    callName ? `Call the user: ${callName}` : "",
+    work ? `User work: ${work}` : "",
+    customInstructions ? `User instructions: ${customInstructions}` : ""
+  ].filter(Boolean);
 }
 
 function normalizeHistory(history) {

@@ -16,6 +16,9 @@ export function getPersistedAppState(session: PersistedSession) {
   return {
     chatThreads: normalizeChatThreads(appState.chatThreads),
     chatTitles: normalizeChatTitles(appState.chatTitles),
+    detachedChatThreads: normalizeChatThreads(appState.detachedChatThreads),
+    detachedChatTitles: normalizeChatTitles(appState.detachedChatTitles),
+    detachedChatUpdatedAt: normalizeDetachedChatUpdatedAt(appState.detachedChatUpdatedAt),
     chatProjects: normalizeChatProjects(appState.chatProjects),
     projectMemories: normalizeProjectMemories(appState.projectMemories),
     editApprovals: normalizeEditApprovals(appState.editApprovals),
@@ -54,14 +57,22 @@ function normalizeChatProjects(value: unknown): Record<string, Project> {
   return value && typeof value === "object" ? (value as Record<string, Project>) : {};
 }
 
+function normalizeDetachedChatUpdatedAt(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object") return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, number>>((updatedAt, [chatId, timestamp]) => {
+    const normalized = normalizeNumber(timestamp);
+    if (normalized > 0) updatedAt[chatId] = normalized;
+    return updatedAt;
+  }, {});
+}
+
 function normalizeEditApprovals(value: unknown): Record<string, "always"> {
   if (!value || typeof value !== "object") return {};
   const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v === "always");
   return Object.fromEntries(entries) as Record<string, "always">;
 }
 
-function normalizeDesktopPermissionMode(value: unknown): AppState["desktopPermissionMode"] {
-  if (value === "read" || value === "auto") return value;
+function normalizeDesktopPermissionMode(_value: unknown): AppState["desktopPermissionMode"] {
   return "ask";
 }
 

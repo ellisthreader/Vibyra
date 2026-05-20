@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useThemedColor } from "../../../context/PreferencesContext";
+import { LoadingScreen } from "../../../components/LoadingScreen";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { createThemedStyleSheet } from "../styles/themeTransform";
 import { colors } from "../../../styles/theme";
 import type { DesktopBrowseEntry, DesktopBrowseListing, Project } from "../../../types/domain";
@@ -18,6 +19,7 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const prefs = usePreferences();
   const accentIcon = useThemedColor("#B084FF");
   const closeIcon = useThemedColor("#FFFFFF");
   const mutedIcon = useThemedColor("#A29CB8");
@@ -116,10 +118,7 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
         ) : null}
 
         {loading ? (
-          <View style={folderBrowserStyles.loading}>
-            <ActivityIndicator color={accentIcon} />
-            <Text style={folderBrowserStyles.loadingText}>Reading folders...</Text>
-          </View>
+          <LoadingScreen colors={prefs.colors} compact message="Reading folders from your PC." scheme={prefs.effectiveScheme} style={folderBrowserStyles.loading} title="Browsing PC" />
         ) : (
           <ScrollView contentContainerStyle={folderBrowserStyles.listContent} style={folderBrowserStyles.list}>
             {visibleEntries.map((entry) => {
@@ -176,8 +175,7 @@ const folderBrowserStyles = createThemedStyleSheet({
   selectCurrentText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   errorBox: { alignItems: "center", backgroundColor: "rgba(255, 209, 102, 0.09)", borderColor: "rgba(255, 209, 102, 0.22)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, marginTop: 12, padding: 10 },
   errorText: { color: "#FFE1A3", flex: 1, fontSize: 12, fontWeight: "700" },
-  loading: { alignItems: "center", flex: 1, gap: 10, justifyContent: "center" },
-  loadingText: { color: "#A29CB8", fontSize: 13, fontWeight: "700" },
+  loading: { borderRadius: 18, flex: 1, marginTop: 12, minHeight: 320 },
   list: { flex: 1, marginTop: 12 },
   listContent: { gap: 8, paddingBottom: 24 },
   row: { backgroundColor: "#151621", borderColor: "rgba(255,255,255,0.08)", borderRadius: 12, borderWidth: 1, overflow: "hidden" },

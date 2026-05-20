@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useThemedColor } from "../../../context/PreferencesContext";
@@ -18,12 +18,18 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
   title: string;
   urls: string[];
 }) {
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
   const [attachError, setAttachError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const addIcon = useThemedColor("#D2CBE2");
+  const placeholderColor = useThemedColor("#827C92");
 
   function add(image: string) {
     setUrls((current) => appendScreenshot(current, image));
+    setAiOpen(false);
     setAttachError("");
+    setMenuOpen(false);
   }
 
   async function attachScreenshot() {
@@ -58,12 +64,13 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
 
   function confirmGenerateScreenshot() {
     const cost = PUBLISH_ASSET_CREDIT_COST.screenshot;
+    setMenuOpen(false);
     Alert.alert(
       "Generate screenshot?",
-      `This will use ${cost} Vibyra credits from your account.`,
+      `This will charge ${cost} tokens from your account.`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: `Generate (${cost} credits)`, onPress: generateScreenshot }
+        { text: `Charge ${cost} tokens`, onPress: generateScreenshot }
       ]
     );
   }
@@ -72,17 +79,16 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
     const image = await onGenerateAsset("screenshot", {
       title: title.trim(),
       description: description.trim(),
-      prompt: `${title.trim() || project?.name || "Vibyra project"} app screenshot, polished mobile UI`
+      prompt: aiPrompt.trim() || `${title.trim() || project?.name || "Vibyra project"} app screenshot, polished mobile UI`
     });
-    if (image) add(image);
+    if (image) {
+      add(image);
+      setAiPrompt("");
+    }
   }
 
   return (
     <>
-      <View style={modalStyles.screenshotHeader}>
-        <Text style={modalStyles.label}>Screenshots (optional)</Text>
-        {urls.length ? <Text style={modalStyles.screenshotCount}>{urls.length}/4</Text> : null}
-      </View>
       <View style={modalStyles.screenshotRow}>
         {urls.map((url, index) => (
           <View key={`${url}-${index}`} style={modalStyles.screenshotThumb}>
@@ -93,17 +99,46 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
           </View>
         ))}
         {urls.length < 4 ? (
-          <>
-            <Pressable disabled={busy} onPress={attachScreenshot} style={modalStyles.screenshotAdd}>
-              <Ionicons name="image-outline" color={addIcon} size={18} />
-              <Text style={modalStyles.addTagText}>Add</Text>
-            </Pressable>
-            <Pressable disabled={busy || generating} onPress={confirmGenerateScreenshot} style={modalStyles.screenshotAddAi}>
-              {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={colors.text} size={15} />}
-            </Pressable>
-          </>
+          <Pressable
+            accessibilityLabel="Add project screenshot"
+            disabled={busy}
+            onPress={() => setMenuOpen((value) => !value)}
+            style={modalStyles.screenshotAdd}
+          >
+            <Ionicons name="add" color={addIcon} size={18} />
+            <Text style={modalStyles.addTagText}>Add screenshot</Text>
+            <Ionicons name={menuOpen ? "chevron-up" : "chevron-down"} color={addIcon} size={16} />
+          </Pressable>
         ) : null}
       </View>
+      {menuOpen && urls.length < 4 ? (
+        <View style={modalStyles.categoryMenu}>
+          <Pressable disabled={busy} onPress={attachScreenshot} style={modalStyles.categoryOption}>
+            <Text style={modalStyles.categoryText}>Choose from photos</Text>
+            <Ionicons name="image-outline" color={addIcon} size={17} />
+          </Pressable>
+          <Pressable disabled={busy || generating} onPress={() => { setAiOpen(true); setMenuOpen(false); }} style={modalStyles.categoryOption}>
+            <Text style={modalStyles.categoryText}>{generating ? "Generating screenshot" : `Generate with AI · ${PUBLISH_ASSET_CREDIT_COST.screenshot} tokens`}</Text>
+            {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={addIcon} size={16} />}
+          </Pressable>
+        </View>
+      ) : null}
+      {aiOpen ? (
+        <View style={modalStyles.aiPromptBox}>
+          <TextInput
+            editable={!busy}
+            multiline
+            onChangeText={setAiPrompt}
+            placeholder="Describe the screenshot you want"
+            placeholderTextColor={placeholderColor}
+            style={modalStyles.aiPromptInput}
+            value={aiPrompt}
+          />
+          <Pressable accessibilityLabel="Generate screenshot with AI" disabled={busy || generating} onPress={confirmGenerateScreenshot} style={modalStyles.tokenCostButton}>
+            {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Text style={modalStyles.tokenCostButtonText}>{PUBLISH_ASSET_CREDIT_COST.screenshot} tokens</Text>}
+          </Pressable>
+        </View>
+      ) : null}
       {attachError ? <Text style={modalStyles.screenshotError}>{attachError}</Text> : null}
     </>
   );

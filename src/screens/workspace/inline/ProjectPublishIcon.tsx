@@ -19,6 +19,7 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [attachError, setAttachError] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const accentIcon = useThemedColor("#B970FF");
   const actionIcon = useThemedColor("#D2CBE2");
   const placeholderColor = useThemedColor("#827C92");
@@ -48,6 +49,7 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
       }
 
       setImageUrl(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+      setMenuOpen(false);
     } catch {
       setAttachError("That image could not be attached.");
     }
@@ -57,10 +59,10 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
     const cost = PUBLISH_ASSET_CREDIT_COST.logo;
     Alert.alert(
       "Generate icon?",
-      `This will use ${cost} Vibyra credits from your account.`,
+      `This will charge ${cost} tokens from your account.`,
       [
         { text: "Cancel", style: "cancel" },
-        { text: `Generate (${cost} credits)`, onPress: generateIcon }
+        { text: `Charge ${cost} tokens`, onPress: generateIcon }
       ]
     );
   }
@@ -74,6 +76,7 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
     if (image) setImageUrl(image);
     setAiPrompt("");
     setAiOpen(false);
+    setMenuOpen(false);
   }
 
   return (
@@ -85,27 +88,40 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
           <Ionicons name="cube-outline" color={accentIcon} size={30} />
         )}
       </View>
-      <View style={modalStyles.iconActions}>
-        <Pressable disabled={busy} onPress={attachImage} style={modalStyles.iconAction}>
-          <Ionicons name="image-outline" color={actionIcon} size={17} />
-        </Pressable>
-        <Pressable disabled={busy || generating} onPress={() => setAiOpen((value) => !value)} style={[modalStyles.iconAction, modalStyles.iconActionAi]}>
-          {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={colors.text} size={15} />}
-        </Pressable>
-      </View>
+      <Pressable
+        accessibilityLabel={imageUrl ? "Change project icon" : "Add project icon"}
+        disabled={busy}
+        onPress={() => setMenuOpen((value) => !value)}
+        style={modalStyles.select}
+      >
+        <Text style={modalStyles.selectText}>{imageUrl ? "Icon selected" : "Add icon"}</Text>
+        <Ionicons name={menuOpen ? "chevron-up" : "chevron-down"} color={actionIcon} size={19} />
+      </Pressable>
+      {menuOpen ? (
+        <View style={modalStyles.categoryMenu}>
+          <Pressable disabled={busy} onPress={attachImage} style={modalStyles.categoryOption}>
+            <Text style={modalStyles.categoryText}>Choose from photos</Text>
+            <Ionicons name="image-outline" color={actionIcon} size={17} />
+          </Pressable>
+          <Pressable disabled={busy || generating} onPress={() => { setAiOpen(true); setMenuOpen(false); }} style={modalStyles.categoryOption}>
+            <Text style={modalStyles.categoryText}>{generating ? "Generating icon" : `Generate with AI · ${PUBLISH_ASSET_CREDIT_COST.logo} tokens`}</Text>
+            {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={accentIcon} size={16} />}
+          </Pressable>
+        </View>
+      ) : null}
       {attachError ? <Text style={modalStyles.iconError}>{attachError}</Text> : null}
       {aiOpen ? (
         <View style={modalStyles.iconInputWrap}>
           <TextInput
             editable={!busy}
             onChangeText={setAiPrompt}
-            placeholder="Describe the icon you want AI to generate"
+            placeholder="Optional icon prompt"
             placeholderTextColor={placeholderColor}
             style={modalStyles.iconInput}
             value={aiPrompt}
           />
-          <Pressable disabled={busy || generating || !aiPrompt.trim()} onPress={confirmGenerateIcon} style={modalStyles.iconAttach}>
-            {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="sparkles" color={colors.text} size={15} />}
+          <Pressable accessibilityLabel="Generate icon with AI" disabled={busy || generating} onPress={confirmGenerateIcon} style={modalStyles.tokenCostButton}>
+            {generating ? <ActivityIndicator color={colors.text} size="small" /> : <Text style={modalStyles.tokenCostButtonText}>{PUBLISH_ASSET_CREDIT_COST.logo} tokens</Text>}
           </Pressable>
         </View>
       ) : null}
