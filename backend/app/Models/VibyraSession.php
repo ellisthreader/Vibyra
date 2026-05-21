@@ -11,6 +11,9 @@ class VibyraSession extends Model
         'user_id',
         'token_hash',
         'device_name',
+        'device_identifier',
+        'ip_address',
+        'user_agent',
         'last_used_at',
     ];
 

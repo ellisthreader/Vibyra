@@ -11,6 +11,7 @@ import { styles } from "../styles";
 import { ChatEmptyState } from "./chunk10";
 import { MessageBubble } from "./chunk23";
 import { ChatComposer } from "./ChatComposer";
+import { DeepResearchPlanCard, type DeepResearchPlanPreview } from "./DeepResearchPlanCard";
 import { FolderBrowserModal } from "./FolderBrowserModal";
 import { ProjectBriefSetup } from "./ProjectBriefSetup";
 
@@ -56,9 +57,10 @@ export function AIChatPage(props: {
 }) {
   const [folderBrowserRecovery, setFolderBrowserRecovery] = useState<NonNullable<ChatMessage["folderRecovery"]> | null>(null);
   const [commandFolderOpen, setCommandFolderOpen] = useState(false);
+  const [deepResearchPreview, setDeepResearchPreview] = useState<DeepResearchPlanPreview | null>(null);
   const [manualBriefProjectId, setManualBriefProjectId] = useState<string | null>(null);
   const appCtx = useAppContext();
-  const hasConversation = props.chatMessages.length > 0;
+  const hasConversation = props.chatMessages.length > 0 || Boolean(deepResearchPreview);
   const projectId = props.selectedChatId?.startsWith("project-") ? props.selectedChatId.replace("project-", "") : "";
   const composerProjectId = projectId || (appCtx.selectedProject.id !== "no-project" ? appCtx.selectedProject.id : undefined);
   const project = projectId ? (appCtx.projects.find((item) => item.id === projectId) ?? appCtx.chatProjects[projectId]) : undefined;
@@ -171,6 +173,7 @@ export function AIChatPage(props: {
                 }}
               />
             ) : null}
+            {deepResearchPreview ? <DeepResearchPlanCard {...deepResearchPreview} /> : null}
           </ScrollView>
         ) : (
           <ChatEmptyState onPickSuggestion={props.setTaskText} />
@@ -179,6 +182,7 @@ export function AIChatPage(props: {
           <ChatComposer
             {...props}
             onNewChat={() => { appCtx.clearCurrentChat(); props.setSelectedChatId(null); }}
+            onDeepResearchPreviewChange={setDeepResearchPreview}
             onOpenFolderCommand={() => setCommandFolderOpen(true)}
             projectId={composerProjectId}
           />

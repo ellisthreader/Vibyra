@@ -43,12 +43,42 @@ const readableNames = new Set(["Dockerfile", "Gemfile", "Makefile", "Procfile"])
 const maxFiles = 80;
 const maxDepth = 6;
 const maxReadBytes = 500_000;
+const maxReviewFiles = 80;
+const maxReviewBodyBytes = 24_000;
+const maxReviewTotalBytes = 420_000;
 
 export async function listProjectFiles(projectId) {
   const project = await requireProject(projectId);
   const files = [];
   await scanFiles(project.path, "", files, 0);
   return files;
+}
+
+export async function listProjectReviewFiles(projectId) {
+  const listed = await listProjectFiles(projectId);
+  const files = [];
+  let totalBytes = 0;
+  let truncated = listed.length > maxReviewFiles;
+
+  for (const item of listed.slice(0, maxReviewFiles)) {
+    if (totalBytes >= maxReviewTotalBytes) {
+      truncated = true;
+      break;
+    }
+
+    try {
+      const file = await readProjectFile(projectId, item.path);
+      const body = String(file.body ?? "");
+      const slice = body.slice(0, maxReviewBodyBytes);
+      if (slice.length < body.length) truncated = true;
+      totalBytes += Buffer.byteLength(slice, "utf8");
+      files.push({ language: file.language, path: file.path, body: slice });
+    } catch {
+      truncated = true;
+    }
+  }
+
+  return { files, totalFiles: listed.length, truncated };
 }
 
 export async function readProjectFile(projectId, path) {

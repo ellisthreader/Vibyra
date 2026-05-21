@@ -12,7 +12,10 @@ export type PublishProjectResponse = {
   ok: boolean;
   project: CommunityPost;
   publishStatus?: ProjectPublishStatus;
+  reviewSummary?: string | null;
   reviewStatus?: string;
+  safetyRating?: string;
+  safetyScore?: number;
   safetyFindings?: string[];
 };
 
@@ -21,7 +24,10 @@ export type ProjectPublishStatus = {
   isPublic?: boolean;
   project?: CommunityPost;
   reviewReason?: string | null;
+  reviewSummary?: string | null;
   reviewStatus?: string;
+  safetyRating?: string;
+  safetyScore?: number;
   safetyFindings?: unknown[];
   sourceProjectId: string;
   title?: string;
@@ -34,7 +40,10 @@ export type PublishProjectResult = {
   outcome: PublishProjectOutcome;
   project: CommunityPost;
   publishStatus?: ProjectPublishStatus;
+  reviewSummary?: string | null;
   reviewStatus?: string;
+  safetyRating?: string;
+  safetyScore?: number;
   safetyFindings?: string[];
   visibility: PublishProjectVisibility;
 };
@@ -100,6 +109,8 @@ export async function publishProject(payload: {
   previewHtml: string;
   projectId: string;
   screenshotUrls?: string[];
+  sourceFiles?: PublishProjectSourceFile[];
+  sourceReview?: { totalFiles?: number; truncated?: boolean };
   stack: string;
   tags: string[];
   title: string;
@@ -116,11 +127,20 @@ export async function publishProject(payload: {
     outcome: publishOutcome(visibility, result),
     project: normalizeCommunityPost(result.project),
     publishStatus: normalizePublishStatus(result.publishStatus),
+    reviewSummary: result.reviewSummary,
     reviewStatus: result.reviewStatus,
+    safetyRating: result.safetyRating,
+    safetyScore: result.safetyScore,
     safetyFindings: result.safetyFindings,
     visibility
   };
 }
+
+export type PublishProjectSourceFile = {
+  body: string;
+  language?: string;
+  path: string;
+};
 
 export async function generatePublishAsset(payload: {
   authToken: string;

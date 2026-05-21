@@ -42,7 +42,7 @@ trait ChatStreamResponder
                 $client = app()->bound("vibyra.openrouter_stream_client")
                     ? app("vibyra.openrouter_stream_client")
                     : new GuzzleClient([
-                        "timeout" => 180,
+                        "timeout" => $this->openRouterHttpTimeout($openRouterModel, $modelKey),
                         "connect_timeout" => 10,
                         "http_errors" => false,
                     ]);

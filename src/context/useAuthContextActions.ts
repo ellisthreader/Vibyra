@@ -80,6 +80,23 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     }
   }
 
+  function applyRemoteUsage(user: RemoteUser) {
+    setters.setAccountPlan(user.plan);
+    setters.setCreditsBalance(user.creditsBalance);
+    setters.setCreditsUsed(user.creditsUsed);
+    setters.setDailyCreditsUsed(user.dailyCreditsUsed ?? 0);
+    setters.setDailyCreditsCap(user.dailyCreditsCap ?? 0);
+    setters.setDailyCreditsResetAt(user.dailyCreditsResetAt ?? null);
+    setters.setBurstCreditsUsed(user.burstCreditsUsed ?? 0);
+    setters.setBurstCreditsCap(user.burstCreditsCap ?? 0);
+    setters.setBurstCreditsResetAt(user.burstCreditsResetAt ?? null);
+    setters.setBurstWindowHours(user.burstWindowHours ?? 5);
+    setters.setWeeklyCreditsUsed(user.weeklyCreditsUsed ?? 0);
+    setters.setWeeklyCreditsCap(user.weeklyCreditsCap ?? 0);
+    setters.setWeeklyCreditsResetAt(user.weeklyCreditsResetAt ?? null);
+    if (user.level) setters.setLevelProgress(user.level);
+  }
+
   async function authenticateWith(
     method: "apple" | "google" | "microsoft" | "email",
     accountStatus?: "existing" | "new"
@@ -213,6 +230,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     completePcSetup,
     skipPcSetup,
     applyRemoteUserFromIap: applyRemoteUser,
+    applyRemoteUsage,
     clearCache,
     expireSession,
     signOut,

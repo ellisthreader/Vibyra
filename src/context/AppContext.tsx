@@ -92,7 +92,7 @@ export function AppProvider({ children }: PropsWithChildren) {
       }, state.authToken)
         .then((result) => {
           if (result.user) {
-            authActions.applyRemoteUserFromIap(result.user);
+            authActions.applyRemoteUsage(result.user);
             return;
           }
           if (result.level) setters.setLevelProgress(result.level);

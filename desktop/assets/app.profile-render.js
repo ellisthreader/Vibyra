@@ -8,7 +8,13 @@ function renderProfile() {
     <main class="profile-detail">${renderProfileDetail(profileActiveSection, meta)}</main>
   </div>`;
   bindProfileControls();
+  if (profileActiveSection === "account" && typeof ensureDesktopSessions === "function") ensureDesktopSessions();
   profileFocus = "";
+}
+
+function profileHasActiveControl() {
+  const active = document.activeElement;
+  return Boolean(active && nodes.content?.contains(active) && active.closest?.(".profile-page") && active.matches?.("input, select, textarea"));
 }
 
 function renderProfileSectionRail(sections, meta) {
@@ -38,7 +44,7 @@ function renderProfileDetail(section, meta) {
 }
 
 function profileHeader(kicker, title, body = "") {
-  return `<header class="profile-detail-head"><p>${escapeHtml(kicker)}</p><h1>${escapeHtml(title)}</h1>${body ? `<span>${escapeHtml(body)}</span>` : ""}</header>`;
+  return `<header class="profile-detail-head">${kicker ? `<p>${escapeHtml(kicker)}</p>` : ""}<h1>${escapeHtml(title)}</h1>${body ? `<span>${escapeHtml(body)}</span>` : ""}</header>`;
 }
 
 function profileGeneralSection(meta) {
@@ -50,11 +56,9 @@ function profileGeneralSection(meta) {
 }
 
 function profileAccountSection(meta) {
-  return `${profileHeader("Account", "Account details", "Changes saved here carry across your Vibyra account where the backend supports them.")}
-    ${renderProfileForm(meta, desktopPreferences())}
-    ${renderReferralPanel()}
-    ${profileActionList([{ key: "logout", icon: "logout", label: "Log out", detail: "End this local desktop session.", action: "logout", danger: true }])}
-    ${renderDeleteAccountPanel(meta)}`;
+  return `${profileHeader("", "Account")}
+    ${renderProfileSessionsPanel()}
+    ${renderAccountActionsPanel(meta)}`;
 }
 
 function renderProfileForm(meta, prefs) {
@@ -72,10 +76,6 @@ function renderReferralPanel() {
     return `<section class="profile-referral-panel"><h2>Refer & earn</h2><div class="profile-referral-code"><strong>${escapeHtml(profileReferral.code || "")}</strong><span>${escapeHtml(profileReferral.link || "")}</span></div><div class="profile-inline-actions"><button class="secondary-button compact-button" type="button" data-profile-action="copy-referral">${profileCopiedCode ? "Copied" : "Copy code"}</button><button class="secondary-button compact-button" type="button" data-profile-action="share-referral">Open invite link</button></div><div class="profile-stat-grid"><span><strong>${escapeHtml(String(stats.signedUp || 0))}</strong>Joined</span><span><strong>${escapeHtml(String(stats.paid || 0))}</strong>Members</span><span><strong>${escapeHtml(String(stats.earnedCredits || 0))}</strong>Earned</span></div></section>`;
   }
   return `<section class="profile-referral-panel"><h2>Refer & earn</h2><p>${escapeHtml(profileReferralError || "Load your invite code and share it from this desktop.")}</p><button class="secondary-button compact-button" type="button" data-profile-action="load-referral">Load invite code</button></section>`;
-}
-
-function renderDeleteAccountPanel(meta) {
-  return `<section class="profile-danger-panel"><h2>Delete account</h2><p>This permanently deletes ${escapeHtml(meta.email || "your Vibyra account")}, including synced Vibyra app data. Manage any active membership before deleting.</p><label class="profile-field"><span>Type DELETE to confirm</span><input id="profile-delete-confirm" type="text" autocomplete="off" /></label><label class="profile-field"><span>Password</span><input id="profile-delete-password" type="password" autocomplete="current-password" /></label><div class="profile-inline-actions"><button class="danger-button compact-button" type="button" data-profile-action="delete-account" ${profileDeleteBusy ? "disabled" : ""}>${profileDeleteBusy ? "Deleting..." : "Delete account"}</button>${profileDeleteMessage ? `<p class="profile-status profile-status--danger">${escapeHtml(profileDeleteMessage)}</p>` : ""}</div></section>`;
 }
 
 function profileBillingSection(meta) {
@@ -188,5 +188,6 @@ function profileActionRow(row) {
   const cls = `profile-action-row${row.danger ? " profile-action-row--danger" : ""}${row.action ? "" : " profile-action-row--static"}`;
   const action = row.action ? ` data-profile-action="${escapeAttribute(row.action)}"` : "";
   const value = row.value ? ` data-profile-value="${escapeAttribute(row.value)}"` : "";
-  return `<button class="${cls}" type="button"${action} data-profile-key="${escapeAttribute(row.key)}"${value}><span class="profile-row-icon">${icon(row.icon)}</span><span class="profile-action-copy"><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || "")}</small></span>${right}</button>`;
+  const disabled = row.disabled ? " disabled" : "";
+  return `<button class="${cls}" type="button"${action} data-profile-key="${escapeAttribute(row.key)}"${value}${disabled}><span class="profile-row-icon">${icon(row.icon)}</span><span class="profile-action-copy"><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || "")}</small></span>${right}</button>`;
 }

@@ -20,6 +20,7 @@ async function submitDesktopEmailAuth(event) {
   try {
     const result = await requestAppAuth(authMode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
       email,
+      deviceName: "Vibyra Desktop",
       installId: desktopInstallId(),
       ...(authMode === "signup" ? { name } : {}),
       password
@@ -38,6 +39,7 @@ async function completeDesktopAuth(token, user) {
   const syncedUser = await syncDesktopSession(token);
   localStorage.setItem("vibyra.desktop.page", "dashboard");
   storeDesktopAuthSession(token, syncedUser || user);
+  if (typeof resetProfileSessions === "function") resetProfileSessions();
   if (typeof activePage !== "undefined") activePage = "dashboard";
   document.body.classList.add("desktop-authenticated");
   clearAuthError();

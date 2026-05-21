@@ -1,0 +1,199 @@
+.profile-session-list {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: grid;
+  gap: 0;
+  padding: 0 0 18px;
+}
+.profile-session-head {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px;
+}
+.profile-session-head h2 {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  margin: 0;
+}
+.profile-session-head span,
+.profile-device-row > span {
+  color: var(--subtle);
+  font-weight: 650;
+}
+.profile-session-head span { font-size: 12px; }
+.profile-session-empty {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0 0 12px;
+}
+.profile-session-empty--danger { color: var(--danger); }
+.profile-device-table {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: grid;
+}
+.profile-device-row {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(130px, 1.25fr) minmax(96px, 0.8fr) minmax(118px, 0.8fr) minmax(118px, 0.8fr) 34px;
+  min-height: 50px;
+  padding: 8px 0;
+  position: relative;
+}
+.profile-device-row--head {
+  border-top: 0;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 740;
+  letter-spacing: 0.03em;
+  min-height: 34px;
+  text-transform: uppercase;
+}
+.profile-device-row > span { color: var(--muted); font-size: 13px; }
+.profile-device-row > span,
+.profile-device-name strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-device-name {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.profile-device-name i {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 7px;
+  width: 7px;
+}
+.profile-device-row.is-current .profile-device-name i {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(93, 255, 183, 0.1);
+}
+.profile-device-name > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.profile-device-name strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 660;
+  line-height: 19px;
+}
+.profile-device-name small {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 740;
+  line-height: 16px;
+}
+.profile-session-actions {
+  position: relative;
+  text-align: right;
+}
+.profile-session-menu-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+.profile-session-menu-button:hover {
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+}
+.profile-session-menu-button svg {
+  height: 19px;
+  width: 19px;
+}
+.profile-session-menu {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+  padding: 5px;
+  position: absolute;
+  right: 0;
+  top: 32px;
+  width: 142px;
+  z-index: 20;
+}
+.profile-session-menu button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--danger);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 680;
+  min-height: 32px;
+  padding: 0 9px;
+  text-align: left;
+  width: 100%;
+}
+.profile-session-menu button:hover { background: rgba(255, 93, 122, 0.1); }
+.profile-session-menu button:disabled { opacity: 0.6; }
+.profile-account-actions {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: grid;
+  gap: 0;
+  padding: 0 0 20px;
+}
+.profile-account-action {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  display: grid;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 48px;
+  padding: 0;
+  text-align: left;
+}
+.profile-account-action svg {
+  color: var(--subtle);
+  height: 16px;
+  width: 16px;
+}
+.profile-account-action:hover span { color: var(--accent-2); }
+.profile-account-action--danger { color: var(--danger); }
+.profile-account-action--danger svg { color: rgba(255, 93, 122, 0.65); }
+.profile-delete-confirm {
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  gap: 12px;
+  padding: 14px 0 2px;
+}
+.profile-delete-confirm p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 19px;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .profile-device-row {
+    gap: 7px;
+    grid-template-columns: minmax(0, 1fr) 30px;
+  }
+  .profile-device-row--head { display: none; }
+  .profile-device-row > span:nth-child(2),
+  .profile-device-row > span:nth-child(3),
+  .profile-device-row > span:nth-child(4) {
+    grid-column: 1;
+    padding-left: 17px;
+  }
+  .profile-session-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

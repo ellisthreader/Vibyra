@@ -43,6 +43,7 @@ body {
 .terminal-banner-divider,
 .terminal-gemini-footer { border-color: var(--terminal-border); }
 .terminal-name,
+.terminal-setup-copy h2,
 .terminal-agent-row button,
 .terminal-agent-option,
 .terminal-agent-row strong,
@@ -65,6 +66,7 @@ body {
 .terminal-banner-tips,
 .terminal-line.user pre { color: var(--terminal-copy); }
 .terminal-meta-chip,
+.terminal-setup-block p,
 .terminal-agent-row small,
 .terminal-agent-option small,
 .terminal-pty-composer,
@@ -78,6 +80,15 @@ body {
 .terminal-banner-path,
 .terminal-gemini-footer,
 .terminal-custom-count span { color: var(--terminal-dim); }
+.terminal-model-section-title,
+.terminal-agent-row button.unavailable,
+.terminal-agent-option.unavailable {
+  color: var(--terminal-muted);
+}
+.terminal-agent-row button.unavailable small,
+.terminal-agent-option.unavailable small {
+  color: var(--terminal-accent);
+}
 
 .terminal-add,
 .terminal-layout-button,
@@ -119,6 +130,8 @@ body {
 .terminal-prompt,
 .terminal-composer-prompt,
 .terminal-assistant-token,
+.terminal-setup-icon,
+.terminal-setup-icon svg,
 .terminal-meta-chip svg,
 .terminal-settings-menu label,
 .terminal-close-row svg,
@@ -156,6 +169,7 @@ body {
 .terminal-line.diff pre,
 .terminal-block,
 .terminal-model-search,
+.terminal-setup-icon,
 .terminal-layout-preview span { background: color-mix(in srgb, var(--terminal-elevated) 72%, transparent); }
 .terminal-line.shell pre,
 .terminal-line.tool pre,

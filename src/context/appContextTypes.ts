@@ -144,6 +144,7 @@ export type AppActions = {
   completePcSetup: () => void;
   skipPcSetup: () => void;
   applyRemoteUserFromIap: (user: import("../utils/appApi").RemoteUser) => void;
+  applyRemoteUsage: (user: import("../utils/appApi").RemoteUser) => void;
   expireSession: (message?: string) => void;
   confirmPhonePermission: () => void;
   discoverPairableDesktops: () => Promise<RememberedDesktop[]>;
@@ -156,6 +157,7 @@ export type AppActions = {
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
   selectProject: (projectId: string, projectOrOptions?: Project | ProjectOpenOptions, options?: ProjectOpenOptions) => Promise<FileEntry[]>;
+  loadProjectReviewFiles: (projectId: string) => Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }>;
   startPreviewServer: (projectId: string, projectName?: string, onProgress?: (phase: PreviewServerPhase, detail?: string) => void) => Promise<GeneratedApp>;
   startAgent: (target?: AgentStartTarget, promptOverride?: string, options?: AgentStartOptions) => Promise<boolean>;
   clearCurrentChat: (projectId?: string) => void;

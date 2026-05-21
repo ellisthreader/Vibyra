@@ -1,6 +1,7 @@
 function desktopSignOut() {
   fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
   localStorage.removeItem(authKey);
+  if (typeof resetProfileSessions === "function") resetProfileSessions();
   document.body.classList.remove("desktop-authenticated");
   if (typeof renderTopbar === "function") renderTopbar();
   document.getElementById("token-modal")?.classList.remove("open");

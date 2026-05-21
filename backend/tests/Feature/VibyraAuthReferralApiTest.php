@@ -76,6 +76,67 @@ class VibyraAuthReferralApiTest extends TestCase
         $this->assertSame(0, DB::table("vibyra_sessions")->count());
     }
 
+    public function test_account_sessions_can_be_listed_revoked_and_cleared(): void
+    {
+        $signup = $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->withHeader('User-Agent', 'Vibyra Desktop Test')
+            ->postJson('/api/auth/signup', [
+                'name' => 'Session Owner',
+                'email' => 'sessions@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'Vibyra Desktop',
+                'installId' => 'desktop-install-1',
+            ])
+            ->assertCreated();
+        $desktopToken = $signup->json('token');
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->withHeader('User-Agent', 'Vibyra Desktop Test')
+            ->postJson('/api/auth/login', [
+                'email' => 'sessions@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'Vibyra Desktop',
+                'installId' => 'desktop-install-1',
+            ])
+            ->assertOk();
+
+        $appToken = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.24'])
+            ->withHeader('User-Agent', 'Vibyra App Test')
+            ->postJson('/api/auth/login', [
+                'email' => 'sessions@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'Vibyra App',
+                'installId' => 'app-install-1',
+            ])
+            ->assertOk()
+            ->json('token');
+
+        $headers = ['Authorization' => "Bearer {$desktopToken}"];
+        $response = $this->getJson('/api/account/sessions', $headers)
+            ->assertOk()
+            ->assertJsonCount(2, 'devices')
+            ->assertJsonCount(3, 'sessions')
+            ->assertJsonPath('devices.0.current', true);
+        $devices = $response->json('devices');
+
+        $appDevice = collect($devices)->firstWhere('deviceName', 'Vibyra App');
+        $this->assertNotEmpty($appDevice['id']);
+
+        $this->deleteJson("/api/account/devices/{$appDevice['id']}", [], $headers)
+            ->assertOk()
+            ->assertJsonPath('currentRevoked', false);
+
+        $this->getJson('/api/session', ['Authorization' => "Bearer {$appToken}"])
+            ->assertUnauthorized();
+
+        $this->deleteJson('/api/account/sessions', [], $headers)
+            ->assertOk()
+            ->assertJsonPath('currentRevoked', true);
+
+        $this->getJson('/api/session', $headers)
+            ->assertUnauthorized();
+    }
+
     public function test_referral_signup_grants_invite_code_and_signup_rewards(): void
     {
         $referrerToken = $this->postJson('/api/auth/signup', [

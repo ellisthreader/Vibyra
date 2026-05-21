@@ -106,7 +106,10 @@ function render() {
   }
   if (activePage === "projects") renderProjects();
   if (activePage === "dashboard") renderDashboard();
-  if (activePage === "profile" && typeof renderProfile === "function") renderProfile();
+  if (activePage === "profile" && typeof renderProfile === "function") {
+    const keepProfileDom = typeof profileHasActiveControl === "function" && profileHasActiveControl();
+    if (!keepProfileDom) renderProfile();
+  }
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open")) renderTokenModal();

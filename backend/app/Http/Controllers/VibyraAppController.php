@@ -9,6 +9,7 @@ use App\Http\Controllers\Concerns\ChatLearningFeedback;
 use App\Http\Controllers\Concerns\ChatStreamEndpoint;
 use App\Http\Controllers\Concerns\ChatModelMap;
 use App\Http\Controllers\Concerns\ChatPrompting;
+use App\Http\Controllers\Concerns\ChatResearchPlan;
 use App\Http\Controllers\Concerns\CommunityAssetGeneration;
 use App\Http\Controllers\Concerns\CommunityPublishMedia;
 use App\Http\Controllers\Concerns\CommunityPublishing;
@@ -29,6 +30,7 @@ class VibyraAppController extends Controller
     use ChatStreamEndpoint;
     use ChatModelMap;
     use ChatPrompting;
+    use ChatResearchPlan;
     use CommunityAssetGeneration;
     use CommunityPublishMedia;
     use CommunityPublishing;

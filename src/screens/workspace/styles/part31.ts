@@ -81,31 +81,31 @@ export const part31 = {
   runningProjectsEmpty: {
     alignItems: "center",
     alignSelf: "center",
-    gap: 18,
+    gap: 17,
     justifyContent: "center",
     maxWidth: 330,
-    minHeight: 470,
+    minHeight: 485,
     paddingHorizontal: 18,
     width: "100%"
   },
   runningProjectsEmptyButton: {
-    borderRadius: 17,
+    borderRadius: 16,
     alignSelf: "center",
-    marginTop: 3,
+    marginTop: 4,
     overflow: "hidden",
     shadowColor: "#9631FF",
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.36,
-    shadowRadius: 20,
-    width: 260
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.34,
+    shadowRadius: 18,
+    width: 254
   },
   runningProjectsEmptyButtonGradient: {
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
     justifyContent: "center",
-    minHeight: 50,
-    paddingHorizontal: 18
+    minHeight: 48,
+    paddingHorizontal: 17
   },
   runningProjectsEmptyButtonPressed: {
     opacity: 0.86,
@@ -119,14 +119,14 @@ export const part31 = {
   },
   runningProjectsEmptyCopy: {
     alignItems: "center",
-    gap: 9,
+    gap: 8,
     maxWidth: 300
   },
   runningProjectsEmptyImage: {
-    height: 188,
-    marginBottom: 8,
-    marginTop: 12,
-    width: 222
+    height: 194,
+    marginBottom: 10,
+    marginTop: 16,
+    width: 230
   },
   runningProjectsEmptyIcon: {
     alignItems: "center",

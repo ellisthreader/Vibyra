@@ -1,6 +1,8 @@
 const terminalPtySockets = {};
 const terminalPtyRenderTimers = {};
 const terminalXterms = {};
+const terminalXtermSizes = {};
+let ptyRenderedSignature = "";
 const terminalPtyRendererVersion = 2;
 const terminalAgents = [
   { key: "codex", label: "Codex", detail: "OpenAI Codex CLI", profile: "openai" },
@@ -27,7 +29,7 @@ normalizeTerminal = function normalizePtyTerminal(item) {
 };
 
 saveTerminals = function savePtyTerminals() {
-  const stored = terminals.map(({ pending, notice, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
+  const stored = terminals.map(({ pending, notice, ptyStartQueued, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
   localStorage.setItem(storageKey, JSON.stringify(stored));
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
   else localStorage.removeItem(activeKey);
@@ -71,18 +73,20 @@ createTerminal = function createPtyTerminal(agentKey = setupAgent, shouldRender 
   };
   terminals.unshift(terminal);
   activeTerminalId = terminal.id;
+  if (terminals.length > 4) terminalLayout = "grid";
   newTerminalMenuOpen = false;
   setupModelMenuOpen = false;
   settingsTerminalId = "";
-  void startPtyTerminal(terminal);
   saveTerminals();
   if (shouldRender) { forceTerminalRender = true; render(); }
+  queueStartPtyTerminal(terminal);
   return terminal;
 };
 
 createTerminals = function createPtyTerminals(count = 1, agentKey = setupAgent) {
   const total = Math.min(maxTerminals - terminals.length, normalizeCount(count));
   const agent = terminalAgentKeyOrSetup(agentKey);
+  if (terminals.length + total > 4) terminalLayout = "grid";
   for (let index = 0; index < total; index += 1) createTerminal(agent, false);
   forceTerminalRender = true;
   render();
@@ -126,18 +130,37 @@ terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {
   return `${terminals.length}/${maxTerminals}${running ? ` running ${running}` : ""}`;
 };
 
+terminalTabs = function ptyTerminalTabs() {
+  const tabs = terminals.map((terminal, index) => {
+    const running = terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running";
+    return `<div class="terminal-tab ${terminal.id === activeTerminalId ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}"><button class="terminal-tab-open" type="button" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(terminal.title)}"><span class="terminal-status ${running ? "running" : ""}"></span><span>${index + 1}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button></div>`;
+  }).join("");
+  return `<header class="terminal-tabs"><div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list">${tabs}</div><button class="terminal-layout-button" id="toggle-terminal-layout" type="button" aria-label="Toggle terminal layout" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button></header>`;
+};
+
 const previousBindTerminalControls = bindTerminalControls;
 bindTerminalControls = function bindPtyTerminalControls() {
   previousBindTerminalControls();
   document.querySelectorAll("[data-terminal-agent]").forEach((button) => button.addEventListener("click", () => { setupAgent = normalizeTerminalAgent(button.dataset.terminalAgent); render(); }));
   document.querySelectorAll("[data-terminal-new-agent]").forEach((button) => button.addEventListener("click", () => createTerminal(button.dataset.terminalNewAgent || setupAgent, true)));
   document.querySelectorAll("[data-terminal-input]").forEach((node) => {
+    if (node.dataset.ptyInputBound) return;
+    node.dataset.ptyInputBound = "1";
     node.addEventListener("keydown", (event) => handlePtyKeydown(event, node.dataset.terminalInput));
     node.addEventListener("paste", (event) => {
       event.preventDefault();
       sendPtyInput(node.dataset.terminalInput, event.clipboardData?.getData("text") || "");
     });
-    node.addEventListener("click", () => terminalXterms[node.dataset.terminalInput]?.focus());
+    node.addEventListener("pointerdown", () => focusPtyTerminal(node.dataset.terminalInput));
+    node.addEventListener("click", () => focusPtyTerminal(node.dataset.terminalInput));
+  });
+  document.querySelectorAll("[data-terminal]").forEach((node) => {
+    if (node.dataset.ptyFocusBound) return;
+    node.dataset.ptyFocusBound = "1";
+    node.addEventListener("pointerdown", (event) => {
+      if (event.target?.closest?.("button, select, option, .terminal-menu")) return;
+      focusPtyTerminal(node.dataset.terminal);
+    });
   });
   mountVisibleXterms();
 };
@@ -148,6 +171,7 @@ closeTerminal = function closePtyTerminal(id) {
   if (socket) socket.close();
   terminalXterms[id]?.dispose?.();
   delete terminalXterms[id];
+  delete terminalXtermSizes[id];
   delete terminalPtySockets[id];
   fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/close`, { method: "POST" }).catch(() => {});
   previousCloseTerminal(id);

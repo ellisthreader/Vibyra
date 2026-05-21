@@ -58,6 +58,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
       }
       const files = await app.selectProject(publishTarget.id, { startPreview: false });
       const previewHtml = pickPreviewHtml(files, false);
+      const sourceReview = await app.loadProjectReviewFiles(publishTarget.id);
       const result = await publishCommunityProject({
         authToken: app.authToken,
         description: payload.description,
@@ -65,13 +66,17 @@ export function ProjectsPage(props: ProjectsPageProps) {
         previewHtml,
         projectId: publishTarget.id,
         screenshotUrls: payload.screenshotUrls,
+        sourceFiles: sourceReview.files,
+        sourceReview: { totalFiles: sourceReview.totalFiles, truncated: sourceReview.truncated },
         stack: publishTarget.stack,
         tags: payload.tags,
         title: payload.title,
         visibility: payload.visibility
       });
       publishStatuses.upsert(result.publishStatus);
-      setPublishResult(publishResultFromOutcome(result.outcome));
+      const outcomeResult = publishResultFromOutcome(result.outcome, result);
+      setPublishResult(outcomeResult);
+      if (!outcomeResult) setPublishTarget(null);
     } catch (error) {
       setPublishResult(null);
       void publishStatuses.refresh();

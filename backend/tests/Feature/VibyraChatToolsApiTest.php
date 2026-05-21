@@ -19,6 +19,52 @@ use Tests\TestCase;
 class VibyraChatToolsApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_deep_research_plan_uses_budget_ai_planner(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $payloads = [];
+        Http::fake(function ($request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'choices' => [[
+                    'message' => ['content' => json_encode([
+                        'title' => 'Popular Names In The UK',
+                        'steps' => [
+                            'Collect official UK baby name tables and recent naming trend reports by country and year.',
+                            'Extract name rankings, counts, spelling variants, regional differences, and source publication dates.',
+                            'Analyse which names are rising, falling, stable, or newly entering the top rankings.',
+                            'Correlate naming shifts with regions, cultural moments, demographics, and longer-term popularity cycles.',
+                            'Summarise the strongest UK name trends with caveats and practical takeaways for choosing names.',
+                        ],
+                    ])],
+                ]],
+            ]);
+        });
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Alex Carter',
+            'email' => 'alex-research-plan@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/research-plan', [
+            'prompt' => 'Anaylse Popular Names In UK',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('title', 'Popular Names In The UK')
+            ->assertJsonPath('steps.0', 'Collect official UK baby name tables and recent naming trend reports by country and year.')
+            ->assertJsonPath('steps.4', 'Summarise the strongest UK name trends with caveats and practical takeaways for choosing names.');
+
+        $this->assertCount(1, $payloads);
+        $this->assertSame('google/gemini-2.5-flash-lite', $payloads[0]['model'] ?? null);
+        $this->assertSame(260, $payloads[0]['max_completion_tokens'] ?? null);
+        $this->assertTrue($payloads[0]['reasoning']['exclude'] ?? false);
+        $this->assertSame(0.2, $payloads[0]['temperature'] ?? null);
+        $this->assertSame(0, DB::table('credit_ledger')->count());
+    }
+
     public function test_chat_tool_skills_use_specialist_or_selected_openrouter_models(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);

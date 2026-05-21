@@ -141,7 +141,7 @@ trait ChatEndpoint
                 $skill
             );
 
-            $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel))
+            $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel, $modelKey))
                 ->acceptJson()
                 ->withToken($apiKey)
                 ->withHeaders([
@@ -164,7 +164,7 @@ trait ChatEndpoint
             $retryPayload = $this->openRouterEmptyCompletionRetryPayload($payload);
             if ($retryPayload !== null) {
                 try {
-                    $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel))
+                    $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel, $modelKey))
                         ->acceptJson()
                         ->withToken($apiKey)
                         ->withHeaders([

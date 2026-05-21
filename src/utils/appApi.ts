@@ -119,7 +119,7 @@ export async function appApiRequest<T>(
     throw new Error(getBackendReachabilityMessage(url, reason, timedOut || aborted));
   }
 
-  if (response.status >= 500) {
+  if (response.status >= 500 && endpoint !== "/api/chat/research-plan") {
     markBackendOffline();
   } else {
     markBackendOnline();
@@ -142,6 +142,7 @@ export async function appApiRequest<T>(
 
 function requestTimeoutFor(endpoint: string) {
   if (endpoint === "/api/chat") return 240000;
+  if (endpoint === "/api/chat/research-plan") return 25000;
   if (endpoint === "/api/community/assets/generate") return 100000;
   if (endpoint === "/api/community/projects") return 30000;
   return 15000;

@@ -13,9 +13,26 @@ function renderTerminalsPage() {
     return;
   }
   const active = findTerminal(activeTerminalId) || terminals[0];
-  nodes.content.innerHTML = `<section class="terminal-page ${terminalLayout === "grid" ? "grid-mode" : ""}"><div class="terminal-stage">${terminalLayout === "grid" ? terminals.map(terminalTile).join("") : activeTerminalView(active)}</div></section>`;
+  const grid = terminalLayout === "grid";
+  const gridMeta = grid ? terminalGridMeta(terminals.length) : null;
+  const gridClass = grid ? `grid-mode ${gridMeta.className}` : "";
+  const gridStyle = grid ? ` style="--terminal-grid-cols:${gridMeta.cols};--terminal-grid-rows:${gridMeta.rows};--terminal-grid-cols-narrow:${gridMeta.narrowCols};--terminal-grid-rows-narrow:${gridMeta.narrowRows};"` : "";
+  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : activeTerminalView(active)}</div></section>`;
   bindTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
+}
+
+function terminalGridMeta(count) {
+  const total = Math.max(1, Math.min(maxTerminals, Number(count) || 1));
+  const cols = total <= 2 ? total : total <= 4 ? 2 : total <= 9 ? 3 : 4;
+  const narrowCols = total <= 2 ? total : total <= 4 ? 2 : 3;
+  return {
+    className: total > 4 ? "terminal-grid-many" : "",
+    cols,
+    rows: Math.ceil(total / cols),
+    narrowCols,
+    narrowRows: Math.ceil(total / narrowCols)
+  };
 }
 
 function setupView() {

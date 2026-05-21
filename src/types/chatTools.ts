@@ -16,6 +16,11 @@ export type ChatStartOptions = {
   tool?: ChatToolMode;
 };
 
+export type DeepResearchPlanDraft = {
+  title: string;
+  steps: string[];
+};
+
 export type AgentStartOptions = {
   imageAttachments?: ChatImageAttachment[];
   model?: string;

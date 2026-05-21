@@ -2,6 +2,15 @@ function bindProfileControls() {
   document.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
   document.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
   document.querySelectorAll("[data-profile-select]").forEach((select) => select.addEventListener("change", () => setDesktopPreference(select.dataset.profileSelect, select.value)));
+  document.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu;
+    renderProfile();
+  }));
+  document.querySelectorAll("[data-device-revoke]").forEach((button) => button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    revokeDesktopDevice(button.dataset.deviceRevoke);
+  }));
 }
 
 function setProfileSection(section) {
@@ -23,6 +32,10 @@ function handleProfileRow(action, key, button) {
   if (action === "load-referral") { loadDesktopReferral(); return; }
   if (action === "copy-referral") { copyDesktopReferralCode(); return; }
   if (action === "share-referral") { openDesktopReferralLink(); return; }
+  if (action === "reload-sessions") { loadDesktopSessions(true); return; }
+  if (action === "logout-all") { logoutAllDesktopSessions(); return; }
+  if (action === "show-delete-account") { profileDeleteOpen = true; profileDeleteMessage = ""; renderProfile(); return; }
+  if (action === "hide-delete-account") { profileDeleteOpen = false; profileDeleteMessage = ""; renderProfile(); return; }
   if (action === "set-pref") { setDesktopPreference(key, button.dataset.profileValue); return; }
   if (action === "toggle-pref") { toggleDesktopPreference(key); return; }
   if (action === "delete-account") { deleteDesktopAccount(); return; }

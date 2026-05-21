@@ -98,6 +98,18 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     }
   }
 
+  async function loadProjectReviewFiles(projectId: string): Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }> {
+    if (!state.connection) return { files: [], totalFiles: 0, truncated: true };
+    try {
+      return await requests.agentRequest<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }>(
+        `/files/review-bundle?projectId=${encodeURIComponent(projectId)}`
+      );
+    } catch (error) {
+      logs.appendLog(error instanceof Error ? error.message : "Could not prepare project files for review", "Projects", "warning");
+      return { files: [], totalFiles: 0, truncated: true };
+    }
+  }
+
   function createLocalProject(name?: string) {
     const project = { ...makeLocalProject(name), briefRequired: true };
     setters.setProjects((current) => [project, ...current]);
@@ -177,6 +189,7 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     createFile: fileActions.createFile,
     undoCodeChange: fileActions.undoCodeChange,
     loadProjectFilesWithConnection: fileActions.loadProjectFilesWithConnection,
+    loadProjectReviewFiles,
     selectFile: fileActions.selectFile,
     selectProject,
     startPreviewServer,

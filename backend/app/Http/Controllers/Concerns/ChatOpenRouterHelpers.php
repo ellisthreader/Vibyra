@@ -140,8 +140,11 @@ trait ChatOpenRouterHelpers
         return $openRouterModel === 'openai/o3-deep-research';
     }
 
-    private function openRouterHttpTimeout(string $openRouterModel): int
+    private function openRouterHttpTimeout(string $openRouterModel, string $modelKey = ''): int
     {
+        if ($this->isDeepResearchModelKey($modelKey)) {
+            return 900;
+        }
         return $this->isDeepResearchOpenRouterModel($openRouterModel) || $openRouterModel === 'google/gemini-2.5-flash-lite' ? 180 : 90;
     }
 

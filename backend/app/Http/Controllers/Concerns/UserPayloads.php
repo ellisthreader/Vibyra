@@ -32,13 +32,23 @@ trait UserPayloads
             'user_id' => $user->id,
             'token_hash' => hash('sha256', $token),
             'device_name' => (string) $request->input('deviceName', 'Vibyra App'),
+            'device_identifier' => $this->sessionDeviceIdentifier($request),
+            'ip_address' => $request->ip(),
+            'user_agent' => (string) $request->userAgent(),
             'last_used_at' => now(),
         ]);
 
         return $token;
     }
 
-    private function authenticatedUser(Request $request): User
+    private function sessionDeviceIdentifier(Request $request): ?string
+    {
+        $value = trim((string) $request->input('installId', ''));
+
+        return $value === '' ? null : mb_substr($value, 0, 128);
+    }
+
+    private function authenticatedSession(Request $request): VibyraSession
     {
         $token = (string) $request->bearerToken();
         if ($token === '') {
@@ -50,9 +60,18 @@ trait UserPayloads
             abort($this->json(['ok' => false, 'error' => 'Your session expired. Please log in again.'], 401));
         }
 
-        $session->forceFill(['last_used_at' => now()])->save();
+        $session->forceFill([
+            'ip_address' => $request->ip(),
+            'user_agent' => (string) $request->userAgent(),
+            'last_used_at' => now(),
+        ])->save();
 
-        return $session->user;
+        return $session;
+    }
+
+    private function authenticatedUser(Request $request): User
+    {
+        return $this->authenticatedSession($request)->user;
     }
 
     private function userPayload(User $user): array

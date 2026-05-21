@@ -64,7 +64,7 @@ export function createWorkspaceToolHandlers(s: WorkspaceState, runtime: Runtime)
       }, app.authToken, {
         onChunk: (delta) => appendDetachedToolDelta(chatId, assistantId, delta)
       });
-      if (result.user) app.applyRemoteUserFromIap(result.user);
+      if (result.user) app.applyRemoteUsage(result.user);
       finishDetachedTool(chatId, assistantId, result);
     } catch (error) {
       if (error instanceof Error && error.message.toLowerCase().includes("session")) {
@@ -132,7 +132,7 @@ export function createWorkspaceToolHandlers(s: WorkspaceState, runtime: Runtime)
         prompt,
         title: target.project.name || "Vibyra image"
       });
-      if (result.user) app.applyRemoteUserFromIap(result.user);
+      if (result.user) app.applyRemoteUsage(result.user);
       const image: GeneratedImage = {
         id: `generated-image-${Date.now()}`,
         provider: result.provider,

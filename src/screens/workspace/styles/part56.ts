@@ -145,6 +145,26 @@ export const part56 = {
     lineHeight: 16,
     maxWidth: 112
   },
+  chatModelToolTag: {
+    alignItems: "center",
+    backgroundColor: "rgba(124, 58, 237, 0.18)",
+    borderColor: "rgba(196, 181, 253, 0.34)",
+    borderRadius: 9,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    height: 28,
+    maxWidth: 154,
+    paddingLeft: 7,
+    paddingRight: 10
+  },
+  chatModelToolTagText: {
+    color: "#EFE7FF",
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 16
+  },
   chatModelLogoButton: {
     alignItems: "center",
     flexDirection: "row",

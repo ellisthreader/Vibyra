@@ -40,7 +40,10 @@ export type CommunityPost = {
   logo?: CommunityLogoKind;
   makerBio: string;
   preview: CommunityPreviewKind;
+  reviewSummary?: string | null;
   reviewStatus?: string;
+  safetyRating?: string;
+  safetyScore?: number;
   screenshots: string[];
   screenshotUrls?: string[];
   tag: CommunityFilter;

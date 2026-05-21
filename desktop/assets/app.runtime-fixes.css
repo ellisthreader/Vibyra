@@ -111,6 +111,35 @@ body.electron-shell .content.chat-content {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
+.grid-mode .terminal-stage {
+  grid-template-columns: repeat(var(--terminal-grid-cols, 3), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--terminal-grid-rows, 2), minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.grid-mode .terminal-tile {
+  min-height: 0;
+}
+
+.grid-mode.terminal-grid-many .terminal-tile-head {
+  padding: 7px 8px;
+}
+
+.grid-mode.terminal-grid-many .terminal-tile-head strong {
+  font-size: 12px;
+}
+
+.grid-mode.terminal-grid-many .terminal-composer {
+  min-height: 34px;
+  padding: 7px 8px;
+}
+
+.grid-mode.terminal-grid-many .terminal-pty-composer span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .terminal-pty-lines {
   overflow: hidden;
   padding: 0 !important;
@@ -122,7 +151,7 @@ body.electron-shell .content.chat-content {
 }
 
 .terminal-xterm {
-  background: #08080c;
+  background: var(--terminal-bg, #08080c);
   box-sizing: border-box;
   height: 100%;
   overflow: hidden;
@@ -141,7 +170,7 @@ body.electron-shell .content.chat-content {
 }
 
 .terminal-xterm .xterm-viewport {
-  background: #08080c !important;
+  background: var(--terminal-bg, #08080c) !important;
 }
 
 .terminal-xterm .xterm-rows {
@@ -152,5 +181,12 @@ body.electron-shell .content.chat-content {
   .content.chat-content {
     height: calc(100vh - var(--chrome-height, 0px));
     height: calc(100dvh - var(--chrome-height, 0px));
+  }
+}
+
+@media (max-width: 1000px) {
+  .grid-mode .terminal-stage {
+    grid-template-columns: repeat(var(--terminal-grid-cols-narrow, var(--terminal-grid-cols, 3)), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--terminal-grid-rows-narrow, var(--terminal-grid-rows, 2)), minmax(0, 1fr));
   }
 }

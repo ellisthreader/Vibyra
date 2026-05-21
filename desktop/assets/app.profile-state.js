@@ -10,6 +10,14 @@ let profileFormMessage = "";
 let profileFormBusy = false;
 let profileDeleteBusy = false;
 let profileDeleteMessage = "";
+let profileDeleteOpen = false;
+let profileSessions = [];
+let profileSessionsError = "";
+let profileSessionsLoaded = false;
+let profileSessionsLoading = false;
+let profileSessionBusyId = "";
+let profileSessionMenuId = "";
+let profileLogoutAllBusy = false;
 
 const desktopPreferenceDefaults = {
   appearance: "auto",

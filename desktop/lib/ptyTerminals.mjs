@@ -26,6 +26,11 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     send(res, 200, { ok: true });
     return true;
   }
+  if (req.method === "POST" && route.action === "resize") {
+    resizePtyTerminal(route.id, await readBody(req));
+    send(res, 200, { ok: true });
+    return true;
+  }
   if (req.method === "POST" && route.action === "close") {
     closePtyTerminal(route.id);
     send(res, 200, { ok: true, sessions: listPtyTerminals(), agents: listAiTerminalAgentStatuses() });
@@ -123,6 +128,19 @@ function writePtyInput(id, input) {
   session.updatedAt = new Date().toISOString();
 }
 
+function resizePtyTerminal(id, size) {
+  const session = sessions.get(string(id));
+  if (!session) return;
+  const cols = clamp(size?.cols, session.cols || 100);
+  const rows = clamp(size?.rows, session.rows || 30);
+  if (session.cols === cols && session.rows === rows) return;
+  session.cols = cols;
+  session.rows = rows;
+  session.updatedAt = new Date().toISOString();
+  try { session.process?.resize?.(cols, rows); } catch {}
+  try { session.process?.kill?.("SIGWINCH"); } catch {}
+}
+
 function subscribePtyTerminal(id, sendMessage) {
   const session = sessions.get(id);
   const list = subscribers.get(id) || new Set();
@@ -139,6 +157,7 @@ function handleSocketMessage(id, message) {
   let payload = null;
   try { payload = JSON.parse(message); } catch { return; }
   if (payload?.type === "input") writePtyInput(id, String(payload.data ?? ""));
+  if (payload?.type === "resize") resizePtyTerminal(id, payload);
 }
 
 function ptyRoute(pathname) {

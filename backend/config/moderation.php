@@ -6,6 +6,21 @@ return [
     'timeout_seconds' => env('OPENAI_MODERATION_TIMEOUT', 12),
     'max_text_characters' => 12000,
     'max_image_data_url_characters' => 7000000,
+    'publish_reviewer_emails' => array_values(array_filter(array_map('trim', explode(',', env('VIBYRA_PUBLISH_REVIEWER_EMAILS', ''))))),
+    'publish_ai_review' => [
+        'enabled' => env('PUBLISH_REVIEW_AI_ENABLED', true),
+        'model' => env('PUBLISH_REVIEW_AI_MODEL', 'openai/gpt-5.4-nano'),
+        'min_score' => (int) env('PUBLISH_REVIEW_AI_MIN_SCORE', 35),
+        'max_score' => (int) env('PUBLISH_REVIEW_AI_MAX_SCORE', 74),
+        'max_input_characters' => (int) env('PUBLISH_REVIEW_AI_MAX_INPUT_CHARACTERS', 9000),
+        'max_source_files' => (int) env('PUBLISH_REVIEW_AI_MAX_SOURCE_FILES', 24),
+        'max_source_characters' => (int) env('PUBLISH_REVIEW_AI_MAX_SOURCE_CHARACTERS', 120000),
+        'max_output_tokens' => (int) env('PUBLISH_REVIEW_AI_MAX_OUTPUT_TOKENS', 350),
+        'timeout_seconds' => (int) env('PUBLISH_REVIEW_AI_TIMEOUT', 20),
+        'approve_confidence' => (float) env('PUBLISH_REVIEW_AI_APPROVE_CONFIDENCE', 0.84),
+        'deny_confidence' => (float) env('PUBLISH_REVIEW_AI_DENY_CONFIDENCE', 0.90),
+        'approve_score' => (int) env('PUBLISH_REVIEW_AI_APPROVE_SCORE', 78),
+    ],
     'block_message' => 'That input does not meet Vibyra PG community rules. Please rewrite it without profanity, hate, sexual content, harassment, spam, or obfuscated wording.',
 
     'thresholds' => [
