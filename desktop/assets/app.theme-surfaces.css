@@ -44,34 +44,15 @@ body {
 
 .modal { background: var(--surface-elevated); }
 .modal-backdrop { background: rgba(0, 0, 0, 0.56); }
+.primary-button { background: var(--surface-accent); color: #fff; }
+.secondary-button { background: var(--surface-hover); border-color: var(--surface-border); color: var(--surface-text); }
 
-.primary-button {
-  background: var(--surface-accent);
-  color: #fff;
-}
-
-.secondary-button {
-  background: var(--surface-hover);
-  border-color: var(--surface-border);
-  color: var(--surface-text);
-}
-
-.danger-button {
-  background: var(--surface-danger-soft);
-  border-color: var(--surface-danger);
-  color: var(--surface-danger);
-}
-
+.danger-button { background: var(--surface-danger-soft); border-color: var(--surface-danger); color: var(--surface-danger); }
 .chip { color: var(--surface-muted); }
 .chip.active,
 .project-card.active,
 .plan-card.featured,
-.membership-plan.active {
-  background: var(--surface-accent-soft);
-  border-color: var(--surface-line-accent);
-  box-shadow: none;
-  color: var(--surface-text);
-}
+.membership-plan.active { background: var(--surface-accent-soft); border-color: var(--surface-line-accent); box-shadow: none; color: var(--surface-text); }
 
 .search input,
 .profile-field input,
@@ -85,9 +66,7 @@ body {
 
 .search input::placeholder,
 .profile-field input::placeholder,
-.profile-field textarea::placeholder {
-  color: var(--surface-dim);
-}
+.profile-field textarea::placeholder { color: var(--surface-dim); }
 
 .search:focus-within,
 .profile-field input:focus,
@@ -152,33 +131,26 @@ body {
 .plans-back:hover,
 .profile-detail-head p,
 .profile-identity-copy span,
-.profile-info-tile:hover,
-.profile-section-button.active svg,
-.profile-action-row:hover .profile-row-icon,
-.profile-choice-row:hover .profile-row-icon,
-.profile-toggle-row:hover .profile-action-copy strong,
 .profile-choice-row.active .profile-row-icon,
 .profile-choice-check,
 .account-help-link svg {
   color: var(--surface-accent);
 }
 
-.projects-phone-panel h2 {
-  color: var(--surface-text);
-}
+.profile-info-tile:hover,
+.profile-section-button.active svg,
+.profile-action-row:hover .profile-row-icon,
+.profile-choice-row:hover .profile-row-icon,
+.profile-toggle-row:hover .profile-action-copy strong { color: var(--surface-text); }
+
+.projects-phone-panel h2 { color: var(--surface-text); }
 
 .profile-section-button:hover,
 .profile-action-row:hover,
 .profile-choice-row:hover,
-.profile-toggle-row:hover {
-  background: var(--surface-hover);
-}
+.profile-toggle-row:hover { background: var(--surface-line-soft); }
 
-.profile-section-button.active {
-  background: var(--surface-accent-soft);
-  border-color: var(--surface-line-accent);
-  color: var(--surface-text);
-}
+.profile-section-button.active { background: var(--surface-line-soft); border-color: transparent; color: var(--surface-text); }
 
 .profile-identity-panel,
 .profile-content-grid,
@@ -208,24 +180,13 @@ body {
 .profile-row-pill,
 .membership-plan em,
 .tag,
-.pair-v2-copied {
-  background: var(--surface-accent-soft);
-  border-color: var(--surface-border-strong);
-  color: var(--surface-accent);
-}
+.pair-v2-copied { background: var(--surface-accent-soft); border-color: var(--surface-border-strong); color: var(--surface-accent); }
 
-.profile-toggle {
-  background: var(--surface-line);
-}
+.profile-toggle { background: var(--surface-line); }
 
-.profile-toggle span {
-  background: var(--surface-elevated);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
-}
+.profile-toggle span { background: var(--surface-elevated); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16); }
 
-.profile-toggle-row.is-on .profile-toggle {
-  background: var(--surface-accent);
-}
+.profile-toggle-row.is-on .profile-toggle { background: var(--surface-accent); }
 
 .profile-action-row--danger .profile-row-icon,
 .profile-action-row--danger .profile-action-copy strong,
@@ -236,6 +197,4 @@ body {
 }
 
 .profile-danger-panel,
-.danger-setting {
-  border-color: var(--surface-danger);
-}
+.danger-setting { border-color: var(--surface-danger); }

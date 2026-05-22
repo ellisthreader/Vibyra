@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { AgentBusyInfo } from "./agentStatus";
-import type { ChatToolMode, GeneratedImage } from "./chatTools";
+import type { ChatFileAttachment, ChatImageAttachment, ChatToolMode, GeneratedImage } from "./chatTools";
 import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
@@ -124,6 +124,10 @@ export type ChatMessage = {
   id: string;
   role: "assistant" | "user";
   text: string;
+  attachments?: {
+    fileAttachments?: ChatFileAttachment[];
+    imageAttachments?: ChatImageAttachment[];
+  };
   file?: string;
   assistantModel?: string; creditCost?: number;
   runStatus?: ChatRunStatus;

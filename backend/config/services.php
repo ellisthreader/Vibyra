@@ -67,4 +67,18 @@ return [
         'service_account_json' => env('GOOGLE_IAP_SERVICE_ACCOUNT_JSON'),
     ],
 
+    'railway' => [
+        'api_token' => env('RAILWAY_API_TOKEN'),
+        'team_id' => env('RAILWAY_TEAM_ID'),
+        'default_region' => env('RAILWAY_DEFAULT_REGION'),
+        'max_active_demos_per_user' => env('RAILWAY_MAX_ACTIVE_DEMOS_PER_USER', 1),
+    ],
+
+    'maxmind' => [
+        'account_id' => env('MAXMIND_ACCOUNT_ID'),
+        'license_key' => env('MAXMIND_LICENSE_KEY'),
+        'database_path' => env('MAXMIND_DATABASE_PATH', storage_path('app/maxmind/GeoLite2-City.mmdb')),
+        'update_days' => (int) env('MAXMIND_UPDATE_DAYS', 7),
+    ],
+
 ];

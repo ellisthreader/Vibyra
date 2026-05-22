@@ -11,6 +11,16 @@ trait ModerationDecisions
         return (bool) config('moderation.enabled', true);
     }
 
+    protected function localModerationEnabled(): bool
+    {
+        return $this->enabled() && (bool) config('moderation.local_enabled', true);
+    }
+
+    protected function remoteModerationEnabled(): bool
+    {
+        return $this->enabled() && (bool) config('moderation.remote_enabled', true);
+    }
+
     protected function allowedDecision(string $surface, ?string $warning = null): array
     {
         return [

@@ -20,6 +20,8 @@ Read this for prompt submission, cloud vs desktop routing, project briefs, model
 
 Detached/new-chat startup remains active: Vibyra can answer greetings, help find/open/create project folders, and guide the user into a project. Once `selectedChatId` is an actual `project-*` chat, plain composer text talks to the selected AI agent via `startAgent`; do not add local Vibyra notices in project chat. Slash commands/skills are still routed through `startAgent` with their skill prompt expansion, and local commands such as `/publish` remain local command flows. Direct explicit AI surfaces such as preview edit mini-chat may also call `startAgent` with generated prompts.
 
+Detached/new-chat `analyze` tool requests do not require an opened project. `workspaceToolActions.ts` sends them directly to `/api/chat` with `skill: "analyze"` and `model: "tool-analyze-files"`; attached images are forwarded as `imageAttachments`, and attached text/code files are converted to `projectFiles` entries via `src/utils/chatFileAttachments.ts`. Backend skill/model override keeps this on the cheap analyze model and normal chat credit charging.
+
 Paired desktop does not mean every activated AI prompt edits code. When Vibyra is activated with a slash skill, treat normal conversation as default. Only explicit edit/apply/build/debug/fix/refactor/style/preview requests use desktop edit pathways; questions, explanations, plans, reviews, publish commands, and open-ended discussion use `/api/chat`.
 
 Build/create-site prompts are project-scoped even when a file is selected. Do not prefix them with `In <file>:` or send selected-file context, otherwise prompts like "create a real estate website" can target `package.json`.

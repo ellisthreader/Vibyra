@@ -1,9 +1,10 @@
 function renderProfile() {
-  if (!nodes.content) return;
+  const target = profileRenderTarget();
+  if (!target) return;
   const sections = profileSections();
   if (!sections.some((section) => section.key === profileActiveSection)) profileActiveSection = "general";
   const meta = profileAccountMeta();
-  nodes.content.innerHTML = `<div class="profile-page profile-page--desktop">
+  target.innerHTML = `<div class="profile-page profile-page--desktop">
     <aside class="profile-section-rail" aria-label="Profile sections">${renderProfileSectionRail(sections, meta)}</aside>
     <main class="profile-detail">${renderProfileDetail(profileActiveSection, meta)}</main>
   </div>`;
@@ -12,20 +13,33 @@ function renderProfile() {
   profileFocus = "";
 }
 
+function renderProfileModal() { renderProfile(); }
+
+function profileRenderTarget() {
+  if (typeof nodes === "undefined") return null;
+  if (nodes.profileModal?.classList.contains("open") && nodes.profileBody) return nodes.profileBody;
+  return null;
+}
+
 function profileHasActiveControl() {
   const active = document.activeElement;
-  return Boolean(active && nodes.content?.contains(active) && active.closest?.(".profile-page") && active.matches?.("input, select, textarea"));
+  const target = profileRenderTarget();
+  return Boolean(active && target?.contains(active) && active.closest?.(".profile-page") && active.matches?.("input, select, textarea"));
 }
 
 function renderProfileSectionRail(sections, meta) {
+  const query = String(profileSectionSearch || "").trim().toLowerCase();
   const items = sections.map((section) => {
     const active = section.key === profileActiveSection ? " active" : "";
-    return `<button class="profile-section-button${active}" type="button" data-profile-section="${escapeAttribute(section.key)}">${icon(section.icon)}<span>${escapeHtml(section.label)}</span></button>`;
+    const hidden = query && !section.label.toLowerCase().includes(query) ? " is-hidden" : "";
+    return `<button class="profile-section-button${active}${hidden}" type="button" data-profile-section="${escapeAttribute(section.key)}" data-profile-section-label="${escapeAttribute(section.label.toLowerCase())}">${icon(section.icon)}<span>${escapeHtml(section.label)}</span></button>`;
   }).join("");
+  const hasMatches = sections.some((section) => !query || section.label.toLowerCase().includes(query));
+  const noResults = `<p class="profile-section-empty${hasMatches ? "" : " is-visible"}">No matches</p>`;
   return `<div class="profile-section-card">
-    <h2 class="profile-section-title">Settings</h2>
+    <label class="profile-section-search">${icon("search")}<input id="profile-section-search" type="search" value="${escapeAttribute(profileSectionSearch)}" placeholder="Search" autocomplete="off" /></label>
     <div class="profile-section-identity">${profileAvatar(meta, "small")}<div><strong>${escapeHtml(meta.name)}</strong><span>${escapeHtml(meta.planLabel)}</span></div></div>
-    <nav class="profile-section-list">${items}</nav>
+    <nav class="profile-section-list">${items}</nav>${noResults}
   </div>`;
 }
 
@@ -37,22 +51,18 @@ function renderProfileDetail(section, meta) {
     general: () => profileGeneralSection(meta),
     preferences: () => profilePreferencesSection(),
     privacy: () => profilePrivacySection(),
-    support: () => profileSupportSection(),
-    usage: () => profileUsageSection(meta)
+    support: () => profileSupportSection()
   };
   return (renderers[section] || renderers.general)();
 }
 
-function profileHeader(kicker, title, body = "") {
-  return `<header class="profile-detail-head">${kicker ? `<p>${escapeHtml(kicker)}</p>` : ""}<h1>${escapeHtml(title)}</h1>${body ? `<span>${escapeHtml(body)}</span>` : ""}</header>`;
-}
+function profileHeader(kicker, title, body = "") { return `<header class="profile-detail-head">${kicker ? `<p>${escapeHtml(kicker)}</p>` : ""}<h1>${escapeHtml(title)}</h1>${body ? `<span>${escapeHtml(body)}</span>` : ""}</header>`; }
 
 function profileGeneralSection(meta) {
   const prefs = desktopPreferences();
-  return `${profileHeader("Vibyra Profile", "General", "Personalize how Vibyra should work with you on this desktop.")}
+  return `${profileHeader("", "General", "Personalize how Vibyra should work with you on this desktop.")}
     <section class="profile-identity-panel profile-identity-panel--editor">${profileAvatar(meta)}<div class="profile-identity-copy"><h2>${escapeHtml(meta.name)}</h2>${meta.email ? `<p>${escapeHtml(meta.email)}</p>` : ""}<span>${escapeHtml(meta.planLabel)}</span></div></section>
-    ${renderProfileForm(meta, prefs)}
-    ${renderGeneralPreferences(prefs)}`;
+    ${renderProfileForm(meta, prefs)}`;
 }
 
 function profileAccountSection(meta) {
@@ -62,11 +72,7 @@ function profileAccountSection(meta) {
 }
 
 function renderProfileForm(meta, prefs) {
-  return `<section class="profile-form profile-form--general" aria-label="Profile information"><h2>Profile</h2><label class="profile-field"><span>Full name</span><input id="profile-name" type="text" value="${escapeAttribute(meta.name === "Desktop account" ? "" : meta.name)}" placeholder="Your name" autocomplete="name" /></label><label class="profile-field"><span>Email</span><input id="profile-email" type="email" value="${escapeAttribute(meta.email)}" placeholder="you@vibyra.app" autocomplete="email" /></label><label class="profile-field"><span>What should Vibyra call you?</span><input id="profile-call-name" type="text" value="${escapeAttribute(prefs.callName || firstName(meta.name))}" placeholder="Preferred name" autocomplete="nickname" /></label><label class="profile-field"><span>What best describes your work?</span><select id="profile-work-type">${profileWorkOptions.map((item) => `<option value="${escapeAttribute(item.key)}" ${prefs.workType === item.key ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><label class="profile-field"><span>Other work description</span><input id="profile-work-other" type="text" value="${escapeAttribute(prefs.workOther || "")}" placeholder="Describe your work" /></label><label class="profile-field profile-field--wide"><span>Instructions for Vibyra</span><textarea id="profile-instructions" rows="4" placeholder="e.g. ask clarifying questions before detailed implementation, keep changes small, explain tradeoffs clearly">${escapeHtml(prefs.customInstructions || "")}</textarea></label><div class="profile-inline-actions"><button class="primary-button compact-button" type="button" data-profile-action="save-profile" ${profileFormBusy ? "disabled" : ""}>${profileFormBusy ? "Saving..." : "Save profile"}</button>${profileFormMessage ? `<p class="profile-status">${escapeHtml(profileFormMessage)}</p>` : ""}</div></section>`;
-}
-
-function renderGeneralPreferences(prefs) {
-  return `<section class="profile-choice-list profile-settings-list"><h2>Preferences</h2>${profileSelectRow("Appearance", "appearance", profileAppearanceOptions, prefs.appearance)}${profileSelectRow("Chat font", "chatFont", profileChatFontOptions, prefs.chatFont)}</section>`;
+  return `<section class="profile-form profile-form--general" aria-label="Profile information"><h2>Profile</h2><label class="profile-field"><span>Full name</span><input id="profile-name" type="text" value="${escapeAttribute(meta.name === "Desktop account" ? "" : meta.name)}" placeholder="Your name" autocomplete="name" /></label><label class="profile-field"><span>Email</span><input id="profile-email" type="email" value="${escapeAttribute(meta.email)}" placeholder="you@vibyra.app" autocomplete="email" /></label><label class="profile-field"><span>What should Vibyra call you?</span><input id="profile-call-name" type="text" value="${escapeAttribute(prefs.callName || firstName(meta.name))}" placeholder="Preferred name" autocomplete="nickname" /></label><label class="profile-field"><span>What best describes your work?</span><select id="profile-work-type">${profileWorkOptions.map((item) => `<option value="${escapeAttribute(item.key)}" ${prefs.workType === item.key ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><label class="profile-field"><span>Preferred response style</span><select id="profile-response-style">${profileResponseStyleOptions.map((item) => `<option value="${escapeAttribute(item.key)}" ${prefs.responseStyle === item.key ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><label class="profile-field"><span>Other work description</span><input id="profile-work-other" type="text" value="${escapeAttribute(prefs.workOther || "")}" placeholder="Describe your work" /></label><label class="profile-field profile-field--wide"><span>Instructions for Vibyra</span><textarea id="profile-instructions" rows="4" placeholder="e.g. ask clarifying questions before detailed implementation, keep changes small, explain tradeoffs clearly">${escapeHtml(prefs.customInstructions || "")}</textarea></label><div class="profile-inline-actions"><button class="primary-button compact-button" type="button" data-profile-action="save-profile" ${profileFormBusy ? "disabled" : ""}>${profileFormBusy ? "Saving..." : "Save profile"}</button>${profileFormMessage ? `<p class="profile-status">${escapeHtml(profileFormMessage)}</p>` : ""}</div></section>`;
 }
 
 function renderReferralPanel() {
@@ -82,24 +88,18 @@ function profileBillingSection(meta) {
   const price = meta.cycle === "annual" && meta.tier.annualPrice ? meta.tier.annualPrice : meta.tier.price;
   const currentAction = meta.tier.key === "free" ? "Upgrade plan" : "Manage billing";
   const planAction = meta.tier.key === "free" ? "open-plans" : "manage-billing";
-  return `${profileHeader("Billing", "Membership", "Plan details stay compact here; checkout and plan management open through the desktop billing flow.")}
+  const changePlan = meta.tier.key === "free" ? "" : profileActionList([
+    { key: "plans", icon: "rocket", label: "Change plan", detail: "Compare Starter, Builder, and Pro.", action: "open-plans" }
+  ]);
+  return `${profileHeader("", "Billing")}
     <section class="profile-plan-panel"><div><span>Current plan</span><h2>${escapeHtml(meta.planLabel)}</h2><p>${escapeHtml(price || "£0")} · ${formatCredits(meta.allowance)} monthly credits</p></div><button class="primary-button compact-button" type="button" data-profile-action="${planAction}" data-profile-key="plan">${escapeHtml(currentAction)}</button></section>
-    ${profileActionList([
-      { key: "plan", icon: "card", label: "Plan & billing", detail: "Compare available Vibyra plans or manage your membership.", action: planAction },
-      { key: "usage", icon: "pulse", label: "Usage", detail: "Review account credits and limits.", action: "section", value: "usage" }
-    ])}`;
-}
-
-function profileUsageSection(meta) {
-  const billingAction = meta.tier.key === "free" ? "open-plans" : "manage-billing";
-  return `${profileHeader("Usage", "Credits", "Track monthly, 5-hour, and weekly allowance from the latest account session.")}
-    <section class="profile-usage-panel"><div class="profile-usage-line"><span>Monthly credits</span><strong>${formatCredits(meta.used)} of ${formatCredits(meta.allowance)}</strong></div><div class="${meta.allowance > 0 ? "credits-bar" : "credits-bar credits-bar--empty"}"><span style="width:${meta.pct}%"></span></div></section>
-    <section class="profile-stat-grid profile-stat-grid--wide">${profileUsageStat("5-hour limit", meta.burstUsed, meta.burstCap)}${profileUsageStat("Weekly limit", meta.weeklyUsed, meta.weeklyCap)}</section>
-    ${profileActionList([{ key: "billing", icon: "bolt", label: "Manage credits", detail: "Open plan and billing options.", action: billingAction }])}`;
+    <section class="profile-usage-panel profile-usage-panel--billing"><div class="profile-usage-line"><span>Credits used</span><strong>${formatCredits(meta.used)} / ${formatCredits(meta.allowance)}</strong></div><div class="${meta.allowance > 0 ? "credits-bar" : "credits-bar credits-bar--empty"}"><span style="width:${meta.pct}%"></span></div></section>
+    <section class="profile-stat-grid profile-stat-grid--wide profile-billing-limits">${profileUsageStat("5-hour limit", meta.burstUsed, meta.burstCap)}${profileUsageStat("Weekly limit", meta.weeklyUsed, meta.weeklyCap)}</section>
+    ${changePlan}`;
 }
 
 function profileUsageStat(label, used, cap) {
-  const value = cap > 0 ? `${formatCredits(used)} / ${formatCredits(cap)}` : "Not limited";
+  const value = cap > 0 ? `${Math.min(100, Math.max(0, Math.round((Number(used || 0) / Number(cap)) * 100)))}%` : "No limit";
   return `<span><strong>${escapeHtml(value)}</strong>${escapeHtml(label)}</span>`;
 }
 
@@ -129,7 +129,8 @@ function profilePrivacySection() {
 function profilePreferencesSection() {
   const prefs = desktopPreferences();
   return `${profileHeader("Preferences", "Preferences", "Desktop preferences are saved locally for this computer.")}
-    <section class="profile-choice-list"><h2>Appearance</h2>${profileAppearanceOptions.map((opt) => profileChoiceButton("appearance", opt.key, opt.title, opt.detail, opt.icon, prefs.appearance === opt.key)).join("")}</section>
+    ${renderAppearancePanel(prefs.appearance)}
+    <section class="profile-choice-list profile-settings-list"><h2>Chat</h2>${profileSelectRow("Chat font", "chatFont", profileChatFontOptions, prefs.chatFont)}</section>
     <section class="profile-choice-list"><h2>Language</h2>${profileLanguages.map((language) => profileChoiceButton("language", language, language, "Display language preference", "globe", prefs.language === language)).join("")}</section>
     <section class="profile-choice-list"><h2>Notifications</h2>${profileToggleList([
       { key: "notifications.buildUpdates", label: "Build updates", detail: "Agent starts, completions, failures, and queued build changes.", value: prefs.notifications.buildUpdates },
@@ -148,40 +149,36 @@ function profileSupportSection() {
     ])}`;
 }
 
-function profileInfoPanel(title, detail) {
-  return `<section class="profile-info-panel"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(detail)}</p></section>`;
+function profileInfoPanel(title, detail) { return `<section class="profile-info-panel"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(detail)}</p></section>`; }
+
+function renderAppearancePanel(value) { return `<section class="profile-choice-list profile-appearance-section"><h2>Appearance</h2>${renderAppearancePicker(value)}</section>`; }
+
+function renderAppearancePicker(value) {
+  const previews = [
+    { key: "dark", title: "Dark mode", image: "/desktop/assets/profile-appearance-dark.png" },
+    { key: "light", title: "Light mode", image: "/desktop/assets/profile-appearance-light.png" },
+    { key: "auto", title: "System", image: "/desktop/assets/profile-appearance-auto.png" }
+  ];
+  return `<div class="profile-appearance-grid">${previews.map((item) => {
+    const active = value === item.key;
+    return `<button class="profile-appearance-card${active ? " active" : ""}" type="button" data-profile-action="set-pref" data-profile-key="appearance" data-profile-value="${escapeAttribute(item.key)}" aria-pressed="${active ? "true" : "false"}" aria-label="${escapeAttribute(item.title)}"><span class="profile-appearance-preview profile-appearance-preview--${escapeAttribute(item.key)}"><img src="${escapeAttribute(item.image)}" alt="" loading="eager" decoding="async" fetchpriority="high" data-profile-appearance-image /></span><strong>${escapeHtml(item.title)}</strong>${active ? `<span class="profile-appearance-check">${icon("check")}</span>` : ""}</button>`;
+  }).join("")}</div>`;
 }
 
-function profileChoiceButton(group, value, title, detail, iconName, active) {
-  return `<button class="profile-choice-row${active ? " active" : ""}" type="button" data-profile-action="set-pref" data-profile-key="${escapeAttribute(group)}" data-profile-value="${escapeAttribute(value)}"><span class="profile-row-icon">${icon(iconName)}</span><span class="profile-action-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></span><span class="profile-choice-check">${active ? icon("check") : ""}</span></button>`;
-}
+function profileChoiceButton(group, value, title, detail, iconName, active) { return `<button class="profile-choice-row${active ? " active" : ""}" type="button" data-profile-action="set-pref" data-profile-key="${escapeAttribute(group)}" data-profile-value="${escapeAttribute(value)}"><span class="profile-row-icon">${icon(iconName)}</span><span class="profile-action-copy"><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></span><span class="profile-choice-check">${active ? icon("check") : ""}</span></button>`; }
 
-function profileToggleList(rows) {
-  return rows.map((row) => `<button class="profile-toggle-row${row.value ? " is-on" : ""}" type="button" data-profile-action="toggle-pref" data-profile-key="${escapeAttribute(row.key)}"><span class="profile-toggle"><span></span></span><span class="profile-action-copy"><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail)}</small></span></button>`).join("");
-}
+function profileToggleList(rows) { return rows.map((row) => `<button class="profile-toggle-row${row.value ? " is-on" : ""}" type="button" data-profile-action="toggle-pref" data-profile-key="${escapeAttribute(row.key)}"><span class="profile-toggle"><span></span></span><span class="profile-action-copy"><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail)}</small></span></button>`).join(""); }
 
-function profileSelectRow(label, key, options, value) {
-  return `<label class="profile-select-row"><span>${escapeHtml(label)}</span><select data-profile-select="${escapeAttribute(key)}">${options.map((item) => `<option value="${escapeAttribute(item.key)}" ${value === item.key ? "selected" : ""}>${escapeHtml(item.label || item.title)}</option>`).join("")}</select></label>`;
-}
+function profileSelectRow(label, key, options, value) { return `<label class="profile-select-row"><span>${escapeHtml(label)}</span><select data-profile-select="${escapeAttribute(key)}">${options.map((item) => `<option value="${escapeAttribute(item.key)}" ${value === item.key ? "selected" : ""}>${escapeHtml(item.label || item.title)}</option>`).join("")}</select></label>`; }
 
 function firstName(name) {
   const value = String(name || "").trim().split(/\s+/).filter(Boolean)[0];
   return value && value !== "Desktop" ? value : "";
 }
 
-function appearanceLabel(mode) {
-  if (mode === "auto") return "Auto";
-  if (mode === "light") return "Light";
-  return "Dark";
-}
+function profileInfoTile(label, value, detail, section) { return `<button class="profile-info-tile" type="button" data-profile-section="${escapeAttribute(section)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></button>`; }
 
-function profileInfoTile(label, value, detail, section) {
-  return `<button class="profile-info-tile" type="button" data-profile-section="${escapeAttribute(section)}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(detail)}</small></button>`;
-}
-
-function profileActionList(rows) {
-  return `<section class="profile-action-list">${rows.map(profileActionRow).join("")}</section>`;
-}
+function profileActionList(rows) { return `<section class="profile-action-list">${rows.map(profileActionRow).join("")}</section>`; }
 
 function profileActionRow(row) {
   const right = row.action ? `<span class="profile-row-chevron">${icon("chevron")}</span>` : "";

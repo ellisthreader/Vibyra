@@ -1,6 +1,7 @@
 import { GeneratedApp, Project } from "../types/domain";
 import type { GeneratedImage } from "../types/chatTools";
 import { ChatResponse } from "../utils/appApi";
+import { chatToolRunKey, isSameRunningChatToolRun, remainingChatToolProgressMs, type ChatToolRunKey } from "../utils/chatToolProgress";
 import { streamChatText, TYPING_CURSOR } from "../utils/chatStream";
 import { isRunArtifact } from "../utils/files";
 import { makeId } from "../utils/ids";
@@ -108,14 +109,23 @@ export function useLocalChatActions(store: Store) {
     return assistantId;
   }
 
-  function finishLocalGeneratedImage(messageId: string, image: GeneratedImage, target?: AgentStartTarget) {
+  function finishLocalGeneratedImage(messageId: string, image: GeneratedImage, target?: AgentStartTarget, expectedRun?: ChatToolRunKey | null) {
     const { projectId } = resolveChatTarget(target);
-    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => ({
-      ...message,
-      text: `Created **${image.title}**.`,
-      generatedImage: image,
-      runStatus: message.runStatus ? { ...message.runStatus, status: "complete", completedAt: Date.now() } : message.runStatus
-    })));
+    setters.setChatThreads((current) => updateThreadMessage(current, projectId, messageId, (message) => {
+      if (!isSameRunningChatToolRun(message.runStatus, expectedRun ?? null)) return message;
+      const delay = remainingChatToolProgressMs(message.runStatus);
+      if (delay > 0) {
+        const runKey = expectedRun ?? chatToolRunKey(message.runStatus);
+        setTimeout(() => finishLocalGeneratedImage(messageId, image, target, runKey), delay);
+        return message;
+      }
+      return {
+        ...message,
+        text: `Created **${image.title}**.`,
+        generatedImage: image,
+        runStatus: message.runStatus ? { ...message.runStatus, status: "complete", completedAt: Date.now() } : message.runStatus
+      };
+    }));
   }
 
   function failLocalImageGeneration(messageId: string, error: string, target?: AgentStartTarget) {

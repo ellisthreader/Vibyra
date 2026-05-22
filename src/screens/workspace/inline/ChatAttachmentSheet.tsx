@@ -1,13 +1,14 @@
 import React from "react";
-import { ActivityIndicator, Alert, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreferences } from "../../../context/PreferencesContext";
-import type { ChatImageAttachment, ChatToolMode } from "../../../types/chatTools";
+import type { ChatFileAttachment, ChatImageAttachment, ChatToolMode } from "../../../types/chatTools";
+import { createChatFileAttachment } from "../../../utils/chatFileAttachments";
 import { styles } from "../styles";
-import { chatToolDescriptions, chatToolLabels } from "./chatAttachmentTools";
+import { chatToolAccent, chatToolDescriptions, chatToolIcons, chatToolLabels } from "./chatAttachmentTools";
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -24,23 +25,20 @@ const PRIMARY_ACTIONS: AttachmentAction[] = [
   { icon: "folder-open-outline", kind: "files", label: "Files", prompt: "Use this file with my request:" }
 ];
 
-const TOOL_ACTIONS: Array<{ icon: IconName; tool: ChatToolMode }> = [
-  { icon: "image-outline", tool: "image" },
-  { icon: "search-outline", tool: "research" },
-  { icon: "globe-outline", tool: "web" },
-  { icon: "document-text-outline", tool: "analyze" }
-];
+const TOOL_ACTIONS: ChatToolMode[] = ["image", "research", "web", "analyze"];
 
 const MAX_IMAGE_DATA_URL_CHARS = 4_500_000;
 
 export function ChatAttachmentSheet({
   onClose,
   onSelectImageAttachment,
+  onSelectFileAttachment,
   onSelectPrompt,
   onSelectTool,
   visible
 }: {
   onClose: () => void;
+  onSelectFileAttachment: (attachment: ChatFileAttachment) => void;
   onSelectImageAttachment: (attachment: ChatImageAttachment) => void;
   onSelectPrompt: (prompt: string) => void;
   onSelectTool: (tool: ChatToolMode) => void;
@@ -50,22 +48,9 @@ export function ChatAttachmentSheet({
   const prefs = usePreferences();
   const { height } = useWindowDimensions();
   const [busyAction, setBusyAction] = React.useState("");
-  const [scrollExpansion, setScrollExpansion] = React.useState(0);
-  const compactHeight = Math.min(Math.round(height * 0.52), height - Math.max(insets.top + 24, 48));
-  const expandedHeight = Math.min(Math.round(height * 0.82), height - Math.max(insets.top + 24, 48));
-  const sheetHeight = Math.round(compactHeight + ((expandedHeight - compactHeight) * scrollExpansion));
+  const availableHeight = height - Math.max(insets.top + 24, 48);
+  const sheetHeight = Math.min(availableHeight, Math.min(460, Math.max(400, Math.round(height * 0.52))));
   const primaryIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#F7F3FF";
-  const toolIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#ECE8F8";
-
-  React.useEffect(() => {
-    if (!visible) setScrollExpansion(0);
-  }, [visible]);
-
-  function handleToolScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const offsetY = Math.max(event.nativeEvent.contentOffset.y, 0);
-    const nextExpansion = Math.min(offsetY / 180, 1);
-    setScrollExpansion((current) => (Math.abs(current - nextExpansion) < 0.04 ? current : nextExpansion));
-  }
 
   async function selectPrimaryAction(action: AttachmentAction) {
     if (action.kind === "camera") {
@@ -93,10 +78,16 @@ export function ChatAttachmentSheet({
       });
       if (result.canceled) return;
 
-      const asset = result.assets[0];
-      const size = asset?.size ? `, ${Math.round(asset.size / 1024)} KB` : "";
-      const type = asset?.mimeType ? `, ${asset.mimeType}` : "";
-      onSelectPrompt(`${action.prompt}\nSelected file: ${asset.name}${size}${type}.`);
+      const attachment = await createChatFileAttachment(result.assets[0]);
+      if (attachment) {
+        onSelectFileAttachment(attachment);
+        if (attachment.readStatus !== "loaded") {
+          Alert.alert(
+            "File text unavailable",
+            "The file is attached, but Vibyra may only be able to use its name and metadata. Text, code, and markdown files work best for analysis."
+          );
+        }
+      }
     } catch {
       Alert.alert("Files unavailable", "Vibyra could not open the file picker on this device.");
     } finally {
@@ -177,25 +168,26 @@ export function ChatAttachmentSheet({
           <ScrollView
             contentContainerStyle={styles.chatAttachmentToolList}
             keyboardShouldPersistTaps="handled"
-            onScroll={handleToolScroll}
-            scrollEventThrottle={16}
             showsVerticalScrollIndicator
           >
-            {TOOL_ACTIONS.map((action) => (
-              <Pressable
-                key={action.tool}
-                onPress={() => onSelectTool(action.tool)}
-                style={({ pressed }) => [styles.chatAttachmentToolRow, pressed ? styles.chatAttachmentPressed : null]}
-              >
-                <View style={styles.chatAttachmentToolIcon}>
-                  <Ionicons name={action.icon} color={toolIconColor} size={24} />
-                </View>
-                <View style={styles.chatAttachmentToolCopy}>
-                  <Text numberOfLines={1} style={styles.chatAttachmentToolLabel}>{chatToolLabels[action.tool]}</Text>
-                  <Text numberOfLines={1} style={styles.chatAttachmentToolDescription}>{chatToolDescriptions[action.tool]}</Text>
-                </View>
-              </Pressable>
-            ))}
+            {TOOL_ACTIONS.map((tool) => {
+              const accent = chatToolAccent[tool];
+              return (
+                <Pressable
+                  key={tool}
+                  onPress={() => onSelectTool(tool)}
+                  style={({ pressed }) => [styles.chatAttachmentToolRow, pressed ? styles.chatAttachmentPressed : null]}
+                >
+                  <View style={styles.chatAttachmentToolIcon}>
+                    <Ionicons name={chatToolIcons[tool] as IconName} color={accent.iconColor} size={23} />
+                  </View>
+                  <View style={styles.chatAttachmentToolCopy}>
+                    <Text numberOfLines={1} style={styles.chatAttachmentToolLabel}>{chatToolLabels[tool]}</Text>
+                    <Text numberOfLines={1} style={styles.chatAttachmentToolDescription}>{chatToolDescriptions[tool]}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </ScrollView>
         </View>
       </View>

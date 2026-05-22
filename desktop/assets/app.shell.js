@@ -3,6 +3,8 @@ const nodes = {
   mobileDock: document.getElementById("mobile-dock"),
   pairBody: document.getElementById("pair-modal-body"),
   pairModal: document.getElementById("pair-modal"),
+  profileBody: document.getElementById("profile-modal-body"),
+  profileModal: document.getElementById("profile-modal"),
   railNav: document.getElementById("rail-nav"),
   railRecents: document.getElementById("rail-recents"),
   railStatus: document.getElementById("rail-status"),
@@ -15,6 +17,7 @@ const nodes = {
 };
 function bootstrapDesktop() {
   document.getElementById("close-pair").innerHTML = icon("close");
+  document.getElementById("close-profile").innerHTML = icon("close");
   document.getElementById("close-token").innerHTML = icon("close");
   document.getElementById("rail-collapse").innerHTML = icon("chevron");
   document.getElementById("rail-expand").innerHTML = icon("chevron");
@@ -22,8 +25,10 @@ function bootstrapDesktop() {
   document.querySelector("[data-window-action='maximize']")?.replaceChildren(svgFromHtml(icon("square")));
   document.querySelector("[data-window-action='close']")?.replaceChildren(svgFromHtml(icon("close")));
   document.getElementById("close-pair").addEventListener("click", closePairModal);
+  document.getElementById("close-profile").addEventListener("click", closeProfileModal);
   document.getElementById("close-token").addEventListener("click", closeTokenModal);
   nodes.pairModal.addEventListener("click", (event) => { if (event.target === nodes.pairModal) closePairModal(); });
+  nodes.profileModal.addEventListener("click", (event) => { if (event.target === nodes.profileModal) closeProfileModal(); });
   nodes.tokenModal.addEventListener("click", (event) => { if (event.target === nodes.tokenModal) closeTokenModal(); });
   document.addEventListener("click", (event) => {
     if (!topbarAccountMenuOpen && !topbarChatMenuOpen) return;
@@ -93,12 +98,15 @@ async function post(path) {
   }
 }
 function render() {
+  if (typeof captureTerminalModelScrolls === "function") captureTerminalModelScrolls(document);
+  const terminalModelSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
   if (!pages.some((page) => page.key === activePage)) activePage = "chat";
   applyRailState();
   renderNav();
   renderRecentChats();
-  renderTopbar();
-  nodes.content.className = activePage === "chat" ? "content chat-content" : activePage === "terminals" ? "content terminal-content" : activePage === "profile" ? "content profile-content" : "content";
+  const terminalNewPickerOpen = activePage === "terminals" && newTerminalMenuOpen && document.querySelector('[data-terminal-model-picker="new"]');
+  if (!(activePage === "terminals" && (terminalModelSearch?.target === "new" || terminalNewPickerOpen))) renderTopbar();
+  nodes.content.className = activePage === "chat" ? "content chat-content" : activePage === "terminals" ? "content terminal-content" : "content";
   if (activePage === "chat") renderChat();
   if (activePage === "terminals") {
     if (typeof renderTerminalsPage === "function") renderTerminalsPage();
@@ -106,13 +114,14 @@ function render() {
   }
   if (activePage === "projects") renderProjects();
   if (activePage === "dashboard") renderDashboard();
-  if (activePage === "profile" && typeof renderProfile === "function") {
-    const keepProfileDom = typeof profileHasActiveControl === "function" && profileHasActiveControl();
-    if (!keepProfileDom) renderProfile();
+  if (typeof profileModalOpen !== "undefined" && profileModalOpen && nodes.profileModal?.classList.contains("open") && typeof renderProfileModal === "function") {
+    const keepProfileDom = (typeof profileHasActiveControl === "function" && profileHasActiveControl())
+      || (typeof profileActiveSection !== "undefined" && profileActiveSection === "preferences");
+    if (!keepProfileDom) renderProfileModal();
   }
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
-  if (nodes.tokenModal.classList.contains("open")) renderTokenModal();
+  if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".billing-revamp"))) renderTokenModal();
 }
 function setRailCollapsed(value) {
   railCollapsed = Boolean(value);
@@ -193,6 +202,7 @@ function renderTopbar() {
   document.querySelectorAll("[data-account-action]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); handleAccountAction(button.dataset.accountAction); }));
   document.getElementById("open-chat-actions")?.addEventListener("click", (event) => { event.stopPropagation(); topbarChatMenuOpen = !topbarChatMenuOpen; topbarAccountMenuOpen = false; renderTopbar(); });
   document.querySelectorAll("[data-chat-action]").forEach((button) => button.addEventListener("click", () => handleChatAction(button.dataset.chatAction)));
+  if (terminalPage && typeof bindPtyTopbarControls === "function") bindPtyTopbarControls();
 }
 function renderRecentChats() {
   if (!nodes.railRecents) return;

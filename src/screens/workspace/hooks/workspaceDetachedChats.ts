@@ -44,11 +44,18 @@ export function useWorkspaceDetachedChats(s: WorkspaceState) {
   }, [app, ensureDetachedChat]);
 
   const updateDetachedMessage = useCallback((chatId: string, messageId: string, update: (message: ChatMessage) => ChatMessage) => {
-    app.setDetachedChatThreads((current) => ({
-      ...current,
-      [chatId]: (current[chatId] ?? []).map((message) => message.id === messageId ? update(message) : message)
-    }));
-    app.setDetachedChatUpdatedAt((current) => ({ ...current, [chatId]: Date.now() }));
+    let changed = false;
+    app.setDetachedChatThreads((current) => {
+      const thread = current[chatId];
+      if (!thread) return current;
+      const nextThread = thread.map((message) => {
+        if (message.id !== messageId) return message;
+        changed = true;
+        return update(message);
+      });
+      return changed ? { ...current, [chatId]: nextThread } : current;
+    });
+    if (changed) app.setDetachedChatUpdatedAt((current) => ({ ...current, [chatId]: Date.now() }));
   }, [app]);
 
   return { appendDetachedMessages, ensureDetachedChat, updateDetachedMessage };

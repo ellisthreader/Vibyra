@@ -49,6 +49,7 @@ Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']
 Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
 Route::get('/api/community/projects', [VibyraAppController::class, 'communityProjects']);
+Route::get('/api/community/projects/{slug}/demo/{path?}', [VibyraAppController::class, 'communityProjectHostedDemo'])->where('path', '.*');
 Route::get('/api/community/projects/{slug}/preview', [VibyraAppController::class, 'communityProjectPreview']);
 Route::post('/api/community/projects/{slug}/comments', [VibyraAppController::class, 'commentOnCommunityProject']);
 Route::post('/api/community/projects/{slug}/reaction', [VibyraAppController::class, 'reactToCommunityProject']);

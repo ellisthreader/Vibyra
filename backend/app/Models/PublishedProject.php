@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'user_id',
@@ -63,6 +64,23 @@ class PublishedProject extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(PublishedProjectComment::class);
+    }
+
+    public function deployments(): HasMany
+    {
+        return $this->hasMany(PublishedProjectDeployment::class);
+    }
+
+    public function latestDeployment(): HasOne
+    {
+        return $this->hasOne(PublishedProjectDeployment::class)->latestOfMany();
+    }
+
+    public function latestSuccessfulDeployment(): HasOne
+    {
+        return $this->hasOne(PublishedProjectDeployment::class)
+            ->whereIn('status', PublishedProjectDeployment::SUCCESS_STATUSES)
+            ->latestOfMany('hosted_at');
     }
 
     public function reactions(): HasMany

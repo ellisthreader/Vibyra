@@ -6,7 +6,7 @@ import { aiTerminalAgentStatus, listAiTerminalAgentStatuses, spawnAiTerminalProc
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
 const MAX_OUTPUT_BUFFER = 50_000;
-const agents = new Set(["shell", "codex", "claude", "gemini"]);
+const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
 
@@ -64,13 +64,16 @@ export function createPtyTerminal(body = {}) {
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, `Vibyra Desktop supports up to ${MAX_PTY_TERMINAL_SESSIONS} terminals at once.`);
   const projectId = string(body.projectId);
   const project = projectById(projectId);
-  const agent = normalizeAgent(body.agent);
+  const model = string(body.model).slice(0, 140);
+  const agent = normalizeAgent(body.agent, model);
   const agentStatus = aiTerminalAgentStatus(agent);
   const session = {
     id: string(body.id) || `pty-${Date.now()}-${randomUUID().slice(0, 8)}`,
     title: string(body.title).slice(0, 72) || "Terminal",
     agent,
     agentStatus,
+    model,
+    reasoningEffort: normalizeReasoningEffort(body.reasoningEffort || body.effort),
     projectId,
     cwd: project?.path || process.cwd(),
     cols: clamp(body.cols, 100),
@@ -89,6 +92,9 @@ export function createPtyTerminal(body = {}) {
   }
   session.process = spawnAiTerminalProcess({
     agent: session.agent,
+    model: session.model,
+    reasoningEffort: session.reasoningEffort,
+    projectId: session.projectId,
     cwd: session.cwd,
     cols: session.cols,
     rows: session.rows,
@@ -218,9 +224,29 @@ function isLoopback(req) {
   return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
 }
 
-function normalizeAgent(value) {
-  const next = string(value).toLowerCase() || "codex";
-  return agents.has(next) ? next : "codex";
+function normalizeAgent(value, model = "") {
+  const next = string(value).toLowerCase() || "vibyra";
+  if (next === "official") return availableOfficialAgentForModel(model) || "vibyra";
+  return agents.has(next) ? next : "vibyra";
+}
+
+function availableOfficialAgentForModel(model) {
+  const agent = officialAgentForModel(model);
+  return agent && aiTerminalAgentStatus(agent).available ? agent : "";
+}
+
+function officialAgentForModel(model) {
+  const key = string(model).toLowerCase();
+  const provider = key.includes("/") ? key.split("/")[0] : "";
+  if (provider === "openai" || key.startsWith("gpt-") || key.includes("codex")) return "codex";
+  if (provider === "anthropic" || provider === "claude" || key.startsWith("claude-")) return "claude";
+  if (provider === "google" || provider === "gemini" || key.startsWith("gemini-")) return "gemini";
+  return "";
+}
+
+function normalizeReasoningEffort(value) {
+  const effort = string(value) || "medium";
+  return ["low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
 }
 
 function clamp(value, fallback) {
@@ -229,7 +255,7 @@ function clamp(value, fallback) {
 }
 
 function label(agent) {
-  return agent === "claude" ? "Claude" : agent === "gemini" ? "Gemini" : agent === "shell" ? "Shell" : "Codex";
+  return agent === "claude" ? "Claude" : agent === "gemini" ? "Gemini" : agent === "shell" ? "Shell" : agent === "codex" ? "Codex" : "Vibyra";
 }
 
 function string(value) {

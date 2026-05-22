@@ -45,6 +45,9 @@
   color: #d2ccdf;
   overflow: hidden;
 }
+.terminal-banner-claude .terminal-cli-box {
+  overflow: visible;
+}
 .terminal-claude-main {
   display: grid;
   gap: 8px;
@@ -71,6 +74,35 @@
 .terminal-banner-claude .terminal-cli-box > div {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+.terminal-claude-codebox {
+  color: #d2ccdf;
+  display: block;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 560;
+  letter-spacing: 0;
+  line-height: 17px;
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0;
+  scrollbar-width: none;
+  white-space: pre;
+}
+.terminal-claude-codebox::-webkit-scrollbar {
+  display: none;
+}
+.terminal-claude-logo,
+.terminal-claude-prompt {
+  color: #ff9b6a;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.terminal-banner-claude.compact .terminal-claude-codebox {
+  font-size: 11px;
+  line-height: 15px;
 }
 .terminal-banner-greeting {
   color: #f1eef8;

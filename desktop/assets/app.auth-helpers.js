@@ -4,6 +4,8 @@ function desktopSignOut() {
   if (typeof resetProfileSessions === "function") resetProfileSessions();
   document.body.classList.remove("desktop-authenticated");
   if (typeof renderTopbar === "function") renderTopbar();
+  document.getElementById("profile-modal")?.classList.remove("open");
+  if (typeof profileModalOpen !== "undefined") profileModalOpen = false;
   document.getElementById("token-modal")?.classList.remove("open");
   authNodes.form?.classList.remove("open");
   document.getElementById("desktop-auth")?.classList.remove("email-open");
@@ -20,13 +22,14 @@ function validateAuthForm() {
 }
 
 async function requestAppAuth(endpoint, payload) {
+  const publicIp = await desktopPublicIp();
   const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(publicIp ? { ...payload, publicIp } : payload)
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || result.message || "Could not sign in to Vibyra.");
@@ -34,11 +37,13 @@ async function requestAppAuth(endpoint, payload) {
 }
 
 async function syncDesktopSession(token) {
+  const publicIp = await desktopPublicIp();
   const response = await fetch("/desktop/session", {
     method: "POST",
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      ...(publicIp ? { "X-Vibyra-Public-IP": publicIp } : {})
     }
   });
   const result = await response.json().catch(() => ({}));
@@ -54,6 +59,39 @@ async function syncDesktopSession(token) {
     }
   }
   return result?.user || null;
+}
+
+async function desktopAccountHeaders(token, extra = {}) {
+  const publicIp = await desktopPublicIp();
+  return {
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+    ...(publicIp ? { "X-Vibyra-Public-IP": publicIp } : {}),
+    ...extra
+  };
+}
+
+async function desktopPublicIp() {
+  const cacheKey = "vibyra.desktop.publicIp";
+  const now = Date.now();
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+    if (cached?.ip && now - Number(cached.at || 0) < 24 * 60 * 60 * 1000) {
+      return cached.ip;
+    }
+  } catch {}
+
+  try {
+    const response = await fetch("https://api.ipify.org?format=json", { cache: "no-store" });
+    const result = await response.json();
+    const ip = typeof result?.ip === "string" ? result.ip.trim() : "";
+    if (/^[0-9a-fA-F:.]+$/.test(ip)) {
+      localStorage.setItem(cacheKey, JSON.stringify({ ip, at: now }));
+      return ip;
+    }
+  } catch {}
+
+  return "";
 }
 
 function appApiBaseUrl() {

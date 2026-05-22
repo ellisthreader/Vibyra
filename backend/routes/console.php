@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('vibyra:refresh-credits')->dailyAt('00:05')->withoutOverlapping();
+Schedule::command('maxmind:update')->weekly()->withoutOverlapping();

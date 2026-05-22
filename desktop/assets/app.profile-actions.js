@@ -2,15 +2,37 @@ function bindProfileControls() {
   document.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
   document.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
   document.querySelectorAll("[data-profile-select]").forEach((select) => select.addEventListener("change", () => setDesktopPreference(select.dataset.profileSelect, select.value)));
-  document.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => {
-    event.stopPropagation();
-    profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu;
-    renderProfile();
-  }));
-  document.querySelectorAll("[data-device-revoke]").forEach((button) => button.addEventListener("click", (event) => {
-    event.stopPropagation();
-    revokeDesktopDevice(button.dataset.deviceRevoke);
-  }));
+  bindProfileAppearanceImages();
+  document.getElementById("profile-section-search")?.addEventListener("input", (event) => updateProfileSectionSearch(event.target.value));
+  document.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu; renderProfile(); }));
+  document.querySelectorAll("[data-device-revoke]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); revokeDesktopDevice(button.dataset.deviceRevoke); }));
+}
+
+function bindProfileAppearanceImages() {
+  document.querySelectorAll("[data-profile-appearance-image]").forEach((image) => {
+    const preview = image.closest(".profile-appearance-preview");
+    const showFallback = () => {
+      image.hidden = true;
+      preview?.classList.add("is-fallback");
+    };
+    if (image.complete && image.naturalWidth === 0) {
+      showFallback();
+      return;
+    }
+    image.addEventListener("error", showFallback, { once: true });
+  });
+}
+
+function updateProfileSectionSearch(value) {
+  profileSectionSearch = String(value || "");
+  const query = profileSectionSearch.trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll("[data-profile-section-label]").forEach((button) => {
+    const visible = !query || String(button.dataset.profileSectionLabel || "").includes(query);
+    button.classList.toggle("is-hidden", !visible);
+    shown += visible ? 1 : 0;
+  });
+  document.querySelector(".profile-section-empty")?.classList.toggle("is-visible", shown === 0);
 }
 
 function setProfileSection(section) {
@@ -18,6 +40,7 @@ function setProfileSection(section) {
   profileActiveSection = section;
   localStorage.setItem(profileSectionKey, section);
   renderProfile();
+  if (typeof resetProfileModalScroll === "function") { resetProfileModalScroll(); requestAnimationFrame(() => resetProfileModalScroll()); }
 }
 
 function handleProfileRow(action, key, button) {
@@ -34,7 +57,7 @@ function handleProfileRow(action, key, button) {
   if (action === "share-referral") { openDesktopReferralLink(); return; }
   if (action === "reload-sessions") { loadDesktopSessions(true); return; }
   if (action === "logout-all") { logoutAllDesktopSessions(); return; }
-  if (action === "show-delete-account") { profileDeleteOpen = true; profileDeleteMessage = ""; renderProfile(); return; }
+  if (action === "show-delete-account") { profileDeleteOpen = true; profileDeleteMessage = ""; renderProfile(); requestAnimationFrame(() => document.querySelector(".profile-delete-confirm")?.scrollIntoView({ block: "nearest" })); return; }
   if (action === "hide-delete-account") { profileDeleteOpen = false; profileDeleteMessage = ""; renderProfile(); return; }
   if (action === "set-pref") { setDesktopPreference(key, button.dataset.profileValue); return; }
   if (action === "toggle-pref") { toggleDesktopPreference(key); return; }
@@ -44,11 +67,9 @@ function handleProfileRow(action, key, button) {
 
 function saveProfilePreferencesFromForm() {
   const prefs = desktopPreferences();
-  const callName = document.getElementById("profile-call-name");
-  const workType = document.getElementById("profile-work-type");
-  const workOther = document.getElementById("profile-work-other");
-  const instructions = document.getElementById("profile-instructions");
+  const callName = document.getElementById("profile-call-name"), responseStyle = document.getElementById("profile-response-style"), workType = document.getElementById("profile-work-type"), workOther = document.getElementById("profile-work-other"), instructions = document.getElementById("profile-instructions");
   if (callName) prefs.callName = callName.value.trim();
+  if (responseStyle) prefs.responseStyle = responseStyle.value;
   if (workType) prefs.workType = workType.value;
   if (workOther) prefs.workOther = workOther.value.trim();
   if (instructions) prefs.customInstructions = instructions.value.trim();
@@ -68,7 +89,7 @@ async function saveDesktopProfile() {
   try {
     const response = await fetch(`${appApiBaseUrl()}/api/account/profile`, {
       method: "POST",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: await desktopAccountHeaders(token, { "Content-Type": "application/json" }),
       body: JSON.stringify({ name, email })
     });
     const result = await response.json().catch(() => ({}));
@@ -91,7 +112,7 @@ async function loadDesktopReferral() {
   profileReferralError = "";
   renderProfile();
   try {
-    const response = await fetch(`${appApiBaseUrl()}/api/referrals/me`, { headers: { Accept: "application/json", Authorization: `Bearer ${token}` } });
+    const response = await fetch(`${appApiBaseUrl()}/api/referrals/me`, { headers: await desktopAccountHeaders(token) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result?.ok === false || !result?.referral) throw new Error(result?.error || result?.message || "Could not load your invite code.");
     profileReferral = result.referral;
@@ -111,9 +132,7 @@ async function copyDesktopReferralCode() {
   setTimeout(() => { profileCopiedCode = false; renderProfile(); }, 1400);
 }
 
-function openDesktopReferralLink() {
-  if (profileReferral?.link) window.open(profileReferral.link, "_blank", "noopener");
-}
+function openDesktopReferralLink() { if (profileReferral?.link) window.open(profileReferral.link, "_blank", "noopener"); }
 
 function setDesktopPreference(key, value) {
   const prefs = desktopPreferences();
@@ -138,9 +157,8 @@ function toggleDesktopPreference(key) {
 
 async function deleteDesktopAccount() {
   const token = desktopAuthSession()?.token;
-  const confirmation = document.getElementById("profile-delete-confirm")?.value?.trim().toUpperCase() || "";
   const password = document.getElementById("profile-delete-password")?.value || "";
-  if (confirmation !== "DELETE" || !password) { profileDeleteMessage = "Type DELETE and enter your password."; renderProfile(); return; }
+  if (!password) { profileDeleteMessage = "Enter your password to delete this account."; renderProfile(); return; }
   if (!token) { profileDeleteMessage = "Log in again to delete this account."; renderProfile(); return; }
   profileDeleteBusy = true;
   profileDeleteMessage = "";
@@ -149,7 +167,7 @@ async function deleteDesktopAccount() {
   try {
     const response = await fetch(`${appApiBaseUrl()}/api/account`, {
       method: "DELETE",
-      headers: { Accept: "application/json", Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: await desktopAccountHeaders(token, { "Content-Type": "application/json" }),
       body: JSON.stringify({ password })
     });
     const result = await response.json().catch(() => ({}));
@@ -169,9 +187,7 @@ function confirmClearDesktopCache() {
   if (!ok) return;
   const keep = new Set(["vibyra.desktop.auth", "vibyra.desktop.install", "vibyra.api.url"]);
   try {
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith("vibyra.desktop.") && !keep.has(k))
-      .forEach((k) => localStorage.removeItem(k));
+    Object.keys(localStorage).filter((k) => k.startsWith("vibyra.desktop.") && !keep.has(k)).forEach((k) => localStorage.removeItem(k));
   } catch {}
   recentChats = [];
   activeChatId = "";

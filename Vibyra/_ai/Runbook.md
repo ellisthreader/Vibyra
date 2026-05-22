@@ -24,6 +24,8 @@ npm run backend
 npx expo start --host lan
 ```
 
+`npm run backend` delegates to `scripts/start-backend.sh`. It first checks `http://127.0.0.1:8000/health`; if this repo's Laravel backend is already running, it prints the URL and exits successfully instead of failing with `Address already in use`. If port 8000 is occupied by a non-Vibyra process, either stop that process or run `BACKEND_PORT=<free-port> npm run backend`.
+
 Manual fallback if scripts fail or you want a fully detached server:
 
 ```bash

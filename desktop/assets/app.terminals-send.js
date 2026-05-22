@@ -6,7 +6,7 @@ async function sendTerminal(id) {
   const profile = terminalProviderProfile(terminal);
   const parsed = parseTerminalInput(terminal, text, profile);
   if (parsed.handled) return;
-  const model = (config().chatModels || []).find((item) => item.key === terminal.model);
+  const model = modelByKey(terminal.model);
   if (typeof modelLocked === "function" && modelLocked(model) && typeof firstUnlockedModel === "function") terminal.model = firstUnlockedModel();
   const history = terminal.messages.filter((message) => ["user", "assistant"].includes(message.role)).slice(-8).map((message) => ({ role: message.role, text: message.text }));
   const pending = makeTerminalMessage("assistant", "Thinking...", { provider: profile.key });
@@ -109,7 +109,7 @@ function renameTerminalCommand(terminal, args, profile, command) {
 function modelTerminalCommand(terminal, args, profile, command) {
   if (!args) { settingsTerminalId = terminal.id; appendTerminalMessages(terminal, [makeTerminalMessage("system", profile.label + " model controls opened.", { type: "tool", provider: profile.key, meta: { command } })], { clearDraft: true }); return { handled: true }; }
   const query = args.toLowerCase();
-  const model = (config().chatModels || []).find((item) => [item.key, item.label, item.provider].some((value) => String(value || "").toLowerCase().includes(query)));
+  const model = modelChoices().find((item) => [item.key, item.label, item.provider, item.company].some((value) => String(value || "").toLowerCase().includes(query)));
   if (!model) { appendTerminalMessages(terminal, [makeTerminalMessage("system", "No model matched " + args + ". Open /model with no argument to pick one.", { provider: profile.key, meta: { command, args } })], { clearDraft: true }); return { handled: true }; }
   if (typeof modelLocked === "function" && modelLocked(model)) { if (typeof openTokenModal === "function") openTokenModal("plans"); appendTerminalMessages(terminal, [makeTerminalMessage("system", model.label + " requires a plan upgrade.", { provider: profile.key, meta: { command, args } })], { clearDraft: true }); return { handled: true }; }
   terminal.model = model.key;

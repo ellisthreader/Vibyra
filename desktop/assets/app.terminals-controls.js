@@ -11,7 +11,7 @@ function bindTerminalControls() {
   document.querySelectorAll("[data-terminal-new-model]").forEach((button) => button.addEventListener("click", () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
   document.querySelectorAll("[data-terminal-focus]").forEach((button) => button.addEventListener("click", () => setActiveTerminal(button.dataset.terminalFocus)));
   document.querySelectorAll("[data-terminal-drag]").forEach((tab) => bindTerminalDrag(tab));
-  document.querySelectorAll("[data-terminal-settings]").forEach((button) => button.addEventListener("click", () => { settingsTerminalId = settingsTerminalId === button.dataset.terminalSettings ? "" : button.dataset.terminalSettings; newTerminalMenuOpen = false; render(); }));
+  document.querySelectorAll("[data-terminal-settings]").forEach((button) => button.addEventListener("click", () => toggleTerminalSettings(button.dataset.terminalSettings)));
   document.querySelectorAll("[data-terminal-close]").forEach((button) => button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -131,6 +131,12 @@ function renderedTerminalDraft(id) {
   return Array.from(nodes.content.querySelectorAll("[data-terminal-draft]")).some((field) => field.dataset.terminalDraft === id);
 }
 
+function toggleTerminalSettings(id) {
+  settingsTerminalId = settingsTerminalId === id ? "" : id;
+  newTerminalMenuOpen = false;
+  render();
+}
+
 function setActiveTerminal(id) {
   activeTerminalId = id;
   settingsTerminalId = "";
@@ -164,18 +170,33 @@ function bindTerminalDrag(tab) {
 
 function bindTerminalModelScroll(scroller) {
   const target = terminalModelPickerTarget(scroller);
-  if (target && modelScrollTops[target]) scroller.scrollTop = modelScrollTops[target];
+  restoreTerminalModelScroll(scroller, target);
   scroller.addEventListener("scroll", () => {
     const nextTarget = terminalModelPickerTarget(scroller);
     if (nextTarget) modelScrollTops[nextTarget] = scroller.scrollTop;
   }, { passive: true });
-  scroller.addEventListener("wheel", (event) => {
-    if (!event.deltaY) return;
-    event.preventDefault();
-    event.stopPropagation();
-    scroller.scrollTop += event.deltaY;
+}
+
+function focusedTerminalModelSearch() {
+  const input = document.activeElement;
+  if (!input?.matches?.("[data-terminal-model-search]")) return null;
+  const target = input.dataset.terminalModelSearch || "";
+  if (target !== "new" && target !== "setup") return null;
+  return { input, target };
+}
+
+function captureTerminalModelScrolls(root = document) {
+  root.querySelectorAll?.(".terminal-model-scroll").forEach((scroller) => {
+    const target = terminalModelPickerTarget(scroller);
     if (target) modelScrollTops[target] = scroller.scrollTop;
-  }, { passive: false });
+  });
+}
+
+function restoreTerminalModelScroll(scroller, target = terminalModelPickerTarget(scroller)) {
+  if (!target) return;
+  const top = modelScrollTops[target] || 0;
+  scroller.scrollTop = top;
+  requestAnimationFrame(() => { scroller.scrollTop = top; });
 }
 
 function terminalModelPickerTarget(scroller) {

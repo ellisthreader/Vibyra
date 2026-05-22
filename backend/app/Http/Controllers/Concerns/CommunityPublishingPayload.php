@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
+use App\Models\PublishedProjectDeployment;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,13 +15,23 @@ trait CommunityPublishingPayload
     private function communityProjectPayload(PublishedProject $project): array
     {
         $slug = $project->slug;
+        $previewUrl = "/api/community/projects/{$slug}/preview";
+        $publicUrl = $this->hostedDemoPublicUrl($project);
+        $deploymentStatus = $this->hostedDemoStatus($project);
 
         return [
             'id' => $slug,
             'title' => $project->title,
             'description' => $project->description,
             'about' => $project->description,
-            'appUrl' => "/api/community/projects/{$slug}/preview",
+            'appUrl' => $publicUrl ?: $previewUrl,
+            'previewUrl' => $previewUrl,
+            'publicUrl' => $publicUrl,
+            'hostingMode' => $this->hostedDemoMode($project),
+            'deploymentStatus' => $deploymentStatus,
+            'hostedDemoStatus' => $this->hostedDemoClientStatus($deploymentStatus),
+            'hostedDemoUrl' => $publicUrl,
+            'hostedDemoMessage' => $this->hostedDemoClientMessage($deploymentStatus),
             'user' => $project->user?->name ?? 'Vibyra Builder',
             'makerBio' => 'Published from Vibyra',
             'tag' => 'Recent',
@@ -46,6 +57,9 @@ trait CommunityPublishingPayload
 
     private function publishedProjectStatusPayload(PublishedProject $project): array
     {
+        $publicUrl = $this->hostedDemoPublicUrl($project);
+        $deploymentStatus = $this->hostedDemoStatus($project);
+
         return [
             'sourceProjectId' => $project->source_project_id,
             'reviewStatus' => $project->review_status,
@@ -57,6 +71,13 @@ trait CommunityPublishingPayload
             'safetyRating' => $project->safety_rating,
             'safetyScore' => (int) $project->safety_score,
             'reviewSummary' => $project->review_summary,
+            'hostingMode' => $this->hostedDemoMode($project),
+            'deploymentStatus' => $deploymentStatus,
+            'hostedDemoStatus' => $this->hostedDemoClientStatus($deploymentStatus),
+            'hostedDemoUrl' => $publicUrl,
+            'hostedDemoMessage' => $this->hostedDemoClientMessage($deploymentStatus),
+            'publicUrl' => $publicUrl,
+            'appUrl' => $publicUrl ?: "/api/community/projects/{$project->slug}/preview",
             'updatedAt' => optional($project->updated_at)->toIso8601String(),
             'project' => $this->communityProjectPayload($project),
         ];
@@ -87,10 +108,120 @@ trait CommunityPublishingPayload
     private function publicPublishedProject(string $slug): PublishedProject
     {
         return PublishedProject::with('user')
+            ->with(['latestDeployment', 'latestSuccessfulDeployment'])
             ->where('slug', $slug)
             ->where('visibility', 'public')
             ->where('review_status', PublishedProject::REVIEW_APPROVED)
             ->firstOrFail();
+    }
+
+    private function hostedDemoPublicUrl(PublishedProject $project): ?string
+    {
+        $deployment = $this->latestSuccessfulHostedDemo($project);
+        if ($deployment === null) {
+            return null;
+        }
+
+        if ($deployment->public_url) {
+            return $deployment->public_url;
+        }
+
+        if ($deployment->provider === PublishedProjectDeployment::PROVIDER_STATIC
+            && ($deployment->demo_html || $deployment->demo_files)) {
+            return $this->hostedDemoPath($project);
+        }
+
+        return null;
+    }
+
+    private function hostedDemoMode(PublishedProject $project): string
+    {
+        $successful = $this->latestSuccessfulHostedDemo($project);
+        if ($successful !== null) {
+            return $successful->hosting_mode ?: PublishedProjectDeployment::MODE_STATIC;
+        }
+
+        $latest = $this->latestDeployment($project);
+        if ($latest !== null) {
+            return $latest->hosting_mode ?: PublishedProjectDeployment::MODE_DEMO;
+        }
+
+        return 'preview';
+    }
+
+    private function hostedDemoStatus(PublishedProject $project): string
+    {
+        $latest = $this->latestDeployment($project);
+        if ($latest !== null) {
+            return $latest->status;
+        }
+
+        return $project->preview_html ? 'preview_only' : 'unavailable';
+    }
+
+    private function hostedDemoClientStatus(string $status): string
+    {
+        if (in_array($status, [PublishedProjectDeployment::STATUS_LIVE, PublishedProjectDeployment::STATUS_STATIC_LIVE], true)) {
+            return 'ready';
+        }
+        if (in_array($status, [PublishedProjectDeployment::STATUS_QUEUED, PublishedProjectDeployment::STATUS_UPLOADING, PublishedProjectDeployment::STATUS_BUILDING, PublishedProjectDeployment::STATUS_STARTING], true)) {
+            return 'pending';
+        }
+        if ($status === PublishedProjectDeployment::STATUS_FAILED) {
+            return 'failed';
+        }
+        return 'unavailable';
+    }
+
+    private function hostedDemoClientMessage(string $status): ?string
+    {
+        return match ($this->hostedDemoClientStatus($status)) {
+            'ready' => 'Hosted demo ready.',
+            'pending' => 'Hosted demo is still building.',
+            'failed' => 'Hosted demo unavailable.',
+            default => null,
+        };
+    }
+
+    private function latestSuccessfulHostedDemo(PublishedProject $project): ?PublishedProjectDeployment
+    {
+        if ($project->relationLoaded('latestSuccessfulDeployment')) {
+            return $project->latestSuccessfulDeployment;
+        }
+
+        return $project->latestSuccessfulDeployment()->first();
+    }
+
+    private function latestDeployment(PublishedProject $project): ?PublishedProjectDeployment
+    {
+        if ($project->relationLoaded('latestDeployment')) {
+            return $project->latestDeployment;
+        }
+
+        return $project->latestDeployment()->first();
+    }
+
+    private function hostedDemoPath(PublishedProject $project): string
+    {
+        return "/api/community/projects/{$project->slug}/demo";
+    }
+
+    private function hostedDemoHeaders(string $contentType = 'text/html; charset=UTF-8'): array
+    {
+        $headers = [
+            'Content-Type' => $contentType,
+            'X-Content-Type-Options' => 'nosniff',
+            'Referrer-Policy' => 'no-referrer',
+            'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), local-network-access=()',
+            'Cross-Origin-Opener-Policy' => 'same-origin',
+            'Cross-Origin-Resource-Policy' => 'same-origin',
+        ];
+
+        if (str_contains($contentType, 'text/html')) {
+            $headers['Content-Security-Policy'] = "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src blob:; base-uri 'none'; form-action 'none'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' https: data:; frame-ancestors 'none';";
+        }
+
+        return $headers;
     }
     private function uniquePublishedSlug(string $title): string
     {

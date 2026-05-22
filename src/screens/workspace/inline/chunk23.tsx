@@ -15,6 +15,7 @@ import { AppPreviewCard, TypingIndicator } from "./AppPreviewCards";
 import { AppPreviewModal } from "./AppPreviewModal";
 import { CodeChangesCard } from "./CodeChangesCard";
 import { ChatToolActivityCard } from "./ChatToolActivityCard";
+import { ChatImageAttachmentPills } from "./ChatImageAttachmentPills";
 import { DesktopConnectionCard } from "./DesktopConnectionCard";
 import { EditPermissionCard } from "./EditPermissionCard";
 import { FolderProposalCard, FolderRecoveryCard } from "./FolderCards";
@@ -50,6 +51,8 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
   const assistantModel = chatModelOptionFor(message.assistantModel) ?? chatModelOptions[0];
   const assistantName = assistantModel.key === "auto" ? "Vibyra" : assistantModel.label;
   const isThinking = !user && message.text === "Working on it...";
+  const runningTool = !user && message.runStatus?.status === "running" && message.runStatus.tool;
+  const runningToolStatus = runningTool ? message.runStatus : null;
   const visibleText = user ? message.text : normalizeAgentReply(message.text);
   const previewApp = useMemo(() => (
     user ? null : message.app ?? previewAppFromMessage(message.id, visibleText)
@@ -91,15 +94,22 @@ export function MessageBubble({ message, projectName, onOpenApp, onAcceptFolderP
       <View style={styles.messageContent}>
         <Text style={[styles.messageAuthor, !user && styles.messageAuthorAssistant]}>{user ? "You" : assistantName}</Text>
         {message.file ? <Text numberOfLines={1} style={styles.messageFile}>{message.file}</Text> : null}
-        {isThinking ? (
-          message.runStatus?.status === "running" && message.runStatus.tool ? (
-            <ChatToolActivityCard status={message.runStatus} />
-          ) : message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
+        {message.attachments ? (
+          <ChatImageAttachmentPills
+            fileAttachments={message.attachments.fileAttachments ?? []}
+            imageAttachments={message.attachments.imageAttachments ?? []}
+            variant="message"
+          />
+        ) : null}
+        {runningToolStatus ? (
+          <ChatToolActivityCard status={runningToolStatus} />
+        ) : isThinking ? (
+          message.runStatus?.status === "running" ? <AgentRunProgressText status={message.runStatus} /> : <TypingIndicator />
         ) : message.previewServer ? (
           <PreviewServerActivityCard previewServer={message.previewServer} onApprove={onApprovePreviewServerStart} onDeny={onDenyPreviewServerStart} />
         ) : <RichMessageText text={visibleText} />}
         {!user && message.generatedImage ? <GeneratedImageCard image={message.generatedImage} /> : null}
-        {!user && message.runStatus?.status === "running" && visibleText.trim().length > 0 ? (
+        {!user && !runningTool && message.runStatus?.status === "running" && visibleText.trim().length > 0 ? (
           <LiveCodeActivityCard text={visibleText} />
         ) : null}
         {previewApp && onOpenApp ? <AppPreviewCard app={previewApp} onOpen={onOpenApp} /> : null}

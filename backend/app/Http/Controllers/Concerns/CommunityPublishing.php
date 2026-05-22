@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
+use App\Models\PublishedProjectDeployment;
 use App\Models\PublishedProjectReaction;
 use App\Models\User;
 use App\Services\Community\ProjectSafetyReview;
@@ -19,7 +20,7 @@ trait CommunityPublishing
     use CommunityPublishingPayload;
     public function communityProjects(): JsonResponse
     {
-        $projects = PublishedProject::with('user')
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
             ->where('visibility', 'public')
             ->where('review_status', PublishedProject::REVIEW_APPROVED)
             ->latest('published_at')
@@ -35,7 +36,7 @@ trait CommunityPublishing
     public function publishedProjectStatuses(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        $projects = PublishedProject::with('user')
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
             ->where('user_id', $user->id)
             ->latest('updated_at')
             ->limit(200)
@@ -50,7 +51,7 @@ trait CommunityPublishing
     public function publishReviewQueue(Request $request): JsonResponse
     {
         $this->assertPublishReviewer($this->authenticatedUser($request));
-        $projects = PublishedProject::with('user')
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
             ->whereIn('review_status', [PublishedProject::REVIEW_PENDING, PublishedProject::REVIEW_UNDER_REVIEW])
             ->latest('updated_at')
             ->limit(100)
@@ -71,7 +72,7 @@ trait CommunityPublishing
             return $this->json(['ok' => false, 'error' => 'Choose approve or deny for this review.'], 422);
         }
 
-        $project = PublishedProject::with('user')->where('slug', $slug)->firstOrFail();
+        $project = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])->where('slug', $slug)->firstOrFail();
         $note = Str::limit(trim((string) $request->input('reason', '')), 500, '');
         $approved = $decision === PublishedProject::REVIEW_APPROVED;
 
@@ -86,12 +87,16 @@ trait CommunityPublishing
             'published_at' => ($approved && $project->visibility === 'public') ? ($project->published_at ?? now()) : null,
         ])->save();
 
+        if ($approved) {
+            $this->publishStaticHostedDemo($project, null);
+        }
+
         return $this->json([
             'ok' => true,
             'reviewStatus' => $project->review_status,
             'isPublic' => $project->isPubliclyVisible(),
-            'project' => $this->communityProjectPayload($project->fresh('user')),
-            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh('user')),
+            'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
+            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
         ]);
     }
 
@@ -152,6 +157,10 @@ trait CommunityPublishing
             'published_at' => ($visibility === 'public' && $safety['public']) ? ($project->published_at ?? now()) : null,
         ])->save();
 
+        if ($visibility === 'public' && $safety['public']) {
+            $this->publishStaticHostedDemo($project, $request->input('hostedDemo'));
+        }
+
         if ($safety['status'] === ProjectSafetyReview::DENIED) {
             return $this->json([
                 'ok' => false,
@@ -161,8 +170,8 @@ trait CommunityPublishing
                 'safetyScore' => $safety['score'],
                 'reviewSummary' => $safety['summary'],
                 'safetyFindings' => $safety['findings'],
-                'project' => $this->communityProjectPayload($project->fresh('user')),
-                'publishStatus' => $this->publishedProjectStatusPayload($project->fresh('user')),
+                'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
+                'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
             ], 422);
         }
 
@@ -176,8 +185,8 @@ trait CommunityPublishing
             'safetyScore' => $safety['score'],
             'reviewSummary' => $safety['summary'],
             'safetyFindings' => $safety['findings'],
-            'project' => $this->communityProjectPayload($project->fresh('user')),
-            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh('user')),
+            'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
+            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
         ], $status);
     }
 
@@ -199,6 +208,182 @@ trait CommunityPublishing
             'Referrer-Policy' => 'no-referrer',
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
         ]);
+    }
+
+    public function communityProjectHostedDemo(string $slug, ?string $path = null): Response
+    {
+        $project = $this->publicPublishedProject($slug);
+        $deployment = PublishedProjectDeployment::where('published_project_id', $project->id)
+            ->whereIn('status', PublishedProjectDeployment::SUCCESS_STATUSES)
+            ->latest('hosted_at')
+            ->firstOrFail();
+
+        $file = $this->hostedDemoFile($deployment, $path);
+        if ($file !== null) {
+            $body = (string) ($file['body'] ?? '');
+            if (($file['encoding'] ?? 'utf8') === 'base64') {
+                $body = base64_decode($body, true) ?: '';
+            }
+
+            $contentType = (string) ($file['contentType'] ?? 'application/octet-stream');
+            $body = $this->rewriteHostedDemoText($body, $contentType, $deployment, $project, (string) ($file['path'] ?? ''));
+            return response($body, 200)->withHeaders($this->hostedDemoHeaders($contentType));
+        }
+
+        abort_if(! $deployment->demo_html, 404);
+        return response((string) $deployment->demo_html, 200)->withHeaders($this->hostedDemoHeaders());
+    }
+
+    private function publishStaticHostedDemo(PublishedProject $project, mixed $hostedDemo): void
+    {
+        $html = trim((string) $project->preview_html);
+        $bundle = is_array($hostedDemo) ? $this->normalizeHostedDemoBundle($hostedDemo) : null;
+        if ($html === '' && $bundle === null) {
+            return;
+        }
+        if (! $project->isPubliclyVisible()) {
+            return;
+        }
+
+        PublishedProjectDeployment::create([
+            'published_project_id' => $project->id,
+            'user_id' => $project->user_id,
+            'provider' => PublishedProjectDeployment::PROVIDER_STATIC,
+            'status' => PublishedProjectDeployment::STATUS_STATIC_LIVE,
+            'provider_status' => PublishedProjectDeployment::STATUS_STATIC_LIVE,
+            'hosting_mode' => PublishedProjectDeployment::MODE_STATIC,
+            'demo_mode_enabled' => true,
+            'disabled_features' => ['network_requests', 'native_permissions', 'real_payments'],
+            'stack' => $project->stack,
+            'public_url' => $this->hostedDemoPath($project),
+            'entry_path' => $bundle['entryPath'] ?? null,
+            'demo_html' => $bundle === null ? $html : null,
+            'demo_files' => $bundle['files'] ?? null,
+            'metadata' => $bundle['metadata'] ?? null,
+            'hosted_at' => now(),
+        ]);
+    }
+
+    private function hostedDemoFile(PublishedProjectDeployment $deployment, ?string $path): ?array
+    {
+        $files = is_array($deployment->demo_files) ? $deployment->demo_files : [];
+        if ($files === []) {
+            return null;
+        }
+
+        $requested = $this->normalizeHostedDemoPath($path ?: (string) $deployment->entry_path);
+        foreach ($files as $file) {
+            if (($file['path'] ?? '') === $requested) {
+                return $file;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeHostedDemoBundle(array $value): ?array
+    {
+        if (($value['ok'] ?? false) !== true) {
+            return null;
+        }
+
+        $entryPath = $this->normalizeHostedDemoPath((string) ($value['entryPath'] ?? ''));
+        $files = [];
+        $totalBytes = 0;
+
+        foreach (array_slice((array) ($value['files'] ?? []), 0, 220) as $file) {
+            if (! is_array($file)) {
+                continue;
+            }
+            $path = $this->normalizeHostedDemoPath((string) ($file['path'] ?? ''));
+            $encoding = (string) ($file['encoding'] ?? 'utf8');
+            $body = (string) ($file['body'] ?? '');
+            if ($path === '' || $this->unsafeHostedDemoPath($path) || ! in_array($encoding, ['utf8', 'base64'], true) || $body === '') {
+                continue;
+            }
+            $totalBytes += strlen($body);
+            if ($totalBytes > 11_000_000) {
+                break;
+            }
+            $files[] = [
+                'path' => $path,
+                'contentType' => Str::limit((string) ($file['contentType'] ?? 'application/octet-stream'), 120, ''),
+                'encoding' => $encoding,
+                'size' => min((int) ($file['size'] ?? strlen($body)), 2_000_000),
+                'body' => Str::limit($body, 2_800_000, ''),
+            ];
+        }
+
+        if ($entryPath === '' || $files === [] || ! $this->demoFilesContain($files, $entryPath)) {
+            return null;
+        }
+
+        return [
+            'entryPath' => $entryPath,
+            'files' => $files,
+            'metadata' => [
+                'kind' => Str::limit((string) ($value['kind'] ?? 'static-demo-bundle'), 80, ''),
+                'mountDirectory' => Str::limit((string) ($value['mountDirectory'] ?? ''), 240, ''),
+                'source' => 'desktop-publish-demo-bundle',
+                'totalFiles' => count($files),
+            ],
+        ];
+    }
+
+    private function demoFilesContain(array $files, string $path): bool
+    {
+        foreach ($files as $file) {
+            if (($file['path'] ?? '') === $path) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function normalizeHostedDemoPath(string $path): string
+    {
+        $path = trim(str_replace('\\', '/', $path), '/');
+        $parts = array_values(array_filter(explode('/', $path), fn ($part) => $part !== '' && $part !== '.'));
+        if (in_array('..', $parts, true)) {
+            return '';
+        }
+        return implode('/', $parts);
+    }
+
+    private function unsafeHostedDemoPath(string $path): bool
+    {
+        return preg_match('/(^|\/)(?:\.env|\.git|\.expo|\.vibyra-agent|node_modules|vendor|secrets?|credentials?)(?:\/|$)/i', $path) === 1
+            || preg_match('/\.(?:pem|key|p12|pfx|sqlite|sqlite3|db)$/i', $path) === 1;
+    }
+
+    private function rewriteHostedDemoText(string $body, string $contentType, PublishedProjectDeployment $deployment, PublishedProject $project, string $filePath): string
+    {
+        if (! str_contains($contentType, 'text/html') && ! str_contains($contentType, 'text/css') && ! str_contains($contentType, 'javascript')) {
+            return $body;
+        }
+
+        $base = $this->hostedDemoPath($project).'/';
+        $mount = trim((string) data_get($deployment->metadata, 'mountDirectory', ''), '/');
+        $documentDir = trim(str_replace('\\', '/', dirname($filePath)), '. /');
+        $rewrite = function (string $value) use ($base, $mount, $documentDir): string {
+            $raw = trim($value);
+            if ($raw === '' || preg_match('/^(?:https?:|\/\/|data:|blob:|mailto:|tel:|javascript:|#)/i', $raw) === 1) {
+                return $value;
+            }
+            $clean = ltrim($raw, '/');
+            $prefix = str_starts_with($raw, '/') ? $mount : $documentDir;
+            return $base.($prefix !== '' ? trim($prefix, '/').'/' : '').$clean;
+        };
+
+        if (str_contains($contentType, 'text/html')) {
+            $body = preg_replace_callback('/\b(src|href|poster)=["\']([^"\']+)["\']/i', fn ($match) => $match[1].'="'.$rewrite($match[2]).'"', $body) ?? $body;
+        }
+
+        if (str_contains($contentType, 'text/css') || str_contains($contentType, 'text/html')) {
+            $body = preg_replace_callback('/url\(\s*(["\']?)([^"\')]+)\1\s*\)/i', fn ($match) => 'url('.$match[1].$rewrite($match[2]).$match[1].')', $body) ?? $body;
+        }
+
+        return $body;
     }
     public function commentOnCommunityProject(Request $request, string $slug): JsonResponse
     {

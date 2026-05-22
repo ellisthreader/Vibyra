@@ -112,10 +112,12 @@ function desktopPrompt(prompt, project, attachments, profileContext) {
 function normalizeProfileContext(profileContext) {
   if (!profileContext || typeof profileContext !== "object") return [];
   const callName = String(profileContext.callName || "").trim().slice(0, 80);
+  const responseStyle = String(profileContext.responseStyle || "").trim().slice(0, 220);
   const work = String(profileContext.work || "").trim().slice(0, 120);
   const customInstructions = String(profileContext.customInstructions || "").trim().slice(0, 1200);
   return [
     callName ? `Call the user: ${callName}` : "",
+    responseStyle ? `Preferred response style: ${responseStyle}` : "",
     work ? `User work: ${work}` : "",
     customInstructions ? `User instructions: ${customInstructions}` : ""
   ].filter(Boolean);

@@ -47,7 +47,7 @@
 .profile-choice-row + .profile-choice-row,
 .profile-toggle-row + .profile-toggle-row { border-top: 1px solid rgba(255, 255, 255, 0.055); }
 .profile-choice-row:hover .profile-row-icon,
-.profile-toggle-row:hover .profile-action-copy strong { color: var(--accent-2); }
+.profile-toggle-row:hover .profile-action-copy strong { color: var(--text); }
 .profile-choice-row.active .profile-row-icon,
 .profile-choice-check { color: var(--accent-2); }
 .profile-choice-check svg { height: 18px; width: 18px; }

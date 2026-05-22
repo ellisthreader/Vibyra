@@ -2,7 +2,7 @@ async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
   const size = initialPtyStartSize(terminal.id);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
@@ -77,13 +77,54 @@ renderTerminalsPage = function renderPtyTerminalsPage() {
     bindPtyTopbarControls();
     return;
   }
+  if (patchPtyTerminalStructure()) {
+    forceTerminalRender = false;
+    ptyRenderedSignature = ptyTerminalDomSignature();
+    bindPtyTopbarControls();
+    return;
+  }
   previousRenderTerminalsPage();
   ptyRenderedSignature = ptyTerminalDomSignature();
+};
+
+
+const previousSetActiveTerminal = setActiveTerminal;
+setActiveTerminal = function setActivePtyTerminal(id) {
+  if (!findTerminal(id)) return previousSetActiveTerminal(id);
+  activeTerminalId = id;
+  settingsTerminalId = "";
+  saveTerminals();
+  if (activePage === "terminals" && refreshPtyTerminalsDom()) {
+    renderTopbar();
+    bindPtyTopbarControls();
+    focusPtyTerminal(id);
+    return;
+  }
+  forceTerminalRender = true;
+  render();
+};
+
+const previousToggleTerminalSettings = toggleTerminalSettings;
+toggleTerminalSettings = function togglePtyTerminalSettings(id) {
+  const terminal = findTerminal(id);
+  if (!terminal) return previousToggleTerminalSettings(id);
+  const nextSettingsTerminalId = settingsTerminalId === id ? "" : id;
+  settingsTerminalId = nextSettingsTerminalId;
+  newTerminalMenuOpen = false;
+  saveTerminals();
+  if (activePage === "terminals" && refreshPtyTerminalSettingsMenus()) {
+    renderTopbar();
+    bindPtyTopbarControls();
+    return;
+  }
+  forceTerminalRender = true;
+  render();
 };
 
 function bindPtyTopbarControls() {
   bindPtyClick(document.getElementById("open-terminal-new"), () => {
     newTerminalMenuOpen = !newTerminalMenuOpen;
+    if (newTerminalMenuOpen) modelScrollTops.new = 0;
     settingsTerminalId = "";
     render();
   });
@@ -98,6 +139,22 @@ function bindPtyTopbarControls() {
     event.stopPropagation();
     closeTerminal(button.dataset.terminalClose);
   }));
+  document.querySelectorAll("[data-terminal-settings]").forEach((button) => bindPtyClick(button, (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleTerminalSettings(button.dataset.terminalSettings);
+  }));
+  document.querySelectorAll("[data-terminal-model-search]").forEach((input) => {
+    if (input.dataset.ptyModelSearchBound) return;
+    input.dataset.ptyModelSearchBound = "1";
+    input.addEventListener("input", () => updateTerminalModelSearch(input));
+  });
+  document.querySelectorAll(".terminal-model-scroll").forEach((scroller) => {
+    if (scroller.dataset.ptyModelScrollBound) return;
+    scroller.dataset.ptyModelScrollBound = "1";
+    bindTerminalModelScroll(scroller);
+  });
+  document.querySelectorAll("[data-terminal-new-model]").forEach((button) => bindPtyClick(button, () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
   document.querySelectorAll("[data-terminal-new-agent]").forEach((button) => bindPtyClick(button, () => createTerminal(button.dataset.terminalNewAgent || setupAgent, true)));
   document.querySelectorAll("[data-terminal-input]").forEach((node) => {
     bindPtyInput(node);
@@ -168,6 +225,7 @@ function mountVisibleXterms() {
     const id = node.dataset.terminalXterm || "";
     const terminal = findTerminal(id);
     if (!terminal || terminal.ptyStatus === "unavailable") return;
+    if (node.closest(".terminal-focus-hidden")) return;
     if (!window.Terminal) {
       node.textContent = plainTerminalOutput(terminal.output || "Terminal renderer failed to load.");
       return;
@@ -238,8 +296,10 @@ function measuredPtySize(node) {
   const rect = node.getBoundingClientRect();
   const styles = getComputedStyle(node);
   const fontSize = Number.parseFloat(styles.fontSize) || 13;
-  const cols = Math.max(18, Math.min(180, Math.floor(Math.max(0, rect.width - 8) / (fontSize * 0.62))));
-  const rows = Math.max(4, Math.min(80, Math.floor(Math.max(0, rect.height - 8) / (fontSize * 1.22))));
+  const paddingX = (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
+  const paddingY = (Number.parseFloat(styles.paddingTop) || 0) + (Number.parseFloat(styles.paddingBottom) || 0);
+  const cols = Math.max(18, Math.min(180, Math.floor(Math.max(0, rect.width - paddingX - 8) / (fontSize * 0.62))));
+  const rows = Math.max(4, Math.min(80, Math.floor(Math.max(0, rect.height - paddingY - 8) / (fontSize * 1.22))));
   return { cols, rows };
 }
 
@@ -269,29 +329,64 @@ function sendPtyResize(id, cols, rows) {
 
 function ptyTerminalDomSignature() {
   if (!terminals.length) return "setup";
-  const visibleIds = terminalLayout === "grid" ? terminals.map((terminal) => terminal.id) : [activeTerminalId || terminals[0]?.id || ""];
+  const visibleIds = terminals.map((terminal) => terminal.id);
   const structural = terminals.map((terminal) => [
     terminal.id,
     terminal.ptyStatus === "unavailable" ? "unavailable" : "xterm",
     terminal.notice ? "notice" : ""
   ].join(":"));
   return JSON.stringify({
-    activeTerminalId,
     layout: terminalLayout,
     visibleIds,
-    structural,
-    settingsTerminalId,
-    newTerminalMenuOpen
+    structural
   });
+}
+function patchPtyTerminalStructure() {
+  if (!terminals.length) return false;
+  const page = nodes.content.querySelector(".terminal-page");
+  const stage = page?.querySelector(".terminal-stage");
+  if (!page || !stage) return false;
+  const grid = terminalLayout === "grid";
+  if (page.classList.contains("grid-mode") !== grid) return false;
+  syncPtyTerminalGrid(page, grid);
+  const expectedIds = new Set(terminals.map((terminal) => terminal.id));
+  stage.querySelectorAll("[data-terminal]").forEach((article) => {
+    if (!expectedIds.has(article.dataset.terminal || "")) article.remove();
+  });
+  for (const terminal of terminals) {
+    let article = stage.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
+    if (!article) {
+      stage.insertAdjacentHTML("beforeend", grid ? terminalTile(terminal) : activeTerminalView(terminal));
+      article = stage.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
+    }
+    if (!article) return false;
+    stage.appendChild(article);
+  }
+  if (!refreshPtyTerminalsDom()) return false;
+  return true;
+}
+
+function syncPtyTerminalGrid(page, grid) {
+  page.classList.toggle("grid-mode", grid);
+  page.classList.remove("terminal-grid-many");
+  page.removeAttribute("style");
+  if (!grid || typeof terminalGridMeta !== "function") return;
+  const gridMeta = terminalGridMeta(terminals.length);
+  if (gridMeta.className) page.classList.add(gridMeta.className);
+  page.style.setProperty("--terminal-grid-cols", gridMeta.cols);
+  page.style.setProperty("--terminal-grid-rows", gridMeta.rows);
+  page.style.setProperty("--terminal-grid-cols-narrow", gridMeta.narrowCols);
+  page.style.setProperty("--terminal-grid-rows-narrow", gridMeta.narrowRows);
 }
 
 function refreshPtyTerminalsDom() {
   if (!terminals.length) return false;
   const page = nodes.content.querySelector(".terminal-page");
   if (!page) return false;
-  const visible = terminalLayout === "grid" ? terminals : [findTerminal(activeTerminalId) || terminals[0]].filter(Boolean);
+  const visible = terminals;
   let stable = true;
   for (const terminal of visible) stable = refreshPtyTerminalDom(terminal) && stable;
+  if (stable) stable = refreshPtyTerminalSettingsMenus() && stable;
   if (stable) mountVisibleXterms();
   return stable;
 }
@@ -299,16 +394,25 @@ function refreshPtyTerminalsDom() {
 function refreshPtyTerminalDom(terminal) {
   const article = nodes.content.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
   if (!article) return false;
-  if (terminal.notice && !article.querySelector(".terminal-notice")) return false;
+  const notice = article.querySelector(".terminal-notice");
+  article.classList.toggle("has-notice", Boolean(terminal.notice));
+  if (terminal.notice && !notice) return false;
+  if (!terminal.notice && notice) notice.remove();
+  if (terminal.notice && notice) {
+    const noticeText = notice.querySelector("p");
+    if (noticeText && noticeText.textContent !== String(terminal.notice)) noticeText.textContent = terminal.notice;
+  }
   const unavailable = terminal.ptyStatus === "unavailable";
   if (unavailable !== Boolean(article.querySelector(".terminal-pty-unavailable"))) return false;
   article.querySelectorAll(".terminal-status").forEach((status) => {
     status.classList.toggle("running", terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running");
   });
+  const active = terminal.id === activeTerminalId;
+  article.classList.toggle("active", active);
+  article.classList.toggle("terminal-focus-hidden", terminalLayout !== "grid" && !active);
+  if (terminalLayout !== "grid") article.setAttribute("aria-hidden", active ? "false" : "true");
   const title = article.querySelector(".terminal-name strong, .terminal-tile-head strong");
   if (title && title.textContent !== terminal.title) title.textContent = terminal.title;
-  const helper = article.querySelector(".terminal-pty-composer span:last-child");
-  if (helper) helper.textContent = ptyComposerCopy(terminal);
   if (unavailable) {
     const pre = article.querySelector(".terminal-pty-lines pre");
     if (pre && pre.textContent !== String(terminal.output || "")) pre.textContent = terminal.output || "";
@@ -316,10 +420,31 @@ function refreshPtyTerminalDom(terminal) {
   return true;
 }
 
-function ptyComposerCopy(terminal) {
-  if (terminal.ptyStatus === "unavailable") return "CLI unavailable";
-  if (terminal.ptyStatus === "exited") return "Exited. Use the menu to close this terminal.";
-  return "Click the terminal and type normally";
+function refreshPtyTerminalSettingsMenus() {
+  if (!nodes.content.querySelector(".terminal-page")) return false;
+  let stable = true;
+  document.querySelectorAll(".terminal-settings-menu").forEach((menu) => menu.remove());
+  for (const terminal of terminals) {
+    const article = nodes.content.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
+    if (!article) {
+      stable = false;
+      continue;
+    }
+    const button = article.querySelector(`[data-terminal-settings="${CSS.escape(terminal.id)}"]`);
+    if (!button) {
+      stable = false;
+      continue;
+    }
+    if (terminal.id === settingsTerminalId) {
+      button.insertAdjacentHTML("afterend", settingsMenu(terminal));
+    }
+  }
+  document.querySelectorAll("[data-terminal-close]").forEach((button) => bindPtyClick(button, (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    closeTerminal(button.dataset.terminalClose);
+  }));
+  return stable;
 }
 
 function terminalXtermTheme(node) {
@@ -363,7 +488,9 @@ function plainTerminalOutput(value) {
 
 function ptySessionPatch(session) {
   return {
+    agent: String(session.agent || ""),
     agentStatus: session.agentStatus || null,
+    model: String(session.model || ""),
     cwd: String(session.cwd || ""),
     output: String(session.output || "").slice(-60000),
     ptyStatus: String(session.status || "idle"),
@@ -387,7 +514,7 @@ function terminalAgentKeyOrSetup(value) {
 
 function normalizeTerminalAgent(value) {
   const next = String(value || "").trim().toLowerCase();
-  return terminalAgents.some((agent) => agent.key === next) ? next : "codex";
+  return terminalAgents.some((agent) => agent.key === next) ? next : "vibyra";
 }
 
 function agentDefaultModel(agent) {

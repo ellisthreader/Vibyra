@@ -1,4 +1,6 @@
 let profileFocus = "";
+let profileModalOpen = false;
+let profileSectionSearch = "";
 const profileSectionKey = "vibyra.desktop.profileSection";
 const profilePrefsKey = "vibyra.desktop.profilePreferences";
 let profileActiveSection = localStorage.getItem(profileSectionKey) || "general";
@@ -35,23 +37,25 @@ const desktopPreferenceDefaults = {
     productUpdates: false,
     responseCompletions: true
   },
+  responseStyle: "balanced",
   improveVibyra: false,
   desktopLock: false,
   workOther: "",
   workType: "other"
 };
 const profileLanguages = ["English", "Espanol", "Francais", "Deutsch", "Japanese", "Chinese", "Portuguese"];
-const profileAppearanceOptions = [
-  { key: "auto", title: "Auto", detail: "Match this computer when supported", icon: "contrast" },
-  { key: "dark", title: "Dark", detail: "Vibyra signature desktop look", icon: "moon" },
-  { key: "light", title: "Light", detail: "Saved for compatible desktop themes", icon: "sun" }
-];
 const profileWorkOptions = [
   { key: "software", label: "Software and product" },
   { key: "design", label: "Design and creative" },
   { key: "founder", label: "Founder or operator" },
   { key: "student", label: "Student or researcher" },
   { key: "other", label: "Other" }
+];
+const profileResponseStyleOptions = [
+  { key: "balanced", label: "Balanced", prompt: "Balanced: be clear and direct, with enough context to make decisions." },
+  { key: "concise", label: "Concise", prompt: "Concise: answer briefly, lead with the result, and avoid extra explanation unless needed." },
+  { key: "detailed", label: "Detailed", prompt: "Detailed: explain reasoning, tradeoffs, and next steps with useful context." },
+  { key: "code-first", label: "Code-first", prompt: "Code-first: prioritize concrete implementation details, file references, and verification steps." }
 ];
 const profileChatFontOptions = [
   { key: "vibyra-sans", label: "Vibyra Sans" },
@@ -76,7 +80,6 @@ function profileSections() {
     { key: "general", icon: "user", label: "General" },
     { key: "account", icon: "card", label: "Account" },
     { key: "billing", icon: "bolt", label: "Billing" },
-    { key: "usage", icon: "pulse", label: "Usage" },
     { key: "devices", icon: "desktop", label: "Devices" },
     { key: "privacy", icon: "lock", label: "Privacy" },
     { key: "preferences", icon: "palette", label: "Preferences" },
@@ -107,9 +110,11 @@ function applyDesktopPreferences(next = desktopPreferences()) {
 function desktopProfileContext() {
   const prefs = desktopPreferences();
   const work = prefs.workType === "other" && prefs.workOther ? prefs.workOther : profileWorkOptions.find((item) => item.key === prefs.workType)?.label || "";
+  const responseStyle = profileResponseStyleOptions.find((item) => item.key === prefs.responseStyle)?.prompt || "";
   return {
     callName: String(prefs.callName || "").trim(),
     customInstructions: String(prefs.customInstructions || "").trim(),
+    responseStyle,
     work
   };
 }

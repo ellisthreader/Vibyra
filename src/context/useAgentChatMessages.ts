@@ -3,6 +3,7 @@ import type { Agent, ChatMessage, ChatRunStatus, LogEvent } from "../types/domai
 import { streamChatText } from "../utils/chatStream";
 import { makeId } from "../utils/ids";
 import { ChatResponse } from "../utils/appApi";
+import { chatToolRunKey, isSameRunningChatToolRun, remainingChatToolProgressMs, type ChatToolRunKey } from "../utils/chatToolProgress";
 import { userFacingAgentError } from "./agentErrors";
 import { ResolvedAgentTarget } from "./agentActionHelpers";
 import { useAppState } from "./useAppState";
@@ -32,7 +33,8 @@ export function useAgentChatMessages(
     target: ResolvedAgentTarget,
     prompt: string,
     assistantModel?: string,
-    runStatus?: Pick<ChatRunStatus, "route" | "mode" | "activeFile" | "tool">
+    runStatus?: Pick<ChatRunStatus, "route" | "mode" | "activeFile" | "tool">,
+    attachments?: ChatMessage["attachments"]
   ) {
     const userMessageId = makeId("chat-user");
     const assistantMessageId = makeId("chat-assistant");
@@ -41,7 +43,7 @@ export function useAgentChatMessages(
     const status = runStatus ? { ...runStatus, startedAt, status: "running" as const } : undefined;
     updateChatMessages(target.chatProjectId, (current) => [
       ...withoutTrailingBusyRetry(current, prompt, file),
-      { id: userMessageId, role: "user", text: prompt, file },
+      { id: userMessageId, role: "user", text: prompt, file, ...(hasAttachments(attachments) ? { attachments } : {}) },
       {
         id: assistantMessageId,
         role: "assistant",
@@ -137,10 +139,18 @@ export function useAgentChatMessages(
     messageId: string,
     finalText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
+    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">,
+    expectedRun?: ChatToolRunKey | null
   ) {
     updateChatMessages(target.chatProjectId, (current) => current.map((message) => {
       if (message.id !== messageId) return message;
+      if (!isSameRunningChatToolRun(message.runStatus, expectedRun ?? null)) return message;
+      const delay = remainingChatToolProgressMs(message.runStatus);
+      if (delay > 0) {
+        const runKey = expectedRun ?? chatToolRunKey(message.runStatus);
+        setTimeout(() => finalizeStreamedAssistantMessage(target, messageId, finalText, app, metadata, runKey), delay);
+        return message;
+      }
       const next: ChatMessage = { ...message, text: finalText };
       if (app !== undefined) {
         if (app) next.app = app;
@@ -162,6 +172,10 @@ export function useAgentChatMessages(
   }
 
   return { appendPendingChat, failAgent, streamAssistantMessage, appendStreamingDelta, finalizeStreamedAssistantMessage };
+}
+
+function hasAttachments(attachments?: ChatMessage["attachments"]) {
+  return Boolean(attachments?.imageAttachments?.length || attachments?.fileAttachments?.length);
 }
 
 function withoutTrailingBusyRetry(messages: ChatMessage[], _prompt: string, _file?: string) {

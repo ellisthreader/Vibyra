@@ -76,18 +76,9 @@ export const part61 = {
     minHeight: 120,
     padding: 10
   },
-  communityPostChevron: {
-    marginLeft: "auto"
-  },
-  communityPostImage: {
-    height: "100%",
-    width: "100%"
-  },
-  communityPostLogoFallback: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center"
-  },
+  communityPostChevron: { marginLeft: "auto" },
+  communityPostImage: { height: "100%", width: "100%" },
+  communityPostLogoFallback: { alignItems: "center", flex: 1, justifyContent: "center" },
   communityPostMedia: {
     backgroundColor: "rgba(255, 255, 255, 0.045)",
     borderColor: "rgba(255, 255, 255, 0.07)",
@@ -160,20 +151,24 @@ export const part61 = {
     minHeight: 42,
     paddingHorizontal: 11
   },
-  communitySortButtonText: {
-    color: "#D8D3E4",
-    fontSize: 12,
-    fontWeight: "900"
-  },
+  communitySortButtonText: { color: "#D8D3E4", fontSize: 12, fontWeight: "900" },
   communitySortMenu: {
     alignSelf: "flex-end",
     backgroundColor: "rgba(8, 10, 18, 0.98)",
     borderColor: "rgba(255, 255, 255, 0.09)",
     borderRadius: 10,
     borderWidth: 1,
+    elevation: 18,
     gap: 2,
-    marginTop: -4,
     padding: 5,
+    position: "absolute",
+    right: 0,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.34,
+    shadowRadius: 24,
+    top: 48,
+    zIndex: 18,
     width: 158
   },
   communitySortOption: {

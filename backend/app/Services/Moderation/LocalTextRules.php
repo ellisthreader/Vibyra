@@ -42,15 +42,21 @@ trait LocalTextRules
     protected function containsBlockedTerm(array $variants, string $term): bool
     {
         $termVariants = $this->textVariants($term);
-        $needleCompact = $termVariants['compact_squeezed'];
+        $needleWords = preg_quote($termVariants['words_squeezed'], '/');
 
-        if (strlen($needleCompact) >= 4 && str_contains($variants['compact_squeezed'], $needleCompact)) {
+        if ($needleWords !== '' && preg_match('/(?:^|\s)'.$needleWords.'(?:\s|$)/u', $variants['words_squeezed']) === 1) {
             return true;
         }
 
-        $needleWords = preg_quote($termVariants['words_squeezed'], '/');
+        $needleCompact = $termVariants['compact_squeezed'];
+        if (strlen($needleCompact) < 3) {
+            return false;
+        }
 
-        return $needleWords !== '' && preg_match('/(?:^|\s)'.$needleWords.'(?:\s|$)/u', $variants['words_squeezed']) === 1;
+        $chars = array_map(fn (string $char) => preg_quote($char, '/'), str_split($needleCompact));
+        $pattern = '/(?:^|[^a-z0-9])'.implode('[^a-z0-9]*', $chars).'(?:[^a-z0-9]|$)/u';
+
+        return preg_match($pattern, $variants['normalized_squeezed']) === 1;
     }
 
     protected function textVariants(string $text): array
@@ -76,6 +82,7 @@ trait LocalTextRules
             'words_squeezed' => $this->squeezeRepeatedLetters($words),
             'compact' => $compact,
             'compact_squeezed' => $this->squeezeRepeatedLetters($compact),
+            'normalized_squeezed' => $this->squeezeRepeatedLetters($normalized),
         ];
     }
 

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { appApiRequest, AuthResponse, RemoteUser } from "../utils/appApi";
 import { normalizePersistedUser } from "../utils/persistence";
 import { AppContextValue } from "./appContextTypes";
@@ -104,8 +105,8 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     const existingAccount = accountStatus === "existing" || (accountStatus === undefined && state.authMode === "login");
     const referralCode = !existingAccount ? state.authReferralCode.trim() : "";
     const payload = method === "email"
-      ? { email: state.authEmail.trim(), installId: state.installId, name: state.authName.trim(), password: state.authPassword }
-      : { installId: state.installId, name: state.authName.trim() || providerDisplayName(method), provider: method, providerId: state.installId };
+      ? { email: state.authEmail.trim(), deviceName: appSessionDeviceName(), installId: state.installId, name: state.authName.trim(), password: state.authPassword }
+      : { deviceName: appSessionDeviceName(), installId: state.installId, name: state.authName.trim() || providerDisplayName(method), provider: method, providerId: state.installId };
     const body = referralCode ? { ...payload, referralCode } : payload;
     const endpoint = method === "email" && !existingAccount ? "/api/auth/signup" : "/api/auth/login";
     const result = await appApiRequest<AuthResponse>(endpoint, { method: "POST", body: JSON.stringify(body) });
@@ -114,6 +115,13 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setAuthenticated(true);
     setters.setAuthPassword("");
     setters.setAuthReferralCode("");
+  }
+
+  function appSessionDeviceName() {
+    if (Platform.OS === "ios") return "Vibyra iPhone";
+    if (Platform.OS === "android") return "Vibyra Android";
+    if (Platform.OS === "web") return "Vibyra Web";
+    return "Vibyra App";
   }
 
   function completeOnboarding() {

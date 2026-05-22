@@ -20,12 +20,14 @@
     <link rel="stylesheet" href="/desktop/assets/app.chat-surface.2.css" />
     <link rel="stylesheet" href="/desktop/assets/app.chat-surface.3.css" />
     <link rel="stylesheet" href="/desktop/assets/app.projects-builds.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.profile.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.profile.css?v=profile-preferences-20260521" />
     <link rel="stylesheet" href="/desktop/assets/app.profile.1.css" />
     <link rel="stylesheet" href="/desktop/assets/app.profile.2.css" />
     <link rel="stylesheet" href="/desktop/assets/app.profile.3.css" />
     <link rel="stylesheet" href="/desktop/assets/app.profile-sessions.css" />
     <link rel="stylesheet" href="/desktop/assets/app.account.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.billing-plans.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.billing-plans.mobile.css" />
     <link rel="stylesheet" href="/desktop/assets/app.chrome.css" />
     <link rel="stylesheet" href="/desktop/assets/app.chrome.1.css" />
     <link rel="stylesheet" href="/desktop/assets/app.chrome.2.css" />
@@ -155,20 +157,30 @@
         <div id="token-modal-body"></div>
       </section>
     </div>
+    <div id="profile-modal" class="modal-backdrop profile-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+      <section class="modal profile-modal-panel">
+        <div class="modal-header profile-modal-header">
+          <div><h2 id="profile-modal-title" class="page-title">Settings</h2></div>
+          <button id="close-profile" class="icon-button" type="button" aria-label="Close profile settings"></button>
+        </div>
+        <div id="profile-modal-body" class="profile-modal-body"></div>
+      </section>
+    </div>
     <script src="/desktop/assets/app.chat-titles.js"></script>
     <script src="/desktop/assets/app.chat.js"></script>
-    <script src="/desktop/assets/app.modals.js"></script>
+    <script src="/desktop/assets/app.modals.js?v=profile-preferences-20260521"></script>
+    <script src="/desktop/assets/app.billing-plans.js"></script>
     <script src="/desktop/assets/app.chat-store.js"></script>
     <script src="/desktop/assets/app.chat-actions.js"></script>
     <script src="/desktop/assets/app.chat-send.js"></script>
     <script src="/desktop/assets/app.render-helpers.js"></script>
     <script src="/desktop/assets/app.icons.js"></script>
     <script src="/desktop/assets/app.profile-state.js"></script>
-    <script src="/desktop/assets/app.profile-render.js"></script>
-    <script src="/desktop/assets/app.profile-actions.js"></script>
+    <script src="/desktop/assets/app.profile-render.js?v=profile-preferences-20260521"></script>
+    <script src="/desktop/assets/app.profile-actions.js?v=profile-preferences-20260521"></script>
     <script src="/desktop/assets/app.profile-sessions.js"></script>
     <script src="/desktop/assets/app.state.js"></script>
-    <script src="/desktop/assets/app.shell.js"></script>
+    <script src="/desktop/assets/app.shell.js?v=profile-preferences-20260521"></script>
     <script src="/desktop/assets/app.pages.js"></script>
     <script src="/desktop/assets/app.terminals.js"></script>
     <script src="/desktop/assets/app.terminals-state.js"></script>

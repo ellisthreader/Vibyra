@@ -1,6 +1,7 @@
 import { startAgentTask, applyAgentTask, discardAgentTask, runCommand } from "./agent.mjs";
 import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
 import { createProjectFile, listProjectFiles, listProjectReviewFiles, readProjectFile } from "./files.mjs";
+import { buildProjectPublishDemoBundle } from "./publishDemoBundle.mjs";
 import { authorizePhone, handleDesktopRoutes } from "./desktopRoutes.mjs";
 import { readBody, send } from "./http.mjs";
 import { createDesktopProject, discoverProjects } from "./projects.mjs";
@@ -103,6 +104,10 @@ async function handleAuthedRoutes(req, res, url) {
   }
   if (req.method === "GET" && url.pathname === "/files/review-bundle") {
     send(res, 200, await listProjectReviewFiles(url.searchParams.get("projectId")));
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/files/publish-demo-bundle") {
+    send(res, 200, await buildProjectPublishDemoBundle(url.searchParams.get("projectId")));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/files/create") {

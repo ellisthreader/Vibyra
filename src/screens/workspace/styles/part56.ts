@@ -156,7 +156,14 @@ export const part56 = {
     height: 28,
     maxWidth: 154,
     paddingLeft: 7,
-    paddingRight: 10
+    paddingRight: 6
+  },
+  chatModelToolTagClear: {
+    alignItems: "center",
+    height: 18,
+    justifyContent: "center",
+    marginLeft: -1,
+    width: 14
   },
   chatModelToolTagText: {
     color: "#EFE7FF",

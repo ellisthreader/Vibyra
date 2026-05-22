@@ -1,5 +1,7 @@
+let terminalDynamicModelGroups = null;
+
 function terminalProviderProfile(terminal) {
-  const provider = modelByKey(terminal?.model)?.provider || "auto";
+  const provider = terminalProviderKeyForModel(terminal?.model);
   if (provider === "claude") return terminalProfiles.claude;
   if (provider === "openai") return terminalProfiles.openai;
   if (provider === "gemini") return terminalProfiles.gemini;
@@ -15,11 +17,34 @@ function findTerminal(id) { return terminals.find((terminal) => terminal.id === 
 function projectForTerminal(terminal) { return (currentState.projects || []).find((project) => project.id === terminal.projectId) || null; }
 function modelLabel(terminal) { return modelByKey(terminal.model).label || "Auto"; }
 function modelChoices() {
-  const models = config().chatModels || [];
+  const groups = terminalDynamicModelGroups || config().chatModelGroups || [];
+  const models = groups.flatMap((group) => Array.isArray(group.options) ? group.options : []);
   return models.length ? models : [{ key: "auto", label: "Auto", provider: "auto" }];
 }
 function modelByKey(key) {
   return modelChoices().find((model) => model.key === key) || modelChoices()[0];
+}
+function terminalProviderKeyForModel(modelOrKey) {
+  const key = typeof modelOrKey === "string" ? modelOrKey : modelOrKey?.key;
+  const model = typeof modelOrKey === "string" ? modelByKey(key) : modelOrKey;
+  const provider = String(model?.provider || "").toLowerCase();
+  const company = String(model?.company || "").toLowerCase();
+  const value = String(key || model?.modelKey || "").toLowerCase();
+  if (provider === "claude" || provider === "anthropic" || company.includes("anthropic") || value.startsWith("anthropic/") || value.startsWith("claude-")) return "claude";
+  if (provider === "gemini" || provider === "google" || company.includes("google") || value.startsWith("google/") || value.startsWith("gemini-")) return "gemini";
+  if (provider === "openai" || company.includes("openai") || value.startsWith("openai/") || value.startsWith("gpt-") || value.includes("codex")) return "openai";
+  return provider || "auto";
+}
+function terminalModelForDisplay(key) {
+  const model = modelByKey(key);
+  if (!key || model.key === key) return model;
+  return {
+    key,
+    modelKey: key,
+    label: String(key).split("/").pop() || key,
+    provider: terminalProviderKeyForModel(key),
+    company: ""
+  };
 }
 function unlockedModel(key) {
   const model = modelByKey(key);
@@ -47,12 +72,7 @@ function updateTerminalModelSearch(input) {
   if (target === "setup") setupModelSearch = input.value;
   if (target === "new") newTerminalModelSearch = input.value;
   if (target === "setup" || target === "new") modelScrollTops[target] = 0;
-  render();
-  requestAnimationFrame(() => {
-    const next = document.querySelector(`[data-terminal-model-search="${target}"]`);
-    next?.focus();
-    next?.setSelectionRange?.(next.value.length, next.value.length);
-  });
+  if (!renderTerminalModelSearchResults(input)) render();
 }
 function createTerminalFromModel(key) {
   const model = modelByKey(key);
@@ -89,17 +109,40 @@ function terminalModelMenu(target, selectedKey) {
   const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
   return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}"><label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label><div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
 }
+function renderTerminalModelSearchResults(input) {
+  const target = input?.dataset?.terminalModelSearch || "";
+  if (target !== "setup" && target !== "new") return false;
+  const picker = input.closest("[data-terminal-model-picker]");
+  const scroller = picker?.querySelector(".terminal-model-scroll");
+  if (!picker || !scroller) return false;
+  const selectedKey = selectedSetupModel().key;
+  const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
+  const query = target === "setup" ? setupModelSearch : newTerminalModelSearch;
+  const groups = filteredTerminalModelGroups(query);
+  scroller.innerHTML = groups.length
+    ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("")
+    : `<p class="terminal-model-empty">No models found</p>`;
+  restoreTerminalModelScroll(scroller, target);
+  picker.querySelectorAll("[data-terminal-setup-model]").forEach((button) => {
+    button.addEventListener("click", () => selectSetupModel(button.dataset.terminalSetupModel || "auto"));
+  });
+  picker.querySelectorAll("[data-terminal-new-model]").forEach((button) => {
+    button.addEventListener("click", () => createTerminalFromModel(button.dataset.terminalNewModel || "auto"));
+  });
+  return true;
+}
 function terminalModelSection(group, selectedKey, optionAttribute) {
   const label = terminalProviderGroupLabel(group);
   const title = label === "Auto" ? "Default" : label;
-  return `<section class="terminal-model-section" aria-label="${escapeAttribute(title)}"><p class="terminal-model-section-title">${escapeHtml(title)}</p><div class="terminal-model-list">${group.options.map((model) => terminalModelButton(model, selectedKey, optionAttribute)).join("")}</div></section>`;
+  const headerLogo = group.options[0] ? modelLogo(group.options[0]) : "";
+  return `<section class="terminal-model-section" aria-label="${escapeAttribute(title)}"><p class="terminal-model-section-title">${headerLogo}<span>${escapeHtml(title)}</span></p><div class="terminal-model-list">${group.options.map((model) => terminalModelButton(model, selectedKey, optionAttribute)).join("")}</div></section>`;
 }
 function terminalModelButton(model, selectedKey, optionAttribute, extraClass = "") {
   const locked = typeof modelLocked === "function" && modelLocked(model);
   return `<button class="terminal-model-option ${extraClass} ${selectedKey === model.key ? "active" : ""} ${locked ? "locked" : ""}" type="button" role="option" aria-selected="${selectedKey === model.key ? "true" : "false"}" ${optionAttribute}="${escapeAttribute(model.key)}">${modelLogo(model)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(modelHint(model, locked))}</small></span>${locked ? `<em class="terminal-model-lock">${icon("lock")}</em>` : model.badge ? `<em class="terminal-model-badge">${escapeHtml(model.badge)}</em>` : "<i></i>"}</button>`;
 }
 function terminalModelGroups() {
-  const groups = config().chatModelGroups || [];
+  const groups = terminalDynamicModelGroups || config().chatModelGroups || [];
   return groups.length ? groups : [{ title: "", options: modelChoices() }];
 }
 function filteredTerminalModelGroups(query) {
@@ -117,6 +160,7 @@ function terminalModelGroupKey(group) {
   return group?.options?.find((model) => model.provider !== "auto")?.provider || "auto";
 }
 function terminalProviderGroupLabel(group) {
+  if (group?.company) return group.company;
   if (typeof providerGroupLabel === "function") return providerGroupLabel(group);
   const key = terminalModelGroupKey(group);
   if (key === "openai") return "OpenAI";
@@ -131,19 +175,59 @@ function activeTerminalModelGroup(selectedKey, activeGroupKey, groups) {
   return groups.find((group) => terminalModelGroupKey(group) === groupKey) || groups.find((group) => terminalModelGroupKey(group) === "openai") || groups[0] || terminalModelGroups()[0];
 }
 function modelLogo(model) {
-  if (typeof providerLogo === "function") return providerLogo(model?.provider);
+  if (typeof providerLogo === "function") return providerLogo(model?.provider, model?.company);
   return `<span class="provider-logo auto">${icon("sparkles")}</span>`;
 }
 function modelHint(model, locked) {
   if (locked && typeof modelTier === "function") return `${modelTier(model)} · upgrade`;
   if (model?.provider === "auto") return "Vibyra chooses";
-  return model?.provider || "OpenRouter";
+  return model?.company || model?.provider || "OpenRouter";
 }
 function modelMetaChip(terminal) {
-  const model = modelByKey(terminal.model);
+  const model = terminalModelForDisplay(terminal.model);
   return `<span class="terminal-meta-chip terminal-model-chip">${modelLogo(model)}${escapeHtml(model.label)}</span>`;
 }
 function isUsageLimit(error) {
   const message = String(error?.message || "").toLowerCase();
   return Number(error?.status) === 429 || message.includes("cap reached") || message.includes("usage limit") || message.includes("rate limit");
 }
+
+async function loadTerminalOpenRouterModels() {
+  try {
+    const response = await fetch("/desktop/openrouter-models");
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !Array.isArray(payload.groups)) return;
+    applyTerminalOpenRouterModels(payload.groups);
+  } catch {}
+}
+
+function applyTerminalOpenRouterModels(groups) {
+  const nextGroups = groups.map(normalizeTerminalModelGroup).filter((group) => group.options.length);
+  if (!nextGroups.length) return;
+  terminalDynamicModelGroups = nextGroups;
+  for (const model of nextGroups.flatMap((group) => group.options)) modelTiers[model.key] = model.tier || modelTiers[model.key] || "balanced";
+  if (!modelChoices().some((model) => model.key === setupModel)) setupModel = "auto";
+  if (activePage === "terminals" || openChatMenu === "model") render();
+}
+
+function normalizeTerminalModelGroup(group) {
+  const company = String(group?.company || group?.title || "").trim();
+  const options = Array.isArray(group?.options) ? group.options.map((model) => normalizeTerminalModel(model, company)).filter(Boolean) : [];
+  return { title: company || group?.title || "", company, options };
+}
+
+function normalizeTerminalModel(model, company) {
+  const key = String(model?.key || "").trim();
+  if (!key) return null;
+  return {
+    key,
+    modelKey: String(model?.modelKey || key),
+    label: String(model?.label || key).slice(0, 96),
+    provider: String(model?.provider || "openrouter").trim() || "openrouter",
+    company: String(model?.company || company || "").trim(),
+    tier: String(model?.tier || "balanced").trim() || "balanced",
+    badge: String(model?.badge || "").slice(0, 24)
+  };
+}
+
+window.addEventListener("load", () => setTimeout(loadTerminalOpenRouterModels, 0));

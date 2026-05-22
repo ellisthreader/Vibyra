@@ -1,8 +1,10 @@
 import { appState, event, pushEvents } from "./state.mjs";
 
-const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || process.env.VIBYRA_API_URL || "http://127.0.0.1:8000");
+const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || "http://127.0.0.1:8000");
 
-export async function verifyAndSetDesktopAccount(token, fetchImpl = fetch) {
+export async function verifyAndSetDesktopAccount(token, publicIpOrFetch = "", fetchImpl = fetch) {
+  const publicIp = typeof publicIpOrFetch === "function" ? "" : String(publicIpOrFetch || "").trim();
+  const request = typeof publicIpOrFetch === "function" ? publicIpOrFetch : fetchImpl;
   const authToken = String(token || "").trim();
   if (!authToken) {
     const error = new Error("Missing Vibyra account session token");
@@ -10,10 +12,11 @@ export async function verifyAndSetDesktopAccount(token, fetchImpl = fetch) {
     throw error;
   }
 
-  const response = await fetchImpl(`${API_URL}/api/session`, {
+  const response = await request(`${API_URL}/api/session`, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${authToken}`
+      Authorization: `Bearer ${authToken}`,
+      ...(publicIp ? { "X-Vibyra-Public-IP": publicIp } : {})
     }
   });
   const payload = await readJson(response);

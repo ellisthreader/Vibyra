@@ -1,0 +1,16 @@
+@media (max-width: 760px) {
+  #token-modal .modal--billing-revamp { width: calc(100vw - 20px); }
+  .billing-revamp-head { align-items: start; flex-direction: column; }
+  .billing-hero {
+    background: linear-gradient(180deg, rgba(5, 5, 9, 0.18), rgba(5, 5, 9, 0.88) 58%), var(--plan-image), #080810;
+    background-position: center;
+    background-size: cover;
+    min-height: 420px;
+  }
+  .billing-hero-copy { align-content: end; max-width: none; padding: 22px; width: 100%; }
+  .billing-hero-copy h4 { font-size: 34px; line-height: 38px; }
+  .billing-plan-row { grid-template-columns: 44px minmax(0, 1fr); }
+  .billing-plan-row img { height: 44px; width: 44px; }
+  .billing-plan-row button,
+  .billing-plan-row .billing-current-chip { grid-column: 2; justify-self: start; }
+}

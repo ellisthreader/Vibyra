@@ -11,11 +11,11 @@ export const part57 = {
   },
   chatAttachmentHandle: {
     alignSelf: "center",
-    backgroundColor: "#080A12",
+    backgroundColor: "rgba(255, 255, 255, 0.82)",
     borderRadius: 999,
     height: 4,
-    marginBottom: 10,
-    width: 42
+    marginBottom: 12,
+    width: 44
   },
   chatAttachmentHeader: {
     alignItems: "center",
@@ -103,9 +103,9 @@ export const part57 = {
   },
   chatAttachmentToolIcon: {
     alignItems: "center",
-    height: 36,
+    height: 34,
     justifyContent: "center",
-    width: 34
+    width: 28
   },
   chatAttachmentToolLabel: {
     color: "#F4F0FF",
@@ -150,10 +150,28 @@ export const part57 = {
     borderWidth: 1,
     flexDirection: "row",
     gap: 8,
-    maxWidth: "100%",
+    maxWidth: 220,
     minHeight: 42,
     paddingHorizontal: 7,
     paddingVertical: 6
+  },
+  chatImageAttachmentPreview: {
+    height: 58,
+    position: "relative",
+    width: 58
+  },
+  chatImageAttachmentPreviewRemove: {
+    alignItems: "center",
+    backgroundColor: "rgba(19, 19, 31, 0.88)",
+    borderColor: "rgba(255, 255, 255, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 22,
+    justifyContent: "center",
+    position: "absolute",
+    right: -6,
+    top: -6,
+    width: 22
   },
   chatImageAttachmentRemove: {
     alignItems: "center",
@@ -162,14 +180,78 @@ export const part57 = {
     width: 24
   },
   chatImageAttachmentRow: {
-    gap: 8,
     marginBottom: 10
+  },
+  chatImageAttachmentRowContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    paddingRight: 8,
+    paddingTop: 6
   },
   chatImageAttachmentThumb: {
     backgroundColor: "#151722",
     borderRadius: 8,
+    height: 58,
+    width: 58
+  },
+  chatFileAttachmentThumb: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 92, 255, 0.18)",
+    borderColor: "rgba(190, 183, 211, 0.16)",
+    borderRadius: 8,
+    borderWidth: 1,
     height: 30,
+    justifyContent: "center",
     width: 30
+  },
+  chatMessageAttachmentRow: {
+    marginBottom: 8,
+    marginTop: 3,
+    maxWidth: 286
+  },
+  chatMessageAttachmentRowContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    paddingRight: 8,
+    paddingVertical: 4
+  },
+  chatMessageFileAttachmentCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.075)",
+    borderColor: "rgba(196, 181, 253, 0.22)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 54,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    width: 230
+  },
+  chatMessageFileAttachmentIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 92, 255, 0.2)",
+    borderColor: "rgba(216, 202, 255, 0.2)",
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 38,
+    justifyContent: "center",
+    width: 38
+  },
+  chatMessageImageAttachmentPreview: {
+    backgroundColor: "#151722",
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 126,
+    overflow: "hidden",
+    width: 168
+  },
+  chatMessageImageAttachmentThumb: {
+    height: "100%",
+    width: "100%"
   },
   chatToolPill: {
     alignItems: "center",

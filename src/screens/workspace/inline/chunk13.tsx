@@ -5,11 +5,12 @@ import { styles } from "../styles";
 import type { CommunityPost } from "../types";
 import { CommunityAppLogo } from "./chunk16";
 
-export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, post }: {
+export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, onReport, post }: {
   bookmarked: boolean;
   commentCount: number;
   liked: boolean;
   onOpen: () => void;
+  onReport: () => void;
   post: CommunityPost;
 }) {
   const screenshot = post.screenshotUrls?.[0];
@@ -44,6 +45,9 @@ export function CommunityPostCard({ bookmarked, commentCount, liked, onOpen, pos
             <Ionicons name="chatbubble-outline" color="#9F9AAD" size={15} />
             <Text style={styles.communityPostStatText}>{commentCount}</Text>
           </View>
+          <Pressable accessibilityLabel="Report app" hitSlop={8} onPress={(event) => { event.stopPropagation(); onReport(); }} style={styles.communityPostReportButton}>
+            <Ionicons name="flag-outline" color="#9F9AAD" size={15} />
+          </Pressable>
           <Ionicons name="chevron-forward" color="#8E899A" size={17} style={styles.communityPostChevron} />
         </View>
       </View>

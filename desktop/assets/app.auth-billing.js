@@ -17,11 +17,7 @@ async function requestDesktopBilling(endpoint, payload) {
   try {
     const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
       method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
+      headers: await desktopAccountHeaders(token, { "Content-Type": "application/json" }),
       body: JSON.stringify(payload)
     });
     const result = await response.json().catch(() => ({}));

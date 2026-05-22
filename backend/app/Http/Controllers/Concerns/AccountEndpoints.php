@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
 use App\Models\VibyraSession;
+use App\Services\SessionLocationResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -166,14 +167,6 @@ trait AccountEndpoints
 
     private function sessionLocation(string $ip): string
     {
-        if ($ip === '') {
-            return 'Unknown location';
-        }
-
-        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            return 'Local network';
-        }
-
-        return $ip;
+        return app(SessionLocationResolver::class)->labelForIp($ip);
     }
 }

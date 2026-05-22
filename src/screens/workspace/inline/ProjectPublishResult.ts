@@ -2,7 +2,7 @@ import type { ProjectPublishStatus, PublishProjectOutcome } from "../../../utils
 
 export type PublishFlowResult = { tone: "success" | "info" | "danger"; title: string; message: string } | null;
 type PublishOutcomeResult = { tone: "success" | "info"; title: string; message: string } | null;
-type SafetyResultInfo = { reviewSummary?: string | null; safetyRating?: string; safetyScore?: number };
+type SafetyResultInfo = { hostedDemoStatus?: string | null; reviewSummary?: string | null; safetyRating?: string; safetyScore?: number };
 
 export function publishResultFromOutcome(outcome: PublishProjectOutcome, result?: SafetyResultInfo): PublishOutcomeResult {
   if (outcome === "published") return { tone: "success", title: "Published to Explore", message: safetyMessage("Your project is live and discoverable in Explore.", result) };
@@ -39,10 +39,19 @@ export function isPublishReviewLocked(status?: ProjectPublishStatus | null) {
 function safetyMessage(base: string, item?: SafetyResultInfo | null) {
   const rating = safetyRatingLabel(item?.safetyRating);
   const score = typeof item?.safetyScore === "number" ? ` ${item.safetyScore}/100` : "";
-  return rating ? `${base} Safety: ${rating}${score}.` : base;
+  const safety = rating ? ` Safety: ${rating}${score}.` : "";
+  const hosting = hostingMessage(item?.hostedDemoStatus);
+  return `${base}${safety}${hosting}`;
 }
 
 function safetyRatingLabel(value?: string) {
   if (!value) return "";
   return value.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function hostingMessage(status?: string | null) {
+  if (status === "ready") return " Hosted demo ready.";
+  if (status === "pending") return " Hosted demo pending.";
+  if (status === "failed") return " Hosted demo unavailable.";
+  return "";
 }

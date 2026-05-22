@@ -51,11 +51,7 @@ body[data-desktop-theme="light"] {
 .suggestion:hover { background: var(--chat-elevated); border-color: var(--chat-border); }
 .suggestion .action-icon, .assistant .message-author, .generated-app-card span, .slash-menu svg, .attach-row-icon, .provider-logo.auto { color: var(--chat-accent); }
 .generated-image-card img { background: var(--chat-bg); }
-.attach-row-icon, .provider-logo.auto { background: var(--chat-accent-soft); }
-body[data-desktop-theme="light"] .provider-logo.gemini { background: var(--chat-surface); }
-@media (prefers-color-scheme: light) {
-  body[data-desktop-theme="auto"] .provider-logo.gemini { background: var(--chat-surface); }
-}
+.attach-row-icon { background: var(--chat-accent-soft); }
 .generated-image-card strong, .generated-app-card strong { color: var(--chat-text); }
 .generated-app-card button {
   background: var(--chat-elevated);

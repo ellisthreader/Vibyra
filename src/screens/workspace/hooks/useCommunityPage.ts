@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchCommunityProjects, likeCommunityProject, postCommunityComment, unlikeCommunityProject } from "../../../utils/communityApi";
-import { communityPosts } from "../data/community";
+import { communityPosts, isSampleCommunityPostId } from "../data/community";
 import { loadCommunityComments, loadCommunityCommentsAsync, saveCommunityComments } from "../inline";
 import { CommunityComment, CommunityFilter, CommunityPost } from "../types";
+import { communityFeedError, createModeratedSampleComment, mergeCommunityComments, mergeIdLists } from "./communityPageHelpers";
+import { loadCommunityReactions, loadCommunityReactionsAsync, saveCommunityReactions } from "./communityReactionStorage";
 
 export function useCommunityPage(
   authToken: string,
@@ -11,15 +13,17 @@ export function useCommunityPage(
   onLevelActivity?: (action: string, contextId: string, meta?: Record<string, unknown>) => void
 ) {
   const [activeFilter, setActiveFilter] = useState<CommunityFilter>("Recent");
-  const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>([]);
+  const savedReactions = useMemo(() => loadCommunityReactions(), []);
+  const [bookmarkedPostIds, setBookmarkedPostIds] = useState<string[]>(savedReactions.bookmarkedPostIds);
   const [commentDraftsByPostId, setCommentDraftsByPostId] = useState<Record<string, string>>({});
   const [commentErrorsByPostId, setCommentErrorsByPostId] = useState<Record<string, string>>({});
   const [commentsReady, setCommentsReady] = useState(false);
   const [commentsByPostId, setCommentsByPostId] = useState<Record<string, CommunityComment[]>>(() => loadCommunityComments());
   const [commentPostingByPostId, setCommentPostingByPostId] = useState<Record<string, boolean>>({});
   const [feedError, setFeedError] = useState("");
-  const [feedLoading, setFeedLoading] = useState(true);
-  const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [likedPostIds, setLikedPostIds] = useState<string[]>(savedReactions.likedPostIds);
+  const [reactionsReady, setReactionsReady] = useState(false);
   const [openedPostIds, setOpenedPostIds] = useState<string[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>(communityPosts);
   const postsRef = useRef(posts);
@@ -28,6 +32,21 @@ export function useCommunityPage(
   useEffect(() => {
     postsRef.current = posts;
   }, [posts]);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadCommunityReactionsAsync()
+      .then((state) => {
+        if (cancelled) return;
+        setBookmarkedPostIds((current) => mergeIdLists(current, state.bookmarkedPostIds));
+        setLikedPostIds((current) => mergeIdLists(current, state.likedPostIds));
+      })
+      .finally(() => { if (!cancelled) setReactionsReady(true); });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    if (reactionsReady) void saveCommunityReactions({ bookmarkedPostIds, likedPostIds });
+  }, [bookmarkedPostIds, likedPostIds, reactionsReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,14 +60,14 @@ export function useCommunityPage(
   useEffect(() => {
     if (commentsReady) void saveCommunityComments(commentsByPostId);
   }, [commentsByPostId, commentsReady]);
-  const loadCommunityFeed = useCallback(() => {
+  const loadCommunityFeed = useCallback((showLoading = true) => {
     let cancelled = false;
-    setFeedLoading(true);
+    if (showLoading) setFeedLoading(true);
     setFeedError("");
     fetchCommunityProjects()
       .then(({ comments, posts }) => {
         if (cancelled) return;
-        setPosts(posts);
+        setPosts(posts.length > 0 ? posts : communityPosts);
         if (Object.keys(comments).length > 0) setCommentsByPostId((current) => mergeCommunityComments(current, comments));
       })
       .catch((error) => {
@@ -58,11 +77,11 @@ export function useCommunityPage(
           setFeedError(fallbackPosts.length > 0 ? "" : communityFeedError(error));
         }
       })
-      .finally(() => { if (!cancelled) setFeedLoading(false); });
+      .finally(() => { if (!cancelled && showLoading) setFeedLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => loadCommunityFeed(), [loadCommunityFeed]);
+  useEffect(() => loadCommunityFeed(false), [loadCommunityFeed]);
 
   const filteredPosts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -89,12 +108,16 @@ export function useCommunityPage(
     setBookmarkedPostIds((c) => c.includes(id) ? c.filter((x) => x !== id) : [...c, id]);
   }, []);
   const toggleLike = useCallback((id: string) => {
-    if (!authToken) return;
+    if (!authToken && !isSampleCommunityPostId(id)) return;
     setLikedPostIds((c) => {
       const liked = c.includes(id);
       setPosts((items) => items.map((post) => (
         post.id === id ? { ...post, likes: Math.max(0, post.likes + (liked ? -1 : 1)) } : post
       )));
+      if (isSampleCommunityPostId(id)) {
+        if (!liked) onLevelActivity?.("community_like", `community-like:${id}`, { postId: id });
+        return liked ? c.filter((x) => x !== id) : [...c, id];
+      }
       void (liked ? unlikeCommunityProject(authToken, id) : likeCommunityProject(authToken, id))
         .then((result) => {
           setPosts((items) => items.map((post) => (
@@ -126,20 +149,24 @@ export function useCommunityPage(
     if (!text) return;
     setCommentErrorsByPostId((c) => ({ ...c, [postId]: "" }));
     setCommentPostingByPostId((c) => ({ ...c, [postId]: true }));
-    let posted: CommunityComment | null = null;
+    let posted: CommunityComment;
     try {
       if (!authToken) throw new Error("Log in to post a comment.");
-      posted = await postCommunityComment(authToken, postId, text);
+      posted = isSampleCommunityPostId(postId)
+        ? await createModeratedSampleComment(authToken, currentUserName, text)
+        : await postCommunityComment(authToken, postId, text);
     } catch (err) {
       setCommentErrorsByPostId((c) => ({ ...c, [postId]: err instanceof Error ? err.message : "That comment could not be posted." }));
       setCommentPostingByPostId((c) => ({ ...c, [postId]: false }));
       return;
     }
-    const displayName = currentUserName.trim() || "You";
     setCommentsByPostId((c) => ({
       ...c,
-      [postId]: [...(c[postId] ?? []), posted ?? { id: `community-comment-${Date.now()}`, name: displayName, text, time: "Just now" }]
+      [postId]: [...(c[postId] ?? []), posted]
     }));
+    setPosts((items) => items.map((post) => (
+      post.id === postId ? { ...post, comments: post.comments + 1 } : post
+    )));
     onLevelActivity?.("community_comment", `community-comment:${postId}:${Date.now()}`, { postId });
     setCommentDraftsByPostId((c) => ({ ...c, [postId]: "" }));
     setCommentPostingByPostId((c) => ({ ...c, [postId]: false }));
@@ -153,29 +180,8 @@ export function useCommunityPage(
     activeFilter, setActiveFilter, hasFeaturedPosts, posts,
     bookmarkedPostIds, likedPostIds, openedPostIds,
     commentDraftsByPostId, commentErrorsByPostId, commentsByPostId, commentPostingByPostId,
-    feedError, feedLoading, reloadCommunityFeed: loadCommunityFeed,
+    feedError, feedLoading, reloadCommunityFeed: () => loadCommunityFeed(true),
     searchQuery, setSearchQuery,
     filteredPosts, toggleBookmark, toggleLike, openApp, addComment, setCommentDraft
   };
-}
-
-function mergeCommunityComments(
-  current: Record<string, CommunityComment[]>,
-  incoming: Record<string, CommunityComment[]>
-) {
-  const next = { ...current };
-  Object.entries(incoming).forEach(([postId, comments]) => {
-    const existing = next[postId] ?? [];
-    const seen = new Set(existing.map((comment) => comment.id));
-    next[postId] = [...existing, ...comments.filter((comment) => !seen.has(comment.id))];
-  });
-  return next;
-}
-
-function communityFeedError(error: unknown) {
-  const message = error instanceof Error ? error.message : "";
-  if (message.toLowerCase().includes("could not reach vibyra")) {
-    return "Community is waiting for the Vibyra backend. Start the backend, then refresh.";
-  }
-  return message || "Community could not be loaded.";
 }

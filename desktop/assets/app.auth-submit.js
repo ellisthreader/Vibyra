@@ -20,7 +20,7 @@ async function submitDesktopEmailAuth(event) {
   try {
     const result = await requestAppAuth(authMode === "signup" ? "/api/auth/signup" : "/api/auth/login", {
       email,
-      deviceName: "Vibyra Desktop",
+      deviceName: desktopAuthDeviceName(),
       installId: desktopInstallId(),
       ...(authMode === "signup" ? { name } : {}),
       password
@@ -44,4 +44,8 @@ async function completeDesktopAuth(token, user) {
   document.body.classList.add("desktop-authenticated");
   clearAuthError();
   if (typeof render === "function") render();
+}
+
+function desktopAuthDeviceName() {
+  return currentState?.machineName || "Vibyra Desktop";
 }

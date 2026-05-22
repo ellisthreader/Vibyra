@@ -46,6 +46,37 @@ class ProjectSafetyReview
             return $this->decision(self::DENIED, $findings, $sanitizedHtml, 'Project failed deterministic safety checks.', count($sourceFiles));
         }
 
+        if ((bool) config('moderation.publish_force_approve_under_review', false)) {
+            try {
+                $this->moderation->assertLocalTextAllowed(
+                    trim($title.' '.$description.' '.$stack.' '.implode(' ', $tags)),
+                    'community.publish'
+                );
+            } catch (HttpResponseException $exception) {
+                $payload = json_decode($exception->getResponse()->getContent(), true) ?: [];
+                $findings[] = [
+                    'code' => (string) Arr::get($payload, 'moderation.reason', 'content_moderation_blocked'),
+                    'severity' => 'deny',
+                    'target' => 'moderation',
+                    'message' => (string) ($payload['error'] ?? 'Project content does not meet Vibyra PG community rules.'),
+                    'categories' => Arr::get($payload, 'moderation.categories', []),
+                    'scoreImpact' => $this->scoreImpact((string) Arr::get($payload, 'moderation.reason', 'content_moderation_blocked')),
+                ];
+
+                return $this->decision(self::DENIED, $findings, $sanitizedHtml, 'Project content does not meet Vibyra PG community rules.', count($sourceFiles));
+            }
+
+            $findings[] = [
+                'code' => 'temp_publish_force_approved',
+                'severity' => 'info',
+                'target' => 'review_status',
+                'message' => 'Temporary local testing override approved this project without remote review.',
+                'scoreImpact' => 0,
+            ];
+
+            return $this->decision(self::APPROVED, $findings, $sanitizedHtml, 'Project force-approved for temporary local testing.', count($sourceFiles));
+        }
+
         try {
             $moderationDecision = $this->moderation->assertModerationInputAllowed([
                 'text' => trim($title.' '.$description.' '.$stack.' '.implode(' ', $tags)),
@@ -82,13 +113,13 @@ class ProjectSafetyReview
         $decision = $this->decision($status, $findings, $sanitizedHtml, $reason, count($sourceFiles));
 
         if ($status === self::UNDER_REVIEW) {
-            return $this->maybeApplyAiReview($decision, [
+            return $this->maybeForceApproveUnderReviewForTesting($this->maybeApplyAiReview($decision, [
                 'title' => $title,
                 'description' => $description,
                 'stack' => $stack,
                 'tags' => $tags,
                 'sourceFiles' => $sourceFiles,
-            ]);
+            ]));
         }
 
         return $decision;
@@ -179,6 +210,31 @@ class ProjectSafetyReview
             ...$decision,
             'summary' => $ai['summary'] ?: $decision['summary'],
             'score' => min((int) $decision['score'], max(1, (int) $ai['score'] ?: (int) $decision['score'])),
+        ];
+    }
+
+    private function maybeForceApproveUnderReviewForTesting(array $decision): array
+    {
+        if (! (bool) config('moderation.publish_force_approve_under_review', false)
+            || ($decision['status'] ?? null) !== self::UNDER_REVIEW) {
+            return $decision;
+        }
+
+        $decision['findings'][] = [
+            'code' => 'temp_under_review_force_approved',
+            'severity' => 'info',
+            'target' => 'review_status',
+            'message' => 'Temporary local testing override converted under-review status to approved.',
+            'scoreImpact' => 0,
+        ];
+
+        return [
+            ...$decision,
+            'status' => self::APPROVED,
+            'reason' => 'Project force-approved for temporary local testing.',
+            'rating' => $decision['rating'] === 'needs_review' ? 'caution' : $decision['rating'],
+            'summary' => 'Temporary testing override approved this project instantly.',
+            'public' => true,
         ];
     }
 

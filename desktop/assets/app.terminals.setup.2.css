@@ -76,10 +76,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .terminal-model-select-wrap .terminal-model-picker {
-    max-height: 260px;
+    max-height: min(380px, calc(100vh - 128px));
   }
   .terminal-model-select-wrap .terminal-model-scroll {
-    max-height: 194px;
+    max-height: min(312px, calc(100vh - 214px));
   }
   .terminal-layout-preview {
     min-height: 78px;

@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChatSkill } from "../../../utils/appApi";
 import { colors } from "../../../styles/theme";
-import type { ChatImageAttachment, ChatStartOptions, ChatToolMode, DeepResearchPlanDraft } from "../../../types/chatTools";
-import { DEEP_RESEARCH_MODEL_KEY, chatToolModelOverride } from "../../../types/chatTools";
+import type { ChatFileAttachment, ChatImageAttachment, ChatStartOptions, ChatToolMode, ChatToolPlanDraft } from "../../../types/chatTools";
+import { chatToolForModelKey, chatToolModelOverride, defaultPromptForChatTool, parseChatToolSlash } from "../../../types/chatTools";
 import { ChatMessage, ModelKey, ReasoningEffort } from "../../../types/domain";
 import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
@@ -16,7 +16,7 @@ import { styles } from "../styles";
 import { LowCreditsWarning, getUnlockedInitialChatModel, isModelLockedForPlan } from "./chunk10";
 import { ModelMenu, effortShortLabel } from "./ChatComposerMenus";
 import { ChatAttachmentSheet } from "./ChatAttachmentSheet";
-import { chatToolLabels } from "./chatAttachmentTools";
+import { chatToolAccent, chatToolIcons, chatToolLabels } from "./chatAttachmentTools";
 import { ChatImageAttachmentPills } from "./ChatImageAttachmentPills";
 import { ChatUsageLimitNotice } from "./ChatUsageLimitNotice";
 import { BillingSheet } from "./profile/BillingSheet";
@@ -24,7 +24,7 @@ import { SlashCommandMenu } from "./SlashCommandMenu";
 import { ProjectMemoryBar } from "./ProjectMemoryBar";
 import { PcPermissionControl } from "./PcPermissionControl";
 import { createDeepResearchPlan } from "../../../utils/researchPlanApi";
-import { buildDeepResearchPlan, formatDeepResearchPlanForChat, type DeepResearchPlanPreview } from "./DeepResearchPlanCard";
+import { buildChatToolPlan, formatToolPlanForChat, type ChatToolPlanPreview } from "./ChatToolPlanCard";
 
 type ChatComposerProps = {
   accountPlan: string;
@@ -40,7 +40,7 @@ type ChatComposerProps = {
   onOpenFolderCommand: () => void;
   onTestPreviewCommand: (userText: string) => void;
   onOpenTokens: () => void;
-  onDeepResearchPreviewChange?: (preview: DeepResearchPlanPreview | null) => void;
+  onToolPreviewChange?: (preview: ChatToolPlanPreview | null) => void;
   onStart: (options?: ChatStartOptions) => void;
   reasoningEffort: ReasoningEffort;
   selectedChatModel: string;
@@ -53,37 +53,39 @@ type ChatComposerProps = {
 };
 
 export function ChatComposer(props: ChatComposerProps) {
-  type PendingDeepResearchPlan = {
-    countdown: number;
-    draft: DeepResearchPlanDraft;
+  type PendingToolPlan = {
+    countdown: number | null;
+    draft: ChatToolPlanDraft;
+    displayPrompt: string;
     options?: ChatStartOptions;
-    prompt: string;
+    tool: ChatToolMode;
   };
   const [attachmentSheetOpen, setAttachmentSheetOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<ChatToolMode | null>(null);
   const [modelBeforeTool, setModelBeforeTool] = useState<string | null>(null);
   const [imageAttachments, setImageAttachments] = useState<ChatImageAttachment[]>([]);
+  const [fileAttachments, setFileAttachments] = useState<ChatFileAttachment[]>([]);
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [billingSheetOpen, setBillingSheetOpen] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
-  const [deepResearchPlanning, setDeepResearchPlanning] = useState(false);
-  const [pendingDeepResearchPlan, setPendingDeepResearchPlan] = useState<PendingDeepResearchPlan | null>(null);
+  const [planningTool, setPlanningTool] = useState<ChatToolMode | null>(null);
+  const [pendingToolPlan, setPendingToolPlan] = useState<PendingToolPlan | null>(null);
   const appCtx = useAppContext();
   const prefs = usePreferences();
   const placeholderColor = useThemedColor("#8F8A9E");
   const toolIconColor = useThemedColor("#B9B5C8");
-  const sendLocked = props.agentRequesting || deepResearchPlanning;
-  const sendGradient = sendLocked
-    ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
-    : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
-  const slashToolMatch = props.taskText.trim().match(/^\/(research|web|analyze)(?:\s|\b)/i);
-  const slashTool = slashToolMatch?.[1]?.toLowerCase() as ChatToolMode | undefined;
+  const slashToolMatch = parseChatToolSlash(props.taskText);
+  const slashTool = slashToolMatch?.tool;
   const slashModelOverride = slashTool ? chatToolModelOverride(slashTool) : "";
   const activeToolModel = chatToolModelOverride(activeTool) || slashModelOverride;
   const selectedChatModel = activeToolModel || getUnlockedInitialChatModel(props.selectedModel, props.accountPlan, props.selectedChatModel);
   const currentModel = chatModelOptionFor(selectedChatModel) ?? chatModelOptions[0];
-  const deepResearchActive = currentModel.key === DEEP_RESEARCH_MODEL_KEY;
-  const visibleToolPill = activeTool && activeTool !== "research" ? activeTool : null;
+  const inlineTool = activeTool ?? slashTool ?? chatToolForModelKey(currentModel.key);
+  const inlineToolAccent = inlineTool ? chatToolAccent[inlineTool] : null;
+  const sendLocked = props.agentRequesting || Boolean(planningTool);
+  const sendGradient = sendLocked
+    ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
+    : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
   const slashMatch = props.taskText.match(/^\/(\w*)$/);
   const slashQuery = slashMatch?.[1] ?? "";
   const filteredSkills = useMemo(() => {
@@ -101,40 +103,39 @@ export function ChatComposer(props: ChatComposerProps) {
   const slashMenuOpen = Boolean(slashMatch) && (filteredCommands.length > 0 || filteredSkills.length > 0);
 
   useEffect(() => {
-    if (!pendingDeepResearchPlan) return;
-    if (pendingDeepResearchPlan.countdown <= 0) {
-      startDeepResearchPlan();
+    if (!pendingToolPlan || pendingToolPlan.countdown === null) return;
+    if (pendingToolPlan.countdown <= 0) {
+      startToolPlan();
       return;
     }
     const timer = setTimeout(() => {
-      setPendingDeepResearchPlan((current) => current ? { ...current, countdown: current.countdown - 1 } : current);
+      setPendingToolPlan((current) => current && current.countdown !== null ? { ...current, countdown: current.countdown - 1 } : current);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [pendingDeepResearchPlan]);
+  }, [pendingToolPlan]);
 
   useEffect(() => {
-    props.onDeepResearchPreviewChange?.(
-      deepResearchPlanning || pendingDeepResearchPlan
+    props.onToolPreviewChange?.(
+      planningTool || pendingToolPlan
         ? {
-          countdown: pendingDeepResearchPlan?.countdown ?? 0,
-          loading: deepResearchPlanning,
-          onCancel: cancelDeepResearchPlan,
-          onEdit: editDeepResearchPlan,
-          onStart: startDeepResearchPlan,
-          plan: pendingDeepResearchPlan?.draft ?? null
+          countdown: pendingToolPlan?.countdown ?? null,
+          loading: Boolean(planningTool),
+          onCancel: cancelToolPlan,
+          onEdit: editToolPlan,
+          onStart: startToolPlan,
+          plan: pendingToolPlan?.draft ?? null,
+          tool: pendingToolPlan?.tool ?? planningTool ?? "research"
         }
         : null
     );
-  }, [deepResearchPlanning, pendingDeepResearchPlan?.countdown, pendingDeepResearchPlan?.draft, pendingDeepResearchPlan?.prompt]);
+  }, [planningTool, pendingToolPlan?.countdown, pendingToolPlan?.draft, pendingToolPlan?.displayPrompt, pendingToolPlan?.tool]);
 
-  useEffect(() => () => props.onDeepResearchPreviewChange?.(null), []);
+  useEffect(() => () => props.onToolPreviewChange?.(null), []);
 
   function selectModel(model: (typeof chatModelOptions)[number]) {
     if (isModelLockedForPlan(model, props.accountPlan)) return;
     const activeToolOverride = chatToolModelOverride(activeTool);
-    if (activeToolOverride && model.key !== activeToolOverride) {
-      setActiveTool(null);
-    }
+    if (activeToolOverride && model.key !== activeToolOverride) setActiveTool(null);
     setModelBeforeTool(null);
     props.setSelectedChatModel(model.key);
     if (model.modelKey) props.setSelectedModel(model.modelKey);
@@ -143,44 +144,66 @@ export function ChatComposer(props: ChatComposerProps) {
 
   function runCommand(command: ChatCommand, args: string) {
     const userText = args ? `${command.slash} ${args}` : command.slash;
+    if (command.kind === "open") {
+      if (args.trim()) {
+        props.setTaskText("");
+        props.onStart({ displayPrompt: userText, prompt: `open folder ${args.trim()}` });
+        return;
+      }
+      props.onOpenFolderCommand();
+      return;
+    }
     props.setTaskText("");
     if (command.kind === "help") appCtx.addLocalChatReply(userText, chatCommandHelpReply);
     if (command.kind === "clear") appCtx.clearCurrentChat();
     if (command.kind === "new") props.onNewChat();
-    if (command.kind === "open") props.onOpenFolderCommand();
     if (command.kind === "test") props.onTestPreviewCommand(userText);
   }
 
   async function handleStart() {
-    if (deepResearchPlanning) return;
+    if (planningTool) return;
     const parsed = matchChatCommand(props.taskText);
     if (parsed) {
       runCommand(parsed.command, parsed.args);
       clearActiveTool();
       setImageAttachments([]);
+      setFileAttachments([]);
       return;
     }
-    const fallbackPrompt = !props.taskText.trim() && imageAttachments.length > 0
+    const startTool = activeTool ?? slashTool;
+    const cleanedSlashPrompt = slashToolMatch ? slashToolMatch.prompt : "";
+    const typedPrompt = slashToolMatch ? cleanedSlashPrompt : props.taskText.trim();
+    const hasVisibleAttachments = imageAttachments.length > 0 || fileAttachments.length > 0;
+    const fallbackPrompt = !typedPrompt && imageAttachments.length > 0
       ? "Describe this image and explain what matters for my request."
-      : !props.taskText.trim() && activeTool === "image"
-        ? "Create a polished image for this project."
+      : !typedPrompt && fileAttachments.length > 0
+        ? "Use the attached file with my request."
+      : !typedPrompt
+        ? defaultPromptForChatTool(startTool) || undefined
         : undefined;
-    if (!props.taskText.trim() && !fallbackPrompt) return;
-    const modelOverride = chatToolModelOverride(activeTool) || slashModelOverride;
-    const startOptions = activeTool || modelOverride || imageAttachments.length > 0 || fallbackPrompt ? {
-      ...(fallbackPrompt ? { prompt: fallbackPrompt } : {}),
-      ...(activeTool ? { tool: activeTool } : {}),
+    const promptOverride = fallbackPrompt ?? (slashToolMatch ? cleanedSlashPrompt : undefined);
+    if (!typedPrompt && !fallbackPrompt) return;
+    const modelOverride = chatToolModelOverride(startTool);
+    const startOptions = startTool || modelOverride || hasVisibleAttachments || promptOverride ? {
+      ...(promptOverride ? { prompt: promptOverride } : {}),
+      ...(startTool ? { tool: startTool } : {}),
       ...(modelOverride ? { model: modelOverride } : {}),
+      ...(fileAttachments.length > 0 ? { fileAttachments } : {}),
       ...(imageAttachments.length > 0 ? { imageAttachments } : {})
     } : undefined;
-    if (isDeepResearchStart(modelOverride)) {
-      const prompt = fallbackPrompt ?? props.taskText.trim();
-      const draft = await loadDeepResearchPlan(prompt);
-      setPendingDeepResearchPlan({
-        countdown: 60,
+    if (startTool === "analyze") {
+      submitStart(startOptions);
+      return;
+    }
+    if (startTool) {
+      const prompt = promptOverride ?? props.taskText.trim();
+      const draft = await loadToolPlan(startTool, prompt);
+      setPendingToolPlan({
+        countdown: startTool === "research" ? 60 : null,
         draft,
-        options: deepResearchStartOptions(prompt, draft, startOptions),
-        prompt
+        displayPrompt: prompt,
+        options: toolStartOptions(startTool, prompt, draft, startOptions),
+        tool: startTool
       });
       setModelMenuOpen(false);
       return;
@@ -188,15 +211,15 @@ export function ChatComposer(props: ChatComposerProps) {
     submitStart(startOptions);
   }
 
-  async function loadDeepResearchPlan(prompt: string): Promise<DeepResearchPlanDraft> {
-    if (!appCtx.authToken) return buildDeepResearchPlan(prompt);
-    setDeepResearchPlanning(true);
+  async function loadToolPlan(tool: ChatToolMode, prompt: string): Promise<ChatToolPlanDraft> {
+    if (tool !== "research" || !appCtx.authToken) return buildChatToolPlan(tool, prompt);
+    setPlanningTool(tool);
     try {
       return await createDeepResearchPlan(appCtx.authToken, prompt);
     } catch {
-      return buildDeepResearchPlan(prompt);
+      return buildChatToolPlan(tool, prompt);
     } finally {
-      setDeepResearchPlanning(false);
+      setPlanningTool(null);
     }
   }
 
@@ -204,35 +227,37 @@ export function ChatComposer(props: ChatComposerProps) {
     props.onStart(options);
     clearActiveTool();
     setImageAttachments([]);
+    setFileAttachments([]);
   }
 
-  function isDeepResearchStart(modelOverride: string) {
-    return activeTool === "research" || slashTool === "research" || modelOverride === DEEP_RESEARCH_MODEL_KEY;
+  function cancelToolPlan() {
+    setPendingToolPlan(null);
+    setPlanningTool(null);
+    clearActiveTool();
   }
 
-  function cancelDeepResearchPlan() {
-    setPendingDeepResearchPlan(null);
+  function editToolPlan() {
+    if (!pendingToolPlan) return;
+    props.setTaskText(pendingToolPlan.displayPrompt);
+    setPendingToolPlan(null);
   }
 
-  function editDeepResearchPlan() {
-    if (!pendingDeepResearchPlan) return;
-    props.setTaskText(formatDeepResearchPlanForChat(pendingDeepResearchPlan.prompt, pendingDeepResearchPlan.draft));
-    setPendingDeepResearchPlan(null);
-  }
-
-  function startDeepResearchPlan() {
-    if (!pendingDeepResearchPlan) return;
-    const options = pendingDeepResearchPlan.options;
-    setPendingDeepResearchPlan(null);
+  function startToolPlan() {
+    if (!pendingToolPlan) return;
+    const options = pendingToolPlan.options;
+    setPendingToolPlan(null);
     submitStart(options);
   }
 
-  function deepResearchStartOptions(prompt: string, draft: DeepResearchPlanDraft, options?: ChatStartOptions): ChatStartOptions {
+  function toolStartOptions(tool: ChatToolMode, displayPrompt: string, draft: ChatToolPlanDraft, options?: ChatStartOptions): ChatStartOptions {
+    const model = chatToolModelOverride(tool);
+    const prompt = tool === "image" ? displayPrompt : formatToolPlanForChat(displayPrompt, tool, draft);
     return {
       ...options,
-      model: DEEP_RESEARCH_MODEL_KEY,
-      prompt: formatDeepResearchPlanForChat(prompt, draft),
-      tool: "research"
+      displayPrompt,
+      ...(model ? { model } : {}),
+      prompt,
+      tool
     };
   }
 
@@ -249,11 +274,16 @@ export function ChatComposer(props: ChatComposerProps) {
   }
 
   function clearActiveTool() {
-    if (chatToolModelOverride(activeTool) && modelBeforeTool) {
-      props.setSelectedChatModel(modelBeforeTool);
-    }
+    if (chatToolModelOverride(activeTool) && modelBeforeTool) props.setSelectedChatModel(modelBeforeTool);
     setActiveTool(null);
     setModelBeforeTool(null);
+  }
+
+  function clearInlineTool() {
+    if (slashToolMatch) props.setTaskText(slashToolMatch.prompt);
+    setPendingToolPlan(null);
+    setPlanningTool(null);
+    clearActiveTool();
   }
 
   function selectAttachmentTool(tool: ChatToolMode) {
@@ -274,11 +304,16 @@ export function ChatComposer(props: ChatComposerProps) {
     setAttachmentSheetOpen(false);
   }
 
+  function selectFileAttachment(attachment: ChatFileAttachment) {
+    setFileAttachments((current) => [...current, attachment].slice(-3));
+    setAttachmentSheetOpen(false);
+  }
+
   return (
     <View style={[styles.chatComposerShell, { paddingBottom: Math.max(props.bottomInset, 8) }]}>
       <ChatUsageLimitNotice messages={props.chatMessages} />
       {props.creditsLow ? <LowCreditsWarning onOpenTokens={props.onOpenTokens} percentRemaining={props.creditPercentRemaining} /> : null}
-      {slashMenuOpen ? <SlashCommandMenu commands={filteredCommands} skills={filteredSkills} onSelectCommand={(c) => runCommand(c, "")} onSelectSkill={(s) => props.setTaskText(`${s.slash} `)} /> : null}
+      {slashMenuOpen ? <SlashCommandMenu commands={filteredCommands} skills={filteredSkills} onSelectCommand={(command) => runCommand(command, "")} onSelectSkill={(skill) => props.setTaskText(`${skill.slash} `)} /> : null}
       <ModelMenu
         open={modelMenuOpen}
         accountPlan={props.accountPlan}
@@ -289,18 +324,12 @@ export function ChatComposer(props: ChatComposerProps) {
         onUpgrade={() => { setModelMenuOpen(false); setBillingSheetOpen(true); }}
       />
       <View style={[styles.chatComposer, composerFocused && styles.chatComposerFocused]}>
-        {visibleToolPill ? (
-          <View style={styles.chatToolPillRow}>
-            <View style={styles.chatToolPill}>
-              <Ionicons name={visibleToolPill === "image" ? "image-outline" : visibleToolPill === "web" ? "globe-outline" : "document-text-outline"} color="#F7F3FF" size={14} />
-              <Text numberOfLines={1} style={styles.chatToolPillText}>{chatToolLabels[visibleToolPill]}</Text>
-              <Pressable accessibilityLabel="Clear selected chat tool" onPress={clearActiveTool} style={styles.chatToolPillClear}>
-                <Ionicons name="close" color="#BDB5CE" size={14} />
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
-        <ChatImageAttachmentPills attachments={imageAttachments} onRemove={(id) => setImageAttachments((current) => current.filter((item) => item.id !== id))} />
+        <ChatImageAttachmentPills
+          fileAttachments={fileAttachments}
+          imageAttachments={imageAttachments}
+          onRemoveFile={(id) => setFileAttachments((current) => current.filter((item) => item.id !== id))}
+          onRemoveImage={(id) => setImageAttachments((current) => current.filter((item) => item.id !== id))}
+        />
         <TextInput
           value={props.taskText}
           onChangeText={props.setTaskText}
@@ -325,10 +354,18 @@ export function ChatComposer(props: ChatComposerProps) {
               onPress={() => setModelMenuOpen((open) => !open)}
               style={({ pressed }) => [styles.chatModelEffortControl, pressed && { opacity: 0.82 }]}
             >
-              {deepResearchActive ? (
-                <View style={styles.chatModelToolTag}>
-                  <Ionicons name="search-outline" color="#EDE2FF" size={13} />
-                  <Text numberOfLines={1} style={styles.chatModelToolTagText}>Deep Research</Text>
+              {inlineTool && inlineToolAccent ? (
+                <View style={[styles.chatModelToolTag, { backgroundColor: inlineToolAccent.backgroundColor, borderColor: inlineToolAccent.borderColor }]}>
+                  <Ionicons name={chatToolIcons[inlineTool]} color={inlineToolAccent.iconColor} size={13} />
+                  <Text numberOfLines={1} style={[styles.chatModelToolTagText, { color: inlineToolAccent.textColor }]}>{chatToolLabels[inlineTool]}</Text>
+                  <Pressable
+                    accessibilityLabel={`Clear ${chatToolLabels[inlineTool]}`}
+                    hitSlop={8}
+                    onPress={clearInlineTool}
+                    style={({ pressed }) => [styles.chatModelToolTagClear, pressed && { opacity: 0.58 }]}
+                  >
+                    <Ionicons name="close" color={inlineToolAccent.iconColor} size={11} />
+                  </Pressable>
                 </View>
               ) : (
                 <>
@@ -346,10 +383,14 @@ export function ChatComposer(props: ChatComposerProps) {
           </Pressable>
         </View>
       </View>
-      <View style={styles.chatComposerStatusRow}><PcPermissionControl onOpenConnect={props.onOpenPcConnection} projectId={props.projectId} /><ProjectMemoryBar chatMessages={props.chatMessages} projectId={props.projectId} taskText={props.taskText} /></View>
+      <View style={styles.chatComposerStatusRow}>
+        <PcPermissionControl onOpenConnect={props.onOpenPcConnection} projectId={props.projectId} />
+        <ProjectMemoryBar chatMessages={props.chatMessages} projectId={props.projectId} taskText={props.taskText} />
+      </View>
       <ChatAttachmentSheet
         visible={attachmentSheetOpen}
         onClose={() => setAttachmentSheetOpen(false)}
+        onSelectFileAttachment={selectFileAttachment}
         onSelectImageAttachment={selectImageAttachment}
         onSelectPrompt={selectAttachmentPrompt}
         onSelectTool={selectAttachmentTool}

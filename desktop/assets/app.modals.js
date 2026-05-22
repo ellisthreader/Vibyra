@@ -22,20 +22,42 @@ function renderPairModal() {
   });
 }
 const tokenModalViews = ["profile", "plans", "help"];
-const tokenModalTitles = { profile: "Profile", plans: "Plans", help: "Help" };
+const tokenModalTitles = { profile: "Profile", plans: "Change plan", help: "Help" };
 function openTokenModal(view) {
   tokenModalView = tokenModalViews.includes(view) ? view : "profile";
   nodes.tokenModal.classList.add("open");
   renderTokenModal();
   if (typeof refreshDesktopAccountSession === "function") {
     refreshDesktopAccountSession()
-      .then(() => { if (nodes.tokenModal.classList.contains("open")) renderTokenModal(); })
+      .then(() => { if (nodes.tokenModal.classList.contains("open") && tokenModalView !== "plans") renderTokenModal(); })
       .catch(() => {});
   }
 }
 function closeTokenModal() {
   nodes.tokenModal.classList.remove("open");
   tokenModalView = "profile";
+}
+function openProfileModal(focus = "") {
+  profileSectionSearch = "";
+  if (typeof setProfileFocus === "function") setProfileFocus(focus);
+  profileModalOpen = true;
+  topbarAccountMenuOpen = false;
+  topbarChatMenuOpen = false;
+  nodes.profileModal.classList.add("open");
+  renderTopbar();
+  renderProfileModal();
+  resetProfileModalScroll();
+  requestAnimationFrame(() => resetProfileModalScroll());
+}
+function closeProfileModal() {
+  profileModalOpen = false;
+  profileSectionSearch = "";
+  profileFocus = "";
+  profileSessionMenuId = "";
+  nodes.profileModal.classList.remove("open");
+}
+function resetProfileModalScroll() {
+  if (nodes.profileBody) nodes.profileBody.scrollTop = 0;
 }
 function setTokenModalView(view) {
   tokenModalView = tokenModalViews.includes(view) ? view : "profile";
@@ -51,13 +73,11 @@ function handleAccountAction(action) {
     return;
   }
   if (action === "profile") {
-    if (typeof setProfileFocus === "function") setProfileFocus("");
-    setPage("profile");
+    openProfileModal("");
     return;
   }
   if (action === "settings") {
-    if (typeof setProfileFocus === "function") setProfileFocus("preferences");
-    setPage("profile");
+    openProfileModal("preferences");
     return;
   }
   if (action === "help") {
@@ -109,10 +129,11 @@ function renderTokenModal() {
   const planLabel = `${tier.name}${cycle === "annual" && tier.key !== "free" ? " annual" : ""}`;
   const modalEl = nodes.tokenModal.querySelector(".modal");
   if (modalEl) modalEl.classList.toggle("modal--narrow", tokenModalView !== "plans");
+  if (modalEl) modalEl.classList.toggle("modal--billing-revamp", tokenModalView === "plans");
   const titleEl = document.getElementById("token-title");
   if (titleEl) titleEl.textContent = tokenModalTitles[tokenModalView] || "Profile";
   if (tokenModalView === "plans") {
-    nodes.tokenBody.innerHTML = `<button class="plans-back" type="button" data-token-view="profile" aria-label="Back to profile">${icon("chevron")}<span>Back</span></button><section class="membership-plans">${planTiers.map((plan) => planCard(plan, tier.key, cycle)).join("")}</section>`;
+    nodes.tokenBody.innerHTML = renderPlanPicker(tier.key, cycle);
   } else if (tokenModalView === "help") {
     nodes.tokenBody.innerHTML = `<section class="account-help"><p class="credits-line">Need a hand?</p><a class="account-help-link" href="mailto:support@vibyra.app?subject=Vibyra%20Desktop%20support" target="_blank" rel="noopener">${icon("send")}<span>Email support@vibyra.app</span></a><p class="credits-daily">For account, billing, and preferences, use the desktop Settings page or email support.</p></section>`;
   } else {
@@ -128,17 +149,8 @@ function renderTokenModal() {
     nodes.tokenBody.innerHTML = `<section class="account-identity">${avatar}<div class="account-identity-copy"><strong>${escapeHtml(account.name || "Desktop account")}</strong><span>${escapeHtml(planLabel)}</span></div></section><section class="account-credits"><p class="credits-line"><span>${formatCredits(used)} of ${formatCredits(allowance)} monthly credits</span></p><div class="${barClass}"><span style="width:${pct}%"></span></div>${dailyLine}</section>`;
   }
   document.querySelectorAll("[data-token-view]").forEach((button) => button.addEventListener("click", () => setTokenModalView(button.dataset.tokenView)));
+  if (typeof bindPlanPickerControls === "function") bindPlanPickerControls();
   document.querySelectorAll("[data-billing-plan]").forEach((button) => button.addEventListener("click", () => startDesktopBilling(button.dataset.billingPlan)));
-}
-function planCard(plan, currentKey, cycle) {
-  const active = plan.key === currentKey;
-  const credits = cycle === "annual" && plan.key !== "free" ? plan.annualCredits : plan.monthlyCredits;
-  const price = cycle === "annual" && plan.annualPrice ? plan.annualPrice : plan.price;
-  const annual = plan.key !== "free" && plan.annualCredits !== plan.monthlyCredits ? `<small>Annual: ${formatCredits(plan.annualCredits)} credits / month</small>` : "";
-  return `<article class="membership-plan ${active ? "active" : ""}"><div class="membership-plan-head"><span><strong>${escapeHtml(plan.name)}</strong><small>${escapeHtml(price)}</small></span>${plan.badge ? `<em>${escapeHtml(plan.badge)}</em>` : active ? `<em>Current</em>` : ""}</div><p>${formatCredits(credits)} credits / month${annual}</p><ul>${plan.perks.map((perk) => `<li>${escapeHtml(perk)}</li>`).join("")}</ul>${active || plan.key === "free" ? "" : `<button class="secondary-button compact-button" data-billing-plan="${escapeAttribute(plan.key)}" type="button">Upgrade</button>`}</article>`;
-}
-function startDesktopBilling(plan) {
-  if (typeof startDesktopBillingCheckout === "function") startDesktopBillingCheckout(plan);
 }
 function manageDesktopBilling() {
   if (typeof openDesktopBillingPortal === "function") openDesktopBillingPortal();

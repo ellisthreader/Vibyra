@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "../../../styles/theme";
@@ -22,6 +22,7 @@ export function CommunityPostDetail({
   onAddComment,
   onCommentDraftChange,
   onOpen,
+  onReport,
   onToggleBookmark,
   onToggleLike,
   opened,
@@ -39,6 +40,7 @@ export function CommunityPostDetail({
   onCommentDraftChange: (text: string) => void;
   onToggleBookmark: () => void;
   onOpen: () => void;
+  onReport: () => void;
   onToggleLike: () => void;
   opened: boolean;
   post: CommunityPost;
@@ -85,11 +87,19 @@ export function CommunityPostDetail({
           <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : colors.text} size={21} />
           <Text style={styles.communityDetailIconText}>{post.likes}</Text>
         </Pressable>
+        <Pressable accessibilityLabel="Report app" accessibilityRole="button" style={styles.communitySmallAction} onPress={onReport}>
+          <Ionicons name="flag-outline" color={colors.text} size={20} />
+        </Pressable>
       </View>
 
       <View style={styles.communityDetailScreenshots}>
         <Text style={styles.communityDetailPanelTitle}>Preview</Text>
-        <View style={styles.communityScreenshotGrid}>
+        <ScrollView
+          contentContainerStyle={styles.communityScreenshotGrid}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.communityScreenshotRail}
+        >
           {post.screenshots.map((screenshot, index) => (
             <View key={screenshot + "-" + index} style={styles.communityScreenshotPreview}>
               {post.screenshotUrls?.[index]
@@ -98,7 +108,7 @@ export function CommunityPostDetail({
               <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot}</Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       <View style={styles.communityAboutBlock}>

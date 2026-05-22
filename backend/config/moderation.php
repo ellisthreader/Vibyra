@@ -1,12 +1,15 @@
 <?php
 
 return [
-    'enabled' => env('OPENAI_MODERATION_ENABLED', true),
+    'enabled' => env('MODERATION_ENABLED', true),
+    'local_enabled' => env('LOCAL_MODERATION_ENABLED', true),
+    'remote_enabled' => env('OPENAI_MODERATION_ENABLED', true),
     'fail_closed' => env('OPENAI_MODERATION_FAIL_CLOSED', true),
     'timeout_seconds' => env('OPENAI_MODERATION_TIMEOUT', 12),
     'max_text_characters' => 12000,
     'max_image_data_url_characters' => 7000000,
     'publish_reviewer_emails' => array_values(array_filter(array_map('trim', explode(',', env('VIBYRA_PUBLISH_REVIEWER_EMAILS', ''))))),
+    'publish_force_approve_under_review' => env('PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW', false),
     'publish_ai_review' => [
         'enabled' => env('PUBLISH_REVIEW_AI_ENABLED', true),
         'model' => env('PUBLISH_REVIEW_AI_MODEL', 'openai/gpt-5.4-nano'),

@@ -32,6 +32,8 @@ Mobile quota visibility lives in `UsageLimitsSection.tsx`, rendered between the 
 
 `AppContext` exposes `signOut()` and `updateProfile({ name, email, machineName, profileImageUri })` for Profile. Toggle/appearance/language state is local-only unless wired to persistence.
 
+Mobile auth requests in `src/context/useAuthContextActions.ts` include a platform device label (`Vibyra iPhone`, `Vibyra Android`, `Vibyra Web`, or fallback `Vibyra App`) plus the persisted `installId`. The backend stores this as `VibyraSession.device_name`, and desktop Account settings uses it when listing signed-in phones/devices.
+
 Profile avatar uploads are handled in `ProfileHero.tsx` with `expo-image-picker` from the pencil/image button next to the avatar. The selected local URI is stored as `profileImageUri` in app-state persistence through `useAppState` / `appStatePersistence`; it is not posted to `/api/account/profile`, which remains name/email only. Keep the profile hero's level summary as a plain inline row under the user name: level, map icon button directly beside the level label, then current/next XP text; do not box it or add a hero progress bar.
 
 Avatar display uses `src/screens/workspace/inline/AccountAvatar.tsx`: if `profileImageUri` exists, render the photo directly with no decorative border/background; otherwise render a Google-style colored circle using the first letter of the user's name. Keep the top account button, account menu, and Profile hero on this shared behavior.

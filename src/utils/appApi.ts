@@ -25,9 +25,30 @@ export class AppApiError extends Error {
 }
 
 export function getAppApiUrl() {
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return normalizeAgentUrl(process.env.EXPO_PUBLIC_API_URL);
-  }
+  if (runtimeAppApiUrl) return runtimeAppApiUrl;
+  return defaultAppApiUrl();
+}
+
+export function rememberAppApiUrl(url: string) {
+  runtimeAppApiUrl = normalizeAgentUrl(url);
+}
+
+export function getAppApiCandidateUrls() {
+  const configured = defaultAppApiUrl();
+  const expoHost = getExpoHost();
+  const webHost = getWebLocationHost();
+  const candidates = [
+    configured,
+    expoHost ? `http://${expoHost}:8000` : "",
+    webHost ? `http://${webHost}:8000` : "",
+    Platform.OS === "web" ? "http://127.0.0.1:8000" : ""
+  ].map(normalizeAgentUrl).filter(Boolean);
+
+  return Array.from(new Set(candidates));
+}
+
+function defaultAppApiUrl() {
+  if (process.env.EXPO_PUBLIC_API_URL) return normalizeAgentUrl(process.env.EXPO_PUBLIC_API_URL);
 
   const host = getExpoHost();
   if (host && Platform.OS !== "web") {
@@ -37,6 +58,7 @@ export function getAppApiUrl() {
   return "http://127.0.0.1:8000";
 }
 
+let runtimeAppApiUrl = "";
 const BACKEND_OFFLINE_COOLDOWN_MS = 60000;
 let backendOfflineUntil = 0;
 let backendKnownOnline = false;
@@ -53,6 +75,21 @@ export function markBackendOffline() {
 export function markBackendOnline() {
   backendOfflineUntil = 0;
   backendKnownOnline = true;
+}
+
+export async function resolveReachableAppApiUrl(timeoutMs = 3500) {
+  for (const candidate of getAppApiCandidateUrls()) {
+    try {
+      const response = await fetchWithTimeout(`${candidate}/api/skills`, { headers: { Accept: "application/json" } }, timeoutMs);
+      if (!response.ok) continue;
+      rememberAppApiUrl(candidate);
+      markBackendOnline();
+      return candidate;
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  return getAppApiUrl();
 }
 
 function shouldSkipBackgroundRequest() {
@@ -91,7 +128,8 @@ export async function appApiRequest<T>(
   token?: string,
   meta: AppApiRequestMeta = {}
 ) {
-  const url = `${getAppApiUrl()}${endpoint}`;
+  const apiUrl = getAppApiUrl();
+  const url = `${apiUrl}${endpoint}`;
 
   if (meta.background && shouldSkipBackgroundRequest()) {
     throw new BackendOfflineError(url);
@@ -102,21 +140,23 @@ export async function appApiRequest<T>(
   let response: Response;
   try {
     if (endpoint === "/api/chat" && !backendKnownOnline) {
-      await assertBackendReachableBeforeChat(getAppApiUrl(), markBackendOnline, markBackendOffline);
+      await assertBackendReachableBeforeChat(apiUrl, markBackendOnline, markBackendOffline);
     }
     response = await fetchWithTimeout(url, {
       ...options,
       headers
     }, requestTimeoutFor(endpoint));
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "unknown error";
-    const timedOut = error instanceof TimeoutError || reason.toLowerCase().includes("timed out");
-    if (timedOut && endpoint === "/api/chat") {
-      throw new Error("Vibyra AI chat timed out while generating the preview edit. Try a smaller change or retry.");
+    if (!meta.background) {
+      const retry = await retryAppApiRequestOnFallbackUrl(endpoint, options, headers, apiUrl);
+      if (retry) {
+        response = retry;
+      } else {
+        throw appApiReachabilityError(endpoint, url, error);
+      }
+    } else {
+      throw appApiReachabilityError(endpoint, url, error);
     }
-    const aborted = reason.toLowerCase().includes("abort");
-    if (!aborted && !timedOut) markBackendOffline();
-    throw new Error(getBackendReachabilityMessage(url, reason, timedOut || aborted));
   }
 
   if (response.status >= 500 && endpoint !== "/api/chat/research-plan") {
@@ -140,11 +180,46 @@ export async function appApiRequest<T>(
   return data as T;
 }
 
+function appApiReachabilityError(endpoint: string, url: string, error: unknown) {
+  const reason = error instanceof Error ? error.message : "unknown error";
+  const timedOut = error instanceof TimeoutError || reason.toLowerCase().includes("timed out");
+  if (timedOut && endpoint === "/api/chat") {
+    return new Error("Vibyra AI chat timed out while generating the preview edit. Try a smaller change or retry.");
+  }
+  const aborted = reason.toLowerCase().includes("abort");
+  if (!aborted && !timedOut) markBackendOffline();
+  return new Error(getBackendReachabilityMessage(url, reason, timedOut || aborted));
+}
+
+async function retryAppApiRequestOnFallbackUrl(
+  endpoint: string,
+  options: RequestInit,
+  headers: Record<string, string>,
+  failedApiUrl: string
+) {
+  for (const candidate of getAppApiCandidateUrls()) {
+    if (!candidate || candidate === failedApiUrl) continue;
+    try {
+      const response = await fetchWithTimeout(`${candidate}${endpoint}`, { ...options, headers }, requestTimeoutFor(endpoint));
+      rememberAppApiUrl(candidate);
+      return response;
+    } catch {
+      // Try the next candidate; the original error remains the user-facing one.
+    }
+  }
+  return null;
+}
+
+function getWebLocationHost() {
+  if (Platform.OS !== "web") return "";
+  return (globalThis as { location?: { hostname?: string } }).location?.hostname ?? "";
+}
+
 function requestTimeoutFor(endpoint: string) {
   if (endpoint === "/api/chat") return 240000;
   if (endpoint === "/api/chat/research-plan") return 25000;
   if (endpoint === "/api/community/assets/generate") return 100000;
-  if (endpoint === "/api/community/projects") return 30000;
+  if (endpoint === "/api/community/projects") return 5000;
   return 15000;
 }
 

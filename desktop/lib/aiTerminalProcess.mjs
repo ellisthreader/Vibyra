@@ -1,37 +1,42 @@
 import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync } from "node:fs";
-import { delimiter } from "node:path";
+import { delimiter, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
+
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const vibyraTerminalCli = join(moduleDir, "aiTerminalOpenRouterCli.mjs");
 
 const AGENT_CONFIG = {
   shell: { label: "Shell", command: "", args: [], env: [], install: "" },
+  vibyra: { label: "Vibyra", command: process.execPath, args: [vibyraTerminalCli], env: ["VIBYRA_NODE"], install: "Install Node.js to run Vibyra OpenRouter terminals." },
   codex: { label: "Codex", command: "codex", args: ["--no-alt-screen"], env: ["VIBYRA_CODEX_CLI", "CODEX_CLI_PATH"], install: "Install the Codex CLI or set VIBYRA_CODEX_CLI to its executable path." },
   claude: { label: "Claude", command: "claude", args: [], env: ["VIBYRA_CLAUDE_CLI", "CLAUDE_CLI_PATH"], install: "Install Claude Code or set VIBYRA_CLAUDE_CLI to its executable path." },
   gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." }
 };
 
-export function spawnAiTerminalProcess({ agent = "codex", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
+export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", projectId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
   const shell = process.env.SHELL || "/bin/bash";
   const status = aiTerminalAgentStatus(agent);
   const launch = launchCommand(status, shell);
-  const env = { ...process.env, TERM: process.env.TERM || "xterm-256color", COLORTERM: process.env.COLORTERM || "truecolor", COLUMNS: String(cols), LINES: String(rows) };
+  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, projectId, cols, rows });
+  const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {
-    return spawnWithScript({ command: launch, cwd, env, cols, rows, onData, onExit });
+    return spawnWithScript({ command, cwd, env, cols, rows, onData, onExit });
   }
 
-  const child = status.commandPath
-    ? spawn(status.commandPath, status.args || [], { cwd, env, stdio: "pipe" })
-    : spawn(shell, ["-l"], { cwd, env, stdio: "pipe" });
+  const child = spawn(shell, ["-lc", command], { cwd, env, stdio: "pipe" });
   attachProcess(child, onData, onExit);
   return child;
 }
 
 export function listAiTerminalAgentStatuses() {
-  return ["codex", "claude", "gemini", "shell"].map(aiTerminalAgentStatus);
+  return ["vibyra", "codex", "claude", "gemini", "shell"].map(aiTerminalAgentStatus);
 }
 
-export function aiTerminalAgentStatus(agent = "codex") {
-  const key = AGENT_CONFIG[agent] ? agent : "codex";
+export function aiTerminalAgentStatus(agent = "vibyra") {
+  const key = AGENT_CONFIG[agent] ? agent : "vibyra";
   const config = AGENT_CONFIG[key];
   const commandPath = resolveAgentExecutable(config);
   return {
@@ -46,7 +51,7 @@ export function aiTerminalAgentStatus(agent = "codex") {
 }
 
 function spawnWithScript({ command, cwd, env, cols, rows, onData, onExit }) {
-  const ptyCommand = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)}; exec ${command}`;
+  const ptyCommand = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)}; ${command}`;
   const child = spawn("/usr/bin/script", ["-qf", "-e", "-E", "never", "-c", ptyCommand, "/dev/null"], { cwd, env, stdio: "pipe" });
   attachProcess(child, onData, onExit);
   return child;
@@ -65,6 +70,7 @@ function resolveAgentExecutable(config) {
     const value = process.env[key]?.trim();
     if (value && canExecute(value)) return value;
   }
+  if (config.command.includes("/") && canExecute(config.command)) return config.command;
   for (const dir of String(process.env.PATH || "").split(delimiter)) {
     const path = `${dir}/${config.command}`;
     if (canExecute(path)) return path;

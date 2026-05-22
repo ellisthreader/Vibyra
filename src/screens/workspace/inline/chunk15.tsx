@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { AppWebView } from "../../../components/AppWebView";
+import { PublicDemoWebView } from "../../../components/PublicDemoWebView";
 import { communityDetailAccent } from "../data/community";
 import { styles } from "../styles";
 import type { CommunityComment, CommunityPost } from "../types";
@@ -16,6 +16,8 @@ export function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post
   const { height } = useWindowDimensions();
   const [reloadVersion, setReloadVersion] = useState(0);
   const previewHeight = Math.max(520, height - 146);
+  const hostingStatus = communityHostingStatus(post);
+  const demoUrl = post.hostedDemoUrl || post.previewUrl || post.publicUrl || post.appUrl;
 
   return (
     <View style={[styles.communityAppPreviewPage, { minHeight: previewHeight }]}>
@@ -25,15 +27,16 @@ export function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post
           <View style={styles.communityOpenedAppCopy}>
             <Text style={styles.communityOpenedAppKicker}>{opened ? "Opened app" : "App preview"}</Text>
             <Text numberOfLines={1} style={styles.communityOpenedAppTitle}>{formatCommunityTitle(post.title)}</Text>
+            {hostingStatus ? <Text numberOfLines={1} style={styles.communityOpenedAppSubtitle}>{hostingStatus}</Text> : null}
           </View>
         </View>
         <Pressable accessibilityLabel="Reload app preview" accessibilityRole="button" onPress={() => setReloadVersion((value) => value + 1)} style={styles.communityAppPreviewRefresh}>
           <Ionicons name="refresh" color="#F6F2FF" size={19} />
         </Pressable>
       </View>
-      {post.appUrl ? (
+      {demoUrl || post.previewHtml ? (
         <View style={styles.communityAppPreviewFrame}>
-          <AppWebView reloadKey={(post.id.length * 31) + reloadVersion} url={post.appUrl} />
+          <PublicDemoWebView html={post.previewHtml} reloadKey={(post.id.length * 31) + reloadVersion} url={demoUrl} />
         </View>
       ) : (
         <View style={styles.communityDemoPanel}>
@@ -52,4 +55,13 @@ export function CommunityAppExperience({ post }: { post: CommunityPost }) {
 
 export function formatCommunityTitle(title: string) {
   return title.replace(/\b\w/g, (letter) => letter.toUpperCase()).replace(/\bAi\b/g, "AI").replace(/\bSaas\b/g, "SaaS");
+}
+
+function communityHostingStatus(post: CommunityPost) {
+  const status = post.hostedDemoStatus || post.deploymentStatus;
+  if (status === "ready") return "Hosted demo";
+  if (status === "pending") return "Hosting pending";
+  if (status === "failed") return post.hostedDemoMessage || "Hosted demo unavailable";
+  if (status === "unavailable") return "Static public preview";
+  return post.appUrl ? "Public preview" : "";
 }

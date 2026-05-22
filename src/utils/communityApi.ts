@@ -1,5 +1,6 @@
 import { CommunityComment, CommunityPost } from "../screens/workspace/types";
 import { appApiRequest, getAppApiUrl } from "./appApi";
+import type { HostedDemoPayload } from "./hostedDemo";
 
 export type CommunityProjectsResponse = {
   ok: boolean;
@@ -11,6 +12,10 @@ export type PublishProjectResponse = {
   isPublic?: boolean;
   ok: boolean;
   project: CommunityPost;
+  hostedDemo?: HostedDemoPayload | null;
+  hostedDemoMessage?: string | null;
+  hostedDemoStatus?: string | null;
+  hostedDemoUrl?: string | null;
   publishStatus?: ProjectPublishStatus;
   reviewSummary?: string | null;
   reviewStatus?: string;
@@ -21,8 +26,14 @@ export type PublishProjectResponse = {
 
 export type PublishProjectVisibility = "public" | "unlisted" | "private";
 export type ProjectPublishStatus = {
+  appUrl?: string;
+  deploymentStatus?: string | null;
+  hostingMode?: string | null;
   isPublic?: boolean;
   project?: CommunityPost;
+  hostedDemoMessage?: string | null;
+  hostedDemoStatus?: string | null;
+  hostedDemoUrl?: string | null;
   reviewReason?: string | null;
   reviewSummary?: string | null;
   reviewStatus?: string;
@@ -39,6 +50,10 @@ export type PublishProjectResult = {
   isPublic?: boolean;
   outcome: PublishProjectOutcome;
   project: CommunityPost;
+  hostedDemo?: HostedDemoPayload | null;
+  hostedDemoMessage?: string | null;
+  hostedDemoStatus?: string | null;
+  hostedDemoUrl?: string | null;
   publishStatus?: ProjectPublishStatus;
   reviewSummary?: string | null;
   reviewStatus?: string;
@@ -48,10 +63,7 @@ export type PublishProjectResult = {
   visibility: PublishProjectVisibility;
 };
 
-export type ProjectPublishStatusesResponse = {
-  ok: boolean;
-  projects: ProjectPublishStatus[];
-};
+type ProjectPublishStatusesResponse = { ok: boolean; projects: ProjectPublishStatus[]; };
 
 export type CommunityCommentResponse = {
   ok: boolean;
@@ -76,10 +88,17 @@ export type GeneratedPublishAssetResponse = {
 };
 
 export function normalizeCommunityPost(post: CommunityPost): CommunityPost {
+  const demoUrl = post.hostedDemoUrl || post.previewUrl || post.publicUrl;
+  const appUrl = post.appUrl || demoUrl || "";
   return {
     ...post,
-    appUrl: absoluteApiUrl(post.appUrl),
+    appUrl: absoluteApiUrl(appUrl),
     accent: post.accent || "#8B35FF",
+    hostedDemoStatus: post.hostedDemoStatus ?? post.deploymentStatus,
+    hostedDemoMessage: post.hostedDemoMessage,
+    hostedDemoUrl: demoUrl ? absoluteApiUrl(demoUrl) : demoUrl,
+    previewUrl: post.previewUrl ? absoluteApiUrl(post.previewUrl) : post.previewUrl,
+    publicUrl: post.publicUrl ? absoluteApiUrl(post.publicUrl) : post.publicUrl,
     logo: post.logo || "default",
     logoImageUrl: post.logoImageUrl ? absoluteApiUrl(post.logoImageUrl) : post.logoImageUrl,
     preview: post.preview || "analytics",
@@ -105,6 +124,7 @@ export async function fetchProjectPublishStatuses(authToken: string) {
 export async function publishProject(payload: {
   authToken: string;
   description: string;
+  hostedDemo?: HostedDemoPayload | null;
   logoImageUrl?: string;
   previewHtml: string;
   projectId: string;
@@ -122,10 +142,15 @@ export async function publishProject(payload: {
     body: JSON.stringify(body)
   }, authToken);
   const visibility = body.visibility ?? "public";
+  const hostedDemoUrl = result.hostedDemoUrl ?? result.hostedDemo?.url;
   return {
     isPublic: result.isPublic,
     outcome: publishOutcome(visibility, result),
     project: normalizeCommunityPost(result.project),
+    hostedDemo: result.hostedDemo,
+    hostedDemoMessage: result.hostedDemoMessage ?? result.hostedDemo?.message,
+    hostedDemoStatus: result.hostedDemoStatus ?? result.hostedDemo?.status,
+    hostedDemoUrl: hostedDemoUrl ? absoluteApiUrl(hostedDemoUrl) : hostedDemoUrl,
     publishStatus: normalizePublishStatus(result.publishStatus),
     reviewSummary: result.reviewSummary,
     reviewStatus: result.reviewStatus,
@@ -185,6 +210,7 @@ function normalizePublishStatus(status?: ProjectPublishStatus) {
   if (!status) return undefined;
   return {
     ...status,
+    hostedDemoUrl: status.hostedDemoUrl ? absoluteApiUrl(status.hostedDemoUrl) : status.hostedDemoUrl,
     project: status.project ? normalizeCommunityPost(status.project) : status.project
   };
 }

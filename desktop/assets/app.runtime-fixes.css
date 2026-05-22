@@ -95,20 +95,24 @@ body.electron-shell .content.chat-content {
 
 .terminal-focus {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 
+.terminal-focus-hidden {
+  display: none !important;
+}
+
 .terminal-focus.has-notice {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .terminal-tile {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .terminal-tile.has-notice {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
 .grid-mode .terminal-stage {
@@ -155,6 +159,7 @@ body.electron-shell .content.chat-content {
   box-sizing: border-box;
   height: 100%;
   overflow: hidden;
+  padding: 12px 14px;
   width: 100%;
 }
 
@@ -162,6 +167,7 @@ body.electron-shell .content.chat-content {
   height: 100%;
   max-width: 100%;
   padding: 0;
+  width: 100%;
 }
 
 .terminal-xterm .xterm-screen,

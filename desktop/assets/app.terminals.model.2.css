@@ -63,13 +63,13 @@
 }
 .terminal-model-option .provider-logo {
   border-radius: 8px;
-  height: 30px;
-  width: 30px;
+  height: 32px;
+  width: 32px;
 }
 .terminal-model-option .provider-logo img,
 .terminal-model-option .provider-logo svg {
-  height: 18px;
-  width: 18px;
+  height: 23px;
+  width: 23px;
 }
 .terminal-model-badge,
 .terminal-model-lock {

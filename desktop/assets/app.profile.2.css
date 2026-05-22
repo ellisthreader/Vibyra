@@ -1,6 +1,4 @@
-.profile-info-tile strong {
-  line-height: 30px;
-}
+.profile-info-tile strong { line-height: 30px; }
 .profile-info-tile small {
   color: var(--subtle);
   font-size: 13px;
@@ -15,11 +13,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   padding: 0 0 22px;
 }
-.profile-plan-panel div {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
+.profile-plan-panel div { display: grid; gap: 5px; min-width: 0; }
 .profile-plan-panel h2 {
   color: var(--text);
   font-size: 30px;
@@ -79,24 +73,14 @@
 }
 .profile-action-row + .profile-action-row { border-top: 1px solid rgba(255, 255, 255, 0.055); }
 .profile-action-row:hover { background: transparent; }
-.profile-action-row:hover .profile-row-icon {
-  color: var(--accent-2);
-}
-.profile-action-row--static {
-  cursor: default;
-}
+.profile-action-row:hover .profile-row-icon { color: var(--text); }
+.profile-action-row--static { cursor: default; }
 .profile-action-row--danger .profile-row-icon,
 .profile-action-row--danger .profile-action-copy strong {
   color: var(--danger);
 }
-.profile-action-row--danger:hover {
-  background: transparent;
-}
-.profile-action-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
+.profile-action-row--danger:hover { background: transparent; }
+.profile-action-copy { display: grid; gap: 2px; min-width: 0; }
 .profile-action-copy strong {
   color: var(--text);
   font-size: 16px;
@@ -124,20 +108,14 @@
   transition: color 120ms ease;
   width: 36px;
 }
-.profile-row-icon svg {
-  height: 20px;
-  width: 20px;
-}
+.profile-row-icon svg { height: 20px; width: 20px; }
 .profile-row-chevron {
   align-items: center;
   color: var(--subtle);
   display: inline-flex;
   opacity: 0.72;
 }
-.profile-row-chevron svg {
-  height: 16px;
-  width: 16px;
-}
+.profile-row-chevron svg { height: 16px; width: 16px; }
 .profile-row-pill {
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -167,9 +145,7 @@
   }
   .profile-section-card { width: 100%; }
   .profile-section-title { font-size: 22px; line-height: 28px; margin-bottom: 8px; }
-  .profile-section-identity {
-    display: none;
-  }
+  .profile-section-identity { display: none; }
   .profile-section-list {
     display: grid;
     gap: 6px;

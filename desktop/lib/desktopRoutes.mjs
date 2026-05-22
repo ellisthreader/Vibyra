@@ -8,6 +8,7 @@ import { openDesktopPreview } from "./desktopPreview.mjs";
 import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { readBody, send, sendFile } from "./http.mjs";
+import { openRouterModelPayload } from "./openRouterModels.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { appState, markPhoneConnected, publicState } from "./state.mjs";
@@ -44,6 +45,11 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/projects") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { projects: await discoverProjects() });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/openrouter-models") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await openRouterModelPayload());
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/chat") {
@@ -85,7 +91,7 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/session") {
     if (!authorizeDesktopUi(req, res)) return true;
     const token = bearerToken(req.headers.authorization);
-    const account = await verifyAndSetDesktopAccount(token);
+    const account = await verifyAndSetDesktopAccount(token, req.headers["x-vibyra-public-ip"]);
     send(res, 200, { ok: true, user: account });
     return true;
   }

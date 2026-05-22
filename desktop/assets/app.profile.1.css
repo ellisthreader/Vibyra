@@ -47,10 +47,7 @@
   line-height: 22px;
   max-width: 720px;
 }
-.profile-section-rail {
-  position: sticky;
-  top: 82px;
-}
+.profile-section-rail { position: sticky; top: 82px; }
 .profile-section-card {
   display: grid;
   gap: 12px;
@@ -65,9 +62,7 @@
   line-height: 30px;
   margin: 0 0 10px;
 }
-.profile-section-identity {
-  display: none;
-}
+.profile-section-identity { display: none; }
 .profile-section-identity div {
   display: grid;
   gap: 2px;
@@ -87,10 +82,7 @@
   font-weight: 540;
   line-height: 15px;
 }
-.profile-section-list {
-  display: grid;
-  gap: 4px;
-}
+.profile-section-list { display: grid; gap: 4px; }
 .profile-section-button {
   align-items: center;
   background: transparent;
@@ -108,19 +100,10 @@
   transition: background-color 120ms ease, color 120ms ease;
   width: 100%;
 }
-.profile-section-button svg {
-  height: 19px;
-  width: 19px;
-}
-.profile-section-button:hover,
-.profile-section-button.active {
-  color: var(--text);
-}
-.profile-section-button:hover { background: rgba(255, 255, 255, 0.035); }
-.profile-section-button.active { background: rgba(109, 59, 255, 0.16); }
-.profile-section-button.active svg {
-  color: var(--accent-2);
-}
+.profile-section-button svg { height: 19px; width: 19px; }
+.profile-section-button:hover { background: rgba(255, 255, 255, 0.035); color: var(--text); }
+.profile-section-button.active { background: rgba(255, 255, 255, 0.055); color: var(--text); }
+.profile-section-button.active svg { color: var(--text); }
 .profile-nav-avatar,
 .profile-detail-avatar {
   align-items: center;
@@ -191,9 +174,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   gap: 0;
 }
-.profile-content-grid--two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
+.profile-content-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .profile-info-tile {
   color: var(--text);
   cursor: pointer;
@@ -205,9 +186,7 @@
   transition: color 120ms ease;
 }
 .profile-info-tile + .profile-info-tile { padding-left: 18px; }
-.profile-info-tile:hover {
-  color: var(--accent-2);
-}
+.profile-info-tile:hover { color: var(--text); }
 .profile-info-tile span,
 .profile-plan-panel span {
   color: var(--muted);

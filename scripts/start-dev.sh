@@ -28,6 +28,15 @@ sync_api_env() {
   local env_file=".env"
   local lan_ip="${EXPO_PUBLIC_API_HOST:-}"
 
+  if [[ "${EXPO_PUBLIC_API_MODE:-}" != "local" && -f "$env_file" ]]; then
+    local configured
+    configured="$(grep -m1 "^EXPO_PUBLIC_API_URL=" "$env_file" | cut -d= -f2- || true)"
+    if [[ "$configured" == https://* ]]; then
+      echo "Using EXPO_PUBLIC_API_URL=$configured"
+      return 0
+    fi
+  fi
+
   if [[ -z "$lan_ip" ]]; then
     lan_ip="$(detect_lan_ip || true)"
   fi

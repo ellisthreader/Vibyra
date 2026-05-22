@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { GeneratedApp, Project } from "../../../types/domain";
 import { type ChatStartOptions } from "../../../types/chatTools";
-import { bareNameCandidate, extractFileName, extractFolderName, isFindFolderIntent, isOpenFileIntent, isProjectLookupOnly } from "../helpers/chatPrompts";
+import { bareNameCandidate, extractFolderName, isFindFolderIntent, isOpenFileIntent } from "../helpers/chatPrompts";
 import { confusionReply, greetingReply, helpReply, isConfusion, isGreeting, isHelpRequest, isSmallTalk, projectSmallTalkReply, smallTalkReply } from "../helpers/chatReplies";
 import { WorkspaceState } from "./useWorkspaceState";
 import { useWorkspaceChatRuntime } from "./workspaceChatRuntime";
@@ -13,6 +13,8 @@ import { isUnsupportedTerminalCommandIntent, parseTerminalCommandIntent, unsuppo
 import { createWorkspaceToolHandlers } from "./workspaceToolActions";
 import { createWorkspaceCommandHandlers } from "./workspaceCommandActions";
 import { createWorkspacePromptReplyHandlers } from "./workspacePromptReplyHandlers";
+import { createWorkspaceFileFolderHandlers } from "./workspacePromptFileFolderActions";
+import { detachedAttachmentDecision } from "./workspacePromptRouting";
 
 type Runtime = ReturnType<typeof useWorkspaceChatRuntime>;
 type ReplyFn = (reply: string, project?: Project, preview?: GeneratedApp) => void;
@@ -30,80 +32,33 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
     pendingTerminalRef,
     promptForDesktopConnection: addDesktopConnectionPrompt
   });
-
-  const runFolderSearch = useCallback(async (prompt: string, query: string, lookupOnly: boolean, detached: boolean) => {
-    const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
-      ? runtime.addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, runtime.activeProjectTarget(project), preview);
-
-    const matches = await app.searchDesktopFolders(query);
-    if (matches.length === 0) {
-      reply(`I couldn't find a folder matching "${query}". Try the exact folder name, or open the Projects tab to browse.`);
-      return;
-    }
-    const onTop = matches[0]?.path && matches[0].path === app.selectedProject?.path;
-    if (onTop) {
-      if (lookupOnly) app.addLocalChatReply(prompt, `${matches[0].name} is already the selected project.`, runtime.activeProjectTarget(matches[0]));
-      else await app.startAgent(runtime.activeProjectTarget(matches[0]));
-      return;
-    }
-    if (lookupOnly || detached) {
-      const top = matches[0];
-      const replyText = matches.length > 1
-        ? `I found ${matches.length} folders matching "${query}". Open ${top.name}?`
-        : `Found ${top.name} on your desktop. Open it for this chat?`;
-      detached
-        ? runtime.addDetachedChatProposal(prompt, replyText, matches, query)
-        : app.addLocalChatProposal(prompt, replyText, matches, runtime.activeProjectTarget(), query);
-      return;
-    }
-    s.setFolderConfirm({ query: prompt, matches });
-  }, [app, runtime, s]);
-
-  const runFileOpen = useCallback(async (prompt: string, query: string, detached: boolean) => {
-    const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
-      ? runtime.addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, runtime.activeProjectTarget(project), preview);
-    if (!app.connection) { addDesktopConnectionPrompt(prompt, query, detached); return; }
-    if (detached) {
-      reply(`I can open "${query}", but first attach a project chat. Ask me to find the folder on your PC, then open the file from that project.`);
-      return;
-    }
-    const target = runtime.activeProjectTarget();
-    const normalized = query.toLowerCase();
-    const file = app.files.filter((item) => item.id !== "empty" && (item.name.toLowerCase().includes(normalized) || item.path.toLowerCase().includes(normalized)))
-      .sort((a, b) => Number(b.name.toLowerCase() === normalized) - Number(a.name.toLowerCase() === normalized))[0];
-    if (!file) {
-      reply(`I couldn't find a loaded file matching "${query}" in ${target.project.name}. Open the project first, then try the exact file name or path.`);
-      return;
-    }
-    s.setPreviewApp(null);
-    await app.selectFile(file.id);
-    reply(`Opened ${file.path} in ${target.project.name}.`, target.project);
-  }, [app, runtime, s]);
-
+  const fileFolderHandlers = createWorkspaceFileFolderHandlers(s, runtime, addDesktopConnectionPrompt);
+  const { runFileOpen, runFolderSearch } = fileFolderHandlers;
   const replyHandlers = createWorkspacePromptReplyHandlers(s, runtime, runFolderSearch, addDesktopConnectionPrompt);
 
   const onStartChat = useCallback(async (promptOverride?: string | ChatStartOptions) => {
     const rawPrompt = typeof promptOverride === "string" ? promptOverride : (promptOverride?.prompt ?? app.taskText);
     const tool = typeof promptOverride === "object" ? promptOverride?.tool : undefined;
+    const fileAttachments = typeof promptOverride === "object" ? (promptOverride?.fileAttachments ?? []) : [];
     const imageAttachments = typeof promptOverride === "object" ? (promptOverride?.imageAttachments ?? []) : [];
     const modelOverride = typeof promptOverride === "object" ? promptOverride?.model : undefined;
+    const displayPrompt = typeof promptOverride === "object" ? promptOverride?.displayPrompt : undefined;
     const prompt = rawPrompt.trim();
+    const visiblePrompt = (displayPrompt ?? prompt).trim();
     if (!prompt || submitLockRef.current) return;
     submitLockRef.current = true;
     const projectChat = Boolean(s.selectedChatId?.startsWith("project-"));
     const detached = !projectChat;
     const reply = (r: string, project?: Project, preview?: GeneratedApp) => detached
-      ? runtime.addDetachedChatReply(prompt, r)
-      : app.addLocalChatReply(prompt, r, runtime.activeProjectTarget(project), preview);
+      ? runtime.addDetachedChatReply(visiblePrompt, r)
+      : app.addLocalChatReply(visiblePrompt, r, runtime.activeProjectTarget(project), preview);
 
     try {
       if (projectChat) {
         const projectTarget = runtime.activeProjectTarget();
-        if (tool && await toolHandlers.handleToolMode(prompt, tool, false, projectTarget, reply, imageAttachments, modelOverride)) return;
-        if (imageAttachments.length > 0) {
-          await app.startAgent(projectTarget, prompt, { imageAttachments });
+        if (tool && await toolHandlers.handleToolMode(prompt, tool, false, projectTarget, reply, imageAttachments, modelOverride, fileAttachments, visiblePrompt)) return;
+        if (imageAttachments.length > 0 || fileAttachments.length > 0) {
+          await app.startAgent(projectTarget, prompt, { displayPrompt: visiblePrompt, fileAttachments, imageAttachments });
           return;
         }
         if (await commandHandlers.handlePreviewServerFollowUp(prompt, projectTarget)) return;
@@ -118,7 +73,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
           return;
         }
         const projectFileIntent = isOpenFileIntent(prompt);
-        const projectFileName = extractFileName(prompt);
+        const projectFileName = fileFolderHandlers.extractedFileName(prompt);
         if (projectFileIntent) {
           if (!projectFileName) reply("Which file should I open? Send the exact file name or path, like `App.tsx`.", projectTarget.project);
           else await runFileOpen(prompt, projectFileName, false);
@@ -128,7 +83,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         if (await replyHandlers.handleProjectFilesQuestion(prompt, false, reply)) return;
         if (replyHandlers.handleProjectQuestion(prompt, false, reply)) return;
         if (isPreviewFixPrompt(prompt)) {
-          await app.startAgent(projectTarget, prompt);
+          await app.startAgent(projectTarget, prompt, { displayPrompt: visiblePrompt });
           return;
         }
         if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime, onNeedsServerApproval: commandHandlers.rememberPreviewServerApproval })) return;
@@ -136,18 +91,23 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
         if (isSmallTalk(prompt)) { reply(projectSmallTalkReply(), projectTarget.project); return; }
         if (isConfusion(prompt)) { reply(confusionReply(), projectTarget.project); return; }
         if (isHelpRequest(prompt)) { reply(helpReply(), projectTarget.project); return; }
-        await app.startAgent(projectTarget, prompt, modelOverride ? { model: modelOverride } : {});
+        await app.startAgent(projectTarget, prompt, { ...(modelOverride ? { model: modelOverride } : {}), displayPrompt: visiblePrompt });
         return;
       }
 
-      if (tool && await toolHandlers.handleToolMode(prompt, tool, true, runtime.activeProjectTarget(), reply, imageAttachments, modelOverride)) return;
-      if (imageAttachments.length > 0) {
-        reply("Open a project chat first so I can use images with the AI chat.");
+      const detachedAttachments = detachedAttachmentDecision(tool, fileAttachments.length, imageAttachments.length);
+      if (detachedAttachments.kind === "tool") {
+        const toolImages = tool ? imageAttachments : [];
+        await toolHandlers.handleToolMode(prompt, detachedAttachments.tool, true, runtime.activeProjectTarget(), reply, toolImages, modelOverride, fileAttachments, visiblePrompt);
+        return;
+      }
+      if (detachedAttachments.kind === "reply") {
+        reply(detachedAttachments.message);
         return;
       }
       if (handlePublishCommand(prompt, detached, s, runtime, reply)) return;
       if (isKnownAiSkillCommand(prompt, app.chatSkills)) {
-        runtime.addDetachedChatReply(prompt, "Open a project chat first, then use that slash command there.");
+        runtime.addDetachedChatReply(visiblePrompt, "Open a project chat first, then use that slash command there.");
         return;
       }
       if (handleDetachedStarter(prompt)) return;
@@ -160,13 +120,13 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       if (await replyHandlers.handleProjectFilesQuestion(prompt, detached, reply)) return;
       if (replyHandlers.handleProjectQuestion(prompt, detached, reply)) return;
       if (isPreviewFixPrompt(prompt)) {
-        s.setSelectedChatId(`project-${app.selectedProject.id}`); await app.startAgent(runtime.activeProjectTarget(), prompt); return;
+        s.setSelectedChatId(`project-${app.selectedProject.id}`); await app.startAgent(runtime.activeProjectTarget(), prompt, { displayPrompt: visiblePrompt }); return;
       }
       if (await handleWorkspacePreviewIntent({ app, detached, prompt, reply, runtime, onNeedsServerApproval: commandHandlers.rememberPreviewServerApproval })) return;
 
       const findIntent = isFindFolderIntent(prompt);
       const fileIntent = isOpenFileIntent(prompt);
-      const extractedFileName = extractFileName(prompt);
+      const extractedFileName = fileFolderHandlers.extractedFileName(prompt);
       const extractedName = extractFolderName(prompt);
       if (fileIntent) {
         if (!extractedFileName) reply("Which file should I open? Send the exact file name or path, like `App.tsx`.");
@@ -181,7 +141,7 @@ export function useWorkspacePromptActions(s: WorkspaceState, runtime: Runtime) {
       }
       if (findIntent && extractedName) {
         if (!app.connection) { addDesktopConnectionPrompt(prompt, extractedName, detached); return; }
-        await runFolderSearch(prompt, extractedName, isProjectLookupOnly(prompt), detached);
+        await runFolderSearch(prompt, extractedName, fileFolderHandlers.isProjectLookupOnly(prompt), detached);
         return;
       }
       replyHandlers.handleDetachedFallback(prompt);

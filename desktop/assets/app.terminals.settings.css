@@ -135,7 +135,16 @@
   white-space: pre;
 }
 .terminal-banner-art.provider-openai { color: #4ade80; }
-.terminal-banner-art.provider-claude { color: #ff9b6a; }
+.terminal-banner-art.provider-claude {
+  box-sizing: content-box;
+  color: #ff9b6a;
+  display: inline-block;
+  font-weight: 760;
+  letter-spacing: 0;
+  min-width: 10ch;
+  overflow: visible;
+  padding-right: 0.5ch;
+}
 .terminal-banner-art.provider-gemini { color: #6aa8ff; }
 .terminal-banner-art.provider-auto { color: #b9a7f6; }
 .terminal-banner-meta {

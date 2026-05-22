@@ -12,12 +12,13 @@ import { makeOptimisticAgent, resolveAgentTarget } from "./agentActionHelpers";
 import { useAgentChatMessages } from "./useAgentChatMessages";
 import { useAgentResultHandlers } from "./useAgentResultHandlers";
 import { chatUsageLimitBlockMessage } from "./chatUsageLimit";
-import { applyLocalSkillPrompt, mergeChatSkills } from "../utils/chatSkills";
 import { normalizeAgentReply } from "../utils/files";
 import { withProjectBriefPrompt } from "../utils/projectBriefs";
 import { withProjectMemoryPrompt } from "../utils/projectMemory";
-import { projectFileContext, shouldAttachFileContext, type ProjectFileContext } from "./agentContextPayload";
-import { makeId } from "../utils/ids";
+import { shouldAttachFileContext } from "./agentContextPayload";
+import { appendPendingEditReminder } from "./agentPendingEdits";
+import { buildAgentProjectFiles } from "./agentProjectFiles";
+import { resolveAgentPrompt } from "./agentPromptResolution";
 import {
   inferLiveEditFile,
   pendingProjectEdit,
@@ -28,17 +29,9 @@ import {
   toolFromSkill
 } from "./agentModeDecisions";
 type Store = ReturnType<typeof useAppState>;
-type Requests = {
-  agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>;
-};
-type Logs = {
-  appendLog: (message: string, source?: string, tone?: LogEvent["tone"]) => void;
-  appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void;
-  advanceWorkflow: (index: number) => void;
-};
-type AuthSession = {
-  expireSession: (message?: string) => void;
-};
+type Requests = { agentRequest: <T>(endpoint: string, options?: RequestInit, useAuth?: boolean) => Promise<T>; };
+type Logs = { appendLog: (message: string, source?: string, tone?: LogEvent["tone"]) => void; appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void; advanceWorkflow: (index: number) => void; };
+type AuthSession = { expireSession: (message?: string) => void; };
 export function useAgentActions(store: Store, requests: Requests, logs: Logs, authSession?: AuthSession) {
   const { state, derived, setters } = store;
   const agentRequestingRef = useRef(false);
@@ -60,34 +53,25 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       streamingRef.current = null;
     }
 
-    const skillMatch = options.skillId ? null : trimmed.match(/^\/(\w+)(?:\s+([\s\S]*))?$/);
-    const allSkills = mergeChatSkills(state.chatSkills);
-    const requestedSkill = options.skillId?.trim().toLowerCase();
-    const skill = requestedSkill
-      ? allSkills.find((s) => s.id === requestedSkill) ?? { id: requestedSkill, slash: `/${requestedSkill}`, label: requestedSkill, description: "", category: "tool", mode: "chat" as const }
-      : skillMatch ? allSkills.find((s) => s.id === skillMatch[1].toLowerCase()) : undefined;
-    const skillId = requestedSkill || skill?.id;
-    const userText = skill && skillMatch ? (skillMatch?.[2] ?? "").trim() : trimmed;
-    const imageAttachments = (options.imageAttachments ?? []).slice(0, 3).map((attachment) => ({
-      url: attachment.dataUrl,
-      name: attachment.name,
-      mimeType: attachment.mimeType,
-      ...(attachment.width ? { width: attachment.width } : {}),
-      ...(attachment.height ? { height: attachment.height } : {})
-    }));
-    const visibleText = skill
-      ? (skillMatch ? (userText ? `${skill.slash} ${userText}` : skill.slash) : trimmed)
-      : trimmed;
+    const {
+      fileAttachments,
+      imageAttachments,
+      intentText,
+      messageAttachments,
+      promptBody,
+      skill,
+      skillId,
+      visibleText
+    } = resolveAgentPrompt(trimmed, options, state.chatSkills);
 
     const chatTarget = resolveAgentTarget(state, derived, target);
     const selectedModel = options.model?.trim() || state.selectedChatModel || state.selectedModel;
-    const intentText = skill ? userText : trimmed;
     const buildMode = shouldUseBuildChatMode(intentText, skill?.mode);
     const desktopAgentMode = imageAttachments.length === 0 && state.desktopPermissionMode !== "read"
       && shouldUseDesktopAgentMode(intentText, skillId, skill?.mode, buildMode, state.connection, chatTarget.project.path);
     const pendingEdit = desktopAgentMode ? pendingProjectEdit(state.chatThreads[chatTarget.chatProjectId] ?? []) : null;
     if (pendingEdit) {
-      appendPendingEditReminder(chatTarget.chatProjectId, visibleText, pendingEdit.file);
+      appendPendingEditReminder(setters.setChatThreads, setters.setTaskText, chatTarget.chatProjectId, visibleText, pendingEdit.file);
       return false;
     }
     agentRequestingRef.current = true;
@@ -103,12 +87,9 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       mode: runMode,
       activeFile: liveEditFile,
       tool: toolFromSkill(skillId)
-    });
+    }, messageAttachments);
     const optimisticAgent = makeOptimisticAgent(chatTarget, visibleText, selectedModel);
     const richContextMode = buildMode || shouldUseAdviceContext(intentText, skill?.mode);
-    const promptBody = skill && !requestedSkill
-      ? ("promptPrefix" in skill ? applyLocalSkillPrompt(skill, userText) : (userText || skill.label))
-      : trimmed;
     const shouldScopeToFile = Boolean(chatTarget.file && fileContextEnabled && !desktopAgentMode && !buildMode);
     const scopedPrompt = shouldScopeToFile
       ? `In ${chatTarget.file?.path}: ${promptBody}`
@@ -118,29 +99,24 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
       ?? chatTarget.project.brief;
     const projectMemory = state.projectMemories[chatTarget.chatProjectId] ?? state.projectMemories[chatTarget.projectId];
     const prompt = withProjectMemoryPrompt(projectMemory, withProjectBriefPrompt(projectBrief, scopedPrompt));
-    const earned = calculatePromptMoney(trimmed);
+    const earned = calculatePromptMoney(visibleText);
 
     impact(Haptics.ImpactFeedbackStyle.Medium);
     setters.setPromptMoney((current) => ({
       total: roundMoney(current.total + earned),
       count: current.count + 1,
       lastEarned: earned,
-      longestPromptLength: Math.max(current.longestPromptLength, trimmed.length)
+      longestPromptLength: Math.max(current.longestPromptLength, visibleText.length)
     }));
     setters.setAgents((current) => [optimisticAgent, ...current]);
     setters.setBuildState(desktopAgentMode || buildMode ? "building" : "idle");
     setters.setPreviewState(desktopAgentMode || buildMode ? "refreshing" : "live");
-    setters.setLastPrompt(trimmed);
+    setters.setLastPrompt(visibleText);
 
     try {
       if (state.connection && desktopAgentMode) {
-        const filesInActiveProject = chatTarget.projectId === state.selectedProjectId ? state.files : [];
         const history = state.chatThreads[chatTarget.chatProjectId] ?? [];
-        const projectFiles = await projectFileContext(filesInActiveProject, intentText, async (path) => (
-          await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
-        ).file, async (query) => (
-          await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
-        ).files ?? []);
+        const projectFiles = await buildAgentProjectFiles(state, requests, chatTarget, intentText, fileAttachments, true);
         const result = await requests.agentRequest<AgentStartResult>("/agents/start", {
           method: "POST",
           body: JSON.stringify({
@@ -173,7 +149,6 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
         throw new Error("Log in or create an account to use Vibyra AI chat.");
       }
 
-      const filesInActiveProject = chatTarget.projectId === state.selectedProjectId ? state.files : [];
       const fileBody = chatTarget.file && fileContextEnabled && richContextMode && !buildMode
         ? (chatTarget.file.body || "").slice(0, 1200)
         : "";
@@ -196,11 +171,7 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
         model: selectedModel,
         mode: runMode,
         project: chatTarget.project.name,
-        projectFiles: await projectFileContext(filesInActiveProject, intentText, state.connection ? async (path) => (
-          await requests.agentRequest<{ file: typeof state.files[number] }>(`/files/read?projectId=${encodeURIComponent(chatTarget.projectId)}&path=${encodeURIComponent(path)}`)
-        ).file : undefined, state.connection ? async (query) => (
-          await requests.agentRequest<{ files: ProjectFileContext[] }>(`/desktop/context?projectId=${encodeURIComponent(chatTarget.projectId)}&q=${encodeURIComponent(query)}`)
-        ).files ?? [] : undefined),
+        projectFiles: await buildAgentProjectFiles(state, requests, chatTarget, intentText, fileAttachments, Boolean(state.connection)),
         prompt,
         reasoningEffort: state.reasoningEffort,
         skill: skillId ?? ""
@@ -223,21 +194,4 @@ export function useAgentActions(store: Store, requests: Requests, logs: Logs, au
   }
 
   return { startAgent };
-
-  function appendPendingEditReminder(projectId: string, prompt: string, file?: string) {
-    setters.setChatThreads((current) => ({
-      ...current,
-      [projectId]: [
-        ...(current[projectId] ?? []),
-        { id: makeId("chat-user"), role: "user", text: prompt, file },
-        {
-          id: makeId("chat-assistant"),
-          role: "assistant",
-          text: "There are generated edits waiting for your approval. Review the pending code changes card, then choose Allow, Allow always, or No before I start another run.",
-          file
-        }
-      ]
-    }));
-    setters.setTaskText("");
-  }
 }

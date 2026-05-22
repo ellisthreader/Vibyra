@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { getBackendReachabilityMessage, getBackendStreamTimeoutMessage } from "./appApiMessages";
-import { AppApiError, appApiRequest, getAppApiUrl, markBackendOffline, markBackendOnline } from "./appApi";
+import { AppApiError, appApiRequest, getAppApiCandidateUrls, getAppApiUrl, markBackendOffline, markBackendOnline, rememberAppApiUrl, resolveReachableAppApiUrl } from "./appApi";
 
 type ApiErrorPayload = {
   error?: string;
@@ -27,7 +27,8 @@ export async function appApiStreamChat<T = unknown>(
     }, token);
   }
 
-  const url = `${getAppApiUrl()}/api/chat/stream`;
+  const apiUrl = await resolveReachableAppApiUrl();
+  const url = `${apiUrl}/api/chat/stream`;
   const controller = new AbortController();
   const streamTimeoutMs = streamTimeoutFor(body);
   let streamTimedOut = false;
@@ -49,11 +50,20 @@ export async function appApiStreamChat<T = unknown>(
       signal: controller.signal
     });
   } catch (error) {
-    clearTimeout(timeout);
     const reason = error instanceof Error ? error.message : "unknown error";
-    if (streamTimedOut) throw new Error(getBackendStreamTimeoutMessage(url, streamTimeoutMs));
-    if (!reason.toLowerCase().includes("abort")) markBackendOffline();
-    throw new Error(getBackendReachabilityMessage(url, reason));
+    if (!streamTimedOut) {
+      const retry = await retryStreamOnFallbackUrl(apiUrl, body, token, controller.signal);
+      if (retry) {
+        response = retry;
+      } else {
+        clearTimeout(timeout);
+        if (!reason.toLowerCase().includes("abort")) markBackendOffline();
+        throw new Error(getBackendReachabilityMessage(url, reason));
+      }
+    } else {
+      clearTimeout(timeout);
+      throw new Error(getBackendStreamTimeoutMessage(url, streamTimeoutMs));
+    }
   }
 
   if (response.status >= 500) markBackendOffline();
@@ -81,6 +91,34 @@ export async function appApiStreamChat<T = unknown>(
     timeoutMs: streamTimeoutMs,
     url
   });
+}
+
+async function retryStreamOnFallbackUrl(
+  failedApiUrl: string,
+  body: unknown,
+  token: string,
+  signal: AbortSignal
+) {
+  for (const candidate of getAppApiCandidateUrls()) {
+    if (!candidate || candidate === failedApiUrl) continue;
+    try {
+      const response = await fetch(`${candidate}/api/chat/stream`, {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(body),
+        signal
+      });
+      rememberAppApiUrl(candidate);
+      return response;
+    } catch {
+      // Keep trying candidates; the original stream error remains user-facing.
+    }
+  }
+  return null;
 }
 
 function supportsStreamingChatResponse() {

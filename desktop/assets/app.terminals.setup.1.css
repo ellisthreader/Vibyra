@@ -111,13 +111,13 @@
 }
 .terminal-model-select .provider-logo {
   border-radius: 8px;
-  height: 30px;
-  width: 30px;
+  height: 32px;
+  width: 32px;
 }
 .terminal-model-select .provider-logo img,
 .terminal-model-select .provider-logo svg {
-  height: 18px;
-  width: 18px;
+  height: 23px;
+  width: 23px;
 }
 .terminal-count-row button,
 .terminal-model-row button {
@@ -171,13 +171,13 @@
 }
 .terminal-model-row .provider-logo {
   border-radius: 8px;
-  height: 30px;
-  width: 30px;
+  height: 32px;
+  width: 32px;
 }
 .terminal-model-row .provider-logo img,
 .terminal-model-row .provider-logo svg {
-  height: 18px;
-  width: 18px;
+  height: 23px;
+  width: 23px;
 }
 .terminal-count-row button:hover,
 .terminal-model-row button:hover,

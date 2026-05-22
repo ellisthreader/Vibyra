@@ -1,4 +1,5 @@
 function renderTerminalsPage() {
+  if (typeof captureTerminalModelScrolls === "function") captureTerminalModelScrolls(nodes.content);
   ensureTerminal();
   const shouldForceRender = forceTerminalRender;
   forceTerminalRender = false;
@@ -8,6 +9,9 @@ function renderTerminalsPage() {
     return;
   }
   if (!terminals.length) {
+    const activeSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
+    const hasSetupPicker = nodes.content.querySelector('[data-terminal-model-picker="setup"]');
+    if ((activeSearch?.target === "setup" || (setupModelMenuOpen && hasSetupPicker)) && nodes.content.querySelector(".terminal-setup")) return;
     nodes.content.innerHTML = setupView();
     bindTerminalControls();
     return;
@@ -17,7 +21,7 @@ function renderTerminalsPage() {
   const gridMeta = grid ? terminalGridMeta(terminals.length) : null;
   const gridClass = grid ? `grid-mode ${gridMeta.className}` : "";
   const gridStyle = grid ? ` style="--terminal-grid-cols:${gridMeta.cols};--terminal-grid-rows:${gridMeta.rows};--terminal-grid-cols-narrow:${gridMeta.narrowCols};--terminal-grid-rows-narrow:${gridMeta.narrowRows};"` : "";
-  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : activeTerminalView(active)}</div></section>`;
+  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)}</div></section>`;
   bindTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
 }
@@ -53,6 +57,10 @@ function activeTerminalView(terminal) {
   return `<article class="terminal-focus ${terminalProviderClass(terminal)} ${terminal.notice ? "has-notice" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-focus-head"><div class="terminal-name"><span class="terminal-status ${terminal.pending ? "running" : ""}"></span><strong>${escapeHtml(terminal.title)}</strong></div><div class="terminal-meta">${modelMetaChip(terminal)}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</div></header>${terminal.notice ? terminalNotice(terminal) : ""}<div class="terminal-lines">${terminalBanner(terminal, false)}${terminal.messages.map((message) => terminalLine(message, terminal)).join("")}${terminalIdleLine(terminal)}</div>${terminalComposer(terminal)}</article>`;
 }
 
+function terminalFocusViews(active) {
+  return activeTerminalView(active);
+}
+
 function terminalTile(terminal) {
   const active = terminal.id === activeTerminalId;
   return `<article class="terminal-tile ${terminalProviderClass(terminal)} ${active ? "active" : ""} ${terminal.notice ? "has-notice" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}"><span class="terminal-status ${terminal.pending ? "running" : ""}"></span><strong>${escapeHtml(terminal.title)}</strong></button><button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>${terminal.notice ? terminalNotice(terminal) : ""}<div class="terminal-lines">${terminalBanner(terminal, true)}${terminal.messages.map((message) => terminalLine(message, terminal)).join("")}${terminalIdleLine(terminal)}</div>${terminalComposer(terminal)}</article>`;
@@ -83,7 +91,7 @@ function selectRow(field, iconName, terminal, options) {
 }
 
 function modelOptions(terminal) {
-  return config().chatModelGroups.map((group) => `${group.title ? `<optgroup label="${escapeAttribute(group.title)}">` : ""}${group.options.map((model) => `<option value="${escapeAttribute(model.key)}" ${terminal.model === model.key ? "selected" : ""}>${escapeHtml(model.label)}</option>`).join("")}${group.title ? "</optgroup>" : ""}`).join("");
+  return terminalModelGroups().map((group) => `${group.title ? `<optgroup label="${escapeAttribute(group.title)}">` : ""}${group.options.map((model) => `<option value="${escapeAttribute(model.key)}" ${terminal.model === model.key ? "selected" : ""}>${escapeHtml(model.label)}</option>`).join("")}${group.title ? "</optgroup>" : ""}`).join("");
 }
 
 function effortOptions(terminal) {
@@ -168,8 +176,85 @@ function claudeBanner({ profile, model, effortLabel, planLabel, firstName, cwd, 
   const art = " ▐▛███▜▌\n▝▜█████▛▘\n  ▘▘ ▝▝";
   const greeting = firstName ? `Welcome back ${firstName}!` : "Welcome back!";
   const meta = `${model.label} with ${effortLabel} effort · ${planLabel} ·`;
-  if (compact) return `<div class="terminal-banner terminal-banner-claude compact"><div class="terminal-banner-title">Claude Code v${escapeHtml(version)}</div><div class="terminal-banner-row"><pre class="terminal-banner-art provider-claude" aria-hidden="true">${escapeHtml(art)}</pre><div class="terminal-banner-meta"><span>${escapeHtml(meta)}</span><span class="terminal-banner-path">${escapeHtml(cwd)}</span></div></div></div>`;
-  return `<div class="terminal-banner terminal-banner-claude"><div class="terminal-cli-box"><div class="terminal-claude-main"><div class="terminal-banner-title">Claude Code v${escapeHtml(version)}</div><p class="terminal-banner-greeting">${escapeHtml(greeting)}</p><pre class="terminal-banner-art provider-claude" aria-hidden="true">${escapeHtml(art)}</pre><div class="terminal-banner-meta"><span>${escapeHtml(meta)}</span><span>${escapeHtml(profile.label)}</span><span class="terminal-banner-path">${escapeHtml(cwd)}</span></div></div><aside class="terminal-claude-side"><strong>Tips for getting started</strong><span>Ask Claude to edit, debug, or explain a file.</span><span>Use <kbd>/plan</kbd> before larger changes.</span><i></i><strong>What&apos;s new</strong><span>Provider-scoped commands and shell syntax.</span></aside></div></div>`;
+  return `<div class="terminal-banner terminal-banner-claude ${compact ? "compact" : ""}">${claudeCodeBox({ art, compact, cwd, greeting, meta, profile, version })}</div>`;
+}
+
+function claudeCodeBox({ art, compact, cwd, greeting, meta, profile, version }) {
+  const width = compact ? 58 : 86;
+  const divider = "─".repeat(width - 2);
+  const logoLines = art.split("\n");
+  const rows = compact
+    ? [
+        claudeBoxRow(`Claude Code v${version}`, width),
+        claudeBoxHtmlRow(claudeCenteredHtml(`<span class="terminal-claude-logo">${escapeHtml(logoLines[0])}</span>`, logoLines[0], width - 2), width),
+        claudeBoxHtmlRow(claudeCenteredHtml(`<span class="terminal-claude-logo">${escapeHtml(logoLines[1])}</span>`, logoLines[1], width - 2), width),
+        claudeBoxHtmlRow(claudeCenteredHtml(`<span class="terminal-claude-logo">${escapeHtml(logoLines[2])}</span>`, logoLines[2], width - 2), width),
+        claudeBoxRow(meta, width),
+        claudeBoxRow(cwd, width)
+      ]
+    : [
+        claudeBoxRow(`Claude Code v${version}`, width),
+        claudeBoxRow("", width),
+        claudeBoxRow(greeting, width, true),
+        ...logoLines.map((line) => claudeBoxHtmlRow(claudeCenteredHtml(`<span class="terminal-claude-logo">${escapeHtml(line)}</span>`, line, width - 2), width)),
+        claudeBoxRow("", width),
+        claudeBoxRow(meta, width, true),
+        claudeBoxRow(profile.label, width, true),
+        claudeBoxRow(cwd, width, true),
+        claudeBoxRow("", width),
+        claudeBoxColumns("Tips for getting started", "What's new", width),
+        claudeBoxColumns("Ask Claude to edit, debug, or explain a file.", "Provider-scoped commands.", width),
+        claudeBoxColumns("Use /plan before larger changes.", "Shell syntax and file mentions.", width),
+        claudeBoxRow("", width),
+        claudeBoxRow("─".repeat(width - 6), width, true),
+        claudePromptRow('Try "edit AppContext.tsx to..."', width),
+        claudeBoxRow("─".repeat(width - 6), width, true),
+        claudeBoxColumns("? for shortcuts · ← for agents", "◉ xhigh · /effort", width)
+      ];
+  return `<pre class="terminal-claude-codebox" aria-label="Claude Code session">╭${divider}╮\n${rows.join("\n")}\n╰${divider}╯</pre>`;
+}
+
+function claudeBoxRow(text, width, centered = false) {
+  const inner = width - 2;
+  const value = centered ? centerPlain(text, inner) : padPlain(text, inner);
+  return `│${escapeHtml(value)}│`;
+}
+
+function claudeBoxHtmlRow(innerHtml, width) {
+  return `│${innerHtml}│`;
+}
+
+function claudeBoxColumns(left, right, width) {
+  const inner = width - 2;
+  const gap = 4;
+  const rightWidth = 34;
+  const leftWidth = inner - rightWidth - gap;
+  return `│${escapeHtml(padPlain(left, leftWidth))}${" ".repeat(gap)}${escapeHtml(padPlain(right, rightWidth))}│`;
+}
+
+function claudePromptRow(text, width) {
+  const visible = `❯ ${text}`;
+  const inner = width - 2;
+  const padding = " ".repeat(Math.max(0, inner - visible.length));
+  return claudeBoxHtmlRow(`<span class="terminal-claude-prompt">❯</span> ${escapeHtml(text)}${padding}`, width);
+}
+
+function claudeCenteredHtml(html, visibleText, width) {
+  const visible = String(visibleText || "");
+  const left = Math.max(0, Math.floor((width - visible.length) / 2));
+  const right = Math.max(0, width - visible.length - left);
+  return `${" ".repeat(left)}${html}${" ".repeat(right)}`;
+}
+
+function padPlain(text, width) {
+  const value = String(text || "").slice(0, width);
+  return value + " ".repeat(Math.max(0, width - value.length));
+}
+
+function centerPlain(text, width) {
+  const value = String(text || "").slice(0, width);
+  const left = Math.max(0, Math.floor((width - value.length) / 2));
+  return `${" ".repeat(left)}${value}${" ".repeat(Math.max(0, width - value.length - left))}`;
 }
 
 function codexBanner({ model, effortShort, planLabel, cwd, version, compact }) {

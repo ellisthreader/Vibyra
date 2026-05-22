@@ -7,7 +7,7 @@ class CreditCalculator
     public function modelConfig(string $modelKey): ?array
     {
         $models = (array) config('billing.models', []);
-        return $models[$modelKey] ?? null;
+        return $models[$modelKey] ?? $this->dynamicOpenRouterModelConfig($modelKey);
     }
 
     public function resolveSlug(string $modelKey): string
@@ -93,5 +93,42 @@ class CreditCalculator
         $raw = $usd * 100.0 * $multiplier;
         $minimum = (int) config('billing.minimum_credit_charge', 1);
         return (int) max($minimum, ceil($raw));
+    }
+
+    private function dynamicOpenRouterModelConfig(string $modelKey): ?array
+    {
+        $slug = trim($modelKey);
+        if (! preg_match('/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i', $slug) || strlen($slug) > 140) {
+            return null;
+        }
+
+        $tier = $this->dynamicTier($slug);
+        return [
+            'slug' => $slug,
+            'tier' => $tier,
+            'multiplier' => match ($tier) {
+                'free', 'budget' => 1.0,
+                'balanced' => 1.15,
+                default => 1.4,
+            },
+        ];
+    }
+
+    private function dynamicTier(string $slug): string
+    {
+        $value = strtolower($slug);
+        if (str_ends_with($value, ':free')) {
+            return 'free';
+        }
+        if (preg_match('/(opus|ultra|max|pro)/', $value)) {
+            return 'premium';
+        }
+        if (preg_match('/(sonnet|medium|large|70b|120b|reasoning)/', $value)) {
+            return 'balanced';
+        }
+        if (preg_match('/(mini|nano|haiku|flash|lite|small|8b|7b|3b)/', $value)) {
+            return 'budget';
+        }
+        return 'premium';
     }
 }

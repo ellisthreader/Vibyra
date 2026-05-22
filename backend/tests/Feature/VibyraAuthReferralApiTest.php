@@ -78,6 +78,13 @@ class VibyraAuthReferralApiTest extends TestCase
 
     public function test_account_sessions_can_be_listed_revoked_and_cleared(): void
     {
+        $this->app->instance(\App\Services\SessionLocationResolver::class, new class {
+            public function labelForIp(string $ip): string
+            {
+                return $ip === '127.0.0.1' ? 'Local network' : 'London, United Kingdom';
+            }
+        });
+
         $signup = $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
             ->withHeader('User-Agent', 'Vibyra Desktop Test')
             ->postJson('/api/auth/signup', [
@@ -121,6 +128,7 @@ class VibyraAuthReferralApiTest extends TestCase
 
         $appDevice = collect($devices)->firstWhere('deviceName', 'Vibyra App');
         $this->assertNotEmpty($appDevice['id']);
+        $this->assertSame('London, United Kingdom', $appDevice['location']);
 
         $this->deleteJson("/api/account/devices/{$appDevice['id']}", [], $headers)
             ->assertOk()
@@ -135,6 +143,105 @@ class VibyraAuthReferralApiTest extends TestCase
 
         $this->getJson('/api/session', $headers)
             ->assertUnauthorized();
+    }
+
+    public function test_local_desktop_session_can_use_forwarded_public_ip_for_location(): void
+    {
+        $this->app->instance(\App\Services\SessionLocationResolver::class, new class {
+            public function labelForIp(string $ip): string
+            {
+                return $ip === '8.8.8.8' ? 'Mountain View, United States' : 'Local network';
+            }
+        });
+
+        $token = $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->postJson('/api/auth/signup', [
+                'name' => 'Local Desktop',
+                'email' => 'local-desktop@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'ThinkPad',
+                'installId' => 'desktop-local-install',
+                'publicIp' => '8.8.8.8',
+            ])
+            ->assertCreated()
+            ->json('token');
+
+        $headers = [
+            'Authorization' => "Bearer {$token}",
+            'X-Vibyra-Public-IP' => '8.8.8.8',
+        ];
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->getJson('/api/session', $headers)
+            ->assertOk();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])
+            ->getJson('/api/account/sessions', $headers)
+            ->assertOk()
+            ->assertJsonPath('devices.0.location', 'Mountain View, United States');
+    }
+
+    public function test_api_cors_allows_desktop_public_ip_header(): void
+    {
+        $this->optionsJson('/api/account/sessions')
+            ->assertNoContent()
+            ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Vibyra-Public-IP');
+    }
+
+    public function test_private_proxy_request_uses_forwarded_public_ip_for_location(): void
+    {
+        $this->app->instance(\App\Services\SessionLocationResolver::class, new class {
+            public function labelForIp(string $ip): string
+            {
+                return $ip === '8.8.8.8' ? 'Mountain View, United States' : 'Local network';
+            }
+        });
+
+        $token = $this->withServerVariables(['REMOTE_ADDR' => '10.10.0.12'])
+            ->withHeader('X-Forwarded-For', '8.8.8.8, 10.10.0.12')
+            ->postJson('/api/auth/signup', [
+                'name' => 'Proxy Desktop',
+                'email' => 'proxy-desktop@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'Desktop Behind Proxy',
+                'installId' => 'desktop-proxy-install',
+            ])
+            ->assertCreated()
+            ->json('token');
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.10.0.12'])
+            ->withHeader('X-Forwarded-For', '8.8.8.8, 10.10.0.12')
+            ->getJson('/api/account/sessions', ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('devices.0.location', 'Mountain View, United States');
+    }
+
+    public function test_public_request_ip_cannot_be_overridden_by_forwarded_header(): void
+    {
+        $this->app->instance(\App\Services\SessionLocationResolver::class, new class {
+            public function labelForIp(string $ip): string
+            {
+                return $ip === '1.1.1.1' ? 'Brisbane, Australia' : 'Mountain View, United States';
+            }
+        });
+
+        $token = $this->withServerVariables(['REMOTE_ADDR' => '1.1.1.1'])
+            ->withHeader('X-Forwarded-For', '8.8.8.8')
+            ->postJson('/api/auth/signup', [
+                'name' => 'Public Desktop',
+                'email' => 'public-desktop@example.com',
+                'password' => 'secret123',
+                'deviceName' => 'Desktop Public',
+                'installId' => 'desktop-public-install',
+            ])
+            ->assertCreated()
+            ->json('token');
+
+        $this->withServerVariables(['REMOTE_ADDR' => '1.1.1.1'])
+            ->withHeader('X-Vibyra-Public-IP', '8.8.8.8')
+            ->getJson('/api/account/sessions', ['Authorization' => "Bearer {$token}"])
+            ->assertOk()
+            ->assertJsonPath('devices.0.location', 'Brisbane, Australia');
     }
 
     public function test_referral_signup_grants_invite_code_and_signup_rewards(): void

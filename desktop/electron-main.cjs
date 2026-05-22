@@ -9,7 +9,21 @@ const port = process.env.VIBYRA_AGENT_PORT || "4317";
 const appUrl = process.env.VIBYRA_DESKTOP_URL || `http://127.0.0.1:${port}/desktop`;
 let mainWindow;
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+function revealWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  if (!mainWindow.isVisible()) mainWindow.show();
+  mainWindow.focus();
+}
+
 function createWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    revealWindow();
+    return;
+  }
+
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 780,
@@ -27,11 +41,44 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadURL(appUrl);
-  mainWindow.once("ready-to-show", () => mainWindow?.show());
+  let revealed = false;
+  const revealOnce = () => {
+    if (revealed) return;
+    revealed = true;
+    revealWindow();
+  };
+
+  mainWindow.once("ready-to-show", revealOnce);
+  mainWindow.webContents.once("did-finish-load", () => setTimeout(revealOnce, 100));
+  mainWindow.webContents.on("did-fail-load", (_event, code, description, url, isMainFrame) => {
+    if (!isMainFrame) return;
+    console.error(`Vibyra Desktop failed to load ${url}: ${code} ${description}`);
+    revealOnce();
+  });
+  mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    console.error(`Vibyra Desktop renderer exited: ${details.reason}`);
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    setTimeout(() => mainWindow?.reload(), 500);
+  });
+  mainWindow.on("closed", () => {
+    mainWindow = undefined;
+  });
+
+  const showFallback = setTimeout(revealOnce, 2000);
+  showFallback.unref?.();
+
+  mainWindow.loadURL(appUrl).catch((error) => {
+    console.error(`Vibyra Desktop failed to open: ${error.message}`);
+    revealOnce();
+  });
 }
 
-app.whenReady().then(createWindow);
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", revealWindow);
+  app.whenReady().then(createWindow);
+}
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();

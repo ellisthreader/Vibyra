@@ -3,8 +3,7 @@ const pages = [
   { key: "chat", label: "Chat", icon: "chat" },
   { key: "terminals", label: "Terminals", icon: "terminal" },
   { key: "projects", label: "Projects", icon: "folder" },
-  { key: "dashboard", label: "Builds", icon: "pulse" },
-  { key: "profile", label: "Profile", icon: "user", hidden: true }
+  { key: "dashboard", label: "Builds", icon: "pulse" }
 ];
 const suggestions = [
   { title: "Fix a bug", description: "Find and resolve issues", icon: "tool", prompt: "Find and fix the main bug in this project." },

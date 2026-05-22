@@ -7,6 +7,7 @@ import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { generatePublishAsset, publishProject as publishCommunityProject } from "../../../utils/communityApi";
 import { pickPreviewHtml } from "../../../utils/files";
+import { requestHostedDemoBundle } from "../../../utils/hostedDemo";
 import { projectFilterModes } from "../data/pages";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { useProjectPublishStatuses } from "../hooks/useProjectPublishStatuses";
@@ -59,9 +60,11 @@ export function ProjectsPage(props: ProjectsPageProps) {
       const files = await app.selectProject(publishTarget.id, { startPreview: false });
       const previewHtml = pickPreviewHtml(files, false);
       const sourceReview = await app.loadProjectReviewFiles(publishTarget.id);
+      const hostedDemo = await requestHostedDemoBundle({ agentUrl: app.agentUrl, connection: app.connection, projectId: publishTarget.id });
       const result = await publishCommunityProject({
         authToken: app.authToken,
         description: payload.description,
+        hostedDemo,
         logoImageUrl: payload.logoImageUrl,
         previewHtml,
         projectId: publishTarget.id,

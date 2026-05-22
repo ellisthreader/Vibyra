@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, PanResponder, Pressable, Text, View } from "react-native";
 import { ReasoningEffort } from "../../../types/domain";
-import { DEEP_RESEARCH_MODEL_KEY } from "../../../types/chatTools";
+import { chatToolForModelKey } from "../../../types/chatTools";
 import { chatModelGroups, chatModelOptionFor, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
 import { ModelMenuRow } from "./chunk10";
@@ -23,16 +23,16 @@ export function ModelMenu(props: {
   onUpgrade: () => void;
 }) {
   const selectedModel = chatModelOptionFor(props.selected) ?? chatModelOptions[0];
-  const deepResearchSelected = selectedModel.key === DEEP_RESEARCH_MODEL_KEY;
+  const toolSelected = Boolean(chatToolForModelKey(selectedModel.key));
   if (!props.open) return null;
   return (
     <View style={styles.chatModelMenu}>
       <View style={styles.chatModelEffortHeader}>
         <View style={styles.chatModelEffortHeaderTop}>
           <Text numberOfLines={1} style={styles.chatModelEffortTitle}>{selectedModel.label}</Text>
-          <Text style={styles.chatModelEffortMeta}>{deepResearchSelected ? "Auto" : "Effort"}</Text>
+          <Text style={styles.chatModelEffortMeta}>{toolSelected ? "Tool" : "Effort"}</Text>
         </View>
-        {deepResearchSelected ? null : <EffortSlider value={props.reasoningEffort} onChange={props.onSelectEffort} />}
+        {toolSelected ? null : <EffortSlider value={props.reasoningEffort} onChange={props.onSelectEffort} />}
       </View>
       {chatModelGroups.map((group) => (
         <View key={group.title || "auto"} style={styles.chatModelGroup}>

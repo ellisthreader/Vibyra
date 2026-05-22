@@ -6,6 +6,7 @@ import { LoadingScreen } from "../../../components/LoadingScreen";
 import { useCommunityPage } from "../hooks/useCommunityPage";
 import { styles } from "../styles";
 import type { CommunityFilter, CommunityPost } from "../types";
+import { CommunityReportModal } from "./CommunityReportModal";
 import { CommunityPostCard } from "./chunk13";
 import { CommunityPostDetail } from "./chunk14";
 import { CommunityOpenedAppPage } from "./chunk15";
@@ -23,6 +24,7 @@ export function CommunityPage({
 }) {
   const c = useCommunityPage(authToken, currentUserName, onOpenApp, onLevelActivity);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [reportPost, setReportPost] = useState<CommunityPost | null>(null);
   const prefs = usePreferences();
   const searchIconColor = useThemedColor("#8E8AA3");
   const filterIconColor = useThemedColor("#B4B1C9");
@@ -45,23 +47,27 @@ export function CommunityPage({
     const opened = c.openedPostIds.includes(livePost.id);
     if (openedPostId === livePost.id) return <CommunityOpenedAppPage opened={opened} post={livePost} />;
     return (
-      <CommunityPostDetail
-        addedComments={added}
-        bookmarked={c.bookmarkedPostIds.includes(livePost.id)}
-        canComment={Boolean(authToken)}
-        commentCount={Math.max(livePost.comments, added.length)}
-        commentDraft={c.commentDraftsByPostId[livePost.id] ?? ""}
-        commentError={c.commentErrorsByPostId[livePost.id] ?? ""}
-        commentPosting={Boolean(c.commentPostingByPostId[livePost.id])}
-        liked={c.likedPostIds.includes(livePost.id)}
-        opened={opened}
-        post={livePost}
-        onAddComment={() => c.addComment(livePost.id)}
-        onCommentDraftChange={(text) => c.setCommentDraft(livePost.id, text)}
-        onOpen={() => c.openApp(livePost.id)}
-        onToggleBookmark={() => c.toggleBookmark(livePost.id)}
-        onToggleLike={() => c.toggleLike(livePost.id)}
-      />
+      <>
+        <CommunityPostDetail
+          addedComments={added}
+          bookmarked={c.bookmarkedPostIds.includes(livePost.id)}
+          canComment={Boolean(authToken)}
+          commentCount={Math.max(livePost.comments, added.length)}
+          commentDraft={c.commentDraftsByPostId[livePost.id] ?? ""}
+          commentError={c.commentErrorsByPostId[livePost.id] ?? ""}
+          commentPosting={Boolean(c.commentPostingByPostId[livePost.id])}
+          liked={c.likedPostIds.includes(livePost.id)}
+          opened={opened}
+          post={livePost}
+          onAddComment={() => c.addComment(livePost.id)}
+          onCommentDraftChange={(text) => c.setCommentDraft(livePost.id, text)}
+          onOpen={() => c.openApp(livePost.id)}
+          onReport={() => setReportPost(livePost)}
+          onToggleBookmark={() => c.toggleBookmark(livePost.id)}
+          onToggleLike={() => c.toggleLike(livePost.id)}
+        />
+        <CommunityReportModal post={reportPost} visible={Boolean(reportPost)} onClose={() => setReportPost(null)} />
+      </>
     );
   }
 
@@ -113,8 +119,8 @@ export function CommunityPage({
       ) : null}
 
       <View style={styles.communityFeed}>
-        {c.feedLoading ? (
-          <LoadingScreen colors={prefs.colors} compact message="Checking for published apps." scheme={prefs.effectiveScheme} style={styles.communityLoadingPage} title="Loading Explore" />
+        {c.feedLoading && c.posts.length === 0 ? (
+          <LoadingScreen colors={prefs.colors} compact message="Checking for published apps." scheme={prefs.effectiveScheme} simple style={styles.communityLoadingPage} title="Loading Explore" />
         ) : c.feedError ? (
           <View style={styles.communityEmptyState}>
             <Ionicons name="warning-outline" color={errorIconColor} size={30} />
@@ -132,6 +138,7 @@ export function CommunityPage({
             post={post}
             commentCount={Math.max(post.comments, c.commentsByPostId[post.id]?.length ?? 0)}
             onOpen={() => onSelectPost(post)}
+            onReport={() => setReportPost(post)}
           />
         )) : (
           <View style={styles.communityEmptyState}>
@@ -146,6 +153,7 @@ export function CommunityPage({
           </View>
         )}
       </View>
+      <CommunityReportModal post={reportPost} visible={Boolean(reportPost)} onClose={() => setReportPost(null)} />
     </View>
   );
 }

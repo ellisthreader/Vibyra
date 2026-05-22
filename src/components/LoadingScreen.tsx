@@ -12,6 +12,7 @@ type Props = {
   compact?: boolean;
   message?: string;
   scheme?: "dark" | "light";
+  simple?: boolean;
   style?: StyleProp<ViewStyle>;
   title?: string;
 };
@@ -21,6 +22,7 @@ export function LoadingScreen({
   compact = false,
   message = "Getting everything ready.",
   scheme = "dark",
+  simple = false,
   style,
   title = "Loading Vibyra"
 }: Props) {
@@ -61,6 +63,7 @@ export function LoadingScreen({
   const plateSize = compact ? 112 : Math.min(148, Math.max(124, width * 0.34));
   const logoWidth = compact ? 76 : 98;
   const logoHeight = logoWidth / (515 / 375);
+  const logoPlateSize = simple ? "68%" : "72%";
   const haloOpacity = breathe.interpolate({ inputRange: [0, 1], outputRange: [isLight ? 0.22 : 0.28, isLight ? 0.46 : 0.6] });
   const logoScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1.035] });
   const ringRotate = orbit.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
@@ -82,14 +85,16 @@ export function LoadingScreen({
       <View style={[styles.topLine, { backgroundColor: isLight ? "rgba(109, 59, 255, 0.08)" : "rgba(255, 255, 255, 0.05)" }]} />
       <View style={styles.content}>
         <Animated.View style={[styles.logoStage, { height: plateSize, width: plateSize, transform: [{ scale: logoScale }] }]}>
-          <Animated.View style={[styles.halo, { borderColor: colors.borderStrong, opacity: haloOpacity }]} />
-          <Animated.View style={[styles.ring, { borderColor: isLight ? "rgba(109, 59, 255, 0.28)" : "rgba(255, 255, 255, 0.22)", transform: [{ rotate: ringRotate }] }]}>
-            <View style={[styles.ringTick, { backgroundColor: colors.magenta }]} />
-            <View style={[styles.ringTickAlt, { backgroundColor: colors.info }]} />
-          </Animated.View>
+          {simple ? null : <Animated.View style={[styles.halo, { borderColor: colors.borderStrong, opacity: haloOpacity }]} />}
+          {simple ? null : (
+            <Animated.View style={[styles.ring, { borderColor: isLight ? "rgba(109, 59, 255, 0.28)" : "rgba(255, 255, 255, 0.22)", transform: [{ rotate: ringRotate }] }]}>
+              <View style={[styles.ringTick, { backgroundColor: colors.magenta }]} />
+              <View style={[styles.ringTickAlt, { backgroundColor: colors.info }]} />
+            </Animated.View>
+          )}
           <LinearGradient
             colors={isLight ? ["rgba(255,255,255,0.96)", "rgba(247,243,255,0.9)"] : ["rgba(26, 21, 40, 0.96)", "rgba(12, 10, 18, 0.98)"]}
-            style={[styles.logoPlate, { borderColor: isLight ? "rgba(109, 59, 255, 0.18)" : "rgba(255, 255, 255, 0.1)" }]}
+            style={[styles.logoPlate, { borderColor: isLight ? "rgba(109, 59, 255, 0.18)" : "rgba(255, 255, 255, 0.1)", borderRadius: simple ? 999 : 30, height: logoPlateSize, width: logoPlateSize }]}
           >
             <VibyraLogo style={{ height: logoHeight, width: logoWidth }} />
           </LinearGradient>
@@ -128,15 +133,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0
   },
-  logoPlate: {
-    alignItems: "center",
-    borderRadius: 30,
-    borderWidth: 1,
-    height: "72%",
-    justifyContent: "center",
-    overflow: "hidden",
-    width: "72%"
-  },
+  logoPlate: { alignItems: "center", borderWidth: 1, justifyContent: "center", overflow: "hidden" },
   logoStage: { alignItems: "center", justifyContent: "center" },
   message: {
     fontSize: 14,
@@ -170,10 +167,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 5
   },
-  screen: {
-    flex: 1,
-    overflow: "hidden"
-  },
+  screen: { flex: 1, overflow: "hidden" },
   sweep: { borderRadius: 999, height: "100%", opacity: 0.92, width: 54 },
   title: {
     fontSize: 20,
@@ -181,13 +175,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: "center"
   },
-  topLine: {
-    height: 1,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0
-  },
+  topLine: { height: 1, left: 0, position: "absolute", right: 0, top: 0 },
   track: {
     borderRadius: 999,
     height: 4,

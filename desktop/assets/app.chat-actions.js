@@ -86,11 +86,75 @@ function modelMenu() {
   return `<div class="composer-menu model-menu model-picker">${autoModel ? `<div class="model-picker-current">${modelButton(autoModel, "model-auto-row")}</div>` : ""}<div class="model-provider-tabs" role="tablist" aria-label="Model providers">${groups.map((group) => `<button class="${activeKey === modelGroupKey(group) ? "active" : ""}" type="button" data-model-group="${escapeAttribute(modelGroupKey(group))}" aria-pressed="${activeKey === modelGroupKey(group) ? "true" : "false"}">${providerLogo(modelGroupKey(group))}<span>${escapeHtml(providerGroupLabel(group))}</span></button>`).join("")}</div><section class="model-picker-options" aria-label="${escapeAttribute(providerGroupLabel(activeGroup))} models">${activeGroup.options.map((model) => modelButton(model)).join("")}</section></div>`;
 }
 function effortMenu() { return `<div class="composer-menu effort-menu">${chatEfforts.map((effort) => `<button class="${reasoningEffort === effort.value ? "active" : ""}" type="button" data-effort="${escapeAttribute(effort.value)}"><span><strong>${escapeHtml(effort.label)}</strong><small>${escapeHtml(effort.hint)}</small></span></button>`).join("")}</div>`; }
-function providerLogo(provider) {
-  if (provider === "openai") return `<span class="provider-logo openai"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/OpenAI_logo_2025_%28symbol%29.svg/250px-OpenAI_logo_2025_%28symbol%29.svg.png" alt="" /></span>`;
-  if (provider === "gemini") return `<span class="provider-logo gemini"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/250px-Google_Gemini_icon_2025.svg.png" alt="" /></span>`;
-  if (provider === "claude") return `<span class="provider-logo claude"><svg viewBox="0 0 100 100" aria-hidden="true"><line x1="50" y1="50" x2="31" y2="10"/><line x1="50" y1="50" x2="57" y2="12"/><line x1="50" y1="50" x2="77" y2="21"/><line x1="50" y1="50" x2="90" y2="43"/><line x1="50" y1="50" x2="87" y2="60"/><line x1="50" y1="50" x2="73" y2="80"/><line x1="50" y1="50" x2="48" y2="91"/><line x1="50" y1="50" x2="31" y2="84"/><line x1="50" y1="50" x2="15" y2="70"/><line x1="50" y1="50" x2="8" y2="47"/><line x1="50" y1="50" x2="15" y2="28"/><circle cx="50" cy="50" r="14"/></svg></span>`;
-  return `<span class="provider-logo auto">${icon("sparkles")}</span>`;
+function providerLogo(provider, company = "") {
+  const logo = providerLogoSource(provider, company);
+  if (logo) return `<span class="provider-logo ${escapeAttribute(providerLogoClass(provider, company))}"><img src="${escapeAttribute(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" /></span>`;
+  if (provider === "auto") return `<span class="provider-logo auto">${icon("sparkles")}</span>`;
+  return `<span class="provider-logo provider-logo-fallback"><strong>${escapeHtml(providerInitials(company || provider))}</strong></span>`;
+}
+
+function providerLogoSource(provider, company = "") {
+  const key = providerLogoKey(provider, company);
+  const simpleSlug = providerSimpleIconSlugs[key];
+  if (simpleSlug) return `https://cdn.simpleicons.org/${simpleSlug}?viewbox=auto`;
+  return providerLogoSources[key] || "";
+}
+
+const providerSimpleIconSlugs = {
+  anthropic: "anthropic",
+  baidu: "baidu",
+  bytedance: "bytedance",
+  deepseek: "deepseek",
+  gemini: "googlegemini",
+  meta: "meta",
+  minimax: "minimax",
+  mistral: "mistralai",
+  nvidia: "nvidia",
+  openrouter: "openrouter",
+  perplexity: "perplexity",
+  qwen: "qwen",
+  xai: "x",
+  xiaomi: "xiaomi"
+};
+
+const providerLogoSources = {
+  microsoft: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
+  openai: "https://upload.wikimedia.org/wikipedia/commons/6/66/OpenAI_logo_2025_%28symbol%29.svg"
+};
+
+function providerLogoKey(provider, company = "") {
+  const value = `${company || ""} ${provider || ""}`.toLowerCase();
+  if (provider === "auto" || value.includes("auto")) return "auto";
+  if (provider === "openai" || value.includes("openai")) return "openai";
+  if (provider === "claude" || value.includes("anthropic") || value.includes("claude")) return "anthropic";
+  if (provider === "gemini" || value.includes("google") || value.includes("gemini")) return "gemini";
+  if (value.includes("deepseek")) return "deepseek";
+  if (value.includes("qwen")) return "qwen";
+  if (value.includes("mistral")) return "mistral";
+  if (value.includes("perplexity")) return "perplexity";
+  if (value.includes("xai") || value.includes("x-ai")) return "xai";
+  if (value.includes("meta")) return "meta";
+  if (value.includes("nvidia")) return "nvidia";
+  if (value.includes("microsoft")) return "microsoft";
+  if (value.includes("baidu")) return "baidu";
+  if (value.includes("bytedance")) return "bytedance";
+  if (value.includes("xiaomi")) return "xiaomi";
+  if (value.includes("openrouter")) return "openrouter";
+  if (value.includes("minimax")) return "minimax";
+  return normalizeProviderLogoKey(company || provider);
+}
+
+function providerLogoClass(provider, company = "") {
+  return `provider-${providerLogoKey(provider, company).replace(/[^a-z0-9_-]/gi, "-")}`;
+}
+
+function providerInitials(value) {
+  const words = String(value || "AI").replace(/[^a-z0-9]+/gi, " ").trim().split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words.slice(0, 2).map((word) => word[0]).join("") : (words[0] || "AI").slice(0, 2)).toUpperCase();
+}
+
+function normalizeProviderLogoKey(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 function openAttachmentPicker(kind) {
   const input = document.getElementById("chat-attach");

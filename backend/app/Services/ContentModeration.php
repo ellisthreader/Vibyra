@@ -27,7 +27,7 @@ class ContentModeration
     {
         $text = trim($text);
 
-        if ($text === '' || ! $this->enabled()) {
+        if ($text === '' || ! $this->localModerationEnabled()) {
             return;
         }
 
@@ -45,23 +45,23 @@ class ContentModeration
 
     public function assertModerationInputAllowed(array $input, string $surface = 'user upload', ?bool $failClosed = null): array
     {
-        if (! $this->enabled()) {
-            return $this->allowedDecision($surface);
-        }
-
         $items = $this->moderationItems($input);
 
         if ($items === []) {
             return $this->allowedDecision($surface);
         }
 
-        foreach ($items as $item) {
-            if (($item['type'] ?? '') === 'text') {
-                $this->assertDecisionAllowed($this->localTextDecision((string) $item['text'], $surface));
+        if ($this->localModerationEnabled()) {
+            foreach ($items as $item) {
+                if (($item['type'] ?? '') === 'text') {
+                    $this->assertDecisionAllowed($this->localTextDecision((string) $item['text'], $surface));
+                }
             }
         }
 
-        $decision = $this->remoteDecision($items, $surface, $failClosed);
+        $decision = $this->remoteModerationEnabled()
+            ? $this->remoteDecision($items, $surface, $failClosed)
+            : $this->allowedDecision($surface, 'OpenAI moderation is disabled; local comment filters were applied.');
         $this->assertDecisionAllowed($decision);
 
         return $decision;
@@ -69,12 +69,16 @@ class ContentModeration
 
     public function checkText(string $text, string $surface = 'user input'): array
     {
-        $localDecision = $this->localTextDecision($text, $surface);
+        $localDecision = $this->localModerationEnabled()
+            ? $this->localTextDecision($text, $surface)
+            : $this->allowedDecision($surface);
 
         if (! $localDecision['allowed']) {
             return $localDecision;
         }
 
-        return $this->remoteDecision($text, $surface);
+        return $this->remoteModerationEnabled()
+            ? $this->remoteDecision($text, $surface)
+            : $localDecision;
     }
 }

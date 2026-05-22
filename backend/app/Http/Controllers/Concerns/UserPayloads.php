@@ -33,7 +33,7 @@ trait UserPayloads
             'token_hash' => hash('sha256', $token),
             'device_name' => (string) $request->input('deviceName', 'Vibyra App'),
             'device_identifier' => $this->sessionDeviceIdentifier($request),
-            'ip_address' => $request->ip(),
+            'ip_address' => $this->sessionRequestIp($request),
             'user_agent' => (string) $request->userAgent(),
             'last_used_at' => now(),
         ]);
@@ -61,12 +61,47 @@ trait UserPayloads
         }
 
         $session->forceFill([
-            'ip_address' => $request->ip(),
+            'ip_address' => $this->sessionRequestIp($request),
             'user_agent' => (string) $request->userAgent(),
             'last_used_at' => now(),
         ])->save();
 
         return $session;
+    }
+
+    private function sessionRequestIp(Request $request): string
+    {
+        $requestIp = trim((string) ($request->server('REMOTE_ADDR') ?: $request->ip()));
+        $forwardedPublicIp = $this->firstPublicSessionIp([
+            (string) $request->input('publicIp', ''),
+            (string) $request->header('X-Vibyra-Public-IP', ''),
+            (string) $request->header('CF-Connecting-IP', ''),
+            (string) $request->header('X-Real-IP', ''),
+            ...(array) preg_split('/\s*,\s*/', (string) $request->header('X-Forwarded-For', ''), -1, PREG_SPLIT_NO_EMPTY),
+        ]);
+
+        if ($this->isPublicIp($requestIp)) {
+            return $requestIp;
+        }
+
+        return $forwardedPublicIp ?: ($requestIp ?: (string) $request->ip());
+    }
+
+    private function firstPublicSessionIp(array $candidates): string
+    {
+        foreach ($candidates as $candidate) {
+            $ip = trim((string) $candidate);
+            if ($this->isPublicIp($ip)) {
+                return $ip;
+            }
+        }
+
+        return '';
+    }
+
+    private function isPublicIp(string $ip): bool
+    {
+        return (bool) filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
     }
 
     private function authenticatedUser(Request $request): User
@@ -139,7 +174,7 @@ trait UserPayloads
             ->json($payload, $status)
             ->withHeaders([
                 'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Headers' => 'Content-Type, Authorization',
+                'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Vibyra-Public-IP',
                 'Access-Control-Allow-Methods' => 'GET, POST, DELETE, OPTIONS',
             ]);
     }
