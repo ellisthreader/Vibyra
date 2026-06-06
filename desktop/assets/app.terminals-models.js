@@ -183,6 +183,34 @@ function modelHint(model, locked) {
   if (model?.provider === "auto") return "Vibyra chooses";
   return model?.company || model?.provider || "OpenRouter";
 }
+function providerTokenLabelForModel(model) {
+  const provider = terminalProviderKeyForModel(model);
+  if (provider !== "openai") return "Provider account";
+  const account = providerAccounts.openai || {};
+  if (!account.connected) return "OpenAI account";
+  return account.source === "env" ? "OpenAI env" : "OpenAI account";
+}
+function terminalTokenModeForModel(model, mode) {
+  const provider = terminalProviderKeyForModel(model);
+  const openai = providerAccounts.openai || {};
+  return mode === "provider" && provider === "openai" && openai.connected ? "provider" : "vibyra";
+}
+function terminalTokenSourcePanel(model, selectedMode, target) {
+  const provider = terminalProviderKeyForModel(model);
+  const openai = providerAccounts.openai || {};
+  const supportsProvider = provider === "openai";
+  const canUseProvider = supportsProvider && openai.connected;
+  const mode = terminalTokenModeForModel(model, selectedMode);
+  const connectedLine = openai.connected
+    ? `<span>${escapeHtml(openai.label || "OpenAI account")}${openai.last4 ? ` · ${escapeHtml(openai.last4)}` : ""}</span><button type="button" data-provider-disconnect ${providerConnectPosting ? "disabled" : ""}>Disconnect</button>`
+    : `<span>OpenAI account not connected</span><button type="button" data-open-provider-connect>${providerConnectOpen ? "Close" : "Connect"}</button>`;
+  const providerTitle = !supportsProvider ? "Provider accounts are available for OpenAI models" : canUseProvider ? "Usage bills your OpenAI account" : "Connect OpenAI before using provider tokens";
+  const billingLine = mode === "provider" && canUseProvider ? `<em class="terminal-provider-notice">Usage bills your OpenAI account.</em>` : "";
+  return `<div class="terminal-token-source"><p>Tokens</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span>Vibyra tokens</span></button><button class="${mode === "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider" ${canUseProvider ? "" : "disabled"} title="${escapeAttribute(providerTitle)}">${icon("lock")}<span>OpenAI account</span></button></div><div class="terminal-provider-row">${connectedLine}</div>${billingLine}${providerConnectOpen ? openAiConnectForm() : ""}${providerConnectNotice ? `<em class="terminal-provider-notice">${escapeHtml(providerConnectNotice)}</em>` : ""}</div>`;
+}
+function openAiConnectForm() {
+  return `<form class="terminal-provider-form" data-provider-connect-form><label><span>API key</span><input name="apiKey" type="password" autocomplete="off" placeholder="sk-..." required /></label><label><span>Organization</span><input name="organization" autocomplete="off" placeholder="optional" /></label><label><span>Project</span><input name="project" autocomplete="off" placeholder="optional" /></label><button type="submit" ${providerConnectPosting ? "disabled" : ""}>${providerConnectPosting ? "Connecting" : "Connect OpenAI"}</button></form>`;
+}
 function modelMetaChip(terminal) {
   const model = terminalModelForDisplay(terminal.model);
   return `<span class="terminal-meta-chip terminal-model-chip">${modelLogo(model)}${escapeHtml(model.label)}</span>`;
@@ -231,3 +259,13 @@ function normalizeTerminalModel(model, company) {
 }
 
 window.addEventListener("load", () => setTimeout(loadTerminalOpenRouterModels, 0));
+window.addEventListener("load", () => setTimeout(loadProviderAccounts, 0));
+
+async function loadProviderAccounts() {
+  try {
+    const response = await fetch("/desktop/provider-accounts");
+    const payload = await response.json().catch(() => ({}));
+    if (response.ok && payload.providers) providerAccounts = payload.providers;
+    if (activePage === "terminals") render();
+  } catch {}
+}

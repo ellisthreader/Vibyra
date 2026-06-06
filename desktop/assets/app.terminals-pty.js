@@ -33,6 +33,7 @@ normalizeTerminal = function normalizePtyTerminal(item) {
   if (!terminal) return null;
   terminal.agent = normalizePtyAgentForModel(item, terminal);
   terminal.agentStatus = item.agentStatus || null;
+  terminal.tokenMode = String(item.tokenMode || terminal.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra";
   const rendererVersion = Number(item.ptyRendererVersion || 0);
   const currentRenderer = rendererVersion === terminalPtyRendererVersion;
   terminal.ptyRendererVersion = terminalPtyRendererVersion;
@@ -50,6 +51,7 @@ saveTerminals = function savePtyTerminals() {
   else localStorage.removeItem(activeKey);
   localStorage.setItem(layoutKey, terminalLayout);
   localStorage.setItem("vibyra.desktop.terminalAgent", setupAgent);
+  localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
 };
 
 terminalProviderProfile = function terminalPtyProviderProfile(terminal) {
@@ -69,6 +71,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
   if (terminals.length >= maxTerminals) return null;
   const model = unlockedModel(modelKey);
   const agent = agentForModel(model);
+  const tokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, setupTokenMode) : setupTokenMode;
   const terminal = {
     id: terminalId(),
     title: `${model.label} ${terminals.length + 1}`,
@@ -76,6 +79,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     agentStatus: null,
     model: model.key,
     effort: "medium",
+    tokenMode,
     projectId: typeof selectedProjectId === "string" ? selectedProjectId : "",
     draft: "",
     shellMode: false,
@@ -113,7 +117,7 @@ createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel) 
 
 setupView = function ptySetupView() {
   const model = selectedSetupModel();
-  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div><button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
+  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalTokenSourcePanel(model, setupTokenMode, "setup")}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
 };
 
 newTerminalMenu = function ptyNewTerminalMenu() {
@@ -147,7 +151,7 @@ terminalComposer = function ptyTerminalComposer(terminal) {
 
 settingsMenu = function ptySettingsMenu(terminal) {
   const cwd = terminal.cwd ? `<div class="terminal-cwd-row">${icon("folder")}<span>${escapeHtml(terminal.cwd)}</span></div>` : "";
-  return `<div class="terminal-menu terminal-settings-menu">${cwd}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
+  return `<div class="terminal-menu terminal-settings-menu">${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
 };
 
 terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {

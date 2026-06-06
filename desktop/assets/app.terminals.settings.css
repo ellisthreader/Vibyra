@@ -41,6 +41,106 @@
   color: #ff9aad;
   margin-top: 3px;
 }
+.terminal-token-source {
+  display: grid;
+  gap: 8px;
+  min-width: 260px;
+  padding: 3px 0;
+}
+.terminal-token-source p {
+  color: #918ca1;
+  font-size: 11px;
+  font-weight: 720;
+}
+.terminal-token-row {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+}
+.terminal-token-row button,
+.terminal-provider-row button,
+.terminal-provider-form button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid rgba(151, 161, 190, 0.13);
+  border-radius: 7px;
+  color: #d8d2e8;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 680;
+  gap: 6px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 9px;
+}
+.terminal-token-row button.active {
+  background: rgba(139, 92, 255, 0.13);
+  border-color: rgba(139, 92, 255, 0.36);
+  color: #f1eef8;
+}
+.terminal-token-row button:disabled {
+  color: #696273;
+  cursor: not-allowed;
+}
+.terminal-token-row svg {
+  height: 14px;
+  width: 14px;
+}
+.terminal-provider-row {
+  align-items: center;
+  color: #918ca1;
+  display: flex;
+  font-size: 12px;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 30px;
+}
+.terminal-provider-row button {
+  color: #b9a7f6;
+  min-height: 28px;
+}
+.terminal-provider-form {
+  display: grid;
+  gap: 8px;
+}
+.terminal-provider-form label {
+  align-items: stretch;
+  border: 0;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  padding: 0;
+}
+.terminal-provider-form label:hover {
+  background: transparent;
+}
+.terminal-provider-form label span {
+  color: #918ca1;
+  font-size: 11px;
+  font-weight: 680;
+}
+.terminal-provider-form input {
+  background: #08080c;
+  border: 1px solid rgba(151, 161, 190, 0.13);
+  border-radius: 7px;
+  color: #eeeaf8;
+  font-size: 12px;
+  min-height: 34px;
+  outline: 0;
+  padding: 0 9px;
+}
+.terminal-provider-form button {
+  background: rgba(139, 92, 255, 0.16);
+  border-color: rgba(139, 92, 255, 0.34);
+  color: #f1eef8;
+}
+.terminal-provider-notice {
+  color: #c8c1d8;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 15px;
+}
 .terminal-notice {
   align-items: center;
   background: rgba(255, 183, 77, 0.08);

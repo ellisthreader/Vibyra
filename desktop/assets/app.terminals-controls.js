@@ -19,6 +19,7 @@ function bindTerminalControls() {
   }));
   document.querySelectorAll("[data-terminal-notice]").forEach((button) => button.addEventListener("click", () => updateTerminal(button.dataset.terminalNotice, { notice: null })));
   document.querySelectorAll("[data-terminal-field]").forEach((field) => field.addEventListener("change", () => updateField(field)));
+  bindTerminalTokenControls(document);
   document.querySelectorAll("[data-terminal-draft]").forEach((field) => {
     fitTerminalDraft(field);
     field.addEventListener("keydown", (event) => handleTerminalDraftKeydown(event, field));
@@ -233,4 +234,99 @@ function updateTerminal(id, patch) {
   forceTerminalRender = true;
   saveTerminals();
   render();
+}
+
+function bindTerminalTokenControls(root) {
+  root.querySelectorAll?.("[data-terminal-token-mode]").forEach((button) => {
+    if (button.dataset.tokenModeBound) return;
+    button.dataset.tokenModeBound = "1";
+    button.addEventListener("click", () => setTerminalTokenMode(button.dataset.terminalTokenTarget || "setup", button.dataset.terminalTokenMode));
+  });
+  root.querySelectorAll?.("[data-open-provider-connect]").forEach((button) => {
+    if (button.dataset.providerConnectBound) return;
+    button.dataset.providerConnectBound = "1";
+    button.addEventListener("click", () => {
+      providerConnectOpen = !providerConnectOpen;
+      providerConnectNotice = "";
+      render();
+    });
+  });
+  root.querySelectorAll?.("[data-provider-disconnect]").forEach((button) => {
+    if (button.dataset.providerDisconnectBound) return;
+    button.dataset.providerDisconnectBound = "1";
+    button.addEventListener("click", () => disconnectOpenAiProvider());
+  });
+  root.querySelectorAll?.("[data-provider-connect-form]").forEach((form) => {
+    if (form.dataset.providerFormBound) return;
+    form.dataset.providerFormBound = "1";
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      connectOpenAiProvider(form);
+    });
+  });
+}
+
+function setTerminalTokenMode(target, mode) {
+  const next = mode === "provider" ? "provider" : "vibyra";
+  if (target === "setup") {
+    const model = typeof selectedSetupModel === "function" ? selectedSetupModel() : null;
+    setupTokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next;
+    localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
+    render();
+    return;
+  }
+  const terminal = findTerminal(target);
+  if (!terminal) return;
+  const model = typeof terminalModelForDisplay === "function" ? terminalModelForDisplay(terminal.model) : null;
+  updateTerminal(target, { tokenMode: typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next });
+}
+
+async function connectOpenAiProvider(form) {
+  const data = new FormData(form);
+  providerConnectPosting = true;
+  providerConnectNotice = "";
+  render();
+  try {
+    const response = await fetch("/desktop/provider-accounts/openai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey: data.get("apiKey"),
+        organization: data.get("organization"),
+        project: data.get("project")
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) throw new Error(result.error || "OpenAI connection failed.");
+    providerAccounts = result.providers || { ...providerAccounts, openai: result.account };
+    providerConnectOpen = false;
+    providerConnectNotice = "OpenAI connected.";
+  } catch (error) {
+    providerConnectNotice = error instanceof Error ? error.message : "OpenAI connection failed.";
+  } finally {
+    providerConnectPosting = false;
+    render();
+  }
+}
+
+async function disconnectOpenAiProvider() {
+  providerConnectPosting = true;
+  providerConnectNotice = "";
+  render();
+  try {
+    const response = await fetch("/desktop/provider-accounts/openai/disconnect", { method: "POST" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || result.ok === false) throw new Error(result.error || "OpenAI disconnect failed.");
+    providerAccounts = result.providers || { ...providerAccounts, openai: result.account };
+    setupTokenMode = "vibyra";
+    terminals.forEach((terminal) => {
+      if (terminal.tokenMode === "provider") terminal.tokenMode = "vibyra";
+    });
+    saveTerminals();
+  } catch (error) {
+    providerConnectNotice = error instanceof Error ? error.message : "OpenAI disconnect failed.";
+  } finally {
+    providerConnectPosting = false;
+    render();
+  }
 }

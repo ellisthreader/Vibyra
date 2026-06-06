@@ -15,11 +15,11 @@ const AGENT_CONFIG = {
   gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." }
 };
 
-export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", projectId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
+export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", tokenMode = "vibyra", projectId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
   const shell = process.env.SHELL || "/bin/bash";
   const status = aiTerminalAgentStatus(agent);
   const launch = launchCommand(status, shell);
-  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, projectId, cols, rows });
+  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, tokenMode, projectId, cols, rows });
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {

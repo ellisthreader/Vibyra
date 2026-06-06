@@ -33,5 +33,29 @@ test("PTY terminal env carries selected OpenRouter model metadata", () => {
   assert.equal(env.VIBYRA_TERMINAL_AGENT, "vibyra");
   assert.equal(env.VIBYRA_OPENROUTER_MODEL, "qwen/qwen3-coder");
   assert.equal(env.VIBYRA_REASONING_EFFORT, "high");
+  assert.equal(env.VIBYRA_TOKEN_MODE, "vibyra");
   assert.equal(env.VIBYRA_TERMINAL_PROJECT_ID, "project-1");
+});
+
+test("terminal env injects OpenAI credentials only for provider token mode", () => {
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "sk-test-openai-key-1234567890";
+  try {
+    const env = terminalEnv({
+      agent: "codex",
+      label: "Codex",
+      model: "openai/gpt-4o-mini",
+      reasoningEffort: "medium",
+      tokenMode: "provider",
+      projectId: "",
+      cols: 120,
+      rows: 40
+    });
+
+    assert.equal(env.VIBYRA_TOKEN_MODE, "provider");
+    assert.equal(env.OPENAI_API_KEY, "sk-test-openai-key-1234567890");
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
 });

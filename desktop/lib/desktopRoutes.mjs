@@ -9,6 +9,7 @@ import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccoun
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { readBody, send, sendFile } from "./http.mjs";
 import { openRouterModelPayload } from "./openRouterModels.mjs";
+import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } from "./providerAccounts.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { appState, markPhoneConnected, publicState } from "./state.mjs";
@@ -55,6 +56,21 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/chat") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await sendDesktopChat(await readBody(req)));
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/provider-accounts") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { providers: providerAccountsState() });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/provider-accounts/openai") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { ok: true, account: await connectOpenAiAccount(await readBody(req)), providers: providerAccountsState() });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/provider-accounts/openai/disconnect") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { ok: true, account: disconnectOpenAiAccount(), providers: providerAccountsState() });
     return true;
   }
   if (url.pathname === "/desktop/pty-terminals" || url.pathname.startsWith("/desktop/pty-terminals/")) {

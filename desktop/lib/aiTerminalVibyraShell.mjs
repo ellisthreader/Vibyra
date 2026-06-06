@@ -2,10 +2,11 @@ import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { PORT } from "./state.mjs";
+import { openAiAccountCredential } from "./providerAccounts.mjs";
 
-export function terminalEnv({ agent, label, model, reasoningEffort, projectId, cols, rows }) {
+export function terminalEnv({ agent, label, model, reasoningEffort, tokenMode = "vibyra", projectId, cols, rows }) {
   const commandDir = vibyraCommandDir();
-  return {
+  const env = {
     ...process.env,
     TERM: process.env.TERM || "xterm-256color",
     COLORTERM: process.env.COLORTERM || "truecolor",
@@ -17,8 +18,16 @@ export function terminalEnv({ agent, label, model, reasoningEffort, projectId, c
     VIBYRA_TERMINAL_LABEL: label,
     VIBYRA_OPENROUTER_MODEL: String(model || ""),
     VIBYRA_REASONING_EFFORT: String(reasoningEffort || "medium"),
+    VIBYRA_TOKEN_MODE: String(tokenMode || "vibyra"),
     VIBYRA_TERMINAL_PROJECT_ID: String(projectId || "")
   };
+  const openai = tokenMode === "provider" ? openAiAccountCredential() : null;
+  if (openai?.apiKey) {
+    env.OPENAI_API_KEY = openai.apiKey;
+    if (openai.organization) env.OPENAI_ORG_ID = openai.organization;
+    if (openai.project) env.OPENAI_PROJECT = openai.project;
+  }
+  return env;
 }
 
 export function terminalSessionCommand({ status, launch, shell, cols, rows }) {

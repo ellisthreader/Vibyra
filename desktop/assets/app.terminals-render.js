@@ -164,12 +164,13 @@ function terminalContext(terminal, profile, compact) {
   const effortShort = String(effort?.short || effort?.label || terminal.effort || "medium").toLowerCase();
   const effortLabel = String(effort?.label || terminal.effort || "medium").toLowerCase();
   const planLabel = typeof currentPlanTier === "function" ? `Vibyra ${currentPlanTier()?.name || "Free"}` : "Vibyra";
+  const tokenLabel = terminal.tokenMode === "provider" ? providerTokenLabelForModel(model) : planLabel;
   const account = typeof currentAccount === "function" ? currentAccount() : {};
   const firstName = String(account?.name || "").trim().split(/\s+/)[0] || "";
   const project = projectForTerminal(terminal);
   const cwd = project?.name ? `~/${slug(project.name)}` : "~/workspace";
   const version = profile.version || ((typeof vibyraDesktopVersion === "string" && vibyraDesktopVersion) || "2.1.0");
-  return { terminal, profile, model, effortShort, effortLabel, planLabel, firstName, cwd, version, compact };
+  return { terminal, profile, model, effortShort, effortLabel, planLabel: tokenLabel, firstName, cwd, version, compact };
 }
 
 function claudeBanner({ profile, model, effortLabel, planLabel, firstName, cwd, version, compact }) {

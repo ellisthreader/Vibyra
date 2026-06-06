@@ -1,5 +1,6 @@
 import { appState } from "./state.mjs";
 import { syncDesktopAccountFromUser } from "./desktopAccount.mjs";
+import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 
@@ -10,12 +11,6 @@ const MAX_HISTORY_CHARS = 1200;
 const DESKTOP_SKILLS = new Set(["plan", "debug", "review", "explain", "fix", "refactor"]);
 
 export async function sendDesktopChat(body, fetchImpl = fetch) {
-  if (!appState.desktopAccountToken) {
-    const error = new Error("Log in to Vibyra Desktop before using Vibyra AI chat.");
-    error.status = 401;
-    throw error;
-  }
-
   const prompt = String(body?.prompt || "").trim();
   if (!prompt) {
     const error = new Error("Ask Vibyra something first.");
@@ -34,11 +29,12 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   const mode = normalizeMode(body?.mode);
   const tool = normalizeTool(body?.tool);
   const projectFiles = project ? await contextForProject(project.id, prompt) : [];
+  const model = normalizeModel(body?.model);
   const payload = {
     fileBody: "",
     filePath: "",
     history: normalizeHistory(body?.history),
-    model: normalizeModel(body?.model),
+    model,
     mode,
     project: project?.name || "",
     projectFiles,
@@ -47,6 +43,16 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     skill,
     surface: "desktop"
   };
+
+  if (normalizeTokenMode(body?.tokenMode) === "provider" && openAiProviderModel(model)) {
+    return sendOpenAiProviderChat(payload, fetchImpl);
+  }
+
+  if (!appState.desktopAccountToken) {
+    const error = new Error("Log in to Vibyra Desktop before using Vibyra AI chat.");
+    error.status = 401;
+    throw error;
+  }
 
   const response = await fetchImpl(`${API_URL}/api/chat`, {
     method: "POST",
@@ -141,6 +147,15 @@ function normalizeAttachments(attachments) {
 
 function normalizeModel(model) {
   return String(model || "auto").trim() || "auto";
+}
+
+function normalizeTokenMode(value) {
+  return String(value || "vibyra").trim().toLowerCase() === "provider" ? "provider" : "vibyra";
+}
+
+function openAiProviderModel(model) {
+  const key = String(model || "").trim().toLowerCase();
+  return key === "auto" || key.startsWith("openai/") || key.startsWith("gpt-") || key.includes("codex");
 }
 
 function normalizeReasoningEffort(value) {

@@ -55,6 +55,35 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.match(requestBody.prompt, /Attached local context names: README\.md/);
 });
 
+test("desktop chat can use a connected OpenAI account without Vibyra credits", async () => {
+  resetDesktopChatState();
+  const previousKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = "sk-test-openai-key-1234567890";
+  let requestBody = null;
+  try {
+    const result = await sendDesktopChat({
+      model: "openai/gpt-4o-mini",
+      prompt: "Use my OpenAI account",
+      reasoningEffort: "high",
+      tokenMode: "provider"
+    }, async (url, options) => {
+      assert.equal(String(url), "https://api.openai.com/v1/responses");
+      assert.equal(options.headers.Authorization, "Bearer sk-test-openai-key-1234567890");
+      requestBody = JSON.parse(options.body);
+      return jsonResponse({ ok: true, output_text: "OpenAI answer", model: "gpt-4o-mini" });
+    });
+
+    assert.equal(result.reply, "OpenAI answer");
+    assert.equal(result.providerBilling, "openai");
+    assert.equal(result.creditCost, null);
+    assert.equal(requestBody.model, "gpt-4o-mini");
+    assert.match(requestBody.input, /Use my OpenAI account/);
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+  }
+});
+
 test("desktop chat refreshes account membership from backend user payload", async () => {
   resetDesktopChatState();
   appState.desktopAccount = { id: 4, email: "user@example.test", name: "User", plan: "free" };

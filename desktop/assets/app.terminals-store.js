@@ -18,6 +18,7 @@ function normalizeTerminal(item) {
     title: String(item.title || "Terminal").slice(0, 72),
     model: String(item.model || "auto"),
     effort: String(item.effort || "medium"),
+    tokenMode: String(item.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
     projectId: String(item.projectId || ""),
     draft: String(item.draft || ""),
     shellMode: Boolean(item.shellMode),
@@ -57,6 +58,7 @@ function saveTerminals() {
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
   else localStorage.removeItem(activeKey);
   localStorage.setItem(layoutKey, terminalLayout);
+  localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
 }
 
 function ensureTerminal() {
@@ -75,6 +77,7 @@ function createTerminal(modelKey = setupModel, shouldRender = true) {
     title: `Terminal ${terminals.length + 1}`,
     model: model.key,
     effort: "medium",
+    tokenMode: setupTokenMode,
     projectId: typeof selectedProjectId === "string" ? selectedProjectId : "",
     draft: "",
     shellMode: false,

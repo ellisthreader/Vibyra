@@ -209,6 +209,7 @@ if (isMainModule()) runTerminal();
 function runTerminal() {
   const model = process.env.VIBYRA_OPENROUTER_MODEL || "auto";
   const reasoningEffort = normalizeReasoningEffort(process.env.VIBYRA_REASONING_EFFORT);
+  const tokenMode = normalizeTokenMode(process.env.VIBYRA_TOKEN_MODE);
   const projectId = process.env.VIBYRA_TERMINAL_PROJECT_ID || "";
   const desktopUrl = normalizeDesktopUrl(process.env.VIBYRA_DESKTOP_URL, process.env.VIBYRA_DESKTOP_PORT);
   const color = process.env.NO_COLOR !== "1";
@@ -230,11 +231,11 @@ function runTerminal() {
       if (!rl.closed) rl.prompt();
       return;
     }
-    if (await handleLocalCommand({ command: prompt, rl, model, reasoningEffort, projectId, desktopUrl, history, color })) {
+    if (await handleLocalCommand({ command: prompt, rl, model, reasoningEffort, tokenMode, projectId, desktopUrl, history, color })) {
       if (!rl.closed) rl.prompt();
       return;
     }
-    await sendPrompt({ prompt, model, reasoningEffort, projectId, desktopUrl, history, color });
+    await sendPrompt({ prompt, model, reasoningEffort, tokenMode, projectId, desktopUrl, history, color });
     if (!rl.closed) rl.prompt();
   });
 
@@ -249,7 +250,7 @@ function runTerminal() {
   });
 }
 
-async function sendPrompt({ prompt, model, reasoningEffort, projectId, desktopUrl, history, color }) {
+async function sendPrompt({ prompt, model, reasoningEffort, tokenMode, projectId, desktopUrl, history, color }) {
   const info = providerInfoForModel(model);
   const token = info.provider === "openai" ? "•" : info.provider === "google" || info.provider === "gemini" ? "✦" : "⏺";
   history.push({ role: "user", text: prompt });
@@ -266,7 +267,8 @@ async function sendPrompt({ prompt, model, reasoningEffort, projectId, desktopUr
         model,
         projectId,
         prompt,
-        reasoningEffort
+        reasoningEffort,
+        tokenMode
       })
     });
     const result = await response.json().catch(() => ({}));
@@ -281,7 +283,7 @@ async function sendPrompt({ prompt, model, reasoningEffort, projectId, desktopUr
   }
 }
 
-async function handleLocalCommand({ command, rl, model, reasoningEffort, projectId, desktopUrl, history, color }) {
+async function handleLocalCommand({ command, rl, model, reasoningEffort, tokenMode, projectId, desktopUrl, history, color }) {
   const [name, ...rest] = command.split(/\s+/);
   const key = name.toLowerCase();
   const info = providerInfoForModel(model);
@@ -295,7 +297,7 @@ async function handleLocalCommand({ command, rl, model, reasoningEffort, project
     return true;
   }
   if (key === "/model") {
-    output.write(`\r\n${ansi("⏺", info.color, color)} Model: ${displayModel(model)}\r\n  Provider: ${info.name}\r\n  Reasoning: ${reasoningEffort}\r\n  Terminal: ${info.officialCli ? "Vibyra wrapper; official CLI also exists" : "Claude-style Vibyra OpenRouter wrapper"}\r\n\r\n`);
+    output.write(`\r\n${ansi("⏺", info.color, color)} Model: ${displayModel(model)}\r\n  Provider: ${info.name}\r\n  Tokens: ${tokenMode === "provider" ? "connected provider account" : "Vibyra account"}\r\n  Reasoning: ${reasoningEffort}\r\n  Terminal: ${info.officialCli ? "Vibyra wrapper; official CLI also exists" : "Claude-style Vibyra OpenRouter wrapper"}\r\n\r\n`);
     return true;
   }
   if (key === "/help" || key === "help" || key === "vibyra") {
@@ -304,7 +306,7 @@ async function handleLocalCommand({ command, rl, model, reasoningEffort, project
   }
   if (key === "/plan" || key === "/debug" || key === "/review" || key === "/explain" || key === "/fix" || key === "/refactor") {
     const text = rest.join(" ").trim();
-    if (text) await sendPrompt({ prompt: `${key.slice(1)}: ${text}`, model, reasoningEffort, projectId, desktopUrl, history, color });
+    if (text) await sendPrompt({ prompt: `${key.slice(1)}: ${text}`, model, reasoningEffort, tokenMode, projectId, desktopUrl, history, color });
     else output.write(`\r\nUsage: ${key} <prompt>\r\n\r\n`);
     return true;
   }
@@ -380,6 +382,10 @@ function ansi(value, colorCode, enabled) {
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").trim();
   return ["low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+}
+
+function normalizeTokenMode(value) {
+  return String(value || "vibyra").trim().toLowerCase() === "provider" ? "provider" : "vibyra";
 }
 
 function normalizeDesktopUrl(url, port) {

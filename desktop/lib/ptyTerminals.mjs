@@ -74,6 +74,7 @@ export function createPtyTerminal(body = {}) {
     agentStatus,
     model,
     reasoningEffort: normalizeReasoningEffort(body.reasoningEffort || body.effort),
+    tokenMode: normalizeTokenMode(body.tokenMode),
     projectId,
     cwd: project?.path || process.cwd(),
     cols: clamp(body.cols, 100),
@@ -94,6 +95,7 @@ export function createPtyTerminal(body = {}) {
     agent: session.agent,
     model: session.model,
     reasoningEffort: session.reasoningEffort,
+    tokenMode: session.tokenMode,
     projectId: session.projectId,
     cwd: session.cwd,
     cols: session.cols,
@@ -247,6 +249,10 @@ function officialAgentForModel(model) {
 function normalizeReasoningEffort(value) {
   const effort = string(value) || "medium";
   return ["low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+}
+
+function normalizeTokenMode(value) {
+  return string(value).toLowerCase() === "provider" ? "provider" : "vibyra";
 }
 
 function clamp(value, fallback) {

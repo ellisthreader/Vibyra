@@ -2,7 +2,7 @@ async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
   const size = initialPtyStartSize(terminal.id);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, tokenMode: terminal.tokenMode, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
@@ -144,6 +144,7 @@ function bindPtyTopbarControls() {
     event.stopPropagation();
     toggleTerminalSettings(button.dataset.terminalSettings);
   }));
+  if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   document.querySelectorAll("[data-terminal-model-search]").forEach((input) => {
     if (input.dataset.ptyModelSearchBound) return;
     input.dataset.ptyModelSearchBound = "1";
@@ -444,6 +445,7 @@ function refreshPtyTerminalSettingsMenus() {
     event.stopPropagation();
     closeTerminal(button.dataset.terminalClose);
   }));
+  if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   return stable;
 }
 
@@ -491,6 +493,7 @@ function ptySessionPatch(session) {
     agent: String(session.agent || ""),
     agentStatus: session.agentStatus || null,
     model: String(session.model || ""),
+    tokenMode: String(session.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
     cwd: String(session.cwd || ""),
     output: String(session.output || "").slice(-60000),
     ptyStatus: String(session.status || "idle"),
