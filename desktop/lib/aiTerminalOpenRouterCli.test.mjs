@@ -4,7 +4,8 @@ import {
   formatAssistantReply,
   promptLabelForModel,
   providerInfoForModel,
-  renderIntroForModel
+  renderIntroForModel,
+  terminalColorEnabled
 } from "./aiTerminalOpenRouterCli.mjs";
 
 test("API-only OpenRouter providers get Claude-style Vibyra terminal metadata", () => {
@@ -73,4 +74,10 @@ test("new relevant OpenRouter providers use the basic Vibyra template", () => {
   assert.equal(providerInfoForModel("moonshotai/kimi-k2").name, "Moonshot");
   assert.equal(providerInfoForModel("ibm-granite/granite-3.3-8b-instruct").name, "IBM");
   assert.equal(providerInfoForModel("perplexity/sonar-pro").officialCli, false);
+});
+
+test("terminal color honors explicit force color over inherited no-color settings", () => {
+  assert.equal(terminalColorEnabled({ NO_COLOR: "1", FORCE_COLOR: "1" }), true);
+  assert.equal(terminalColorEnabled({ NO_COLOR: "" }), false);
+  assert.equal(terminalColorEnabled({ FORCE_COLOR: "0" }), false);
 });

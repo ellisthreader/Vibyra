@@ -22,9 +22,99 @@ function renderTerminalsPage() {
   const gridMeta = grid ? terminalGridMeta(terminals.length) : null;
   const gridClass = grid ? `grid-mode ${gridMeta.className}` : "";
   const gridStyle = grid ? ` style="--terminal-grid-cols:${gridMeta.cols};--terminal-grid-rows:${gridMeta.rows};--terminal-grid-cols-narrow:${gridMeta.narrowCols};--terminal-grid-rows-narrow:${gridMeta.narrowRows};"` : "";
-  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)}</div></section>`;
-  bindTerminalControls();
+  const markup = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)}</div></section>`;
+  renderTerminalPageMarkup(markup);
+  bindRenderedTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
+}
+
+function renderTerminalPageMarkup(markup) {
+  const currentPage = nodes.content.querySelector(".terminal-page");
+  if (!currentPage?.querySelector("[data-terminal-input]")) {
+    nodes.content.innerHTML = markup;
+    return;
+  }
+  const template = document.createElement("template");
+  template.innerHTML = markup.trim();
+  const nextPage = template.content.firstElementChild;
+  const currentStage = currentPage.querySelector(".terminal-stage");
+  const nextStage = nextPage?.querySelector(".terminal-stage");
+  if (!nextPage || !currentStage || !nextStage) {
+    nodes.content.innerHTML = markup;
+    return;
+  }
+  syncTerminalPageLayout(currentPage, nextPage);
+  const expectedIds = new Set();
+  let previousArticle = null;
+  Array.from(nextStage.querySelectorAll(":scope > [data-terminal]")).forEach((nextArticle) => {
+    const id = nextArticle.dataset.terminal || "";
+    if (!id) return;
+    expectedIds.add(id);
+    let currentArticle = currentStage.querySelector(`[data-terminal="${CSS.escape(id)}"]`);
+    const expectedPosition = previousArticle ? previousArticle.nextElementSibling : currentStage.firstElementChild;
+    if (!currentArticle) {
+      currentStage.insertBefore(nextArticle, expectedPosition);
+      currentArticle = nextArticle;
+    } else {
+      syncMountedTerminalArticle(currentArticle, nextArticle);
+      if (currentArticle !== expectedPosition) currentStage.insertBefore(currentArticle, expectedPosition);
+    }
+    previousArticle = currentArticle;
+  });
+  currentStage.querySelectorAll(":scope > [data-terminal]").forEach((article) => {
+    if (!expectedIds.has(article.dataset.terminal || "")) article.remove();
+  });
+}
+
+function syncTerminalPageLayout(currentPage, nextPage) {
+  currentPage.classList.toggle("grid-mode", nextPage.classList.contains("grid-mode"));
+  currentPage.classList.toggle("terminal-grid-many", nextPage.classList.contains("terminal-grid-many"));
+  if (!nextPage.classList.contains("grid-mode")) currentPage.classList.remove("terminal-grid-scroll");
+  ["--terminal-grid-cols", "--terminal-grid-rows", "--terminal-grid-cols-narrow", "--terminal-grid-rows-narrow"].forEach((name) => {
+    const value = nextPage.style.getPropertyValue(name);
+    if (value) currentPage.style.setProperty(name, value);
+    else currentPage.style.removeProperty(name);
+  });
+}
+
+function syncMountedTerminalArticle(currentArticle, nextArticle) {
+  currentArticle.className = nextArticle.className;
+  syncOptionalAttribute(currentArticle, nextArticle, "aria-hidden");
+  const currentHeader = currentArticle.querySelector(":scope > header");
+  const nextHeader = nextArticle.querySelector(":scope > header");
+  if (currentHeader && nextHeader && currentHeader.outerHTML !== nextHeader.outerHTML) currentHeader.replaceWith(nextHeader);
+  else if (!currentHeader && nextHeader) currentArticle.prepend(nextHeader);
+
+  const currentNotice = currentArticle.querySelector(":scope > .terminal-notice");
+  const nextNotice = nextArticle.querySelector(":scope > .terminal-notice");
+  if (currentNotice && !nextNotice) currentNotice.remove();
+  else if (!currentNotice && nextNotice) (currentArticle.querySelector(":scope > .terminal-lines") || null)?.before(nextNotice);
+  else if (currentNotice && nextNotice && currentNotice.outerHTML !== nextNotice.outerHTML) currentNotice.replaceWith(nextNotice);
+
+  const currentViewport = currentArticle.querySelector(":scope > [data-terminal-input]");
+  const nextViewport = nextArticle.querySelector(":scope > [data-terminal-input]");
+  if (!currentViewport || !nextViewport) return;
+  const currentUsesXterm = Boolean(currentViewport.querySelector("[data-terminal-xterm]"));
+  const nextUsesXterm = Boolean(nextViewport.querySelector("[data-terminal-xterm]"));
+  if (currentUsesXterm !== nextUsesXterm) {
+    currentViewport.replaceWith(nextViewport);
+    return;
+  }
+  currentViewport.className = nextViewport.className;
+  ["tabindex", "role", "aria-label", "data-terminal-input"].forEach((name) => syncOptionalAttribute(currentViewport, nextViewport, name));
+}
+
+function syncOptionalAttribute(current, next, name) {
+  if (next.hasAttribute(name)) current.setAttribute(name, next.getAttribute(name));
+  else current.removeAttribute(name);
+}
+
+function bindRenderedTerminalControls() {
+  if (nodes.content.querySelector("[data-terminal-input]") && typeof bindPtyTopbarControls === "function") {
+    bindPtyTopbarControls();
+    return;
+  }
+  bindTerminalControls();
 }
 
 function terminalGridMeta(count) {

@@ -212,7 +212,7 @@ function runTerminal() {
   const tokenMode = normalizeTokenMode(process.env.VIBYRA_TOKEN_MODE);
   const projectId = process.env.VIBYRA_TERMINAL_PROJECT_ID || "";
   const desktopUrl = normalizeDesktopUrl(process.env.VIBYRA_DESKTOP_URL, process.env.VIBYRA_DESKTOP_PORT);
-  const color = process.env.NO_COLOR !== "1";
+  const color = terminalColorEnabled();
   const history = [];
   const rl = readline.createInterface({
     input,
@@ -377,6 +377,13 @@ function visibleLength(value) {
 
 function ansi(value, colorCode, enabled) {
   return enabled ? `\x1b[${colorCode}m${value}\x1b[0m` : value;
+}
+
+export function terminalColorEnabled(env = process.env) {
+  if (Object.hasOwn(env, "FORCE_COLOR")) {
+    return !["0", "false", "never"].includes(String(env.FORCE_COLOR).trim().toLowerCase());
+  }
+  return !Object.hasOwn(env, "NO_COLOR");
 }
 
 function normalizeReasoningEffort(value) {

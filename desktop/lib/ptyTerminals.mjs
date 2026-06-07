@@ -12,6 +12,7 @@ import {
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
 const MAX_OUTPUT_BUFFER = 50_000;
+const MAX_WEBSOCKET_MESSAGE_BYTES = 1_000_000;
 const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
@@ -30,12 +31,12 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && route.action === "input") {
-    writePtyInput(route.id, String((await readBody(req))?.input ?? ""));
+    await writePtyInput(route.id, String((await readBody(req))?.input ?? ""));
     send(res, 200, { ok: true });
     return true;
   }
   if (req.method === "POST" && route.action === "resize") {
-    resizePtyTerminal(route.id, await readBody(req));
+    await resizePtyTerminal(route.id, await readBody(req), { requireRunning: true });
     send(res, 200, { ok: true });
     return true;
   }
@@ -59,18 +60,42 @@ export function handlePtyTerminalUpgrade(req, socket) {
     socket.destroy();
     return;
   }
-  acceptWebSocket(req, socket);
-  const unsubscribe = subscribePtyTerminal(session.id, (payload) => sendFrame(socket, JSON.stringify(payload)));
+  if (!acceptWebSocket(req, socket)) {
+    socket.destroy();
+    return;
+  }
+  let unsubscribe = () => {};
+  let sendFailed = false;
+  const sendMessage = (payload) => {
+    if (sendFrame(socket, JSON.stringify(payload))) return;
+    sendFailed = true;
+    unsubscribe();
+  };
+  unsubscribe = subscribePtyTerminal(session.id, sendMessage);
+  if (sendFailed) {
+    unsubscribe();
+    socket.destroy();
+    return;
+  }
   let pendingSocketData = Buffer.alloc(0);
-  let pendingSocketFragments = [];
+  let frameState = emptyFrameState();
+  let messageQueue = Promise.resolve();
   socket.on("data", (chunk) => {
     try {
-      const parsed = readFrames(Buffer.concat([pendingSocketData, chunk]), pendingSocketFragments);
+      const incoming = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      if (pendingSocketData.length + incoming.length > MAX_WEBSOCKET_MESSAGE_BYTES + 14) {
+        throw webSocketProtocolError("PTY WebSocket input exceeded the message limit.");
+      }
+      const parsed = parsePtyWebSocketFrames(Buffer.concat([pendingSocketData, incoming]), frameState);
       pendingSocketData = parsed.remaining;
-      pendingSocketFragments = parsed.fragments;
-      for (const message of parsed.messages) handlePtySocketMessage(session.id, message);
+      frameState = parsed.state;
+      for (const pong of parsed.pongs) sendFrame(socket, pong, 10);
+      for (const message of parsed.messages) {
+        messageQueue = messageQueue.then(() => handlePtySocketMessage(session.id, message));
+      }
+      if (parsed.close) socket.end();
     } catch (error) {
-      console.error(error instanceof Error ? error.stack || error.message : error);
+      if (error?.code !== "PTY_WEBSOCKET_PROTOCOL") logPtyError(error);
       socket.destroy();
     }
   });
@@ -82,7 +107,7 @@ export function createPtyTerminal(body = {}) {
   const requestedId = string(body.id);
   const existing = requestedId ? sessions.get(requestedId) : null;
   if (existing && existing.status !== "exited") {
-    resizePtyTerminal(existing.id, body);
+    void resizePtyTerminal(existing.id, body).catch(logUnexpectedPtyError);
     return publicSession(existing);
   }
   if (existing) closePtyTerminal(existing.id);
@@ -90,14 +115,17 @@ export function createPtyTerminal(body = {}) {
   const projectId = string(body.projectId);
   const project = projectById(projectId);
   const model = string(body.model).slice(0, 140);
-  const agent = normalizeAgent(body.agent, model);
+  const agent = normalizeAgent(body.agent);
   const agentStatus = aiTerminalAgentStatus(agent);
   const session = {
     id: requestedId || "pty-" + Date.now() + "-" + randomUUID().slice(0, 8),
     title: string(body.title).slice(0, 72) || "Terminal",
+    jobId: normalizeJobMetadata(body.jobId, 120),
+    jobRole: normalizeJobMetadata(body.jobRole, 40),
     agent,
     agentStatus,
     model,
+    initialPrompt: normalizeInitialPrompt(body.initialPrompt),
     reasoningEffort: normalizeReasoningEffort(body.reasoningEffort || body.effort),
     permissionMode: normalizePermissionMode(body.permissionMode, agent),
     tokenMode: normalizeTokenMode(body.tokenMode),
@@ -117,42 +145,61 @@ export function createPtyTerminal(body = {}) {
     appendOutput(session, `${label(session.agent)} CLI is not available.\r\n${agentStatus.installHint}\r\n`);
     return publicSession(session);
   }
-  session.process = launchPersistentAiTerminalProcess({
-    agent: session.agent,
-    model: session.model,
-    reasoningEffort: session.reasoningEffort,
-    permissionMode: session.permissionMode,
-    tokenMode: session.tokenMode,
-    projectId: session.projectId,
-    terminalId: session.id,
-    title: session.title,
-    cwd: session.cwd,
-    cols: session.cols,
-    rows: session.rows,
-    createdAt: session.createdAt
-  }, persistentHandlers(session));
+  try {
+    session.process = launchPersistentAiTerminalProcess({
+      agent: session.agent,
+      model: session.model,
+      reasoningEffort: session.reasoningEffort,
+      permissionMode: session.permissionMode,
+      tokenMode: session.tokenMode,
+      projectId: session.projectId,
+      terminalId: session.id,
+      title: session.title,
+      jobId: session.jobId,
+      jobRole: session.jobRole,
+      initialPrompt: session.initialPrompt,
+      cwd: session.cwd,
+      cols: session.cols,
+      rows: session.rows,
+      createdAt: session.createdAt
+    }, persistentHandlers(session));
+  } catch (error) {
+    sessions.delete(session.id);
+    try { removePersistentAiTerminalSession(session.id); } catch {}
+    throw error;
+  }
   return publicSession(session);
 }
 
 function persistentHandlers(session) {
+  const isCurrent = () => sessions.get(session.id) === session;
   return {
     onSnapshot: (payload) => {
+      if (!isCurrent()) return;
       const output = String(payload.output || "").slice(-MAX_OUTPUT_BUFFER);
-      if (output && output !== session.output) {
-        session.output = output;
-        publish(session.id, { type: "session", session: publicSession(session), output });
-      }
       const workerStatus = String(payload.state?.status || "");
+      let changed = output !== session.output;
+      if (workerStatus && workerStatus !== session.status) changed = true;
+      if (payload.state?.exitCode !== undefined && payload.state.exitCode !== session.exitCode) changed = true;
+      session.output = output;
       if (workerStatus) session.status = workerStatus;
       session.exitCode = payload.state?.exitCode ?? session.exitCode;
       session.updatedAt = payload.state?.updatedAt || session.updatedAt;
+      if (workerStatus === "exited" && session.process) {
+        const processHandle = session.process;
+        session.process = null;
+        processHandle.disconnect?.();
+      }
+      if (changed) publish(session.id, { type: "session", session: publicSession(session), output });
     },
     onData: (data) => {
+      if (!isCurrent()) return;
       session.status = "running";
       appendOutput(session, data);
       publish(session.id, { type: "output", data });
     },
     onExit: ({ code, signal }) => {
+      if (!isCurrent()) return;
       session.process = null;
       session.status = "exited";
       session.exitCode = Number.isFinite(Number(code)) ? Number(code) : null;
@@ -173,16 +220,20 @@ export function closePtyTerminal(id) {
 }
 
 function restorePersistentSessions() {
-  for (const record of listPersistentAiTerminalSessions().slice(0, MAX_PTY_TERMINAL_SESSIONS)) {
+  const records = selectPersistentSessionRecords(listPersistentAiTerminalSessions());
+  for (const record of records) {
     const config = record.config;
     const workerState = record.state;
-    const agent = normalizeAgent(config.agent, config.model);
+    const agent = normalizeAgent(config.agent);
     const session = {
       id: string(config.terminalId),
       title: string(config.title).slice(0, 72) || "Recovered terminal",
+      jobId: normalizeJobMetadata(config.jobId, 120),
+      jobRole: normalizeJobMetadata(config.jobRole, 40),
       agent,
       agentStatus: aiTerminalAgentStatus(agent),
       model: string(config.model).slice(0, 140),
+      initialPrompt: normalizeInitialPrompt(config.initialPrompt),
       reasoningEffort: normalizeReasoningEffort(config.reasoningEffort),
       permissionMode: normalizePermissionMode(config.permissionMode, agent),
       tokenMode: normalizeTokenMode(config.tokenMode),
@@ -213,24 +264,65 @@ export function listPtyTerminals() {
   return Array.from(sessions.values()).map(publicSession);
 }
 
-function writePtyInput(id, input) {
+async function writePtyInput(id, input) {
   const session = sessions.get(string(id));
-  if (!session?.process?.stdin?.writable) throw httpError(409, "Terminal is not running.");
-  session.process.stdin.write(input);
+  await writePtySessionInput(session, input);
+}
+
+async function resizePtyTerminal(id, size, options = {}) {
+  const session = sessions.get(string(id));
+  return resizePtySession(session, size, options);
+}
+
+export async function writePtySessionInput(session, input) {
+  const stdin = session?.process?.stdin;
+  if (!isPtySessionWritable(session)) throw httpError(409, "Terminal is not running.");
+  let result;
+  try {
+    result = stdin.write(String(input ?? ""));
+    if (result && typeof result.then === "function") result = await result;
+  } catch (error) {
+    if (isClosedPtyError(error) || !stdin.writable) {
+      throw httpError(409, "Terminal is not running.");
+    }
+    throw error;
+  }
+  if (result === false && !stdin.writable) throw httpError(409, "Terminal is not running.");
   session.updatedAt = new Date().toISOString();
 }
 
-function resizePtyTerminal(id, size) {
-  const session = sessions.get(string(id));
-  if (!session) return;
+export async function resizePtySession(session, size, options = {}) {
+  if (!session) {
+    if (options.requireRunning) throw httpError(409, "Terminal is not running.");
+    return false;
+  }
+  if (options.requireRunning && !isPtySessionWritable(session)) {
+    throw httpError(409, "Terminal is not running.");
+  }
+  const resize = session.process?.resize;
+  if (options.requireRunning && typeof resize !== "function") {
+    throw httpError(409, "Terminal is not running.");
+  }
   const cols = clamp(size?.cols, session.cols || 100);
   const rows = clamp(size?.rows, session.rows || 30);
-  if (session.cols === cols && session.rows === rows) return;
+  if (session.cols === cols && session.rows === rows) return false;
+  let result;
+  try {
+    result = resize?.call(session.process, cols, rows);
+    if (result && typeof result.then === "function") await result;
+  } catch (error) {
+    if (isClosedPtyError(error) || !session.process?.stdin?.writable) {
+      throw httpError(409, "Terminal is not running.");
+    }
+    throw error;
+  }
+  if (result === false && !session.process?.stdin?.writable) {
+    throw httpError(409, "Terminal is not running.");
+  }
   session.cols = cols;
   session.rows = rows;
   session.updatedAt = new Date().toISOString();
-  try { session.process?.resize?.(cols, rows); } catch {}
-  try { session.process?.kill?.("SIGWINCH"); } catch {}
+  return true;
 }
 
 function subscribePtyTerminal(id, sendMessage) {
@@ -245,16 +337,14 @@ function subscribePtyTerminal(id, sendMessage) {
   };
 }
 
-export function handlePtySocketMessage(id, message) {
+export async function handlePtySocketMessage(id, message) {
   let payload = null;
   try { payload = JSON.parse(message); } catch { return; }
   try {
-    if (payload?.type === "input") writePtyInput(id, String(payload.data ?? ""));
-    if (payload?.type === "resize") resizePtyTerminal(id, payload);
+    if (payload?.type === "input") await writePtyInput(id, String(payload.data ?? ""));
+    if (payload?.type === "resize") await resizePtyTerminal(id, payload, { requireRunning: true });
   } catch (error) {
-    if (Number(error?.status) !== 409) {
-      console.error(error instanceof Error ? error.stack || error.message : error);
-    }
+    logUnexpectedPtyError(error);
   }
 }
 
@@ -269,7 +359,7 @@ function ptyRoute(pathname) {
 
 function publicSession(session) {
   if (!session) return null;
-  const { process, ...safe } = session;
+  const { process, initialPrompt, ...safe } = session;
   return safe;
 }
 
@@ -279,42 +369,70 @@ function appendOutput(session, data) {
 }
 
 function publish(id, payload) {
-  for (const sendMessage of subscribers.get(id) || []) sendMessage(payload);
+  const list = subscribers.get(id);
+  if (!list) return;
+  for (const sendMessage of [...list]) {
+    try {
+      sendMessage(payload);
+    } catch (error) {
+      list.delete(sendMessage);
+      logPtyError(error);
+    }
+  }
+  if (!list.size) subscribers.delete(id);
 }
 
 function acceptWebSocket(req, socket) {
   const key = req.headers["sec-websocket-key"];
+  if (typeof key !== "string" || !key.trim() || !socket?.writable) return false;
   const accept = createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
-  socket.write(["HTTP/1.1 101 Switching Protocols", "Upgrade: websocket", "Connection: Upgrade", `Sec-WebSocket-Accept: ${accept}`, "", ""].join("\r\n"));
+  try {
+    socket.write(["HTTP/1.1 101 Switching Protocols", "Upgrade: websocket", "Connection: Upgrade", `Sec-WebSocket-Accept: ${accept}`, "", ""].join("\r\n"));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function sendFrame(socket, text) {
-  const body = Buffer.from(text);
+function sendFrame(socket, value, opcode = 1) {
+  if (!socket?.writable || socket.destroyed || socket.writableEnded) return false;
+  const body = Buffer.isBuffer(value) ? value : Buffer.from(value);
+  let frame;
   if (body.length < 126) {
-    socket.write(Buffer.concat([Buffer.from([129, body.length]), body]));
-    return;
+    frame = Buffer.concat([Buffer.from([0x80 | opcode, body.length]), body]);
+  } else if (body.length <= 0xffff) {
+    frame = Buffer.concat([Buffer.from([0x80 | opcode, 126, body.length >> 8, body.length & 255]), body]);
+  } else {
+    const head = Buffer.alloc(10);
+    head[0] = 0x80 | opcode;
+    head[1] = 127;
+    head.writeBigUInt64BE(BigInt(body.length), 2);
+    frame = Buffer.concat([head, body]);
   }
-  if (body.length <= 0xffff) {
-    socket.write(Buffer.concat([Buffer.from([129, 126, body.length >> 8, body.length & 255]), body]));
-    return;
+  try {
+    socket.write(frame);
+    return true;
+  } catch {
+    return false;
   }
-  const head = Buffer.alloc(10);
-  head[0] = 129;
-  head[1] = 127;
-  head.writeBigUInt64BE(BigInt(body.length), 2);
-  socket.write(Buffer.concat([head, body]));
 }
 
-function readFrames(buffer, fragments = []) {
+export function parsePtyWebSocketFrames(buffer, state = emptyFrameState()) {
   const messages = [];
+  const pongs = [];
   let offset = 0;
-  let nextFragments = fragments;
+  let nextState = state;
+  let close = false;
   while (offset + 2 <= buffer.length) {
     const first = buffer[offset];
     const second = buffer[offset + 1];
     const fin = Boolean(first & 0x80);
     const opcode = first & 0x0f;
     const masked = Boolean(second & 0x80);
+    if (first & 0x70) throw webSocketProtocolError("PTY WebSocket extensions are not supported.");
+    if (!masked) throw webSocketProtocolError("PTY WebSocket client frames must be masked.");
+    if (![0, 1, 8, 9, 10].includes(opcode)) throw webSocketProtocolError("Unsupported PTY WebSocket frame.");
+    if (opcode >= 8 && !fin) throw webSocketProtocolError("PTY WebSocket control frames cannot be fragmented.");
     let length = second & 0x7f;
     let cursor = offset + 2;
     if (length === 126) {
@@ -324,32 +442,111 @@ function readFrames(buffer, fragments = []) {
     } else if (length === 127) {
       if (cursor + 8 > buffer.length) break;
       const bigLength = buffer.readBigUInt64BE(cursor);
-      if (bigLength > BigInt(Number.MAX_SAFE_INTEGER)) break;
+      if (bigLength > BigInt(MAX_WEBSOCKET_MESSAGE_BYTES)) {
+        throw webSocketProtocolError("PTY WebSocket input exceeded the message limit.");
+      }
       length = Number(bigLength);
       cursor += 8;
     }
+    if (length > MAX_WEBSOCKET_MESSAGE_BYTES || (opcode >= 8 && length > 125)) {
+      throw webSocketProtocolError("PTY WebSocket frame exceeded its allowed size.");
+    }
     const maskOffset = cursor;
-    if (masked) cursor += 4;
+    cursor += 4;
     if (cursor + length > buffer.length) break;
     const payload = Buffer.from(buffer.subarray(cursor, cursor + length));
-    if (masked) {
-      const mask = buffer.subarray(maskOffset, maskOffset + 4);
-      for (let index = 0; index < payload.length; index += 1) payload[index] ^= mask[index % 4];
-    }
-    if (opcode === 8) return { messages, remaining: Buffer.alloc(0), fragments: [] };
-    if (opcode === 1 || opcode === 2) {
-      if (fin) messages.push(payload.toString("utf8"));
-      else nextFragments = [payload];
-    } else if (opcode === 0 && nextFragments.length) {
-      nextFragments = [...nextFragments, payload];
+    const mask = buffer.subarray(maskOffset, maskOffset + 4);
+    for (let index = 0; index < payload.length; index += 1) payload[index] ^= mask[index % 4];
+    if (opcode === 8) {
+      close = true;
+    } else if (opcode === 9) {
+      pongs.push(payload);
+    } else if (opcode === 0) {
+      if (!nextState.fragmented) throw webSocketProtocolError("Unexpected PTY WebSocket continuation frame.");
+      const bytes = nextState.bytes + payload.length;
+      if (bytes > MAX_WEBSOCKET_MESSAGE_BYTES) throw webSocketProtocolError("PTY WebSocket input exceeded the message limit.");
+      const fragments = [...nextState.fragments, payload];
       if (fin) {
-        messages.push(Buffer.concat(nextFragments).toString("utf8"));
-        nextFragments = [];
+        messages.push(decodeWebSocketText(Buffer.concat(fragments)));
+        nextState = emptyFrameState();
+      } else {
+        nextState = { fragmented: true, fragments, bytes };
       }
+    } else if (nextState.fragmented) {
+      throw webSocketProtocolError("A PTY WebSocket message was interrupted.");
+    } else if (fin) {
+      messages.push(decodeWebSocketText(payload));
+    } else {
+      nextState = { fragmented: true, fragments: [payload], bytes: payload.length };
     }
     offset = cursor + length;
+    if (close) break;
   }
-  return { messages, remaining: buffer.subarray(offset), fragments: nextFragments };
+  return { messages, pongs, close, remaining: buffer.subarray(offset), state: nextState };
+}
+
+export function selectPersistentSessionRecords(records, limit = MAX_PTY_TERMINAL_SESSIONS) {
+  const selectedById = new Map();
+  for (const record of records || []) {
+    const id = string(record?.config?.terminalId);
+    if (!id) continue;
+    const current = selectedById.get(id);
+    if (!current || sessionRecordPriority(record) < sessionRecordPriority(current)) {
+      selectedById.set(id, record);
+    }
+  }
+  return [...selectedById.values()]
+    .sort((left, right) => {
+      const priority = sessionRecordPriority(left) - sessionRecordPriority(right);
+      if (priority) return priority;
+      const leftTime = Date.parse(left.state?.updatedAt || left.state?.createdAt || left.config?.createdAt || "") || 0;
+      const rightTime = Date.parse(right.state?.updatedAt || right.state?.createdAt || right.config?.createdAt || "") || 0;
+      return priority === 0 && String(left.state?.status) === "exited"
+        ? rightTime - leftTime
+        : leftTime - rightTime;
+    })
+    .slice(0, Math.max(0, limit));
+}
+
+function emptyFrameState() {
+  return { fragmented: false, fragments: [], bytes: 0 };
+}
+
+function decodeWebSocketText(payload) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(payload);
+  } catch {
+    throw webSocketProtocolError("PTY WebSocket input was not valid UTF-8.");
+  }
+}
+
+function webSocketProtocolError(message) {
+  const error = new Error(message);
+  error.code = "PTY_WEBSOCKET_PROTOCOL";
+  return error;
+}
+
+function sessionRecordPriority(record) {
+  return String(record?.state?.status || "exited") === "exited" ? 1 : 0;
+}
+
+function isPtySessionWritable(session) {
+  if (!session?.process?.stdin) return false;
+  if (["exited", "stopped", "unavailable"].includes(String(session.status))) return false;
+  return session.process.stdin.writable !== false;
+}
+
+function isClosedPtyError(error) {
+  return Number(error?.status) === 409
+    || ["EPIPE", "ERR_STREAM_DESTROYED", "ERR_STREAM_WRITE_AFTER_END"].includes(String(error?.code || ""));
+}
+
+function logPtyError(error) {
+  console.error(error instanceof Error ? error.stack || error.message : error);
+}
+
+function logUnexpectedPtyError(error) {
+  if (Number(error?.status) !== 409) logPtyError(error);
 }
 
 function isLoopback(req) {
@@ -357,24 +554,14 @@ function isLoopback(req) {
   return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
 }
 
-function normalizeAgent(value, model = "") {
+export function normalizePtyTerminalAgent(value) {
   const next = string(value).toLowerCase() || "vibyra";
-  if (next === "official") return availableOfficialAgentForModel(model) || "vibyra";
+  if (next === "official") return "vibyra";
   return agents.has(next) ? next : "vibyra";
 }
 
-function availableOfficialAgentForModel(model) {
-  const agent = officialAgentForModel(model);
-  return agent && aiTerminalAgentStatus(agent).available ? agent : "";
-}
-
-function officialAgentForModel(model) {
-  const key = string(model).toLowerCase();
-  const provider = key.includes("/") ? key.split("/")[0] : "";
-  if (provider === "openai" || key.startsWith("gpt-") || key.includes("codex")) return "codex";
-  if (provider === "anthropic" || provider === "claude" || key.startsWith("claude-")) return "claude";
-  if (provider === "google" || provider === "gemini" || key.startsWith("gemini-")) return "gemini";
-  return "";
+function normalizeAgent(value) {
+  return normalizePtyTerminalAgent(value);
 }
 
 function normalizeReasoningEffort(value) {
@@ -384,6 +571,14 @@ function normalizeReasoningEffort(value) {
 
 function normalizeTokenMode(value) {
   return string(value).toLowerCase() === "provider" ? "provider" : "vibyra";
+}
+
+function normalizeInitialPrompt(value) {
+  return String(value ?? "").trim().slice(0, 12_000);
+}
+
+function normalizeJobMetadata(value, max) {
+  return String(value ?? "").trim().replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, max);
 }
 
 function normalizePermissionMode(value, agent) {

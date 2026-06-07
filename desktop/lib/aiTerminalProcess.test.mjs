@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { aiTerminalAgentArgs, aiTerminalAgentStatus, listAiTerminalAgentStatuses } from "./aiTerminalProcess.mjs";
+import {
+  aiTerminalAgentArgs,
+  aiTerminalAgentStatus,
+  interactiveAiTerminalEnv,
+  listAiTerminalAgentStatuses
+} from "./aiTerminalProcess.mjs";
 import { terminalEnv } from "./aiTerminalVibyraShell.mjs";
 
 test("Vibyra PTY agent is the default available terminal agent", () => {
@@ -67,6 +72,19 @@ test("PTY terminal env carries selected OpenRouter model metadata", () => {
   assert.equal(env.VIBYRA_PERMISSION_MODE, "standard");
   assert.equal(env.VIBYRA_TOKEN_MODE, "vibyra");
   assert.equal(env.VIBYRA_TERMINAL_PROJECT_ID, "project-1");
+});
+
+test("interactive terminal env restores ANSI color inherited from a no-color parent", () => {
+  const env = interactiveAiTerminalEnv({
+    TERM: "dumb",
+    NO_COLOR: "1",
+    FORCE_COLOR: "0"
+  });
+
+  assert.equal(env.TERM, "xterm-256color");
+  assert.equal(env.COLORTERM, "truecolor");
+  assert.equal(env.FORCE_COLOR, "1");
+  assert.equal("NO_COLOR" in env, false);
 });
 
 test("terminal env injects OpenAI credentials only for provider token mode", () => {

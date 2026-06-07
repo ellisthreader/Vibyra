@@ -5,7 +5,8 @@
   gap: 10px;
   justify-content: space-between;
   min-width: 0;
-  padding-bottom: 11px;
+  min-height: 54px;
+  padding: 9px 12px;
 }
 .terminal-companion-brand {
   align-items: center;
@@ -14,8 +15,18 @@
   gap: 8px;
   min-width: 0;
 }
-.terminal-companion-brand > svg {
+.terminal-companion-brand-mark {
+  align-items: center;
+  background: var(--terminal-accent-soft, rgba(139, 92, 255, 0.13));
+  border: 1px solid var(--terminal-accent-border, rgba(139, 92, 255, 0.36));
+  border-radius: 9px;
+  display: inline-flex;
   flex: 0 0 auto;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+.terminal-companion-brand-mark svg {
   height: 17px;
   width: 17px;
 }
@@ -41,6 +52,22 @@
   align-items: center;
   display: flex;
   gap: 3px;
+}
+.terminal-companion-live {
+  align-items: center;
+  color: var(--terminal-dim, #918ca1);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  margin-right: 3px;
+}
+.terminal-companion-live i {
+  background: var(--terminal-status-running, #37d67a);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--terminal-status-running-ring, rgba(55, 214, 122, 0.09));
+  height: 6px;
+  width: 6px;
 }
 .terminal-companion-shell-actions button {
   align-items: center;

@@ -14,16 +14,17 @@ function terminalVoiceHtml() {
   const active = terminalCompanionActiveTerminal();
   const available = terminalVoiceAvailable();
   const status = available ? terminalVoiceStatus : "Speech recognition unavailable";
-  const toggleLabel = terminalVoiceStarting ? "Starting" : terminalVoiceListening ? "Stop" : "Mic";
+  const toggleLabel = terminalVoiceStarting ? "Starting" : terminalVoiceListening ? "Stop listening" : "Talk to Vibyra";
   const stateClass = terminalVoiceListening ? " listening" : "";
-  const copy = [terminalVoiceTranscript, terminalVoiceInterim].filter(Boolean).join(" ") || "Speak to type in the active terminal.";
-  return "<div class=\"terminal-companion-head\"><span>Voice</span><div class=\"terminal-companion-head-actions\"><small role=\"status\" aria-live=\"polite\">" + escapeHtml(status) + "</small></div></div>"
-    + "<div class=\"terminal-voice-orb" + stateClass + "\"><span>" + icon("pulse") + "</span><strong>" + escapeHtml(active?.title || "No terminal") + "</strong></div>"
+  const transcript = [terminalVoiceTranscript, terminalVoiceInterim].filter(Boolean).join(" ");
+  const copy = transcript || "Your voice becomes the next prompt for the active AI agent.";
+  return "<div class=\"terminal-companion-head terminal-ai-heading\"><div><span>AI voice</span><small>Built into your active agent</small></div><small role=\"status\" aria-live=\"polite\">" + escapeHtml(status) + "</small></div>"
+    + "<div class=\"terminal-voice-orb" + stateClass + "\"><span class=\"terminal-voice-ai-mark\">" + icon("sparkles") + "</span><div><strong>" + escapeHtml(active?.title || "No active agent") + "</strong><small>" + (active ? "Listening for your next instruction" : "Open a terminal to start") + "</small></div><span class=\"terminal-voice-wave\" aria-hidden=\"true\"><i></i><i></i><i></i><i></i><i></i></span></div>"
     + "<div class=\"terminal-voice-actions\">"
-    + "<button class=\"terminal-tool-button primary\" type=\"button\" data-terminal-voice-toggle aria-pressed=\"" + (terminalVoiceListening ? "true" : "false") + "\" " + (available && active && !terminalVoiceStarting ? "" : "disabled") + ">" + icon(terminalVoiceListening ? "square" : "pulse") + "<span>" + toggleLabel + "</span></button>"
-    + "<button class=\"terminal-tool-button\" type=\"button\" data-terminal-voice-enter " + (active ? "" : "disabled") + ">" + icon("send") + "<span>Enter</span></button>"
+    + "<button class=\"terminal-tool-button primary terminal-voice-toggle\" type=\"button\" data-terminal-voice-toggle aria-pressed=\"" + (terminalVoiceListening ? "true" : "false") + "\" " + (available && active && !terminalVoiceStarting ? "" : "disabled") + ">" + icon(terminalVoiceListening ? "square" : "pulse") + "<span>" + toggleLabel + "</span></button>"
+    + "<button class=\"terminal-tool-button terminal-voice-send\" type=\"button\" data-terminal-voice-enter " + (active && transcript ? "" : "disabled") + ">" + icon("send") + "<span>Send to agent</span></button>"
     + "<button class=\"terminal-tool-button\" type=\"button\" data-terminal-voice-clear aria-label=\"Clear transcript\" title=\"Clear transcript\">" + icon("trash") + "</button>"
-    + "</div><div class=\"terminal-voice-transcript\" aria-live=\"polite\">" + escapeHtml(copy) + "</div>";
+    + "</div><div class=\"terminal-voice-transcript" + (transcript ? " has-transcript" : "") + "\" aria-live=\"polite\"><span>" + icon("chat") + "</span><p>" + escapeHtml(copy) + "</p></div>";
 }
 
 function bindTerminalVoice(root = document) {
@@ -156,6 +157,10 @@ function handleTerminalVoiceResult(event) {
 
 function terminalVoiceSendEnter() {
   terminalCompanionInsertIntoTerminal(terminalVoiceTargetId || terminalCompanionActiveTerminal()?.id, "", true);
+  terminalVoiceTranscript = "";
+  terminalVoiceInterim = "";
+  terminalVoiceStatus = "Sent";
+  syncTerminalCompanion("voice");
 }
 
 function terminalVoiceApi() {

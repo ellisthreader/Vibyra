@@ -1,5 +1,5 @@
-import { spawn } from "node:child_process";
-import { accessSync, constants, existsSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { accessSync, constants, existsSync, readFileSync, readlinkSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
@@ -19,7 +19,18 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoning
   const shell = process.env.SHELL || "/bin/bash";
   const status = aiTerminalAgentStatus(agent);
   const launch = launchCommand(status, shell, { model, reasoningEffort, permissionMode });
-  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, permissionMode, tokenMode, projectId, terminalId, cols, rows });
+  const env = interactiveAiTerminalEnv(terminalEnv({
+    agent: status.key,
+    label: status.label,
+    model,
+    reasoningEffort,
+    permissionMode,
+    tokenMode,
+    projectId,
+    terminalId,
+    cols,
+    rows
+  }));
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {
@@ -33,6 +44,17 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoning
 
 export function listAiTerminalAgentStatuses() {
   return ["vibyra", "codex", "claude", "gemini", "shell"].map(aiTerminalAgentStatus);
+}
+
+export function interactiveAiTerminalEnv(source = {}) {
+  const env = {
+    ...source,
+    TERM: source.TERM && source.TERM !== "dumb" ? source.TERM : "xterm-256color",
+    COLORTERM: source.COLORTERM || "truecolor",
+    FORCE_COLOR: "1"
+  };
+  delete env.NO_COLOR;
+  return env;
 }
 
 export function aiTerminalAgentStatus(agent = "vibyra") {
@@ -53,13 +75,112 @@ export function aiTerminalAgentStatus(agent = "vibyra") {
 function spawnWithScript({ command, cwd, env, cols, rows, onData, onExit }) {
   const ptyCommand = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)}; ${command}`;
   const child = spawn("/usr/bin/script", ["-qf", "-e", "-E", "never", "-c", ptyCommand, "/dev/null"], { cwd, env, stdio: "pipe" });
+  attachScriptResize(child);
   attachProcess(child, onData, onExit);
   return child;
 }
 
+function attachScriptResize(child) {
+  let pending = null;
+  let timer = null;
+  let attempts = 0;
+  let terminalReady = false;
+  const readyTimer = setTimeout(() => {
+    terminalReady = true;
+    if (pending && !timer) apply();
+  }, 2000);
+  readyTimer.unref?.();
+  const apply = () => {
+    timer = null;
+    if (!pending || child.exitCode !== null || child.signalCode) return;
+    if (resizeScriptPty(child.pid, pending.cols, pending.rows)) {
+      if (!terminalReady) {
+        timer = setTimeout(apply, 25);
+        timer.unref?.();
+        return;
+      }
+      const complete = pending.complete;
+      pending = null;
+      complete?.(true);
+      return;
+    }
+    if (attempts++ < 20) {
+      timer = setTimeout(apply, 25);
+      timer.unref?.();
+      return;
+    }
+    const complete = pending.complete;
+    pending = null;
+    complete?.(false);
+  };
+  child.resize = (cols, rows, complete) => {
+    pending?.complete?.(false);
+    pending = {
+      cols: Math.max(2, integer(cols, 100)),
+      rows: Math.max(2, integer(rows, 30)),
+      complete
+    };
+    attempts = 0;
+    clearTimeout(timer);
+    apply();
+    return true;
+  };
+  child.markTerminalReady = () => {
+    terminalReady = true;
+    clearTimeout(readyTimer);
+    if (pending && !timer) apply();
+  };
+  child.once("close", () => {
+    clearTimeout(timer);
+    clearTimeout(readyTimer);
+    pending?.complete?.(false);
+    pending = null;
+  });
+}
+
+function resizeScriptPty(pid, cols, rows) {
+  const pty = descendantPty(pid);
+  if (!pty) return false;
+  try {
+    return spawnSync("stty", ["-F", pty, "rows", String(rows), "cols", String(cols)], {
+      stdio: "ignore"
+    }).status === 0;
+  } catch {
+    return false;
+  }
+}
+
+function descendantPty(rootPid) {
+  const queue = [rootPid];
+  const seen = new Set(queue);
+  while (queue.length) {
+    const pid = queue.shift();
+    try {
+      const path = readlinkSync(`/proc/${pid}/fd/0`);
+      if (path.startsWith("/dev/pts/")) return path;
+    } catch {}
+    let children = [];
+    try {
+      children = readFileSync(`/proc/${pid}/task/${pid}/children`, "utf8").trim().split(/\s+/);
+    } catch {}
+    for (const value of children) {
+      const childPid = Number(value);
+      if (childPid > 0 && !seen.has(childPid)) {
+        seen.add(childPid);
+        queue.push(childPid);
+      }
+    }
+  }
+  return "";
+}
+
 function attachProcess(child, onData, onExit) {
-  child.stdout?.on("data", (chunk) => onData?.(chunk.toString("utf8")));
-  child.stderr?.on("data", (chunk) => onData?.(chunk.toString("utf8")));
+  const handleData = (chunk) => {
+    child.markTerminalReady?.();
+    onData?.(chunk.toString("utf8"));
+  };
+  child.stdout?.on("data", handleData);
+  child.stderr?.on("data", handleData);
   child.on("error", (error) => onData?.(`\r\n${error.message}\r\n`));
   child.on("close", (code, signal) => onExit?.({ code, signal }));
 }

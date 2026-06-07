@@ -115,6 +115,17 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   `desktop/lib/desktopActions.mjs` and execution in
   `desktop/assets/app.desktop-actions.js`; do not execute arbitrary assistant
   prose as a desktop command.
+- Explicit subagent, multi-agent, or plan/review/implement requests use the
+  structured `run_agentic_terminal_job` action. Keep its role prompts and
+  training examples in `desktop/lib/desktopAgenticTraining.mjs`; launch one
+  planner, bounded disjoint workers, and one reviewer through existing
+  detached PTY terminals rather than adding a second terminal dashboard.
+- Agentic assignments must be delivered once by the detached worker from its
+  persisted `initialPrompt`, not replayed by the renderer after refresh.
+  Planner/workers/reviewer coordinate through
+  `.vibyra-agent/jobs/<job-id>/`; terminals retain only bounded job metadata
+  in browser-visible state. Standard permission remains the default, and only
+  explicit full-access wording may enable Codex full access.
 - Full terminal access is opt-in only. Require explicit wording such as
   `full permissions`, persist `permissionMode: "full"`, show the state on the
   terminal, and pass Codex
@@ -141,10 +152,11 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - Hide model, effort, project, and close controls inside a compact settings popover per terminal. Do not show every dropdown on every terminal by default.
 - In terminal output, prioritize readable monospace content with minimal prompts (`$`, `vibyra`) and generous spacing. Avoid large empty-state icons, heavy nested borders, or repeated labels.
 - Use restrained status: a small dot for idle/running and a subtle active tab/surface treatment. Avoid progress dashboards, bright badges, and per-card metadata clutter.
-- Voice/Memory companion panels must mount only while open, use one shared close
-  pattern, render only the active tool, preserve and refit mounted xterm nodes,
-  and keep keyboard focus visible. Keep the companion on the right through the
-  Electron `860px` minimum width; Memory may be wider while Voice stays compact.
+- Voice and Memory share one `Vibyra AI` companion that mounts only while open,
+  uses one close action, preserves and refits mounted xterm nodes, and keeps
+  keyboard focus visible. Voice is the AI's native prompt input at the top;
+  project Memory remains visible below it instead of replacing Voice as a tab.
+  Keep the companion on the right through the Electron `860px` minimum width.
   Electron Voice uses recorded-audio transcription through the local bridge;
   do not depend on Web Speech recognition in Electron, and stop every microphone
   track on denial, recorder failure, tab/project change, panel close, and page
@@ -153,10 +165,20 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   editor, but folders/documents remain backend-owned project vault nodes.
   Markdown or Obsidian imports must send normalized relative paths and text
   content only; never expose or persist arbitrary local filesystem paths.
-- Keep labeled Voice and Memory launchers visible beside terminal tabs and on
-  the empty terminal setup screen. Slash commands remain shortcuts, not the
-  only discovery path. Show the active companion state and collapse labels to
-  icons only when the desktop title bar is genuinely narrow.
+- Keep one labeled `Vibyra AI` launcher visible beside terminal tabs and on the
+  empty terminal setup screen. The shared right sidebar contains AI Voice above
+  project Memory; `/voice` and `/memory` remain shortcuts to the same surface.
+  Show the active sidebar state and collapse its label to an icon only when the
+  title bar is genuinely narrow.
+- Center the scrollable terminal tabs independently in the topbar. Keep New in
+  the left track and Sidebar, focus/grid, and overflow in the right track. Put
+  only rare global actions such as Close all in overflow. Do not repeat
+  minimize/maximize/close controls in every terminal header; keep the header to
+  status, identity, and settings.
+- New terminal should open a short agent-first menu. Put project and model
+  selection behind Advanced setup. Terminal settings may show immutable launch
+  details, token source, and close, but must not imply that a running PTY can
+  change its model, project, reasoning, or permission mode.
 
 ## Projects
 
@@ -180,6 +202,7 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - For AI terminals, keep split CSS files (`app.terminals*.css`, `app.terminals-companion.css`, `app.terminals.pty.css`) routed through `app.theme-terminals.css`, `app.theme-terminals-states.css`, and `app.theme-terminals-controls.css` tokens for surfaces, text, disabled states, model picker rows, settings/token-source forms, PTY fallback text, and companion panels. Do not leave hardcoded dark text boxes in terminal setup/model/settings UI.
 - Existing xterm instances do not automatically repaint from CSS variable changes. Keep the PTY runtime reapplying `terminalXtermTheme()` when `body[data-desktop-theme]` changes, without remounting xterm nodes.
 - Persisted xterm transcript replay must temporarily suppress `onData` forwarding; terminal device-response sequences emitted during replay are renderer output, not user keyboard input.
+- When xterm is mounted, keyboard and paste input must flow only through xterm `onData`; wrapper `keydown` and `paste` listeners are fallback-only. Probe one physical key and verify exactly one PTY input message.
 - Keep idle/running/success/error/stopped/unavailable dots semantic in both themes, and define separate light/dark xterm ANSI palettes so command output remains readable beyond the base background/foreground colors.
 - Start desktop polling only from `app.boot.js`, after terminal scripts are loaded. In `app.shell.js`, compare the serialized `/desktop/state` payload and skip `render()` when it is unchanged; otherwise the terminal topbar flashes every second and slow startup can briefly show the legacy chat-style terminal surface.
 - For flashing regressions, use a `MutationObserver` on the terminal content

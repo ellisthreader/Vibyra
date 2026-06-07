@@ -13,7 +13,7 @@
 }
 .terminal-model-option:hover,
 .terminal-model-option.locked:hover {
-  background: rgba(255, 255, 255, 0.052);
+  background: var(--terminal-hover);
   border-color: transparent;
   box-shadow: none;
   color: var(--terminal-text, #eeeaf8);
@@ -26,13 +26,13 @@
 }
 .terminal-model-option.active,
 .terminal-model-option.active:hover {
-  background: rgba(109, 59, 255, 0.17);
-  border-color: transparent;
-  box-shadow: inset 0 0 0 1px rgba(109, 59, 255, 0.18);
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+  box-shadow: inset 0 0 0 1px var(--terminal-accent-border);
   color: var(--terminal-text, #f8f6ff);
 }
 .terminal-model-option:focus-visible {
-  outline: 2px solid rgba(109, 59, 255, 0.52);
+  outline: 2px solid var(--terminal-focus-ring);
   outline-offset: 2px;
 }
 .terminal-model-option span:nth-child(2) {

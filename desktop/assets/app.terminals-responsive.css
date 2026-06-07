@@ -1,14 +1,28 @@
+.terminal-tab-list {
+  justify-content: flex-start;
+}
+
 .grid-mode .terminal-stage {
   align-content: start;
-  grid-template-rows: repeat(var(--terminal-grid-rows, 1), minmax(230px, 1fr));
+  grid-template-rows: repeat(var(--terminal-grid-rows, 1), minmax(0, 1fr));
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
 
 .grid-mode .terminal-tile {
-  min-height: 230px;
+  min-height: 0;
+}
+
+.grid-mode.terminal-grid-scroll .terminal-stage {
+  grid-template-rows: repeat(var(--terminal-grid-rows, 1), minmax(var(--terminal-grid-min-row, 170px), 1fr));
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.grid-mode.terminal-grid-scroll .terminal-tile {
+  min-height: var(--terminal-grid-min-row, 170px);
 }
 
 .terminal-settings-menu.terminal-settings-menu--positioned {
@@ -24,15 +38,17 @@
 
 @media (max-width: 1000px) {
   .grid-mode .terminal-stage {
-    grid-template-columns: repeat(var(--terminal-grid-cols-narrow, 2), minmax(0, 1fr));
-    grid-template-rows: repeat(var(--terminal-grid-rows-narrow, 1), minmax(230px, 1fr));
+    grid-template-columns: repeat(var(--terminal-grid-cols-narrow, var(--terminal-grid-cols, 2)), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--terminal-grid-rows-narrow, var(--terminal-grid-rows, 1)), minmax(0, 1fr));
+  }
+
+  .grid-mode.terminal-grid-scroll .terminal-stage {
+    grid-template-rows: repeat(var(--terminal-grid-rows-narrow, var(--terminal-grid-rows, 1)), minmax(var(--terminal-grid-min-row, 170px), 1fr));
   }
 }
 
 @media (max-width: 560px) {
   .grid-mode .terminal-stage {
-    grid-auto-rows: minmax(240px, auto);
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
   }
 }

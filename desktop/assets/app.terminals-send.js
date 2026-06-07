@@ -75,7 +75,15 @@ function handleSlashCommand(terminal, text, profile) {
 
 function handleLocalSlashCommand(terminal, command, args, profile) {
   if (command === "/clear") { terminal.messages = []; terminal.draft = ""; terminal.shellMode = false; terminal.updatedAt = Date.now(); terminalCommandIndexes[terminal.id] = 0; forceTerminalRender = true; saveTerminals(); render(); return { handled: true }; }
-  if (["/new", "/resume", "/chat", "/fork", "/side"].includes(command)) { createTerminal(terminal.model, true); return { handled: true }; }
+  if (["/new", "/resume", "/chat", "/fork", "/side"].includes(command)) {
+    createTerminal(terminal.model, true, {
+      agent: terminal.agent,
+      effort: terminal.effort,
+      permissionMode: terminal.permissionMode,
+      projectId: terminal.projectId
+    });
+    return { handled: true };
+  }
   if (["/exit", "/quit"].includes(command)) { closeTerminal(terminal.id); return { handled: true }; }
   if (["/rename", "/title"].includes(command)) return renameTerminalCommand(terminal, args, profile, command);
   if (command === "/model") return modelTerminalCommand(terminal, args, profile, command);

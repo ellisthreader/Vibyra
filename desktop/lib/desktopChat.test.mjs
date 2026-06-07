@@ -22,6 +22,19 @@ test("desktop chat returns local desktop actions without a cloud account", async
   }]);
 });
 
+test("desktop chat locally routes explicit agent-team implementation requests", async () => {
+  resetDesktopChatState();
+
+  const result = await sendDesktopChat({
+    projectId: "project-1",
+    prompt: "Use subagents in multiple terminals to plan, implement, test, and review this fix"
+  });
+
+  assert.equal(result.actions[0].type, "run_agentic_terminal_job");
+  assert.equal(result.actions[0].count, 4);
+  assert.equal(result.actions[0].projectId, "project-1");
+});
+
 test("desktop chat requires a verified desktop account session", async () => {
   resetDesktopChatState();
 
