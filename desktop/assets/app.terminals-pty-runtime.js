@@ -287,7 +287,7 @@ function mountVisibleXterms() {
     const id = node.dataset.terminalXterm || "";
     const terminal = findTerminal(id);
     if (!terminal || terminal.ptyStatus === "unavailable") return;
-    if (node.closest(".terminal-focus-hidden")) return;
+    if (node.closest(".terminal-focus-hidden, .terminal-minimized, .terminal-maximized-hidden")) return;
     if (!window.Terminal) {
       node.textContent = plainTerminalOutput(terminal.output || "Terminal renderer failed to load.");
       return;
@@ -373,6 +373,7 @@ function focusPtyTerminal(id) {
 function fitPtyXterm(id, node, terminal = findTerminal(id)) {
   const xterm = terminalXterms[id];
   if (!xterm || !node?.isConnected) return;
+  if (node.closest(".terminal-focus-hidden, .terminal-minimized, .terminal-maximized-hidden")) return;
   const size = measuredPtySize(node);
   const previous = terminalXtermSizes[id] || {};
   if (previous.cols === size.cols && previous.rows === size.rows && xterm.cols === size.cols && xterm.rows === size.rows) return;
