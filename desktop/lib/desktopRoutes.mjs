@@ -4,7 +4,10 @@ import { handleAiTerminalRoutes } from "./aiTerminals.mjs";
 import { handlePtyTerminalRoutes } from "./ptyTerminals.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
+import { transcribeDesktopVoice } from "./desktopVoice.mjs";
 import { openDesktopPreview } from "./desktopPreview.mjs";
+import { addDesktopProjectMemory, deleteDesktopProjectMemory, getDesktopProjectMemory } from "./desktopProjectMemory.mjs";
+import { startPhonePreview } from "./phonePreview.mjs";
 import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { readBody, send, sendFile } from "./http.mjs";
@@ -58,6 +61,24 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, await sendDesktopChat(await readBody(req)));
     return true;
   }
+  if (req.method === "POST" && url.pathname === "/desktop/voice/transcribe") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await transcribeDesktopVoice(await readBody(req)));
+    return true;
+  }
+  if (url.pathname === "/desktop/project-memory") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const projectId = url.searchParams.get("projectId");
+    if (req.method === "GET") send(res, 200, { ok: true, memory: await getDesktopProjectMemory(projectId) });
+    else if (req.method === "POST") send(res, 200, { ok: true, memory: await addDesktopProjectMemory(projectId, (await readBody(req)).text) });
+    else return false;
+    return true;
+  }
+  if (req.method === "DELETE" && url.pathname === "/desktop/project-memory/entry") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { ok: true, memory: await deleteDesktopProjectMemory(url.searchParams.get("projectId"), url.searchParams.get("entryId")) });
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/desktop/provider-accounts") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { providers: providerAccountsState() });
@@ -84,6 +105,11 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/preview") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await openDesktopPreview(await readBody(req), req.headers.host));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/phone-preview/start") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await startPhonePreview(await readBody(req), req.headers.host));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/approve") {

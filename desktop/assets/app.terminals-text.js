@@ -7,6 +7,7 @@ function terminalCommandHint(command, profile) {
   if (command === "/effort") return "set reasoning effort";
   if (command === "/fast") return "switch to low effort";
   if (["/help", "/?", "/commands"].includes(command)) return "show provider commands";
+  if (command === "/phone") return "show the phone preview panel";
   if (["/copy", "/export"].includes(command)) return "copy or save the transcript";
   if (["/status", "/about"].includes(command)) return "show terminal and provider status";
   if (["/usage", "/cost", "/stats"].includes(command)) return "show local usage/account summary";

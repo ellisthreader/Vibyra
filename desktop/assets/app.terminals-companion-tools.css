@@ -1,0 +1,61 @@
+.terminal-setup--with-companion { align-items: stretch; gap: 0; grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 360px); justify-items: stretch; }
+.terminal-setup--with-companion .terminal-setup-panel { align-self: center; justify-self: center; }
+.terminal-voice-section, .terminal-memory-section { display: none; }
+.terminal-voice-section.active, .terminal-memory-section.active, .terminal-setup--phone-open .terminal-phone-section { display: grid; }
+.terminal-tool-button {
+  align-items: center;
+  background: var(--terminal-hover, rgba(255, 255, 255, 0.045));
+  border: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
+  border-radius: 7px;
+  color: var(--terminal-text, #f1eef8);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 740;
+  gap: 6px;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 9px;
+}
+.terminal-tool-button.primary { background: var(--terminal-accent-soft, rgba(139, 92, 255, 0.13)); border-color: var(--terminal-accent-border, rgba(139, 92, 255, 0.36)); }
+.terminal-tool-button.danger { color: var(--danger, #ff7b87); }
+.terminal-tool-button:disabled { color: var(--terminal-dim, #918ca1); }
+.terminal-tool-button svg { height: 13px; width: 13px; }
+.terminal-voice-orb {
+  align-items: center;
+  background: radial-gradient(circle at 50% 25%, rgba(139, 92, 255, 0.26), transparent 62%), var(--terminal-bg, #07070a);
+  border: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-height: 104px;
+  padding: 14px;
+}
+.terminal-voice-orb > span { color: var(--terminal-accent, #8b5cff); display: inline-flex; }
+.terminal-voice-orb svg { height: 30px; width: 30px; }
+.terminal-voice-orb.listening { border-color: var(--terminal-accent-border, rgba(139, 92, 255, 0.36)); }
+.terminal-voice-orb strong { color: var(--terminal-text, #f1eef8); font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.terminal-voice-actions, .terminal-memory-actions { display: flex; gap: 7px; }
+.terminal-voice-transcript { color: var(--terminal-muted, #aaa3b8); font-size: 12px; line-height: 17px; min-height: 38px; overflow-wrap: anywhere; }
+.terminal-memory-project, .terminal-memory-empty { color: var(--terminal-muted, #aaa3b8); margin: 0; }
+.terminal-memory-list { display: grid; gap: 6px; max-height: 290px; overflow: auto; }
+.terminal-memory-row { background: var(--terminal-bg, #07070a); border: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12)); border-radius: 7px; color: var(--terminal-text, #f1eef8); display: grid; gap: 7px; padding: 8px; }
+.terminal-memory-row p { margin: 0; white-space: normal; }
+.terminal-memory-row > div { align-items: center; display: flex; gap: 7px; justify-content: flex-end; }
+.terminal-memory-row button { background: transparent; border: 0; border-radius: 6px; color: var(--terminal-muted, #aaa3b8); min-height: 26px; padding: 0 7px; }
+.terminal-memory-row button:hover { background: var(--terminal-hover, rgba(255, 255, 255, 0.045)); color: var(--terminal-text, #f1eef8); }
+.terminal-memory-row svg { height: 13px; width: 13px; }
+.terminal-memory-row span { color: var(--terminal-dim, #918ca1); font-size: 11px; }
+.terminal-memory-add { display: grid; gap: 7px; }
+.terminal-memory-add label { color: var(--terminal-muted, #aaa3b8); font-size: 12px; }
+.terminal-memory-add textarea { background: var(--terminal-bg, #07070a); border: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12)); border-radius: 7px; color: var(--terminal-text, #f1eef8); font: inherit; line-height: 17px; min-height: 72px; padding: 8px; resize: vertical; }
+.terminal-memory-actions { align-items: center; justify-content: space-between; }
+.terminal-memory-actions small { color: var(--terminal-dim, #918ca1); font-size: 11px; }
+.terminal-companion :is(button, input, textarea):focus-visible { outline: 2px solid var(--terminal-accent, #8b5cff); outline-offset: 2px; }
+
+@media (max-width: 1120px) {
+  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+@media (max-width: 860px) {
+  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+}

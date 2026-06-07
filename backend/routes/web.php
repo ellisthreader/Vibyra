@@ -39,6 +39,9 @@ Route::delete('/api/account/sessions/{sessionId}', [VibyraAppController::class, 
 Route::delete('/api/account', [VibyraAppController::class, 'deleteAccount']);
 Route::get('/api/session', [VibyraAppController::class, 'session']);
 Route::post('/api/session/state', [VibyraAppController::class, 'saveState']);
+Route::get('/api/project-memory/{projectId}', [VibyraAppController::class, 'projectMemory']);
+Route::post('/api/project-memory/{projectId}/entries', [VibyraAppController::class, 'addProjectMemory']);
+Route::delete('/api/project-memory/{projectId}/entries/{entryId}', [VibyraAppController::class, 'deleteProjectMemory']);
 Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOnboarding']);
 Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);

@@ -35,6 +35,13 @@ Desktop email login has two backend hops: browser JS posts `/api/auth/login`, th
 
 `POST /api/session/state` accepts `{ onboardingComplete, rememberedDesktops, appState }` and persists per user.
 
+Editable project memory has focused authenticated CRUD routes under
+`/api/project-memory/{projectId}`. Mutations update only
+`app_state.projectMemories`; `/api/session/state` merges project-memory records
+by `updatedAt` so stale full-state mobile sync cannot erase newer desktop
+memory. The canonical limits remain eight entries per project and 220
+characters per entry; `brief` entries cannot be deleted.
+
 The mobile `useCloudSync` debounce writes remote app state. On backend failure it backs off before retrying to avoid repeated background logs.
 
 Any new background Laravel request should pass `{ background: true }` to `appApiRequest`; user-initiated requests should not.

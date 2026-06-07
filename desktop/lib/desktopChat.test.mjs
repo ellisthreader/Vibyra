@@ -55,6 +55,24 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.match(requestBody.prompt, /Attached local context names: README\.md/);
 });
 
+test("desktop chat loads canonical memory for the selected project", async () => {
+  resetDesktopChatState();
+  appState.desktopAccountToken = "account-token";
+  appState.cachedProjects = [{ id: "project-1", name: "Desktop Project", path: "/tmp/project-1" }];
+  let chatPayload = null;
+
+  await sendDesktopChat({ projectId: "project-1", prompt: "Continue the implementation" }, async (url, options = {}) => {
+    if (String(url).includes("/api/project-memory/")) {
+      return jsonResponse({ ok: true, memory: { entries: [{ id: "user-1", text: "Keep terminal memory project scoped.", source: "user" }] } });
+    }
+    chatPayload = JSON.parse(options.body);
+    return jsonResponse({ ok: true, reply: "Done" });
+  });
+
+  assert.match(chatPayload.prompt, /Relevant desktop memory:/);
+  assert.match(chatPayload.prompt, /Keep terminal memory project scoped\./);
+});
+
 test("desktop chat can use a connected OpenAI account without Vibyra credits", async () => {
   resetDesktopChatState();
   const previousKey = process.env.OPENAI_API_KEY;

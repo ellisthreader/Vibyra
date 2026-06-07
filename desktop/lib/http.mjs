@@ -38,7 +38,7 @@ export function readBody(req) {
     let raw = "";
     req.on("data", (chunk) => {
       raw += chunk;
-      if (raw.length > 1_000_000) {
+      if (raw.length > 12_000_000) {
         reject(new Error("Request body too large"));
         req.destroy();
       }

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("node:path");
 
 app.commandLine.appendSwitch("no-sandbox");
@@ -8,6 +8,7 @@ app.commandLine.appendSwitch("disable-gpu-compositing");
 const port = process.env.VIBYRA_AGENT_PORT || "4317";
 const appUrl = process.env.VIBYRA_DESKTOP_URL || `http://127.0.0.1:${port}/desktop`;
 let mainWindow;
+let quitting = false;
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -60,6 +61,11 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     setTimeout(() => mainWindow?.reload(), 500);
   });
+  mainWindow.on("close", (event) => {
+    if (quitting) return;
+    event.preventDefault();
+    mainWindow.hide();
+  });
   mainWindow.on("closed", () => {
     mainWindow = undefined;
   });
@@ -73,11 +79,30 @@ function createWindow() {
   });
 }
 
+function configureDesktopPermissions() {
+  const appOrigin = new URL(appUrl).origin;
+  const isTrustedRequest = (webContents, permission, details = {}) => {
+    const origin = new URL(webContents.getURL() || appUrl).origin;
+    const mediaTypes = Array.isArray(details.mediaTypes) ? details.mediaTypes : [];
+    return permission === "media" && origin === appOrigin && !mediaTypes.includes("video");
+  };
+  session.defaultSession.setPermissionCheckHandler((webContents, permission, _origin, details) => isTrustedRequest(webContents, permission, details));
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    callback(isTrustedRequest(webContents, permission, details));
+  });
+}
+
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
+  app.on("before-quit", () => {
+    quitting = true;
+  });
   app.on("second-instance", revealWindow);
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => {
+    configureDesktopPermissions();
+    createWindow();
+  });
 }
 
 app.on("window-all-closed", () => {
@@ -103,5 +128,5 @@ ipcMain.handle("window:maximize", () => {
 });
 
 ipcMain.handle("window:close", () => {
-  mainWindow?.close();
+  mainWindow?.hide();
 });

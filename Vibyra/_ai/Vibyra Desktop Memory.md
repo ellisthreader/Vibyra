@@ -17,6 +17,8 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 ## Focused Notes
 
 - Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
+- AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- AI-terminal Voice and canonical project Memory: `Desktop/Voice And Project Memory.md`
 - Pairing, bearer token, `/health`, phone session, LAN discovery: `Desktop/Pairing And Phone Session.md`
 - Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`
 - Agent runs, apply/discard, safe commands, run artifacts: `Desktop/Agent Runs And Commands.md`

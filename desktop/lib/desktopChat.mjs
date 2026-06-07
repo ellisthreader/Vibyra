@@ -3,6 +3,7 @@ import { syncDesktopAccountFromUser } from "./desktopAccount.mjs";
 import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
+import { desktopMemoryContext } from "./desktopProjectMemory.mjs";
 
 const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || process.env.VIBYRA_API_URL || "http://127.0.0.1:8000");
 const MAX_PROMPT_CHARS = 8000;
@@ -29,6 +30,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   const mode = normalizeMode(body?.mode);
   const tool = normalizeTool(body?.tool);
   const projectFiles = project ? await contextForProject(project.id, prompt) : [];
+  const memoryContext = project ? await desktopMemoryContext(project.id, fetchImpl) : [];
   const model = normalizeModel(body?.model);
   const payload = {
     fileBody: "",
@@ -38,7 +40,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     mode,
     project: project?.name || "",
     projectFiles,
-    prompt: desktopPrompt(prompt, project, attachments, body?.profileContext),
+    prompt: desktopPrompt(prompt, project, attachments, body?.profileContext, memoryContext),
     reasoningEffort: normalizeReasoningEffort(body?.reasoningEffort),
     skill,
     surface: "desktop"
@@ -106,13 +108,24 @@ async function contextForProject(projectId, prompt) {
   }
 }
 
-function desktopPrompt(prompt, project, attachments, profileContext) {
+function desktopPrompt(prompt, project, attachments, profileContext, memoryContext) {
   const context = [];
   const profileLines = normalizeProfileContext(profileContext);
   if (profileLines.length) context.push("Desktop profile preferences:", ...profileLines);
   if (project?.path) context.push(`Desktop project path: ${project.path}`);
   if (attachments.length) context.push(`Attached local context names: ${attachments.join(", ")}`);
+  const memories = normalizeMemoryContext(memoryContext);
+  if (memories.length) context.push("Relevant desktop memory:", ...memories);
   return context.length ? `${prompt}\n\n${context.join("\n")}` : prompt;
+}
+
+function normalizeMemoryContext(memoryContext) {
+  if (!Array.isArray(memoryContext)) return [];
+  return memoryContext.slice(0, 4).flatMap((item) => {
+    const title = String(item?.title || "Memory").trim().slice(0, 80);
+    const body = String(item?.body || "").trim().slice(0, 1600);
+    return body ? [`### ${title}`, body] : [];
+  });
 }
 
 function normalizeProfileContext(profileContext) {

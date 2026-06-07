@@ -72,15 +72,25 @@ docs/assets/               README screenshots and showcase imagery
 
 ## Run Locally
 
-Install dependencies:
+### Desktop: one command
+
+Codex or a developer should run this from the repository root:
+
+```bash
+npm run desktop:setup
+```
+
+That command installs dependencies, prepares and migrates the local Laravel
+database, starts the backend, and opens Vibyra Desktop.
+
+Requirements: Node.js, npm, PHP, Composer, and Git.
+
+### Full mobile development
+
+Install dependencies and start the backend and Expo app together:
 
 ```bash
 npm install
-```
-
-Start the backend and Expo app together:
-
-```bash
 npm start
 ```
 
@@ -107,6 +117,7 @@ After pairing, the phone can list local projects, start preview sessions, send p
 ```bash
 npm run backend                 # Laravel backend only
 npm run desktop                 # Desktop bridge and desktop shell
+npm run desktop:setup           # Install, configure, and run desktop
 npm run ios                     # Expo iOS target
 npm run web                     # Expo web target
 npm run typecheck               # TypeScript check

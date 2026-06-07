@@ -10,11 +10,17 @@ let newTerminalModelSearch = "";
 let settingsTerminalId = "";
 let forceTerminalRender = false;
 let setupCount = 1;
-let setupModel = localStorage.getItem("vibyra.desktop.chatModel") || "auto";
+const setupModelKey = "vibyra.desktop.terminalSetupModel";
+let setupModel = localStorage.getItem(setupModelKey) || localStorage.getItem("vibyra.desktop.chatModel") || "auto";
+const setupProjectKey = "vibyra.desktop.terminalProject";
+let setupProjectId = localStorage.getItem(setupProjectKey) || (typeof selectedProjectId === "string" ? selectedProjectId : "");
 let setupTokenMode = localStorage.getItem("vibyra.desktop.terminalTokenMode") === "provider" ? "provider" : "vibyra";
 let setupModelMenuOpen = false;
 let setupModelSearch = "";
-let providerAccounts = { openai: { provider: "openai", connected: false, source: "", label: "OpenAI" } };
+let providerAccounts = {
+  openai: { provider: "openai", connected: false, source: "", label: "OpenAI" },
+  codex: { provider: "codex", available: false, connected: false, source: "", label: "ChatGPT" }
+};
 let providerConnectOpen = false;
 let providerConnectPosting = false;
 let providerConnectNotice = "";
@@ -39,7 +45,7 @@ const terminalProfiles = {
     mentionLabel: "Claude file mention",
     planPrefix: "Plan this change in Claude Code style before editing files.",
     reviewPrefix: "Review this change in Claude Code style. Put risks and concrete file references first.",
-    commands: ["/clear", "/compact", "/resume", "/branch", "/exit", "/quit", "/rename", "/add-dir", "/memory", "/context", "/init", "/model", "/effort", "/fast", "/plan", "/permissions", "/sandbox", "/tui", "/theme", "/mcp", "/agents", "/tasks", "/background", "/hooks", "/ide", "/plugin", "/reload-plugins", "/diff", "/review", "/security-review", "/simplify", "/run", "/verify", "/batch", "/debug", "/doctor", "/help", "/copy", "/usage", "/cost", "/stats", "/feedback", "/export", "/terminal-setup"]
+    commands: ["/clear", "/phone", "/voice", "/compact", "/resume", "/branch", "/exit", "/quit", "/rename", "/add-dir", "/memory", "/context", "/init", "/model", "/effort", "/fast", "/plan", "/permissions", "/sandbox", "/tui", "/theme", "/mcp", "/agents", "/tasks", "/background", "/hooks", "/ide", "/plugin", "/reload-plugins", "/diff", "/review", "/security-review", "/simplify", "/run", "/verify", "/batch", "/debug", "/doctor", "/help", "/copy", "/usage", "/cost", "/stats", "/feedback", "/export", "/terminal-setup"]
   },
   openai: {
     key: "openai",
@@ -58,7 +64,7 @@ const terminalProfiles = {
     mentionLabel: "Codex fuzzy file mention",
     planPrefix: "Make a concise Codex implementation plan. Explain actions, risks, and verification before editing.",
     reviewPrefix: "Review this like Codex CLI. Findings first, ordered by severity, with file references when possible.",
-    commands: ["/clear", "/new", "/resume", "/fork", "/side", "/exit", "/quit", "/raw", "/copy", "/model", "/fast", "/personality", "/plan", "/goal", "/permissions", "/approve", "/status", "/mention", "/ide", "/review", "/diff", "/compact", "/skills", "/agent", "/apps", "/plugins", "/hooks", "/init", "/mcp", "/logout", "/feedback", "/experimental", "/debug-config", "/statusline", "/title", "/theme", "/keymap", "/memories", "/ps", "/stop", "/help"]
+    commands: ["/clear", "/phone", "/voice", "/new", "/resume", "/fork", "/side", "/exit", "/quit", "/raw", "/copy", "/model", "/fast", "/personality", "/plan", "/goal", "/permissions", "/approve", "/status", "/mention", "/ide", "/review", "/diff", "/compact", "/skills", "/agent", "/apps", "/plugins", "/hooks", "/init", "/mcp", "/logout", "/feedback", "/experimental", "/debug-config", "/statusline", "/title", "/theme", "/keymap", "/memory", "/memories", "/ps", "/stop", "/help"]
   },
   gemini: {
     key: "gemini",
@@ -80,7 +86,7 @@ const terminalProfiles = {
     mentionLabel: "Gemini @ path context",
     planPrefix: "Use Gemini CLI planning mode for this request. Be specific and list next actions.",
     reviewPrefix: "Review this in Gemini CLI style. List findings, context, and suggested commands.",
-    commands: ["/about", "/auth", "/chat", "/resume", "/clear", "/compress", "/copy", "/quit", "/exit", "/restore", "/rewind", "/directory", "/init", "/memory", "/model", "/plan", "/permissions", "/theme", "/vim", "/settings", "/tools", "/mcp", "/ide", "/extensions", "/hooks", "/commands", "/skills", "/agents", "/stats", "/privacy", "/upgrade", "/docs", "/bug", "/shells", "/bashes", "/help", "/?", "/editor", "/terminal-setup", "/setup-github"]
+    commands: ["/about", "/phone", "/voice", "/auth", "/chat", "/resume", "/clear", "/compress", "/copy", "/quit", "/exit", "/restore", "/rewind", "/directory", "/init", "/memory", "/model", "/plan", "/permissions", "/theme", "/vim", "/settings", "/tools", "/mcp", "/ide", "/extensions", "/hooks", "/commands", "/skills", "/agents", "/stats", "/privacy", "/upgrade", "/docs", "/bug", "/shells", "/bashes", "/help", "/?", "/editor", "/terminal-setup", "/setup-github"]
   },
   auto: {
     key: "auto",
@@ -99,6 +105,6 @@ const terminalProfiles = {
     mentionLabel: "Vibyra context mention",
     planPrefix: "Make a concise implementation plan for this request.",
     reviewPrefix: "Review this change. Findings first, with concrete file references when possible.",
-    commands: ["/open", "/new", "/clear", "/help", "/plan", "/debug", "/review", "/explain", "/fix", "/refactor", "/model"]
+    commands: ["/open", "/phone", "/voice", "/memory", "/new", "/clear", "/help", "/plan", "/debug", "/review", "/explain", "/fix", "/refactor", "/model"]
   }
 };

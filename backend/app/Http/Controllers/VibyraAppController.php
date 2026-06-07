@@ -14,6 +14,7 @@ use App\Http\Controllers\Concerns\CommunityAssetGeneration;
 use App\Http\Controllers\Concerns\CommunityPublishMedia;
 use App\Http\Controllers\Concerns\CommunityPublishing;
 use App\Http\Controllers\Concerns\LevelEndpoints;
+use App\Http\Controllers\Concerns\ProjectMemoryEndpoints;
 use App\Http\Controllers\Concerns\ReferralEndpoints;
 use App\Http\Controllers\Concerns\UserPayloads;
 use App\Services\Community\ProjectSafetyReview;
@@ -35,6 +36,7 @@ class VibyraAppController extends Controller
     use CommunityPublishMedia;
     use CommunityPublishing;
     use LevelEndpoints;
+    use ProjectMemoryEndpoints;
     use ReferralEndpoints;
     use UserPayloads;
 
