@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { appState } from "./state.mjs";
 import { buildProjectPublishDemoBundle } from "./publishDemoBundle.mjs";
@@ -85,6 +86,252 @@ test("publish demo bundle rejects source-only Vite entries", async () => {
   }
 });
 
+test("publish demo bundle runs build script when no built entry exists", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-build-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+    await writeFile(join(project.path, "build.mjs"), [
+      "import { mkdir, writeFile } from 'node:fs/promises';",
+      "await mkdir('dist/assets', { recursive: true });",
+      "await writeFile('dist/index.html', '<!doctype html><html><body><script type=\"module\" src=\"/assets/app.js\"></script></body></html>');",
+      "await writeFile('dist/assets/app.js', 'document.body.dataset.ready = \"true\";');"
+    ].join("\n"));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000 });
+    assert.equal(result.ok, true);
+    assert.equal(result.entryPath, "dist/index.html");
+    assert.equal(result.metadata.autoBuild.code, "build_ok");
+    assert.deepEqual(result.files.map((file) => file.path).sort(), ["dist/assets/app.js", "dist/index.html"]);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle builds a recognized nested frontend package", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-nested-build-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "frontend"), { recursive: true });
+    await writeFile(join(project.path, "frontend", "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" }
+    }));
+    await writeFile(join(project.path, "frontend", "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.tsx\"></script>");
+    await writeFile(join(project.path, "frontend", "build.mjs"), [
+      "import { mkdir, writeFile } from 'node:fs/promises';",
+      "await mkdir('dist/assets', { recursive: true });",
+      "await writeFile('dist/index.html', '<!doctype html><html><body><script type=\"module\" src=\"/assets/app.js\"></script></body></html>');",
+      "await writeFile('dist/assets/app.js', 'document.body.dataset.nested = \"true\";');"
+    ].join("\n"));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000 });
+    assert.equal(result.ok, true);
+    assert.equal(result.entryPath, "frontend/dist/index.html");
+    assert.equal(result.metadata.buildDirectory, "frontend");
+    assert.equal(result.metadata.autoBuild.cwd, "frontend");
+    assert.equal(result.metadata.autoBuild.code, "build_ok");
+    assert.deepEqual(result.files.map((file) => file.path).sort(), [
+      "frontend/dist/assets/app.js",
+      "frontend/dist/index.html"
+    ]);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle installs missing dependencies before building", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-install-");
+  const fakeNpm = await makeFakePublishNpm();
+  const previousProjects = appState.cachedProjects;
+  const previousPath = process.env.PATH;
+  appState.cachedProjects = [project];
+  process.env.PATH = `${fakeNpm.bin}:${previousPath ?? ""}`;
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" },
+      dependencies: { vite: "latest" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+    await writeFile(join(project.path, "build.mjs"), [
+      "import { existsSync } from 'node:fs';",
+      "import { mkdir, writeFile } from 'node:fs/promises';",
+      "if (!existsSync('node_modules/vite')) throw new Error('dependencies were not installed');",
+      "await mkdir('dist/assets', { recursive: true });",
+      "await writeFile('dist/index.html', '<!doctype html><html><body><script type=\"module\" src=\"/assets/app.js\"></script></body></html>');",
+      "await writeFile('dist/assets/app.js', 'document.body.dataset.installed = \"true\";');"
+    ].join("\n"));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000, installTimeoutMs: 15000 });
+    assert.equal(result.ok, true);
+    assert.equal(result.metadata.autoInstall.code, "install_ok");
+    assert.equal(result.metadata.autoInstall.ignoreScripts, true);
+    assert.match(result.metadata.autoInstall.command, /^npm install --ignore-scripts$/);
+    assert.equal(result.metadata.autoBuild.code, "build_ok");
+    assert.deepEqual(result.files.map((file) => file.path).sort(), ["dist/assets/app.js", "dist/index.html"]);
+  } finally {
+    process.env.PATH = previousPath;
+    appState.cachedProjects = previousProjects;
+    await fakeNpm.cleanup();
+    await cleanup();
+  }
+});
+
+test("publish demo bundle reports install failure before build", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-install-fail-");
+  const fakeNpm = await makeFakePublishNpm({ installExitCode: 17 });
+  const previousProjects = appState.cachedProjects;
+  const previousPath = process.env.PATH;
+  appState.cachedProjects = [project];
+  process.env.PATH = `${fakeNpm.bin}:${previousPath ?? ""}`;
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" },
+      dependencies: { vite: "latest" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+    await writeFile(join(project.path, "build.mjs"), "throw new Error('build should not run');");
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000, installTimeoutMs: 15000 });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "no_static_preview_entry");
+    assert.equal(result.metadata.autoInstall.code, "install_failed");
+    assert.equal(result.metadata.autoBuild, undefined);
+    assert.equal(result.metadata.warnings.some((warning) => warning.code === "install_failed"), true);
+  } finally {
+    process.env.PATH = previousPath;
+    appState.cachedProjects = previousProjects;
+    await fakeNpm.cleanup();
+    await cleanup();
+  }
+});
+
+test("publish demo bundle skips dependency install when node_modules exists", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-installed-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "node_modules", "vite"), { recursive: true });
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" },
+      dependencies: { vite: "latest" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+    await writeFile(join(project.path, "build.mjs"), [
+      "import { mkdir, writeFile } from 'node:fs/promises';",
+      "await mkdir('dist', { recursive: true });",
+      "await writeFile('dist/index.html', '<!doctype html><html><body>Installed</body></html>');"
+    ].join("\n"));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000, installTimeoutMs: 15000 });
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.metadata.autoInstall, { skipped: true, reason: "dependencies_present" });
+    assert.equal(result.metadata.autoBuild.code, "build_ok");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle creates a Laravel Vite Inertia static shell from manifest assets", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-laravel-vite-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "public", "build", "assets"), { recursive: true });
+    await mkdir(join(project.path, "public", "videos"), { recursive: true });
+    await mkdir(join(project.path, "resources", "js", "Pages"), { recursive: true });
+    await writeFile(join(project.path, "composer.json"), JSON.stringify({ require: { "laravel/framework": "^13.0" } }));
+    await writeFile(join(project.path, "package.json"), JSON.stringify({ devDependencies: { "laravel-vite-plugin": "latest", vite: "latest" } }));
+    await writeFile(join(project.path, "public", "build", "manifest.json"), JSON.stringify({
+      "resources/js/app.tsx": {
+        file: "assets/app-123.js",
+        isEntry: true,
+        css: ["assets/app-123.css"],
+        dynamicImports: ["resources/js/Pages/HomeLanding.tsx"]
+      },
+      "resources/js/Pages/HomeLanding.tsx": {
+        file: "assets/HomeLanding-456.js"
+      }
+    }));
+    await writeFile(join(project.path, "public", "build", "assets", "app-123.js"), "import('./HomeLanding-456.js'); const logo='/videos/logo.mp4';");
+    await writeFile(join(project.path, "public", "build", "assets", "app-123.css"), "body{background:url('/videos/logo.mp4')}");
+    await writeFile(join(project.path, "public", "build", "assets", "HomeLanding-456.js"), "export default function HomeLanding(){}");
+    await writeFile(join(project.path, "public", "videos", "logo.mp4"), Buffer.from([1, 2, 3]));
+    await writeFile(join(project.path, "resources", "js", "Pages", "HomeLanding.tsx"), "source should not be bundled");
+
+    const result = await buildProjectPublishDemoBundle(project.id);
+    assert.equal(result.ok, true);
+    assert.equal(result.entryPath, "index.html");
+    assert.equal(result.mountDirectory, "");
+    assert.equal(result.metadata.kind, "laravel-vite-static-shell");
+    assert.equal(result.metadata.pageComponent, "HomeLanding");
+    assert.deepEqual(result.files.map((file) => file.path).sort(), [
+      "build/assets/HomeLanding-456.js",
+      "build/assets/app-123.css",
+      "build/assets/app-123.js",
+      "index.html",
+      "videos/logo.mp4"
+    ]);
+    const html = result.files.find((file) => file.path === "index.html")?.body ?? "";
+    assert.match(html, /data-page=/);
+    assert.match(html, /HomeLanding/);
+    assert.match(html, /\/build\/assets\/app-123\.js/);
+    assert.equal(result.files.some((file) => file.path.startsWith("resources/")), false);
+    assert.equal(result.files.find((file) => file.path === "videos/logo.mp4")?.encoding, "base64");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle keeps Laravel private and backend files out of static shell bundles", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-laravel-private-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "public", "build", "assets"), { recursive: true });
+    await mkdir(join(project.path, "public", "vendor"), { recursive: true });
+    await mkdir(join(project.path, "database"), { recursive: true });
+    await writeFile(join(project.path, "composer.json"), JSON.stringify({ require: { "laravel/framework": "^13.0" } }));
+    await writeFile(join(project.path, "package.json"), JSON.stringify({ devDependencies: { "laravel-vite-plugin": "latest", vite: "latest" } }));
+    await writeFile(join(project.path, ".env"), "APP_KEY=secret");
+    await writeFile(join(project.path, "database", "database.sqlite"), "private db");
+    await writeFile(join(project.path, "public", "vendor", "secret.js"), "private vendor");
+    await writeFile(join(project.path, "public", "build", "manifest.json"), JSON.stringify({
+      "resources/js/app.tsx": {
+        file: "assets/app.js",
+        isEntry: true,
+        dynamicImports: ["resources/js/Pages/Welcome.tsx"]
+      },
+      "resources/js/Pages/Welcome.tsx": {
+        file: "assets/Welcome.js"
+      }
+    }));
+    await writeFile(join(project.path, "public", "build", "assets", "app.js"), "import('./Welcome.js'); const env='/.env'; const db='/database/database.sqlite'; const vendor='/vendor/secret.js';");
+    await writeFile(join(project.path, "public", "build", "assets", "Welcome.js"), "export default function Welcome(){}");
+
+    const result = await buildProjectPublishDemoBundle(project.id);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.files.map((file) => file.path).sort(), [
+      "build/assets/Welcome.js",
+      "build/assets/app.js",
+      "index.html"
+    ]);
+    assert.equal(result.files.some((file) => file.path.includes(".env") || file.path.includes("database")), false);
+    assert.equal(result.metadata.skipped.some((item) => item.path === "vendor/secret.js" && item.reason === "unsafe_or_private_directory"), true);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
 test("publish demo bundle fails clearly when required dependencies exceed caps", async () => {
   const { project, cleanup } = await makeProject("vibyra-publish-cap-");
   const previousProjects = appState.cachedProjects;
@@ -102,3 +349,28 @@ test("publish demo bundle fails clearly when required dependencies exceed caps",
     await cleanup();
   }
 });
+
+async function makeFakePublishNpm({ installExitCode = 0 } = {}) {
+  const bin = await mkdtemp(join(tmpdir(), "vibyra-fake-publish-npm-"));
+  const npmPath = join(bin, "npm");
+  await writeFile(npmPath, [
+    "#!/usr/bin/env node",
+    "import { spawn } from 'node:child_process';",
+    "import { mkdir } from 'node:fs/promises';",
+    "const args = process.argv.slice(2);",
+    "if (args[0] === 'install' || args[0] === 'ci') {",
+    `  if (${Number(installExitCode)} !== 0) process.exit(${Number(installExitCode)});`,
+    "  await mkdir('node_modules/vite', { recursive: true });",
+    "  process.exit(0);",
+    "}",
+    "if (args[0] === 'run' && args[1] === 'build') {",
+    "  const child = spawn(process.execPath, ['build.mjs'], { stdio: 'inherit' });",
+    "  child.on('close', (code) => process.exit(code ?? 1));",
+    "  child.on('error', () => process.exit(1));",
+    "} else {",
+    "  process.exit(1);",
+    "}"
+  ].join("\n"));
+  await chmod(npmPath, 0o755);
+  return { bin, cleanup: () => rm(bin, { recursive: true, force: true }) };
+}

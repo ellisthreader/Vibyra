@@ -32,6 +32,7 @@ export function ProjectPublishModal({ busy, error, generating, onGenerateAsset, 
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [description, setDescription] = useState("");
   const [logoImageUrl, setLogoImageUrl] = useState("");
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [screenshotUrls, setScreenshotUrls] = useState<string[]>([]);
   const [suggestedCategory, setSuggestedCategory] = useState("");
   const [tagDraft, setTagDraft] = useState("");
@@ -49,33 +50,39 @@ export function ProjectPublishModal({ busy, error, generating, onGenerateAsset, 
 
   useEffect(() => {
     const suggestion = suggestPublishMetadata(project);
-    setTitle(project?.name ?? "");
-    setDescription(suggestion.description);
-    setCategory(suggestion.category);
+    const existingProject = publishStatus?.project;
+    const savedTags = publishStatus?.tags?.length ? publishStatus.tags : existingProject?.tags ?? [];
+    const savedCategory = savedTags.find((tag) => (PUBLISH_CATEGORIES as readonly string[]).includes(tag));
+    const nextCategory = savedCategory || suggestion.category;
+    setTitle(publishStatus?.title || existingProject?.title || project?.name || "");
+    setDescription(publishStatus?.description || existingProject?.description || suggestion.description);
+    setCategory(nextCategory);
     setSuggestedCategory(suggestion.category);
     setCategoryOpen(false);
-    setLogoImageUrl("");
-    setScreenshotUrls([]);
+    setMoreOptionsOpen(false);
+    setLogoImageUrl(publishStatus?.logoImageUrl || existingProject?.logoImageUrl || "");
+    setScreenshotUrls((publishStatus?.screenshotUrls?.length ? publishStatus.screenshotUrls : existingProject?.screenshotUrls) ?? []);
     setTagDraft("");
     setTagInputOpen(false);
-    setTags(suggestion.tags);
-    setVisibility("public");
-  }, [project]);
+    setTags(savedTags.length ? savedTags.filter((tag) => tag !== nextCategory).slice(0, 8) : suggestion.tags);
+    setVisibility(publishStatus?.visibility || existingProject?.visibility || "public");
+  }, [project, publishStatus]);
 
   const canPublish = Boolean(project && title.trim() && description.trim() && !busy);
   const activeVisibility = VISIBILITY_OPTIONS.find((option) => option.key === visibility) ?? VISIBILITY_OPTIONS[0];
   const categorySuggested = Boolean(category && category === suggestedCategory);
   const statusResult = publishResultFromStatus(publishStatus);
   const lockedStatus = isPublishReviewLocked(publishStatus);
+  const editingListing = Boolean(publishStatus?.id || publishStatus?.sourceProjectId);
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen" visible={project !== null}>
       <View style={modalStyles.page}>
-        <View style={[modalStyles.header, { paddingTop: Math.max(insets.top + 4, 14) }]}>
+        <View style={[modalStyles.header, { paddingTop: Math.max(insets.top + 8, 60) }]}>
           <Pressable accessibilityLabel="Close publish page" disabled={busy} hitSlop={12} onPress={onClose} style={modalStyles.headerButton}>
             <Ionicons name="close" color={closeIcon} size={27} />
           </Pressable>
-          <Text style={modalStyles.headerTitle}>Publish to Explore</Text>
+          <Text style={modalStyles.headerTitle}>{editingListing ? "Edit Explore listing" : "Publish to Explore"}</Text>
           <View style={modalStyles.headerButton} />
         </View>
 
@@ -83,14 +90,6 @@ export function ProjectPublishModal({ busy, error, generating, onGenerateAsset, 
         <ScrollView contentContainerStyle={[modalStyles.content, { paddingBottom: Math.max(insets.bottom + 20, 28) }]} showsVerticalScrollIndicator={false}>
           {statusResult ? <StatusLine tone={statusResult.tone} title={statusResult.title} message={statusResult.message} /> : null}
           <View style={[modalStyles.section, modalStyles.firstSection]}>
-            <View style={modalStyles.sectionHeader}>
-              <Text style={modalStyles.sectionTitle}>Photos</Text>
-              <Text style={modalStyles.sectionMeta}>{screenshotUrls.length}/4</Text>
-            </View>
-            <ProjectPublishScreenshots busy={busy} description={description} generating={generating === "screenshot"} onGenerateAsset={onGenerateAsset} project={project} setUrls={setScreenshotUrls} title={title} urls={screenshotUrls} />
-          </View>
-
-          <View style={modalStyles.section}>
             <View style={modalStyles.sectionHeader}>
               <Text style={modalStyles.sectionTitle}>Project details</Text>
               <Text style={modalStyles.requiredText}>Required</Text>
@@ -121,60 +120,82 @@ export function ProjectPublishModal({ busy, error, generating, onGenerateAsset, 
           </View>
 
           <View style={modalStyles.section}>
-            <View style={modalStyles.sectionHeader}>
-              <Text style={modalStyles.sectionTitle}>Discovery</Text>
-              <Text style={modalStyles.sectionMeta}>AI suggested</Text>
-            </View>
-            <FieldLabel label="Primary category" />
-            <Pressable disabled={busy} onPress={() => setCategoryOpen((value) => !value)} style={modalStyles.select}>
-              <View style={modalStyles.selectValueRow}>
-                <Text style={modalStyles.selectText}>{category}</Text>
-                {categorySuggested ? <Text style={modalStyles.suggestedPill}>Suggested</Text> : null}
+            <Pressable disabled={busy} onPress={() => setMoreOptionsOpen((value) => !value)} style={modalStyles.moreOptionsRow}>
+              <View style={modalStyles.moreOptionsCopy}>
+                <Text style={modalStyles.moreOptionsTitle}>More options</Text>
+                <Text style={modalStyles.moreOptionsText}>Photos, category, tags, and app icon</Text>
               </View>
-              <Ionicons name={categoryOpen ? "chevron-up" : "chevron-down"} color={chevronColor} size={20} />
+              <Ionicons name={moreOptionsOpen ? "chevron-up" : "chevron-down"} color={chevronColor} size={20} />
             </Pressable>
-            {categoryOpen ? (
-              <View style={modalStyles.categoryMenu}>
-                {PUBLISH_CATEGORIES.map((item) => (
-                  <Pressable key={item} disabled={busy} onPress={() => { setCategory(item); setCategoryOpen(false); }} style={modalStyles.categoryOption}>
-                    <View style={modalStyles.categoryOptionCopy}>
-                      <Text style={[modalStyles.categoryText, item === category ? modalStyles.categoryTextActive : null]}>{item}</Text>
-                      {item === suggestedCategory ? <Text style={modalStyles.categorySuggestedText}>Suggested</Text> : null}
+            {moreOptionsOpen ? (
+              <View style={modalStyles.moreOptionsPanel}>
+                <View style={modalStyles.nestedSection}>
+                  <View style={modalStyles.sectionHeader}>
+                    <Text style={modalStyles.sectionTitle}>Photos</Text>
+                    <Text style={modalStyles.sectionMeta}>{screenshotUrls.length}/4</Text>
+                  </View>
+                  <ProjectPublishScreenshots busy={busy} description={description} generating={generating === "screenshot"} onGenerateAsset={onGenerateAsset} project={project} setUrls={setScreenshotUrls} title={title} urls={screenshotUrls} />
+                </View>
+
+                <View style={modalStyles.nestedSection}>
+                  <View style={modalStyles.sectionHeader}>
+                    <Text style={modalStyles.sectionTitle}>Discovery</Text>
+                    <Text style={modalStyles.sectionMeta}>AI suggested</Text>
+                  </View>
+                  <FieldLabel label="Primary category" />
+                  <Pressable disabled={busy} onPress={() => setCategoryOpen((value) => !value)} style={modalStyles.select}>
+                    <View style={modalStyles.selectValueRow}>
+                      <Text style={modalStyles.selectText}>{category}</Text>
+                      {categorySuggested ? <Text style={modalStyles.suggestedPill}>Suggested</Text> : null}
                     </View>
-                    {item === category ? <Ionicons name="checkmark" color={accentIcon} size={17} /> : null}
+                    <Ionicons name={categoryOpen ? "chevron-up" : "chevron-down"} color={chevronColor} size={20} />
                   </Pressable>
-                ))}
+                  {categoryOpen ? (
+                    <View style={modalStyles.categoryMenu}>
+                      {PUBLISH_CATEGORIES.map((item) => (
+                        <Pressable key={item} disabled={busy} onPress={() => { setCategory(item); setCategoryOpen(false); }} style={modalStyles.categoryOption}>
+                          <View style={modalStyles.categoryOptionCopy}>
+                            <Text style={[modalStyles.categoryText, item === category ? modalStyles.categoryTextActive : null]}>{item}</Text>
+                            {item === suggestedCategory ? <Text style={modalStyles.categorySuggestedText}>Suggested</Text> : null}
+                          </View>
+                          {item === category ? <Ionicons name="checkmark" color={accentIcon} size={17} /> : null}
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                  <FieldLabel label="Tags" />
+                  <View style={modalStyles.tagsRow}>
+                    {tags.map((tag) => (
+                      <View key={tag} style={modalStyles.tagChip}>
+                        <Text style={modalStyles.tagText}>{tag}</Text>
+                        <Pressable disabled={busy} onPress={() => setTags((current) => current.filter((item) => item !== tag))}>
+                          <Ionicons name="close" color={chipCloseIcon} size={15} />
+                        </Pressable>
+                      </View>
+                    ))}
+                    {tagInputOpen ? (
+                      <View style={modalStyles.tagInputWrap}>
+                        <TextInput autoFocus editable={!busy} onChangeText={setTagDraft} onSubmitEditing={() => addTag()} placeholder="Tag" placeholderTextColor={placeholderColor} style={modalStyles.tagInput} value={tagDraft} />
+                        <Pressable disabled={busy || !tagDraft.trim()} onPress={addTag}><Ionicons name="checkmark" color={accentIcon} size={18} /></Pressable>
+                      </View>
+                    ) : (
+                      <Pressable disabled={busy || tags.length >= 8} onPress={() => setTagInputOpen(true)} style={modalStyles.addTag}>
+                        <Ionicons name="add" color={addIcon} size={18} />
+                        <Text style={modalStyles.addTagText}>Add tag</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+
+                <View style={modalStyles.nestedSectionLast}>
+                  <View style={modalStyles.sectionHeader}>
+                    <Text style={modalStyles.sectionTitle}>App icon</Text>
+                    <Text style={modalStyles.sectionMeta}>Optional</Text>
+                  </View>
+                  <ProjectPublishIcon busy={busy} description={description} generating={generating === "logo"} imageUrl={logoImageUrl} onGenerateAsset={onGenerateAsset} setImageUrl={setLogoImageUrl} title={title} />
+                </View>
               </View>
             ) : null}
-            <FieldLabel label="Tags" />
-            <View style={modalStyles.tagsRow}>
-              {tags.map((tag) => (
-                <View key={tag} style={modalStyles.tagChip}>
-                  <Text style={modalStyles.tagText}>{tag}</Text>
-                  <Pressable disabled={busy} onPress={() => setTags((current) => current.filter((item) => item !== tag))}>
-                    <Ionicons name="close" color={chipCloseIcon} size={15} />
-                  </Pressable>
-                </View>
-              ))}
-              {tagInputOpen ? (
-                <View style={modalStyles.tagInputWrap}>
-                  <TextInput autoFocus editable={!busy} onChangeText={setTagDraft} onSubmitEditing={() => addTag()} placeholder="Tag" placeholderTextColor={placeholderColor} style={modalStyles.tagInput} value={tagDraft} />
-                  <Pressable disabled={busy || !tagDraft.trim()} onPress={addTag}><Ionicons name="checkmark" color={accentIcon} size={18} /></Pressable>
-                </View>
-              ) : (
-                <Pressable disabled={busy || tags.length >= 8} onPress={() => setTagInputOpen(true)} style={modalStyles.addTag}>
-                  <Ionicons name="add" color={addIcon} size={18} />
-                  <Text style={modalStyles.addTagText}>Add tag</Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
-          <View style={modalStyles.section}>
-            <View style={modalStyles.sectionHeader}>
-              <Text style={modalStyles.sectionTitle}>App icon</Text>
-              <Text style={modalStyles.sectionMeta}>Optional</Text>
-            </View>
-            <ProjectPublishIcon busy={busy} description={description} generating={generating === "logo"} imageUrl={logoImageUrl} onGenerateAsset={onGenerateAsset} setImageUrl={setLogoImageUrl} title={title} />
           </View>
 
           <View style={modalStyles.publishBlock}>
@@ -182,7 +203,7 @@ export function ProjectPublishModal({ busy, error, generating, onGenerateAsset, 
             <Pressable disabled={!canPublish} style={[modalStyles.primary, !canPublish ? modalStyles.primaryDisabled : null]} onPress={() => onPublish({ title: title.trim(), description: description.trim(), logoImageUrl: logoImageUrl.trim(), screenshotUrls, tags: publishTags(tags, category), visibility })}>
               <LinearGradient colors={["#7028FF", "#8B35FF", "#6D35FF"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={modalStyles.primaryGradient} />
               {busy ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="cloud-upload-outline" color={colors.text} size={21} />}
-              <Text style={modalStyles.primaryText}>{busy ? "Publishing" : "Publish"}</Text>
+              <Text style={modalStyles.primaryText}>{busy ? (editingListing ? "Updating" : "Publishing") : (editingListing ? "Update" : "Publish")}</Text>
             </Pressable>
           </View>
         </ScrollView>

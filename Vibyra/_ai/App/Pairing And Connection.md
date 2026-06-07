@@ -43,7 +43,6 @@ For future deep diagnosis of "connected but cannot browse/open files" failures, 
 - `src/utils/persistence.ts`
 - `src/screens/welcome/WelcomeConnectScreen.tsx`
 - `src/screens/welcome/steps/StepSetup.tsx`
-- `src/screens/welcome/steps/StepApprove.tsx`
 - `src/screens/welcome/hooks/useWelcomeFlow.ts`
 - `src/screens/workspace/hooks/useWorkspaceState.ts`
 
@@ -55,15 +54,19 @@ Auto Find no longer depends on or displays a pair code from `/health`. Nearby de
 
 Pair requests include the phone's `accountId`; the desktop bridge only queues approval when its loopback-verified desktop account matches that id. Onboarding Step 2 may try reachable desktops until one accepts the same-account request, but it must not rely on account identity from `/health`.
 
+Desktop `/health` exposes `desktopAccountReady: boolean` only. Direct tap-to-pair checks this flag and surfaces "Log in to Vibyra Desktop with the same account as your phone." without appending generic approval instructions. LAN `/pair` and `/pair/status` timeouts are intentionally longer than health probes so slow Wi-Fi does not fail after 3 seconds while waiting for desktop approval.
+
 Connection UI should stay simple: Automatic and Manual tabs. Automatic finds nearby PCs and tapping one sends the desktop approval request; Manual only asks for the desktop code and then waits for PC approval. Keep this pattern in both onboarding (`src/screens/welcome/steps/StepSetup.tsx`, the "Find my PC" / "Use a code" tabs) and the workspace PC switcher (`chunk4.tsx`).
 
 ## Welcome + PC Setup Flow (post-paywall gate)
 
-Post-paywall, onboarding routes into `src/screens/welcome/WelcomeConnectScreen.tsx`. The screen has 4 sub-steps driven by `useWelcomeFlow`:
+Post-paywall, onboarding routes into `src/screens/welcome/WelcomeConnectScreen.tsx`. The screen is intentionally simpler than a stepper/wizard: no persistent `StepIndicator`, and the hero CTA goes straight to PC discovery. Download remains a secondary link inside setup, not a separate required first step.
 
-1. **Hero** (`StepHero.tsx`) — animated logo, personalized greeting, "Let's get started" CTA, "Skip for now" pill.
-2. **Setup** (`StepSetup.tsx`) — combined download-prompt + radar discovery + tap-to-pair list. "Find my PC" (auto) / "Use a code" (manual) tabs. Reuses `app.discoverPairableDesktops`, `app.pairMachineAt`, `app.pairMachine`.
-3. **Confirm/Approve** (`StepApprove.tsx`) — shown only after Desktop has already approved and returned `pendingPhoneApproval`; copy must ask the user to approve/confirm on the phone, not approve on PC. Keep the phone/desktop connection artwork centered with large unframed icons and no purple circular backing shapes. Confirmation sheet shown here on skip.
+The flow has these states driven by `useWelcomeFlow`:
+
+1. **Hero** (`StepHero.tsx`) — personalized greeting, "Find my PC" CTA, "Skip for now" pill.
+2. **Setup** (`StepSetup.tsx`) — auto discovery/pairing plus a small `vibyra.ai` desktop-download link. Reuses `app.discoverPairableDesktops`, `app.pairMachineAt`, `app.pairMachine`.
+3. **Inline confirm** (`StepSetup.tsx` while `flow.step === "approve"`) — after Desktop approves and returns `pendingPhoneApproval`, stay on the connect-PC screen and swap the center content to "PC found" + machine name + confirm button. Do not route to a standalone approve page; the confirm action should feel like the final state of "Finding your PC." Confirmation sheet shown here on skip.
 4. **Connected** (`StepConnected.tsx`) — sparkle burst + spring checkmark, auto-advances after 2.4s.
 
 ### Routing gate is local-only

@@ -7,7 +7,7 @@ import { useAppContext } from "../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { generatePublishAsset, publishProject as publishCommunityProject } from "../../../utils/communityApi";
 import { pickPreviewHtml } from "../../../utils/files";
-import { requestHostedDemoBundle } from "../../../utils/hostedDemo";
+import { requestHostedDemoBundle, requestHostedRuntimeBundle, type HostedDemoPayload, type HostedRuntimePayload } from "../../../utils/hostedDemo";
 import { projectFilterModes } from "../data/pages";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { useProjectPublishStatuses } from "../hooks/useProjectPublishStatuses";
@@ -15,7 +15,7 @@ import { ProjectsPageProps, useProjectsPage } from "../hooks/useProjectsPage";
 import { styles } from "../styles";
 import { ProjectDisplay } from "../types";
 import { ProjectCard } from "./chunk20";
-import { ProjectDeleteConfirmModal, ProjectFilterMenuItem } from "./chunk21";
+import { ProjectFilterMenuItem } from "./chunk21";
 import { FolderBrowserModal } from "./FolderBrowserModal";
 import { ProjectPublishModal } from "./ProjectPublishModal"; import { ProjectPublishNotice } from "./ProjectPublishNotice";
 import { publishResultFromOutcome, type PublishFlowResult } from "./ProjectPublishResult";
@@ -61,6 +61,17 @@ export function ProjectsPage(props: ProjectsPageProps) {
       const previewHtml = pickPreviewHtml(files, false);
       const sourceReview = await app.loadProjectReviewFiles(publishTarget.id);
       const hostedDemo = await requestHostedDemoBundle({ agentUrl: app.agentUrl, connection: app.connection, projectId: publishTarget.id });
+      const runtimeBundle = await requestHostedRuntimeBundle({ agentUrl: app.agentUrl, connection: app.connection, projectId: publishTarget.id });
+      const previewError = publicPreviewPublishError({
+        hostedDemo,
+        previewHtml,
+        runtimeBundle,
+        visibility: payload.visibility
+      });
+      if (previewError) {
+        setPublishError(previewError);
+        return;
+      }
       const result = await publishCommunityProject({
         authToken: app.authToken,
         description: payload.description,
@@ -68,6 +79,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         logoImageUrl: payload.logoImageUrl,
         previewHtml,
         projectId: publishTarget.id,
+        runtimeBundle,
         screenshotUrls: payload.screenshotUrls,
         sourceFiles: sourceReview.files,
         sourceReview: { totalFiles: sourceReview.totalFiles, truncated: sourceReview.truncated },
@@ -159,7 +171,6 @@ export function ProjectsPage(props: ProjectsPageProps) {
             onCancelRename={p.cancelRenameProject}
             onChangeRename={p.setRenameDraft}
             onArchive={() => p.archiveProject(project.id)}
-            onDelete={() => p.requestDeleteProject(project)}
             onMore={() => p.toggleProjectMenu(project.id)}
             onOpen={() => p.openProject(project)}
             onPublish={() => {
@@ -168,8 +179,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
               setPublishResult(null);
               setPublishTarget(project);
             }}
-            onStartRename={() => p.startRenameProject(project)}
             onSubmitRename={() => p.submitRenameProject(project.id)}
+            onTogglePin={() => p.togglePinProject(project.id)}
             layout={p.projectLayout}
             project={project}
             publishStatus={publishStatuses.items[project.sourceProject?.id ?? project.id]}
@@ -184,7 +195,6 @@ export function ProjectsPage(props: ProjectsPageProps) {
           </View>
         ) : null}
       </View>
-      <ProjectDeleteConfirmModal onCancel={p.cancelDeleteProject} onConfirm={p.confirmDeleteProject} project={p.deleteTarget} />
       <ProjectPublishModal busy={publishing} error={publishError} generating={generatingAsset} onClose={() => { if (!publishing) { setPublishError(""); setPublishResult(null); setPublishTarget(null); } }} onGenerateAsset={handleGenerateAsset} onPublish={submitPublish} onResultComplete={() => { setPublishError(""); setPublishTarget(null); }} project={publishTarget} publishStatus={publishTarget ? publishStatuses.items[publishTarget.sourceProject?.id ?? publishTarget.id] : null} result={publishResult} />
       <FolderBrowserModal
         browseDesktopPath={app.browseDesktopPath}
@@ -200,4 +210,32 @@ export function ProjectsPage(props: ProjectsPageProps) {
       />
     </View>
   );
+}
+
+function publicPreviewPublishError({
+  hostedDemo,
+  previewHtml,
+  runtimeBundle,
+  visibility
+}: {
+  hostedDemo: HostedDemoPayload | null;
+  previewHtml: string;
+  runtimeBundle: HostedRuntimePayload | null;
+  visibility: "public" | "unlisted" | "private";
+}) {
+  if (visibility !== "public") return "";
+  if (hasOpenablePublishHtml(previewHtml) || hostedDemo?.ok === true || runtimeBundle?.ok === true) return "";
+
+  const reason = [hostedDemo?.message, runtimeBundle?.message]
+    .filter((message): message is string => Boolean(message?.trim()))
+    .join(" ");
+  const detail = reason ? ` ${reason}` : "";
+  return `This folder does not have a publishable public app preview yet.${detail} Open the actual app folder from Browse PC, make sure it has a built browser entry or a supported start/build script, then publish again.`;
+}
+
+function hasOpenablePublishHtml(html: string) {
+  const trimmed = html.trim();
+  if (!trimmed) return false;
+  const normalized = trimmed.toLowerCase().replace(/\s+/g, " ");
+  return !(normalized.includes("<h2>project preview</h2>") && normalized.includes("<pre><code>") && normalized.includes("</code></pre>"));
 }

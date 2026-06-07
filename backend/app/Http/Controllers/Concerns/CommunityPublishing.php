@@ -18,17 +18,26 @@ use Illuminate\Support\Str;
 trait CommunityPublishing
 {
     use CommunityPublishingPayload;
-    public function communityProjects(): JsonResponse
+    public function communityProjects(Request $request): JsonResponse
     {
-        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
+        $viewer = $this->optionalAuthenticatedUser($request);
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments'])
             ->where('visibility', 'public')
             ->where('review_status', PublishedProject::REVIEW_APPROVED)
+            ->where(function ($query): void {
+                $query->whereNotNull('preview_html')
+                    ->where('preview_html', '!=', '')
+                    ->orWhereHas('deployments', fn ($deployment) => $deployment->whereIn('status', PublishedProjectDeployment::SUCCESS_STATUSES));
+            })
             ->latest('published_at')
-            ->limit(50)
-            ->get();
+            ->limit(100)
+            ->get()
+            ->filter(fn (PublishedProject $project) => $this->hasOpenablePublishedApp($project))
+            ->take(50)
+            ->values();
         return $this->json([
             'ok' => true,
-            'projects' => $projects->map(fn (PublishedProject $project) => $this->communityProjectPayload($project))->values(),
+            'projects' => $projects->map(fn (PublishedProject $project) => $this->communityProjectPayload($project, $viewer))->values(),
             'comments' => $this->commentsPayload($projects->pluck('id')->all()),
         ]);
     }
@@ -36,7 +45,7 @@ trait CommunityPublishing
     public function publishedProjectStatuses(Request $request): JsonResponse
     {
         $user = $this->authenticatedUser($request);
-        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments'])
             ->where('user_id', $user->id)
             ->latest('updated_at')
             ->limit(200)
@@ -44,14 +53,14 @@ trait CommunityPublishing
 
         return $this->json([
             'ok' => true,
-            'projects' => $projects->map(fn (PublishedProject $project) => $this->publishedProjectStatusPayload($project))->values(),
+            'projects' => $projects->map(fn (PublishedProject $project) => $this->publishedProjectStatusPayload($project, $user))->values(),
         ]);
     }
 
     public function publishReviewQueue(Request $request): JsonResponse
     {
         $this->assertPublishReviewer($this->authenticatedUser($request));
-        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment'])
+        $projects = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments'])
             ->whereIn('review_status', [PublishedProject::REVIEW_PENDING, PublishedProject::REVIEW_UNDER_REVIEW])
             ->latest('updated_at')
             ->limit(100)
@@ -133,6 +142,19 @@ trait CommunityPublishing
             'sourceFiles' => $request->input('sourceFiles', []),
             'sourceReview' => $request->input('sourceReview', []),
         ]);
+        $hasPublicPreviewPayload = $this->isOpenablePreviewHtml((string) ($safety['sanitizedHtml'] ?? ''))
+            || $this->hasHostedDemoBundle($request->input('hostedDemo'))
+            || $this->hasRuntimeBundle($request->input('runtimeBundle'));
+        if ($visibility === 'public' && (bool) $safety['public'] && ! $hasPublicPreviewPayload) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'Vibyra could not capture a public app preview for this folder. Open the project from Browse PC, make sure the desktop preview works, then publish again.',
+                'reviewStatus' => ProjectSafetyReview::UNDER_REVIEW,
+                'isPublic' => false,
+                'hostedDemoStatus' => 'unavailable',
+                'hostedDemoMessage' => 'No hosted demo or preview HTML was captured.',
+            ], 422);
+        }
 
         $project = $project ?? new PublishedProject(['user_id' => $user->id, 'source_project_id' => $sourceProjectId]);
 
@@ -159,6 +181,7 @@ trait CommunityPublishing
 
         if ($visibility === 'public' && $safety['public']) {
             $this->publishStaticHostedDemo($project, $request->input('hostedDemo'));
+            $this->queueRuntimeHostedDemo($project, $request->input('runtimeBundle'));
         }
 
         if ($safety['status'] === ProjectSafetyReview::DENIED) {
@@ -170,8 +193,8 @@ trait CommunityPublishing
                 'safetyScore' => $safety['score'],
                 'reviewSummary' => $safety['summary'],
                 'safetyFindings' => $safety['findings'],
-                'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
-                'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
+                'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment']), $user),
+                'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment']), $user),
             ], 422);
         }
 
@@ -185,9 +208,58 @@ trait CommunityPublishing
             'safetyScore' => $safety['score'],
             'reviewSummary' => $safety['summary'],
             'safetyFindings' => $safety['findings'],
-            'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
-            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment'])),
+            'project' => $this->communityProjectPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment']), $user),
+            'publishStatus' => $this->publishedProjectStatusPayload($project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment']), $user),
         ], $status);
+    }
+
+    public function updatePublishedProjectVisibility(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        $project = PublishedProject::with(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments'])
+            ->where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        $visibility = $this->publishVisibility((string) $request->input('visibility', $project->visibility));
+
+        if ($visibility === 'public' && ! $this->hasOpenablePublishedApp($project)) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'Add a hosted demo or preview before making this project public.',
+            ], 422);
+        }
+
+        $project->forceFill([
+            'visibility' => $visibility,
+            'published_at' => ($visibility === 'public' && $project->review_status === PublishedProject::REVIEW_APPROVED)
+                ? ($project->published_at ?? now())
+                : null,
+        ])->save();
+
+        $fresh = $project->fresh(['user', 'latestDeployment', 'latestSuccessfulDeployment', 'deployments']);
+
+        return $this->json([
+            'ok' => true,
+            'project' => $this->communityProjectPayload($fresh, $user),
+            'publishStatus' => $this->publishedProjectStatusPayload($fresh, $user),
+        ]);
+    }
+
+    public function deletePublishedProject(Request $request, string $slug): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+        $project = PublishedProject::where('slug', $slug)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        $sourceProjectId = $project->source_project_id;
+        $project->delete();
+
+        return $this->json([
+            'ok' => true,
+            'deleted' => true,
+            'slug' => $slug,
+            'sourceProjectId' => $sourceProjectId,
+        ]);
     }
 
     private function assertPublishReviewer(User $user): void
@@ -200,7 +272,16 @@ trait CommunityPublishing
     public function communityProjectPreview(string $slug): Response
     {
         $project = $this->publicPublishedProject($slug);
-        $html = $project->preview_html ?: $this->previewFallbackHtml($project);
+        if (trim((string) $project->preview_html) === '') {
+            return response($this->previewUnavailableHtml($project), 404)->withHeaders([
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; img-src data: https:;",
+                'X-Content-Type-Options' => 'nosniff',
+                'Referrer-Policy' => 'no-referrer',
+            ]);
+        }
+
+        $html = (string) $project->preview_html;
         return response($html, 200)->withHeaders([
             'Content-Type' => 'text/html; charset=UTF-8',
             'Content-Security-Policy' => "default-src 'none'; script-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'; img-src data: https:; style-src 'unsafe-inline'; font-src https: data:;",
@@ -213,10 +294,8 @@ trait CommunityPublishing
     public function communityProjectHostedDemo(string $slug, ?string $path = null): Response
     {
         $project = $this->publicPublishedProject($slug);
-        $deployment = PublishedProjectDeployment::where('published_project_id', $project->id)
-            ->whereIn('status', PublishedProjectDeployment::SUCCESS_STATUSES)
-            ->latest('hosted_at')
-            ->firstOrFail();
+        $deployment = $this->openableSuccessfulHostedDemo($project);
+        abort_if($deployment === null || $deployment->provider !== PublishedProjectDeployment::PROVIDER_STATIC, 404);
 
         $file = $this->hostedDemoFile($deployment, $path);
         if ($file !== null) {
@@ -264,6 +343,41 @@ trait CommunityPublishing
         ]);
     }
 
+    private function hasHostedDemoBundle(mixed $hostedDemo): bool
+    {
+        return is_array($hostedDemo) && $this->normalizeHostedDemoBundle($hostedDemo) !== null;
+    }
+
+    private function hasRuntimeBundle(mixed $runtimeBundle): bool
+    {
+        return is_array($runtimeBundle) && $this->normalizeRuntimeBundle($runtimeBundle) !== null;
+    }
+
+    private function queueRuntimeHostedDemo(PublishedProject $project, mixed $runtimeBundle): void
+    {
+        $bundle = is_array($runtimeBundle) ? $this->normalizeRuntimeBundle($runtimeBundle) : null;
+        if ($bundle === null || ! $project->isPubliclyVisible()) {
+            return;
+        }
+
+        PublishedProjectDeployment::create([
+            'published_project_id' => $project->id,
+            'user_id' => $project->user_id,
+            'provider' => PublishedProjectDeployment::PROVIDER_RAILWAY,
+            'status' => PublishedProjectDeployment::STATUS_QUEUED,
+            'provider_status' => 'waiting_for_runtime_worker',
+            'hosting_mode' => PublishedProjectDeployment::MODE_RAILWAY,
+            'demo_mode_enabled' => true,
+            'disabled_features' => ['creator_secrets', 'persistent_storage', 'real_payments'],
+            'stack' => $project->stack,
+            'build_command' => $bundle['buildCommand'],
+            'start_command' => $bundle['startCommand'],
+            'demo_files' => $bundle['files'],
+            'metadata' => $bundle['metadata'],
+            'last_error' => 'Runtime deployment is queued. A Railway worker must upload this source bundle and resolve a public HTTPS URL before Explore can open the backend app.',
+        ]);
+    }
+
     private function hostedDemoFile(PublishedProjectDeployment $deployment, ?string $path): ?array
     {
         $files = is_array($deployment->demo_files) ? $deployment->demo_files : [];
@@ -301,6 +415,12 @@ trait CommunityPublishing
             if ($path === '' || $this->unsafeHostedDemoPath($path) || ! in_array($encoding, ['utf8', 'base64'], true) || $body === '') {
                 continue;
             }
+            if ($encoding === 'utf8') {
+                $body = $this->neutralizeCompiledPrivateUrlLiterals($body, ['path' => $path]);
+            }
+            if ($encoding === 'utf8' && $this->containsUnsafePublishedUrl($body, ['path' => $path])) {
+                return null;
+            }
             $totalBytes += strlen($body);
             if ($totalBytes > 11_000_000) {
                 break;
@@ -328,6 +448,94 @@ trait CommunityPublishing
                 'totalFiles' => count($files),
             ],
         ];
+    }
+
+    private function normalizeRuntimeBundle(array $value): ?array
+    {
+        $platform = (string) ($value['platform'] ?? '');
+        if (($value['ok'] ?? false) !== true || ! in_array($platform, ['node', 'laravel', 'python'], true)) {
+            return null;
+        }
+
+        $files = [];
+        $totalBytes = 0;
+        foreach (array_slice((array) ($value['files'] ?? []), 0, 320) as $file) {
+            if (! is_array($file)) {
+                continue;
+            }
+            $path = $this->normalizeHostedDemoPath((string) ($file['path'] ?? ''));
+            $encoding = (string) ($file['encoding'] ?? 'utf8');
+            $body = (string) ($file['body'] ?? '');
+            if ($path === '' || $this->unsafeHostedDemoPath($path) || $this->unsafeRuntimeSourcePath($path, $platform) || ! in_array($encoding, ['utf8', 'base64'], true) || $body === '') {
+                continue;
+            }
+            if ($encoding === 'utf8' && $this->containsUnsafePublishedUrl($body, ['path' => $path])) {
+                return null;
+            }
+            $totalBytes += strlen($body);
+            if ($totalBytes > 10_000_000) {
+                break;
+            }
+            $fileLimit = $this->isGeneratedBuildAssetPath($path) ? 2_800_000 : 1_400_000;
+            $files[] = [
+                'path' => $path,
+                'contentType' => Str::limit((string) ($file['contentType'] ?? 'text/plain; charset=UTF-8'), 120, ''),
+                'encoding' => $encoding,
+                'size' => min((int) ($file['size'] ?? strlen($body)), $fileLimit),
+                'body' => Str::limit($body, $fileLimit, ''),
+            ];
+        }
+
+        $requiredRootFiles = match ($platform) {
+            'laravel' => ['composer.json'],
+            'python' => ['requirements.txt', 'pyproject.toml'],
+            default => ['package.json'],
+        };
+        if ($files === [] || ! collect($requiredRootFiles)->contains(fn (string $path) => $this->demoFilesContain($files, $path))) {
+            return null;
+        }
+
+        return [
+            'files' => $files,
+            'buildCommand' => Str::limit((string) ($value['buildCommand'] ?? ''), 320, ''),
+            'startCommand' => Str::limit((string) ($value['startCommand'] ?? ''), 320, ''),
+            'metadata' => [
+                'kind' => 'runtime-source-bundle',
+                'platform' => $platform,
+                'source' => 'desktop-publish-runtime-bundle',
+                'runtimeReason' => Str::limit((string) ($value['runtimeReason'] ?? ''), 220, ''),
+                'totalFiles' => count($files),
+                'requiresProviderWorker' => true,
+            ],
+        ];
+    }
+
+    private function unsafeRuntimeSourcePath(string $path, string $platform = 'node'): bool
+    {
+        $segments = explode('/', $path);
+        $blockedDirs = ['.git', '.expo', '.vibyra-agent', 'node_modules', 'vendor', 'dist', 'build', '.next', '.output'];
+        foreach ($segments as $index => $segment) {
+            if ($platform === 'laravel' && $segment === 'build' && ($segments[$index - 1] ?? '') === 'public') {
+                continue;
+            }
+            if (in_array($segment, $blockedDirs, true)) {
+                return true;
+            }
+        }
+        foreach ($segments as $segment) {
+            if (preg_match('/^\.env(?:\.|$)/i', $segment) === 1) {
+                return true;
+            }
+            if (! $this->isGeneratedBuildAssetPath($path) && preg_match('/(?:^|[-_.])(secret|token|credential|password|private[-_.]?key|api[-_.]?key)(?:[-_.]|$)/i', $segment) === 1) {
+                return true;
+            }
+        }
+        return preg_match('/\.(?:db|sqlite3?|pem|key|p12|pfx|crt|cer)$/i', $path) === 1;
+    }
+
+    private function isGeneratedBuildAssetPath(string $path): bool
+    {
+        return preg_match('#^(?:public/)?build/assets/#i', $path) === 1;
     }
 
     private function demoFilesContain(array $files, string $path): bool

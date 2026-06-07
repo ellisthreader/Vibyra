@@ -7,7 +7,11 @@ metadata:
 
 # VibyraObsiden
 
-Use this skill to treat Obsidian memory as part of delivery. Do not wait for the user to ask whether memory was updated when the work produced durable knowledge.
+Use this skill to treat Obsidian memory as part of delivery. Whenever repo work
+touches Vibyra code, architecture, workflows, debugging, routes, permissions,
+state, or product decisions, actively consult Obsidian before broad source
+exploration. Do not wait for the user to ask whether memory was updated when
+the work produced durable knowledge.
 
 ## Start Of Task
 
@@ -24,6 +28,11 @@ Before broad repo exploration, follow the repo memory protocol:
 
 Use these notes to choose a narrow source-file set. Avoid generated folders such as `node_modules`, `.git`, `.expo`, `.vibyra-agent`, `backend/vendor`, and temporary browser profiles.
 
+Before topic-specific work, check `.agents/skills/` for a matching local skill
+and read it. Treat relevant skills as active instructions for the task.
+
+For memory/skill audits, also read `Vibyra/_ai/Memory And Skills Optimization.md`.
+
 ## What Must Be Recorded
 
 Update Obsidian when the task changes or confirms durable knowledge:
@@ -33,11 +42,18 @@ Update Obsidian when the task changes or confirms durable knowledge:
 - permission or approval policy decisions
 - validation commands and recurring diagnostic workflows
 - generated local skills and when to use them
+- local skill trigger rules, workflows, diagnostics, or validation patterns
 - persistent state shape, cloud/local persistence, or migration behavior
 - recurring bugs and their proven recovery path
 - product decisions that future agents should preserve
 
-Do not record temporary implementation noise, raw command output, speculative plans, or every touched file. Record the durable rule and the files future agents should inspect first.
+Write back before the final response when the task produced stable context.
+Do not record temporary implementation noise, raw command output, speculative
+plans, transcripts, or every touched file. Record the durable rule and the files
+future agents should inspect first.
+
+If a durable lesson belongs in a local skill, update that skill directly and add
+only the routing/context fact to Obsidian.
 
 ## Where To Write
 
@@ -51,14 +67,20 @@ Do not record temporary implementation noise, raw command output, speculative pl
 
 Prefer the smallest focused note that future sessions will naturally read. Keep index notes short and move feature-specific details to focused notes.
 
+Long specs, research files, and decision logs are deep references. Keep them
+searchable, but do not route agents to read them by default.
+
 ## End Of Task Checklist
 
 Before final response, ask:
 
 - Did I change durable architecture, route behavior, permissions, validation workflow, or state shape?
 - Did I create or rename a skill?
+- Did I change or confirm a workflow that belongs in an existing skill?
 - Did I discover a recurring bug pattern or repo-specific diagnostic?
 - Did I split ownership across new files that future agents need to know about?
+- Did I leave an oversized everyday note that should instead be a deep reference
+  or split into a focused note?
 
 If yes, update Obsidian before final. In the final response, mention which note was updated. If no memory update was needed, say that no durable Obsidian update was warranted.
 

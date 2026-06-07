@@ -22,7 +22,7 @@ let profileSessionMenuId = "";
 let profileLogoutAllBusy = false;
 
 const desktopPreferenceDefaults = {
-  appearance: "auto",
+  appearance: "dark",
   callName: "",
   chatFont: "vibyra-sans",
   customInstructions: "",
@@ -103,7 +103,7 @@ function saveDesktopPreferences(next) {
 
 function applyDesktopPreferences(next = desktopPreferences()) {
   if (!document.body) return;
-  document.body.dataset.desktopTheme = next.appearance || "auto";
+  document.body.dataset.desktopTheme = next.appearance || "dark";
   document.body.dataset.chatFont = next.chatFont || "vibyra-sans";
 }
 

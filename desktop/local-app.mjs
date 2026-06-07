@@ -6,12 +6,14 @@ import { handlePtyTerminalUpgrade } from "./lib/ptyTerminals.mjs";
 import { appState, connectionUrls, PAIR_CODE, PORT } from "./lib/state.mjs";
 import { openDesktopWindow } from "./lib/window.mjs";
 
+const shouldOpenDesktopWindow = process.env.VIBYRA_SKIP_DESKTOP_WINDOW !== "1";
+
 appState.server = createServer(handle);
 appState.server.on("upgrade", handlePtyTerminalUpgrade);
 
 appState.server.listen(PORT, "0.0.0.0", async () => {
   startDiscoveryBroadcast();
-  openDesktopWindow();
+  if (shouldOpenDesktopWindow) openDesktopWindow();
   void discoverProjects().catch((error) => {
     console.error(error instanceof Error ? error.message : "Project discovery failed");
   });
@@ -24,7 +26,7 @@ appState.server.listen(PORT, "0.0.0.0", async () => {
 appState.server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
     console.error("Vibyra Desktop is already open.");
-    openDesktopWindow();
+    if (shouldOpenDesktopWindow) openDesktopWindow();
     setTimeout(() => process.exit(0), 400);
     return;
   }

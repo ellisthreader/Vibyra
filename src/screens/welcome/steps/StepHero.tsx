@@ -40,10 +40,10 @@ export function StepHero({ flow }: { flow: WelcomeFlow }) {
         }}
       >
         <Pressable
-          accessibilityHint="Continue to download Vibyra Desktop"
+          accessibilityHint="Continue to find your PC"
           accessibilityLabel={welcomeCopy.hero.cta}
           accessibilityRole="button"
-          onPress={flow.goToDownload}
+          onPress={flow.goToSetup}
           style={({ pressed }) => [styles.ghostBtn, pressed ? styles.ghostBtnPressed : null]}
         >
           <Animated.Text style={styles.ghostBtnText}>{welcomeCopy.hero.cta}</Animated.Text>

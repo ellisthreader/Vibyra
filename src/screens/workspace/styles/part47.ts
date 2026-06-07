@@ -3,15 +3,6 @@ export const part47 = {
     flex: 1,
     minWidth: 0
   },
-  workspaceConnectionDot: {
-    backgroundColor: "#7CF1B3",
-    borderRadius: 999,
-    height: 9,
-    width: 9
-  },
-  workspaceConnectionDotOffline: {
-    backgroundColor: "#FF9DAE"
-  },
   workspaceConnectionLabel: {
     color: "#AFA7C2",
     fontSize: 11,

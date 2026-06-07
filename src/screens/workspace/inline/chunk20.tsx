@@ -31,11 +31,10 @@ export function ProjectCard({
   onArchive,
   onCancelRename,
   onChangeRename,
-  onDelete,
   onMore,
   onOpen,
   onPublish,
-  onStartRename,
+  onTogglePin,
   onSubmitRename,
   project,
   publishStatus,
@@ -48,11 +47,10 @@ export function ProjectCard({
   onArchive: () => void;
   onCancelRename: () => void;
   onChangeRename: (value: string) => void;
-  onDelete: () => void;
   onMore: () => void;
   onOpen: () => void;
   onPublish: () => void;
-  onStartRename: () => void;
+  onTogglePin: () => void;
   onSubmitRename: () => void;
   project: ProjectDisplay;
   publishStatus?: ProjectPublishStatus | null;
@@ -154,10 +152,9 @@ export function ProjectCard({
       {menuOpen ? (
         <View style={[styles.projectMenuLayer, { pointerEvents: "box-none" }]}>
           <View style={styles.projectMenu}>
-            <ProjectMenuItem icon="create-outline" label="Rename" onPress={onStartRename} />
-            <ProjectMenuItem icon="cloud-upload-outline" label="Publish" onPress={onPublish} />
+            <ProjectMenuItem icon="create-outline" label="Edit listing" onPress={onPublish} />
             <ProjectMenuItem icon="archive-outline" label="Archive" onPress={onArchive} />
-            <ProjectMenuItem danger icon="trash-outline" label="Delete" onPress={onDelete} />
+            <ProjectMenuItem icon={project.pinned ? "remove-circle-outline" : "pin-outline"} label={project.pinned ? "Unpin" : "Pin"} onPress={onTogglePin} />
           </View>
         </View>
       ) : null}

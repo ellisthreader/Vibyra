@@ -41,6 +41,10 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
         src={safeHtml ? undefined : url}
         srcDoc={safeHtml}
         onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false);
+          onPreviewError?.({ message: "Preview failed to load", source: url, type: "webview" });
+        }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-modals"
         style={iframeStyle}
         title="App preview"

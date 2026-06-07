@@ -1,9 +1,28 @@
 export const part51 = {
-  workspaceConnectionDot: {
+  workspaceConnectionIconTile: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    position: "relative",
+    width: 42
+  },
+  workspaceConnectionStatusBadge: {
     backgroundColor: "#7CF1B3",
+    borderColor: "rgba(8, 10, 18, 0.99)",
     borderRadius: 999,
-    height: 10,
-    width: 10
+    borderWidth: 2,
+    bottom: -3,
+    height: 14,
+    position: "absolute",
+    right: -3,
+    width: 14
+  },
+  workspaceConnectionStatusBadgeOffline: {
+    backgroundColor: "#FF9DAE"
   },
   workspaceConnectionLabel: {
     color: "#9EA3B2",
@@ -11,6 +30,9 @@ export const part51 = {
     fontWeight: "900",
     letterSpacing: 0,
     textTransform: "uppercase"
+  },
+  workspaceConnectionLabelOnline: {
+    color: "#7CF1B3"
   },
   workspaceConnectionName: {
     color: "#F4F6FB",
@@ -58,17 +80,6 @@ export const part51 = {
     shadowOpacity: 0.32,
     shadowRadius: 24,
     width: 300
-  },
-  workspaceMenuActiveRail: {
-    backgroundColor: "transparent",
-    borderRadius: 999,
-    height: 22,
-    left: 0,
-    position: "absolute",
-    width: 3
-  },
-  workspaceMenuActiveRailVisible: {
-    backgroundColor: "#8B5CFF"
   },
   workspaceMenuRowIcon: {
     alignItems: "center",

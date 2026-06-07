@@ -60,6 +60,8 @@ import { part59 } from "./part59";
 import { part60 } from "./part60";
 import { part61 } from "./part61";
 import { part62 } from "./part62";
+import { part63 } from "./part63";
+import { part64 } from "./part64";
 import { createThemedStyleSheet, setThemeTransformScheme } from "./themeTransform";
 
 const rawDark = {
@@ -68,7 +70,7 @@ const rawDark = {
   ...part17, ...part18, ...part19, ...part20, ...part21, ...part22, ...part23, ...part24,
   ...part25, ...part26, ...part27, ...part28, ...part29, ...part30, ...part31, ...part32,
   ...part33, ...part34, ...part35, ...part36, ...part37, ...part38, ...part39,
-  ...part40, ...part41, ...part42, ...part43, ...part44, ...part45, ...part46, ...part47, ...part48, ...part49, ...part50, ...part51, ...part52, ...part53, ...part54, ...part55, ...part56, ...part57, ...part58, ...part59, ...part60, ...part61, ...part62
+  ...part40, ...part41, ...part42, ...part43, ...part44, ...part45, ...part46, ...part47, ...part48, ...part49, ...part50, ...part51, ...part52, ...part53, ...part54, ...part55, ...part56, ...part57, ...part58, ...part59, ...part60, ...part61, ...part62, ...part63, ...part64
 } as Record<string, Record<string, unknown>>;
 
 export function setStylesScheme(scheme: "dark" | "light") {

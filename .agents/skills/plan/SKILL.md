@@ -10,13 +10,14 @@ Use this skill when the task is large enough that a quick edit would risk drift,
 ## Workflow
 
 1. Restate the goal in concrete terms.
-2. Read the smallest relevant project memory, skill, and source files before broad exploration.
+2. Read the smallest relevant project memory, matching local skill, and source files before broad exploration.
 3. Write a short plan with clear checkpoints. Keep it practical, not ceremonial.
 4. Review the plan before editing:
    - Is the core user outcome preserved?
    - Is the implementation smaller than the first obvious version?
    - Are UI surfaces simpler, calmer, and less control-heavy?
    - Are permission, persistence, and validation boundaries explicit?
+   - Does a local skill need to be read or updated so future agents follow the same workflow?
 5. Implement the plan in scoped steps.
 6. Validate with the narrowest useful checks.
 7. Update durable memory or local skills when the work creates reusable rules.

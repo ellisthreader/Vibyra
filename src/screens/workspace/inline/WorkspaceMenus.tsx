@@ -1,25 +1,16 @@
 import React from "react";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { styles } from "../styles";
-import type { DashboardPage, SettingsTab } from "../types";
+import type { DashboardPage } from "../types";
 import { AccountAvatar } from "./AccountAvatar";
-
-type IconName = keyof typeof Ionicons.glyphMap;
-
-type MenuRow = {
-  icon?: IconName;
-  label: string;
-  meta?: string;
-  onPress: () => void;
-  active?: boolean;
-  danger?: boolean;
-};
+import { SidePanel } from "./SidePanel";
+import { WorkspaceMenuRow, type MenuRow } from "./WorkspaceMenuRow";
 
 export function PrimaryMenuSheet({
-  activeBuildCount,
+  accountName,
   activePage,
   connected,
   machineName,
@@ -27,14 +18,17 @@ export function PrimaryMenuSheet({
   onConnectPc,
   onNavigate,
   onNewChat,
+  onOpenAccountMenu,
   onOpenProfile,
   onOpenRecentChat,
   onRenameChat,
+  profileImageUri,
   projectCount,
   recentChats,
+  selectedChatId,
   visible
 }: {
-  activeBuildCount: number;
+  accountName: string;
   activePage: DashboardPage;
   connected: boolean;
   machineName: string;
@@ -42,42 +36,51 @@ export function PrimaryMenuSheet({
   onConnectPc: () => void;
   onNavigate: (page: DashboardPage) => void;
   onNewChat: () => void;
+  onOpenAccountMenu: () => void;
   onOpenProfile: () => void;
   onOpenRecentChat: (chatId: string) => void;
   onRenameChat?: () => void;
+  profileImageUri: string;
   projectCount: number;
   recentChats: Array<{ id: string; title: string }>;
+  selectedChatId: string | null;
   visible: boolean;
 }) {
   const insets = useSafeAreaInsets();
-  const closeIconColor = useThemedColor("#B8B8C8");
   const chevronColor = useThemedColor("#8F94A3");
+  const pcIconColor = useThemedColor("#D5D9E4");
+  const activeRecent = recentChats.some((chat) => chat.id === selectedChatId);
   const rows: MenuRow[] = [
-    { icon: "create-outline", label: "New chat", onPress: onNewChat, active: activePage === "chat" },
+    { icon: "create-outline", label: "New chat", onPress: onNewChat, active: activePage === "chat" && !activeRecent },
     { icon: "folder-open-outline", label: "Projects", meta: `${projectCount}`, onPress: () => onNavigate("projects"), active: activePage === "projects" },
-    { icon: "pulse-outline", label: "Active builds", meta: `${activeBuildCount}`, onPress: () => onNavigate("dashboard"), active: activePage === "dashboard" },
     { icon: "compass-outline", label: "Explore", onPress: () => onNavigate("community"), active: activePage === "community" },
     { icon: "person-circle-outline", label: "Account", onPress: onOpenProfile, active: activePage === "profile" }
   ];
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.workspaceMenuOverlay}>
-        <Pressable accessibilityLabel="Close menu" style={styles.workspaceMenuScrim} onPress={onClose} />
-        <View style={[styles.workspaceMenuPanel, { paddingTop: Math.max(insets.top + 16, 18) }]}>
-          <View style={styles.workspaceMenuHeader}>
-            <View>
-              <Text style={styles.workspaceMenuTitle}>Vibyra</Text>
-            </View>
-            <Pressable accessibilityLabel="Close menu" style={styles.workspaceMenuIconButton} onPress={onClose}>
-              <Ionicons name="close" color={closeIconColor} size={20} />
-            </Pressable>
-          </View>
+    <SidePanel side="left" visible={visible} onClose={onClose}>
+      <View style={[styles.menuPage, { paddingTop: Math.max(insets.top + 16, 20) }]}>
+        <View style={styles.workspaceMenuHeader}>
+          <Text style={styles.workspaceMenuTitle}>Vibyra</Text>
+          <Pressable
+            accessibilityLabel="Open profile"
+            onPress={onOpenAccountMenu}
+            style={({ pressed }) => [styles.menuHeaderAvatar, pressed ? styles.menuHeaderAvatarPressed : null]}
+          >
+            <AccountAvatar imageUri={profileImageUri} name={accountName} size={30} textSize={13} />
+          </Pressable>
+        </View>
 
+        <ScrollView style={styles.menuPageScroll} contentContainerStyle={styles.menuPageScrollContent} showsVerticalScrollIndicator={false}>
           <Pressable style={styles.workspaceConnectionRow} onPress={onConnectPc}>
-            <View style={[styles.workspaceConnectionDot, connected ? null : styles.workspaceConnectionDotOffline]} />
+            <View style={styles.workspaceConnectionIconTile}>
+              <Ionicons name="desktop-outline" color={pcIconColor} size={19} />
+              <View style={[styles.workspaceConnectionStatusBadge, connected ? null : styles.workspaceConnectionStatusBadgeOffline]} />
+            </View>
             <View style={styles.workspaceConnectionCopy}>
-              <Text style={styles.workspaceConnectionLabel}>{connected ? "Connected" : "Not connected"}</Text>
+              <Text style={[styles.workspaceConnectionLabel, connected ? styles.workspaceConnectionLabelOnline : null]}>
+                {connected ? "Connected PC" : "Not connected"}
+              </Text>
               <Text numberOfLines={1} style={styles.workspaceConnectionName}>{machineName}</Text>
             </View>
             <Ionicons name="chevron-forward" color={chevronColor} size={18} />
@@ -95,89 +98,14 @@ export function PrimaryMenuSheet({
                 {recentChats.map((chat) => (
                   <WorkspaceMenuRow
                     key={chat.id}
-                    row={{ label: chat.title, onPress: () => onOpenRecentChat(chat.id) }}
+                    row={{ label: chat.title, onPress: () => onOpenRecentChat(chat.id), active: chat.id === selectedChatId }}
                   />
                 ))}
               </View>
             </>
           ) : null}
-        </View>
+        </ScrollView>
       </View>
-    </Modal>
-  );
-}
-
-export function AccountMenuSheet({
-  name,
-  onClose,
-  onOpenTokens,
-  onTab,
-  plan,
-  profileImageUri,
-  tokenBalance,
-  visible
-}: {
-  name: string;
-  onClose: () => void;
-  onOpenTokens: () => void;
-  onTab: (tab: SettingsTab) => void;
-  plan: string;
-  profileImageUri: string;
-  tokenBalance: number;
-  visible: boolean;
-}) {
-  const insets = useSafeAreaInsets();
-  const rows: MenuRow[] = [
-    { icon: "person-outline", label: "Profile", onPress: () => onTab("profile") },
-    { icon: "card-outline", label: "Billing", meta: plan, onPress: () => onTab("billing") },
-    { icon: "color-palette-outline", label: "Appearance", onPress: () => onTab("preferences") },
-    { icon: "shield-outline", label: "Security", onPress: () => onTab("security") },
-    { icon: "flash-outline", label: "Credits", meta: tokenBalance.toLocaleString(), onPress: onOpenTokens }
-  ];
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.accountMenuOverlay}>
-        <Pressable accessibilityLabel="Close account menu" style={styles.workspaceMenuScrim} onPress={onClose} />
-        <View style={[styles.accountMenuPanel, { marginTop: Math.max(insets.top + 8, 12) }]}>
-          <View style={styles.accountMenuHeader}>
-            <View style={styles.accountAvatarLarge}>
-              <AccountAvatar imageUri={profileImageUri} name={name} size={52} textSize={21} />
-            </View>
-            <View style={styles.accountMenuCopy}>
-              <Text numberOfLines={1} style={styles.accountMenuName}>{name.trim() || "Account"}</Text>
-              <Text style={styles.accountMenuPlan}>{plan}</Text>
-            </View>
-          </View>
-          <View style={styles.workspaceMenuList}>
-            {rows.map((row) => <WorkspaceMenuRow key={row.label} row={row} />)}
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function WorkspaceMenuRow({ row }: { row: MenuRow }) {
-  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : row.active ? "#F6F2FF" : "#A6ABB8");
-  return (
-    <Pressable
-      onPress={row.onPress}
-      style={({ pressed }) => [
-        styles.workspaceMenuRow,
-        row.active ? styles.workspaceMenuRowActive : null,
-        row.danger ? styles.workspaceMenuRowDanger : null,
-        pressed ? styles.workspaceMenuRowPressed : null
-      ]}
-    >
-      <View style={[styles.workspaceMenuActiveRail, row.active ? styles.workspaceMenuActiveRailVisible : null]} />
-      {row.icon ? (
-        <View style={[styles.workspaceMenuRowIcon, row.active ? styles.workspaceMenuRowIconActive : null]}>
-          <Ionicons name={row.icon} color={iconColor} size={20} />
-        </View>
-      ) : null}
-      <Text numberOfLines={1} style={[styles.workspaceMenuRowLabel, row.active ? styles.workspaceMenuRowLabelActive : null, row.danger ? styles.workspaceMenuRowLabelDanger : null]}>{row.label}</Text>
-      {row.meta ? <Text numberOfLines={1} style={[styles.workspaceMenuRowMeta, row.active ? styles.workspaceMenuRowMetaActive : null]}>{row.meta}</Text> : null}
-    </Pressable>
+    </SidePanel>
   );
 }

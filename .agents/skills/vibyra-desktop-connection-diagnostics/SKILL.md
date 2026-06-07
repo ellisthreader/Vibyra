@@ -86,6 +86,9 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 11. If live sync disconnects a valid session, inspect `/events`:
    `/events` polling should be serialized with an in-flight guard, should tolerate multiple transient failures before clearing session, and should have an explicit shorter timeout than the polling interval plus fallback cycle. Desktop `PHONE_SESSION_TIMEOUT_MS` should be comfortably longer than a few missed polls.
 
+12. If Browse PC opens a full-stack parent folder but preview or publishing says no app was captured, inspect app-root discovery before changing the target project:
+   `desktop/lib/projectAppRoots.mjs` is the shared source for common nested web and backend roots. Dev-server preview must launch from the detected web app root, static publishing must build a recognized web root, and runtime publishing must rebase the detected backend root into its bundle. Cover parent folders containing `frontend/`, `backend/`, `client/`, `server/`, `apps/web`, or `apps/api` with regression tests.
+
 ## Proven Failure Patterns
 
 - Parallel LAN `/pair` probes can hit the same desktop through multiple URLs. Without an idempotent phone request ID, a later duplicate replaces the pending request and the phone sees "Desktop lost the pairing request".
@@ -94,6 +97,7 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 - Successful GET fallback is not enough unless the working URL is promoted; otherwise Browse PC can succeed through a fallback and the next POST still targets the stale primary URL.
 - Invalid remembered tokens must be deleted, not merged as `undefined`.
 - React Native LAN fetch may not reject promptly after `AbortController.abort()`. Use a `Promise.race` timer so scans and route timeouts actually settle.
+- A valid parent-folder project can still fail preview when code assumes `index.html` and `package.json` are at the selected root. Resolve the nested app root once and use it as the process working directory.
 
 ## Fix Principles
 

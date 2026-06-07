@@ -19,7 +19,16 @@ export function useProjectPublishStatuses(authToken?: string | null) {
     setItems((current) => ({ ...current, [status.sourceProjectId]: status }));
   }, []);
 
+  const remove = useCallback((sourceProjectId?: string | null) => {
+    if (!sourceProjectId) return;
+    setItems((current) => {
+      const next = { ...current };
+      delete next[sourceProjectId];
+      return next;
+    });
+  }, []);
+
   useEffect(() => { void refresh(); }, [refresh]);
 
-  return { items, refresh, upsert };
+  return { items, refresh, remove, upsert };
 }

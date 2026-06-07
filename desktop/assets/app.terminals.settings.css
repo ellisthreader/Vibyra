@@ -82,6 +82,10 @@
   color: #696273;
   cursor: not-allowed;
 }
+.terminal-token-row button.needs-connect {
+  border-style: dashed;
+  color: #b9a7f6;
+}
 .terminal-token-row svg {
   height: 14px;
   width: 14px;

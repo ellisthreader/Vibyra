@@ -45,6 +45,18 @@ Each imported locale module must exist and export the matching symbol. Example: 
 
 If Metro still reports a module missing after the file exists, restart the Expo server. The running dependency graph can stay stale after a resolver miss.
 
+## Native Modules On Web
+
+For `Cannot find native module 'ExpoIap'` or similar errors, catching a failed
+call after a top-level native import is too late because Expo web resolves the
+module while loading the bundle. Keep the native hook in `.ts` and add a
+platform-specific `.web.ts` implementation. Web purchase flows should use the
+existing Stripe checkout path or a deliberate no-op when the owning component
+already handles Stripe.
+
+Verify the focused hook tests, run `npm run typecheck`, and export Expo web.
+Search the generated bundle to confirm the native module name is absent.
+
 ## Expo Server Checks
 
 Check which Expo processes are already running before starting another server:

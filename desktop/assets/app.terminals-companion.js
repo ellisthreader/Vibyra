@@ -2,6 +2,10 @@ let terminalCompanionMode = "";
 let terminalPhonePreviewStatus = "";
 let terminalPhonePreviewOpening = false;
 let terminalCompanionReturnFocusId = "";
+let terminalCompanionContextKey = "";
+let terminalCompanionSyncing = false;
+let terminalCompanionSyncQueued = false;
+let terminalCompanionSwitchGeneration = 0;
 const terminalCompanionModes = new Set(["phone", "voice", "memory"]);
 const terminalCompanionCommands = {
   "/phone": "phone",
@@ -11,9 +15,43 @@ const terminalCompanionCommands = {
 };
 const terminalPhonePtyBuffers = {};
 
+function terminalCompanionToolbarHtml() {
+  return `<div class="terminal-companion-launchers" aria-label="Vibyra AI tools">
+    <span class="terminal-companion-label">Vibyra AI</span>
+    <button class="terminal-companion-launcher ${terminalCompanionMode === "voice" ? "active" : ""}" type="button" data-terminal-companion-open="voice" aria-pressed="${terminalCompanionMode === "voice" ? "true" : "false"}" title="Open Vibyra Voice">${icon("pulse")}<span>Voice</span></button>
+    <button class="terminal-companion-launcher ${terminalCompanionMode === "memory" ? "active" : ""}" type="button" data-terminal-companion-open="memory" aria-pressed="${terminalCompanionMode === "memory" ? "true" : "false"}" title="Open Vibyra Memory">${icon("archive")}<span>Memory</span></button>
+  </div>`;
+}
+
+function terminalCompanionStandaloneToolbarHtml() {
+  return `<header class="terminal-tabs terminal-tabs--tools-only">${terminalCompanionToolbarHtml()}</header>`;
+}
+
+function bindTerminalCompanionLaunchers(root = document) {
+  root.querySelectorAll?.("[data-terminal-companion-open]").forEach((button) => {
+    if (button.dataset.terminalCompanionBound) return;
+    button.dataset.terminalCompanionBound = "1";
+    button.addEventListener("click", () => {
+      const mode = button.dataset.terminalCompanionOpen || "";
+      if (terminalCompanionMode === mode) closeTerminalCompanionPanel();
+      else openTerminalCompanionPanel(mode, "toolbar");
+    });
+  });
+  syncTerminalCompanionLaunchers();
+}
+
+function syncTerminalCompanionLaunchers() {
+  document.querySelectorAll?.("[data-terminal-companion-open]").forEach((button) => {
+    const active = button.dataset.terminalCompanionOpen === terminalCompanionMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 function openTerminalCompanionPanel(mode = "", source = "terminal") {
   terminalCompanionReturnFocusId = terminalCompanionActiveTerminal()?.id || activeTerminalId || "";
   terminalCompanionMode = terminalCompanionModes.has(mode) ? mode : "";
+  syncTerminalCompanionLaunchers();
   if (activePage !== "terminals") {
     setPage("terminals");
     return;
@@ -30,6 +68,7 @@ function closeTerminalCompanionPanel() {
     stopTerminalVoiceForPanelClose();
   }
   terminalCompanionMode = "";
+  syncTerminalCompanionLaunchers();
   syncTerminalCompanion("close");
   if (terminalCompanionReturnFocusId && typeof focusPtyTerminal === "function") {
     requestAnimationFrame(() => focusPtyTerminal(terminalCompanionReturnFocusId));
@@ -78,21 +117,30 @@ function terminalCompanionInsertIntoTerminal(id, text = "", submit = false) {
 }
 
 function terminalCompanionHtml() {
-  const project = currentProject();
+  const terminal = terminalCompanionActiveTerminal();
+  const project = projectForTerminal(terminal) || currentProject();
   const preview = currentState.latestPreview || {};
   const previewUrl = preview.url || "";
   const launchDisabled = terminalPhonePreviewOpening ? "disabled" : "";
-  const voiceHtml = typeof terminalVoiceHtml === "function" ? terminalVoiceHtml() : "";
-  const memoryHtml = typeof terminalMemoryHtml === "function" ? terminalMemoryHtml() : "";
-  return `<aside class="terminal-companion" data-terminal-companion aria-label="Terminal side panel">
-    <section class="terminal-companion-section terminal-voice-section ${terminalCompanionMode === "voice" ? "active" : ""}" data-terminal-voice-panel>
-      ${voiceHtml}
-    </section>
-    <section class="terminal-companion-section terminal-memory-section ${terminalCompanionMode === "memory" ? "active" : ""}" data-terminal-memory-panel>
-      ${memoryHtml}
-    </section>
-    <section class="terminal-companion-section terminal-phone-section ${terminalCompanionMode === "phone" ? "active" : ""}" data-terminal-phone-panel>
-      <div class="terminal-companion-head"><span>Phone Preview</span><button type="button" data-terminal-phone-close aria-label="Close phone preview">${icon("close")}</button></div>
+  const toolHtml = terminalCompanionMode === "voice" && typeof terminalVoiceHtml === "function"
+    ? terminalVoiceHtml()
+    : terminalCompanionMode === "memory" && typeof terminalMemoryHtml === "function"
+      ? terminalMemoryHtml()
+      : "";
+  const modeClass = `terminal-companion--${terminalCompanionMode}`;
+  const panelClass = terminalCompanionMode === "phone" ? "terminal-phone-section" : `terminal-${terminalCompanionMode}-section`;
+  const panelData = terminalCompanionMode === "phone" ? "data-terminal-phone-panel" : `data-terminal-${terminalCompanionMode}-panel`;
+  return `<aside class="terminal-companion ${modeClass}" data-terminal-companion data-terminal-companion-mode="${escapeAttribute(terminalCompanionMode)}" aria-label="Vibyra AI">
+    <header class="terminal-companion-shell-head">
+      <div class="terminal-companion-brand">${icon("sparkles")}<span><strong>Vibyra AI</strong><small>${escapeHtml(terminal?.title || project?.name || "Terminal tools")}</small></span></div>
+      <div class="terminal-companion-shell-actions">
+        <button class="${terminalCompanionMode === "voice" ? "active" : ""}" type="button" data-terminal-companion-open="voice" aria-pressed="${terminalCompanionMode === "voice"}">${icon("pulse")}<span>Voice</span></button>
+        <button class="${terminalCompanionMode === "memory" ? "active" : ""}" type="button" data-terminal-companion-open="memory" aria-pressed="${terminalCompanionMode === "memory"}">${icon("archive")}<span>Memory</span></button>
+        <button type="button" data-terminal-companion-close aria-label="Close Vibyra AI">${icon("close")}</button>
+      </div>
+    </header>
+    <section class="terminal-companion-section ${panelClass} active" ${panelData}>
+      ${terminalCompanionMode === "phone" ? `
       <div class="terminal-phone-host" data-phone-preview-host>
         <div class="terminal-phone-shell" aria-hidden="true"><span></span><i></i></div>
         <div class="terminal-phone-copy">
@@ -101,41 +149,72 @@ function terminalCompanionHtml() {
         </div>
         <button class="terminal-phone-launch" type="button" data-terminal-phone-launch ${launchDisabled}>${icon("play")}<span>${terminalPhonePreviewOpening ? "Opening..." : "Open PhonePreview"}</span></button>
         ${terminalPhonePreviewStatus ? `<p class="terminal-phone-status">${escapeHtml(terminalPhonePreviewStatus)}</p>` : ""}
-      </div>
+      </div>` : toolHtml}
     </section>
   </aside>`;
 }
 
 function syncTerminalCompanion(source = "") {
   if (activePage !== "terminals" || !nodes?.content) return false;
+  if (terminalCompanionSyncing) {
+    terminalCompanionSyncQueued = true;
+    return true;
+  }
+  syncTerminalCompanionLaunchers();
   const page = nodes.content.querySelector(".terminal-page") || nodes.content.querySelector(".terminal-setup");
   if (!page) return false;
   const setupMode = page.classList.contains("terminal-setup");
   const existing = page.querySelector("[data-terminal-companion]");
   if (!terminalCompanionModes.has(terminalCompanionMode)) {
     page.classList.remove("terminal-page--with-companion", "terminal-setup--with-companion", "terminal-page--phone-open", "terminal-setup--phone-open");
+    delete page.dataset.terminalCompanionMode;
     existing?.remove();
     scheduleTerminalCompanionFit();
     return true;
   }
+  syncTerminalCompanionContext();
   page.classList.remove(setupMode ? "terminal-page--with-companion" : "terminal-setup--with-companion");
   page.classList.add(setupMode ? "terminal-setup--with-companion" : "terminal-page--with-companion");
+  page.dataset.terminalCompanionMode = terminalCompanionMode;
   page.classList.toggle("terminal-page--phone-open", !setupMode && terminalCompanionMode === "phone");
   page.classList.toggle("terminal-setup--phone-open", setupMode && terminalCompanionMode === "phone");
-  if (existing && !source) {
+  if (existing && existing.dataset.terminalCompanionMode === terminalCompanionMode && !source) {
     bindTerminalCompanion();
     return true;
   }
   const focus = captureTerminalCompanionFocus(existing);
-  if (existing) existing.outerHTML = terminalCompanionHtml();
-  else page.insertAdjacentHTML("beforeend", terminalCompanionHtml(source));
-  bindTerminalCompanion();
-  restoreTerminalCompanionFocus(focus);
+  terminalCompanionSyncing = true;
+  try {
+    if (existing) existing.outerHTML = terminalCompanionHtml();
+    else page.insertAdjacentHTML("beforeend", terminalCompanionHtml());
+    bindTerminalCompanion();
+    restoreTerminalCompanionFocus(focus);
+  } finally {
+    terminalCompanionSyncing = false;
+  }
   scheduleTerminalCompanionFit();
   if (source && !["voice", "memory", "close"].includes(source) && !focus) {
     requestAnimationFrame(() => page.querySelector("[data-terminal-companion] button, [data-terminal-companion] textarea")?.focus?.());
   }
+  if (terminalCompanionSyncQueued) {
+    terminalCompanionSyncQueued = false;
+    requestAnimationFrame(() => syncTerminalCompanion());
+  }
   return true;
+}
+
+function syncTerminalCompanionContext() {
+  const terminal = terminalCompanionActiveTerminal();
+  const nextKey = `${terminal?.id || ""}:${terminal?.projectId || ""}`;
+  if (nextKey === terminalCompanionContextKey) return;
+  terminalCompanionContextKey = nextKey;
+  if (typeof syncTerminalVoiceTarget === "function") syncTerminalVoiceTarget(terminal);
+  if (terminalCompanionMode === "memory" && typeof terminalMemoryEnsureProject === "function") {
+    terminalMemoryEnsureProject(terminal?.projectId || "");
+  }
+  window.dispatchEvent(new CustomEvent("vibyra:terminal-companion-context", {
+    detail: { mode: terminalCompanionMode, terminalId: terminal?.id || "", projectId: terminal?.projectId || "" }
+  }));
 }
 
 function scheduleTerminalCompanionFit() {
@@ -147,131 +226,4 @@ function scheduleTerminalCompanionFit() {
       if (id && typeof fitPtyXterm === "function") fitPtyXterm(id, node);
     });
   });
-}
-
-function bindTerminalCompanion() {
-  document.querySelectorAll("[data-terminal-companion-close]").forEach((button) => {
-    if (button.dataset.companionCloseBound) return;
-    button.dataset.companionCloseBound = "1";
-    button.addEventListener("click", closeTerminalCompanionPanel);
-  });
-  document.querySelectorAll("[data-terminal-phone-close]").forEach((button) => {
-    if (button.dataset.phoneCloseBound) return;
-    button.dataset.phoneCloseBound = "1";
-    button.addEventListener("click", closeTerminalPhonePanel);
-  });
-  document.querySelectorAll("[data-terminal-phone-launch]").forEach((button) => {
-    if (button.dataset.phoneLaunchBound) return;
-    button.dataset.phoneLaunchBound = "1";
-    button.addEventListener("click", launchTerminalPhonePreview);
-  });
-  if (typeof bindTerminalVoice === "function") bindTerminalVoice();
-  if (typeof bindTerminalMemory === "function") bindTerminalMemory();
-  if (!document.body.dataset.terminalCompanionEscapeBound) {
-    document.body.dataset.terminalCompanionEscapeBound = "1";
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && terminalCompanionMode) closeTerminalCompanionPanel();
-    });
-  }
-}
-
-function captureTerminalCompanionFocus(root) {
-  const field = root?.contains(document.activeElement) ? document.activeElement : null;
-  if (!field) return null;
-  const key = ["terminalVoiceToggle", "terminalMemorySearch", "terminalMemoryTitle", "terminalMemoryBody"]
-    .find((name) => field.dataset?.[name] !== undefined);
-  return key ? { key, start: field.selectionStart, end: field.selectionEnd } : null;
-}
-
-function restoreTerminalCompanionFocus(focus) {
-  if (!focus) return;
-  const field = document.querySelector(`[data-${focus.key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`);
-  field?.focus?.();
-  if (typeof field?.setSelectionRange === "function" && Number.isInteger(focus.start)) {
-    field.setSelectionRange(focus.start, focus.end);
-  }
-}
-
-async function launchTerminalPhonePreview() {
-  if (terminalPhonePreviewOpening) return;
-  terminalPhonePreviewOpening = true;
-  terminalPhonePreviewStatus = "";
-  syncTerminalCompanion();
-  const preview = currentState.latestPreview || {};
-  const url = normalizeTerminalPhonePreviewUrl(preview.url || "");
-  try {
-    const response = await fetch("/desktop/phone-preview/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok === false) throw new Error(result.error || "PhonePreview could not start.");
-    terminalPhonePreviewStatus = "Opened existing PhonePreview.";
-  } catch (error) {
-    terminalPhonePreviewStatus = error instanceof Error ? error.message : "PhonePreview could not start.";
-  } finally {
-    terminalPhonePreviewOpening = false;
-    syncTerminalCompanion();
-  }
-}
-
-function normalizeTerminalPhonePreviewUrl(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "http://localhost:8081";
-  try {
-    return new URL(raw, window.location.origin).toString();
-  } catch {
-    return "http://localhost:8081";
-  }
-}
-
-const previousRenderTerminalsPageForCompanion = renderTerminalsPage;
-renderTerminalsPage = function renderTerminalsPageWithCompanion() {
-  previousRenderTerminalsPageForCompanion();
-  syncTerminalCompanion();
-};
-
-const previousSetPageForCompanion = setPage;
-setPage = function setPageWithCompanion(page) {
-  if (page !== "terminals" && terminalCompanionMode) closeTerminalCompanionPanel();
-  previousSetPageForCompanion(page);
-};
-
-if (typeof sendPtyInput === "function") {
-  const previousSendPtyInputForPhone = sendPtyInput;
-  sendPtyInput = function sendPtyInputWithPhone(id, input) {
-    if (interceptPtyPhoneInput(id, input, previousSendPtyInputForPhone)) return;
-    previousSendPtyInputForPhone(id, input);
-  };
-}
-
-function interceptPtyPhoneInput(id, input, sendInput) {
-  if (!id) return false;
-  const value = String(input || "");
-  const buffered = terminalPhonePtyBuffers[id] || "";
-  if (value === "\r" || value === "\n") {
-    const mode = terminalCompanionCommands[buffered];
-    if (mode) {
-      delete terminalPhonePtyBuffers[id];
-      sendInput(id, "\x15");
-      openTerminalCompanionPanel(mode, "pty");
-      return true;
-    }
-    delete terminalPhonePtyBuffers[id];
-    return false;
-  }
-  if (value === "\x7f" || value === "\b") {
-    if (buffered) terminalPhonePtyBuffers[id] = buffered.slice(0, -1);
-    return false;
-  }
-  if (value === "\x1b" || value === "\x03" || value === "\x04") {
-    delete terminalPhonePtyBuffers[id];
-    return false;
-  }
-  if (!/^[\x20-\x7e]+$/.test(value)) return false;
-  const next = buffered || value.startsWith("/") ? buffered + value : "";
-  if (next && Object.keys(terminalCompanionCommands).some((command) => command.startsWith(next))) terminalPhonePtyBuffers[id] = next;
-  else delete terminalPhonePtyBuffers[id];
-  return false;
 }

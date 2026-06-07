@@ -1,8 +1,9 @@
 function initDesktopAuth() {
   const session = desktopAuthSession();
   if (session?.token && session.user) {
-    localStorage.setItem("vibyra.desktop.page", "dashboard");
-    if (typeof activePage !== "undefined") activePage = "dashboard";
+    const restoredPage = typeof activePage !== "undefined" && pages.some((page) => page.key === activePage) ? activePage : "dashboard";
+    localStorage.setItem("vibyra.desktop.page", restoredPage);
+    if (typeof activePage !== "undefined") activePage = restoredPage;
     document.body.classList.add("desktop-authenticated");
     syncDesktopSession(session.token).catch((error) => {
       showAuthError(error instanceof Error ? error.message : "Desktop could not verify this Vibyra account session.");

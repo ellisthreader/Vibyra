@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_URL="http://127.0.0.1:8000/api/skills"
 BACKEND_PID=""
+PHONE_PREVIEW_WAITER_PID=""
+EXPO_WEB_PORT="${EXPO_WEB_PORT:-8081}"
+EXPO_WEB_URL="${EXPO_WEB_URL:-http://localhost:${EXPO_WEB_PORT}}"
+PHONE_PREVIEW_SCRIPT="${PHONE_PREVIEW_SCRIPT:-/home/ellis/Desktop/PhonePreview/start-phone-preview.sh}"
 
 cd "$ROOT_DIR"
 
@@ -86,6 +90,11 @@ sync_api_env() {
 }
 
 cleanup() {
+  if [[ -n "$PHONE_PREVIEW_WAITER_PID" ]] && kill -0 "$PHONE_PREVIEW_WAITER_PID" 2>/dev/null; then
+    kill "$PHONE_PREVIEW_WAITER_PID" 2>/dev/null || true
+    wait "$PHONE_PREVIEW_WAITER_PID" 2>/dev/null || true
+  fi
+
   if [[ -n "$BACKEND_PID" ]] && kill -0 "$BACKEND_PID" 2>/dev/null; then
     kill "$BACKEND_PID" 2>/dev/null || true
     wait "$BACKEND_PID" 2>/dev/null || true
@@ -93,6 +102,24 @@ cleanup() {
 }
 
 trap cleanup EXIT INT TERM
+
+open_phone_preview_when_ready() {
+  if [[ ! -x "$PHONE_PREVIEW_SCRIPT" ]]; then
+    echo "Phone Preview launcher not found at $PHONE_PREVIEW_SCRIPT; skipping external phone UI." >&2
+    return 0
+  fi
+
+  for _ in {1..80}; do
+    if curl -fsS "$EXPO_WEB_URL" >/dev/null 2>&1; then
+      "$PHONE_PREVIEW_SCRIPT" "$EXPO_WEB_URL"
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  echo "Expo web did not become reachable at $EXPO_WEB_URL; opening Phone Preview anyway." >&2
+  "$PHONE_PREVIEW_SCRIPT" "$EXPO_WEB_URL"
+}
 
 sync_api_env
 
@@ -123,4 +150,7 @@ if [[ "$backend_ready" != "1" ]]; then
 fi
 
 echo "Vibyra backend is ready."
-expo start --host lan
+open_phone_preview_when_ready &
+PHONE_PREVIEW_WAITER_PID="$!"
+
+BROWSER=none expo start --web --host lan --port "$EXPO_WEB_PORT"

@@ -34,6 +34,7 @@ export async function checkHealth(url: string, code?: string): Promise<HealthRes
       machineName: String(payload?.machineName ?? ""),
       pairCode: pairCode || undefined,
       connectionUrls,
+      desktopAccountReady: typeof payload?.desktopAccountReady === "boolean" ? payload.desktopAccountReady : undefined,
       ok: Boolean(payload?.ok) && (!code || pairCode === code)
     };
   } catch {

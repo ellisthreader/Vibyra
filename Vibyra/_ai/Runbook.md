@@ -10,7 +10,7 @@ Default command to run both processes (Laravel + Expo) with `Ctrl+C` killing bot
 npm start
 ```
 
-`npm start` delegates to `npm run dev`. `scripts/start-dev.sh` refreshes root `.env` `EXPO_PUBLIC_API_URL` from the machine's current LAN IP, starts Laravel on `0.0.0.0:8000`, waits for `http://127.0.0.1:8000/api/skills`, then starts Expo so auth calls do not race a cold backend or stale LAN address.
+`npm start` delegates to `npm run dev`. `scripts/start-dev.sh` refreshes root `.env` `EXPO_PUBLIC_API_URL` from the machine's current LAN IP, starts Laravel on `0.0.0.0:8000`, waits for `http://127.0.0.1:8000/api/skills`, then starts Expo web on `http://localhost:8081` so auth calls do not race a cold backend or stale LAN address. It also opens the external, phone-only preview helper at `/home/ellis/Desktop/PhonePreview/start-phone-preview.sh` after Expo web is reachable. That helper is now a standalone public repo at `https://github.com/ellisthreader/phone-preview`. It prefers a transparent Electron window with a DOM `<webview>` clipped to the selected phone screen; this is required so React Native Web modals, fixed nav, and help overlays cannot escape the phone frame while the frame/controls stay clickable. Device presets use full-screen CSS viewport dimensions and DPR metadata for app-style rendering, not shortened browser-chrome heights. Chrome is fallback only because browser windows cannot make the area outside the phone transparent. Override the preview target with `EXPO_WEB_PORT`, `EXPO_WEB_URL`, or `PHONE_PREVIEW_SCRIPT` if the dev URL/helper path changes.
 
 As of 2026-05-20, `scripts/start-dev.sh` prefers the active default-route IPv4 address before falling back to `hostname -I`. Do not reject all `172.16.0.0/12` addresses as Docker-only; phone hotspots can use addresses such as `172.20.10.2`, and Expo login must use that Wi-Fi/LAN URL instead of a virtual bridge address.
 
@@ -21,7 +21,7 @@ Or split across two terminals:
 npm run backend
 
 # terminal 2 — Expo
-npx expo start --host lan
+npx expo start --web --host lan --port 8081
 ```
 
 `npm run backend` delegates to `scripts/start-backend.sh`. It first checks `http://127.0.0.1:8000/health`; if this repo's Laravel backend is already running, it prints the URL and exits successfully instead of failing with `Address already in use`. If port 8000 is occupied by a non-Vibyra process, either stop that process or run `BACKEND_PORT=<free-port> npm run backend`.
@@ -63,6 +63,11 @@ Useful checks:
 npm run typecheck
 ```
 
+Normalize nullable remote payloads before string operations. Project names,
+paths, and account plan values can arrive as `null`; search/filter and model
+locking code must coerce them to safe strings rather than calling
+`toLowerCase()` directly.
+
 ## Desktop Bridge
 
 Desktop code is in `desktop/`.
@@ -91,7 +96,12 @@ Use the memory layer as a routing cache, not a transcript. Default path: `Memory
 
 Update the smallest focused note with stable facts. Keep `Project Context.md` and domain indexes short. Put temporary notes in `Runs/` or task-specific files.
 
-Treat `Decisions.md`, `Mobile App Desktop Recreation Spec.md`, and `Desktop App Implementation Spec.md` as deep references. Search them with `rg` and read the matching section instead of opening them end-to-end.
+Treat long specs, research files, and decision logs as deep references. Search
+them with `rg` and read the matching section instead of opening them end-to-end.
+Examples: `Decisions.md`, `Backend/AI Live Chat Backend Context.txt`,
+`Backend/Railway Cloud Runtime.md`, `Desktop/AI Terminal Provider CLI Research.txt`,
+`Mobile App Desktop Recreation Spec.md`, `Desktop App Implementation Spec.md`,
+and `Marketing/Competitor Marketing Analysis.md`.
 
 Desktop agent runs automatically save compact summaries to `_ai/Runs/` when they find a vault at either:
 
@@ -108,6 +118,14 @@ VIBYRA_OBSIDIAN_VAULT=/absolute/path/to/vault npm run desktop
 Generated run notes include `vibyra/run` and `generated` tags. Search those tags in Obsidian when reviewing recent agent activity.
 
 ## Local Agent Skills
+
+Use local skills as active task instructions whenever their trigger matches the
+work. Before broad exploration, read the relevant skill from `.agents/skills/`
+and follow its workflow. When a task changes or confirms a durable workflow,
+diagnostic, validation command, design rule, or permission rule covered by a
+skill, update the smallest relevant skill before final response. Keep Obsidian
+as the routing memory for when to use a skill; keep detailed operating rules in
+the skill itself.
 
 `VibyraOptimse` lives at `.agents/skills/VibyraOptimse/SKILL.md`. Use it for future app audits that combine permission approval boundaries, code organization, optimization, and the source-file line limit.
 

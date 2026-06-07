@@ -19,7 +19,7 @@ export function openDesktopWindow() {
   if (electron && existsSync(electronEntrypoint)) {
     const electronEnv = { ...process.env, VIBYRA_DESKTOP_URL: url };
     delete electronEnv.ELECTRON_RUN_AS_NODE;
-    const child = spawn(electron, ["--no-sandbox", "--disable-gpu", "--disable-gpu-compositing", electronEntrypoint], {
+    const child = spawn(electron, ["--disable-gpu", "--disable-gpu-compositing", electronEntrypoint], {
       detached: true,
       env: electronEnv,
       stdio: ["ignore", "ignore", "inherit"]

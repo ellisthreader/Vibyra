@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "php artisan config:clear && php artisan route:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT",
+    "startCommand": "php artisan config:clear && php artisan route:clear && php artisan migrate --force && mkdir -p storage/logs && (php artisan schedule:work >> storage/logs/scheduler.log 2>&1 &) && php artisan serve --host=0.0.0.0 --port=$PORT",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

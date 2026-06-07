@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('vibyra:refresh-credits')->dailyAt('00:05')->withoutOverlapping();
 Schedule::command('maxmind:update')->weekly()->withoutOverlapping();
+Schedule::command('vibyra:deploy-runtime-demos --limit=1')->everyMinute()->withoutOverlapping();

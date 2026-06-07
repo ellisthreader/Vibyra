@@ -32,7 +32,6 @@ export function TopBar({
   chatHasConversation,
   chatStarred,
   communitySubPageTitle,
-  isConnected,
   onBackFromCommunity,
   onChatHelp,
   onDeleteChat,
@@ -51,7 +50,6 @@ export function TopBar({
   chatHasConversation: boolean;
   chatStarred: boolean;
   communitySubPageTitle: string;
-  isConnected: boolean;
   onBackFromCommunity: () => void;
   onChatHelp: () => void;
   onDeleteChat: () => void;
@@ -126,57 +124,25 @@ export function TopBar({
     );
   }
 
-  if (activePage !== "dashboard") {
-    return (
-      <View style={styles.topBar}>
-        <Pressable accessibilityLabel="Open workspace menu" style={styles.chatTopIconButton} onPress={onOpenMenu}>
-          <Ionicons name="menu" color={colors.text} size={24} />
-        </Pressable>
-        <View style={styles.pageTopTitleBlock}>
-          <Text numberOfLines={1} style={styles.pageTopTitle}>{title}</Text>
-        </View>
-        {activePage === "profile" ? (
-          <View style={styles.topRight}>
-            <View style={styles.accountTopButton} />
-          </View>
-        ) : (
-          <View style={styles.topRight}>
-            <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-              <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
-            </Pressable>
-          </View>
-        )}
-      </View>
-    );
-  }
-
   return (
     <View style={styles.topBar}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Open workspace menu"
-        hitSlop={8}
-        onPress={onOpenMenu}
-        style={({ pressed }) => [styles.topLeft, pressed ? styles.topLeftPressed : null]}
-      >
-        <View style={styles.chatTopIconButton}>
-          <Ionicons name="menu" color={colors.text} size={24} />
-        </View>
-        <View style={styles.topMachineCopy}>
-          <View style={styles.topConnectionRow}>
-            <View style={[styles.statusDot, isConnected ? null : styles.statusDotOffline]} />
-            <Text style={styles.topKicker}>{isConnected ? "Connected" : "Not connected"}</Text>
-          </View>
-          <View style={styles.topTitleRow}>
-            <Text numberOfLines={1} style={styles.topTitle}>Active builds</Text>
-          </View>
-        </View>
+      <Pressable accessibilityLabel="Open workspace menu" style={styles.chatTopIconButton} onPress={onOpenMenu}>
+        <Ionicons name="menu" color={colors.text} size={24} />
       </Pressable>
-      <View style={styles.topRight}>
-        <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
-          <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
-        </Pressable>
+      <View style={styles.pageTopTitleBlock}>
+        <Text numberOfLines={1} style={styles.pageTopTitle}>{title}</Text>
       </View>
+      {activePage === "profile" ? (
+        <View style={styles.topRight}>
+          <View style={styles.accountTopButton} />
+        </View>
+      ) : (
+        <View style={styles.topRight}>
+          <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>
+            <AccountAvatar imageUri={profileImageUri} name={accountName} size={38} textSize={16} />
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }

@@ -109,6 +109,27 @@ trait UserPayloads
         return $this->authenticatedSession($request)->user;
     }
 
+    private function optionalAuthenticatedUser(Request $request): ?User
+    {
+        $token = (string) $request->bearerToken();
+        if ($token === '') {
+            return null;
+        }
+
+        $session = VibyraSession::where('token_hash', hash('sha256', $token))->first();
+        if (! $session) {
+            return null;
+        }
+
+        $session->forceFill([
+            'ip_address' => $this->sessionRequestIp($request),
+            'user_agent' => (string) $request->userAgent(),
+            'last_used_at' => now(),
+        ])->save();
+
+        return $session->user;
+    }
+
     private function userPayload(User $user): array
     {
         $plan = $user->plan ?: 'free';

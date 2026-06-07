@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\ProjectMemory\ProjectMemoryImportService;
+use App\Services\ProjectMemory\ProjectMemoryVaultService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 trait ProjectMemoryEndpoints
 {
@@ -40,7 +43,7 @@ trait ProjectMemoryEndpoints
                     'source' => 'user',
                     'createdAt' => now()->toISOString(),
                 ];
-                $memory['entries'] = array_slice($memory['entries'], -8);
+                $memory['entries'] = $this->limitProjectMemoryEntries($memory['entries']);
             }
             $memory['updatedAt'] = now()->toISOString();
             $memories[$projectId] = $memory;
@@ -51,6 +54,91 @@ trait ProjectMemoryEndpoints
         });
 
         return $this->json($this->projectMemoryPayload($projectId, $memory));
+    }
+
+    public function projectMemoryVault(Request $request, string $projectId): JsonResponse
+    {
+        $user = $this->authenticatedUser($request);
+
+        return $this->json(app(ProjectMemoryVaultService::class)->payload($user, $projectId));
+    }
+
+    public function createProjectMemoryNode(Request $request, string $projectId): JsonResponse
+    {
+        $attributes = $request->validate([
+            'type' => ['required', 'in:folder,document'],
+            'name' => ['required', 'string', 'max:255'],
+            'parentId' => ['nullable', 'string', 'max:26'],
+            'markdown' => ['nullable', 'string'],
+        ]);
+        $node = app(ProjectMemoryVaultService::class)->createNode(
+            $this->authenticatedUser($request),
+            $projectId,
+            $attributes
+        );
+
+        return $this->json(['ok' => true, 'node' => $node], 201);
+    }
+
+    public function updateProjectMemoryNode(
+        Request $request,
+        string $projectId,
+        string $nodeId
+    ): JsonResponse {
+        $attributes = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'parentId' => ['sometimes', 'nullable', 'string', 'max:26'],
+            'markdown' => ['sometimes', 'nullable', 'string'],
+            'version' => ['sometimes', 'integer', 'min:1'],
+        ]);
+        if (count($attributes) === (array_key_exists('version', $attributes) ? 1 : 0)) {
+            throw ValidationException::withMessages(['node' => 'Provide a memory change.']);
+        }
+        $node = app(ProjectMemoryVaultService::class)->updateNode(
+            $this->authenticatedUser($request),
+            $projectId,
+            $nodeId,
+            $attributes
+        );
+
+        return $this->json(['ok' => true, 'node' => $node]);
+    }
+
+    public function deleteProjectMemoryNode(
+        Request $request,
+        string $projectId,
+        string $nodeId
+    ): JsonResponse {
+        $result = app(ProjectMemoryVaultService::class)->deleteNode(
+            $this->authenticatedUser($request),
+            $projectId,
+            $nodeId,
+            $request->boolean('recursive')
+        );
+
+        return $this->json($result);
+    }
+
+    public function importProjectMemory(Request $request, string $projectId): JsonResponse
+    {
+        $strategy = (string) $request->input('collisionStrategy', 'skip');
+        if (! in_array($strategy, ['skip', 'replace', 'keep_both'], true)) {
+            throw ValidationException::withMessages([
+                'collisionStrategy' => 'Use skip, replace, or keep_both.',
+            ]);
+        }
+        $files = $request->input('files', $request->input('manifest', []));
+        if (! is_array($files)) {
+            throw ValidationException::withMessages(['files' => 'Provide a Markdown manifest.']);
+        }
+        $result = app(ProjectMemoryImportService::class)->import(
+            $this->authenticatedUser($request),
+            $projectId,
+            $files,
+            $strategy
+        );
+
+        return $this->json($result, 201);
     }
 
     public function deleteProjectMemory(Request $request, string $projectId, string $entryId): JsonResponse
@@ -110,7 +198,7 @@ trait ProjectMemoryEndpoints
         }
 
         return [
-            'entries' => array_slice($entries, -8),
+            'entries' => $this->limitProjectMemoryEntries($entries),
             'updatedAt' => (string) ($value['updatedAt'] ?? ($entries[count($entries) - 1]['createdAt'] ?? '')),
         ];
     }
@@ -123,5 +211,18 @@ trait ProjectMemoryEndpoints
     private function projectMemoryPayload(string $projectId, mixed $memory): array
     {
         return ['ok' => true, 'projectId' => $projectId, 'memory' => $this->normalizeProjectMemory($memory)];
+    }
+
+    private function limitProjectMemoryEntries(array $entries): array
+    {
+        $briefs = array_values(array_filter($entries, fn ($entry) => $entry['source'] === 'brief'));
+        $userEntries = array_values(array_filter($entries, fn ($entry) => $entry['source'] !== 'brief'));
+        $briefs = array_slice($briefs, 0, 8);
+        $remaining = 8 - count($briefs);
+
+        return array_values(array_merge(
+            $briefs,
+            $remaining > 0 ? array_slice($userEntries, -$remaining) : []
+        ));
     }
 }

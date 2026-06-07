@@ -1,28 +1,28 @@
 #token-modal .modal--billing-revamp {
-  background: linear-gradient(180deg, #11111a, #08080d);
+  background: var(--billing-modal-bg);
   border-color: rgba(139, 92, 255, 0.18);
-  color: #fff;
+  color: var(--billing-modal-text);
   max-width: 900px;
   overflow: hidden;
   padding: 0;
   width: min(900px, calc(100vw - 48px));
 }
-#token-modal .modal--billing-revamp .page-title { color: #fff; }
-#token-modal .modal--billing-revamp .icon-button { color: rgba(255, 255, 255, 0.78); }
-#token-modal .modal--billing-revamp .icon-button:hover { color: #fff; }
+#token-modal .modal--billing-revamp .page-title { color: var(--billing-modal-text); }
+#token-modal .modal--billing-revamp .icon-button { color: var(--billing-muted); }
+#token-modal .modal--billing-revamp .icon-button:hover { color: var(--billing-modal-text); }
 #token-modal .modal--billing-revamp .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--billing-line);
   padding: 20px 22px 14px;
 }
 #token-modal .modal--billing-revamp #token-modal-body {
   max-height: min(720px, calc(100vh - 142px));
   overflow: auto;
   padding: 18px 22px 22px;
-  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  scrollbar-color: var(--billing-scrollbar) transparent;
 }
 .billing-back { margin-bottom: 10px; }
-.modal--billing-revamp .plans-back { color: rgba(255, 255, 255, 0.62); }
-.modal--billing-revamp .plans-back:hover { color: #fff; }
+.modal--billing-revamp .plans-back { color: var(--billing-muted); }
+.modal--billing-revamp .plans-back:hover { color: var(--billing-modal-text); }
 .billing-revamp {
   display: grid;
   gap: 16px;
@@ -40,21 +40,21 @@
   justify-content: space-between;
 }
 .billing-revamp-head p {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--billing-muted);
   font-size: 13px;
   font-weight: 640;
 }
-.billing-revamp-head p strong { color: #fff; }
+.billing-revamp-head p strong { color: var(--billing-modal-text); }
 .billing-revamp-head h3 {
-  color: #fff;
+  color: var(--billing-modal-text);
   font-size: 28px;
   font-weight: 760;
   line-height: 34px;
   margin-top: 4px;
 }
 .billing-cycle-toggle {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--billing-control-bg);
+  border: 1px solid var(--billing-line);
   border-radius: 8px;
   display: inline-flex;
   padding: 3px;
@@ -62,12 +62,13 @@
 .billing-cycle-toggle button {
   background: transparent;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--billing-dim);
   font-size: 12px;
   font-weight: 760;
   min-height: 30px;
   padding: 0 12px;
 }
+.billing-cycle-toggle button:hover { background: var(--billing-control-hover); color: var(--billing-modal-text); }
 .billing-cycle-toggle button.active {
   background: var(--accent);
   color: #fff;
@@ -75,13 +76,13 @@
 .billing-hero {
   --plan-accent: #38bdf8;
   background:
-    linear-gradient(90deg, rgba(5, 5, 9, 0.22), rgba(5, 5, 9, 0.54) 42%, rgba(5, 5, 9, 0.92) 66%),
+    var(--billing-hero-overlay),
     radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--plan-accent) 22%, transparent), transparent 44%),
     var(--plan-image),
-    #080810;
+    var(--billing-hero-base);
   background-position: center;
   background-size: cover;
-  border: 1px solid color-mix(in srgb, var(--plan-accent) 36%, rgba(255, 255, 255, 0.08));
+  border: 1px solid color-mix(in srgb, var(--plan-accent) 36%, var(--billing-line));
   border-radius: 8px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -90,7 +91,7 @@
   position: relative;
 }
 .billing-hero::after {
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2));
+  background: var(--billing-hero-hover-overlay);
   content: "";
   inset: 0;
   opacity: 0;
@@ -116,19 +117,19 @@
   font-weight: 820;
 }
 .billing-hero-copy h4 {
-  color: #fff;
+  color: var(--billing-modal-text);
   font-size: 42px;
   line-height: 46px;
   margin: 0;
 }
 .billing-hero-copy p {
-  color: #fff;
+  color: var(--billing-modal-text);
   font-size: 16px;
   font-weight: 760;
   margin: 0;
 }
 .billing-hero-copy small {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--billing-muted);
   font-size: 14px;
   line-height: 20px;
 }
@@ -139,10 +140,10 @@
   margin: 6px 0 8px;
 }
 .billing-hero-points i {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--billing-point-bg);
+  border: 1px solid var(--billing-line);
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--billing-point-color);
   font-size: 12px;
   font-style: normal;
   font-weight: 720;
@@ -155,19 +156,19 @@
   padding: 0 18px;
 }
 .modal--billing-revamp .secondary-button {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #fff;
+  background: var(--billing-secondary-bg);
+  border-color: var(--billing-line-strong);
+  color: var(--billing-modal-text);
 }
-.modal--billing-revamp .secondary-button:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+.modal--billing-revamp .secondary-button:hover { background: var(--billing-secondary-hover); border-color: var(--billing-line-strong); }
 .billing-plan-rows {
   display: grid;
   gap: 8px;
 }
 .billing-plan-row {
   align-items: center;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--billing-row-bg);
+  border: 1px solid var(--billing-line);
   border-radius: 8px;
   display: grid;
   gap: 14px;
@@ -176,8 +177,8 @@
   transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .billing-plan-row:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: color-mix(in srgb, var(--plan-accent) 34%, rgba(255, 255, 255, 0.08));
+  background: var(--billing-row-hover);
+  border-color: color-mix(in srgb, var(--plan-accent) 34%, var(--billing-line));
   transform: translateY(-1px);
 }
 .billing-plan-row img {
@@ -187,9 +188,9 @@
   width: 52px;
 }
 .billing-plan-row div { display: grid; gap: 2px; min-width: 0; }
-.billing-plan-row strong { color: #fff; font-size: 16px; }
-.billing-plan-row span { color: rgba(255, 255, 255, 0.92); font-size: 13px; font-weight: 760; }
-.billing-plan-row small { color: rgba(255, 255, 255, 0.58); font-size: 13px; }
+.billing-plan-row strong { color: var(--billing-modal-text); font-size: 16px; }
+.billing-plan-row span { color: var(--billing-copy); font-size: 13px; font-weight: 760; }
+.billing-plan-row small { color: var(--billing-dim); font-size: 13px; }
 .billing-current-chip { color: var(--plan-accent); font-size: 12px; font-weight: 800; }
 .plan-tone-starter { --plan-accent: #c259ff; }
 .plan-tone-builder { --plan-accent: #38bdf8; }

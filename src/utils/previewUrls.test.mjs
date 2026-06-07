@@ -39,6 +39,46 @@ test("desktop preview URL candidates rewrite dev-server ports onto known desktop
   ]);
 });
 
+test("desktop preview URL candidates prefer authenticated bridge proxies for absolute preview URLs", async () => {
+  const { desktopPreviewUrlCandidates } = await loadPreviewUrls();
+  const target = "http://127.0.0.1:8000/";
+  assert.deepEqual(desktopPreviewUrlCandidates({
+    url: "http://192.168.1.20:4317",
+    connectionUrls: ["http://10.0.0.9:4317"],
+    token: "pair token"
+  }, target), [
+    `http://192.168.1.20:4317/preview/proxy-url/pair%20token/?url=${encodeURIComponent(target)}`,
+    `http://10.0.0.9:4317/preview/proxy-url/pair%20token/?url=${encodeURIComponent(target)}`,
+    target,
+    "http://192.168.1.20:8000/",
+    "http://10.0.0.9:8000/"
+  ]);
+});
+
+test("reachable desktop preview resolution uses the bridge proxy before a frame-blocked direct app URL", async () => {
+  const target = "http://127.0.0.1:8000/";
+  const proxyUrl = `http://192.168.1.20:4317/preview/proxy-url/token/?url=${encodeURIComponent(target)}`;
+  const calls = [];
+  const { resolveReachableDesktopPreviewUrl } = await loadPreviewUrls({
+    fetchWithTimeout: async (url) => {
+      calls.push(url);
+      if (url !== proxyUrl) throw new Error("direct target is not frame-safe");
+      return response({
+        body: "<!doctype html><html><body>ready</body></html>",
+        url
+      });
+    }
+  });
+
+  const resolved = await resolveReachableDesktopPreviewUrl({
+    url: "http://192.168.1.20:4317",
+    token: "token"
+  }, target);
+
+  assert.equal(resolved, proxyUrl);
+  assert.deepEqual(calls, [proxyUrl]);
+});
+
 test("desktop preview URL candidates keep relative desktop preview paths on bridge hosts", async () => {
   const { desktopPreviewUrlCandidates } = await loadPreviewUrls();
   assert.deepEqual(desktopPreviewUrlCandidates({

@@ -94,6 +94,8 @@ function syncLiveAgentProgress(agents: Agent[], run: ActiveAgentRun) {
       model: run.model ?? agent.model,
       progress: Math.max(agent.progress, progress),
       projectId: run.projectId,
+      chatProjectId: agent.chatProjectId ?? run.projectId,
+      startedAt: agent.startedAt ?? Date.now(),
       state: run.state ?? "running",
       title: run.title ?? agent.title
     };
@@ -107,6 +109,8 @@ function syncLiveAgentProgress(agents: Agent[], run: ActiveAgentRun) {
       title: run.title ?? "AI build in progress",
       model: run.model,
       projectId: run.projectId,
+      chatProjectId: run.projectId,
+      startedAt: Date.now(),
       state: run.state ?? "running",
       progress,
       file: run.file ?? "OpenAI stream"

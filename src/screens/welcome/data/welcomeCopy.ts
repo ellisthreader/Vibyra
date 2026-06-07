@@ -3,8 +3,8 @@ export const welcomeCopy = {
     eyebrow: "WELCOME TO VIBYRA",
     welcome: "Welcome,",
     welcomeFallback: "Welcome to Vibyra",
-    tagline: "Let's get started",
-    cta: "Next",
+    tagline: "Connect your PC",
+    cta: "Find my PC",
     skip: "Skip"
   },
   download: {
@@ -16,14 +16,15 @@ export const welcomeCopy = {
     cta: "Next"
   },
   setup: {
-    eyebrow: "STEP 2",
+    eyebrow: "CONNECT PC",
     title: "Finding your PC",
-    body: "Keep Vibyra Desktop open on your computer. We'll connect automatically when it appears."
+    body: "Open Vibyra Desktop on your computer. This phone connects when it appears.",
+    download: "Need the desktop app? Open vibyra.ai on your computer."
   },
   approve: {
-    eyebrow: "STEP 3",
-    title: "Approve this connection",
-    body: "Your PC has approved the request. Finish approval here to link your phone and desktop.",
+    eyebrow: "PC FOUND",
+    title: "Confirm connection",
+    body: "Confirm this connection to link your phone and desktop.",
     waiting: "Finishing secure approval...",
     confirmCta: "Confirm connection",
     timeoutHelp: "Still waiting? Keep Vibyra Desktop open.",

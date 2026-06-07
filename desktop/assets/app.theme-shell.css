@@ -1,5 +1,6 @@
 body {
   --shell-bg: var(--color-background, var(--bg));
+  --shell-rail: var(--shell-bg);
   --shell-surface: var(--color-surface, var(--shell));
   --shell-elevated: var(--color-elevated, var(--panel));
   --shell-border: var(--color-border, var(--line));
@@ -22,7 +23,7 @@ body,
 
 .rail,
 .app.rail-collapsed .rail {
-  background: var(--shell-surface);
+  background: var(--shell-rail);
   border-right-color: var(--shell-border-soft);
 }
 
@@ -65,10 +66,15 @@ body.electron-shell .desktop-chrome {
 
 .rail .nav-button.active:not(:hover),
 .rail-chat.active:not(:hover) {
-  background: transparent;
+  background: color-mix(in srgb, var(--shell-accent) 9%, transparent);
   border-color: transparent;
-  box-shadow: none;
-  color: var(--shell-muted);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--shell-accent) 72%, transparent);
+  color: var(--shell-text);
+}
+
+.rail .nav-button.active svg,
+.rail-chat.active svg {
+  color: var(--shell-accent);
 }
 
 .rail .nav-button:hover,
@@ -167,7 +173,7 @@ body[data-desktop-theme="light"] .chat-page {
 }
 
 body[data-desktop-theme="light"] .rail {
-  background: var(--shell-surface);
+  background: var(--shell-rail);
 }
 
 body[data-desktop-theme="light"] .rail-logo strong,
@@ -200,7 +206,7 @@ body[data-desktop-theme="light"] .desktop-window-controls button[data-window-act
   }
 
   body[data-desktop-theme="auto"] .rail {
-    background: var(--shell-surface);
+    background: var(--shell-rail);
   }
 
   body[data-desktop-theme="auto"] .rail-logo strong,
@@ -218,4 +224,25 @@ body[data-desktop-theme="light"] .desktop-window-controls button[data-window-act
     background: #d94155;
     color: #ffffff;
   }
+}
+
+.topbar-menu button.danger,
+.account-menu-section button.danger {
+  color: var(--color-error, #ff5d7a);
+}
+
+.topbar-menu button.danger svg,
+.account-menu-section button.danger svg {
+  color: currentColor;
+}
+
+.topbar-menu button:disabled,
+.account-menu-section button:disabled {
+  color: var(--shell-dim);
+  opacity: 0.62;
+}
+
+.topbar-menu button:disabled svg,
+.account-menu-section button:disabled svg {
+  color: currentColor;
 }

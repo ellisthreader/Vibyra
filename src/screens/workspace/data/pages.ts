@@ -3,8 +3,7 @@ import { DashboardPage } from "../types";
 
 export const pages: Array<{ key: DashboardPage; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
   { key: "chat", label: "Chat", icon: "chatbubble-ellipses-outline" },
-  { key: "projects", label: "Projects", icon: "folder-open-outline" },
-  { key: "dashboard", label: "Builds", icon: "pulse-outline" }
+  { key: "projects", label: "Projects", icon: "folder-open-outline" }
 ];
 
 export const projectStatuses = ["Active", "Draft", "Published"] as const;
@@ -25,6 +24,12 @@ export type PreviousChat = {
 };
 
 export const previousChats: PreviousChat[] = [];
+
+export const buildExamplePrompts: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; prompt: string }> = [
+  { icon: "barbell-outline", label: "Workout tracker", prompt: "Build a workout tracker app where I can log exercises, sets, and reps, and see my progress over time." },
+  { icon: "restaurant-outline", label: "Recipe app", prompt: "Build a recipe app where I can save recipes, search by ingredient, and plan meals for the week." },
+  { icon: "wallet-outline", label: "Budget tracker", prompt: "Build a budget tracker where I can add expenses, set monthly budgets, and see spending by category." }
+];
 
 export const chatSuggestions = [
   { description: "Find & resolve\nissues", icon: "construct-outline" as const, prompt: "Find and fix the main bug in this project.", title: "Fix a bug" },

@@ -45,8 +45,7 @@ export function getTopBarTitle(page: DashboardPage) {
   if (page === "projects") return "Projects";
   if (page === "community") return "Explore";
   if (page === "profile") return "Profile";
-  if (page === "chat") return "AI Chat";
-  return "Active builds";
+  return "AI Chat";
 }
 
 export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {

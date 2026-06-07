@@ -1,7 +1,11 @@
 const terminalPtySockets = {};
 const terminalPtyRenderTimers = {};
+const terminalPtyReconnectTimers = {};
+const terminalPtyReconnectAttempts = {};
 const terminalXterms = {};
 const terminalXtermSizes = {};
+const terminalXtermSnapshots = {};
+const terminalXtermReplayWrites = {};
 let ptyRenderedSignature = "";
 const terminalPtyRendererVersion = 2;
 const terminalAgents = [
@@ -34,6 +38,7 @@ normalizeTerminal = function normalizePtyTerminal(item) {
   terminal.agent = normalizePtyAgentForModel(item, terminal);
   terminal.agentStatus = item.agentStatus || null;
   terminal.tokenMode = String(item.tokenMode || terminal.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra";
+  terminal.permissionMode = normalizeTerminalPermissionMode(item.permissionMode || terminal.permissionMode);
   const rendererVersion = Number(item.ptyRendererVersion || 0);
   const currentRenderer = rendererVersion === terminalPtyRendererVersion;
   terminal.ptyRendererVersion = terminalPtyRendererVersion;
@@ -45,12 +50,14 @@ normalizeTerminal = function normalizePtyTerminal(item) {
 };
 
 saveTerminals = function savePtyTerminals() {
-  const stored = terminals.map(({ pending, notice, ptyStartQueued, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
+  const stored = terminals.map(({ pending, notice, ptyStartQueued, restoringFromSnapshot, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
   localStorage.setItem(storageKey, JSON.stringify(stored));
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
   else localStorage.removeItem(activeKey);
   localStorage.setItem(layoutKey, terminalLayout);
   localStorage.setItem("vibyra.desktop.terminalAgent", setupAgent);
+  if (setupProjectId) localStorage.setItem(setupProjectKey, setupProjectId);
+  else localStorage.removeItem(setupProjectKey);
   localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
 };
 
@@ -64,10 +71,13 @@ terminalProviderProfile = function terminalPtyProviderProfile(terminal) {
 
 modelMetaChip = function terminalAgentMetaChip(terminal) {
   const model = terminalModelForDisplay(terminal.model);
-  return `<span class="terminal-meta-chip terminal-model-chip">${modelLogo(model)}${escapeHtml(model.label)}</span>`;
+  const projectLabel = terminalProjectLabel(terminal.projectId);
+  const projectChip = terminal.projectId ? `<span class="terminal-meta-chip terminal-project-chip">${icon("folder")}${escapeHtml(projectLabel)}</span>` : "";
+  const permissionChip = terminal.permissionMode === "full" ? `<span class="terminal-meta-chip terminal-permission-chip">${icon("lock")}Full access</span>` : "";
+  return `<span class="terminal-meta-chip terminal-model-chip">${modelLogo(model)}${escapeHtml(model.label)}</span>${projectChip}${permissionChip}`;
 };
 
-createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender = true) {
+createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
   const model = unlockedModel(modelKey);
   const agent = agentForModel(model);
@@ -78,9 +88,10 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     agent,
     agentStatus: null,
     model: model.key,
-    effort: "medium",
+    effort: normalizeTerminalEffort(options.effort),
+    permissionMode: normalizeTerminalPermissionMode(options.permissionMode),
     tokenMode,
-    projectId: typeof selectedProjectId === "string" ? selectedProjectId : "",
+    projectId: options.projectId === undefined ? terminalProjectForSetup() : String(options.projectId || ""),
     draft: "",
     shellMode: false,
     profileVersion: 1,
@@ -99,6 +110,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
   if (terminals.length > 4) terminalLayout = "grid";
   newTerminalMenuOpen = false;
   setupModelMenuOpen = false;
+  terminalProjectMenuTarget = "";
   settingsTerminalId = "";
   saveTerminals();
   if (shouldRender) { forceTerminalRender = true; render(); }
@@ -106,18 +118,18 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
   return terminal;
 };
 
-createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel) {
+createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel, options = {}) {
   const total = Math.min(maxTerminals - terminals.length, normalizeCount(count));
   const model = unlockedModel(modelKey);
   if (terminals.length + total > 4) terminalLayout = "grid";
-  for (let index = 0; index < total; index += 1) createTerminal(model.key, false);
+  for (let index = 0; index < total; index += 1) createTerminal(model.key, false, options);
   forceTerminalRender = true;
   render();
 };
 
 setupView = function ptySetupView() {
   const model = selectedSetupModel();
-  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalTokenSourcePanel(model, setupTokenMode, "setup")}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
+  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Project</p>${terminalProjectSelect("setup")}</div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalTokenSourcePanel(model, setupTokenMode, "setup")}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
 };
 
 newTerminalMenu = function ptyNewTerminalMenu() {
@@ -128,7 +140,7 @@ activeTerminalView = function ptyActiveTerminalView(terminal) {
   const active = terminal.id === activeTerminalId;
   const hiddenClass = active ? "active" : "terminal-focus-hidden";
   const hiddenAttr = active ? "" : " aria-hidden=\"true\"";
-  return `<article class="terminal-focus ${terminalProviderClass(terminal)} ${hiddenClass} ${terminal.notice ? "has-notice" : ""}" data-terminal="${escapeAttribute(terminal.id)}"${hiddenAttr}><header class="terminal-focus-head"><div class="terminal-name"><span class="terminal-status ${terminal.pending || terminal.ptyStatus === "running" ? "running" : ""}"></span><strong>${escapeHtml(terminal.title)}</strong></div><div class="terminal-meta">${modelMetaChip(terminal)}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</div></header>${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}</article>`;
+  return `<article class="terminal-focus ${terminalProviderClass(terminal)} ${hiddenClass} ${terminal.notice ? "has-notice" : ""}" data-terminal="${escapeAttribute(terminal.id)}"${hiddenAttr}><header class="terminal-focus-head"><div class="terminal-name">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></div><div class="terminal-meta">${modelMetaChip(terminal)}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</div></header>${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}</article>`;
 };
 
 terminalFocusViews = function ptyTerminalFocusViews() {
@@ -137,12 +149,12 @@ terminalFocusViews = function ptyTerminalFocusViews() {
 
 terminalTile = function ptyTerminalTile(terminal) {
   const active = terminal.id === activeTerminalId;
-  return `<article class="terminal-tile ${terminalProviderClass(terminal)} ${active ? "active" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}"><span class="terminal-status ${terminal.pending || terminal.ptyStatus === "running" ? "running" : ""}"></span><strong>${escapeHtml(terminal.title)}</strong></button><button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>${terminalViewport(terminal)}</article>`;
+  return `<article class="terminal-tile ${terminalProviderClass(terminal)} ${active ? "active" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></button><button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>${terminalViewport(terminal)}</article>`;
 };
 
 function terminalViewport(terminal) {
   const unavailable = terminal.ptyStatus === "unavailable";
-  return `<div class="terminal-lines terminal-pty-lines ${unavailable ? "terminal-pty-unavailable" : ""}" tabindex="0" data-terminal-input="${escapeAttribute(terminal.id)}">${unavailable ? `<pre>${escapeHtml(terminal.output || "")}</pre>` : `<div class="terminal-xterm" data-terminal-xterm="${escapeAttribute(terminal.id)}"></div>`}</div>`;
+  return `<div class="terminal-lines terminal-pty-lines ${unavailable ? "terminal-pty-unavailable" : ""}" tabindex="0" role="region" aria-label="${escapeAttribute(`${terminal.title || "Terminal"} output`)}" data-terminal-input="${escapeAttribute(terminal.id)}">${unavailable ? `<pre>${escapeHtml(terminal.output || "")}</pre>` : `<div class="terminal-xterm" data-terminal-xterm="${escapeAttribute(terminal.id)}"></div>`}</div>`;
 }
 
 terminalComposer = function ptyTerminalComposer(terminal) {
@@ -150,8 +162,11 @@ terminalComposer = function ptyTerminalComposer(terminal) {
 };
 
 settingsMenu = function ptySettingsMenu(terminal) {
+  const project = projectForTerminal(terminal);
+  const projectRow = `<div class="terminal-cwd-row terminal-project-row">${icon("folder")}<span>${escapeHtml(project?.name || (terminal.projectId ? "Selected project" : "No project selected"))}</span></div>`;
+  const permissionRow = terminal.permissionMode === "full" ? `<div class="terminal-cwd-row terminal-permission-row">${icon("lock")}<span>Full access: approvals and sandbox disabled</span></div>` : "";
   const cwd = terminal.cwd ? `<div class="terminal-cwd-row">${icon("folder")}<span>${escapeHtml(terminal.cwd)}</span></div>` : "";
-  return `<div class="terminal-menu terminal-settings-menu">${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
+  return `<div class="terminal-menu terminal-settings-menu">${projectRow}${permissionRow}${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
 };
 
 terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {
@@ -162,11 +177,26 @@ terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {
 
 terminalTabs = function ptyTerminalTabs() {
   const tabs = terminals.map((terminal, index) => {
-    const running = terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running";
-    return `<div class="terminal-tab ${terminal.id === activeTerminalId ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}"><button class="terminal-tab-open" type="button" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(terminal.title)}"><span class="terminal-status ${running ? "running" : ""}"></span><span>${index + 1}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button></div>`;
+    const active = terminal.id === activeTerminalId;
+    return `<div class="terminal-tab ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}"><button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(terminal.title)}">${terminalStatusDot(terminal)}<span>${index + 1}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button></div>`;
   }).join("");
-  return `<header class="terminal-tabs"><div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list">${tabs}</div><button class="terminal-layout-button" id="toggle-terminal-layout" type="button" aria-label="Toggle terminal layout" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button></header>`;
+  const companionTools = typeof terminalCompanionToolbarHtml === "function" ? terminalCompanionToolbarHtml() : "";
+  return `<header class="terminal-tabs"><div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list" role="tablist" aria-label="AI terminals">${tabs}</div>${companionTools}<button class="terminal-layout-button" id="toggle-terminal-layout" type="button" aria-label="Toggle terminal layout" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button></header>`;
 };
+
+function terminalStatusState(terminal) {
+  if (terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running") return { key: "running", label: "Running" };
+  if (terminal.ptyStatus === "unavailable") return { key: "unavailable", label: "Unavailable" };
+  if (terminal.ptyStatus === "exited" && Number(terminal.exitCode) === 0) return { key: "success", label: "Completed" };
+  if (terminal.ptyStatus === "exited" && terminal.exitCode !== null && terminal.exitCode !== undefined) return { key: "error", label: `Exited with code ${terminal.exitCode}` };
+  if (terminal.ptyStatus === "exited") return { key: "stopped", label: "Stopped" };
+  return { key: "idle", label: "Idle" };
+}
+
+function terminalStatusDot(terminal) {
+  const status = terminalStatusState(terminal);
+  return `<span class="terminal-status ${status.key}" role="img" aria-label="${escapeAttribute(status.label)}" title="${escapeAttribute(status.label)}"></span>`;
+}
 
 const previousBindTerminalControls = bindTerminalControls;
 bindTerminalControls = function bindPtyTerminalControls() {
@@ -195,14 +225,44 @@ bindTerminalControls = function bindPtyTerminalControls() {
   mountVisibleXterms();
 };
 
+function requestCloseTerminal(id) {
+  if (!confirmClosePtyTerminal(id)) return;
+  closeTerminal(id);
+}
+
+function confirmClosePtyTerminal(id) {
+  const terminal = findTerminal(id);
+  if (!terminal) return true;
+  const running = terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running";
+  const hasContext = Boolean(String(terminal.output || terminal.draft || "").trim() || (terminal.messages || []).length);
+  if (!running && !hasContext) return true;
+  const title = terminal.title || "this terminal";
+  return window.confirm("Close " + title + "? This ends the agent and removes its saved terminal context on this computer.");
+}
+
 const previousCloseTerminal = closeTerminal;
-closeTerminal = function closePtyTerminal(id) {
+closeTerminal = async function closePtyTerminal(id) {
+  const terminal = findTerminal(id);
+  const localOnly = !terminal || terminal.ptyStatus === "exited" || terminal.ptyStatus === "unavailable";
+  if (!localOnly) {
+    try {
+      const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/close`, { method: "POST" });
+      if (!response.ok) throw new Error("Desktop could not stop this terminal.");
+    } catch (error) {
+      if (typeof setPtyInputNotice === "function") setPtyInputNotice(id, error instanceof Error ? error.message : "Desktop could not stop this terminal.");
+      return;
+    }
+  }
   const socket = terminalPtySockets[id];
   if (socket) socket.close();
+  clearTimeout(terminalPtyReconnectTimers[id]);
   terminalXterms[id]?.dispose?.();
   delete terminalXterms[id];
   delete terminalXtermSizes[id];
+  delete terminalXtermSnapshots[id];
+  delete terminalXtermReplayWrites[id];
   delete terminalPtySockets[id];
-  fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/close`, { method: "POST" }).catch(() => {});
+  delete terminalPtyReconnectTimers[id];
+  delete terminalPtyReconnectAttempts[id];
   previousCloseTerminal(id);
 };

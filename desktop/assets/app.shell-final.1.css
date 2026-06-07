@@ -111,11 +111,11 @@ body.electron-shell .desktop-chrome-page {
   left: 50%;
   position: absolute;
   transform: translateX(-50%);
-  width: min(520px, calc(100vw - 360px));
+  width: min(720px, calc(100vw - 360px));
 }
 
 .desktop-chrome-page .top-title {
-  max-width: min(520px, 100%);
+  max-width: min(720px, 100%);
 }
 
 .desktop-chrome-right,

@@ -17,12 +17,13 @@ export const part50 = {
     alignItems: "center",
     backgroundColor: "transparent",
     borderColor: "transparent",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 0,
     flexDirection: "row",
-    gap: 9,
-    minHeight: 46,
-    paddingHorizontal: 4
+    gap: 12,
+    minHeight: 56,
+    paddingHorizontal: 4,
+    paddingVertical: 6
   },
   workspaceMenuPanel: {
     backgroundColor: "rgba(8, 10, 18, 0.99)",
@@ -46,11 +47,11 @@ export const part50 = {
     flexDirection: "row",
     gap: 9,
     minHeight: 48,
-    paddingHorizontal: 4,
+    paddingHorizontal: 11,
     position: "relative"
   },
   workspaceMenuRowActive: {
-    backgroundColor: "transparent"
+    backgroundColor: "rgba(255, 255, 255, 0.07)"
   },
   workspaceMenuTitle: {
     color: "#FFFFFF",

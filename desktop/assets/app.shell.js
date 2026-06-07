@@ -15,6 +15,10 @@ const nodes = {
   chromeActions: document.getElementById("desktop-chrome-actions"),
   chromeStatus: document.getElementById("desktop-chrome-status")
 };
+let desktopRefreshTimer = null;
+let lastDesktopStateSignature = "";
+let lastDesktopRefreshError = "";
+
 function bootstrapDesktop() {
   document.getElementById("close-pair").innerHTML = icon("close");
   document.getElementById("close-profile").innerHTML = icon("close");
@@ -46,8 +50,11 @@ function bootstrapDesktop() {
   loadDesktopProjects();
 }
 
-refresh();
-setInterval(refresh, 1000);
+function startDesktopRefresh() {
+  if (desktopRefreshTimer) return;
+  refresh();
+  desktopRefreshTimer = setInterval(refresh, 1000);
+}
 
 async function loadDesktopProjects() {
   try {
@@ -66,11 +73,19 @@ async function refresh() {
   try {
     const response = await fetch("/desktop/state", { cache: "no-store" });
     if (!response.ok) throw new Error("Desktop state failed");
-    currentState = { ...emptyState, ...(await response.json()) };
+    const nextState = { ...emptyState, ...(await response.json()) };
+    const nextSignature = JSON.stringify(nextState);
+    const stateChanged = nextSignature !== lastDesktopStateSignature;
+    currentState = nextState;
+    lastDesktopStateSignature = nextSignature;
+    lastDesktopRefreshError = "";
     openPendingPairRequest();
-    render();
+    if (stateChanged) render();
   } catch (error) {
-    currentState = { ...currentState, events: [{ source: "Desktop", message: error instanceof Error ? error.message : "Could not load desktop state", tone: "error" }] };
+    const message = error instanceof Error ? error.message : "Could not load desktop state";
+    if (message === lastDesktopRefreshError) return;
+    lastDesktopRefreshError = message;
+    currentState = { ...currentState, events: [{ source: "Desktop", message, tone: "error" }] };
     render();
   }
 }
@@ -173,7 +188,7 @@ function renderTopbar() {
   const terminalPage = activePage === "terminals";
   const title = activePage === "chat" ? activeChatTitle() : terminalPage ? "" : activePage === "dashboard" ? "Vibyra Desktop" : pageTitle(activePage);
   const subtitle = activePage === "chat"
-    ? chatDirectoryLabel(selected)
+    ? selected ? chatDirectoryLabel(selected) : ""
     : activePage === "projects"
       ? `${projectCount} project${projectCount === 1 ? "" : "s"}`
       : terminalPage ? "" : activePage === "dashboard" ? desktopChromeStatusText() : statusLabel();

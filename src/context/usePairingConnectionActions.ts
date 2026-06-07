@@ -81,6 +81,9 @@ export function usePairingConnectionActions(
   async function requestPairAtReachableUrl(url: string, code: string) {
     const knownDesktop = state.rememberedDesktops.find((desktop) => desktop.url === url || Boolean(code) && desktop.pairCode === code);
     const health = await checkHealth(url, code);
+    if (health && health.desktopAccountReady === false) {
+      return { type: "failed" as const, url, message: "Log in to Vibyra Desktop with the same account as your phone." };
+    }
     const urls = desktopConnectionUrls(url, [
       ...(knownDesktop?.connectionUrls ?? []),
       ...(health?.connectionUrls ?? [])

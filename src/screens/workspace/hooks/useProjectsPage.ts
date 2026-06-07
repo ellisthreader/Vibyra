@@ -35,6 +35,8 @@ export function useProjectsPage(props: ProjectsPageProps) {
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [openedProjectId, setOpenedProjectId] = useState<string | null>(null);
+  const [archivedProjectIds, setArchivedProjectIds] = useState<string[]>([]);
+  const [pinnedProjectIds, setPinnedProjectIds] = useState<string[]>([]);
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
 
@@ -57,12 +59,16 @@ export function useProjectsPage(props: ProjectsPageProps) {
 
   const combined = useMemo(() => [...sourceFilteredProjects, ...includedDesktopFolders], [includedDesktopFolders, sourceFilteredProjects]);
 
-  const displayProjects = combined.map((project): ProjectDisplay => ({
-    id: project.id, name: project.name, path: project.path,
-    sourceProject: project, stack: project.stack,
-    status: getProjectStatus(project),
-    updated: `Updated ${project.updated}`
-  }));
+  const displayProjects = combined
+    .filter((project) => !archivedProjectIds.includes(project.id))
+    .map((project): ProjectDisplay => ({
+      id: project.id, name: project.name, path: project.path,
+      pinned: pinnedProjectIds.includes(project.id),
+      sourceProject: project, stack: project.stack,
+      status: getProjectStatus(project),
+      updated: `Updated ${project.updated}`
+    }))
+    .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
   const estimatedCardHeight = width <= 375 ? 134 : width <= 393 ? 130 : 122;
   const estimatedProjectsHeight = 182 + 44 + 18 + 18 + 14 * 4 + displayProjects.length * estimatedCardHeight + Math.max(displayProjects.length - 1, 0) * 12;
   const availableProjectsHeight = height - 74 - 88;
@@ -75,7 +81,12 @@ export function useProjectsPage(props: ProjectsPageProps) {
     setOpenedProjectId(project.id); setFilterMenuOpen(false); setMenuProjectId(null); setRenamingProjectId(null);
     props.onOpenProjectPreview(project.sourceProject?.id ?? project.id, project.name);
   };
-  const archiveProject = (_id: string) => {
+  const archiveProject = (id: string) => {
+    setArchivedProjectIds((current) => current.includes(id) ? current : [...current, id]);
+    setMenuProjectId(null);
+  };
+  const togglePinProject = (id: string) => {
+    setPinnedProjectIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
     setMenuProjectId(null);
   };
   const requestDeleteProject = (_p: ProjectDisplay) => { setDeleteTarget(null); setFilterMenuOpen(false); setMenuProjectId(null); setRenamingProjectId(null); };
@@ -93,7 +104,7 @@ export function useProjectsPage(props: ProjectsPageProps) {
     projectLayout, displayProjects, deleteTarget,
     filterMode, filterMenuOpen, menuProjectId, openedProjectId, renamingProjectId, renameDraft,
     setRenameDraft,
-    selectFilterMode, createProject, openProject, archiveProject, requestDeleteProject,
+    selectFilterMode, createProject, openProject, archiveProject, togglePinProject, requestDeleteProject,
     confirmDeleteProject, cancelDeleteProject, startRenameProject, submitRenameProject,
     cancelRenameProject, toggleProjectMenu, toggleFilterMenu
   };

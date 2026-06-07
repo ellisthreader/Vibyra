@@ -4,6 +4,7 @@ import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { desktopMemoryContext } from "./desktopProjectMemory.mjs";
+import { desktopActionsForPrompt } from "./desktopActions.mjs";
 
 const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || process.env.VIBYRA_API_URL || "http://127.0.0.1:8000");
 const MAX_PROMPT_CHARS = 8000;
@@ -23,6 +24,9 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     error.status = 413;
     throw error;
   }
+
+  const desktopAction = desktopActionsForPrompt(prompt, { projectId: body?.projectId });
+  if (desktopAction) return desktopAction;
 
   const project = await resolveProject(body?.projectId);
   const attachments = normalizeAttachments(body?.attachments);

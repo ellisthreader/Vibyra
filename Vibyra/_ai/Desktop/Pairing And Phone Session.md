@@ -38,3 +38,5 @@ The desktop server binds to `0.0.0.0` so phones can reach LAN pairing routes, bu
 `/health` and UDP discovery do not expose `PAIR_CODE`. `/pair` accepts either the manually typed desktop code or `{ autoPair: true }`, then the local desktop user must approve before the phone receives a bearer token.
 
 Desktop pairing is also account-gated. The static desktop shell verifies the real backend account token through loopback-only `POST /desktop/session`, stores only public account identity in process state, and LAN `/pair` rejects requests whose `accountId` does not match the verified desktop account. Health/discovery routes must not expose account identity.
+
+`/health` may expose only `desktopAccountReady: boolean` so the phone can distinguish "desktop reachable but not signed in" from a network timeout. Do not expose account id/email/name through health or UDP discovery.

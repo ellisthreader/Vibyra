@@ -3,6 +3,25 @@ import assert from "node:assert/strict";
 import { appState } from "./state.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
 
+test("desktop chat returns local desktop actions without a cloud account", async () => {
+  resetDesktopChatState();
+
+  const result = await sendDesktopChat({
+    projectId: "project-1",
+    prompt: "Open 8 terminals with Codex 5.5 fast full permissions"
+  });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.actions, [{
+    type: "open_terminals",
+    count: 8,
+    model: "gpt-5.5",
+    effort: "low",
+    permissionMode: "full",
+    projectId: "project-1"
+  }]);
+});
+
 test("desktop chat requires a verified desktop account session", async () => {
   resetDesktopChatState();
 

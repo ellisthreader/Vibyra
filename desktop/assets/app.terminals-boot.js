@@ -1,5 +1,7 @@
 terminals = loadTerminals();
 activeTerminalId = localStorage.getItem(activeKey) || terminals[0]?.id || "";
+ensureTerminal();
+saveTerminals();
 window.renderTerminalsPage = renderTerminalsPage;
 window.terminalTopbarSubtitle = terminalTopbarSubtitle;
 window.terminalTopbarHtml = terminalTopbarHtml;

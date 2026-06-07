@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -70,6 +70,8 @@ export function ChatComposer(props: ChatComposerProps) {
   const [composerFocused, setComposerFocused] = useState(false);
   const [planningTool, setPlanningTool] = useState<ChatToolMode | null>(null);
   const [pendingToolPlan, setPendingToolPlan] = useState<PendingToolPlan | null>(null);
+  const planRequestIdRef = useRef(0);
+  const startingToolPlanRef = useRef(false);
   const appCtx = useAppContext();
   const prefs = usePreferences();
   const placeholderColor = useThemedColor("#8F8A9E");
@@ -82,7 +84,7 @@ export function ChatComposer(props: ChatComposerProps) {
   const currentModel = chatModelOptionFor(selectedChatModel) ?? chatModelOptions[0];
   const inlineTool = activeTool ?? slashTool ?? chatToolForModelKey(currentModel.key);
   const inlineToolAccent = inlineTool ? chatToolAccent[inlineTool] : null;
-  const sendLocked = props.agentRequesting || Boolean(planningTool);
+  const sendLocked = props.agentRequesting || Boolean(planningTool) || Boolean(pendingToolPlan);
   const sendGradient = sendLocked
     ? (prefs.effectiveScheme === "light" ? ["#DADDE8", "#C9CEDA"] as const : ["#282B34", "#1A1C25"] as const)
     : (prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#A368FF", "#5D24D8"] as const);
@@ -130,7 +132,11 @@ export function ChatComposer(props: ChatComposerProps) {
     );
   }, [planningTool, pendingToolPlan?.countdown, pendingToolPlan?.draft, pendingToolPlan?.displayPrompt, pendingToolPlan?.tool]);
 
-  useEffect(() => () => props.onToolPreviewChange?.(null), []);
+  useEffect(() => () => {
+    planRequestIdRef.current += 1;
+    startingToolPlanRef.current = false;
+    props.onToolPreviewChange?.(null);
+  }, []);
 
   function selectModel(model: (typeof chatModelOptions)[number]) {
     if (isModelLockedForPlan(model, props.accountPlan)) return;
@@ -197,7 +203,10 @@ export function ChatComposer(props: ChatComposerProps) {
     }
     if (startTool) {
       const prompt = promptOverride ?? props.taskText.trim();
-      const draft = await loadToolPlan(startTool, prompt);
+      const requestId = planRequestIdRef.current + 1;
+      planRequestIdRef.current = requestId;
+      const draft = await loadToolPlan(startTool, prompt, requestId);
+      if (planRequestIdRef.current !== requestId) return;
       setPendingToolPlan({
         countdown: startTool === "research" ? 60 : null,
         draft,
@@ -211,7 +220,7 @@ export function ChatComposer(props: ChatComposerProps) {
     submitStart(startOptions);
   }
 
-  async function loadToolPlan(tool: ChatToolMode, prompt: string): Promise<ChatToolPlanDraft> {
+  async function loadToolPlan(tool: ChatToolMode, prompt: string, requestId: number): Promise<ChatToolPlanDraft> {
     if (tool !== "research" || !appCtx.authToken) return buildChatToolPlan(tool, prompt);
     setPlanningTool(tool);
     try {
@@ -219,7 +228,7 @@ export function ChatComposer(props: ChatComposerProps) {
     } catch {
       return buildChatToolPlan(tool, prompt);
     } finally {
-      setPlanningTool(null);
+      if (planRequestIdRef.current === requestId) setPlanningTool(null);
     }
   }
 
@@ -231,6 +240,8 @@ export function ChatComposer(props: ChatComposerProps) {
   }
 
   function cancelToolPlan() {
+    planRequestIdRef.current += 1;
+    startingToolPlanRef.current = false;
     setPendingToolPlan(null);
     setPlanningTool(null);
     clearActiveTool();
@@ -238,15 +249,20 @@ export function ChatComposer(props: ChatComposerProps) {
 
   function editToolPlan() {
     if (!pendingToolPlan) return;
+    planRequestIdRef.current += 1;
+    startingToolPlanRef.current = false;
     props.setTaskText(pendingToolPlan.displayPrompt);
     setPendingToolPlan(null);
   }
 
   function startToolPlan() {
-    if (!pendingToolPlan) return;
+    if (!pendingToolPlan || startingToolPlanRef.current) return;
+    startingToolPlanRef.current = true;
+    planRequestIdRef.current += 1;
     const options = pendingToolPlan.options;
     setPendingToolPlan(null);
     submitStart(options);
+    setTimeout(() => { startingToolPlanRef.current = false; }, 750);
   }
 
   function toolStartOptions(tool: ChatToolMode, displayPrompt: string, draft: ChatToolPlanDraft, options?: ChatStartOptions): ChatStartOptions {
@@ -280,6 +296,8 @@ export function ChatComposer(props: ChatComposerProps) {
   }
 
   function clearInlineTool() {
+    planRequestIdRef.current += 1;
+    startingToolPlanRef.current = false;
     if (slashToolMatch) props.setTaskText(slashToolMatch.prompt);
     setPendingToolPlan(null);
     setPlanningTool(null);

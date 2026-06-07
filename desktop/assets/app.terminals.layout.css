@@ -21,7 +21,7 @@ body.electron-shell .content.terminal-content {
   justify-items: center;
   overflow: visible;
   text-align: center;
-  width: min(520px, 100%);
+  width: min(720px, 100%);
 }
 .terminal-tabs {
   -webkit-app-region: no-drag;
@@ -32,6 +32,49 @@ body.electron-shell .content.terminal-content {
   min-width: 0;
   overflow: visible;
   width: 100%;
+}
+.terminal-tabs--tools-only {
+  justify-content: center;
+}
+.terminal-companion-launchers {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+.terminal-companion-label {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 11px;
+  font-weight: 760;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.terminal-companion-launcher {
+  -webkit-app-region: no-drag;
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--terminal-muted, #a9a3b8);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 680;
+  gap: 6px;
+  height: 32px;
+  padding: 0 9px;
+}
+.terminal-companion-launcher:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, 0.045));
+  color: var(--terminal-text, #eeeaf8);
+}
+.terminal-companion-launcher.active {
+  background: var(--terminal-accent-soft, rgba(139, 92, 255, 0.12));
+  border-color: var(--terminal-accent-border, rgba(139, 92, 255, 0.3));
+  color: var(--terminal-text, #f1eef8);
+}
+.terminal-companion-launcher svg {
+  height: 15px;
+  width: 15px;
 }
 .terminal-new-wrap,
 .terminal-focus-head,
@@ -85,10 +128,21 @@ body.electron-shell .content.terminal-content {
   flex: 0 1 auto;
   gap: 6px;
   justify-content: center;
-  max-width: min(420px, 44vw);
+  max-width: min(360px, 34vw);
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
+}
+@media (max-width: 640px) {
+  .terminal-companion-label {
+    display: none;
+  }
+  .terminal-companion-launcher {
+    padding: 0 8px;
+  }
+  .terminal-companion-launcher span {
+    display: none;
+  }
 }
 .terminal-tab-list::-webkit-scrollbar { display: none; }
 .terminal-tab {

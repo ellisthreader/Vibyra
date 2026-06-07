@@ -33,7 +33,7 @@ export function ProfileLevelProgressModal({ formatNumber, level, levelMap, level
   return (
     <Modal animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
       <View style={styles.billingScreen}>
-        <View style={[styles.billingHeader, { paddingTop: Math.max(insets.top + 10, 24) }]}>
+        <View style={[styles.billingHeader, { paddingTop: Math.max(insets.top + 8, 60) }]}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
             <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
           </Pressable>

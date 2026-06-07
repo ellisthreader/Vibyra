@@ -2,6 +2,14 @@
 
 Use this map to choose the smallest useful context. Read one domain index and one focused note unless the task clearly crosses domains.
 
+## Memory, Skills, And Planning
+
+For memory/skill optimization, broad planning, or agent workflow changes, read
+`Memory And Skills Optimization.md` plus the matching local skill. Common
+matches: `VibyraObsiden`, `plan`, `VibyraRefactor`, `VibyraOptimse`,
+`VibyraDesktopFrontendDesign`, `vibyra-desktop-connection-diagnostics`, and
+`vibyra-expo-web-diagnostics`.
+
 ## Mobile App
 
 Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
@@ -18,12 +26,15 @@ Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
 - `/api/session/state`, cloud sync: `App/Cloud Sync.md`
 - Profile, billing, model locks: `App/Profile Billing.md`
 - Bottom nav, app shell, broad UI: `App/Navigation UI.md`
+- Mobile/frontend design clarity from short-form product demos: `App/Short-Form Frontend Design Principles.md`
 
 ## Desktop Bridge
 
 Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/`.
 
 - Shell UI/auth gate/launcher: `Desktop/Desktop Shell.md`
+- AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- AI-terminal voice and editable project memory: `Desktop/Voice And Project Memory.md`
 - Pairing/phone session/LAN URLs: `Desktop/Pairing And Phone Session.md`
 - Discovery/browse/search/preview: `Desktop/Projects And Preview.md`
 - Agent runs/apply-discard/safe commands: `Desktop/Agent Runs And Commands.md`
@@ -36,6 +47,7 @@ Read `Vibyra Backend Memory.md`, then one focused note from `Vibyra/_ai/Backend/
 - Billing, credits, levels: `Backend/Billing Credits And Levels.md`
 - Auth and cloud sync: `Backend/Auth And Cloud Sync.md`
 - Community publish/moderation/assets: `Backend/Community Publishing.md`
+- App Store-safe static/Railway interactive demos for Explore: `Backend/Hosted Demos.md`
 - Laravel desktop-agent route/locks: `Backend/Desktop Agent Backend.md`
 
 ## Cross-Domain Shortcuts
@@ -50,6 +62,15 @@ OpenRouter cost tuning: read `Backend/Chat And Cost Controls.md`. Start near `Ch
 
 Style or UI work: read `App/Navigation UI.md` unless the task names a more specific feature. Start near `src/styles/theme.ts`, `src/components/`, `src/screens/WorkspaceScreen.tsx`, and `src/screens/workspace/styles/`.
 
-## Known Noise
+## Deep References
 
-Current typecheck noise: several `src/screens/workspace/styles/part*.ts` files reference missing `Platform` and `communityDetailAccent`.
+Do not read long specs, research files, or decision logs by default. Search them
+with `rg` and open only the matching section:
+
+- `Decisions.md`
+- `Backend/AI Live Chat Backend Context.txt`
+- `Backend/Railway Cloud Runtime.md`
+- `Desktop/AI Terminal Provider CLI Research.txt`
+- `Desktop App Implementation Spec.md`
+- `Mobile App Desktop Recreation Spec.md`
+- `Marketing/Competitor Marketing Analysis.md`

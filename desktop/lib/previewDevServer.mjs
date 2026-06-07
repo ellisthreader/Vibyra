@@ -5,6 +5,7 @@ import { isViteOutputUrl, portsFromOutput, publicDevServerBases } from "./previe
 import { choosePreviewPort } from "./previewPortAllocator.mjs";
 import { isLaravelViteProject, startLaravelViteDevServer } from "./previewLaravelDevServer.mjs";
 import { devServerPortsFromPackage, npmRunArgs, npmRunEnv, previewCommand, previewFrameworkProfile } from "./previewFrameworkProfiles.mjs";
+import { existingProjectAppRoots, WEB_APP_DIRECTORIES } from "./projectAppRoots.mjs";
 import { isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
 import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
 import { appState, publicHostFromRequestHost } from "./state.mjs";
@@ -49,8 +50,9 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
   const context = await startablePreviewContext(project);
   if (!context) throw new Error("This project does not expose a recognized web dev script that Vibyra can start safely. Add a standard package.json script for Vite, SvelteKit, Next.js, Astro, Nuxt, Angular, Vue CLI, Create React App, or Remix Vite, then try Preview again.");
 
-  if (await isLaravelViteProject(project.path, context.packageText, context.profile)) {
-    return startLaravelViteDevServer(project, requestHost, context, options);
+  const launchProject = context.appPath === project.path ? project : { ...project, path: context.appPath };
+  if (await isLaravelViteProject(context.appPath, context.packageText, context.profile)) {
+    return startLaravelViteDevServer(launchProject, requestHost, context, options);
   }
 
   stopTrackedPreviewServer(project.id);
@@ -58,7 +60,7 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
   context.command = previewCommand(context.profile, context.launchPort);
   const executable = process.platform === "win32" ? "npm.cmd" : "npm";
   const child = spawn(executable, npmRunArgs(context.profile, context.launchPort), {
-    cwd: project.path,
+    cwd: context.appPath,
     detached: process.platform !== "win32",
     env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, context.launchPort), ...(options.env ?? {}) },
     stdio: ["ignore", "pipe", "pipe"]
@@ -124,24 +126,34 @@ function uniquePorts(ports) {
 }
 
 async function sourcePreviewContext(project) {
-  const localHtml = await readProjectIndex(project.path);
-  if (!localHtml || !isSourceOnlyPreviewHtml(localHtml)) return null;
-  const localScripts = sourceScriptPaths(localHtml);
-  if (localScripts.length === 0) return null;
-  const packageText = await readOptionalText(join(project.path, "package.json"));
-  const profile = previewFrameworkProfile(packageText);
-  if (!profile) return null;
-  if (profile.viteClient && !looksLikeViteProject(packageText, localHtml)) return null;
-  return { localHtml, localScripts, packageText, profile };
+  for (const root of await previewAppRoots(project.path)) {
+    const localHtml = await readProjectIndex(root.path);
+    if (!localHtml || !isSourceOnlyPreviewHtml(localHtml)) continue;
+    const localScripts = sourceScriptPaths(localHtml);
+    if (localScripts.length === 0) continue;
+    const packageText = await readOptionalText(join(root.path, "package.json"));
+    const profile = previewFrameworkProfile(packageText);
+    if (!profile) continue;
+    if (profile.viteClient && !looksLikeViteProject(packageText, localHtml)) continue;
+    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile };
+  }
+  return null;
 }
 
 async function startablePreviewContext(project) {
-  const packageText = await readOptionalText(join(project.path, "package.json"));
-  const profile = previewFrameworkProfile(packageText);
-  if (!profile) return null;
-  const localHtml = await readProjectIndex(project.path);
-  const localScripts = localHtml && isSourceOnlyPreviewHtml(localHtml) ? sourceScriptPaths(localHtml) : [];
-  return { localHtml, localScripts, packageText, profile };
+  for (const root of await previewAppRoots(project.path)) {
+    const packageText = await readOptionalText(join(root.path, "package.json"));
+    const profile = previewFrameworkProfile(packageText);
+    if (!profile) continue;
+    const localHtml = await readProjectIndex(root.path);
+    const localScripts = localHtml && isSourceOnlyPreviewHtml(localHtml) ? sourceScriptPaths(localHtml) : [];
+    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile };
+  }
+  return null;
+}
+
+function previewAppRoots(projectPath) {
+  return existingProjectAppRoots(projectPath, WEB_APP_DIRECTORIES, ["package.json"]);
 }
 
 function looksLikeViteProject(packageText, html) {

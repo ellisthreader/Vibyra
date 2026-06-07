@@ -1,0 +1,183 @@
+.terminal-composer textarea::placeholder,
+.terminal-model-search input::placeholder { color: var(--terminal-dim); }
+.terminal-notice { background: var(--terminal-warning-bg); border-color: var(--terminal-warning-border); color: var(--terminal-text); }
+
+/* Terminal theme coverage for controls not owned by the base token selectors. */
+body {
+  --terminal-disabled: rgba(247, 244, 255, 0.46);
+  --terminal-danger: #ff9aad;
+  --terminal-active-muted: #bdb3df;
+  --terminal-scroll-thumb: rgba(151, 161, 190, 0.28);
+  --terminal-status-idle: #6e687a;
+  --terminal-status-running: #37d67a;
+  --terminal-status-running-ring: rgba(55, 214, 122, 0.09);
+  --terminal-phone-frame: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
+  --terminal-phone-border: #3d4049;
+  --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+  --terminal-phone-screen: #05060a;
+  --terminal-phone-camera: #000;
+  --terminal-companion-header: color-mix(in srgb, var(--terminal-elevated) 76%, transparent);
+}
+
+body[data-desktop-theme="light"] {
+  --terminal-disabled: rgba(78, 88, 108, 0.42);
+  --terminal-danger: #b42350;
+  --terminal-active-muted: #5a6170;
+  --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
+  --terminal-status-idle: #9aa3b2;
+  --terminal-status-running: #1f9d5b;
+  --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+  --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
+  --terminal-phone-border: #c4ccd9;
+  --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);
+  --terminal-phone-screen: #ffffff;
+  --terminal-phone-camera: #d0d7e3;
+  --terminal-companion-header: #f7f8fb;
+}
+
+@media (prefers-color-scheme: light) {
+  body:not([data-desktop-theme="dark"]) {
+    --terminal-disabled: rgba(78, 88, 108, 0.42);
+    --terminal-danger: #b42350;
+    --terminal-active-muted: #5a6170;
+    --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
+    --terminal-status-idle: #9aa3b2;
+    --terminal-status-running: #1f9d5b;
+    --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+    --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
+    --terminal-phone-border: #c4ccd9;
+    --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);
+    --terminal-phone-screen: #ffffff;
+    --terminal-phone-camera: #d0d7e3;
+    --terminal-companion-header: #f7f8fb;
+  }
+}
+
+.terminal-token-source p,
+.terminal-provider-row,
+.terminal-provider-form label span,
+.terminal-provider-notice {
+  color: var(--terminal-dim);
+}
+.terminal-token-row button,
+.terminal-provider-row button,
+.terminal-provider-form button {
+  border-color: var(--terminal-border);
+}
+.terminal-token-row button,
+.terminal-provider-row button {
+  color: var(--terminal-copy);
+}
+.terminal-token-row button.active,
+.terminal-provider-form button {
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+  color: var(--terminal-text);
+}
+.terminal-token-row button.needs-connect,
+.terminal-provider-row button {
+  color: var(--terminal-accent);
+}
+.terminal-token-row button:disabled,
+.terminal-add:disabled {
+  color: var(--terminal-disabled);
+}
+.terminal-provider-form input {
+  background: color-mix(in srgb, var(--terminal-elevated) 72%, transparent);
+  border-color: var(--terminal-border);
+  color: var(--terminal-text);
+}
+.terminal-notice button,
+.terminal-model-option.locked,
+.terminal-model-option.locked:hover {
+  color: var(--terminal-muted);
+}
+.terminal-close-row {
+  color: var(--terminal-danger);
+}
+.terminal-permission-chip,
+.terminal-permission-row {
+  color: var(--terminal-danger);
+}
+.terminal-model-search input {
+  color: var(--terminal-text);
+}
+.terminal-model-option.active small {
+  color: var(--terminal-active-muted);
+}
+.terminal-model-scroll {
+  scrollbar-color: var(--terminal-scroll-thumb) transparent;
+}
+.terminal-model-scroll::-webkit-scrollbar-thumb {
+  background: var(--terminal-scroll-thumb);
+}
+.terminal-status {
+  background: var(--terminal-status-idle);
+}
+.terminal-status.running {
+  background: var(--terminal-status-running);
+  box-shadow: 0 0 0 4px var(--terminal-status-running-ring);
+}
+.terminal-status.success {
+  background: var(--terminal-status-success);
+}
+.terminal-status.error {
+  background: var(--terminal-status-error);
+}
+.terminal-status.stopped {
+  background: var(--terminal-status-stopped);
+}
+.terminal-status.unavailable {
+  background: var(--terminal-status-unavailable);
+}
+.terminal-pty-lines:focus {
+  box-shadow: inset 0 0 0 1px var(--terminal-accent-border);
+}
+.terminal-phone-shell {
+  background: var(--terminal-phone-frame);
+  border-color: var(--terminal-phone-border);
+  box-shadow: var(--terminal-phone-shadow);
+}
+.terminal-phone-shell span {
+  background: var(--terminal-phone-screen);
+}
+.terminal-phone-shell i {
+  background: var(--terminal-phone-camera);
+}
+.terminal-companion-shell-head {
+  background: var(--terminal-companion-header);
+}
+.terminal-companion--memory {
+  gap: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.terminal-companion--memory .terminal-companion-shell-head {
+  padding: 10px 12px;
+}
+.terminal-memory-toolbar [data-terminal-companion-close] {
+  display: none;
+}
+.terminal-companion-shell-actions button:disabled,
+.terminal-tool-button:disabled {
+  color: var(--terminal-disabled);
+}
+
+body[data-desktop-theme="dark"] .terminal-model-option.locked,
+body[data-desktop-theme="dark"] .terminal-model-option.locked:hover {
+  color: #b8b8c8 !important;
+}
+body[data-desktop-theme="light"] .terminal-model-option.locked,
+body[data-desktop-theme="light"] .terminal-model-option.locked:hover {
+  color: #555e70 !important;
+}
+@media (prefers-color-scheme: light) {
+  body:not([data-desktop-theme="dark"]) .terminal-model-option.locked,
+  body:not([data-desktop-theme="dark"]) .terminal-model-option.locked:hover {
+    color: #555e70 !important;
+  }
+}
+@media (max-width: 860px) {
+  .terminal-companion:has(.terminal-memory-workspace) {
+    max-height: none;
+  }
+}

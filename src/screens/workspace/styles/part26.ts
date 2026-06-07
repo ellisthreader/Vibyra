@@ -168,9 +168,6 @@ export const part26 = {
     height: 7,
     width: 7
   },
-  statusDotOffline: {
-    backgroundColor: "#FF5A6B"
-  },
   statusLabel: {
     alignSelf: "flex-start",
     backgroundColor: "rgba(255, 255, 255, 0.05)",

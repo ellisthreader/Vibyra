@@ -9,13 +9,14 @@ import type { CommunityFilter, CommunityPost } from "../types";
 import { CommunityReportModal } from "./CommunityReportModal";
 import { CommunityPostCard } from "./chunk13";
 import { CommunityPostDetail } from "./chunk14";
-import { CommunityOpenedAppPage } from "./chunk15";
+import { CommunityOpenedAppPage, hasCommunityRunnableDemo } from "./chunk15";
 
 export function CommunityPage({
-  authToken, currentUserName, openedPostId, onLevelActivity, onOpenApp, onSelectPost, selectedPost
+  authToken, currentUserName, openedPostId, onEditOwnPost, onLevelActivity, onOpenApp, onSelectPost, selectedPost
 }: {
   authToken: string;
   currentUserName: string;
+  onEditOwnPost?: (post: CommunityPost) => void;
   openedPostId: string | null;
   onOpenApp: (postId: string) => void;
   onLevelActivity?: (action: string, contextId: string, meta?: Record<string, unknown>) => void;
@@ -45,7 +46,7 @@ export function CommunityPage({
     const livePost = c.posts.find((post) => post.id === selectedPost.id) ?? selectedPost;
     const added = c.commentsByPostId[livePost.id] ?? [];
     const opened = c.openedPostIds.includes(livePost.id);
-    if (openedPostId === livePost.id) return <CommunityOpenedAppPage opened={opened} post={livePost} />;
+    if (openedPostId === livePost.id && hasCommunityRunnableDemo(livePost)) return <CommunityOpenedAppPage opened={opened} post={livePost} />;
     return (
       <>
         <CommunityPostDetail
@@ -61,6 +62,9 @@ export function CommunityPage({
           post={livePost}
           onAddComment={() => c.addComment(livePost.id)}
           onCommentDraftChange={(text) => c.setCommentDraft(livePost.id, text)}
+          onDelete={() => { void c.deleteOwnedPost(livePost).then(() => onSelectPost(null)); }}
+          onEdit={livePost.sourceProjectId && onEditOwnPost ? () => onEditOwnPost(livePost) : undefined}
+          onMakePrivate={() => { void c.makePrivate(livePost).then(() => onSelectPost(null)); }}
           onOpen={() => c.openApp(livePost.id)}
           onReport={() => setReportPost(livePost)}
           onToggleBookmark={() => c.toggleBookmark(livePost.id)}

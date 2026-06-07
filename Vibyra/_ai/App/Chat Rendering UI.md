@@ -73,7 +73,7 @@ The composer keeps attach, model selector, effort picker, and send button in one
 
 Composer attachments render as a horizontal strip above the text input through `ChatImageAttachmentPills.tsx`. Image picks show only a bare square preview with an overlaid remove button; document picks show a compact file icon, filename, and metadata. Document picks are composer-local `ChatFileAttachment`s and text/code-like files include a bounded text snippet for analyze/project context on send; image picks still travel through `ChatStartOptions.imageAttachments`.
 
-The empty live-chat screen uses `chatEmptyTitles.ts` for desktop-style rotating, greeting-led titles. Do not re-add the old `Vibyra AI` kicker or long helper description above suggestions.
+The empty live-chat screen uses `chatEmptyTitles.ts` for desktop-style rotating, greeting-led titles. Keep it prompt-first and quiet: greeting title plus four compact suggestion cards with small icons and short labels only. Do not re-add the old `Vibyra AI` kicker, long helper description, large animated hero/glyph, or description-heavy card grid above the composer.
 
 Live chat top controls should read as icons floating on the chat surface: `chatIconOnlyTopBar` blends into the chat page background with no divider, and the menu / preview / more buttons use transparent hit targets with no visible boxed or pill backgrounds.
 

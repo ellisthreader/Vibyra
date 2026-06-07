@@ -14,7 +14,10 @@ function terminalProviderClass(terminal) {
 }
 
 function findTerminal(id) { return terminals.find((terminal) => terminal.id === id) || null; }
-function projectForTerminal(terminal) { return (currentState.projects || []).find((project) => project.id === terminal.projectId) || null; }
+function projectForTerminal(terminal) {
+  if (!terminal?.projectId) return null;
+  return (currentState.projects || []).find((project) => project.id === terminal.projectId) || null;
+}
 function modelLabel(terminal) { return modelByKey(terminal.model).label || "Auto"; }
 function modelChoices() {
   const groups = terminalDynamicModelGroups || config().chatModelGroups || [];
@@ -63,7 +66,9 @@ function selectSetupModel(key) {
     return;
   }
   setupModel = model.key;
+  localStorage.setItem(setupModelKey, setupModel);
   setupModelMenuOpen = false;
+  terminalProjectMenuTarget = "";
   setupModelSearch = "";
   render();
 }
@@ -83,6 +88,7 @@ function createTerminalFromModel(key) {
     return;
   }
   newTerminalModelSearch = "";
+  terminalProjectMenuTarget = "";
   createTerminal(model.key, true);
 }
 function normalizeCount(value) {
@@ -107,7 +113,8 @@ function terminalModelMenu(target, selectedKey) {
   const query = target === "setup" ? setupModelSearch : newTerminalModelSearch;
   const groups = filteredTerminalModelGroups(query);
   const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
-  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}"><label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label><div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
+  const projectSelect = target === "new" ? terminalProjectSelect("new") : "";
+  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}">${projectSelect}<label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label><div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
 }
 function renderTerminalModelSearchResults(input) {
   const target = input?.dataset?.terminalModelSearch || "";
@@ -187,8 +194,8 @@ function providerTokenLabelForModel(model) {
   const provider = terminalProviderKeyForModel(model);
   if (provider !== "openai") return "Provider account";
   const account = providerAccounts.openai || {};
-  if (!account.connected) return "OpenAI account";
-  return account.source === "env" ? "OpenAI env" : "OpenAI account";
+  if (!account.connected) return "OpenAI API key";
+  return account.source === "env" ? "OpenAI env" : "OpenAI API key";
 }
 function terminalTokenModeForModel(model, mode) {
   const provider = terminalProviderKeyForModel(model);
@@ -198,18 +205,31 @@ function terminalTokenModeForModel(model, mode) {
 function terminalTokenSourcePanel(model, selectedMode, target) {
   const provider = terminalProviderKeyForModel(model);
   const openai = providerAccounts.openai || {};
+  const codex = providerAccounts.codex || {};
   const supportsProvider = provider === "openai";
   const canUseProvider = supportsProvider && openai.connected;
   const mode = terminalTokenModeForModel(model, selectedMode);
+  const codexLine = supportsProvider ? codexAccountLine(codex) : "";
   const connectedLine = openai.connected
-    ? `<span>${escapeHtml(openai.label || "OpenAI account")}${openai.last4 ? ` · ${escapeHtml(openai.last4)}` : ""}</span><button type="button" data-provider-disconnect ${providerConnectPosting ? "disabled" : ""}>Disconnect</button>`
-    : `<span>OpenAI account not connected</span><button type="button" data-open-provider-connect>${providerConnectOpen ? "Close" : "Connect"}</button>`;
-  const providerTitle = !supportsProvider ? "Provider accounts are available for OpenAI models" : canUseProvider ? "Usage bills your OpenAI account" : "Connect OpenAI before using provider tokens";
-  const billingLine = mode === "provider" && canUseProvider ? `<em class="terminal-provider-notice">Usage bills your OpenAI account.</em>` : "";
-  return `<div class="terminal-token-source"><p>Tokens</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span>Vibyra tokens</span></button><button class="${mode === "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider" ${canUseProvider ? "" : "disabled"} title="${escapeAttribute(providerTitle)}">${icon("lock")}<span>OpenAI account</span></button></div><div class="terminal-provider-row">${connectedLine}</div>${billingLine}${providerConnectOpen ? openAiConnectForm() : ""}${providerConnectNotice ? `<em class="terminal-provider-notice">${escapeHtml(providerConnectNotice)}</em>` : ""}</div>`;
+    ? `<span>${escapeHtml(openai.label || "OpenAI API key")}${openai.last4 ? ` · ${escapeHtml(openai.last4)}` : ""}</span><button type="button" data-provider-disconnect ${providerConnectPosting ? "disabled" : ""}>Disconnect</button>`
+    : `<span>OpenAI API key not connected</span><button type="button" data-open-provider-connect>${providerConnectOpen ? "Close" : "Connect"}</button>`;
+  const providerTitle = !supportsProvider ? "Provider API keys are available for OpenAI models" : canUseProvider ? "Usage bills your OpenAI API account" : "Connect an OpenAI API key before using API-key billing";
+  const billingLine = mode === "provider" && canUseProvider ? `<em class="terminal-provider-notice">Usage bills your OpenAI API account.</em>` : "";
+  return `<div class="terminal-token-source"><p>Tokens</p>${codexLine}<div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span>Vibyra tokens</span></button><button class="${mode === "provider" ? "active" : ""} ${canUseProvider ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider" title="${escapeAttribute(providerTitle)}">${icon("lock")}<span>OpenAI API key</span></button></div><div class="terminal-provider-row">${connectedLine}</div>${billingLine}${providerConnectOpen ? openAiConnectForm() : ""}${providerConnectNotice ? `<em class="terminal-provider-notice">${escapeHtml(providerConnectNotice)}</em>` : ""}</div>`;
 }
+
+function codexAccountLine(codex) {
+  if (!codex.available) {
+    return `<div class="terminal-provider-row"><span>Codex CLI is not installed</span></div>`;
+  }
+  if (codex.connected) {
+    return `<div class="terminal-provider-row"><span>${escapeHtml(codex.label || "ChatGPT via Codex CLI")}</span></div>`;
+  }
+  return `<div class="terminal-provider-row"><span>ChatGPT not signed in for Codex CLI</span></div>`;
+}
+
 function openAiConnectForm() {
-  return `<form class="terminal-provider-form" data-provider-connect-form><label><span>API key</span><input name="apiKey" type="password" autocomplete="off" placeholder="sk-..." required /></label><label><span>Organization</span><input name="organization" autocomplete="off" placeholder="optional" /></label><label><span>Project</span><input name="project" autocomplete="off" placeholder="optional" /></label><button type="submit" ${providerConnectPosting ? "disabled" : ""}>${providerConnectPosting ? "Connecting" : "Connect OpenAI"}</button></form>`;
+  return `<form class="terminal-provider-form" data-provider-connect-form><label><span>API key</span><input name="apiKey" type="password" autocomplete="off" placeholder="sk-..." required /></label><label><span>Organization</span><input name="organization" autocomplete="off" placeholder="optional" /></label><label><span>Project</span><input name="project" autocomplete="off" placeholder="optional" /></label><button type="submit" ${providerConnectPosting ? "disabled" : ""}>${providerConnectPosting ? "Connecting" : "Connect API key"}</button></form>`;
 }
 function modelMetaChip(terminal) {
   const model = terminalModelForDisplay(terminal.model);
@@ -235,7 +255,7 @@ function applyTerminalOpenRouterModels(groups) {
   terminalDynamicModelGroups = nextGroups;
   for (const model of nextGroups.flatMap((group) => group.options)) modelTiers[model.key] = model.tier || modelTiers[model.key] || "balanced";
   if (!modelChoices().some((model) => model.key === setupModel)) setupModel = "auto";
-  if (activePage === "terminals" || openChatMenu === "model") render();
+  if (activePage === "terminals" || openChatMenu === "ai") render();
 }
 
 function normalizeTerminalModelGroup(group) {

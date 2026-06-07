@@ -3,30 +3,39 @@ import assert from "node:assert/strict";
 import { transcribeDesktopVoice } from "./desktopVoice.mjs";
 
 test("desktop voice requires a connected OpenAI credential", async () => {
-  const previous = process.env.OPENAI_API_KEY;
-  delete process.env.OPENAI_API_KEY;
-  try {
-    await assert.rejects(() => transcribeDesktopVoice({ audioBase64: "YXVkaW8=" }), /Connect an OpenAI account/);
-  } finally {
-    if (previous !== undefined) process.env.OPENAI_API_KEY = previous;
-  }
+  await assert.rejects(
+    () => transcribeDesktopVoice({ audioBase64: "YXVkaW8=" }, fetch, null),
+    /Connect an OpenAI account/
+  );
 });
 
 test("desktop voice sends recorded audio to OpenAI transcription", async () => {
-  const previous = process.env.OPENAI_API_KEY;
-  process.env.OPENAI_API_KEY = "sk-test-openai-key-1234567890";
-  try {
-    const result = await transcribeDesktopVoice({ audioBase64: "YXVkaW8=", mimeType: "audio/webm" }, async (url, options) => {
+  const credential = { apiKey: "sk-test-openai-key-1234567890", organization: "", project: "" };
+  const result = await transcribeDesktopVoice(
+    { audioBase64: "YXVkaW8=", mimeType: "audio/webm;codecs=opus" },
+    async (url, options) => {
       assert.equal(String(url), "https://api.openai.com/v1/audio/transcriptions");
       assert.equal(options.headers.Authorization, "Bearer sk-test-openai-key-1234567890");
       assert.equal(options.body.get("model"), "gpt-4o-mini-transcribe");
+      assert.equal(options.body.get("file").type, "audio/webm");
+      assert.equal(options.body.get("file").name, "vibyra-voice.webm");
       return response({ text: "Open the memory panel." });
-    });
-    assert.equal(result.text, "Open the memory panel.");
-  } finally {
-    if (previous === undefined) delete process.env.OPENAI_API_KEY;
-    else process.env.OPENAI_API_KEY = previous;
-  }
+    },
+    credential
+  );
+  assert.equal(result.text, "Open the memory panel.");
+});
+
+test("desktop voice rejects malformed recordings and unsupported formats", async () => {
+  const credential = { apiKey: "sk-test-openai-key-1234567890", organization: "", project: "" };
+  await assert.rejects(
+    () => transcribeDesktopVoice({ audioBase64: "not base64" }, fetch, credential),
+    /recording is invalid/
+  );
+  await assert.rejects(
+    () => transcribeDesktopVoice({ audioBase64: "YXVkaW8=", mimeType: "video/webm" }, fetch, credential),
+    /format is not supported/
+  );
 });
 
 function response(payload, status = 200) {

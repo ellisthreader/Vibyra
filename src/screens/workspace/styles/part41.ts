@@ -81,12 +81,13 @@ export const part41 = {
     minHeight: 58,
     paddingBottom: 10,
     paddingHorizontal: 14,
-    paddingTop: 8
+    paddingTop: 8,
+    position: "relative"
   },
   appModalIconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "transparent",
+    borderColor: "transparent",
     borderRadius: 999,
     borderWidth: 1,
     height: 38,
@@ -96,5 +97,28 @@ export const part41 = {
   appModalTitleStack: {
     flex: 1,
     minWidth: 0
+  },
+  appModalActionMenu: {
+    backgroundColor: "rgba(10, 11, 18, 0.98)",
+    borderColor: "rgba(255, 255, 255, 0.10)",
+    borderRadius: 10,
+    borderWidth: 1,
+    position: "absolute",
+    right: 12,
+    top: 52,
+    zIndex: 30
+  },
+  appModalActionRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 40,
+    minWidth: 124,
+    paddingHorizontal: 12
+  },
+  appModalActionText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800"
   },
 } as const;

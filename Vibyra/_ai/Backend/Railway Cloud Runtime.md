@@ -146,6 +146,26 @@ Implemented backend baseline:
 - `/api/community/projects/{slug}/demo/{path?}` serves only approved successful deployment HTML/files with locked-down headers. `/preview` remains the inert fallback route.
 - Railway config lives in `config/services.php`, but no Railway upload is implemented yet. Do not synthesize a Railway `publicUrl` unless a real provider URL has been resolved.
 
+Current implementation review, 2026-06-06:
+
+- Mobile publishing already asks desktop for `/files/publish-demo-bundle`, sends `previewHtml`, `hostedDemo`, screenshots, source review files, and visibility to `POST /api/projects/publish`.
+- Desktop `publishDemoBundle.mjs` builds a bounded static runtime bundle from a discovered browser entry, follows asset references, excludes private/secret paths, and caps files/bytes. If no built entry exists but a `package.json` `build` script is present, desktop publish capture can install missing Node dependencies once with lifecycle scripts disabled, runs the build with timeouts, and retries static bundle capture; local dev preview working alone still does not make a public Explore demo.
+- Backend stores and serves approved static demo bundles as `static_live` deployments and exposes `hostedDemoUrl`/`publicUrl`/`appUrl` in community payloads.
+- Explore's opened-app page already opens the best available hosted/static/preview URL in `PublicDemoWebView` and shows ready/pending/failed/unavailable hosting status text.
+- Native `AppWebView` uses `react-native-webview`; web uses an iframe. Both can render hosted demos, but the public demo surface still needs iOS device verification, stricter native WebView settings, and App Store review notes before submission.
+- Node runtime MVP is wired: mobile can send a desktop `runtimeBundle` during publish; backend validates it, stores a queued `railway` deployment with source files in `demo_files`, and `vibyra:deploy-runtime-demos` uses `RailwayRuntimeDeploymentService` to upload the queued bundle with Railway CLI, generate/read a Railway domain, and mark it `live` only after a safe HTTPS URL is resolved. This supports Node/Express/Next-style demos first; Laravel/PHP, databases, secrets, persistent storage, and arbitrary full-stack hosting remain planned.
+
+Railway production recovery, 2026-06-06:
+
+- Railway project `spectacular-charisma`, environment `production`, service `Vibyra`, public URL `https://vibyra-production.up.railway.app`.
+- The service must deploy from `ellisthreader/Vibeza` branch `codex/vibyra-mobile-auth` with Railway root directory `/backend`; the stale `ellisthreader/Vibyra` `main` deployment used old backend routes.
+- Production needs a valid Laravel `APP_KEY`; an invalid key causes Laravel to fail before `/health` and Railway returns edge 502.
+- The service domain target port is `8000`, so production must boot Laravel on `PORT=8000` (and `VIBYRA_BACKEND_PORT=8000` for generated connection URLs). A container listening on `8080` can pass internal startup but still return public 502 through the Railway domain.
+- In this project, `railway redeploy --from-source` can fall back to `main`; reconnecting the source with `railway service source connect --service Vibyra --environment production --repo ellisthreader/Vibeza --branch codex/vibyra-mobile-auth` reliably triggers the correct branch build.
+- Validation commands: `curl https://vibyra-production.up.railway.app/health` should return `{"ok":true,...}` and `curl https://vibyra-production.up.railway.app/api/community/projects` should return `{"ok":true,"projects":[],"comments":[]}` when there are no publishes.
+- Runtime demo worker production setup: `backend/nixpacks.toml` installs `nodejs_20` and `@railway/cli`; `backend/railway.json`/`Procfile` start Laravel scheduler in the web container before `php artisan serve`; `routes/console.php` schedules `vibyra:deploy-runtime-demos --limit=1` every minute. Root `.railwayignore` is required when deploying from repo root so Railway can keep service root `/backend` without uploading `node_modules`, `tmp`, `.git`, or backend generated dependency/cache folders.
+- Production variables required on Railway service `Vibyra`: `RAILWAY_API_TOKEN`, `RAILWAY_CLI_PATH`, `RAILWAY_RUNTIME_ENVIRONMENT=production`, and `RAILWAY_RUNTIME_PROJECT_PREFIX=vibyra-demo`. Verify inside the live container with `railway ssh --service Vibyra --environment production php artisan vibyra:deploy-runtime-demos --limit=1`; with no queued demos it should print `No queued runtime demos.`
+
 ## Railway Integration
 
 Backend service should wrap Railway API calls behind a focused service:

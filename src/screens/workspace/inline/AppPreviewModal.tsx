@@ -30,7 +30,9 @@ export function AppPreviewModal({
   const [editDoneMessage, setEditDoneMessage] = useState("");
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [miniChatOpen, setMiniChatOpen] = useState(false);
+  const [miniChatHeight, setMiniChatHeight] = useState(54);
   const [previewErrors, setPreviewErrors] = useState<PreviewRuntimeError[]>([]);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const entrance = useRef(new Animated.Value(0)).current;
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const appCtx = useAppContext();
@@ -44,7 +46,9 @@ export function AppPreviewModal({
     if (!app) return;
     setReloadKey(0);
     setMiniChatOpen(false);
+    setMiniChatHeight(54);
     setPreviewErrors([]);
+    setActionsOpen(false);
     entrance.setValue(0);
     Animated.spring(entrance, {
       toValue: 1,
@@ -100,6 +104,12 @@ export function AppPreviewModal({
     }).start(() => onClose());
   }
 
+  function refreshPreview() {
+    setActionsOpen(false);
+    setPreviewErrors([]);
+    setReloadKey((k) => k + 1);
+  }
+
   async function submitAiPrompt(prompt: string) {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
     setEditDoneMessage(doneMessageForPrompt(prompt));
@@ -122,7 +132,7 @@ export function AppPreviewModal({
   }
 
   const previewBottomOffset = 18 + keyboardInset;
-  const errorBottomOffset = keyboardInset + (miniChatOpen ? 168 : 88);
+  const errorBottomOffset = previewBottomOffset + (miniChatOpen ? miniChatHeight - 1 : 62);
   const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [-Math.min(height, 920), 0] });
   const opacity = entrance.interpolate({ inputRange: [0, 0.22, 1], outputRange: [0, 0.98, 1] });
   const scale = entrance.interpolate({ inputRange: [0, 1], outputRange: [0.985, 1] });
@@ -130,18 +140,25 @@ export function AppPreviewModal({
   return (
     <Modal animationType="none" presentationStyle="overFullScreen" transparent visible onRequestClose={closePreview}>
       <View style={styles.appModalBackdrop}>
-        <Animated.View style={[styles.appModalScreen, { paddingTop: insets.top, opacity, transform: [{ translateY }, { scale }] }]}>
+        <Animated.View style={[styles.appModalScreen, { paddingTop: Math.max(insets.top, 60), opacity, transform: [{ translateY }, { scale }] }]}>
         <View style={styles.appModalHeader}>
           <Pressable onPress={closePreview} style={styles.appModalIconButton}>
             <Ionicons name="close" color={headerIconColor} size={22} />
           </Pressable>
           <View style={styles.appModalTitleStack}>
-            <Text style={styles.appModalLabel}>App preview</Text>
             <Text numberOfLines={1} style={styles.appModalTitle}>{previewApp.title}</Text>
           </View>
-          <Pressable onPress={() => { setPreviewErrors([]); setReloadKey((k) => k + 1); }} style={styles.appModalIconButton}>
-            <Ionicons name="refresh" color={headerIconColor} size={20} />
+          <Pressable onPress={() => setActionsOpen((open) => !open)} style={styles.appModalIconButton}>
+            <Ionicons name="ellipsis-horizontal" color={headerIconColor} size={21} />
           </Pressable>
+          {actionsOpen ? (
+            <View style={styles.appModalActionMenu}>
+              <Pressable onPress={refreshPreview} style={styles.appModalActionRow}>
+                <Ionicons name="refresh" color={headerIconColor} size={17} />
+                <Text style={styles.appModalActionText}>Refresh</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
         <View style={styles.appModalWebContainer}>
           <AppWebView html={previewApp.html} onPreviewError={handlePreviewError} url={previewApp.url} reloadKey={reloadKey} style={styles.appModalWebView} />
@@ -149,6 +166,7 @@ export function AppPreviewModal({
           {latestError ? (
             <PreviewErrorPanel
               bottomOffset={errorBottomOffset}
+              connectedToChat={miniChatOpen}
               errors={previewErrors}
               onAskAi={askAiToFix}
               onDismiss={() => setPreviewErrors([])}
@@ -158,6 +176,8 @@ export function AppPreviewModal({
             agentRequesting={appCtx.agentRequesting}
             app={previewApp}
             bottomOffset={previewBottomOffset}
+            connectedAbove={Boolean(latestError)}
+            onHeightChange={setMiniChatHeight}
             onOpenChange={setMiniChatOpen}
             onSubmit={submitAiPrompt}
           />

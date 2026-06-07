@@ -1,0 +1,160 @@
+body,
+body[data-desktop-theme="dark"] {
+  --terminal-bg: #07070a;
+  --terminal-surface: #12121a;
+  --terminal-elevated: #0d0d12;
+  --terminal-hover: rgba(255, 255, 255, 0.045);
+  --terminal-border: rgba(255, 255, 255, 0.06);
+  --terminal-border-strong: rgba(255, 255, 255, 0.09);
+  --terminal-text: #ffffff;
+  --terminal-copy: #cdc6dc;
+  --terminal-muted: #b8b8c8;
+  --terminal-dim: #7a7a8c;
+  --terminal-accent: #8b5cff;
+  --terminal-accent-soft: rgba(109, 59, 255, 0.18);
+  --terminal-accent-border: rgba(139, 92, 255, 0.36);
+  --terminal-shadow: rgba(0, 0, 0, 0.42);
+  --terminal-disabled: rgba(247, 244, 255, 0.46);
+  --terminal-danger: #ff9aad;
+  --terminal-active-muted: #bdb3df;
+  --terminal-scroll-thumb: rgba(151, 161, 190, 0.28);
+  --terminal-status-idle: #6e687a;
+  --terminal-status-running: #37d67a;
+  --terminal-status-running-ring: rgba(55, 214, 122, 0.09);
+  --terminal-status-success: #37d67a;
+  --terminal-status-error: #ff5d7a;
+  --terminal-status-stopped: #8d8799;
+  --terminal-status-unavailable: #ffb347;
+  --terminal-warning-bg: rgba(255, 183, 77, 0.08);
+  --terminal-warning-border: rgba(255, 192, 97, 0.14);
+  --terminal-phone-frame: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
+  --terminal-phone-border: #3d4049;
+  --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+  --terminal-phone-screen: #05060a;
+  --terminal-phone-camera: #000;
+  --terminal-ansi-black: #24242d;
+  --terminal-ansi-red: #ff6b81;
+  --terminal-ansi-green: #55d98b;
+  --terminal-ansi-yellow: #e7c65f;
+  --terminal-ansi-blue: #6aa8ff;
+  --terminal-ansi-magenta: #bd8cff;
+  --terminal-ansi-cyan: #69d6c7;
+  --terminal-ansi-white: #ddd8e8;
+  --terminal-ansi-bright-black: #7a7a8c;
+  --terminal-ansi-bright-red: #ff9aad;
+  --terminal-ansi-bright-green: #86e7aa;
+  --terminal-ansi-bright-yellow: #f3db83;
+  --terminal-ansi-bright-blue: #9bc2ff;
+  --terminal-ansi-bright-magenta: #d5b4ff;
+  --terminal-ansi-bright-cyan: #9be7dc;
+  --terminal-ansi-bright-white: #ffffff;
+}
+
+body[data-desktop-theme="light"] {
+  --terminal-bg: #f7f8fb;
+  --terminal-surface: #ffffff;
+  --terminal-elevated: #ffffff;
+  --terminal-hover: rgba(24, 31, 44, 0.055);
+  --terminal-border: rgba(33, 42, 60, 0.12);
+  --terminal-border-strong: rgba(33, 42, 60, 0.18);
+  --terminal-text: #171923;
+  --terminal-copy: #303646;
+  --terminal-muted: #555e70;
+  --terminal-dim: #6e7686;
+  --terminal-accent: #6842d8;
+  --terminal-accent-soft: rgba(109, 59, 255, 0.09);
+  --terminal-accent-border: rgba(109, 59, 255, 0.24);
+  --terminal-shadow: rgba(29, 36, 54, 0.14);
+  --terminal-status-success: #1f8f57;
+  --terminal-status-error: #c62d50;
+  --terminal-status-stopped: #727b8b;
+  --terminal-status-unavailable: #a76400;
+  --terminal-warning-bg: rgba(174, 111, 0, 0.08);
+  --terminal-warning-border: rgba(174, 111, 0, 0.18);
+  --terminal-ansi-black: #222631;
+  --terminal-ansi-red: #b42350;
+  --terminal-ansi-green: #167a4b;
+  --terminal-ansi-yellow: #8a6500;
+  --terminal-ansi-blue: #245fbd;
+  --terminal-ansi-magenta: #7a3eb1;
+  --terminal-ansi-cyan: #16766d;
+  --terminal-ansi-white: #5c6474;
+  --terminal-ansi-bright-black: #687183;
+  --terminal-ansi-bright-red: #d53b60;
+  --terminal-ansi-bright-green: #208d59;
+  --terminal-ansi-bright-yellow: #9b7300;
+  --terminal-ansi-bright-blue: #326fce;
+  --terminal-ansi-bright-magenta: #8e4bc4;
+  --terminal-ansi-bright-cyan: #21877d;
+  --terminal-ansi-bright-white: #171923;
+}
+body[data-desktop-theme="light"] .terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.13); --terminal-accent-border: rgba(255, 155, 106, 0.28); }
+body[data-desktop-theme="light"] .terminal-provider-openai { --terminal-accent: #16836f; --terminal-accent-soft: rgba(22, 131, 111, 0.1); --terminal-accent-border: rgba(22, 131, 111, 0.24); }
+body[data-desktop-theme="light"] .terminal-provider-gemini { --terminal-accent: #246edb; --terminal-accent-soft: rgba(36, 110, 219, 0.1); --terminal-accent-border: rgba(36, 110, 219, 0.24); }
+body[data-desktop-theme="light"] .terminal-provider-auto { --terminal-accent: #6842d8; --terminal-accent-soft: rgba(109, 59, 255, 0.1); --terminal-accent-border: rgba(109, 59, 255, 0.24); }
+
+body[data-desktop-theme="light"] .terminal-banner-art.provider-openai { color: #16836f; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-claude { color: #ff9b6a; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-gemini { color: #246edb; }
+body[data-desktop-theme="light"] .terminal-banner-art.provider-auto { color: #6842d8; }
+body[data-desktop-theme="light"] .terminal-inline-command { color: #1d6fa7; }
+body[data-desktop-theme="light"] .terminal-inline-mention { color: #315fc1; }
+body[data-desktop-theme="light"] .terminal-inline-shell,
+body[data-desktop-theme="light"] .terminal-banner-box { color: #16764e; }
+body[data-desktop-theme="light"] .terminal-settings-menu option,
+body[data-desktop-theme="light"] .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
+
+@media (prefers-color-scheme: light) {
+  body:not([data-desktop-theme="dark"]) {
+    --terminal-bg: #f7f8fb;
+    --terminal-surface: #ffffff;
+    --terminal-elevated: #ffffff;
+    --terminal-hover: rgba(24, 31, 44, 0.055);
+    --terminal-border: rgba(33, 42, 60, 0.12);
+    --terminal-border-strong: rgba(33, 42, 60, 0.18);
+    --terminal-text: #171923;
+    --terminal-copy: #303646;
+    --terminal-muted: #555e70;
+    --terminal-dim: #6e7686;
+    --terminal-accent: #6842d8;
+    --terminal-accent-soft: rgba(109, 59, 255, 0.09);
+    --terminal-accent-border: rgba(109, 59, 255, 0.24);
+    --terminal-shadow: rgba(29, 36, 54, 0.14);
+    --terminal-status-success: #1f8f57;
+    --terminal-status-error: #c62d50;
+    --terminal-status-stopped: #727b8b;
+    --terminal-status-unavailable: #a76400;
+    --terminal-warning-bg: rgba(174, 111, 0, 0.08);
+    --terminal-warning-border: rgba(174, 111, 0, 0.18);
+    --terminal-ansi-black: #222631;
+    --terminal-ansi-red: #b42350;
+    --terminal-ansi-green: #167a4b;
+    --terminal-ansi-yellow: #8a6500;
+    --terminal-ansi-blue: #245fbd;
+    --terminal-ansi-magenta: #7a3eb1;
+    --terminal-ansi-cyan: #16766d;
+    --terminal-ansi-white: #5c6474;
+    --terminal-ansi-bright-black: #687183;
+    --terminal-ansi-bright-red: #d53b60;
+    --terminal-ansi-bright-green: #208d59;
+    --terminal-ansi-bright-yellow: #9b7300;
+    --terminal-ansi-bright-blue: #326fce;
+    --terminal-ansi-bright-magenta: #8e4bc4;
+    --terminal-ansi-bright-cyan: #21877d;
+    --terminal-ansi-bright-white: #171923;
+  }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.13); --terminal-accent-border: rgba(255, 155, 106, 0.28); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-openai { --terminal-accent: #16836f; --terminal-accent-soft: rgba(22, 131, 111, 0.1); --terminal-accent-border: rgba(22, 131, 111, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-gemini { --terminal-accent: #246edb; --terminal-accent-soft: rgba(36, 110, 219, 0.1); --terminal-accent-border: rgba(36, 110, 219, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-provider-auto { --terminal-accent: #6842d8; --terminal-accent-soft: rgba(109, 59, 255, 0.1); --terminal-accent-border: rgba(109, 59, 255, 0.24); }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-openai { color: #16836f; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-claude { color: #ff9b6a; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-gemini { color: #246edb; }
+  body:not([data-desktop-theme="dark"]) .terminal-banner-art.provider-auto { color: #6842d8; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-command { color: #1d6fa7; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-mention { color: #315fc1; }
+  body:not([data-desktop-theme="dark"]) .terminal-inline-shell,
+  body:not([data-desktop-theme="dark"]) .terminal-banner-box { color: #16764e; }
+  body:not([data-desktop-theme="dark"]) .terminal-settings-menu option,
+  body:not([data-desktop-theme="dark"]) .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
+}

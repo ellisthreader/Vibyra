@@ -16,6 +16,16 @@ async function sendChat() {
   const text = skill ? skillText : rawText;
   if (!text && !skill) return;
   if (!skill && (text === "/clear" || text === "/new")) { startNewChat(); return; }
+  if (!skill && text === "/phone") {
+    chatMessages.push({ role: "user", text }, { role: "assistant", text: "Opened Phone Preview in AI terminals." });
+    chatDraft = "";
+    localStorage.removeItem("vibyra.desktop.chatDraft");
+    input.value = "";
+    saveActiveChat(text);
+    if (typeof openTerminalPhonePanel === "function") openTerminalPhonePanel("chat");
+    else setPage("terminals");
+    return;
+  }
   if (!skill && text === "/help") {
     chatMessages.push({ role: "user", text }, { role: "assistant", text: chatHelpText() });
     chatDraft = "";
@@ -77,6 +87,9 @@ async function sendChat() {
     pendingMessage.app = normalizeChatApp(result.app);
     pendingMessage.pending = false;
     updateActiveChatTitle(result.title, rawText);
+    if (typeof runDesktopActions === "function" && Array.isArray(result.actions) && result.actions.length) {
+      pendingMessage.text = await runDesktopActions(result.actions) || pendingMessage.text;
+    }
   } catch (error) {
     if (isChatUsageLimitError(error)) {
       const pendingIndex = chatMessages.indexOf(pendingMessage);
@@ -121,9 +134,9 @@ function humanChatLimitMessage(message) {
 }
 function chatHelpText() {
   return [
-    "Commands: /help, /clear, /new, /open.",
+    "Commands: /help, /clear, /new, /open, /phone, /voice, /memory.",
     "Skills: /plan, /debug, /review, /explain, /fix, /refactor.",
-    "Use the paperclip menu to attach local files or folder context."
+    "Ask Vibyra to launch AI terminals with a count, model, effort, and explicit permissions."
   ].join("\n");
 }
 function displayChatText(rawText, skill, tool) {

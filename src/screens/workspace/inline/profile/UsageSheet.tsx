@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
@@ -13,6 +14,10 @@ const COLLAPSED_HISTORY_COUNT = 3;
 export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; onClose: () => void; onUpgrade: () => void }) {
   const app = useAppContext();
   const prefs = usePreferences();
+  const insets = useSafeAreaInsets();
+  // Modals render outside the app SafeAreaProvider, so insets.top can come back as 0.
+  // Floor the header padding so it always clears the iPhone camera / Dynamic Island.
+  const headerPaddingTop = Math.max(insets.top + 8, 60);
   const primaryIconColor = useThemedColor("#C259FF");
   const emptyIconColor = useThemedColor("#7D6A96");
   const [projectsExpanded, setProjectsExpanded] = useState(false);
@@ -63,7 +68,7 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
   return (
     <Modal animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
       <View style={styles.billingScreen}>
-        <View style={styles.billingHeader}>
+        <View style={[styles.billingHeader, { paddingTop: headerPaddingTop }]}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
             <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#0A0814" : "#FFFFFF"} size={24} />
           </Pressable>

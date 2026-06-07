@@ -1,142 +1,195 @@
-import { Platform, StyleSheet } from "react-native";
 import { colors } from "../../../styles/theme";
-import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 
 export const part32 = {
-  runningProjectsEmptyText: {
-    color: "#B8B4C4",
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 23,
-    textAlign: "center"
-  },
-  runningProjectsEmptyTitle: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: "900",
-    letterSpacing: 0,
-    lineHeight: 30,
-    textAlign: "center"
-  },
-  runningProjectsList: {
-    gap: 12
-  },
-  runningProjectsScroll: {
-    maxHeight: 430
-  },
-  runningProjectsScrollContent: {
-    gap: 12,
-    paddingBottom: 2
-  },
   runningProjectsPanel: {
+    flex: 1,
     gap: 14
   },
   runningProjectsPanelEmpty: {
-    flex: 1,
     justifyContent: "center",
-    paddingBottom: 96
+    paddingBottom: 80
   },
-  runningProjectTask: {
-    color: "#B8B4C4",
-    fontSize: 14,
-    fontWeight: "700",
-    lineHeight: 18,
-    marginTop: 3
+  buildSection: {
+    gap: 10,
+    marginTop: 2
   },
-  runningProjectTop: {
-    alignItems: "flex-start",
+  buildSectionHeader: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: 12
+    justifyContent: "space-between"
   },
-  homeQueueStats: {
-    flexDirection: "row",
-    gap: 10
-  },
-  homeQueueStat: {
-    backgroundColor: "rgba(7, 10, 20, 0.82)",
-    borderColor: "rgba(118, 74, 202, 0.36)",
-    borderRadius: 16,
-    borderWidth: 1,
-    flex: 1,
-    minHeight: 74,
-    paddingHorizontal: 16,
-    paddingVertical: 12
-  },
-  homeQueueStatValue: {
-    color: "#D18BFF",
-    fontSize: 34,
-    fontWeight: "900",
-    lineHeight: 38
-  },
-  homeQueueStatValueQueued: {
-    color: "#8CC8FF"
-  },
-  homeQueueStatLabel: {
-    color: "#A855FF",
+  buildSectionTitle: {
+    color: colors.dim,
     fontSize: 12,
-    fontWeight: "900",
-    lineHeight: 16,
-    marginTop: 2,
+    fontWeight: "800",
+    letterSpacing: 0.6,
     textTransform: "uppercase"
   },
-  homeQueueStatLabelQueued: {
-    color: "#4CA3FF"
-  },
-  homeQueueSection: {
-    gap: 10
-  },
-  homeQueueSectionTitle: {
-    color: "#AAA7B7",
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 19
-  },
-  runningProjectMetaRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 7,
-    marginTop: 8
-  },
-  runningProjectMetaDot: {
-    backgroundColor: "#A855FF",
-    borderRadius: 999,
-    height: 8,
-    width: 8
-  },
-  runningProjectMetaDotQueued: {
-    backgroundColor: "#4CA3FF"
-  },
-  runningProjectMetaText: {
-    color: "#A855FF",
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 17
-  },
-  runningProjectMetaTextQueued: {
-    color: "#4CA3FF"
-  },
-  runningProjectMetaSep: {
-    color: "#7C798A",
-    fontSize: 13,
+  buildSectionCount: {
+    color: colors.muted,
+    fontSize: 12,
     fontWeight: "900"
   },
-  runningProjectMetaMuted: {
-    color: "#AAA7B7",
-    flexShrink: 1,
-    fontSize: 13,
-    fontWeight: "700",
-    lineHeight: 17
+  buildList: {
+    gap: 8,
+    paddingBottom: 2
   },
-  runningProjectBottom: {
+  buildMoreText: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: "800",
+    paddingHorizontal: 2,
+    paddingTop: 2
+  },
+  buildRow: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderColor: "rgba(139, 92, 255, 0.24)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 13,
+    minHeight: 84,
+    overflow: "hidden",
+    padding: 14
+  },
+  buildRowQueued: {
+    borderColor: colors.border
+  },
+  buildRowComplete: {
+    backgroundColor: colors.surface,
+    borderColor: "rgba(55, 214, 122, 0.34)"
+  },
+  buildRowPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }]
+  },
+  buildRowFlyLayer: {
+    zIndex: 20
+  },
+  buildSuccessEdge: {
+    borderColor: colors.success,
+    borderRadius: 10,
+    borderWidth: 2,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0
+  },
+  buildRowIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(139, 92, 255, 0.16)",
+    borderColor: "rgba(139, 92, 255, 0.24)",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    position: "relative",
+    width: 42
+  },
+  buildRowIconQueued: {
+    backgroundColor: colors.infoSoft,
+    borderColor: "rgba(76, 163, 255, 0.24)"
+  },
+  buildRowIconComplete: {
+    backgroundColor: colors.successSoft,
+    borderColor: "rgba(55, 214, 122, 0.3)"
+  },
+  buildRowLiveDot: {
+    backgroundColor: colors.success,
+    borderColor: colors.surface,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 9,
+    position: "absolute",
+    right: 6,
+    top: 6,
+    width: 9
+  },
+  buildRowLiveDotQueued: {
+    backgroundColor: colors.info
+  },
+  buildRowLiveDotComplete: {
+    backgroundColor: colors.success
+  },
+  buildRowCopy: {
+    flex: 1,
+    minWidth: 0
+  },
+  buildRowTitleLine: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12,
-    marginTop: 12
+    gap: 8
   },
-  runningProjectPercent: {
-    color: "#A855FF",
+  buildRowName: {
+    color: colors.text,
+    flex: 1,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
     lineHeight: 19
+  },
+  buildRowMeta: {
+    color: colors.dim,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 17,
+    marginTop: 4
+  },
+  buildActivityStrip: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 9
+  },
+  buildActivityBlock: {
+    backgroundColor: "rgba(139, 92, 255, 0.72)",
+    borderRadius: 999,
+    height: 4,
+    width: 18
+  },
+  buildActivityBlockWide: {
+    width: 34
+  },
+  buildRowAside: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
+  buildStatusPill: {
+    alignItems: "center",
+    backgroundColor: colors.accentSoft,
+    borderRadius: 999,
+    justifyContent: "center",
+    minHeight: 22,
+    paddingHorizontal: 8,
+    paddingVertical: 0
+  },
+  buildStatusPillQueued: {
+    backgroundColor: colors.infoSoft
+  },
+  buildStatusPillComplete: {
+    backgroundColor: colors.successSoft
+  },
+  buildStatusText: {
+    color: "#CDBDFF",
+    fontSize: 10,
+    fontWeight: "900",
+    lineHeight: 12,
+    textAlign: "center"
+  },
+  buildStatusTextQueued: {
+    color: "#8CC8FF"
+  },
+  buildStatusTextComplete: {
+    color: "#8EF0B2"
+  },
+  buildTimerText: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  buildTimerTextComplete: {
+    color: "#8EF0B2"
   },
 } as const;

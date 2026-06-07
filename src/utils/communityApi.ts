@@ -1,6 +1,7 @@
 import { CommunityComment, CommunityPost } from "../screens/workspace/types";
 import { appApiRequest, getAppApiUrl } from "./appApi";
-import type { HostedDemoPayload } from "./hostedDemo";
+import type { HostedDemoPayload, HostedRuntimePayload } from "./hostedDemo";
+import { sanitizePublicDemoUrl } from "./publicDemoUrls";
 
 export type CommunityProjectsResponse = {
   ok: boolean;
@@ -27,22 +28,32 @@ export type PublishProjectResponse = {
 export type PublishProjectVisibility = "public" | "unlisted" | "private";
 export type ProjectPublishStatus = {
   appUrl?: string;
+  backendPlatform?: string | null;
+  backendStatus?: string | null;
   deploymentStatus?: string | null;
+  description?: string;
+  frontendStatus?: string | null;
   hostingMode?: string | null;
+  id?: string;
   isPublic?: boolean;
   project?: CommunityPost;
   hostedDemoMessage?: string | null;
   hostedDemoStatus?: string | null;
   hostedDemoUrl?: string | null;
+  logoImageUrl?: string | null;
+  publicUrl?: string | null;
   reviewReason?: string | null;
   reviewSummary?: string | null;
   reviewStatus?: string;
   safetyRating?: string;
   safetyScore?: number;
   safetyFindings?: unknown[];
+  screenshotUrls?: string[];
   sourceProjectId: string;
+  tags?: string[];
   title?: string;
   updatedAt?: string | null;
+  viewerCanManage?: boolean;
   visibility?: PublishProjectVisibility;
 };
 export type PublishProjectOutcome = "published" | "under_review" | "private" | "unlisted";
@@ -88,17 +99,19 @@ export type GeneratedPublishAssetResponse = {
 };
 
 export function normalizeCommunityPost(post: CommunityPost): CommunityPost {
-  const demoUrl = post.hostedDemoUrl || post.previewUrl || post.publicUrl;
-  const appUrl = post.appUrl || demoUrl || "";
+  const hostedDemoUrl = sanitizePublicDemoUrl(absoluteApiUrl(post.hostedDemoUrl || ""));
+  const previewUrl = sanitizePublicDemoUrl(absoluteApiUrl(post.previewUrl || ""));
+  const publicUrl = sanitizePublicDemoUrl(absoluteApiUrl(post.publicUrl || ""));
+  const appUrl = sanitizePublicDemoUrl(absoluteApiUrl(post.appUrl || "")) || hostedDemoUrl || previewUrl || publicUrl || "";
   return {
     ...post,
-    appUrl: absoluteApiUrl(appUrl),
+    appUrl,
     accent: post.accent || "#8B35FF",
     hostedDemoStatus: post.hostedDemoStatus ?? post.deploymentStatus,
     hostedDemoMessage: post.hostedDemoMessage,
-    hostedDemoUrl: demoUrl ? absoluteApiUrl(demoUrl) : demoUrl,
-    previewUrl: post.previewUrl ? absoluteApiUrl(post.previewUrl) : post.previewUrl,
-    publicUrl: post.publicUrl ? absoluteApiUrl(post.publicUrl) : post.publicUrl,
+    hostedDemoUrl,
+    previewUrl,
+    publicUrl,
     logo: post.logo || "default",
     logoImageUrl: post.logoImageUrl ? absoluteApiUrl(post.logoImageUrl) : post.logoImageUrl,
     preview: post.preview || "analytics",
@@ -108,8 +121,8 @@ export function normalizeCommunityPost(post: CommunityPost): CommunityPost {
   };
 }
 
-export async function fetchCommunityProjects() {
-  const result = await appApiRequest<CommunityProjectsResponse>("/api/community/projects");
+export async function fetchCommunityProjects(authToken?: string | null) {
+  const result = await appApiRequest<CommunityProjectsResponse>("/api/community/projects", {}, authToken || undefined);
   return {
     posts: (result.projects ?? []).map(normalizeCommunityPost),
     comments: result.comments ?? {}
@@ -128,6 +141,7 @@ export async function publishProject(payload: {
   logoImageUrl?: string;
   previewHtml: string;
   projectId: string;
+  runtimeBundle?: HostedRuntimePayload | null;
   screenshotUrls?: string[];
   sourceFiles?: PublishProjectSourceFile[];
   sourceReview?: { totalFiles?: number; truncated?: boolean };
@@ -159,6 +173,27 @@ export async function publishProject(payload: {
     safetyFindings: result.safetyFindings,
     visibility
   };
+}
+
+export async function updatePublishedProjectVisibility(authToken: string, slug: string, visibility: PublishProjectVisibility) {
+  const result = await appApiRequest<PublishProjectResponse>(
+    `/api/projects/${encodeURIComponent(slug)}/publish`,
+    { method: "PATCH", body: JSON.stringify({ visibility }) },
+    authToken
+  );
+  return {
+    ...result,
+    project: normalizeCommunityPost(result.project),
+    publishStatus: normalizePublishStatus(result.publishStatus)
+  };
+}
+
+export async function deletePublishedProject(authToken: string, slug: string) {
+  return appApiRequest<{ ok: boolean; deleted: boolean; slug: string; sourceProjectId?: string }>(
+    `/api/projects/${encodeURIComponent(slug)}/publish`,
+    { method: "DELETE" },
+    authToken
+  );
 }
 
 export type PublishProjectSourceFile = {
@@ -210,14 +245,37 @@ function normalizePublishStatus(status?: ProjectPublishStatus) {
   if (!status) return undefined;
   return {
     ...status,
-    hostedDemoUrl: status.hostedDemoUrl ? absoluteApiUrl(status.hostedDemoUrl) : status.hostedDemoUrl,
+    appUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.appUrl || "")),
+    hostedDemoUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.hostedDemoUrl || "")),
+    logoImageUrl: status.logoImageUrl ? absoluteApiUrl(status.logoImageUrl) : status.logoImageUrl,
+    publicUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.publicUrl || "")),
+    screenshotUrls: status.screenshotUrls?.map(absoluteApiUrl) ?? [],
     project: status.project ? normalizeCommunityPost(status.project) : status.project
   };
 }
 
 function absoluteApiUrl(url: string) {
-  if (!url || /^https?:\/\//i.test(url)) return url;
-  return `${getAppApiUrl()}${url.startsWith("/") ? url : `/${url}`}`;
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return safePublicUrl(url);
+  return safePublicUrl(`${getAppApiUrl()}${url.startsWith("/") ? url : `/${url}`}`);
+}
+
+function safePublicUrl(url: string) {
+  if (!url || !isPrivateNetworkUrl(url)) return url;
+  return isPrivateNetworkUrl(getAppApiUrl()) ? url : "";
+}
+
+function isPrivateNetworkUrl(url: string) {
+  let host = "";
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (host === "localhost" || host.endsWith(".local")) return true;
+  if (/^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host)) return true;
+  const match = host.match(/^172\.(\d{1,2})\./);
+  return Boolean(match && Number(match[1]) >= 16 && Number(match[1]) <= 31);
 }
 
 function publishOutcome(visibility: PublishProjectVisibility, result: PublishProjectResponse): PublishProjectOutcome {

@@ -53,6 +53,22 @@ export const welcome6 = {
     paddingHorizontal: 12,
     textAlign: "center" as const
   },
+  setupDownloadLink: {
+    color: "#C8A8FF",
+    fontSize: 13,
+    fontWeight: "800" as const,
+    lineHeight: 18,
+    marginTop: 10,
+    textAlign: "center" as const,
+    textDecorationColor: "rgba(200, 168, 255, 0.42)" as const,
+    textDecorationLine: "underline" as const
+  },
+  setupConfirmBlock: {
+    alignItems: "center" as const,
+    alignSelf: "stretch" as const,
+    gap: 12,
+    marginTop: 4
+  },
   setupScanHelp: {
     alignSelf: "center" as const,
     backgroundColor: "rgba(26, 17, 52, 0.72)",

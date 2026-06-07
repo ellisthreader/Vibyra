@@ -60,10 +60,19 @@ function normalizeReference(value, fromPath, mountDirectory) {
   const raw = String(value ?? "").trim();
   if (!raw || /^(?:https?:|\/\/|data:|blob:|mailto:|tel:|javascript:|#)/i.test(raw)) return "";
   const clean = decodePath(raw.split("#")[0].split("?")[0]);
-  if (!referencedExtensions.has(extname(clean).toLowerCase()) && !looksPrivateReference(clean)) return "";
+  const unsupportedExtension = !referencedExtensions.has(extname(clean).toLowerCase());
+  if (unsupportedExtension) {
+    if (isGeneratedBuildSourceReference(clean)) return "";
+    if (!looksPrivateReference(clean)) return "";
+  }
   const base = clean.startsWith("/") ? mountDirectory : dirname(fromPath);
   const normalized = posix.normalize(posix.join(base || "", clean.replace(/^\/+/, "")));
+  if (unsupportedExtension && isGeneratedBuildSourceReference(normalized)) return "";
   return normalized.startsWith("../") || normalized === ".." ? "" : normalized;
+}
+
+function isGeneratedBuildSourceReference(path) {
+  return /^(?:\/)?build\/assets\//i.test(path);
 }
 
 function decodePath(value) {

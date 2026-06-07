@@ -69,8 +69,12 @@ return [
 
     'railway' => [
         'api_token' => env('RAILWAY_API_TOKEN'),
-        'team_id' => env('RAILWAY_TEAM_ID'),
+        'cli_path' => env('RAILWAY_CLI_PATH', 'railway'),
+        'team_id' => env('RAILWAY_WORKSPACE_ID', env('RAILWAY_TEAM_ID')),
         'default_region' => env('RAILWAY_DEFAULT_REGION'),
+        'runtime_environment' => env('RAILWAY_RUNTIME_ENVIRONMENT', 'production'),
+        'runtime_project_prefix' => env('RAILWAY_RUNTIME_PROJECT_PREFIX', 'vibyra-demo'),
+        'runtime_ready_timeout' => env('RAILWAY_RUNTIME_READY_TIMEOUT', 180),
         'max_active_demos_per_user' => env('RAILWAY_MAX_ACTIVE_DEMOS_PER_USER', 1),
     ],
 

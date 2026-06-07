@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchCommunityProjects, likeCommunityProject, postCommunityComment, unlikeCommunityProject } from "../../../utils/communityApi";
+import { deletePublishedProject, fetchCommunityProjects, likeCommunityProject, postCommunityComment, unlikeCommunityProject, updatePublishedProjectVisibility } from "../../../utils/communityApi";
 import { communityPosts, isSampleCommunityPostId } from "../data/community";
 import { loadCommunityComments, loadCommunityCommentsAsync, saveCommunityComments } from "../inline";
 import { CommunityComment, CommunityFilter, CommunityPost } from "../types";
@@ -64,7 +64,7 @@ export function useCommunityPage(
     let cancelled = false;
     if (showLoading) setFeedLoading(true);
     setFeedError("");
-    fetchCommunityProjects()
+    fetchCommunityProjects(authToken)
       .then(({ comments, posts }) => {
         if (cancelled) return;
         setPosts(posts.length > 0 ? posts : communityPosts);
@@ -79,7 +79,7 @@ export function useCommunityPage(
       })
       .finally(() => { if (!cancelled && showLoading) setFeedLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [authToken]);
 
   useEffect(() => loadCommunityFeed(false), [loadCommunityFeed]);
 
@@ -144,6 +144,23 @@ export function useCommunityPage(
     onOpenAppCb(id);
   }, [onLevelActivity, onOpenAppCb]);
 
+  const makePrivate = useCallback(async (post: CommunityPost) => {
+    if (!authToken || !post.viewerCanManage) return;
+    await updatePublishedProjectVisibility(authToken, post.id, "private");
+    setPosts((items) => items.filter((item) => item.id !== post.id));
+  }, [authToken]);
+
+  const deleteOwnedPost = useCallback(async (post: CommunityPost) => {
+    if (!authToken || !post.viewerCanManage) return;
+    await deletePublishedProject(authToken, post.id);
+    setPosts((items) => items.filter((item) => item.id !== post.id));
+    setCommentsByPostId((current) => {
+      const next = { ...current };
+      delete next[post.id];
+      return next;
+    });
+  }, [authToken]);
+
   const addComment = useCallback(async (postId: string) => {
     const text = (commentDraftsByPostId[postId] ?? "").trim();
     if (!text) return;
@@ -182,6 +199,6 @@ export function useCommunityPage(
     commentDraftsByPostId, commentErrorsByPostId, commentsByPostId, commentPostingByPostId,
     feedError, feedLoading, reloadCommunityFeed: () => loadCommunityFeed(true),
     searchQuery, setSearchQuery,
-    filteredPosts, toggleBookmark, toggleLike, openApp, addComment, setCommentDraft
+    filteredPosts, toggleBookmark, toggleLike, openApp, makePrivate, deleteOwnedPost, addComment, setCommentDraft
   };
 }

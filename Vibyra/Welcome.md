@@ -7,6 +7,7 @@ Start here when using Obsidian as project memory for Vibyra.
 - [[_ai/Memory Protocol|Memory Protocol]]
 - [[_ai/Context Map|Context Map]]
 - [[_ai/Project Context|Project Context]]
+- [[_ai/Memory And Skills Optimization|Memory And Skills Optimization]]
 - [[_ai/Vibyra App Memory|Vibyra App Memory]]
 - [[_ai/Vibyra Desktop Memory|Vibyra Desktop Memory]]
 - [[_ai/Vibyra Backend Memory|Vibyra Backend Memory]]

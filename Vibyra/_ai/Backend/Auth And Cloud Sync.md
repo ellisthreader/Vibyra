@@ -42,6 +42,19 @@ by `updatedAt` so stale full-state mobile sync cannot erase newer desktop
 memory. The canonical limits remain eight entries per project and 220
 characters per entry; `brief` entries cannot be deleted.
 
+Full Markdown memory is backend-owned in `project_memory_vaults` and
+`project_memory_nodes`, separate from legacy `app_state`. Authenticated vault
+routes provide flat folder/document nodes through `GET .../vault`, node
+`POST`/`PATCH`/`DELETE`, and normalized Markdown manifests through
+`POST .../imports`; imports never accept local filesystem paths. Node updates
+support version checks, non-empty folder deletion requires `recursive`, and
+imports enforce relative `.md` paths plus file/count/size limits. Start in
+`ProjectMemoryEndpoints.php` and `App\Services\ProjectMemory\`.
+
+`POST /api/session/state` merges incoming `appState` over existing keys rather
+than replacing the entire object, so older clients preserve fields they do not
+send. The eight-entry compatibility projection always retains brief entries.
+
 The mobile `useCloudSync` debounce writes remote app state. On backend failure it backs off before retrying to avoid repeated background logs.
 
 Any new background Laravel request should pass `{ background: true }` to `appApiRequest`; user-initiated requests should not.

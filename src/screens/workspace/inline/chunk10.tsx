@@ -10,7 +10,7 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "reac
 import { AppWebView } from "../../../components/AppWebView";
 import { colors } from "../../../styles/theme";
 import { useAppContext } from "../../../context/AppContext";
-import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
+import { useThemedColor } from "../../../context/PreferencesContext";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
 import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
@@ -74,9 +74,10 @@ export function getUnlockedInitialChatModel(selectedModel: ModelKey, accountPlan
 }
 
 export function isModelLockedForPlan(model: ChatModelOption, accountPlan: string, allowedTiers?: string[]) {
+  const normalizedPlan = typeof accountPlan === "string" ? accountPlan.toLowerCase() : "free";
   const tiers = (allowedTiers && allowedTiers.length > 0)
     ? allowedTiers
-    : planAllowedTiers[accountPlan.toLowerCase()] ?? planAllowedTiers.free;
+    : planAllowedTiers[normalizedPlan] ?? planAllowedTiers.free;
   return modelLockedForTiers(model, tiers);
 }
 
@@ -107,39 +108,20 @@ export function LowCreditsWarning({ onOpenTokens, percentRemaining }: {
 
 export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (prompt: string) => void }) {
   const app = useAppContext();
-  const prefs = usePreferences();
   const title = useMemo(() => chatEmptyTitle(app.authName), [app.authName]);
   const suggestionIconColor = useThemedColor("#D7C4FF");
-  const suggestionGradient = prefs.effectiveScheme === "light"
-    ? ["rgba(109, 59, 255, 0.12)", "rgba(79, 70, 229, 0.08)"] as const
-    : ["rgba(142, 60, 255, 0.32)", "rgba(93, 36, 216, 0.18)"] as const;
   const opacity = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(12)).current;
-  const orbPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, { toValue: 1, duration: 380, useNativeDriver: Platform.OS !== "web" }),
       Animated.timing(lift, { toValue: 0, duration: 420, useNativeDriver: Platform.OS !== "web" })
     ]).start();
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(orbPulse, { toValue: 1, duration: 1800, useNativeDriver: Platform.OS !== "web" }),
-        Animated.timing(orbPulse, { toValue: 0, duration: 1800, useNativeDriver: Platform.OS !== "web" })
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [opacity, lift, orbPulse]);
-
-  const orbScale = orbPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.06] });
-  const orbGlow = orbPulse.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+  }, [opacity, lift]);
 
   return (
     <Animated.View style={[styles.chatEmptyState, { opacity, transform: [{ translateY: lift }] }]}>
-      <Animated.View style={[styles.chatWelcomeGlyph, { pointerEvents: "none", transform: [{ scale: orbScale }], opacity: orbGlow }]}>
-        <Image resizeMode="contain" source={aiChatGlyph} style={styles.chatWelcomeGlyphImage as ImageStyle} />
-      </Animated.View>
       <Text style={styles.chatWelcomeTitle}>{title}</Text>
       <View style={styles.chatSuggestionGrid}>
         {chatSuggestions.map((suggestion) => (
@@ -148,17 +130,10 @@ export function ChatEmptyState({ onPickSuggestion }: { onPickSuggestion?: (promp
             onPress={() => onPickSuggestion?.(suggestion.prompt)}
             style={({ pressed }) => [styles.chatSuggestionCard, pressed && styles.chatSuggestionCardPressed]}
           >
-            <View style={styles.chatSuggestionIconPlate}>
-              <LinearGradient
-                colors={suggestionGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <Ionicons name={suggestion.icon} color={suggestionIconColor} size={18} />
+            <View style={styles.chatSuggestionIcon}>
+              <Ionicons name={suggestion.icon} color={suggestionIconColor} size={17} />
             </View>
             <Text numberOfLines={2} style={styles.chatSuggestionTitle}>{suggestion.title}</Text>
-            <Text numberOfLines={3} style={styles.chatSuggestionDescription}>{suggestion.description}</Text>
           </Pressable>
         ))}
       </View>

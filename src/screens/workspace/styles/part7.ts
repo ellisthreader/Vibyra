@@ -146,22 +146,22 @@ export const part7 = {
   },
   chatSuggestionCard: {
     alignItems: "flex-start",
-    backgroundColor: "rgba(15, 17, 26, 0.78)",
-    borderColor: "rgba(176, 132, 255, 0.18)",
+    backgroundColor: "rgba(16, 18, 28, 0.74)",
+    borderColor: "rgba(200, 168, 255, 0.14)",
     borderRadius: 14,
     borderWidth: 1,
     flexBasis: "47%",
     flexGrow: 1,
-    gap: 8,
-    minHeight: 130,
-    justifyContent: "flex-start",
+    gap: 10,
+    justifyContent: "space-between",
+    minHeight: 106,
     minWidth: 0,
     overflow: "hidden",
     padding: 13
   },
   chatSuggestionCardPressed: {
-    backgroundColor: "rgba(176, 132, 255, 0.10)",
-    borderColor: "rgba(176, 132, 255, 0.36)",
+    backgroundColor: "rgba(142, 60, 255, 0.13)",
+    borderColor: "rgba(200, 168, 255, 0.30)",
     transform: [{ scale: 0.98 }]
   },
   chatSuggestionIconPlate: {
@@ -176,17 +176,20 @@ export const part7 = {
   chatSuggestionGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 9,
-    marginTop: 19,
+    gap: 8,
+    marginTop: 20,
+    maxWidth: 330,
     paddingHorizontal: 10,
     width: "100%"
   },
   chatSuggestionIcon: {
     alignItems: "center",
-    borderRadius: 8,
+    backgroundColor: "rgba(142, 60, 255, 0.16)",
+    borderColor: "rgba(200, 168, 255, 0.18)",
+    borderRadius: 10,
     borderWidth: 1,
-    height: 34,
+    height: 32,
     justifyContent: "center",
-    width: 34
+    width: 32
   },
 } as const;

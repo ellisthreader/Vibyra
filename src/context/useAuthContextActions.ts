@@ -82,7 +82,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   }
 
   function applyRemoteUsage(user: RemoteUser) {
-    setters.setAccountPlan(user.plan);
+    setters.setAccountPlan(typeof user.plan === "string" && user.plan.trim() ? user.plan : "free");
     setters.setCreditsBalance(user.creditsBalance);
     setters.setCreditsUsed(user.creditsUsed);
     setters.setDailyCreditsUsed(user.dailyCreditsUsed ?? 0);

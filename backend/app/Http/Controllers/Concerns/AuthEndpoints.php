@@ -134,8 +134,9 @@ trait AuthEndpoints
             $existing = is_array($user->app_state) ? $user->app_state : [];
             $incomingMemories = is_array($incoming['projectMemories'] ?? null) ? $incoming['projectMemories'] : [];
             $existingMemories = is_array($existing['projectMemories'] ?? null) ? $existing['projectMemories'] : [];
-            $incoming['projectMemories'] = $this->mergeProjectMemoriesState($incomingMemories, $existingMemories);
-            $user->app_state = $incoming;
+            $merged = array_replace($existing, $incoming);
+            $merged['projectMemories'] = $this->mergeProjectMemoriesState($incomingMemories, $existingMemories);
+            $user->app_state = $merged;
         }
 
         $user->save();

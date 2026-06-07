@@ -1,4 +1,5 @@
-.terminal-setup--with-companion { align-items: stretch; gap: 0; grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 360px); justify-items: stretch; }
+.terminal-setup--with-companion { align-items: stretch; gap: 0; grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px); justify-items: stretch; }
+.terminal-setup--with-companion[data-terminal-companion-mode="memory"] { grid-template-columns: minmax(260px, 1fr) clamp(420px, 42vw, 640px); }
 .terminal-setup--with-companion .terminal-setup-panel { align-self: center; justify-self: center; }
 .terminal-voice-section, .terminal-memory-section { display: none; }
 .terminal-voice-section.active, .terminal-memory-section.active, .terminal-setup--phone-open .terminal-phone-section { display: grid; }
@@ -54,8 +55,10 @@
 .terminal-companion :is(button, input, textarea):focus-visible { outline: 2px solid var(--terminal-accent, #8b5cff); outline-offset: 2px; }
 
 @media (max-width: 1120px) {
-  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr) 300px; }
+  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr) 286px; }
+  .terminal-setup--with-companion[data-terminal-companion-mode="memory"] { grid-template-columns: minmax(220px, 1fr) minmax(380px, 46vw); }
 }
 @media (max-width: 860px) {
-  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .terminal-setup--with-companion { grid-template-columns: minmax(0, 1fr) 280px; }
+  .terminal-setup--with-companion[data-terminal-companion-mode="memory"] { grid-template-columns: minmax(180px, 1fr) minmax(360px, 46vw); }
 }

@@ -99,7 +99,7 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
   return (
     <Modal animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
       <View style={[styles.billingScreen, { backgroundColor: prefs.colors.background }]}>
-        <View style={[styles.billingHeader, { paddingTop: Math.max(insets.top + 10, 24) }]}>
+        <View style={[styles.billingHeader, { paddingTop: Math.max(insets.top + 8, 60) }]}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
             <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#0A0814" : "#FFFFFF"} size={24} />
           </Pressable>

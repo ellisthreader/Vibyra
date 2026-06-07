@@ -1,11 +1,9 @@
-import React, { useEffect } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import React, { useMemo } from "react";
+import { KeyboardAvoidingView, PanResponder, Platform, ScrollView, View, useWindowDimensions } from "react-native";
 import {
   AIChatPage,
-  AccountMenuSheet,
   AppPreviewModal,
   CommunityPage,
-  DashboardHome,
   FolderConfirmModal,
   PcSwitcherSheet,
   PrimaryMenuSheet,
@@ -18,7 +16,7 @@ import {
 } from "./workspace/inline";
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
 import { directoryForChat } from "./workspace/helpers/chatDirectory";
-import { hasRunnableLoadedFilePreview, isDisplayablePreview, previewFingerprint } from "./workspace/helpers/previewDisplay";
+import { hasRunnableLoadedFilePreview, isDisplayablePreview } from "./workspace/helpers/previewDisplay";
 import { sendWorkspaceChatHelp, workspaceRecentChats } from "./workspace/helpers/chatHeaderActions";
 import { styles } from "./workspace/styles";
 
@@ -34,16 +32,38 @@ export function WorkspaceScreen() {
   const projectChatHasRunnableFiles = Boolean(selectedChatProjectId && app.selectedProject.id === selectedChatProjectId && hasRunnableLoadedFilePreview(app.files));
   const projectChatCanStartPreview = Boolean(selectedChatProjectId && selectedChatProject && app.connection);
   const recentChats = workspaceRecentChats(app);
+  const { width: screenWidth } = useWindowDimensions();
 
-  useEffect(() => {
-    if (!w.previewApp || !latestRunnablePreview || previewFingerprint(w.previewApp) === previewFingerprint(latestRunnablePreview)) return;
-    w.setPreviewApp(latestRunnablePreview);
-  }, [latestRunnablePreview, w.previewApp, w.setPreviewApp]);
+  const openProfile = () => {
+    w.setSettingsTab("profile");
+    w.setSettingsTabRequestId((id) => id + 1);
+    w.setActivePage("profile");
+  };
+
+  // Edge swipe-to-open: from the left edge opens the workspace menu, from the right edge opens the profile page.
+  const edgePan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_e, g) => {
+      if (w.primaryMenuVisible) return false;
+      const horizontal = Math.abs(g.dx) > Math.abs(g.dy) * 1.4 && Math.abs(g.dx) > 14;
+      if (!horizontal) return false;
+      if (g.x0 <= 28 && g.dx > 0) return true;
+      if (g.x0 >= screenWidth - 28 && g.dx < 0) return true;
+      return false;
+    },
+    onPanResponderRelease: (_e, g) => {
+      if (g.x0 <= 28 && g.dx > 0) { w.setPrimaryMenuVisible(true); return; }
+      if (g.x0 >= screenWidth - 28 && g.dx < 0) {
+        w.setSettingsTab("profile");
+        w.setSettingsTabRequestId((id) => id + 1);
+        w.setActivePage("profile");
+      }
+    }
+  }), [screenWidth, w.primaryMenuVisible, w.setPrimaryMenuVisible, w.setSettingsTab, w.setSettingsTabRequestId, w.setActivePage]);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
       <View style={styles.shell}>
-        <View style={styles.main}>
+        <View style={styles.main} {...edgePan.panHandlers}>
           <TopBar
             activePage={activePage}
             accountName={app.authName}
@@ -53,11 +73,10 @@ export function WorkspaceScreen() {
             chatStarred={Boolean(w.starredChatKeys[w.chatTitleKey])}
             chatTitle={w.chatTitle}
             communitySubPageTitle={w.selectedCommunityPost ? formatCommunityTitle(w.selectedCommunityPost.title) : ""}
-            isConnected={w.isConnected}
             onBackFromCommunity={w.backFromCommunitySubPage}
             onChatHelp={() => sendWorkspaceChatHelp(w)}
             onDeleteChat={w.deleteCurrentChat}
-            onOpenAccount={() => w.setAccountMenuVisible(true)}
+            onOpenAccount={openProfile}
             onOpenMenu={() => w.setPrimaryMenuVisible(true)}
             onOpenPreview={() => { void w.openRunnablePreview("/preview"); }}
             onRenameChat={w.openRenameChat}
@@ -112,22 +131,14 @@ export function WorkspaceScreen() {
               style={styles.contentScroll}
               contentContainerStyle={[
                 styles.content,
-                activePage === "dashboard" ? styles.dashboardContent : null,
                 activePage === "projects" ? styles.projectsContent : null,
                 activePage === "profile" ? styles.profileContent : null,
-                { minHeight: Math.max(height - (activePage === "dashboard" ? 190 : 72), 0) }
+                { minHeight: Math.max(height - 72, 0) }
               ]}
-              bounces={activePage === "projects" ? w.projectsCanScroll : activePage !== "dashboard"}
-              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : activePage === "community" || activePage === "profile" ? true : activePage !== "dashboard"}
+              bounces={activePage === "projects" ? w.projectsCanScroll : true}
+              scrollEnabled={activePage === "projects" ? w.projectsCanScroll : true}
               showsVerticalScrollIndicator={false}
             >
-              {activePage === "dashboard" ? (
-                <DashboardHome
-                  activeAgents={app.activeAgents}
-                  onNavigate={w.navigatePage}
-                  projects={app.projects}
-                />
-              ) : null}
               {activePage === "projects" ? (
                 <ProjectsPage
                   connected={Boolean(app.connection)}
@@ -148,6 +159,13 @@ export function WorkspaceScreen() {
                   authToken={app.authToken}
                   currentUserName={app.authName}
                   openedPostId={w.openedCommunityPostId}
+                  onEditOwnPost={(post) => {
+                    w.setOpenedCommunityPostId(null);
+                    w.setSelectedCommunityPost(null);
+                    w.setProjectSearch("");
+                    w.setPublishProjectId(post.sourceProjectId ?? null);
+                    w.setActivePage("projects");
+                  }}
                   onLevelActivity={app.reportLevelActivity}
                   onOpenApp={(id) => w.setOpenedCommunityPostId(id)}
                   onSelectPost={w.setSelectedCommunityPost}
@@ -161,7 +179,7 @@ export function WorkspaceScreen() {
           )}
         </View>
         <PrimaryMenuSheet
-          activeBuildCount={app.activeAgents.filter((agent) => agent.state === "running" || agent.state === "waiting").length}
+          accountName={app.authName}
           activePage={activePage}
           connected={w.isConnected}
           machineName={w.connectedMachineName}
@@ -169,21 +187,14 @@ export function WorkspaceScreen() {
           onConnectPc={() => { w.setPrimaryMenuVisible(false); w.openPcSwitcher(); }}
           onNavigate={(page) => { w.setPrimaryMenuVisible(false); w.navigatePage(page); }}
           onNewChat={() => { w.setPrimaryMenuVisible(false); w.navigatePage("chat"); }}
-          onOpenProfile={() => { w.setPrimaryMenuVisible(false); w.setSettingsTab("profile"); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
+          onOpenAccountMenu={() => { w.setPrimaryMenuVisible(false); openProfile(); }}
+          onOpenProfile={() => { w.setPrimaryMenuVisible(false); openProfile(); }}
           onOpenRecentChat={(chatId) => { w.setPrimaryMenuVisible(false); w.setSelectedChatId(chatId); w.setActivePage("chat"); }}
+          profileImageUri={app.profileImageUri}
           projectCount={app.projects.length}
           recentChats={recentChats}
+          selectedChatId={w.selectedChatId}
           visible={w.primaryMenuVisible}
-        />
-        <AccountMenuSheet
-          name={app.authName}
-          onClose={() => w.setAccountMenuVisible(false)}
-          onOpenTokens={() => { w.setAccountMenuVisible(false); w.setSettingsTab("usage"); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
-          onTab={(tab) => { w.setAccountMenuVisible(false); w.setSettingsTab(tab); w.setSettingsTabRequestId((id) => id + 1); w.setActivePage("profile"); }}
-          plan={app.accountPlan}
-          profileImageUri={app.profileImageUri}
-          tokenBalance={w.tokenBalance}
-          visible={w.accountMenuVisible}
         />
         <PcSwitcherSheet
           candidates={w.desktopCandidates}

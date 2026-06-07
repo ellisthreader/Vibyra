@@ -1,7 +1,7 @@
 .terminal-model-option {
   border-radius: 7px;
   box-shadow: none;
-  color: #eeeaf8;
+  color: var(--terminal-text, #eeeaf8);
   display: grid;
   gap: 10px;
   grid-template-columns: 34px minmax(0, 1fr) minmax(20px, auto);
@@ -16,20 +16,20 @@
   background: rgba(255, 255, 255, 0.052);
   border-color: transparent;
   box-shadow: none;
-  color: #eeeaf8;
+  color: var(--terminal-text, #eeeaf8);
 }
 .terminal-model-option.locked {
-  color: #90889e;
+  color: var(--terminal-disabled, #90889e);
 }
 .terminal-model-option.locked:hover {
-  color: #90889e;
+  color: var(--terminal-disabled, #90889e);
 }
 .terminal-model-option.active,
 .terminal-model-option.active:hover {
   background: rgba(109, 59, 255, 0.17);
   border-color: transparent;
   box-shadow: inset 0 0 0 1px rgba(109, 59, 255, 0.18);
-  color: #f8f6ff;
+  color: var(--terminal-text, #f8f6ff);
 }
 .terminal-model-option:focus-visible {
   outline: 2px solid rgba(109, 59, 255, 0.52);
@@ -51,7 +51,7 @@
   line-height: 17px;
 }
 .terminal-model-option small {
-  color: #918ca1;
+  color: var(--terminal-dim, #918ca1);
   font-size: 11px;
   font-weight: 620;
   line-height: 15px;
@@ -59,7 +59,7 @@
   text-transform: capitalize;
 }
 .terminal-model-option.active small {
-  color: #bdb3df;
+  color: var(--terminal-active-muted, #bdb3df);
 }
 .terminal-model-option .provider-logo {
   border-radius: 8px;
@@ -74,7 +74,7 @@
 .terminal-model-badge,
 .terminal-model-lock {
   align-items: center;
-  color: #a9a3b8;
+  color: var(--terminal-muted, #a9a3b8);
   display: inline-flex;
   font-style: normal;
   justify-content: flex-end;

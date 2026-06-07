@@ -6,6 +6,7 @@ import { ChatMessage, GeneratedApp, Project } from "../../../types/domain";
 import { previousChats } from "../data/pages";
 import { CommunityPost, DashboardPage, DesktopCandidate, SettingsTab } from "../types";
 import { isDetachedChatId } from "./workspaceDetachedChats";
+import { projectMatchesSearch } from "./workspaceProjectSearch";
 
 export type WorkspaceState = ReturnType<typeof useWorkspaceState>;
 type PendingDesktopFolderIntent = { action: "analyze-project" | "search"; query: string; detached: boolean; messageId: string; projectId?: string };
@@ -15,9 +16,8 @@ export function useWorkspaceState() {
   const { height, width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const compact = width < 420;
-  const [activePage, setActivePage] = useState<DashboardPage>("dashboard");
+  const [activePage, setActivePage] = useState<DashboardPage>("chat");
   const [primaryMenuVisible, setPrimaryMenuVisible] = useState(false);
-  const [accountMenuVisible, setAccountMenuVisible] = useState(false);
   const [desktopCandidates, setDesktopCandidates] = useState<DesktopCandidate[]>(app.rememberedDesktops);
   const [pcSwitcherVisible, setPcSwitcherVisible] = useState(false);
   const [projectSearch, setProjectSearch] = useState("");
@@ -44,13 +44,13 @@ export function useWorkspaceState() {
   const filteredProjects = useMemo(() => {
     const s = projectSearch.trim().toLowerCase();
     if (!s) return app.projects;
-    return app.projects.filter((p) => p.name.toLowerCase().includes(s) || p.path.toLowerCase().includes(s) || p.stack.toLowerCase().includes(s));
+    return app.projects.filter((project) => projectMatchesSearch(project, s));
   }, [app.projects, projectSearch]);
 
   const filteredDesktopFolders = useMemo(() => {
     const s = projectSearch.trim().toLowerCase();
     if (!s) return desktopFolders;
-    return desktopFolders.filter((f) => f.name.toLowerCase().includes(s) || f.path.toLowerCase().includes(s) || (f.stack ?? "").toLowerCase().includes(s));
+    return desktopFolders.filter((folder) => projectMatchesSearch(folder, s));
   }, [desktopFolders, projectSearch]);
 
   useEffect(() => {
@@ -98,7 +98,6 @@ export function useWorkspaceState() {
     app, height, insets, compact,
     activePage, setActivePage,
     primaryMenuVisible, setPrimaryMenuVisible,
-    accountMenuVisible, setAccountMenuVisible,
     desktopCandidates, setDesktopCandidates,
     pcSwitcherVisible, setPcSwitcherVisible,
     projectSearch, setProjectSearch,

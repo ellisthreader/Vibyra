@@ -1,7 +1,7 @@
 import { ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
 import { ModelKey, Project, RememberedDesktop } from "../../types/domain";
 
-export type DashboardPage = "dashboard" | "projects" | "chat" | "community" | "profile";
+export type DashboardPage = "projects" | "chat" | "community" | "profile";
 export type SettingsTab = "profile" | "billing" | "preferences" | "security" | "usage";
 export type DesktopCandidate = RememberedDesktop;
 
@@ -34,11 +34,14 @@ export type CommunityPost = {
   comments: number;
   deploymentStatus?: string | null;
   description: string;
+  frontendStatus?: string | null;
   id: string;
   hostedDemoMessage?: string | null;
   hostedDemoStatus?: string | null;
   hostedDemoUrl?: string | null;
   hostingMode?: string | null;
+  backendPlatform?: string | null;
+  backendStatus?: string | null;
   isPublic?: boolean;
   likes: number;
   logoImageUrl?: string | null;
@@ -59,12 +62,16 @@ export type CommunityPost = {
   time: string;
   title: string;
   user: string;
+  sourceProjectId?: string;
+  viewerCanManage?: boolean;
+  visibility?: "public" | "unlisted" | "private";
 };
 
 export type ProjectDisplay = {
   id: string;
   name: string;
   path: string;
+  pinned?: boolean;
   sourceProject?: Project;
   stack: string;
   status: ProjectStatus;

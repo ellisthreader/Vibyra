@@ -28,6 +28,7 @@ export function healthPayload() {
     pairedDevice,
     startedAt,
     preview: appState.latestPreview,
+    desktopAccountReady: Boolean(appState.desktopAccount?.id),
     connectionUrls: connectionUrls()
   };
 }

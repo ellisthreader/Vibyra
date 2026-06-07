@@ -1,0 +1,134 @@
+function bindTerminalMemoryEvents(root) {
+  if (!root || root.dataset.terminalMemoryBound) return;
+  root.dataset.terminalMemoryBound = "1";
+  bindTerminalMemoryTreeEvents(root);
+  root.querySelector("[data-terminal-memory-search]")?.addEventListener("input", (event) => {
+    terminalMemoryState.query = event.target.value;
+    terminalMemoryUpdateTree();
+  });
+  root.querySelector("[data-terminal-memory-title]")?.addEventListener("input", (event) => {
+    terminalMemoryState.draftTitle = event.target.value;
+    scheduleTerminalMemorySave();
+  });
+  root.querySelector("[data-terminal-memory-body]")?.addEventListener("input", (event) => {
+    terminalMemoryState.draftBody = event.target.value;
+    const preview = root.querySelector("[data-terminal-memory-preview]");
+    if (preview) preview.innerHTML = terminalMemoryMarkdownHtml(event.target.value);
+    scheduleTerminalMemorySave();
+  });
+  root.querySelector("[data-terminal-memory-new-note]")?.addEventListener("click", () => promptTerminalMemoryNode("document"));
+  root.querySelector("[data-terminal-memory-new-folder]")?.addEventListener("click", () => promptTerminalMemoryNode("folder"));
+  root.querySelector("[data-terminal-memory-import-files]")?.addEventListener("click", () => openTerminalMemoryImport("markdown"));
+  root.querySelector("[data-terminal-memory-import-vault]")?.addEventListener("click", () => openTerminalMemoryImport("vault"));
+  root.querySelector("[data-terminal-memory-file-input]")?.addEventListener("change", (event) => {
+    void importTerminalMemoryFiles(event.target.files, "markdown");
+  });
+  root.querySelector("[data-terminal-memory-vault-input]")?.addEventListener("change", (event) => {
+    void importTerminalMemoryFiles(event.target.files, "vault");
+  });
+  root.querySelectorAll("[data-terminal-memory-mode]").forEach((button) => button.addEventListener("click", () => {
+    terminalMemoryState.mode = button.dataset.terminalMemoryMode === "preview" ? "preview" : "edit";
+    terminalMemoryRefresh();
+  }));
+  root.querySelector("[data-terminal-memory-insert]")?.addEventListener("click", () => {
+    const text = terminalMemoryState.draftBody.trim();
+    if (text) terminalCompanionInsertIntoActiveTerminal(text, false);
+  });
+  root.addEventListener("keydown", handleTerminalMemoryKeyboard);
+}
+
+function bindTerminalMemoryTreeEvents(root) {
+  root.querySelectorAll("[data-terminal-memory-node]").forEach((row) => {
+    if (row.dataset.terminalMemoryRowBound) return;
+    row.dataset.terminalMemoryRowBound = "1";
+    row.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      void selectTerminalMemoryNode(row.dataset.terminalMemoryNode);
+    });
+    row.addEventListener("dblclick", () => toggleTerminalMemoryFolder(row.dataset.terminalMemoryNode));
+  });
+  root.querySelectorAll("[data-terminal-memory-toggle]").forEach((button) => {
+    if (button.dataset.terminalMemoryToggleBound) return;
+    button.dataset.terminalMemoryToggleBound = "1";
+    button.addEventListener("click", () => toggleTerminalMemoryFolder(button.dataset.terminalMemoryToggle));
+  });
+  root.querySelectorAll("[data-terminal-memory-delete]").forEach((button) => {
+    if (button.dataset.terminalMemoryDeleteBound) return;
+    button.dataset.terminalMemoryDeleteBound = "1";
+    button.addEventListener("click", () => void deleteTerminalMemoryNode(button.dataset.terminalMemoryDelete));
+  });
+}
+
+async function selectTerminalMemoryNode(nodeId) {
+  if (nodeId === terminalMemoryState.selectedId) return;
+  await flushTerminalMemorySave();
+  const node = terminalMemoryState.nodes.find((item) => item.id === nodeId);
+  if (!node) return;
+  if (node.type === "folder") {
+    terminalMemoryState.expandedIds.add(node.id);
+  }
+  terminalMemorySelect(node.id);
+  terminalMemoryRefresh();
+}
+
+function toggleTerminalMemoryFolder(nodeId) {
+  const node = terminalMemoryState.nodes.find((item) => item.id === nodeId);
+  if (node?.type !== "folder") return;
+  if (terminalMemoryState.expandedIds.has(nodeId)) terminalMemoryState.expandedIds.delete(nodeId);
+  else terminalMemoryState.expandedIds.add(nodeId);
+  terminalMemoryUpdateTree();
+}
+
+function promptTerminalMemoryNode(type) {
+  const fallback = type === "folder" ? "New folder" : "Untitled";
+  const value = window.prompt(type === "folder" ? "Folder name" : "Note title", fallback);
+  const name = String(value || "").trim().slice(0, 160);
+  if (name) void createTerminalMemoryNode(type, name);
+}
+
+function scheduleTerminalMemorySave() {
+  terminalMemoryState.dirty = true;
+  terminalMemoryState.status = "Unsaved";
+  terminalMemoryUpdateStatus();
+  window.clearTimeout(terminalMemoryState.saveTimer);
+  terminalMemoryState.saveTimer = window.setTimeout(() => void saveTerminalMemoryNode(), 700);
+}
+
+async function flushTerminalMemorySave() {
+  window.clearTimeout(terminalMemoryState.saveTimer);
+  terminalMemoryState.saveTimer = 0;
+  await saveTerminalMemoryNode();
+}
+
+function handleTerminalMemoryKeyboard(event) {
+  const command = event.ctrlKey || event.metaKey;
+  if (command && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    void flushTerminalMemorySave();
+  } else if (command && event.key.toLowerCase() === "n") {
+    event.preventDefault();
+    promptTerminalMemoryNode(event.shiftKey ? "folder" : "document");
+  } else if (command && event.key.toLowerCase() === "e") {
+    event.preventDefault();
+    terminalMemoryState.mode = terminalMemoryState.mode === "edit" ? "preview" : "edit";
+    terminalMemoryRefresh();
+  } else if (command && event.shiftKey && event.key.toLowerCase() === "f") {
+    event.preventDefault();
+    document.querySelector("[data-terminal-memory-search]")?.focus();
+  } else if (event.key === "Delete" && document.activeElement?.matches?.("[data-terminal-memory-node]")) {
+    event.preventDefault();
+    void deleteTerminalMemoryNode(document.activeElement.dataset.terminalMemoryNode);
+  } else if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+    handleTerminalMemoryTreeArrow(event);
+  }
+}
+
+function handleTerminalMemoryTreeArrow(event) {
+  const row = event.target.closest?.("[data-terminal-memory-node]");
+  if (!row) return;
+  const node = terminalMemoryState.nodes.find((item) => item.id === row.dataset.terminalMemoryNode);
+  if (node?.type !== "folder") return;
+  const expanded = terminalMemoryState.expandedIds.has(node.id);
+  if (event.key === "ArrowRight" && !expanded) toggleTerminalMemoryFolder(node.id);
+  if (event.key === "ArrowLeft" && expanded) toggleTerminalMemoryFolder(node.id);
+}

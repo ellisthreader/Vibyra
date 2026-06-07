@@ -6,7 +6,7 @@ import { sendSafeAsset } from "./assetRoutes.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
 import { transcribeDesktopVoice } from "./desktopVoice.mjs";
 import { openDesktopPreview } from "./desktopPreview.mjs";
-import { addDesktopProjectMemory, deleteDesktopProjectMemory, getDesktopProjectMemory } from "./desktopProjectMemory.mjs";
+import { handleDesktopMemoryRoutes } from "./desktopMemoryRoutes.mjs";
 import { startPhonePreview } from "./phonePreview.mjs";
 import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
@@ -66,18 +66,8 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, await transcribeDesktopVoice(await readBody(req)));
     return true;
   }
-  if (url.pathname === "/desktop/project-memory") {
-    if (!authorizeDesktopUi(req, res)) return true;
-    const projectId = url.searchParams.get("projectId");
-    if (req.method === "GET") send(res, 200, { ok: true, memory: await getDesktopProjectMemory(projectId) });
-    else if (req.method === "POST") send(res, 200, { ok: true, memory: await addDesktopProjectMemory(projectId, (await readBody(req)).text) });
-    else return false;
-    return true;
-  }
-  if (req.method === "DELETE" && url.pathname === "/desktop/project-memory/entry") {
-    if (!authorizeDesktopUi(req, res)) return true;
-    send(res, 200, { ok: true, memory: await deleteDesktopProjectMemory(url.searchParams.get("projectId"), url.searchParams.get("entryId")) });
-    return true;
+  if (url.pathname === "/desktop/project-memory" || url.pathname.startsWith("/desktop/project-memory/")) {
+    if (await handleDesktopMemoryRoutes(req, res, url)) return true;
   }
   if (req.method === "GET" && url.pathname === "/desktop/provider-accounts") {
     if (!authorizeDesktopUi(req, res)) return true;

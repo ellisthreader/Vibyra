@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectComment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -83,6 +84,80 @@ class CommunityPublishingCoreTest extends TestCase
 
         Http::assertSent(fn ($request) => collect($request['input'] ?? [])
             ->contains(fn ($item) => ($item['type'] ?? null) === 'image_url'));
+    }
+
+    public function test_public_publish_without_preview_payload_is_not_listed_as_openable_app(): void
+    {
+        $this->fakeCleanModeration();
+        config(['moderation.publish_force_approve_under_review' => true]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'No Preview Publisher',
+            'email' => 'no-preview.publisher@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+
+        $this->postJson('/api/projects/publish', [
+            'projectId' => 'no-preview-project',
+            'title' => 'No Preview Project',
+            'description' => 'A folder that did not produce a hosted demo.',
+            'stack' => 'Laravel',
+            'sourceFiles' => [
+                ['path' => 'routes/web.php', 'language' => 'php', 'body' => '<?php'],
+            ],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertUnprocessable()
+            ->assertJsonPath('isPublic', false)
+            ->assertJsonPath('hostedDemoStatus', 'unavailable');
+
+        $user = User::where('email', 'no-preview.publisher@example.com')->firstOrFail();
+        PublishedProject::create([
+            'user_id' => $user->id,
+            'source_project_id' => 'old-no-preview-project',
+            'slug' => 'old-no-preview-project',
+            'title' => 'Old No Preview Project',
+            'description' => 'Previously approved without a captured demo.',
+            'stack' => 'Laravel',
+            'visibility' => 'public',
+            'review_status' => PublishedProject::REVIEW_APPROVED,
+            'published_at' => now(),
+        ]);
+
+        $this->getJson('/api/community/projects')
+            ->assertOk()
+            ->assertJsonCount(0, 'projects');
+    }
+
+    public function test_public_publish_rejects_generated_source_preview_shell(): void
+    {
+        $this->fakeCleanModeration();
+        config(['moderation.publish_force_approve_under_review' => true]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Source Preview Publisher',
+            'email' => 'source-preview.publisher@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+
+        $sourcePreview = '<!doctype html><html><body><h2>Project preview</h2><section><h3>routes/web.php</h3><pre><code>&lt;?php Route::get("/", fn () =&gt; "ok");</code></pre></section></body></html>';
+
+        $this->postJson('/api/projects/publish', [
+            'projectId' => 'source-preview-project',
+            'title' => 'Source Preview Project',
+            'description' => 'A folder that only produced the source-code preview shell.',
+            'stack' => 'Laravel',
+            'previewHtml' => $sourcePreview,
+            'sourceFiles' => [
+                ['path' => 'routes/web.php', 'language' => 'php', 'body' => '<?php'],
+            ],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertUnprocessable()
+            ->assertJsonPath('isPublic', false)
+            ->assertJsonPath('hostedDemoStatus', 'unavailable');
+
+        $this->assertDatabaseMissing('published_projects', [
+            'source_project_id' => 'source-preview-project',
+        ]);
     }
 
     public function test_publish_retries_do_not_hit_old_global_hourly_limit(): void

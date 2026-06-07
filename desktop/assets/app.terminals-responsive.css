@@ -1,0 +1,38 @@
+.grid-mode .terminal-stage {
+  align-content: start;
+  grid-template-rows: repeat(var(--terminal-grid-rows, 1), minmax(230px, 1fr));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.grid-mode .terminal-tile {
+  min-height: 230px;
+}
+
+.terminal-settings-menu.terminal-settings-menu--positioned {
+  bottom: auto;
+  left: var(--terminal-menu-left);
+  max-height: min(520px, calc(100vh - 16px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: fixed;
+  right: auto;
+  top: var(--terminal-menu-top);
+}
+
+@media (max-width: 1000px) {
+  .grid-mode .terminal-stage {
+    grid-template-columns: repeat(var(--terminal-grid-cols-narrow, 2), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--terminal-grid-rows-narrow, 1), minmax(230px, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .grid-mode .terminal-stage {
+    grid-auto-rows: minmax(240px, auto);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+}

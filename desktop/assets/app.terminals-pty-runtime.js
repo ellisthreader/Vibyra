@@ -2,7 +2,7 @@ async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
   const size = initialPtyStartSize(terminal.id);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, tokenMode: terminal.tokenMode, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, cols: size.cols, rows: size.rows }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
@@ -25,6 +25,8 @@ async function startPtyTerminal(terminal) {
   }
 }
 
+let ptyCollectionSyncTimer = null;
+
 function queueStartPtyTerminal(terminal) {
   if (!terminal || terminal.ptyStartQueued) return;
   terminal.ptyStartQueued = true;
@@ -42,8 +44,40 @@ function connectPtyTerminal(terminal) {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   const socket = new WebSocket(`${protocol}//${location.host}/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/socket`);
   terminalPtySockets[terminal.id] = socket;
+  socket.onopen = () => {
+    clearTimeout(terminalPtyReconnectTimers[terminal.id]);
+    delete terminalPtyReconnectTimers[terminal.id];
+    terminalPtyReconnectAttempts[terminal.id] = 0;
+    schedulePtyCollectionSync(250);
+  };
   socket.onmessage = (event) => handlePtySocketMessage(terminal.id, event.data);
-  socket.onclose = () => { if (terminalPtySockets[terminal.id] === socket) delete terminalPtySockets[terminal.id]; };
+  socket.onclose = () => {
+    if (terminalPtySockets[terminal.id] !== socket) return;
+    delete terminalPtySockets[terminal.id];
+    schedulePtyCollectionSync();
+    schedulePtyReconnect(terminal.id);
+  };
+  socket.onerror = () => socket.close();
+}
+
+function schedulePtyCollectionSync(delay = 750) {
+  clearTimeout(ptyCollectionSyncTimer);
+  ptyCollectionSyncTimer = setTimeout(() => {
+    ptyCollectionSyncTimer = null;
+    void syncPtyTerminals();
+  }, delay);
+}
+
+function schedulePtyReconnect(id) {
+  const terminal = findTerminal(id);
+  if (!terminal || terminal.ptyStatus === "exited" || terminal.ptyStatus === "unavailable" || terminalPtyReconnectTimers[id]) return;
+  const attempt = (terminalPtyReconnectAttempts[id] || 0) + 1;
+  terminalPtyReconnectAttempts[id] = attempt;
+  terminalPtyReconnectTimers[id] = setTimeout(() => {
+    delete terminalPtyReconnectTimers[id];
+    const current = findTerminal(id);
+    if (current) connectPtyTerminal(current);
+  }, Math.min(10000, 500 * (2 ** Math.min(attempt - 1, 5))));
 }
 
 function handlePtySocketMessage(id, raw) {
@@ -53,8 +87,12 @@ function handlePtySocketMessage(id, raw) {
   try { payload = JSON.parse(raw); } catch { return; }
   let shouldRender = false;
   if (payload.type === "session" && payload.session) {
-    Object.assign(terminal, ptySessionPatch(payload.session));
+    const localOutput = String(terminal.output || "");
+    const patch = ptySessionPatch(payload.session);
+    patch.output = mergePtySnapshotOutput(localOutput, patch.output);
+    Object.assign(terminal, patch);
     mountVisibleXterms();
+    syncPtyXtermOutput(terminal);
     shouldRender = true;
   } else if (payload.type === "output") {
     appendPtyOutput(terminal, payload.data || "");
@@ -122,9 +160,11 @@ toggleTerminalSettings = function togglePtyTerminalSettings(id) {
 };
 
 function bindPtyTopbarControls() {
+  if (typeof bindTerminalCompanionLaunchers === "function") bindTerminalCompanionLaunchers(document);
   bindPtyClick(document.getElementById("open-terminal-new"), () => {
     newTerminalMenuOpen = !newTerminalMenuOpen;
     if (newTerminalMenuOpen) modelScrollTops.new = 0;
+    else terminalProjectMenuTarget = "";
     settingsTerminalId = "";
     render();
   });
@@ -137,13 +177,14 @@ function bindPtyTopbarControls() {
   document.querySelectorAll("[data-terminal-close]").forEach((button) => bindPtyClick(button, (event) => {
     event.preventDefault();
     event.stopPropagation();
-    closeTerminal(button.dataset.terminalClose);
+    (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
   }));
   document.querySelectorAll("[data-terminal-settings]").forEach((button) => bindPtyClick(button, (event) => {
     event.preventDefault();
     event.stopPropagation();
     toggleTerminalSettings(button.dataset.terminalSettings);
   }));
+  if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(document);
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   document.querySelectorAll("[data-terminal-model-search]").forEach((input) => {
     if (input.dataset.ptyModelSearchBound) return;
@@ -178,11 +219,13 @@ function bindPtyTopbarControls() {
 function bindPtyInput(node) {
   if (!node || node.dataset.ptyInputBound) return;
   node.dataset.ptyInputBound = "1";
-  node.addEventListener("keydown", (event) => handlePtyKeydown(event, node.dataset.terminalInput));
-  node.addEventListener("paste", (event) => {
-    event.preventDefault();
-    sendPtyInput(node.dataset.terminalInput, event.clipboardData?.getData("text") || "");
-  });
+  if (!window.Terminal) {
+    node.addEventListener("keydown", (event) => handlePtyKeydown(event, node.dataset.terminalInput));
+    node.addEventListener("paste", (event) => {
+      event.preventDefault();
+      sendPtyInput(node.dataset.terminalInput, event.clipboardData?.getData("text") || "");
+    });
+  }
   node.addEventListener("pointerdown", () => focusPtyTerminal(node.dataset.terminalInput));
   node.addEventListener("click", () => focusPtyTerminal(node.dataset.terminalInput));
 }
@@ -209,7 +252,22 @@ function handlePtyKeydown(event, id) {
 function sendPtyInput(id, input) {
   const socket = terminalPtySockets[id];
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "input", data: input }));
-  else fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/input`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) }).catch(() => {});
+  else fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/input`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) })
+    .then((response) => { if (!response.ok) setPtyInputNotice(id, "Terminal is not connected. Reconnect or open a new terminal to continue."); })
+    .catch(() => setPtyInputNotice(id, "Terminal input could not be delivered."));
+}
+
+function setPtyInputNotice(id, message) {
+  const terminal = findTerminal(id);
+  if (!terminal) return;
+  terminal.pending = false;
+  terminal.notice = message;
+  terminal.updatedAt = Date.now();
+  saveTerminals();
+  if (activePage === "terminals") {
+    renderTopbar();
+    if (!refreshPtyTerminalsDom()) render();
+  }
 }
 
 function appendPtyOutput(terminal, data) {
@@ -218,7 +276,10 @@ function appendPtyOutput(terminal, data) {
   terminal.pending = false;
   terminal.updatedAt = Date.now();
   const xterm = terminalXterms[terminal.id];
-  if (xterm) xterm.write(data);
+  if (xterm) {
+    xterm.write(data);
+    terminalXtermSnapshots[terminal.id] = terminal.output;
+  }
 }
 
 function mountVisibleXterms() {
@@ -239,6 +300,7 @@ function mountVisibleXterms() {
         convertEol: false,
         cursorBlink: true,
         disableStdin: false,
+        screenReaderMode: true,
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
         fontSize: 13,
         lineHeight: 1.18,
@@ -248,7 +310,9 @@ function mountVisibleXterms() {
         theme: terminalXtermTheme(node)
       });
       terminalXterms[id] = xterm;
-      xterm.onData((data) => sendPtyInput(id, data));
+      xterm.onData((data) => {
+        if (!terminalXtermReplayWrites[id]) sendPtyInput(id, data);
+      });
     } else {
       xterm.options.theme = terminalXtermTheme(node);
     }
@@ -256,9 +320,37 @@ function mountVisibleXterms() {
       node.replaceChildren();
       xterm.open(node);
       xterm.clear();
-      if (terminal.output) xterm.write(terminal.output);
+      if (terminal.output) writePtySnapshot(id, xterm, terminal.output);
+      terminalXtermSnapshots[id] = terminal.output || "";
     }
     fitPtyXterm(id, node, terminal);
+  });
+}
+
+function mergePtySnapshotOutput(localOutput, remoteOutput) {
+  const local = String(localOutput || "");
+  const remote = String(remoteOutput || "");
+  if (!local) return remote;
+  if (!remote || local.endsWith(remote)) return local;
+  if (remote.startsWith(local)) return remote;
+  return remote;
+}
+
+function syncPtyXtermOutput(terminal) {
+  const xterm = terminalXterms[terminal.id];
+  if (!xterm || terminalXtermSnapshots[terminal.id] === terminal.output) return;
+  try {
+    xterm.reset();
+    if (terminal.output) writePtySnapshot(terminal.id, xterm, terminal.output);
+    terminalXtermSnapshots[terminal.id] = terminal.output || "";
+  } catch {}
+}
+
+function writePtySnapshot(id, xterm, output) {
+  terminalXtermReplayWrites[id] = (terminalXtermReplayWrites[id] || 0) + 1;
+  xterm.write(output, () => {
+    terminalXtermReplayWrites[id] = Math.max(0, (terminalXtermReplayWrites[id] || 1) - 1);
+    if (!terminalXtermReplayWrites[id]) delete terminalXtermReplayWrites[id];
   });
 }
 
@@ -406,7 +498,10 @@ function refreshPtyTerminalDom(terminal) {
   const unavailable = terminal.ptyStatus === "unavailable";
   if (unavailable !== Boolean(article.querySelector(".terminal-pty-unavailable"))) return false;
   article.querySelectorAll(".terminal-status").forEach((status) => {
-    status.classList.toggle("running", terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running");
+    const next = terminalStatusState(terminal);
+    status.className = `terminal-status ${next.key}`;
+    status.setAttribute("aria-label", next.label);
+    status.setAttribute("title", next.label);
   });
   const active = terminal.id === activeTerminalId;
   article.classList.toggle("active", active);
@@ -443,7 +538,7 @@ function refreshPtyTerminalSettingsMenus() {
   document.querySelectorAll("[data-terminal-close]").forEach((button) => bindPtyClick(button, (event) => {
     event.preventDefault();
     event.stopPropagation();
-    closeTerminal(button.dataset.terminalClose);
+    (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
   }));
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   return stable;
@@ -457,9 +552,48 @@ function terminalXtermTheme(node) {
     background: css("--terminal-bg", "#08080c"),
     foreground: css("--terminal-copy", "#f7f4ff"),
     cursor: css("--terminal-text", "#f7f4ff"),
-    selectionBackground: css("--terminal-accent-border", "rgba(109, 59, 255, 0.4)")
+    selectionBackground: css("--terminal-accent-border", "rgba(109, 59, 255, 0.4)"),
+    black: css("--terminal-ansi-black", "#24242d"),
+    red: css("--terminal-ansi-red", "#ff6b81"),
+    green: css("--terminal-ansi-green", "#55d98b"),
+    yellow: css("--terminal-ansi-yellow", "#e7c65f"),
+    blue: css("--terminal-ansi-blue", "#6aa8ff"),
+    magenta: css("--terminal-ansi-magenta", "#bd8cff"),
+    cyan: css("--terminal-ansi-cyan", "#69d6c7"),
+    white: css("--terminal-ansi-white", "#ddd8e8"),
+    brightBlack: css("--terminal-ansi-bright-black", "#7a7a8c"),
+    brightRed: css("--terminal-ansi-bright-red", "#ff9aad"),
+    brightGreen: css("--terminal-ansi-bright-green", "#86e7aa"),
+    brightYellow: css("--terminal-ansi-bright-yellow", "#f3db83"),
+    brightBlue: css("--terminal-ansi-bright-blue", "#9bc2ff"),
+    brightMagenta: css("--terminal-ansi-bright-magenta", "#d5b4ff"),
+    brightCyan: css("--terminal-ansi-bright-cyan", "#9be7dc"),
+    brightWhite: css("--terminal-ansi-bright-white", "#ffffff")
   };
 }
+
+function applyTerminalXtermThemes() {
+  Object.values(terminalXterms).forEach((xterm) => {
+    const node = xterm?.element?.parentElement;
+    if (!node?.isConnected) return;
+    try {
+      xterm.options.theme = terminalXtermTheme(node);
+      xterm.refresh?.(0, Math.max(0, (xterm.rows || 1) - 1));
+    } catch {}
+  });
+}
+
+let terminalThemeObserver = null;
+function ensureTerminalThemeObserver() {
+  if (terminalThemeObserver || !document.body || typeof MutationObserver !== "function") return;
+  terminalThemeObserver = new MutationObserver(() => {
+    const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
+    schedule(applyTerminalXtermThemes);
+  });
+  terminalThemeObserver.observe(document.body, { attributes: true, attributeFilter: ["data-desktop-theme"] });
+}
+
+ensureTerminalThemeObserver();
 
 function schedulePtyRender(id) {
   clearTimeout(terminalPtyRenderTimers[id]);
@@ -493,6 +627,8 @@ function ptySessionPatch(session) {
     agent: String(session.agent || ""),
     agentStatus: session.agentStatus || null,
     model: String(session.model || ""),
+    effort: normalizeTerminalEffort(session.reasoningEffort),
+    permissionMode: normalizeTerminalPermissionMode(session.permissionMode),
     tokenMode: String(session.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
     cwd: String(session.cwd || ""),
     output: String(session.output || "").slice(-60000),
@@ -533,35 +669,117 @@ function updateTerminalAgents(statuses) {
 }
 
 window.addEventListener("load", () => setTimeout(syncPtyTerminals, 0));
+window.addEventListener("pagehide", flushPtyTerminals);
+window.addEventListener("beforeunload", flushPtyTerminals);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushPtyTerminals(); });
+
+function flushPtyTerminals() {
+  try { saveTerminals(); } catch {}
+}
 
 async function syncPtyTerminals() {
   try {
     const response = await fetch("/desktop/pty-terminals");
     const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Desktop terminal service did not respond.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
     const sessions = Array.isArray(result.sessions) ? result.sessions : [];
-    for (const terminal of terminals) {
-      const session = sessions.find((item) => item.id === terminal.id);
-      if (!session) {
-        if (terminal.ptyStatus !== "exited" && terminal.ptyStatus !== "unavailable") {
-          terminal.pending = false;
-          terminal.ptyStatus = "exited";
-          terminal.updatedAt = Date.now();
-          terminalPtySockets[terminal.id]?.close?.();
-          delete terminalPtySockets[terminal.id];
-        }
-        continue;
-      }
-      Object.assign(terminal, ptySessionPatch(session), { pending: false });
-      if (terminal.ptyStatus !== "exited" && terminal.ptyStatus !== "unavailable") connectPtyTerminal(terminal);
-    }
+    reconcilePtyTerminalSessions(sessions);
+    ensureTerminal();
     saveTerminals();
-    if (activePage === "terminals") {
-      renderTopbar();
-      if (!refreshPtyTerminalsDom()) {
-        forceTerminalRender = true;
-        render();
-      }
+  } catch (error) {
+    markPtySyncError(error);
+  } finally {
+    finishPtySyncRender();
+  }
+}
+
+function reconcilePtyTerminalSessions(sessions) {
+  const localById = new Map(terminals.map((terminal) => [terminal.id, terminal]));
+  const serverById = new Map(
+    sessions.filter((session) => session?.id).map((session) => [String(session.id), session])
+  );
+  const pendingLocalIds = terminals
+    .filter((terminal) => terminal.pending && Date.now() - Number(terminal.updatedAt || 0) < 15_000)
+    .map((terminal) => terminal.id)
+    .filter((id) => !serverById.has(id));
+  const orderedIds = [
+    ...terminals.map((terminal) => terminal.id).filter((id) => serverById.has(id)),
+    ...pendingLocalIds,
+    ...Array.from(serverById.keys()).filter((id) => !localById.has(id))
+  ];
+  const next = [];
+
+  for (const id of orderedIds.slice(0, maxTerminals)) {
+    const session = serverById.get(id);
+    let terminal = localById.get(id);
+    if (!session && terminal?.pending) {
+      next.push(terminal);
+      continue;
     }
-  } catch {}
+    if (!terminal) {
+      terminal = normalizeTerminal({
+        id,
+        title: session.title || "Recovered terminal",
+        agent: session.agent || "vibyra",
+        model: session.model || "auto",
+        effort: session.reasoningEffort || "medium",
+        permissionMode: session.permissionMode || "standard",
+        projectId: session.projectId || "",
+        ptyRendererVersion: terminalPtyRendererVersion,
+        updatedAt: Date.parse(session.updatedAt || "") || Date.now()
+      });
+    }
+    if (!terminal) continue;
+    Object.assign(terminal, ptySessionPatch(session), {
+      title: String(session.title || terminal.title || "Terminal"),
+      pending: false,
+      notice: null
+    });
+    next.push(terminal);
+  }
+
+  const nextIds = new Set(next.map((terminal) => terminal.id));
+  terminals.filter((terminal) => !nextIds.has(terminal.id)).forEach(removeLocalPtyTerminal);
+  terminals = next;
+  for (const terminal of terminals) {
+    if (terminal.ptyStatus !== "exited" && terminal.ptyStatus !== "unavailable") {
+      connectPtyTerminal(terminal);
+    }
+  }
+}
+
+function removeLocalPtyTerminal(terminal) {
+  const id = terminal?.id;
+  if (!id) return;
+  clearTimeout(terminalPtyReconnectTimers[id]);
+  terminalPtySockets[id]?.close?.();
+  terminalXterms[id]?.dispose?.();
+  delete terminalPtySockets[id];
+  delete terminalPtyReconnectTimers[id];
+  delete terminalPtyReconnectAttempts[id];
+  delete terminalXterms[id];
+  delete terminalXtermSizes[id];
+  delete terminalXtermSnapshots[id];
+  delete terminalXtermReplayWrites[id];
+}
+
+function markPtySyncError(error) {
+  const message = error instanceof Error ? error.message : "Desktop terminal sync failed.";
+  for (const terminal of terminals) {
+    if (terminal.ptyStatus === "exited" || terminal.ptyStatus === "unavailable") continue;
+    terminal.pending = false;
+    terminal.notice = "Could not reconnect terminals. " + message;
+    terminal.updatedAt = Date.now();
+  }
+  saveTerminals();
+}
+
+function finishPtySyncRender() {
+  if (activePage !== "terminals") return;
+  renderTopbar();
+  if (!refreshPtyTerminalsDom()) {
+    forceTerminalRender = true;
+    render();
+  }
 }

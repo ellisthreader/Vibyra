@@ -34,6 +34,7 @@ The app is the phone-side command center for onboarding, pairing with Vibyra Des
 - Cloud sync, account state, background API offline gate: `App/Cloud Sync.md`
 - Profile tab, billing sheets, model gating UI: `App/Profile Billing.md`
 - Bottom nav, major UI entry points, visual routing: `App/Navigation UI.md`
+- Short-form product clarity, visual hook, and mobile frontend design checks: `App/Short-Form Frontend Design Principles.md`
 
 ## Source Entry Points
 

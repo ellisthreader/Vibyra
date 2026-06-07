@@ -1,11 +1,9 @@
 export { BottomNav } from "./chunk1";
-export { AccountMenuSheet, PrimaryMenuSheet } from "./WorkspaceMenus";
+export { PrimaryMenuSheet } from "./WorkspaceMenus";
 export { TopBar } from "./chunk2";
 export { TokenBalancePill, getTopBarTitle, projectPreviewUrl, RenameChatModal, getDesktopStatusLabel, getDesktopStatusStyle } from "./chunk3";
 export { PcSwitcherSheet } from "./chunk4";
 export { TokenMembershipSheet, formatPlanLabel, MobileConnectionCard } from "./chunk5";
-export { DashboardHome } from "./chunk6";
-export { RunningProjectsPanel } from "./chunk7";
 export { ProjectsPage } from "./chunk8";
 export { AIChatPage } from "./chunk9";
 export { ModelMenuRow, getUnlockedInitialChatModel, isModelLockedForPlan, LowCreditsWarning, ChatEmptyState, ChatWelcomeGlyph, ModelProviderIcon } from "./chunk10";

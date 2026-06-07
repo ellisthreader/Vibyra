@@ -113,6 +113,22 @@ body[data-desktop-theme="light"] {
   border-color: color-mix(in srgb, var(--chat-accent) 18%, transparent);
   color: var(--chat-accent);
 }
+.ai-selector-copy small,
+.ai-picker-head small,
+.ai-effort-copy small { color: var(--chat-muted); }
+.model-selected { color: var(--chat-accent); }
+.ai-effort { border-top-color: var(--chat-line); }
+.ai-effort-options {
+  background: color-mix(in srgb, var(--chat-elevated) 58%, transparent);
+  border-color: var(--chat-line-soft);
+}
+.ai-effort-options button { color: var(--chat-muted); }
+.ai-effort-options button:hover { color: var(--chat-text); }
+.ai-effort-options button.active {
+  background: var(--chat-surface);
+  border-color: var(--chat-line);
+  color: var(--chat-text);
+}
 .attach-menu .attach-clear { border-color: color-mix(in srgb, var(--chat-error) 18%, transparent); color: var(--chat-error); }
 .slash-menu strong b { color: var(--chat-text); }
 
@@ -147,5 +163,30 @@ body[data-desktop-theme="light"] {
     --chat-error: var(--color-error, #b42345);
     --chat-error-soft: var(--color-error-soft, #fff1f4);
     --chat-shadow: rgba(33, 28, 48, 0.14);
+  }
+}
+
+.chat-actions-menu button.danger {
+  color: var(--chat-error);
+}
+
+.chat-actions-menu button:disabled {
+  color: var(--chat-dim);
+  opacity: 0.62;
+}
+
+.chat-actions-menu button:disabled svg {
+  color: currentColor;
+}
+
+body[data-desktop-theme="light"] .send-button:not(:disabled) {
+  background: var(--chat-accent);
+  color: #ffffff;
+}
+
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] .send-button:not(:disabled) {
+    background: var(--chat-accent);
+    color: #ffffff;
   }
 }

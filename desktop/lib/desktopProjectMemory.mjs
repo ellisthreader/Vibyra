@@ -27,10 +27,11 @@ export async function desktopMemoryContext(projectId, fetchImpl = fetch) {
   }
 }
 
-async function requestProjectMemory(projectId, suffix, options, fetchImpl) {
+export async function requestDesktopProjectMemory(projectId, suffix, options = {}, fetchImpl = fetch) {
   if (!appState.desktopAccountToken) throw httpError(401, "Log in to Vibyra Desktop to use project memory.");
   const id = String(projectId || "").trim();
   if (!id) throw httpError(422, "Select a project before using Memory.");
+  if (id.length > 190 || id.includes("\0")) throw httpError(422, "Select a valid project before using Memory.");
   const response = await fetchImpl(`${API_URL}/api/project-memory/${encodeURIComponent(id)}${suffix}`, {
     ...options,
     headers: {
@@ -40,7 +41,12 @@ async function requestProjectMemory(projectId, suffix, options, fetchImpl) {
     }
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload.ok === false) throw httpError(response.status, payload.error || "Project memory request failed.");
+  if (!response.ok || payload.ok === false) throw httpError(response.status, payload.error || payload.message || "Project memory request failed.");
+  return payload;
+}
+
+async function requestProjectMemory(projectId, suffix, options, fetchImpl) {
+  const payload = await requestDesktopProjectMemory(projectId, suffix, options, fetchImpl);
   return normalizeMemory(payload.memory);
 }
 

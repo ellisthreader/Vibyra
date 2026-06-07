@@ -36,7 +36,7 @@ export function BottomNav(props: { activePage: DashboardPage; onChange: (page: D
           >
             <Ionicons name={page.icon} color={active ? activeIconColor : inactiveIconColor} size={24} />
             <Text numberOfLines={1} style={[styles.bottomNavText, active ? styles.bottomNavTextActive : null]}>
-              {page.key === "dashboard" ? "Home" : page.key === "profile" ? "Profile" : page.label.replace("AI ", "")}
+              {page.key === "profile" ? "Profile" : page.label.replace("AI ", "")}
             </Text>
           </Pressable>
         );

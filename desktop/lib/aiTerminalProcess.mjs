@@ -15,11 +15,11 @@ const AGENT_CONFIG = {
   gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." }
 };
 
-export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", tokenMode = "vibyra", projectId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
+export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", permissionMode = "standard", tokenMode = "vibyra", projectId = "", terminalId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
   const shell = process.env.SHELL || "/bin/bash";
   const status = aiTerminalAgentStatus(agent);
-  const launch = launchCommand(status, shell);
-  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, tokenMode, projectId, cols, rows });
+  const launch = launchCommand(status, shell, { model, reasoningEffort, permissionMode });
+  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, permissionMode, tokenMode, projectId, terminalId, cols, rows });
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {
@@ -96,8 +96,34 @@ function integer(value, fallback) {
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
-function launchCommand(status, shell) {
+function launchCommand(status, shell, options = {}) {
   if (!status.commandPath) return `${shellQuote(shell)} -l`;
-  const args = Array.isArray(status.args) ? status.args : [];
+  const args = aiTerminalAgentArgs(status.key, options);
   return [status.commandPath, ...args].map(shellQuote).join(" ");
+}
+
+export function aiTerminalAgentArgs(agent, options = {}) {
+  const key = AGENT_CONFIG[agent] ? agent : "vibyra";
+  const args = [...(AGENT_CONFIG[key].args || [])];
+  if (key !== "codex") return args;
+  const model = codexModelName(options.model);
+  if (model && model !== "auto") args.push("--model", model);
+  args.push("-c", `model_reasoning_effort="${normalizeReasoningEffort(options.reasoningEffort)}"`);
+  if (normalizePermissionMode(options.permissionMode) === "full") {
+    args.push("--dangerously-bypass-approvals-and-sandbox");
+  }
+  return args;
+}
+
+function normalizeReasoningEffort(value) {
+  const effort = String(value || "medium").toLowerCase();
+  return ["low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+}
+
+function normalizePermissionMode(value) {
+  return String(value || "").toLowerCase() === "full" ? "full" : "standard";
+}
+
+function codexModelName(value) {
+  return String(value || "").trim().replace(/^openai\//i, "");
 }

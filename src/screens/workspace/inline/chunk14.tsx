@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -6,9 +6,10 @@ import { colors } from "../../../styles/theme";
 import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
 import { styles } from "../styles";
 import type { CommunityComment, CommunityPost } from "../types";
-import { formatCommunityTitle, getCommunitySeedComments } from "./chunk15";
+import { formatCommunityTitle, getCommunitySeedComments, hasCommunityRunnableDemo } from "./chunk15";
 import { CommunityAppLogo, CommunityAuthorAvatar } from "./chunk16";
 import { CommunityPreview } from "./chunk17";
+import { ProjectMenuItem } from "./chunk21";
 
 export function CommunityPostDetail({
   addedComments,
@@ -21,6 +22,9 @@ export function CommunityPostDetail({
   liked,
   onAddComment,
   onCommentDraftChange,
+  onDelete,
+  onEdit,
+  onMakePrivate,
   onOpen,
   onReport,
   onToggleBookmark,
@@ -38,6 +42,9 @@ export function CommunityPostDetail({
   liked: boolean;
   onAddComment: () => void;
   onCommentDraftChange: (text: string) => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
+  onMakePrivate?: () => void;
   onToggleBookmark: () => void;
   onOpen: () => void;
   onReport: () => void;
@@ -45,9 +52,11 @@ export function CommunityPostDetail({
   opened: boolean;
   post: CommunityPost;
 }) {
+  const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
   const comments = [...getCommunitySeedComments(post), ...addedComments];
   const visibleComments = comments.slice(0, 4);
   const canPostComment = canComment && commentDraft.trim().length > 0 && !commentPosting;
+  const canOpenApp = hasCommunityRunnableDemo(post);
 
   return (
     <View style={styles.communityDetailScreen}>
@@ -69,15 +78,19 @@ export function CommunityPostDetail({
       </View>
 
       <View style={styles.communityDetailActions}>
-        <Pressable style={styles.communityPrimaryOpenButton} onPress={onOpen}>
+        <Pressable
+          disabled={!canOpenApp}
+          onPress={() => { if (canOpenApp) onOpen(); }}
+          style={[styles.communityPrimaryOpenButton, !canOpenApp ? { opacity: 0.58 } : null]}
+        >
           <LinearGradient
             colors={[communityDetailAccentDark, communityDetailAccent]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.communityPrimaryOpenGradient}
           >
-            <Ionicons name={opened ? "checkmark-circle" : "open-outline"} color={colors.text} size={23} />
-            <Text style={styles.communityPrimaryOpenText}>{opened ? "Opened" : "Open app"}</Text>
+            <Ionicons name={!canOpenApp ? "cloud-offline-outline" : opened ? "checkmark-circle" : "open-outline"} color={colors.text} size={23} />
+            <Text style={styles.communityPrimaryOpenText}>{!canOpenApp ? "Unavailable" : opened ? "Opened" : "Open preview"}</Text>
           </LinearGradient>
         </Pressable>
         <Pressable accessibilityLabel={bookmarked ? "Remove saved app" : "Save app"} accessibilityRole="button" style={styles.communitySmallAction} onPress={onToggleBookmark}>
@@ -90,6 +103,20 @@ export function CommunityPostDetail({
         <Pressable accessibilityLabel="Report app" accessibilityRole="button" style={styles.communitySmallAction} onPress={onReport}>
           <Ionicons name="flag-outline" color={colors.text} size={20} />
         </Pressable>
+        {post.viewerCanManage ? (
+          <View style={{ position: "relative" }}>
+            <Pressable accessibilityLabel="Manage listing" accessibilityRole="button" style={styles.communitySmallAction} onPress={() => setOwnerMenuOpen((open) => !open)}>
+              <Ionicons name="ellipsis-vertical" color={colors.text} size={20} />
+            </Pressable>
+            {ownerMenuOpen ? (
+              <View style={[styles.projectMenu, { position: "absolute", right: 0, top: 50, zIndex: 40 }]}>
+                {onEdit ? <ProjectMenuItem icon="create-outline" label="Edit listing" onPress={() => { setOwnerMenuOpen(false); onEdit(); }} /> : null}
+                {onMakePrivate ? <ProjectMenuItem icon="lock-closed-outline" label="Make private" onPress={() => { setOwnerMenuOpen(false); onMakePrivate(); }} /> : null}
+                {onDelete ? <ProjectMenuItem danger icon="trash-outline" label="Delete listing" onPress={() => { setOwnerMenuOpen(false); onDelete(); }} /> : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.communityDetailScreenshots}>

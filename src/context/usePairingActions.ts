@@ -95,7 +95,7 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Pairing failed";
-      setters.setPairingError(`${message}. Keep Vibyra Desktop open and use the code shown there.`);
+      setters.setPairingError(pairingErrorMessage(message, "code"));
       setters.setPairingMessage("Open Vibyra Desktop and type the code shown there.");
       return false;
     } finally {
@@ -139,7 +139,7 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
       return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Pairing failed";
-      setters.setPairingError(`${message}. Keep Vibyra Desktop open and approve the request.`);
+      setters.setPairingError(pairingErrorMessage(message, "approval"));
       return false;
     } finally {
       setters.setPairing(false);
@@ -172,4 +172,19 @@ export function usePairingActions(state: State, setters: Setters, requests: Requ
     pairMachineAt,
     testDesktopConnection
   };
+}
+
+function pairingErrorMessage(message: string, recovery: "code" | "approval") {
+  if (isDesktopAccountError(message)) return message;
+  const hint = recovery === "code"
+    ? "Keep Vibyra Desktop open and use the code shown there."
+    : "Keep Vibyra Desktop open and approve the request.";
+  return `${message}. ${hint}`;
+}
+
+function isDesktopAccountError(message: string) {
+  const normalized = message.toLowerCase();
+  return normalized.includes("log in to vibyra desktop")
+    || normalized.includes("different vibyra account")
+    || normalized.includes("phone account identity");
 }

@@ -9,13 +9,17 @@ import { matchChatCommand } from "../data/chatCommands";
 export function AppPreviewMiniChat({
   agentRequesting,
   app,
+  connectedAbove,
   bottomOffset,
+  onHeightChange,
   onOpenChange,
   onSubmit
 }: {
   agentRequesting: boolean;
   app: GeneratedApp;
+  connectedAbove?: boolean;
   bottomOffset: number;
+  onHeightChange?: (height: number) => void;
   onOpenChange?: (open: boolean) => void;
   onSubmit: (prompt: string) => Promise<boolean> | boolean;
 }) {
@@ -23,9 +27,8 @@ export function AppPreviewMiniChat({
   const [draft, setDraft] = useState("");
   const [commandBlocked, setCommandBlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const closeIcon = useThemedColor("#C8C1D8");
+  const secondaryIcon = useThemedColor("#A7A1B7");
   const inputPlaceholder = useThemedColor("#8D879D");
-  const sparkleIcon = useThemedColor("#D9CCFF");
   const busy = agentRequesting || submitting;
   const trimmed = draft.trim();
 
@@ -37,7 +40,7 @@ export function AppPreviewMiniChat({
     setSubmitting(false);
   }, [app.id, onOpenChange]);
 
-  function setPanelOpen(value: boolean) {
+  function setChatOpen(value: boolean) {
     setOpen(value);
     onOpenChange?.(value);
   }
@@ -52,7 +55,6 @@ export function AppPreviewMiniChat({
     setCommandBlocked(false);
     setSubmitting(true);
     setDraft("");
-    setPanelOpen(false);
     try {
       await onSubmit(prompt);
     } finally {
@@ -65,37 +67,41 @@ export function AppPreviewMiniChat({
       <Pressable
         accessibilityLabel="Open preview AI chat"
         accessibilityRole="button"
-        onPress={() => setPanelOpen(true)}
-        style={({ pressed }) => [miniStyles.fab, { bottom: bottomOffset }, pressed ? miniStyles.pressed : null]}
+        onPress={() => setChatOpen(true)}
+        style={({ pressed }) => [
+          miniStyles.trigger,
+          { bottom: bottomOffset },
+          pressed ? miniStyles.pressed : null
+        ]}
       >
-        <Ionicons name="chatbubble-ellipses" color="#FFFFFF" size={22} />
+        <Ionicons name="sparkles" color="#FFFFFF" size={16} />
+        <Text style={miniStyles.triggerText}>Ask AI</Text>
       </Pressable>
     );
   }
 
   return (
-    <View style={[miniStyles.panel, { bottom: bottomOffset }]}>
-      <View style={miniStyles.header}>
-        <View style={miniStyles.titleRow}>
-          <View style={miniStyles.titleIcon}>
-            <Ionicons name="sparkles-outline" color={sparkleIcon} size={15} />
-          </View>
-          <View style={miniStyles.titleCopy}>
-            <Text style={miniStyles.title}>Preview AI</Text>
-            <Text numberOfLines={1} style={miniStyles.subtitle}>{busy ? "Updating preview" : "Ask for a quick change"}</Text>
-          </View>
-        </View>
-        <Pressable accessibilityLabel="Close preview AI chat" hitSlop={8} onPress={() => setPanelOpen(false)} style={miniStyles.close}>
-          <Ionicons name="close" color={closeIcon} size={18} />
+    <View
+      onLayout={(event) => onHeightChange?.(event.nativeEvent.layout.height)}
+      style={[miniStyles.container, { bottom: bottomOffset }]}
+    >
+      <View style={[miniStyles.composer, connectedAbove ? miniStyles.composerConnected : null]}>
+        <Pressable
+          accessibilityLabel="Close preview AI chat"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() => setChatOpen(false)}
+          style={({ pressed }) => [miniStyles.close, pressed ? miniStyles.pressed : null]}
+        >
+          <Ionicons name="chevron-down" color={secondaryIcon} size={19} />
         </Pressable>
-      </View>
-      <View style={miniStyles.composer}>
         <TextInput
+          autoFocus
           editable={!busy}
           multiline
           onChangeText={(value) => { setDraft(value); if (commandBlocked) setCommandBlocked(false); }}
           onSubmitEditing={submit}
-          placeholder="Describe the change..."
+          placeholder="Ask for a change..."
           placeholderTextColor={inputPlaceholder}
           returnKeyType="send"
           style={miniStyles.input}
@@ -134,46 +140,37 @@ function buildPreviewPrompt(app: GeneratedApp, request: string) {
 
 const miniStyles = createThemedStyleSheet({
   close: {
-    alignItems: "center", backgroundColor: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)",
-    borderRadius: 10, borderWidth: 1, height: 34, justifyContent: "center", width: 34
+    alignItems: "center", alignSelf: "center", height: 40, justifyContent: "center", width: 38
   },
   composer: {
-    alignItems: "flex-end", backgroundColor: "rgba(255,255,255,0.055)", borderColor: "rgba(255,255,255,0.1)",
-    borderRadius: 14, borderWidth: 1, flexDirection: "row", minHeight: 50, paddingLeft: 13
+    alignItems: "flex-end", backgroundColor: "rgba(7,9,17,0.97)", borderColor: "rgba(142,60,255,0.42)",
+    borderRadius: 18, borderWidth: 1, flexDirection: "row", minHeight: 54,
+    shadowColor: "#000000", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.28,
+    shadowRadius: 24
   },
-  fab: {
-    alignItems: "center", backgroundColor: "#8E3CFF", borderColor: "rgba(255,255,255,0.22)",
-    borderRadius: 999, borderWidth: 1, elevation: 10, height: 52, justifyContent: "center",
-    position: "absolute", right: 18, shadowColor: "#000000", shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28, shadowRadius: 16, width: 52, zIndex: 20
+  composerConnected: {
+    borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTopWidth: 0,
+    shadowOpacity: 0
   },
-  header: {
-    alignItems: "center", flexDirection: "row", justifyContent: "space-between",
-    marginBottom: 10
+  container: {
+    left: 14, position: "absolute", right: 14, zIndex: 20
   },
   input: {
     color: "#FFFFFF", flex: 1, fontSize: 14, lineHeight: 19, maxHeight: 94, minHeight: 42,
-    paddingHorizontal: 0, paddingRight: 9, paddingVertical: 10
+    paddingHorizontal: 0, paddingRight: 8, paddingVertical: 10
   },
-  note: { color: "#A7A1B7", fontSize: 12, fontWeight: "700", marginTop: 8 },
-  panel: {
-    backgroundColor: "rgba(7, 9, 17, 0.97)", borderColor: "rgba(142,60,255,0.42)",
-    borderRadius: 20, borderWidth: 1, left: 14, padding: 12, position: "absolute",
-    right: 14, shadowColor: "#000000", shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.28, shadowRadius: 24, zIndex: 20
-  },
+  note: { color: "#A7A1B7", fontSize: 12, fontWeight: "700", marginLeft: 8, marginTop: 7 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
   send: {
     alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 12,
-    height: 40, justifyContent: "center", marginBottom: 5, marginRight: 5, width: 40
+    height: 42, justifyContent: "center", marginBottom: 5, marginRight: 5, width: 42
   },
   sendDisabled: { backgroundColor: "rgba(255,255,255,0.12)" },
-  subtitle: { color: "#A7A1B7", fontSize: 11, fontWeight: "800", marginTop: 1 },
-  title: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
-  titleCopy: { flex: 1, minWidth: 0 },
-  titleIcon: {
-    alignItems: "center", backgroundColor: "rgba(142,60,255,0.16)", borderRadius: 10,
-    height: 30, justifyContent: "center", width: 30
+  trigger: {
+    alignItems: "center", backgroundColor: "#8E3CFF", borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 44,
+    paddingHorizontal: 15, position: "absolute", right: 16, shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 16, zIndex: 20
   },
-  titleRow: { alignItems: "center", flex: 1, flexDirection: "row", gap: 9, minWidth: 0 }
+  triggerText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" }
 });

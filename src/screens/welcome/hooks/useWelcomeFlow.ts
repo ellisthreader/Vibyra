@@ -25,10 +25,10 @@ export function useWelcomeFlow(): WelcomeFlow {
     if (announced.current === step) return;
     announced.current = step;
     const labels: Record<WelcomeStep, string> = {
-      hero: "Welcome to Vibyra. Let's get started.",
-      download: "Step 1. Download Vibyra Desktop on your computer.",
-      setup: "Step 2. Connect your PC.",
-      approve: "Step 3. Confirm the connection on your phone.",
+      hero: "Welcome to Vibyra. Connect your PC.",
+      download: "Download Vibyra Desktop on your computer.",
+      setup: "Finding your PC.",
+      approve: "Confirm the connection on your phone.",
       connected: "All set. You're connected."
     };
     AccessibilityInfo.announceForAccessibility(labels[step]);
@@ -42,7 +42,7 @@ export function useWelcomeFlow(): WelcomeFlow {
         return true;
       }
       if (step === "setup") {
-        setStep("download");
+        setStep("hero");
         return true;
       }
       if (step === "download") {
@@ -68,7 +68,7 @@ export function useWelcomeFlow(): WelcomeFlow {
 
   const advance = useCallback((next: WelcomeStep) => setStep(next), []);
   const goToHero = useCallback(() => setStep("hero"), []);
-  const goToDownload = useCallback(() => setStep("download"), []);
+  const goToDownload = useCallback(() => setStep("setup"), []);
   const goToSetup = useCallback(() => setStep("setup"), []);
   const goToApprove = useCallback(() => setStep("approve"), []);
   const goToConnected = useCallback(() => setStep("connected"), []);

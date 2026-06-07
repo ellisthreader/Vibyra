@@ -180,7 +180,7 @@ function activeModelGroup() {
 }
 function selectModelMenuGroup(groupKey) {
   modelMenuGroup = groupKey || "";
-  openChatMenu = "model";
+  openChatMenu = "ai";
   renderChat();
 }
 function selectChatModel(modelKey) {

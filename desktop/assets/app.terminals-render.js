@@ -11,7 +11,8 @@ function renderTerminalsPage() {
   if (!terminals.length) {
     const activeSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
     const hasSetupPicker = nodes.content.querySelector('[data-terminal-model-picker="setup"]');
-    if ((activeSearch?.target === "setup" || (setupModelMenuOpen && hasSetupPicker)) && nodes.content.querySelector(".terminal-setup")) return;
+    const hasProjectMenu = terminalProjectMenuTarget === "setup" && nodes.content.querySelector('[data-terminal-project-menu="setup"]');
+    if ((activeSearch?.target === "setup" || (setupModelMenuOpen && hasSetupPicker) || hasProjectMenu) && nodes.content.querySelector(".terminal-setup")) return;
     nodes.content.innerHTML = setupView();
     bindTerminalControls();
     return;
@@ -45,8 +46,9 @@ function setupView() {
 }
 
 function terminalTabs() {
-  const tabs = terminals.map((terminal, index) => `<div class="terminal-tab ${terminal.id === activeTerminalId ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}"><button class="terminal-tab-open" type="button" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(terminal.title)}"><span class="terminal-status ${terminal.pending ? "running" : ""}"></span><span>${index + 1}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button></div>`).join("");
-  return `<header class="terminal-tabs"><div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list">${tabs}</div><button class="terminal-layout-button" id="toggle-terminal-layout" type="button" aria-label="Toggle terminal layout" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button></header>`;
+  const tabs = terminals.map((terminal, index) => `<div class="terminal-tab ${terminal.id === activeTerminalId ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}"><button class="terminal-tab-open" type="button" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(terminal.title)}">${typeof terminalStatusDot === "function" ? terminalStatusDot(terminal) : `<span class="terminal-status ${terminal.pending ? "running" : ""}"></span>`}<span>${index + 1}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button></div>`).join("");
+  const companionTools = typeof terminalCompanionToolbarHtml === "function" ? terminalCompanionToolbarHtml() : "";
+  return `<header class="terminal-tabs"><div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list">${tabs}</div>${companionTools}<button class="terminal-layout-button" id="toggle-terminal-layout" type="button" aria-label="Toggle terminal layout" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button></header>`;
 }
 
 function newTerminalMenu() {
@@ -103,7 +105,7 @@ function projectOptions(terminal) {
 }
 
 function terminalNotice(terminal) {
-  return `<aside class="terminal-notice"><span>${icon("alert")}</span><p>${escapeHtml(terminal.notice)}</p><button type="button" data-terminal-notice="${escapeAttribute(terminal.id)}">${icon("close")}</button></aside>`;
+  return `<aside class="terminal-notice" role="status" aria-live="polite"><span>${icon("alert")}</span><p>${escapeHtml(terminal.notice)}</p><button type="button" data-terminal-notice="${escapeAttribute(terminal.id)}" aria-label="Dismiss terminal notice">${icon("close")}</button></aside>`;
 }
 
 function terminalLine(message, terminal) {

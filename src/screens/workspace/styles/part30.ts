@@ -57,11 +57,6 @@ export const part30 = {
     flex: 1,
     minWidth: 0
   },
-  topConnectionRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8
-  },
   topKicker: {
     color: "#9AE9B4",
     fontSize: 9,

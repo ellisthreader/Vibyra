@@ -17,7 +17,8 @@ function normalizeTerminal(item) {
     id: String(item.id || "").trim() || terminalId(),
     title: String(item.title || "Terminal").slice(0, 72),
     model: String(item.model || "auto"),
-    effort: String(item.effort || "medium"),
+    effort: normalizeTerminalEffort(item.effort),
+    permissionMode: normalizeTerminalPermissionMode(item.permissionMode),
     tokenMode: String(item.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
     projectId: String(item.projectId || ""),
     draft: String(item.draft || ""),
@@ -53,6 +54,15 @@ function terminalId() {
   return `terminal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function normalizeTerminalEffort(value) {
+  const effort = String(value || "medium").toLowerCase();
+  return ["low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+}
+
+function normalizeTerminalPermissionMode(value) {
+  return String(value || "").toLowerCase() === "full" ? "full" : "standard";
+}
+
 function saveTerminals() {
   localStorage.setItem(storageKey, JSON.stringify(terminals.map(({ pending, notice, ...terminal }) => terminal).slice(0, maxTerminals)));
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
@@ -69,16 +79,17 @@ function ensureTerminal() {
   if (!terminals.some((terminal) => terminal.id === activeTerminalId)) activeTerminalId = terminals[0]?.id || "";
 }
 
-function createTerminal(modelKey = setupModel, shouldRender = true) {
+function createTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
   const model = unlockedModel(modelKey);
   const terminal = {
     id: terminalId(),
     title: `Terminal ${terminals.length + 1}`,
     model: model.key,
-    effort: "medium",
+    effort: normalizeTerminalEffort(options.effort),
+    permissionMode: normalizeTerminalPermissionMode(options.permissionMode),
     tokenMode: setupTokenMode,
-    projectId: typeof selectedProjectId === "string" ? selectedProjectId : "",
+    projectId: options.projectId === undefined ? (typeof selectedProjectId === "string" ? selectedProjectId : "") : String(options.projectId || ""),
     draft: "",
     shellMode: false,
     profileVersion: 1,
@@ -97,9 +108,9 @@ function createTerminal(modelKey = setupModel, shouldRender = true) {
   return terminal;
 }
 
-function createTerminals(count = 1, modelKey = setupModel) {
+function createTerminals(count = 1, modelKey = setupModel, options = {}) {
   const total = Math.min(maxTerminals - terminals.length, normalizeCount(count));
-  for (let index = 0; index < total; index += 1) createTerminal(modelKey, false);
+  for (let index = 0; index < total; index += 1) createTerminal(modelKey, false, options);
   forceTerminalRender = true;
   render();
 }
@@ -111,6 +122,10 @@ function terminalTopbarSubtitle() {
 }
 
 function terminalTopbarHtml() {
-  if (!terminals.length) return "";
+  if (!terminals.length) {
+    return typeof terminalCompanionStandaloneToolbarHtml === "function"
+      ? terminalCompanionStandaloneToolbarHtml()
+      : "";
+  }
   return terminalTabs();
 }

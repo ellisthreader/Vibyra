@@ -52,6 +52,8 @@ export function makeOptimisticAgent(
     title,
     model,
     projectId: target.projectId,
+    chatProjectId: target.chatProjectId,
+    startedAt: Date.now(),
     state: "running",
     progress: 12,
     file: "backend/orchestration"

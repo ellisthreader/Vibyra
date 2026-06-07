@@ -25,7 +25,8 @@ The backend is the cloud companion to the phone app. It owns auth, account/credi
 - Membership, Stripe/IAP, credits, level rewards: `Backend/Billing Credits And Levels.md`
 - App auth, `/api/session/state`, cloud sync: `Backend/Auth And Cloud Sync.md`
 - Public publishing, moderation, community assets: `Backend/Community Publishing.md`
-- App Store-safe Railway/static hosted interactive demos for published apps: `Backend/Railway Cloud Runtime.md`
+- Public Explore hosted/static/Railway demos: `Backend/Hosted Demos.md`
+- Deep hosted-demo/Railway product spec: `Backend/Railway Cloud Runtime.md`
 - Desktop-agent backend route, locks, stale recovery: `Backend/Desktop Agent Backend.md`
 
 ## Concern Traits

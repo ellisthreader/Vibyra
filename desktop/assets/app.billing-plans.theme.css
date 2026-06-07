@@ -1,0 +1,71 @@
+#token-modal .modal--billing-revamp {
+  --billing-modal-bg: linear-gradient(180deg, #11111a, #08080d);
+  --billing-modal-text: #fff;
+  --billing-muted: rgba(255, 255, 255, 0.62);
+  --billing-dim: rgba(255, 255, 255, 0.58);
+  --billing-copy: rgba(255, 255, 255, 0.92);
+  --billing-line: rgba(255, 255, 255, 0.07);
+  --billing-line-strong: rgba(255, 255, 255, 0.14);
+  --billing-control-bg: rgba(255, 255, 255, 0.045);
+  --billing-control-hover: rgba(255, 255, 255, 0.1);
+  --billing-row-bg: rgba(255, 255, 255, 0.035);
+  --billing-row-hover: rgba(255, 255, 255, 0.055);
+  --billing-secondary-bg: rgba(255, 255, 255, 0.07);
+  --billing-secondary-hover: rgba(255, 255, 255, 0.1);
+  --billing-scrollbar: rgba(255, 255, 255, 0.28);
+  --billing-hero-base: #080810;
+  --billing-hero-overlay: linear-gradient(90deg, rgba(5, 5, 9, 0.22), rgba(5, 5, 9, 0.54) 42%, rgba(5, 5, 9, 0.92) 66%);
+  --billing-hero-hover-overlay: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2));
+  --billing-point-bg: rgba(255, 255, 255, 0.08);
+  --billing-point-color: rgba(255, 255, 255, 0.88);
+}
+body[data-desktop-theme="light"] #token-modal .modal--billing-revamp {
+  --billing-modal-bg: var(--surface-elevated);
+  --billing-modal-text: var(--surface-text);
+  --billing-muted: var(--surface-muted);
+  --billing-dim: var(--surface-dim);
+  --billing-copy: var(--surface-text);
+  --billing-line: var(--surface-line-soft);
+  --billing-line-strong: var(--surface-border);
+  --billing-control-bg: var(--surface-hover);
+  --billing-control-hover: rgba(31, 35, 48, 0.08);
+  --billing-row-bg: var(--surface-bg);
+  --billing-row-hover: var(--surface-hover);
+  --billing-secondary-bg: var(--surface-hover);
+  --billing-secondary-hover: rgba(31, 35, 48, 0.08);
+  --billing-scrollbar: rgba(31, 35, 48, 0.22);
+  --billing-hero-base: #ffffff;
+  --billing-hero-overlay: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.58) 42%, rgba(255, 255, 255, 0.96) 66%);
+  --billing-hero-hover-overlay: linear-gradient(180deg, transparent, rgba(24, 31, 44, 0.08));
+  --billing-point-bg: rgba(24, 31, 44, 0.06);
+  --billing-point-color: var(--surface-text);
+}
+body[data-desktop-theme="light"] .modal--billing-revamp .plan-tone-starter { --plan-accent: #9b3fd0; }
+body[data-desktop-theme="light"] .modal--billing-revamp .plan-tone-builder { --plan-accent: #137ea2; }
+body[data-desktop-theme="light"] .modal--billing-revamp .plan-tone-pro { --plan-accent: #9a6500; }
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] #token-modal .modal--billing-revamp {
+    --billing-modal-bg: var(--surface-elevated);
+    --billing-modal-text: var(--surface-text);
+    --billing-muted: var(--surface-muted);
+    --billing-dim: var(--surface-dim);
+    --billing-copy: var(--surface-text);
+    --billing-line: var(--surface-line-soft);
+    --billing-line-strong: var(--surface-border);
+    --billing-control-bg: var(--surface-hover);
+    --billing-control-hover: rgba(31, 35, 48, 0.08);
+    --billing-row-bg: var(--surface-bg);
+    --billing-row-hover: var(--surface-hover);
+    --billing-secondary-bg: var(--surface-hover);
+    --billing-secondary-hover: rgba(31, 35, 48, 0.08);
+    --billing-scrollbar: rgba(31, 35, 48, 0.22);
+    --billing-hero-base: #ffffff;
+    --billing-hero-overlay: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.58) 42%, rgba(255, 255, 255, 0.96) 66%);
+    --billing-hero-hover-overlay: linear-gradient(180deg, transparent, rgba(24, 31, 44, 0.08));
+    --billing-point-bg: rgba(24, 31, 44, 0.06);
+    --billing-point-color: var(--surface-text);
+  }
+  body[data-desktop-theme="auto"] .modal--billing-revamp .plan-tone-starter { --plan-accent: #9b3fd0; }
+  body[data-desktop-theme="auto"] .modal--billing-revamp .plan-tone-builder { --plan-accent: #137ea2; }
+  body[data-desktop-theme="auto"] .modal--billing-revamp .plan-tone-pro { --plan-accent: #9a6500; }
+}

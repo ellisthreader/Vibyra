@@ -89,6 +89,81 @@
   color: var(--surface-success);
 }
 
+.profile-section-search,
+.profile-appearance-card,
+.profile-field input,
+.profile-field select,
+.profile-field textarea,
+.profile-select-row select,
+.profile-session-menu {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.profile-section-search input,
+.profile-appearance-card strong { color: var(--surface-text); }
+
+.profile-section-search svg,
+.profile-section-empty { color: var(--surface-muted); }
+
+.profile-section-search input::placeholder { color: var(--surface-dim); }
+
+.profile-appearance-card:hover,
+.profile-session-menu-button:hover {
+  background: var(--surface-hover);
+  color: var(--surface-text);
+}
+
+.profile-appearance-card.active { background: var(--surface-accent-soft); border-color: var(--surface-border-strong); }
+
+.profile-session-menu {
+  background: var(--surface-elevated);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--color-shadow, #000) 26%, transparent);
+}
+
+.profile-field select option,
+.profile-select-row select option {
+  background: var(--surface-elevated);
+  color: var(--surface-text);
+}
+
+.profile-device-dot,
+.profile-toggle {
+  background: var(--surface-line);
+}
+
+.profile-toggle span {
+  background: var(--surface-elevated);
+}
+
+.profile-session-list,
+.profile-device-list,
+.profile-device-row + .profile-device-row,
+.profile-account-actions,
+.profile-account-action,
+.profile-account-action--danger.is-open,
+.profile-delete-confirm,
+.profile-referral-code,
+.profile-stat-grid span,
+.profile-choice-row + .profile-choice-row,
+.profile-toggle-row + .profile-toggle-row,
+.profile-faq-list article {
+  border-color: var(--surface-line-soft);
+}
+
+.profile-delete-confirm,
+.profile-account-action--danger.is-open {
+  background: var(--surface-danger-soft);
+}
+
+.profile-delete-confirm { border-color: color-mix(in srgb, var(--surface-danger) 32%, transparent); }
+
+.profile-delete-warning {
+  background: var(--surface-danger-soft);
+  border-color: var(--surface-danger);
+}
+
 body[data-desktop-theme="light"] .modal-backdrop {
   background: rgba(20, 16, 32, 0.28);
 }

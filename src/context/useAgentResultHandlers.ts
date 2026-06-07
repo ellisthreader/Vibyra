@@ -7,30 +7,27 @@ import { previewAppForAgentResult } from "./agentPreviewHelpers";
 import { useAppState } from "./useAppState";
 
 type Store = ReturnType<typeof useAppState>;
-type Logs = {
-  appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void;
-  advanceWorkflow: (index: number) => void;
-};
+type Logs = { appendLogs: (logs: Omit<LogEvent, "id" | "time">[]) => void; advanceWorkflow: (index: number) => void; };
+type ResultMetadata = Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">;
 type Messages = {
   streamAssistantMessage: (
     target: ResolvedAgentTarget,
     messageId: string,
     fullText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
+    metadata?: ResultMetadata
   ) => void;
   finalizeStreamedAssistantMessage: (
     target: ResolvedAgentTarget,
     messageId: string,
     finalText: string,
     app?: ChatResponse["app"],
-    metadata?: Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "pendingApplyId" | "creditCost">
+    metadata?: ResultMetadata
   ) => void;
 };
 
 export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messages) {
   const { state, setters } = store;
-
   function finishRealAgent(
     target: ResolvedAgentTarget,
     result: AgentStartResult,
@@ -38,7 +35,9 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     assistantMessageId: string
   ) {
     setters.setAgents((current) => current.map((agent) => (
-      agent.id === optimisticAgentId ? result.agent : agent
+      agent.id === optimisticAgentId
+        ? { ...result.agent, chatProjectId: agent.chatProjectId ?? target.chatProjectId, completedAt: result.agent.state === "complete" ? Date.now() : agent.completedAt, startedAt: agent.startedAt ?? Date.now() }
+        : agent
     )));
     setters.setBuildState(result.buildState);
     setters.setPreviewState(result.preview.state);
@@ -99,7 +98,7 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
   ) {
     setters.setAgents((current) => current.map((agent) => (
       agent.id === optimisticAgentId
-        ? { ...agent, state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
+        ? { ...agent, completedAt: Date.now(), state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
         : agent
     )));
     setters.setBuildState(result.app ? "passed" : "idle");
@@ -133,7 +132,7 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
   ) {
     setters.setAgents((current) => current.map((agent) => (
       agent.id === optimisticAgentId
-        ? { ...agent, state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
+        ? { ...agent, completedAt: Date.now(), state: "complete", progress: 100, file: `OpenRouter - ${result.model}` }
         : agent
     )));
     setters.setBuildState(result.app ? "passed" : "idle");
@@ -176,13 +175,12 @@ export function useAgentResultHandlers(store: Store, logs: Logs, messages: Messa
     setters.setWeeklyCreditsResetAt(user.weeklyCreditsResetAt ?? null);
   }
 }
-
-function chatResponseMetadata(app: ChatResponse["app"], creditCost: number): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval" | "creditCost"> {
+function chatResponseMetadata(app: ChatResponse["app"], creditCost: number): ResultMetadata {
   const preview = previewCodeMetadata(app);
   return preview ? { ...preview, creditCost } : { creditCost };
 }
 
-function previewCodeMetadata(app: ChatResponse["app"]): Pick<ChatMessage, "codeChanges" | "codeFiles" | "codeProjectId" | "editApproval"> | undefined {
+function previewCodeMetadata(app: ChatResponse["app"]): ResultMetadata | undefined {
   const html = app?.html?.trim();
   if (!app || !html) return undefined;
   const appId = app.id;
@@ -196,11 +194,6 @@ function previewCodeMetadata(app: ChatResponse["app"]): Pick<ChatMessage, "codeC
   };
 }
 
-function generatedPreviewApp(app: ChatResponse["app"]): ChatResponse["app"] {
-  if (!app) return app;
-  return { source: "generated", ...app };
-}
+function generatedPreviewApp(app: ChatResponse["app"]): ChatResponse["app"] { return app ? { source: "generated", ...app } : app; }
 
-function countLines(value: string) {
-  return value ? value.split(/\r\n|\r|\n/).length : 0;
-}
+function countLines(value: string) { return value ? value.split(/\r\n|\r|\n/).length : 0; }

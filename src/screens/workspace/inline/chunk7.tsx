@@ -1,100 +1,116 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator, Animated, Image, ImageBackground, KeyboardAvoidingView, Linking, Modal,
-  NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View
-} from "react-native";
-import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
+import React, { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
-import { AppWebView } from "../../../components/AppWebView";
-import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
-import { usePreferences } from "../../../context/PreferencesContext";
-import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
-import { appApiRequest } from "../../../utils/appApi";
-import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
-import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
-import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
-import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
-import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
+import { useThemedColor } from "../../../context/PreferencesContext";
+import type { Agent } from "../../../types/domain";
+import { buildExamplePrompts } from "../data/pages";
 import { styles } from "../styles";
-import { HomeBuildCard } from "./HomeBuildCard";
-import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
+import { HomeBuildRow } from "./HomeBuildRow";
 
-export function RunningProjectsPanel({ buildingCount, onCreateBuild, queuedCount, runningProjects }: {
-  buildingCount: number;
+type BuildItem = {
+  agent: Agent;
+  projectName: string;
+};
+
+export function RunningProjectsPanel({ onCreateBuild, onOpenBuildChat, onUsePrompt, runningProjects }: {
   onCreateBuild: () => void;
-  queuedCount: number;
-  runningProjects: Array<{
-    agent: Agent;
-    projectName: string;
-  }>;
+  onOpenBuildChat: (chatProjectId: string) => void;
+  onUsePrompt: (prompt: string) => void;
+  runningProjects: BuildItem[];
 }) {
-  const prefs = usePreferences();
-  const hasRunning = runningProjects.length > 0;
-  const inProgress = runningProjects.filter((item) => item.agent.state === "running");
+  const accentColor = useThemedColor(colors.accent);
+  const dimColor = useThemedColor(colors.dim);
+  const [hiddenCompleteIds, setHiddenCompleteIds] = useState<Record<string, true>>({});
+  const running = runningProjects.filter((item) => item.agent.state === "running");
   const queued = runningProjects.filter((item) => item.agent.state === "waiting");
+  const complete = runningProjects.filter((item) => item.agent.state === "complete" && !hiddenCompleteIds[item.agent.id]);
+  const active = [...running, ...complete];
+  const visibleRunning = active.slice(0, 4);
+  const visibleQueued = queued.slice(0, 4);
+  const hiddenRunningCount = active.length - visibleRunning.length;
+  const hiddenQueuedCount = queued.length - visibleQueued.length;
 
-  const emptyCtaGradient = prefs.effectiveScheme === "light" ? ["#7C3AED", "#6D3BFF", "#4F46E5"] as const : ["#7C2DFF", "#AA35FF", "#6C22E8"] as const;
+  if (active.length === 0 && queued.length === 0) {
+    return (
+      <View style={[styles.runningProjectsPanel, styles.runningProjectsPanelEmpty]}>
+        <View style={styles.buildEmpty}>
+          <View style={styles.buildEmptyHeader}>
+            <View style={styles.buildEmptyStatus}>
+              <View style={styles.buildEmptyStatusDot} />
+              <Text style={styles.buildEmptyStatusText}>Ready to build</Text>
+            </View>
+            <Text style={styles.buildEmptyTitle}>Start a build</Text>
+            <Text style={styles.buildEmptyText}>Describe the app. Vibyra builds it on your desktop and opens the preview.</Text>
+          </View>
+          <Pressable onPress={onCreateBuild} style={({ pressed }) => [styles.buildEmptyPrimary, pressed ? styles.buildExampleChipPressed : null]}>
+            <Text style={styles.buildEmptyPrimaryText}>Describe your app</Text>
+            <View style={styles.buildEmptyPrimaryIcon}>
+              <Ionicons name="arrow-forward" size={17} color={colors.text} />
+            </View>
+          </Pressable>
+          <View style={styles.buildExampleList}>
+            {buildExamplePrompts.map((example) => (
+              <Pressable
+                key={example.label}
+                onPress={() => onUsePrompt(example.prompt)}
+                style={({ pressed }) => [styles.buildExampleChip, pressed ? styles.buildExampleChipPressed : null]}
+              >
+                <View style={styles.buildExampleIcon}>
+                  <Ionicons name={example.icon} size={20} color={accentColor} />
+                </View>
+                <Text style={styles.buildExampleLabel}>{example.label}</Text>
+                <Ionicons name="arrow-forward" size={16} color={dimColor} />
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.runningProjectsPanel, !hasRunning ? styles.runningProjectsPanelEmpty : null]}>
-      {hasRunning ? (
-        <>
-          <View style={styles.homeQueueStats}>
-            <View style={styles.homeQueueStat}>
-              <Text style={styles.homeQueueStatValue}>{buildingCount}</Text>
-              <Text style={styles.homeQueueStatLabel}>Building</Text>
-            </View>
-            <View style={styles.homeQueueStat}>
-              <Text style={[styles.homeQueueStatValue, styles.homeQueueStatValueQueued]}>{queuedCount}</Text>
-              <Text style={[styles.homeQueueStatLabel, styles.homeQueueStatLabelQueued]}>Queued</Text>
-            </View>
-          </View>
+    <View style={styles.runningProjectsPanel}>
+      <BuildSection
+        count={active.length}
+        hiddenCount={hiddenRunningCount}
+        items={visibleRunning}
+        onCompleteExit={(id) => setHiddenCompleteIds((current) => ({ ...current, [id]: true }))}
+        onOpenBuildChat={onOpenBuildChat}
+        title="Building now"
+      />
+      <BuildSection
+        count={queued.length}
+        hiddenCount={hiddenQueuedCount}
+        items={visibleQueued}
+        onOpenBuildChat={onOpenBuildChat}
+        title="Queued"
+      />
+    </View>
+  );
+}
 
-          <View style={styles.runningProjectsList}>
-          <ScrollView
-            contentContainerStyle={styles.runningProjectsScrollContent}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-            style={styles.runningProjectsScroll}
-          >
-            {inProgress.length > 0 ? (
-              <View style={styles.homeQueueSection}>
-                <Text style={styles.homeQueueSectionTitle}>In progress</Text>
-                {inProgress.map((item) => <HomeBuildCard key={item.agent.id} item={item} />)}
-              </View>
-            ) : null}
-            {queued.length > 0 ? (
-              <View style={styles.homeQueueSection}>
-                <Text style={styles.homeQueueSectionTitle}>Queued</Text>
-                {queued.map((item) => <HomeBuildCard key={item.agent.id} item={item} />)}
-              </View>
-            ) : null}
-          </ScrollView>
-          </View>
-        </>
-      ) : (
-        <View style={styles.runningProjectsEmpty}>
-          <Image source={projectsFoldersHero} style={styles.runningProjectsEmptyImage} resizeMode="contain" />
-          <View style={styles.runningProjectsEmptyCopy}>
-            <Text style={styles.runningProjectsEmptyTitle}>Nothing is being built yet</Text>
-            <Text style={styles.runningProjectsEmptyText}>Create your first build and get started{"\n"}with Vibyra.</Text>
-          </View>
-          <Pressable style={({ pressed }) => [styles.runningProjectsEmptyButton, pressed ? styles.runningProjectsEmptyButtonPressed : null]} onPress={onCreateBuild}>
-            <LinearGradient
-              colors={emptyCtaGradient}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.runningProjectsEmptyButtonGradient}
-            >
-              <Ionicons name="add" color={colors.text} size={24} />
-              <Text style={styles.runningProjectsEmptyButtonText}>Create your first build</Text>
-            </LinearGradient>
-          </Pressable>
-        </View>
-      )}
+function BuildSection({ count, hiddenCount, items, onCompleteExit, onOpenBuildChat, title }: {
+  count: number;
+  hiddenCount: number;
+  items: BuildItem[];
+  onCompleteExit?: (agentId: string) => void;
+  onOpenBuildChat: (chatProjectId: string) => void;
+  title: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <View style={styles.buildSection}>
+      <View style={styles.buildSectionHeader}>
+        <Text style={styles.buildSectionTitle}>{title}</Text>
+        <Text style={styles.buildSectionCount}>{count}</Text>
+      </View>
+      <View style={styles.buildList}>
+        {items.map((item, index) => (
+          <HomeBuildRow index={index} key={item.agent.id} item={item} onCompleteExit={onCompleteExit} onOpenBuildChat={onOpenBuildChat} />
+        ))}
+        {hiddenCount > 0 ? <Text style={styles.buildMoreText}>{hiddenCount} more</Text> : null}
+      </View>
     </View>
   );
 }

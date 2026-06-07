@@ -74,6 +74,9 @@ export type Agent = {
   title: string;
   model: string;
   projectId: string;
+  chatProjectId?: string;
+  startedAt?: number;
+  completedAt?: number;
   state: AgentState;
   progress: number;
   file: string;

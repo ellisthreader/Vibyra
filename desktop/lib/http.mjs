@@ -5,7 +5,7 @@ export function headers(contentType = "application/json") {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "Cache-Control": "no-store",
     "Content-Type": contentType
   };
