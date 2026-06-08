@@ -79,3 +79,56 @@ test("preserves per-task settings while enriching the task text", () => {
   assert.equal(task.task, "Audit authentication");
   assert.match(task.prompt, /Audit authentication/);
 });
+
+test("uses read-only reviewer roles when the user forbids code changes", () => {
+  const tasks = agenticTerminalTasks({
+    tasks: [
+      { task: "Investigate: front-end audit of the terminal page" },
+      { task: "Review terminal page interaction states" },
+      { task: "Trace terminal page state and rendering" }
+    ]
+  }, {
+    userPrompt: "Assign three open terminals to audit the terminal page. Do not change any code."
+  });
+
+  assert.match(tasks[0].prompt, /Frontend reproduction and evidence reviewer/);
+  assert.match(tasks[1].prompt, /Frontend interaction and accessibility reviewer/);
+  assert.match(tasks[2].prompt, /Frontend state and architecture reviewer/);
+  for (const task of tasks) {
+    assert.match(task.prompt, /Strictly read-only/);
+    assert.match(task.prompt, /do not create, edit, format, generate, or delete files/i);
+    assert.match(task.prompt, /State explicitly that no files were changed/);
+    assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
+  }
+});
+
+test("treats without-changing wording as a read-only terminal assignment", () => {
+  const [task] = agenticTerminalTasks({
+    tasks: [{ task: "Investigate: front-end diagnosis of the terminal page" }]
+  }, {
+    userPrompt: "Diagnose the terminal page without changing any code."
+  });
+
+  assert.match(task.prompt, /Strictly read-only/);
+  assert.match(task.prompt, /do not create, edit, format, generate, or delete files/i);
+  assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
+});
+
+test("recognizes common diagnosis-only wording from user or task text", () => {
+  const prompts = [
+    { userPrompt: "Diagnose the terminal page, but don't make changes." },
+    { userPrompt: "Do a diagnosis only of the terminal page." },
+    { userPrompt: "Review the terminal page with no modifications." },
+    { userPrompt: "Inspect the terminal page without making any code changes." },
+    { userPrompt: "Audit the terminal page and only report findings." },
+    { userPrompt: "", task: "Audit the terminal page read-only." }
+  ];
+
+  for (const item of prompts) {
+    const [task] = agenticTerminalTasks({
+      tasks: [{ task: item.task || "Investigate the terminal page" }]
+    }, { userPrompt: item.userPrompt });
+    assert.match(task.prompt, /Strictly read-only/);
+    assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
+  }
+});

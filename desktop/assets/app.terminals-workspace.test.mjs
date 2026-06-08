@@ -32,6 +32,23 @@ test("workspace display distinguishes isolated, shared, and fallback terminals",
   assert.match(fallback.explanation, /files were not deleted/);
   assert.match(fallback.explanation, /GitHub is not required/);
   assert.match(fallback.explanation, /parallel terminals can edit the same files/i);
+  assert.equal(ui.terminalWorkspaceCanCheckpoint({
+    projectId: "p",
+    workspaceMode: "shared",
+    workspaceNotice: "Separate branches need a saved Git checkpoint, but this project has changes that are not saved in Git yet."
+  }), true);
+  assert.match(ui.terminalWorkspaceCheckpointLink({
+    id: "two",
+    projectId: "p",
+    workspaceMode: "shared",
+    workspaceNotice: "Separate branches need a saved Git checkpoint, but this project has changes that are not saved in Git yet."
+  }), /Save local checkpoint/);
+  assert.equal(ui.terminalWorkspaceCanCheckpoint({
+    projectId: "p",
+    workspaceMode: "shared",
+    workspaceNotice: "Separate branches need a saved Git checkpoint, but this project has changes that are not saved in Git yet.",
+    notice: "Local checkpoint saved. Reopen these terminals and choose Separate branches."
+  }), false);
 });
 
 test("workspace indicator exposes branch and fallback state accessibly", () => {

@@ -107,6 +107,9 @@ async function assignExistingTerminalTasks(tasks, action) {
   const projectId = hasProject ? String(action.projectId || "") : "";
   const eligible = terminals.filter((terminal) => {
     if (terminal.ptyStatus === "exited" || terminal.ptyStatus === "unavailable") return false;
+    if (String(terminal.agent || "").toLowerCase() === "shell") return false;
+    if (action.permissionMode === "full" && terminal.permissionMode !== "full") return false;
+    if (action.model && action.model !== "auto" && String(terminal.model || "") !== String(action.model)) return false;
     return !hasProject || String(terminal.projectId || "") === projectId;
   });
   const activeIndex = eligible.findIndex((terminal) => terminal.id === activeTerminalId);
@@ -125,8 +128,9 @@ async function assignExistingTerminalTasks(tasks, action) {
   ));
   const assigned = results.filter(Boolean).length;
   const failed = results.length - assigned;
+  const failedTasks = assignments.filter((_, index) => !results[index]);
   const remaining = action.target === "existing_then_new"
-    ? tasks.slice(assignments.length)
+    ? [...failedTasks, ...tasks.slice(assignments.length)]
     : [];
   const template = eligible[0] || null;
   const available = Math.max(0, maxTerminals - terminals.length);
@@ -154,6 +158,10 @@ async function assignExistingTerminalTasks(tasks, action) {
   const details = failed
     ? ` ${failed} assignment${failed === 1 ? "" : "s"} could not be delivered.`
     : "";
+  const unassigned = action.target === "existing" ? tasks.length - assignments.length : 0;
+  const unavailable = unassigned
+    ? ` ${unassigned} task${unassigned === 1 ? "" : "s"} had no compatible running terminal.`
+    : "";
   const overflow = remaining.length - launched.length;
   const capacity = overflow
     ? ` ${overflow} task${overflow === 1 ? "" : "s"} could not start because the 12-terminal limit was reached.`
@@ -161,7 +169,7 @@ async function assignExistingTerminalTasks(tasks, action) {
   const started = launched.length
     ? ` Started ${launched.length} additional terminal job${launched.length === 1 ? "" : "s"}.`
     : "";
-  return `Assigned ${assigned} terminal job${assigned === 1 ? "" : "s"} to the open terminals.${started}${details}${capacity}`;
+  return `Assigned ${assigned} terminal job${assigned === 1 ? "" : "s"} to the open terminals.${started}${details}${unavailable}${capacity}`;
 }
 
 async function sendExistingTerminalTask(terminal, prompt) {
@@ -173,24 +181,41 @@ async function sendExistingTerminalTask(terminal, prompt) {
     .trim()
     .slice(0, 8000);
   if (!safePrompt) return false;
+  if (typeof terminalTaskActivityStart === "function") terminalTaskActivityStart(terminal, safePrompt);
   const input = `\x1b[200~${safePrompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
-  try {
-    const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/input`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/input`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        terminal.notice = null;
+        if (typeof terminalTaskActivityAccepted === "function") terminalTaskActivityAccepted(terminal);
+        if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
+        return true;
+      }
+      const starting = response.status === 409
+        && /terminal is not running/i.test(String(result.error || ""))
+        && terminal.ptyStatus === "starting";
+      if (starting && attempt < 5) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        continue;
+      }
       terminal.notice = result.error || "The terminal job could not be delivered.";
+      if (typeof terminalTaskActivityFailed === "function") terminalTaskActivityFailed(terminal);
+      if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
+      return false;
+    } catch {
+      terminal.notice = "The terminal job could not be delivered.";
+      if (typeof terminalTaskActivityFailed === "function") terminalTaskActivityFailed(terminal);
+      if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
       return false;
     }
-    terminal.notice = null;
-    return true;
-  } catch {
-    terminal.notice = "The terminal job could not be delivered.";
-    return false;
   }
+  return false;
 }
 
 function desktopTerminalTask(item, action) {
@@ -243,33 +268,51 @@ async function setTerminalPermissionsFromDesktopAction(action) {
     setPage("terminals");
     return action.scope === "all" ? "No Vibyra Desktop terminals were open." : "There is no active terminal to update.";
   }
-  const unavailable = targets.find((terminal) => {
-    const model = desktopActionModel(terminal.model);
-    return !model || (typeof modelLocked === "function" && modelLocked(model));
-  });
+  const relaunches = targets.map((terminal) => ({
+    terminal,
+    model: codexFullAccessModel(terminal)
+  }));
+  const unsupported = relaunches.find((item) => !item.model);
+  if (unsupported) return "Full access requires a Codex-compatible OpenAI terminal.";
+  if (typeof loadProviderAccounts === "function") await loadProviderAccounts();
+  if (
+    typeof providerAccounts !== "undefined"
+    && providerAccounts.codex
+    && (!providerAccounts.codex.available || !providerAccounts.codex.connected)
+  ) {
+    return "Codex CLI must be installed and signed in before Vibyra can relaunch terminals with full access.";
+  }
+  const unavailable = relaunches.find(({ model }) =>
+    typeof modelLocked === "function" && modelLocked(model)
+  );
   if (unavailable) {
     return "A terminal model is no longer available on the current plan, so no terminals were relaunched.";
   }
-  const unsupported = targets.find((terminal) => {
-    const model = desktopActionModel(terminal.model);
-    return !isCodexDesktopActionModel(model || terminal.model);
-  });
-  if (unsupported) return "Full access is currently supported only for Codex terminals.";
-  if (targets.every((terminal) => terminal.permissionMode === "full")) {
+  if (relaunches.every(({ terminal, model }) =>
+    terminal.permissionMode === "full"
+    && terminal.agent === "codex"
+    && terminal.model === model.key
+  )) {
     return targets.length === 1 ? "That terminal already has full access." : "All open terminals already have full access.";
   }
   if (targets.some((terminal) => terminal.workspaceMode === "worktree")) {
     return "Isolated terminals cannot be relaunched with different permissions yet because their local Git branches must stay attached to the same workspace.";
   }
   const count = targets.length;
-  if (!window.confirm(`Relaunch ${count} Codex terminal${count === 1 ? "" : "s"} with full access? This ends the current processes and bypasses approval and sandbox protections.`)) {
+  const conversions = relaunches.filter(({ terminal, model }) =>
+    terminal.agent !== "codex" || terminal.model !== model.key
+  );
+  const conversionNotice = conversions.length
+    ? ` ${conversions.length} OpenAI terminal${conversions.length === 1 ? "" : "s"} will switch to the compatible Codex CLI model because OpenRouter wrappers cannot bypass local approvals.`
+    : "";
+  if (!window.confirm(`Relaunch ${count} Codex terminal${count === 1 ? "" : "s"} with full access? This ends the current processes and bypasses approval and sandbox protections.${conversionNotice}`)) {
     return "Full-access terminal relaunch was cancelled.";
   }
 
-  const snapshots = targets.map((terminal) => ({
+  const snapshots = relaunches.map(({ terminal, model }) => ({
     id: terminal.id,
-    title: terminal.title,
-    model: terminal.model,
+    title: codexRelaunchTitle(terminal, model),
+    model: model.key,
     effort: terminal.effort,
     projectId: terminal.projectId,
     tokenMode: terminal.tokenMode
@@ -281,11 +324,11 @@ async function setTerminalPermissionsFromDesktopAction(action) {
     const terminal = createTerminal(snapshot.model, false, {
       effort: snapshot.effort,
       permissionMode: "full",
-      projectId: snapshot.projectId
+      projectId: snapshot.projectId,
+      tokenMode: snapshot.tokenMode
     });
     if (!terminal) continue;
     terminal.title = snapshot.title;
-    terminal.tokenMode = snapshot.tokenMode;
     if (snapshot.id === previousActiveId) nextActiveId = terminal.id;
   }
   if (nextActiveId) activeTerminalId = nextActiveId;
@@ -294,6 +337,23 @@ async function setTerminalPermissionsFromDesktopAction(action) {
   setPage("terminals");
   render();
   return `Relaunched ${count} Codex terminal${count === 1 ? "" : "s"} with full access.`;
+}
+function codexFullAccessModel(terminal) {
+  const current = desktopActionModel(terminal?.model);
+  if ((!terminal?.agent || terminal.agent === "codex") && current && isCodexDesktopActionModel(current)) return current;
+  const key = String(terminal?.model || "").trim().toLowerCase();
+  if (terminal?.agent !== "vibyra" || !key.startsWith("openai/")) return null;
+  const tail = key.slice("openai/".length);
+  const candidates = [tail, tail.replace(/-pro$/, "")];
+  const choices = typeof modelChoices === "function" ? modelChoices() : chatModels;
+  return candidates
+    .map((candidate) => choices.find((model) => String(model.key || "").toLowerCase() === candidate))
+    .find((model) => model && isCodexDesktopActionModel(model)) || null;
+}
+function codexRelaunchTitle(terminal, model) {
+  if (terminal?.agent === "codex" && terminal.model === model.key) return terminal.title;
+  const suffix = String(terminal?.title || "").match(/\s+\d+$/)?.[0] || "";
+  return `${model.label}${suffix}`;
 }
 async function closeDesktopActionTargets(targets, scope) {
   const ids = targets.map((terminal) => terminal.id);

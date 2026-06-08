@@ -61,7 +61,9 @@ function bindTerminalControls() {
     (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
   }));
   root.querySelectorAll("[data-terminal-notice]").forEach((button) => button.addEventListener("click", () => updateTerminal(button.dataset.terminalNotice, { notice: null })));
+  if (typeof bindTerminalWorkspaceCheckpointLinks === "function") bindTerminalWorkspaceCheckpointLinks(root);
   root.querySelectorAll("[data-terminal-field]").forEach((field) => field.addEventListener("change", () => updateField(field)));
+  bindTerminalRenameControls(root);
   bindTerminalTokenControls(root);
   root.querySelectorAll("[data-terminal-draft]").forEach((field) => {
     fitTerminalDraft(field);
@@ -84,6 +86,49 @@ function updateField(field) {
     if (typeof modelLocked === "function" && modelLocked(model)) { openTokenModal("plans"); render(); return; }
   }
   updateTerminal(field.dataset.terminalId, { [field.dataset.terminalField]: field.value });
+}
+
+function bindTerminalRenameControls(root = document) {
+  root.querySelectorAll?.("[data-terminal-rename-form]").forEach((form) => {
+    if (form.dataset.terminalRenameBound) return;
+    form.dataset.terminalRenameBound = "1";
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = form.dataset.terminalRenameForm || "";
+      const input = form.querySelector("[data-terminal-rename-input]");
+      const status = form.querySelector("[data-terminal-rename-status]");
+      const title = String(input?.value || "").replace(/\s+/g, " ").trim().slice(0, 72);
+      if (!title) {
+        if (status) status.textContent = "Enter a terminal name.";
+        input?.focus();
+        return;
+      }
+      const button = form.querySelector('button[type="submit"]');
+      if (button) button.disabled = true;
+      if (status) status.textContent = "Saving...";
+      try {
+        const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.session) throw new Error(result.error || "The terminal name could not be saved.");
+        const terminal = findTerminal(id);
+        if (terminal) terminal.title = String(result.session.title || title);
+        settingsTerminalId = "";
+        saveTerminals();
+        renderTopbar();
+        if (!refreshPtyTerminalsDom()) {
+          forceTerminalRender = true;
+          render();
+        }
+      } catch (error) {
+        if (status) status.textContent = error instanceof Error ? error.message : "The terminal name could not be saved.";
+        if (button) button.disabled = false;
+      }
+    });
+  });
 }
 
 function updateDraft(field) {

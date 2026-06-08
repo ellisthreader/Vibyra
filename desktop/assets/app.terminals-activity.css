@@ -1,0 +1,115 @@
+.terminal-focus.is-ai-working {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.terminal-focus.has-notice.is-ai-working {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+.terminal-tile.is-ai-working {
+  grid-template-rows: auto auto minmax(190px, 1fr);
+}
+
+.terminal-task-activity {
+  align-items: center;
+  background: linear-gradient(90deg, var(--terminal-accent-soft), transparent 72%);
+  border-bottom: 1px solid var(--terminal-accent-border);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  min-height: 48px;
+  overflow: hidden;
+  padding: 8px 14px;
+  position: relative;
+}
+
+.terminal-task-activity::after {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--terminal-accent) 26%, transparent), transparent);
+  content: "";
+  inset: auto 0 0;
+  height: 1px;
+  position: absolute;
+  transform: translateX(-100%);
+  animation: terminal-task-scan 2.2s ease-in-out infinite;
+}
+
+.terminal-task-motion {
+  align-items: end;
+  display: flex;
+  gap: 3px;
+  height: 20px;
+  justify-content: center;
+}
+
+.terminal-task-motion i {
+  background: var(--terminal-accent);
+  border-radius: 999px;
+  height: 7px;
+  opacity: .55;
+  width: 3px;
+  animation: terminal-task-level 1.05s ease-in-out infinite;
+}
+
+.terminal-task-motion i:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.terminal-task-motion i:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.terminal-task-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.terminal-task-copy strong {
+  color: var(--terminal-text);
+  font-size: 12px;
+  font-weight: 740;
+}
+
+.terminal-task-copy small {
+  color: var(--terminal-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-task-live {
+  color: var(--terminal-accent);
+  font-size: 9px;
+  font-weight: 820;
+  letter-spacing: .12em;
+}
+
+.terminal-status.working {
+  background: var(--terminal-accent);
+  box-shadow: 0 0 0 4px var(--terminal-accent-soft);
+  animation: terminal-task-status 1.5s ease-in-out infinite;
+}
+
+@keyframes terminal-task-level {
+  0%, 100% { height: 6px; opacity: .42; }
+  50% { height: 19px; opacity: 1; }
+}
+
+@keyframes terminal-task-scan {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+
+@keyframes terminal-task-status {
+  0%, 100% { box-shadow: 0 0 0 3px var(--terminal-accent-soft); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-task-activity::after,
+  .terminal-task-motion i,
+  .terminal-status.working {
+    animation: none;
+  }
+}

@@ -58,7 +58,7 @@ const terminalProfiles = {
   openai: {
     key: "openai",
     label: "OpenAI Codex",
-    accent: "#69d6c7",
+    accent: "#8b5cff",
     promptToken: "›",
     historyPromptToken: "›",
     assistantToken: "•",

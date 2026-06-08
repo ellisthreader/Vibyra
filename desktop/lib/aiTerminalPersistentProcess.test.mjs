@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -141,6 +141,41 @@ test("immediate close is delivered while the worker socket is still connecting",
       () => listPersistentAiTerminalSessions().some((item) => item.config.terminalId === terminalId) ? null : true,
       5_000
     );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
+test("terminal title updates persist in the detached session config", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-rename-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?rename=${Date.now()}`, import.meta.url);
+  const {
+    launchPersistentAiTerminalProcess,
+    persistentTerminalPaths,
+    updatePersistentAiTerminalSession
+  } = await import(moduleUrl);
+  const terminalId = `rename-${Date.now()}`;
+
+  try {
+    const handle = launchPersistentAiTerminalProcess({
+      agent: "shell",
+      terminalId,
+      title: "Original name",
+      cwd: process.cwd(),
+      cols: 100,
+      rows: 30,
+      model: "",
+      reasoningEffort: "medium",
+      permissionMode: "standard",
+      tokenMode: "vibyra",
+      projectId: ""
+    });
+    assert.equal(updatePersistentAiTerminalSession(terminalId, { title: "Build checks" }), true);
+    const config = JSON.parse(readFileSync(persistentTerminalPaths(terminalId).config, "utf8"));
+    assert.equal(config.title, "Build checks");
+    handle.kill("SIGTERM");
   } finally {
     rmSync(root, { recursive: true, force: true });
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;

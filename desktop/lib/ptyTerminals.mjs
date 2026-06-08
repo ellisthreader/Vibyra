@@ -7,7 +7,8 @@ import {
   connectPersistentAiTerminalProcess,
   launchPersistentAiTerminalProcess,
   listPersistentAiTerminalSessions,
-  removePersistentAiTerminalSession
+  removePersistentAiTerminalSession,
+  updatePersistentAiTerminalSession
 } from "./aiTerminalPersistentProcess.mjs";
 import {
   normalizeTerminalWorkspaceMode,
@@ -60,6 +61,10 @@ export async function handlePtyTerminalRoutes(req, res, url) {
   if (req.method === "POST" && route.action === "resize") {
     resizePtyTerminal(route.id, await readBody(req));
     send(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "PATCH" && route.action === "session") {
+    send(res, 200, { ok: true, session: renamePtyTerminal(route.id, await readBody(req)) });
     return true;
   }
   if (req.method === "POST" && route.action === "close") {
@@ -277,6 +282,18 @@ export function closePtyTerminal(id) {
   return true;
 }
 
+export function renamePtyTerminal(id, body = {}) {
+  const session = sessions.get(string(id));
+  if (!session) throw httpError(404, "Terminal not found.");
+  const title = string(body.title).replace(/\s+/g, " ").trim().slice(0, 72);
+  if (!title) throw httpError(422, "Enter a terminal name.");
+  session.title = title;
+  session.updatedAt = new Date().toISOString();
+  updatePersistentAiTerminalSession(session.id, { title });
+  publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+  return publicSession(session);
+}
+
 export function closeAllPtyTerminals() {
   const ids = Array.from(sessions.keys());
   ids.forEach(closePtyTerminal);
@@ -414,6 +431,7 @@ function ptyRoute(pathname) {
   if (pathname === "/desktop/pty-terminals/workspace/checkpoint") return { action: "workspace-checkpoint" };
   const parts = pathname.split("/").filter(Boolean);
   if (parts[0] !== "desktop" || parts[1] !== "pty-terminals") return null;
+  if (parts.length === 3) return { action: "session", id: decodeURIComponent(parts[2]) };
   if (parts.length === 4 && parts[3] === "socket") return { action: "socket", id: decodeURIComponent(parts[2]) };
   if (parts.length === 4) return { action: parts[3], id: decodeURIComponent(parts[2]) };
   return null;

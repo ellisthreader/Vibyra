@@ -136,6 +136,7 @@ function handlePtySocketMessage(id, raw) {
   }
   if (payload.type === "exit") {
     appendPtyOutput(terminal, payload.data || "");
+    if (typeof terminalTaskActivityClear === "function") terminalTaskActivityClear(terminal);
     terminal.ptyStatus = "exited";
     terminal.pending = false;
     terminal.exitCode = payload.code ?? null;
@@ -317,6 +318,7 @@ function appendPtyOutput(terminal, data) {
   terminal.ptyStatus = terminal.ptyStatus === "starting" ? "running" : terminal.ptyStatus;
   terminal.pending = false;
   terminal.updatedAt = Date.now();
+  if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data);
   const xterm = terminalXterms[terminal.id];
   if (xterm?.element?.isConnected) {
     xterm.write(data);
@@ -570,8 +572,14 @@ function refreshPtyTerminalDom(terminal) {
   if (!terminal.notice && notice) notice.remove();
   if (terminal.notice && notice) {
     const noticeText = notice.querySelector("p");
-    if (noticeText && noticeText.textContent !== String(terminal.notice)) noticeText.textContent = terminal.notice;
+    const checkpoint = typeof terminalWorkspaceCheckpointLink === "function"
+      ? terminalWorkspaceCheckpointLink(terminal)
+      : "";
+    const noticeHtml = `${escapeHtml(terminal.notice)}${checkpoint}`;
+    if (noticeText && noticeText.innerHTML !== noticeHtml) noticeText.innerHTML = noticeHtml;
+    if (typeof bindTerminalWorkspaceCheckpointLinks === "function") bindTerminalWorkspaceCheckpointLinks(notice);
   }
+  if (typeof terminalTaskActivityRefresh === "function") terminalTaskActivityRefresh(terminal);
   const unavailable = terminal.ptyStatus === "unavailable";
   if (unavailable !== Boolean(article.querySelector(".terminal-pty-unavailable"))) return false;
   article.querySelectorAll(".terminal-status").forEach((status) => {
@@ -618,6 +626,7 @@ function refreshPtyTerminalSettingsMenus() {
     (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
   }));
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
+  if (typeof bindTerminalRenameControls === "function") bindTerminalRenameControls(document);
   return stable;
 }
 
@@ -840,6 +849,7 @@ function reconcilePtyTerminalSessions(sessions) {
 function removeLocalPtyTerminal(terminal) {
   const id = terminal?.id;
   if (!id) return;
+  if (typeof terminalTaskActivityClear === "function") terminalTaskActivityClear(terminal);
   clearTimeout(terminalPtyReconnectTimers[id]);
   terminalPtySockets[id]?.close?.();
   terminalXterms[id]?.dispose?.();

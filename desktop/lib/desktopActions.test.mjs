@@ -107,6 +107,90 @@ test("assigns counted work to terminals already open instead of opening more", (
   assert.match(result.actions[0].tasks[0].task, /frontend fixes to terminal picker/i);
 });
 
+test("assigns a subset of numbered open terminals without launching replacements", () => {
+  const result = desktopActionsForPrompt(
+    "the 4 terminals open assign 2 of them to do frontend auidt of terminal page",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 2);
+  assert.match(result.actions[0].tasks[0].task, /frontend audit of terminal page/i);
+});
+
+test("assigns read-only audits to newly opened existing terminals", () => {
+  const result = desktopActionsForPrompt(
+    "Assign three of the new terminals you just opened to do a front-end audit of the terminal page. Do not change any code, just find problems.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.match(result.actions[0].tasks[0].task, /front-end audit of the terminal page/i);
+  assert.doesNotMatch(result.actions[0].tasks[0].task, /change any code/i);
+});
+
+test("assigns the exact requested read-only diagnosis to terminals already opened", () => {
+  const result = desktopActionsForPrompt(
+    "Now, I want you to assign three of the terminals you have just opened to do a front-end diagnosis of the terminal page without changing any code, just let me know what needs changing.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.match(result.actions[0].tasks[0].task, /front-end diagnosis of the terminal page/i);
+  assert.doesNotMatch(result.actions[0].tasks[0].task, /without changing|change any code/i);
+});
+
+test("read-only wording does not neutralize an unrelated negated desktop action", () => {
+  assert.equal(
+    desktopActionsForPrompt("Do not open terminals. This is a read-only request."),
+    null
+  );
+  assert.equal(
+    desktopActionsForPrompt("Never close the terminals; no code changes."),
+    null
+  );
+});
+
+test("diagnosis-only wording preserves the complete terminal task objective", () => {
+  const result = desktopActionsForPrompt(
+    "Assign three terminals to do a diagnosis only of the terminal page.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.match(result.actions[0].tasks[0].task, /diagnosis only of the terminal page/i);
+});
+
+test("supports out-of subsets and never launches terminals for unsupported task wording", () => {
+  const result = desktopActionsForPrompt(
+    "Assign two out of the four open terminals to audit the terminal page.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 2);
+  assert.equal(
+    desktopActionsForPrompt("Use three of those open terminals for a frontend audit.", { projectId: "saas" }),
+    null
+  );
+});
+
+test("curly-apostrophe negation prevents terminal assignment", () => {
+  assert.equal(
+    desktopActionsForPrompt("Don’t assign three terminals to audit the terminal page."),
+    null
+  );
+});
+
 test("uses the previous specific goal for a vague eight-subagent retry", () => {
   const result = desktopActionsForPrompt(
     "still not working assign 8 subagents to diagonse and fix pls",

@@ -92,6 +92,58 @@ test("desktop chat assigns counted work to open terminals without launching more
   assert.match(result.actions[0].tasks[2].prompt, /Root-cause and implementation lead/);
 });
 
+test("desktop chat keeps numbered open-terminal subset assignments on existing sessions", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "the 4 terminals open assign 2 of them to do frontend auidt of terminal page"
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 2);
+  assert.match(result.actions[0].tasks[0].prompt, /frontend audit of terminal page/i);
+});
+
+test("desktop chat assigns read-only frontend audits to terminals just opened", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "Assign three of the new terminals you just opened to do a front-end audit of the terminal page. Do not change any code, just find problems."
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 3);
+  for (const task of result.actions[0].tasks) {
+    assert.match(task.prompt, /Strictly read-only/);
+    assert.match(task.prompt, /no files were changed/i);
+  }
+});
+
+test("desktop chat executes the exact recently-opened read-only diagnosis request", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "Now, I want you to assign three of the terminals you have just opened to do a front-end diagnosis of the terminal page without changing any code, just let me know what needs changing."
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 3);
+  for (const task of result.actions[0].tasks) {
+    assert.match(task.prompt, /Strictly read-only/);
+    assert.match(task.prompt, /no files were changed/i);
+    assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
+  }
+});
+
 test("desktop chat resolves an explicitly named terminal project", async () => {
   resetDesktopChatState();
   appState.cachedProjects = [{

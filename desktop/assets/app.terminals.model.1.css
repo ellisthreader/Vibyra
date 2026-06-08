@@ -137,6 +137,54 @@ body.electron-shell .terminal-new-wrap .terminal-model-scroll {
   right: 0;
   top: calc(100% + 8px);
 }
+.terminal-rename-form {
+  border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
+  display: grid;
+  gap: 6px;
+  margin-bottom: 5px;
+  padding: 3px 8px 10px;
+}
+.terminal-rename-form > label {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.terminal-rename-form > div {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.terminal-rename-form input {
+  background: color-mix(in srgb, var(--terminal-elevated) 72%, transparent);
+  border: 1px solid var(--terminal-border);
+  border-radius: 7px;
+  color: var(--terminal-text);
+  font: inherit;
+  min-width: 0;
+  outline: 0;
+  padding: 8px 9px;
+}
+.terminal-rename-form input:focus {
+  border-color: var(--terminal-accent-border);
+}
+.terminal-rename-form button {
+  background: var(--terminal-accent-soft);
+  border: 1px solid var(--terminal-accent-border);
+  border-radius: 7px;
+  color: var(--terminal-text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+.terminal-rename-form button:disabled {
+  opacity: .55;
+}
+.terminal-rename-form > small {
+  color: var(--terminal-dim);
+  min-height: 0;
+}
 .terminal-menu-section {
   display: grid;
   gap: 2px;

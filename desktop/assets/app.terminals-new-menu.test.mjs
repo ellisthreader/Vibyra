@@ -9,6 +9,9 @@ const renderSource = readFileSync(new URL("./app.terminals-render.js", import.me
 const controlsSource = readFileSync(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
 const modelsSource = readFileSync(new URL("./app.terminals-models.js", import.meta.url), "utf8");
 const ptyRuntimeSource = readFileSync(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
+const ptySource = readFileSync(new URL("./app.terminals-pty.js", import.meta.url), "utf8");
+const themeSource = readFileSync(new URL("./app.theme-terminals.css", import.meta.url), "utf8");
+const themeControlsSource = readFileSync(new URL("./app.theme-terminals-controls.css", import.meta.url), "utf8");
 
 test("new terminal menu is anchored to the plus button", () => {
   assert.match(layoutSource, /positionTerminalNewMenu\(\)/);
@@ -30,6 +33,23 @@ test("PTY controls do not double-bind terminal menu buttons", () => {
   assert.match(controlsSource, /function bindTerminalClick/);
   assert.match(controlsSource, /dataset\.terminalClickBound/);
   assert.match(ptyRuntimeSource, /dataset\.terminalClickBound \|\| node\.dataset\.ptyClickBound/);
+});
+
+test("terminal options group user-facing context and separate close", () => {
+  assert.match(ptySource, /data-terminal-rename-form/);
+  assert.match(controlsSource, /method: "PATCH"/);
+  assert.match(controlsSource, /bindTerminalRenameControls/);
+  assert.match(ptySource, /"Project"/);
+  assert.match(ptySource, /"Workspace"/);
+  assert.match(ptySource, /"Access"/);
+  assert.match(ptySource, /terminal-menu-advanced/);
+  assert.match(ptySource, /terminal-close-row/);
+});
+
+test("terminal chrome uses Vibyra purple instead of provider green", () => {
+  assert.match(themeSource, /\.terminal-provider-openai \{ --terminal-accent: #8b5cff/);
+  assert.match(themeSource, /\.terminal-menu,[\s\S]*--terminal-accent: #8b5cff/);
+  assert.match(themeControlsSource, /--terminal-status-running: #8b5cff/);
 });
 
 test("terminal setup persists and forwards model-aware reasoning effort", () => {

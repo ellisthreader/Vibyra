@@ -157,11 +157,30 @@ stays visible in the lower half. Patch the panel beside `.terminal-stage`
 rather than remounting xterm. Chat threads are in-memory and scoped per
 terminal id so switching terminal/project context does not mix conversation
 history.
+The no-terminal setup is intentionally compact: count and custom count share
+one row, Project and Model share a responsive grid, and there is no decorative
+layout preview. Reasoning and token source live under a native Advanced
+settings disclosure whose open state survives setup rerenders. Workspace
+safety remains visible for multiple project terminals. Preserve the terminal
+surface and tabs during visual cleanup; the three-dot options menu owns the
+labeled Project, Workspace, Access, advanced path/token details, and separated
+Close terminal action.
+When a requested separate workspace falls back because the project is dirty,
+the terminal notice ends with `Save local checkpoint`. That action must use the
+existing checkpoint preflight and approval dialog, create only a local Git
+checkpoint, and then tell the user to reopen the terminals with Separate
+branches. Keep the action available after incremental PTY notice updates.
 The Chat companion visual shell is split across
 `app.terminals-companion-shell.css` and `app.terminals-companion-chat.css`.
 Keep its title and sibling mode tabs visible at the `860px` Electron minimum,
-keep starter prompts compact, omit redundant terminal-context copy inside Chat,
-and preserve per-terminal composer drafts whenever the panel rerenders.
+keep at most two starter prompts compact, omit redundant terminal-context copy
+inside Chat, and do not show an `Enter to send` hint beside the familiar
+composer actions. Preserve per-terminal composer drafts whenever the panel
+rerenders.
+The companion frontend presents Vibyra AI as the assistant for the whole
+desktop app. Never label it as limited to the active terminal or display
+`Using context from...`; terminal and project identifiers may still be passed
+quietly for routing and relevant answers.
 Keep the companion Chat CSS/JS versioned in `app.html` so a
 running Electron renderer cannot retain the pre-polish assets after a reload.
 Do not show persistent local-model installation or availability copy in the
@@ -193,6 +212,34 @@ Terminal tabs and surfaces share semantic `idle`, `running`, `success`,
 `error`, `stopped`, and `unavailable` status-dot classes. Keep those tokens
 theme-aware, and define separate light/dark xterm ANSI palettes; changing only
 background and foreground leaves light-mode command output with weak contrast.
+Terminal chrome uses Vibyra purple, including running status and dropdown/menu
+selection. Provider accents must not recolor terminal controls; reserve ANSI
+green for actual terminal output and green status for proven success.
+The terminal options menu includes a rename form backed by
+`PATCH /desktop/pty-terminals/:id`; the bridge updates both its live session
+and detached-session config so the name survives reconciliation and restart.
+New terminals append to display order. Grid tiles show their position, and the
+wide eight-terminal layout is four columns by two rows, placing `1` top-left
+and `8` bottom-right.
+Tasks assigned by Vibyra AI to already-open terminals use transient renderer
+state from `app.terminals-activity.js` and `app.terminals-activity.css`.
+Assignment delivery shows the real task summary immediately; accepted work
+stays visibly active while PTY output arrives and settles quietly after output
+inactivity. Do not persist this state, remount xterm, or claim task completion
+without an authoritative process signal.
+Natural-language subset assignment must recognize recent-terminal phrasing
+such as `terminals you have just opened` and `N out of the open terminals`.
+Read-only constraints including `without changing code`, `diagnosis only`, and
+`only report findings` must select read-only prompt roles and must not suppress
+an unrelated negation such as `do not assign`. Unrecognized assignment wording
+must never fall through to `open_terminals`.
+Existing-terminal delivery excludes shell sessions and terminals that do not
+match explicit model or full-access requirements. A newly created PTY may
+briefly return `409 Terminal is not running`; retry that startup-only failure
+for a bounded interval. Treat HTTP input acceptance as `Task accepted`, and
+show `Vibyra is working` only after real PTY output. Clear transient activity on
+failure, exit, removal, or timeout, and keep its regression test in
+`npm run test:desktop-ai`.
 
 Multi-terminal layout uses focus mode for one full-size active terminal and a
 scrollable grid overview. At `1000px` and below, grid mode uses two columns
@@ -257,8 +304,12 @@ Explicit follow-ups such as `give all terminals full permissions` resolve to
 process, so the renderer must confirm the destructive boundary, close the
 selected Codex terminal sessions, and relaunch them while preserving model,
 reasoning effort, project scope, token source, and the previously active tab.
-Provider-qualified OpenRouter models are not Codex CLI sessions and must be
-rejected for full-access actions even when their provider metadata is OpenAI.
+Provider-qualified OpenRouter models are not Codex CLI sessions. An explicit
+full-access relaunch may convert one only when a compatible built-in Codex
+model exists; for example, `openai/gpt-5.5-pro` converts to built-in
+`gpt-5.5` after the confirmation explains the model switch. Preserve effort,
+project, token source, count, and active-terminal identity. Never pass a
+provider-qualified slug to Codex or claim full access for non-OpenAI wrappers.
 
 Model intent distinguishes built-in official models from provider-qualified
 catalog models. Plain `GPT-5.5`, `gpt5.5`, and `open ai 5.5` resolve to the
@@ -360,7 +411,15 @@ existing-terminal delegation even when the user omits `tasks`, `jobs`, or
 `subagents`. The `assign|delegate|distribute <count> terminals to <goal>`
 construction must produce `run_terminal_tasks` with `target: "existing"` when
 the prompt says the terminals are open; it must never fall through to
-`open_terminals`.
+`open_terminals`. The equivalent subset phrasing
+`the <open-count> terminals open, assign <subset-count> of them to <goal>` has
+the same contract and must assign exactly the subset count without launching
+replacement terminals. Treat `the new terminals you just opened` as existing
+sessions, not a request to launch replacements. A trailing constraint such as
+`do not change any code, just find problems` restricts the task rather than
+negating delegation: use read-only reviewer roles for every assigned terminal,
+prohibit source/test/config/generated-file edits, and require evidence-backed
+findings that explicitly state no files were changed.
 Before returning a `run_terminal_tasks` action, `desktopChat.mjs` resolves the
 authoritative project and enriches every short task label through
 `terminalTaskPrompts.mjs`. Each delivered prompt preserves the user's request

@@ -101,6 +101,25 @@ test("close all removes every PTY session regardless of status", async () => {
   }
 });
 
+test("PTY terminal names can be changed without relaunching", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-rename-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?rename=${Date.now()}`, import.meta.url);
+    const { closeAllPtyTerminals, createPtyTerminal, listPtyTerminals, renamePtyTerminal } = await import(moduleUrl);
+    await createPtyTerminal({ id: "rename-terminal", agent: "gemini", title: "Original" });
+
+    const renamed = renamePtyTerminal("rename-terminal", { title: "  Build checks  " });
+
+    assert.equal(renamed.title, "Build checks");
+    assert.equal(listPtyTerminals()[0].title, "Build checks");
+    closeAllPtyTerminals();
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("reusing a running terminal ID cannot switch its project", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-project-conflict-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;

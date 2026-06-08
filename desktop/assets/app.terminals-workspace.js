@@ -57,6 +57,21 @@ function terminalWorkspaceFallbackCopy(message) {
   };
 }
 
+function terminalWorkspaceCanCheckpoint(terminal) {
+  const visibleNotice = String(terminal?.notice || terminal?.workspaceNotice || "");
+  return Boolean(
+    terminal?.projectId
+    && normalizeTerminalWorkspaceMode(terminal?.workspaceMode) === "shared"
+    && /clean repository|saved Git checkpoint|not saved in Git/i.test(String(terminal?.workspaceNotice || ""))
+    && /clean repository|saved Git checkpoint|not saved in Git|Save a local project checkpoint/i.test(visibleNotice)
+  );
+}
+
+function terminalWorkspaceCheckpointLink(terminal) {
+  if (!terminalWorkspaceCanCheckpoint(terminal)) return "";
+  return ` <a href="#save-local-checkpoint" data-terminal-workspace-checkpoint="${escapeAttribute(terminal.id)}">Save local checkpoint</a>`;
+}
+
 function terminalWorkspaceIndicator(terminal) {
   const state = terminalWorkspaceDisplay(terminal);
   if (!state) return "";
@@ -92,6 +107,40 @@ function bindTerminalWorkspaceIndicators(root = document) {
         if (typeof bindPtyTopbarControls === "function") bindPtyTopbarControls();
         return;
       }
+      forceTerminalRender = true;
+      render();
+    });
+  });
+  bindTerminalWorkspaceCheckpointLinks(root);
+}
+
+function bindTerminalWorkspaceCheckpointLinks(root = document) {
+  root.querySelectorAll?.("[data-terminal-workspace-checkpoint]").forEach((link) => {
+    if (link.dataset.workspaceCheckpointBound) return;
+    link.dataset.workspaceCheckpointBound = "1";
+    link.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const terminal = findTerminal(link.dataset.terminalWorkspaceCheckpoint);
+      if (!terminal || !terminalWorkspaceCanCheckpoint(terminal)) return;
+      link.setAttribute("aria-disabled", "true");
+      link.textContent = "Checking project...";
+      const preflight = await terminalWorkspaceRequest("preflight", { projectId: terminal.projectId });
+      if (!preflight) {
+        link.removeAttribute("aria-disabled");
+        link.textContent = "Save local checkpoint";
+        return;
+      }
+      const saved = preflight.clean || await terminalCheckpointApproval(preflight);
+      if (!saved) {
+        link.removeAttribute("aria-disabled");
+        link.textContent = "Save local checkpoint";
+        return;
+      }
+      terminal.notice = "Local checkpoint saved. Reopen these terminals and choose Separate branches. Nothing was uploaded.";
+      terminal.updatedAt = Date.now();
+      saveTerminals();
+      if (activePage === "terminals" && typeof refreshPtyTerminalsDom === "function" && refreshPtyTerminalsDom()) return;
       forceTerminalRender = true;
       render();
     });

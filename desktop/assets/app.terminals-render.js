@@ -29,7 +29,7 @@ function renderTerminalsPage() {
 
 function terminalGridMeta(count) {
   const total = Math.max(1, Math.min(maxTerminals, Number(count) || 1));
-  const cols = total <= 2 ? total : total <= 4 ? 2 : total <= 9 ? 3 : 4;
+  const cols = total <= 2 ? total : total <= 4 ? 2 : total <= 8 ? 4 : total === 9 ? 3 : 4;
   const narrowCols = total <= 2 ? total : total <= 4 ? 2 : 3;
   return {
     className: total > 4 ? "terminal-grid-many" : "",
@@ -112,7 +112,10 @@ function projectOptions(terminal) {
 }
 
 function terminalNotice(terminal) {
-  return `<aside class="terminal-notice" role="status" aria-live="polite"><span>${icon("alert")}</span><p>${escapeHtml(terminal.notice)}</p><button type="button" data-terminal-notice="${escapeAttribute(terminal.id)}" aria-label="Dismiss terminal notice">${icon("close")}</button></aside>`;
+  const checkpoint = typeof terminalWorkspaceCheckpointLink === "function"
+    ? terminalWorkspaceCheckpointLink(terminal)
+    : "";
+  return `<aside class="terminal-notice" role="status" aria-live="polite"><span>${icon("alert")}</span><p>${escapeHtml(terminal.notice)}${checkpoint}</p><button type="button" data-terminal-notice="${escapeAttribute(terminal.id)}" aria-label="Dismiss terminal notice">${icon("close")}</button></aside>`;
 }
 
 function terminalLine(message, terminal) {

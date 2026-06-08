@@ -9,8 +9,8 @@ body {
   --terminal-active-muted: #bdb3df;
   --terminal-scroll-thumb: rgba(151, 161, 190, 0.28);
   --terminal-status-idle: #6e687a;
-  --terminal-status-running: #37d67a;
-  --terminal-status-running-ring: rgba(55, 214, 122, 0.09);
+  --terminal-status-running: #8b5cff;
+  --terminal-status-running-ring: rgba(139, 92, 255, 0.13);
   --terminal-phone-frame: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
   --terminal-phone-border: #3d4049;
   --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
@@ -28,8 +28,8 @@ body[data-desktop-theme="light"] {
   --terminal-active-muted: #5a6170;
   --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
   --terminal-status-idle: #9aa3b2;
-  --terminal-status-running: #1f9d5b;
-  --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+  --terminal-status-running: #6842d8;
+  --terminal-status-running-ring: rgba(104, 66, 216, 0.12);
   --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
   --terminal-phone-border: #c4ccd9;
   --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);
@@ -48,8 +48,8 @@ body[data-desktop-theme="light"] {
     --terminal-active-muted: #5a6170;
     --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
     --terminal-status-idle: #9aa3b2;
-    --terminal-status-running: #1f9d5b;
-    --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+    --terminal-status-running: #6842d8;
+    --terminal-status-running-ring: rgba(104, 66, 216, 0.12);
     --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
     --terminal-phone-border: #c4ccd9;
     --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);

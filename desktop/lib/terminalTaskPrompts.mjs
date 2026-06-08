@@ -1,4 +1,4 @@
-import { TERMINAL_TASK_ROLES } from "./terminalTaskPromptRoles.mjs";
+import { TERMINAL_READ_ONLY_ROLES, TERMINAL_TASK_ROLES } from "./terminalTaskPromptRoles.mjs";
 
 const MAX_PROMPT_CHARS = 7800;
 const MAX_CONTEXT_FILES = 12;
@@ -8,9 +8,14 @@ const MAX_HISTORY_ITEMS = 3;
 export function agenticTerminalTasks(action, context = {}) {
   const tasks = Array.isArray(action?.tasks) ? action.tasks : [];
   if (!tasks.length) return tasks;
+  const readOnlySource = [
+    context.userPrompt,
+    ...tasks.map((item) => item?.prompt || item?.task || item?.text || item)
+  ].join("\n");
   const promptContext = {
     ...context,
-    objective: taskObjective(tasks, context.userPrompt)
+    objective: taskObjective(tasks, context.userPrompt),
+    readOnly: readOnlyRequest(readOnlySource)
   };
   return tasks.map((item, index) => {
     const source = item && typeof item === "object" ? item : { task: item };
@@ -30,7 +35,8 @@ export function agenticTerminalTasks(action, context = {}) {
 }
 
 export function agenticTerminalPrompt({ assignment, context = {}, index = 0, total = 1 }) {
-  const template = TERMINAL_TASK_ROLES[index % TERMINAL_TASK_ROLES.length];
+  const roles = context.readOnly ? TERMINAL_READ_ONLY_ROLES : TERMINAL_TASK_ROLES;
+  const template = roles[index % roles.length];
   const project = context.project || null;
   const sections = [
     [
@@ -53,14 +59,18 @@ export function agenticTerminalPrompt({ assignment, context = {}, index = 0, tot
       "Stay inside this lane so parallel agents do not duplicate or overwrite one another."
     ].join("\n"),
     contextSection(context.projectFiles, context.memoryContext),
-    acceptanceSection(template, context.userPrompt, assignment),
+    acceptanceSection(template, context.userPrompt, assignment, context.readOnly),
     [
       "# Execution",
       "1. Inspect the real repository state and relevant instructions before acting.",
       "2. Establish evidence: reproduce the behavior or trace the exact failing path.",
       "3. Use available tools directly. Do not invent commands, files, APIs, test results, or completed work.",
-      "4. Follow the edit policy. Where edits are allowed, implement the smallest complete fix.",
-      "5. Run focused validation, inspect the result, and review the diff for regressions.",
+      context.readOnly
+        ? "4. Remain read-only. Use inspection and non-mutating validation only; do not create, edit, format, generate, or delete files."
+        : "4. Follow the edit policy. Where edits are allowed, implement the smallest complete fix.",
+      context.readOnly
+        ? "5. Validate findings with independent evidence and inspect the current diff only to avoid attributing existing changes to this audit."
+        : "5. Run focused validation, inspect the result, and review the diff for regressions.",
       "6. If evidence disproves the initial approach, revise it instead of repeating the same failed step.",
       "",
       "# Guardrails",
@@ -71,7 +81,9 @@ export function agenticTerminalPrompt({ assignment, context = {}, index = 0, tot
       "- Stop when the acceptance criteria are met, or when a concrete blocker is documented with the attempted evidence.",
       "",
       "# Final handoff",
-      "Return only a concise engineering report with: outcome; evidence/root cause; files changed; validation run and result; remaining blocker or risk.",
+      context.readOnly
+        ? "Return only a concise engineering report with: severity-ranked findings; evidence/root cause; files and lines inspected; validation run and result; remaining uncertainty. State explicitly that no files were changed."
+        : "Return only a concise engineering report with: outcome; evidence/root cause; files changed; validation run and result; remaining blocker or risk.",
       `Required deliverable: ${template.deliverable}`
     ].join("\n")
   ].filter(Boolean);
@@ -106,13 +118,15 @@ function historySection(history) {
   ].filter(Boolean).join("\n");
 }
 
-function acceptanceSection(template, userPrompt, assignment) {
-  const frontend = /\b(frontend|ui|ux|page|screen|picker|modal|dialog|layout|style|css|responsive|accessibility)\b/i
+function acceptanceSection(template, userPrompt, assignment, readOnly) {
+  const frontend = /\b(front[- ]?end|ui|ux|page|screen|picker|modal|dialog|layout|style|css|responsive|accessibility)\b/i
     .test(`${userPrompt || ""} ${assignment || ""}`);
   const criteria = [
     "# Acceptance criteria",
     "- Findings are grounded in repository or runtime evidence, with exact paths or commands where useful.",
-    "- Any allowed code change addresses the confirmed cause rather than masking a symptom.",
+    readOnly
+      ? "- No source, test, fixture, configuration, generated, or documentation files are changed."
+      : "- Any allowed code change addresses the confirmed cause rather than masking a symptom.",
     "- Relevant tests or checks pass, and the final behavior is compared with the user objective.",
     `- The role-specific deliverable is complete: ${template.deliverable}`
   ];
@@ -159,6 +173,11 @@ function taskObjective(tasks, userPrompt) {
   const investigated = assignments.find((item) => /^Investigate:\s+/i.test(item));
   if (investigated) return investigated.replace(/^Investigate:\s+/i, "");
   return clean(userPrompt, 1800) || assignments[0] || "Complete the assigned project task.";
+}
+
+function readOnlyRequest(value) {
+  return /\b(?:(?:do not|don't|dont|never)\s+(?:(?:change|edit|modify|write|touch)\s+(?:any\s+)?(?:code|files?|source|tests?)|make\s+(?:any\s+)?(?:code\s+)?changes?)|without\s+(?:(?:changing|editing|modifying|writing|touching)\s+(?:any\s+)?(?:code|files?|source|tests?)|making\s+(?:any\s+)?(?:code\s+)?changes?)|read[- ]only|no (?:code changes?|edits?|modifications?)|(?:diagnosis|diagnose|audit|review|inspection)\s+only|only\s+(?:report|list|summarize)\s+(?:the\s+)?(?:findings?|problems?|issues?))\b/i
+    .test(String(value || "").replace(/[’‘]/g, "'"));
 }
 
 function clean(value, limit) {

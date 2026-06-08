@@ -4,27 +4,34 @@ const TERMINAL_CLOSE_INTENT = /\b(?:close|stop|end|remove|quit)\s+(?:(?:all|ever
 const TERMINAL_PERMISSION_VERBS = /\b(give|grant|set|enable|switch|change|upgrade|relaunch|restart)\b/i;
 const TERMINAL_NOUN = /\b(?:ai\s+)?(?:terminals?|termianls?|teminals?|termnals?)\b/i;
 const TERMINAL_TASK_VERBS = /\b(assign|delegate|distribute|run)\b/i;
+const TERMINAL_TASK_CANDIDATE = /\b(?:assign|delegate|distribute|use)\b.*\b(?:ai\s+)?terminals?\b|\b(?:ai\s+)?terminals?\b.*\b(?:tasks?|jobs?|diagnos(?:e|is)|audit|review|inspect)\b/i;
 const GIVE_TERMINAL_TASK_COMMAND = /\bgive\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+of\s+(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?)\s+(?:the\s+)?(?:jobs?|tasks?)\b/i;
 const TERMINAL_TASK_SCOPE = /\b(?:each|separate|different|multiple)\s+terminals?\b|\bacross\s+(?:the\s+)?(?:multiple\s+)?terminals?\b/i;
 const COUNTED_TERMINAL_TASK_COMMAND = /\b(?:assign|delegate|distribute)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:ai\s+)?terminals?\s+to\b/i;
+const SUBSET_TERMINAL_TASK_COMMAND = /\b(?:assign|delegate|distribute|use)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:(?:out\s+)?of\s+)?(?:them|these|those|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?)\s+to\b/i;
 const TERMINAL_SUBAGENT_NOUN = /\bsub-?agents?\b/i;
 const TERMINAL_SUBAGENT_COMMAND = /^(?:(?:still not working|try again|again|please|pls)\b[\s,!]*)*(?:can you\s+)?(?:assign|delegate|distribute|run)\b/i;
 const TERMINAL_WORK_NOUN = /\b(?:tasks?|jobs?|sub-?agents?)\b/i;
-const EXISTING_TERMINAL_SCOPE = /\b(?:all|every|each|these|those|existing|current|open)(?:\s+\d{1,2})?\s+terminals?\b|\b(?:all|every|each)\s+of\s+(?:the\s+)?terminals?\b|\bterminals?\s+(?:are\s+)?open\b|\bterminals?\s+you\s+(?:just\s+)?opened\b|\b\d{1,2}\s+of\s+(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?)\b/i;
+const EXISTING_TERMINAL_SCOPE = /\b(?:all|every|each|these|those|existing|current|open)(?:\s+\d{1,2})?\s+terminals?\b|\b(?:all|every|each)\s+of\s+(?:the\s+)?terminals?\b|\b(?:the\s+)?(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+terminals?\s+(?:are\s+)?open\b|\bterminals?\s+(?:are\s+)?open\b|\bterminals?\s+you\s+(?:have\s+)?(?:just\s+)?opened\b|\b\d{1,2}\s+of\s+(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?)\b/i;
 const IMPLICIT_TERMINAL_MODEL = /^\s*(?:open|launch|start|create|spawn|run)\s+(?:(?:an?|one)\s+)?(?:(?:open\s*ai|openai|ai|gpt|codex|claude|gemini)(?:[\s-]*\d+(?:\.\d+)?)?(?:\s+pro)?)\s*[.!]?\s*$/i;
 const FULL_ACCESS = /\b(full[- ]permissions?|full[- ]access|danger(?:ously)? full access|no sandbox|without (?:a )?sandbox|bypass (?:all )?approvals?)\b/i;
 const NEGATED_FULL_ACCESS = /\b(?:no|without|except|disable|remove|revoke)\b.{0,32}\bfull[- ](?:access|permissions?)\b|\bfull[- ](?:access|permissions?)\b.{0,20}\b(?:off|disabled)\b/i;
 const NON_ACTION_PREFIX = /^\s*(?:explain|describe|tell me how|write (?:an?|the) example|give me an example|show me an example|can you (?:explain|describe|tell|show)|how (?:do|can|would|to)|what (?:does|would|happens?)|why|should (?:we|i)|is it possible|if i|when\b|test whether|i might|the ui says|we need copy|add (?:an?\s+)?button)\b/i;
 const NON_ACTION_TERMINAL_TOPIC = /\bterminals?\s+(?:documentation|docs|guide|definition|settings?|example|prompt)\b/i;
 const NEGATED_ACTION = /\b(?:do not|don't|dont|never)\s+(?:\w+\s+){0,3}(?:open|launch|start|create|spawn|run|assign|delegate|distribute|close|stop|end|remove|quit|give|grant|set|enable|switch|change|upgrade|relaunch|restart)\b/i;
+const READ_ONLY_TASK_CONSTRAINT = /\b(?:(?:do not|don't|dont|never)\s+(?:(?:change|edit|modify|write|touch)\s+(?:any\s+)?(?:code|files?|source|tests?)|make\s+(?:any\s+)?(?:code\s+)?changes?)|without\s+(?:(?:changing|editing|modifying|writing|touching)\s+(?:any\s+)?(?:code|files?|source|tests?)|making\s+(?:any\s+)?(?:code\s+)?changes?)|read[- ]only|no (?:code changes?|edits?|modifications?)|(?:diagnosis|diagnose|audit|review|inspection)\s+only|only\s+(?:report|list|summarize)\s+(?:the\s+)?(?:findings?|problems?|issues?))\b/i;
 const NUMBER_WORDS = new Map(Object.entries({
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12
 }));
 
 export function desktopActionsForPrompt(prompt, context = {}) {
-  const text = String(prompt || "").trim();
+  const text = String(prompt || "").replace(/[’‘]/g, "'").trim();
   if (!text) return null;
-  if (NON_ACTION_PREFIX.test(text) || NON_ACTION_TERMINAL_TOPIC.test(text) || NEGATED_ACTION.test(text)) return null;
+  if (
+    NON_ACTION_PREFIX.test(text)
+    || NON_ACTION_TERMINAL_TOPIC.test(text)
+    || NEGATED_ACTION.test(withoutReadOnlyConstraint(text))
+  ) return null;
 
   const companion = companionAction(text);
   if (companion) return actionResult(companion, companionReply(companion.mode));
@@ -37,7 +44,7 @@ export function desktopActionsForPrompt(prompt, context = {}) {
 
   const terminalTasks = terminalTaskAction(text, context);
   if (terminalTasks) return actionResult(terminalTasks, terminalTaskReply(terminalTasks));
-  if (terminalTaskIntent(text)) return null;
+  if (terminalTaskIntent(text) || TERMINAL_TASK_CANDIDATE.test(text)) return null;
 
   if (!TERMINAL_VERBS.test(text) || (!TERMINAL_NOUN.test(text) && !IMPLICIT_TERMINAL_MODEL.test(text))) return null;
   const settings = terminalSettings(text, context);
@@ -49,6 +56,7 @@ function terminalTaskIntent(text) {
   return (TERMINAL_TASK_VERBS.test(text) || GIVE_TERMINAL_TASK_COMMAND.test(text))
     && (
       COUNTED_TERMINAL_TASK_COMMAND.test(text)
+      || SUBSET_TERMINAL_TASK_COMMAND.test(text)
       ||
       (TERMINAL_SUBAGENT_NOUN.test(text) && TERMINAL_SUBAGENT_COMMAND.test(text))
       || (
@@ -92,7 +100,11 @@ function listedTerminalTasks(text) {
 }
 
 function inferredTerminalTasks(text, count = 3, context = {}) {
-  if (!TERMINAL_WORK_NOUN.test(text) && !COUNTED_TERMINAL_TASK_COMMAND.test(text)) return [];
+  if (
+    !TERMINAL_WORK_NOUN.test(text)
+    && !COUNTED_TERMINAL_TASK_COMMAND.test(text)
+    && !SUBSET_TERMINAL_TASK_COMMAND.test(text)
+  ) return [];
   const currentGoal = terminalTaskGoal(text);
   const goal = shouldReusePreviousTaskGoal(text, currentGoal)
     ? previousTerminalTaskGoal(context.history) || currentGoal
@@ -133,10 +145,17 @@ function inferredTerminalTasks(text, count = 3, context = {}) {
 }
 
 function normalizeInferredTaskGoal(value) {
-  return String(value || "")
+  return withoutReadOnlyConstraint(value)
     .replace(/\b(?:tereminal|termianl|teminal|termnal)\b/gi, "terminal")
     .replace(/\b(?:diagons(?:e|ing)|diagon(?:se|sing))\b/gi, (word) => /ing$/i.test(word) ? "diagnosing" : "diagnose")
+    .replace(/\bauidt\b/gi, "audit")
     .replace(/\b(?:pls|please)\b[.!]*$/i, "")
+    .trim();
+}
+
+function withoutReadOnlyConstraint(value) {
+  return String(value || "")
+    .replace(/\s*[.!]?\s*(?:(?:do not|don't|dont|never)\s+(?:(?:change|edit|modify|write|touch)\s+(?:any\s+)?(?:code|files?|source|tests?)|make\s+(?:any\s+)?(?:code\s+)?changes?)|without\s+(?:(?:changing|editing|modifying|writing|touching)\s+(?:any\s+)?(?:code|files?|source|tests?)|making\s+(?:any\s+)?(?:code\s+)?changes?)|no (?:code changes?|edits?|modifications?)|only\s+(?:report|list|summarize)\s+(?:the\s+)?(?:findings?|problems?|issues?)).*$/i, "")
     .trim();
 }
 
@@ -239,9 +258,9 @@ function explicitTerminalCount(text) {
 }
 
 function explicitTerminalTaskCount(text) {
-  const numeric = text.match(/\b(?:assign|delegate|distribute|run|give)\s+(?<![\d.])(\d{1,2})(?![\d.])\s+(?:of\s+)?(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?|jobs?|tasks?|sub-?agents?)\b/i);
+  const numeric = text.match(/\b(?:assign|delegate|distribute|run|give|use)\s+(?<![\d.])(\d{1,2})(?![\d.])\s+(?:(?:out\s+)?of\s+)?(?:them|those|these|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?|jobs?|tasks?|sub-?agents?)\b/i);
   if (numeric) return clampCount(numeric[1]);
-  const word = text.match(/\b(?:assign|delegate|distribute|run|give)\s+(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:of\s+)?(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?|jobs?|tasks?|sub-?agents?)\b/i);
+  const word = text.match(/\b(?:assign|delegate|distribute|run|give|use)\s+(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:(?:out\s+)?of\s+)?(?:them|those|these|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?|jobs?|tasks?|sub-?agents?)\b/i);
   return word ? NUMBER_WORDS.get(word[1].toLowerCase()) : null;
 }
 

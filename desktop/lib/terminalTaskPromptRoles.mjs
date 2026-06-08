@@ -73,6 +73,45 @@ export const TERMINAL_TASK_ROLES = [
   )
 ];
 
+export const TERMINAL_READ_ONLY_ROLES = [
+  role(
+    "Frontend reproduction and evidence reviewer",
+    "Reproduce visible terminal-page problems and capture exact observed-versus-expected evidence.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "Reproducible frontend findings with severity, steps, evidence, and exact file or runtime boundaries."
+  ),
+  role(
+    "Frontend interaction and accessibility reviewer",
+    "Audit layout, interaction states, keyboard use, focus, semantics, responsive behavior, and visual consistency.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "Prioritized UI and accessibility findings with affected states, exact paths or selectors, and recommended fixes."
+  ),
+  role(
+    "Frontend state and architecture reviewer",
+    "Trace rendering, state ownership, async lifecycle, errors, and integration boundaries behind terminal-page behavior.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "Evidence-backed root causes and architectural risks with exact files, symbols, and non-duplicative recommendations."
+  ),
+  role(
+    "Frontend resilience reviewer",
+    "Inspect loading, empty, error, disabled, retry, disconnect, recovery, and stale-state behavior.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "Failure-path findings with reproduction steps, user impact, and precise remediation guidance."
+  ),
+  role(
+    "Frontend performance reviewer",
+    "Inspect rendering churn, event ownership, blocking work, leaks, duplicated requests, and measurable responsiveness risks.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "Performance findings grounded in code or runtime evidence, with likely cause and validation guidance."
+  ),
+  role(
+    "Frontend audit synthesis reviewer",
+    "Challenge prior assumptions, inspect uncovered edge cases, and produce a deduplicated severity-ranked audit.",
+    "Strictly read-only. Do not edit source, tests, fixtures, configuration, or generated files.",
+    "A pass/fail audit summary with confirmed problems, evidence, severity, and recommended owner for each fix."
+  )
+];
+
 function role(name, scope, editPolicy, deliverable) {
   return { role: name, scope, editPolicy, deliverable };
 }

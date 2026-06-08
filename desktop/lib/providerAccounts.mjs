@@ -1,6 +1,7 @@
 import { accessSync, chmodSync, constants, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
+import { openRouterConfigPaths, parseEnvConfigValue } from "./agentConfig.mjs";
 
 const OPENAI_API_URL = "https://api.openai.com/v1";
 
@@ -36,7 +37,7 @@ export function disconnectOpenAiAccount() {
   return publicOpenAiAccount();
 }
 
-export function openAiAccountCredential() {
+export function openAiAccountCredential(configPaths = openRouterConfigPaths()) {
   const stored = readStore().openai;
   if (stored?.apiKey) {
     return {
@@ -46,14 +47,40 @@ export function openAiAccountCredential() {
       source: "local"
     };
   }
-  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
-  if (!apiKey) return null;
+  const configured = openAiEnvironmentCredential(configPaths);
+  if (!configured) return null;
   return {
-    apiKey,
-    organization: String(process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ""),
-    project: String(process.env.OPENAI_PROJECT || ""),
+    ...configured,
     source: "env"
   };
+}
+
+function openAiEnvironmentCredential(configPaths) {
+  const processApiKey = String(process.env.OPENAI_API_KEY || "").trim();
+  if (processApiKey) {
+    return {
+      apiKey: processApiKey,
+      organization: String(process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ""),
+      project: String(process.env.OPENAI_PROJECT || "")
+    };
+  }
+  for (const path of configPaths) {
+    let body = "";
+    try {
+      body = readFileSync(path, "utf8");
+    } catch {
+      continue;
+    }
+    const apiKey = parseEnvConfigValue(body, "OPENAI_API_KEY");
+    if (!apiKey) continue;
+    return {
+      apiKey,
+      organization: parseEnvConfigValue(body, "OPENAI_ORG_ID")
+        || parseEnvConfigValue(body, "OPENAI_ORGANIZATION"),
+      project: parseEnvConfigValue(body, "OPENAI_PROJECT")
+    };
+  }
+  return null;
 }
 
 export function openAiHeaders(credential = openAiAccountCredential()) {

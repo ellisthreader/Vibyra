@@ -5,6 +5,13 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("./app.terminals-companion-chat.js", import.meta.url), "utf8");
 
+test("companion keeps the empty chat and composer concise", () => {
+  assert.equal((source.match(/data-terminal-ai-prompt="/g) || []).length, 2);
+  assert.doesNotMatch(source, /Enter to send/);
+  assert.match(source, /projects, terminals, and desktop/);
+  assert.doesNotMatch(source, /Ask about this terminal|Using context from|active terminal context/);
+});
+
 test("companion action results use the executor summary", async () => {
   const calls = [];
   const context = companionContext({

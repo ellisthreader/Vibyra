@@ -236,6 +236,32 @@ function addBroadTerminalTaskCases(add) {
     ], { target: "existing" })
   ));
   add(actionCase(
+    "tasks.reported.assign-two-of-four-open-terminals",
+    "the 4 terminals open assign 2 of them to do frontend auidt of terminal page",
+    terminalTasksAction([
+      "Investigate: do frontend audit of terminal page",
+      "Run focused tests for: do frontend audit of terminal page"
+    ], { target: "existing" })
+  ));
+  add(actionCase(
+    "tasks.reported.assign-three-newly-opened-read-only-audit",
+    "Assign three of the new terminals you just opened to do a front-end audit of the terminal page. Do not change any code, just find problems.",
+    terminalTasksAction([
+      "Investigate: do a front-end audit of the terminal page",
+      "Run focused tests for: do a front-end audit of the terminal page",
+      "Review relevant code paths for: do a front-end audit of the terminal page"
+    ], { target: "existing" })
+  ));
+  add(actionCase(
+    "tasks.reported.assign-three-terminals-have-just-opened-read-only",
+    "Now, I want you to assign three of the terminals you have just opened to do a front-end diagnosis of the terminal page without changing any code, just let me know what needs changing.",
+    terminalTasksAction([
+      "Investigate: do a front-end diagnosis of the terminal page",
+      "Run focused tests for: do a front-end diagnosis of the terminal page",
+      "Review relevant code paths for: do a front-end diagnosis of the terminal page"
+    ], { target: "existing" })
+  ));
+  add(actionCase(
     "tasks.reported.eight-subagent-follow-up",
     "still not working assign 8 subagents to diagonse and fix pls",
     terminalTasksAction(

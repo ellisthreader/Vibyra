@@ -25,15 +25,14 @@ function terminalAiChatHtml() {
 }
 
 function terminalAiChatEmptyHtml(terminal) {
-  const terminalName = terminal?.title || "this terminal";
   return `<div class="terminal-ai-chat-empty">
     <div class="terminal-ai-chat-intro">
       <span class="terminal-ai-chat-avatar"><img src="/app-assets/vibyra.png" alt="" /></span>
-      <div><strong>Ask about this terminal</strong><p>Using context from ${escapeHtml(terminalName)}.</p></div>
+      <div><strong>How can I help?</strong><p>Ask Vibyra to work across your projects, terminals, and desktop.</p></div>
     </div>
     <div class="terminal-ai-chat-starters" aria-label="Suggested prompts">
-      <button type="button" data-terminal-ai-prompt="Explain the latest terminal output and tell me what it means.">${icon("chat")}<span><strong>Explain the output</strong><small>Summarize what the terminal is showing</small></span>${icon("chevron")}</button>
-      <button type="button" data-terminal-ai-prompt="Review the active terminal context for errors and suggest the safest next step.">${icon("search")}<span><strong>Check for errors</strong><small>Find the likely issue and next step</small></span>${icon("chevron")}</button>
+      <button type="button" data-terminal-ai-prompt="Review my current Vibyra workspace and suggest the most useful next step.">${icon("chat")}<span><strong>Plan my next step</strong><small>Review the workspace and suggest what to do</small></span>${icon("chevron")}</button>
+      <button type="button" data-terminal-ai-prompt="Check my projects and active work for errors, then suggest the safest fixes.">${icon("search")}<span><strong>Check my work</strong><small>Find issues across projects and active tasks</small></span>${icon("chevron")}</button>
     </div>
   </div>`;
 }

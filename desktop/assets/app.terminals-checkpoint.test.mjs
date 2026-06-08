@@ -48,3 +48,10 @@ test("safe mode is recommended and defaults on for new users", () => {
   assert.match(setupSource, /Advanced: terminals can edit the same files/);
   assert.match(stateSource, /storedSetupWorkspaceMode === null[\s\S]*"worktree"/);
 });
+
+test("terminal setup stays compact without hiding workspace safety", () => {
+  assert.match(setupSource, /data-terminal-setup-advanced/);
+  assert.match(setupSource, /terminalSetupAdvancedOpen/);
+  assert.doesNotMatch(setupSource, /terminal-preview-block/);
+  assert.doesNotMatch(setupSource, /layoutPreview\(setupCount\)/);
+});

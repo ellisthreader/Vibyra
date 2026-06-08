@@ -3,7 +3,30 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { providerAccountsState } from "./providerAccounts.mjs";
+import { openAiAccountCredential, providerAccountsState } from "./providerAccounts.mjs";
+
+test("OpenAI credentials can come from an ignored desktop env file", () => {
+  const envDir = mkdtempSync(join(tmpdir(), "vibyra-openai-env-"));
+  const envPath = join(envDir, ".env");
+  writeFileSync(envPath, [
+    "OPENAI_API_KEY=sk-test-env-key-1234567890",
+    "OPENAI_ORG_ID=org-test",
+    "OPENAI_PROJECT=proj-test"
+  ].join("\n"));
+  const previousKey = process.env.OPENAI_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  try {
+    const credential = openAiAccountCredential([envPath]);
+    assert.equal(credential.apiKey, "sk-test-env-key-1234567890");
+    assert.equal(credential.organization, "org-test");
+    assert.equal(credential.project, "proj-test");
+    assert.equal(credential.source, "env");
+  } finally {
+    if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
+    else process.env.OPENAI_API_KEY = previousKey;
+    rmSync(envDir, { recursive: true, force: true });
+  }
+});
 
 test("provider account state detects ChatGPT-backed Codex CLI auth", () => {
   const previousCodexHome = process.env.CODEX_HOME;

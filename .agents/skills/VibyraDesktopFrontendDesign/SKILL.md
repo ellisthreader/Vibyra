@@ -121,7 +121,11 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   and project Memory remains visible in the lower half of the companion.
 - Keep the terminal Chat companion visually compact: use a title row, visible
   Chat/Voice controls, useful starter rows, and a rounded bottom composer.
-  Avoid a redundant active-terminal context strip inside Chat. Keep local-model setup or availability
+  Present Vibyra AI as the assistant for the whole desktop app, not as an
+  assistant limited to the active terminal. Do not show copy such as `Ask about
+  this terminal` or `Using context from...`; project or terminal context may
+  still be used invisibly to improve routing. Avoid a redundant active-terminal
+  context strip inside Chat. Keep local-model setup or availability
   warnings out of the persistent composer chrome; surface failures only when a
   request actually needs user action. Avoid a large
   centered empty-state icon or card-heavy chat bubbles.
@@ -152,7 +156,35 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   keep the control in a direct responding state until playback begins.
 - Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
 - Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
-- When no terminals exist, show a simple setup panel that asks how many terminals to open, supports a custom count up to 12, previews the selected count, and lets the user pick from the same OpenRouter/chat model set used by desktop chat.
+- Keep terminal chrome, status motion, dropdown selection, and settings actions
+  on Vibyra purple. Provider colors may identify content, but OpenAI/Codex teal
+  must not turn the surrounding terminal UI into a green theme; ANSI green
+  remains valid only for real terminal output and semantic success.
+- Terminal options must include a persistent rename control backed by the PTY
+  service. Grid positions are numbered in reading order, creation appends new
+  terminals, and an eight-terminal wide grid uses four columns so `1` starts
+  top-left and `8` ends bottom-right.
+- When Vibyra AI assigns work to an open terminal, show a compact live activity
+  strip with the real task summary and an animated tab status. Drive it from
+  assignment delivery and PTY output, keep it transient and memory-only, honor
+  reduced motion, and never imply a percentage or completion state the PTY
+  cannot prove.
+- Distinguish delivery from execution: show `Task accepted` after the bridge
+  accepts stdin, and show `Vibyra is working` only after real PTY output. Clear
+  the transient state on failure, exit, removal, or inactivity.
+- Existing-terminal AI assignments must exclude plain shell sessions and honor
+  explicit model/full-access compatibility. Retry only the brief startup
+  `Terminal is not running` race; do not hide persistent delivery failures.
+- When no terminals exist, show a simple setup panel with one compact count
+  row, a custom count up to 12, Project and Model side by side when space
+  allows, and one primary launch action. Do not add a decorative terminal-count
+  preview. Keep reasoning and token-source controls under `Advanced settings`;
+  keep multi-terminal workspace safety visible because it changes file
+  isolation.
+- Preserve the focused terminal surface and tab behavior during visual cleanup.
+  Put Project, Workspace, Access, technical details, and the separated close
+  action in the existing three-dot terminal options menu rather than adding
+  more permanent terminal chrome.
 - For two or more project terminals, keep workspace isolation as one quiet
   two-choice row: recommended `Safe mode` or advanced `Shared folder`. Safe
   mode is the default for users without a saved preference and means separate

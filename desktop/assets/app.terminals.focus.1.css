@@ -131,6 +131,19 @@
   padding: 0;
   text-align: left;
 }
+.terminal-grid-number {
+  align-items: center;
+  background: var(--terminal-accent-soft, rgba(139, 92, 255, .13));
+  border: 1px solid var(--terminal-accent-border, rgba(139, 92, 255, .34));
+  border-radius: 5px;
+  color: var(--terminal-text, #f1eef8);
+  display: inline-flex;
+  flex: 0 0 22px;
+  font-size: 10px;
+  font-weight: 760;
+  height: 20px;
+  justify-content: center;
+}
 .terminal-tile-head strong {
   font-size: 13px;
   font-weight: 700;
@@ -157,13 +170,13 @@
   padding: 9px 10px 9px 16px;
 }
 .terminal-provider-claude { --terminal-accent: #ff9b6a; }
-.terminal-provider-openai { --terminal-accent: #69d6c7; }
+.terminal-provider-openai { --terminal-accent: #8b5cff; }
 .terminal-provider-gemini { --terminal-accent: #6aa8ff; }
 .terminal-provider-auto { --terminal-accent: #b9a7f6; }
 .terminal-provider-claude .terminal-prompt,
 .terminal-provider-claude .terminal-assistant-token { color: #ff9b6a; }
 .terminal-provider-openai .terminal-prompt,
-.terminal-provider-openai .terminal-assistant-token { color: #69d6c7; }
+.terminal-provider-openai .terminal-assistant-token { color: #8b5cff; }
 .terminal-provider-gemini .terminal-prompt,
 .terminal-provider-gemini .terminal-assistant-token { color: #6aa8ff; }
 .terminal-provider-auto .terminal-prompt,

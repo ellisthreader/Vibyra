@@ -138,6 +138,17 @@ export function removePersistentAiTerminalSession(terminalId) {
   rmSync(persistentTerminalPaths(terminalId).dir, { recursive: true, force: true });
 }
 
+export function updatePersistentAiTerminalSession(terminalId, patch = {}) {
+  const paths = persistentTerminalPaths(terminalId);
+  const config = readJson(paths.config);
+  if (!config) return false;
+  if (Object.prototype.hasOwnProperty.call(patch, "title")) {
+    config.title = String(patch.title || "").slice(0, 72);
+  }
+  writeFileSync(paths.config, JSON.stringify(config, null, 2), { mode: 0o600 });
+  return true;
+}
+
 export function persistentTerminalPaths(terminalId) {
   const key = createHash("sha256").update(String(terminalId || "")).digest("hex").slice(0, 24);
   const dir = join(sessionRoot, key);

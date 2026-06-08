@@ -201,6 +201,83 @@ test("desktop task actions assign jobs to existing project terminals without rel
   assert.equal(summary, "Assigned 2 terminal jobs to the open terminals.");
 });
 
+test("desktop task assignments expose accepted activity to the terminal UI", async () => {
+  const events = [];
+  const terminal = { id: "one", projectId: "saas", ptyStatus: "running" };
+  const context = actionContext({
+    terminals: [terminal],
+    terminalTaskActivityStart: (target, prompt) => events.push(["start", target.id, prompt]),
+    terminalTaskActivityAccepted: (target) => events.push(["accepted", target.id]),
+    terminalTaskActivityFailed: (target) => events.push(["failed", target.id]),
+    fetch: async () => jsonResponse({ ok: true })
+  });
+
+  await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "existing",
+    projectId: "saas",
+    tasks: ["Review the terminal activity UI"]
+  }]);
+
+  assert.deepEqual(JSON.parse(JSON.stringify(events)), [
+    ["start", "one", "Review the terminal activity UI"],
+    ["accepted", "one"]
+  ]);
+});
+
+test("desktop task assignments retry while a newly opened terminal is starting", async () => {
+  let attempts = 0;
+  const terminal = { id: "one", projectId: "saas", ptyStatus: "starting" };
+  const context = actionContext({
+    terminals: [terminal],
+    setTimeout: (callback) => callback(),
+    fetch: async () => {
+      attempts += 1;
+      return attempts < 3
+        ? jsonResponse({ error: "Terminal is not running." }, 409)
+        : jsonResponse({ ok: true });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "existing",
+    projectId: "saas",
+    tasks: ["Review the terminal UI"]
+  }]);
+
+  assert.equal(attempts, 3);
+  assert.equal(summary, "Assigned 1 terminal job to the open terminals.");
+});
+
+test("desktop task assignments exclude shell and incompatible existing terminals", async () => {
+  const requests = [];
+  const context = actionContext({
+    terminals: [
+      { id: "shell", agent: "shell", model: "gpt-5.5", projectId: "saas", ptyStatus: "running", permissionMode: "full" },
+      { id: "standard", agent: "codex", model: "gpt-5.5", projectId: "saas", ptyStatus: "running", permissionMode: "standard" },
+      { id: "other-model", agent: "codex", model: "gpt-5-codex", projectId: "saas", ptyStatus: "running", permissionMode: "full" },
+      { id: "match", agent: "codex", model: "gpt-5.5", projectId: "saas", ptyStatus: "running", permissionMode: "full" }
+    ],
+    fetch: async (url) => {
+      requests.push(url);
+      return jsonResponse({ ok: true });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "existing",
+    model: "gpt-5.5",
+    permissionMode: "full",
+    projectId: "saas",
+    tasks: ["Audit one", "Audit two"]
+  }]);
+
+  assert.deepEqual(requests, ["/desktop/pty-terminals/match/input"]);
+  assert.match(summary, /1 task had no compatible running terminal/);
+});
+
 test("desktop task actions flatten multiline briefs for Vibyra wrapper terminals", async () => {
   const requests = [];
   const context = actionContext({
@@ -352,12 +429,117 @@ test("desktop actions relaunch all Codex terminals with full permissions", async
   assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
   assert.equal(created.length, 2);
   assert.deepEqual(JSON.parse(JSON.stringify(created.map((item) => item.options))), [
-    { effort: "xhigh", permissionMode: "full", projectId: "saas" },
-    { effort: "high", permissionMode: "full", projectId: "saas" }
+    { effort: "xhigh", permissionMode: "full", projectId: "saas", tokenMode: "vibyra" },
+    { effort: "high", permissionMode: "full", projectId: "saas", tokenMode: "provider" }
   ]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.tokenMode), ["provider", "vibyra"]);
   assert.equal(context.activeTerminalId, "new-1");
+});
+
+test("desktop permissions safely convert compatible OpenAI wrappers to Codex", async () => {
+  const created = [];
+  let confirmation = "";
+  const context = actionContext({
+    activeTerminalId: "two",
+    terminals: [
+      { id: "one", title: "GPT-5.5 Pro 1", agent: "vibyra", model: "openai/gpt-5.5-pro", effort: "high", permissionMode: "standard", projectId: "saas", tokenMode: "provider" },
+      { id: "two", title: "GPT-5.5 Pro 2", agent: "vibyra", model: "openai/gpt-5.5-pro", effort: "xhigh", permissionMode: "standard", projectId: "saas", tokenMode: "vibyra" }
+    ],
+    modelChoices: () => [
+      { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+      { key: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", provider: "openai" }
+    ],
+    createTerminal(model, shouldRender, options) {
+      const terminal = { id: `new-${created.length + 1}`, agent: "codex", model, ...options };
+      created.push({ model, shouldRender, options, terminal });
+      context.terminals.unshift(terminal);
+      context.activeTerminalId = terminal.id;
+      return terminal;
+    },
+    fetch: async () => jsonResponse({ ok: true, closed: 2 }),
+    window: {
+      confirm(message) {
+        confirmation = message;
+        return true;
+      }
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "set_terminal_permissions",
+    scope: "all",
+    permissionMode: "full"
+  }]);
+
+  assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
+  assert.match(confirmation, /switch to the compatible Codex CLI model/);
+  assert.deepEqual(created.map((item) => item.model), ["gpt-5.5", "gpt-5.5"]);
+  assert.deepEqual(created.map((item) => item.options.tokenMode), ["vibyra", "provider"]);
+  assert.deepEqual(context.terminals.map((terminal) => terminal.title), ["GPT-5.5 1", "GPT-5.5 2"]);
+  assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
+});
+
+test("desktop permissions keep non-OpenAI wrappers blocked", async () => {
+  let fetchCalls = 0;
+  const context = actionContext({
+    terminals: [{
+      id: "one",
+      title: "Claude Sonnet",
+      agent: "vibyra",
+      model: "anthropic/claude-sonnet-4",
+      permissionMode: "standard"
+    }],
+    modelChoices: () => [
+      { key: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" }
+    ],
+    fetch: async () => {
+      fetchCalls += 1;
+      return jsonResponse({ ok: true, closed: 1 });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "set_terminal_permissions",
+    scope: "all",
+    permissionMode: "full"
+  }]);
+
+  assert.equal(summary, "Full access requires a Codex-compatible OpenAI terminal.");
+  assert.equal(fetchCalls, 0);
+});
+
+test("desktop permissions do not close terminals when Codex is unavailable", async () => {
+  let fetchCalls = 0;
+  const context = actionContext({
+    terminals: [{
+      id: "one",
+      title: "GPT-5.5 Pro",
+      agent: "vibyra",
+      model: "openai/gpt-5.5-pro",
+      permissionMode: "standard"
+    }],
+    modelChoices: () => [
+      { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+      { key: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", provider: "openai" }
+    ],
+    providerAccounts: {
+      codex: { available: false, connected: false }
+    },
+    fetch: async () => {
+      fetchCalls += 1;
+      return jsonResponse({ ok: true, closed: 1 });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "set_terminal_permissions",
+    scope: "all",
+    permissionMode: "full"
+  }]);
+
+  assert.match(summary, /Codex CLI must be installed and signed in/);
+  assert.equal(fetchCalls, 0);
 });
 
 test("desktop permission relaunch leaves terminals open when their model is locked", async () => {

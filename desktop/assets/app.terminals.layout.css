@@ -223,6 +223,6 @@ body.electron-shell .content.terminal-content {
   width: 7px;
 }
 .terminal-status.running {
-  background: #37d67a;
-  box-shadow: 0 0 0 4px rgba(55, 214, 122, 0.09);
+  background: #8b5cff;
+  box-shadow: 0 0 0 4px rgba(139, 92, 255, 0.13);
 }

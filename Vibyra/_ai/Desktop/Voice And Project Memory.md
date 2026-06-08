@@ -42,6 +42,13 @@ service is unreliable. Electron media permission is audio-only and restricted
 to the local desktop origin. Every recorder failure and cancellation path must
 stop all acquired microphone tracks, including tab/project switches, panel
 close, navigation, and page hide.
+OpenAI credential discovery is owned by `desktop/lib/providerAccounts.mjs`.
+After the private provider store and `process.env`, it reads
+`OPENAI_API_KEY` from the same ignored root/backend `.env` paths used by
+desktop agent configuration. This lets Voice use local env configuration
+without copying the key into source or the provider account store. A bridge
+restart is required after changing bridge code, but env-file values are read
+at request time.
 
 Voice is a Vibyra AI conversation, not terminal dictation. Its upper-half UI is
 one talk/stop button with `Alt+V`; after transcription it sends the spoken turn

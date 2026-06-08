@@ -62,7 +62,7 @@ normalizeTerminal = function normalizePtyTerminal(item) {
 };
 
 saveTerminals = function savePtyTerminals() {
-  const stored = terminals.map(({ initialPrompt, pending, notice, ptyStartQueued, restoringFromSnapshot, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
+  const stored = terminals.map(({ initialPrompt, pending, notice, ptyStartQueued, restoringFromSnapshot, taskActivity, ...terminal }) => ({ ...terminal, ptyRendererVersion: terminalPtyRendererVersion, output: String(terminal.output || "").slice(-60000) })).slice(0, maxTerminals);
   localStorage.setItem(storageKey, JSON.stringify(stored));
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
   else localStorage.removeItem(activeKey);
@@ -96,7 +96,12 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
   const model = unlockedModel(modelKey);
   const agent = agentForModel(model);
   const effort = terminalEffortForModel(model, options.effort);
-  const tokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, setupTokenMode) : setupTokenMode;
+  const requestedTokenMode = ["provider", "vibyra"].includes(options.tokenMode)
+    ? options.tokenMode
+    : setupTokenMode;
+  const tokenMode = typeof terminalTokenModeForModel === "function"
+    ? terminalTokenModeForModel(model, requestedTokenMode)
+    : requestedTokenMode;
   const terminal = {
     id: terminalId(),
     title: `${model.label} ${terminals.length + 1}`,
@@ -126,7 +131,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     updatedAt: Date.now(),
     messages: []
   };
-  terminals.unshift(terminal);
+  terminals.push(terminal);
   activeTerminalId = terminal.id;
   newTerminalMenuOpen = false;
   setupModelMenuOpen = false;
@@ -187,7 +192,8 @@ activeTerminalView = function ptyActiveTerminalView(terminal) {
   const active = terminal.id === activeTerminalId;
   const hiddenClass = active ? "active" : "terminal-focus-hidden";
   const hiddenAttr = active ? "" : " aria-hidden=\"true\"";
-  return `<article class="terminal-focus ${terminalProviderClass(terminal)} ${hiddenClass} ${terminal.notice ? "has-notice" : ""}" data-terminal="${escapeAttribute(terminal.id)}"${hiddenAttr}><header class="terminal-focus-head"><div class="terminal-name">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></div><div class="terminal-meta">${modelMetaChip(terminal)}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</div></header>${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}</article>`;
+  const activity = typeof terminalTaskActivityHtml === "function" ? terminalTaskActivityHtml(terminal) : "";
+  return `<article class="terminal-focus ${terminalProviderClass(terminal)} ${hiddenClass} ${terminal.notice ? "has-notice" : ""} ${activity ? "is-ai-working" : ""}" data-terminal="${escapeAttribute(terminal.id)}"${hiddenAttr}><header class="terminal-focus-head"><div class="terminal-name">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></div><div class="terminal-meta">${modelMetaChip(terminal)}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</div></header>${activity}${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}</article>`;
 };
 
 terminalFocusViews = function ptyTerminalFocusViews() {
@@ -196,8 +202,10 @@ terminalFocusViews = function ptyTerminalFocusViews() {
 
 terminalTile = function ptyTerminalTile(terminal) {
   const active = terminal.id === activeTerminalId;
+  const position = Math.max(1, terminals.findIndex((item) => item.id === terminal.id) + 1);
   const workspaceChip = typeof terminalWorkspaceIndicator === "function" ? terminalWorkspaceIndicator(terminal) : "";
-  return `<article class="terminal-tile ${terminalProviderClass(terminal)} ${active ? "active" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></button>${workspaceChip}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>${terminalViewport(terminal)}</article>`;
+  const activity = typeof terminalTaskActivityHtml === "function" ? terminalTaskActivityHtml(terminal) : "";
+  return `<article class="terminal-tile ${terminalProviderClass(terminal)} ${active ? "active" : ""} ${activity ? "is-ai-working" : ""}" data-terminal="${escapeAttribute(terminal.id)}"><header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}"><span class="terminal-grid-number">${position}</span>${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong></button>${workspaceChip}<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings">${icon("menu")}</button>${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>${activity}${terminalViewport(terminal)}</article>`;
 };
 
 function terminalViewport(terminal) {
@@ -219,7 +227,8 @@ settingsMenu = function ptySettingsMenu(terminal) {
   const permissionRow = optionRow(fullAccess ? "lock" : "shield", "Access", fullAccess ? "Full access" : "Standard", fullAccess ? "Approvals and sandbox are disabled" : "Approvals and sandbox stay enabled", fullAccess ? "terminal-permission-row" : "");
   const cwd = terminal.cwd ? optionRow("terminal", "Path", terminal.cwd, "", "terminal-path-row") : "";
   const advanced = `${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}`;
-  return `<div class="terminal-menu terminal-settings-menu" role="dialog" aria-label="Terminal options"><div class="terminal-menu-section">${projectRow}${workspaceRow}${permissionRow}</div><div class="terminal-menu-section terminal-menu-advanced"><p class="terminal-menu-section-label">Advanced</p>${advanced}</div><button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}<span>Close terminal</span></button></div>`;
+  const rename = `<form class="terminal-rename-form" data-terminal-rename-form="${escapeAttribute(terminal.id)}"><label for="terminal-name-${escapeAttribute(terminal.id)}">Terminal name</label><div><input id="terminal-name-${escapeAttribute(terminal.id)}" type="text" maxlength="72" value="${escapeAttribute(terminal.title)}" data-terminal-rename-input autocomplete="off" /><button type="submit">Rename</button></div><small data-terminal-rename-status aria-live="polite"></small></form>`;
+  return `<div class="terminal-menu terminal-settings-menu" role="dialog" aria-label="Terminal options">${rename}<div class="terminal-menu-section">${projectRow}${workspaceRow}${permissionRow}</div><div class="terminal-menu-section terminal-menu-advanced"><p class="terminal-menu-section-label">Advanced</p>${advanced}</div><button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}<span>Close terminal</span></button></div>`;
 };
 
 terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {
@@ -238,6 +247,11 @@ terminalTabs = function ptyTerminalTabs() {
 };
 
 function terminalStatusState(terminal) {
+  if (terminal.taskActivity) {
+    if (terminal.taskActivity.phase === "assigning") return { key: "working", label: "Assigning task" };
+    if (terminal.taskActivity.phase === "working") return { key: "working", label: "Vibyra AI is working" };
+    return { key: "running", label: "Task accepted" };
+  }
   if (terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running") return { key: "running", label: "Running" };
   if (terminal.ptyStatus === "unavailable") return { key: "unavailable", label: "Unavailable" };
   if (terminal.ptyStatus === "exited" && Number(terminal.exitCode) === 0) return { key: "success", label: "Completed" };
