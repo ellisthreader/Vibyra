@@ -1,0 +1,100 @@
+.terminal-memory-detected-vaults {
+  display: grid;
+  gap: 5px;
+  padding: 6px 0 2px;
+}
+.terminal-memory-find-vaults {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  color: var(--terminal-dim);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  min-height: 52px;
+  padding: 8px 11px;
+  text-align: left;
+}
+.terminal-memory-find-vaults:hover {
+  background: var(--terminal-hover);
+  border-color: var(--terminal-border-strong);
+}
+.terminal-memory-find-vaults span {
+  display: grid;
+  gap: 2px;
+}
+.terminal-memory-find-vaults strong {
+  color: var(--terminal-text);
+  font-size: 11px;
+}
+.terminal-memory-find-vaults small {
+  color: var(--terminal-dim);
+  font-size: 10px;
+}
+.terminal-memory-detected-vaults > small {
+  color: var(--terminal-accent);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  padding: 0 2px;
+  text-transform: uppercase;
+}
+.terminal-memory-detected-vault-list {
+  display: grid;
+  gap: 3px;
+  max-height: 156px;
+  overflow: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
+}
+.terminal-memory-detected-vault-list > button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  border-radius: 6px;
+  color: var(--terminal-dim);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  min-height: 40px;
+  padding: 5px 8px;
+  text-align: left;
+}
+.terminal-memory-detected-vault-list > button:hover {
+  background: var(--terminal-hover);
+  border-color: var(--terminal-accent-border);
+}
+.terminal-memory-detected-vault-list > button > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.terminal-memory-detected-vault-list > button strong {
+  color: var(--terminal-text);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-memory-detected-vault-list > button small,
+.terminal-memory-vault-scan {
+  color: var(--terminal-dim);
+  font-size: 9px;
+}
+.terminal-memory-detected-vault-list > button b {
+  color: var(--terminal-accent);
+  font-size: 9px;
+  font-weight: 700;
+}
+.terminal-memory-vault-scan {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 4px;
+}
+.terminal-memory-vault-scan svg {
+  height: 13px;
+  width: 13px;
+}

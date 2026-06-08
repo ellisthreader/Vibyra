@@ -1,0 +1,204 @@
+.terminal-memory-workspace--fullscreen {
+  background: #1e1e1e;
+  color: #dcddde;
+  grid-template-rows: 42px minmax(0, 1fr);
+}
+.terminal-memory-appbar {
+  align-items: stretch;
+  background: #303030;
+  border-bottom: 1px solid #151515;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) auto;
+  min-width: 0;
+}
+.terminal-memory-app-brand {
+  align-items: center;
+  border-right: 1px solid #242424;
+  color: #c8c8c8;
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 12px;
+}
+.terminal-memory-app-brand svg {
+  color: var(--terminal-accent);
+  height: 16px;
+  width: 16px;
+}
+.terminal-memory-tabs {
+  align-items: end;
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+.terminal-memory-tabs button {
+  align-items: center;
+  background: #292929;
+  border: 0;
+  border-right: 1px solid #202020;
+  color: #9e9e9e;
+  display: inline-flex;
+  flex: 0 1 200px;
+  font-size: 11px;
+  gap: 7px;
+  height: 36px;
+  min-width: 90px;
+  padding: 0 11px;
+}
+.terminal-memory-tabs button.active {
+  background: #1e1e1e;
+  color: #ededed;
+}
+.terminal-memory-tabs button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-memory-tabs button svg {
+  height: 13px;
+  width: 13px;
+}
+.terminal-memory-tabs .terminal-memory-tab-add {
+  background: transparent;
+  flex: 0 0 36px;
+  justify-content: center;
+  min-width: 36px;
+  padding: 0;
+}
+.terminal-memory-app-actions {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  padding: 0 8px;
+}
+.terminal-memory-app-actions button,
+.terminal-memory-app-import,
+.terminal-memory-ribbon button,
+.terminal-memory-vault-head button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #999;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0 7px;
+}
+.terminal-memory-app-actions button,
+.terminal-memory-ribbon button,
+.terminal-memory-vault-head button {
+  padding: 0;
+  width: 28px;
+}
+.terminal-memory-app-actions button:hover,
+.terminal-memory-app-import:hover,
+.terminal-memory-ribbon button:hover,
+.terminal-memory-ribbon button.active,
+.terminal-memory-vault-head button:hover {
+  background: #3a3a3a;
+  color: #eee;
+}
+.terminal-memory-app-actions svg,
+.terminal-memory-app-import svg,
+.terminal-memory-ribbon svg,
+.terminal-memory-vault-head svg {
+  height: 14px;
+  width: 14px;
+}
+.terminal-memory-app-import {
+  cursor: pointer;
+  gap: 6px;
+  position: relative;
+}
+.terminal-memory-app-import span {
+  font-size: 10px;
+}
+.terminal-memory-app-body {
+  display: grid;
+  grid-template-columns: 42px clamp(220px, 20vw, 300px) minmax(0, 1fr) clamp(190px, 17vw, 250px);
+  min-height: 0;
+}
+.terminal-memory-ribbon {
+  align-items: center;
+  background: #202020;
+  border-right: 1px solid #151515;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 6px;
+}
+.terminal-memory-ribbon span {
+  border-top: 1px solid #393939;
+  margin: 3px 0;
+  width: 22px;
+}
+.terminal-memory-vault-pane {
+  background: #242424;
+  border-right: 1px solid #151515;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-height: 0;
+}
+.terminal-memory-vault-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px 8px 7px 12px;
+}
+.terminal-memory-vault-head > span {
+  display: grid;
+  min-width: 0;
+}
+.terminal-memory-vault-head small {
+  color: #777;
+  font-size: 8px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.terminal-memory-vault-head strong {
+  color: #d3d3d3;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-memory-vault-head > div {
+  display: flex;
+}
+.terminal-memory-vault-search {
+  background: #1b1b1b;
+  border-color: #3a3a3a;
+  margin: 0 10px 7px;
+}
+.terminal-memory-vault-search input {
+  min-height: 27px;
+}
+.terminal-memory-vault-tree {
+  padding: 2px 7px 8px;
+}
+.terminal-memory-vault-pane footer {
+  align-items: center;
+  border-top: 1px solid #353535;
+  color: #aaa;
+  display: grid;
+  font-size: 10px;
+  gap: 7px;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  min-height: 34px;
+  padding: 0 10px;
+}
+.terminal-memory-vault-pane footer svg {
+  height: 13px;
+  width: 13px;
+}
+.terminal-memory-vault-pane footer span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-memory-vault-pane footer small {
+  color: #6f6f6f;
+}

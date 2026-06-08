@@ -1,5 +1,6 @@
 async function terminalMemoryRequest(url, options = {}) {
   const response = await fetch(url, {
+    cache: "no-store",
     ...options,
     headers: {
       Accept: "application/json",
@@ -15,7 +16,11 @@ async function terminalMemoryRequest(url, options = {}) {
 }
 
 async function loadTerminalMemoryVault(projectId, force = false) {
-  if (!projectId || terminalMemoryState.loading) return;
+  if (!projectId) return;
+  if (terminalMemoryState.loading) {
+    if (force) terminalMemoryState.reloadQueued = true;
+    return;
+  }
   if (!force && terminalMemoryState.loaded && terminalMemoryState.projectId === projectId) return;
   terminalMemoryState.loading = true;
   terminalMemoryState.status = "Loading memory...";
@@ -35,6 +40,10 @@ async function loadTerminalMemoryVault(projectId, force = false) {
   } finally {
     terminalMemoryState.loading = false;
     terminalMemoryRefresh();
+    if (terminalMemoryState.reloadQueued && terminalMemoryState.projectId === projectId) {
+      terminalMemoryState.reloadQueued = false;
+      queueMicrotask(() => loadTerminalMemoryVault(projectId, true));
+    }
   }
 }
 

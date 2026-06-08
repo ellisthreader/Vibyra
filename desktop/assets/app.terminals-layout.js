@@ -15,7 +15,9 @@ function scheduleTerminalLayoutSync() {
   terminalLayoutFrame = schedule(() => {
     terminalLayoutFrame = 0;
     ensureActiveTerminalTabVisible();
+    positionTerminalNewMenu();
     positionTerminalSettingsMenus();
+    if (typeof mountVisibleXterms === "function") mountVisibleXterms();
   });
 }
 
@@ -58,6 +60,38 @@ function positionTerminalSettingsMenus() {
     menu.style.setProperty("--terminal-menu-left", `${Math.round(left)}px`);
     menu.style.setProperty("--terminal-menu-top", `${Math.round(top)}px`);
   });
+}
+
+function positionTerminalNewMenu() {
+  const button = document.getElementById("open-terminal-new");
+  const menu = document.querySelector('.terminal-new-wrap [data-terminal-model-picker="new"]');
+  if (!button || !menu) return;
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const containingRect = terminalFixedContainingRect(menu);
+  const gap = 8;
+  const edge = 8;
+  const viewportLeft = Math.min(
+    window.innerWidth - menuRect.width - edge,
+    Math.max(edge, buttonRect.left)
+  );
+  const below = buttonRect.bottom + gap;
+  const viewportTop = below + menuRect.height <= window.innerHeight - edge
+    ? below
+    : Math.max(edge, buttonRect.top - menuRect.height - gap);
+  menu.style.setProperty("--terminal-new-menu-left", `${Math.round(viewportLeft - containingRect.left)}px`);
+  menu.style.setProperty("--terminal-new-menu-top", `${Math.round(viewportTop - containingRect.top)}px`);
+  menu.classList.add("terminal-model-picker--positioned");
+}
+
+function terminalFixedContainingRect(node) {
+  for (let parent = node.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+    const styles = getComputedStyle(parent);
+    if (styles.transform !== "none" || styles.perspective !== "none" || styles.filter !== "none") {
+      return parent.getBoundingClientRect();
+    }
+  }
+  return { left: 0, top: 0 };
 }
 
 const previousBindPtyTopbarControlsForLayout = bindPtyTopbarControls;

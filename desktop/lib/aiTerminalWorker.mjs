@@ -72,7 +72,6 @@ function handleMessage(line) {
   if (payload.type === "input" && child?.stdin?.writable) child.stdin.write(String(payload.data ?? ""));
   if (payload.type === "resize") {
     try { child?.resize?.(payload.cols, payload.rows); } catch {}
-    try { child?.kill?.("SIGWINCH"); } catch {}
   }
   if (payload.type === "close") {
     closing = true;

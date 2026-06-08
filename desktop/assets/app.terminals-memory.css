@@ -1,5 +1,9 @@
 .terminal-page--with-companion:has(.terminal-memory-workspace) {
-  grid-template-columns: minmax(0, 1fr) clamp(520px, 44vw, 720px);
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+.terminal-page--with-companion:has(.terminal-memory-section--stacked),
+.terminal-setup--with-companion:has(.terminal-memory-section--stacked) {
+  grid-template-columns: minmax(0, 1fr) 340px;
 }
 .terminal-memory-section {
   display: none; min-height: 0;
@@ -7,8 +11,18 @@
 .terminal-memory-section.active {
   display: block; height: 100%; padding: 0;
 }
+.terminal-memory-section--stacked {
+  border-bottom: 0;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
 .terminal-companion:has(.terminal-memory-workspace) {
   overflow: hidden; padding: 0;
+}
+.terminal-companion:has(.terminal-memory-section--stacked) {
+  grid-template-rows: auto minmax(0, 1fr);
 }
 .terminal-memory-workspace {
   color: var(--terminal-text, #f1eef8);
@@ -21,6 +35,25 @@
   border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
   display: flex; justify-content: space-between;
   min-width: 0; padding: 9px 10px;
+}
+.terminal-memory-section--stacked .terminal-memory-toolbar {
+  min-height: 38px;
+  padding: 5px 8px;
+}
+.terminal-memory-section--stacked .terminal-memory-heading small {
+  max-width: 120px;
+}
+.terminal-memory-section--stacked .terminal-memory-toolbar-actions {
+  gap: 1px;
+}
+.terminal-memory-section--stacked .terminal-memory-toolbar-actions button {
+  min-height: 25px;
+  padding: 0 5px;
+}
+.terminal-memory-section--stacked .terminal-memory-toolbar-actions button:nth-of-type(3),
+.terminal-memory-section--stacked .terminal-memory-toolbar-actions button:nth-of-type(4),
+.terminal-memory-section--stacked .terminal-memory-toolbar-actions button:nth-of-type(5) {
+  display: none;
 }
 .terminal-memory-footer {
   border-bottom: 0; border-top: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
@@ -38,12 +71,11 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .terminal-memory-toolbar-actions,
-.terminal-memory-document-actions,
 .terminal-memory-modes {
   align-items: center; display: flex; gap: 4px;
 }
 .terminal-memory-toolbar button,
-.terminal-memory-document-actions button,
+.terminal-memory-toolbar-import,
 .terminal-memory-modes button {
   align-items: center;
   background: transparent; border: 1px solid transparent; border-radius: 6px;
@@ -52,7 +84,7 @@
   justify-content: center; min-height: 28px; padding: 0 7px;
 }
 .terminal-memory-toolbar button:hover,
-.terminal-memory-document-actions button:hover,
+.terminal-memory-toolbar-import:hover,
 .terminal-memory-modes button:hover,
 .terminal-memory-modes button.active {
   background: var(--terminal-hover, rgba(255, 255, 255, .045));
@@ -62,12 +94,27 @@
   opacity: .35;
 }
 .terminal-memory-toolbar svg,
-.terminal-memory-document-actions svg {
+.terminal-memory-toolbar-import svg {
   height: 14px; width: 14px;
 }
-.terminal-memory-hidden-input { display: none; }
+.terminal-memory-toolbar-import {
+  cursor: pointer;
+  position: relative;
+}
+.terminal-memory-toolbar-import span {
+  font-size: 10px;
+}
 .terminal-memory-workbench {
   display: grid; grid-template-columns: 190px minmax(0, 1fr); min-height: 0;
+}
+.terminal-memory-section--stacked .terminal-memory-workbench {
+  grid-template-columns: minmax(112px, 38%) minmax(0, 1fr);
+}
+.terminal-memory-section--stacked .terminal-memory-explorer {
+  padding: 5px 4px;
+}
+.terminal-memory-section--stacked .terminal-memory-search {
+  margin-bottom: 4px;
 }
 .terminal-memory-explorer {
   border-right: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
@@ -129,7 +176,7 @@
   font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .terminal-memory-document {
-  display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0;
+  display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0;
 }
 .terminal-memory-document-bar {
   align-items: center;
@@ -152,6 +199,14 @@
   font: 12px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace;
   height: 100%; margin: 0; outline: 0; overflow: auto;
   padding: 14px 16px; resize: none; width: 100%;
+}
+.terminal-memory-section--stacked .terminal-memory-editor textarea,
+.terminal-memory-section--stacked .terminal-memory-preview {
+  padding: 9px 10px;
+}
+.terminal-memory-section--stacked .terminal-memory-footer {
+  min-height: 24px;
+  padding: 4px 8px;
 }
 .terminal-memory-editor.preview textarea,
 .terminal-memory-editor.edit .terminal-memory-preview {
@@ -187,16 +242,6 @@
 .memory-wikilink {
   color: var(--terminal-accent, #8b5cff);
 }
-.terminal-memory-document-actions {
-  border-top: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
-  padding: 7px 10px;
-}
-.terminal-memory-document-actions button {
-  font-size: 10px;
-}
-.terminal-memory-document-actions .danger:hover {
-  color: #f87171;
-}
 .terminal-memory-empty,
 .terminal-memory-document-empty {
   color: var(--terminal-dim, #918ca1);
@@ -212,14 +257,31 @@
 }
 @media (max-width: 1120px) {
   .terminal-page--with-companion:has(.terminal-memory-workspace) {
-    grid-template-columns: minmax(0, 1fr) minmax(420px, 48vw);
+    grid-template-columns: minmax(0, 1fr) 286px;
   }
   .terminal-memory-workbench {
     grid-template-columns: 160px minmax(0, 1fr);
+  }
+  .terminal-page--with-companion:has(.terminal-memory-section--stacked),
+  .terminal-setup--with-companion:has(.terminal-memory-section--stacked) {
+    grid-template-columns: minmax(0, 1fr) 286px;
+  }
+  .terminal-memory-section--stacked .terminal-memory-workbench {
+    grid-template-columns: 130px minmax(0, 1fr);
   }
 }
 @media (max-width: 860px) {
   .terminal-companion:has(.terminal-memory-workspace) {
     max-height: 60vh;
+  }
+  .terminal-companion:has(.terminal-memory-section--stacked) {
+    max-height: none;
+  }
+  .terminal-page--with-companion:has(.terminal-memory-section--stacked),
+  .terminal-setup--with-companion:has(.terminal-memory-section--stacked) {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+  .terminal-memory-section--stacked .terminal-memory-workbench {
+    grid-template-columns: 116px minmax(0, 1fr);
   }
 }

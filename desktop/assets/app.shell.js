@@ -138,9 +138,11 @@ function render() {
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".billing-revamp"))) renderTokenModal();
 }
-function setRailCollapsed(value) {
+function setRailCollapsed(value, options = {}) {
+  const companionOwnsRail = document.querySelector(".app")?.classList.contains("terminal-companion-active");
+  if (!value && companionOwnsRail && !options.force) return;
   railCollapsed = Boolean(value);
-  localStorage.setItem(railCollapsedKey, railCollapsed ? "true" : "false");
+  if (options.persist !== false) localStorage.setItem(railCollapsedKey, railCollapsed ? "true" : "false");
   applyRailState();
 }
 function svgFromHtml(markup) {
@@ -200,7 +202,8 @@ function renderTopbar() {
   const terminalTopbar = terminalPage && typeof terminalTopbarHtml === "function" ? terminalTopbarHtml() : "";
   const left = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div>`;
   const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
-  const actions = `${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
+  const terminalAiAction = terminalPage && typeof terminalAiTopbarButtonHtml === "function" ? terminalAiTopbarButtonHtml() : "";
+  const actions = `${terminalAiAction}${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
   if (isElectronShell()) {
     nodes.topbar.innerHTML = "";
     if (nodes.chromePage) nodes.chromePage.innerHTML = center;

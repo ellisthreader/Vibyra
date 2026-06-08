@@ -27,6 +27,7 @@ body[data-desktop-theme="dark"] {
   --terminal-status-unavailable: #ffb347;
   --terminal-warning-bg: rgba(255, 183, 77, 0.08);
   --terminal-warning-border: rgba(255, 192, 97, 0.14);
+  --terminal-warning-text: #e7b45f;
   --terminal-phone-frame: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
   --terminal-phone-border: #3d4049;
   --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
@@ -71,6 +72,7 @@ body[data-desktop-theme="light"] {
   --terminal-status-unavailable: #a76400;
   --terminal-warning-bg: rgba(174, 111, 0, 0.08);
   --terminal-warning-border: rgba(174, 111, 0, 0.18);
+  --terminal-warning-text: #8a5900;
   --terminal-ansi-black: #222631;
   --terminal-ansi-red: #b42350;
   --terminal-ansi-green: #167a4b;
@@ -126,6 +128,7 @@ body[data-desktop-theme="light"] .terminal-settings-menu optgroup { background: 
     --terminal-status-unavailable: #a76400;
     --terminal-warning-bg: rgba(174, 111, 0, 0.08);
     --terminal-warning-border: rgba(174, 111, 0, 0.18);
+    --terminal-warning-text: #8a5900;
     --terminal-ansi-black: #222631;
     --terminal-ansi-red: #b42350;
     --terminal-ansi-green: #167a4b;

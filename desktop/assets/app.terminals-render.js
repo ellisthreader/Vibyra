@@ -41,8 +41,14 @@ function terminalGridMeta(count) {
 }
 
 function setupView() {
-  const modelKey = selectedSetupModel().key;
-  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", modelByKey(modelKey))}${setupModelMenuOpen ? terminalModelMenu("setup", modelKey) : ""}</div></div><button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
+  const model = selectedSetupModel();
+  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalSetupEffortPicker(model)}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
+}
+
+function terminalSetupEffortPicker(model = selectedSetupModel()) {
+  const efforts = terminalReasoningEfforts(model);
+  if (!efforts.length) return "";
+  return `<div class="terminal-setup-block"><p>Reasoning effort</p><div class="terminal-effort-row" role="radiogroup" aria-label="Terminal reasoning effort">${efforts.map((effort) => `<button class="${setupEffort === effort.value ? "active" : ""}" type="button" role="radio" aria-checked="${setupEffort === effort.value}" data-terminal-setup-effort="${escapeAttribute(effort.value)}"><strong>${escapeHtml(effort.label)}</strong><small>${escapeHtml(effort.hint || effort.short || "")}</small></button>`).join("")}</div></div>`;
 }
 
 function terminalTabs() {
@@ -85,7 +91,8 @@ function terminalCommandPalette(terminal) {
 }
 
 function settingsMenu(terminal) {
-  return `<div class="terminal-menu terminal-settings-menu">${selectRow("model", "sparkles", terminal, modelOptions(terminal))}${selectRow("effort", "bolt", terminal, effortOptions(terminal))}${selectRow("projectId", "folder", terminal, projectOptions(terminal))}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
+  const effortRow = terminalReasoningEfforts(terminal.model).length ? selectRow("effort", "bolt", terminal, effortOptions(terminal)) : "";
+  return `<div class="terminal-menu terminal-settings-menu">${selectRow("model", "sparkles", terminal, modelOptions(terminal))}${effortRow}${selectRow("projectId", "folder", terminal, projectOptions(terminal))}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
 }
 
 function selectRow(field, iconName, terminal, options) {
@@ -97,7 +104,7 @@ function modelOptions(terminal) {
 }
 
 function effortOptions(terminal) {
-  return config().chatEfforts.map((effort) => `<option value="${escapeAttribute(effort.value)}" ${terminal.effort === effort.value ? "selected" : ""}>${escapeHtml(effort.label)}</option>`).join("");
+  return terminalReasoningEfforts(terminal.model).map((effort) => `<option value="${escapeAttribute(effort.value)}" ${terminal.effort === effort.value ? "selected" : ""}>${escapeHtml(effort.label)}</option>`).join("");
 }
 
 function projectOptions(terminal) {
@@ -170,7 +177,7 @@ function terminalContext(terminal, profile, compact) {
   const account = typeof currentAccount === "function" ? currentAccount() : {};
   const firstName = String(account?.name || "").trim().split(/\s+/)[0] || "";
   const project = projectForTerminal(terminal);
-  const cwd = project?.name ? `~/${slug(project.name)}` : "~/workspace";
+  const cwd = terminal.cwd || project?.path || "Default workspace";
   const version = profile.version || ((typeof vibyraDesktopVersion === "string" && vibyraDesktopVersion) || "2.1.0");
   return { terminal, profile, model, effortShort, effortLabel, planLabel: tokenLabel, firstName, cwd, version, compact };
 }

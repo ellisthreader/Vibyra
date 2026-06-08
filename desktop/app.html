@@ -41,22 +41,31 @@
     <link rel="stylesheet" href="/desktop/assets/app.terminals.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.layout.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.model.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals.model.1.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals.model.1.css?v=terminal-menu-fix-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.model.2.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.settings.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.focus.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.focus.1.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.focus.2.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.1.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.1.css?v=terminal-worktrees-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.2.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.project-picker.css" />
     <link rel="stylesheet" href="/desktop/assets/vendor.xterm.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.pty.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-workspace.css?v=terminal-workspace-ui-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-companion.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-shell.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-tools.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-tools.css?v=simple-ai-nav-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-chat.css?v=equal-ai-memory-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory.css?v=simple-memory-import-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-graph.css?v=flat-memory-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-graph-advanced.css?v=memory-graph-flat-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-start.css?v=simple-memory-import-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-discovery.css?v=obsidian-discovery-3-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-layout.css?v=resizable-memory-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-fullscreen.css?v=simple-memory-import-20260608" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-fullscreen-content.css?v=simple-memory-import-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.auth.css" />
     <link rel="stylesheet" href="/desktop/assets/app.auth.1.css" />
     <link rel="stylesheet" href="/desktop/assets/app.auth.2.css" />
@@ -74,6 +83,7 @@
     <link rel="stylesheet" href="/desktop/assets/app.builds-screenshot.css" />
     <link rel="stylesheet" href="/desktop/assets/app.builds-screenshot.1.css" />
     <link rel="stylesheet" href="/desktop/assets/app.builds-screenshot.2.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.chat-polish.css" />
   </head>
   <body>
     <script>
@@ -196,7 +206,7 @@
     <script src="/desktop/assets/app.chat-store.js"></script>
     <script src="/desktop/assets/app.chat-actions.js"></script>
     <script src="/desktop/assets/app.chat-send.js"></script>
-    <script src="/desktop/assets/app.render-helpers.js"></script>
+    <script src="/desktop/assets/app.render-helpers.js?v=remove-working-with-20260608"></script>
     <script src="/desktop/assets/app.icons.js"></script>
     <script src="/desktop/assets/app.profile-state.js"></script>
     <script src="/desktop/assets/app.profile-render.js?v=profile-preferences-20260521"></script>
@@ -206,30 +216,43 @@
     <script src="/desktop/assets/app.shell.js?v=profile-preferences-20260521"></script>
     <script src="/desktop/assets/app.pages.js"></script>
     <script src="/desktop/assets/app.terminals.js"></script>
-    <script src="/desktop/assets/app.terminals-state.js"></script>
-    <script src="/desktop/assets/app.terminals-store.js"></script>
-    <script src="/desktop/assets/app.terminals-render.js"></script>
-    <script src="/desktop/assets/app.terminals-controls.js"></script>
+    <script src="/desktop/assets/app.terminals-state.js?v=terminal-worktrees-20260608"></script>
+    <script src="/desktop/assets/app.terminals-store.js?v=terminal-worktrees-20260608"></script>
+    <script src="/desktop/assets/app.terminals-render.js?v=model-aware-effort-20260608"></script>
+    <script src="/desktop/assets/app.terminals-controls.js?v=terminal-worktrees-20260608"></script>
     <script src="/desktop/assets/app.terminals-send.js"></script>
     <script src="/desktop/assets/app.terminals-text.js"></script>
-    <script src="/desktop/assets/app.terminals-models.js"></script>
+    <script src="/desktop/assets/app.terminals-models.js?v=ai-evals-20260608"></script>
     <script src="/desktop/assets/app.terminals-project-picker.js"></script>
     <script src="/desktop/assets/vendor.xterm.js"></script>
-    <script src="/desktop/assets/app.terminals-pty.js"></script>
-    <script src="/desktop/assets/app.terminals-pty-runtime.js"></script>
-    <script src="/desktop/assets/app.terminals-companion.js"></script>
-    <script src="/desktop/assets/app.terminals-companion-voice-utils.js"></script>
-    <script src="/desktop/assets/app.terminals-companion-voice.js"></script>
-    <script src="/desktop/assets/app.terminals-memory-state.js"></script>
+    <script src="/desktop/assets/app.terminals-pty.js?v=terminal-worktrees-20260608"></script>
+    <script src="/desktop/assets/app.terminals-pty-runtime.js?v=terminal-workspace-ui-20260608"></script>
+    <script src="/desktop/assets/app.terminals-workspace.js?v=terminal-workspace-ui-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion.js?v=simple-ai-nav-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-chat.js?v=simple-ai-nav-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-utils.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-history.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-request.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-playback.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-transcription.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice-recorder.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-voice.js?v=private-voice-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-state.js?v=simple-memory-import-20260608"></script>
     <script src="/desktop/assets/app.terminals-memory-markdown.js"></script>
     <script src="/desktop/assets/app.terminals-memory-api.js"></script>
-    <script src="/desktop/assets/app.terminals-memory-render.js"></script>
-    <script src="/desktop/assets/app.terminals-memory-events.js"></script>
+    <script src="/desktop/assets/app.terminals-memory-graph-layout.js?v=memory-graph-2-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-graph-visuals.js?v=memory-graph-flat-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-graph.js?v=memory-graph-3-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-render.js?v=simple-memory-import-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-fullscreen.js?v=simple-memory-import-20260608"></script>
+    <script src="/desktop/assets/app.terminals-memory-events.js?v=simple-memory-import-20260608"></script>
     <script src="/desktop/assets/app.terminals-memory-import.js"></script>
+    <script src="/desktop/assets/app.terminals-memory-onboarding.js?v=simple-memory-import-20260608"></script>
     <script src="/desktop/assets/app.terminals-companion-memory.js"></script>
-    <script src="/desktop/assets/app.terminals-companion-runtime.js"></script>
-    <script src="/desktop/assets/app.terminals-layout.js"></script>
-    <script src="/desktop/assets/app.desktop-actions.js"></script>
+    <script src="/desktop/assets/app.terminals-companion-runtime.js?v=simple-ai-nav-20260608"></script>
+    <script src="/desktop/assets/app.terminals-companion-layout.js?v=resizable-memory-20260608"></script>
+    <script src="/desktop/assets/app.terminals-layout.js?v=terminal-menu-coordinates-20260608"></script>
+    <script src="/desktop/assets/app.desktop-actions.js?v=agentic-terminal-briefs-20260608"></script>
     <script src="/desktop/assets/app.terminals-boot.js"></script>
     <script src="/desktop/assets/app.auth.js"></script>
     <script src="/desktop/assets/app.auth-state.js"></script>

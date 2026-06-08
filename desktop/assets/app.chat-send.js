@@ -75,7 +75,7 @@ async function sendChat() {
       history,
       model: selectedChatModel,
       mode,
-      projectId: project?.id || "",
+      projectId: project?.id || String(selectedProjectId || ""),
       profileContext: typeof desktopProfileContext === "function" ? desktopProfileContext() : null,
       prompt,
       reasoningEffort,

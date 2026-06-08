@@ -1,0 +1,132 @@
+.terminal-page--with-companion,
+.terminal-setup--with-companion,
+.terminal-page--with-companion[data-terminal-companion-mode="chat"],
+.terminal-setup--with-companion[data-terminal-companion-mode="chat"],
+.terminal-page--with-companion:has(.terminal-memory-workspace),
+.terminal-page--with-companion:has(.terminal-memory-section--stacked),
+.terminal-setup--with-companion:has(.terminal-memory-section--stacked) {
+  grid-template-columns: minmax(420px, 1fr) var(--terminal-companion-width, 340px) !important;
+}
+
+.terminal-companion {
+  position: relative;
+}
+
+.terminal-companion-resizer {
+  background: transparent;
+  border: 0;
+  cursor: col-resize;
+  height: 100%;
+  left: -6px;
+  outline: 0;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  touch-action: none;
+  width: 12px;
+  z-index: 8;
+}
+
+.terminal-companion-resizer::after {
+  background: transparent;
+  content: "";
+  height: 100%;
+  left: 5px;
+  position: absolute;
+  top: 0;
+  transition: background-color 120ms ease;
+  width: 2px;
+}
+
+.terminal-companion-resizer:hover::after,
+.terminal-companion-resizer:focus-visible::after,
+.terminal-companion-resizing .terminal-companion-resizer::after {
+  background: var(--terminal-accent, #8b5cff);
+}
+
+.terminal-companion-resizing {
+  transition: none;
+  user-select: none;
+}
+
+.terminal-companion-resizing .terminal-companion {
+  animation: none;
+}
+
+.terminal-page.terminal-page--with-companion.terminal-page--memory-fullscreen:has(.terminal-memory-workspace),
+.terminal-setup.terminal-setup--with-companion.terminal-page--memory-fullscreen:has(.terminal-memory-workspace) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.terminal-page--memory-fullscreen .terminal-stage,
+.terminal-setup--memory-fullscreen .terminal-setup-panel {
+  display: none;
+}
+
+.terminal-page--memory-fullscreen .terminal-companion,
+.terminal-setup--memory-fullscreen .terminal-companion {
+  border-left: 0;
+  grid-column: 1;
+  grid-template-rows: minmax(0, 1fr);
+  padding: 0;
+  width: 100%;
+}
+.terminal-page--memory-fullscreen .terminal-companion-shell-head,
+.terminal-setup--memory-fullscreen .terminal-companion-shell-head {
+  display: none;
+}
+
+.terminal-page--memory-fullscreen .terminal-companion-primary,
+.terminal-setup--memory-fullscreen .terminal-companion-primary {
+  display: none;
+}
+
+.terminal-page--memory-fullscreen .terminal-companion-stack,
+.terminal-setup--memory-fullscreen .terminal-companion-stack {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.terminal-page--memory-fullscreen .terminal-memory-section--stacked,
+.terminal-setup--memory-fullscreen .terminal-memory-section--stacked {
+  display: block;
+  grid-row: 1;
+}
+
+.terminal-page--memory-fullscreen .terminal-memory-workbench,
+.terminal-setup--memory-fullscreen .terminal-memory-workbench {
+  grid-template-columns: clamp(210px, 22vw, 300px) minmax(0, 1fr);
+}
+
+.terminal-page--memory-fullscreen .terminal-memory-toolbar,
+.terminal-setup--memory-fullscreen .terminal-memory-toolbar {
+  min-height: 46px;
+  padding: 8px 12px;
+}
+
+.terminal-page--memory-fullscreen .terminal-memory-heading small,
+.terminal-setup--memory-fullscreen .terminal-memory-heading small {
+  max-width: 360px;
+}
+
+.terminal-page--memory-fullscreen .terminal-memory-toolbar-actions button,
+.terminal-setup--memory-fullscreen .terminal-memory-toolbar-actions button {
+  display: inline-flex;
+}
+
+.terminal-page--memory-fullscreen .terminal-companion-resizer,
+.terminal-setup--memory-fullscreen .terminal-companion-resizer {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .terminal-page--with-companion:not(.terminal-page--memory-fullscreen),
+  .terminal-setup--with-companion:not(.terminal-page--memory-fullscreen) {
+    grid-template-columns: minmax(320px, 1fr) var(--terminal-companion-width, 280px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-companion-resizer::after {
+    transition: none;
+  }
+}

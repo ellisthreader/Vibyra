@@ -12,6 +12,8 @@ reference.
 - `desktop/assets/app.terminals-controls.js`
 - `desktop/assets/app.terminals-pty.js`
 - `desktop/assets/app.terminals-pty-runtime.js`
+- `desktop/assets/app.terminals-workspace.js`
+- `desktop/assets/app.terminals-workspace.css`
 - `desktop/assets/app.terminals-companion.js`
 - `desktop/assets/app.desktop-actions.js`
 - `desktop/lib/ptyTerminals.mjs`
@@ -27,6 +29,16 @@ reference.
 Terminal composers intentionally have no send button. Enter submits and
 Shift+Enter inserts a newline.
 
+The empty terminal setup persists its reasoning default in
+`localStorage["vibyra.desktop.terminalSetupEffort"]`. The OpenRouter catalog
+normalizer copies each model's `supported_parameters` into
+`supportsReasoning`. Reasoning-capable models show Low/Medium/High/Extra high
+and pass low/medium/high/xhigh through `createTerminals(..., { effort })`.
+Models without `reasoning` omit the control and use the internal `default`
+value, which causes the backend to omit OpenRouter's `reasoning` object.
+OpenRouter performs nearest-level mapping when the provider supports fewer
+levels than its normalized interface.
+
 Known terminal slash commands must either perform a local UI action, show real
 local status/configuration, execute through the restricted `/commands/run`
 route for allowed `!` shell commands, or transform into a provider-scoped
@@ -35,11 +47,32 @@ desktop chat prompt. Do not render known commands as unsupported placeholders.
 Official CLI provider families are OpenAI/Codex, Anthropic/Claude, and
 Google/Gemini. Other OpenRouter slugs use the Vibyra API wrapper unless an
 official local CLI is intentionally added later.
+Provider-qualified catalog IDs always remain on that wrapper, including
+`openai/*`, `anthropic/*`, and `google/*`. Only Vibyra's built-in unqualified
+model keys may route to official CLIs. This prevents OpenRouter-only variants
+such as `openai/gpt-5.5-pro` from being passed to a ChatGPT-authenticated Codex
+CLI that supports the official `gpt-5.5` ID instead.
+
+The terminal project picker includes a synthetic `full-pc` scope labeled
+`Full PC`. `desktop/lib/projects.mjs` resolves that fixed ID to the current
+user's home directory, so the browser never sends an arbitrary filesystem
+path. This changes the terminal working directory only; permission mode remains
+independent and defaults to standard.
 
 PTY-backed terminals must preserve mounted xterm DOM nodes across
 `/desktop/state` refreshes. Patch status, helper text, active/hidden classes,
 settings menus, terminal add/remove/reorder, and companion panels in place
 instead of forcing a full content `innerHTML` render that disconnects xterm.
+Keyboard and paste input must have exactly one browser event owner.
+`app.terminals-pty.js` delegates terminal input binding to `bindPtyInput()` in
+`app.terminals-pty-runtime.js`; when xterm is available, only `xterm.onData`
+forwards typed bytes. Attaching a bubbling `keydown` listener to the outer
+`[data-terminal-input]` host as well causes every physical keypress to be sent
+twice. The outer keydown/paste fallback is only for environments without
+xterm and must become inert if xterm later becomes available. Keep xterm
+`screenReaderMode` disabled in Electron, and ignore `onData` from detached or
+replaced xterm instances. Keep `desktop/assets/app.terminals-input.test.mjs`
+passing whenever terminal input binding changes.
 When replaying a persisted transcript into xterm, suppress `onData` forwarding
 until the replay write completes. Terminal control sequences can otherwise
 generate device-response bytes that are mistaken for keyboard input, flood the
@@ -94,6 +127,41 @@ The `/phone` command opens the terminal companion panel in memory only. Do not
 forward it to `/desktop/chat`, persist it in localStorage, or remount xterm when
 the panel opens.
 
+The terminal page has one persistent `Vibyra AI` launcher in the top-right
+shell actions, including setup when no terminals exist. Do not render Voice or
+Memory launchers beside terminal tabs, and do not add Chat/Voice/Memory
+navigation tabs inside the companion. It opens Chat; Voice is reached from the
+chat composer or `Alt+V`, with a small return-to-chat action in Voice. Memory
+stays visible in the lower half. Patch the panel beside `.terminal-stage`
+rather than remounting xterm. Chat threads are in-memory and scoped per
+terminal id so switching terminal/project context does not mix conversation
+history.
+The Chat companion visual shell is split across
+`app.terminals-companion-shell.css` and `app.terminals-companion-chat.css`.
+Keep its title and sibling mode tabs visible at the `860px` Electron minimum,
+keep starter prompts compact, omit redundant terminal-context copy inside Chat,
+and preserve per-terminal composer drafts whenever the panel rerenders.
+Keep the companion Chat CSS/JS versioned in `app.html` so a
+running Electron renderer cannot retain the pre-polish assets after a reload.
+Do not show persistent local-model installation or availability copy in the
+composer; keep the panel neutral and report an actionable runtime error only
+after the user sends a request.
+The terminal companion body is a vertical 50/50 stack: Chat or Voice stays in
+the upper half and project Memory stays visible below it. The stacked Memory
+workspace uses the normal backend-owned vault state but a compact toolbar and
+explorer; both halves own their scrolling, and Memory must not trigger the
+legacy wide full-height companion layout. Keep the companion outer grid at
+`auto minmax(0, 1fr)` and the inner stack at two `minmax(0, 1fr)` rows; the
+later-loaded Memory stylesheet must not restore an extra `auto` row or let
+graph minimum heights expand the Memory half.
+Any open companion temporarily owns the shell rail: collapse it to the
+icon-only state, block expansion while the panel is open, and restore the
+user's previous rail state on close without changing
+`vibyra.desktop.railCollapsed`. Keep the shell grid and companion entrance
+animated, honor reduced motion, and let the xterm `ResizeObserver` refit the PTY
+through the width transition. The regression is
+`desktop/assets/app.terminals-companion-rail.test.mjs`.
+
 For `/voice`, `/memory`, microphone transcription, or project-memory behavior,
 read `Desktop/Voice And Project Memory.md`. These commands are intercepted
 before PTY input reaches provider CLIs.
@@ -110,8 +178,30 @@ scrollable grid overview. At `1000px` and below, grid mode uses two columns
 with a `230px` minimum tile height instead of squeezing 10-12 terminals into
 short rows; below `560px`, use one column. Keep the active tab scrolled into
 view and viewport-position settings menus so lower-row controls are not clipped.
+Do not auto-switch to grid at a terminal-count threshold; grid is an explicit
+user choice so bulk creation does not remount every xterm.
 The layout helpers live in `app.terminals-layout.js` and
 `app.terminals-responsive.css`.
+The new-terminal model picker is a fixed popover anchored to
+`#open-terminal-new` by `positionTerminalNewMenu()`. Clamp it to viewport edges
+and place it below the `+` button when space allows; do not use window-centered
+coordinates. Keep the popover hidden until positioning adds
+`terminal-model-picker--positioned`, preventing a flash at fallback
+coordinates. Electron's `.desktop-chrome-page` is transformed, so fixed menu
+coordinates must subtract the actual transformed containing block rectangle;
+raw viewport coordinates place the picker far to the right. Base terminal
+controls mark click ownership with
+`data-terminal-click-bound`; PTY incremental binding must skip those nodes or
+the `+` and three-dot menus toggle open and closed from one click. Keep
+`desktop/assets/app.terminals-new-menu.test.mjs` passing.
+
+Runtime terminal resize must keep three dimensions synchronized: the visible
+xterm host, the xterm rows/columns, and the underlying pseudo-TTY. On Linux the
+`/usr/bin/script` adapter resolves its `/dev/pts/*` device, applies `stty -F`,
+then signals the child session process group with `SIGWINCH`. The persistent
+process handle's `kill()` method is reserved for explicit close and must never
+be used as resize signaling. Observe mounted xterm hosts with `ResizeObserver`
+so grid, sidebar, companion, and window geometry changes reach the PTY.
 
 When terminal theme regressions appear, inspect `app.theme-terminals.css`, `app.theme-terminals-states.css`, `app.theme-terminals-controls.css`, `app.terminals.model.2.css`, and `app.terminals-pty-runtime.js` first. Validate both normal CSS surfaces and xterm internal theme repaint after changing `body[data-desktop-theme]`.
 
@@ -128,16 +218,204 @@ and executes them through the existing terminal and companion functions. Keep
 ordinary chat on `/api/chat` and never treat unstructured assistant text as an
 executable desktop command.
 
+Both the main desktop Chat page and the terminal Vibyra AI companion must pass
+returned `actions` through `runDesktopActions()`. Never display optimistic
+action copy as success without executing the structured action. Companion
+actions that create or close the active terminal must move the user/result
+messages to the newly active terminal or setup thread so the confirmation
+remains visible.
+
 Terminal launch actions carry `count`, `model`, `effort`, `permissionMode`, and
 `projectId`. `permissionMode` defaults to `standard`; only explicit full-access
 phrases may set `full`. The browser persists and displays that mode, the PTY
 route forwards it, and Codex alone receives
 `--dangerously-bypass-approvals-and-sandbox`. Strip an `openai/` OpenRouter
 prefix before passing the selected model to Codex CLI.
+Explicit follow-ups such as `give all terminals full permissions` resolve to
+`set_terminal_permissions`. Permission mode cannot change inside a running CLI
+process, so the renderer must confirm the destructive boundary, close the
+selected Codex terminal sessions, and relaunch them while preserving model,
+reasoning effort, project scope, token source, and the previously active tab.
+Provider-qualified OpenRouter models are not Codex CLI sessions and must be
+rejected for full-access actions even when their provider metadata is OpenAI.
+
+Model intent distinguishes built-in official models from provider-qualified
+catalog models. Plain `GPT-5.5`, `gpt5.5`, and `open ai 5.5` resolve to the
+unqualified `gpt-5.5` Codex route; explicit `GPT-5.5 Pro` resolves to
+`openai/gpt-5.5-pro` and stays on the Vibyra/OpenRouter wrapper. Dynamic
+OpenRouter groups extend built-in model groups instead of replacing them, so
+action matching cannot lose official model keys after catalog load.
+
+Named-project launch intent resolves unique exact, case-insensitive, and quoted
+project names against discovered projects. Explicit prompt scope overrides the
+currently selected project; nonexistent, ambiguous, and stale project
+references must fail instead of falling back to `process.cwd()`. Natural
+language such as `Full PC`, `whole computer`, or `home directory` maps to the
+terminal-only `full-pc` scope. Keep the end-to-end matrix covering exact,
+lowercase, quoted, missing, ambiguous, current-project, and Full PC cases.
+
+Terminal project identity is backend-authoritative. Companion chat must
+preserve an intentional empty project on an existing terminal, startup chat may
+use `terminalProjectForSetup()` before the first terminal exists; that setup
+state is initialized from persisted `selectedProjectId` while projects load.
+Desktop actions with
+missing project metadata inherit that setup scope, while an explicit empty
+`projectId` remains an intentional `No project` selection. PTY
+reconciliation must copy both `projectId` and `cwd` from the server. Reusing a
+running terminal ID with a different project returns a conflict. Provider
+wrapper banners and status copy must render the real process cwd, not a
+synthetic `~/workspace` or encoded project ID.
+
+Persistent PTY recovery must discover projects before restoring sessions,
+re-resolve each saved `projectId`, and require the saved cwd to equal the
+server-resolved project path. Terminate unknown or mismatched legacy workers
+instead of trusting their stored cwd. The setup screen must not launch a
+persisted project selection until it appears in the loaded project registry.
+Closing a stale terminal ID reports that it was already closed rather than
+showing false success.
+
+Project IDs accepted by normal desktop routes must come from cached,
+discovered, browsed, or explicitly analyzed projects. Do not reconstruct an
+arbitrary filesystem path from a manufactured base64 project ID.
+`terminalProjectById()` is the only resolver allowed to recognize `full-pc`;
+keep that broad home-directory scope confined to PTY terminal launch.
+
+Terminal close intent uses `close_terminals` with `scope: "active" | "all"`.
+Close-all must call `POST /desktop/pty-terminals/close-all`, which delegates
+every session to the existing close lifecycle so running, exited, unavailable,
+and still-connecting workers are removed consistently. Parser guards must keep
+model versions such as `GPT-5.5` from becoming terminal counts and must reject
+negated or explanatory requests such as `don't open terminals` or
+`explain how to open terminals`. Close parsing must require a direct close
+command and reject conversational or deferred phrases such as `stop talking
+about terminals` and `close terminals after tests finish`. Full-access parsing
+must reject `no`, `except`, revoke, or disable wording. Before a permission
+relaunch closes anything, verify every original model is still available and
+unlocked so the session cannot be replaced by a fallback model.
+
+## Action Evaluation Dataset
+
+Treat `desktop/evals/action-parsing/cases.jsonl` as the supervised action
+dataset and release gate. It is deterministically generated by
+`desktop/evals/action-parsing/generate.mjs` and covers more than 15,000
+count/model/effort/permission/project combinations, common typos,
+close/companion actions, and no-action safety examples. Add a reported prompt
+and its expected structured action before fixing a new routing regression.
+
+Regenerate and run the gate with:
+
+```bash
+npm run desktop:ai:dataset
+npm run test:desktop-ai
+```
+
+Keep generated IDs and normalized prompts unique. False-positive execution
+cases are release failures, especially explanatory, quoted-example, negated,
+full-access, and close-all prompts.
+
+Per-terminal delegation uses the `run_terminal_tasks` desktop action. Common
+model, effort, permission, and authoritative project scope live on the action;
+`tasks` contains one `{ task }` item per terminal. Broad audit requests
+decompose into complementary investigation, focused-test, and code-path review
+tasks, while numbered or bulleted task lists are preserved. Treat `subagent`
+or `subagents` beside an explicit terminal count as delegation intent even when
+the prompt omits the word `task`; generate exactly the requested number of
+complementary assignments. Phrases such as `all 5 terminals`, `each terminal`,
+or `open terminals` set `target: "existing"`: synchronize the backend-owned
+session collection, keep each terminal's model/effort/project/token/permission
+settings unchanged, and submit one sanitized bracketed-paste-plus-Enter payload
+through the acknowledged HTTP input route. Do not relaunch existing terminals
+for task assignment. When no existing-terminal count is stated, prepare enough
+complementary tasks to fill the eligible project terminals and report only
+actual delivery failures, not unused task templates.
+Subset wording such as `give 3 of the 7 terminals the job` or `give 3 of them
+the task` must use the subset count, not the referenced total. Assign exactly
+that many jobs to eligible existing terminals, starting with the active
+eligible terminal and then following visible terminal-tab order. Keep
+explanatory, hypothetical, deferred, and subset full-permission wording out of
+automatic execution.
+Phrases such as `with the terminals open, assign 3 terminals to ...` are
+existing-terminal delegation even when the user omits `tasks`, `jobs`, or
+`subagents`. The `assign|delegate|distribute <count> terminals to <goal>`
+construction must produce `run_terminal_tasks` with `target: "existing"` when
+the prompt says the terminals are open; it must never fall through to
+`open_terminals`.
+Before returning a `run_terminal_tasks` action, `desktopChat.mjs` resolves the
+authoritative project and enriches every short task label through
+`terminalTaskPrompts.mjs`. Each delivered prompt preserves the user's request
+and recent user context, identifies a distinct role and ownership boundary,
+includes the source project name/path plus safe ranked relative file hints and
+bounded project memory, requires `pwd` as the authoritative execution root for
+managed worktrees, and directs permitted agents to inspect, implement, test,
+and report real changes. Reproduction and final-review roles are read-only, the
+test lead owns focused tests, and the implementation lead owns the primary
+production fix so shared-folder agents do not all edit the same files.
+Project file hints use the path-only `promptProjectFilePaths()` helper: never
+load or expose `.env`, credentials, private keys, certificates, or secret paths
+for terminal assignments. Project memory is reference material, not executable
+instructions.
+For a vague counted retry such as `still not working, assign 8 subagents`,
+use `target: "existing_then_new"`: assign the project-matching open terminals
+first, then open only enough additional terminals to reach the requested task
+count. Clone the first eligible terminal's model, effort, project, token mode,
+and workspace mode for additions, but never inherit full access. New terminals
+use the action/task permission mode and require the normal explicit full-access
+confirmation. This keeps the batch within the 12-terminal cap instead of
+trying to open the requested count on top of the existing sessions.
+
+New-terminal task batches still open one terminal per task and pass a transient
+`initialPrompt`; `startPtyTerminal` submits bracketed paste plus Enter as one
+awaited `/input` payload only after the authoritative PTY create request
+succeeds, and clears the prompt only after delivery is accepted. A narrow
+`still not working` or `try again` subagent follow-up may reuse the last
+specific user task goal from normalized chat history, but history never grants
+permissions or changes project scope.
+Preserve active creates and recently starting sessions during collection
+reconciliation. Never persist or replay `initialPrompt`, because recovery must
+not rerun agent work.
+`aiTerminalOpenRouterCli.mjs` must send `disableDesktopActions: true` for
+terminal-internal prompts so assigned work cannot recursively launch terminals.
+Detached Vibyra/OpenRouter wrappers must receive a bridge-origin
+`VIBYRA_DESKTOP_URL` with no `/desktop` page suffix. The wrapper also strips
+that suffix defensively before appending `/desktop/chat`; otherwise Electron's
+page URL becomes `/desktop/desktop/chat` and falls through to the phone token
+guard with a misleading `Missing or invalid desktop token` error.
+Start with `desktop/lib/desktopActions.mjs`,
+`desktop/assets/app.desktop-actions.js`, and
+`desktop/assets/app.terminals-pty-runtime.js`.
+
+Parallel terminal editing supports a local-only `workspaceMode` of `shared` or
+`worktree`; GitHub integration is not required. Shared remains the default.
+For two or more new terminals, the setup surface offers a quiet Shared folder /
+Separate branches choice, and structured desktop batches ask once whether to
+isolate when no mode was supplied. Worktree mode is backend-authoritative:
+`desktop/lib/terminalWorktrees.mjs` resolves the selected project, requires a
+clean Git repository, serializes `git worktree add`, creates one
+`vibyra/<project>-<hash>` branch under
+`~/.vibyra-agent/terminal-worktrees`, and never copies ignored files,
+dependencies, `.env` files, credentials, or user data. Persist and revalidate
+the repository root, managed worktree path, branch, and nested project cwd
+before restoring a worker; reject dirty, non-Git, Full PC, missing, or tampered
+workspaces. A browser launch that explicitly allows safe fallback opens the
+terminal in the original shared project folder when isolation is unavailable
+and persists the reason separately as `workspaceNotice`; do not leave the
+terminal stuck in `starting`, and do not stash or copy the dirty source state.
+Project terminal headers show the effective state as `Separate branch`,
+`Shared folder`, or amber `Shared for now`. Dirty-project guidance says that
+changes need a local checkpoint, confirms files were not deleted, and states
+that GitHub is not required. Clicking that compact indicator reuses the notice
+surface for explanation, while incremental refresh patches the indicator
+without remounting xterm. Closing a
+terminal stops and removes its worker context but
+deliberately preserves its local branch and worktree. Do not add automatic
+merge, discard, branch deletion, or secret copying without a separate explicit
+approval and conflict-handling workflow. Permission relaunch is blocked for an
+isolated terminal until it can retain the same authoritative workspace.
 
 Focused validation:
 
 ```bash
-node --test desktop/lib/desktopActions.test.mjs desktop/lib/desktopChat.test.mjs desktop/lib/aiTerminalProcess.test.mjs
-node --test desktop/lib/aiTerminalPersistentProcess.test.mjs desktop/lib/ptyTerminalsSocket.test.mjs
+node --test desktop/assets/app.terminals-input.test.mjs desktop/assets/app.terminals-companion-rail.test.mjs desktop/assets/app.terminals-new-menu.test.mjs
+node --test desktop/lib/localAi.test.mjs desktop/lib/desktopActions.test.mjs desktop/lib/desktopChat.test.mjs desktop/lib/aiTerminalProcess.test.mjs
+node --test desktop/lib/aiTerminalPersistentProcess.test.mjs desktop/lib/ptyTerminalsSocket.test.mjs desktop/lib/terminalWorktrees.test.mjs
 ```

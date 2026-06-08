@@ -113,17 +113,20 @@
   max-height: min(440px, calc(100vh - 230px));
 }
 .terminal-new-wrap .terminal-model-picker {
-  left: 50vw;
+  left: var(--terminal-new-menu-left, 8px);
   max-height: calc(100vh - 86px);
   position: fixed;
-  top: 62px;
-  transform: translateX(-50%);
+  top: var(--terminal-new-menu-top, 62px);
+  transform: none;
   width: min(440px, calc(100vw - 24px));
   z-index: 320;
+  visibility: hidden;
+}
+.terminal-new-wrap .terminal-model-picker.terminal-model-picker--positioned {
+  visibility: visible;
 }
 body.electron-shell .terminal-new-wrap .terminal-model-picker {
   max-height: calc(100vh - var(--chrome-height, 54px) - 24px);
-  top: calc(var(--chrome-height, 54px) + 10px);
 }
 body.electron-shell .terminal-new-wrap .terminal-model-scroll {
   max-height: calc(100vh - var(--chrome-height, 54px) - 118px);

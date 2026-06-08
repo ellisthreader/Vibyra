@@ -60,7 +60,7 @@ function terminalCommandMessageType(command) {
 function terminalStatusText(terminal, profile, command) {
   const model = modelByKey(terminal.model);
   const project = projectForTerminal(terminal);
-  const cwd = project?.name ? "~/" + slug(project.name) : "~/workspace";
+  const cwd = terminal.cwd || project?.path || "Default workspace";
   return (command === "/about" ? profile.label + " v" + profile.version : profile.label + " status") + "\nmodel: " + model.label + "\neffort: " + terminal.effort + "\nproject: " + (project?.name || "No project selected") + "\ndirectory: " + cwd + "\nlayout: " + terminalLayout + "\nmessages: " + terminal.messages.length + "\nshell mode: " + (terminal.shellMode ? "on" : "off");
 }
 

@@ -36,7 +36,7 @@ trait ChatOpenRouterHelpers
     private function normalizeReasoningEffort(string $value): string
     {
         $value = strtolower(trim($value));
-        return in_array($value, ['none', 'low', 'medium', 'high', 'xhigh'], true) ? $value : 'medium';
+        return in_array($value, ['default', 'none', 'low', 'medium', 'high', 'xhigh'], true) ? $value : 'medium';
     }
 
     private function buildReasoningPayload(string $effort, int $maxOutputTokens, string $openRouterModel): ?array
@@ -47,14 +47,14 @@ trait ChatOpenRouterHelpers
         if ($openRouterModel === 'google/gemini-2.5-flash-lite') {
             return ['exclude' => true];
         }
+        if ($effort === 'default') {
+            return null;
+        }
         if ($effort === 'none') {
             return ['exclude' => true];
         }
         if ($effort === 'xhigh') {
-            return [
-                'effort' => 'high',
-                'max_tokens' => max($maxOutputTokens * 4, 8000),
-            ];
+            return ['effort' => 'xhigh'];
         }
         return ['effort' => $effort];
     }

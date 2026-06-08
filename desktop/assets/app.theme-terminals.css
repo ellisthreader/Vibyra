@@ -15,6 +15,7 @@ body {
   --terminal-shadow: rgba(0, 0, 0, 0.42);
   --terminal-warning-bg: rgba(255, 183, 77, 0.08);
   --terminal-warning-border: rgba(255, 192, 97, 0.14);
+  --terminal-warning-text: #e7b45f;
 }
 
 .terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.12); --terminal-accent-border: rgba(255, 155, 106, 0.32); }
@@ -55,6 +56,7 @@ body {
 .terminal-command-option,
 .terminal-model-select,
 .terminal-count-row button,
+.terminal-effort-row button,
 .terminal-model-row button,
 .terminal-custom-count,
 .terminal-settings-menu select,
@@ -107,6 +109,7 @@ body {
 .terminal-settings-menu label:hover,
 .terminal-model-select:hover,
 .terminal-count-row button:hover,
+.terminal-effort-row button:hover,
 .terminal-model-row button:hover,
 .terminal-custom-count:hover,
 .terminal-model-option:hover,
@@ -117,6 +120,7 @@ body {
 .terminal-agent-row button.active,
 .terminal-agent-option.active,
 .terminal-count-row button.active,
+.terminal-effort-row button.active,
 .terminal-model-row button.active,
 .terminal-model-option.active,
 .terminal-model-option.active:hover,

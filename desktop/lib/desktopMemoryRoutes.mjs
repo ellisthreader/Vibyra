@@ -5,6 +5,7 @@ import {
   importDesktopMemoryManifest,
   updateDesktopMemoryNode
 } from "./desktopMemoryVault.mjs";
+import { proposeDesktopMemory } from "./desktopMemoryAi.mjs";
 import { addDesktopProjectMemory, deleteDesktopProjectMemory, getDesktopProjectMemory } from "./desktopProjectMemory.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { readBody, send } from "./http.mjs";
@@ -53,6 +54,12 @@ export async function handleDesktopMemoryRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     const body = await readBody(req);
     send(res, 200, await importDesktopMemoryManifest(body.projectId, body));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/project-memory/proposal") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const body = await readBody(req);
+    send(res, 200, await proposeDesktopMemory(body.projectId, body));
     return true;
   }
   return false;

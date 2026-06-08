@@ -1,0 +1,128 @@
+.terminal-memory-graph-grid {
+  color: var(--terminal-muted);
+  pointer-events: none;
+}
+.terminal-memory-graph-regions ellipse {
+  fill: none;
+  opacity: .55;
+  pointer-events: none;
+  stroke: color-mix(in srgb, var(--terminal-accent) 13%, transparent);
+  stroke-dasharray: 3 7;
+  stroke-width: .8;
+}
+.terminal-memory-graph-regions .cluster-1 { stroke: rgba(72, 181, 255, .13); }
+.terminal-memory-graph-regions .cluster-2 { stroke: rgba(126, 231, 190, .13); }
+.terminal-memory-graph-regions .cluster-3 { stroke: rgba(255, 170, 94, .12); }
+.terminal-memory-graph-regions .cluster-4 { stroke: rgba(236, 118, 255, .12); }
+.terminal-memory-graph-regions .cluster-5 { stroke: rgba(255, 116, 149, .12); }
+.terminal-memory-graph-edges path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--terminal-muted) 24%, transparent);
+  stroke-width: .65;
+  transition: opacity 140ms ease, stroke 140ms ease, stroke-width 140ms ease;
+  vector-effect: non-scaling-stroke;
+}
+.terminal-memory-graph-edges path.link {
+  stroke: color-mix(in srgb, var(--terminal-accent) 38%, transparent);
+  stroke-dasharray: 2.5 3;
+}
+.terminal-memory-graph-edges path.selected,
+.terminal-memory-graph-edges path.focused {
+  stroke: color-mix(in srgb, var(--terminal-accent) 72%, transparent);
+  stroke-width: 1.35;
+}
+.terminal-memory-graph-edges path.dimmed {
+  opacity: .08;
+}
+.terminal-memory-graph-node {
+  color: var(--terminal-muted);
+  cursor: pointer;
+  outline: none;
+  transition: opacity 140ms ease;
+}
+.terminal-memory-graph-node .node-core {
+  fill: currentColor;
+  fill-opacity: .78;
+  stroke: color-mix(in srgb, var(--terminal-text) 14%, transparent);
+  stroke-width: 1;
+  transition: fill 120ms ease, r 120ms ease, stroke 120ms ease;
+}
+.terminal-memory-graph-node .node-orbit {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 30%, transparent);
+  stroke-width: .7;
+}
+.terminal-memory-graph-node .node-center {
+  fill: var(--terminal-companion-bg);
+  stroke: currentColor;
+  stroke-width: .8;
+}
+.terminal-memory-graph-node.folder {
+  color: color-mix(in srgb, var(--terminal-text) 78%, var(--terminal-accent));
+}
+.terminal-memory-graph-node.cluster-1 { color: #76c7ff; }
+.terminal-memory-graph-node.cluster-2 { color: #83dfbf; }
+.terminal-memory-graph-node.cluster-3 { color: #f4b274; }
+.terminal-memory-graph-node.cluster-4 { color: #d99afb; }
+.terminal-memory-graph-node.cluster-5 { color: #f28da6; }
+.terminal-memory-graph-node text {
+  fill: var(--terminal-text);
+  font: 10px Inter, system-ui, sans-serif;
+  opacity: 0;
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: var(--terminal-companion-bg, #0d0d14);
+  stroke-width: 4px;
+  transition: opacity 100ms ease;
+}
+.terminal-memory-graph-node.hub text { opacity: .52; }
+.terminal-memory-graph-node:hover,
+.terminal-memory-graph-node:focus,
+.terminal-memory-graph-node.selected,
+.terminal-memory-graph-node.related { color: var(--terminal-text); }
+.terminal-memory-graph-node:hover .node-core,
+.terminal-memory-graph-node:focus .node-core,
+.terminal-memory-graph-node.selected .node-core {
+  fill: var(--terminal-text);
+  stroke: var(--terminal-accent);
+  stroke-width: 2;
+}
+.terminal-memory-graph-node.dimmed { opacity: .16; }
+.terminal-memory-graph-node:hover text,
+.terminal-memory-graph-node:focus text,
+.terminal-memory-graph-node.selected text { opacity: 1; }
+.terminal-memory-graph-legend {
+  align-items: center;
+  background: color-mix(in srgb, var(--terminal-companion-bg) 82%, transparent);
+  border: 1px solid var(--terminal-border);
+  border-radius: 6px;
+  bottom: 8px;
+  color: var(--terminal-dim);
+  display: flex;
+  font-size: 8px;
+  gap: 8px;
+  padding: 4px 6px;
+  position: absolute;
+  right: 9px;
+}
+.terminal-memory-graph-legend span {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+.terminal-memory-graph-legend i {
+  background: var(--terminal-muted);
+  border-radius: 50%;
+  height: 5px;
+  width: 5px;
+}
+.terminal-memory-graph-legend i.folder {
+  background: var(--terminal-accent);
+}
+.terminal-memory-graph-legend i.link {
+  background: transparent;
+  border-top: 1px dashed var(--terminal-accent);
+  border-radius: 0;
+  height: 0;
+  width: 9px;
+}

@@ -1,0 +1,120 @@
+.terminal-memory-graph {
+  background: var(--terminal-companion-bg, #0d0d14);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.terminal-memory-graph-meta {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 11px 0 13px;
+  position: relative;
+  z-index: 1;
+}
+.terminal-memory-graph-meta > div {
+  display: grid;
+  gap: 2px;
+}
+.terminal-memory-graph-meta small {
+  color: var(--terminal-dim);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.terminal-memory-graph-meta strong {
+  color: var(--terminal-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+.terminal-memory-graph-controls {
+  align-items: center;
+  background: color-mix(in srgb, var(--terminal-companion-bg) 84%, transparent);
+  border: 1px solid var(--terminal-border);
+  border-radius: 7px;
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+}
+.terminal-memory-graph-controls button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--terminal-dim);
+  display: inline-flex;
+  font-size: 9px;
+  height: 24px;
+  justify-content: center;
+  min-width: 25px;
+  padding: 0 6px;
+}
+.terminal-memory-graph-controls button:hover {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+.terminal-memory-graph-controls button svg {
+  height: 12px;
+  width: 12px;
+}
+.terminal-memory-graph-controls span {
+  color: var(--terminal-muted);
+  font-size: 9px;
+  min-width: 34px;
+  text-align: center;
+}
+.terminal-memory-graph-canvas {
+  cursor: grab;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+.terminal-memory-graph-canvas.dragging {
+  cursor: grabbing;
+}
+.terminal-memory-graph svg {
+  display: block;
+  height: 100%;
+  min-height: 420px;
+  touch-action: none;
+  width: 100%;
+}
+.terminal-memory-section--stacked .terminal-memory-graph svg {
+  height: 100%;
+  min-height: 0;
+}
+.terminal-memory-graph-hint {
+  bottom: 8px;
+  color: var(--terminal-dim);
+  font-size: 8px;
+  left: 11px;
+  opacity: .7;
+  pointer-events: none;
+  position: absolute;
+}
+.terminal-memory-view-toggle {
+  align-items: center;
+  background: var(--terminal-companion-subtle);
+  border: 1px solid var(--terminal-border);
+  border-radius: 7px;
+  display: flex;
+  padding: 2px;
+}
+.terminal-memory-toolbar .terminal-memory-view-toggle button {
+  border: 0;
+  min-height: 23px;
+  padding: 0 5px;
+}
+.terminal-memory-toolbar .terminal-memory-view-toggle button.active {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-memory-graph-node circle,
+  .terminal-memory-graph-node text {
+    transition: none;
+  }
+}

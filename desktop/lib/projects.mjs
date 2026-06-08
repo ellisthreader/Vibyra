@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { readdir } from "node:fs/promises";
 import { appState } from "./state.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
@@ -7,6 +7,8 @@ import { folderNameSearchScore, projectSearchScore } from "./searchScoring.mjs";
 
 export { browseDesktopPath } from "./projectBrowse.mjs";
 export { createDesktopProject } from "./projectCreate.mjs";
+
+export const FULL_PC_PROJECT_ID = "full-pc";
 
 export async function discoverProjects() {
   const roots = [
@@ -30,11 +32,15 @@ export async function discoverProjects() {
 }
 
 export function findProjectById(id) {
-  return appState.cachedProjects.find((project) => project.id === id) ?? projectFromEncodedId(id);
+  return appState.cachedProjects.find((project) => project.id === id) ?? null;
 }
 
 export function projectById(id) {
   return findProjectById(id);
+}
+
+export function terminalProjectById(id) {
+  return id === FULL_PC_PROJECT_ID ? fullPcProject() : findProjectById(id);
 }
 
 export async function listDesktopFolders() {
@@ -42,7 +48,9 @@ export async function listDesktopFolders() {
 }
 
 export async function analyzeDesktopProject(path) {
-  return projectFromPath(resolve(String(path ?? "")));
+  const project = await projectFromPath(resolve(String(path ?? "")));
+  cacheProjects([project]);
+  return project;
 }
 
 export async function searchDesktopProjects(query) {
@@ -176,12 +184,14 @@ function cacheProjects(projects) {
   appState.cachedProjects = next;
 }
 
-function projectFromEncodedId(id) {
-  try {
-    const path = Buffer.from(String(id ?? ""), "base64url").toString("utf8");
-    if (!isAbsolute(path)) return null;
-    return { id, name: basename(path), path, stack: "Project", updated: "Now", source: "desktop" };
-  } catch {
-    return null;
-  }
+function fullPcProject() {
+  return {
+    id: FULL_PC_PROJECT_ID,
+    name: "Full PC",
+    path: homedir(),
+    stack: "Computer",
+    updated: "Now",
+    source: "desktop",
+    briefRequired: false
+  };
 }

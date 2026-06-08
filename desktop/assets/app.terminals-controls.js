@@ -1,20 +1,40 @@
 function bindTerminalControls() {
   const root = nodes?.content || document;
-  root.querySelector("#open-terminal-new")?.addEventListener("click", () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
-  root.querySelector("#toggle-terminal-layout")?.addEventListener("click", () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
-  root.querySelector("#start-terminals")?.addEventListener("click", () => createTerminals(root.querySelector("[data-terminal-custom-count]")?.value || setupCount, setupModel));
+  bindTerminalClick(root.querySelector("#open-terminal-new"), () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
+  bindTerminalClick(root.querySelector("#toggle-terminal-layout"), () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
+  root.querySelector("#start-terminals")?.addEventListener("click", () => {
+    if (typeof terminalProjectReadyForSetup === "function" && !terminalProjectReadyForSetup()) return;
+    const count = normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount);
+    const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
+      ? setupWorkspaceMode
+      : "shared";
+    createTerminals(count, setupModel, {
+      effort: terminalEffortForModel(selectedSetupModel(), setupEffort),
+      workspaceMode
+    });
+  });
   root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => { setupCount = normalizeCount(button.dataset.terminalCount); render(); }));
+  root.querySelectorAll("[data-terminal-setup-effort]").forEach((button) => button.addEventListener("click", () => {
+    setupEffort = terminalEffortForModel(selectedSetupModel(), button.dataset.terminalSetupEffort);
+    localStorage.setItem(setupEffortKey, setupEffort);
+    render();
+  }));
   root.querySelector("[data-terminal-custom-count]")?.addEventListener("change", (event) => { setupCount = normalizeCount(event.target.value); render(); });
+  root.querySelectorAll("[data-terminal-workspace-mode]").forEach((button) => button.addEventListener("click", () => {
+    setupWorkspaceMode = normalizeTerminalWorkspaceMode(button.dataset.terminalWorkspaceMode);
+    localStorage.setItem(setupWorkspaceModeKey, setupWorkspaceMode);
+    render();
+  }));
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(root);
   root.querySelector("[data-terminal-setup-model-toggle]")?.addEventListener("click", () => { setupModelMenuOpen = !setupModelMenuOpen; if (setupModelMenuOpen) { modelScrollTops.setup = 0; terminalProjectMenuTarget = ""; } render(); });
   root.querySelectorAll("[data-terminal-model-search]").forEach((input) => input.addEventListener("input", () => updateTerminalModelSearch(input)));
   root.querySelectorAll(".terminal-model-scroll").forEach(bindTerminalModelScroll);
   root.querySelectorAll("[data-terminal-setup-model]").forEach((button) => button.addEventListener("click", () => selectSetupModel(button.dataset.terminalSetupModel || "auto")));
-  root.querySelectorAll("[data-terminal-new-model]").forEach((button) => button.addEventListener("click", () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
-  root.querySelectorAll("[data-terminal-focus]").forEach((button) => button.addEventListener("click", () => setActiveTerminal(button.dataset.terminalFocus)));
+  root.querySelectorAll("[data-terminal-new-model]").forEach((button) => bindTerminalClick(button, () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
+  root.querySelectorAll("[data-terminal-focus]").forEach((button) => bindTerminalClick(button, () => setActiveTerminal(button.dataset.terminalFocus)));
   root.querySelectorAll("[data-terminal-drag]").forEach((tab) => bindTerminalDrag(tab));
-  root.querySelectorAll("[data-terminal-settings]").forEach((button) => button.addEventListener("click", () => toggleTerminalSettings(button.dataset.terminalSettings)));
-  root.querySelectorAll("[data-terminal-close]").forEach((button) => button.addEventListener("click", (event) => {
+  root.querySelectorAll("[data-terminal-settings]").forEach((button) => bindTerminalClick(button, () => toggleTerminalSettings(button.dataset.terminalSettings)));
+  root.querySelectorAll("[data-terminal-close]").forEach((button) => bindTerminalClick(button, (event) => {
     event.preventDefault();
     event.stopPropagation();
     (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
@@ -29,6 +49,12 @@ function bindTerminalControls() {
   });
   root.querySelectorAll("[data-terminal-form]").forEach((form) => form.addEventListener("submit", (event) => { event.preventDefault(); sendTerminal(form.dataset.terminalForm); }));
   bindTerminalCommandButtons(root);
+}
+
+function bindTerminalClick(node, handler) {
+  if (!node || node.dataset.terminalClickBound) return;
+  node.dataset.terminalClickBound = "1";
+  node.addEventListener("click", handler);
 }
 
 function updateField(field) {

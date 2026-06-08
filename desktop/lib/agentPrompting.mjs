@@ -120,8 +120,8 @@ function formatSelectedFile(file) {
 }
 
 function reasoningPayload(effort) {
+  if (effort === "default") return null;
   if (effort === "none") return { exclude: true };
-  if (effort === "xhigh") return { effort: "high", max_tokens: 12000 };
   return { effort };
 }
 

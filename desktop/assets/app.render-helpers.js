@@ -116,7 +116,11 @@ function dashboardEventTime(event) {
   return `${hours}h ago`;
 }
 function projectCard(project, index) { const active = selectedProjectId ? selectedProjectId === project.id : index === 0; return `<article class="project-card ${active ? "active" : ""}"><div class="project-top"><div style="display:flex;gap:12px;min-width:0;"><span class="project-icon">${icon("folder")}</span><div><p class="project-name">${escapeHtml(project.name || "Project")}</p><p class="project-path">${escapeHtml(project.path || "")}</p></div></div><span class="tag">${escapeHtml(displayProjectSource(project))}</span></div><div class="project-footer"><span class="body-copy">${escapeHtml(project.stack || "Project")}</span><button class="secondary-button compact-button" type="button" data-project-chat="${escapeAttribute(project.id)}">${icon("chat")}Chat</button></div></article>`; }
-function chatEmptyState() { const project = currentProject(); const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?"; return `<div class="chat-empty">${project ? `<p class="kicker">${escapeHtml(project.name)}</p>` : ""}<h1>${escapeHtml(title)}</h1><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><span>${escapeHtml(item.title)}</span></button>`).join("")}</div></div>`; }
+function chatEmptyState() {
+  const project = currentProject();
+  const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?";
+  return `<div class="chat-empty"><div class="chat-empty-mark"><img src="/app-assets/vibyra.png" alt="" /></div>${project ? `<p class="kicker">${escapeHtml(project.name)}</p>` : ""}<h1>${escapeHtml(title)}</h1><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><span class="suggestion-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.description)}</small></span>${icon("arrow")}</button>`).join("")}</div></div>`;
+}
 function chatNoticeBanner() {
   if (!chatNotice) return "";
   const resetLabel = chatNotice.resetAt ? formatResetTime(chatNotice.resetAt) : "";

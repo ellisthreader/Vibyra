@@ -1,0 +1,117 @@
+.terminal-memory-main-pane {
+  background: #1e1e1e;
+  display: grid;
+  grid-template-rows: 35px minmax(0, 1fr);
+  min-height: 0;
+}
+.terminal-memory-pane-head {
+  align-items: center;
+  border-bottom: 1px solid #303030;
+  color: #c6c6c6;
+  display: flex;
+  font-size: 11px;
+  gap: 7px;
+  justify-content: center;
+  padding: 0 12px;
+}
+.terminal-memory-pane-head span {
+  color: #858585;
+  display: inline-flex;
+}
+.terminal-memory-pane-head svg {
+  height: 13px;
+  width: 13px;
+}
+.terminal-memory-pane-content {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+}
+.terminal-memory-pane-content > .terminal-memory-graph,
+.terminal-memory-pane-content > .terminal-memory-document,
+.terminal-memory-pane-content > .terminal-memory-onboarding {
+  height: 100%;
+  min-height: 0;
+}
+.terminal-memory-pane-content .terminal-memory-graph-meta {
+  padding: 10px 13px 0;
+}
+.terminal-memory-pane-content .terminal-memory-graph svg {
+  min-height: 0;
+}
+.terminal-memory-links-pane {
+  background: #242424;
+  border-left: 1px solid #151515;
+  color: #aaa;
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr) auto;
+  min-height: 0;
+}
+.terminal-memory-links-pane header {
+  align-items: center;
+  border-bottom: 1px solid #353535;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+.terminal-memory-links-pane header strong {
+  color: #ddd;
+  font-size: 11px;
+}
+.terminal-memory-links-pane header span {
+  color: #707070;
+  font-size: 10px;
+}
+.terminal-memory-links-list {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+.terminal-memory-links-list button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #aaa;
+  display: flex;
+  font-size: 10px;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 7px;
+  text-align: left;
+  width: 100%;
+}
+.terminal-memory-links-list button:hover {
+  background: #333;
+  color: #eee;
+}
+.terminal-memory-links-list button svg {
+  flex: 0 0 auto;
+  height: 12px;
+  width: 12px;
+}
+.terminal-memory-links-list p,
+.terminal-memory-links-pane section small {
+  color: #707070;
+  font-size: 9px;
+  line-height: 14px;
+  margin: 0;
+}
+.terminal-memory-links-pane section {
+  border-top: 1px solid #353535;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+.terminal-memory-links-pane section strong {
+  color: #898989;
+  font-size: 10px;
+}
+@media (max-width: 1050px) {
+  .terminal-memory-app-body {
+    grid-template-columns: 40px 220px minmax(0, 1fr);
+  }
+  .terminal-memory-links-pane {
+    display: none;
+  }
+}

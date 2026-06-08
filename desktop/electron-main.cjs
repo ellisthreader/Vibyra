@@ -1,7 +1,13 @@
-const { app, BrowserWindow, ipcMain, session } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, session } = require("electron");
 const { spawn } = require("node:child_process");
 const http = require("node:http");
 const path = require("node:path");
+const { pickMemoryFiles } = require("./lib/desktopMemoryPicker.cjs");
+const {
+  discoverObsidianVaults,
+  importDiscoveredObsidianVault
+} = require("./lib/desktopObsidianDiscovery.cjs");
+const { bindDesktopReloadShortcuts, reloadDesktopWindow } = require("./lib/electronReload.cjs");
 
 app.commandLine.appendSwitch("disable-gpu");
 app.commandLine.appendSwitch("disable-gpu-compositing");
@@ -79,6 +85,7 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     setTimeout(() => mainWindow?.reload(), 500);
   });
+  bindDesktopReloadShortcuts(mainWindow);
   mainWindow.on("close", (event) => {
     if (quitting) return;
     event.preventDefault();
@@ -197,7 +204,7 @@ if (!hasSingleInstanceLock) {
     quitting = true;
     clearInterval(bridgeHealthTimer);
   });
-  app.on("second-instance", revealWindow);
+  app.on("second-instance", () => reloadDesktopWindow(mainWindow));
   app.whenReady().then(() => {
     configureDesktopPermissions();
     startBridgeHealthMonitor();
@@ -230,3 +237,11 @@ ipcMain.handle("window:maximize", () => {
 ipcMain.handle("window:close", () => {
   mainWindow?.hide();
 });
+
+ipcMain.handle("memory:pick", async (_event, kind) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return { canceled: true, files: [] };
+  return pickMemoryFiles(dialog, mainWindow, kind === "vault" ? "vault" : "markdown");
+});
+
+ipcMain.handle("memory:discover-obsidian", () => discoverObsidianVaults());
+ipcMain.handle("memory:import-discovered-vault", (_event, id) => importDiscoveredObsidianVault(id));

@@ -1,7 +1,7 @@
 function terminalMemoryHtml() {
   const terminal = terminalCompanionActiveTerminal();
   const projectId = String(terminal?.projectId || "");
-  if (terminalCompanionMode === "memory") terminalMemoryEnsureProject(projectId);
+  terminalMemoryEnsureProject(projectId);
   return terminalMemoryWorkspaceHtml(terminal);
 }
 
@@ -21,7 +21,6 @@ function terminalMemoryEnsureProject(projectId) {
 }
 
 function terminalMemoryRefresh(options = {}) {
-  if (terminalCompanionMode !== "memory") return;
   const panel = document.querySelector("[data-terminal-memory-panel]");
   if (!panel) return;
   const terminal = terminalCompanionActiveTerminal();

@@ -56,7 +56,7 @@ export function buildOpenRouterModelPayload(models) {
     ok: true,
     source: "openrouter",
     loadedAt: new Date().toISOString(),
-    groups: [{ title: "", company: "Auto", options: [{ key: "auto", label: "Auto", provider: "auto", company: "Auto", tier: "budget" }] }, ...groups.map(({ score, newest, ...group }) => group)]
+    groups: [{ title: "", company: "Auto", options: [{ key: "auto", label: "Auto", provider: "auto", company: "Auto", tier: "budget", supportsReasoning: true }] }, ...groups.map(({ score, newest, ...group }) => group)]
   };
 }
 
@@ -73,6 +73,7 @@ function normalizeModel(model) {
   const free = id.endsWith(":free") || price === 0;
   const tier = modelTier(id, label, price, free);
   const quality = qualityScore(id, label, free);
+  const supportedParameters = Array.isArray(model?.supported_parameters) ? model.supported_parameters : [];
   return {
     key: id,
     modelKey: id,
@@ -81,6 +82,7 @@ function normalizeModel(model) {
     company: rawCompany,
     tier,
     badge: created > Date.now() / 1000 - 45 * 24 * 60 * 60 ? "New" : "",
+    supportsReasoning: supportedParameters.includes("reasoning"),
     contextLength: Number(model?.context_length || model?.top_provider?.context_length || 0) || 0,
     created,
     score: quality * 1_000_000_000 + created

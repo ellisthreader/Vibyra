@@ -74,3 +74,15 @@ test("OpenRouter companies are canonicalized from provider slugs", () => {
     ["ByteDance", "Cohere", "IBM", "Mistral", "Moonshot AI", "Qwen"]
   );
 });
+
+test("OpenRouter reasoning capability follows each model's supported parameters", () => {
+  const payload = buildOpenRouterModelPayload([
+    { id: "openai/gpt-5.4", name: "OpenAI: GPT-5.4", architecture: { output_modalities: ["text"] }, supported_parameters: ["reasoning", "tools"] },
+    { id: "meta-llama/llama-3.3-70b-instruct", name: "Meta: Llama 3.3 70B Instruct", architecture: { output_modalities: ["text"] }, supported_parameters: ["temperature", "tools"] }
+  ]);
+  const models = payload.groups.flatMap((group) => group.options);
+
+  assert.equal(models.find((model) => model.key === "auto").supportsReasoning, true);
+  assert.equal(models.find((model) => model.key === "openai/gpt-5.4").supportsReasoning, true);
+  assert.equal(models.find((model) => model.key === "meta-llama/llama-3.3-70b-instruct").supportsReasoning, false);
+});

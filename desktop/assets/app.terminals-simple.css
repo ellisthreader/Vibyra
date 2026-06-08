@@ -1,0 +1,174 @@
+.terminal-tabs {
+  justify-content: flex-start;
+}
+body.electron-shell .desktop-chrome-page:has(.terminal-tabs) {
+  width: min(1200px, calc(100vw - 360px));
+}
+.desktop-chrome-page:has(.terminal-tabs) .top-title,
+.top-title.terminal-top-title {
+  max-width: none;
+  width: 100%;
+}
+.terminal-tab-list {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  max-width: none;
+}
+.terminal-tab {
+  max-width: 132px;
+  min-width: 82px;
+}
+.terminal-tab-open span:last-child {
+  font-weight: 680;
+}
+.terminal-toolbar-wrap {
+  flex: 0 0 auto;
+  position: relative;
+}
+.terminal-companion-launcher--single {
+  flex: 0 0 auto;
+}
+.terminal-toolbar-menu {
+  display: grid;
+  min-width: 190px;
+  right: 0;
+  top: calc(100% + 8px);
+}
+.terminal-toolbar-menu button,
+.terminal-agent-menu button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--terminal-text, #eeeaf8);
+  display: flex;
+  gap: 9px;
+  min-height: 36px;
+  padding: 7px 9px;
+  text-align: left;
+  width: 100%;
+}
+.terminal-toolbar-menu button:hover,
+.terminal-agent-menu button:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, .05));
+}
+.terminal-toolbar-menu button.danger {
+  color: #ff9aad;
+}
+.terminal-toolbar-menu svg {
+  height: 15px;
+  width: 15px;
+}
+.terminal-agent-menu {
+  display: grid;
+  left: 0;
+  min-width: 230px;
+  top: calc(100% + 8px);
+}
+.terminal-agent-menu > p {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 11px;
+  font-weight: 720;
+  padding: 3px 9px 5px;
+}
+.terminal-agent-menu button:disabled {
+  opacity: .45;
+}
+.terminal-agent-menu button > span:not(.terminal-status) {
+  display: grid;
+  gap: 2px;
+}
+.terminal-agent-menu strong {
+  font-size: 13px;
+}
+.terminal-agent-menu small {
+  color: var(--terminal-muted, #a9a3b8);
+  font-size: 11px;
+}
+.terminal-focus-head,
+.terminal-tile-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.terminal-name,
+.terminal-tile-head > button:first-child {
+  min-width: 0;
+}
+.terminal-name small,
+.terminal-tile-head > button:first-child small {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 11px;
+  font-weight: 620;
+}
+.terminal-window-actions {
+  align-items: center;
+  display: flex;
+  gap: 1px;
+}
+.terminal-window-actions > button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--terminal-muted, #a9a3b8);
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+.terminal-window-actions > button:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, .05));
+  color: var(--terminal-text, #eeeaf8);
+}
+.terminal-window-actions > button:last-child:hover {
+  color: #ff9aad;
+}
+.terminal-window-actions svg {
+  height: 14px;
+  width: 14px;
+}
+.terminal-details-menu {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+}
+.terminal-details-menu > strong {
+  font-size: 12px;
+  padding: 4px 8px 7px;
+}
+.terminal-details-menu > span {
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+  padding: 6px 8px;
+}
+.terminal-details-menu small {
+  color: var(--terminal-dim, #918ca1);
+}
+.terminal-minimized {
+  min-height: 48px !important;
+}
+.terminal-minimized > :not(header),
+.terminal-maximized-hidden {
+  display: none !important;
+}
+.terminal-page--terminal-maximized .terminal-stage {
+  display: block;
+  overflow: hidden;
+}
+.terminal-maximized {
+  height: 100%;
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  .terminal-name small,
+  .terminal-tile-head > button:first-child small {
+    display: none;
+  }
+  .terminal-window-actions > button {
+    width: 25px;
+  }
+  .terminal-companion-launcher--single span {
+    display: none;
+  }
+}

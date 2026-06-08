@@ -21,6 +21,10 @@ function normalizeTerminal(item) {
     permissionMode: normalizeTerminalPermissionMode(item.permissionMode),
     tokenMode: String(item.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
     projectId: String(item.projectId || ""),
+    workspaceMode: normalizeTerminalWorkspaceMode(item.workspaceMode),
+    branchName: String(item.branchName || ""),
+    workspacePath: String(item.workspacePath || ""),
+    workspaceNotice: String(item.workspaceNotice || ""),
     draft: String(item.draft || ""),
     shellMode: Boolean(item.shellMode),
     profileVersion: 1,
@@ -56,11 +60,15 @@ function terminalId() {
 
 function normalizeTerminalEffort(value) {
   const effort = String(value || "medium").toLowerCase();
-  return ["low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
 }
 
 function normalizeTerminalPermissionMode(value) {
   return String(value || "").toLowerCase() === "full" ? "full" : "standard";
+}
+
+function normalizeTerminalWorkspaceMode(value) {
+  return ["worktree", "isolated"].includes(String(value || "").toLowerCase()) ? "worktree" : "shared";
 }
 
 function saveTerminals() {
@@ -68,6 +76,7 @@ function saveTerminals() {
   if (activeTerminalId) localStorage.setItem(activeKey, activeTerminalId);
   else localStorage.removeItem(activeKey);
   localStorage.setItem(layoutKey, terminalLayout);
+  localStorage.setItem(setupWorkspaceModeKey, setupWorkspaceMode);
   localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
 }
 
@@ -82,14 +91,19 @@ function ensureTerminal() {
 function createTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
   const model = unlockedModel(modelKey);
+  const effort = terminalEffortForModel(model, options.effort);
   const terminal = {
     id: terminalId(),
     title: `Terminal ${terminals.length + 1}`,
     model: model.key,
-    effort: normalizeTerminalEffort(options.effort),
+    effort,
     permissionMode: normalizeTerminalPermissionMode(options.permissionMode),
     tokenMode: setupTokenMode,
     projectId: options.projectId === undefined ? (typeof selectedProjectId === "string" ? selectedProjectId : "") : String(options.projectId || ""),
+    workspaceMode: normalizeTerminalWorkspaceMode(options.workspaceMode),
+    branchName: "",
+    workspacePath: "",
+    workspaceNotice: "",
     draft: "",
     shellMode: false,
     profileVersion: 1,

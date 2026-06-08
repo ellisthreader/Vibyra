@@ -1,5 +1,6 @@
 let terminalProjectMenuTarget = "";
 let terminalProjectDismissBound = false;
+const terminalFullPcProjectId = "full-pc";
 
 function terminalProjectChoices() {
   return Array.isArray(currentState.projects) ? currentState.projects : [];
@@ -7,6 +8,7 @@ function terminalProjectChoices() {
 
 function terminalProjectForSetup() {
   const projects = terminalProjectChoices();
+  if (setupProjectId === terminalFullPcProjectId) return setupProjectId;
   if (setupProjectId && projects.some((project) => project.id === setupProjectId)) return setupProjectId;
   if (setupProjectId && !projects.length) return setupProjectId;
   setupProjectId = "";
@@ -14,7 +16,15 @@ function terminalProjectForSetup() {
   return "";
 }
 
+function terminalProjectReadyForSetup() {
+  if (!setupProjectId || setupProjectId === terminalFullPcProjectId) return true;
+  return terminalProjectChoices().some((project) => project.id === setupProjectId);
+}
+
 function terminalProject(projectId) {
+  if (projectId === terminalFullPcProjectId) {
+    return { id: terminalFullPcProjectId, name: "Full PC", path: "Browse from your home folder" };
+  }
   return terminalProjectChoices().find((project) => project.id === projectId) || null;
 }
 
@@ -35,6 +45,7 @@ function terminalProjectMenu(target, selectedId) {
   const projects = terminalProjectChoices();
   const rows = [
     terminalProjectOption(target, "", "No project", "Use the default workspace", selectedId),
+    terminalProjectOption(target, terminalFullPcProjectId, "Full PC", "Browse from your home folder", selectedId),
     ...projects.map((project) => terminalProjectOption(target, project.id, project.name || "Project", project.path || "Project folder", selectedId))
   ].join("");
   return `<div class="terminal-project-menu" data-terminal-project-menu="${escapeAttribute(target)}" role="listbox" aria-label="Terminal project">${rows}</div>`;

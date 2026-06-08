@@ -1,11 +1,30 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   formatAssistantReply,
+  normalizeDesktopUrl,
   promptLabelForModel,
   providerInfoForModel,
   renderIntroForModel
 } from "./aiTerminalOpenRouterCli.mjs";
+
+const source = readFileSync(new URL("./aiTerminalOpenRouterCli.mjs", import.meta.url), "utf8");
+
+test("AI terminal prompts cannot recursively trigger desktop actions", () => {
+  assert.match(source, /disableDesktopActions:\s*true/);
+});
+
+test("terminal wrapper canonicalizes Electron desktop page URLs to the bridge origin", () => {
+  assert.equal(
+    normalizeDesktopUrl("http://127.0.0.1:4317/desktop", "9999"),
+    "http://127.0.0.1:4317"
+  );
+  assert.equal(
+    normalizeDesktopUrl("http://127.0.0.1:4317/desktop/", "9999"),
+    "http://127.0.0.1:4317"
+  );
+});
 
 test("API-only OpenRouter providers get Claude-style Vibyra terminal metadata", () => {
   const deepseek = providerInfoForModel("deepseek/deepseek-chat-v3.1");
@@ -31,6 +50,7 @@ test("Claude-style intro is customized to the selected API-only model", () => {
     modelKey: "deepseek/deepseek-chat-v3.1",
     reasoningEffort: "high",
     projectId: "project-1",
+    cwd: "/home/ellis/Desktop/SaaS",
     columns: 80,
     color: false
   });
@@ -39,7 +59,7 @@ test("Claude-style intro is customized to the selected API-only model", () => {
   assert.match(intro, /DeepSeek via Vibyra/);
   assert.match(intro, /deepseek\/deepseek-chat-v3\.1 with high effort/);
   assert.match(intro, /OpenRouter API terminal/);
-  assert.match(intro, /project: project-1/);
+  assert.match(intro, /directory: ~\/Desktop\/SaaS/);
 });
 
 test("prompt and replies use Claude-style tokens with model branding", () => {
@@ -65,6 +85,19 @@ test("official provider fallbacks keep their own terminal cues", () => {
   assert.match(gemini, /Tips for getting started/);
   assert.match(codex, />_ OpenAI Codex/);
   assert.equal(formatAssistantReply("Ready", "google/gemini-2.5-pro", false), "✦ Ready");
+});
+
+test("provider intros display the real process directory instead of the project id", () => {
+  const intro = renderIntroForModel({
+    modelKey: "openai/gpt-5.5",
+    projectId: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    cwd: "/home/ellis/Desktop/SaaS",
+    color: false
+  });
+
+  assert.match(intro, /directory: ~\/Desktop\/SaaS/);
+  assert.doesNotMatch(intro, /L2hvbWUv/);
+  assert.doesNotMatch(intro, /~\/workspace/);
 });
 
 test("new relevant OpenRouter providers use the basic Vibyra template", () => {

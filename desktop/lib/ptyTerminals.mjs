@@ -1,5 +1,6 @@
 import { randomUUID, createHash } from "node:crypto";
-import { projectById } from "./projects.mjs";
+import { resolve } from "node:path";
+import { discoverProjects, terminalProjectById } from "./projects.mjs";
 import { readBody, send } from "./http.mjs";
 import { aiTerminalAgentStatus, listAiTerminalAgentStatuses } from "./aiTerminalProcess.mjs";
 import {
@@ -8,6 +9,12 @@ import {
   listPersistentAiTerminalSessions,
   removePersistentAiTerminalSession
 } from "./aiTerminalPersistentProcess.mjs";
+import {
+  normalizeTerminalWorkspaceMode,
+  prepareTerminalWorkspace,
+  restoredTerminalWorkspace,
+  rollbackPreparedTerminalWorkspace
+} from "./terminalWorktrees.mjs";
 
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
@@ -16,7 +23,7 @@ const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
 
-restorePersistentSessions();
+await restorePersistentSessions();
 
 export async function handlePtyTerminalRoutes(req, res, url) {
   const route = ptyRoute(url.pathname);
@@ -26,7 +33,12 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && route.action === "collection") {
-    send(res, 200, { session: createPtyTerminal(await readBody(req)), agents: listAiTerminalAgentStatuses() });
+    send(res, 200, { session: await createPtyTerminal(await readBody(req)), agents: listAiTerminalAgentStatuses() });
+    return true;
+  }
+  if (req.method === "POST" && route.action === "close-all") {
+    const closed = closeAllPtyTerminals();
+    send(res, 200, { ok: true, closed, sessions: listPtyTerminals(), agents: listAiTerminalAgentStatuses() });
     return true;
   }
   if (req.method === "POST" && route.action === "input") {
@@ -40,8 +52,8 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && route.action === "close") {
-    closePtyTerminal(route.id);
-    send(res, 200, { ok: true, sessions: listPtyTerminals(), agents: listAiTerminalAgentStatuses() });
+    const closed = closePtyTerminal(route.id);
+    send(res, 200, { ok: true, closed, sessions: listPtyTerminals(), agents: listAiTerminalAgentStatuses() });
     return true;
   }
   return false;
@@ -78,31 +90,66 @@ export function handlePtyTerminalUpgrade(req, socket) {
   socket.on("error", unsubscribe);
 }
 
-export function createPtyTerminal(body = {}) {
+export async function createPtyTerminal(body = {}) {
   const requestedId = string(body.id);
+  const projectId = string(body.projectId);
+  const model = string(body.model).slice(0, 140);
+  const agent = normalizeAgent(body.agent, model);
+  const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort || body.effort);
+  const permissionMode = normalizePermissionMode(body.permissionMode, agent);
+  const tokenMode = normalizeTokenMode(body.tokenMode);
+  const workspaceMode = normalizeTerminalWorkspaceMode(body.workspaceMode);
   const existing = requestedId ? sessions.get(requestedId) : null;
   if (existing && existing.status !== "exited") {
+    if (projectId !== existing.projectId) {
+      throw httpError(409, "That terminal ID is already running in a different project.");
+    }
+    if (
+      model !== existing.model
+      || agent !== existing.agent
+      || reasoningEffort !== existing.reasoningEffort
+      || permissionMode !== existing.permissionMode
+      || tokenMode !== existing.tokenMode
+      || workspaceMode !== existing.workspaceMode
+    ) {
+      throw httpError(409, "That terminal ID is already running with different launch settings.");
+    }
     resizePtyTerminal(existing.id, body);
     return publicSession(existing);
   }
   if (existing) closePtyTerminal(existing.id);
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, "Vibyra Desktop supports up to " + MAX_PTY_TERMINAL_SESSIONS + " terminals at once.");
-  const projectId = string(body.projectId);
-  const project = projectById(projectId);
-  const model = string(body.model).slice(0, 140);
-  const agent = normalizeAgent(body.agent, model);
+  const project = terminalProjectById(projectId);
+  if (projectId && !project) throw httpError(404, "The selected terminal project is no longer available.");
   const agentStatus = aiTerminalAgentStatus(agent);
+  let workspace = {
+    workspaceMode: "shared",
+    cwd: project?.path || process.cwd(),
+    branchName: "",
+    workspacePath: "",
+    repositoryRoot: "",
+    workspaceNotice: ""
+  };
+  if (workspaceMode === "worktree") {
+    try {
+      workspace = await prepareTerminalWorkspace({ project, terminalId: requestedId, workspaceMode });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The isolated terminal workspace could not be created.";
+      if (!body.allowSharedFallback) throw httpError(409, message);
+      workspace.workspaceNotice = `Separate branches could not start, so this terminal opened in the shared folder. ${message}`;
+    }
+  }
   const session = {
     id: requestedId || "pty-" + Date.now() + "-" + randomUUID().slice(0, 8),
     title: string(body.title).slice(0, 72) || "Terminal",
     agent,
     agentStatus,
     model,
-    reasoningEffort: normalizeReasoningEffort(body.reasoningEffort || body.effort),
-    permissionMode: normalizePermissionMode(body.permissionMode, agent),
-    tokenMode: normalizeTokenMode(body.tokenMode),
+    reasoningEffort,
+    permissionMode,
+    tokenMode,
     projectId,
-    cwd: project?.path || process.cwd(),
+    ...workspace,
     cols: clamp(body.cols, 100),
     rows: clamp(body.rows, 30),
     output: "",
@@ -117,20 +164,31 @@ export function createPtyTerminal(body = {}) {
     appendOutput(session, `${label(session.agent)} CLI is not available.\r\n${agentStatus.installHint}\r\n`);
     return publicSession(session);
   }
-  session.process = launchPersistentAiTerminalProcess({
-    agent: session.agent,
-    model: session.model,
-    reasoningEffort: session.reasoningEffort,
-    permissionMode: session.permissionMode,
-    tokenMode: session.tokenMode,
-    projectId: session.projectId,
-    terminalId: session.id,
-    title: session.title,
-    cwd: session.cwd,
-    cols: session.cols,
-    rows: session.rows,
-    createdAt: session.createdAt
-  }, persistentHandlers(session));
+  try {
+    session.process = launchPersistentAiTerminalProcess({
+      agent: session.agent,
+      model: session.model,
+      reasoningEffort: session.reasoningEffort,
+      permissionMode: session.permissionMode,
+      tokenMode: session.tokenMode,
+      projectId: session.projectId,
+      workspaceMode: session.workspaceMode,
+      branchName: session.branchName,
+      workspacePath: session.workspacePath,
+      repositoryRoot: session.repositoryRoot,
+      workspaceNotice: session.workspaceNotice,
+      terminalId: session.id,
+      title: session.title,
+      cwd: session.cwd,
+      cols: session.cols,
+      rows: session.rows,
+      createdAt: session.createdAt
+    }, persistentHandlers(session));
+  } catch (error) {
+    sessions.delete(session.id);
+    await rollbackPreparedTerminalWorkspace(session);
+    throw error;
+  }
   return publicSession(session);
 }
 
@@ -165,17 +223,30 @@ function persistentHandlers(session) {
 
 export function closePtyTerminal(id) {
   const session = sessions.get(string(id));
-  if (!session) return;
+  if (!session) return false;
   if (session.process) session.process.kill("SIGTERM");
   else removePersistentAiTerminalSession(session.id);
   sessions.delete(session.id);
   subscribers.delete(session.id);
+  return true;
 }
 
-function restorePersistentSessions() {
+export function closeAllPtyTerminals() {
+  const ids = Array.from(sessions.keys());
+  ids.forEach(closePtyTerminal);
+  return ids.length;
+}
+
+async function restorePersistentSessions() {
+  await discoverProjects();
   for (const record of listPersistentAiTerminalSessions().slice(0, MAX_PTY_TERMINAL_SESSIONS)) {
     const config = record.config;
     const workerState = record.state;
+    const location = await restoredTerminalLocation(config);
+    if (!location) {
+      terminateUntrustedPersistentSession(config.terminalId);
+      continue;
+    }
     const agent = normalizeAgent(config.agent, config.model);
     const session = {
       id: string(config.terminalId),
@@ -186,8 +257,13 @@ function restorePersistentSessions() {
       reasoningEffort: normalizeReasoningEffort(config.reasoningEffort),
       permissionMode: normalizePermissionMode(config.permissionMode, agent),
       tokenMode: normalizeTokenMode(config.tokenMode),
-      projectId: string(config.projectId),
-      cwd: string(config.cwd) || process.cwd(),
+      projectId: location.projectId,
+      workspaceMode: location.workspaceMode,
+      branchName: location.branchName,
+      workspacePath: location.workspacePath,
+      repositoryRoot: location.repositoryRoot,
+      workspaceNotice: string(config.workspaceNotice),
+      cwd: location.cwd,
       cols: clamp(config.cols, 100),
       rows: clamp(config.rows, 30),
       output: String(record.output || "").slice(-MAX_OUTPUT_BUFFER),
@@ -207,6 +283,34 @@ function restorePersistentSessions() {
       );
     }
   }
+}
+
+export async function restoredTerminalLocation(config = {}) {
+  const projectId = string(config.projectId);
+  const project = projectId ? terminalProjectById(projectId) : null;
+  if (projectId && !project) return null;
+  const workspaceMode = normalizeTerminalWorkspaceMode(config.workspaceMode);
+  if (workspaceMode === "worktree") {
+    const workspace = await restoredTerminalWorkspace(config, project);
+    return workspace ? { projectId, ...workspace } : null;
+  }
+  const cwd = resolve(project?.path || process.cwd());
+  const savedCwd = resolve(string(config.cwd) || process.cwd());
+  return savedCwd === cwd ? {
+    projectId,
+    workspaceMode: "shared",
+    branchName: "",
+    workspacePath: "",
+    repositoryRoot: "",
+    workspaceNotice: "",
+    cwd
+  } : null;
+}
+
+function terminateUntrustedPersistentSession(terminalId) {
+  const id = string(terminalId);
+  if (!id) return;
+  connectPersistentAiTerminalProcess(id, {}, { waitForWorker: true }).kill("SIGTERM");
 }
 
 export function listPtyTerminals() {
@@ -230,7 +334,6 @@ function resizePtyTerminal(id, size) {
   session.rows = rows;
   session.updatedAt = new Date().toISOString();
   try { session.process?.resize?.(cols, rows); } catch {}
-  try { session.process?.kill?.("SIGWINCH"); } catch {}
 }
 
 function subscribePtyTerminal(id, sendMessage) {
@@ -260,6 +363,7 @@ export function handlePtySocketMessage(id, message) {
 
 function ptyRoute(pathname) {
   if (pathname === "/desktop/pty-terminals" || pathname === "/desktop/pty-terminals/") return { action: "collection" };
+  if (pathname === "/desktop/pty-terminals/close-all") return { action: "close-all" };
   const parts = pathname.split("/").filter(Boolean);
   if (parts[0] !== "desktop" || parts[1] !== "pty-terminals") return null;
   if (parts.length === 4 && parts[3] === "socket") return { action: "socket", id: decodeURIComponent(parts[2]) };
@@ -368,18 +472,22 @@ function availableOfficialAgentForModel(model) {
   return agent && aiTerminalAgentStatus(agent).available ? agent : "";
 }
 
+export function terminalAgentForModel(model) {
+  return officialAgentForModel(model);
+}
+
 function officialAgentForModel(model) {
   const key = string(model).toLowerCase();
-  const provider = key.includes("/") ? key.split("/")[0] : "";
-  if (provider === "openai" || key.startsWith("gpt-") || key.includes("codex")) return "codex";
-  if (provider === "anthropic" || provider === "claude" || key.startsWith("claude-")) return "claude";
-  if (provider === "google" || provider === "gemini" || key.startsWith("gemini-")) return "gemini";
+  if (key.includes("/")) return "";
+  if (key.startsWith("gpt-") || key.includes("codex")) return "codex";
+  if (key.startsWith("claude-")) return "claude";
+  if (key.startsWith("gemini-")) return "gemini";
   return "";
 }
 
 function normalizeReasoningEffort(value) {
   const effort = string(value) || "medium";
-  return ["low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
 }
 
 function normalizeTokenMode(value) {

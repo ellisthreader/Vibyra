@@ -5,7 +5,7 @@ const terminalMemoryImportLimits = {
 };
 
 async function importTerminalMemoryFiles(fileList, kind = "markdown") {
-  const files = Array.from(fileList || []);
+  const files = Array.from(fileList || []).filter((file) => file && typeof file.text === "function");
   if (!terminalMemoryState.projectId || !files.length) return;
   terminalMemoryState.status = "Reading Markdown...";
   terminalMemoryUpdateStatus();
@@ -25,6 +25,7 @@ async function importTerminalMemoryFiles(fileList, kind = "markdown") {
     const summary = manifest.skipped.length
       ? `Imported ${manifest.files.length}; skipped ${manifest.skipped.length}`
       : `Imported ${manifest.files.length} notes`;
+    terminalMemoryState.view = "graph";
     await loadTerminalMemoryVault(terminalMemoryState.projectId, true);
     terminalMemoryState.status = result.notice ? String(result.notice) : summary;
     terminalMemoryUpdateStatus();
@@ -32,6 +33,58 @@ async function importTerminalMemoryFiles(fileList, kind = "markdown") {
     terminalMemoryState.status = terminalMemoryError(error, "Markdown import failed.");
     terminalMemoryUpdateStatus();
   }
+}
+
+async function pickTerminalMemoryFiles(kind = "markdown") {
+  if (!window.vibyraDesktopMemory?.pick || terminalMemoryState.loading) return;
+  terminalMemoryState.status = "Opening file picker...";
+  terminalMemoryUpdateStatus();
+  try {
+    const result = await window.vibyraDesktopMemory.pick(kind);
+    if (result?.canceled) {
+      terminalMemoryState.status = "";
+      terminalMemoryUpdateStatus();
+      return;
+    }
+    await importTerminalMemoryManifest(result?.files, kind);
+  } catch (error) {
+    terminalMemoryState.status = terminalMemoryError(error, "Markdown import failed.");
+    terminalMemoryUpdateStatus();
+  }
+}
+
+async function importTerminalMemoryDiscoveredVault(id) {
+  if (!window.vibyraDesktopMemory?.importDiscoveredVault || terminalMemoryState.loading) return;
+  terminalMemoryState.status = "Reading Obsidian vault...";
+  terminalMemoryUpdateStatus();
+  try {
+    const result = await window.vibyraDesktopMemory.importDiscoveredVault(id);
+    await importTerminalMemoryManifest(result?.files, "vault");
+  } catch (error) {
+    terminalMemoryState.status = terminalMemoryError(error, "Obsidian vault import failed.");
+    terminalMemoryUpdateStatus();
+  }
+}
+
+async function importTerminalMemoryManifest(files, kind = "markdown") {
+  const manifestFiles = Array.isArray(files) ? files : [];
+  if (!terminalMemoryState.projectId || !manifestFiles.length) {
+    throw new Error("No supported Markdown files were selected.");
+  }
+  terminalMemoryState.status = `Importing ${manifestFiles.length} notes...`;
+  terminalMemoryUpdateStatus();
+  const result = await terminalMemoryRequest("/desktop/project-memory/import", {
+    method: "POST",
+    body: JSON.stringify({
+      projectId: terminalMemoryState.projectId,
+      collisionStrategy: "keep_both",
+      files: manifestFiles
+    })
+  });
+  terminalMemoryState.view = "graph";
+  await loadTerminalMemoryVault(terminalMemoryState.projectId, true);
+  terminalMemoryState.status = result.notice || `Imported ${manifestFiles.length} notes`;
+  terminalMemoryUpdateStatus();
 }
 
 async function buildTerminalMemoryManifest(files, kind) {
@@ -42,15 +95,18 @@ async function buildTerminalMemoryManifest(files, kind) {
   const skipped = [];
   let totalBytes = 0;
   for (const file of files) {
-    const path = normalizeTerminalMemoryImportPath(file.webkitRelativePath || file.name);
-    const reason = terminalMemoryImportRejection(file, path, kind);
+    const sourcePath = normalizeTerminalMemoryImportPath(file.webkitRelativePath || file.name);
+    const reason = terminalMemoryImportRejection(file, sourcePath, kind);
     if (reason) {
-      skipped.push({ path: path || file.name, reason });
+      skipped.push({ path: sourcePath || file.name, reason });
       continue;
     }
+    const path = kind === "markdown" && /\.(txt|markdown)$/i.test(sourcePath)
+      ? sourcePath.replace(/\.(txt|markdown)$/i, ".md")
+      : sourcePath;
     totalBytes += file.size;
     if (totalBytes > terminalMemoryImportLimits.maxTotalBytes) {
-      throw new Error("The selected Markdown files exceed the 20 MB import limit.");
+      throw new Error("The selected Markdown files exceed the 10 MB import limit.");
     }
     accepted.push({
       path,
@@ -72,7 +128,8 @@ function normalizeTerminalMemoryImportPath(value) {
 
 function terminalMemoryImportRejection(file, path, kind) {
   if (!path) return "Invalid path";
-  if (!/\.md$/i.test(path)) return "Not Markdown";
+  if (kind === "vault" && !/\.md$/i.test(path)) return "Not Markdown";
+  if (kind !== "vault" && !/\.(md|markdown|txt)$/i.test(path)) return "Not a Markdown or text note";
   if (file.size > terminalMemoryImportLimits.maxFileBytes) return "File exceeds 500 KB";
   const parts = path.split("/");
   const ignored = new Set([".obsidian", ".git", "node_modules", ".expo", ".vibyra-agent", "vendor"]);
@@ -81,10 +138,8 @@ function terminalMemoryImportRejection(file, path, kind) {
   return "";
 }
 
-function openTerminalMemoryImport(kind) {
-  const selector = kind === "vault" ? "[data-terminal-memory-vault-input]" : "[data-terminal-memory-file-input]";
-  const input = document.querySelector(selector);
-  if (!input) return;
-  input.value = "";
-  input.click();
+function consumeTerminalMemoryImport(event, kind) {
+  const files = Array.from(event?.target?.files || []);
+  if (event?.target) event.target.value = "";
+  void importTerminalMemoryFiles(files, kind);
 }

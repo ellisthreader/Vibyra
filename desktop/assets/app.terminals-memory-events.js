@@ -16,24 +16,25 @@ function bindTerminalMemoryEvents(root) {
     if (preview) preview.innerHTML = terminalMemoryMarkdownHtml(event.target.value);
     scheduleTerminalMemorySave();
   });
-  root.querySelector("[data-terminal-memory-new-note]")?.addEventListener("click", () => promptTerminalMemoryNode("document"));
-  root.querySelector("[data-terminal-memory-new-folder]")?.addEventListener("click", () => promptTerminalMemoryNode("folder"));
-  root.querySelector("[data-terminal-memory-import-files]")?.addEventListener("click", () => openTerminalMemoryImport("markdown"));
-  root.querySelector("[data-terminal-memory-import-vault]")?.addEventListener("click", () => openTerminalMemoryImport("vault"));
-  root.querySelector("[data-terminal-memory-file-input]")?.addEventListener("change", (event) => {
-    void importTerminalMemoryFiles(event.target.files, "markdown");
+  if (typeof bindTerminalMemoryNativePickers === "function") bindTerminalMemoryNativePickers(root);
+  root.querySelectorAll("[data-terminal-memory-new-folder]").forEach((button) => {
+    button.addEventListener("click", () => promptTerminalMemoryNode("folder"));
   });
+  if (typeof bindTerminalMemoryFullscreenButtons === "function") bindTerminalMemoryFullscreenButtons(root);
   root.querySelector("[data-terminal-memory-vault-input]")?.addEventListener("change", (event) => {
-    void importTerminalMemoryFiles(event.target.files, "vault");
+    consumeTerminalMemoryImport(event, "vault");
   });
+  root.querySelectorAll("[data-terminal-memory-view]").forEach((button) => button.addEventListener("click", () => {
+    terminalMemoryState.view = button.dataset.terminalMemoryView === "notes" ? "notes" : "graph";
+    terminalMemoryRefresh();
+  }));
   root.querySelectorAll("[data-terminal-memory-mode]").forEach((button) => button.addEventListener("click", () => {
     terminalMemoryState.mode = button.dataset.terminalMemoryMode === "preview" ? "preview" : "edit";
     terminalMemoryRefresh();
   }));
-  root.querySelector("[data-terminal-memory-insert]")?.addEventListener("click", () => {
-    const text = terminalMemoryState.draftBody.trim();
-    if (text) terminalCompanionInsertIntoActiveTerminal(text, false);
-  });
+  if (typeof bindTerminalMemoryOnboardingEvents === "function") bindTerminalMemoryOnboardingEvents(root);
+  if (typeof bindTerminalMemoryGraphEvents === "function") bindTerminalMemoryGraphEvents(root);
+  if (typeof bindTerminalMemoryFullscreen === "function") bindTerminalMemoryFullscreen(root);
   root.addEventListener("keydown", handleTerminalMemoryKeyboard);
 }
 
@@ -105,9 +106,6 @@ function handleTerminalMemoryKeyboard(event) {
   if (command && event.key.toLowerCase() === "s") {
     event.preventDefault();
     void flushTerminalMemorySave();
-  } else if (command && event.key.toLowerCase() === "n") {
-    event.preventDefault();
-    promptTerminalMemoryNode(event.shiftKey ? "folder" : "document");
   } else if (command && event.key.toLowerCase() === "e") {
     event.preventDefault();
     terminalMemoryState.mode = terminalMemoryState.mode === "edit" ? "preview" : "edit";

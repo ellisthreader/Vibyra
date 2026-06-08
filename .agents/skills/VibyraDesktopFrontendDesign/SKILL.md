@@ -88,6 +88,16 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
 ## Chat And Dashboard
 
 - Chat should be calm and AI-app-like: compact prompt chips, restrained bottom composer, clean message rows.
+- Keep the real desktop chat visually obvious: on wide screens show a compact
+  Vibyra AI ready/thinking indicator in the upper-right of the chat workspace,
+  and hide it at narrow widths where it would compete with the mobile chrome.
+- The upper-right Vibyra AI indicator is a native button, not decorative UI.
+  Clicking it must scroll to and focus the chat composer, and its event binding
+  must be restored whenever `renderChat()` replaces the chat DOM.
+- The polished desktop chat layout is owned by the late-loaded
+  `desktop/assets/app.chat-polish.css`. Keep its empty state in the upper part
+  of the workspace, use descriptive quick-action rows, and keep the working
+  composer/history/request behavior in the existing chat JS modules.
 - On an empty chat, group the headline, quick prompts, and composer as one start surface slightly above center; pin the composer to the bottom only after messages or a real run card exist.
 - Chat draft and recent chat history are local shell state: `vibyra.desktop.chatDraft`, `vibyra.desktop.recentChats`, and `vibyra.desktop.activeChat`.
 - Desktop chat model and reasoning controls should stay as one combined AI selector in the composer, not two separate model/effort pills. Keep backend effort values `low`, `medium`, `high`, and `xhigh`, but label them for users as `Fast`, `Balanced`, `Deep`, and `Max`.
@@ -104,10 +114,57 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
 
 AI terminals should feel like calm model workspaces, not a dashboard of configuration cards.
 
+- Keep one labeled `Vibyra AI` button in the terminal page's top-right shell
+  actions, including the no-terminal setup state. Do not duplicate Voice or
+  Memory beside terminal tabs or as companion navigation tabs. The launcher
+  opens Chat beside the terminal; Voice is a compact chat action plus `Alt+V`,
+  and project Memory remains visible in the lower half of the companion.
+- Keep the terminal Chat companion visually compact: use a title row, visible
+  Chat/Voice controls, useful starter rows, and a rounded bottom composer.
+  Avoid a redundant active-terminal context strip inside Chat. Keep local-model setup or availability
+  warnings out of the persistent composer chrome; surface failures only when a
+  request actually needs user action. Avoid a large
+  centered empty-state icon or card-heavy chat bubbles.
+- In the right terminal companion, split the available body height evenly:
+  Chat or Voice occupies the upper half and project Memory remains visible in
+  the lower half. Each half scrolls independently; do not make Memory widen the
+  companion or replace Chat as a full-height mode. Keep the outer companion
+  rows at `auto minmax(0, 1fr)`, the inner stack at two equal
+  `minmax(0, 1fr)` rows, and remove stacked graph minimum heights that could
+  force Memory beyond its half.
+- Voice is a conversation surface, not terminal dictation. Keep one prominent
+  click-to-talk control with an `Alt+V` shortcut; transcribe the turn, send it
+  directly through Vibyra AI with private per-terminal history, execute
+  structured desktop actions through the existing approval path, and speak the
+  reply without rendering ordinary user or assistant text. Prefer
+  `/desktop/voice/speak` audio and fall back to system speech synthesis. Do not
+  show separate Enter, clear-transcript, terminal target, or manual-send controls.
+  Keep a visible `AI-generated voice` disclosure.
 - Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
 - Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
 - When no terminals exist, show a simple setup panel that asks how many terminals to open, supports a custom count up to 12, previews the selected count, and lets the user pick from the same OpenRouter/chat model set used by desktop chat.
+- For two or more project terminals, keep workspace isolation as one quiet
+  two-choice row: `Shared folder` or `Separate branches`. Shared is the default;
+  explain that separate branches require a clean Git project. Do not require or
+  imply GitHub integration, and do not expose backend-managed worktree paths as
+  editable browser inputs.
+- Show each project terminal's effective workspace beside its header metadata:
+  `Separate branch` with the branch name, `Shared folder`, or an amber
+  `Shared for now` when requested isolation was unavailable. Dirty-project
+  guidance must use plain language: explain that current changes need a local
+  checkpoint, files were not deleted, and GitHub is not required. Clicking the
+  compact indicator may reuse the terminal notice surface for the explanation.
+  Patch indicator state in place so workspace updates never remount xterm.
+- The no-terminal setup panel must derive reasoning support from each selected
+  OpenRouter model's catalog metadata. Show `Low`, `Medium`, `High`, and
+  `Extra high` only when `supported_parameters` includes `reasoning`; otherwise
+  omit the control and let the model use its default. Persist the selected
+  reasoning level and pass `low`, `medium`, `high`, or `xhigh` to every spawned
+  terminal. OpenRouter owns nearest-level mapping for models with fewer levels.
 - Keep grid mode available as an explicit layout toggle for users who want multiple terminals visible at once.
+- Never auto-switch to grid when terminal count grows. Bulk creation stays in
+  focus mode so existing xterm instances are not remounted at an arbitrary
+  count threshold.
 - Support up to 12 terminals through tabs/status dots, not by forcing 12 fully-expanded control cards into the first view.
 - In grid mode, preserve readable tiles instead of shrinking every terminal to fit the viewport. Keep medium/narrow grids at two columns with roughly `230px` minimum tile height and vertical overview scrolling; below phone width, use one column. Keep the active tab scrolled into view and position terminal settings menus against the viewport so lower-row menus are not clipped.
 - Natural-language desktop control requests must resolve to structured local
@@ -120,13 +177,46 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   terminal, and pass Codex
   `--dangerously-bypass-approvals-and-sandbox`. Standard requests must retain
   the CLI's normal approvals and sandbox defaults.
+- Permission follow-ups for already-open terminals must use the structured
+  `set_terminal_permissions` action. Confirm that relaunch ends current
+  processes, then preserve each Codex terminal's model, reasoning, project,
+  token source, and active-tab identity across the relaunch.
+- Do not infer Codex capability from OpenAI provider metadata alone.
+  Provider-qualified `openai/*` models use the Vibyra wrapper and cannot claim
+  Codex full-access behavior.
 - New terminal creation should offer the same chat/OpenRouter model picker with provider logos, not local skill presets.
+- Anchor the new-terminal model picker directly below the `+` launcher. Measure
+  the launcher after render, clamp the fixed menu to viewport edges, and flip
+  above only when the menu cannot fit below; never center this menu on the
+  window independently of its trigger. Keep it hidden until measured so it
+  cannot flash at fallback coordinates. In Electron, account for the
+  transformed `.desktop-chrome-page` fixed-position containing block instead
+  of applying viewport coordinates directly to the popover.
+- Terminal topbar and per-terminal menu buttons must have one click owner.
+  The PTY incremental binder must skip controls already marked by the base
+  terminal binder; double binding makes `+` and three-dot menus toggle twice.
+- Route provider-qualified OpenRouter slugs such as
+  `openai/gpt-5.5-pro` through the Vibyra wrapper. Only built-in unqualified
+  Codex/Claude/Gemini model keys may launch official local CLIs; provider name
+  alone does not prove that a catalog model is accepted by that CLI or account.
+- Keep detached wrapper requests pointed at the local bridge origin, not the
+  `/desktop` page URL. Strip any inherited `/desktop` suffix before appending
+  `/desktop/chat`; a doubled path falls into phone auth and surfaces a false
+  desktop-token error.
 - Keep setup/new-terminal project selection as a real button + listbox menu, not a transparent native select over a styled row. Patch only the picker DOM when it opens or changes, preserve keyboard focus across the one-second desktop refresh, and store the preference in `localStorage["vibyra.desktop.terminalProject"]`.
+- Include a `Full PC` project option backed by the fixed `full-pc` scope. The
+  bridge resolves it to the current user's home directory; it changes terminal
+  working scope but does not imply full permissions or approval bypass.
 - Keep terminal task lifetime independent from the renderer and window. Refresh, renderer crash, bridge restart, or hiding/closing the desktop window must reconnect to the detached persisted worker without stopping or replaying the active prompt. Only an explicit terminal close may terminate and remove the worker; a missing worker must be shown as unavailable rather than auto-restarted.
 - Treat `GET /desktop/pty-terminals` as authoritative on load and after socket
   reconnect. Import backend sessions, drop stale browser-only terminal records,
   preserve only an in-flight pending create, and patch the existing terminal
   DOM rather than remounting xterm.
+- Keep runtime terminal dimensions synchronized across the visible xterm host,
+  xterm rows/columns, and the actual pseudo-TTY. On Linux, resize the
+  `/usr/bin/script` PTY device before signaling its session process group.
+  Never use the persistent handle's `kill()` method for resize because that
+  method means explicit terminal close.
 - Contain PTY WebSocket input errors inside the socket listener. Xterm may send
   protocol/device responses before a recovered worker is writable; a `409`
   must not escape and crash the desktop bridge.
@@ -135,6 +225,10 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - Electron startup/recovery must not reveal Chromium's internal error page.
   Only the configured `/desktop` URL counts as a successful load; supervise
   bridge health and retry while the window remains hidden.
+- Re-running `npm run desktop` against an open single-instance Electron window
+  must reload the renderer without cache before focusing it. Keep `F5`,
+  `Ctrl+R`, and `Cmd+R` wired to the same explicit cache-bypassing reload
+  because the frameless window has no normal menu accelerator to rely on.
 - On Linux, detached bridge and terminal-worker launches must close inherited
   descriptors above `2` before `exec`, or Electron sockets can leak into
   terminal process trees.
@@ -144,7 +238,18 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - Voice/Memory companion panels must mount only while open, use one shared close
   pattern, render only the active tool, preserve and refit mounted xterm nodes,
   and keep keyboard focus visible. Keep the companion on the right through the
-  Electron `860px` minimum width; Memory may be wider while Voice stays compact.
+  Electron `860px` minimum width. The right companion width is user-resizable
+  and persisted locally. Clamp it between 280px and 720px while preserving at
+  least 420px for the terminal, refit mounted xterms during/after resizing, and
+  keep the splitter keyboard accessible. Memory may expand into a focused
+  in-app workspace that replaces the terminal canvas without stopping or
+  remounting terminal sessions; Escape or restore returns to the saved split
+  width and refits xterm.
+  While any Vibyra AI companion is open, temporarily collapse the left rail to
+  its icon-only state without overwriting the user's saved rail preference.
+  Keep expansion locked until the companion closes, then restore the prior rail
+  state. Animate both shell and companion layout changes and honor reduced
+  motion.
   Electron Voice uses recorded-audio transcription through the local bridge;
   do not depend on Web Speech recognition in Electron, and stop every microphone
   track on denial, recorder failure, tab/project change, panel close, and page
@@ -153,6 +258,40 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   editor, but folders/documents remain backend-owned project vault nodes.
   Markdown or Obsidian imports must send normalized relative paths and text
   content only; never expose or persist arbitrary local filesystem paths.
+- Fullscreen Memory must become a dedicated Obsidian-style application shell,
+  not a stretched companion card. Use a top tab/action bar, narrow tool ribbon,
+  real vault explorer on the left, Graph/Notes workspace in the center, and a
+  real-data Links panel on the right. Expand top-level folders on entry so files
+  are immediately visible, and never invent notes, counts, links, or graph
+  relationships for visual effect.
+- Empty project Memory should show one focused `Import` action for an Obsidian
+  vault or Markdown folder. Do not expose AI generation, starter-vault creation,
+  discovery, or separate file/folder import choices.
+- Memory imports in Electron should open a main-process native file dialog
+  through the narrow preload memory picker API. Return only normalized relative
+  paths and note text to the renderer; never expose or retain absolute local
+  paths. Keep browser file inputs and drag-and-drop as non-Electron fallbacks,
+  and keep `.md` visibly named and accepted. When Electron takes over, hide the
+  fallback file input and remove it from pointer hit-testing; a disabled
+  full-row file input overlay blocks real clicks on the visible import row.
+- Keep import singular across compact, fullscreen, and empty-vault Memory.
+  The visible `Import` control should open the native folder picker in Electron;
+  browser folder input and drag-and-drop are fallbacks, not additional choices.
+- Do not expose New Note controls or a note-creation keyboard shortcut in
+  Memory. Imported notes remain editable; New Folder may remain for organizing
+  them.
+- Once populated, Memory should open as a restrained project-brain graph:
+  render real folder and Markdown-link relationships, leave unlinked notes
+  visually separate, reveal labels on interaction, and open document nodes in
+  the Notes editor. Avoid a decorative fake network disconnected from vault
+  data. Dense imports need a deterministic force-spaced canvas, persistent
+  folder/high-degree labels, bounded zoom controls, wheel zoom, drag-to-pan,
+  and a Fit reset; do not compress every folder cluster into one radial column.
+  Use real folder-region halos, cluster colors, hub orbits, curved Markdown
+  links, and hover neighborhood isolation to improve comprehension without
+  inventing relationships. Keep document editing free of a large bottom action
+  bar; do not show `Insert into terminal` or a prominent delete action there.
+- Do not expose AI-created Memory controls in the desktop Memory frontend.
 - Keep labeled Voice and Memory launchers visible beside terminal tabs and on
   the empty terminal setup screen. Slash commands remain shortcuts, not the
   only discovery path. Show the active companion state and collapse labels to
@@ -180,6 +319,10 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - For AI terminals, keep split CSS files (`app.terminals*.css`, `app.terminals-companion.css`, `app.terminals.pty.css`) routed through `app.theme-terminals.css`, `app.theme-terminals-states.css`, and `app.theme-terminals-controls.css` tokens for surfaces, text, disabled states, model picker rows, settings/token-source forms, PTY fallback text, and companion panels. Do not leave hardcoded dark text boxes in terminal setup/model/settings UI.
 - Existing xterm instances do not automatically repaint from CSS variable changes. Keep the PTY runtime reapplying `terminalXtermTheme()` when `body[data-desktop-theme]` changes, without remounting xterm nodes.
 - Persisted xterm transcript replay must temporarily suppress `onData` forwarding; terminal device-response sequences emitted during replay are renderer output, not user keyboard input.
+- Xterm owns keyboard input whenever it is available. Keep fallback host
+  keydown/paste handlers inert if xterm appears after binding, ignore `onData`
+  from detached or replaced xterms, and keep `screenReaderMode` disabled in the
+  Electron terminal surface to avoid duplicated input events.
 - Keep idle/running/success/error/stopped/unavailable dots semantic in both themes, and define separate light/dark xterm ANSI palettes so command output remains readable beyond the base background/foreground colors.
 - Start desktop polling only from `app.boot.js`, after terminal scripts are loaded. In `app.shell.js`, compare the serialized `/desktop/state` payload and skip `render()` when it is unchanged; otherwise the terminal topbar flashes every second and slow startup can briefly show the legacy chat-style terminal surface.
 - For flashing regressions, use a `MutationObserver` on the terminal content

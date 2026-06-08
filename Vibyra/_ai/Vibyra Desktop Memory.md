@@ -18,6 +18,7 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 
 - Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Local Vibyra AI, Ollama runtime/model, local chat routing: `Desktop/Local Vibyra AI.md`
 - AI-terminal Voice and canonical project Memory: `Desktop/Voice And Project Memory.md`
 - Pairing, bearer token, `/health`, phone session, LAN discovery: `Desktop/Pairing And Phone Session.md`
 - Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`

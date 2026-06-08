@@ -5,6 +5,7 @@ import { sendDesktopChat } from "./desktopChat.mjs";
 
 test("desktop chat returns local desktop actions without a cloud account", async () => {
   resetDesktopChatState();
+  appState.cachedProjects = [{ id: "project-1", name: "Project One", path: "/tmp/project-1" }];
 
   const result = await sendDesktopChat({
     projectId: "project-1",
@@ -22,6 +23,148 @@ test("desktop chat returns local desktop actions without a cloud account", async
   }]);
 });
 
+test("desktop chat keeps explicit permission follow-ups local", async () => {
+  resetDesktopChatState();
+
+  const result = await sendDesktopChat({
+    prompt: "perfect thanks can you also give all 4 of the terminals full permissions pls",
+    terminalId: "terminal-1"
+  });
+
+  assert.deepEqual(result.actions, [{
+    type: "set_terminal_permissions",
+    scope: "all",
+    permissionMode: "full",
+    terminalId: ""
+  }]);
+});
+
+test("desktop chat uses recent task context for a vague subagent retry", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "still not working assign 8 subagents to diagonse and fix pls",
+    history: [{
+      role: "user",
+      text: "try again and assign jobs to each terminal pls to find errors on terminal page"
+    }]
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].tasks.length, 8);
+  assert.match(result.actions[0].tasks[0].task, /terminal page/i);
+});
+
+test("desktop chat returns an executable three-of-seven terminal assignment", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "now with the 7 terminals you just opened can you give 3 of them the job to find and diagonse errors on the terminal page on vibyra desktop app"
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.equal(new Set(result.actions[0].tasks.map(({ prompt }) => prompt)).size, 3);
+  assert.match(result.actions[0].tasks[0].prompt, /Reproduction and evidence lead/);
+  assert.match(result.actions[0].tasks[1].prompt, /Regression-test and verification lead/);
+  assert.match(result.actions[0].tasks[2].prompt, /Root-cause and implementation lead/);
+  assert.match(result.actions[0].tasks[0].prompt, /Source project location: \/tmp\/saas/);
+  assert.match(result.actions[0].tasks[2].prompt, /now with the 7 terminals you just opened/i);
+});
+
+test("desktop chat assigns counted work to open terminals without launching more", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "with the terminals open now assign 3 terminals to find frontend fixes to terminal picker"
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.match(result.actions[0].tasks[2].prompt, /Root-cause and implementation lead/);
+});
+
+test("desktop chat resolves an explicitly named terminal project", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{
+    id: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    name: "SaaS",
+    path: "/home/ellis/Desktop/SaaS"
+  }];
+
+  const result = await sendDesktopChat({
+    projectId: "wrong-project",
+    prompt: "open 7 5.5 gpt pro terminals on the project saas on my desktop"
+  });
+
+  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+  assert.equal("projectName" in result.actions[0], false);
+  assert.match(result.reply, /project SaaS/i);
+});
+
+test("desktop chat resolves the project for a terminal task batch", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{
+    id: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    name: "SaaS",
+    path: "/home/ellis/Desktop/SaaS"
+  }];
+
+  const result = await sendDesktopChat({
+    prompt: [
+      'Delegate separate terminal tasks in project "SaaS":',
+      "- Inspect the terminal renderer",
+      "- Run the terminal action tests"
+    ].join("\n")
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+  assert.equal("projectName" in result.actions[0], false);
+  assert.equal(result.actions[0].tasks.length, 2);
+});
+
+test("desktop chat resolves a discovered project path suffix", async () => {
+  resetDesktopChatState();
+
+  const result = await sendDesktopChat({
+    prompt: "open 5 gpt5.5 terminals and open them in project Desktop/SaaS"
+  });
+
+  assert.equal(result.actions[0].model, "gpt-5.5");
+  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+});
+
+test("desktop chat refuses ambiguous explicitly named terminal projects", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [
+    { id: "saas-1", name: "SaaS", path: "/tmp/saas-1" },
+    { id: "saas-2", name: "saas", path: "/tmp/saas-2" }
+  ];
+
+  await assert.rejects(
+    () => sendDesktopChat({ prompt: "Open a terminal in project SaaS" }),
+    /More than one desktop project is named "SaaS"/
+  );
+});
+
+test("desktop chat refuses a stale inherited terminal project", async () => {
+  resetDesktopChatState();
+
+  await assert.rejects(
+    () => sendDesktopChat({ projectId: "stale-project", prompt: "Open a terminal" }),
+    /selected terminal project is no longer available/
+  );
+});
+
 test("desktop chat requires a verified desktop account session", async () => {
   resetDesktopChatState();
 
@@ -29,6 +172,27 @@ test("desktop chat requires a verified desktop account session", async () => {
     () => sendDesktopChat({ prompt: "Hello" }, fakeChatResponse({ ok: true, reply: "Hi" })),
     /Log in to Vibyra Desktop/
   );
+});
+
+test("desktop chat uses local Vibyra AI without a cloud account", async () => {
+  resetDesktopChatState();
+  const requests = [];
+
+  const result = await sendDesktopChat({
+    prompt: "Explain Vibyra",
+    provider: "local"
+  }, async (url, options = {}) => {
+    requests.push(String(url));
+    if (String(url).endsWith("/api/tags")) return jsonResponse({ models: [{ name: "qwen3:4b" }] });
+    const body = JSON.parse(options.body);
+    assert.match(body.messages.at(-1).content, /Explain Vibyra/);
+    return jsonResponse({ model: "qwen3:4b", message: { content: "Private local answer" } });
+  });
+
+  assert.equal(result.reply, "Private local answer");
+  assert.equal(result.local, true);
+  assert.equal(requests.some((url) => url.endsWith("/api/chat")), true);
+  assert.equal(requests.some((url) => url.includes("/api/chat") && !url.includes("11434")), false);
 });
 
 test("desktop chat sends a desktop-surface cloud chat payload", async () => {

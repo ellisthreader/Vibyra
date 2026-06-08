@@ -36,6 +36,12 @@
   margin-top: 2px;
 }
 @media (max-width: 760px) {
+  .terminal-effort-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .terminal-workspace-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .terminal-page {
     padding: 0;
   }

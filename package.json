@@ -7,12 +7,14 @@
     "start": "npm run dev",
     "desktop": "./Vibyra\\ Desktop",
     "desktop:setup": "./scripts/setup-desktop.sh",
+    "desktop:ai:dataset": "node desktop/evals/action-parsing/generate.mjs",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
     "backend": "./scripts/start-backend.sh",
     "dev": "./scripts/start-dev.sh",
     "test:desktop-preview": "node --test desktop/lib/preview.test.mjs",
+    "test:desktop-ai": "node --test desktop/lib/desktopActionDataset.test.mjs desktop/lib/desktopActions.test.mjs desktop/lib/desktopChat.test.mjs desktop/lib/projectContext.test.mjs desktop/lib/terminalTaskPrompts.test.mjs desktop/assets/app.desktop-actions.test.mjs desktop/assets/app.terminals-input.test.mjs desktop/assets/app.terminals-models.test.mjs desktop/assets/app.terminals-workspace.test.mjs desktop/lib/ptyTerminalsSocket.test.mjs desktop/lib/terminalWorktrees.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

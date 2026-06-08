@@ -5,14 +5,19 @@ const terminalMemoryState = {
   query: "",
   expandedIds: new Set(),
   mode: "edit",
+  view: "graph",
   loading: false,
   loaded: false,
+  reloadQueued: false,
   saving: false,
   dirty: false,
   status: "",
   saveTimer: 0,
   draftTitle: "",
-  draftBody: ""
+  draftBody: "",
+  graphScale: 1,
+  graphPanX: 0,
+  graphPanY: 0
 };
 
 function terminalMemoryReset(projectId = "") {
@@ -22,13 +27,19 @@ function terminalMemoryReset(projectId = "") {
   terminalMemoryState.selectedId = "";
   terminalMemoryState.query = "";
   terminalMemoryState.expandedIds = new Set();
+  terminalMemoryState.mode = "edit";
+  terminalMemoryState.view = "graph";
   terminalMemoryState.loading = false;
   terminalMemoryState.loaded = false;
+  terminalMemoryState.reloadQueued = false;
   terminalMemoryState.saving = false;
   terminalMemoryState.dirty = false;
   terminalMemoryState.status = "";
   terminalMemoryState.draftTitle = "";
   terminalMemoryState.draftBody = "";
+  terminalMemoryState.graphScale = 1;
+  terminalMemoryState.graphPanX = 0;
+  terminalMemoryState.graphPanY = 0;
 }
 
 function terminalMemoryNormalizeVault(value) {
@@ -54,6 +65,7 @@ function terminalMemoryNormalizeNode(value) {
     type,
     name: name || (type === "folder" ? "Untitled folder" : "Untitled"),
     body: String(value?.markdown ?? value?.markdownContent ?? value?.markdown_content ?? value?.body ?? value?.content ?? ""),
+    sourcePath: String(value?.sourcePath || value?.source_path || ""),
     version: Number(value?.version || 0),
     updatedAt: String(value?.updatedAt || value?.updated_at || "")
   };

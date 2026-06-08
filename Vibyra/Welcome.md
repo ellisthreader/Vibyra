@@ -1,6 +1,8 @@
-# Vibyra Vault
+# Global Vault
 
-Start here when using Obsidian as project memory for Vibyra.
+Open [[Home]] for the complete project dashboard.
+
+The Vibyra engineering memory remains available below.
 
 ## Core Notes
 

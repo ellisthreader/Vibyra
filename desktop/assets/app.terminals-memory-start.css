@@ -1,0 +1,160 @@
+.terminal-memory-full-state {
+  display: grid;
+  min-height: 0;
+}
+.terminal-memory-workspace--onboarding {
+  grid-template-rows: minmax(0, 1fr);
+}
+.terminal-memory-onboarding {
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: auto;
+}
+.terminal-memory-onboarding {
+  align-content: center;
+  display: grid;
+  gap: 22px;
+  margin: auto;
+  max-width: 560px;
+  padding: 28px;
+  width: 100%;
+}
+.terminal-memory-onboarding-copy {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+}
+.terminal-memory-onboarding-mark {
+  align-items: center;
+  background: var(--terminal-accent-soft);
+  border: 1px solid var(--terminal-accent-border);
+  border-radius: 8px;
+  color: var(--terminal-accent);
+  display: inline-flex;
+  flex: 0 0 36px;
+  height: 36px;
+  justify-content: center;
+}
+.terminal-memory-onboarding-mark svg {
+  height: 17px;
+  width: 17px;
+}
+.terminal-memory-onboarding-copy small {
+  color: var(--terminal-accent);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.terminal-memory-onboarding h2 {
+  color: var(--terminal-text);
+  font-size: 17px;
+  line-height: 22px;
+  margin: 2px 0 4px;
+}
+.terminal-memory-onboarding p {
+  color: var(--terminal-muted);
+  font-size: 11px;
+  line-height: 17px;
+  margin: 0;
+}
+.terminal-memory-onboarding-options {
+  display: grid;
+  gap: 7px;
+}
+.terminal-memory-onboarding-options > button,
+.terminal-memory-import-option {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+  color: var(--terminal-dim);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  min-height: 60px;
+  padding: 8px 11px;
+  text-align: left;
+}
+.terminal-memory-onboarding-options > button:hover,
+.terminal-memory-onboarding-options > button.primary,
+.terminal-memory-import-option.primary,
+.terminal-memory-import-option:hover {
+  background: var(--terminal-hover);
+  border-color: var(--terminal-border-strong);
+}
+.terminal-memory-onboarding-options > button.primary,
+.terminal-memory-import-option.primary {
+  border-color: var(--terminal-accent-border);
+}
+.terminal-memory-onboarding-options > button:disabled,
+.terminal-memory-import-option.disabled {
+  cursor: wait;
+  opacity: .55;
+}
+.terminal-memory-onboarding-options svg,
+.terminal-memory-import-option svg {
+  height: 15px;
+  width: 15px;
+}
+.terminal-memory-onboarding-options span,
+.terminal-memory-import-option span {
+  display: grid;
+  gap: 2px;
+}
+.terminal-memory-onboarding-options strong,
+.terminal-memory-import-option strong {
+  color: var(--terminal-text);
+  font-size: 11px;
+}
+.terminal-memory-onboarding-options small,
+.terminal-memory-import-option small {
+  color: var(--terminal-dim);
+  font-size: 10px;
+  line-height: 14px;
+}
+.terminal-memory-onboarding .terminal-memory-onboarding-privacy {
+  align-items: center;
+  color: var(--terminal-dim);
+  display: flex;
+  font-size: 9px;
+  gap: 6px;
+}
+.terminal-memory-onboarding-privacy svg {
+  height: 12px;
+  width: 12px;
+}
+.terminal-memory-onboarding .terminal-memory-onboarding-status {
+  color: var(--terminal-accent);
+  min-height: 14px;
+}
+.terminal-memory-import-option {
+  cursor: pointer;
+  position: relative;
+}
+.terminal-memory-import-option input,
+.terminal-memory-toolbar-import input,
+.terminal-memory-app-import input {
+  cursor: pointer;
+  height: 100%;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 2;
+}
+.terminal-memory-import-option input:disabled,
+.terminal-memory-toolbar-import input:disabled,
+.terminal-memory-app-import input:disabled {
+  pointer-events: none;
+}
+body:has([data-terminal-memory-pick]) .terminal-memory-import-option:has(input:disabled),
+body:has([data-terminal-memory-pick]) .terminal-memory-toolbar-import:has(input:disabled) {
+  cursor: pointer;
+}
+.terminal-memory-onboarding.dragging {
+  background: var(--terminal-accent-soft);
+  border-radius: 8px;
+  outline: 1px dashed var(--terminal-accent-border);
+  outline-offset: -10px;
+}

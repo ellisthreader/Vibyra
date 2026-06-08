@@ -16,11 +16,14 @@ function terminalProviderClass(terminal) {
 function findTerminal(id) { return terminals.find((terminal) => terminal.id === id) || null; }
 function projectForTerminal(terminal) {
   if (!terminal?.projectId) return null;
+  if (terminal.projectId === "full-pc") {
+    return { id: "full-pc", name: "Full PC", path: terminal.cwd || "Home folder" };
+  }
   return (currentState.projects || []).find((project) => project.id === terminal.projectId) || null;
 }
 function modelLabel(terminal) { return modelByKey(terminal.model).label || "Auto"; }
 function modelChoices() {
-  const groups = terminalDynamicModelGroups || config().chatModelGroups || [];
+  const groups = terminalModelGroups();
   const models = groups.flatMap((group) => Array.isArray(group.options) ? group.options : []);
   return models.length ? models : [{ key: "auto", label: "Auto", provider: "auto" }];
 }
@@ -57,6 +60,7 @@ function unlockedModel(key) {
 function selectedSetupModel() {
   const model = unlockedModel(setupModel);
   setupModel = model.key;
+  setupEffort = terminalEffortForModel(model, setupEffort);
   return model;
 }
 function selectSetupModel(key) {
@@ -66,7 +70,9 @@ function selectSetupModel(key) {
     return;
   }
   setupModel = model.key;
+  setupEffort = terminalEffortForModel(model, setupEffort);
   localStorage.setItem(setupModelKey, setupModel);
+  localStorage.setItem(setupEffortKey, setupEffort);
   setupModelMenuOpen = false;
   terminalProjectMenuTarget = "";
   setupModelSearch = "";
@@ -89,7 +95,7 @@ function createTerminalFromModel(key) {
   }
   newTerminalModelSearch = "";
   terminalProjectMenuTarget = "";
-  createTerminal(model.key, true);
+  createTerminal(model.key, true, { effort: terminalEffortForModel(model, setupEffort) });
 }
 function normalizeCount(value) {
   const numeric = Number.parseInt(String(value || ""), 10);
@@ -149,8 +155,28 @@ function terminalModelButton(model, selectedKey, optionAttribute, extraClass = "
   return `<button class="terminal-model-option ${extraClass} ${selectedKey === model.key ? "active" : ""} ${locked ? "locked" : ""}" type="button" role="option" aria-selected="${selectedKey === model.key ? "true" : "false"}" ${optionAttribute}="${escapeAttribute(model.key)}">${modelLogo(model)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(modelHint(model, locked))}</small></span>${locked ? `<em class="terminal-model-lock">${icon("lock")}</em>` : model.badge ? `<em class="terminal-model-badge">${escapeHtml(model.badge)}</em>` : "<i></i>"}</button>`;
 }
 function terminalModelGroups() {
-  const groups = terminalDynamicModelGroups || config().chatModelGroups || [];
-  return groups.length ? groups : [{ title: "", options: modelChoices() }];
+  const baseGroups = config().chatModelGroups || [];
+  const groups = terminalDynamicModelGroups
+    ? mergeTerminalModelGroups(baseGroups, terminalDynamicModelGroups)
+    : baseGroups;
+  return groups.length ? groups : [{ title: "", options: [{ key: "auto", label: "Auto", provider: "auto" }] }];
+}
+
+function mergeTerminalModelGroups(...collections) {
+  const seen = new Set();
+  const groups = [];
+  for (const collection of collections) {
+    for (const group of collection || []) {
+      const options = (group.options || []).filter((model) => {
+        const key = String(model?.key || "").trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      if (options.length) groups.push({ ...group, options });
+    }
+  }
+  return groups;
 }
 function filteredTerminalModelGroups(query) {
   const normalized = String(query || "").trim().toLowerCase();
@@ -189,6 +215,28 @@ function modelHint(model, locked) {
   if (locked && typeof modelTier === "function") return `${modelTier(model)} · upgrade`;
   if (model?.provider === "auto") return "Vibyra chooses";
   return model?.company || model?.provider || "OpenRouter";
+}
+function terminalModelSupportsReasoning(modelOrKey) {
+  const model = typeof modelOrKey === "string" ? modelByKey(modelOrKey) : modelOrKey;
+  if (typeof model?.supportsReasoning === "boolean") return model.supportsReasoning;
+  const key = String(model?.key || model?.modelKey || "").toLowerCase();
+  if (!key || key === "auto") return true;
+  return /(^|\/)(gpt-5|o\d|claude-(?:opus|sonnet)-4|gemini-2\.5)/.test(key);
+}
+function terminalReasoningEfforts(modelOrKey) {
+  if (!terminalModelSupportsReasoning(modelOrKey)) return [];
+  return [
+    { value: "low", label: "Low", hint: "Less reasoning" },
+    { value: "medium", label: "Medium", hint: "Standard reasoning" },
+    { value: "high", label: "High", hint: "More reasoning" },
+    { value: "xhigh", label: "Extra high", hint: "Maximum reasoning" }
+  ];
+}
+function terminalEffortForModel(modelOrKey, value) {
+  const efforts = terminalReasoningEfforts(modelOrKey);
+  if (!efforts.length) return "default";
+  const requested = String(value || "medium").toLowerCase();
+  return efforts.some((effort) => effort.value === requested) ? requested : "medium";
 }
 function providerTokenLabelForModel(model) {
   const provider = terminalProviderKeyForModel(model);
@@ -274,7 +322,8 @@ function normalizeTerminalModel(model, company) {
     provider: String(model?.provider || "openrouter").trim() || "openrouter",
     company: String(model?.company || company || "").trim(),
     tier: String(model?.tier || "balanced").trim() || "balanced",
-    badge: String(model?.badge || "").slice(0, 24)
+    badge: String(model?.badge || "").slice(0, 24),
+    supportsReasoning: Boolean(model?.supportsReasoning)
   };
 }
 

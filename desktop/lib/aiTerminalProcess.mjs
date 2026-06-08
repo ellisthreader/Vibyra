@@ -1,11 +1,12 @@
 import { spawn } from "node:child_process";
-import { accessSync, constants, existsSync } from "node:fs";
+import { accessSync, constants, existsSync, readFileSync, readlinkSync } from "node:fs";
 import { delimiter, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const vibyraTerminalCli = join(moduleDir, "aiTerminalOpenRouterCli.mjs");
+const scriptResizeStates = new WeakMap();
 
 const AGENT_CONFIG = {
   shell: { label: "Shell", command: "", args: [], env: [], install: "" },
@@ -53,8 +54,58 @@ export function aiTerminalAgentStatus(agent = "vibyra") {
 function spawnWithScript({ command, cwd, env, cols, rows, onData, onExit }) {
   const ptyCommand = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)}; ${command}`;
   const child = spawn("/usr/bin/script", ["-qf", "-e", "-E", "never", "-c", ptyCommand, "/dev/null"], { cwd, env, stdio: "pipe" });
+  child.resize = (nextCols, nextRows) => queueScriptPtyResize(child, nextCols, nextRows);
   attachProcess(child, onData, onExit);
   return child;
+}
+
+function queueScriptPtyResize(child, cols, rows) {
+  const state = scriptResizeStates.get(child) || { running: false, pending: null };
+  state.pending = { cols: integer(cols, 100), rows: integer(rows, 30) };
+  scriptResizeStates.set(child, state);
+  flushScriptPtyResize(child, state);
+}
+
+function flushScriptPtyResize(child, state, attempt = 0) {
+  if (state.running || !state.pending) return;
+  if (process.platform !== "linux" || !child?.pid || child.exitCode !== null) return;
+  const size = state.pending;
+  state.pending = null;
+  const session = scriptSession(child.pid);
+  if (!session) {
+    state.pending = size;
+    if (attempt < 3) setTimeout(() => flushScriptPtyResize(child, state, attempt + 1), 25 * (attempt + 1));
+    return;
+  }
+  state.running = true;
+  const resize = spawn("stty", [
+    "-F",
+    session.tty,
+    "rows",
+    String(size.rows),
+    "cols",
+    String(size.cols)
+  ], { stdio: "ignore" });
+  resize.once("close", (code) => {
+    state.running = false;
+    if (code === 0) {
+      try { process.kill(-session.pid, "SIGWINCH"); } catch {}
+    }
+    flushScriptPtyResize(child, state);
+  });
+}
+
+function scriptSession(scriptPid) {
+  try {
+    const childrenPath = `/proc/${scriptPid}/task/${scriptPid}/children`;
+    const sessionPid = Number.parseInt(readFileSync(childrenPath, "utf8").trim().split(/\s+/)[0], 10);
+    if (!Number.isInteger(sessionPid) || sessionPid <= 0) return null;
+    const tty = readlinkSync(`/proc/${sessionPid}/fd/0`);
+    if (!tty.startsWith("/dev/pts/")) return null;
+    return { pid: sessionPid, tty };
+  } catch {
+    return null;
+  }
 }
 
 function attachProcess(child, onData, onExit) {
@@ -108,7 +159,8 @@ export function aiTerminalAgentArgs(agent, options = {}) {
   if (key !== "codex") return args;
   const model = codexModelName(options.model);
   if (model && model !== "auto") args.push("--model", model);
-  args.push("-c", `model_reasoning_effort="${normalizeReasoningEffort(options.reasoningEffort)}"`);
+  const effort = normalizeReasoningEffort(options.reasoningEffort);
+  if (effort !== "default") args.push("-c", `model_reasoning_effort="${effort}"`);
   if (normalizePermissionMode(options.permissionMode) === "full") {
     args.push("--dangerously-bypass-approvals-and-sandbox");
   }
@@ -117,7 +169,7 @@ export function aiTerminalAgentArgs(agent, options = {}) {
 
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").toLowerCase();
-  return ["low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
 }
 
 function normalizePermissionMode(value) {

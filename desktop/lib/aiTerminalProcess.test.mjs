@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { aiTerminalAgentArgs, aiTerminalAgentStatus, listAiTerminalAgentStatuses } from "./aiTerminalProcess.mjs";
+import { aiTerminalAgentArgs, aiTerminalAgentStatus, listAiTerminalAgentStatuses, spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
 import { terminalEnv } from "./aiTerminalVibyraShell.mjs";
 
 test("Vibyra PTY agent is the default available terminal agent", () => {
@@ -62,6 +62,7 @@ test("PTY terminal env carries selected OpenRouter model metadata", () => {
   });
 
   assert.equal(env.VIBYRA_TERMINAL_AGENT, "vibyra");
+  assert.match(env.VIBYRA_DESKTOP_URL, /^http:\/\/127\.0\.0\.1:\d+$/);
   assert.equal(env.VIBYRA_OPENROUTER_MODEL, "qwen/qwen3-coder");
   assert.equal(env.VIBYRA_REASONING_EFFORT, "high");
   assert.equal(env.VIBYRA_PERMISSION_MODE, "standard");
@@ -121,3 +122,41 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
     rmSync(isolatedRoot, { recursive: true, force: true });
   }
 });
+
+test("script-backed terminal resize updates the real PTY dimensions", async (t) => {
+  if (process.platform !== "linux" || !existsSync("/usr/bin/script")) {
+    t.skip("Linux script PTY is required");
+    return;
+  }
+  let output = "";
+  let child;
+  const exited = new Promise((resolve) => {
+    child = spawnAiTerminalProcess({
+      agent: "shell",
+      cwd: process.cwd(),
+      cols: 90,
+      rows: 24,
+      onData: (data) => { output += data; },
+      onExit: resolve
+    });
+  });
+
+  try {
+    await delay(100);
+    child.resize(60, 15);
+    child.resize(47, 13);
+    await delay(100);
+    child.stdin.write("stty size; exit\r");
+    await Promise.race([
+      exited,
+      delay(3_000).then(() => { throw new Error("resized PTY did not exit"); })
+    ]);
+    assert.match(output, /13 47/);
+  } finally {
+    if (child?.exitCode === null) child.kill("SIGTERM");
+  }
+});
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

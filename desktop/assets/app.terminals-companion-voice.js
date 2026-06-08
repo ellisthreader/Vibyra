@@ -1,234 +1,103 @@
-let terminalVoiceListening = false;
-let terminalVoiceStarting = false;
-let terminalVoiceRecognition = null;
-let terminalVoiceTargetId = "";
-let terminalVoiceGeneration = 0;
-let terminalVoiceRecorder = null;
-let terminalVoiceStream = null;
-let terminalVoiceChunks = [];
-let terminalVoiceInterim = "";
-let terminalVoiceTranscript = "";
-let terminalVoiceStatus = "Ready";
-
 function terminalVoiceHtml() {
-  const active = terminalCompanionActiveTerminal();
   const available = terminalVoiceAvailable();
-  const status = available ? terminalVoiceStatus : "Speech recognition unavailable";
-  const toggleLabel = terminalVoiceStarting ? "Starting" : terminalVoiceListening ? "Stop" : "Mic";
-  const stateClass = terminalVoiceListening ? " listening" : "";
-  const copy = [terminalVoiceTranscript, terminalVoiceInterim].filter(Boolean).join(" ") || "Speak to type in the active terminal.";
-  return "<div class=\"terminal-companion-head\"><span>Voice</span><div class=\"terminal-companion-head-actions\"><small role=\"status\" aria-live=\"polite\">" + escapeHtml(status) + "</small></div></div>"
-    + "<div class=\"terminal-voice-orb" + stateClass + "\"><span>" + icon("pulse") + "</span><strong>" + escapeHtml(active?.title || "No terminal") + "</strong></div>"
-    + "<div class=\"terminal-voice-actions\">"
-    + "<button class=\"terminal-tool-button primary\" type=\"button\" data-terminal-voice-toggle aria-pressed=\"" + (terminalVoiceListening ? "true" : "false") + "\" " + (available && active && !terminalVoiceStarting ? "" : "disabled") + ">" + icon(terminalVoiceListening ? "square" : "pulse") + "<span>" + toggleLabel + "</span></button>"
-    + "<button class=\"terminal-tool-button\" type=\"button\" data-terminal-voice-enter " + (active ? "" : "disabled") + ">" + icon("send") + "<span>Enter</span></button>"
-    + "<button class=\"terminal-tool-button\" type=\"button\" data-terminal-voice-clear aria-label=\"Clear transcript\" title=\"Clear transcript\">" + icon("trash") + "</button>"
-    + "</div><div class=\"terminal-voice-transcript\" aria-live=\"polite\">" + escapeHtml(copy) + "</div>";
+  const busy = terminalVoiceState.starting || terminalVoiceState.asking;
+  const stateClass = terminalVoiceState.listening
+    ? " listening"
+    : busy
+      ? " busy"
+      : terminalVoiceState.speaking
+        ? " speaking"
+        : "";
+  const label = terminalVoiceState.starting
+    ? "Starting..."
+    : terminalVoiceState.listening
+      ? "Stop and send"
+      : terminalVoiceState.asking
+        ? "Vibyra is thinking..."
+        : terminalVoiceState.speaking
+          ? "Vibyra is speaking"
+          : "Talk to Vibyra";
+  const status = available ? terminalVoiceState.status : "Microphone unavailable";
+  return `<div class="terminal-voice-simple${stateClass}">
+    <button class="terminal-voice-back" type="button" data-terminal-companion-open="chat">${icon("arrow")}<span>Back to chat</span></button>
+    <button class="terminal-voice-talk" type="button" data-terminal-voice-toggle aria-pressed="${terminalVoiceState.listening}" ${available && !terminalVoiceState.asking ? "" : "disabled"}>
+      <span>${icon(terminalVoiceState.listening ? "square" : "pulse")}</span>
+      <strong>${escapeHtml(label)}</strong>
+      <small>${terminalVoiceState.listening ? "Click or press Alt+V when you finish" : "Click or press Alt+V to talk"}</small>
+    </button>
+    <p class="terminal-voice-status" role="status" aria-live="polite">${escapeHtml(status)}</p>
+    <small class="terminal-voice-disclosure">AI-generated voice</small>
+  </div>`;
 }
 
 function bindTerminalVoice(root = document) {
-  root.querySelector("[data-terminal-voice-toggle]")?.addEventListener("click", () => {
-    if (terminalVoiceListening) stopTerminalVoice();
-    else void startTerminalVoice();
-  });
-  root.querySelector("[data-terminal-voice-enter]")?.addEventListener("click", terminalVoiceSendEnter);
-  root.querySelector("[data-terminal-voice-clear]")?.addEventListener("click", () => {
-    terminalVoiceTranscript = "";
-    terminalVoiceInterim = "";
-    syncTerminalCompanion("voice");
+  root.querySelector("[data-terminal-voice-toggle]")?.addEventListener("click", toggleTerminalVoice);
+  root.querySelector(".terminal-voice-back")?.addEventListener("click", stopTerminalVoiceForPanelClose);
+  bindTerminalVoiceHotkey();
+}
+
+function bindTerminalVoiceHotkey() {
+  if (document.body.dataset.terminalVoiceHotkeyBound) return;
+  document.body.dataset.terminalVoiceHotkeyBound = "1";
+  document.addEventListener("keydown", (event) => {
+    if (!event.altKey || event.code !== "KeyV" || event.repeat) return;
+    if (!["chat", "voice"].includes(terminalCompanionMode)) return;
+    event.preventDefault();
+    if (terminalCompanionMode === "chat") {
+      openTerminalCompanionPanel("voice", "voice");
+      requestAnimationFrame(() => toggleTerminalVoice());
+      return;
+    }
+    toggleTerminalVoice();
   });
 }
 
-async function startTerminalVoice() {
-  if (terminalVoiceStarting || terminalVoiceListening) return;
-  const Recognition = terminalVoiceApi();
-  if (!Recognition && !terminalVoiceRecorderAvailable()) {
-    terminalVoiceStatus = "Speech unavailable";
-    syncTerminalCompanion("voice");
-    return;
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    terminalVoiceStatus = "Microphone unavailable";
-    syncTerminalCompanion("voice");
-    return;
-  }
-  const target = terminalCompanionActiveTerminal();
-  if (!target) return;
-  terminalVoiceStarting = true;
-  terminalVoiceTargetId = target.id;
-  const generation = ++terminalVoiceGeneration;
-  terminalVoiceStatus = "Starting";
-  syncTerminalCompanion("voice");
+function toggleTerminalVoice() {
+  if (terminalVoiceState.asking) return;
+  if (terminalVoiceState.listening) stopTerminalVoiceCapture();
+  else void startTerminalVoiceCapture();
+}
+
+async function submitTerminalVoicePrompt(text, generation = terminalVoiceState.generation) {
+  const prompt = String(text || "").trim();
+  if (!prompt || terminalVoiceState.asking || !terminalVoiceGenerationCurrent(generation)) return;
+  const terminal = terminalCompanionActiveTerminal();
+  if (!terminal || terminal.id !== terminalVoiceState.targetId) return;
+  terminalVoiceState.asking = true;
+  terminalVoiceSetStatus("Vibyra is thinking");
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (generation !== terminalVoiceGeneration) {
-      stopTerminalVoiceStream(stream);
-      return;
-    }
-    if (!Recognition) {
-      startTerminalVoiceRecorder(stream, generation);
-      return;
-    }
-    stream?.getTracks?.().forEach((track) => track.stop());
-  } catch {
-    if (generation !== terminalVoiceGeneration) return;
-    terminalVoiceStarting = false;
-    terminalVoiceStatus = "Microphone blocked";
-    syncTerminalCompanion("voice");
-    return;
-  }
-  if (generation !== terminalVoiceGeneration) return;
-  terminalVoiceRecognition?.abort?.();
-  terminalVoiceRecognition = new Recognition();
-  terminalVoiceRecognition.continuous = true;
-  terminalVoiceRecognition.interimResults = true;
-  terminalVoiceRecognition.lang = "en-US";
-  terminalVoiceRecognition.onstart = () => { if (generation !== terminalVoiceGeneration) return; terminalVoiceStarting = false; terminalVoiceListening = true; terminalVoiceStatus = "Listening"; syncTerminalCompanion("voice"); };
-  terminalVoiceRecognition.onerror = (event) => { if (generation !== terminalVoiceGeneration) return; terminalVoiceStarting = false; terminalVoiceStatus = terminalVoiceErrorStatus(event?.error); syncTerminalCompanion("voice"); };
-  terminalVoiceRecognition.onend = () => { if (generation !== terminalVoiceGeneration) return; terminalVoiceStarting = false; terminalVoiceListening = false; terminalVoiceInterim = ""; if (terminalVoiceStatus === "Listening") terminalVoiceStatus = "Ready"; syncTerminalCompanion("voice"); };
-  terminalVoiceRecognition.onresult = handleTerminalVoiceResult;
-  try {
-    terminalVoiceRecognition.start();
+    const reply = await requestTerminalVoiceReply(prompt, terminal, generation);
+    if (!terminalVoiceGenerationCurrent(generation)) return;
+    terminalVoiceState.asking = false;
+    await playTerminalVoiceReply(reply, generation);
   } catch (error) {
-    terminalVoiceStarting = false;
-    terminalVoiceStatus = error instanceof Error ? error.message : "Voice could not start";
-    syncTerminalCompanion("voice");
-  }
-}
-
-function stopTerminalVoice() {
-  terminalVoiceStarting = false;
-  terminalVoiceListening = false;
-  if (terminalVoiceRecorder?.state === "recording") {
-    terminalVoiceStatus = "Transcribing";
-    try {
-      terminalVoiceRecorder.stop();
-    } catch {
-      failTerminalVoiceRecorder("Recording failed");
+    if (!terminalVoiceGenerationCurrent(generation)) return;
+    terminalVoiceState.asking = false;
+    terminalVoiceSetStatus(terminalVoiceErrorMessage(error, "Vibyra AI could not reply"));
+  } finally {
+    if (terminalVoiceGenerationCurrent(generation)) {
+      terminalVoiceState.asking = false;
+      terminalVoiceSync();
     }
-    syncTerminalCompanion("voice");
-    return;
   }
-  terminalVoiceRecognition?.stop?.();
-  terminalVoiceStatus = "Ready";
-  syncTerminalCompanion("voice");
 }
 
 function stopTerminalVoiceForPanelClose() {
-  terminalVoiceGeneration += 1;
-  terminalVoiceStarting = false;
-  terminalVoiceListening = false;
-  terminalVoiceInterim = "";
-  terminalVoiceRecognition?.abort?.();
-  terminalVoiceRecognition = null;
-  releaseTerminalVoiceRecorder(true);
-  terminalVoiceTargetId = "";
-  terminalVoiceStatus = "Ready";
+  terminalVoiceInvalidate();
+  stopTerminalVoiceCapture(true);
+  stopTerminalVoicePlayback();
+  terminalVoiceState.targetId = "";
+  terminalVoiceSetStatus("Ready", false);
 }
 
 function syncTerminalVoiceTarget(terminal) {
   const nextId = terminal?.id || "";
-  if (nextId === terminalVoiceTargetId) return;
-  if (terminalVoiceStarting || terminalVoiceListening || terminalVoiceRecorder) {
-    stopTerminalVoiceForPanelClose();
-  }
-  terminalVoiceTargetId = nextId;
-  terminalVoiceStatus = "Ready";
-}
-
-function handleTerminalVoiceResult(event) {
-  let finalText = "";
-  let interim = "";
-  for (let index = event.resultIndex || 0; index < event.results.length; index += 1) {
-    const result = event.results[index];
-    const text = String(result?.[0]?.transcript || "").trim();
-    if (!text) continue;
-    if (result.isFinal) finalText += text + " ";
-    else interim += text + " ";
-  }
-  terminalVoiceInterim = interim.trim();
-  if (finalText.trim()) {
-    terminalVoiceTranscript = (terminalVoiceTranscript + " " + finalText.trim()).trim().slice(-1200);
-    terminalCompanionInsertIntoTerminal(terminalVoiceTargetId, finalText, false);
-  }
-  syncTerminalCompanion("voice");
-}
-
-function terminalVoiceSendEnter() {
-  terminalCompanionInsertIntoTerminal(terminalVoiceTargetId || terminalCompanionActiveTerminal()?.id, "", true);
-}
-
-function terminalVoiceApi() {
-  if (window.vibyraDesktopWindow?.isElectron) return null;
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
-}
-
-function terminalVoiceAvailable() {
-  return Boolean(terminalVoiceApi() || terminalVoiceRecorderAvailable());
-}
-
-function terminalVoiceRecorderAvailable() {
-  return Boolean(window.MediaRecorder && navigator.mediaDevices?.getUserMedia);
-}
-
-function startTerminalVoiceRecorder(stream, generation) {
-  terminalVoiceStream = stream;
-  terminalVoiceChunks = [];
-  try {
-    terminalVoiceRecorder = new MediaRecorder(stream);
-  } catch {
-    failTerminalVoiceRecorder("Recording unavailable");
-    return;
-  }
-  terminalVoiceRecorder.ondataavailable = (event) => {
-    if (event.data?.size) terminalVoiceChunks.push(event.data);
-  };
-  terminalVoiceRecorder.onerror = () => {
-    if (generation !== terminalVoiceGeneration) return;
-    failTerminalVoiceRecorder("Recording failed");
-  };
-  terminalVoiceRecorder.onstop = () => void finishTerminalVoiceRecording(generation);
-  try {
-    terminalVoiceRecorder.start();
-  } catch {
-    failTerminalVoiceRecorder("Recording could not start");
-    return;
-  }
-  terminalVoiceStarting = false;
-  terminalVoiceListening = true;
-  terminalVoiceStatus = "Listening";
-  syncTerminalCompanion("voice");
-}
-
-async function finishTerminalVoiceRecording(generation) {
-  const targetId = terminalVoiceTargetId;
-  const blob = new Blob(terminalVoiceChunks, { type: terminalVoiceRecorder?.mimeType || "audio/webm" });
-  releaseTerminalVoiceRecorder(false);
-  if (generation !== terminalVoiceGeneration) return;
-  if (!blob.size) {
-    terminalVoiceStatus = "No speech heard";
-    syncTerminalCompanion("voice");
-    return;
-  }
-  try {
-    const response = await fetch("/desktop/voice/transcribe", {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ audioBase64: await blobToBase64(blob), mimeType: blob.type })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok === false) throw new Error(result.error || "Voice transcription failed.");
-    const text = String(result.text || "").trim();
-    if (text) {
-      terminalVoiceTranscript = (terminalVoiceTranscript + " " + text).trim().slice(-1200);
-      terminalCompanionInsertIntoTerminal(targetId, text, false);
-    }
-    terminalVoiceStatus = text ? "Ready" : "No speech heard";
-  } catch (error) {
-    terminalVoiceStatus = error instanceof Error ? error.message : "Voice transcription failed";
-  } finally {
-    if (generation === terminalVoiceGeneration) syncTerminalCompanion("voice");
-  }
+  if (nextId === terminalVoiceState.targetId) return;
+  terminalVoiceInvalidate();
+  stopTerminalVoiceCapture(true);
+  stopTerminalVoicePlayback();
+  terminalVoiceState.targetId = nextId;
+  terminalVoiceSetStatus("Ready", false);
 }
 
 window.addEventListener("pagehide", stopTerminalVoiceForPanelClose);

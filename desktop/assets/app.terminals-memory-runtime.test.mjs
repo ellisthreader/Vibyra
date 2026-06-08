@@ -1,0 +1,210 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
+
+const stateSource = await readFile(new URL("./app.terminals-memory-state.js", import.meta.url), "utf8");
+const apiSource = await readFile(new URL("./app.terminals-memory-api.js", import.meta.url), "utf8");
+const graphLayoutSource = await readFile(new URL("./app.terminals-memory-graph-layout.js", import.meta.url), "utf8");
+const graphVisualsSource = await readFile(new URL("./app.terminals-memory-graph-visuals.js", import.meta.url), "utf8");
+const graphSource = await readFile(new URL("./app.terminals-memory-graph.js", import.meta.url), "utf8");
+const importSource = await readFile(new URL("./app.terminals-memory-import.js", import.meta.url), "utf8");
+const onboardingSource = await readFile(new URL("./app.terminals-memory-onboarding.js", import.meta.url), "utf8");
+const renderSource = await readFile(new URL("./app.terminals-memory-render.js", import.meta.url), "utf8");
+const eventsSource = await readFile(new URL("./app.terminals-memory-events.js", import.meta.url), "utf8");
+const memoryCss = await readFile(new URL("./app.terminals-memory.css", import.meta.url), "utf8");
+const companionLayoutCss = await readFile(new URL("./app.terminals-companion-layout.css", import.meta.url), "utf8");
+
+test("forced vault reloads queue while an earlier load is active", async () => {
+  let releaseFirst;
+  const requests = [];
+  const context = memoryContext(async (url, options) => {
+    requests.push({ url, options });
+    if (requests.length === 1) {
+      await new Promise((resolve) => { releaseFirst = resolve; });
+      return jsonResponse({ ok: true, vault: { nodes: [] } });
+    }
+    return jsonResponse({ ok: true, vault: { nodes: [{ id: "note-1", type: "document", name: "Imported" }] } });
+  });
+
+  const first = vm.runInContext('loadTerminalMemoryVault("project-1")', context);
+  await waitFor(() => typeof releaseFirst === "function");
+  vm.runInContext('loadTerminalMemoryVault("project-1", true)', context);
+  releaseFirst();
+  await first;
+  await waitFor(() => requests.length === 2 && context.terminalMemoryState.nodes.length === 1);
+
+  assert.equal(requests[0].options.cache, "no-store");
+  assert.equal(requests.length, 2);
+  assert.equal(context.terminalMemoryState.nodes[0].name, "Imported");
+});
+
+test("memory graph uses folders and wikilinks as real connections", () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(graphLayoutSource, context);
+  vm.runInContext(graphVisualsSource, context);
+  vm.runInContext(graphSource, context);
+  const model = vm.runInContext(`terminalMemoryGraphModel([
+    { id: "folder", type: "folder", name: "Project", parentId: "", body: "" },
+    { id: "a", type: "document", name: "Architecture", parentId: "folder", body: "[[Commands]]" },
+    { id: "b", type: "document", name: "Commands", parentId: "folder", body: "" },
+    { id: "c", type: "document", name: "Loose note", parentId: "", body: "" }
+  ])`, context);
+
+  assert.equal(model.documents, 3);
+  assert.equal(model.edges.length, 3);
+  assert.equal(model.edges.some((edge) => edge.kind === "link" && edge.from === "a" && edge.to === "b"), true);
+  assert.equal(model.edges.some((edge) => edge.from === "folder" && edge.to === "a"), true);
+});
+
+test("large memory graphs spread across the canvas and support bounded zoom", () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(graphLayoutSource, context);
+  vm.runInContext(graphVisualsSource, context);
+  vm.runInContext(graphSource, context);
+  context.graphNodes = Array.from({ length: 48 }, (_, index) => ({
+    id: `note-${index}`,
+    type: index < 4 ? "folder" : "document",
+    name: `Note ${index}`,
+    parentId: index < 4 ? "" : `note-${index % 4}`,
+    body: index > 5 ? `[[Note ${index - 1}]]` : ""
+  }));
+  const result = vm.runInContext(`(() => {
+    const model = terminalMemoryGraphModel(graphNodes);
+    const points = Object.values(model.positions);
+    terminalMemoryGraphSetScale(9, false);
+    const maximum = terminalMemoryState.graphScale;
+    terminalMemoryGraphSetScale(.1, false);
+    return {
+      width: Math.max(...points.map((point) => point.x)) - Math.min(...points.map((point) => point.x)),
+      height: Math.max(...points.map((point) => point.y)) - Math.min(...points.map((point) => point.y)),
+      maximum,
+      minimum: terminalMemoryState.graphScale
+    };
+  })()`, context);
+
+  assert.ok(result.width > 420);
+  assert.ok(result.height > 300);
+  assert.equal(result.maximum, 3.2);
+  assert.equal(result.minimum, .55);
+});
+
+test("memory documents omit terminal insertion and footer deletion actions", () => {
+  assert.doesNotMatch(renderSource, /Insert into terminal|data-terminal-memory-insert/);
+  assert.doesNotMatch(eventsSource, /data-terminal-memory-insert/);
+  assert.doesNotMatch(renderSource, /terminal-memory-document-actions/);
+});
+
+test("Memory does not expose note creation controls or shortcuts", () => {
+  assert.doesNotMatch(renderSource, /data-terminal-memory-new-note|New note/);
+  assert.doesNotMatch(eventsSource, /data-terminal-memory-new-note|promptTerminalMemoryNode\("document"\)/);
+});
+
+test("memory companion width is user-resizable without shrinking the terminal below its floor", () => {
+  assert.match(memoryCss, /has\(\.terminal-memory-workspace\)\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\) 340px/);
+  assert.match(companionLayoutCss, /minmax\(420px, 1fr\) var\(--terminal-companion-width, 340px\)/);
+  assert.match(companionLayoutCss, /terminal-page--memory-fullscreen/);
+});
+
+test("native Memory import accepts and reads Markdown files", async () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(importSource, context);
+  context.files = [
+    { name: "Notes.md", size: 8, async text() { return "# Notes"; } },
+    { name: "Legacy.markdown", size: 6, async text() { return "Legacy"; } }
+  ];
+  const manifest = await vm.runInContext('buildTerminalMemoryManifest(files, "markdown")', context);
+
+  assert.deepEqual(
+    Array.from(manifest.files, (file) => ({ path: file.path, markdown: file.markdown })),
+    [
+      { path: "Notes.md", markdown: "# Notes" },
+      { path: "Legacy.md", markdown: "Legacy" }
+    ]
+  );
+  assert.equal((onboardingSource.match(/data-terminal-memory-pick="vault"/g) || []).length, 1);
+  assert.match(onboardingSource, /data-terminal-memory-vault-input/);
+  assert.doesNotMatch(onboardingSource, /data-terminal-memory-ai|Create new vault|Find Obsidian|Import \.md files/);
+  assert.match(onboardingSource, /window\.vibyraDesktopMemory\?\.pick/);
+});
+
+test("Electron picker removes the fallback input from mouse hit testing", () => {
+  let clickHandler;
+  let pickedKind = "";
+  const input = { disabled: false, hidden: false };
+  const control = {
+    dataset: { terminalMemoryPick: "vault" },
+    querySelector() { return input; },
+    addEventListener(type, handler) {
+      if (type === "click") clickHandler = handler;
+    }
+  };
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  context.window.vibyraDesktopMemory = { pick() {} };
+  context.root = { querySelectorAll() { return [control]; } };
+  context.pickTerminalMemoryFiles = (kind) => { pickedKind = kind; };
+  vm.runInContext(onboardingSource, context);
+  vm.runInContext("bindTerminalMemoryNativePickers(root)", context);
+
+  let prevented = false;
+  clickHandler({ preventDefault() { prevented = true; } });
+
+  assert.equal(input.disabled, true);
+  assert.equal(input.hidden, true);
+  assert.equal(prevented, true);
+  assert.equal(pickedKind, "vault");
+});
+
+test("Memory onboarding exposes one import choice", () => {
+  assert.equal((onboardingSource.match(/terminal-memory-import-option/g) || []).length, 1);
+  assert.equal((onboardingSource.match(/data-terminal-memory-pick=/g) || []).length, 1);
+  assert.doesNotMatch(onboardingSource, /discoverObsidian|importDiscoveredVault|createTerminalMemoryStarterVault/);
+});
+
+test("native picker manifests post directly to the canonical import route", async () => {
+  let request;
+  const context = memoryContext(async (url, options) => {
+    request = { url, body: JSON.parse(options.body) };
+    return jsonResponse({ ok: true });
+  });
+  vm.runInContext(importSource, context);
+  context.nativeFiles = [{ path: "Project/Note.md", markdown: "# Note", source: "markdown_import" }];
+  await vm.runInContext('importTerminalMemoryManifest(nativeFiles, "markdown")', context);
+
+  assert.equal(request.url, "/desktop/project-memory/import");
+  assert.deepEqual(request.body.files, context.nativeFiles);
+});
+
+function memoryContext(fetchImpl) {
+  const context = vm.createContext({
+    console,
+    fetch: fetchImpl,
+    queueMicrotask,
+    setTimeout,
+    clearTimeout,
+    window: { clearTimeout, setTimeout },
+    terminalMemoryRefresh() {},
+    terminalMemoryUpdateStatus() {},
+    terminalMemoryUpdateTree() {},
+    icon() { return "<svg></svg>"; },
+    escapeAttribute: String,
+    escapeHtml: String
+  });
+  vm.runInContext(stateSource, context);
+  vm.runInContext("globalThis.terminalMemoryState = terminalMemoryState", context);
+  vm.runInContext(apiSource, context);
+  vm.runInContext('terminalMemoryReset("project-1")', context);
+  return context;
+}
+
+function jsonResponse(payload) {
+  return { ok: true, async json() { return payload; } };
+}
+
+async function waitFor(predicate) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error("Timed out waiting for memory runtime.");
+}

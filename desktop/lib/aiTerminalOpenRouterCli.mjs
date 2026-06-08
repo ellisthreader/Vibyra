@@ -1,5 +1,6 @@
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const MAX_HISTORY = 8;
@@ -84,11 +85,11 @@ export function promptLabelForModel(modelKey, color = true) {
   return `${ansi("❯", info.color, color)} ${info.prompt}:${shortModel} `;
 }
 
-export function renderIntroForModel({ modelKey = "auto", reasoningEffort = "medium", projectId = "", columns = 100, color = true } = {}) {
+export function renderIntroForModel({ modelKey = "auto", reasoningEffort = "medium", projectId = "", cwd = process.cwd(), columns = 100, color = true } = {}) {
   const info = providerInfoForModel(modelKey);
-  if (info.provider === "anthropic" || info.provider === "claude") return renderClaudeIntro({ info, modelKey, reasoningEffort, projectId, columns, color });
-  if (info.provider === "google" || info.provider === "gemini") return renderGeminiIntro({ info, modelKey, projectId, columns, color });
-  if (info.provider === "openai") return renderCodexIntro({ info, modelKey, reasoningEffort, projectId, columns, color });
+  if (info.provider === "anthropic" || info.provider === "claude") return renderClaudeIntro({ info, modelKey, reasoningEffort, cwd, columns, color });
+  if (info.provider === "google" || info.provider === "gemini") return renderGeminiIntro({ info, modelKey, cwd, columns, color });
+  if (info.provider === "openai") return renderCodexIntro({ info, modelKey, reasoningEffort, cwd, columns, color });
   const width = Math.max(58, Math.min(100, Number(columns) || 100));
   const inner = width - 2;
   const title = `${info.name} via Vibyra`;
@@ -101,7 +102,7 @@ export function renderIntroForModel({ modelKey = "auto", reasoningEffort = "medi
     "",
     `${displayModel(modelKey)} with ${reasoningEffort} effort`,
     `provider: ${info.name} · ${terminalMode}`,
-    projectId ? `project: ${projectId}` : "project: current desktop workspace",
+    `directory: ${displayDirectory(cwd)}`,
     "",
     "Tips for getting started",
     info.tip,
@@ -116,11 +117,11 @@ export function renderIntroForModel({ modelKey = "auto", reasoningEffort = "medi
   ].join("\r\n");
 }
 
-function renderClaudeIntro({ info, modelKey, reasoningEffort, projectId, columns, color }) {
+function renderClaudeIntro({ info, modelKey, reasoningEffort, cwd, columns, color }) {
   const width = Math.max(68, Math.min(104, Number(columns) || 100));
   const inner = width - 2;
   const meta = `${displayModel(modelKey)} with ${reasoningEffort} effort · Vibyra ·`;
-  const cwd = projectId ? `project: ${projectId}` : "project: current desktop workspace";
+  const directory = `directory: ${displayDirectory(cwd)}`;
   const placeholder = `❯ Try "edit AppContext.tsx to..."`;
   const footer = `? for shortcuts · ← for agents${" ".repeat(Math.max(2, inner - visibleLength("? for shortcuts · ← for agents") - visibleLength(`◉ ${reasoningEffort} · /effort`) - 2))}◉ ${reasoningEffort} · /effort`;
   const lines = [
@@ -130,7 +131,7 @@ function renderClaudeIntro({ info, modelKey, reasoningEffort, projectId, columns
     ...CLAUDE_ASCII_ART.map((line) => center(ansi(line, info.color, color), inner)),
     "",
     center(meta, inner),
-    center(cwd, inner),
+    center(directory, inner),
     "",
     "Tips for getting started",
     "Ask Claude to edit, debug, or explain a file.",
@@ -147,10 +148,10 @@ function renderClaudeIntro({ info, modelKey, reasoningEffort, projectId, columns
   return boxedLines(lines, inner, info.color, color);
 }
 
-function renderCodexIntro({ info, modelKey, reasoningEffort, projectId, columns, color }) {
+function renderCodexIntro({ info, modelKey, reasoningEffort, cwd, columns, color }) {
   const width = Math.max(58, Math.min(90, Number(columns) || 88));
   const inner = width - 2;
-  const directory = projectId ? `~/${compactToken(projectId)}` : "~/workspace";
+  const directory = displayDirectory(cwd);
   const model = `${displayModel(modelKey)} ${reasoningEffort}`;
   const rows = [
     ">_ OpenAI Codex (v0.132.0)",
@@ -166,11 +167,11 @@ function renderCodexIntro({ info, modelKey, reasoningEffort, projectId, columns,
   ].join("\r\n");
 }
 
-function renderGeminiIntro({ info, modelKey, projectId, columns, color }) {
+function renderGeminiIntro({ info, modelKey, cwd, columns, color }) {
   const width = Math.max(64, Math.min(104, Number(columns) || 100));
   const inner = width - 2;
   const letters = ["G", "E", "M", "I", "N", "I"].map((letter, index) => ansi(letter, [34, 36, 35, 35, 36, 34][index], color)).join(" ");
-  const cwd = projectId ? `~/${compactToken(projectId)}` : "~/workspace";
+  const directory = displayDirectory(cwd);
   const lines = [
     center(`${ansi("✦", info.color, color)}  ${letters}`, inner),
     center("Gemini CLI v0.42.0", inner),
@@ -181,7 +182,7 @@ function renderGeminiIntro({ info, modelKey, projectId, columns, color }) {
     "3. /help for more information.",
     "",
     `Using: Vibyra project context | ${displayModel(modelKey)}`,
-    `${cwd} · no sandbox (see /docs) · auto`
+    `${directory} · no sandbox (see /docs) · auto`
   ];
   return boxedLines(lines, inner, info.color, color);
 }
@@ -222,7 +223,7 @@ function runTerminal() {
     prompt: promptLabelForModel(model, color)
   });
 
-  printIntro({ model, reasoningEffort, projectId, color });
+  printIntro({ model, reasoningEffort, projectId, cwd: process.cwd(), color });
   rl.prompt();
 
   rl.on("line", async (line) => {
@@ -263,6 +264,7 @@ async function sendPrompt({ prompt, model, reasoningEffort, tokenMode, projectId
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        disableDesktopActions: true,
         history: history.slice(-MAX_HISTORY - 1, -1),
         model,
         projectId,
@@ -293,7 +295,7 @@ async function handleLocalCommand({ command, rl, model, reasoningEffort, tokenMo
   }
   if (key === "/clear" || key === "clear") {
     output.write("\x1Bc");
-    printIntro({ model, reasoningEffort, projectId, color });
+    printIntro({ model, reasoningEffort, projectId, cwd: process.cwd(), color });
     return true;
   }
   if (key === "/model") {
@@ -313,8 +315,15 @@ async function handleLocalCommand({ command, rl, model, reasoningEffort, tokenMo
   return false;
 }
 
-function printIntro({ model, reasoningEffort, projectId, color }) {
-  output.write(`${renderIntroForModel({ modelKey: model, reasoningEffort, projectId, columns: output.columns || 100, color })}\r\n`);
+function printIntro({ model, reasoningEffort, projectId, cwd, color }) {
+  output.write(`${renderIntroForModel({ modelKey: model, reasoningEffort, projectId, cwd, columns: output.columns || 100, color })}\r\n`);
+}
+
+function displayDirectory(cwd) {
+  const directory = String(cwd || process.cwd());
+  const home = homedir();
+  if (directory === home) return "~";
+  return directory.startsWith(`${home}/`) ? `~/${directory.slice(home.length + 1)}` : directory;
 }
 
 function trimHistory(history) {
@@ -381,16 +390,26 @@ function ansi(value, colorCode, enabled) {
 
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").trim();
-  return ["low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
 }
 
 function normalizeTokenMode(value) {
   return String(value || "vibyra").trim().toLowerCase() === "provider" ? "provider" : "vibyra";
 }
 
-function normalizeDesktopUrl(url, port) {
-  const explicit = String(url || "").trim().replace(/\/+$/, "");
-  if (explicit) return explicit;
+export function normalizeDesktopUrl(url, port) {
+  const explicit = String(url || "").trim();
+  if (explicit) {
+    try {
+      const parsed = new URL(explicit);
+      parsed.pathname = parsed.pathname.replace(/\/desktop\/?$/, "").replace(/\/+$/, "");
+      parsed.search = "";
+      parsed.hash = "";
+      return parsed.toString().replace(/\/+$/, "");
+    } catch {
+      return explicit.replace(/\/desktop\/?$/, "").replace(/\/+$/, "");
+    }
+  }
   const nextPort = Number.parseInt(String(port || "4317"), 10);
   return `http://127.0.0.1:${Number.isFinite(nextPort) ? nextPort : 4317}`;
 }

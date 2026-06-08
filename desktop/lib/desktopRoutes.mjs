@@ -4,15 +4,16 @@ import { handleAiTerminalRoutes } from "./aiTerminals.mjs";
 import { handlePtyTerminalRoutes } from "./ptyTerminals.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
 import { sendDesktopChat } from "./desktopChat.mjs";
-import { transcribeDesktopVoice } from "./desktopVoice.mjs";
+import { speakDesktopVoice, transcribeDesktopVoice } from "./desktopVoice.mjs";
 import { openDesktopPreview } from "./desktopPreview.mjs";
 import { handleDesktopMemoryRoutes } from "./desktopMemoryRoutes.mjs";
 import { startPhonePreview } from "./phonePreview.mjs";
 import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
-import { readBody, send, sendFile } from "./http.mjs";
+import { headers, readBody, send, sendFile } from "./http.mjs";
 import { openRouterModelPayload } from "./openRouterModels.mjs";
 import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } from "./providerAccounts.mjs";
+import { localAiStatus } from "./localAi.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { appState, markPhoneConnected, publicState } from "./state.mjs";
@@ -61,9 +62,21 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, await sendDesktopChat(await readBody(req)));
     return true;
   }
+  if (req.method === "GET" && url.pathname === "/desktop/local-ai") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await localAiStatus());
+    return true;
+  }
   if (req.method === "POST" && url.pathname === "/desktop/voice/transcribe") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await transcribeDesktopVoice(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/voice/speak") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const speech = await speakDesktopVoice(await readBody(req));
+    res.writeHead(200, headers(speech.contentType));
+    res.end(speech.audio);
     return true;
   }
   if (url.pathname === "/desktop/project-memory" || url.pathname.startsWith("/desktop/project-memory/")) {

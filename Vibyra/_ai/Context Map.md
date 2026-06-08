@@ -34,6 +34,7 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 
 - Shell UI/auth gate/launcher: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Local Vibyra AI, Ollama, model/runtime status: `Desktop/Local Vibyra AI.md`
 - AI-terminal voice and editable project memory: `Desktop/Voice And Project Memory.md`
 - Pairing/phone session/LAN URLs: `Desktop/Pairing And Phone Session.md`
 - Discovery/browse/search/preview: `Desktop/Projects And Preview.md`

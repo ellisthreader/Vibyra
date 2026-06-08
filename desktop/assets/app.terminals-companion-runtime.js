@@ -11,12 +11,22 @@ function bindTerminalCompanion() {
     button.addEventListener("click", launchTerminalPhonePreview);
   });
   const companion = document.querySelector("[data-terminal-companion]");
+  if (typeof bindTerminalCompanionLayout === "function") bindTerminalCompanionLayout(companion);
+  if (typeof bindTerminalVoiceHotkey === "function") bindTerminalVoiceHotkey();
+  if (terminalCompanionMode === "chat" && typeof bindTerminalAiChat === "function") bindTerminalAiChat(companion);
   if (terminalCompanionMode === "voice" && typeof bindTerminalVoice === "function") bindTerminalVoice(companion);
-  if (terminalCompanionMode === "memory" && typeof bindTerminalMemory === "function") bindTerminalMemory(companion);
+  if (companion?.querySelector("[data-terminal-memory-workspace]") && typeof bindTerminalMemory === "function") {
+    bindTerminalMemory(companion);
+  }
   if (!document.body.dataset.terminalCompanionEscapeBound) {
     document.body.dataset.terminalCompanionEscapeBound = "1";
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && terminalCompanionMode) closeTerminalCompanionPanel();
+      if (event.key !== "Escape" || !terminalCompanionMode) return;
+      if (typeof terminalMemoryIsFullscreen === "function" && terminalMemoryIsFullscreen()) {
+        setTerminalMemoryFullscreen(false);
+        return;
+      }
+      closeTerminalCompanionPanel();
     });
   }
 }
@@ -106,7 +116,7 @@ function switchTerminalCompanionContext(id, activate) {
     activate(id);
     if (terminalCompanionMode) syncTerminalCompanion("terminal-change");
   };
-  const memoryBusy = terminalCompanionMode === "memory"
+  const memoryBusy = Boolean(document.querySelector("[data-terminal-memory-workspace]"))
     && typeof terminalMemoryState !== "undefined"
     && (terminalMemoryState.dirty || terminalMemoryState.saving);
   if (!memoryBusy || typeof flushTerminalMemorySave !== "function") {

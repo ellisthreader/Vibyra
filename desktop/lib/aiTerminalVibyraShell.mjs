@@ -13,6 +13,7 @@ export function terminalEnv({ agent, label, model, reasoningEffort, permissionMo
     COLUMNS: String(cols),
     LINES: String(rows),
     PATH: `${commandDir}${delimiter}${process.env.PATH || ""}`,
+    VIBYRA_DESKTOP_URL: `http://127.0.0.1:${PORT}`,
     VIBYRA_DESKTOP_PORT: String(PORT),
     VIBYRA_TERMINAL_AGENT: agent,
     VIBYRA_TERMINAL_LABEL: label,
