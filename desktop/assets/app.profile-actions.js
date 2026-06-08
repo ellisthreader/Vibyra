@@ -1,15 +1,14 @@
-function bindProfileControls() {
-  document.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
-  document.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
-  document.querySelectorAll("[data-profile-select]").forEach((select) => select.addEventListener("change", () => setDesktopPreference(select.dataset.profileSelect, select.value)));
-  bindProfileAppearanceImages();
-  document.getElementById("profile-section-search")?.addEventListener("input", (event) => updateProfileSectionSearch(event.target.value));
-  document.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu; renderProfile(); }));
-  document.querySelectorAll("[data-device-revoke]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); revokeDesktopDevice(button.dataset.deviceRevoke); }));
+function bindProfileControls(root = profileRenderTarget() || document) {
+  root.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
+  root.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
+  root.querySelectorAll("[data-profile-select]").forEach((select) => select.addEventListener("change", () => setDesktopPreference(select.dataset.profileSelect, select.value)));
+  bindProfileAppearanceImages(root);
+  root.querySelector("#profile-section-search")?.addEventListener("input", (event) => updateProfileSectionSearch(event.target.value));
+  root.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu; renderProfile(); }));
+  root.querySelectorAll("[data-device-revoke]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); revokeDesktopDevice(button.dataset.deviceRevoke); }));
 }
-
-function bindProfileAppearanceImages() {
-  document.querySelectorAll("[data-profile-appearance-image]").forEach((image) => {
+function bindProfileAppearanceImages(root = profileRenderTarget() || document) {
+  root.querySelectorAll("[data-profile-appearance-image]").forEach((image) => {
     const preview = image.closest(".profile-appearance-preview");
     const showFallback = () => {
       image.hidden = true;
@@ -60,6 +59,7 @@ function handleProfileRow(action, key, button) {
   if (action === "show-delete-account") { profileDeleteOpen = true; profileDeleteMessage = ""; renderProfile(); requestAnimationFrame(() => document.querySelector(".profile-delete-confirm")?.scrollIntoView({ block: "nearest" })); return; }
   if (action === "hide-delete-account") { profileDeleteOpen = false; profileDeleteMessage = ""; renderProfile(); return; }
   if (action === "set-pref") { setDesktopPreference(key, button.dataset.profileValue); return; }
+  if (action === "adjust-voice-speed") { adjustDesktopVoiceSpeed(button.dataset.profileValue); return; }
   if (action === "toggle-pref") { toggleDesktopPreference(key); return; }
   if (action === "delete-account") { deleteDesktopAccount(); return; }
   if (action === "logout") { if (typeof desktopSignOut === "function") desktopSignOut(); }
@@ -139,8 +139,9 @@ function setDesktopPreference(key, value) {
   if (key === "appearance") prefs.appearance = value;
   if (key === "language") prefs.language = value;
   if (key === "chatFont") prefs.chatFont = value;
+  setDesktopVoicePreference(prefs, key, value);
   saveDesktopPreferences(prefs);
-  renderProfile();
+  syncProfilePreferenceControls(key, prefs);
 }
 
 function toggleDesktopPreference(key) {
@@ -152,7 +153,7 @@ function toggleDesktopPreference(key) {
     prefs[key] = !prefs[key];
   }
   saveDesktopPreferences(prefs);
-  renderProfile();
+  syncProfilePreferenceControls(key, prefs);
 }
 
 async function deleteDesktopAccount() {

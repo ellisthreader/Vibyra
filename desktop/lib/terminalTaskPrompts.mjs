@@ -8,14 +8,13 @@ const MAX_HISTORY_ITEMS = 3;
 export function agenticTerminalTasks(action, context = {}) {
   const tasks = Array.isArray(action?.tasks) ? action.tasks : [];
   if (!tasks.length) return tasks;
-  const readOnlySource = [
-    context.userPrompt,
-    ...tasks.map((item) => item?.prompt || item?.task || item?.text || item)
-  ].join("\n");
+  const taskText = tasks.map((item) => item?.prompt || item?.task || item?.text || item).join("\n");
+  const userPrompt = String(context.userPrompt || "");
   const promptContext = {
     ...context,
     objective: taskObjective(tasks, context.userPrompt),
-    readOnly: readOnlyRequest(readOnlySource)
+    readOnly: readOnlyRequest(userPrompt)
+      || (!mutationRequest(userPrompt) && readOnlyRequest(taskText))
   };
   return tasks.map((item, index) => {
     const source = item && typeof item === "object" ? item : { task: item };
@@ -176,8 +175,17 @@ function taskObjective(tasks, userPrompt) {
 }
 
 function readOnlyRequest(value) {
-  return /\b(?:(?:do not|don't|dont|never)\s+(?:(?:change|edit|modify|write|touch)\s+(?:any\s+)?(?:code|files?|source|tests?)|make\s+(?:any\s+)?(?:code\s+)?changes?)|without\s+(?:(?:changing|editing|modifying|writing|touching)\s+(?:any\s+)?(?:code|files?|source|tests?)|making\s+(?:any\s+)?(?:code\s+)?changes?)|read[- ]only|no (?:code changes?|edits?|modifications?)|(?:diagnosis|diagnose|audit|review|inspection)\s+only|only\s+(?:report|list|summarize)\s+(?:the\s+)?(?:findings?|problems?|issues?))\b/i
-    .test(String(value || "").replace(/[’‘]/g, "'"));
+  const text = String(value || "").replace(/[’‘]/g, "'");
+  const explicit = /\b(?:(?:do not|don't|dont|never)\s+(?:(?:change|edit|modify|write|touch)\s+(?:any\s+)?(?:code|files?|source|tests?)|make\s+(?:any\s+)?(?:code\s+)?changes?)|without\s+(?:(?:changing|editing|modifying|writing|touching)\s+(?:any\s+)?(?:code|files?|source|tests?)|making\s+(?:any\s+)?(?:code\s+)?changes?)|read[- ]only|no (?:code changes?|edits?|modifications?)|(?:diagnosis|diagnose|audit|review|inspection)\s+only|only\s+(?:report|list|summarize)\s+(?:the\s+)?(?:findings?|problems?|issues?))\b/i.test(text);
+  if (explicit) return true;
+  const audit = /\b(?:audit|diagnos(?:e|is|ing)|review|inspect(?:ion|ing)?)\b/i.test(text);
+  const mutation = /\b(?:fix|implement|edit|modify|change|update|refactor|rewrite|patch|repair)\b/i.test(text);
+  return audit && !mutation;
+}
+
+function mutationRequest(value) {
+  return /\b(?:fix(?:es|ing)?|implement|edit|modify|change|update|refactor|rewrite|patch|repair|improve|build|create|add)\b/i
+    .test(String(value || ""));
 }
 
 function clean(value, limit) {

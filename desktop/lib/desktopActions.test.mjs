@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { desktopActionsForPrompt } from "./desktopActions.mjs";
+import { correctDesktopCapabilityDenial, desktopActionsForPrompt } from "./desktopActions.mjs";
 
 test("plans a multi-terminal Codex launch from natural language", () => {
   const result = desktopActionsForPrompt(
@@ -18,6 +18,37 @@ test("plans a multi-terminal Codex launch from natural language", () => {
   }]);
   assert.match(result.reply, /watch them live/i);
   assert.match(result.reply, /Voice and Memory/);
+});
+
+test("keeps launch permissions attached to a requested new terminal batch", () => {
+  const result = desktopActionsForPrompt(
+    "I want you to open six terminals using 5.5 GPT. Give them full permission. Open it on my project called SAAS."
+  );
+
+  assert.deepEqual(result.actions, [{
+    type: "open_terminals",
+    count: 6,
+    model: "gpt-5.5",
+    effort: "medium",
+    permissionMode: "full",
+    projectId: "",
+    projectName: "SAAS"
+  }]);
+  assert.match(result.reply, /Opening 6 GPT-5\.5 terminals with full access in project SAAS/);
+});
+
+test("keeps existing-terminal permission follow-ups as relaunch actions", () => {
+  const result = desktopActionsForPrompt(
+    "Give all open Codex terminals full permissions",
+    { terminalId: "terminal-1" }
+  );
+
+  assert.deepEqual(result.actions, [{
+    type: "set_terminal_permissions",
+    scope: "all",
+    permissionMode: "full",
+    terminalId: ""
+  }]);
 });
 
 test("expands a broad each-terminal error-finding request into deterministic tasks", () => {
@@ -169,25 +200,62 @@ test("diagnosis-only wording preserves the complete terminal task objective", ()
   assert.match(result.actions[0].tasks[0].task, /diagnosis only of the terminal page/i);
 });
 
-test("supports out-of subsets and never launches terminals for unsupported task wording", () => {
+test("supports out-of subsets and pronoun-based existing terminal tasks", () => {
   const result = desktopActionsForPrompt(
     "Assign two out of the four open terminals to audit the terminal page.",
+    { projectId: "saas" }
+  );
+  const pronounResult = desktopActionsForPrompt(
+    "Use three of those open terminals for a frontend audit.",
     { projectId: "saas" }
   );
 
   assert.equal(result.actions[0].type, "run_terminal_tasks");
   assert.equal(result.actions[0].target, "existing");
   assert.equal(result.actions[0].tasks.length, 2);
-  assert.equal(
-    desktopActionsForPrompt("Use three of those open terminals for a frontend audit.", { projectId: "saas" }),
-    null
-  );
+  assert.equal(pronounResult.actions[0].type, "run_terminal_tasks");
+  assert.equal(pronounResult.actions[0].target, "existing");
+  assert.equal(pronounResult.actions[0].tasks.length, 3);
 });
 
 test("curly-apostrophe negation prevents terminal assignment", () => {
   assert.equal(
     desktopActionsForPrompt("Don’t assign three terminals to audit the terminal page."),
     null
+  );
+});
+
+test("normalizes the reported use-launched frontend audit request", () => {
+  const result = desktopActionsForPrompt(
+    "I want you to use three of them terminals you have just launched, front a front-end order of the terminal page.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 3);
+  assert.match(result.actions[0].tasks[0].task, /front-end audit of the terminal page/i);
+});
+
+test("corrects false model denials for missed terminal action wording", () => {
+  const reply = correctDesktopCapabilityDenial(
+    "Use three terminals for a frontend audit.",
+    "I can't directly launch actual terminals because I am not a terminal emulator."
+  );
+
+  assert.match(reply, /Vibyra Desktop can open, close, and assign work/i);
+  assert.match(reply, /no terminal action ran/i);
+  assert.doesNotMatch(reply, /can't|cannot|not a terminal emulator/i);
+});
+
+test("does not rewrite ordinary terminal explanations", () => {
+  assert.equal(
+    correctDesktopCapabilityDenial(
+      "Explain the terminal UI.",
+      "The terminal UI uses persistent PTY sessions."
+    ),
+    "The terminal UI uses persistent PTY sessions."
   );
 });
 
@@ -204,9 +272,80 @@ test("uses the previous specific goal for a vague eight-subagent retry", () => {
   );
 
   assert.equal(result.actions[0].type, "run_terminal_tasks");
-  assert.equal(result.actions[0].target, "existing_then_new");
+  assert.equal(result.actions[0].target, "existing");
   assert.equal(result.actions[0].tasks.length, 8);
   assert.equal(result.actions[0].tasks[0].task, "Inspect terminal page for errors");
+});
+
+test("uses exact recent batch terminal ids for an ambiguous follow-up task", () => {
+  const result = desktopActionsForPrompt(
+    "Assign three terminals to audit the terminal page.",
+    {
+      projectId: "",
+      desktopActionContext: {
+        recentTerminalBatch: {
+          batchId: "batch-7",
+          projectId: "saas",
+          terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+        }
+      }
+    }
+  );
+
+  assert.equal(result.actions[0].target, "existing");
+  assert.deepEqual(result.actions[0].terminalIds, ["terminal-8", "terminal-9", "terminal-10"]);
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 3);
+});
+
+test("uses only the requested subset from a recent terminal batch", () => {
+  const result = desktopActionsForPrompt(
+    "Give two of them tasks to review terminal recovery.",
+    {
+      desktopActionContext: {
+        recentTerminalBatch: {
+          projectId: "saas",
+          terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+        }
+      }
+    }
+  );
+
+  assert.equal(result.actions[0].target, "existing");
+  assert.deepEqual(result.actions[0].terminalIds, ["terminal-8", "terminal-9"]);
+  assert.equal(result.actions[0].projectId, "saas");
+});
+
+test("opens task replacements only when the user explicitly permits it", () => {
+  const retry = desktopActionsForPrompt(
+    "Try again and assign 3 terminals to audit the terminal page.",
+    { projectId: "saas" }
+  );
+  const allowedFallback = desktopActionsForPrompt(
+    "Assign 3 terminals to audit the terminal page and open more terminals if needed.",
+    { projectId: "saas" }
+  );
+
+  assert.equal(retry.actions[0].target, "existing");
+  assert.equal(allowedFallback.actions[0].target, "existing_then_new");
+});
+
+test("task wording around terminals cannot fall through to a launch action", () => {
+  const result = desktopActionsForPrompt(
+    "Run a frontend audit on the terminals you opened.",
+    {
+      desktopActionContext: {
+        recentTerminalBatch: {
+          projectId: "saas",
+          terminalIds: ["terminal-1", "terminal-2", "terminal-3"]
+        }
+      }
+    }
+  );
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.deepEqual(result.actions[0].terminalIds, ["terminal-1", "terminal-2", "terminal-3"]);
 });
 
 test("does not execute explanatory or hypothetical subagent text", () => {
@@ -233,6 +372,7 @@ test("parses explicit numbered tasks with common top-level terminal settings", (
 
   assert.deepEqual(result.actions, [{
     type: "run_terminal_tasks",
+    target: "new",
     model: "gpt-5.5",
     effort: "high",
     permissionMode: "full",
@@ -254,6 +394,7 @@ test("parses bullet tasks with a common explicit project reference", () => {
 
   assert.deepEqual(result.actions[0], {
     type: "run_terminal_tasks",
+    target: "new",
     model: "auto",
     effort: "medium",
     permissionMode: "standard",

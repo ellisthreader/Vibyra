@@ -15,8 +15,8 @@ test("companion keeps the empty chat and composer concise", () => {
 test("companion action results use the executor summary", async () => {
   const calls = [];
   const context = companionContext({
-    runDesktopActions: async (actions) => {
-      calls.push(actions);
+    runDesktopActions: async (actions, options) => {
+      calls.push({ actions, options });
       return "Opening 1 GPT-5.5 terminal in Terminals.";
     }
   });
@@ -26,7 +26,8 @@ test("companion action results use the executor summary", async () => {
 
   assert.equal(text, "Opening 1 GPT-5.5 terminal in Terminals.");
   assert.equal(calls.length, 1);
-  assert.equal(calls[0], actions);
+  assert.equal(calls[0].actions, actions);
+  assert.equal(calls[0].options.desktopActionContextScope, "terminal:terminal-1");
 });
 
 test("companion ordinary chat does not invoke the action executor", async () => {
@@ -91,6 +92,9 @@ test("companion preserves an intentional no-project terminal setup scope", () =>
 
 function companionContext(overrides = {}) {
   const context = {
+    desktopActionContextForScope: () => null,
+    desktopActionContextScope: (kind, id) => `${kind}:${id}`,
+    registerDesktopActionContextStore() {},
     requestAnimationFrame() {},
     terminalCompanionActiveTerminal: () => ({ id: "terminal-1" }),
     ...overrides

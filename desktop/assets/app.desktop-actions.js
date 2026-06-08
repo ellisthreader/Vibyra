@@ -1,24 +1,26 @@
-async function runDesktopActions(actions) {
+let desktopAssignmentSequence = 0;
+
+async function runDesktopActions(actions, executionContext = {}) {
   if (!Array.isArray(actions) || !actions.length) return "";
   const summaries = [];
   for (const action of actions) {
-    const summary = await runDesktopAction(action);
+    const summary = await runDesktopAction(action, executionContext);
     if (summary) summaries.push(summary);
   }
   return summaries.join("\n");
 }
 
-async function runDesktopAction(action) {
+async function runDesktopAction(action, executionContext = {}) {
   if (!action || typeof action !== "object") return "";
-  if (action.type === "open_terminals") return openTerminalsFromDesktopAction(action);
-  if (action.type === "run_terminal_tasks") return runTerminalTasksFromDesktopAction(action);
+  if (action.type === "open_terminals") return openTerminalsFromDesktopAction(action, executionContext);
+  if (action.type === "run_terminal_tasks") return runTerminalTasksFromDesktopAction(action, executionContext);
   if (action.type === "set_terminal_permissions") return setTerminalPermissionsFromDesktopAction(action);
   if (action.type === "close_terminals") return closeTerminalsFromDesktopAction(action);
   if (action.type === "open_terminal_companion") return openCompanionFromDesktopAction(action);
   throw new Error("Vibyra AI returned an unsupported desktop action.");
 }
 
-async function openTerminalsFromDesktopAction(action) {
+async function openTerminalsFromDesktopAction(action, executionContext = {}) {
   const requested = normalizeCount(action.count);
   const available = Math.max(0, maxTerminals - terminals.length);
   const count = Math.min(requested, available);
@@ -49,7 +51,17 @@ async function openTerminalsFromDesktopAction(action) {
     workspaceMode
   };
   setPage("terminals");
+  const beforeIds = new Set(terminals.map((terminal) => terminal.id));
   createTerminals(count, model.key, options);
+  const terminalIds = terminals
+    .filter((terminal) => !beforeIds.has(terminal.id))
+    .map((terminal) => terminal.id);
+  await recordDesktopActionResult(action, {
+    status: "opened",
+    terminalIds,
+    requestedCount: requested,
+    openedCount: terminalIds.length || count
+  }, executionContext);
   const access = options.permissionMode === "full" ? " with full access" : "";
   const workspace = workspaceMode === "worktree" ? " on separate local Git branches" : "";
   const speed = options.effort === "low" ? " in fast mode" : "";
@@ -57,13 +69,17 @@ async function openTerminalsFromDesktopAction(action) {
   return `Opening ${count} ${model.label} terminal${count === 1 ? "" : "s"}${speed}${access}${workspace} in Terminals. Voice and Memory are available in the terminal toolbar.${capacity}`;
 }
 
-async function runTerminalTasksFromDesktopAction(action) {
+async function runTerminalTasksFromDesktopAction(action, executionContext = {}) {
   const tasks = (Array.isArray(action.tasks) ? action.tasks : [])
     .map((item) => desktopTerminalTask(item, action))
     .filter((item) => item.prompt);
   if (!tasks.length) return "No terminal tasks were provided.";
-  if (action.target === "existing" || action.target === "existing_then_new") {
-    return assignExistingTerminalTasks(tasks, action);
+  const target = String(action.target || "").trim().toLowerCase();
+  if (!["new", "existing", "terminal_ids", "latest_batch", "existing_then_new"].includes(target)) {
+    return "The terminal task target was not specified, so no terminals were changed.";
+  }
+  if (target !== "new") {
+    return assignExistingTerminalTasks(tasks, action, executionContext);
   }
   const available = Math.max(0, maxTerminals - terminals.length);
   const queued = tasks.slice(0, available);
@@ -96,40 +112,82 @@ async function runTerminalTasksFromDesktopAction(action) {
   })).filter(Boolean);
   forceTerminalRender = true;
   render();
+  const terminalIds = launches.map((terminal) => terminal.id).filter(Boolean);
+  await recordDesktopActionResult(action, {
+    status: "queued",
+    terminalIds,
+    queuedTerminalIds: terminalIds,
+    requestedCount: tasks.length,
+    queuedCount: launches.length
+  }, executionContext);
   const capacity = launches.length < tasks.length ? ` ${tasks.length - launches.length} could not start because the 12-terminal limit was reached.` : "";
   const workspace = workspaceMode === "worktree" ? " on separate local Git branches" : "";
-  return `Starting ${launches.length} terminal task${launches.length === 1 ? "" : "s"}${workspace} in Terminals.${capacity}`;
+  return `Queued ${launches.length} terminal task${launches.length === 1 ? "" : "s"}${workspace} in Terminals.${capacity}`;
 }
 
-async function assignExistingTerminalTasks(tasks, action) {
+async function assignExistingTerminalTasks(tasks, action, executionContext = {}) {
   if (typeof syncPtyTerminals === "function") await syncPtyTerminals();
-  const hasProject = Object.prototype.hasOwnProperty.call(action || {}, "projectId");
+  const requestedIds = desktopActionTerminalIds(action);
+  const target = String(action?.target || "").trim().toLowerCase();
+  const requiresExactTargets = ["terminal_ids", "latest_batch"].includes(target)
+    || [action?.terminalIds, action?.latestBatchTerminalIds, action?.latestBatch?.terminalIds]
+      .some((value) => Array.isArray(value));
+  const hasExactTargets = requestedIds.length > 0;
+  if (requiresExactTargets && !hasExactTargets) {
+    const summary = "The requested terminal batch is no longer available, so no tasks were assigned.";
+    setPage("terminals");
+    await recordDesktopActionResult(action, {
+      status: "failed",
+      terminalIds: [],
+      results: [],
+      error: summary
+    }, executionContext);
+    return summary;
+  }
+  const hasProject = !hasExactTargets && Object.prototype.hasOwnProperty.call(action || {}, "projectId");
   const projectId = hasProject ? String(action.projectId || "") : "";
-  const eligible = terminals.filter((terminal) => {
+  const isEligible = (terminal) => {
     if (terminal.ptyStatus === "exited" || terminal.ptyStatus === "unavailable") return false;
     if (String(terminal.agent || "").toLowerCase() === "shell") return false;
+    const providerState = String(terminal.providerState || "").trim().toLowerCase();
+    if (["busy", "fallback-shell", "exited", "unavailable", "error"].includes(providerState)) return false;
     if (action.permissionMode === "full" && terminal.permissionMode !== "full") return false;
     if (action.model && action.model !== "auto" && String(terminal.model || "") !== String(action.model)) return false;
     return !hasProject || String(terminal.projectId || "") === projectId;
-  });
-  const activeIndex = eligible.findIndex((terminal) => terminal.id === activeTerminalId);
-  if (activeIndex > 0) eligible.unshift(eligible.splice(activeIndex, 1)[0]);
+  };
+  const eligible = hasExactTargets
+    ? requestedIds.map((id) => terminals.find((terminal) => terminal.id === id)).filter((terminal) => terminal && isEligible(terminal))
+    : terminals.filter(isEligible);
+  if (!hasExactTargets) {
+    const activeIndex = eligible.findIndex((terminal) => terminal.id === activeTerminalId);
+    if (activeIndex > 0) eligible.unshift(eligible.splice(activeIndex, 1)[0]);
+  }
   const assignments = tasks.slice(0, eligible.length);
-  if (!assignments.length && action.target !== "existing_then_new") {
+  const allowOpenMore = desktopActionAllowsOpenMore(action);
+  if (!assignments.length && !allowOpenMore) {
     setPage("terminals");
-    return hasProject
+    const summary = hasExactTargets
+      ? "None of the requested terminals are available for assignment."
+      : hasProject
       ? "No running terminals are available in the selected project."
       : "No running terminals are available.";
+    await recordDesktopActionResult(action, {
+      status: "failed",
+      terminalIds: requestedIds,
+      results: [],
+      error: summary
+    }, executionContext);
+    return summary;
   }
 
   setPage("terminals");
   const results = await Promise.all(assignments.map((task, index) =>
     sendExistingTerminalTask(eligible[index], task.prompt)
   ));
-  const assigned = results.filter(Boolean).length;
+  const assigned = results.filter((result) => result.ok).length;
   const failed = results.length - assigned;
-  const failedTasks = assignments.filter((_, index) => !results[index]);
-  const remaining = action.target === "existing_then_new"
+  const failedTasks = assignments.filter((_, index) => !results[index].ok);
+  const remaining = allowOpenMore
     ? [...failedTasks, ...tasks.slice(assignments.length)]
     : [];
   const template = eligible[0] || null;
@@ -155,10 +213,20 @@ async function assignExistingTerminalTasks(tasks, action) {
     saveTerminals();
     render();
   }
+  const launchedIds = launched.map((terminal) => terminal.id).filter(Boolean);
+  await recordDesktopActionResult(action, {
+    status: failed || tasks.length > assignments.length ? "partial" : "completed",
+    terminalIds: eligible.slice(0, assignments.length).map((terminal) => terminal.id),
+    queuedTerminalIds: launchedIds,
+    results,
+    assignedCount: assigned,
+    failedCount: failed,
+    queuedCount: launched.length
+  }, executionContext);
   const details = failed
     ? ` ${failed} assignment${failed === 1 ? "" : "s"} could not be delivered.`
     : "";
-  const unassigned = action.target === "existing" ? tasks.length - assignments.length : 0;
+  const unassigned = allowOpenMore ? 0 : tasks.length - assignments.length;
   const unavailable = unassigned
     ? ` ${unassigned} task${unassigned === 1 ? "" : "s"} had no compatible running terminal.`
     : "";
@@ -173,49 +241,124 @@ async function assignExistingTerminalTasks(tasks, action) {
 }
 
 async function sendExistingTerminalTask(terminal, prompt) {
-  const preparedPrompt = typeof terminalTaskInputPrompt === "function"
-    ? terminalTaskInputPrompt(terminal, prompt)
-    : String(prompt || "");
-  const safePrompt = String(preparedPrompt || "")
+  const safePrompt = String(prompt || "")
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim()
     .slice(0, 8000);
-  if (!safePrompt) return false;
-  if (typeof terminalTaskActivityStart === "function") terminalTaskActivityStart(terminal, safePrompt);
-  const input = `\x1b[200~${safePrompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    try {
-      const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/input`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.ok) {
-        terminal.notice = null;
-        if (typeof terminalTaskActivityAccepted === "function") terminalTaskActivityAccepted(terminal);
-        if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
-        return true;
-      }
-      const starting = response.status === 409
-        && /terminal is not running/i.test(String(result.error || ""))
-        && terminal.ptyStatus === "starting";
-      if (starting && attempt < 5) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        continue;
-      }
-      terminal.notice = result.error || "The terminal job could not be delivered.";
-      if (typeof terminalTaskActivityFailed === "function") terminalTaskActivityFailed(terminal);
-      if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
-      return false;
-    } catch {
-      terminal.notice = "The terminal job could not be delivered.";
-      if (typeof terminalTaskActivityFailed === "function") terminalTaskActivityFailed(terminal);
-      if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
-      return false;
-    }
+  const assignmentId = desktopAssignmentId(terminal.id);
+  if (!safePrompt) {
+    return {
+      ok: false,
+      assignmentId,
+      terminalId: terminal.id,
+      status: "rejected",
+      error: "The terminal task prompt was empty."
+    };
   }
-  return false;
+  if (typeof terminalTaskActivityStart === "function") {
+    terminalTaskActivityStart(terminal, safePrompt, assignmentId);
+  }
+  try {
+    const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId, prompt: safePrompt })
+    });
+    const result = await response.json().catch(() => ({}));
+    const assignment = result.assignment || result;
+    const resolvedAssignmentId = String(assignment.assignmentId || assignmentId);
+    const status = String(assignment.status || assignment.state || (response.ok ? "accepted" : "failed"));
+    if (response.ok) {
+      terminal.notice = null;
+      if (typeof terminalTaskActivityAccepted === "function") {
+        terminalTaskActivityAccepted(terminal, {
+          assignmentId: resolvedAssignmentId,
+          acceptedAt: assignment.acceptedAt
+        });
+      }
+      if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
+      return {
+        ok: true,
+        assignmentId: resolvedAssignmentId,
+        terminalId: String(assignment.terminalId || terminal.id),
+        status,
+        providerState: assignment.providerState || ""
+      };
+    }
+    const error = result.error || "The terminal job could not be delivered.";
+    terminal.notice = error;
+    if (typeof terminalTaskActivityFailed === "function") {
+      terminalTaskActivityFailed(terminal, assignmentId);
+    }
+    if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
+    return {
+      ok: false,
+      assignmentId: resolvedAssignmentId,
+      terminalId: String(assignment.terminalId || terminal.id),
+      status,
+      providerState: assignment.providerState || "",
+      error
+    };
+  } catch {
+    const error = "The terminal job could not be delivered.";
+    terminal.notice = error;
+    if (typeof terminalTaskActivityFailed === "function") {
+      terminalTaskActivityFailed(terminal, assignmentId);
+    }
+    if (typeof refreshPtyTerminalsDom === "function") refreshPtyTerminalsDom();
+    return { ok: false, assignmentId, terminalId: terminal.id, status: "failed", error };
+  }
+}
+
+function desktopActionTerminalIds(action) {
+  const candidates = [
+    action?.terminalIds,
+    action?.latestBatchTerminalIds,
+    action?.latestBatch?.terminalIds
+  ];
+  const ids = candidates.find((value) => Array.isArray(value)) || [];
+  return Array.from(new Set(ids.map((id) => String(id || "").trim()).filter(Boolean)));
+}
+function desktopActionAllowsOpenMore(action) {
+  return action?.allowOpenMore === true
+    || action?.userApprovedOpenMore === true
+    || action?.allowAdditionalTerminals === true;
+}
+function desktopAssignmentId(terminalId) {
+  desktopAssignmentSequence += 1;
+  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `assignment-${Date.now()}-${desktopAssignmentSequence}-${String(terminalId || "terminal")}`;
+}
+async function recordDesktopActionResult(action, details, executionContext = {}) {
+  if (typeof recordDesktopActionExecution !== "function") return;
+  const scope = String(executionContext.desktopActionContextScope || "");
+  if (!scope) return;
+  const executionStatus = details.status === "opened" || details.status === "completed"
+    ? "completed"
+    : details.status === "queued" ? "pending"
+      : details.status === "partial" ? "partial"
+        : details.status === "failed" ? "failed"
+          : "running";
+  try {
+    await recordDesktopActionExecution(scope, {
+      batchId: String(details.batchId || action.batchId || desktopActionBatchId()),
+      terminalIds: details.terminalIds,
+      projectId: String(action.projectId || ""),
+      model: String(action.model || ""),
+      effort: String(action.effort || ""),
+      permissionMode: action.permissionMode === "full" ? "full" : "standard",
+      workspaceMode: String(action.workspaceMode || ""),
+      executionStatus
+    });
+  } catch {
+    // Assignment delivery must not fail because transient chat context could not be recorded.
+  }
+}
+
+function desktopActionBatchId() {
+  return `terminal-batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function desktopTerminalTask(item, action) {

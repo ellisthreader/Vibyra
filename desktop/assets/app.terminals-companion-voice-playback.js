@@ -18,10 +18,11 @@ async function playTerminalVoiceReply(text, generation) {
 }
 
 async function requestTerminalVoiceAudio(text, signal) {
+  const preferences = desktopVoicePreferences();
   const response = await fetch("/desktop/voice/speak", {
     method: "POST",
     headers: { Accept: "audio/wav, audio/*, application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, voice: preferences.voice, speed: preferences.speed }),
     signal
   });
   const contentType = String(response.headers.get("content-type") || "").toLowerCase();
@@ -71,7 +72,7 @@ function fallbackTerminalVoicePlayback(text, generation, error) {
 function speakTerminalVoiceWithSystem(text, generation) {
   if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return false;
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1;
+  utterance.rate = desktopVoicePreferences().speed;
   utterance.onstart = () => {
     if (!terminalVoiceGenerationCurrent(generation)) return;
     terminalVoiceState.speaking = true;

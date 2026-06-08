@@ -1,8 +1,9 @@
-import { dirname } from "node:path";
+import { dirname, isAbsolute } from "node:path";
 import { readFile } from "node:fs/promises";
 import { headers } from "./http.mjs";
 import { appState, TOKEN } from "./state.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
+import { isDirectory, projectFromPath } from "./projectInfo.mjs";
 import { runningProjectDevServerUrl } from "./previewDevServer.mjs";
 import { previewServerProxyUrl, previewUrl } from "./previewUrls.mjs";
 import { contentTypeFor, isPreviewImagePath, missingPreviewImageSvg, previewEntryPath, previewMountDirectory, rewritePreviewCss, rewritePreviewHtml, safeProjectFile } from "./previewStatic.mjs";
@@ -23,7 +24,7 @@ export async function serveProjectPreview(res, url) {
   }
 
   const projectId = decodeURIComponent(match[1]);
-  const project = findProjectById(projectId);
+  const project = await resolvePreviewProject(projectId);
   if (!project) {
     sendHtml(res, 404, previewShell("Project not found", "Vibyra Desktop could not find that workspace anymore."));
     return;
@@ -167,12 +168,25 @@ export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer,
 }
 
 async function projectPreviewRefererPath(projectId, requestedPath) {
-  const project = findProjectById(projectId);
+  const project = await resolvePreviewProject(projectId);
   const entryPath = project ? await previewEntryPath(project) : "";
   const mountDirectory = previewMountDirectory(entryPath);
   const cleanPath = String(requestedPath || "/").replace(/^\/+/, "");
   if (!mountDirectory || cleanPath.startsWith(`${mountDirectory}/`)) return `/${cleanPath}`;
   return `/${mountDirectory}/${cleanPath}`;
+}
+
+async function resolvePreviewProject(projectId) {
+  const cached = findProjectById(projectId);
+  if (cached) return cached;
+  try {
+    const path = Buffer.from(String(projectId || ""), "base64url").toString("utf8");
+    if (!isAbsolute(path) || !(await isDirectory(path))) return null;
+    const project = await projectFromPath(path);
+    return project.id === projectId ? project : null;
+  } catch {
+    return null;
+  }
 }
 
 

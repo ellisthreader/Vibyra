@@ -262,11 +262,29 @@ function addBroadTerminalTaskCases(add) {
     ], { target: "existing" })
   ));
   add(actionCase(
+    "tasks.reported.use-three-launched-frontend-order",
+    "I want you to use three of them terminals you have just launched, front a front-end order of the terminal page.",
+    terminalTasksAction([
+      "Investigate: a front-end audit of the terminal page",
+      "Run focused tests for: a front-end audit of the terminal page",
+      "Review relevant code paths for: a front-end audit of the terminal page"
+    ], { target: "existing" })
+  ));
+  add(actionCase(
+    "tasks.pronoun.use-three-open-terminals",
+    "Use three of those open terminals for a frontend audit.",
+    terminalTasksAction([
+      "Investigate: a frontend audit",
+      "Run focused tests for: a frontend audit",
+      "Review relevant code paths for: a frontend audit"
+    ], { target: "existing" })
+  ));
+  add(actionCase(
     "tasks.reported.eight-subagent-follow-up",
     "still not working assign 8 subagents to diagonse and fix pls",
     terminalTasksAction(
       broadTerminalTasks("find errors on terminal page", 8),
-      { target: "existing_then_new" }
+      { target: "existing" }
     ),
     {
       projectId: "project-current",
@@ -275,6 +293,61 @@ function addBroadTerminalTaskCases(add) {
         text: "try again and assign jobs to each terminal pls to find errors on terminal page"
       }]
     }
+  ));
+  add(actionCase(
+    "tasks.recent-batch.ambiguous-follow-up",
+    "Assign three terminals to audit the terminal page.",
+    terminalTasksAction([
+      "Investigate: audit the terminal page",
+      "Run focused tests for: audit the terminal page",
+      "Review relevant code paths for: audit the terminal page"
+    ], {
+      target: "existing",
+      projectId: "project-recent",
+      terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+    }),
+    {
+      projectId: "",
+      desktopActionContext: {
+        recentTerminalBatch: {
+          batchId: "batch-7",
+          projectId: "project-recent",
+          terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+        }
+      }
+    }
+  ));
+  add(actionCase(
+    "tasks.recent-batch.task-before-terminals",
+    "Run a frontend audit on the terminals you opened.",
+    terminalTasksAction([
+      "Investigate: a frontend audit",
+      "Run focused tests for: a frontend audit",
+      "Review relevant code paths for: a frontend audit"
+    ], {
+      target: "existing",
+      projectId: "project-recent",
+      terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+    }),
+    {
+      projectId: "",
+      desktopActionContext: {
+        recentTerminalBatch: {
+          batchId: "batch-7",
+          projectId: "project-recent",
+          terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+        }
+      }
+    }
+  ));
+  add(actionCase(
+    "tasks.explicit.allow-more-if-needed",
+    "Assign 3 terminals to audit the terminal page and open more terminals if needed.",
+    terminalTasksAction([
+      "Investigate: audit the terminal page",
+      "Run focused tests for: audit the terminal page",
+      "Review relevant code paths for: audit the terminal page"
+    ], { target: "existing_then_new" })
   ));
 }
 
@@ -558,11 +631,13 @@ function terminalTasksAction(taskTexts, {
   permissionMode = "standard",
   projectId = "project-current",
   projectName,
-  target
+  target = "new",
+  terminalIds
 } = {}) {
   return {
     type: "run_terminal_tasks",
-    ...(target ? { target } : {}),
+    target,
+    ...(Array.isArray(terminalIds) && terminalIds.length ? { terminalIds } : {}),
     model,
     effort,
     permissionMode,

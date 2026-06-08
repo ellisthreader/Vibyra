@@ -1,0 +1,69 @@
+.profile-voice-settings {
+  gap: 0;
+}
+.profile-voice-speed-row {
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  gap: 10px 16px;
+  grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+  min-height: 78px;
+  padding: 10px 0;
+}
+.profile-voice-speed-copy {
+  display: grid;
+  gap: 3px;
+}
+.profile-voice-speed-copy strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+}
+.profile-voice-speed-copy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 17px;
+}
+.profile-voice-speed-controls {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 34px minmax(58px, auto) 34px;
+  justify-content: end;
+}
+.profile-voice-speed-controls button {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  height: 34px;
+}
+.profile-voice-speed-controls button:hover,
+.profile-voice-speed-controls button:focus-visible {
+  border-color: var(--line-strong);
+}
+.profile-voice-speed-controls output {
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 680;
+  text-align: center;
+}
+.profile-voice-speed-row input[type="range"] {
+  accent-color: var(--accent);
+  grid-column: 2;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .profile-voice-speed-row {
+    grid-template-columns: 1fr;
+  }
+  .profile-voice-speed-controls {
+    justify-content: start;
+  }
+  .profile-voice-speed-row input[type="range"] {
+    grid-column: 1;
+  }
+}

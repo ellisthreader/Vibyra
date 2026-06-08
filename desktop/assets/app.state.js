@@ -1,9 +1,9 @@
 const emptyState = { machineName: "Vibyra Desktop", pairCode: "------", pairedDevice: null, pendingPair: null, latestPreview: null, events: [], projects: [], connectionUrls: [] };
 const pages = [
+  { key: "dashboard", label: "Home", icon: "home" },
   { key: "chat", label: "Chat", icon: "chat" },
   { key: "terminals", label: "Terminals", icon: "terminal" },
-  { key: "projects", label: "Projects", icon: "folder" },
-  { key: "dashboard", label: "Builds", icon: "pulse" }
+  { key: "projects", label: "Projects", icon: "folder" }
 ];
 const suggestions = [
   { title: "Launch terminals", description: "Open live AI workspaces", icon: "terminal", prompt: "Open 4 terminals with Codex 5.5 fast." },
@@ -51,6 +51,99 @@ const chatSkills = [
   { id: "refactor", slash: "/refactor", icon: "code", label: "Refactor", description: "Clean up readability", mode: "chat" }
 ];
 window.vibyraDesktopChatConfig = { chatModelGroups, chatModels, chatEfforts, chatSkills };
+const desktopActionContextMaxAgeMs = 30 * 60 * 1000;
+const desktopActionContextStores = new Map();
+
+function desktopActionContextScope(kind, id) {
+  const safeKind = String(kind || "chat").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") || "chat";
+  const safeId = String(id || "").trim().slice(0, 160);
+  return `${safeKind}:${safeId || "default"}`;
+}
+
+function normalizeDesktopActionContext(value, now = Date.now()) {
+  if (!value || typeof value !== "object") return null;
+  const source = value.recentTerminalBatch || value.recentBatch || value.lastTerminalBatch || value;
+  if (!source || typeof source !== "object") return null;
+  const timestamp = Number(source.timestamp || value.timestamp);
+  if (!Number.isFinite(timestamp) || timestamp <= 0 || timestamp > now + 60000 || now - timestamp > desktopActionContextMaxAgeMs) return null;
+  const rawIds = Array.isArray(source.terminalIds) ? source.terminalIds : Array.isArray(source.ids) ? source.ids : [];
+  const terminalIds = [...new Set(rawIds.map((id) => String(id || "").trim().slice(0, 160)).filter(Boolean))].slice(0, 12);
+  if (!terminalIds.length) return null;
+  const executionStatus = ["pending", "running", "completed", "partial", "failed", "cancelled"].includes(source.executionStatus)
+    ? source.executionStatus
+    : "completed";
+  return {
+    recentTerminalBatch: {
+      batchId: String(source.batchId || source.id || "").trim().slice(0, 120),
+      terminalIds,
+      projectId: String(source.projectId || "").trim().slice(0, 240),
+      model: String(source.model || "").trim().slice(0, 160),
+      effort: String(source.effort || "").trim().slice(0, 40),
+      permissionMode: source.permissionMode === "full" ? "full" : "standard",
+      workspaceMode: String(source.workspaceMode || "").trim().slice(0, 40),
+      timestamp,
+      executionStatus
+    }
+  };
+}
+
+function desktopActionContextStore(scope) {
+  const kind = String(scope || "").split(":", 1)[0];
+  return desktopActionContextStores.get(kind) || null;
+}
+
+function desktopActionContextForScope(scope) {
+  const normalizedScope = String(scope || "");
+  const store = desktopActionContextStore(normalizedScope);
+  const stored = store?.read?.(normalizedScope);
+  const context = normalizeDesktopActionContext(stored);
+  if (!context && stored) store?.write?.(normalizedScope, null);
+  return context;
+}
+
+function recordDesktopActionExecution(scope, update) {
+  const normalizedScope = String(scope || "");
+  const store = desktopActionContextStore(normalizedScope);
+  if (!store || !update || typeof update !== "object") return null;
+  const previous = desktopActionContextForScope(normalizedScope)?.recentTerminalBatch || {};
+  const context = normalizeDesktopActionContext({
+    recentTerminalBatch: {
+      ...previous,
+      ...update,
+      terminalIds: update.terminalIds || previous.terminalIds,
+      timestamp: Number(update.timestamp) || Date.now()
+    }
+  });
+  store.write(normalizedScope, context);
+  return context;
+}
+
+function clearDesktopActionContext(scope) {
+  desktopActionContextStore(scope)?.write?.(String(scope || ""), null);
+}
+
+function transferDesktopActionContext(sourceScope, targetScope) {
+  const context = desktopActionContextForScope(sourceScope);
+  const targetStore = desktopActionContextStore(targetScope);
+  if (!context || !targetStore || sourceScope === targetScope) return context;
+  targetStore.write(String(targetScope || ""), context);
+  clearDesktopActionContext(sourceScope);
+  return context;
+}
+
+function registerDesktopActionContextStore(kind, store) {
+  const key = String(kind || "").trim().toLowerCase();
+  if (!key || !store || typeof store.read !== "function" || typeof store.write !== "function") return;
+  desktopActionContextStores.set(key, store);
+}
+
+window.vibyraDesktopActionContext = Object.freeze({
+  clear: clearDesktopActionContext,
+  read: desktopActionContextForScope,
+  record: recordDesktopActionExecution,
+  scope: desktopActionContextScope,
+  transfer: transferDesktopActionContext
+});
 const storedPage = localStorage.getItem("vibyra.desktop.page");
 const desktopChatsKey = "vibyra.desktop.recentChats";
 const activeChatKey = "vibyra.desktop.activeChat";
@@ -61,6 +154,21 @@ let projectQuery = "";
 let projectFilter = "All";
 let posting = false;
 let recentChats = loadDesktopChats();
+registerDesktopActionContextStore("chat", {
+  read(scope) {
+    const id = String(scope || "").slice("chat:".length);
+    return recentChats.find((chat) => chat.id === id)?.desktopActionContext || null;
+  },
+  write(scope, context) {
+    const id = String(scope || "").slice("chat:".length);
+    const chat = recentChats.find((item) => item.id === id);
+    if (!chat) return;
+    if (context) chat.desktopActionContext = context;
+    else delete chat.desktopActionContext;
+    chat.updatedAt = Date.now();
+    saveDesktopChats();
+  }
+});
 let activeChatId = localStorage.getItem(activeChatKey) || "";
 let chatMessages = activeChatId ? messagesForChat(activeChatId) : [];
 let chatAttachments = [];

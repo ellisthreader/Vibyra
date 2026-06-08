@@ -23,6 +23,25 @@ test("desktop chat returns local desktop actions without a cloud account", async
   }]);
 });
 
+test("desktop chat resolves a combined full-access launch to the named SaaS project", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas-project", name: "CombinedLaunchSaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    prompt: "I want you to open six terminals using 5.5 GPT. Give them full permission. Open it on my project called CombinedLaunchSaaS."
+  });
+
+  assert.deepEqual(result.actions, [{
+    type: "open_terminals",
+    count: 6,
+    model: "gpt-5.5",
+    effort: "medium",
+    permissionMode: "full",
+    projectId: "saas-project"
+  }]);
+  assert.match(result.reply, /Opening 6 GPT-5\.5 terminals with full access in project CombinedLaunchSaaS/);
+});
+
 test("desktop chat keeps explicit permission follow-ups local", async () => {
   resetDesktopChatState();
 
@@ -53,8 +72,49 @@ test("desktop chat uses recent task context for a vague subagent retry", async (
   });
 
   assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
   assert.equal(result.actions[0].tasks.length, 8);
   assert.match(result.actions[0].tasks[0].task, /terminal page/i);
+});
+
+test("desktop chat passes recent launch context into terminal task routing", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    prompt: "Assign three terminals to audit the terminal page.",
+    desktopActionContext: {
+      recentTerminalBatch: {
+        batchId: "batch-7",
+        projectId: "saas",
+        terminalIds: ["terminal-8", "terminal-9", "terminal-10"]
+      }
+    }
+  });
+
+  assert.equal(result.actions[0].target, "existing");
+  assert.deepEqual(result.actions[0].terminalIds, ["terminal-8", "terminal-9", "terminal-10"]);
+  assert.equal(result.actions[0].projectId, "saas");
+  assert.equal(result.actions[0].tasks.length, 3);
+});
+
+test("desktop chat sanitizes recent launch context before parser use", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    prompt: "Give two of them tasks to review terminal recovery.",
+    desktopActionContext: {
+      recentBatch: {
+        id: "batch-7",
+        projectId: "saas",
+        ids: [" terminal-8 ", "", "terminal-8", "terminal-9", null]
+      }
+    }
+  });
+
+  assert.deepEqual(result.actions[0].terminalIds, ["terminal-8", "terminal-9"]);
+  assert.equal(result.actions[0].target, "existing");
 });
 
 test("desktop chat returns an executable three-of-seven terminal assignment", async () => {
@@ -70,9 +130,9 @@ test("desktop chat returns an executable three-of-seven terminal assignment", as
   assert.equal(result.actions[0].target, "existing");
   assert.equal(result.actions[0].tasks.length, 3);
   assert.equal(new Set(result.actions[0].tasks.map(({ prompt }) => prompt)).size, 3);
-  assert.match(result.actions[0].tasks[0].prompt, /Reproduction and evidence lead/);
-  assert.match(result.actions[0].tasks[1].prompt, /Regression-test and verification lead/);
-  assert.match(result.actions[0].tasks[2].prompt, /Root-cause and implementation lead/);
+  assert.match(result.actions[0].tasks[0].prompt, /Frontend reproduction and evidence reviewer/);
+  assert.match(result.actions[0].tasks[1].prompt, /Frontend interaction and accessibility reviewer/);
+  assert.match(result.actions[0].tasks[2].prompt, /Frontend state and architecture reviewer/);
   assert.match(result.actions[0].tasks[0].prompt, /Source project location: \/tmp\/saas/);
   assert.match(result.actions[0].tasks[2].prompt, /now with the 7 terminals you just opened/i);
 });
@@ -142,6 +202,47 @@ test("desktop chat executes the exact recently-opened read-only diagnosis reques
     assert.match(task.prompt, /no files were changed/i);
     assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
   }
+});
+
+test("desktop chat executes the reported use-launched frontend audit request", async () => {
+  resetDesktopChatState();
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+
+  const result = await sendDesktopChat({
+    projectId: "saas",
+    prompt: "I want you to use three of them terminals you have just launched, front a front-end order of the terminal page."
+  });
+
+  assert.equal(result.actions[0].type, "run_terminal_tasks");
+  assert.equal(result.actions[0].target, "existing");
+  assert.equal(result.actions[0].tasks.length, 3);
+  for (const task of result.actions[0].tasks) {
+    assert.match(task.prompt, /front-end audit of the terminal page/i);
+    assert.match(task.prompt, /Strictly read-only/);
+  }
+});
+
+test("desktop chat replaces a false local-model terminal capability denial", async () => {
+  resetDesktopChatState();
+
+  const result = await sendDesktopChat({
+    provider: "local",
+    prompt: "Please put the terminals to work checking the frontend."
+  }, async (url) => {
+    if (String(url).endsWith("/api/tags")) {
+      return jsonResponse({ models: [{ name: "qwen3:4b" }] });
+    }
+    return jsonResponse({
+      model: "qwen3:4b",
+      message: {
+        content: "I cannot run commands in physical terminals because I am not a terminal emulator."
+      }
+    });
+  });
+
+  assert.match(result.reply, /Vibyra Desktop can open, close, and assign work/i);
+  assert.match(result.reply, /no terminal action ran/i);
+  assert.doesNotMatch(result.reply, /cannot run commands|not a terminal emulator/i);
 });
 
 test("desktop chat resolves an explicitly named terminal project", async () => {

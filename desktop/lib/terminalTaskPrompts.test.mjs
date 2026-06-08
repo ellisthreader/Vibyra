@@ -132,3 +132,16 @@ test("recognizes common diagnosis-only wording from user or task text", () => {
     assert.doesNotMatch(task.prompt, /implement the smallest complete fix/i);
   }
 });
+
+test("defaults audits to read-only unless the user explicitly requests fixes", () => {
+  const [audit] = agenticTerminalTasks({
+    tasks: [{ task: "Investigate: a front-end audit of the terminal page" }]
+  }, { userPrompt: "Use three terminals for a front-end audit of the terminal page." });
+  const [fix] = agenticTerminalTasks({
+    tasks: [{ task: "Investigate and fix the terminal page" }]
+  }, { userPrompt: "Audit and fix the terminal page." });
+
+  assert.match(audit.prompt, /Strictly read-only/);
+  assert.doesNotMatch(audit.prompt, /implement the smallest complete fix/i);
+  assert.match(fix.prompt, /implement the smallest complete fix/i);
+});

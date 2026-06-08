@@ -8,6 +8,11 @@ const TRANSCRIPTION_TIMEOUT_MS = 90_000;
 const SPEECH_TIMEOUT_MS = 45_000;
 const SPEECH_CONTENT_TYPE = "audio/wav";
 const SPEECH_INSTRUCTIONS = "Speak as Vibyra: concise, clear, neutral, and helpful. Do not read markdown formatting aloud.";
+const DEFAULT_SPEECH_VOICE = "marin";
+const SPEECH_VOICES = new Set([
+  "alloy", "ash", "ballad", "coral", "echo", "fable", "nova",
+  "onyx", "sage", "shimmer", "verse", "marin", "cedar"
+]);
 const AUDIO_TYPES = new Map([
   ["audio/webm", "webm"],
   ["audio/ogg", "ogg"],
@@ -58,6 +63,8 @@ export async function speakDesktopVoice(
 ) {
   if (!credential) throw httpError(401, "Connect an OpenAI account to use Vibyra Voice speech.");
   const input = normalizeSpeechText(body.text);
+  const voice = normalizeSpeechVoice(body.voice);
+  const speed = normalizeSpeechSpeed(body.speed);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   let response;
@@ -70,7 +77,8 @@ export async function speakDesktopVoice(
       },
       body: JSON.stringify({
         model: "gpt-4o-mini-tts",
-        voice: "marin",
+        voice,
+        speed,
         input,
         instructions: SPEECH_INSTRUCTIONS,
         response_format: "wav"
@@ -100,6 +108,21 @@ function normalizeSpeechText(value) {
     throw httpError(413, `Voice response text must be ${MAX_SPEECH_TEXT_CHARS} characters or fewer.`);
   }
   return text;
+}
+
+function normalizeSpeechVoice(value) {
+  const voice = String(value || DEFAULT_SPEECH_VOICE).trim().toLowerCase();
+  if (!SPEECH_VOICES.has(voice)) throw httpError(422, "This OpenAI voice is not supported.");
+  return voice;
+}
+
+function normalizeSpeechSpeed(value) {
+  if (value === undefined || value === null || value === "") return 1;
+  const speed = Number(value);
+  if (!Number.isFinite(speed) || speed < 0.25 || speed > 4) {
+    throw httpError(422, "Voice speed must be between 0.25 and 4.");
+  }
+  return speed;
 }
 
 function normalizeAudioType(value) {

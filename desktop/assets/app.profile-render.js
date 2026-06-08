@@ -8,7 +8,7 @@ function renderProfile() {
     <aside class="profile-section-rail" aria-label="Profile sections">${renderProfileSectionRail(sections, meta)}</aside>
     <main class="profile-detail">${renderProfileDetail(profileActiveSection, meta)}</main>
   </div>`;
-  bindProfileControls();
+  bindProfileControls(target);
   if (profileActiveSection === "account" && typeof ensureDesktopSessions === "function") ensureDesktopSessions();
   profileFocus = "";
 }
@@ -131,6 +131,7 @@ function profilePreferencesSection() {
   return `${profileHeader("Preferences", "Preferences", "Desktop preferences are saved locally for this computer.")}
     ${renderAppearancePanel(prefs.appearance)}
     <section class="profile-choice-list profile-settings-list"><h2>Chat</h2>${profileSelectRow("Chat font", "chatFont", profileChatFontOptions, prefs.chatFont)}</section>
+    ${profileVoiceSettingsPanel(prefs)}
     <section class="profile-choice-list"><h2>Language</h2>${profileLanguages.map((language) => profileChoiceButton("language", language, language, "Display language preference", "globe", prefs.language === language)).join("")}</section>
     <section class="profile-choice-list"><h2>Notifications</h2>${profileToggleList([
       { key: "notifications.buildUpdates", label: "Build updates", detail: "Agent starts, completions, failures, and queued build changes.", value: prefs.notifications.buildUpdates },

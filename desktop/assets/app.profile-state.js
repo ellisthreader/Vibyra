@@ -38,6 +38,8 @@ const desktopPreferenceDefaults = {
     responseCompletions: true
   },
   responseStyle: "balanced",
+  voice: "marin",
+  voiceSpeed: 1,
   improveVibyra: false,
   desktopLock: false,
   workOther: "",
@@ -103,8 +105,10 @@ function saveDesktopPreferences(next) {
 
 function applyDesktopPreferences(next = desktopPreferences()) {
   if (!document.body) return;
-  document.body.dataset.desktopTheme = next.appearance || "dark";
-  document.body.dataset.chatFont = next.chatFont || "vibyra-sans";
+  const appearance = next.appearance || "dark";
+  const chatFont = next.chatFont || "vibyra-sans";
+  if (document.body.dataset.desktopTheme !== appearance) document.body.dataset.desktopTheme = appearance;
+  if (document.body.dataset.chatFont !== chatFont) document.body.dataset.chatFont = chatFont;
 }
 
 function desktopProfileContext() {

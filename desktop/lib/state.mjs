@@ -10,6 +10,7 @@ export const machineName = hostname();
 export const startedAt = new Date().toISOString();
 export const allowedCommands = new Set(["git status", "npm install", "npm run dev", "npm run build", "npm test", "pytest"]);
 export const PHONE_SESSION_TIMEOUT_MS = 30000;
+export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-08.1";
 
 export const appState = {
   server: null,
@@ -23,12 +24,39 @@ export const appState = {
   previewServers: {},
   agentRuns: {},
   pendingAgentApplies: {},
+  rendererReloadRequest: null,
   cachedProjects: [],
   events: [
     event("Desktop", "Vibyra Desktop is ready", "success"),
     event("Pairing", `Pair code ${PAIR_CODE} is showing in Vibyra Desktop`, "info")
   ]
 };
+
+export function desktopRuntimeState(rendererProtocolVersion = "") {
+  const rendererVersion = String(rendererProtocolVersion || "").trim();
+  if (rendererVersion === TERMINAL_ACTION_PROTOCOL_VERSION) {
+    appState.rendererReloadRequest = null;
+  }
+  return {
+    terminalActionProtocolVersion: TERMINAL_ACTION_PROTOCOL_VERSION,
+    rendererReloadRequestId: appState.rendererReloadRequest?.id || null
+  };
+}
+
+export function requestRendererProtocolReload(rendererProtocolVersion = "") {
+  const rendererVersion = String(rendererProtocolVersion || "").trim() || "unknown";
+  if (rendererVersion === TERMINAL_ACTION_PROTOCOL_VERSION) {
+    appState.rendererReloadRequest = null;
+    return desktopRuntimeState(rendererVersion);
+  }
+  if (appState.rendererReloadRequest?.rendererProtocolVersion !== rendererVersion) {
+    appState.rendererReloadRequest = {
+      id: `renderer-reload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      rendererProtocolVersion: rendererVersion
+    };
+  }
+  return desktopRuntimeState(rendererVersion);
+}
 
 export function makePairCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

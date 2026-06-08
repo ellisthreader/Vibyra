@@ -23,7 +23,7 @@ function terminalCompanionToolbarHtml() {
 
 function terminalAiTopbarButtonHtml() {
   const active = terminalCompanionMode === "chat" || terminalCompanionMode === "voice";
-  return `<button class="terminal-ai-topbar-button ${active ? "active" : ""}" type="button" data-terminal-companion-open="chat" aria-label="Open Vibyra AI chat" aria-pressed="${active ? "true" : "false"}" title="Open Vibyra AI">${icon("sparkles")}<span>Vibyra AI</span></button>`;
+  return `<button class="terminal-ai-topbar-button ${active ? "active" : ""}" type="button" data-terminal-companion-open="chat" aria-label="Open Vibyra AI chat" aria-pressed="${active ? "true" : "false"}" title="Open Vibyra AI"><img src="/app-assets/vibyra.png" alt=""></button>`;
 }
 
 function terminalCompanionStandaloneToolbarHtml() {

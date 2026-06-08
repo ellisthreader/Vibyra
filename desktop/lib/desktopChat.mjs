@@ -5,7 +5,7 @@ import { discoverProjects, projectById, terminalProjectById } from "./projects.m
 import { promptProjectContext, promptProjectFilePaths } from "./projectContext.mjs";
 import { desktopMemoryContext } from "./desktopProjectMemory.mjs";
 import { desktopVaultMemoryContext } from "./desktopTerminalMemory.mjs";
-import { desktopActionsForPrompt } from "./desktopActions.mjs";
+import { correctDesktopCapabilityDenial, desktopActionsForPrompt } from "./desktopActions.mjs";
 import { sendLocalVibyraChat } from "./localAi.mjs";
 import { agenticTerminalTasks } from "./terminalTaskPrompts.mjs";
 
@@ -31,6 +31,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   const desktopAction = body?.disableDesktopActions
     ? null
     : desktopActionsForPrompt(prompt, {
+      desktopActionContext: normalizeDesktopActionContext(body?.desktopActionContext),
       history: normalizeHistory(body?.history),
       projectId: body?.projectId,
       terminalId: body?.terminalId
@@ -66,11 +67,11 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   };
 
   if (normalizeProvider(body?.provider) === "local") {
-    return sendLocalVibyraChat(payload, fetchImpl);
+    return correctModelCapabilityReply(await sendLocalVibyraChat(payload, fetchImpl), prompt);
   }
 
   if (normalizeTokenMode(body?.tokenMode) === "provider" && openAiProviderModel(model)) {
-    return sendOpenAiProviderChat(payload, fetchImpl);
+    return correctModelCapabilityReply(await sendOpenAiProviderChat(payload, fetchImpl), prompt);
   }
 
   if (!appState.desktopAccountToken) {
@@ -102,7 +103,10 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
 
   return {
     ok: true,
-    reply: String(result?.reply || "I received an empty response from Vibyra AI."),
+    reply: correctDesktopCapabilityDenial(
+      prompt,
+      String(result?.reply || "I received an empty response from Vibyra AI.")
+    ),
     title: result?.title || "",
     model: result?.model || "",
     modelKey: result?.modelKey || payload.model,
@@ -110,6 +114,13 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     creditsBalance: result?.creditsBalance ?? null,
     app: normalizeAppPayload(result?.app),
     user: result?.user || null
+  };
+}
+
+function correctModelCapabilityReply(result, prompt) {
+  return {
+    ...result,
+    reply: correctDesktopCapabilityDenial(prompt, result?.reply)
   };
 }
 
@@ -274,6 +285,28 @@ function normalizeHistory(history) {
       role: item.role,
       text: String(item.text || "").slice(0, MAX_HISTORY_CHARS)
     }));
+}
+
+function normalizeDesktopActionContext(value) {
+  if (!value || typeof value !== "object") return {};
+  const source = value.recentTerminalBatch || value.recentBatch || value.lastTerminalBatch;
+  if (!source || typeof source !== "object") return {};
+  const rawIds = Array.isArray(source.terminalIds)
+    ? source.terminalIds
+    : Array.isArray(source.ids)
+      ? source.ids
+      : [];
+  const terminalIds = [...new Set(
+    rawIds.map((id) => String(id || "").trim()).filter(Boolean)
+  )].slice(0, 12);
+  if (!terminalIds.length) return {};
+  return {
+    recentTerminalBatch: {
+      batchId: String(source.batchId || source.id || "").trim().slice(0, 120),
+      projectId: String(source.projectId || "").trim().slice(0, 240),
+      terminalIds
+    }
+  };
 }
 
 function normalizeAttachments(attachments) {

@@ -93,17 +93,10 @@
 .terminal-memory-graph-node.selected text { opacity: 1; }
 .terminal-memory-graph-legend {
   align-items: center;
-  background: color-mix(in srgb, var(--terminal-companion-bg) 82%, transparent);
-  border: 1px solid var(--terminal-border);
-  border-radius: 6px;
-  bottom: 8px;
   color: var(--terminal-dim);
   display: flex;
   font-size: 8px;
   gap: 8px;
-  padding: 4px 6px;
-  position: absolute;
-  right: 9px;
 }
 .terminal-memory-graph-legend span {
   align-items: center;

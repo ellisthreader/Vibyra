@@ -44,9 +44,11 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
   let retryTimer = null;
   let retryCount = 0;
   const queued = [];
+  const pendingAssignments = new Map();
+  const socketReady = () => socket?.readyState === "open" && socket.writable;
 
   const send = (payload) => {
-    if (!socket?.writable) {
+    if (!socketReady()) {
       if (!stopped) queued.push(payload);
       return !stopped;
     }
@@ -61,7 +63,7 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
     socket.on("connect", () => {
       retryCount = 0;
       socket.write(`${JSON.stringify({ type: "attach" })}\n`);
-      while (queued.length && socket.writable) {
+      while (queued.length && socketReady()) {
         socket.write(`${JSON.stringify(queued.shift())}\n`);
       }
       if (closing) stopped = true;
@@ -71,8 +73,16 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
       const lines = pending.split("\n");
       pending = lines.pop() || "";
       for (const line of lines) {
-        const type = handleWorkerMessage(line, handlers);
-        if (type === "exit") stopped = true;
+        const payload = handleWorkerMessage(line, handlers);
+        if (payload?.type === "assignment_ack") {
+          const pendingAssignment = pendingAssignments.get(String(payload.messageId || ""));
+          if (pendingAssignment) {
+            clearTimeout(pendingAssignment.timer);
+            pendingAssignments.delete(String(payload.messageId || ""));
+            pendingAssignment.resolve(payload);
+          }
+        }
+        if (payload?.type === "exit") stopped = true;
       }
     });
     socket.on("error", () => {});
@@ -81,6 +91,7 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
       if (!stopped && options.waitForWorker && retryCount < 40) {
         retryCount += 1;
         retryTimer = setTimeout(connect, Math.min(1000, 50 * retryCount));
+        retryTimer.unref?.();
       }
     });
   };
@@ -92,22 +103,68 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
       write(input) { return send({ type: "input", data: String(input ?? "") }); }
     },
     resize(cols, rows) { send({ type: "resize", cols, rows }); },
+    assign({ assignmentId, data, timeoutMs = 5_000 }) {
+      const messageId = createHash("sha256")
+        .update(`${terminalId}:${assignmentId}:${Date.now()}:${Math.random()}`)
+        .digest("hex")
+        .slice(0, 24);
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          pendingAssignments.delete(messageId);
+          const queuedIndex = queued.findIndex((item) => item?.messageId === messageId);
+          if (queuedIndex >= 0) queued.splice(queuedIndex, 1);
+          send({ type: "assignment_cancel", messageId, assignmentId });
+          resolve({
+            type: "assignment_ack",
+            messageId,
+            assignmentId,
+            state: "timed-out",
+            reason: "The terminal worker did not acknowledge the assignment in time."
+          });
+        }, Math.max(100, Math.min(30_000, Number(timeoutMs) || 5_000)));
+        pendingAssignments.set(messageId, { resolve, timer });
+        if (!send({ type: "assign", messageId, assignmentId, data })) {
+          clearTimeout(timer);
+          pendingAssignments.delete(messageId);
+          resolve({
+            type: "assignment_ack",
+            messageId,
+            assignmentId,
+            state: "rejected",
+            reason: "Terminal worker is not running."
+          });
+        }
+      });
+    },
     kill(signal = "SIGTERM") {
       closing = true;
-      if (socket?.writable) {
+      if (socketReady()) {
         clearTimeout(retryTimer);
         socket.write(`${JSON.stringify({ type: "close", signal })}\n`);
         stopped = true;
         socket.end();
       } else {
         queued.push({ type: "close", signal });
-        if (!socket && !retryTimer) retryTimer = setTimeout(connect, 0);
+        if (!socket && !retryTimer) {
+          retryTimer = setTimeout(connect, 0);
+          retryTimer.unref?.();
+        }
       }
     },
     disconnect() {
       stopped = true;
       clearTimeout(retryTimer);
       socket?.destroy();
+      for (const [messageId, pendingAssignment] of pendingAssignments) {
+        clearTimeout(pendingAssignment.timer);
+        pendingAssignment.resolve({
+          type: "assignment_ack",
+          messageId,
+          state: "rejected",
+          reason: "Terminal worker connection closed."
+        });
+      }
+      pendingAssignments.clear();
     }
   };
 }
@@ -164,14 +221,17 @@ export function persistentTerminalPaths(terminalId) {
 
 function handleWorkerMessage(line, handlers) {
   let payload;
-  try { payload = JSON.parse(line); } catch { return ""; }
+  try { payload = JSON.parse(line); } catch { return null; }
   if (payload.type === "snapshot") handlers.onSnapshot?.(payload);
-  if (payload.type === "output") handlers.onData?.(String(payload.data || ""));
+  if (payload.type === "output") handlers.onData?.(String(payload.data || ""), {
+    assignmentId: String(payload.assignmentId || ""),
+    emittedAt: String(payload.emittedAt || "")
+  });
   if (payload.type === "exit") handlers.onExit?.({
     code: payload.code ?? null,
     signal: payload.signal || ""
   });
-  return payload.type || "";
+  return payload;
 }
 
 function serializableConfig(config) {

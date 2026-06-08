@@ -24,7 +24,7 @@ research file is a deep reference only.
 
 `Vibyra/_ai/Desktop App Implementation Spec.md` and `Vibyra/_ai/Mobile App Desktop Recreation Spec.md` are deep references only. Use them when recreating broad desktop screens, not for routine bridge/debug tasks.
 
-`/desktop` serves `desktop/app.html`, a static Vibyra shell with a Chat-first layout, compact left rail, top bar, Projects, Builds, pairing modal, account/token modal, and responsive mobile dock. `desktop/index.html` remains the legacy bridge screen.
+`/desktop` serves `desktop/app.html`, a static Vibyra shell with a compact left rail, top bar, Home, Chat, Terminals, Projects, pairing modal, account/token modal, and responsive mobile dock. `desktop/index.html` remains the legacy bridge screen.
 
 `desktop/lib/routes.mjs` serves mobile app imagery under `/app-assets/...` from `src/assets/` so the shell can reuse app assets.
 
@@ -94,9 +94,23 @@ Both `openTokenModal` and `closeTokenModal` reset `tokenModalView` to `profile`.
 
 `app.1.css :root` and `app.7.css :root` both define palette CSS vars, and `--token` (yellow, `#f7d65b`) is defined only in `app.1.css` and intentionally NOT overridden by `app.7.css` because it represents the credit-token icon color. Do NOT use `var(--token)` for general accent surfaces — it will paint them yellow. For purple accents use `var(--accent)` / `var(--accent-soft)` / `var(--line-strong)`; for muted text use `var(--muted)` / `var(--subtle)`; for elevated text use `var(--text)`. The pair code and pulsing dot use `var(--accent)` (purple), not `var(--token)`.
 
-## Chat, Builds, And Projects
+## Home, Chat, Terminals, And Projects
 
-The desktop shell defaults to `dashboard`/Builds after login. `desktop/assets/app.auth.js` sets `localStorage["vibyra.desktop.page"] = "dashboard"` for restored sessions and completed desktop email auth, and `desktop/assets/app.1.js` falls back to Builds when no stored page exists. Keep primary rail destinations to Chat, Projects, and Builds; keep profile/billing/account details in the account modal instead of rail tabs unless real desktop account APIs require a fuller page.
+The desktop shell defaults to Home after login while retaining the internal
+`dashboard` route key for saved-session compatibility.
+`localStorage["vibyra.desktop.page"] = "dashboard"` remains valid. Keep primary
+rail destinations ordered as Home, Chat, Terminals, and Projects; keep
+profile/billing/account details in the account modal.
+
+Home is rendered by `desktop/assets/app.pages.js` with helpers in
+`desktop/assets/app.render-helpers.js` and scoped late styles in
+`desktop/assets/app.home.css`. It shows real phone state, local projects,
+recent real events, active agent work, and reconciled frontend terminal rows.
+PTY terminals are not included in `/desktop/state`, so Home reads the shared
+`terminals` store and `app.terminals-pty-runtime.js` refreshes Home after PTY
+reconciliation. Keep the internal route key; change visible copy and layout
+without introducing fake analytics, generated activity, progress bars, or
+route-wide `body:has(...)` theme overrides.
 
 Chat should stay a calm desktop-chat surface: compact prompt chips, a restrained bottom composer, removable selected-project and attachment chips, local draft persistence in `vibyra.desktop.chatDraft`, and inline `activeAgentRun` status cards from real `/desktop/state`. Assistant message rows show the Vibyra logo avatar from `/app-assets/vibyra.png` in a transparent circular treatment so users can identify who is speaking. Empty chat headlines rotate from `desktop/assets/app.chat-titles.js` using a 200+ short, greeting-led pool keyed by day plus app-open count, with optional first-name and time-of-day personalization; avoid question-first prompts like `What should we rethink` and long helper sentences in the headline pool. The desktop chat model menu mirrors mobile `src/screens/workspace/data/chatModels.ts` model groups, uses matching provider logos for Claude/OpenAI/Gemini, keeps Auto pinned, and shows provider tabs so one provider's model rows are visible at a time instead of a long all-model list; effort uses the mobile `low|medium|high|xhigh` values. Do not make the desktop shell start `/agents/start` directly without an intentional desktop-auth agent contract; that route remains phone-authenticated.
 
@@ -172,8 +186,6 @@ Desktop light/dark theme ownership lives in the late-loaded `desktop/assets/app.
 
 The sidebar rail is part of the shell canvas, not an elevated panel. In `desktop/assets/app.theme-shell.css`, keep its background on the same semantic shell background token as `.main`; rely on the soft right border plus nav hover/active states for visual separation in both light and dark modes.
 
-The Builds page must use real `/desktop/state` data only. Show `activeAgentRun` as compact rows with duration and a three-dot action. Do not show fake project counts, fake event counts, fallback build rows, progress bars, token counts, percentages, or predicted completion. Builds is rendered from `desktop/assets/app.pages.js` plus dashboard helpers in `desktop/assets/app.render-helpers.js`; its late cascade ownership lives in `desktop/assets/app.builds-screenshot.css`, `.1.css`, and `.2.css`, loaded after `app.runtime-fixes.css` in `desktop/app.html`. Those files may style Builds content and `--build-*` variables, but must not override the global shell rail/topbar/grid/nav chrome; desktop shell chrome stays owned by the theme shell files for route consistency.
-
 Projects layout should match the full-width screenshot style: toolbar below top bar, three-card grid on wide screens, 176px cards, 16px padding, about 14px column gap and 16px row gap, active card with purple border.
 
 ## Diagnostics
@@ -196,13 +208,28 @@ same cache-bypassing reload through `desktop/lib/electronReload.cjs`. Keep this
 behavior when changing launcher/window lifecycle code so an already-open
 frameless window cannot remain on stale frontend assets.
 
-Profile/Settings controls must keep their DOM nodes while focused. The desktop shell refreshes `/desktop/state` every second and calls `render()`, so `desktop/assets/app.shell.js` skips `renderProfile()` when `profileHasActiveControl()` in `desktop/assets/app.profile-render.js` sees a focused profile input, select, or textarea. Without that guard, native select dropdowns collapse as soon as the refresh tick replaces the focused node.
+Settings performance requires the whole open modal to remain DOM-stable across
+shell refreshes, not only focused controls or Preferences. Background desktop
+state never owns `renderProfileModal()`; profile/account actions render
+explicitly when their own data changes. Bind profile controls inside
+`#profile-modal-body`, patch ordinary preferences through
+`app.profile-performance.js`, and reserve a full modal render for section
+changes or appearance/theme changes. Keep the Settings backdrop as a flat
+dark overlay without `backdrop-filter`: Electron runs with GPU compositing
+disabled on the supported Linux path, so live blur over terminals creates
+visible input and scrolling lag.
 The once-per-second `/desktop/state` refresh is the default suspect when a desktop UI flashes, replays its entrance animation, drops an expanded row, loses scroll, or closes/reopens while idle. `desktop/assets/app.shell.js` runs `refresh(); setInterval(refresh, 1000)` and `render()` can rebuild nav, topbar, content, and open modal bodies. Any animated dropdown, open menu, modal sub-view, selected control, typed input, mounted canvas/xterm, or scrollable picker must either be patched in place or explicitly skipped by the refresh path while it is open. For Profile modal work, do not call `renderProfileModal()` every tick for Account, Billing, or an expanded delete panel unless the account/session data actually changed; otherwise the DOM replacement makes the panel look like it is flashing open and closed. After adding desktop UI that stays open, test by waiting at least two refresh ticks before calling it fixed.
 AI terminal project selection is owned by `desktop/assets/app.terminals-project-picker.js` and `app.terminals.project-picker.css`. Keep it as an accessible button/listbox with local DOM patching; transparent native-select overlays and full terminal renders cause inconsistent dropdown behavior, lost focus, and PTY flicker. Setup and new-terminal pickers share `vibyra.desktop.terminalProject`.
 Opening the account dropdown's Settings action must render the Profile modal on Preferences and reset `#profile-modal-body.scrollTop` to `0`; otherwise a previous scroll position can hide the Appearance screenshot cards even though they are present. `desktop/assets/app.modals.js` owns the open-path reset, and `desktop/assets/app.profile-actions.js` resets scroll after section switches. The `/desktop/state` refresh must not re-render the Preferences modal every second: `desktop/assets/app.shell.js` preserves the Preferences DOM while open, and the Appearance screenshots in `desktop/assets/app.profile-render.js` load eagerly so the image nodes are not replaced before decode completes.
 The Profile Preferences appearance picker must show the `dark`, `light`, and `auto/system` cards even if PNG thumbnails are slow or fail: `desktop/assets/app.profile.css` owns CSS fallback previews behind the images, while `desktop/assets/app.profile-actions.js` hides failed thumbnail images instead of leaving broken image chrome.
 
-If dark/light switching appears broken only on launch or on the Builds/dashboard page, check `desktop/assets/app.builds-screenshot*.css` first. The dashboard is the default authenticated page (`vibyra.desktop.page` falls back to `dashboard`), and late-loaded `body:has(.builds-page--screenshot)` rules can override `body[data-desktop-theme]`. The fixed pattern is: default screenshot/light `--build-*` tokens, explicit `body[data-desktop-theme="dark"]` build tokens, auto-dark build tokens only under `prefers-color-scheme: dark`, and no hardcoded light colors in dashboard rule bodies outside local `--build-*` variables. `desktop/app.html` also applies saved `data-desktop-theme`/`data-chat-font` at the top of `<body>` before visible shell content to prevent launch flash.
+If dark/light switching appears broken only on launch or Home, check the
+late-loaded `desktop/assets/app.home.css` for hardcoded colors or selectors
+escaping `.home-*`. Home replaced the old Builds screenshot CSS specifically
+to remove route-wide `body:has(...)` theme overrides. The compatibility route
+key is still `dashboard`, and `desktop/app.html` applies saved
+`data-desktop-theme`/`data-chat-font` before visible shell content to prevent
+launch flash.
 
 Desktop theme regression checklist: before closing desktop visual work, test explicit light and dark via `body[data-desktop-theme]` or the Profile Appearance picker. Sample computed styles for dashboard launch, Profile modal inputs/selects/textareas, Token billing plan modal rows and controls, Pair modal, chat menus/send button, and terminal setup/model/settings surfaces. If a surface stays dark in light mode, first check the late owner CSS chunk: `app.theme-shell.css`, `app.theme-chat.css`, `app.theme-surfaces*.css`, `app.billing-plans.theme.css`, or `app.theme-terminals*.css`. Avoid fixing by adding new theme state; route colors through the existing local token variables.
 

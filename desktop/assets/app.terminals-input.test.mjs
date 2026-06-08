@@ -32,19 +32,26 @@ test("PTY keyboard input has one browser event owner", () => {
 });
 
 test("assigned terminal tasks are transient and submitted after PTY creation", () => {
-  assert.match(legacySource, /\{\s*initialPrompt,\s*pending,/);
+  assert.match(legacySource, /\{\s*initialPrompt,\s*initialAssignmentId,\s*pending,/);
   assert.match(legacySource, /initialPrompt:\s*normalizeInitialTerminalPrompt\(options\.initialPrompt\)/);
   assert.match(runtimeSource, /Object\.assign\(terminal,\s*ptySessionPatch\(result\.session\)/);
   assert.match(runtimeSource, /await submitInitialPtyPrompt\(terminal\)/);
-  assert.match(runtimeSource, /terminalTaskInputPrompt\(terminal,\s*terminal\?\.initialPrompt\)/);
-  assert.match(runtimeSource, /normalizeTerminalAgent\(terminal\?\.agent\)\s*!==\s*"vibyra"/);
-  assert.match(runtimeSource, /\.join\(" \| "\)/);
-  assert.match(runtimeSource, /const input = `\\x1b\[200~\$\{prompt/);
-  assert.match(runtimeSource, /\\x1b\[201~\\r`/);
+  assert.match(runtimeSource, /\/desktop\/pty-terminals\/\$\{encodeURIComponent\(terminal\.id\)\}\/assign/);
+  assert.match(runtimeSource, /JSON\.stringify\(\{\s*assignmentId,\s*prompt\s*\}\)/);
   assert.match(runtimeSource, /if \(!response\.ok\) throw new Error/);
-  assert.match(runtimeSource, /if \(!response\.ok\)[\s\S]*delete terminal\.initialPrompt/);
+  assert.match(runtimeSource, /finally\s*\{[\s\S]*delete terminal\.initialPrompt/);
   assert.doesNotMatch(runtimeSource, /sendPtyInput\(terminal\.id,\s*"\\r"\)/);
   assert.match(runtimeSource, /terminal\.ptyStartQueued[\s\S]*terminal\.ptyStatus === "starting"/);
+});
+
+test("PTY collection sync is serialized and reconciliation preserves local task state", () => {
+  assert.match(runtimeSource, /if \(ptyCollectionSyncPromise\) return ptyCollectionSyncPromise/);
+  assert.match(runtimeSource, /ptyCollectionSyncPromise = performPtyTerminalSync\(\)/);
+  assert.match(runtimeSource, /const localNotice = terminal\.notice/);
+  assert.match(runtimeSource, /terminal\.notice = localNotice \|\| terminal\.workspaceNotice \|\| null/);
+  assert.match(runtimeSource, /providerState:\s*provider\.state/);
+  assert.match(runtimeSource, /providerReady:\s*provider\.ready/);
+  assert.match(runtimeSource, /providerBusy:\s*provider\.busy/);
 });
 
 test("terminal workspace mode is persisted and sent to the authoritative PTY service", () => {

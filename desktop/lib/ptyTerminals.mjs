@@ -23,6 +23,8 @@ import { terminalMemoryInstructions } from "./desktopTerminalMemory.mjs";
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
 const MAX_OUTPUT_BUFFER = 50_000;
+const MAX_ASSIGNMENT_PROMPT = 8_000;
+const ASSIGNMENT_TIMEOUT_MS = 5_000;
 const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
@@ -56,6 +58,18 @@ export async function handlePtyTerminalRoutes(req, res, url) {
   if (req.method === "POST" && route.action === "input") {
     writePtyInput(route.id, String((await readBody(req))?.input ?? ""));
     send(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && route.action === "assign") {
+    const assignment = await assignPtyTerminalTask(route.id, await readBody(req));
+    const status = assignment.state === "written-to-child"
+      ? 200
+      : assignment.state === "timed-out" ? 504 : 409;
+    send(res, status, {
+      ok: status === 200,
+      assignment,
+      ...(status === 200 ? {} : { error: assignment.reason || "The terminal assignment was rejected." })
+    });
     return true;
   }
   if (req.method === "POST" && route.action === "resize") {
@@ -195,6 +209,7 @@ export async function createPtyTerminal(body = {}) {
     rows: clamp(body.rows, 30),
     output: "",
     status: agentStatus.available ? "starting" : "unavailable",
+    providerState: !agentStatus.available ? "exited" : agent === "shell" ? "fallback-shell" : "starting",
     exitCode: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -253,13 +268,20 @@ function persistentHandlers(session) {
       }
       const workerStatus = String(payload.state?.status || "");
       if (workerStatus) session.status = workerStatus;
+      const providerState = normalizeProviderState(payload.state?.providerState);
+      if (providerState) session.providerState = providerState;
       session.exitCode = payload.state?.exitCode ?? session.exitCode;
       session.updatedAt = payload.state?.updatedAt || session.updatedAt;
     },
-    onData: (data) => {
+    onData: (data, meta = {}) => {
       session.status = "running";
       appendOutput(session, data);
-      publish(session.id, { type: "output", data });
+      publish(session.id, {
+        type: "output",
+        data,
+        ...(meta.assignmentId ? { assignmentId: meta.assignmentId } : {}),
+        ...(meta.emittedAt ? { emittedAt: meta.emittedAt } : {})
+      });
     },
     onExit: ({ code, signal }) => {
       session.process = null;
@@ -331,6 +353,8 @@ async function restorePersistentSessions() {
       rows: clamp(config.rows, 30),
       output: String(record.output || "").slice(-MAX_OUTPUT_BUFFER),
       status: String(workerState.status || "exited"),
+      providerState: normalizeProviderState(workerState.providerState)
+        || (workerState.status === "exited" ? "exited" : "starting"),
       exitCode: workerState.exitCode ?? null,
       createdAt: config.createdAt || workerState.createdAt || new Date().toISOString(),
       updatedAt: workerState.updatedAt || new Date().toISOString(),
@@ -385,6 +409,66 @@ function writePtyInput(id, input) {
   if (!session?.process?.stdin?.writable) throw httpError(409, "Terminal is not running.");
   session.process.stdin.write(input);
   session.updatedAt = new Date().toISOString();
+}
+
+export async function assignPtyTerminalTask(id, body = {}, options = {}) {
+  const session = sessions.get(string(id));
+  if (!session) throw httpError(404, "Terminal not found.");
+  const assignmentId = string(body.assignmentId).slice(0, 160);
+  const prompt = sanitizeAssignmentPrompt(body.prompt);
+  if (!assignmentId) throw httpError(422, "Assignment ID is required.");
+  if (!prompt) throw httpError(422, "Assignment prompt is required.");
+  if (session.agent === "shell" || session.providerState === "fallback-shell") {
+    return rejectedAssignment(session, assignmentId, "The terminal is a project shell and cannot accept AI assignments.");
+  }
+  if (session.providerState === "exited" || session.status === "exited" || !session.process?.assign) {
+    return rejectedAssignment(session, assignmentId, "The AI provider is not running.");
+  }
+  const acknowledgement = await session.process.assign({
+    assignmentId,
+    data: formatAssignmentInput(session.agent, prompt),
+    timeoutMs: options.timeoutMs ?? ASSIGNMENT_TIMEOUT_MS
+  });
+  session.providerState = normalizeProviderState(acknowledgement.providerState)
+    || session.providerState;
+  session.updatedAt = new Date().toISOString();
+  return {
+    assignmentId,
+    terminalId: session.id,
+    state: acknowledgement.state,
+    providerState: session.providerState,
+    duplicate: Boolean(acknowledgement.duplicate),
+    ...(acknowledgement.reason ? { reason: acknowledgement.reason } : {})
+  };
+}
+
+export function formatPtyTerminalAssignment(agent, prompt) {
+  return formatAssignmentInput(normalizeAgent(agent), sanitizeAssignmentPrompt(prompt));
+}
+
+function formatAssignmentInput(agent, prompt) {
+  const providerPrompt = agent === "vibyra"
+    ? prompt.split(/\r\n|\r|\n/).map((line) => line.trim()).filter(Boolean).join(" | ")
+    : prompt;
+  return `\x1b[200~${providerPrompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
+}
+
+function sanitizeAssignmentPrompt(value) {
+  return String(value || "")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, MAX_ASSIGNMENT_PROMPT);
+}
+
+function rejectedAssignment(session, assignmentId, reason) {
+  return {
+    assignmentId,
+    terminalId: session.id,
+    state: "rejected",
+    providerState: session.providerState,
+    duplicate: false,
+    reason
+  };
 }
 
 function resizePtyTerminal(id, size) {
@@ -571,6 +655,11 @@ function clamp(value, fallback) {
 
 function label(agent) {
   return agent === "claude" ? "Claude" : agent === "gemini" ? "Gemini" : agent === "shell" ? "Shell" : agent === "codex" ? "Codex" : "Vibyra";
+}
+
+function normalizeProviderState(value) {
+  const state = string(value);
+  return ["starting", "ready", "fallback-shell", "exited"].includes(state) ? state : "";
 }
 
 function string(value) {

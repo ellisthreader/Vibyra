@@ -40,6 +40,50 @@ test("OpenRouter model slugs do not launch unsupported official CLIs", async () 
   }
 });
 
+test("semantic assignment formatting is bridge-owned and provider-specific", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-assignment-format-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?assignmentFormat=${Date.now()}`, import.meta.url);
+    const { formatPtyTerminalAssignment } = await import(moduleUrl);
+
+    assert.equal(
+      formatPtyTerminalAssignment("codex", "Inspect this\nthen test it"),
+      "\u001b[200~Inspect this\rthen test it\u001b[201~\r"
+    );
+    assert.equal(
+      formatPtyTerminalAssignment("vibyra", "Inspect this\n\nthen test it"),
+      "\u001b[200~Inspect this | then test it\u001b[201~\r"
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
+test("shell PTY sessions reject semantic AI assignments", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-shell-assignment-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?shellAssignment=${Date.now()}`, import.meta.url);
+    const { assignPtyTerminalTask, closeAllPtyTerminals, createPtyTerminal } = await import(moduleUrl);
+    await createPtyTerminal({ id: "shell-assignment", agent: "shell", title: "Shell" });
+
+    const result = await assignPtyTerminalTask("shell-assignment", {
+      assignmentId: "job-shell",
+      prompt: "This must not be pasted into Bash."
+    });
+
+    assert.equal(result.state, "rejected");
+    assert.equal(result.providerState, "fallback-shell");
+    assert.match(result.reason, /project shell/i);
+    closeAllPtyTerminals();
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("official terminal Memory stays out of public PTY session payloads", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-memory-private-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
@@ -89,6 +133,7 @@ test("close all removes every PTY session regardless of status", async () => {
   try {
     const moduleUrl = new URL(`./ptyTerminals.mjs?closeAll=${Date.now()}`, import.meta.url);
     const { closeAllPtyTerminals, createPtyTerminal, listPtyTerminals } = await import(moduleUrl);
+    closeAllPtyTerminals();
     await createPtyTerminal({ id: "missing-agent-1", agent: "gemini", title: "One" });
     await createPtyTerminal({ id: "missing-agent-2", agent: "gemini", title: "Two" });
 
@@ -112,7 +157,10 @@ test("PTY terminal names can be changed without relaunching", async () => {
     const renamed = renamePtyTerminal("rename-terminal", { title: "  Build checks  " });
 
     assert.equal(renamed.title, "Build checks");
-    assert.equal(listPtyTerminals()[0].title, "Build checks");
+    assert.equal(
+      listPtyTerminals().find((terminal) => terminal.id === "rename-terminal")?.title,
+      "Build checks"
+    );
     closeAllPtyTerminals();
   } finally {
     rmSync(root, { recursive: true, force: true });

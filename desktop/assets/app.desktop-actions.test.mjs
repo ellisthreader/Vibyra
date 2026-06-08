@@ -29,6 +29,37 @@ test("desktop actions open requested terminals with captured project scope", asy
   assert.match(summary, /Opening 2 GPT-5\.5 terminals/);
 });
 
+test("desktop actions capture opened terminal IDs in the execution hook", async () => {
+  const records = [];
+  const context = actionContext({
+    createTerminals(count, model, options) {
+      for (let index = 0; index < count; index += 1) {
+        context.terminals.unshift({
+          id: `opened-${index + 1}`,
+          model,
+          projectId: options.projectId
+        });
+      }
+    },
+    recordDesktopActionExecution: (scope, details) => records.push({ scope, details })
+  });
+  const action = {
+    type: "open_terminals",
+    count: 2,
+    model: "gpt-5.5",
+    projectId: "project-1"
+  };
+
+  await context.runDesktopActions([action], { desktopActionContextScope: "chat:test" });
+
+  assert.equal(records.length, 1);
+  assert.equal(records[0].scope, "chat:test");
+  assert.equal(records[0].details.executionStatus, "completed");
+  assert.deepEqual(JSON.parse(JSON.stringify(records[0].details.terminalIds)), ["opened-2", "opened-1"]);
+  assert.equal(records[0].details.projectId, "project-1");
+  assert.match(records[0].details.batchId, /^terminal-batch-/);
+});
+
 test("desktop actions inherit terminal setup scope only when project metadata is absent", async () => {
   const calls = [];
   const context = actionContext({
@@ -116,6 +147,7 @@ test("desktop batch tasks assign transient prompts without dispatching input ear
 
   const summary = await context.runDesktopActions([{
     type: "run_terminal_tasks",
+    target: "new",
     model: "gpt-5.5",
     effort: "high",
     permissionMode: "standard",
@@ -127,7 +159,7 @@ test("desktop batch tasks assign transient prompts without dispatching input ear
   assert.equal(created[0].options.initialPrompt, "Audit the API");
   assert.equal(created[1].options.initialPrompt, "Run the tests");
   assert.equal(created[0].options.workspaceMode, "worktree");
-  assert.equal(summary, "Starting 2 terminal tasks on separate local Git branches in Terminals.");
+  assert.equal(summary, "Queued 2 terminal tasks on separate local Git branches in Terminals.");
 });
 
 test("desktop batch tasks preserve per-task launch settings", async () => {
@@ -146,6 +178,7 @@ test("desktop batch tasks preserve per-task launch settings", async () => {
 
   await context.runDesktopActions([{
     type: "run_terminal_tasks",
+    target: "new",
     model: "gpt-5.5",
     projectId: "default-project",
     tasks: [{
@@ -165,6 +198,31 @@ test("desktop batch tasks preserve per-task launch settings", async () => {
     projectId: "auth-project",
     workspaceMode: "shared"
   });
+});
+
+test("desktop task actions require an explicit target", async () => {
+  let createCalls = 0;
+  let fetchCalls = 0;
+  const context = actionContext({
+    terminals: [{ id: "one", ptyStatus: "running" }],
+    createTerminal() {
+      createCalls += 1;
+      return null;
+    },
+    fetch: async () => {
+      fetchCalls += 1;
+      return jsonResponse({ status: "written-to-child" });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    tasks: ["Audit the terminal page"]
+  }]);
+
+  assert.equal(summary, "The terminal task target was not specified, so no terminals were changed.");
+  assert.equal(createCalls, 0);
+  assert.equal(fetchCalls, 0);
 });
 
 test("desktop task actions assign jobs to existing project terminals without relaunching", async () => {
@@ -194,14 +252,87 @@ test("desktop task actions assign jobs to existing project terminals without rel
   assert.equal(context.syncCalls, 1);
   assert.equal(requests.length, 2);
   assert.deepEqual(requests.map(({ url }) => url), [
-    "/desktop/pty-terminals/one/input",
-    "/desktop/pty-terminals/two/input"
+    "/desktop/pty-terminals/one/assign",
+    "/desktop/pty-terminals/two/assign"
   ]);
-  assert.equal(JSON.parse(requests[0].options.body).input, "\u001b[200~Inspect the terminal page\u001b[201~\r");
+  const firstAssignment = JSON.parse(requests[0].options.body);
+  const secondAssignment = JSON.parse(requests[1].options.body);
+  assert.equal(firstAssignment.prompt, "Inspect the terminal page");
+  assert.equal(secondAssignment.prompt, "Run focused terminal tests");
+  assert.notEqual(firstAssignment.assignmentId, secondAssignment.assignmentId);
   assert.equal(summary, "Assigned 2 terminal jobs to the open terminals.");
 });
 
-test("desktop task assignments expose accepted activity to the terminal UI", async () => {
+test("desktop task actions target exact latest-batch IDs in supplied order", async () => {
+  const requests = [];
+  const records = [];
+  const context = actionContext({
+    activeTerminalId: "old-active",
+    terminals: [
+      { id: "old-active", projectId: "old-project", ptyStatus: "running" },
+      { id: "new-1", projectId: "batch-project", ptyStatus: "running" },
+      { id: "old-2", projectId: "batch-project", ptyStatus: "running" },
+      { id: "new-2", projectId: "batch-project", ptyStatus: "running" }
+    ],
+    fetch: async (url, options) => {
+      const body = JSON.parse(options.body);
+      requests.push({ url, body });
+      return jsonResponse({
+        assignment: {
+          assignmentId: body.assignmentId,
+          terminalId: url.includes("new-2") ? "new-2" : "new-1",
+          state: "written-to-child",
+          providerState: "ready"
+        }
+      });
+    },
+    recordDesktopActionExecution: (scope, details) => records.push({ scope, details })
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "latest_batch",
+    latestBatchTerminalIds: ["new-2", "new-1"],
+    projectId: "stale-project",
+    tasks: ["Inspect rendering", "Review accessibility"]
+  }], { desktopActionContextScope: "chat:test" });
+
+  assert.deepEqual(requests.map((request) => request.url), [
+    "/desktop/pty-terminals/new-2/assign",
+    "/desktop/pty-terminals/new-1/assign"
+  ]);
+  assert.deepEqual(requests.map((request) => request.body.prompt), [
+    "Inspect rendering",
+    "Review accessibility"
+  ]);
+  assert.equal(summary, "Assigned 2 terminal jobs to the open terminals.");
+  assert.equal(records[0].scope, "chat:test");
+  assert.equal(records[0].details.executionStatus, "completed");
+  assert.deepEqual(JSON.parse(JSON.stringify(records[0].details.terminalIds)), ["new-2", "new-1"]);
+});
+
+test("desktop latest-batch targeting fails closed when no IDs are available", async () => {
+  let fetchCalls = 0;
+  const context = actionContext({
+    terminals: [{ id: "older", projectId: "saas", ptyStatus: "running" }],
+    fetch: async () => {
+      fetchCalls += 1;
+      return jsonResponse({ status: "written-to-child" });
+    }
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "latest_batch",
+    latestBatchTerminalIds: [],
+    tasks: ["Do not send this to an older terminal"]
+  }]);
+
+  assert.equal(summary, "The requested terminal batch is no longer available, so no tasks were assigned.");
+  assert.equal(fetchCalls, 0);
+});
+
+test("desktop task assignments preserve internal delivery callbacks", async () => {
   const events = [];
   const terminal = { id: "one", projectId: "saas", ptyStatus: "running" };
   const context = actionContext({
@@ -225,7 +356,7 @@ test("desktop task assignments expose accepted activity to the terminal UI", asy
   ]);
 });
 
-test("desktop task assignments retry while a newly opened terminal is starting", async () => {
+test("desktop task assignments report semantic endpoint failures without raw-input retries", async () => {
   let attempts = 0;
   const terminal = { id: "one", projectId: "saas", ptyStatus: "starting" };
   const context = actionContext({
@@ -233,9 +364,7 @@ test("desktop task assignments retry while a newly opened terminal is starting",
     setTimeout: (callback) => callback(),
     fetch: async () => {
       attempts += 1;
-      return attempts < 3
-        ? jsonResponse({ error: "Terminal is not running." }, 409)
-        : jsonResponse({ ok: true });
+      return jsonResponse({ status: "rejected", error: "Terminal is not ready." }, 409);
     }
   });
 
@@ -246,8 +375,8 @@ test("desktop task assignments retry while a newly opened terminal is starting",
     tasks: ["Review the terminal UI"]
   }]);
 
-  assert.equal(attempts, 3);
-  assert.equal(summary, "Assigned 1 terminal job to the open terminals.");
+  assert.equal(attempts, 1);
+  assert.equal(summary, "Assigned 0 terminal jobs to the open terminals. 1 assignment could not be delivered.");
 });
 
 test("desktop task assignments exclude shell and incompatible existing terminals", async () => {
@@ -274,17 +403,14 @@ test("desktop task assignments exclude shell and incompatible existing terminals
     tasks: ["Audit one", "Audit two"]
   }]);
 
-  assert.deepEqual(requests, ["/desktop/pty-terminals/match/input"]);
+  assert.deepEqual(requests, ["/desktop/pty-terminals/match/assign"]);
   assert.match(summary, /1 task had no compatible running terminal/);
 });
 
-test("desktop task actions flatten multiline briefs for Vibyra wrapper terminals", async () => {
+test("desktop task actions send semantic multiline prompts without renderer formatting", async () => {
   const requests = [];
   const context = actionContext({
     terminals: [{ id: "one", agent: "vibyra", projectId: "saas", ptyStatus: "running" }],
-    terminalTaskInputPrompt: (terminal, prompt) => terminal.agent === "vibyra"
-      ? String(prompt).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).join(" | ")
-      : String(prompt),
     fetch: async (url, options) => {
       requests.push({ url, options });
       return jsonResponse({ ok: true });
@@ -299,8 +425,8 @@ test("desktop task actions flatten multiline briefs for Vibyra wrapper terminals
   }]);
 
   assert.equal(
-    JSON.parse(requests[0].options.body).input,
-    "\u001b[200~Role: investigator | Inspect the picker | Run focused tests\u001b[201~\r"
+    JSON.parse(requests[0].options.body).prompt,
+    "Role: investigator\nInspect the picker\nRun focused tests"
   );
 });
 
@@ -328,14 +454,14 @@ test("desktop task actions assign only three jobs when seven terminals are open"
 
   assert.equal(requests.length, 3);
   assert.deepEqual(requests.map(({ url }) => url), [
-    "/desktop/pty-terminals/terminal-4/input",
-    "/desktop/pty-terminals/terminal-1/input",
-    "/desktop/pty-terminals/terminal-2/input"
+    "/desktop/pty-terminals/terminal-4/assign",
+    "/desktop/pty-terminals/terminal-1/assign",
+    "/desktop/pty-terminals/terminal-2/assign"
   ]);
   assert.equal(summary, "Assigned 3 terminal jobs to the open terminals.");
 });
 
-test("desktop subagent retries reuse existing terminals before opening matching additions", async () => {
+test("desktop subagent additions require explicit user-approved open-more intent", async () => {
   const requests = [];
   const created = [];
   const context = actionContext({
@@ -363,6 +489,7 @@ test("desktop subagent retries reuse existing terminals before opening matching 
   const summary = await context.runDesktopActions([{
     type: "run_terminal_tasks",
     target: "existing_then_new",
+    allowOpenMore: true,
     projectId: "saas",
     tasks: Array.from({ length: 8 }, (_, index) => `Task ${index + 1}`)
   }]);
@@ -373,6 +500,59 @@ test("desktop subagent retries reuse existing terminals before opening matching 
   assert.equal(created.every((terminal) => terminal.permissionMode === "standard"), true);
   assert.equal(created.every((terminal) => terminal.tokenMode === "provider"), true);
   assert.equal(summary, "Assigned 5 terminal jobs to the open terminals. Started 3 additional terminal jobs.");
+});
+
+test("desktop task delivery failures never open replacement terminals without approval", async () => {
+  let createCalls = 0;
+  const records = [];
+  const context = actionContext({
+    terminals: [{ id: "existing-1", projectId: "saas", ptyStatus: "running" }],
+    createTerminal() {
+      createCalls += 1;
+      return { id: `unexpected-${createCalls}` };
+    },
+    recordDesktopActionExecution: (scope, details) => records.push({ scope, details }),
+    fetch: async () => jsonResponse({ status: "rejected", error: "Provider is busy." }, 409)
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "existing_then_new",
+    projectId: "saas",
+    tasks: ["Audit the terminal page", "Run focused tests"]
+  }], { desktopActionContextScope: "chat:test" });
+
+  assert.equal(createCalls, 0);
+  assert.equal(summary, "Assigned 0 terminal jobs to the open terminals. 1 assignment could not be delivered. 1 task had no compatible running terminal.");
+  assert.equal(records.length, 1);
+  assert.equal(records[0].scope, "chat:test");
+  assert.equal(records[0].details.executionStatus, "partial");
+  assert.deepEqual(JSON.parse(JSON.stringify(records[0].details.terminalIds)), ["existing-1"]);
+});
+
+test("desktop new task actions record queued IDs without claiming delivery", async () => {
+  const records = [];
+  const context = actionContext({
+    createTerminal(model, shouldRender, options) {
+      const terminal = { id: `queued-${context.terminals.length + 1}`, model, ...options };
+      context.terminals.unshift(terminal);
+      return terminal;
+    },
+    recordDesktopActionExecution: (scope, details) => records.push({ scope, details })
+  });
+
+  const summary = await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "new",
+    model: "gpt-5.5",
+    projectId: "saas",
+    tasks: ["Audit one", "Audit two"]
+  }], { desktopActionContextScope: "chat:test" });
+
+  assert.match(summary, /^Queued 2 terminal tasks/);
+  assert.equal(records[0].scope, "chat:test");
+  assert.equal(records[0].details.executionStatus, "pending");
+  assert.deepEqual(JSON.parse(JSON.stringify(records[0].details.terminalIds)), ["queued-1", "queued-2"]);
 });
 
 test("desktop actions close every authoritative terminal in one request", async () => {

@@ -6,6 +6,7 @@ let terminals = [];
 let activeTerminalId = "";
 let terminalLayout = localStorage.getItem(layoutKey) === "grid" ? "grid" : "focus";
 let newTerminalMenuOpen = false;
+let terminalToolbarMenuOpen = false;
 let newTerminalModelSearch = "";
 let settingsTerminalId = "";
 let forceTerminalRender = false;

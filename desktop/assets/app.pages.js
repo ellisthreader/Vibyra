@@ -1,23 +1,22 @@
 function renderDashboard() {
-  const rows = liveBuildRows();
+  const terminalRows = homeTerminalRows();
+  const activeWork = liveBuildRows();
   const events = dashboardActivityEvents();
-  nodes.content.innerHTML = `<section class="builds-page builds-page--screenshot"><div class="builds-title-row"><div class="page-head"><h1>Builds on this desktop</h1><p class="body-copy">Builds running on this desktop will appear here.</p></div><button class="primary-button builds-new-chat" type="button" data-jump="chat">${icon("plus")}New chat</button></div><div class="summary-grid builds-summary-grid">${dashboardSummaryTile("pulse", "Active builds", rows.length, "running")}${dashboardSummaryTile("folder", "Local projects", (currentState.projects || []).length, "available", true)}${dashboardSummaryTile("desktop", "Desktop status", desktopStatusTitle(), currentState.machineName || "Desktop")}</div>${rows.length ? dashboardActiveBuildPanel(rows) : dashboardPairingPanel()}<section class="activity-panel builds-activity-panel"><div class="activity-head"><h2>Recent activity</h2><span class="activity-count">${events.length} event${events.length === 1 ? "" : "s"}</span></div><div class="activity-list builds-activity-list">${dashboardActivityRows(events.slice(0, 8))}</div></section></section>`;
+  nodes.content.innerHTML = `<section class="home-page"><header class="home-welcome"><div><p>${escapeHtml(currentState.machineName || "Vibyra Desktop")}</p><h1>Your workspace at a glance.</h1></div><button class="primary-button home-new-chat" type="button" data-jump="chat">${icon("plus")}New chat</button></header><div class="home-status-strip">${homeStatusItem("phone", "Phone", homePhoneStatus(), "phone")}${homeStatusItem("terminal", "Terminals", `${terminalRows.length} open`, "terminals")}${homeStatusItem("folder", "Projects", `${(currentState.projects || []).length} local`, "projects")}</div><div class="home-grid"><section class="home-panel home-terminals"><div class="home-panel-head"><div><span>Live workspace</span><h2>Terminals</h2></div><button class="home-text-button" type="button" data-jump="terminals">Open terminals ${icon("arrow")}</button></div>${activeWork.length ? homeActiveWorkRow(activeWork[0]) : ""}${terminalRows.length ? `<div class="home-terminal-list">${terminalRows.slice(0, 5).map(homeTerminalRow).join("")}</div>` : homeEmptyTerminals()}</section><aside class="home-side">${homePhonePanel()}${homeProjectsPanel()}</aside></div>${events.length ? `<section class="home-panel home-activity"><div class="home-panel-head"><div><span>Latest</span><h2>Recent activity</h2></div></div><div class="home-activity-list">${dashboardActivityRows(events.slice(0, 4))}</div></section>` : ""}</section>`;
   bindJumps();
   bindDashboardActions();
 }
 function bindDashboardActions() {
-  document.getElementById("copy-dashboard-pair-code")?.addEventListener("click", async () => {
-    const value = currentState.pairCode || "";
-    try {
-      await navigator.clipboard?.writeText(value);
-      const button = document.getElementById("copy-dashboard-pair-code");
-      button?.classList.add("is-copied");
-      setTimeout(() => button?.classList.remove("is-copied"), 1400);
-    } catch {
-    }
-  });
-  document.getElementById("dashboard-pair-phone")?.addEventListener("click", openPairModal);
-  document.getElementById("dashboard-pair-help")?.addEventListener("click", openPairModal);
+  document.querySelectorAll("[data-home-phone]").forEach((button) => button.addEventListener("click", openPairModal));
+  document.querySelectorAll("[data-home-terminal]").forEach((button) => button.addEventListener("click", () => {
+    if (typeof activeTerminalId !== "undefined") activeTerminalId = button.dataset.homeTerminal || activeTerminalId;
+    setPage("terminals");
+  }));
+  document.querySelectorAll("[data-home-project]").forEach((button) => button.addEventListener("click", () => {
+    selectedProjectId = button.dataset.homeProject || "";
+    if (selectedProjectId) localStorage.setItem("vibyra.desktop.project", selectedProjectId);
+    setPage("projects");
+  }));
 }
 function renderProjects() {
   const projects = filteredProjects();

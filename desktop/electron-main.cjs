@@ -20,6 +20,8 @@ let loadRetryTimer;
 let loadRetryAttempt = 0;
 let bridgeStartPending = false;
 let bridgeHealthTimer;
+let handledRendererReloadRequestId = "";
+let observedTerminalActionProtocolVersion = "";
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -147,9 +149,37 @@ function isolatedLaunch(command, args) {
 function startBridgeHealthMonitor() {
   if (bridgeHealthTimer) return;
   const check = () => {
-    const request = http.get(`${new URL(appUrl).origin}/health`, { timeout: 1500 }, (response) => {
-      response.resume();
-      if (response.statusCode !== 200) ensureDesktopBridge();
+    const request = http.get(`${new URL(appUrl).origin}/desktop/runtime`, { timeout: 1500 }, (response) => {
+      if (response.statusCode !== 200) {
+        response.resume();
+        ensureDesktopBridge();
+        return;
+      }
+      let body = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => {
+        if (body.length < 16384) body += chunk;
+      });
+      response.on("end", () => {
+        try {
+          const runtime = JSON.parse(body);
+          const protocolVersion = String(runtime.terminalActionProtocolVersion || "");
+          const requestId = String(runtime.rendererReloadRequestId || "");
+          const protocolChanged = Boolean(
+            protocolVersion
+            && observedTerminalActionProtocolVersion
+            && protocolVersion !== observedTerminalActionProtocolVersion
+          );
+          if (protocolVersion) observedTerminalActionProtocolVersion = protocolVersion;
+          const reloadRequested = Boolean(
+            requestId && requestId !== handledRendererReloadRequestId
+          );
+          if (requestId) handledRendererReloadRequestId = requestId;
+          if (protocolChanged || reloadRequested) reloadDesktopWindow(mainWindow);
+        } catch {
+          ensureDesktopBridge();
+        }
+      });
     });
     request.on("timeout", () => request.destroy());
     request.on("error", ensureDesktopBridge);

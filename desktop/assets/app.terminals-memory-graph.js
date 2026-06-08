@@ -23,9 +23,11 @@ function terminalMemoryGraphHtml() {
           </g>
         </g>
       </svg>
-      ${terminalMemoryGraphSummaryHtml(model)}
-      <span class="terminal-memory-graph-hint">Scroll to zoom · drag to move</span>
     </div>
+    <footer class="terminal-memory-graph-footer">
+      <span class="terminal-memory-graph-hint">Scroll to zoom · drag to move</span>
+      ${terminalMemoryGraphSummaryHtml(model)}
+    </footer>
   </section>`;
 }
 

@@ -16,7 +16,13 @@ import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } 
 import { localAiStatus } from "./localAi.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
-import { appState, markPhoneConnected, publicState } from "./state.mjs";
+import {
+  appState,
+  desktopRuntimeState,
+  markPhoneConnected,
+  publicState,
+  requestRendererProtocolReload
+} from "./state.mjs";
 import { approvePairing, denyPairing, isAuthed } from "./pairingHandlers.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -45,6 +51,17 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/state") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, publicState());
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/runtime") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, desktopRuntimeState(url.searchParams.get("rendererProtocolVersion")));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/runtime/renderer-mismatch") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const body = await readBody(req);
+    send(res, 202, requestRendererProtocolReload(body.rendererProtocolVersion));
     return true;
   }
   if (req.method === "GET" && url.pathname === "/desktop/projects") {

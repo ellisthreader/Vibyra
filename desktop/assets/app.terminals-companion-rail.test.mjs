@@ -64,6 +64,9 @@ test("terminal AI and Memory keep an equal companion split", () => {
 test("terminal navigation exposes one Vibyra AI launcher without voice or memory tabs", () => {
   assert.match(companionSource, /function terminalCompanionToolbarHtml\(\) \{\s+return "";/);
   assert.match(companionSource, /function terminalCompanionStandaloneToolbarHtml\(\) \{\s+return "";/);
+  assert.match(companionSource, /terminal-ai-topbar-button[\s\S]*\/app-assets\/vibyra\.png/);
+  assert.doesNotMatch(companionSource, /terminal-ai-topbar-button[\s\S]*<span>Vibyra AI<\/span>/);
+  assert.match(companionChatStyles, /\.terminal-ai-topbar-button\s*\{[\s\S]*width: 32px/);
   assert.doesNotMatch(companionSource, /data-terminal-companion-open="memory"/);
   assert.match(companionSource, /terminal-memory-section--stacked/);
 });
@@ -76,7 +79,7 @@ test("terminal voice is a one-control AI conversation", () => {
   assert.match(companionVoiceSource, /terminalVoiceThreads/);
   assert.match(companionVoiceSource, /terminalVoiceHistoryItems = 8/);
   assert.match(companionVoiceSource, /profileContext: terminalVoiceProfileContext\(\)/);
-  assert.match(companionVoiceSource, /await runDesktopActions\(result\.actions\)/);
+  assert.match(companionVoiceSource, /await runDesktopActions\(result\.actions, \{ desktopActionContextScope: actionContextScope \}\)/);
   assert.match(companionVoiceSource, /fetch\("\/desktop\/voice\/speak"/);
   assert.match(companionVoiceSource, /SpeechSynthesisUtterance/);
   assert.match(companionVoiceSource, /OpenAI voice unavailable; using system voice/);
@@ -117,8 +120,8 @@ test("terminal voice makes listening, processing, and speaking visually explicit
 });
 
 test("terminal chat companion executes actions and keeps their result visible", () => {
-  assert.match(companionChatSource, /await terminalAiChatResultText\(result\)/);
-  assert.match(companionChatSource, /await runDesktopActions\(result\.actions\)/);
+  assert.match(companionChatSource, /await terminalAiChatResultText\(result, actionContextScope\)/);
+  assert.match(companionChatSource, /await runDesktopActions\(result\.actions, \{ desktopActionContextScope: actionContextScope \}\)/);
   assert.match(companionChatSource, /moveTerminalAiActionMessages\(thread, userMessage, pending\)/);
   assert.match(companionChatSource, /terminalId: terminal\?\.id/);
 });

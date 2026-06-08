@@ -1,16 +1,16 @@
 .terminal-memory-graph {
   background: var(--terminal-companion-bg, #0d0d14);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 0;
   overflow: hidden;
   position: relative;
 }
 .terminal-memory-graph-meta {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   justify-content: space-between;
-  padding: 9px 11px 0 13px;
+  padding: 9px 11px 7px 13px;
   position: relative;
   z-index: 1;
 }
@@ -86,14 +86,21 @@
   height: 100%;
   min-height: 0;
 }
-.terminal-memory-graph-hint {
-  bottom: 8px;
+.terminal-memory-graph-footer {
+  align-items: center;
+  border-top: 1px solid var(--terminal-border);
   color: var(--terminal-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  justify-content: space-between;
+  min-height: 27px;
+  padding: 4px 9px 4px 11px;
+}
+.terminal-memory-graph-hint {
   font-size: 8px;
-  left: 11px;
   opacity: .7;
   pointer-events: none;
-  position: absolute;
 }
 .terminal-memory-view-toggle {
   align-items: center;

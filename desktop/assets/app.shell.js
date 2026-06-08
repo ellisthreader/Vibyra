@@ -129,11 +129,6 @@ function render() {
   }
   if (activePage === "projects") renderProjects();
   if (activePage === "dashboard") renderDashboard();
-  if (typeof profileModalOpen !== "undefined" && profileModalOpen && nodes.profileModal?.classList.contains("open") && typeof renderProfileModal === "function") {
-    const keepProfileDom = (typeof profileHasActiveControl === "function" && profileHasActiveControl())
-      || (typeof profileActiveSection !== "undefined" && profileActiveSection === "preferences");
-    if (!keepProfileDom) renderProfileModal();
-  }
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".billing-revamp"))) renderTokenModal();
@@ -188,7 +183,7 @@ function renderTopbar() {
   const projectCount = filteredProjects().length;
   if (activePage !== "chat") topbarChatMenuOpen = false;
   const terminalPage = activePage === "terminals";
-  const title = activePage === "chat" ? activeChatTitle() : terminalPage ? "" : activePage === "dashboard" ? "Vibyra Desktop" : pageTitle(activePage);
+  const title = activePage === "chat" ? activeChatTitle() : terminalPage ? "" : pageTitle(activePage);
   const subtitle = activePage === "chat"
     ? selected ? chatDirectoryLabel(selected) : ""
     : activePage === "projects"

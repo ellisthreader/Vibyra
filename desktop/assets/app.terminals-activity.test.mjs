@@ -5,57 +5,57 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("./app.terminals-activity.js", import.meta.url), "utf8");
 
-test("terminal activity summarizes, renders, and clears transient work", () => {
-  const timers = [];
+test("terminal assignments remain visually silent while preserving assignment IDs", () => {
   const context = {
     activePage: "chat",
     clearTimeout,
     document: { querySelectorAll: () => [] },
     escapeHtml: (value) => String(value).replaceAll("<", "&lt;"),
-    setTimeout: (callback, delay) => {
-      timers.push({ callback, delay });
-      return timers.length;
-    }
-  };
-  vm.runInNewContext(source, context);
-
-  const terminal = { id: "one" };
-  context.terminalTaskActivityStart(terminal, `Inspect   ${"<terminal>"}\nactivity`);
-  assert.equal(terminal.taskActivity.phase, "assigning");
-  assert.equal(timers[0].delay, 15000);
-  assert.match(context.terminalTaskActivityHtml(terminal), /Assigning task/);
-  assert.match(context.terminalTaskActivityHtml(terminal), /&lt;terminal>/);
-
-  context.terminalTaskActivityAccepted(terminal);
-  assert.equal(terminal.taskActivity.phase, "accepted");
-  assert.match(context.terminalTaskActivityHtml(terminal), /Task accepted/);
-
-  context.terminalTaskActivityOutput(terminal, "Working...");
-  assert.equal(terminal.taskActivity.phase, "working");
-  assert.match(context.terminalTaskActivityHtml(terminal), /Vibyra is working/);
-
-  context.terminalTaskActivityFailed(terminal);
-  assert.equal(terminal.taskActivity, undefined);
-});
-
-test("terminal activity signatures change only with visible status content", () => {
-  const context = {
-    activePage: "chat",
-    clearTimeout,
-    document: { querySelectorAll: () => [] },
-    escapeHtml: String,
     setTimeout
   };
   vm.runInNewContext(source, context);
 
   const terminal = { id: "one" };
-  context.terminalTaskActivityStart(terminal, "Inspect terminal UI");
-  const assigning = context.terminalTaskActivitySignature(terminal);
-  context.terminalTaskActivityAccepted(terminal);
-  const working = context.terminalTaskActivitySignature(terminal);
+  const assignmentId = context.terminalTaskActivityStart(terminal, `Inspect   ${"<terminal>"}\nactivity`);
+  assert.match(assignmentId, /^assignment-one-/);
+  assert.equal(terminal.taskActivity, undefined);
+  assert.equal(context.terminalTaskActivityHtml(terminal), "");
+  context.terminalTaskActivityAccepted(terminal, assignmentId);
+  context.terminalTaskActivityOutput(terminal, "Working...", { assignmentId });
+  context.terminalTaskActivityFailed(terminal);
+  assert.equal(terminal.taskActivity, undefined);
+});
 
-  assert.notEqual(assigning, working);
-  assert.equal(context.terminalTaskActivitySignature(terminal), working);
+test("terminal activity helpers never create frontend status content", () => {
+  const context = {
+    activePage: "chat",
+    clearTimeout,
+    document: { querySelectorAll: () => [] },
+    escapeHtml: String,
+    setTimeout: () => 1
+  };
+  vm.runInNewContext(source, context);
+
+  const terminal = { id: "one" };
+  const assignmentId = context.terminalTaskActivityStart(terminal, "Inspect terminal UI", "assignment-1");
+  assert.equal(assignmentId, "assignment-1");
+  assert.equal(context.terminalTaskActivitySignature(terminal), "");
+  assert.equal(context.terminalTaskActivityHtml(terminal), "");
   context.terminalTaskActivityClear(terminal);
   assert.equal(context.terminalTaskActivitySignature(terminal), "");
+});
+
+test("terminal activity cleanup removes stale persisted visual state", () => {
+  const context = {
+    activePage: "chat",
+    clearTimeout,
+    document: { querySelectorAll: () => [] },
+    escapeHtml: String,
+    setTimeout: () => 1
+  };
+  vm.runInNewContext(source, context);
+
+  const terminal = { id: "one", taskActivity: { phase: "accepted" } };
+  context.terminalTaskActivityClear(terminal);
+  assert.equal(terminal.taskActivity, undefined);
 });

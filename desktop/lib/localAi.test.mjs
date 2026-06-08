@@ -32,6 +32,8 @@ test("local Vibyra chat sends a specialized bounded Ollama request", async () =>
   assert.equal(body.stream, false);
   assert.equal(body.model, "qwen3:4b");
   assert.match(body.messages[0].content, /private local assistant inside Vibyra Desktop/);
+  assert.match(body.messages[0].content, /can open and close its terminals and assign tasks/i);
+  assert.match(body.messages[0].content, /Never claim that Vibyra cannot control terminals/i);
   assert.match(body.messages.at(-1).content, /Active Vibyra project: Vibyra/);
 });
 

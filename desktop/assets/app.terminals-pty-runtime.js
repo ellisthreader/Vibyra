@@ -35,17 +35,45 @@ async function startPtyTerminal(terminal) {
 }
 
 async function submitInitialPtyPrompt(terminal) {
-  const prompt = terminalTaskInputPrompt(terminal, terminal?.initialPrompt);
+  const prompt = normalizeInitialTerminalPrompt(terminal?.initialPrompt);
   if (!prompt || terminal.ptyStatus === "unavailable" || terminal.ptyStatus === "exited") return;
-  const input = `\x1b[200~${prompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
-  const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/input`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ input })
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || "The terminal task could not be delivered.");
-  delete terminal.initialPrompt;
+  const assignmentId = terminal.initialAssignmentId
+    || (typeof terminalTaskActivityStart === "function"
+      ? terminalTaskActivityStart(terminal, prompt)
+      : `assignment-${terminal.id}-${Date.now()}`);
+  terminal.initialAssignmentId = assignmentId;
+  try {
+    const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/assign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId, prompt })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "The terminal task could not be delivered.");
+    const assignment = result.assignment || result;
+    const provider = normalizedPtyProviderState({
+      providerState: assignment.providerState,
+      status: terminal.ptyStatus
+    });
+    terminal.providerState = provider.state;
+    terminal.providerReady = provider.ready;
+    terminal.providerBusy = provider.busy;
+    terminal.notice = null;
+    if (typeof terminalTaskActivityAccepted === "function") {
+      terminalTaskActivityAccepted(terminal, {
+        assignmentId: assignment.assignmentId || assignmentId,
+        acceptedAt: assignment.acceptedAt
+      });
+    }
+  } catch (error) {
+    if (typeof terminalTaskActivityFailed === "function") {
+      terminalTaskActivityFailed(terminal, assignmentId);
+    }
+    throw error;
+  } finally {
+    delete terminal.initialPrompt;
+    delete terminal.initialAssignmentId;
+  }
 }
 
 function terminalTaskInputPrompt(terminal, value) {
@@ -59,6 +87,7 @@ function terminalTaskInputPrompt(terminal, value) {
 }
 
 let ptyCollectionSyncTimer = null;
+let ptyCollectionSyncPromise = null;
 let terminalXtermResizeFrame = 0;
 let terminalXtermResizeObserver = null;
 const terminalXtermObservedNodes = new WeakSet();
@@ -132,7 +161,10 @@ function handlePtySocketMessage(id, raw) {
     syncPtyXtermOutput(terminal);
     shouldRender = true;
   } else if (payload.type === "output") {
-    appendPtyOutput(terminal, payload.data || "");
+    appendPtyOutput(terminal, payload.data || "", {
+      assignmentId: payload.assignmentId || payload.assignment?.id || "",
+      emittedAt: payload.emittedAt || payload.timestamp || ""
+    });
   }
   if (payload.type === "exit") {
     appendPtyOutput(terminal, payload.data || "");
@@ -202,15 +234,28 @@ function bindPtyTopbarControls() {
   if (typeof bindTerminalWorkspaceIndicators === "function") bindTerminalWorkspaceIndicators(document);
   bindPtyClick(document.getElementById("open-terminal-new"), () => {
     newTerminalMenuOpen = !newTerminalMenuOpen;
+    terminalToolbarMenuOpen = false;
     if (newTerminalMenuOpen) modelScrollTops.new = 0;
     else terminalProjectMenuTarget = "";
     settingsTerminalId = "";
     render();
   });
+  bindPtyClick(document.getElementById("open-terminal-toolbar"), (event) => {
+    event.stopPropagation();
+    terminalToolbarMenuOpen = !terminalToolbarMenuOpen;
+    newTerminalMenuOpen = false;
+    terminalProjectMenuTarget = "";
+    settingsTerminalId = "";
+    renderTopbar();
+  });
   bindPtyClick(document.getElementById("toggle-terminal-layout"), () => {
+    terminalToolbarMenuOpen = false;
     terminalLayout = terminalLayout === "grid" ? "focus" : "grid";
     saveTerminals();
     render();
+  });
+  document.querySelectorAll("[data-terminal-close-all]").forEach((button) => {
+    bindPtyClick(button, () => void requestCloseAllPtyTerminals());
   });
   document.querySelectorAll("[data-terminal-focus]").forEach((button) => bindPtyClick(button, () => setActiveTerminal(button.dataset.terminalFocus)));
   document.querySelectorAll("[data-terminal-close]").forEach((button) => bindPtyClick(button, (event) => {
@@ -313,12 +358,12 @@ function setPtyInputNotice(id, message) {
   }
 }
 
-function appendPtyOutput(terminal, data) {
+function appendPtyOutput(terminal, data, meta = {}) {
   terminal.output = String((terminal.output || "") + String(data || "")).slice(-60000);
   terminal.ptyStatus = terminal.ptyStatus === "starting" ? "running" : terminal.ptyStatus;
   terminal.pending = false;
   terminal.updatedAt = Date.now();
-  if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data);
+  if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data, meta);
   const xterm = terminalXterms[terminal.id];
   if (xterm?.element?.isConnected) {
     xterm.write(data);
@@ -709,6 +754,7 @@ function plainTerminalOutput(value) {
 }
 
 function ptySessionPatch(session) {
+  const provider = normalizedPtyProviderState(session);
   return {
     agent: String(session.agent || ""),
     agentStatus: session.agentStatus || null,
@@ -724,7 +770,32 @@ function ptySessionPatch(session) {
     cwd: String(session.cwd || ""),
     output: String(session.output || "").slice(-60000),
     ptyStatus: String(session.status || "idle"),
+    providerState: provider.state,
+    providerReady: provider.ready,
+    providerBusy: provider.busy,
     exitCode: session.exitCode ?? null
+  };
+}
+
+function normalizedPtyProviderState(session) {
+  const source = session?.providerState;
+  const rawState = typeof source === "object"
+    ? source.state || source.status
+    : source;
+  let state = String(rawState || session?.agentStatus || "").trim().toLowerCase();
+  if (["fallback_shell", "fallback shell", "shell-fallback"].includes(state)) state = "fallback-shell";
+  if (["initializing", "launching", "connecting", "not-ready"].includes(state)) state = "starting";
+  if (["idle", "available"].includes(state)) state = "ready";
+  if (["running", "working"].includes(state)) state = "busy";
+  if (!["starting", "ready", "busy", "fallback-shell", "exited", "unavailable", "error"].includes(state)) {
+    state = String(session?.status || "") === "starting" ? "starting" : "ready";
+  }
+  const explicitReady = typeof source === "object" ? source.ready : session?.providerReady;
+  const explicitBusy = typeof source === "object" ? source.busy : session?.providerBusy;
+  return {
+    state,
+    ready: explicitReady === undefined ? state === "ready" || state === "busy" : Boolean(explicitReady),
+    busy: explicitBusy === undefined ? state === "busy" : Boolean(explicitBusy)
   };
 }
 
@@ -768,7 +839,16 @@ function flushPtyTerminals() {
   try { saveTerminals(); } catch {}
 }
 
-async function syncPtyTerminals() {
+function syncPtyTerminals() {
+  if (ptyCollectionSyncPromise) return ptyCollectionSyncPromise;
+  ptyCollectionSyncPromise = performPtyTerminalSync()
+    .finally(() => {
+      ptyCollectionSyncPromise = null;
+    });
+  return ptyCollectionSyncPromise;
+}
+
+async function performPtyTerminalSync() {
   try {
     const response = await fetch("/desktop/pty-terminals");
     const result = await response.json().catch(() => ({}));
@@ -828,11 +908,12 @@ function reconcilePtyTerminalSessions(sessions) {
       });
     }
     if (!terminal) continue;
+    const localNotice = terminal.notice;
     Object.assign(terminal, ptySessionPatch(session), {
       title: String(session.title || terminal.title || "Terminal"),
-      pending: false,
-      notice: null
+      pending: false
     });
+    terminal.notice = localNotice || terminal.workspaceNotice || null;
     next.push(terminal);
   }
 
@@ -874,6 +955,10 @@ function markPtySyncError(error) {
 }
 
 function finishPtySyncRender() {
+  if (activePage === "dashboard") {
+    renderDashboard();
+    return;
+  }
   if (activePage !== "terminals") return;
   renderTopbar();
   if (!refreshPtyTerminalsDom()) {

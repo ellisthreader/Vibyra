@@ -82,6 +82,22 @@ and page hide stop capture/playback, revoke audio URLs, and invalidate stale
 requests. Keep explicit push-to-talk; do not add automatic listening, separate
 Enter, clear-transcript, terminal target, or manual-send controls.
 
+Desktop Settings > Preferences owns local Voice preferences. The built-in
+selector mirrors the 13 voices accepted by `gpt-4o-mini-tts`: `alloy`, `ash`,
+`ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`,
+`verse`, `marin`, and `cedar`; default to `marin`. Speaking speed supports the
+OpenAI Speech API range `0.25`-`4.0`, defaults to `1.0`, and also controls
+system-speech fallback playback. The browser sends both values to
+`POST /desktop/voice/speak`, while `desktop/lib/desktopVoice.mjs` validates
+them independently before calling OpenAI. Start with
+`desktop/assets/app.profile-voice.js`,
+`desktop/assets/app.terminals-companion-voice-playback.js`, and
+`desktop/lib/desktopVoice.mjs` for preference changes. Settings shows a short
+sound-character description beside each voice name. Treat these descriptions
+as concise listening guidance, not official OpenAI API metadata; OpenAI
+publishes the voice names and recommends `marin` or `cedar` for best quality,
+but does not publish a per-voice personality taxonomy.
+
 Editable Memory uses the existing mobile `appState.projectMemories` shape:
 eight project-scoped entries, 220 characters each, with `brief` entries locked
 against deletion. Backend routes are:
@@ -125,7 +141,9 @@ drag-to-pan. Do not return to fixed radial placement that collapses dense
 imports into a narrow column. The advanced visual layer adds real folder-region
 halos, cluster colors, hub orbits, curved Markdown links, a structural legend,
 and hover neighborhood isolation; these remain derived from vault data rather
-than decorative fake connections.
+than decorative fake connections. Keep `Project brain` in the graph's top
+header, and render zoom/pan guidance plus the folder/link legend in a separate
+footer outside the interactive canvas so controls never cover graph content.
 
 The terminal companion has a persisted drag width owned by
 `app.terminals-companion-layout.js`, clamped to 280px-720px while reserving at

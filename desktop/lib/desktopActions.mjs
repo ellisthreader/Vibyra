@@ -2,17 +2,26 @@ const TERMINAL_VERBS = /\b(open|launch|start|create|spawn|run)\b/i;
 const TERMINAL_CLOSE_VERBS = /\b(close|stop|end|remove|quit)\b/i;
 const TERMINAL_CLOSE_INTENT = /\b(?:close|stop|end|remove|quit)\s+(?:(?:all|every|this|the|active|current|\d{1,2})\s+){0,2}(?:ai\s+)?terminals?\b/i;
 const TERMINAL_PERMISSION_VERBS = /\b(give|grant|set|enable|switch|change|upgrade|relaunch|restart)\b/i;
+const EXPLICIT_TERMINAL_LAUNCH = /(?:^|[.!?]\s*|\b(?:want(?:\s+you)?\s+to|please|can\s+you|could\s+you|then|and)\s+)(?:open|launch|start|create|spawn)\s+(?:(?:an?|the|my)\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:using|with)\s+)?(?:[a-z0-9][a-z0-9./-]*\s+){0,4}(?:ai\s+)?terminals?\b/i;
 const TERMINAL_NOUN = /\b(?:ai\s+)?(?:terminals?|termianls?|teminals?|termnals?)\b/i;
-const TERMINAL_TASK_VERBS = /\b(assign|delegate|distribute|run)\b/i;
-const TERMINAL_TASK_CANDIDATE = /\b(?:assign|delegate|distribute|use)\b.*\b(?:ai\s+)?terminals?\b|\b(?:ai\s+)?terminals?\b.*\b(?:tasks?|jobs?|diagnos(?:e|is)|audit|review|inspect)\b/i;
+const TERMINAL_TASK_VERBS = /\b(assign|delegate|distribute|run|use)\b/i;
+const TERMINAL_ACTION_LANGUAGE = /\b(?:open|launch|start|create|spawn|run|close|stop|end|remove|quit|give|grant|set|enable|switch|change|upgrade|relaunch|restart|assign|delegate|distribute|use|put|send|have|get|tell|ask)\b/i;
+const TERMINAL_TASK_CANDIDATE = /\b(?:assign|delegate|distribute|use|send|tell|ask|put)\b.*\b(?:ai\s+)?terminals?\b|\b(?:ai\s+)?terminals?\b.*\b(?:tasks?|jobs?|diagnos(?:e|is)|audit|review|inspect|check|test|fix)\b|\brun\b.{0,80}\b(?:audit|diagnos(?:e|is)|review|inspection|tests?|checks?|task|job)\b.{0,80}\b(?:ai\s+)?terminals?\b/i;
+const TERMINAL_CAPABILITY_DENIAL = /\b(?:(?:i|vibyra)\s+(?:can(?:not|'t)|am\s+unable\s+to|is\s+unable\s+to|do\s+not\s+have\s+(?:the\s+)?(?:ability|capability|access)\s+to)|not\s+(?:a|your)\s+terminal\s+emulator)\b.{0,180}\b(?:terminals?|commands?|desktop|environment)\b|\b(?:physical|actual)\s+terminals?\b/i;
 const GIVE_TERMINAL_TASK_COMMAND = /\bgive\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+of\s+(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?)\s+(?:the\s+)?(?:jobs?|tasks?)\b/i;
 const TERMINAL_TASK_SCOPE = /\b(?:each|separate|different|multiple)\s+terminals?\b|\bacross\s+(?:the\s+)?(?:multiple\s+)?terminals?\b/i;
+const TERMINAL_TASK_OBJECTIVE = /\b(?:tasks?|jobs?|diagnos(?:e|is|ing)|audit|review|inspect(?:ion)?|check|test|fix|investigate)\b/i;
 const COUNTED_TERMINAL_TASK_COMMAND = /\b(?:assign|delegate|distribute)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:ai\s+)?terminals?\s+to\b/i;
-const SUBSET_TERMINAL_TASK_COMMAND = /\b(?:assign|delegate|distribute|use)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:(?:out\s+)?of\s+)?(?:them|these|those|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?)\s+to\b/i;
+const SUBSET_TERMINAL_TASK_COMMAND = /\b(?:assign|delegate|distribute|use)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:(?:out\s+)?of\s+)?(?:them|these|those|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?)\s*[,;:]?\s*(?:to|for)\b/i;
+const SUBSET_TERMINAL_TASK_GOAL = /\b(?:assign|delegate|distribute|use)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:(?:out\s+)?of\s+)?(?:them|these|those|(?:the\s+)?(?:(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+)?(?:(?:new|open|current|existing)\s+)?terminals?(?:(?:\s+you|\s+i)\s+(?:have\s+)?(?:just\s+)?opened)?)\s*[,;:]?\s*(?:to|for)\s+(.+)$/i;
 const TERMINAL_SUBAGENT_NOUN = /\bsub-?agents?\b/i;
 const TERMINAL_SUBAGENT_COMMAND = /^(?:(?:still not working|try again|again|please|pls)\b[\s,!]*)*(?:can you\s+)?(?:assign|delegate|distribute|run)\b/i;
 const TERMINAL_WORK_NOUN = /\b(?:tasks?|jobs?|sub-?agents?)\b/i;
 const EXISTING_TERMINAL_SCOPE = /\b(?:all|every|each|these|those|existing|current|open)(?:\s+\d{1,2})?\s+terminals?\b|\b(?:all|every|each)\s+of\s+(?:the\s+)?terminals?\b|\b(?:the\s+)?(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+terminals?\s+(?:are\s+)?open\b|\bterminals?\s+(?:are\s+)?open\b|\bterminals?\s+you\s+(?:have\s+)?(?:just\s+)?opened\b|\b\d{1,2}\s+of\s+(?:them|those|these|(?:the\s+)?(?:\d{1,2}\s+)?terminals?)\b/i;
+const RECENT_TERMINAL_REFERENCE = /\b(?:of\s+)?(?:them|those)\b|\bthese\s+terminals?\b|\b(?:the\s+)?terminals?\s+(?:(?:you|i|we)\s+(?:have\s+)?(?:just\s+)?(?:opened|launched|started|created)|from\s+(?:the\s+)?(?:last|previous|recent)\s+(?:launch|batch))\b|\b(?:just|recently)\s+(?:opened|launched|started|created)\s+terminals?\b/i;
+const EXPLICIT_NEW_TERMINAL_TASK_SCOPE = /\b(?:new|additional|more|fresh)\s+terminals?\b|\bopen\s+(?:new|additional|more)\s+terminals?\b/i;
+const ALLOW_TERMINAL_TASK_FALLBACK = /\b(?:open|add|create|launch|start)\s+(?:new|additional|more|replacement)?\s*terminals?\s+(?:if|when)\s+(?:needed|required|necessary|there (?:are|is)(?:n't| not) enough)\b|\bif\s+(?:needed|required|necessary|there (?:are|is)(?:n't| not) enough)\b.{0,40}\b(?:open|add|create|launch|start)\s+(?:new|additional|more|replacement)?\s*terminals?\b/i;
+const RETRY_TERMINAL_TASK = /\b(?:still not working|try again|retry|again)\b/i;
 const IMPLICIT_TERMINAL_MODEL = /^\s*(?:open|launch|start|create|spawn|run)\s+(?:(?:an?|one)\s+)?(?:(?:open\s*ai|openai|ai|gpt|codex|claude|gemini)(?:[\s-]*\d+(?:\.\d+)?)?(?:\s+pro)?)\s*[.!]?\s*$/i;
 const FULL_ACCESS = /\b(full[- ]permissions?|full[- ]access|danger(?:ously)? full access|no sandbox|without (?:a )?sandbox|bypass (?:all )?approvals?)\b/i;
 const NEGATED_FULL_ACCESS = /\b(?:no|without|except|disable|remove|revoke)\b.{0,32}\bfull[- ](?:access|permissions?)\b|\bfull[- ](?:access|permissions?)\b.{0,20}\b(?:off|disabled)\b/i;
@@ -25,7 +34,7 @@ const NUMBER_WORDS = new Map(Object.entries({
 }));
 
 export function desktopActionsForPrompt(prompt, context = {}) {
-  const text = String(prompt || "").replace(/[’‘]/g, "'").trim();
+  const text = normalizeDesktopActionText(prompt);
   if (!text) return null;
   if (
     NON_ACTION_PREFIX.test(text)
@@ -52,6 +61,37 @@ export function desktopActionsForPrompt(prompt, context = {}) {
   return actionResult(action, terminalReply(action));
 }
 
+export function correctDesktopCapabilityDenial(prompt, reply) {
+  const text = normalizeDesktopActionText(prompt);
+  const answer = String(reply || "").trim();
+  if (
+    !answer
+    || !TERMINAL_NOUN.test(text)
+    || !terminalActionLanguage(text)
+    || !TERMINAL_CAPABILITY_DENIAL.test(answer)
+  ) return answer;
+
+  return [
+    "Vibyra Desktop can open, close, and assign work to its terminals.",
+    "I did not safely recognize that wording as an executable desktop action, so no terminal action ran.",
+    "State the terminal count and the task again in one sentence."
+  ].join(" ");
+}
+
+function normalizeDesktopActionText(value) {
+  return String(value || "")
+    .replace(/[’‘]/g, "'")
+    .replace(/\bthem\s+terminals?\b/gi, "the terminals")
+    .replace(/\b(terminals?\s+(?:you|i)\s+(?:have\s+)?(?:just\s+)?)launched\b/gi, "$1opened")
+    .replace(/\bfront[- ]end\s+order\b/gi, "front-end audit")
+    .replace(/\bfront\s+(?=a\s+front[- ]end\b)/gi, "for ")
+    .trim();
+}
+
+function terminalActionLanguage(text) {
+  return TERMINAL_ACTION_LANGUAGE.test(text) || GIVE_TERMINAL_TASK_COMMAND.test(text);
+}
+
 function terminalTaskIntent(text) {
   return (TERMINAL_TASK_VERBS.test(text) || GIVE_TERMINAL_TASK_COMMAND.test(text))
     && (
@@ -61,7 +101,11 @@ function terminalTaskIntent(text) {
       (TERMINAL_SUBAGENT_NOUN.test(text) && TERMINAL_SUBAGENT_COMMAND.test(text))
       || (
         TERMINAL_NOUN.test(text)
-        && (TERMINAL_TASK_SCOPE.test(text) || TERMINAL_WORK_NOUN.test(text))
+        && (
+          TERMINAL_TASK_SCOPE.test(text)
+          || TERMINAL_WORK_NOUN.test(text)
+          || TERMINAL_TASK_OBJECTIVE.test(text)
+        )
       )
     );
 }
@@ -69,20 +113,70 @@ function terminalTaskIntent(text) {
 function terminalTaskAction(text, context) {
   if (!terminalTaskIntent(text)) return null;
   const explicitTasks = listedTerminalTasks(text);
-  const target = EXISTING_TERMINAL_SCOPE.test(text)
-    ? "existing"
-    : TERMINAL_SUBAGENT_NOUN.test(text) && /\b(?:still not working|try again|again)\b/i.test(text)
-      ? "existing_then_new"
-      : "new";
-  const inferredCount = explicitTerminalTaskCount(text) || explicitTerminalCount(text) || (target === "existing" ? 12 : 3);
+  const recentBatch = recentTerminalBatch(context);
+  const target = terminalTaskTarget(text, recentBatch);
+  const terminalIds = target !== "new" ? selectedRecentTerminalIds(text, recentBatch) : [];
+  const inferredCount = explicitTerminalTaskCount(text)
+    || explicitTerminalCount(text)
+    || terminalIds.length
+    || (target === "existing" ? 12 : 3);
   const taskTexts = explicitTasks.length >= 2 ? explicitTasks : inferredTerminalTasks(text, inferredCount, context);
   if (taskTexts.length < 2) return null;
-  const settings = terminalSettings(text, context);
+  const settings = terminalSettings(text, {
+    ...context,
+    projectId: inheritedTerminalTaskProjectId(text, context, recentBatch, target)
+  });
   return {
     type: "run_terminal_tasks",
-    ...(target === "new" ? {} : { target }),
+    target,
+    ...(terminalIds.length ? { terminalIds } : {}),
     ...settings,
     tasks: taskTexts.slice(0, 12).map((task) => ({ task }))
+  };
+}
+
+function terminalTaskTarget(text, recentBatch) {
+  if (ALLOW_TERMINAL_TASK_FALLBACK.test(text)) return "existing_then_new";
+  if (EXPLICIT_NEW_TERMINAL_TASK_SCOPE.test(text) && !RECENT_TERMINAL_REFERENCE.test(text)) return "new";
+  if (
+    EXISTING_TERMINAL_SCOPE.test(text)
+    || RECENT_TERMINAL_REFERENCE.test(text)
+    || RETRY_TERMINAL_TASK.test(text)
+    || recentBatch.terminalIds.length
+  ) return "existing";
+  return "new";
+}
+
+function selectedRecentTerminalIds(text, recentBatch) {
+  if (!recentBatch.terminalIds.length) return [];
+  const count = explicitTerminalTaskCount(text) || explicitTerminalCount(text) || recentBatch.terminalIds.length;
+  return recentBatch.terminalIds.slice(0, count);
+}
+
+function inheritedTerminalTaskProjectId(text, context, recentBatch, target) {
+  if (target === "new" || terminalFullPcScope(text) || terminalProjectName(text)) {
+    return String(context.projectId || "");
+  }
+  return recentBatch.projectId || String(context.projectId || "");
+}
+
+function recentTerminalBatch(context) {
+  const actionContext = context?.desktopActionContext && typeof context.desktopActionContext === "object"
+    ? context.desktopActionContext
+    : context;
+  const candidate = actionContext?.recentTerminalBatch
+    || actionContext?.recentBatch
+    || actionContext?.lastTerminalBatch
+    || {};
+  const terminalIds = Array.isArray(candidate?.terminalIds)
+    ? candidate.terminalIds
+    : Array.isArray(candidate?.ids)
+      ? candidate.ids
+      : [];
+  return {
+    batchId: String(candidate?.batchId || candidate?.id || "").trim(),
+    projectId: String(candidate?.projectId || "").trim(),
+    terminalIds: [...new Set(terminalIds.map((id) => String(id || "").trim()).filter(Boolean))].slice(0, 12)
   };
 }
 
@@ -104,6 +198,7 @@ function inferredTerminalTasks(text, count = 3, context = {}) {
     !TERMINAL_WORK_NOUN.test(text)
     && !COUNTED_TERMINAL_TASK_COMMAND.test(text)
     && !SUBSET_TERMINAL_TASK_COMMAND.test(text)
+    && !TERMINAL_TASK_OBJECTIVE.test(text)
   ) return [];
   const currentGoal = terminalTaskGoal(text);
   const goal = shouldReusePreviousTaskGoal(text, currentGoal)
@@ -146,6 +241,7 @@ function inferredTerminalTasks(text, count = 3, context = {}) {
 
 function normalizeInferredTaskGoal(value) {
   return withoutReadOnlyConstraint(value)
+    .replace(/\s*(?:,|and)?\s*(?:open|add|create|launch|start)\s+(?:new|additional|more|replacement)?\s*terminals?\s+(?:if|when)\s+(?:needed|required|necessary|there (?:are|is)(?:n't| not) enough)\b.*$/i, "")
     .replace(/\b(?:tereminal|termianl|teminal|termnal)\b/gi, "terminal")
     .replace(/\b(?:diagons(?:e|ing)|diagon(?:se|sing))\b/gi, (word) => /ing$/i.test(word) ? "diagnosing" : "diagnose")
     .replace(/\bauidt\b/gi, "audit")
@@ -161,8 +257,12 @@ function withoutReadOnlyConstraint(value) {
 
 function terminalTaskGoal(text) {
   const source = String(text || "");
+  const subsetAssignment = source.match(SUBSET_TERMINAL_TASK_GOAL);
+  if (subsetAssignment) return normalizeInferredTaskGoal(cleanTask(subsetAssignment[1]));
   const countedAssignment = source.match(/\b(?:assign|delegate|distribute)\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:ai\s+)?terminals?\s+to\s+(.+)$/i);
   if (countedAssignment) return normalizeInferredTaskGoal(cleanTask(countedAssignment[1]));
+  const leadingObjective = source.match(/\brun\s+(.+?)\s+(?:on|in|across|using)\s+(?:the\s+)?(?:ai\s+)?terminals?(?:\s+(?:you|i|we)\s+(?:have\s+)?(?:just\s+)?(?:opened|launched|started|created))?[.!]?$/i);
+  if (leadingObjective) return normalizeInferredTaskGoal(cleanTask(leadingObjective[1]));
   const toMarkers = Array.from(source.matchAll(/\bto\s+/gi));
   const marker = toMarkers.at(-1) || Array.from(source.matchAll(/\bfor\s+/gi))[0];
   return normalizeInferredTaskGoal(cleanTask(
@@ -214,6 +314,7 @@ function terminalPermissionAction(text, context) {
     || !TERMINAL_NOUN.test(text)
     || !FULL_ACCESS.test(text)
     || NEGATED_FULL_ACCESS.test(text)
+    || EXPLICIT_TERMINAL_LAUNCH.test(text)
     || /\bgive\s+(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+of\b/i.test(text)
   ) return null;
   const plural = /\b(?:terminals|termianls|teminals|termnals)\b/i.test(text);

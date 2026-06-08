@@ -13,6 +13,8 @@ const onboardingSource = await readFile(new URL("./app.terminals-memory-onboardi
 const renderSource = await readFile(new URL("./app.terminals-memory-render.js", import.meta.url), "utf8");
 const eventsSource = await readFile(new URL("./app.terminals-memory-events.js", import.meta.url), "utf8");
 const memoryCss = await readFile(new URL("./app.terminals-memory.css", import.meta.url), "utf8");
+const graphCss = await readFile(new URL("./app.terminals-memory-graph.css", import.meta.url), "utf8");
+const graphAdvancedCss = await readFile(new URL("./app.terminals-memory-graph-advanced.css", import.meta.url), "utf8");
 const companionLayoutCss = await readFile(new URL("./app.terminals-companion-layout.css", import.meta.url), "utf8");
 
 test("forced vault reloads queue while an earlier load is active", async () => {
@@ -87,6 +89,14 @@ test("large memory graphs spread across the canvas and support bounded zoom", ()
   assert.ok(result.height > 300);
   assert.equal(result.maximum, 3.2);
   assert.equal(result.minimum, .55);
+});
+
+test("graph guidance stays outside the interactive canvas", () => {
+  assert.match(graphSource, /<\/svg>\s*<\/div>\s*<footer class="terminal-memory-graph-footer">/);
+  assert.match(graphCss, /grid-template-rows:\s*auto minmax\(0, 1fr\) auto/);
+  assert.match(graphCss, /\.terminal-memory-graph-meta\s*\{[^}]*align-items:\s*flex-start/s);
+  assert.doesNotMatch(graphCss, /\.terminal-memory-graph-hint\s*\{[^}]*position:\s*absolute/s);
+  assert.doesNotMatch(graphAdvancedCss, /\.terminal-memory-graph-legend\s*\{[^}]*position:\s*absolute/s);
 });
 
 test("memory documents omit terminal insertion and footer deletion actions", () => {

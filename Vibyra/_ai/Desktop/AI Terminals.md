@@ -119,8 +119,15 @@ application listeners alive after their owner exits.
 Electron must reveal the desktop window only after the real configured
 `/desktop` URL finishes loading. Chromium's `chrome-error://chromewebdata/`
 also emits `did-finish-load`; treating it as success cancels retries and shows
-a blank/error flash. Keep a lightweight `/health` monitor in the Electron main
-process so a bridge crash after page load is restarted without user action.
+a blank/error flash. Keep a lightweight `/desktop/runtime` monitor in the
+Electron main process so a bridge crash after page load is restarted without
+user action.
+Terminal action executor assets and the bridge share
+`TERMINAL_ACTION_PROTOCOL_VERSION`. The renderer must verify it through
+`/desktop/runtime` before allowing structured terminal actions. A mismatch
+stays blocked, reports one coalesced reload request to the bridge, and Electron
+consumes that request once with `reloadIgnoringCache()`; a compatible renderer
+clears the request to prevent reload loops after bridge health restarts.
 
 Start `/desktop/state` polling from `app.boot.js`, after the terminal renderer
 stack has loaded, and skip `render()` when the serialized desktop state is
@@ -148,15 +155,16 @@ The `/phone` command opens the terminal companion panel in memory only. Do not
 forward it to `/desktop/chat`, persist it in localStorage, or remount xterm when
 the panel opens.
 
-The terminal page has one persistent `Vibyra AI` launcher in the top-right
-shell actions, including setup when no terminals exist. Do not render Voice or
-Memory launchers beside terminal tabs, and do not add Chat/Voice/Memory
-navigation tabs inside the companion. It opens Chat; Voice is reached from the
-chat composer or `Alt+V`, with a small return-to-chat action in Voice. Memory
-stays visible in the lower half. Patch the panel beside `.terminal-stage`
-rather than remounting xterm. Chat threads are in-memory and scoped per
-terminal id so switching terminal/project context does not mix conversation
-history.
+The terminal page has one persistent icon-only Vibyra AI launcher in the
+top-right shell actions, including setup when no terminals exist. Use the real
+Vibyra logo with an accessible label and tooltip instead of a labeled pill. Do
+not render Voice or Memory launchers beside terminal tabs, and do not add
+Chat/Voice/Memory navigation tabs inside the companion. It opens Chat; Voice is
+reached from the chat composer or `Alt+V`, with a small return-to-chat action
+in Voice. Memory stays visible in the lower half. Patch the panel beside
+`.terminal-stage` rather than remounting xterm. Chat threads are in-memory and
+scoped per terminal id so switching terminal/project context does not mix
+conversation history.
 The no-terminal setup is intentionally compact: count and custom count share
 one row, Project and Model share a responsive grid, and there is no decorative
 layout preview. Reasoning and token source live under a native Advanced
@@ -165,6 +173,12 @@ safety remains visible for multiple project terminals. Preserve the terminal
 surface and tabs during visual cleanup; the three-dot options menu owns the
 labeled Project, Workspace, Access, advanced path/token details, and separated
 Close terminal action.
+Topbar terminal tabs show the normalized agent label plus visible tab position,
+for example `Codex 1`, `Claude 2`, or `Vibyra 3`. Keep each tab's close button
+and drag behavior. Tabs should remain wide enough for those labels, with the
+group centered and the strip scrolling horizontally when terminal count exceeds
+the available space. The topbar three-dot menu owns Focus/Grid switching and a
+confirmed close-all action through `POST /desktop/pty-terminals/close-all`.
 When a requested separate workspace falls back because the project is dirty,
 the terminal notice ends with `Save local checkpoint`. That action must use the
 existing checkpoint preflight and approval dialog, create only a local Git
@@ -221,25 +235,49 @@ and detached-session config so the name survives reconciliation and restart.
 New terminals append to display order. Grid tiles show their position, and the
 wide eight-terminal layout is four columns by two rows, placing `1` top-left
 and `8` bottom-right.
-Tasks assigned by Vibyra AI to already-open terminals use transient renderer
-state from `app.terminals-activity.js` and `app.terminals-activity.css`.
-Assignment delivery shows the real task summary immediately; accepted work
-stays visibly active while PTY output arrives and settles quietly after output
-inactivity. Do not persist this state, remount xterm, or claim task completion
-without an authoritative process signal.
+Tasks assigned by Vibyra AI to already-open terminals remain visually silent.
+`app.terminals-activity.js` now only preserves assignment-ID compatibility and
+cleans stale visual state. The prompt and provider output inside xterm are the
+only success presentation; delivery errors remain visible.
+Serialize `GET /desktop/pty-terminals` refreshes so an older response cannot
+reconcile after newer state. Reconciliation preserves visible delivery errors
+while applying authoritative `providerState`.
+Main and terminal-companion chats carry a separate structured
+`desktopActionContext.recentTerminalBatch` instead of reconstructing terminal
+identity from prose. The browser context is scoped per chat, stores at most 12
+terminal IDs plus batch/project/model/execution metadata, expires after 30
+minutes, and is sent by main chat, companion chat, and companion Voice. Action
+executors receive the scope as their optional second argument and record
+results through `window.vibyraDesktopActionContext`; companion context follows
+the conversation when an action changes the active terminal.
 Natural-language subset assignment must recognize recent-terminal phrasing
 such as `terminals you have just opened` and `N out of the open terminals`.
+Speech-like variants such as `use N of them terminals you have just launched`
+must normalize to existing-terminal assignment. Normalize the observed
+`front-end order` / `front a front-end` transcription to `front-end audit`
+before extracting the shared objective.
 Read-only constraints including `without changing code`, `diagnosis only`, and
 `only report findings` must select read-only prompt roles and must not suppress
 an unrelated negation such as `do not assign`. Unrecognized assignment wording
 must never fall through to `open_terminals`.
-Existing-terminal delivery excludes shell sessions and terminals that do not
-match explicit model or full-access requirements. A newly created PTY may
-briefly return `409 Terminal is not running`; retry that startup-only failure
-for a bounded interval. Treat HTTP input acceptance as `Task accepted`, and
-show `Vibyra is working` only after real PTY output. Clear transient activity on
-failure, exit, removal, or timeout, and keep its regression test in
-`npm run test:desktop-ai`.
+Audit, diagnosis, review, and inspection assignments default to strictly
+read-only roles unless the same request explicitly asks to fix, edit, implement,
+or otherwise mutate the project.
+If unfamiliar terminal-action wording falls through the deterministic parser,
+model replies from local Ollama, connected providers, and cloud chat pass
+through `correctDesktopCapabilityDenial()` before display. Never let a model
+claim Vibyra cannot control terminals or is not a terminal emulator; replace
+that false denial with the truthful statement that the wording was not safely
+recognized and no action ran. Keep `localAi.test.mjs` in
+`npm run test:desktop-ai` so both the local system prompt and response guard
+remain covered.
+Existing-terminal delivery excludes shell, fallback-shell, starting, and other
+not-ready sessions plus terminals that do not match explicit model or
+full-access requirements. Keep successful semantic acknowledgement internal;
+surface only delivery failures.
+Legacy `/desktop/terminals` AI sessions are bridge-memory-only and disappear on
+a bridge restart; do not treat them as the persistent PTY sessions used by the
+terminal page.
 
 Multi-terminal layout uses focus mode for one full-size active terminal and a
 scrollable grid overview. At `1000px` and below, grid mode uses two columns
@@ -445,19 +483,70 @@ for design-system consistency, relevant interaction states, responsive
 behavior, keyboard use, focus visibility, labels, contrast, accessibility, and
 reduced motion. Keep context bounded and mark files, logs, quoted text, and
 memory as evidence rather than executable instructions.
-For a vague counted retry such as `still not working, assign 8 subagents`,
-use `target: "existing_then_new"`: assign the project-matching open terminals
-first, then open only enough additional terminals to reach the requested task
-count. Clone the first eligible terminal's model, effort, project, token mode,
-and workspace mode for additions, but never inherit full access. New terminals
-use the action/task permission mode and require the normal explicit full-access
-confirmation. This keeps the batch within the 12-terminal cap instead of
-trying to open the requested count on top of the existing sessions.
+The current parser maps vague counted retries such as `still not working,
+assign 8 subagents` to `existing_then_new`, but the reliability audit found
+that behavior unsafe because failed delivery can silently open replacements.
+Do not preserve it in the repair: additional terminals must require explicit
+user wording, and failed existing-terminal delivery must remain a visible
+failure.
+
+## Task Assignment Reliability Audit
+
+The current follow-up contract is incomplete: chat history stores prose but not
+the terminal IDs created by the previous action, so `them` and `just opened`
+cannot reliably identify a launch batch. Missing task targets default to new
+terminals, and `existing_then_new` can open replacements after a delivery
+failure. Treat this as unsafe: future repair must carry explicit batch and
+terminal IDs, default follow-up work to that batch, and require explicit user
+wording before opening additional terminals.
+
+AI tasks use `POST /desktop/pty-terminals/:id/assign` with an idempotent
+assignment ID and semantic prompt. The bridge owns provider-specific input
+formatting and reports success only after the worker acknowledges
+`written-to-child`; rejected and timed-out assignments stay visible failures.
+Public sessions expose `providerState` as `starting`, `ready`,
+`fallback-shell`, or `exited`; raw `/input` remains separate for ordinary
+keyboard/PTTY traffic. Assignment timeout sends a cancel message so work still
+queued in the worker is not executed later.
+
+Bridge restart does not reload Electron renderer assets. When action-executor
+or terminal-runtime JavaScript changes, reload or restart the renderer and use
+a bridge/renderer protocol version so stale code cannot execute terminal
+actions.
+
+The completed reliability repair stores a bounded recent terminal batch on the
+owning chat or terminal-companion thread, passes that structured context to
+desktop chat, and routes ambiguous follow-up jobs to the exact recorded IDs.
+Task wording cannot fall through to a launch action, missing identity fails
+closed, and failed assignment never opens a replacement without explicit
+`open more` intent. Renderer and bridge currently share terminal action
+protocol `2026-06-08.1`; the renderer blocks actions until that version
+matches.
+
+Release gate on 2026-06-08: `npm run test:desktop-ai` passed 158/158 tests.
+A live `/desktop/chat` check routed the reported three-terminal read-only
+frontend diagnosis to the exact three supplied recent-batch IDs. A disposable
+ready Vibyra/OpenRouter terminal then acknowledged a unique semantic assignment
+as `written-to-child`, emitted the exact verification marker in its transcript,
+and was closed; the four pre-existing terminal IDs and ready states were
+unchanged.
+
+Successful assignment acknowledgement is intentionally not shown as frontend
+status. Do not render `Task accepted`, task-summary strips, or animated terminal
+tab states; the prompt and model response in the terminal are the confirmation.
+Keep semantic acknowledgement internally and continue showing delivery errors.
+
+Combined launch wording such as `open six terminals ... give them full
+permission` is one `open_terminals` action with `permissionMode: full`; it is
+not an existing-terminal permission relaunch. Preserve standalone follow-ups
+such as `give all open terminals full permissions` as
+`set_terminal_permissions`.
 
 New-terminal task batches still open one terminal per task and pass a transient
-`initialPrompt`; `startPtyTerminal` submits bracketed paste plus Enter as one
-awaited `/input` payload only after the authoritative PTY create request
-succeeds, and clears the prompt only after delivery is accepted. A narrow
+`initialPrompt`; `startPtyTerminal` submits it through the awaited semantic
+`/assign` endpoint only after the authoritative PTY create request succeeds,
+then clears the prompt after that one attempt so reconciliation cannot replay
+uncertain work. A narrow
 `still not working` or `try again` subagent follow-up may reuse the last
 specific user task goal from normalized chat history, but history never grants
 permissions or changes project scope.

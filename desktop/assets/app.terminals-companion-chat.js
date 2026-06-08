@@ -2,9 +2,20 @@ const terminalAiChatThreads = {};
 
 function terminalAiChatThread(terminal = terminalCompanionActiveTerminal()) {
   const key = terminal?.id || "setup";
-  if (!terminalAiChatThreads[key]) terminalAiChatThreads[key] = { draft: "", messages: [], sending: false };
+  if (!terminalAiChatThreads[key]) terminalAiChatThreads[key] = { draft: "", messages: [], sending: false, desktopActionContext: null };
   return terminalAiChatThreads[key];
 }
+
+registerDesktopActionContextStore("terminal", {
+  read(scope) {
+    const id = String(scope || "").slice("terminal:".length) || "setup";
+    return terminalAiChatThread({ id }).desktopActionContext;
+  },
+  write(scope, context) {
+    const id = String(scope || "").slice("terminal:".length) || "setup";
+    terminalAiChatThread({ id }).desktopActionContext = context;
+  }
+});
 
 function terminalAiChatHtml() {
   const thread = terminalAiChatThread();
@@ -98,6 +109,7 @@ async function sendTerminalAiChat(input) {
 async function sendTerminalAiPrompt(prompt, source = "chat") {
   const terminal = terminalCompanionActiveTerminal();
   const thread = terminalAiChatThread(terminal);
+  const actionContextScope = desktopActionContextScope("terminal", terminal?.id || "setup");
   if (thread.sending) return "";
   const userMessage = { role: "user", text: prompt };
   const pending = { role: "assistant", text: "", pending: true };
@@ -110,6 +122,7 @@ async function sendTerminalAiPrompt(prompt, source = "chat") {
     const model = terminal?.model || selectedSetupModel()?.key || "auto";
     const result = await requestDesktopChat({
       attachments: [],
+      desktopActionContext: desktopActionContextForScope(actionContextScope),
       history,
       mode: "chat",
       model,
@@ -122,7 +135,7 @@ async function sendTerminalAiPrompt(prompt, source = "chat") {
       terminalId: terminal?.id || "",
       tool: ""
     });
-    pending.text = await terminalAiChatResultText(result);
+    pending.text = await terminalAiChatResultText(result, actionContextScope);
     moveTerminalAiActionMessages(thread, userMessage, pending);
   } catch (error) {
     pending.text = error instanceof Error ? error.message : "Vibyra AI could not reply.";
@@ -142,13 +155,13 @@ function terminalAiProjectId(terminal) {
   return String(currentProject()?.id || selectedProjectId || "");
 }
 
-async function terminalAiChatResultText(result) {
+async function terminalAiChatResultText(result, actionContextScope = desktopActionContextScope("terminal", terminalCompanionActiveTerminal()?.id || "setup")) {
   const fallback = result.reply || "I received an empty response from Vibyra AI.";
   if (!Array.isArray(result.actions) || !result.actions.length) return fallback;
   if (typeof runDesktopActions !== "function") {
     throw new Error("Desktop actions are unavailable. Reload Vibyra Desktop and try again.");
   }
-  const summary = await runDesktopActions(result.actions);
+  const summary = await runDesktopActions(result.actions, { desktopActionContextScope: actionContextScope });
   if (!summary) throw new Error("Vibyra AI returned an unsupported desktop action.");
   return summary;
 }
@@ -156,6 +169,14 @@ async function terminalAiChatResultText(result) {
 function moveTerminalAiActionMessages(sourceThread, userMessage, assistantMessage) {
   const targetThread = terminalAiChatThread();
   if (targetThread === sourceThread) return;
+  const sourceId = Object.keys(terminalAiChatThreads).find((id) => terminalAiChatThreads[id] === sourceThread);
+  const targetId = terminalCompanionActiveTerminal()?.id || "setup";
+  if (sourceId && typeof transferDesktopActionContext === "function") {
+    transferDesktopActionContext(
+      desktopActionContextScope("terminal", sourceId),
+      desktopActionContextScope("terminal", targetId)
+    );
+  }
   sourceThread.messages = sourceThread.messages.filter((message) => message !== userMessage && message !== assistantMessage);
   targetThread.messages.push(userMessage, assistantMessage);
 }

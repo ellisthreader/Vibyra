@@ -1,8 +1,10 @@
 const terminalVoiceStyleInstruction = "For voice: answer concisely in natural spoken language. Avoid markdown, lists, and code unless they are necessary.";
 
 async function requestTerminalVoiceReply(prompt, terminal, generation) {
+  const actionContextScope = desktopActionContextScope("terminal", terminal?.id || "setup");
   const result = await requestDesktopChat({
     attachments: [],
+    desktopActionContext: desktopActionContextForScope(actionContextScope),
     history: terminalVoiceHistory(terminal),
     mode: "chat",
     model: terminal?.model || selectedSetupModel()?.key || "auto",
@@ -16,7 +18,7 @@ async function requestTerminalVoiceReply(prompt, terminal, generation) {
     tool: ""
   });
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
-  const reply = await terminalVoiceResultText(result);
+  const reply = await terminalVoiceResultText(result, actionContextScope);
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
   return reply;
 }
@@ -29,15 +31,19 @@ function terminalVoiceProfileContext() {
   };
 }
 
-async function terminalVoiceResultText(result) {
+async function terminalVoiceResultText(result, actionContextScope = desktopActionContextScope("terminal", terminalCompanionActiveTerminal()?.id || "setup")) {
   if (Array.isArray(result?.actions) && result.actions.length) {
     if (typeof runDesktopActions !== "function") {
       throw new Error("Desktop actions are unavailable. Reload Vibyra Desktop and try again.");
     }
     terminalVoiceState.actionInFlight = true;
     try {
-      const summary = await runDesktopActions(result.actions);
+      const summary = await runDesktopActions(result.actions, { desktopActionContextScope: actionContextScope });
       if (!summary) throw new Error("Vibyra AI returned an unsupported desktop action.");
+      const targetScope = desktopActionContextScope("terminal", terminalCompanionActiveTerminal()?.id || "setup");
+      if (typeof transferDesktopActionContext === "function") {
+        transferDesktopActionContext(actionContextScope, targetScope);
+      }
       return summary;
     } finally {
       terminalVoiceState.actionInFlight = false;

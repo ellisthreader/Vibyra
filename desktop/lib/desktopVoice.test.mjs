@@ -45,10 +45,10 @@ test("desktop voice speech requires a connected OpenAI credential", async () => 
   );
 });
 
-test("desktop voice speech requests marin WAV audio and returns route-ready bytes", async () => {
+test("desktop voice speech requests the selected voice and speed as WAV audio", async () => {
   const expected = Buffer.from("RIFF-test-wav");
   const result = await speakDesktopVoice(
-    { text: "  Your build\ncompleted successfully.  " },
+    { text: "  Your build\ncompleted successfully.  ", voice: "cedar", speed: 1.25 },
     async (url, options) => {
       assert.equal(String(url), "https://api.openai.com/v1/audio/speech");
       assert.equal(options.method, "POST");
@@ -56,7 +56,8 @@ test("desktop voice speech requests marin WAV audio and returns route-ready byte
       assert.equal(options.headers["Content-Type"], "application/json");
       const body = JSON.parse(options.body);
       assert.equal(body.model, "gpt-4o-mini-tts");
-      assert.equal(body.voice, "marin");
+      assert.equal(body.voice, "cedar");
+      assert.equal(body.speed, 1.25);
       assert.equal(body.input, "Your build completed successfully.");
       assert.equal(body.response_format, "wav");
       assert.match(body.instructions, /Vibyra/);
@@ -67,6 +68,38 @@ test("desktop voice speech requests marin WAV audio and returns route-ready byte
   );
   assert.equal(result.contentType, "audio/wav");
   assert.deepEqual(result.audio, expected);
+});
+
+test("desktop voice speech defaults to marin at normal speed", async () => {
+  await speakDesktopVoice(
+    { text: "Use the defaults." },
+    async (_url, options) => {
+      const body = JSON.parse(options.body);
+      assert.equal(body.voice, "marin");
+      assert.equal(body.speed, 1);
+      return audioResponse(Buffer.from("RIFF-defaults"));
+    },
+    credential
+  );
+});
+
+test("desktop voice speech accepts every built-in OpenAI speech voice", async () => {
+  const voices = [
+    "alloy", "ash", "ballad", "coral", "echo", "fable", "nova",
+    "onyx", "sage", "shimmer", "verse", "marin", "cedar"
+  ];
+  for (const voice of voices) {
+    await speakDesktopVoice(
+      { text: `Testing ${voice}.`, voice, speed: voice === "alloy" ? 0.25 : 4 },
+      async (_url, options) => {
+        const body = JSON.parse(options.body);
+        assert.equal(body.voice, voice);
+        assert.ok(body.speed === 0.25 || body.speed === 4);
+        return audioResponse(Buffer.from(`RIFF-${voice}`));
+      },
+      credential
+    );
+  }
 });
 
 test("desktop voice speech rejects empty and oversized text before requesting audio", async () => {
@@ -82,6 +115,27 @@ test("desktop voice speech rejects empty and oversized text before requesting au
   await assert.rejects(
     () => speakDesktopVoice({ text: "x".repeat(1601) }, request, credential),
     errorWithStatus(413, /1600 characters or fewer/)
+  );
+  assert.equal(requests, 0);
+});
+
+test("desktop voice speech rejects unsupported voices and speeds before requesting audio", async () => {
+  let requests = 0;
+  const request = async () => {
+    requests += 1;
+    return audioResponse(Buffer.from("unused"));
+  };
+  await assert.rejects(
+    () => speakDesktopVoice({ text: "Hello.", voice: "unknown" }, request, credential),
+    errorWithStatus(422, /voice is not supported/)
+  );
+  await assert.rejects(
+    () => speakDesktopVoice({ text: "Hello.", speed: 4.01 }, request, credential),
+    errorWithStatus(422, /between 0.25 and 4/)
+  );
+  await assert.rejects(
+    () => speakDesktopVoice({ text: "Hello.", speed: 0.24 }, request, credential),
+    errorWithStatus(422, /between 0.25 and 4/)
   );
   assert.equal(requests, 0);
 });
