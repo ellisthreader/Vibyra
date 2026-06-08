@@ -59,13 +59,6 @@
   height: 13px;
   width: 13px;
 }
-.terminal-memory-tabs .terminal-memory-tab-add {
-  background: transparent;
-  flex: 0 0 36px;
-  justify-content: center;
-  min-width: 36px;
-  padding: 0;
-}
 .terminal-memory-app-actions {
   align-items: center;
   display: flex;
