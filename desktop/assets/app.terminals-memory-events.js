@@ -17,9 +17,6 @@ function bindTerminalMemoryEvents(root) {
     scheduleTerminalMemorySave();
   });
   if (typeof bindTerminalMemoryNativePickers === "function") bindTerminalMemoryNativePickers(root);
-  root.querySelectorAll("[data-terminal-memory-new-folder]").forEach((button) => {
-    button.addEventListener("click", () => promptTerminalMemoryNode("folder"));
-  });
   if (typeof bindTerminalMemoryFullscreenButtons === "function") bindTerminalMemoryFullscreenButtons(root);
   root.querySelector("[data-terminal-memory-vault-input]")?.addEventListener("change", (event) => {
     consumeTerminalMemoryImport(event, "vault");
@@ -78,13 +75,6 @@ function toggleTerminalMemoryFolder(nodeId) {
   if (terminalMemoryState.expandedIds.has(nodeId)) terminalMemoryState.expandedIds.delete(nodeId);
   else terminalMemoryState.expandedIds.add(nodeId);
   terminalMemoryUpdateTree();
-}
-
-function promptTerminalMemoryNode(type) {
-  const fallback = type === "folder" ? "New folder" : "Untitled";
-  const value = window.prompt(type === "folder" ? "Folder name" : "Note title", fallback);
-  const name = String(value || "").trim().slice(0, 160);
-  if (name) void createTerminalMemoryNode(type, name);
 }
 
 function scheduleTerminalMemorySave() {

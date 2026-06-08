@@ -114,11 +114,6 @@ function terminalMemoryVisibleNodes() {
   return terminalMemoryState.nodes.filter((node) => matches.has(node.id));
 }
 
-function terminalMemoryActiveParentId() {
-  const selected = terminalMemorySelectedNode();
-  return selected?.type === "folder" ? selected.id : selected?.parentId || "";
-}
-
 function terminalMemoryReplaceNode(value) {
   const node = terminalMemoryNormalizeNode(value);
   if (!node) return null;

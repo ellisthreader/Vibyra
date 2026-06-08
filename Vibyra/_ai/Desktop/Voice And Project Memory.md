@@ -47,11 +47,23 @@ Voice is a Vibyra AI conversation, not terminal dictation. Its upper-half UI is
 one talk/stop button with `Alt+V`; after transcription it sends the spoken turn
 directly through `requestDesktopChat` with the active terminal project, model,
 reasoning, profile preferences, and a voice-specific concise-response style.
+The same primary control communicates the full turn state without showing
+transcripts: idle says Vibyra is not listening, listening uses red `MIC LIVE`
+copy and animated level bars, processing explicitly says listening is paused,
+and playback uses purple `VIBYRA LIVE` speaking feedback. Never describe the
+physical microphone as off when only Vibyra capture is idle. State changes
+also use assertive accessible announcements and reduced-motion fallbacks.
+Voice-specific visuals live in
+`desktop/assets/app.terminals-companion-voice.css`.
 Voice history is private per terminal and bounded to four turns; it never enters
 visible terminal Chat or PTY input. The Voice UI renders only state and
 actionable errors. Structured actions still run through `runDesktopActions`, so
 existing confirmation dialogs remain authoritative and the action summary is
-spoken. Replies use binary audio from `POST /desktop/voice/speak`, with system
+spoken. Before any terminal exists, Voice uses the same `setup` context as
+terminal Chat so spoken launch commands can create the first terminal. A voice
+action that creates or activates a terminal must transfer its target to that
+terminal without invalidating the in-flight request or spoken confirmation.
+Replies use binary audio from `POST /desktop/voice/speak`, with system
 speech synthesis as the fallback, and the UI keeps an `AI-generated voice`
 disclosure visible. New recording, panel/page/context changes,
 and page hide stop capture/playback, revoke audio URLs, and invalidate stale
@@ -140,9 +152,9 @@ Memory surfaces expose no AI-generation controls. Keep import as the sole
 vault-ingestion action in compact, fullscreen, and empty-vault views. The
 legacy proposal backend may remain for compatibility, but it must not be loaded
 or linked from the desktop Memory frontend.
-Do not expose New Note buttons or a note-creation keyboard shortcut. Notes enter
-Memory through the single Import action and remain editable after import; New
-Folder may remain for organizing imported notes.
+Do not expose New Note, New Folder, or item-creation keyboard controls. Files
+and folder structure enter Memory through the single Import action; imported
+notes remain editable.
 
 `sendDesktopChat()` fetches canonical memory for the selected project and adds
 the latest six user entries to the prompt. This covers desktop chat and the

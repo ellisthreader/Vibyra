@@ -15,7 +15,7 @@ test("expanded Memory renders a full Obsidian-style application shell", () => {
   assert.match(source, /terminal-memory-links-pane/);
   assert.match(source, /terminal-memory-app-import/);
   assert.doesNotMatch(source, /data-terminal-memory-ai|sparkles/);
-  assert.doesNotMatch(source, /data-terminal-memory-new-note|New note/);
+  assert.doesNotMatch(source, /data-terminal-memory-new-(note|folder)|New (note|folder)/i);
   assert.match(styles, /grid-template-columns: 42px clamp\(220px, 20vw, 300px\) minmax\(0, 1fr\) clamp\(190px, 17vw, 250px\)/);
 });
 
@@ -31,5 +31,5 @@ test("compact Memory delegates to the expanded renderer only while fullscreen", 
   assert.match(renderSource, /terminalMemoryFullscreenHtml\(terminal\)/);
   assert.equal((renderSource.match(/data-terminal-memory-pick="vault"/g) || []).length, 1);
   assert.doesNotMatch(renderSource, /data-terminal-memory-ai|sparkles/);
-  assert.doesNotMatch(renderSource, /data-terminal-memory-new-note|New note/);
+  assert.doesNotMatch(renderSource, /data-terminal-memory-new-(note|folder)|New (note|folder)/i);
 });

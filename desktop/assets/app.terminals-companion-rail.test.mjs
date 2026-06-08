@@ -7,6 +7,7 @@ const companionSource = readFileSync(new URL("./app.terminals-companion.js", imp
 const companionStyles = readFileSync(new URL("./app.terminals-companion.css", import.meta.url), "utf8");
 const companionChatSource = readFileSync(new URL("./app.terminals-companion-chat.js", import.meta.url), "utf8");
 const companionChatStyles = readFileSync(new URL("./app.terminals-companion-chat.css", import.meta.url), "utf8");
+const companionVoiceStyles = readFileSync(new URL("./app.terminals-companion-voice.css", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../app.html", import.meta.url), "utf8");
 const companionVoiceFiles = [
   "app.terminals-companion-voice.js",
@@ -80,6 +81,10 @@ test("terminal voice is a one-control AI conversation", () => {
   assert.match(companionVoiceSource, /OpenAI voice unavailable; using system voice/);
   assert.match(companionVoiceSource, /AI-generated voice/);
   assert.match(companionVoiceSource, /\[terminalVoiceStyleInstruction, profile\?\.responseStyle\]/);
+  assert.match(companionVoiceSource, /terminal\?\.id \|\| "setup"/);
+  assert.match(companionVoiceSource, /terminalVoiceState\.actionInFlight = true/);
+  assert.match(companionVoiceSource, /if \(terminalVoiceState\.actionInFlight\)/);
+  assert.doesNotMatch(companionVoiceSource, /if \(!target\) return/);
   assert.match(appSource, /app\.terminals-companion-voice-history\.js/);
   assert.match(appSource, /app\.terminals-companion-voice-request\.js/);
   assert.match(appSource, /app\.terminals-companion-voice-playback\.js/);
@@ -89,6 +94,20 @@ test("terminal voice is a one-control AI conversation", () => {
   assert.doesNotMatch(companionVoiceSource, /terminal-voice-conversation/);
   assert.doesNotMatch(companionVoiceSource, /<small>You<\/small>/);
   assert.doesNotMatch(companionVoiceSource, /<small>Vibyra<\/small>/);
+});
+
+test("terminal voice makes listening, processing, and speaking visually explicit", () => {
+  assert.match(companionVoiceSource, /data-voice-phase=/);
+  assert.match(companionVoiceSource, /MIC LIVE/);
+  assert.match(companionVoiceSource, /Vibyra can hear you now/);
+  assert.match(companionVoiceSource, /Vibyra is speaking/);
+  assert.match(companionVoiceSource, /Vibyra isn't listening/);
+  assert.doesNotMatch(companionVoiceSource, /Your microphone is off/);
+  assert.match(companionVoiceSource, /aria-live="assertive"/);
+  assert.match(companionVoiceStyles, /\[data-voice-phase="listening"\]/);
+  assert.match(companionVoiceStyles, /\[data-voice-phase="speaking"\]/);
+  assert.match(companionVoiceStyles, /prefers-reduced-motion: reduce/);
+  assert.match(appSource, /app\.terminals-companion-voice\.css/);
 });
 
 test("terminal chat companion executes actions and keeps their result visible", () => {

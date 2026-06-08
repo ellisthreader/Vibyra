@@ -67,8 +67,7 @@
 }
 .terminal-memory-app-actions button,
 .terminal-memory-app-import,
-.terminal-memory-ribbon button,
-.terminal-memory-vault-head button {
+.terminal-memory-ribbon button {
   align-items: center;
   background: transparent;
   border: 0;
@@ -80,23 +79,20 @@
   padding: 0 7px;
 }
 .terminal-memory-app-actions button,
-.terminal-memory-ribbon button,
-.terminal-memory-vault-head button {
+.terminal-memory-ribbon button {
   padding: 0;
   width: 28px;
 }
 .terminal-memory-app-actions button:hover,
 .terminal-memory-app-import:hover,
 .terminal-memory-ribbon button:hover,
-.terminal-memory-ribbon button.active,
-.terminal-memory-vault-head button:hover {
+.terminal-memory-ribbon button.active {
   background: #3a3a3a;
   color: #eee;
 }
 .terminal-memory-app-actions svg,
 .terminal-memory-app-import svg,
-.terminal-memory-ribbon svg,
-.terminal-memory-vault-head svg {
+.terminal-memory-ribbon svg {
   height: 14px;
   width: 14px;
 }
@@ -121,11 +117,6 @@
   flex-direction: column;
   gap: 5px;
   padding: 9px 6px;
-}
-.terminal-memory-ribbon span {
-  border-top: 1px solid #393939;
-  margin: 3px 0;
-  width: 22px;
 }
 .terminal-memory-vault-pane {
   background: #242424;
@@ -157,9 +148,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.terminal-memory-vault-head > div {
-  display: flex;
 }
 .terminal-memory-vault-search {
   background: #1b1b1b;

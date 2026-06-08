@@ -95,9 +95,9 @@ test("memory documents omit terminal insertion and footer deletion actions", () 
   assert.doesNotMatch(renderSource, /terminal-memory-document-actions/);
 });
 
-test("Memory does not expose note creation controls or shortcuts", () => {
-  assert.doesNotMatch(renderSource, /data-terminal-memory-new-note|New note/);
-  assert.doesNotMatch(eventsSource, /data-terminal-memory-new-note|promptTerminalMemoryNode\("document"\)/);
+test("Memory does not expose item creation controls or shortcuts", () => {
+  assert.doesNotMatch(renderSource, /data-terminal-memory-new-(note|folder)|New (note|folder)/i);
+  assert.doesNotMatch(eventsSource, /data-terminal-memory-new-(note|folder)|promptTerminalMemoryNode/);
 });
 
 test("memory companion width is user-resizable without shrinking the terminal below its floor", () => {

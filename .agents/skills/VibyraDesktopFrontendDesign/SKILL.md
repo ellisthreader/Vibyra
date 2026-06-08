@@ -139,7 +139,14 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   reply without rendering ordinary user or assistant text. Prefer
   `/desktop/voice/speak` audio and fall back to system speech synthesis. Do not
   show separate Enter, clear-transcript, terminal target, or manual-send controls.
-  Keep a visible `AI-generated voice` disclosure.
+  Keep a visible `AI-generated voice` disclosure. Make every voice phase
+  unmistakable on the primary control: microphone-off idle, red animated
+  `MIC LIVE` listening, distinct processing, and purple animated
+  `VIBYRA LIVE` speaking. Pair color and motion with explicit text and an
+  assertive accessible status; never rely on animation or color alone. Voice
+  must work from the empty terminal setup state so it can launch the first
+  terminal, and a launch action must not cancel its own spoken confirmation
+  when the new terminal becomes active.
 - Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
 - Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
 - When no terminals exist, show a simple setup panel that asks how many terminals to open, supports a custom count up to 12, previews the selected count, and lets the user pick from the same OpenRouter/chat model set used by desktop chat.
@@ -277,9 +284,9 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
 - Keep import singular across compact, fullscreen, and empty-vault Memory.
   The visible `Import` control should open the native folder picker in Electron;
   browser folder input and drag-and-drop are fallbacks, not additional choices.
-- Do not expose New Note controls or a note-creation keyboard shortcut in
-  Memory. Imported notes remain editable; New Folder may remain for organizing
-  them.
+- Do not expose New Note, New Folder, or item-creation keyboard controls in
+  Memory. Files and folder structure come from Import; imported notes remain
+  editable.
 - Once populated, Memory should open as a restrained project-brain graph:
   render real folder and Markdown-link relationships, leave unlinked notes
   visually separate, reveal labels on interaction, and open document nodes in

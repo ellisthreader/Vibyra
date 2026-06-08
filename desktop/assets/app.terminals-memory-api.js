@@ -47,36 +47,6 @@ async function loadTerminalMemoryVault(projectId, force = false) {
   }
 }
 
-async function createTerminalMemoryNode(type, name) {
-  if (!terminalMemoryState.projectId) return null;
-  terminalMemoryState.status = "Creating...";
-  terminalMemoryUpdateStatus();
-  try {
-    const result = await terminalMemoryRequest("/desktop/project-memory/node", {
-      method: "POST",
-      body: JSON.stringify({
-        projectId: terminalMemoryState.projectId,
-        parentId: terminalMemoryActiveParentId() || null,
-        type,
-        name,
-        markdownContent: ""
-      })
-    });
-    const node = terminalMemoryReplaceNode(result.node || result.memoryNode || result);
-    if (node) {
-      terminalMemorySelect(node.id);
-      if (node.type === "folder") terminalMemoryState.expandedIds.add(node.id);
-    }
-    terminalMemoryState.status = "Created";
-    terminalMemoryRefresh();
-    return node;
-  } catch (error) {
-    terminalMemoryState.status = terminalMemoryError(error, "Memory item could not be created.");
-    terminalMemoryUpdateStatus();
-    return null;
-  }
-}
-
 async function saveTerminalMemoryNode() {
   const node = terminalMemorySelectedNode();
   if (!node || node.type !== "document" || !terminalMemoryState.dirty || terminalMemoryState.saving) return;

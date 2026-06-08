@@ -37,8 +37,6 @@ function terminalMemoryFullscreenRibbonHtml() {
   return `<nav class="terminal-memory-ribbon" aria-label="Memory tools">
     <button class="${terminalMemoryState.view === "graph" ? "active" : ""}" type="button" data-terminal-memory-view="graph" aria-label="Graph view" title="Graph view">${icon("network")}</button>
     <button class="${terminalMemoryState.view === "notes" ? "active" : ""}" type="button" data-terminal-memory-view="notes" aria-label="Notes view" title="Notes view">${icon("document")}</button>
-    <span></span>
-    <button type="button" data-terminal-memory-new-folder aria-label="New folder" title="New folder">${icon("folder-plus")}</button>
   </nav>`;
 }
 
@@ -53,9 +51,6 @@ function terminalMemoryFullscreenExplorerHtml(projectId, projectName) {
   return `<aside class="terminal-memory-vault-pane">
     <header class="terminal-memory-vault-head">
       <span><small>Project vault</small><strong title="${escapeAttribute(projectName)}">${escapeHtml(projectName)}</strong></span>
-      <div>
-        <button type="button" data-terminal-memory-new-folder aria-label="New folder" title="New folder">${icon("folder-plus")}</button>
-      </div>
     </header>
     <label class="terminal-memory-search terminal-memory-vault-search">
       ${icon("search")}

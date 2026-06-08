@@ -1,4 +1,5 @@
 const terminalVoiceState = {
+  actionInFlight: false,
   asking: false,
   captureText: "",
   generation: 0,
@@ -12,6 +13,10 @@ const terminalVoiceState = {
   stream: null,
   targetId: ""
 };
+
+function terminalVoiceTargetId(terminal = terminalCompanionActiveTerminal()) {
+  return terminal?.id || "setup";
+}
 
 function terminalVoiceSync() {
   if (terminalCompanionMode === "voice") syncTerminalCompanion("voice");

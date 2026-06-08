@@ -27,7 +27,6 @@ function terminalMemoryWorkspaceHtml(terminal) {
           <button class="${terminalMemoryState.view === "notes" ? "active" : ""}" type="button" data-terminal-memory-view="notes" title="Notes view">${icon("document")}</button>
         </div>
         <button type="button" data-terminal-memory-fullscreen aria-label="Open Memory workspace" aria-pressed="false" title="Open Memory workspace">${icon("square")}</button>
-        <button type="button" data-terminal-memory-new-folder title="New folder" ${projectId ? "" : "disabled"}>${icon("folder")}</button>
         <label class="terminal-memory-toolbar-import" title="Import memory" data-terminal-memory-pick="vault">
           ${icon("share")}<span>Import</span>
           <input type="file" accept=".md,text/markdown" multiple webkitdirectory directory data-terminal-memory-vault-input>

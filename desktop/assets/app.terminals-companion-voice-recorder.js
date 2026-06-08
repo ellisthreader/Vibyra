@@ -19,11 +19,10 @@ async function startTerminalVoiceCapture() {
     return;
   }
   const target = terminalCompanionActiveTerminal();
-  if (!target) return;
   terminalVoiceInvalidate();
   stopTerminalVoicePlayback();
   terminalVoiceState.starting = true;
-  terminalVoiceState.targetId = target.id;
+  terminalVoiceState.targetId = terminalVoiceTargetId(target);
   const generation = terminalVoiceState.generation;
   terminalVoiceSetStatus("Starting microphone");
   try {

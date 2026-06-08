@@ -35,9 +35,14 @@ async function terminalVoiceResultText(result) {
     if (typeof runDesktopActions !== "function") {
       throw new Error("Desktop actions are unavailable. Reload Vibyra Desktop and try again.");
     }
-    const summary = await runDesktopActions(result.actions);
-    if (!summary) throw new Error("Vibyra AI returned an unsupported desktop action.");
-    return summary;
+    terminalVoiceState.actionInFlight = true;
+    try {
+      const summary = await runDesktopActions(result.actions);
+      if (!summary) throw new Error("Vibyra AI returned an unsupported desktop action.");
+      return summary;
+    } finally {
+      terminalVoiceState.actionInFlight = false;
+    }
   }
   const reply = String(result?.reply || "").trim();
   if (!reply) throw new Error("Vibyra AI returned an empty response.");
