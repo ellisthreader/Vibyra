@@ -22,6 +22,16 @@ export function prepareTerminalWorkspace(options = {}) {
   return prepared;
 }
 
+export function inspectTerminalWorkspace(project) {
+  return worktreeQueue.then(() => inspectWorkspaceProject(project));
+}
+
+export function createTerminalWorkspaceCheckpoint(project) {
+  const checkpoint = worktreeQueue.then(() => checkpointWorkspaceProject(project));
+  worktreeQueue = checkpoint.catch(() => {});
+  return checkpoint;
+}
+
 async function prepareWorkspace({ project, terminalId, workspaceMode } = {}) {
   const mode = normalizeTerminalWorkspaceMode(workspaceMode);
   if (mode === "shared") {
@@ -60,6 +70,40 @@ async function prepareWorkspace({ project, terminalId, workspaceMode } = {}) {
     });
     throw error;
   }
+}
+
+async function inspectWorkspaceProject(project) {
+  assertWorktreeProject(project);
+  const projectPath = await existingDirectory(project.path, "Project directory does not exist.");
+  const repositoryRoot = await gitPath(projectPath, ["rev-parse", "--show-toplevel"],
+    "Project is not inside a Git repository.");
+  try {
+    await git(repositoryRoot, ["rev-parse", "--verify", "HEAD"]);
+  } catch {
+    throw new Error("Separate branches need a project with at least one local Git checkpoint.");
+  }
+  const status = await git(repositoryRoot, ["status", "--porcelain", "--untracked-files=all"]);
+  const changedFiles = status.split(/\r?\n/).filter(Boolean).length;
+  return {
+    clean: changedFiles === 0,
+    changedFiles,
+    repositoryRoot
+  };
+}
+
+async function checkpointWorkspaceProject(project) {
+  const state = await inspectWorkspaceProject(project);
+  if (state.clean) return { ...state, created: false, commit: "" };
+  await git(state.repositoryRoot, ["add", "--all"]);
+  const stamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+  await git(state.repositoryRoot, [
+    "-c", "user.name=Vibyra",
+    "-c", "user.email=local-checkpoint@vibyra.invalid",
+    "-c", "commit.gpgSign=false",
+    "commit", "--no-verify", "-m", `Vibyra local checkpoint ${stamp}`
+  ]);
+  const commit = (await git(state.repositoryRoot, ["rev-parse", "--short", "HEAD"])).trim();
+  return { clean: true, changedFiles: state.changedFiles, repositoryRoot: state.repositoryRoot, created: true, commit };
 }
 
 export async function restoredTerminalWorkspace(config = {}, project) {
@@ -149,10 +193,15 @@ async function existingDirectory(path, message = "Directory does not exist.") {
 }
 
 async function git(cwd, args) {
-  const { stdout } = await runFile("git", ["-C", cwd, ...args], {
-    encoding: "utf8", maxBuffer: 4 * 1024 * 1024
-  });
-  return stdout;
+  try {
+    const { stdout } = await runFile("git", ["-C", cwd, ...args], {
+      encoding: "utf8", maxBuffer: 4 * 1024 * 1024
+    });
+    return stdout;
+  } catch (error) {
+    const message = String(error?.stderr || error?.message || "").trim();
+    throw new Error(message || "Git operation failed.", { cause: error });
+  }
 }
 
 async function gitPath(cwd, args, message) {

@@ -2,18 +2,39 @@ function bindTerminalControls() {
   const root = nodes?.content || document;
   bindTerminalClick(root.querySelector("#open-terminal-new"), () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
   bindTerminalClick(root.querySelector("#toggle-terminal-layout"), () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
-  root.querySelector("#start-terminals")?.addEventListener("click", () => {
+  root.querySelector("#start-terminals")?.addEventListener("click", async (event) => {
     if (typeof terminalProjectReadyForSetup === "function" && !terminalProjectReadyForSetup()) return;
+    const button = event.currentTarget;
+    if (button?.dataset.terminalLaunchBusy) return;
     const count = normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount);
     const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
       ? setupWorkspaceMode
       : "shared";
+    if (workspaceMode === "worktree" && typeof prepareTerminalWorkspaceLaunch === "function") {
+      button.dataset.terminalLaunchBusy = "1";
+      button.disabled = true;
+      const original = button.innerHTML;
+      button.textContent = "Checking project...";
+      let ready = false;
+      try {
+        ready = await prepareTerminalWorkspaceLaunch(terminalProjectForSetup());
+      } finally {
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+      if (!ready) return;
+    }
     createTerminals(count, setupModel, {
       effort: terminalEffortForModel(selectedSetupModel(), setupEffort),
-      workspaceMode
+      workspaceMode,
+      allowSharedFallback: workspaceMode !== "worktree"
     });
   });
   root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => { setupCount = normalizeCount(button.dataset.terminalCount); render(); }));
+  root.querySelector("[data-terminal-setup-advanced]")?.addEventListener("toggle", (event) => {
+    terminalSetupAdvancedOpen = Boolean(event.currentTarget.open);
+  });
   root.querySelectorAll("[data-terminal-setup-effort]").forEach((button) => button.addEventListener("click", () => {
     setupEffort = terminalEffortForModel(selectedSetupModel(), button.dataset.terminalSetupEffort);
     localStorage.setItem(setupEffortKey, setupEffort);

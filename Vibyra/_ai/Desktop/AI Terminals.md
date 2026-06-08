@@ -14,6 +14,8 @@ reference.
 - `desktop/assets/app.terminals-pty-runtime.js`
 - `desktop/assets/app.terminals-workspace.js`
 - `desktop/assets/app.terminals-workspace.css`
+- `desktop/assets/app.terminals-checkpoint.js`
+- `desktop/assets/app.terminals-checkpoint.css`
 - `desktop/assets/app.terminals-companion.js`
 - `desktop/assets/app.desktop-actions.js`
 - `desktop/lib/ptyTerminals.mjs`
@@ -47,6 +49,13 @@ desktop chat prompt. Do not render known commands as unsupported placeholders.
 Official CLI provider families are OpenAI/Codex, Anthropic/Claude, and
 Google/Gemini. Other OpenRouter slugs use the Vibyra API wrapper unless an
 official local CLI is intentionally added later.
+Built-in unqualified official models must map to concrete terminal agent keys:
+OpenAI to `codex`, Anthropic to `claude`, and Google to `gemini`. Never use a
+synthetic `official` key because terminal-agent normalization falls back to the
+Vibyra wrapper. During backend session reconciliation, preserve a valid
+backend-reported agent key before inferring from the model; this keeps legacy
+wrapper sessions identified correctly so wrapper-specific input safeguards
+still apply.
 Provider-qualified catalog IDs always remain on that wrapper, including
 `openai/*`, `anthropic/*`, and `google/*`. Only Vibyra's built-in unqualified
 model keys may route to official CLIs. This prevents OpenRouter-only variants
@@ -122,6 +131,18 @@ visible topbar flashing and broad shell DOM churn.
 `desktop/lib/aiTerminalProcess.mjs` launches PTY sessions through
 `/usr/bin/script`; keep row/column sizing synchronized before process start.
 Codex should launch with `--no-alt-screen` in the embedded terminal surface.
+
+Project-backed AI terminals use the canonical imported Vibyra Memory vault.
+`desktopTerminalMemory.mjs` builds a bounded snapshot with a file index and
+selected note excerpts. Vibyra/OpenRouter terminals receive current vault
+context through `desktopChat.mjs` on every request. Official CLI sessions
+receive a private launch snapshot without modifying project files: Codex uses
+its isolated `CODEX_HOME/AGENTS.md`, Claude uses `--append-system-prompt`, and
+Gemini uses a session-private included `GEMINI.md` directory configured through
+`GEMINI_CLI_SYSTEM_SETTINGS_PATH`. Persist the bounded snapshot only inside the
+mode-0600 detached terminal session config so recovery keeps the same context;
+never expose the raw snapshot in public PTY session responses. Shell and
+`Full PC` terminals do not receive project Memory.
 
 The `/phone` command opens the terminal companion panel in memory only. Do not
 forward it to `/desktop/chat`, persist it in localStorage, or remount xterm when
@@ -354,6 +375,17 @@ Project file hints use the path-only `promptProjectFilePaths()` helper: never
 load or expose `.env`, credentials, private keys, certificates, or secret paths
 for terminal assignments. Project memory is reference material, not executable
 instructions.
+Agentic job briefs follow an outcome-first contract informed by current
+cross-provider prompting guidance: outcome and persistence first; clearly
+separated project context, assignment, scope, and edit policy; explicit
+acceptance criteria and stopping conditions; evidence-grounded execution with
+adaptation after failed hypotheses; focused validation plus diff review; and a
+short fixed final handoff. Do not request an upfront prose plan that can become
+a premature stopping point. For frontend objectives, add acceptance criteria
+for design-system consistency, relevant interaction states, responsive
+behavior, keyboard use, focus visibility, labels, contrast, accessibility, and
+reduced motion. Keep context bounded and mark files, logs, quoted text, and
+memory as evidence rather than executable instructions.
 For a vague counted retry such as `still not working, assign 8 subagents`,
 use `target: "existing_then_new"`: assign the project-matching open terminals
 first, then open only enough additional terminals to reach the requested task
@@ -370,6 +402,13 @@ succeeds, and clears the prompt only after delivery is accepted. A narrow
 `still not working` or `try again` subagent follow-up may reuse the last
 specific user task goal from normalized chat history, but history never grants
 permissions or changes project scope.
+The Vibyra/OpenRouter terminal wrapper is line-oriented and does not interpret
+bracketed multiline paste like an interactive provider CLI. Before sending an
+initial or existing-terminal task to `agent: "vibyra"`, flatten non-empty prompt
+lines into one ` | `-separated logical line. Otherwise every line in an
+agentic brief becomes a separate model request and floods the transcript with
+repeated `is thinking` status messages. Keep multiline bracketed paste for the
+real Codex, Claude, and Gemini CLIs.
 Preserve active creates and recently starting sessions during collection
 reconciliation. Never persist or replay `initialPrompt`, because recovery must
 not rerun agent work.
@@ -385,10 +424,11 @@ Start with `desktop/lib/desktopActions.mjs`,
 `desktop/assets/app.terminals-pty-runtime.js`.
 
 Parallel terminal editing supports a local-only `workspaceMode` of `shared` or
-`worktree`; GitHub integration is not required. Shared remains the default.
-For two or more new terminals, the setup surface offers a quiet Shared folder /
-Separate branches choice, and structured desktop batches ask once whether to
-isolate when no mode was supplied. Worktree mode is backend-authoritative:
+`worktree`; GitHub integration is not required. For users without a saved
+preference, worktree mode is the default. For two or more new terminals, setup
+labels it `Safe mode`, marks it Recommended, and explains that separate files
+prevent overlap; `Shared folder` remains an advanced choice. Structured desktop
+batches ask once whether to isolate when no mode was supplied. Worktree mode is backend-authoritative:
 `desktop/lib/terminalWorktrees.mjs` resolves the selected project, requires a
 clean Git repository, serializes `git worktree add`, creates one
 `vibyra/<project>-<hash>` branch under
@@ -405,7 +445,12 @@ Project terminal headers show the effective state as `Separate branch`,
 changes need a local checkpoint, confirms files were not deleted, and states
 that GitHub is not required. Clicking that compact indicator reuses the notice
 surface for explanation, while incremental refresh patches the indicator
-without remounting xterm. Closing a
+without remounting xterm. Setup preflights `Separate branches` through
+`POST /desktop/pty-terminals/workspace/preflight`; a dirty project shows one
+explicit `Save checkpoint and continue` approval with the changed-file count.
+Approval calls `POST /desktop/pty-terminals/workspace/checkpoint`, creates a
+local-only Git commit using the Vibyra local identity, then launches with shared
+fallback disabled. Cancellation changes nothing and opens no terminals. Closing a
 terminal stops and removes its worker context but
 deliberately preserves its local branch and worktree. Do not add automatic
 merge, discard, branch deletion, or secret copying without a separate explicit

@@ -18,7 +18,10 @@ let setupEffort = ["default", "low", "medium", "high", "xhigh"].includes(storedS
 const setupProjectKey = "vibyra.desktop.terminalProject";
 let setupProjectId = localStorage.getItem(setupProjectKey) || (typeof selectedProjectId === "string" ? selectedProjectId : "");
 const setupWorkspaceModeKey = "vibyra.desktop.terminalWorkspaceMode";
-let setupWorkspaceMode = localStorage.getItem(setupWorkspaceModeKey) === "worktree" ? "worktree" : "shared";
+const storedSetupWorkspaceMode = localStorage.getItem(setupWorkspaceModeKey);
+let setupWorkspaceMode = storedSetupWorkspaceMode === null
+  ? "worktree"
+  : storedSetupWorkspaceMode === "worktree" ? "worktree" : "shared";
 let setupTokenMode = localStorage.getItem("vibyra.desktop.terminalTokenMode") === "provider" ? "provider" : "vibyra";
 let setupModelMenuOpen = false;
 let setupModelSearch = "";

@@ -18,7 +18,6 @@ async function requestTerminalVoiceReply(prompt, terminal, generation) {
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
   const reply = await terminalVoiceResultText(result);
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
-  rememberTerminalVoiceTurn(terminal, prompt, reply);
   return reply;
 }
 

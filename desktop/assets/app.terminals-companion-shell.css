@@ -1,7 +1,7 @@
 .terminal-companion-shell-head {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
   min-width: 0;
 }
@@ -9,7 +9,7 @@
   align-items: center;
   color: var(--terminal-muted, #aaa3b8);
   display: flex;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 .terminal-companion-brand > svg {
@@ -29,8 +29,8 @@
 .terminal-companion-brand small {
   color: var(--terminal-dim, #918ca1);
   font-size: 10px;
-  line-height: 13px;
-  max-width: 120px;
+  line-height: 12px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

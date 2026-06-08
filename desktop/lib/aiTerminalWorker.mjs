@@ -2,6 +2,7 @@ import { appendFileSync, existsSync, readFileSync, rmSync, statSync, truncateSyn
 import { createServer } from "node:net";
 import { dirname, join } from "node:path";
 import { spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
+import { prepareAiTerminalMemoryFiles } from "./aiTerminalMemoryFiles.mjs";
 
 const configPath = process.argv[2];
 if (!configPath || !existsSync(configPath)) process.exit(2);
@@ -46,8 +47,10 @@ const server = createServer((socket) => {
 });
 
 server.listen(paths.socket, () => {
+  const memoryFiles = prepareAiTerminalMemoryFiles(dir, config.memoryInstructions);
   child = spawnAiTerminalProcess({
     ...config,
+    ...memoryFiles,
     onData: handleOutput,
     onExit: handleExit
   });

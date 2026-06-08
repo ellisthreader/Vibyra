@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
+  createTerminalWorkspaceCheckpoint,
+  inspectTerminalWorkspace,
   normalizeTerminalWorkspaceMode,
   prepareTerminalWorkspace,
   restoredTerminalWorkspace,
@@ -93,6 +95,28 @@ test("rejects tracked and untracked repository changes", async () => {
     await assert.rejects(prepareTerminalWorkspace({
       project: project(repo), terminalId: "dirty-2", workspaceMode: "worktree"
     }), /saved Git checkpoint/);
+  });
+});
+
+test("inspects and creates a local checkpoint without remote Git", async () => {
+  await withRepo(async (repo) => {
+    writeFileSync(join(repo, "README.md"), "checkpointed\n");
+    writeFileSync(join(repo, "local-note.md"), "local only\n");
+    const hook = join(repo, ".git", "hooks", "pre-commit");
+    writeFileSync(hook, "#!/bin/sh\nexit 1\n");
+    chmodSync(hook, 0o700);
+    const before = await inspectTerminalWorkspace(project(repo));
+    assert.equal(before.clean, false);
+    assert.equal(before.changedFiles, 2);
+    const checkpoint = await createTerminalWorkspaceCheckpoint(project(repo));
+    assert.equal(checkpoint.clean, true);
+    assert.equal(checkpoint.created, true);
+    assert.match(checkpoint.commit, /^[a-f0-9]+$/);
+    assert.equal(git(repo, "status", "--porcelain"), "");
+    assert.equal(git(repo, "show", "-s", "--format=%an <%ae>"),
+      "Vibyra <local-checkpoint@vibyra.invalid>");
+    assert.match(git(repo, "log", "-1", "--pretty=%s"), /^Vibyra local checkpoint /);
+    assert.equal(git(repo, "remote"), "");
   });
 });
 

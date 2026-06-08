@@ -36,6 +36,9 @@ test("assigned terminal tasks are transient and submitted after PTY creation", (
   assert.match(legacySource, /initialPrompt:\s*normalizeInitialTerminalPrompt\(options\.initialPrompt\)/);
   assert.match(runtimeSource, /Object\.assign\(terminal,\s*ptySessionPatch\(result\.session\)/);
   assert.match(runtimeSource, /await submitInitialPtyPrompt\(terminal\)/);
+  assert.match(runtimeSource, /terminalTaskInputPrompt\(terminal,\s*terminal\?\.initialPrompt\)/);
+  assert.match(runtimeSource, /normalizeTerminalAgent\(terminal\?\.agent\)\s*!==\s*"vibyra"/);
+  assert.match(runtimeSource, /\.join\(" \| "\)/);
   assert.match(runtimeSource, /const input = `\\x1b\[200~\$\{prompt/);
   assert.match(runtimeSource, /\\x1b\[201~\\r`/);
   assert.match(runtimeSource, /if \(!response\.ok\) throw new Error/);

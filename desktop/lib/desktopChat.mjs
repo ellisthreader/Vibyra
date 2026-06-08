@@ -4,6 +4,7 @@ import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById, terminalProjectById } from "./projects.mjs";
 import { promptProjectContext, promptProjectFilePaths } from "./projectContext.mjs";
 import { desktopMemoryContext } from "./desktopProjectMemory.mjs";
+import { desktopVaultMemoryContext } from "./desktopTerminalMemory.mjs";
 import { desktopActionsForPrompt } from "./desktopActions.mjs";
 import { sendLocalVibyraChat } from "./localAi.mjs";
 import { agenticTerminalTasks } from "./terminalTaskPrompts.mjs";
@@ -48,7 +49,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   const mode = normalizeMode(body?.mode);
   const tool = normalizeTool(body?.tool);
   const projectFiles = project ? await contextForProject(project.id, prompt) : [];
-  const memoryContext = project ? await desktopMemoryContext(project.id, fetchImpl) : [];
+  const memoryContext = project ? await combinedDesktopMemoryContext(project.id, fetchImpl) : [];
   const model = normalizeModel(body?.model);
   const payload = {
     fileBody: "",
@@ -170,7 +171,7 @@ async function enrichTerminalTaskAction(result, project, context) {
     ? await terminalTaskProjectFiles(project.id, context.prompt)
     : [];
   const memoryContext = project?.id && project.id !== "full-pc"
-    ? await desktopMemoryContext(project.id, context.fetchImpl)
+    ? await combinedDesktopMemoryContext(project.id, context.fetchImpl)
     : [];
   action.tasks = agenticTerminalTasks(action, {
     history: context.history,
@@ -240,6 +241,14 @@ function normalizeMemoryContext(memoryContext) {
     const body = String(item?.body || "").trim().slice(0, 1600);
     return body ? [`### ${title}`, body] : [];
   });
+}
+
+async function combinedDesktopMemoryContext(projectId, fetchImpl) {
+  const [vault, entries] = await Promise.all([
+    desktopVaultMemoryContext(projectId, fetchImpl).catch(() => []),
+    desktopMemoryContext(projectId, fetchImpl).catch(() => [])
+  ]);
+  return [...vault, ...entries].slice(0, 6);
 }
 
 function normalizeProfileContext(profileContext) {

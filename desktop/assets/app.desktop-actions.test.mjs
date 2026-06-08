@@ -201,6 +201,32 @@ test("desktop task actions assign jobs to existing project terminals without rel
   assert.equal(summary, "Assigned 2 terminal jobs to the open terminals.");
 });
 
+test("desktop task actions flatten multiline briefs for Vibyra wrapper terminals", async () => {
+  const requests = [];
+  const context = actionContext({
+    terminals: [{ id: "one", agent: "vibyra", projectId: "saas", ptyStatus: "running" }],
+    terminalTaskInputPrompt: (terminal, prompt) => terminal.agent === "vibyra"
+      ? String(prompt).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).join(" | ")
+      : String(prompt),
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      return jsonResponse({ ok: true });
+    }
+  });
+
+  await context.runDesktopActions([{
+    type: "run_terminal_tasks",
+    target: "existing",
+    projectId: "saas",
+    tasks: [{ prompt: "Role: investigator\nInspect the picker\nRun focused tests" }]
+  }]);
+
+  assert.equal(
+    JSON.parse(requests[0].options.body).input,
+    "\u001b[200~Role: investigator | Inspect the picker | Run focused tests\u001b[201~\r"
+  );
+});
+
 test("desktop task actions assign only three jobs when seven terminals are open", async () => {
   const requests = [];
   const context = actionContext({

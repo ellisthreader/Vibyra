@@ -3,8 +3,9 @@ import { homedir, tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { PORT } from "./state.mjs";
 import { openAiAccountCredential } from "./providerAccounts.mjs";
+import { applyCodexTerminalMemory } from "./aiTerminalMemoryFiles.mjs";
 
-export function terminalEnv({ agent, label, model, reasoningEffort, permissionMode = "standard", tokenMode = "vibyra", projectId, terminalId = "", cols, rows }) {
+export function terminalEnv({ agent, label, model, reasoningEffort, permissionMode = "standard", tokenMode = "vibyra", projectId, terminalId = "", memoryInstructions = "", geminiSettingsPath = "", cols, rows }) {
   const commandDir = vibyraCommandDir();
   const env = {
     ...process.env,
@@ -24,7 +25,13 @@ export function terminalEnv({ agent, label, model, reasoningEffort, permissionMo
     VIBYRA_TERMINAL_PROJECT_ID: String(projectId || ""),
     VIBYRA_TERMINAL_ID: String(terminalId || "")
   };
-  if (agent === "codex") env.CODEX_HOME = embeddedCodexHome(terminalId);
+  if (agent === "codex") {
+    env.CODEX_HOME = embeddedCodexHome(terminalId);
+    applyCodexTerminalMemory(env.CODEX_HOME, memoryInstructions);
+  }
+  if (agent === "gemini" && geminiSettingsPath) {
+    env.GEMINI_CLI_SYSTEM_SETTINGS_PATH = geminiSettingsPath;
+  }
   const openai = tokenMode === "provider" ? openAiAccountCredential() : null;
   if (openai?.apiKey) {
     env.OPENAI_API_KEY = openai.apiKey;
@@ -48,7 +55,7 @@ function embeddedCodexHome(terminalId) {
 function seedCodexHome(targetDir) {
   const sourceDir = String(process.env.CODEX_HOME || "").trim() || join(homedir(), ".codex");
   if (!existsSync(sourceDir) || sourceDir === targetDir) return;
-  for (const name of ["auth.json", "config.toml", "requirements.toml", "skills", "plugins"]) {
+  for (const name of ["auth.json", "config.toml", "requirements.toml", "AGENTS.md", "skills", "plugins"]) {
     const source = join(sourceDir, name);
     const target = join(targetDir, name);
     if (!existsSync(source) || existsSync(target)) continue;

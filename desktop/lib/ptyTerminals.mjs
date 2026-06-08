@@ -11,10 +11,13 @@ import {
 } from "./aiTerminalPersistentProcess.mjs";
 import {
   normalizeTerminalWorkspaceMode,
+  inspectTerminalWorkspace,
+  createTerminalWorkspaceCheckpoint,
   prepareTerminalWorkspace,
   restoredTerminalWorkspace,
   rollbackPreparedTerminalWorkspace
 } from "./terminalWorktrees.mjs";
+import { terminalMemoryInstructions } from "./desktopTerminalMemory.mjs";
 
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
@@ -34,6 +37,14 @@ export async function handlePtyTerminalRoutes(req, res, url) {
   }
   if (req.method === "POST" && route.action === "collection") {
     send(res, 200, { session: await createPtyTerminal(await readBody(req)), agents: listAiTerminalAgentStatuses() });
+    return true;
+  }
+  if (req.method === "POST" && route.action === "workspace-preflight") {
+    send(res, 200, await terminalWorkspacePreflight(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && route.action === "workspace-checkpoint") {
+    send(res, 200, await terminalWorkspaceCheckpoint(await readBody(req)));
     return true;
   }
   if (req.method === "POST" && route.action === "close-all") {
@@ -57,6 +68,30 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   return false;
+}
+
+async function terminalWorkspacePreflight(body = {}) {
+  await discoverProjects();
+  const project = terminalProjectById(string(body.projectId));
+  if (!project) throw httpError(404, "The selected terminal project is no longer available.");
+  try {
+    const state = await inspectTerminalWorkspace(project);
+    return { ok: true, project: { id: project.id, name: project.name }, ...state };
+  } catch (error) {
+    throw httpError(409, error instanceof Error ? error.message : "The project could not be checked.");
+  }
+}
+
+async function terminalWorkspaceCheckpoint(body = {}) {
+  await discoverProjects();
+  const project = terminalProjectById(string(body.projectId));
+  if (!project) throw httpError(404, "The selected terminal project is no longer available.");
+  try {
+    const state = await createTerminalWorkspaceCheckpoint(project);
+    return { ok: true, project: { id: project.id, name: project.name }, ...state };
+  } catch (error) {
+    throw httpError(409, error instanceof Error ? error.message : "The local checkpoint could not be created.");
+  }
 }
 
 export function handlePtyTerminalUpgrade(req, socket) {
@@ -121,6 +156,7 @@ export async function createPtyTerminal(body = {}) {
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, "Vibyra Desktop supports up to " + MAX_PTY_TERMINAL_SESSIONS + " terminals at once.");
   const project = terminalProjectById(projectId);
   if (projectId && !project) throw httpError(404, "The selected terminal project is no longer available.");
+  const memoryInstructions = await officialTerminalMemory(agent, projectId);
   const agentStatus = aiTerminalAgentStatus(agent);
   let workspace = {
     workspaceMode: "shared",
@@ -177,6 +213,7 @@ export async function createPtyTerminal(body = {}) {
       workspacePath: session.workspacePath,
       repositoryRoot: session.repositoryRoot,
       workspaceNotice: session.workspaceNotice,
+      memoryInstructions,
       terminalId: session.id,
       title: session.title,
       cwd: session.cwd,
@@ -190,6 +227,15 @@ export async function createPtyTerminal(body = {}) {
     throw error;
   }
   return publicSession(session);
+}
+
+async function officialTerminalMemory(agent, projectId) {
+  if (!["codex", "claude", "gemini"].includes(agent) || !projectId || projectId === "full-pc") return "";
+  try {
+    return await terminalMemoryInstructions(projectId);
+  } catch {
+    return "";
+  }
 }
 
 function persistentHandlers(session) {
@@ -364,6 +410,8 @@ export function handlePtySocketMessage(id, message) {
 function ptyRoute(pathname) {
   if (pathname === "/desktop/pty-terminals" || pathname === "/desktop/pty-terminals/") return { action: "collection" };
   if (pathname === "/desktop/pty-terminals/close-all") return { action: "close-all" };
+  if (pathname === "/desktop/pty-terminals/workspace/preflight") return { action: "workspace-preflight" };
+  if (pathname === "/desktop/pty-terminals/workspace/checkpoint") return { action: "workspace-checkpoint" };
   const parts = pathname.split("/").filter(Boolean);
   if (parts[0] !== "desktop" || parts[1] !== "pty-terminals") return null;
   if (parts.length === 4 && parts[3] === "socket") return { action: "socket", id: decodeURIComponent(parts[2]) };

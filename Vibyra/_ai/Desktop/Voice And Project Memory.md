@@ -47,17 +47,22 @@ Voice is a Vibyra AI conversation, not terminal dictation. Its upper-half UI is
 one talk/stop button with `Alt+V`; after transcription it sends the spoken turn
 directly through `requestDesktopChat` with the active terminal project, model,
 reasoning, profile preferences, and a voice-specific concise-response style.
-The same primary control communicates the full turn state without showing
-transcripts: idle says Vibyra is not listening, listening uses red `MIC LIVE`
-copy and animated level bars, processing explicitly says listening is paused,
-and playback uses purple `VIBYRA LIVE` speaking feedback. Never describe the
+The same primary control communicates the full turn state: idle says Vibyra is
+not listening, listening uses red `MIC LIVE` copy and animated level bars,
+processing explicitly says listening is paused, and playback uses purple
+`VIBYRA LIVE` speaking feedback. Never describe the
 physical microphone as off when only Vibyra capture is idle. State changes
 also use assertive accessible announcements and reduced-motion fallbacks.
 Voice-specific visuals live in
 `desktop/assets/app.terminals-companion-voice.css`.
 Voice history is private per terminal and bounded to four turns; it never enters
-visible terminal Chat or PTY input. The Voice UI renders only state and
-actionable errors. Structured actions still run through `runDesktopActions`, so
+visible terminal Chat or PTY input. That same history renders below the primary
+control as a compact transcript with `You` and `Vibyra` rows, styled by
+`desktop/assets/app.terminals-companion-voice-conversation.css`. Do not maintain
+a duplicate transcript store or add clear/edit/send controls. The user turn
+appears after transcription and the assistant turn appears before spoken
+playback. Do not show a `Preparing voice` phase. Structured actions still run
+through `runDesktopActions`, so
 existing confirmation dialogs remain authoritative and the action summary is
 spoken. Before any terminal exists, Voice uses the same `setup` context as
 terminal Chat so spoken launch commands can create the first terminal. A voice
@@ -156,10 +161,13 @@ Do not expose New Note, New Folder, or item-creation keyboard controls. Files
 and folder structure enter Memory through the single Import action; imported
 notes remain editable.
 
-`sendDesktopChat()` fetches canonical memory for the selected project and adds
-the latest six user entries to the prompt. This covers desktop chat and the
-Vibyra PTY wrapper because both use `/desktop/chat`. Native Codex, Claude, and
-Gemini CLI processes do not automatically receive Vibyra Memory.
+`sendDesktopChat()` combines bounded imported-vault excerpts with the latest
+project memory entries. This covers desktop chat and the Vibyra PTY wrapper
+because both use `/desktop/chat`. Official Codex, Claude, and Gemini PTYs use a
+bounded vault snapshot prepared by `desktopTerminalMemory.mjs` at terminal
+launch and injected through private provider-specific context owned by the
+detached terminal session; no Memory instruction file is written to the user
+project. Reopen an official terminal to pick up later vault changes.
 
 Backend chat-learning memory remains separate hidden quality data. Do not expose
 it as editable project memory.

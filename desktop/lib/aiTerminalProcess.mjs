@@ -16,11 +16,11 @@ const AGENT_CONFIG = {
   gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." }
 };
 
-export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", permissionMode = "standard", tokenMode = "vibyra", projectId = "", terminalId = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
+export function spawnAiTerminalProcess({ agent = "vibyra", model = "", reasoningEffort = "medium", permissionMode = "standard", tokenMode = "vibyra", projectId = "", terminalId = "", memoryInstructions = "", geminiSettingsPath = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
   const shell = process.env.SHELL || "/bin/bash";
   const status = aiTerminalAgentStatus(agent);
-  const launch = launchCommand(status, shell, { model, reasoningEffort, permissionMode });
-  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, permissionMode, tokenMode, projectId, terminalId, cols, rows });
+  const launch = launchCommand(status, shell, { model, reasoningEffort, permissionMode, memoryInstructions });
+  const env = terminalEnv({ agent: status.key, label: status.label, model, reasoningEffort, permissionMode, tokenMode, projectId, terminalId, memoryInstructions, geminiSettingsPath, cols, rows });
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {
@@ -156,6 +156,10 @@ function launchCommand(status, shell, options = {}) {
 export function aiTerminalAgentArgs(agent, options = {}) {
   const key = AGENT_CONFIG[agent] ? agent : "vibyra";
   const args = [...(AGENT_CONFIG[key].args || [])];
+  const memoryInstructions = String(options.memoryInstructions || "").trim();
+  if (key === "claude" && memoryInstructions) {
+    args.push("--append-system-prompt", memoryInstructions);
+  }
   if (key !== "codex") return args;
   const model = codexModelName(options.model);
   if (model && model !== "auto") args.push("--model", model);

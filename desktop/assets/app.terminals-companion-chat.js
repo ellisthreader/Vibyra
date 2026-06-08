@@ -17,7 +17,6 @@ function terminalAiChatHtml() {
     <form class="terminal-ai-chat-composer" data-terminal-ai-form>
       <textarea rows="2" data-terminal-ai-input placeholder="Ask Vibyra AI..." ${thread.sending ? "disabled" : ""}>${escapeHtml(thread.draft)}</textarea>
       <div class="terminal-ai-chat-composer-foot">
-        <small>Enter to send</small>
         <button class="terminal-ai-chat-voice" type="button" data-terminal-companion-open="voice" aria-label="Talk to Vibyra" title="Talk to Vibyra (Alt+V)">${icon("pulse")}</button>
         <button type="submit" aria-label="Send to Vibyra AI" ${thread.sending || !thread.draft.trim() ? "disabled" : ""}>${icon("send")}</button>
       </div>
@@ -30,12 +29,11 @@ function terminalAiChatEmptyHtml(terminal) {
   return `<div class="terminal-ai-chat-empty">
     <div class="terminal-ai-chat-intro">
       <span class="terminal-ai-chat-avatar"><img src="/app-assets/vibyra.png" alt="" /></span>
-      <div><strong>How can I help?</strong><p>I can use the context from ${escapeHtml(terminalName)} without interrupting the running session.</p></div>
+      <div><strong>Ask about this terminal</strong><p>Using context from ${escapeHtml(terminalName)}.</p></div>
     </div>
     <div class="terminal-ai-chat-starters" aria-label="Suggested prompts">
       <button type="button" data-terminal-ai-prompt="Explain the latest terminal output and tell me what it means.">${icon("chat")}<span><strong>Explain the output</strong><small>Summarize what the terminal is showing</small></span>${icon("chevron")}</button>
       <button type="button" data-terminal-ai-prompt="Review the active terminal context for errors and suggest the safest next step.">${icon("search")}<span><strong>Check for errors</strong><small>Find the likely issue and next step</small></span>${icon("chevron")}</button>
-      <button type="button" data-terminal-ai-prompt="What should I do next in this terminal to move the current task forward?">${icon("arrow")}<span><strong>Plan the next step</strong><small>Continue from the active terminal context</small></span>${icon("chevron")}</button>
     </div>
   </div>`;
 }

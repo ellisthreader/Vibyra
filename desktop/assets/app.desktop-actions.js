@@ -165,7 +165,10 @@ async function assignExistingTerminalTasks(tasks, action) {
 }
 
 async function sendExistingTerminalTask(terminal, prompt) {
-  const safePrompt = String(prompt || "")
+  const preparedPrompt = typeof terminalTaskInputPrompt === "function"
+    ? terminalTaskInputPrompt(terminal, prompt)
+    : String(prompt || "");
+  const safePrompt = String(preparedPrompt || "")
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
     .trim()
     .slice(0, 8000);

@@ -7,6 +7,7 @@ const terminalXtermSizes = {};
 const terminalXtermSnapshots = {};
 const terminalXtermReplayWrites = {};
 let ptyRenderedSignature = "";
+let terminalSetupAdvancedOpen = false;
 const terminalPtyRendererVersion = 2;
 const terminalAgents = [
   { key: "vibyra", label: "Vibyra", detail: "OpenRouter terminal", profile: "auto" },
@@ -23,11 +24,16 @@ function agentForModel(model) {
   const provider = typeof terminalProviderKeyForModel === "function"
     ? terminalProviderKeyForModel(model)
     : String(model?.provider || "").toLowerCase();
-  return ["openai", "claude", "gemini"].includes(provider) ? "official" : "vibyra";
+  if (provider === "openai") return "codex";
+  if (provider === "claude") return "claude";
+  if (provider === "gemini") return "gemini";
+  return "vibyra";
 }
 
 function normalizePtyAgentForModel(item, terminal) {
-  const agent = normalizeTerminalAgent(item.agent || terminal.agent);
+  const reportedAgent = String(item.agent || "").trim().toLowerCase();
+  if (terminalAgents.some((agent) => agent.key === reportedAgent)) return reportedAgent;
+  const agent = normalizeTerminalAgent(terminal.agent);
   const modelKey = String(item.model || terminal.model || "").trim();
   if (modelKey && modelKey !== "auto") return agentForModel(terminalModelForDisplay(modelKey));
   return agent;
@@ -102,6 +108,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     tokenMode,
     projectId: options.projectId === undefined ? terminalProjectForSetup() : String(options.projectId || ""),
     workspaceMode: normalizeTerminalWorkspaceMode(options.workspaceMode),
+    allowSharedFallback: options.allowSharedFallback !== false,
     branchName: "",
     workspacePath: "",
     workspaceNotice: "",
@@ -149,13 +156,27 @@ createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel, 
 setupView = function ptySetupView() {
   const model = selectedSetupModel();
   const projectReady = typeof terminalProjectReadyForSetup !== "function" || terminalProjectReadyForSetup();
-  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Project</p>${terminalProjectSelect("setup")}</div>${terminalWorkspaceSetupPicker()}<div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalSetupEffortPicker(model)}${terminalTokenSourcePanel(model, setupTokenMode, "setup")}<button class="primary-button terminal-start-button" type="button" id="start-terminals" ${projectReady ? "" : "disabled"}>${icon("plus")}${projectReady ? `Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}` : "Loading project..."}</button></div></section>`;
+  const advanced = `${terminalSetupEffortPicker(model)}${terminalTokenSourcePanel(model, setupTokenMode, "setup")}`;
+  return `<section class="terminal-setup"><div class="terminal-setup-panel">
+    <div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div>
+    <div class="terminal-setup-block"><p>Terminals</p><div class="terminal-count-row">
+      ${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}
+      <label class="terminal-custom-count"><input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label>
+    </div></div>
+    <div class="terminal-setup-grid">
+      <div class="terminal-setup-block"><p>Project</p>${terminalProjectSelect("setup")}</div>
+      <div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>
+    </div>
+    ${terminalWorkspaceSetupPicker()}
+    ${advanced ? `<details class="terminal-setup-advanced" data-terminal-setup-advanced ${terminalSetupAdvancedOpen ? "open" : ""}><summary>${icon("tool")}<span>Advanced settings</span>${icon("chevron")}</summary><div>${advanced}</div></details>` : ""}
+    <button class="primary-button terminal-start-button" type="button" id="start-terminals" ${projectReady ? "" : "disabled"}>${icon("plus")}${projectReady ? `Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}` : "Loading project..."}</button>
+  </div></section>`;
 };
 
 function terminalWorkspaceSetupPicker() {
   if (setupCount < 2 || !setupProjectId || setupProjectId === "full-pc") return "";
-  const choice = (mode, title, detail) => `<button class="${setupWorkspaceMode === mode ? "active" : ""}" type="button" role="radio" aria-checked="${setupWorkspaceMode === mode}" data-terminal-workspace-mode="${mode}"><strong>${title}</strong><small>${detail}</small></button>`;
-  return `<div class="terminal-setup-block"><p>Workspace</p><div class="terminal-workspace-row" role="radiogroup" aria-label="Terminal workspace mode">${choice("shared", "Shared folder", "Terminals can edit the same files")}${choice("worktree", "Separate branches", "Safer parallel editing; needs a saved Git checkpoint")}</div></div>`;
+  const choice = (mode, title, detail, recommended = false) => `<button class="${setupWorkspaceMode === mode ? "active" : ""} ${recommended ? "recommended" : ""}" type="button" role="radio" aria-checked="${setupWorkspaceMode === mode}" data-terminal-workspace-mode="${mode}"><span class="terminal-workspace-choice-title"><strong>${title}</strong>${recommended ? "<em>Recommended</em>" : ""}</span><small>${detail}</small></button>`;
+  return `<div class="terminal-setup-block"><p>Workspace safety</p><div class="terminal-workspace-row" role="radiogroup" aria-label="Terminal workspace safety">${choice("worktree", "Safe mode", "Each terminal gets separate files to prevent overlap", true)}${choice("shared", "Shared folder", "Advanced: terminals can edit the same files")}</div></div>`;
 }
 
 newTerminalMenu = function ptyNewTerminalMenu() {
@@ -190,12 +211,15 @@ terminalComposer = function ptyTerminalComposer(terminal) {
 
 settingsMenu = function ptySettingsMenu(terminal) {
   const project = projectForTerminal(terminal);
-  const projectRow = `<div class="terminal-cwd-row terminal-project-row">${icon("folder")}<span>${escapeHtml(project?.name || (terminal.projectId ? "Selected project" : "No project selected"))}</span></div>`;
+  const optionRow = (iconName, label, value, detail = "", className = "") => `<div class="terminal-option-row ${className}">${icon(iconName)}<span class="terminal-option-copy"><small>${label}</small><strong>${escapeHtml(value)}</strong>${detail ? `<em>${escapeHtml(detail)}</em>` : ""}</span></div>`;
+  const projectRow = optionRow("folder", "Project", project?.name || (terminal.projectId ? "Selected project" : "No project selected"), "", "terminal-project-row");
   const workspace = typeof terminalWorkspaceDisplay === "function" ? terminalWorkspaceDisplay(terminal) : null;
-  const workspaceRow = workspace ? `<div class="terminal-cwd-row terminal-branch-row">${icon(workspace.key === "isolated" || workspace.key === "preparing" ? "split" : "folder")}<span>${escapeHtml(workspace.label)}${workspace.detail ? ` · ${escapeHtml(workspace.detail)}` : ""}</span></div>` : "";
-  const permissionRow = terminal.permissionMode === "full" ? `<div class="terminal-cwd-row terminal-permission-row">${icon("lock")}<span>Full access: approvals and sandbox disabled</span></div>` : "";
-  const cwd = terminal.cwd ? `<div class="terminal-cwd-row">${icon("folder")}<span>${escapeHtml(terminal.cwd)}</span></div>` : "";
-  return `<div class="terminal-menu terminal-settings-menu">${projectRow}${workspaceRow}${permissionRow}${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}<button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}Close terminal</button></div>`;
+  const workspaceRow = workspace ? optionRow(workspace.key === "isolated" || workspace.key === "preparing" ? "split" : "folder", "Workspace", workspace.label, workspace.detail, "terminal-branch-row") : "";
+  const fullAccess = terminal.permissionMode === "full";
+  const permissionRow = optionRow(fullAccess ? "lock" : "shield", "Access", fullAccess ? "Full access" : "Standard", fullAccess ? "Approvals and sandbox are disabled" : "Approvals and sandbox stay enabled", fullAccess ? "terminal-permission-row" : "");
+  const cwd = terminal.cwd ? optionRow("terminal", "Path", terminal.cwd, "", "terminal-path-row") : "";
+  const advanced = `${cwd}${terminalTokenSourcePanel(terminalModelForDisplay(terminal.model), terminal.tokenMode, terminal.id)}`;
+  return `<div class="terminal-menu terminal-settings-menu" role="dialog" aria-label="Terminal options"><div class="terminal-menu-section">${projectRow}${workspaceRow}${permissionRow}</div><div class="terminal-menu-section terminal-menu-advanced"><p class="terminal-menu-section-label">Advanced</p>${advanced}</div><button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}<span>Close terminal</span></button></div>`;
 };
 
 terminalTopbarSubtitle = function ptyTerminalTopbarSubtitle() {

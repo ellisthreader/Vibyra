@@ -245,6 +245,19 @@ test("desktop chat loads canonical memory for the selected project", async () =>
   let chatPayload = null;
 
   await sendDesktopChat({ projectId: "project-1", prompt: "Continue the implementation" }, async (url, options = {}) => {
+    if (String(url).endsWith("/vault")) {
+      return jsonResponse({
+        ok: true,
+        vault: {
+          nodes: [{
+            id: "architecture",
+            type: "document",
+            name: "Architecture.md",
+            markdown: "The desktop bridge owns terminal memory injection."
+          }]
+        }
+      });
+    }
     if (String(url).includes("/api/project-memory/")) {
       return jsonResponse({ ok: true, memory: { entries: [{ id: "user-1", text: "Keep terminal memory project scoped.", source: "user" }] } });
     }
@@ -253,6 +266,7 @@ test("desktop chat loads canonical memory for the selected project", async () =>
   });
 
   assert.match(chatPayload.prompt, /Relevant desktop memory:/);
+  assert.match(chatPayload.prompt, /The desktop bridge owns terminal memory injection\./);
   assert.match(chatPayload.prompt, /Keep terminal memory project scoped\./);
 });
 

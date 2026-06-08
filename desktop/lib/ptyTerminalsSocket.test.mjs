@@ -40,6 +40,49 @@ test("OpenRouter model slugs do not launch unsupported official CLIs", async () 
   }
 });
 
+test("official terminal Memory stays out of public PTY session payloads", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-memory-private-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const previousPath = process.env.PATH;
+  const previousFetch = global.fetch;
+  const { appState } = await import("./state.mjs");
+  const previousProjects = appState.cachedProjects;
+  const previousToken = appState.desktopAccountToken;
+  appState.cachedProjects = [{ id: "project-memory", name: "Memory", path: root }];
+  appState.desktopAccountToken = "account-token";
+  process.env.PATH = "";
+  global.fetch = async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      return {
+        ok: true,
+        vault: {
+          nodes: [{ id: "note", type: "document", name: "Context.md", markdown: "Private terminal context" }]
+        }
+      };
+    }
+  });
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?memoryPrivate=${Date.now()}`, import.meta.url);
+    const { closeAllPtyTerminals, createPtyTerminal } = await import(moduleUrl);
+    const session = await createPtyTerminal({
+      id: "private-memory-terminal",
+      agent: "claude",
+      projectId: "project-memory"
+    });
+    assert.equal("memoryInstructions" in session, false);
+    closeAllPtyTerminals();
+  } finally {
+    appState.cachedProjects = previousProjects;
+    appState.desktopAccountToken = previousToken;
+    process.env.PATH = previousPath;
+    global.fetch = previousFetch;
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("close all removes every PTY session regardless of status", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-close-all-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;

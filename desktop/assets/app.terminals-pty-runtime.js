@@ -2,7 +2,7 @@ async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
   const size = initialPtyStartSize(terminal.id);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree", cols: size.cols, rows: size.rows }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, cols: size.cols, rows: size.rows }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
@@ -35,7 +35,7 @@ async function startPtyTerminal(terminal) {
 }
 
 async function submitInitialPtyPrompt(terminal) {
-  const prompt = String(terminal?.initialPrompt || "").trim();
+  const prompt = terminalTaskInputPrompt(terminal, terminal?.initialPrompt);
   if (!prompt || terminal.ptyStatus === "unavailable" || terminal.ptyStatus === "exited") return;
   const input = `\x1b[200~${prompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
   const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/input`, {
@@ -46,6 +46,16 @@ async function submitInitialPtyPrompt(terminal) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || "The terminal task could not be delivered.");
   delete terminal.initialPrompt;
+}
+
+function terminalTaskInputPrompt(terminal, value) {
+  const prompt = String(value || "").trim();
+  if (!prompt || normalizeTerminalAgent(terminal?.agent) !== "vibyra") return prompt;
+  return prompt
+    .split(/\r\n|\r|\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" | ");
 }
 
 let ptyCollectionSyncTimer = null;

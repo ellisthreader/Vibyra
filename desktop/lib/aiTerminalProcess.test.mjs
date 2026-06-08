@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { aiTerminalAgentArgs, aiTerminalAgentStatus, listAiTerminalAgentStatuses, spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
@@ -47,6 +47,17 @@ test("Codex standard mode does not bypass approvals or sandboxing", () => {
   });
 
   assert.equal(args.includes("--dangerously-bypass-approvals-and-sandbox"), false);
+});
+
+test("Claude launch appends Vibyra Memory as system context", () => {
+  const args = aiTerminalAgentArgs("claude", {
+    memoryInstructions: "Vibyra project memory snapshot"
+  });
+
+  assert.deepEqual(args, [
+    "--append-system-prompt",
+    "Vibyra project memory snapshot"
+  ]);
 });
 
 test("PTY terminal env carries selected OpenRouter model metadata", () => {
@@ -104,7 +115,14 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
   writeFileSync(join(sourceHome, "config.toml"), "model = \"gpt-5.5\"\n");
 
   try {
-    const first = terminalEnv({ agent: "codex", label: "Codex", terminalId: "terminal/a", cols: 100, rows: 30 });
+    const first = terminalEnv({
+      agent: "codex",
+      label: "Codex",
+      terminalId: "terminal/a",
+      memoryInstructions: "Project memory",
+      cols: 100,
+      rows: 30
+    });
     const second = terminalEnv({ agent: "codex", label: "Codex", terminalId: "terminal/b", cols: 100, rows: 30 });
 
     assert.notEqual(first.CODEX_HOME, sourceHome);
@@ -113,6 +131,7 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
     assert.equal(second.CODEX_HOME, join(isolatedRoot, "terminal-b"));
     assert.equal(existsSync(join(first.CODEX_HOME, "auth.json")), true);
     assert.equal(existsSync(join(first.CODEX_HOME, "config.toml")), true);
+    assert.match(readFileSync(join(first.CODEX_HOME, "AGENTS.md"), "utf8"), /Project memory/);
   } finally {
     if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
     else process.env.CODEX_HOME = previousCodexHome;
@@ -121,6 +140,18 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
     rmSync(sourceHome, { recursive: true, force: true });
     rmSync(isolatedRoot, { recursive: true, force: true });
   }
+});
+
+test("Gemini terminal env loads its private Memory settings", () => {
+  const env = terminalEnv({
+    agent: "gemini",
+    label: "Gemini",
+    geminiSettingsPath: "/tmp/vibyra-gemini-settings.json",
+    cols: 100,
+    rows: 30
+  });
+
+  assert.equal(env.GEMINI_CLI_SYSTEM_SETTINGS_PATH, "/tmp/vibyra-gemini-settings.json");
 });
 
 test("script-backed terminal resize updates the real PTY dimensions", async (t) => {

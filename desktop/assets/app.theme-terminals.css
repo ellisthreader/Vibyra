@@ -68,6 +68,7 @@ body {
 .terminal-banner-tips,
 .terminal-line.user pre { color: var(--terminal-copy); }
 .terminal-meta-chip,
+.terminal-setup-advanced summary,
 .terminal-setup-block p,
 .terminal-agent-row small,
 .terminal-agent-option small,
@@ -158,6 +159,7 @@ body {
 .terminal-line.mention pre,
 .terminal-line.approval pre,
 .terminal-line.review pre,
+.terminal-setup-advanced,
 .terminal-block,
 .terminal-cli-box,
 .terminal-banner-tips kbd,

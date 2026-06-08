@@ -8,6 +8,7 @@ const companionStyles = readFileSync(new URL("./app.terminals-companion.css", im
 const companionChatSource = readFileSync(new URL("./app.terminals-companion-chat.js", import.meta.url), "utf8");
 const companionChatStyles = readFileSync(new URL("./app.terminals-companion-chat.css", import.meta.url), "utf8");
 const companionVoiceStyles = readFileSync(new URL("./app.terminals-companion-voice.css", import.meta.url), "utf8");
+const companionVoiceConversationStyles = readFileSync(new URL("./app.terminals-companion-voice-conversation.css", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../app.html", import.meta.url), "utf8");
 const companionVoiceFiles = [
   "app.terminals-companion-voice.js",
@@ -91,9 +92,11 @@ test("terminal voice is a one-control AI conversation", () => {
   assert.doesNotMatch(companionVoiceSource, /sendTerminalAiPrompt/);
   assert.doesNotMatch(companionVoiceSource, /terminalCompanionInsertIntoTerminal/);
   assert.doesNotMatch(companionVoiceSource, /data-terminal-voice-enter/);
-  assert.doesNotMatch(companionVoiceSource, /terminal-voice-conversation/);
-  assert.doesNotMatch(companionVoiceSource, /<small>You<\/small>/);
-  assert.doesNotMatch(companionVoiceSource, /<small>Vibyra<\/small>/);
+  assert.match(companionVoiceSource, /terminalVoiceConversationHtml/);
+  assert.match(companionVoiceSource, /assistant \? "Vibyra" : "You"/);
+  assert.match(companionVoiceSource, /appendTerminalVoiceMessage\(terminal, "user", prompt\)/);
+  assert.match(companionVoiceSource, /appendTerminalVoiceMessage\(terminalCompanionActiveTerminal\(\) \|\| terminal, "assistant", reply\)/);
+  assert.doesNotMatch(companionVoiceSource, /Preparing voice/);
 });
 
 test("terminal voice makes listening, processing, and speaking visually explicit", () => {
@@ -107,7 +110,10 @@ test("terminal voice makes listening, processing, and speaking visually explicit
   assert.match(companionVoiceStyles, /\[data-voice-phase="listening"\]/);
   assert.match(companionVoiceStyles, /\[data-voice-phase="speaking"\]/);
   assert.match(companionVoiceStyles, /prefers-reduced-motion: reduce/);
+  assert.match(companionVoiceConversationStyles, /\.terminal-voice-message\.user/);
+  assert.match(companionVoiceConversationStyles, /\.terminal-voice-message\.assistant/);
   assert.match(appSource, /app\.terminals-companion-voice\.css/);
+  assert.match(appSource, /app\.terminals-companion-voice-conversation\.css/);
 });
 
 test("terminal chat companion executes actions and keeps their result visible", () => {

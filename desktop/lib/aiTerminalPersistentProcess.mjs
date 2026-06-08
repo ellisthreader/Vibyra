@@ -176,6 +176,7 @@ function serializableConfig(config) {
     workspacePath: config.workspacePath,
     repositoryRoot: config.repositoryRoot,
     workspaceNotice: config.workspaceNotice,
+    memoryInstructions: config.memoryInstructions,
     terminalId: config.terminalId,
     title: config.title,
     cwd: config.cwd,

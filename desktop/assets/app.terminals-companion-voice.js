@@ -23,6 +23,7 @@ function terminalVoiceHtml() {
       <strong>${escapeHtml(view.status)}</strong>
       <span>${escapeHtml(status)}</span>
     </p>
+    ${terminalVoiceConversationHtml()}
     <small class="terminal-voice-disclosure">AI-generated voice</small>
   </div>`;
 }
@@ -32,7 +33,7 @@ function terminalVoicePhase(available) {
   if (terminalVoiceState.speaking) return "speaking";
   if (terminalVoiceState.listening) return "listening";
   if (terminalVoiceState.starting) return "starting";
-  if (terminalVoiceState.asking || ["Transcribing", "Preparing voice"].includes(terminalVoiceState.status)) {
+  if (terminalVoiceState.asking || ["Transcribing", "Vibyra is responding"].includes(terminalVoiceState.status)) {
     return "processing";
   }
   if (terminalVoiceState.status !== "Ready") return "notice";
@@ -108,6 +109,7 @@ function terminalVoiceBars() {
 function bindTerminalVoice(root = document) {
   root.querySelector("[data-terminal-voice-toggle]")?.addEventListener("click", toggleTerminalVoice);
   root.querySelector(".terminal-voice-back")?.addEventListener("click", stopTerminalVoiceForPanelClose);
+  scrollTerminalVoiceConversation(root);
   bindTerminalVoiceHotkey();
 }
 
@@ -141,9 +143,14 @@ async function submitTerminalVoicePrompt(text, generation = terminalVoiceState.g
   terminalVoiceState.asking = true;
   terminalVoiceSetStatus("Vibyra is thinking");
   try {
-    const reply = await requestTerminalVoiceReply(prompt, terminal, generation);
+    const replyRequest = requestTerminalVoiceReply(prompt, terminal, generation);
+    appendTerminalVoiceMessage(terminal, "user", prompt);
+    terminalVoiceSync();
+    const reply = await replyRequest;
     if (!terminalVoiceGenerationCurrent(generation)) return;
     terminalVoiceState.asking = false;
+    appendTerminalVoiceMessage(terminalCompanionActiveTerminal() || terminal, "assistant", reply);
+    terminalVoiceSync();
     await playTerminalVoiceReply(reply, generation);
   } catch (error) {
     if (!terminalVoiceGenerationCurrent(generation)) return;
@@ -169,6 +176,7 @@ function syncTerminalVoiceTarget(terminal) {
   const nextId = terminalVoiceTargetId(terminal);
   if (nextId === terminalVoiceState.targetId) return;
   if (terminalVoiceState.actionInFlight) {
+    transferTerminalVoiceThread(terminalVoiceState.targetId, nextId);
     terminalVoiceState.targetId = nextId;
     return;
   }

@@ -1,38 +1,47 @@
 .terminal-custom-count input {
-  width: 54px;
+  width: 42px;
 }
 .terminal-custom-count span {
   color: #918ca1;
   font-size: 12px;
   font-weight: 650;
 }
-.terminal-preview-block {
-  min-width: 0;
+.terminal-setup-advanced {
+  border-top: 1px solid rgba(151, 161, 190, 0.1);
+  padding-top: 4px;
 }
-.terminal-layout-preview {
-  align-content: start;
-  background: #08080c;
-  border: 1px solid rgba(151, 161, 190, 0.1);
-  border-radius: 8px;
+.terminal-setup-advanced summary {
+  align-items: center;
+  color: #aaa3b8;
+  cursor: pointer;
   display: grid;
-  gap: 6px;
-  grid-template-columns: repeat(var(--terminal-preview-cols), 38px);
-  justify-content: center;
-  min-height: 112px;
-  padding: 9px;
+  font-size: 12px;
+  font-weight: 680;
+  gap: 8px;
+  grid-template-columns: 16px minmax(0, 1fr) 14px;
+  list-style: none;
+  min-height: 36px;
 }
-.terminal-layout-preview span {
-  background: #12121a;
-  border: 1px solid rgba(151, 161, 190, 0.12);
-  border-radius: 6px;
-  min-height: 24px;
+.terminal-setup-advanced summary::-webkit-details-marker {
+  display: none;
 }
-.terminal-layout-preview span.active {
-  background: rgba(139, 92, 255, 0.18);
-  border-color: rgba(139, 92, 255, 0.36);
+.terminal-setup-advanced summary svg {
+  height: 14px;
+  width: 14px;
+}
+.terminal-setup-advanced summary svg:last-child {
+  transition: transform 120ms ease;
+}
+.terminal-setup-advanced[open] summary svg:last-child {
+  transform: rotate(90deg);
+}
+.terminal-setup-advanced > div {
+  display: grid;
+  gap: 14px;
+  padding-top: 10px;
 }
 .terminal-start-button {
-  justify-self: start;
+  justify-self: stretch;
   margin-top: 2px;
 }
 @media (max-width: 760px) {
@@ -86,9 +95,6 @@
   }
   .terminal-model-select-wrap .terminal-model-scroll {
     max-height: min(312px, calc(100vh - 214px));
-  }
-  .terminal-layout-preview {
-    min-height: 78px;
   }
   .terminal-model-row button {
     width: 100%;

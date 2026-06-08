@@ -136,7 +136,9 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   click-to-talk control with an `Alt+V` shortcut; transcribe the turn, send it
   directly through Vibyra AI with private per-terminal history, execute
   structured desktop actions through the existing approval path, and speak the
-  reply without rendering ordinary user or assistant text. Prefer
+  reply. Below the primary control, show the same bounded history as a compact
+  transcript with right-aligned `You` turns and left-aligned `Vibyra` turns;
+  do not create a second transcript store or add transcript controls. Prefer
   `/desktop/voice/speak` audio and fall back to system speech synthesis. Do not
   show separate Enter, clear-transcript, terminal target, or manual-send controls.
   Keep a visible `AI-generated voice` disclosure. Make every voice phase
@@ -146,15 +148,17 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   assertive accessible status; never rely on animation or color alone. Voice
   must work from the empty terminal setup state so it can launch the first
   terminal, and a launch action must not cancel its own spoken confirmation
-  when the new terminal becomes active.
+  when the new terminal becomes active. Do not show a `Preparing voice` phase;
+  keep the control in a direct responding state until playback begins.
 - Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
 - Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
 - When no terminals exist, show a simple setup panel that asks how many terminals to open, supports a custom count up to 12, previews the selected count, and lets the user pick from the same OpenRouter/chat model set used by desktop chat.
 - For two or more project terminals, keep workspace isolation as one quiet
-  two-choice row: `Shared folder` or `Separate branches`. Shared is the default;
-  explain that separate branches require a clean Git project. Do not require or
-  imply GitHub integration, and do not expose backend-managed worktree paths as
-  editable browser inputs.
+  two-choice row: recommended `Safe mode` or advanced `Shared folder`. Safe
+  mode is the default for users without a saved preference and means separate
+  local branches/files that prevent terminal overlap. Explain that its local
+  checkpoint stays on the computer. Do not require or imply GitHub integration,
+  and do not expose backend-managed worktree paths as editable browser inputs.
 - Show each project terminal's effective workspace beside its header metadata:
   `Separate branch` with the branch name, `Shared folder`, or an amber
   `Shared for now` when requested isolation was unavailable. Dirty-project
@@ -162,6 +166,11 @@ AI terminals should feel like calm model workspaces, not a dashboard of configur
   checkpoint, files were not deleted, and GitHub is not required. Clicking the
   compact indicator may reuse the terminal notice surface for the explanation.
   Patch indicator state in place so workspace updates never remount xterm.
+- Before setup launches `Separate branches`, preflight the selected project.
+  If it has non-ignored changes, show one approval dialog with the changed-file
+  count and `Save checkpoint and continue`; state that the checkpoint stays on
+  the computer and nothing is uploaded. Never create the commit without
+  approval, and never silently fall back to shared mode after this guided flow.
 - The no-terminal setup panel must derive reasoning support from each selected
   OpenRouter model's catalog metadata. Show `Low`, `Medium`, `High`, and
   `Extra high` only when `supported_parameters` includes `reasoning`; otherwise

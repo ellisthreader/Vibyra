@@ -6,7 +6,7 @@ async function playTerminalVoiceReply(text, generation) {
   if (!text || !terminalVoiceGenerationCurrent(generation)) return;
   stopTerminalVoicePlayback();
   terminalVoiceSpeechController = new AbortController();
-  terminalVoiceSetStatus("Preparing voice");
+  terminalVoiceSetStatus("Vibyra is responding");
   try {
     const blob = await requestTerminalVoiceAudio(text, terminalVoiceSpeechController.signal);
     if (!terminalVoiceGenerationCurrent(generation)) return;
