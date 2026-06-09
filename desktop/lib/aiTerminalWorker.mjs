@@ -16,6 +16,11 @@ const paths = {
 const clients = new Set();
 let closing = false;
 let child = null;
+let queuedInput = "";
+let pendingSize = null;
+let resizeInFlight = false;
+let initialPromptTimer = null;
+let initialPromptSent = false;
 let state = {
   status: "starting",
   pid: process.pid,
@@ -51,6 +56,10 @@ server.listen(paths.socket, () => {
     onData: handleOutput,
     onExit: handleExit
   });
+  child?.stdin?.on("error", () => {});
+  child?.stdin?.on("drain", flushPendingControl);
+  child?.once("spawn", flushPendingControl);
+  flushPendingControl();
   state = {
     ...state,
     status: "running",
@@ -69,14 +78,61 @@ process.on("unhandledRejection", failWorker);
 function handleMessage(line) {
   let payload;
   try { payload = JSON.parse(line); } catch { return; }
-  if (payload.type === "input" && child?.stdin?.writable) child.stdin.write(String(payload.data ?? ""));
+  if (payload.type === "input") {
+    const input = String(payload.data ?? "");
+    if (!writeChildInput(input)) queuedInput += input;
+  }
   if (payload.type === "resize") {
-    try { child?.resize?.(payload.cols, payload.rows); } catch {}
+    pendingSize = { cols: payload.cols, rows: payload.rows };
+    resizeChild();
+  }
+  if (payload.type === "signal" && payload.signal === "SIGWINCH") {
     try { child?.kill?.("SIGWINCH"); } catch {}
   }
   if (payload.type === "close") {
     closing = true;
+    queuedInput = "";
     stopChild(payload.signal || "SIGTERM");
+  }
+}
+
+function flushPendingControl() {
+  resizeChild();
+  if (queuedInput && writeChildInput(queuedInput)) queuedInput = "";
+}
+
+function writeChildInput(input) {
+  if (pendingSize || resizeInFlight) return false;
+  if (!child?.stdin?.writable || child.stdin.destroyed || child.stdin.writableEnded) return false;
+  try {
+    child.stdin.write(input);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resizeChild() {
+  if (!child || !pendingSize || resizeInFlight) return;
+  const size = pendingSize;
+  pendingSize = null;
+  resizeInFlight = true;
+  let completed = false;
+  const complete = (resized = false) => {
+    if (completed) return;
+    completed = true;
+    resizeInFlight = false;
+    if (!resized) {
+      try { child?.kill?.("SIGWINCH"); } catch {}
+    }
+    if (pendingSize) resizeChild();
+    else if (queuedInput && writeChildInput(queuedInput)) queuedInput = "";
+  };
+  try {
+    const waitsForCompletion = child.resize?.(size.cols, size.rows, complete) === true;
+    if (!waitsForCompletion) complete();
+  } catch {
+    complete();
   }
 }
 
@@ -87,6 +143,7 @@ function handleOutput(data) {
   state = { ...state, status: "running", updatedAt: new Date().toISOString() };
   writeState();
   broadcast({ type: "output", data: value });
+  queueInitialPrompt();
 }
 
 function handleExit({ code, signal }) {
@@ -109,12 +166,30 @@ function stopChild(signal) {
 }
 
 function shutdown() {
+  clearTimeout(initialPromptTimer);
   for (const socket of clients) socket.end();
   server.close(() => {
     try { unlinkSync(paths.socket); } catch {}
     if (closing) rmSync(dir, { recursive: true, force: true });
     process.exit(0);
   });
+}
+
+function queueInitialPrompt() {
+  const prompt = String(config.initialPrompt || "").trim().replace(/\s*\r?\n\s*/g, " ");
+  if (!prompt || initialPromptSent || initialPromptTimer) return;
+  initialPromptTimer = setTimeout(() => {
+    initialPromptTimer = null;
+    if (initialPromptSent || closing) return;
+    const input = `${prompt}\r`;
+    if (writeChildInput(input)) {
+      initialPromptSent = true;
+      return;
+    }
+    queuedInput = `${input}${queuedInput}`;
+    initialPromptSent = true;
+  }, 600);
+  initialPromptTimer.unref?.();
 }
 
 function broadcast(payload) {

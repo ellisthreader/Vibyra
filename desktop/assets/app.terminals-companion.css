@@ -1,26 +1,33 @@
 .terminal-page--with-companion {
-  grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px);
+  grid-template-columns: minmax(0, 1fr) clamp(340px, 30vw, 430px);
 }
-.terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-  grid-template-columns: minmax(260px, 1fr) clamp(420px, 42vw, 640px);
+.terminal-page--with-companion[data-terminal-companion-mode="phone"] {
+  grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px);
 }
 .terminal-companion {
   background: var(--terminal-surface, #0b0b10);
   border-left: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
+  color: var(--terminal-copy, #cdc6dc);
   display: grid;
-  gap: 10px;
-  grid-auto-rows: max-content;
+  gap: 0;
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
-  overflow: auto;
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
+  scrollbar-color: var(--terminal-scroll-thumb) transparent;
+}
+.terminal-companion--voice,
+.terminal-companion--memory {
+  grid-template-rows: auto minmax(232px, 0.82fr) minmax(250px, 1.18fr);
 }
 .terminal-companion-section {
   border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
   display: grid;
-  gap: 8px;
+  gap: 10px;
+  min-height: 0;
   min-width: 0;
-  padding: 0 0 12px;
+  padding: 14px;
 }
 .terminal-companion-section:last-child {
   border-bottom: 0;
@@ -99,10 +106,10 @@
   padding: 16px 12px;
 }
 .terminal-phone-shell {
-  background: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
-  border: 2px solid #3d4049;
+  background: var(--terminal-phone-frame);
+  border: 2px solid var(--terminal-phone-border);
   border-radius: 36px;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+  box-shadow: var(--terminal-phone-shadow);
   display: grid;
   height: 300px;
   padding: 10px;
@@ -110,12 +117,12 @@
   width: 148px;
 }
 .terminal-phone-shell span {
-  background: #05060a;
+  background: var(--terminal-phone-screen);
   border-radius: 28px;
   display: block;
 }
 .terminal-phone-shell i {
-  background: #000;
+  background: var(--terminal-phone-camera);
   border-radius: 999px;
   height: 18px;
   left: 50%;
@@ -175,26 +182,17 @@
 }
 @media (max-width: 1120px) {
   .terminal-page--with-companion {
-    grid-template-columns: minmax(0, 1fr) 286px;
-  }
-  .terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-    grid-template-columns: minmax(220px, 1fr) minmax(380px, 46vw);
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 38vw);
   }
 }
 @media (max-width: 860px) {
   .terminal-page--with-companion {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) 330px;
   }
 
   .terminal-companion {
     border-left: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
     border-top: 0;
     max-height: none;
-  }
-  .terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-    grid-template-columns: minmax(180px, 1fr) minmax(360px, 46vw);
-  }
-  .terminal-companion-shell-actions button span {
-    display: none;
   }
 }

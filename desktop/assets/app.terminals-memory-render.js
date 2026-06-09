@@ -7,15 +7,14 @@ function terminalMemoryWorkspaceHtml(terminal) {
   return `<div class="terminal-memory-workspace" data-terminal-memory-workspace>
     <header class="terminal-memory-toolbar">
       <div class="terminal-memory-heading">
-        <strong>Memory</strong>
-        <small title="${escapeAttribute(projectName)}">${escapeHtml(projectName)}</small>
+        <strong>${icon("archive")}<span>Project memory</span></strong>
+        <small title="${escapeAttribute(projectName)}">${escapeHtml(projectName)} · available to Vibyra AI</small>
       </div>
       <div class="terminal-memory-toolbar-actions">
         <button type="button" data-terminal-memory-new-note title="New note" ${projectId ? "" : "disabled"}>${icon("document")}</button>
         <button type="button" data-terminal-memory-new-folder title="New folder" ${projectId ? "" : "disabled"}>${icon("folder")}</button>
         <button type="button" data-terminal-memory-import-files title="Import Markdown" ${projectId ? "" : "disabled"}>${icon("share")}</button>
         <button type="button" data-terminal-memory-import-vault title="Import Obsidian vault" ${projectId ? "" : "disabled"}>${icon("archive")}</button>
-        <button type="button" data-terminal-companion-close aria-label="Close Memory">${icon("close")}</button>
       </div>
     </header>
     <input class="terminal-memory-hidden-input" type="file" accept=".md,text/markdown" multiple data-terminal-memory-file-input>
@@ -36,7 +35,7 @@ function terminalMemoryWorkspaceHtml(terminal) {
     </div>
     <footer class="terminal-memory-footer">
       <span data-terminal-memory-status aria-live="polite">${escapeHtml(terminalMemoryState.status)}</span>
-      <span>${terminalMemoryState.nodes.filter((node) => node.type === "document").length} notes</span>
+      <span>${terminalMemoryState.nodes.filter((node) => node.type === "document").length} note${terminalMemoryState.nodes.filter((node) => node.type === "document").length === 1 ? "" : "s"}</span>
     </footer>
   </div>`;
 }

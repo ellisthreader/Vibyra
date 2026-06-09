@@ -21,14 +21,19 @@ function agentForModel(model) {
   const provider = typeof terminalProviderKeyForModel === "function"
     ? terminalProviderKeyForModel(model)
     : String(model?.provider || "").toLowerCase();
-  return ["openai", "claude", "gemini"].includes(provider) ? "official" : "vibyra";
+  if (provider === "openai") return "codex";
+  if (provider === "claude") return "claude";
+  if (provider === "gemini") return "gemini";
+  return "vibyra";
 }
 
 function normalizePtyAgentForModel(item, terminal) {
-  const agent = normalizeTerminalAgent(item.agent || terminal.agent);
+  const requestedAgent = String(item.agent || terminal.agent || "").trim().toLowerCase();
   const modelKey = String(item.model || terminal.model || "").trim();
-  if (modelKey && modelKey !== "auto") return agentForModel(terminalModelForDisplay(modelKey));
-  return agent;
+  if (requestedAgent === "official" && modelKey && modelKey !== "auto") {
+    return agentForModel(terminalModelForDisplay(modelKey));
+  }
+  return normalizeTerminalAgent(requestedAgent || "vibyra");
 }
 
 const previousNormalizeTerminal = normalizeTerminal;
@@ -80,7 +85,7 @@ modelMetaChip = function terminalAgentMetaChip(terminal) {
 createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
   const model = unlockedModel(modelKey);
-  const agent = agentForModel(model);
+  const agent = options.agent ? normalizeTerminalAgent(options.agent) : "vibyra";
   const tokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, setupTokenMode) : setupTokenMode;
   const terminal = {
     id: terminalId(),
@@ -105,6 +110,10 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     updatedAt: Date.now(),
     messages: []
   };
+  if (options.title) terminal.title = String(options.title).slice(0, 72);
+  if (options.initialPrompt) terminal.initialPrompt = String(options.initialPrompt).slice(0, 12000);
+  if (options.jobId) terminal.jobId = String(options.jobId).slice(0, 120);
+  if (options.jobRole) terminal.jobRole = String(options.jobRole).slice(0, 40);
   terminals.unshift(terminal);
   activeTerminalId = terminal.id;
   if (terminals.length > 4) terminalLayout = "grid";
@@ -206,11 +215,13 @@ bindTerminalControls = function bindPtyTerminalControls() {
   document.querySelectorAll("[data-terminal-input]").forEach((node) => {
     if (node.dataset.ptyInputBound) return;
     node.dataset.ptyInputBound = "1";
-    node.addEventListener("keydown", (event) => handlePtyKeydown(event, node.dataset.terminalInput));
-    node.addEventListener("paste", (event) => {
-      event.preventDefault();
-      sendPtyInput(node.dataset.terminalInput, event.clipboardData?.getData("text") || "");
-    });
+    if (!window.Terminal) {
+      node.addEventListener("keydown", (event) => handlePtyKeydown(event, node.dataset.terminalInput));
+      node.addEventListener("paste", (event) => {
+        event.preventDefault();
+        sendPtyInput(node.dataset.terminalInput, event.clipboardData?.getData("text") || "");
+      });
+    }
     node.addEventListener("pointerdown", () => focusPtyTerminal(node.dataset.terminalInput));
     node.addEventListener("click", () => focusPtyTerminal(node.dataset.terminalInput));
   });
@@ -257,6 +268,7 @@ closeTerminal = async function closePtyTerminal(id) {
   if (socket) socket.close();
   clearTimeout(terminalPtyReconnectTimers[id]);
   terminalXterms[id]?.dispose?.();
+  if (typeof disconnectPtyXtermObserver === "function") disconnectPtyXtermObserver(id);
   delete terminalXterms[id];
   delete terminalXtermSizes[id];
   delete terminalXtermSnapshots[id];

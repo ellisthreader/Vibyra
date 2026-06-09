@@ -11,8 +11,8 @@ function bindTerminalCompanion() {
     button.addEventListener("click", launchTerminalPhonePreview);
   });
   const companion = document.querySelector("[data-terminal-companion]");
-  if (terminalCompanionMode === "voice" && typeof bindTerminalVoice === "function") bindTerminalVoice(companion);
-  if (terminalCompanionMode === "memory" && typeof bindTerminalMemory === "function") bindTerminalMemory(companion);
+  if (["voice", "memory"].includes(terminalCompanionMode) && typeof bindTerminalVoice === "function") bindTerminalVoice(companion);
+  if (["voice", "memory"].includes(terminalCompanionMode) && typeof bindTerminalMemory === "function") bindTerminalMemory(companion);
   if (!document.body.dataset.terminalCompanionEscapeBound) {
     document.body.dataset.terminalCompanionEscapeBound = "1";
     document.addEventListener("keydown", (event) => {
@@ -106,7 +106,7 @@ function switchTerminalCompanionContext(id, activate) {
     activate(id);
     if (terminalCompanionMode) syncTerminalCompanion("terminal-change");
   };
-  const memoryBusy = terminalCompanionMode === "memory"
+  const memoryBusy = ["voice", "memory"].includes(terminalCompanionMode)
     && typeof terminalMemoryState !== "undefined"
     && (terminalMemoryState.dirty || terminalMemoryState.saving);
   if (!memoryBusy || typeof flushTerminalMemorySave !== "function") {

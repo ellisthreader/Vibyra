@@ -6,9 +6,9 @@
 
 .terminal-agent-row button,
 .terminal-agent-option {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: #f7f4ff;
+  border: 1px solid var(--terminal-border);
+  background: var(--terminal-surface);
+  color: var(--terminal-text);
   border-radius: 8px;
   padding: 10px;
   text-align: left;
@@ -16,18 +16,18 @@
 
 .terminal-agent-row button.active,
 .terminal-agent-option.active {
-  border-color: rgba(139, 92, 255, 0.75);
-  background: rgba(109, 59, 255, 0.16);
+  border-color: var(--terminal-accent-border);
+  background: var(--terminal-accent-soft);
 }
 
 .terminal-agent-row button.unavailable,
 .terminal-agent-option.unavailable {
-  color: rgba(247, 244, 255, 0.46);
+  color: var(--terminal-muted);
 }
 
 .terminal-agent-row button.unavailable small,
 .terminal-agent-option.unavailable small {
-  color: rgba(255, 192, 97, 0.78);
+  color: var(--terminal-status-unavailable);
 }
 
 .terminal-agent-row strong,
@@ -40,7 +40,7 @@
 
 .terminal-agent-row small,
 .terminal-agent-option small {
-  color: rgba(247, 244, 255, 0.58);
+  color: var(--terminal-dim);
   font-size: 11px;
   margin-top: 3px;
 }
@@ -57,12 +57,15 @@
 }
 
 .terminal-pty-lines {
+  background: var(--terminal-bg);
+  color: var(--terminal-copy);
   cursor: text;
   outline: none;
 }
 
-.terminal-pty-lines:focus {
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 255, 0.55);
+.terminal-pty-lines:focus,
+.terminal-pty-lines:focus-within {
+  box-shadow: inset 0 0 0 2px var(--terminal-focus-ring);
 }
 
 .terminal-pty-lines pre {
@@ -70,17 +73,44 @@
   margin: 0;
   white-space: pre;
   overflow-wrap: normal;
-  color: #f7f4ff;
+  color: var(--terminal-copy);
+}
+
+.terminal-pty-unavailable pre {
+  background: var(--terminal-input-bg);
+  border: 1px solid var(--terminal-border);
+  border-radius: 7px;
+  padding: 12px;
+}
+
+.terminal-xterm {
+  color: var(--terminal-copy);
+}
+
+.terminal-xterm:not(:has(.xterm)) {
+  font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.terminal-xterm .composition-view {
+  background: var(--terminal-input-bg);
+  color: var(--terminal-text);
+}
+
+.terminal-xterm .xterm-viewport {
+  scrollbar-color: var(--terminal-scroll-thumb) var(--terminal-bg);
 }
 
 .terminal-pty-composer {
   align-items: center;
-  color: rgba(247, 244, 255, 0.62);
+  color: var(--terminal-muted);
   min-height: 44px;
 }
 
 .terminal-pty-composer:focus {
-  border-color: rgba(139, 92, 255, 0.62);
+  border-color: var(--terminal-focus-ring);
 }
 
 .terminal-cwd-row {
@@ -88,7 +118,7 @@
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
-  color: rgba(247, 244, 255, 0.66);
+  color: var(--terminal-dim);
   font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   padding: 8px 10px;
 }

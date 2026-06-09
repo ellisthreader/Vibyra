@@ -6,6 +6,7 @@ let terminalCompanionContextKey = "";
 let terminalCompanionSyncing = false;
 let terminalCompanionSyncQueued = false;
 let terminalCompanionSwitchGeneration = 0;
+let terminalCompanionFitFrame = 0;
 const terminalCompanionModes = new Set(["phone", "voice", "memory"]);
 const terminalCompanionCommands = {
   "/phone": "phone",
@@ -64,7 +65,7 @@ function openTerminalPhonePanel(source = "terminal") {
 }
 
 function closeTerminalCompanionPanel() {
-  if (terminalCompanionMode === "voice" && typeof stopTerminalVoiceForPanelClose === "function") {
+  if (["voice", "memory"].includes(terminalCompanionMode) && typeof stopTerminalVoiceForPanelClose === "function") {
     stopTerminalVoiceForPanelClose();
   }
   terminalCompanionMode = "";
@@ -122,25 +123,19 @@ function terminalCompanionHtml() {
   const preview = currentState.latestPreview || {};
   const previewUrl = preview.url || "";
   const launchDisabled = terminalPhonePreviewOpening ? "disabled" : "";
-  const toolHtml = terminalCompanionMode === "voice" && typeof terminalVoiceHtml === "function"
-    ? terminalVoiceHtml()
-    : terminalCompanionMode === "memory" && typeof terminalMemoryHtml === "function"
-      ? terminalMemoryHtml()
-      : "";
+  const aiSidebar = ["voice", "memory"].includes(terminalCompanionMode);
+  const voiceHtml = aiSidebar && typeof terminalVoiceHtml === "function" ? terminalVoiceHtml() : "";
+  const memoryHtml = aiSidebar && typeof terminalMemoryHtml === "function" ? terminalMemoryHtml() : "";
   const modeClass = `terminal-companion--${terminalCompanionMode}`;
-  const panelClass = terminalCompanionMode === "phone" ? "terminal-phone-section" : `terminal-${terminalCompanionMode}-section`;
-  const panelData = terminalCompanionMode === "phone" ? "data-terminal-phone-panel" : `data-terminal-${terminalCompanionMode}-panel`;
   return `<aside class="terminal-companion ${modeClass}" data-terminal-companion data-terminal-companion-mode="${escapeAttribute(terminalCompanionMode)}" aria-label="Vibyra AI">
     <header class="terminal-companion-shell-head">
-      <div class="terminal-companion-brand">${icon("sparkles")}<span><strong>Vibyra AI</strong><small>${escapeHtml(terminal?.title || project?.name || "Terminal tools")}</small></span></div>
+      <div class="terminal-companion-brand"><span class="terminal-companion-brand-mark">${icon("sparkles")}</span><span><strong>Vibyra AI</strong><small>${escapeHtml(terminal?.title || project?.name || "Terminal companion")}</small></span></div>
       <div class="terminal-companion-shell-actions">
-        <button class="${terminalCompanionMode === "voice" ? "active" : ""}" type="button" data-terminal-companion-open="voice" aria-pressed="${terminalCompanionMode === "voice"}">${icon("pulse")}<span>Voice</span></button>
-        <button class="${terminalCompanionMode === "memory" ? "active" : ""}" type="button" data-terminal-companion-open="memory" aria-pressed="${terminalCompanionMode === "memory"}">${icon("archive")}<span>Memory</span></button>
+        ${aiSidebar ? `<span class="terminal-companion-live"><i></i>Ready</span>` : ""}
         <button type="button" data-terminal-companion-close aria-label="Close Vibyra AI">${icon("close")}</button>
       </div>
     </header>
-    <section class="terminal-companion-section ${panelClass} active" ${panelData}>
-      ${terminalCompanionMode === "phone" ? `
+    ${terminalCompanionMode === "phone" ? `<section class="terminal-companion-section terminal-phone-section active" data-terminal-phone-panel>
       <div class="terminal-phone-host" data-phone-preview-host>
         <div class="terminal-phone-shell" aria-hidden="true"><span></span><i></i></div>
         <div class="terminal-phone-copy">
@@ -149,8 +144,10 @@ function terminalCompanionHtml() {
         </div>
         <button class="terminal-phone-launch" type="button" data-terminal-phone-launch ${launchDisabled}>${icon("play")}<span>${terminalPhonePreviewOpening ? "Opening..." : "Open PhonePreview"}</span></button>
         ${terminalPhonePreviewStatus ? `<p class="terminal-phone-status">${escapeHtml(terminalPhonePreviewStatus)}</p>` : ""}
-      </div>` : toolHtml}
-    </section>
+      </div>
+    </section>` : `
+    <section class="terminal-companion-section terminal-voice-section active" data-terminal-voice-panel>${voiceHtml}</section>
+    <section class="terminal-companion-section terminal-memory-section active" data-terminal-memory-panel>${memoryHtml}</section>`}
   </aside>`;
 }
 
@@ -173,9 +170,9 @@ function syncTerminalCompanion(source = "") {
     return true;
   }
   syncTerminalCompanionContext();
-  page.classList.remove(setupMode ? "terminal-page--with-companion" : "terminal-setup--with-companion");
-  page.classList.add(setupMode ? "terminal-setup--with-companion" : "terminal-page--with-companion");
-  page.dataset.terminalCompanionMode = terminalCompanionMode;
+  page.classList.toggle("terminal-page--with-companion", !setupMode);
+  page.classList.toggle("terminal-setup--with-companion", setupMode);
+  if (page.dataset.terminalCompanionMode !== terminalCompanionMode) page.dataset.terminalCompanionMode = terminalCompanionMode;
   page.classList.toggle("terminal-page--phone-open", !setupMode && terminalCompanionMode === "phone");
   page.classList.toggle("terminal-setup--phone-open", setupMode && terminalCompanionMode === "phone");
   if (existing && existing.dataset.terminalCompanionMode === terminalCompanionMode && !source) {
@@ -209,7 +206,7 @@ function syncTerminalCompanionContext() {
   if (nextKey === terminalCompanionContextKey) return;
   terminalCompanionContextKey = nextKey;
   if (typeof syncTerminalVoiceTarget === "function") syncTerminalVoiceTarget(terminal);
-  if (terminalCompanionMode === "memory" && typeof terminalMemoryEnsureProject === "function") {
+  if (["voice", "memory"].includes(terminalCompanionMode) && typeof terminalMemoryEnsureProject === "function") {
     terminalMemoryEnsureProject(terminal?.projectId || "");
   }
   window.dispatchEvent(new CustomEvent("vibyra:terminal-companion-context", {
@@ -218,12 +215,11 @@ function syncTerminalCompanionContext() {
 }
 
 function scheduleTerminalCompanionFit() {
+  if (terminalCompanionFitFrame) return;
   const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
-  schedule(() => {
-    if (typeof mountVisibleXterms === "function") mountVisibleXterms();
-    document.querySelectorAll("[data-terminal-xterm]").forEach((node) => {
-      const id = node.dataset.terminalXterm || "";
-      if (id && typeof fitPtyXterm === "function") fitPtyXterm(id, node);
-    });
+  terminalCompanionFitFrame = schedule(() => {
+    terminalCompanionFitFrame = 0;
+    if (typeof scheduleTerminalLayoutSync === "function") scheduleTerminalLayoutSync({ fit: true });
+    else if (typeof fitVisibleTerminalXterms === "function") fitVisibleTerminalXterms();
   });
 }

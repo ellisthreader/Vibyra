@@ -1,3 +1,5 @@
+import { agenticTerminalJobForPrompt } from "./desktopAgenticTraining.mjs";
+
 const TERMINAL_VERBS = /\b(open|launch|start|create|spawn|run)\b/i;
 const TERMINAL_NOUN = /\b(?:ai\s+)?terminals?\b/i;
 const FULL_ACCESS = /\b(full permissions?|full access|danger(?:ously)? full access|no sandbox|without (?:a )?sandbox|bypass (?:all )?approvals?)\b/i;
@@ -22,6 +24,9 @@ export function desktopActionsForPrompt(prompt, context = {}) {
 
   const companion = companionAction(text);
   if (companion) return actionResult(companion, companionReply(companion.mode));
+
+  const agenticJob = agenticTerminalJobForPrompt(text, context);
+  if (agenticJob) return actionResult(agenticJob, agenticReply(agenticJob));
 
   if (!TERMINAL_VERBS.test(text) || !TERMINAL_NOUN.test(text)) return null;
   const action = {
@@ -85,6 +90,12 @@ function companionReply(mode) {
   return `Opening Vibyra ${mode === "voice" ? "Voice" : "Memory"} beside the live terminal workspace.`;
 }
 
+function agenticReply(action) {
+  const workers = Math.max(1, action.count - 2);
+  const access = action.permissionMode === "full" ? " Full access was explicitly requested." : "";
+  return `Starting an agentic terminal job with one planner, ${workers} implementation worker${workers === 1 ? "" : "s"}, and one reviewer.${access}`;
+}
+
 function modelLabel(model) {
   if (model === "auto") return "AI";
   if (model === "gpt-5-codex") return "Codex";
@@ -95,7 +106,11 @@ function actionResult(action, reply) {
   return {
     ok: true,
     reply,
-    title: action.type === "open_terminals" ? "Launch AI terminals" : `Open Vibyra ${action.mode}`,
+    title: action.type === "run_agentic_terminal_job"
+      ? "Agentic terminal job"
+      : action.type === "open_terminals"
+        ? "Launch AI terminals"
+        : `Open Vibyra ${action.mode}`,
     actions: [action]
   };
 }

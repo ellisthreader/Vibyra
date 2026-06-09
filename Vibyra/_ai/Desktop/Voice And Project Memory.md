@@ -22,17 +22,19 @@ permissions, transcription, and editable project memory.
 ## Contracts
 
 `/voice`, `/memory`, `/memories`, and `/phone` are intercepted before PTY input
-reaches provider CLIs. Companion panels exist only while open, preserve mounted
-xterm nodes, refit xterm after width changes, and use a shared close action.
-Voice and Memory also have persistent labeled launchers beside the terminal tabs
-so users do not need to discover slash commands first. Keep those launchers
-visible on the empty terminal setup screen, show the active panel state, and
-collapse labels to icons only at narrow phone-sized desktop widths.
-The mounted frame is labeled `Vibyra AI`, renders only the active tool, and
-stays in the right grid column through Electron's `860px` minimum width. Memory
-uses the wider panel variant; Voice stays compact. Terminal/project switches
-must synchronize the open tool without remounting xterm nodes, and a dirty
-Memory document must flush before its terminal context changes.
+reaches provider CLIs. The terminal toolbar has one labeled `Vibyra AI`
+launcher. `/voice` and `/memory` open the same right sidebar: AI Voice is the
+native prompt input at the top and project Memory remains visible below it.
+The companion exists only while open, preserves mounted xterm nodes, refits
+xterm after width changes, and uses one close action. Keep the launcher on the
+empty terminal setup screen, show its active state, and collapse its label only
+when the title bar is genuinely narrow.
+
+Voice transcription is inserted into the active terminal prompt and the user
+explicitly sends it to the active agent. The mounted sidebar stays in the right
+grid column through Electron's `860px` minimum width. Terminal/project switches
+must synchronize both tools without remounting xterm nodes, and a dirty Memory
+document must flush before its terminal context changes.
 
 Electron Voice records microphone audio with `MediaRecorder` and posts it to
 `POST /desktop/voice/transcribe`. The bridge uses the connected OpenAI

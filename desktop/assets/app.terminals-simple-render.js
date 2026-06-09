@@ -1,19 +1,32 @@
-const terminalMaximizedKey = "vibyra.desktop.maximizedTerminal";
-let maximizedTerminalId = localStorage.getItem(terminalMaximizedKey) || "";
 let terminalToolbarMenuOpen = false;
+let terminalAdvancedNewOpen = false;
+let terminalSidebarMode = localStorage.getItem("vibyra.desktop.terminalSidebarTool") === "memory" ? "memory" : "voice";
 
-const normalizeTerminalBeforeSimpleUi = normalizeTerminal;
-normalizeTerminal = function normalizeSimpleTerminal(item) {
-  const terminal = normalizeTerminalBeforeSimpleUi(item);
-  if (terminal) terminal.minimized = Boolean(item?.minimized);
-  return terminal;
+const openTerminalCompanionPanelBeforeSimpleUi = openTerminalCompanionPanel;
+openTerminalCompanionPanel = function openSimpleTerminalSidebar(mode = "", source = "terminal") {
+  if (mode === "voice" || mode === "memory") {
+    terminalSidebarMode = mode;
+    localStorage.setItem("vibyra.desktop.terminalSidebarTool", mode);
+  }
+  const result = openTerminalCompanionPanelBeforeSimpleUi(mode, source);
+  if (activePage === "terminals") requestAnimationFrame(() => renderTopbar());
+  return result;
+};
+
+const closeTerminalCompanionPanelBeforeSimpleUi = closeTerminalCompanionPanel;
+closeTerminalCompanionPanel = function closeSimpleTerminalSidebar() {
+  if (terminalCompanionMode === "voice" || terminalCompanionMode === "memory") {
+    terminalSidebarMode = terminalCompanionMode;
+  }
+  const result = closeTerminalCompanionPanelBeforeSimpleUi();
+  if (activePage === "terminals") requestAnimationFrame(() => renderTopbar());
+  return result;
 };
 
 const createTerminalBeforeSimpleUi = createTerminal;
 createTerminal = function createSimpleTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   const terminal = createTerminalBeforeSimpleUi(modelKey, shouldRender, options);
   if (!terminal) return terminal;
-  terminal.minimized = false;
   if (options.agent) {
     terminal.agent = normalizeTerminalAgent(options.agent);
     const agent = terminalAgent(terminal);
@@ -35,39 +48,25 @@ function terminalSimpleAgentLabel(terminal) {
   return agent.label;
 }
 
-function terminalWindowActions(terminal) {
-  const minimized = Boolean(terminal.minimized);
-  const maximized = maximizedTerminalId === terminal.id;
-  return `<div class="terminal-window-actions">
-    <button type="button" data-terminal-minimize="${escapeAttribute(terminal.id)}" aria-label="${minimized ? "Restore" : "Minimize"} ${escapeAttribute(terminal.title)}" title="${minimized ? "Restore" : "Minimize"}">${icon(minimized ? "square" : "minus")}</button>
-    <button type="button" data-terminal-maximize="${escapeAttribute(terminal.id)}" aria-label="${maximized ? "Restore" : "Maximize"} ${escapeAttribute(terminal.title)}" title="${maximized ? "Restore" : "Maximize"}">${icon(maximized ? "grid" : "square")}</button>
-    <button type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal details" title="Terminal details">${icon("menu")}</button>
-    <button type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}" title="Close">${icon("close")}</button>
-  </div>`;
+function terminalHeaderAction(terminal) {
+  return `<button class="terminal-settings-button" type="button" data-terminal-settings="${escapeAttribute(terminal.id)}" aria-label="Terminal settings" title="Terminal settings">${icon("menu")}</button>`;
 }
 
 function terminalSimpleClasses(terminal, base) {
-  const classes = [base, terminalProviderClass(terminal)];
-  if (terminal.id === activeTerminalId) classes.push("active");
-  if (terminal.minimized) classes.push("terminal-minimized");
-  if (maximizedTerminalId === terminal.id) classes.push("terminal-maximized");
-  if (maximizedTerminalId && maximizedTerminalId !== terminal.id) classes.push("terminal-maximized-hidden");
-  if (terminal.notice) classes.push("has-notice");
-  return classes.join(" ");
+  return [base, terminalProviderClass(terminal), terminal.id === activeTerminalId ? "active" : "", terminal.notice ? "has-notice" : ""].filter(Boolean).join(" ");
 }
 
 activeTerminalView = function simpleActiveTerminalView(terminal) {
   const active = terminal.id === activeTerminalId;
-  const hidden = active ? "" : " terminal-focus-hidden";
-  return `<article class="${terminalSimpleClasses(terminal, "terminal-focus")}${hidden}" data-terminal="${escapeAttribute(terminal.id)}" aria-hidden="${active ? "false" : "true"}">
-    <header class="terminal-focus-head"><div class="terminal-name">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong><small>${escapeHtml(terminalSimpleAgentLabel(terminal))}</small></div>${terminalWindowActions(terminal)}${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>
+  return `<article class="${terminalSimpleClasses(terminal, "terminal-focus")}${active ? "" : " terminal-focus-hidden"}" data-terminal="${escapeAttribute(terminal.id)}" aria-hidden="${active ? "false" : "true"}">
+    <header class="terminal-focus-head"><div class="terminal-name">${terminalStatusDot(terminal)}<span><strong>${escapeHtml(terminal.title)}</strong><small>${escapeHtml(terminalSimpleAgentLabel(terminal))}</small></span></div>${terminalHeaderAction(terminal)}${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>
     ${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}
   </article>`;
 };
 
 terminalTile = function simpleTerminalTile(terminal) {
   return `<article class="${terminalSimpleClasses(terminal, "terminal-tile")}" data-terminal="${escapeAttribute(terminal.id)}">
-    <header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<strong>${escapeHtml(terminal.title)}</strong><small>${escapeHtml(terminalSimpleAgentLabel(terminal))}</small></button>${terminalWindowActions(terminal)}${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>
+    <header class="terminal-tile-head"><button type="button" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<span><strong>${escapeHtml(terminal.title)}</strong><small>${escapeHtml(terminalSimpleAgentLabel(terminal))}</small></span></button>${terminalHeaderAction(terminal)}${settingsTerminalId === terminal.id ? settingsMenu(terminal) : ""}</header>
     ${terminal.notice ? terminalNotice(terminal) : ""}${terminalViewport(terminal)}
   </article>`;
 };
@@ -75,50 +74,79 @@ terminalTile = function simpleTerminalTile(terminal) {
 settingsMenu = function simpleTerminalDetails(terminal) {
   const model = terminalModelForDisplay(terminal.model);
   const project = projectForTerminal(terminal);
+  const effort = (config().chatEfforts || []).find((item) => item.value === terminal.effort)?.label || terminal.effort || "Balanced";
   const access = terminal.permissionMode === "full" ? "Full access" : "Standard";
-  return `<div class="terminal-menu terminal-settings-menu terminal-details-menu" role="dialog" aria-label="Terminal details">
-    <strong>Terminal details</strong>
-    <span><small>Agent</small>${escapeHtml(terminalSimpleAgentLabel(terminal))}</span>
-    <span><small>Model</small>${escapeHtml(model.label)}</span>
-    <span><small>Project</small>${escapeHtml(project?.name || "No project")}</span>
-    <span><small>Access</small>${escapeHtml(access)}</span>
+  return `<div class="terminal-menu terminal-settings-menu terminal-details-menu" role="dialog" aria-label="Terminal settings">
+    <div class="terminal-details-head"><span>${icon("terminal")}</span><div><strong>${escapeHtml(terminal.title)}</strong><small>Session settings</small></div></div>
+    <div class="terminal-detail-list">
+      <span><small>Agent</small><strong>${escapeHtml(terminalSimpleAgentLabel(terminal))}</strong></span>
+      <span><small>Model</small><strong>${escapeHtml(model.label)}</strong></span>
+      <span><small>Reasoning</small><strong>${escapeHtml(effort)}</strong></span>
+      <span><small>Project</small><strong>${escapeHtml(project?.name || "No project")}</strong></span>
+      <span class="${terminal.permissionMode === "full" ? "danger" : ""}"><small>Access</small><strong>${escapeHtml(access)}</strong></span>
+    </div>
+    ${terminalTokenSourcePanel(model, terminal.tokenMode, terminal.id)}
+    <button class="terminal-close-row" type="button" data-terminal-close="${escapeAttribute(terminal.id)}">${icon("trash")}<span>Close terminal</span></button>
   </div>`;
 };
 
 newTerminalMenu = function simpleNewTerminalMenu() {
+  if (terminalAdvancedNewOpen) {
+    const query = newTerminalModelSearch;
+    const groups = filteredTerminalModelGroups(query);
+    const models = groups.length
+      ? groups.map((group) => terminalModelSection(group, selectedSetupModel().key, "data-terminal-new-model")).join("")
+      : `<p class="terminal-model-empty">No models found</p>`;
+    return `<div class="terminal-menu terminal-model-picker terminal-advanced-picker" data-terminal-model-picker="new">
+      <button class="terminal-menu-back" type="button" data-terminal-new-back>${icon("chevron")}<span>Choose an agent</span></button>
+      ${terminalProjectSelect("new")}
+      <label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="new" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label>
+      <div class="terminal-model-scroll" role="listbox" aria-label="Models">${models}</div>
+    </div>`;
+  }
   const rows = terminalAgents.map((agent) => {
     const unavailable = agent.available === false;
-    return `<button type="button" data-terminal-simple-agent="${escapeAttribute(agent.key)}" ${unavailable ? "disabled" : ""}>
-      ${terminalStatusDot({ ptyStatus: unavailable ? "unavailable" : "idle" })}
-      <span><strong>${escapeHtml(agent.label)}</strong><small>${escapeHtml(unavailable ? "Not installed" : agent.detail)}</small></span>
-    </button>`;
+    return `<button type="button" data-terminal-simple-agent="${escapeAttribute(agent.key)}" ${unavailable ? "disabled" : ""}>${terminalStatusDot({ ptyStatus: unavailable ? "unavailable" : "idle" })}<span><strong>${escapeHtml(agent.label)}</strong><small>${escapeHtml(unavailable ? "Not installed" : agent.detail)}</small></span></button>`;
   }).join("");
-  return `<div class="terminal-menu terminal-agent-menu" role="menu"><p>New terminal</p>${rows}</div>`;
+  return `<div class="terminal-menu terminal-agent-menu" role="menu">
+    <div class="terminal-menu-head"><span>${icon("plus")}</span><div><strong>New terminal</strong><small>Choose an AI agent</small></div></div>
+    ${rows}
+    <button class="terminal-agent-advanced" type="button" data-terminal-new-advanced>${icon("tool")}<span><strong>Advanced setup</strong><small>Choose project and model</small></span>${icon("chevron")}</button>
+  </div>`;
 };
 
 terminalTabs = function simpleTerminalTabs() {
   const tabs = terminals.map((terminal) => {
     const active = terminal.id === activeTerminalId;
-    const label = terminalSimpleAgentLabel(terminal);
     return `<div class="terminal-tab ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}">
-      <button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<span>${escapeHtml(label)}</span></button>
+      <button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<span>${escapeHtml(terminalSimpleAgentLabel(terminal))}</span></button>
       <button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button>
     </div>`;
   }).join("");
-  const tools = terminalCompanionToolbarHtml();
-  const menu = terminalToolbarMenuOpen ? `<div class="terminal-menu terminal-toolbar-menu">
-    <button type="button" id="toggle-terminal-layout">${icon(terminalLayout === "grid" ? "terminal" : "grid")}<span>${terminalLayout === "grid" ? "Focus view" : "Grid view"}</span></button>
-    <button class="danger" type="button" data-terminal-close-all>${icon("trash")}<span>Close all terminals</span></button>
-  </div>` : "";
+  const menu = terminalToolbarMenuOpen ? `<div class="terminal-menu terminal-toolbar-menu"><div class="terminal-toolbar-summary"><strong>${terminals.length} terminal${terminals.length === 1 ? "" : "s"}</strong><small>Ctrl+Tab to switch</small></div><button class="danger" type="button" data-terminal-close-all>${icon("trash")}<span>Close all terminals</span></button></div>` : "";
   return `<header class="terminal-tabs">
-    <div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div>
+    <div class="terminal-top-left"><div class="terminal-new-wrap"><button class="terminal-add terminal-create-button" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal (Ctrl+T)" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}<span>New</span></button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div></div>
     <div class="terminal-tab-list" role="tablist" aria-label="AI terminals">${tabs}</div>
-    ${tools}
-    <div class="terminal-toolbar-wrap"><button class="terminal-layout-button" id="open-terminal-toolbar" type="button" aria-label="Terminal options" title="Terminal options">${icon("menu")}</button>${menu}</div>
+    <div class="terminal-top-actions">
+      ${terminalCompanionToolbarHtml()}
+      <button class="terminal-layout-button ${terminalLayout === "grid" ? "active" : ""}" id="toggle-terminal-layout" type="button" aria-label="${terminalLayout === "grid" ? "Use focus view" : "Use grid view"}" title="${terminalLayout === "grid" ? "Focus view" : "Grid view"}">${icon(terminalLayout === "grid" ? "terminal" : "grid")}</button>
+      <div class="terminal-toolbar-wrap"><button class="terminal-layout-button" id="open-terminal-toolbar" type="button" aria-label="Terminal options" title="Terminal options">${icon("menu")}</button>${menu}</div>
+    </div>
   </header>`;
 };
 
 terminalCompanionToolbarHtml = function simpleCompanionToolbar() {
-  const active = Boolean(terminalCompanionMode);
-  return `<button class="terminal-companion-launcher terminal-companion-launcher--single ${active ? "active" : ""}" type="button" data-terminal-companion-toggle aria-pressed="${active}">${icon("sparkles")}<span>Vibyra AI</span></button>`;
+  const active = terminalCompanionMode === "voice" || terminalCompanionMode === "memory";
+  return `<button class="terminal-companion-launcher terminal-sidebar-toggle ${active ? "active" : ""}" type="button" data-terminal-sidebar-toggle aria-pressed="${active}" title="Toggle Vibyra AI sidebar">${icon("sparkles")}<span>Vibyra AI</span></button>`;
+};
+
+const createTerminalFromModelBeforeSimpleUi = createTerminalFromModel;
+createTerminalFromModel = function createSimpleTerminalFromModel(key) {
+  const model = modelByKey(key);
+  if (typeof modelLocked === "function" && modelLocked(model)) return createTerminalFromModelBeforeSimpleUi(key);
+  const projectId = typeof terminalProjectForSetup === "function" ? terminalProjectForSetup() : setupProjectId;
+  newTerminalModelSearch = "";
+  terminalProjectMenuTarget = "";
+  terminalAdvancedNewOpen = false;
+  createTerminal(model.key, true, { projectId });
 };

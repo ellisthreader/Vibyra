@@ -17,10 +17,10 @@ body {
   --terminal-warning-border: rgba(255, 192, 97, 0.14);
 }
 
-.terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.12); --terminal-accent-border: rgba(255, 155, 106, 0.32); }
-.terminal-provider-openai { --terminal-accent: #69d6c7; --terminal-accent-soft: rgba(105, 214, 199, 0.12); --terminal-accent-border: rgba(105, 214, 199, 0.32); }
-.terminal-provider-gemini { --terminal-accent: #6aa8ff; --terminal-accent-soft: rgba(106, 168, 255, 0.12); --terminal-accent-border: rgba(106, 168, 255, 0.34); }
-.terminal-provider-auto { --terminal-accent: #b9a7f6; --terminal-accent-soft: rgba(139, 92, 255, 0.13); --terminal-accent-border: rgba(139, 92, 255, 0.34); }
+.terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.12); --terminal-accent-border: rgba(255, 155, 106, 0.42); }
+.terminal-provider-openai { --terminal-accent: #69d6c7; --terminal-accent-soft: rgba(105, 214, 199, 0.12); --terminal-accent-border: rgba(105, 214, 199, 0.42); }
+.terminal-provider-gemini { --terminal-accent: #6aa8ff; --terminal-accent-soft: rgba(106, 168, 255, 0.12); --terminal-accent-border: rgba(106, 168, 255, 0.42); }
+.terminal-provider-auto { --terminal-accent: #b9a7f6; --terminal-accent-soft: rgba(139, 92, 255, 0.13); --terminal-accent-border: rgba(139, 92, 255, 0.44); }
 
 .terminal-page,
 .terminal-setup { background: var(--terminal-bg); }
@@ -87,7 +87,7 @@ body {
 }
 .terminal-agent-row button.unavailable small,
 .terminal-agent-option.unavailable small {
-  color: var(--terminal-accent);
+  color: var(--terminal-status-unavailable);
 }
 
 .terminal-add,

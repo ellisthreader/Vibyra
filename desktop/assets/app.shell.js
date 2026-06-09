@@ -16,8 +16,11 @@ const nodes = {
   chromeStatus: document.getElementById("desktop-chrome-status")
 };
 let desktopRefreshTimer = null;
+let desktopRefreshPromise = null;
 let lastDesktopStateSignature = "";
 let lastDesktopRefreshError = "";
+let lastTopbarSignature = "";
+const renderedNodeHtml = new WeakMap();
 
 function bootstrapDesktop() {
   document.getElementById("close-pair").innerHTML = icon("close");
@@ -62,6 +65,7 @@ async function loadDesktopProjects() {
     if (!response.ok) return;
     const result = await response.json();
     if (Array.isArray(result.projects)) {
+      if (desktopStateSignature(result.projects) === desktopStateSignature(currentState.projects || [])) return;
       currentState = { ...currentState, projects: result.projects };
       render();
     }
@@ -69,18 +73,27 @@ async function loadDesktopProjects() {
   }
 }
 
-async function refresh() {
+function refresh() {
+  if (desktopRefreshPromise) return desktopRefreshPromise;
+  desktopRefreshPromise = performDesktopRefresh().finally(() => {
+    desktopRefreshPromise = null;
+  });
+  return desktopRefreshPromise;
+}
+
+async function performDesktopRefresh() {
   try {
     const response = await fetch("/desktop/state", { cache: "no-store" });
     if (!response.ok) throw new Error("Desktop state failed");
     const nextState = { ...emptyState, ...(await response.json()) };
-    const nextSignature = JSON.stringify(nextState);
+    const nextSignature = desktopStateSignature(nextState);
     const stateChanged = nextSignature !== lastDesktopStateSignature;
+    const recoveredFromError = Boolean(lastDesktopRefreshError);
     currentState = nextState;
     lastDesktopStateSignature = nextSignature;
     lastDesktopRefreshError = "";
     openPendingPairRequest();
-    if (stateChanged) render();
+    if (stateChanged || recoveredFromError) render();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not load desktop state";
     if (message === lastDesktopRefreshError) return;
@@ -103,6 +116,8 @@ async function post(path) {
     const response = await fetch(path, { method: "POST" });
     if (!response.ok) throw new Error("Desktop action failed");
     currentState = { ...emptyState, ...(await response.json()) };
+    lastDesktopStateSignature = desktopStateSignature(currentState);
+    lastDesktopRefreshError = "";
     render();
   } catch (error) {
     currentState = { ...currentState, events: [{ source: "Desktop", message: error instanceof Error ? error.message : "Desktop action failed", tone: "error" }, ...(currentState.events || [])] };
@@ -169,16 +184,20 @@ function applyRailState() {
 }
 function renderNav() {
   const html = pages.filter((page) => !page.hidden).map((page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`).join("");
-  nodes.railNav.innerHTML = html;
-  nodes.mobileDock.innerHTML = html;
-  document.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
+  const railChanged = renderNodeHtml(nodes.railNav, html);
+  const dockChanged = renderNodeHtml(nodes.mobileDock, html);
+  if (railChanged) nodes.railNav.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
+  if (dockChanged) nodes.mobileDock.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
 }
 function renderTopbar() {
   if (!document.body.classList.contains("desktop-authenticated")) {
-    if (nodes.chromePage) nodes.chromePage.innerHTML = "";
-    if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
+    const signature = "signed-out";
+    if (lastTopbarSignature === signature) return;
+    lastTopbarSignature = signature;
+    if (nodes.chromePage) nodes.chromePage.replaceChildren();
+    if (nodes.chromeActions) nodes.chromeActions.replaceChildren();
     if (nodes.chromeStatus) nodes.chromeStatus.textContent = "";
-    if (nodes.topbar) nodes.topbar.innerHTML = "";
+    if (nodes.topbar) nodes.topbar.replaceChildren();
     return;
   }
   const connected = Boolean(currentState.pairedDevice);
@@ -201,11 +220,19 @@ function renderTopbar() {
   const left = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div>`;
   const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
   const actions = `${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
-  if (isElectronShell()) {
+  const electron = isElectronShell();
+  const status = statusLabel();
+  const signature = JSON.stringify([electron, left, center, actions, status]);
+  if (lastTopbarSignature === signature) {
+    if (terminalPage && typeof bindPtyTopbarControls === "function") bindPtyTopbarControls();
+    return;
+  }
+  lastTopbarSignature = signature;
+  if (electron) {
     nodes.topbar.innerHTML = "";
     if (nodes.chromePage) nodes.chromePage.innerHTML = center;
     if (nodes.chromeActions) nodes.chromeActions.innerHTML = `${left}<div class="top-actions">${actions}</div>`;
-    if (nodes.chromeStatus) nodes.chromeStatus.textContent = statusLabel();
+    if (nodes.chromeStatus) nodes.chromeStatus.textContent = status;
   } else {
     if (nodes.chromePage) nodes.chromePage.innerHTML = "";
     if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
@@ -222,13 +249,26 @@ function renderTopbar() {
 function renderRecentChats() {
   if (!nodes.railRecents) return;
   const rows = recentChats.filter((chat) => !chat.archived).slice(0, 5);
-  nodes.railRecents.innerHTML = `<div class="rail-section-head"><span>Recent chats</span>${isBlankNewChat() ? "" : `<button id="rail-new-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>`}</div><div class="rail-chat-list">${rows.length ? rows.map((chat) => `<button class="rail-chat ${activeChatId === chat.id ? "active" : ""}" type="button" data-chat-id="${escapeAttribute(chat.id)}" title="${escapeAttribute(chat.title)}">${icon(chat.pinned ? "pin" : "chat")}<span>${escapeHtml(chat.title)}</span></button>`).join("") : `<p class="rail-empty">No recent chats yet</p>`}</div>`;
+  const html = `<div class="rail-section-head"><span>Recent chats</span>${isBlankNewChat() ? "" : `<button id="rail-new-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>`}</div><div class="rail-chat-list">${rows.length ? rows.map((chat) => `<button class="rail-chat ${activeChatId === chat.id ? "active" : ""}" type="button" data-chat-id="${escapeAttribute(chat.id)}" title="${escapeAttribute(chat.title)}">${icon(chat.pinned ? "pin" : "chat")}<span>${escapeHtml(chat.title)}</span></button>`).join("") : `<p class="rail-empty">No recent chats yet</p>`}</div>`;
+  if (!renderNodeHtml(nodes.railRecents, html)) return;
   document.getElementById("rail-new-chat")?.addEventListener("click", startNewChat);
   document.querySelectorAll("[data-chat-id]").forEach((button) => button.addEventListener("click", () => openRecentChat(button.dataset.chatId)));
 }
 function renderRailStatus() {
   const paired = Boolean(currentState.pairedDevice);
   const pending = currentState.pendingPair && currentState.pendingPair.status === "pending";
-  nodes.railStatus.innerHTML = `<button class="rail-status-card ${pending ? "pending" : ""}" type="button" id="rail-pair" aria-label="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}" title="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}"><span class="rail-status-top"><span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span><span>${pending ? "Approval needed" : statusLabel()}</span></span><span class="rail-status-main"><span class="rail-phone-icon">${icon(pending ? "clock" : paired ? "phone" : "link")}</span><span><strong>${pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone"}</strong><small>${pending ? "A phone is waiting for access." : paired ? currentState.pairedDevice : "Connect your phone to start builds."}</small></span></span></button>`;
+  const html = `<button class="rail-status-card ${pending ? "pending" : ""}" type="button" id="rail-pair" aria-label="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}" title="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}"><span class="rail-status-top"><span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span><span>${pending ? "Approval needed" : statusLabel()}</span></span><span class="rail-status-main"><span class="rail-phone-icon">${icon(pending ? "clock" : paired ? "phone" : "link")}</span><span><strong>${pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone"}</strong><small>${pending ? "A phone is waiting for access." : paired ? currentState.pairedDevice : "Connect your phone to start builds."}</small></span></span></button>`;
+  if (!renderNodeHtml(nodes.railStatus, html)) return;
   document.getElementById("rail-pair")?.addEventListener("click", openPairModal);
+}
+
+function desktopStateSignature(value) {
+  return JSON.stringify(value);
+}
+
+function renderNodeHtml(node, html) {
+  if (!node || renderedNodeHtml.get(node) === html) return false;
+  node.innerHTML = html;
+  renderedNodeHtml.set(node, html);
+  return true;
 }
