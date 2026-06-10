@@ -1,5 +1,6 @@
+import { desktopAppApiUrl } from "./appApiConfig.mjs";
 import { appState } from "./state.mjs";
-import { syncDesktopAccountFromUser } from "./desktopAccount.mjs";
+import { clearDesktopAccount, syncDesktopAccountFromUser } from "./desktopAccount.mjs";
 import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById, terminalProjectById } from "./projects.mjs";
 import { promptProjectContext, promptProjectFilePaths } from "./projectContext.mjs";
@@ -9,7 +10,7 @@ import { correctDesktopCapabilityDenial, desktopActionsForPrompt } from "./deskt
 import { sendLocalVibyraChat } from "./localAi.mjs";
 import { agenticTerminalTasks } from "./terminalTaskPrompts.mjs";
 
-const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || process.env.VIBYRA_API_URL || "http://127.0.0.1:8000");
+const API_URL = desktopAppApiUrl();
 const MAX_PROMPT_CHARS = 8000;
 const MAX_HISTORY_ITEMS = 4;
 const MAX_HISTORY_CHARS = 1200;
@@ -61,6 +62,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     project: project?.name || "",
     projectFiles,
     prompt: desktopPrompt(prompt, project, attachments, body?.profileContext, memoryContext),
+    routingPrompt: prompt,
     reasoningEffort: normalizeReasoningEffort(body?.reasoningEffort),
     skill,
     surface: "desktop"
@@ -91,6 +93,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   });
   const result = await readJson(response);
   if (!response.ok || result?.ok === false) {
+    invalidateExpiredDesktopSession(response);
     const error = new Error(result?.error || result?.message || "Vibyra AI could not complete this chat.");
     error.status = response.status || 500;
     error.code = result?.code || "";
@@ -110,11 +113,71 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     title: result?.title || "",
     model: result?.model || "",
     modelKey: result?.modelKey || payload.model,
+    autoRouting: normalizeAutoRouting(result?.autoRouting),
     creditCost: result?.creditCost ?? null,
     creditsBalance: result?.creditsBalance ?? null,
     app: normalizeAppPayload(result?.app),
     user: result?.user || null
   };
+}
+
+export async function routeDesktopAutoModel(body, fetchImpl = fetch) {
+  const prompt = String(body?.prompt || "").trim();
+  const allowedProviders = [...new Set(
+    (Array.isArray(body?.allowedProviders) ? body.allowedProviders : [])
+      .map((provider) => String(provider || "").trim().toLowerCase())
+      .filter(Boolean)
+  )].slice(0, 12);
+  if (!prompt) {
+    const error = new Error("Enter a prompt for Auto to route.");
+    error.status = 422;
+    throw error;
+  }
+  if (prompt.length > MAX_PROMPT_CHARS) {
+    const error = new Error(`That prompt is too long. Trim it to under ${MAX_PROMPT_CHARS} characters.`);
+    error.status = 413;
+    throw error;
+  }
+  if (!appState.desktopAccountToken) {
+    const error = new Error("Log in to Vibyra Desktop before using Auto.");
+    error.status = 401;
+    throw error;
+  }
+
+  const response = await fetchImpl(`${API_URL}/api/chat/route`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${appState.desktopAccountToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      prompt,
+      ...(allowedProviders.length ? { allowedProviders } : {})
+    })
+  });
+  const result = await readJson(response);
+  if (!response.ok || result?.ok === false) {
+    invalidateExpiredDesktopSession(response);
+    const error = new Error(result?.error || result?.message || "Auto could not select a terminal model.");
+    error.status = response.status || 500;
+    throw error;
+  }
+
+  const autoRouting = normalizeAutoRouting(result?.autoRouting);
+  const modelKey = String(result?.modelKey || autoRouting?.modelKey || "").trim().slice(0, 160);
+  if (!modelKey || modelKey === "auto") {
+    const error = new Error("Auto did not return a usable terminal model.");
+    error.status = 502;
+    throw error;
+  }
+
+  return { ok: true, modelKey, autoRouting };
+}
+
+function invalidateExpiredDesktopSession(response) {
+  if (Number(response?.status) !== 401) return;
+  clearDesktopAccount("Your Vibyra session expired. Sign in again to continue.");
 }
 
 function correctModelCapabilityReply(result, prompt) {
@@ -358,6 +421,18 @@ function normalizeAppPayload(app) {
     title: String(app.title || "Generated app").slice(0, 120),
     url,
     html
+  };
+}
+
+function normalizeAutoRouting(value) {
+  if (!value || typeof value !== "object") return null;
+  const modelKey = String(value.modelKey || "").trim().slice(0, 160);
+  if (!modelKey) return null;
+  return {
+    category: String(value.category || "").trim().slice(0, 80),
+    modelKey,
+    preferredModelKey: String(value.preferredModelKey || modelKey).trim().slice(0, 160),
+    reason: String(value.reason || "").trim().slice(0, 240)
   };
 }
 

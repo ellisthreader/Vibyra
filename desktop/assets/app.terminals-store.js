@@ -87,6 +87,9 @@ function ensureTerminal() {
     return;
   }
   if (!terminals.some((terminal) => terminal.id === activeTerminalId)) activeTerminalId = terminals[0]?.id || "";
+  if (typeof rememberActiveTerminalForProject === "function") {
+    rememberActiveTerminalForProject(terminals.find((terminal) => terminal.id === activeTerminalId));
+  }
 }
 
 function createTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
@@ -95,7 +98,7 @@ function createTerminal(modelKey = setupModel, shouldRender = true, options = {}
   const effort = terminalEffortForModel(model, options.effort);
   const terminal = {
     id: terminalId(),
-    title: `Terminal ${terminals.length + 1}`,
+    title: typeof terminalRandomName === "function" ? terminalRandomName() : `Terminal ${terminals.length + 1}`,
     model: model.key,
     effort,
     permissionMode: normalizeTerminalPermissionMode(options.permissionMode),

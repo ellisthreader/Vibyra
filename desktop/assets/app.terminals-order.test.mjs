@@ -15,6 +15,15 @@ test("wide grid orders eight terminals from top-left to bottom-right", () => {
   );
 });
 
+test("six terminals use a balanced three by two grid", () => {
+  const context = { maxTerminals: 12 };
+  vm.runInNewContext(renderSource, context);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(context.terminalGridMeta(6))),
+    { className: "terminal-grid-many", cols: 3, rows: 2, narrowCols: 3, narrowRows: 2 }
+  );
+});
+
 test("new PTY terminals append so terminal one stays first", () => {
   assert.match(ptySource, /terminals\.push\(terminal\)/);
   assert.doesNotMatch(ptySource, /terminals\.unshift\(terminal\)/);

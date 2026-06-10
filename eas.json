@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vibyra-production.up.railway.app",
+        "EXPO_PUBLIC_DESKTOP_URL": "http://127.0.0.1:4317",
+        "EXPO_PUBLIC_FAKE_BUILDS": "0",
+        "EXPO_PUBLIC_RECOVERY_LINK_URL": "https://links.vibyra.app/reset-password"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vibyra-production.up.railway.app",
+        "EXPO_PUBLIC_DESKTOP_URL": "http://127.0.0.1:4317",
+        "EXPO_PUBLIC_FAKE_BUILDS": "0",
+        "EXPO_PUBLIC_RECOVERY_LINK_URL": "https://links.vibyra.app/reset-password"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://vibyra-production.up.railway.app",
+        "EXPO_PUBLIC_DESKTOP_URL": "http://127.0.0.1:4317",
+        "EXPO_PUBLIC_FAKE_BUILDS": "0",
+        "EXPO_PUBLIC_RECOVERY_LINK_URL": "https://links.vibyra.app/reset-password"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 
 test("detached terminal worker finishes after the bridge client disconnects", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-safe-rails-"));
@@ -30,6 +31,7 @@ test("detached terminal worker finishes after the bridge client disconnects", as
       reasoningEffort: "medium",
       permissionMode: "standard",
       tokenMode: "vibyra",
+      terminalGatewayToken: "private-terminal-token",
       projectId: ""
     }, { onSnapshot: resolveSnapshot });
 
@@ -68,7 +70,7 @@ test("detached terminal worker finishes after the bridge client disconnects", as
     assert.match(recoveredOutput, /SAFE_RAIL_STARTED/);
     assert.match(recoveredOutput, /SAFE_RAIL_FINISHED/);
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -97,6 +99,7 @@ test("explicit close stops the worker and removes its saved session", async () =
       reasoningEffort: "medium",
       permissionMode: "standard",
       tokenMode: "vibyra",
+      terminalGatewayToken: "private-terminal-token",
       projectId: ""
     }, { onSnapshot: resolveSnapshot });
 
@@ -107,7 +110,7 @@ test("explicit close stops the worker and removes its saved session", async () =
       5_000
     );
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -134,6 +137,7 @@ test("immediate close is delivered while the worker socket is still connecting",
       reasoningEffort: "medium",
       permissionMode: "standard",
       tokenMode: "vibyra",
+      terminalGatewayToken: "private-terminal-token",
       projectId: ""
     });
 
@@ -143,7 +147,7 @@ test("immediate close is delivered while the worker socket is still connecting",
       5_000
     );
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -172,18 +176,81 @@ test("terminal title updates persist in the detached session config", async () =
       reasoningEffort: "medium",
       permissionMode: "standard",
       tokenMode: "vibyra",
+      terminalGatewayToken: "private-terminal-token",
       projectId: ""
     });
-    assert.equal(updatePersistentAiTerminalSession(terminalId, { title: "Build checks" }), true);
+    assert.equal(updatePersistentAiTerminalSession(terminalId, {
+      title: "Build checks",
+      model: "openai/gpt-5.5"
+    }), true);
     const config = JSON.parse(readFileSync(persistentTerminalPaths(terminalId).config, "utf8"));
     assert.equal(config.title, "Build checks");
+    assert.equal(config.model, "openai/gpt-5.5");
+    assert.equal(config.terminalGatewayToken, "private-terminal-token");
     handle.kill("SIGTERM");
     await waitFor(
       () => listPersistentAiTerminalSessions().some((item) => item.config.terminalId === terminalId) ? null : true,
       5_000
     );
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
+test("legacy Vibyra launch sessions are not compatible with the current runtime", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-runtime-version-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?runtime=${Date.now()}`, import.meta.url);
+  const {
+    AI_TERMINAL_GEMINI_PROFILE_VERSION,
+    AI_TERMINAL_RUNTIME_VERSION,
+    persistentAiTerminalConfigIsCurrent
+  } = await import(moduleUrl);
+
+  try {
+    assert.equal(AI_TERMINAL_RUNTIME_VERSION, 13);
+    assert.equal(persistentAiTerminalConfigIsCurrent({ agent: "vibyra" }), false);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "vibyra",
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+      launchPlan: { launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION }
+    }), true);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "vibyra",
+      tokenMode: "vibyra",
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+      launchPlan: { runtimeId: "gemini", launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION }
+    }), false);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "vibyra",
+      tokenMode: "vibyra",
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+      geminiProfileVersion: AI_TERMINAL_GEMINI_PROFILE_VERSION,
+      launchPlan: { runtimeId: "gemini", launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION }
+    }), true);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "claude",
+      tokenMode: "vibyra"
+    }), false);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "claude",
+      tokenMode: "vibyra",
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+      launchPlan: { launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION }
+    }), true);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "claude",
+      tokenMode: "provider"
+    }), false);
+    assert.equal(persistentAiTerminalConfigIsCurrent({
+      agent: "claude",
+      tokenMode: "provider",
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION
+    }), true);
+    assert.equal(persistentAiTerminalConfigIsCurrent({ agent: "shell" }), true);
+  } finally {
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -194,6 +261,7 @@ test("semantic assignments queue before worker attach and deliver each assignmen
   const cli = fakeCli(root, "capture-cli", [
     "#!/bin/bash",
     "sleep 0.2",
+    "printf 'Write tests for @filename\\n'",
     "while IFS= read -r line; do",
     `  printf '%s\\n' "$line" >> ${shellQuote(capture)}`,
     "done"
@@ -242,7 +310,54 @@ test("semantic assignments queue before worker attach and deliver each assignmen
       5_000
     );
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
+test("Codex assignments broadcast busy until the CLI restores its idle title", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-live-state-"));
+  const cli = fakeCli(root, "live-state-cli", [
+    "#!/bin/bash",
+    "printf 'Write tests for @filename\\n'",
+    "while IFS= read -r line; do",
+    "  printf '\\033]0;⠋ Test\\007'",
+    "  sleep 0.05",
+    "  printf '\\033]0;Test\\007'",
+    "done"
+  ]);
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  process.env.VIBYRA_CODEX_CLI = cli;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?live-state=${Date.now()}`, import.meta.url);
+  const { launchPersistentAiTerminalProcess, listPersistentAiTerminalSessions } = await import(moduleUrl);
+  const terminalId = `live-state-${Date.now()}`;
+  const providerStates = [];
+
+  try {
+    const handle = launchPersistentAiTerminalProcess(terminalConfig(terminalId), {
+      onSnapshot: (payload) => providerStates.push(payload.state?.providerState)
+    });
+    const acknowledgement = await handle.assign({
+      assignmentId: "live-state-job",
+      data: "SHOW_LIVE_STATE\r",
+      timeoutMs: 5_000
+    });
+
+    assert.equal(acknowledgement.state, "written-to-child");
+    assert.equal(acknowledgement.providerState, "busy");
+    await waitFor(() => {
+      const busyIndex = providerStates.indexOf("busy");
+      const readyIndex = providerStates.lastIndexOf("ready");
+      return busyIndex >= 0 && readyIndex > busyIndex;
+    }, 5_000);
+    handle.kill("SIGTERM");
+    await waitFor(
+      () => listPersistentAiTerminalSessions().some((item) => item.config.terminalId === terminalId) ? null : true,
+      5_000
+    );
+  } finally {
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
     delete process.env.VIBYRA_CODEX_CLI;
   }
@@ -271,15 +386,16 @@ test("semantic assignments reject invalid payloads and fallback shells", async (
     assert.equal(invalid.state, "rejected");
     assert.match(invalid.reason, /prompt are required/i);
 
-    await waitFor(() => output.includes("Project shell ready"), 5_000);
+    await waitFor(() => listPersistentAiTerminalSessions()
+      .find((item) => item.config.terminalId === terminalId)?.state.status === "exited", 5_000);
     const fallback = await handle.assign({
       assignmentId: "fallback-job",
       data: "MUST_NOT_REACH_SHELL\r",
       timeoutMs: 5_000
     });
     assert.equal(fallback.state, "rejected");
-    assert.equal(fallback.providerState, "fallback-shell");
-    assert.match(fallback.reason, /project shell/i);
+    assert.equal(fallback.providerState, "exited");
+    assert.match(fallback.reason, /exited|not running/i);
     assert.doesNotMatch(output, /MUST_NOT_REACH_SHELL/);
     handle.kill("SIGTERM");
     await waitFor(
@@ -287,7 +403,7 @@ test("semantic assignments reject invalid payloads and fallback shells", async (
       5_000
     );
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
     delete process.env.VIBYRA_CODEX_CLI;
   }
@@ -322,7 +438,7 @@ test("semantic assignment acknowledgement uses a bounded timeout", async () => {
     handle.disconnect();
   } finally {
     await new Promise((resolve) => server.close(resolve));
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -335,10 +451,23 @@ function terminalConfig(terminalId) {
     cwd: process.cwd(),
     cols: 100,
     rows: 30,
-    model: "",
+    model: "openai/gpt-5.5",
     reasoningEffort: "medium",
     permissionMode: "standard",
     tokenMode: "vibyra",
+    launchPlan: {
+      billingMode: "vibyra",
+      providerId: "openai",
+      runtimeId: "codex",
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: "openai/gpt-5.5",
+      billingModel: "openai/gpt-5.5",
+      allowedModels: ["openai/gpt-5.5"],
+      permissionMode: "standard",
+      sandboxMode: "workspace-write",
+      launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION
+    },
     projectId: ""
   };
 }
@@ -366,6 +495,15 @@ async function waitFor(read, timeoutMs) {
     await delay(50);
   }
   throw new Error("Timed out waiting for detached terminal task.");
+}
+
+async function removeTreeEventually(path) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    try { rmSync(path, { recursive: true, force: true }); } catch {}
+    if (!existsSync(path)) return;
+    await delay(25);
+  }
+  rmSync(path, { recursive: true, force: true });
 }
 
 async function withTimeout(promise, timeoutMs, message) {

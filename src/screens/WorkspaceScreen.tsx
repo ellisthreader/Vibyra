@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { KeyboardAvoidingView, PanResponder, Platform, ScrollView, View, useWindowDimensions } from "react-native";
 import {
   AIChatPage,
@@ -11,8 +11,7 @@ import {
   ProjectsPage,
   RenameChatModal,
   TokenMembershipSheet,
-  TopBar,
-  formatCommunityTitle
+  TopBar
 } from "./workspace/inline";
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
 import { directoryForChat } from "./workspace/helpers/chatDirectory";
@@ -33,6 +32,10 @@ export function WorkspaceScreen() {
   const projectChatCanStartPreview = Boolean(selectedChatProjectId && selectedChatProject && app.connection);
   const recentChats = workspaceRecentChats(app);
   const { width: screenWidth } = useWindowDimensions();
+
+  useEffect(() => {
+    if ((app.pairing || app.pendingPhoneApproval) && !w.pcSwitcherVisible) w.openPcSwitcher();
+  }, [app.pairing, app.pendingPhoneApproval, w.openPcSwitcher, w.pcSwitcherVisible]);
 
   const openProfile = () => {
     w.setSettingsTab("profile");
@@ -72,7 +75,7 @@ export function WorkspaceScreen() {
             chatHasConversation={chatHasConversation}
             chatStarred={Boolean(w.starredChatKeys[w.chatTitleKey])}
             chatTitle={w.chatTitle}
-            communitySubPageTitle={w.selectedCommunityPost ? formatCommunityTitle(w.selectedCommunityPost.title) : ""}
+            communitySubPageOpen={Boolean(w.selectedCommunityPost)}
             onBackFromCommunity={w.backFromCommunitySubPage}
             onChatHelp={() => sendWorkspaceChatHelp(w)}
             onDeleteChat={w.deleteCurrentChat}
@@ -167,6 +170,7 @@ export function WorkspaceScreen() {
                     w.setActivePage("projects");
                   }}
                   onLevelActivity={app.reportLevelActivity}
+                  onCloseApp={() => w.setOpenedCommunityPostId(null)}
                   onOpenApp={(id) => w.setOpenedCommunityPostId(id)}
                   onSelectPost={w.setSelectedCommunityPost}
                   selectedPost={w.selectedCommunityPost}

@@ -42,6 +42,16 @@ test("approved preview server start supports Next dev scripts", async () => {
 
 const FRAMEWORK_DEV_SERVER_CASES = [
   {
+    label: "Expo web",
+    packageJson: {
+      scripts: { web: "expo start --web" },
+      dependencies: { expo: "latest", react: "latest", "react-native": "latest" }
+    },
+    appJson: { expo: { name: "Preview Expo", slug: "preview-expo" } },
+    html: "<!doctype html><html><head><title>Preview Expo</title><style id=\"expo-reset\"></style></head><body><div id=\"root\"></div><script src=\"/node_modules/expo/AppEntry.bundle?platform=web\"></script></body></html>",
+    command: (port) => `npm run web -- --host lan --port ${port}`
+  },
+  {
     label: "SvelteKit",
     packageJson: { scripts: { dev: "svelte-kit dev" }, devDependencies: { "@sveltejs/kit": "latest", vite: "latest" } },
     html: "<!doctype html><html><body><div data-sveltekit-hydrate=\"x\"></div><script>window.__sveltekit = true;</script></body></html>",
@@ -85,6 +95,40 @@ const FRAMEWORK_DEV_SERVER_CASES = [
   }
 ];
 
+test("Expo web profile outranks generic project wrapper scripts", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-expo-wrapper-");
+  const fakeNpm = await makeFakeNpm();
+  const port = await findFreePort();
+  const html = "<!doctype html><html><head><title>Vibyra</title><style id=\"expo-reset\"></style></head><body><script src=\"/node_modules/expo/AppEntry.bundle?platform=web\"></script></body></html>";
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: {
+        start: "npm run dev",
+        web: "expo start --web",
+        dev: "./scripts/start-dev.sh"
+      },
+      dependencies: { expo: "latest", react: "latest", "react-native": "latest" }
+    }));
+    await writeFile(join(project.path, "app.json"), JSON.stringify({ expo: { name: "Vibyra", slug: "vibyra" } }));
+    const result = await startProjectDevServer(project, "127.0.0.1:4317", {
+      env: {
+        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        VIBYRA_FAKE_PREVIEW_HTML: html,
+        VIBYRA_FAKE_PREVIEW_PORT: String(port)
+      },
+      port,
+      timeoutMs: 6000
+    });
+    assert.equal(result.framework, "Expo web");
+    assert.equal(result.command, `npm run web -- --host lan --port ${port}`);
+    assert.equal(result.url, `http://127.0.0.1:${port}`);
+  } finally {
+    killTrackedPreview(project.id);
+    await fakeNpm.cleanup();
+    await cleanup();
+  }
+});
+
 for (const scenario of FRAMEWORK_DEV_SERVER_CASES) {
   test(`approved preview server start supports ${scenario.label} dev scripts`, async () => {
     const { project, cleanup } = await makeProject(`vibyra-preview-start-${scenario.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-`);
@@ -92,6 +136,7 @@ for (const scenario of FRAMEWORK_DEV_SERVER_CASES) {
     const port = await findFreePort();
     try {
       await writeFile(join(project.path, "package.json"), JSON.stringify(scenario.packageJson));
+      if (scenario.appJson) await writeFile(join(project.path, "app.json"), JSON.stringify(scenario.appJson));
 
       const result = await startProjectDevServer(project, "127.0.0.1:4317", {
         env: {

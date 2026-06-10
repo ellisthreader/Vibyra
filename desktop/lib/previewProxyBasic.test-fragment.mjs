@@ -26,7 +26,8 @@ test("started preview servers are proxied through the desktop bridge", async () 
       command: "test preview",
       proxyTargetUrl: `http://0.0.0.0:${app.port}`,
       startedAt: new Date().toISOString(),
-      url: `http://192.168.1.20:${app.port}`
+      url: `http://192.168.1.20:${app.port}`,
+      viteProxyTargetUrl: `http://0.0.0.0:${vite.port}`
     };
 
     const response = await requestPreviewServerProxy(project);
@@ -82,6 +83,11 @@ test("preview server proxy injects runtime error overlay once before app scripts
     assert.equal((response.body.match(/__vibyraPreviewRuntimeErrorOverlay/g) ?? []).length, 2);
     assert.ok(response.body.indexOf("__vibyraPreviewRuntimeErrorOverlay") < response.body.indexOf("__headScript"));
     assert.match(response.body, /Preview runtime error/);
+    assert.match(response.body, /vibyra-preview-console/);
+    assert.match(response.body, /__vibyraPreviewConsoleBridge/);
+    assert.match(response.body, /\["log", "info", "warn", "error", "debug"\]/);
+    assert.match(response.body, /vibyra-preview-device/);
+    assert.match(response.body, /devicePixelRatio/);
     assert.match(response.body, /__vibyraPreviewFetchOverlay/);
     assert.match(response.body, /__vibyraPreviewXhrOverlay/);
     assert.match(response.body, /responseDiagnosticText/);

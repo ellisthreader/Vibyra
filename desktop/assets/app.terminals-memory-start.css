@@ -3,19 +3,24 @@
   min-height: 0;
 }
 .terminal-memory-workspace--onboarding {
+  align-items: center;
   grid-template-rows: minmax(0, 1fr);
+  justify-items: center;
 }
 .terminal-memory-onboarding {
   box-sizing: border-box;
+  max-height: 100%;
   min-height: 0;
   overflow: auto;
 }
 .terminal-memory-onboarding {
   align-content: center;
+  align-self: center;
   display: grid;
-  gap: 22px;
-  margin: auto;
-  max-width: 560px;
+  gap: 18px;
+  justify-self: center;
+  margin: 0;
+  max-width: 520px;
   padding: 28px;
   width: 100%;
 }
@@ -61,6 +66,7 @@
 .terminal-memory-onboarding-options {
   display: grid;
   gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .terminal-memory-onboarding-options > button,
 .terminal-memory-import-option {
@@ -72,8 +78,8 @@
   display: grid;
   gap: 10px;
   grid-template-columns: 22px minmax(0, 1fr) 14px;
-  min-height: 60px;
-  padding: 8px 11px;
+  min-height: 74px;
+  padding: 11px;
   text-align: left;
 }
 .terminal-memory-onboarding-options > button:hover,
@@ -85,6 +91,7 @@
 }
 .terminal-memory-onboarding-options > button.primary,
 .terminal-memory-import-option.primary {
+  background: color-mix(in srgb, var(--terminal-accent-soft) 60%, transparent);
   border-color: var(--terminal-accent-border);
 }
 .terminal-memory-onboarding-options > button:disabled,
@@ -133,8 +140,7 @@
   position: relative;
 }
 .terminal-memory-import-option input,
-.terminal-memory-toolbar-import input,
-.terminal-memory-app-import input {
+.terminal-memory-import-menu-popover input {
   cursor: pointer;
   height: 100%;
   inset: 0;
@@ -144,12 +150,11 @@
   z-index: 2;
 }
 .terminal-memory-import-option input:disabled,
-.terminal-memory-toolbar-import input:disabled,
-.terminal-memory-app-import input:disabled {
+.terminal-memory-import-menu-popover input:disabled {
   pointer-events: none;
 }
 body:has([data-terminal-memory-pick]) .terminal-memory-import-option:has(input:disabled),
-body:has([data-terminal-memory-pick]) .terminal-memory-toolbar-import:has(input:disabled) {
+body:has([data-terminal-memory-pick]) .terminal-memory-import-menu-popover label:has(input:disabled) {
   cursor: pointer;
 }
 .terminal-memory-onboarding.dragging {
@@ -157,4 +162,12 @@ body:has([data-terminal-memory-pick]) .terminal-memory-toolbar-import:has(input:
   border-radius: 8px;
   outline: 1px dashed var(--terminal-accent-border);
   outline-offset: -10px;
+}
+@media (max-width: 430px) {
+  .terminal-memory-onboarding {
+    padding: 22px 18px;
+  }
+  .terminal-memory-onboarding-options {
+    grid-template-columns: 1fr;
+  }
 }

@@ -8,30 +8,50 @@ import {
   preparePreviewHtml,
   PreviewRuntimeError
 } from "./appWebViewPreview";
+import {
+  createWebViewNavigationPolicy,
+  isWebViewNavigationAllowed
+} from "./webViewNavigationPolicy";
 
 export type { PreviewRuntimeError };
 
 export type AppWebViewProps = {
   html?: string;
   onPreviewError?: (error: PreviewRuntimeError) => void;
+  publicDemo?: boolean;
   url?: string;
   reloadKey: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppWebViewProps) {
-  const source = html ? { html: preparePreviewHtml(html), baseUrl: "about:blank" } : { uri: url ?? "about:blank" };
+export function AppWebView({ html, onPreviewError, publicDemo = false, reloadKey, style, url }: AppWebViewProps) {
+  const source = publicDemo
+    ? { uri: url ?? "about:blank" }
+    : html
+      ? { html: preparePreviewHtml(html), baseUrl: "about:blank" }
+      : { uri: url ?? "about:blank" };
+  const navigationPolicy = createWebViewNavigationPolicy(html, url, publicDemo);
 
   return (
     <WebView
       key={reloadKey}
-      originWhitelist={["*"]}
+      originWhitelist={publicDemo ? ["https://*"] : ["about:blank", "http://*", "https://*"]}
       source={source}
       style={[styles.web, style]}
       javaScriptEnabled
-      domStorageEnabled
-      injectedJavaScriptBeforeContentLoaded={ERROR_CAPTURE_SCRIPT}
-      onMessage={(event) => handlePreviewMessage(event, onPreviewError)}
+      domStorageEnabled={!publicDemo}
+      cacheEnabled={!publicDemo}
+      incognito={publicDemo}
+      sharedCookiesEnabled={false}
+      thirdPartyCookiesEnabled={false}
+      allowFileAccess={false}
+      allowFileAccessFromFileURLs={false}
+      allowUniversalAccessFromFileURLs={false}
+      injectedJavaScriptBeforeContentLoaded={publicDemo ? PUBLIC_DEMO_ISOLATION_SCRIPT : ERROR_CAPTURE_SCRIPT}
+      onMessage={(publicDemo
+        ? undefined
+        : (event: WebViewMessageEvent) => handlePreviewMessage(event, onPreviewError))}
+      onShouldStartLoadWithRequest={(event) => isWebViewNavigationAllowed(navigationPolicy, event.url)}
       onError={(event) => {
         onPreviewError?.({
           message: event.nativeEvent.description || "Preview failed to load",
@@ -47,9 +67,16 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
         });
       }}
       allowsInlineMediaPlayback
+      allowsBackForwardNavigationGestures={false}
+      allowsLinkPreview={false}
+      dataDetectorTypes="none"
       mediaPlaybackRequiresUserAction
+      javaScriptCanOpenWindowsAutomatically={false}
       setSupportMultipleWindows={false}
-      mixedContentMode="always"
+      onOpenWindow={() => undefined}
+      mixedContentMode="never"
+      pullToRefreshEnabled={!publicDemo}
+      webviewDebuggingEnabled={!publicDemo && __DEV__}
       startInLoadingState
       renderLoading={() => (
         <LoadingScreen compact message="Loading preview." style={styles.loader} title="Opening app" />
@@ -57,6 +84,58 @@ export function AppWebView({ html, onPreviewError, reloadKey, style, url }: AppW
     />
   );
 }
+
+const PUBLIC_DEMO_ISOLATION_SCRIPT = String.raw`
+(() => {
+  const blockedHost = (hostname) => {
+    const host = String(hostname || "").toLowerCase().replace(/^\[|\]$/g, "");
+    if (!host || host === "localhost" || host.endsWith(".localhost") ||
+        host.endsWith(".local") || host.endsWith(".lan") || host.endsWith(".internal")) return true;
+    if (host === "::" || host === "::1" || host.startsWith("fc") ||
+        host.startsWith("fd") || host.startsWith("fe80:")) return true;
+    const parts = host.split(".");
+    if (parts.length !== 4 || parts.some((part) => !/^\d+$/.test(part) || Number(part) > 255)) return false;
+    const [a, b] = parts.map(Number);
+    return a === 0 || a === 10 || a === 127 || a >= 224 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 198 && b >= 18 && b <= 19);
+  };
+  const allowed = (value) => {
+    try {
+      const url = new URL(String(value), location.href);
+      return ["data:", "blob:", "about:"].includes(url.protocol) ||
+        (url.protocol === "https:" && !url.username && !url.password && !blockedHost(url.hostname));
+    } catch {
+      return false;
+    }
+  };
+  const deny = () => Promise.reject(new TypeError("Blocked public demo network request"));
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => allowed(input && input.url ? input.url : input)
+    ? nativeFetch(input, init)
+    : deny();
+  const nativeOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    if (!allowed(url)) throw new DOMException("Blocked public demo network request", "SecurityError");
+    return nativeOpen.call(this, method, url, ...rest);
+  };
+  const guardConstructor = (NativeConstructor) => function(url, ...rest) {
+    if (!allowed(url)) throw new DOMException("Blocked public demo network request", "SecurityError");
+    return new NativeConstructor(url, ...rest);
+  };
+  if (window.WebSocket) window.WebSocket = guardConstructor(window.WebSocket);
+  if (window.EventSource) window.EventSource = guardConstructor(window.EventSource);
+  if (navigator.sendBeacon) {
+    const nativeSendBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = (url, data) => allowed(url) && nativeSendBeacon(url, data);
+  }
+  window.open = () => null;
+})();
+true;
+`;
 
 function handlePreviewMessage(event: WebViewMessageEvent, onPreviewError?: (error: PreviewRuntimeError) => void) {
   if (!onPreviewError) return;

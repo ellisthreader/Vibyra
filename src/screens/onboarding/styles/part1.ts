@@ -70,11 +70,11 @@ export const part1 = {
     fontWeight: "900"
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: "hidden"
   },
   backdropLayer: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   backdropBand: {
     borderRadius: 999,
@@ -94,7 +94,7 @@ export const part1 = {
     transform: [{ rotate: "12deg" }]
   },
   backdropGrid: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(7, 7, 10, 0.38)"
   },
   badge: {

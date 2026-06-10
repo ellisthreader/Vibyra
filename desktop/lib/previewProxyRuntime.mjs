@@ -21,11 +21,53 @@ const PROXY_RUNTIME_ERROR_SCRIPT = `
   }
   function report(payload) {
     try {
-      var next = { source: "vibyra-preview-error", type: payload.type || "error", message: payload.message, file: payload.file, stack: payload.stack, status: payload.status };
+      var next = { source: payload.source || "vibyra-preview-error", type: payload.type || "error", level: payload.level, message: payload.message, file: payload.file, stack: payload.stack, status: payload.status, timestamp: Date.now() };
       if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(next));
       else if (window.parent) window.parent.postMessage(next, "*");
     } catch (_) {}
   }
+  function consoleText(value) {
+    if (value instanceof Error) return value.stack || value.message || String(value);
+    if (typeof value === "string") return value;
+    if (typeof value === "undefined") return "undefined";
+    try {
+      var seen = [];
+      return JSON.stringify(value, function (_key, next) {
+        if (!next || typeof next !== "object") return next;
+        if (seen.indexOf(next) !== -1) return "[Circular]";
+        seen.push(next);
+        return next;
+      });
+    } catch (_) {
+      try { return String(value); } catch (_) { return "[Unserializable value]"; }
+    }
+  }
+  if (window.console && !window.__vibyraPreviewConsoleBridge) {
+    window.__vibyraPreviewConsoleBridge = true;
+    ["log", "info", "warn", "error", "debug"].forEach(function (level) {
+      var original = typeof console[level] === "function" ? console[level].bind(console) : function () {};
+      console[level] = function () {
+        var args = Array.prototype.slice.call(arguments);
+        original.apply(console, args);
+        report({
+          source: "vibyra-preview-console",
+          type: "console",
+          level: level,
+          message: args.map(consoleText).join(" ").slice(0, 6000)
+        });
+      };
+    });
+  }
+  window.addEventListener("message", function (event) {
+    var payload = event && event.data;
+    if (!payload || payload.source !== "vibyra-preview-device") return;
+    var dpr = Number(payload.dpr);
+    if (!Number.isFinite(dpr) || dpr <= 0 || dpr > 8) return;
+    try {
+      Object.defineProperty(window, "devicePixelRatio", { configurable: true, get: function () { return dpr; } });
+      window.dispatchEvent(new Event("resize"));
+    } catch (_) {}
+  });
   function previewBasePath() {
     var match = String(location.pathname || "").match(/^(\\/preview\\/server\\/[^\\/]+\\/[^\\/]+\\/?)/);
     if (!match) return "";

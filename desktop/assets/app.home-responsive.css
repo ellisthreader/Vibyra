@@ -1,0 +1,29 @@
+@media (max-width: 1180px) {
+  .desktop-home { padding: 28px 26px 40px; }
+  .desktop-home-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .desktop-home-dashboard { grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr); }
+}
+
+@media (max-width: 880px) {
+  .desktop-home-dashboard { grid-template-columns: 1fr; }
+  .desktop-home-support { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .desktop-home-phone,
+  .desktop-home-projects { min-height: 100%; }
+}
+
+@media (max-width: 680px) {
+  .desktop-home { padding: 24px 16px 92px; }
+  .desktop-home-header { align-items: stretch; flex-direction: column; gap: 18px; }
+  .desktop-home-new-chat { width: 100%; }
+  .desktop-home-status,
+  .desktop-home-support { grid-template-columns: 1fr; }
+  .desktop-home-status-item { min-height: 88px; }
+  .desktop-home-phone-body { grid-template-columns: 52px minmax(0, 1fr); }
+  .desktop-home-phone .desktop-home-side-icon { height: 52px; width: 52px; }
+  .desktop-home-terminal-status { display: none; }
+  .desktop-home-terminal-row { grid-template-columns: 9px minmax(0, 1fr) 16px; }
+  .desktop-home-empty { grid-template-columns: 38px minmax(0, 1fr); }
+  .desktop-home-empty button { grid-column: 1 / -1; width: 100%; }
+  .desktop-home-activity .dashboard-event-row { grid-template-columns: 30px minmax(0, 1fr); }
+  .desktop-home-activity time { grid-column: 2; }
+}

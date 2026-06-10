@@ -2,8 +2,14 @@ import { RememberedDesktop } from "../types/domain";
 import { LevelProgress } from "./appApiTypes";
 import { readStorageItem, writeStorageItem } from "./nativeStorage";
 import { normalizeLevelProgress } from "./persistenceLevel";
+import { createSecretSessionPersistence } from "./persistenceSecrets";
+import { secretStorage } from "./secretStorage";
 
 const SESSION_KEY = "vibyra.session.v1";
+const protectedPersistence = createSecretSessionPersistence({
+  read: () => readStorageItem(SESSION_KEY),
+  write: (value) => writeStorageItem(SESSION_KEY, value)
+}, secretStorage);
 
 export type PersistedSession = {
   authToken: string;
@@ -58,36 +64,34 @@ export function createEmptyPersistedSession(): PersistedSession {
 
 export async function loadPersistedSession(): Promise<PersistedSession> {
   try {
-    const raw = await readStorageItem(SESSION_KEY);
-    return raw ? parsePersistedSession(raw) : createEmptyPersistedSession();
+    const value = await protectedPersistence.load();
+    return value ? parsePersistedSession(value) : createEmptyPersistedSession();
   } catch {
     return createEmptyPersistedSession();
   }
 }
 
 export async function savePersistedSession(session: PersistedSession) {
-  try {
-    await writeStorageItem(SESSION_KEY, JSON.stringify({
-      authToken: session.authToken,
-      installId: session.installId,
-      onboardingComplete: session.onboardingComplete,
-      pcSetupComplete: session.pcSetupComplete,
-      pcSetupSkipped: session.pcSetupSkipped,
-      selectedChatModel: session.selectedChatModel,
-      rememberedDesktops: normalizeDesktops(session.rememberedDesktops),
-      user: normalizeUser(session.user)
-    }));
-  } catch {
-    // Persistence is a convenience layer; the app should still run if storage is unavailable.
-  }
+  await protectedPersistence.save({
+    authToken: session.authToken,
+    installId: session.installId,
+    onboardingComplete: session.onboardingComplete,
+    pcSetupComplete: session.pcSetupComplete,
+    pcSetupSkipped: session.pcSetupSkipped,
+    selectedChatModel: session.selectedChatModel,
+    rememberedDesktops: normalizeDesktops(session.rememberedDesktops),
+    user: normalizeUser(session.user)
+  });
 }
 
-export function normalizePersistedUser(value: unknown): PersistedUser | null {
-  return normalizeUser(value);
-}
+export const clearPersistedSecrets = () => protectedPersistence.clearAllSecrets();
+export const clearPersistedAuthToken = () => protectedPersistence.clearAuthToken();
+export const clearPersistedDesktopTokens = () => protectedPersistence.clearDesktopTokens();
 
-function parsePersistedSession(raw: string): PersistedSession {
-  const parsed = JSON.parse(raw) as Partial<PersistedSession>;
+export const normalizePersistedUser = (value: unknown): PersistedUser | null => normalizeUser(value);
+
+function parsePersistedSession(value: unknown): PersistedSession {
+  const parsed = value as Partial<PersistedSession>;
   const user = normalizeUser(parsed.user);
   return {
     authToken: String(parsed.authToken ?? ""),

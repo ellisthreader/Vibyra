@@ -12,7 +12,7 @@ let settingsTerminalId = "";
 let forceTerminalRender = false;
 let setupCount = 1;
 const setupModelKey = "vibyra.desktop.terminalSetupModel";
-let setupModel = localStorage.getItem(setupModelKey) || localStorage.getItem("vibyra.desktop.chatModel") || "auto";
+let setupModel = localStorage.getItem(setupModelKey) || "auto";
 const setupEffortKey = "vibyra.desktop.terminalSetupEffort";
 const storedSetupEffort = localStorage.getItem(setupEffortKey) || localStorage.getItem("vibyra.desktop.reasoningEffort") || "medium";
 let setupEffort = ["default", "low", "medium", "high", "xhigh"].includes(storedSetupEffort) ? storedSetupEffort : "medium";
@@ -28,7 +28,9 @@ let setupModelMenuOpen = false;
 let setupModelSearch = "";
 let providerAccounts = {
   openai: { provider: "openai", connected: false, source: "", label: "OpenAI" },
-  codex: { provider: "codex", available: false, connected: false, source: "", label: "ChatGPT" }
+  codex: { provider: "codex", available: false, connected: false, source: "", label: "ChatGPT" },
+  claude: { provider: "claude", available: false, connected: false, source: "", label: "Claude Code" },
+  gemini: { provider: "gemini", available: false, connected: false, source: "", label: "Gemini CLI" }
 };
 let providerConnectOpen = false;
 let providerConnectPosting = false;

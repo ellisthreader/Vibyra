@@ -40,9 +40,11 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
 
   return {
     buyMembership,
+    isRestoring: false,
     isPurchasing,
     purchaseError,
     purchaseMessage,
+    restorePurchases: async () => {},
     selectedProductId,
     selectedStoreProduct: undefined
   };

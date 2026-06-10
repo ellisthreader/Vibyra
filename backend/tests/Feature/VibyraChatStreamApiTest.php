@@ -75,6 +75,43 @@ class VibyraChatStreamApiTest extends TestCase
         }
     }
 
+    public function test_chat_stream_auto_routes_and_emits_the_selected_model(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $history = [];
+        $streamBody = "data: ".json_encode([
+            'choices' => [['delta' => ['content' => 'Implemented.']]],
+            'usage' => ['prompt_tokens' => 20, 'completion_tokens' => 8, 'cost' => 0.001],
+        ])."\n\ndata: [DONE]\n\n";
+        $mock = new MockHandler([new GuzzleResponse(200, ['Content-Type' => 'text/event-stream'], $streamBody)]);
+        $stack = HandlerStack::create($mock);
+        $stack->push(Middleware::history($history));
+        app()->instance('vibyra.openrouter_stream_client', new GuzzleClient(['handler' => $stack]));
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Auto Stream User',
+            'email' => 'auto-stream@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+        User::where('email', 'auto-stream@example.com')->update([
+            'plan' => 'starter',
+            'credits_balance' => 500,
+        ]);
+
+        $response = $this->post('/api/chat/stream', [
+            'prompt' => 'Implement the API and its tests.',
+            'model' => 'auto',
+        ], ['Authorization' => "Bearer {$token}"]);
+
+        $response->assertOk();
+        $content = $response->streamedContent();
+        $this->assertStringContainsString('"modelKey":"openai/gpt-5.5"', $content);
+        $this->assertStringContainsString('"category":"agentic_coding"', $content);
+        $this->assertCount(1, $history);
+        $payload = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertSame('openai/gpt-5.5', $payload['model'] ?? null);
+    }
+
     public function test_chat_stream_allows_budget_research_tool_on_free_plan(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);

@@ -29,9 +29,11 @@ body.electron-shell .content.terminal-content {
   display: flex;
   gap: 8px;
   justify-content: center;
+  margin-inline: auto;
+  max-width: 100%;
   min-width: 0;
   overflow: visible;
-  width: 100%;
+  width: max-content;
 }
 .terminal-tabs--tools-only {
   justify-content: center;
@@ -125,7 +127,7 @@ body.electron-shell .content.terminal-content {
 }
 .terminal-tab-list {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   gap: 6px;
   justify-content: safe center;
   max-width: min(640px, 62vw);

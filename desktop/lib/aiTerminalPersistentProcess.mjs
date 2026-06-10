@@ -5,11 +5,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createConnection } from "node:net";
 import { spawn } from "node:child_process";
+import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const workerPath = join(moduleDir, "aiTerminalWorker.mjs");
 const sessionRoot = process.env.VIBYRA_TERMINAL_SESSION_ROOT
   || join(homedir(), ".vibyra-agent", "terminal-sessions");
+export const AI_TERMINAL_RUNTIME_VERSION = 13;
+export const AI_TERMINAL_GEMINI_PROFILE_VERSION = 1;
 
 export function launchPersistentAiTerminalProcess(config, handlers = {}) {
   const paths = persistentTerminalPaths(config.terminalId);
@@ -103,6 +106,9 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
       write(input) { return send({ type: "input", data: String(input ?? "") }); }
     },
     resize(cols, rows) { send({ type: "resize", cols, rows }); },
+    setRendererAttached(attached) {
+      return send({ type: "renderer_attached", attached: Boolean(attached) });
+    },
     assign({ assignmentId, data, timeoutMs = 5_000 }) {
       const messageId = createHash("sha256")
         .update(`${terminalId}:${assignmentId}:${Date.now()}:${Math.random()}`)
@@ -202,6 +208,9 @@ export function updatePersistentAiTerminalSession(terminalId, patch = {}) {
   if (Object.prototype.hasOwnProperty.call(patch, "title")) {
     config.title = String(patch.title || "").slice(0, 72);
   }
+  if (Object.prototype.hasOwnProperty.call(patch, "model")) {
+    config.model = String(patch.model || "").trim().slice(0, 140);
+  }
   writeFileSync(paths.config, JSON.stringify(config, null, 2), { mode: 0o600 });
   return true;
 }
@@ -236,8 +245,15 @@ function handleWorkerMessage(line, handlers) {
 
 function serializableConfig(config) {
   return {
+    runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+    geminiProfileVersion: config.launchPlan?.runtimeId === "gemini"
+      ? AI_TERMINAL_GEMINI_PROFILE_VERSION
+      : undefined,
+    launchPlan: config.launchPlan,
     agent: config.agent,
+    requestedModel: config.requestedModel,
     model: config.model,
+    autoRouting: config.autoRouting,
     reasoningEffort: config.reasoningEffort,
     permissionMode: config.permissionMode,
     tokenMode: config.tokenMode,
@@ -248,6 +264,7 @@ function serializableConfig(config) {
     repositoryRoot: config.repositoryRoot,
     workspaceNotice: config.workspaceNotice,
     memoryInstructions: config.memoryInstructions,
+    terminalGatewayToken: config.terminalGatewayToken,
     terminalId: config.terminalId,
     title: config.title,
     cwd: config.cwd,
@@ -255,6 +272,18 @@ function serializableConfig(config) {
     rows: config.rows,
     createdAt: config.createdAt || new Date().toISOString()
   };
+}
+
+export function persistentAiTerminalConfigIsCurrent(config = {}) {
+  if (config.agent === "shell") return true;
+  if (Number(config.runtimeVersion) !== AI_TERMINAL_RUNTIME_VERSION) return false;
+  const managedCreditSession = config.tokenMode === "vibyra" || config.agent === "vibyra";
+  if (!managedCreditSession) return true;
+  if (
+    config.launchPlan?.runtimeId === "gemini"
+    && Number(config.geminiProfileVersion) !== AI_TERMINAL_GEMINI_PROFILE_VERSION
+  ) return false;
+  return Number(config.launchPlan?.launchContractVersion) === AI_TERMINAL_LAUNCH_CONTRACT_VERSION;
 }
 
 function readJson(path) {

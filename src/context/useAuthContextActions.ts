@@ -1,6 +1,12 @@
-import { Platform } from "react-native";
 import { appApiRequest, AuthResponse, RemoteUser } from "../utils/appApi";
-import { normalizePersistedUser } from "../utils/persistence";
+import { appDeviceName } from "../utils/deviceIdentity";
+import {
+  clearPersistedAuthToken,
+  clearPersistedDesktopTokens,
+  clearPersistedSecrets,
+  normalizePersistedUser
+} from "../utils/persistence";
+import { authenticateNativeProvider } from "../utils/nativeAuth";
 import { AppContextValue } from "./appContextTypes";
 import { useAppState } from "./useAppState";
 
@@ -99,14 +105,22 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   }
 
   async function authenticateWith(
-    method: "apple" | "google" | "microsoft" | "email",
+    method: "apple" | "google" | "email",
     accountStatus?: "existing" | "new"
   ) {
     const existingAccount = accountStatus === "existing" || (accountStatus === undefined && state.authMode === "login");
     const referralCode = !existingAccount ? state.authReferralCode.trim() : "";
+    const providerCredential = method === "email" ? null : await authenticateNativeProvider(method);
     const payload = method === "email"
-      ? { email: state.authEmail.trim(), deviceName: appSessionDeviceName(), installId: state.installId, name: state.authName.trim(), password: state.authPassword }
-      : { deviceName: appSessionDeviceName(), installId: state.installId, name: state.authName.trim() || providerDisplayName(method), provider: method, providerId: state.installId };
+      ? { email: state.authEmail.trim(), deviceName: appDeviceName(), installId: state.installId, name: state.authName.trim(), password: state.authPassword }
+      : {
+          deviceName: appDeviceName(),
+          challengeId: providerCredential?.challengeId,
+          identityToken: providerCredential?.identityToken,
+          installId: state.installId,
+          name: providerCredential?.name || state.authName.trim(),
+          provider: method
+        };
     const body = referralCode ? { ...payload, referralCode } : payload;
     const endpoint = method === "email" && !existingAccount ? "/api/auth/signup" : "/api/auth/login";
     const result = await appApiRequest<AuthResponse>(endpoint, { method: "POST", body: JSON.stringify(body) });
@@ -117,11 +131,18 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setAuthReferralCode("");
   }
 
-  function appSessionDeviceName() {
-    if (Platform.OS === "ios") return "Vibyra iPhone";
-    if (Platform.OS === "android") return "Vibyra Android";
-    if (Platform.OS === "web") return "Vibyra Web";
-    return "Vibyra App";
+  async function deleteAccount(password?: string) {
+    if (!state.authToken) throw new Error("Log in again before deleting your account.");
+    const session = await appApiRequest<{ user: RemoteUser }>("/api/session", {}, state.authToken);
+    const provider = session.user.provider ?? "email";
+    const credential = provider === "email" ? null : await authenticateNativeProvider(provider);
+    await appApiRequest("/api/account", {
+      method: "DELETE",
+      body: JSON.stringify(provider === "email"
+        ? { password: password ?? "" }
+        : { challengeId: credential?.challengeId, identityToken: credential?.identityToken })
+    }, state.authToken);
+    signOut();
   }
 
   function completeOnboarding() {
@@ -148,6 +169,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   }
 
   function signOut() {
+    void clearPersistedSecrets();
     setters.setAuthenticated(false);
     setters.setAuthToken("");
     setters.setAccountId(null);
@@ -182,6 +204,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   }
 
   function clearCache() {
+    void clearPersistedDesktopTokens();
     setters.setPaired(false);
     setters.setPendingPhoneApproval(null);
     setters.setConnection(null);
@@ -209,6 +232,7 @@ export function useAuthContextActions(store: Store, logs: Logs) {
   }
 
   function expireSession(message = "Your Vibyra login needs refreshing. Log in again to continue.") {
+    void clearPersistedAuthToken();
     setters.setAuthenticated(false);
     setters.setAuthToken("");
     setters.setAccountId(null);
@@ -240,15 +264,9 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     applyRemoteUserFromIap: applyRemoteUser,
     applyRemoteUsage,
     clearCache,
+    deleteAccount,
     expireSession,
     signOut,
     updateProfile
   };
-}
-
-function providerDisplayName(method: "apple" | "google" | "microsoft" | "email") {
-  if (method === "apple") return "Apple User";
-  if (method === "google") return "Google User";
-  if (method === "microsoft") return "Microsoft User";
-  return "Vibyra User";
 }

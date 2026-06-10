@@ -1,7 +1,6 @@
 .terminal-memory-detected-vaults {
   display: grid;
-  gap: 5px;
-  padding: 6px 0 2px;
+  gap: 7px;
 }
 .terminal-memory-find-vaults {
   align-items: center;
@@ -33,7 +32,7 @@
   font-size: 10px;
 }
 .terminal-memory-detected-vaults > small {
-  color: var(--terminal-accent);
+  color: var(--terminal-dim);
   font-size: 9px;
   font-weight: 750;
   letter-spacing: .08em;
@@ -57,13 +56,18 @@
   display: grid;
   gap: 8px;
   grid-template-columns: 18px minmax(0, 1fr) auto;
-  min-height: 40px;
-  padding: 5px 8px;
+  min-height: 48px;
+  padding: 7px 9px;
   text-align: left;
 }
 .terminal-memory-detected-vault-list > button:hover {
-  background: var(--terminal-hover);
+  background: var(--terminal-accent-soft);
   border-color: var(--terminal-accent-border);
+}
+.terminal-memory-detected-vault-list > button > svg {
+  color: var(--terminal-accent);
+  height: 15px;
+  width: 15px;
 }
 .terminal-memory-detected-vault-list > button > span {
   display: grid;
@@ -89,10 +93,13 @@
 }
 .terminal-memory-vault-scan {
   align-items: center;
+  background: var(--terminal-hover);
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
   display: flex;
   gap: 7px;
-  min-height: 30px;
-  padding: 0 4px;
+  min-height: 42px;
+  padding: 0 11px;
 }
 .terminal-memory-vault-scan svg {
   height: 13px;

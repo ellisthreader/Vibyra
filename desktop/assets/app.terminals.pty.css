@@ -61,7 +61,8 @@
   outline: none;
 }
 
-.terminal-pty-lines:focus {
+.terminal-pty-lines:focus,
+.terminal-pty-lines:focus-within {
   box-shadow: inset 0 0 0 1px rgba(139, 92, 255, 0.55);
 }
 

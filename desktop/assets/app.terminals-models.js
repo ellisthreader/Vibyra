@@ -69,10 +69,26 @@ function selectSetupModel(key) {
     if (typeof openTokenModal === "function") openTokenModal("plans");
     return;
   }
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  if (!terminalModelAvailableForTokenMode(model, tokenMode)) {
+    providerConnectNotice = terminalTokenSourceIssue(model, tokenMode);
+    render();
+    return;
+  }
+  const runtimeIssue = typeof terminalRuntimeLaunchIssue === "function"
+    ? terminalRuntimeLaunchIssue(model, tokenMode)
+    : "";
+  if (runtimeIssue && String(model.key || "").toLowerCase() !== "auto") {
+    terminalRuntimeNotice = runtimeIssue;
+    render();
+    return;
+  }
   setupModel = model.key;
+  setupTokenMode = tokenMode;
   setupEffort = terminalEffortForModel(model, setupEffort);
   localStorage.setItem(setupModelKey, setupModel);
   localStorage.setItem(setupEffortKey, setupEffort);
+  localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
   setupModelMenuOpen = false;
   terminalProjectMenuTarget = "";
   setupModelSearch = "";
@@ -93,9 +109,21 @@ function createTerminalFromModel(key) {
     render();
     return;
   }
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  const runtimeIssue = typeof terminalRuntimeLaunchIssue === "function"
+    ? terminalRuntimeLaunchIssue(model, tokenMode)
+    : "";
+  if (runtimeIssue) {
+    terminalRuntimeNotice = runtimeIssue;
+    render();
+    return;
+  }
   newTerminalModelSearch = "";
   terminalProjectMenuTarget = "";
-  createTerminal(model.key, true, { effort: terminalEffortForModel(model, setupEffort) });
+  createTerminal(model.key, true, {
+    effort: terminalEffortForModel(model, setupEffort),
+    tokenMode
+  });
 }
 function normalizeCount(value) {
   const numeric = Number.parseInt(String(value || ""), 10);
@@ -120,7 +148,8 @@ function terminalModelMenu(target, selectedKey) {
   const groups = filteredTerminalModelGroups(query);
   const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
   const projectSelect = target === "new" ? terminalProjectSelect("new") : "";
-  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}">${projectSelect}<label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label><div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
+  const notice = terminalRuntimeNotice ? `<em class="terminal-model-cli-notice">${escapeHtml(terminalRuntimeNotice)}</em>` : "";
+  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}">${projectSelect}<label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label>${notice}<div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
 }
 function renderTerminalModelSearchResults(input) {
   const target = input?.dataset?.terminalModelSearch || "";
@@ -142,6 +171,7 @@ function renderTerminalModelSearchResults(input) {
   picker.querySelectorAll("[data-terminal-new-model]").forEach((button) => {
     button.addEventListener("click", () => createTerminalFromModel(button.dataset.terminalNewModel || "auto"));
   });
+  if (typeof bindTerminalRuntimeControls === "function") bindTerminalRuntimeControls(picker);
   return true;
 }
 function terminalModelSection(group, selectedKey, optionAttribute) {
@@ -152,7 +182,22 @@ function terminalModelSection(group, selectedKey, optionAttribute) {
 }
 function terminalModelButton(model, selectedKey, optionAttribute, extraClass = "") {
   const locked = typeof modelLocked === "function" && modelLocked(model);
-  return `<button class="terminal-model-option ${extraClass} ${selectedKey === model.key ? "active" : ""} ${locked ? "locked" : ""}" type="button" role="option" aria-selected="${selectedKey === model.key ? "true" : "false"}" ${optionAttribute}="${escapeAttribute(model.key)}">${modelLogo(model)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(modelHint(model, locked))}</small></span>${locked ? `<em class="terminal-model-lock">${icon("lock")}</em>` : model.badge ? `<em class="terminal-model-badge">${escapeHtml(model.badge)}</em>` : "<i></i>"}</button>`;
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  const launch = typeof terminalRuntimePickerState === "function"
+    ? terminalRuntimePickerState(model, tokenMode)
+    : typeof terminalRuntimeLaunchState === "function"
+      ? terminalRuntimeLaunchState(model, tokenMode)
+    : { available: true, issue: "", surface: "native", label: "Native CLI" };
+  const unavailable = !launch.available;
+  const runtimeUi = typeof terminalModelCliControl === "function"
+    ? terminalModelCliControl(model, tokenMode)
+    : "";
+  const download = launch.surface === "download" ? runtimeUi : "";
+  const status = launch.surface === "download" ? "" : runtimeUi;
+  const disabled = unavailable;
+  const fallbackMeta = model.badge ? `<em class="terminal-model-badge">${escapeHtml(model.badge)}</em>` : "";
+  const meta = `<span class="terminal-model-option-meta">${locked ? `<em class="terminal-model-lock">${icon("lock")}</em>` : ""}${status || fallbackMeta}</span>`;
+  return `<div class="terminal-model-option-row"><button class="terminal-model-option ${extraClass} ${selectedKey === model.key ? "active" : ""} ${locked ? "locked" : ""} ${unavailable ? "unavailable" : ""}" type="button" role="option" aria-selected="${selectedKey === model.key ? "true" : "false"}" aria-disabled="${disabled ? "true" : "false"}" title="${unavailable ? escapeAttribute(launch.issue) : ""}" ${disabled ? "disabled" : ""} ${optionAttribute}="${escapeAttribute(model.key)}">${modelLogo(model)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(modelHint(model, locked))}</small></span>${meta}</button>${download}</div>`;
 }
 function terminalModelGroups() {
   const baseGroups = config().chatModelGroups || [];
@@ -239,41 +284,69 @@ function terminalEffortForModel(modelOrKey, value) {
   return efforts.some((effort) => effort.value === requested) ? requested : "medium";
 }
 function providerTokenLabelForModel(model) {
-  const provider = terminalProviderKeyForModel(model);
-  if (provider !== "openai") return "Provider account";
-  const account = providerAccounts.openai || {};
-  if (!account.connected) return "OpenAI API key";
-  return account.source === "env" ? "OpenAI env" : "OpenAI API key";
+  return terminalOwnAccountRoute(model).label || "My AI account";
 }
 function terminalTokenModeForModel(model, mode) {
+  return mode === "provider" ? "provider" : "vibyra";
+}
+function terminalOwnAccountRoute(model) {
   const provider = terminalProviderKeyForModel(model);
-  const openai = providerAccounts.openai || {};
-  return mode === "provider" && provider === "openai" && openai.connected ? "provider" : "vibyra";
+  const nativeRuntime = typeof terminalNativeRuntimeForModel === "function"
+    ? terminalNativeRuntimeForModel(model)
+    : provider === "openai"
+      ? "codex"
+      : ["claude", "gemini"].includes(provider) ? provider : "";
+  const codex = providerAccounts.codex || {};
+  const nativeAccount = provider === "claude"
+    ? providerAccounts.claude || {}
+    : provider === "gemini"
+      ? providerAccounts.gemini || {}
+      : null;
+  if (nativeRuntime === "codex" && codex.available && codex.connected) {
+    return { available: true, agent: "codex", label: codex.label || "ChatGPT via Codex CLI" };
+  }
+  if (nativeRuntime === "codex" && !codex.available) {
+    return { available: false, agent: "", label: "", reason: "Your OpenAI account is not ready for this model." };
+  }
+  if (nativeRuntime === "codex") {
+    return { available: false, agent: "", label: "", reason: "Your OpenAI account is not ready for this model." };
+  }
+  if (nativeAccount && nativeRuntime && nativeAccount.available) {
+    return {
+      available: true,
+      agent: provider,
+      label: nativeAccount.label || (provider === "claude" ? "Claude Code" : "Gemini CLI")
+    };
+  }
+  if (nativeAccount && nativeRuntime) {
+    return {
+      available: false,
+      agent: "",
+      label: "",
+      reason: `Your ${provider === "claude" ? "Claude" : "Gemini"} account is not ready for this model.`
+    };
+  }
+  return { available: false, agent: "", label: "", reason: "This model is only available with Vibyra tokens." };
+}
+function terminalModelAvailableForTokenMode(model, mode) {
+  return mode !== "provider" || terminalOwnAccountRoute(model).available;
+}
+function terminalFirstModelForTokenMode(mode) {
+  return modelChoices().find((model) =>
+    terminalModelAvailableForTokenMode(model, mode)
+    && !(typeof modelLocked === "function" && modelLocked(model))
+  ) || null;
+}
+function terminalTokenSourceIssue(model, mode) {
+  if (mode !== "provider") return "";
+  return terminalOwnAccountRoute(model).reason || "";
 }
 function terminalTokenSourcePanel(model, selectedMode, target) {
-  const provider = terminalProviderKeyForModel(model);
-  const openai = providerAccounts.openai || {};
-  const codex = providerAccounts.codex || {};
-  const supportsProvider = provider === "openai";
-  const canUseProvider = supportsProvider && openai.connected;
   const mode = terminalTokenModeForModel(model, selectedMode);
-  const codexLine = supportsProvider ? codexAccountLine(codex) : "";
-  const connectedLine = openai.connected
-    ? `<span>${escapeHtml(openai.label || "OpenAI API key")}${openai.last4 ? ` · ${escapeHtml(openai.last4)}` : ""}</span><button type="button" data-provider-disconnect ${providerConnectPosting ? "disabled" : ""}>Disconnect</button>`
-    : `<span>OpenAI API key not connected</span><button type="button" data-open-provider-connect>${providerConnectOpen ? "Close" : "Connect"}</button>`;
-  const providerTitle = !supportsProvider ? "Provider API keys are available for OpenAI models" : canUseProvider ? "Usage bills your OpenAI API account" : "Connect an OpenAI API key before using API-key billing";
-  const billingLine = mode === "provider" && canUseProvider ? `<em class="terminal-provider-notice">Usage bills your OpenAI API account.</em>` : "";
-  return `<div class="terminal-token-source"><p>Tokens</p>${codexLine}<div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span>Vibyra tokens</span></button><button class="${mode === "provider" ? "active" : ""} ${canUseProvider ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider" title="${escapeAttribute(providerTitle)}">${icon("lock")}<span>OpenAI API key</span></button></div><div class="terminal-provider-row">${connectedLine}</div>${billingLine}${providerConnectOpen ? openAiConnectForm() : ""}${providerConnectNotice ? `<em class="terminal-provider-notice">${escapeHtml(providerConnectNotice)}</em>` : ""}</div>`;
-}
-
-function codexAccountLine(codex) {
-  if (!codex.available) {
-    return `<div class="terminal-provider-row"><span>Codex CLI is not installed</span></div>`;
-  }
-  if (codex.connected) {
-    return `<div class="terminal-provider-row"><span>${escapeHtml(codex.label || "ChatGPT via Codex CLI")}</span></div>`;
-  }
-  return `<div class="terminal-provider-row"><span>ChatGPT not signed in for Codex CLI</span></div>`;
+  const route = terminalOwnAccountRoute(model);
+  const issue = terminalTokenSourceIssue(model, mode);
+  const notice = providerConnectNotice || issue;
+  return `<div class="terminal-token-source"><p>Pay with</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span><strong>Vibyra tokens</strong><small>Uses your Vibyra credits</small></span></button><button class="${mode === "provider" ? "active" : ""} ${route.available ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider">${icon("lock")}<span><strong>My AI accounts</strong><small>Uses your account and its billing</small></span></button></div>${notice ? `<em class="terminal-provider-notice">${escapeHtml(notice)}</em>` : ""}</div>`;
 }
 
 function openAiConnectForm() {
@@ -298,12 +371,34 @@ async function loadTerminalOpenRouterModels() {
 }
 
 function applyTerminalOpenRouterModels(groups) {
-  const nextGroups = groups.map(normalizeTerminalModelGroup).filter((group) => group.options.length);
+  const nextGroups = groups
+    .map(normalizeTerminalModelGroup)
+    .map((group) => ({
+      ...group,
+      options: group.options.filter(terminalOpenRouterModelAllowed)
+    }))
+    .filter((group) => group.options.length);
   if (!nextGroups.length) return;
   terminalDynamicModelGroups = nextGroups;
   for (const model of nextGroups.flatMap((group) => group.options)) modelTiers[model.key] = model.tier || modelTiers[model.key] || "balanced";
-  if (!modelChoices().some((model) => model.key === setupModel)) setupModel = "auto";
+  if (!modelChoices().some((model) => model.key === setupModel)) {
+    setupModel = terminalOfficialFallbackModelKey(setupModel);
+    localStorage.setItem(setupModelKey, setupModel);
+  }
   if (activePage === "terminals" || openChatMenu === "ai") render();
+}
+
+function terminalOpenRouterModelAllowed(model) {
+  return !["openai", "claude", "gemini"].includes(terminalProviderKeyForModel(model));
+}
+
+function terminalOfficialFallbackModelKey(key) {
+  const provider = terminalProviderKeyForModel(key);
+  const fallback = modelChoices().find((model) =>
+    !String(model?.modelKey || model?.key || "").includes("/")
+    && terminalProviderKeyForModel(model) === provider
+  );
+  return fallback?.key || "auto";
 }
 
 function normalizeTerminalModelGroup(group) {

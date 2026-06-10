@@ -74,12 +74,17 @@ async function refresh() {
     const response = await fetch("/desktop/state", { cache: "no-store" });
     if (!response.ok) throw new Error("Desktop state failed");
     const nextState = { ...emptyState, ...(await response.json()) };
+    const accountSessionExpired = Boolean(currentState.desktopAccount && !nextState.desktopAccount && desktopAuthSession()?.token);
     const nextSignature = JSON.stringify(nextState);
     const stateChanged = nextSignature !== lastDesktopStateSignature;
     currentState = nextState;
     lastDesktopStateSignature = nextSignature;
     lastDesktopRefreshError = "";
     openPendingPairRequest();
+    if (accountSessionExpired) {
+      desktopSignOut();
+      showAuthError("Your Vibyra session expired. Log in again to continue.");
+    }
     if (stateChanged) render();
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not load desktop state";
@@ -131,7 +136,7 @@ function render() {
   if (activePage === "dashboard") renderDashboard();
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
-  if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".billing-revamp"))) renderTokenModal();
+  if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".token-plan-picker"))) renderTokenModal();
 }
 function setRailCollapsed(value, options = {}) {
   const companionOwnsRail = document.querySelector(".app")?.classList.contains("terminal-companion-active");
@@ -165,10 +170,17 @@ function applyRailState() {
   }
 }
 function renderNav() {
-  const html = pages.filter((page) => !page.hidden).map((page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`).join("");
-  nodes.railNav.innerHTML = html;
-  nodes.mobileDock.innerHTML = html;
+  const visiblePages = pages.filter((page) => !page.hidden);
+  const pageButton = (page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`;
+  nodes.railNav.innerHTML = visiblePages.map((page) => {
+    if (page.key !== "terminals") return pageButton(page);
+    const projects = typeof terminalRailProjectsHtml === "function" ? terminalRailProjectsHtml() : "";
+    const create = typeof terminalRailCreateButtonHtml === "function" ? terminalRailCreateButtonHtml() : "";
+    return `<div class="rail-nav-group rail-nav-group--terminals"><div class="terminal-rail-heading">${pageButton(page)}${create}</div>${projects}</div>`;
+  }).join("");
+  nodes.mobileDock.innerHTML = visiblePages.map(pageButton).join("");
   document.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
+  if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(nodes.railNav);
 }
 function renderTopbar() {
   if (!document.body.classList.contains("desktop-authenticated")) {
@@ -198,7 +210,9 @@ function renderTopbar() {
   const left = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div>`;
   const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
   const terminalAiAction = terminalPage && typeof terminalAiTopbarButtonHtml === "function" ? terminalAiTopbarButtonHtml() : "";
-  const actions = `${terminalAiAction}${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
+  const accountAction = `<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
+  const actions = `${terminalAiAction}${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}${accountAction}`;
+  nodes.topbar.classList.remove("terminal-preview-topbar");
   if (isElectronShell()) {
     nodes.topbar.innerHTML = "";
     if (nodes.chromePage) nodes.chromePage.innerHTML = center;

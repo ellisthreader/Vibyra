@@ -1,0 +1,73 @@
+.profile-plan-card {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile-plan-badge {
+  background: var(--surface-bg-elevated, #12121a);
+  border: 1px solid color-mix(in srgb, #38bdf8 55%, var(--surface-border));
+  border-radius: 999px;
+  color: #38bdf8;
+  font-size: 9px;
+  font-weight: 800;
+  left: 50%;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  position: absolute;
+  text-transform: uppercase;
+  top: 9px;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.profile-plan-card::before,
+.profile-plan-card::after {
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.profile-plan-card::before {
+  background-image: var(--plan-card-image);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: auto 178px;
+  opacity: 0.52;
+  transform: scale(1.01);
+  z-index: -2;
+}
+
+.profile-plan-card::after {
+  background:
+    linear-gradient(180deg, transparent 0, transparent 12%, var(--surface-bg-elevated, #12121a) 46%, var(--surface-bg-elevated, #12121a) 100%),
+    linear-gradient(90deg, var(--surface-bg-elevated, #12121a) 0, transparent 58%);
+  z-index: -1;
+}
+
+.profile-plan-card.is-current::after {
+  background:
+    linear-gradient(180deg, transparent 0, transparent 10%, var(--surface-hover, #181820) 46%, var(--surface-hover, #181820) 100%),
+    linear-gradient(90deg, var(--surface-hover, #181820) 0, transparent 58%);
+}
+
+.profile-plan-card-top {
+  min-height: 58px;
+}
+
+.profile-plan-card-top img {
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.32));
+}
+
+body[data-desktop-theme="light"] .profile-plan-card::before {
+  opacity: 0.3;
+}
+
+@media (max-width: 720px) {
+  .profile-plan-card::before {
+    background-position: right top;
+    background-size: auto 190px;
+  }
+}

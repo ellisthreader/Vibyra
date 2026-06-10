@@ -50,6 +50,10 @@ async function openTerminalsFromDesktopAction(action, executionContext = {}) {
     projectId,
     workspaceMode
   };
+  const runtimeIssue = typeof terminalRuntimeLaunchIssueForRequest === "function"
+    ? terminalRuntimeLaunchIssueForRequest(model, fullAccess ? "provider" : setupTokenMode, "")
+    : "";
+  if (runtimeIssue) return runtimeIssue;
   setPage("terminals");
   const beforeIds = new Set(terminals.map((terminal) => terminal.id));
   createTerminals(count, model.key, options);
@@ -102,12 +106,14 @@ async function runTerminalTasksFromDesktopAction(action, executionContext = {}) 
   }
 
   const workspaceMode = desktopActionWorkspaceMode(action, queued.length, queued.map((task) => task.projectId));
+  const defaultTokenMode = typeof setupTokenMode === "string" ? setupTokenMode : "vibyra";
   setPage("terminals");
   const launches = queued.map((task) => createTerminal(task.model.key, false, {
     effort: task.effort,
     initialPrompt: task.prompt,
     permissionMode: task.permissionMode,
     projectId: task.projectId,
+    tokenMode: task.permissionMode === "full" ? "provider" : defaultTokenMode,
     workspaceMode
   })).filter(Boolean);
   forceTerminalRender = true;
@@ -193,6 +199,7 @@ async function assignExistingTerminalTasks(tasks, action, executionContext = {})
   const template = eligible[0] || null;
   const available = Math.max(0, maxTerminals - terminals.length);
   const additions = remaining.slice(0, available);
+  const defaultTokenMode = typeof setupTokenMode === "string" ? setupTokenMode : "vibyra";
   const fullAccessCount = additions.filter((task) => task.permissionMode === "full").length;
   if (fullAccessCount && !window.confirm(`Open ${fullAccessCount} additional terminal${fullAccessCount === 1 ? "" : "s"} with the same full access? This bypasses approval and sandbox protections.`)) {
     return `Assigned ${assigned} terminal job${assigned === 1 ? "" : "s"} to the open terminals. Additional full-access terminals were cancelled.`;
@@ -203,9 +210,9 @@ async function assignExistingTerminalTasks(tasks, action, executionContext = {})
       initialPrompt: task.prompt,
       permissionMode: task.permissionMode,
       projectId: template?.projectId ?? task.projectId,
+      tokenMode: template?.tokenMode || defaultTokenMode,
       workspaceMode: template?.workspaceMode || "shared"
     });
-    if (terminal && template?.tokenMode) terminal.tokenMode = template.tokenMode;
     return terminal;
   }).filter(Boolean);
   if (launched.length) {
@@ -458,7 +465,7 @@ async function setTerminalPermissionsFromDesktopAction(action) {
     model: model.key,
     effort: terminal.effort,
     projectId: terminal.projectId,
-    tokenMode: terminal.tokenMode
+    tokenMode: "provider"
   }));
   const previousActiveId = activeTerminalId;
   await closeDesktopActionTargets(targets, action.scope);

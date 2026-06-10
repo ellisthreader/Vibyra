@@ -3,28 +3,35 @@ function terminalVoiceHtml() {
   const phase = terminalVoicePhase(available);
   const view = terminalVoicePhaseView(phase);
   const status = available ? terminalVoiceState.status : "Microphone unavailable";
+  const statusDetail = terminalVoiceStatusDetail(status);
   const disabled = !available || terminalVoiceState.starting || terminalVoiceState.asking;
   return `<div class="terminal-voice-simple" data-voice-phase="${phase}">
-    <button class="terminal-voice-back" type="button" data-terminal-companion-open="chat">${icon("arrow")}<span>Back to chat</span></button>
-    <button class="terminal-voice-talk" type="button" data-terminal-voice-toggle
-      aria-label="${escapeAttribute(view.action)}"
-      aria-pressed="${terminalVoiceState.listening}"
-      ${disabled ? "disabled" : ""}>
-      <span class="terminal-voice-phase-label"><i></i>${escapeHtml(view.badge)}</span>
-      <span class="terminal-voice-orb" aria-hidden="true">
-        <span class="terminal-voice-rings"></span>
-        <span class="terminal-voice-bars">${terminalVoiceBars()}</span>
-        <span class="terminal-voice-icon">${icon(view.icon)}</span>
-      </span>
-      <strong>${escapeHtml(view.title)}</strong>
-      <small>${escapeHtml(view.instruction)}</small>
-    </button>
-    <p class="terminal-voice-status" role="status" aria-live="assertive" aria-atomic="true">
-      <strong>${escapeHtml(view.status)}</strong>
-      <span>${escapeHtml(status)}</span>
-    </p>
+    <section class="terminal-voice-stage">
+      <button class="terminal-voice-talk" type="button" data-terminal-voice-toggle
+        aria-label="${escapeAttribute(view.action)}"
+        aria-pressed="${terminalVoiceState.listening}"
+        ${disabled ? "disabled" : ""}>
+        <span class="terminal-voice-phase-label"><i></i>${escapeHtml(view.badge)}</span>
+        <span class="terminal-voice-visual" aria-hidden="true">
+          <span class="terminal-voice-orbit"></span>
+          <span class="terminal-voice-orb">
+            <span class="terminal-voice-rings"></span>
+            <span class="terminal-voice-bars">${terminalVoiceBars()}</span>
+            <span class="terminal-voice-icon">${icon(view.icon)}</span>
+          </span>
+        </span>
+        <span class="terminal-voice-copy">
+          <strong>${escapeHtml(view.title)}</strong>
+          <small>${escapeHtml(view.instruction)}</small>
+        </span>
+      </button>
+      <p class="terminal-voice-status" role="status" aria-live="assertive" aria-atomic="true">
+        <i aria-hidden="true"></i>
+        <span><strong>${escapeHtml(view.status)}</strong>${statusDetail ? `<small>${escapeHtml(statusDetail)}</small>` : ""}</span>
+      </p>
+    </section>
     ${terminalVoiceConversationHtml()}
-    <small class="terminal-voice-disclosure">AI-generated voice</small>
+    <small class="terminal-voice-disclosure">${icon("sparkles")}AI-generated voice</small>
   </div>`;
 }
 
@@ -54,7 +61,7 @@ function terminalVoicePhaseView(phase) {
       action: "Start talking to Vibyra",
       badge: "READY",
       icon: "pulse",
-      instruction: "Click or press Alt+V to start",
+      instruction: "Click to begin or press Alt+V",
       status: "Vibyra isn't listening yet",
       title: "Talk to Vibyra"
     },
@@ -62,7 +69,7 @@ function terminalVoicePhaseView(phase) {
       action: "Stop listening and send",
       badge: "MIC LIVE",
       icon: "square",
-      instruction: "Click or press Alt+V when finished",
+      instruction: "Click when you are finished",
       status: "Vibyra can hear you now",
       title: "I'm listening"
     },
@@ -70,7 +77,7 @@ function terminalVoicePhaseView(phase) {
       action: "Try talking to Vibyra again",
       badge: "READY",
       icon: "pulse",
-      instruction: "Click or press Alt+V to try again",
+      instruction: "Click to try again or press Alt+V",
       status: "Vibyra isn't listening",
       title: "Talk to Vibyra"
     },
@@ -78,15 +85,15 @@ function terminalVoicePhaseView(phase) {
       action: "Vibyra is processing your message",
       badge: "WORKING",
       icon: "pulse",
-      instruction: "Listening is paused while I respond",
-      status: "Please wait",
+      instruction: "Your message is being prepared",
+      status: "Listening is paused",
       title: "Understanding you"
     },
     speaking: {
       action: "Interrupt Vibyra and start talking",
       badge: "VIBYRA LIVE",
       icon: "pulse",
-      instruction: "Click or press Alt+V to interrupt",
+      instruction: "Click to interrupt and speak",
       status: "Audio is playing",
       title: "Vibyra is speaking"
     },
@@ -94,12 +101,26 @@ function terminalVoicePhaseView(phase) {
       action: "Starting microphone",
       badge: "STARTING",
       icon: "pulse",
-      instruction: "Your microphone will light up when live",
-      status: "Please wait",
+      instruction: "Connecting to your microphone",
+      status: "Requesting microphone access",
       title: "Opening microphone"
     }
   };
   return views[phase] || views.idle;
+}
+
+function terminalVoiceStatusDetail(status) {
+  const value = String(status || "").trim();
+  const redundant = new Set([
+    "Ready",
+    "Listening",
+    "Speaking",
+    "Starting microphone",
+    "Transcribing",
+    "Vibyra is thinking",
+    "Vibyra is responding"
+  ]);
+  return redundant.has(value) ? "" : value;
 }
 
 function terminalVoiceBars() {
@@ -108,7 +129,6 @@ function terminalVoiceBars() {
 
 function bindTerminalVoice(root = document) {
   root.querySelector("[data-terminal-voice-toggle]")?.addEventListener("click", toggleTerminalVoice);
-  root.querySelector(".terminal-voice-back")?.addEventListener("click", stopTerminalVoiceForPanelClose);
   scrollTerminalVoiceConversation(root);
   bindTerminalVoiceHotkey();
 }
@@ -117,11 +137,12 @@ function bindTerminalVoiceHotkey() {
   if (document.body.dataset.terminalVoiceHotkeyBound) return;
   document.body.dataset.terminalVoiceHotkeyBound = "1";
   document.addEventListener("keydown", (event) => {
-    if (!event.altKey || event.code !== "KeyV" || event.repeat) return;
-    if (!["chat", "voice"].includes(terminalCompanionMode)) return;
+    if (!event.altKey || event.shiftKey || event.code !== "KeyV" || event.repeat) return;
+    if (terminalCompanionMode !== "chat") return;
     event.preventDefault();
-    if (terminalCompanionMode === "chat") {
-      openTerminalCompanionPanel("voice", "voice");
+    if (typeof terminalAiSurface !== "undefined" && terminalAiSurface !== "voice") {
+      terminalAiSurface = "voice";
+      syncTerminalCompanion("voice");
       requestAnimationFrame(() => toggleTerminalVoice());
       return;
     }
@@ -144,12 +165,12 @@ async function submitTerminalVoicePrompt(text, generation = terminalVoiceState.g
   terminalVoiceSetStatus("Vibyra is thinking");
   try {
     const replyRequest = requestTerminalVoiceReply(prompt, terminal, generation);
-    appendTerminalVoiceMessage(terminal, "user", prompt);
+    const userMessage = appendTerminalVoiceMessage(terminal, "user", prompt);
     terminalVoiceSync();
     const reply = await replyRequest;
     if (!terminalVoiceGenerationCurrent(generation)) return;
     terminalVoiceState.asking = false;
-    appendTerminalVoiceMessage(terminalCompanionActiveTerminal() || terminal, "assistant", reply);
+    appendTerminalVoiceReply(userMessage, reply, terminal);
     terminalVoiceSync();
     await playTerminalVoiceReply(reply, generation);
   } catch (error) {

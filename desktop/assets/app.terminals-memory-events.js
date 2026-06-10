@@ -21,6 +21,9 @@ function bindTerminalMemoryEvents(root) {
   root.querySelector("[data-terminal-memory-vault-input]")?.addEventListener("change", (event) => {
     consumeTerminalMemoryImport(event, "vault");
   });
+  root.querySelector("[data-terminal-memory-markdown-input]")?.addEventListener("change", (event) => {
+    consumeTerminalMemoryImport(event, "markdown");
+  });
   root.querySelectorAll("[data-terminal-memory-view]").forEach((button) => button.addEventListener("click", () => {
     terminalMemoryState.view = button.dataset.terminalMemoryView === "notes" ? "notes" : "graph";
     terminalMemoryRefresh();

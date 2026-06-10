@@ -23,6 +23,12 @@ Chat chrome should stay transparent and icon-only on the mobile chat screen: kee
 
 The legacy `pages` array in `src/screens/workspace/data/pages.ts` is limited to Chat and Projects. Profile, Explore/Community, and build status are secondary/contextual destinations.
 
+Workspace sidebar color balance: keep the full-screen panel on the semantic
+Vibyra background with neutral navigation and PC status. Preserve secondary
+palette character at roughly 10% visual weight through a faint theme-aware
+violet atmosphere, thin panel edge, and restrained avatar accent; do not turn
+selected rows into purple fills or rails.
+
 Decision (2026-06-07): remove the standalone Builds page from primary mobile navigation. `DashboardPage` no longer includes `dashboard`, the post-login workspace defaults to Chat, and the left workspace menu should not show a Builds/Active builds row. Build progress/status belongs contextually in the chat or project workflow when needed, not as a top-level page.
 
 Community is user-facing as "Explore" in top-level chrome while retaining `community` route/state keys internally.
@@ -63,7 +69,49 @@ Light mode local sheets (2026-05-19): `src/screens/workspace/styles/themeTransfo
 
 Publish frontend (2026-05-20, simplified 2026-06-07): publish starts from Projects cards in `src/screens/workspace/inline/chunk8.tsx`, which owns publish target/result state and receives outcome metadata from `src/utils/communityApi.ts`. The full-screen publish page in `ProjectPublishModal.tsx` should start with only the minimum fields needed to act: project details, visibility, and the Publish/Update action. Photos, category, tags, and app icon belong behind the `More options` row; keep generated/suggested metadata in state so users can publish without opening advanced controls. Keep successful review/private/unlisted outcomes as calm status states, not red errors.
 
-Explore frontend (2026-05-20, updated 2026-05-21): `src/screens/workspace/inline/chunk12.tsx` owns the search/sort/feed surface, backed by `useCommunityPage` live post state and sort modes. `chunk13.tsx` is the single-tap visual feed card, `chunk14.tsx` is the single-scroll app detail page, `chunk15.tsx` is the full-page opened-app preview, and `src/screens/workspace/styles/part61.ts` holds the current Explore polish overrides. Keep Explore user-facing as "Explore" while preserving internal `community` state keys. `useCommunityPage` renders bundled sample posts immediately and refreshes `/api/community/projects` in the background; the feed request timeout lives in `src/utils/appApi.ts`. Local like/bookmark IDs persist through `hooks/communityReactionStorage.ts`, while small feed/comment helpers live in `hooks/communityPageHelpers.ts`.
+Publish status UX (2026-06-09): publishing must never close silently. While the
+desktop prepares files, `chunk8.tsx` supplies concrete stages such as reading
+the project, checking source, preparing backend/frontend, and submitting.
+`ProjectPublishResult.ts` maps every durable state to visible copy:
+`In review`, `Queued`, `Publishing`, `Live`, `Failed`, private, and unlisted.
+`ProjectPublishCompletion.tsx` remains visible until the user taps Back to
+Projects; do not restore timed auto-dismissal. `useProjectPublishStatuses.ts`
+polls nonterminal review/deployment states and project cards retain the current
+label after the modal closes. Review-state listings remain editable/retryable
+so temporary review bypasses or corrected source bundles can be resubmitted.
+Pending runtime publishes use plain-language stages in
+`ProjectPublishResult.ts`: waiting, uploading, building, and final checks.
+`ProjectPublishCompletion.tsx` shows a progress bar plus an honest typical time
+range. Progress must be bounded by the backend deployment status and use
+`deploymentUpdatedAt` only to advance within that stage; it must never reach
+100% until the backend reports the app live. Do not expose internal safety
+scores or hosting-worker terminology in normal customer-facing status copy.
+
+Publish/listing lifecycle (2026-06-09): Projects UI must use the backend
+`listingState`, current/candidate release fields, and `allowedActions` rather
+than treating every status row as a live listing. A project without a listing
+shows `Publish to Explore`; existing listings show lifecycle-aware actions such
+as `Manage listing`, `Continue publishing`, `View publishing status`, or `Fix
+and resubmit`. Saving title, description, tags, icon, or screenshots uses the
+metadata-only listing endpoint and must not collect source, rerun review, or
+create a deployment. `Publish latest version` is the separate release action.
+The visibility selector intentionally exposes only Public and Private until a
+real link-accessible Unlisted contract exists. Making private and deleting
+require destructive confirmations. Status copy distinguishes `Live +
+Updating` and `Live + Update failed`, because the current release remains
+available while a candidate builds or fails. Polling resets when a new
+candidate deployment appears, and same-project polling updates must not
+overwrite a dirty listing form.
+
+Explore frontend (2026-05-20, updated 2026-06-09): `src/screens/workspace/inline/chunk12.tsx` owns the search/sort/feed surface, backed by `useCommunityPage` live post state and sort modes. `chunk13.tsx` is the single-tap visual feed card, `chunk14.tsx` is the single-scroll app detail page, `chunk15.tsx` is the full-page opened-app preview, and `src/screens/workspace/styles/part61.ts` holds the current Explore polish overrides. Keep Explore user-facing as "Explore" while preserving internal `community` state keys. Explore project detail top chrome contains only the back button and account avatar; do not render the project title or other center text in that navbar. The detail Preview gallery renders only real non-empty `screenshotUrls`; never synthesize a preview label or substitute `CommunityPreview` artwork when no screenshot was attached, and omit the entire section when there are no real screenshots. `useCommunityPage` renders bundled sample posts immediately and refreshes `/api/community/projects` in the background; the feed request timeout lives in `src/utils/appApi.ts`. Local like/bookmark IDs persist through `hooks/communityReactionStorage.ts`, while small feed/comment helpers live in `hooks/communityPageHelpers.ts`.
+
+Explore is a cloud/global feed, so mobile release builds must resolve
+`EXPO_PUBLIC_API_URL` to `https://vibyra-production.up.railway.app`. A LAN URL
+such as `http://<desktop>:8000` reads a separate local database and can make
+production publishes appear missing. Root `.env` uses production by default;
+set `EXPO_PUBLIC_API_MODE=local` when intentionally running the local Laravel
+backend. `src/utils/appApi.ts` also falls back to the production API in
+non-development builds when no Expo API URL is provided.
 
 Shared loading surface (2026-05-19, updated 2026-05-21): `src/components/LoadingScreen.tsx` owns the reusable animated Vibyra loading page. Use it for full-page or framed load states that would otherwise expose rough spinners; current callers include initial app boot in `App.tsx`, preview loading in `src/components/AppWebView.*.tsx`, Explore feed loading in `src/screens/workspace/inline/chunk12.tsx`, PC folder browsing in `FolderBrowserModal.tsx`, and the final publish overlay in `ProjectPublishModal.tsx`. The optional `simple` variant removes the outer halo/ring and leaves one centered logo circle; Explore uses this simpler treatment for its compact feed loading state. `app.json` defines the native Expo splash using `src/assets/vibyra.png` on `#07070A`, backed by the `expo-splash-screen` dependency, so cold iOS launches do not show a blank native screen before React mounts. Keep small button/row spinners for quick inline actions such as auth buttons, billing checkout, referral code fetches, image generation buttons, and chat action cards.
 

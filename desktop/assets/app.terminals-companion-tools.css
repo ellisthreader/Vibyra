@@ -1,6 +1,6 @@
 .terminal-setup--with-companion { align-items: stretch; gap: 0; grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px); justify-items: stretch; }
 .terminal-setup--with-companion[data-terminal-companion-mode="memory"] { grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px); }
-.terminal-setup--with-companion .terminal-setup-panel { align-self: center; justify-self: center; }
+.terminal-setup--with-companion .terminal-setup-panel { justify-self: center; }
 .terminal-voice-section, .terminal-memory-section { display: none; }
 .terminal-voice-section.active, .terminal-memory-section.active, .terminal-setup--phone-open .terminal-phone-section { display: grid; }
 .terminal-tool-button {

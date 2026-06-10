@@ -1,0 +1,189 @@
+.profile-billing {
+  display: grid;
+  gap: 22px;
+}
+
+.profile-billing-plan,
+.profile-billing-usage,
+.profile-billing-management {
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  display: grid;
+  gap: 14px;
+  padding: 0 0 22px;
+}
+
+.profile-billing-plan > div {
+  display: grid;
+  gap: 5px;
+}
+
+.profile-billing-plan span,
+.profile-billing-usage-head span,
+.profile-billing-limit span {
+  color: var(--surface-muted, var(--muted));
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.profile-billing-plan h2,
+.profile-billing-management h2 {
+  color: var(--surface-text, var(--text));
+  margin: 0;
+}
+
+.profile-billing-plan h2 {
+  font-size: 30px;
+  font-weight: 720;
+  line-height: 36px;
+}
+
+.profile-billing-plan p,
+.profile-billing-management p {
+  color: var(--surface-muted, var(--muted));
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0;
+}
+
+.profile-billing-refresh {
+  color: var(--surface-text, var(--text)) !important;
+}
+
+.profile-billing-cancellation-date {
+  color: var(--surface-danger, var(--danger)) !important;
+  font-size: 13px !important;
+}
+
+.profile-billing-usage-head,
+.profile-billing-limit {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.profile-billing-usage-head strong,
+.profile-billing-limit strong {
+  color: var(--surface-text, var(--text));
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.profile-billing-limits {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-billing-limit {
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  padding-top: 12px;
+}
+
+.profile-billing-management {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.profile-billing-management > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.profile-billing-status {
+  color: var(--surface-muted, var(--muted));
+  font-size: 12px;
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
+
+.profile-billing-status.is-danger { color: var(--surface-danger, var(--danger)); }
+
+.profile-billing-management h2 {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.profile-billing-management--static {
+  grid-template-columns: 1fr;
+}
+
+.profile-billing-management--secure {
+  align-items: start;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+}
+
+.profile-billing-security-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-billing-security-details {
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  display: grid;
+  margin: 0;
+  padding: 2px 14px;
+}
+
+.profile-billing-security-details div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 0;
+}
+
+.profile-billing-security-details div + div {
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+}
+
+.profile-billing-security-details dt {
+  color: var(--surface-muted, var(--muted));
+  font-size: 13px;
+}
+
+.profile-billing-security-details dd {
+  color: var(--surface-text, var(--text));
+  font-size: 13px;
+  font-weight: 650;
+  margin: 0;
+}
+
+.profile-billing-security-details dd span {
+  color: var(--surface-success, #57d39b);
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+.profile-billing-provider {
+  background: transparent;
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  border-radius: 7px;
+  color: var(--surface-muted, var(--muted));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 9px 12px;
+}
+
+.profile-billing-provider:hover {
+  border-color: var(--surface-border-strong, rgba(255, 255, 255, 0.14));
+  color: var(--surface-text, var(--text));
+}
+
+@media (max-width: 720px) {
+  .profile-billing-limits,
+  .profile-billing-management {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-billing-provider,
+  .profile-billing-management > button {
+    width: 100%;
+  }
+
+  .profile-billing-security-details div {
+    align-items: start;
+    flex-direction: column;
+    gap: 3px;
+  }
+}

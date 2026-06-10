@@ -1,7 +1,6 @@
 function ensureDesktopSessions() {
   if (!profileSessionsLoaded && !profileSessionsLoading) loadDesktopSessions();
 }
-
 function resetProfileSessions() {
   profileSessions = [];
   profileSessionsError = "";
@@ -23,7 +22,13 @@ function renderProfileSessionsPanel() {
   if (!profileSessions.length) {
     return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2></div><p class="profile-session-empty">No signed-in devices found.</p></section>`;
   }
-  return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2><span>${count} device${count === 1 ? "" : "s"}</span></div><div class="profile-device-list" role="list" aria-label="Signed-in devices">${profileSortedSessions().map(profileSessionRow).join("")}</div></section>`;
+  return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2><span>${count} device${count === 1 ? "" : "s"}</span></div>
+    <div class="profile-device-table-wrap">
+      <table class="profile-device-table"><caption class="profile-visually-hidden">Devices currently signed in to this Vibyra account</caption>
+        <thead><tr><th scope="col">Device</th><th scope="col">Type</th><th scope="col">Location</th><th scope="col">Last active</th><th scope="col"><span class="profile-visually-hidden">Actions</span></th></tr></thead>
+        <tbody>${profileSortedSessions().map(profileSessionRow).join("")}</tbody>
+      </table>
+    </div></section>`;
 }
 
 function profileSessionRow(session) {
@@ -32,18 +37,20 @@ function profileSessionRow(session) {
   const menuOpen = profileSessionMenuId === id;
   const name = profileDeviceName(session);
   const location = profileDeviceLocation(session);
+  const ipAddress = profileDeviceIp(session, location);
   const kind = profileDeviceKind(session);
   const current = session.current ? `<em>Current</em>` : "";
   const updated = profileShortDate(session.updatedAt);
   const menu = menuOpen
     ? `<div class="profile-session-menu"><button type="button" data-device-revoke="${escapeAttribute(id)}" ${busy ? "disabled" : ""}>${busy ? "Terminating..." : "Terminate"}</button></div>`
     : "";
-  return `<div class="profile-device-row${session.current ? " is-current" : ""}" role="listitem">
-    <span class="profile-device-dot" aria-hidden="true"></span>
-    <span class="profile-device-name"><strong>${escapeHtml(name)}</strong><small>${current}<span>${escapeHtml(kind)} &middot; ${escapeHtml(location)}</span></small></span>
-    <span class="profile-device-activity" aria-label="Last active ${escapeAttribute(updated)}"><strong>${escapeHtml(updated)}</strong></span>
-    <span class="profile-session-actions"><button class="profile-session-menu-button" type="button" data-device-menu="${escapeAttribute(id)}" aria-label="Device actions" aria-expanded="${menuOpen ? "true" : "false"}">${icon("menu")}</button>${menu}</span>
-  </div>`;
+  return `<tr class="profile-device-row${session.current ? " is-current" : ""}">
+    <td class="profile-device-name" data-label="Device"><span class="profile-device-dot" aria-hidden="true"></span><strong>${escapeHtml(name)}</strong>${current}</td>
+    <td class="profile-device-kind" data-label="Type">${escapeHtml(kind)}</td>
+    <td class="profile-device-location" data-label="Location"><span>${escapeHtml(location)}</span>${ipAddress ? `<small>${escapeHtml(ipAddress)}</small>` : ""}</td>
+    <td class="profile-device-activity" data-label="Last active"><time datetime="${escapeAttribute(session.updatedAt || "")}">${escapeHtml(updated)}</time></td>
+    <td class="profile-session-actions"><button class="profile-session-menu-button" type="button" data-device-menu="${escapeAttribute(id)}" aria-label="Actions for ${escapeAttribute(name)}" aria-expanded="${menuOpen ? "true" : "false"}">${icon("menu")}</button>${menu}</td>
+  </tr>`;
 }
 
 function profileSortedSessions() {
@@ -70,13 +77,10 @@ function profileDeviceName(session) {
   return "Vibyra device";
 }
 
-function profileDeviceLocation(session) {
-  return String(session?.location || session?.ipAddress || "Unknown location").trim() || "Unknown location";
-}
-
 function profileDeviceKind(session) {
   const text = `${session?.deviceName || ""} ${session?.userAgent || ""}`.toLowerCase();
-  if (/iphone|ipad|android|phone|mobile|vibyra app/.test(text)) return "Phone";
+  if (/ipad|tablet/.test(text)) return "Tablet";
+  if (/iphone|android|phone|mobile|vibyra app/.test(text)) return "Phone";
   if (/desktop|windows|macintosh|linux|x11|electron/.test(text)) return "Desktop";
   return "Device";
 }

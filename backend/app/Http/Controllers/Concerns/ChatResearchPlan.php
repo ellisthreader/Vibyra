@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Services\Billing\BillingReservationException;
+use App\Services\Billing\ChatCostReservationService;
+use App\Services\Billing\CreditCalculator;
+use App\Services\Billing\OpenRouterRequestPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -16,7 +20,7 @@ trait ChatResearchPlan
 
     public function chatResearchPlan(Request $request): JsonResponse
     {
-        $this->authenticatedUser($request);
+        $user = $this->authenticatedUser($request);
 
         $prompt = trim((string) $request->input('prompt', ''));
         if ($prompt === '') {
@@ -31,7 +35,36 @@ trait ChatResearchPlan
             return $this->json(['ok' => false, 'error' => 'OpenRouter is not configured on the Vibyra backend.'], 500);
         }
 
+        $calculator = app(CreditCalculator::class);
+        $reservations = app(ChatCostReservationService::class);
+        $inputTokens = max(1, (int) ceil(mb_strlen($prompt) / 4));
         try {
+            $reservation = $reservations->reserve(
+                $user,
+                'research-plan:'.Str::uuid()->toString(),
+                'tool-deep-research',
+                max(1, $calculator->estimateCredits(
+                    'tool-deep-research',
+                    $inputTokens,
+                    self::RESEARCH_PLAN_MAX_TOKENS
+                )),
+                (int) ceil($calculator->estimateReservationUsd(
+                    'tool-deep-research',
+                    $inputTokens,
+                    self::RESEARCH_PLAN_MAX_TOKENS
+                ) * 1_000_000),
+                ['tool' => 'research-plan'],
+            );
+        } catch (BillingReservationException $error) {
+            return $this->json([
+                'ok' => false,
+                'error' => $error->getMessage(),
+                'code' => $error->errorCode,
+            ], $error->status);
+        }
+
+        try {
+            $reservations->markProviderStarted($reservation);
             $response = Http::timeout(20)
                 ->acceptJson()
                 ->withToken($apiKey)
@@ -39,18 +72,44 @@ trait ChatResearchPlan
                     'HTTP-Referer' => (string) config('app.url', 'http://localhost'),
                     'X-Title' => 'Vibyra',
                 ])
-                ->post((string) config('services.openrouter.url'), $this->researchPlanPayload($prompt));
+                ->post((string) config('services.openrouter.url'), [
+                    ...$this->researchPlanPayload($prompt),
+                    'provider' => app(OpenRouterRequestPolicy::class)->provider('tool-deep-research'),
+                ]);
         } catch (Throwable) {
+            $reservations->settle($reservation, [[
+                'billable' => true,
+                'outcome' => 'transport_error_after_dispatch',
+                'charge_reserved_estimate' => true,
+            ]]);
             return $this->json(['ok' => false, 'error' => 'Could not create a Deep Research plan.'], 502);
         }
 
+        $usage = (array) ($response->json('usage') ?? []);
         if (! $response->successful()) {
+            if ($usage === []) {
+                $reservations->release($reservation, 'provider_error_without_usage');
+            } else {
+                $reservations->settle($reservation, [[
+                    'billable' => true,
+                    'outcome' => 'provider_error',
+                    'usage' => $usage,
+                ]]);
+            }
             $message = $response->json('error.message') ?: $response->json('message') ?: 'OpenRouter could not create a Deep Research plan.';
             return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
         }
 
         $content = $this->openRouterCompletionContent($response->json() ?? []);
         $plan = $this->parseResearchPlan($content);
+        $ledger = $reservations->settle($reservation, [[
+            'billable' => true,
+            'outcome' => $plan === null ? 'malformed_response' : 'completed',
+            'usage' => $usage,
+            'estimated_input_tokens' => $inputTokens,
+            'estimated_output_tokens' => self::RESEARCH_PLAN_MAX_TOKENS,
+            'minimum_credits' => 1,
+        ]]);
         if ($plan === null) {
             return $this->json(['ok' => false, 'error' => 'OpenRouter returned a malformed Deep Research plan.'], 502);
         }
@@ -60,6 +119,7 @@ trait ChatResearchPlan
             'title' => $plan['title'],
             'steps' => $plan['steps'],
             'model' => self::RESEARCH_PLAN_MODEL,
+            'creditCost' => abs((int) $ledger->credits_delta),
         ]);
     }
 

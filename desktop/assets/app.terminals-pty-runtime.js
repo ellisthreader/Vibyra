@@ -1,26 +1,49 @@
 async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
-  const size = initialPtyStartSize(terminal.id);
+  const size = backendPtySize(terminal, initialPtyStartSize(terminal.id));
+  const initialPrompt = normalizeInitialTerminalPrompt(terminal.initialPrompt);
+  const assignmentId = initialPrompt
+    ? (terminal.initialAssignmentId
+      || (typeof terminalTaskActivityStart === "function"
+        ? terminalTaskActivityStart(terminal, initialPrompt)
+        : `assignment-${terminal.id}-${Date.now()}`))
+    : "";
+  if (assignmentId) terminal.initialAssignmentId = assignmentId;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, cols: size.cols, rows: size.rows }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, cols: size.cols, rows: size.rows, ...(initialPrompt ? { initialPrompt, assignmentId } : {}) }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
-    const hasInitialPrompt = Boolean(String(terminal.initialPrompt || "").trim());
-    Object.assign(terminal, ptySessionPatch(result.session), { pending: hasInitialPrompt });
+    Object.assign(terminal, ptySessionPatch(result.session), { pending: Boolean(initialPrompt) });
     if (terminal.workspaceNotice && !terminal.notice) terminal.notice = terminal.workspaceNotice;
     try {
-      await submitInitialPtyPrompt(terminal);
+      if (result.assignment) {
+        acceptInitialPtyAssignment(terminal, result.assignment, assignmentId);
+        delete terminal.initialPrompt;
+        delete terminal.initialAssignmentId;
+      } else {
+        await submitInitialPtyPrompt(terminal);
+      }
     } catch (error) {
       terminal.notice = error instanceof Error ? error.message : "The terminal task could not be delivered.";
     }
     terminal.pending = false;
     if (terminal.ptyStatus !== "unavailable") connectPtyTerminal(terminal);
   } catch (error) {
+    if (assignmentId && typeof terminalTaskActivityFailed === "function") {
+      terminalTaskActivityFailed(terminal, assignmentId);
+    }
     terminal.pending = false;
     terminal.ptyStatus = "exited";
-    terminal.notice = error instanceof Error ? error.message : "Terminal failed to start.";
+    terminal.providerState = "exited";
+    terminal.providerBusy = false;
+    terminal.notice = error?.name === "AbortError"
+      ? "Terminal startup timed out. Try opening it again."
+      : error instanceof Error ? error.message : "Terminal failed to start.";
   } finally {
+    clearTimeout(timeout);
     delete terminal.ptyStartQueued;
     terminal.updatedAt = Date.now();
     saveTerminals();
@@ -31,6 +54,23 @@ async function startPtyTerminal(terminal) {
         render();
       }
     }
+  }
+}
+
+function acceptInitialPtyAssignment(terminal, assignment, assignmentId) {
+  const provider = normalizedPtyProviderState({
+    providerState: assignment.providerState,
+    status: terminal.ptyStatus
+  });
+  terminal.providerState = provider.state;
+  terminal.providerReady = provider.ready;
+  terminal.providerBusy = provider.busy;
+  terminal.notice = null;
+  if (typeof terminalTaskActivityAccepted === "function") {
+    terminalTaskActivityAccepted(terminal, {
+      assignmentId: assignment.assignmentId || assignmentId,
+      acceptedAt: assignment.acceptedAt
+    });
   }
 }
 
@@ -77,13 +117,7 @@ async function submitInitialPtyPrompt(terminal) {
 }
 
 function terminalTaskInputPrompt(terminal, value) {
-  const prompt = String(value || "").trim();
-  if (!prompt || normalizeTerminalAgent(terminal?.agent) !== "vibyra") return prompt;
-  return prompt
-    .split(/\r\n|\r|\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join(" | ");
+  return String(value || "").trim();
 }
 
 let ptyCollectionSyncTimer = null;
@@ -92,15 +126,31 @@ let terminalXtermResizeFrame = 0;
 let terminalXtermResizeObserver = null;
 const terminalXtermObservedNodes = new WeakSet();
 const terminalXtermPendingResizeNodes = new Set();
+const terminalXtermSettledFits = new Map();
+const terminalXtermLayoutSettleDelay = 120;
 
 function queueStartPtyTerminal(terminal) {
   if (!terminal || terminal.ptyStartQueued) return;
   terminal.ptyStartQueued = true;
+  const launch = () => {
+    if (!findTerminal(terminal.id)) return;
+    try {
+      mountVisibleXterms();
+    } catch (error) {
+      console.error("Could not mount xterm before terminal launch.", error);
+    }
+    void startPtyTerminal(terminal);
+  };
+  if (typeof queueMicrotask === "function") queueMicrotask(launch);
+  else Promise.resolve().then(launch);
   const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
   schedule(() => schedule(() => {
     if (!findTerminal(terminal.id)) return;
-    mountVisibleXterms();
-    void startPtyTerminal(terminal);
+    try {
+      mountVisibleXterms();
+    } catch (error) {
+      console.error("Could not mount xterm before terminal launch.", error);
+    }
   }));
 }
 
@@ -114,6 +164,8 @@ function connectPtyTerminal(terminal) {
     clearTimeout(terminalPtyReconnectTimers[terminal.id]);
     delete terminalPtyReconnectTimers[terminal.id];
     terminalPtyReconnectAttempts[terminal.id] = 0;
+    mountVisibleXterms();
+    schedulePtyXtermFit(terminal.id, { forceBackend: true });
     schedulePtyCollectionSync(250);
   };
   socket.onmessage = (event) => handlePtySocketMessage(terminal.id, event.data);
@@ -161,7 +213,7 @@ function handlePtySocketMessage(id, raw) {
     syncPtyXtermOutput(terminal);
     shouldRender = true;
   } else if (payload.type === "output") {
-    appendPtyOutput(terminal, payload.data || "", {
+    shouldRender = appendPtyOutput(terminal, payload.data || "", {
       assignmentId: payload.assignmentId || payload.assignment?.id || "",
       emittedAt: payload.emittedAt || payload.timestamp || ""
     });
@@ -180,6 +232,11 @@ function handlePtySocketMessage(id, raw) {
 
 const previousRenderTerminalsPage = renderTerminalsPage;
 renderTerminalsPage = function renderPtyTerminalsPage() {
+  if (terminalBatchSetupOpen) {
+    previousRenderTerminalsPage();
+    ptyRenderedSignature = ptyTerminalDomSignature();
+    return;
+  }
   const signature = ptyTerminalDomSignature();
   if (!forceTerminalRender && ptyRenderedSignature === signature && refreshPtyTerminalsDom()) {
     bindPtyTopbarControls();
@@ -200,10 +257,17 @@ const previousSetActiveTerminal = setActiveTerminal;
 setActiveTerminal = function setActivePtyTerminal(id) {
   if (!findTerminal(id)) return previousSetActiveTerminal(id);
   activeTerminalId = id;
+  if (typeof activateTerminalProjectForTerminal === "function") activateTerminalProjectForTerminal(findTerminal(id));
+  if (fullscreenTerminalId) {
+    fullscreenTerminalId = id;
+    localStorage.setItem(terminalFullscreenKey, id);
+  }
+  if (typeof rememberActiveTerminalForProject === "function") rememberActiveTerminalForProject(findTerminal(id));
   settingsTerminalId = "";
   saveTerminals();
   if (activePage === "terminals" && refreshPtyTerminalsDom()) {
     renderTopbar();
+    renderNav();
     bindPtyTopbarControls();
     focusPtyTerminal(id);
     return;
@@ -268,8 +332,11 @@ function bindPtyTopbarControls() {
     event.stopPropagation();
     toggleTerminalSettings(button.dataset.terminalSettings);
   }));
+  if (typeof bindTerminalFullscreenControls === "function") bindTerminalFullscreenControls(document);
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(document);
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
+  if (typeof bindTerminalRuntimeControls === "function") bindTerminalRuntimeControls(document);
+  if (typeof bindTerminalProjectWorkspaceControls === "function") bindTerminalProjectWorkspaceControls(document);
   document.querySelectorAll("[data-terminal-model-search]").forEach((input) => {
     if (input.dataset.ptyModelSearchBound) return;
     input.dataset.ptyModelSearchBound = "1";
@@ -338,6 +405,8 @@ function handlePtyKeydown(event, id) {
 }
 
 function sendPtyInput(id, input) {
+  const terminal = findTerminal(id);
+  if (terminal && /[\r\n]/.test(input)) markTerminalProviderBusy(terminal);
   const socket = terminalPtySockets[id];
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "input", data: input }));
   else fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/input`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) })
@@ -359,16 +428,97 @@ function setPtyInputNotice(id, message) {
 }
 
 function appendPtyOutput(terminal, data, meta = {}) {
+  const previousState = terminal.providerState;
   terminal.output = String((terminal.output || "") + String(data || "")).slice(-60000);
   terminal.ptyStatus = terminal.ptyStatus === "starting" ? "running" : terminal.ptyStatus;
   terminal.pending = false;
+  applyTerminalProviderActivity(terminal, data);
   terminal.updatedAt = Date.now();
   if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data, meta);
   const xterm = terminalXterms[terminal.id];
   if (xterm?.element?.isConnected) {
-    xterm.write(data);
+    xterm.write(terminalDisplayOutput(terminal, data), () => {
+      applyPtyBottomOverscan(terminal, xterm);
+      xterm.scrollToBottom?.();
+    });
     terminalXtermSnapshots[terminal.id] = terminal.output;
   }
+  return previousState !== terminal.providerState;
+}
+
+function markTerminalProviderBusy(terminal) {
+  if (!terminal || ["fallback-shell", "exited", "unavailable"].includes(terminal.providerState)) return;
+  const changed = terminal.providerState !== "busy";
+  terminal.providerState = "busy";
+  terminal.providerReady = true;
+  terminal.providerBusy = true;
+  terminal.providerBusyObserved = false;
+  terminal.updatedAt = Date.now();
+  if (changed && activePage === "dashboard") renderDashboard();
+}
+
+function applyTerminalProviderActivity(terminal, data) {
+  const signal = terminalProviderActivitySignal(terminal?.agent, data);
+  if (signal === "busy") {
+    markTerminalProviderBusy(terminal);
+    terminal.providerBusyObserved = true;
+    return;
+  }
+  if (signal !== "ready") return;
+  if (terminal.providerState === "starting") {
+    terminal.providerState = "ready";
+    terminal.providerReady = true;
+    terminal.providerBusy = false;
+    terminal.providerBusyObserved = false;
+    return;
+  }
+  if (terminal.providerState !== "busy") return;
+  if (normalizeTerminalAgent(terminal.agent) === "codex" && !terminal.providerBusyObserved) return;
+  terminal.providerState = "ready";
+  terminal.providerReady = true;
+  terminal.providerBusy = false;
+  terminal.providerBusyObserved = false;
+}
+
+function terminalProviderActivitySignal(agent, data) {
+  const value = String(data || "");
+  if (!value) return "";
+  if (normalizeTerminalAgent(agent) === "codex") {
+    const titles = Array.from(value.matchAll(/\x1b\]0;([^\x07]*)\x07/g));
+    const title = titles.at(-1)?.[1] || "";
+    if (title) return /^[\u2800-\u28ff]\s/.test(title) ? "busy" : "ready";
+    return [
+      "Explain this codebase",
+      "Summarize recent commits",
+      "Implement {feature}",
+      "Find and fix a bug in @filename",
+      "Write tests for @filename",
+      "Improve documentation in @filename",
+      "Run /review on my current changes"
+    ].some((placeholder) => value.includes(placeholder)) ? "ready" : "";
+  }
+  if (normalizeTerminalAgent(agent) === "vibyra") {
+    const plain = terminalPlainActivityOutput(value);
+    if (/(?:^|[\r\n])(?:│\s*)?[❯›>](?:\s+auto)?\s*$/.test(plain)) return "ready";
+  }
+  const plain = terminalPlainActivityOutput(value);
+  if (normalizeTerminalAgent(agent) === "claude" && (
+    /Claude\s*Code\s*v?\d/i.test(plain) && /❯\s*(?:Try\b|$)/m.test(plain)
+    || /(?:^|[\r\n])❯\s*$/m.test(plain)
+  )) return "ready";
+  if (normalizeTerminalAgent(agent) === "gemini" && (
+    /Do you trust the files in this folder\?/i.test(plain)
+    || /Type your message or @path\/to\/file/i.test(plain)
+    || /(?:^|[\r\n])>\s*$/m.test(plain)
+  )) return "ready";
+  return "";
+}
+
+function terminalPlainActivityOutput(value) {
+  return String(value)
+    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, "")
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
+    .replace(/\u00a0/g, " ");
 }
 
 function mountVisibleXterms() {
@@ -394,19 +544,29 @@ function mountVisibleXterms() {
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
         fontSize: 13,
         lineHeight: 1.18,
-        rows: 34,
-        cols: 120,
+        rows: normalizedPtyDimension(terminal.rows, 30, 4, 240),
+        cols: normalizedPtyDimension(terminal.cols, 100, 18, 180),
+        scrollOnUserInput: true,
         scrollback: 5000,
         theme: terminalXtermTheme(node)
       });
       terminalXterms[id] = xterm;
+      if (typeof attachTerminalEditorLinkProvider === "function") {
+        attachTerminalEditorLinkProvider(id, xterm);
+      }
       xterm.onData((data) => {
         if (terminalXterms[id] !== xterm || !xterm.element?.isConnected) return;
-        if (!terminalXtermReplayWrites[id]) sendPtyInput(id, data);
+        if (!terminalXtermReplayWrites[id]) {
+          xterm.scrollToBottom?.();
+          sendPtyInput(id, data);
+        }
       });
     } else {
       xterm.options.theme = terminalXtermTheme(node);
       xterm.options.screenReaderMode = false;
+    }
+    if (typeof attachTerminalEditorLinkProvider === "function") {
+      attachTerminalEditorLinkProvider(id, xterm);
     }
     if (!xterm.element || xterm.element.parentElement !== node) {
       node.replaceChildren();
@@ -417,6 +577,7 @@ function mountVisibleXterms() {
     }
     observeTerminalXtermNode(node);
     fitPtyXterm(id, node, terminal);
+    schedulePtyXtermFit(id);
   });
 }
 
@@ -441,10 +602,16 @@ function syncPtyXtermOutput(terminal) {
 
 function writePtySnapshot(id, xterm, output) {
   terminalXtermReplayWrites[id] = (terminalXtermReplayWrites[id] || 0) + 1;
-  xterm.write(output, () => {
+  xterm.write(terminalDisplayOutput(findTerminal(id), output), () => {
     terminalXtermReplayWrites[id] = Math.max(0, (terminalXtermReplayWrites[id] || 1) - 1);
     if (!terminalXtermReplayWrites[id]) delete terminalXtermReplayWrites[id];
+    applyPtyBottomOverscan(findTerminal(id), xterm);
+    xterm.scrollToBottom?.();
   });
+}
+
+function terminalDisplayOutput(_terminal, value) {
+  return value;
 }
 
 function focusPtyTerminal(id) {
@@ -454,30 +621,78 @@ function focusPtyTerminal(id) {
     activeTerminalId = id;
     saveTerminals();
     renderTopbar();
+    refreshPtyTerminalsDom();
   }
   const xterm = terminalXterms[id];
   if (xterm) {
+    xterm.scrollToBottom?.();
     xterm.focus?.();
     return;
   }
   nodes.content.querySelector(`[data-terminal-input="${CSS.escape(id)}"]`)?.focus?.();
 }
 
-function fitPtyXterm(id, node, terminal = findTerminal(id)) {
+function fitPtyXterm(id, node, terminal = findTerminal(id), options = {}) {
   const xterm = terminalXterms[id];
   if (!xterm || !node?.isConnected) return;
+  if (document.visibilityState === "hidden") return;
   const rect = node.getBoundingClientRect();
   if (rect.width < 80 || rect.height < 48) return;
-  const size = measuredPtySize(node);
+  const size = measuredPtySize(node, xterm);
+  const backendSize = backendPtySize(terminal, size);
   const previous = terminalXtermSizes[id] || {};
-  if (previous.cols === size.cols && previous.rows === size.rows && xterm.cols === size.cols && xterm.rows === size.rows) return;
+  const backendMatches = Number(terminal?.cols) === backendSize.cols
+    && Number(terminal?.rows) === backendSize.rows;
+  const rendererMatches = previous.cols === size.cols
+    && previous.rows === size.rows
+    && previous.bottomInset === size.bottomInset
+    && xterm.cols === size.cols
+    && xterm.rows === backendSize.rows;
   terminalXtermSizes[id] = size;
-  try { xterm.resize(size.cols, size.rows); } catch {}
-  if (terminal) {
-    terminal.cols = size.cols;
-    terminal.rows = size.rows;
+  applyPtyBottomOverscan(terminal, xterm, size);
+  if (!options.forceBackend && rendererMatches && backendMatches) return;
+  if (xterm.cols !== backendSize.cols || xterm.rows !== backendSize.rows) {
+    try { xterm.resize(backendSize.cols, backendSize.rows); } catch {}
+    applyPtyBottomOverscan(terminal, xterm, size);
   }
-  sendPtyResize(id, size.cols, size.rows);
+  if (terminal) {
+    terminal.cols = backendSize.cols;
+    terminal.rows = backendSize.rows;
+  }
+  if (options.forceBackend || !backendMatches) {
+    sendPtyResize(id, backendSize.cols, backendSize.rows);
+  }
+}
+
+function schedulePtyXtermFit(id, options = {}) {
+  const run = () => {
+    const node = document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`);
+    if (node?.isConnected) fitPtyXterm(id, node, findTerminal(id), options);
+  };
+  const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
+  schedule(() => schedule(run));
+  setTimeout(run, 180);
+}
+
+function scheduleSettledPtyXtermFit(id, options = {}) {
+  if (!id) return;
+  const pending = terminalXtermSettledFits.get(id) || { timer: 0, forceBackend: false };
+  clearTimeout(pending.timer);
+  pending.forceBackend = pending.forceBackend || Boolean(options.forceBackend);
+  pending.timer = setTimeout(() => {
+    terminalXtermSettledFits.delete(id);
+    const node = document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`);
+    if (!node?.isConnected) return;
+    fitPtyXterm(id, node, findTerminal(id), { forceBackend: pending.forceBackend });
+  }, terminalXtermLayoutSettleDelay);
+  terminalXtermSettledFits.set(id, pending);
+}
+
+function cancelSettledPtyXtermFit(id) {
+  const pending = terminalXtermSettledFits.get(id);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  terminalXtermSettledFits.delete(id);
 }
 
 function ensureTerminalXtermResizeObserver() {
@@ -492,7 +707,7 @@ function ensureTerminalXtermResizeObserver() {
       terminalXtermPendingResizeNodes.clear();
       for (const node of pending) {
         const id = node.dataset.terminalXterm || "";
-        if (id) fitPtyXterm(id, node);
+        if (id) scheduleSettledPtyXtermFit(id);
       }
     });
   });
@@ -504,25 +719,114 @@ function observeTerminalXtermNode(node) {
   terminalXtermResizeObserver.observe(node);
 }
 
-function measuredPtySize(node) {
+function measuredPtySize(node, xterm = null) {
   const rect = node.getBoundingClientRect();
   const styles = getComputedStyle(node);
   const fontSize = Number.parseFloat(styles.fontSize) || 13;
   const paddingX = (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
   const paddingY = (Number.parseFloat(styles.paddingTop) || 0) + (Number.parseFloat(styles.paddingBottom) || 0);
-  const cols = Math.max(18, Math.min(180, Math.floor(Math.max(0, rect.width - paddingX - 8) / (fontSize * 0.62))));
-  const rows = Math.max(4, Math.min(80, Math.floor(Math.max(0, rect.height - paddingY - 8) / (fontSize * 1.22))));
-  return { cols, rows };
+  const cell = xterm?._core?._renderService?.dimensions?.css?.cell;
+  const viewport = xterm?.element?.querySelector?.(".xterm-viewport");
+  const cellWidth = Number(cell?.width) || fontSize * 0.62;
+  const cellHeight = Number(cell?.height) || fontSize * 1.22;
+  const availableWidth = viewport?.clientWidth || Math.max(0, rect.width - paddingX - 8);
+  const visibleHeight = Math.max(0, rect.height - paddingY);
+  const availableHeight = Math.min(viewport?.clientHeight || visibleHeight, visibleHeight);
+  const cols = Math.max(18, Math.min(180, Math.floor(availableWidth / cellWidth)));
+  const rows = Math.max(4, Math.min(80, Math.round(availableHeight / cellHeight)));
+  const bottomInset = terminalPtyBottomInsetForGeometry(availableHeight, cellHeight, rows);
+  return { cols, rows, bottomInset };
 }
 
 function initialPtyStartSize(id) {
   const node = nodes.content.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"], [data-terminal-input="${CSS.escape(id)}"]`);
-  if (node?.isConnected) return measuredPtySize(node);
+  if (node?.isConnected) return measuredPtySize(node, terminalXterms[id]);
   const terminal = findTerminal(id);
   return {
     cols: Number.isFinite(Number(terminal?.cols)) ? Number(terminal.cols) : 100,
-    rows: Number.isFinite(Number(terminal?.rows)) ? Number(terminal.rows) : 30
+    rows: rendererPtyRows(
+      terminal,
+      Number.isFinite(Number(terminal?.rows)) ? Number(terminal.rows) : 30
+    )
   };
+}
+
+function backendPtySize(terminal, size) {
+  return {
+    cols: size.cols,
+    rows: size.rows + terminalPtyBottomOverscanRows(terminal)
+  };
+}
+
+function rendererPtyRows(terminal, backendRows) {
+  return Math.max(4, backendRows - terminalPtyBottomOverscanRows(terminal));
+}
+
+function terminalPtyBottomInsetForGeometry(availableHeight, cellHeight, rows) {
+  const fractionalOverflow = (rows * cellHeight) - availableHeight;
+  const overflowInset = Math.ceil(Math.max(0, fractionalOverflow - 0.25));
+  return overflowInset + 3;
+}
+
+function applyPtyBottomOverscan(terminal, xterm, measuredSize = null) {
+  const element = xterm?.element;
+  if (!element) return;
+  const rows = terminalPtyBottomOverscanRows(terminal);
+  const cellHeight = Number(xterm?._core?._renderService?.dimensions?.css?.cell?.height) || 0;
+  const extraHeight = rows * cellHeight;
+  const inset = terminalPtyBottomInsetPixels(terminal, measuredSize);
+  const totalHeight = extraHeight + inset;
+  const overscanOffset = terminalPtyBottomRowsContainContent(xterm, rows) ? extraHeight : 0;
+  const bottomAnchorOffset = terminalPtyBottomAnchorRows(terminal, xterm) * cellHeight;
+  const offset = inset + overscanOffset - bottomAnchorOffset;
+  element.style.height = totalHeight ? `calc(100% + ${totalHeight}px)` : "";
+  element.style.transform = offset ? `translateY(${-offset}px)` : "";
+}
+
+function terminalPtyBottomRowsContainContent(xterm, rows) {
+  const buffer = xterm?.buffer?.active;
+  if (!buffer || !rows) return false;
+  const firstRow = Math.max(0, Number(xterm.rows || 0) - rows);
+  for (let row = firstRow; row < Number(xterm.rows || 0); row += 1) {
+    const line = buffer.getLine(buffer.viewportY + row);
+    if (line?.translateToString(true).trim()) return true;
+  }
+  return false;
+}
+
+function terminalPtyBottomAnchorRows(terminal, xterm) {
+  const reserveRows = terminalPtyBottomOverscanRows(terminal);
+  const buffer = xterm?.buffer?.active;
+  const totalRows = Number(xterm?.rows || 0);
+  if (!buffer || !reserveRows || !totalRows) return 0;
+  const visibleRows = Math.max(1, totalRows - reserveRows);
+  for (let row = totalRows - 1; row >= 0; row -= 1) {
+    const line = buffer.getLine(buffer.viewportY + row);
+    if (!line?.translateToString(true).trim()) continue;
+    return Math.max(0, visibleRows - (row + 1));
+  }
+  return 0;
+}
+
+function terminalPtyBottomOverscanRows(terminal) {
+  const runtimeId = String(terminal?.launchPlan?.runtimeId || "").toLowerCase();
+  const agent = String(terminal?.agent || "").toLowerCase();
+  const model = String(terminal?.model || "").toLowerCase();
+  const codexModel = model.startsWith("gpt-")
+    || model.includes("/gpt-")
+    || model.includes("codex")
+    || /^o[134](?:-|$)/.test(model);
+  return runtimeId === "codex" || agent === "codex" || (agent === "vibyra" && codexModel)
+    ? 2
+    : 0;
+}
+
+function terminalPtyBottomInsetPixels(terminal, measuredSize = null) {
+  const storedSize = typeof terminalXtermSizes === "object"
+    ? terminalXtermSizes[terminal?.id]
+    : null;
+  const inset = Number(measuredSize?.bottomInset ?? storedSize?.bottomInset);
+  return Number.isFinite(inset) ? Math.max(0, inset) : 0;
 }
 
 function sendPtyResize(id, cols, rows) {
@@ -549,6 +853,8 @@ function ptyTerminalDomSignature() {
   ].join(":"));
   return JSON.stringify({
     layout: terminalLayout,
+    fullscreen: typeof fullscreenTerminalId === "string" ? fullscreenTerminalId : "",
+    activeProject: typeof activeTerminalProjectKey === "function" ? activeTerminalProjectKey() : "",
     visibleIds,
     structural
   });
@@ -558,6 +864,7 @@ function patchPtyTerminalStructure() {
   const page = nodes.content.querySelector(".terminal-page");
   const stage = page?.querySelector(".terminal-stage");
   if (!page || !stage) return false;
+  if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
   const grid = terminalLayout === "grid";
   if (page.classList.contains("grid-mode") !== grid) return false;
   syncPtyTerminalGrid(page, grid);
@@ -579,11 +886,14 @@ function patchPtyTerminalStructure() {
 }
 
 function syncPtyTerminalGrid(page, grid) {
+  if (typeof syncTerminalFullscreenState === "function") syncTerminalFullscreenState();
+  page.classList.toggle("terminal-page--terminal-fullscreen", Boolean(fullscreenTerminalId));
   page.classList.toggle("grid-mode", grid);
   page.classList.remove("terminal-grid-many");
   page.removeAttribute("style");
   if (!grid || typeof terminalGridMeta !== "function") return;
-  const gridMeta = terminalGridMeta(terminals.length);
+  const projectTerminals = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  const gridMeta = terminalGridMeta(projectTerminals.length);
   if (gridMeta.className) page.classList.add(gridMeta.className);
   page.style.setProperty("--terminal-grid-cols", gridMeta.cols);
   page.style.setProperty("--terminal-grid-rows", gridMeta.rows);
@@ -595,6 +905,7 @@ function refreshPtyTerminalsDom() {
   if (!terminals.length) return false;
   const page = nodes.content.querySelector(".terminal-page");
   if (!page) return false;
+  if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
   const visible = terminals;
   let stable = true;
   for (const terminal of visible) stable = refreshPtyTerminalDom(terminal) && stable;
@@ -622,6 +933,7 @@ function refreshPtyTerminalDom(terminal) {
       : "";
     const noticeHtml = `${escapeHtml(terminal.notice)}${checkpoint}`;
     if (noticeText && noticeText.innerHTML !== noticeHtml) noticeText.innerHTML = noticeHtml;
+    if (typeof bindTerminalNoticeControls === "function") bindTerminalNoticeControls(notice);
     if (typeof bindTerminalWorkspaceCheckpointLinks === "function") bindTerminalWorkspaceCheckpointLinks(notice);
   }
   if (typeof terminalTaskActivityRefresh === "function") terminalTaskActivityRefresh(terminal);
@@ -634,11 +946,42 @@ function refreshPtyTerminalDom(terminal) {
     status.setAttribute("title", next.label);
   });
   const active = terminal.id === activeTerminalId;
+  const projectVisible = typeof terminalProjectGroupKey !== "function"
+    || terminalProjectGroupKey(terminal) === activeTerminalProjectKey();
+  article.classList.remove(
+    "terminal-provider-auto",
+    "terminal-provider-openai",
+    "terminal-provider-claude",
+    "terminal-provider-gemini",
+    "terminal-shell-mode"
+  );
+  article.classList.add(...terminalProviderClass(terminal).split(/\s+/).filter(Boolean));
+  article.classList.toggle("terminal-auto-waiting", Boolean(terminal.autoAwaitingTask));
   article.classList.toggle("active", active);
+  article.classList.toggle("terminal-project-hidden", !projectVisible);
+  article.classList.toggle("terminal-fullscreen", fullscreenTerminalId === terminal.id);
+  article.classList.toggle("terminal-fullscreen-hidden", Boolean(fullscreenTerminalId) && fullscreenTerminalId !== terminal.id);
   article.classList.toggle("terminal-focus-hidden", terminalLayout !== "grid" && !active);
-  if (terminalLayout !== "grid") article.setAttribute("aria-hidden", active ? "false" : "true");
+  const fullscreenVisible = !fullscreenTerminalId || fullscreenTerminalId === terminal.id;
+  article.setAttribute("aria-hidden", projectVisible && fullscreenVisible && (terminalLayout === "grid" || active) ? "false" : "true");
   const title = article.querySelector(".terminal-name strong, .terminal-tile-head strong");
   if (title && title.textContent !== terminal.title) title.textContent = terminal.title;
+  const agentName = article.querySelector(".terminal-name small, .terminal-tile-head > button:first-child small");
+  const nextAgentName = terminalAgentDisplayName(terminal);
+  if (agentName && agentName.textContent !== nextAgentName) agentName.textContent = nextAgentName;
+  const modelChip = article.querySelector(".terminal-model-chip");
+  if (modelChip) {
+    const model = terminalModelForDisplay(terminal.model);
+    modelChip.innerHTML = `${modelLogo(model)}${escapeHtml(model.label)}`;
+  }
+  const fullscreenButton = article.querySelector(`[data-terminal-fullscreen="${CSS.escape(terminal.id)}"]`);
+  if (fullscreenButton) {
+    const fullscreen = fullscreenTerminalId === terminal.id;
+    fullscreenButton.setAttribute("aria-pressed", String(fullscreen));
+    fullscreenButton.setAttribute("aria-label", `${fullscreen ? "Exit full screen for" : "Full screen"} ${terminal.title || "terminal"}`);
+    fullscreenButton.setAttribute("title", fullscreen ? "Exit full screen" : "Full screen");
+    fullscreenButton.innerHTML = icon(fullscreen ? "contract" : "expand");
+  }
   if (unavailable) {
     const pre = article.querySelector(".terminal-pty-lines pre");
     if (pre && pre.textContent !== String(terminal.output || "")) pre.textContent = terminal.output || "";
@@ -683,7 +1026,8 @@ function terminalXtermTheme(node) {
     background: css("--terminal-bg", "#08080c"),
     foreground: css("--terminal-copy", "#f7f4ff"),
     cursor: css("--terminal-text", "#f7f4ff"),
-    selectionBackground: css("--terminal-accent-border", "rgba(109, 59, 255, 0.4)"),
+    selectionBackground: "rgba(109, 59, 255, 0.22)",
+    selectionInactiveBackground: "rgba(109, 59, 255, 0.14)",
     black: css("--terminal-ansi-black", "#24242d"),
     red: css("--terminal-ansi-red", "#ff6b81"),
     green: css("--terminal-ansi-green", "#55d98b"),
@@ -756,9 +1100,14 @@ function plainTerminalOutput(value) {
 function ptySessionPatch(session) {
   const provider = normalizedPtyProviderState(session);
   return {
+    title: String(session.title || ""),
     agent: String(session.agent || ""),
     agentStatus: session.agentStatus || null,
+    requestedModel: String(session.requestedModel || session.model || ""),
     model: String(session.model || ""),
+    autoRouting: session.autoRouting || null,
+    autoAwaitingTask: Boolean(session.autoAwaitingTask),
+    launchPlan: session.launchPlan || null,
     effort: normalizeTerminalEffort(session.reasoningEffort),
     permissionMode: normalizeTerminalPermissionMode(session.permissionMode),
     tokenMode: String(session.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
@@ -768,6 +1117,8 @@ function ptySessionPatch(session) {
     workspacePath: String(session.workspacePath || ""),
     workspaceNotice: String(session.workspaceNotice || ""),
     cwd: String(session.cwd || ""),
+    cols: normalizedPtyDimension(session.cols, 100, 18, 180),
+    rows: normalizedPtyDimension(session.rows, 30, 4, 80),
     output: String(session.output || "").slice(-60000),
     ptyStatus: String(session.status || "idle"),
     providerState: provider.state,
@@ -775,6 +1126,13 @@ function ptySessionPatch(session) {
     providerBusy: provider.busy,
     exitCode: session.exitCode ?? null
   };
+}
+
+function normalizedPtyDimension(value, fallback, minimum, maximum) {
+  const numeric = Math.floor(Number(value));
+  return Number.isFinite(numeric)
+    ? Math.max(minimum, Math.min(maximum, numeric))
+    : fallback;
 }
 
 function normalizedPtyProviderState(session) {
@@ -833,7 +1191,14 @@ function updateTerminalAgents(statuses) {
 window.addEventListener("load", () => setTimeout(syncPtyTerminals, 0));
 window.addEventListener("pagehide", flushPtyTerminals);
 window.addEventListener("beforeunload", flushPtyTerminals);
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushPtyTerminals(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushPtyTerminals();
+    return;
+  }
+  mountVisibleXterms();
+  for (const terminal of terminals) schedulePtyXtermFit(terminal.id, { forceBackend: true });
+});
 
 function flushPtyTerminals() {
   try { saveTerminals(); } catch {}
@@ -931,6 +1296,7 @@ function removeLocalPtyTerminal(terminal) {
   const id = terminal?.id;
   if (!id) return;
   if (typeof terminalTaskActivityClear === "function") terminalTaskActivityClear(terminal);
+  cancelSettledPtyXtermFit(id);
   clearTimeout(terminalPtyReconnectTimers[id]);
   terminalPtySockets[id]?.close?.();
   terminalXterms[id]?.dispose?.();
@@ -960,6 +1326,7 @@ function finishPtySyncRender() {
     return;
   }
   if (activePage !== "terminals") return;
+  renderNav();
   renderTopbar();
   if (!refreshPtyTerminalsDom()) {
     forceTerminalRender = true;

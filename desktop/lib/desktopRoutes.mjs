@@ -1,21 +1,40 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAiTerminalRoutes } from "./aiTerminals.mjs";
+import { handleAiTerminalRuntimeRoutes } from "./aiTerminalRuntimeRoutes.mjs";
 import { handlePtyTerminalRoutes } from "./ptyTerminals.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
-import { sendDesktopChat } from "./desktopChat.mjs";
+import { routeDesktopAutoModel, sendDesktopChat } from "./desktopChat.mjs";
+import { proxyDesktopCodexResponse } from "./desktopCodexResponses.mjs";
+import { proxyNativeTerminalProtocol } from "./desktopNativeTerminalGateway.mjs";
 import { speakDesktopVoice, transcribeDesktopVoice } from "./desktopVoice.mjs";
-import { openDesktopPreview } from "./desktopPreview.mjs";
+import {
+  activateDesktopPreviewServer,
+  desktopPreviewStartup,
+  openDesktopPreview,
+  startDesktopPreviewServer,
+  stopDesktopPreviewServer
+} from "./desktopPreview.mjs";
 import { handleDesktopMemoryRoutes } from "./desktopMemoryRoutes.mjs";
+import { handleTerminalEditorRoutes } from "./terminalEditor.mjs";
+import { requestDesktopAuth } from "./desktopAuthProxy.mjs";
 import { startPhonePreview } from "./phonePreview.mjs";
-import { clearDesktopAccount, verifyAndSetDesktopAccount } from "./desktopAccount.mjs";
+import { stopAllTrackedPreviewServers } from "./previewServerProcesses.mjs";
+import {
+  clearDesktopAccount,
+  persistDesktopAccountSession,
+  removeDesktopAccountSession,
+  verifyAndSetDesktopAccount
+} from "./desktopAccount.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { headers, readBody, send, sendFile } from "./http.mjs";
 import { openRouterModelPayload } from "./openRouterModels.mjs";
 import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } from "./providerAccounts.mjs";
 import { localAiStatus } from "./localAi.mjs";
+import { pairingQrSvg } from "./pairingQr.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
+import { authorizeTerminalGatewayRequest } from "./terminalGatewayAuth.mjs";
 import {
   appState,
   desktopRuntimeState,
@@ -29,6 +48,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const desktopDir = join(__dirname, "..");
 const appAssetsDir = join(__dirname, "..", "..", "src", "assets");
 const desktopAssetsDir = join(desktopDir, "assets");
+const monacoAssetsDir = join(__dirname, "..", "..", "node_modules", "monaco-editor", "min", "vs");
 
 export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/folders") {
@@ -51,6 +71,17 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/state") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, publicState());
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/pair-qr.svg") {
+    if (!authorizeDesktopUi(req, res, false)) return true;
+    const svg = await pairingQrSvg();
+    if (!svg) {
+      send(res, 404, { ok: false, error: "No phone-reachable desktop address is available." });
+      return true;
+    }
+    res.writeHead(200, headers("image/svg+xml; charset=utf-8"));
+    res.end(svg);
     return true;
   }
   if (req.method === "GET" && url.pathname === "/desktop/runtime") {
@@ -79,6 +110,78 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, await sendDesktopChat(await readBody(req)));
     return true;
   }
+  if (req.method === "POST" && url.pathname === "/desktop/chat/route") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await routeDesktopAutoModel(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/v1/responses") {
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      model: body.model,
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: body.model
+    });
+    if (!authorization) return true;
+    await proxyDesktopCodexResponse(req, res, {
+      ...body,
+      model: authorization.billingModel || body.model
+    });
+    return true;
+  }
+  if (req.method === "POST" && ["/desktop/anthropic/v1/messages", "/desktop/anthropic/v1/messages/count_tokens"].includes(url.pathname)) {
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      authSchemes: ["bearer"],
+      errorProtocol: "anthropic",
+      model: body.model,
+      runtimeId: "claude",
+      providerId: "anthropic",
+      adapterId: "anthropic-messages",
+      protocol: "anthropic-messages",
+      nativeModel: body.model
+    });
+    if (!authorization) return true;
+    if (url.pathname.endsWith("/count_tokens")) {
+      send(res, 200, { input_tokens: Math.max(1, Math.ceil(JSON.stringify(body).length / 4)) });
+      return true;
+    }
+    await proxyNativeTerminalProtocol(req, res, {
+      protocol: "anthropic",
+      billingModel: authorization.billingModel,
+      body
+    });
+    return true;
+  }
+  const geminiRoute = url.pathname.match(/^\/desktop\/gemini\/(?:v1|v1beta)\/models\/([^/:]+):(generateContent|streamGenerateContent|countTokens)$/);
+  if (req.method === "POST" && geminiRoute) {
+    const model = decodeURIComponent(geminiRoute[1]);
+    const action = geminiRoute[2];
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      authSchemes: ["x-goog-api-key", "bearer"],
+      errorProtocol: "gemini",
+      model,
+      runtimeId: "gemini",
+      providerId: "google",
+      adapterId: "gemini-generate-content",
+      protocol: "gemini-generate-content",
+      nativeModel: model
+    });
+    if (!authorization) return true;
+    if (action === "countTokens") {
+      send(res, 200, { totalTokens: Math.max(1, Math.ceil(JSON.stringify(body).length / 4)) });
+      return true;
+    }
+    await proxyNativeTerminalProtocol(req, res, {
+      protocol: "gemini",
+      billingModel: authorization.billingModel,
+      body,
+      streamResponse: action === "streamGenerateContent"
+    });
+    return true;
+  }
   if (req.method === "GET" && url.pathname === "/desktop/local-ai") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await localAiStatus());
@@ -104,6 +207,10 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, { providers: providerAccountsState() });
     return true;
   }
+  if (url.pathname === "/desktop/terminal-runtimes" || url.pathname.startsWith("/desktop/terminal-runtimes/")) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    if (await handleAiTerminalRuntimeRoutes(req, res, url)) return true;
+  }
   if (req.method === "POST" && url.pathname === "/desktop/provider-accounts/openai") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { ok: true, account: await connectOpenAiAccount(await readBody(req)), providers: providerAccountsState() });
@@ -118,6 +225,10 @@ export async function handleDesktopRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     if (await handlePtyTerminalRoutes(req, res, url)) return true;
   }
+  if (url.pathname.startsWith("/desktop/terminal-editor/")) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    if (await handleTerminalEditorRoutes(req, res, url)) return true;
+  }
   if (url.pathname === "/desktop/terminals" || url.pathname.startsWith("/desktop/terminals/")) {
     if (!authorizeDesktopUi(req, res)) return true;
     if (await handleAiTerminalRoutes(req, res, url)) return true;
@@ -125,6 +236,26 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/preview") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await openDesktopPreview(await readBody(req), req.headers.host));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/preview/start-server") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await startDesktopPreviewServer(await readBody(req), req.headers.host));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/preview/activate") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await activateDesktopPreviewServer(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/preview/stop-server") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await stopDesktopPreviewServer(await readBody(req)));
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/preview/startup") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, desktopPreviewStartup(url.searchParams.get("projectId"), url.searchParams.get("targetId")));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/phone-preview/start") {
@@ -147,6 +278,7 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/quit") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { ok: true });
+    stopAllTrackedPreviewServers();
     appState.server?.close(() => process.exit(0));
     return true;
   }
@@ -154,12 +286,19 @@ export async function handleDesktopRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     const token = bearerToken(req.headers.authorization);
     const account = await verifyAndSetDesktopAccount(token, req.headers["x-vibyra-public-ip"]);
+    persistDesktopAccountSession(token, account);
     send(res, 200, { ok: true, user: account });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname.startsWith("/desktop/auth/")) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await requestDesktopAuth(url.pathname.slice("/desktop/auth/".length), await readBody(req)));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/session/clear") {
     if (!authorizeDesktopUi(req, res)) return true;
     clearDesktopAccount();
+    removeDesktopAccountSession();
     send(res, 200, { ok: true });
     return true;
   }
@@ -178,9 +317,15 @@ export async function handleDesktopRoutes(req, res, url) {
     await sendSafeAsset(res, desktopAssetsDir, url.pathname, "/desktop/assets/");
     return true;
   }
-  if (req.method === "GET" && url.pathname.startsWith("/desktop/")) {
+  if (req.method === "GET" && url.pathname.startsWith("/desktop/vendor/monaco/vs/")) {
     if (!authorizeDesktopUi(req, res, false)) return true;
-    await sendFile(res, join(desktopDir, basename(url.pathname.replace("/desktop/", ""))));
+    await sendSafeAsset(res, monacoAssetsDir, url.pathname, "/desktop/vendor/monaco/vs/");
+    return true;
+  }
+  const desktopFileRoute = url.pathname.match(/^\/desktop\/([^/]+)$/);
+  if (req.method === "GET" && desktopFileRoute) {
+    if (!authorizeDesktopUi(req, res, false)) return true;
+    await sendFile(res, join(desktopDir, basename(desktopFileRoute[1])));
     return true;
   }
   return false;

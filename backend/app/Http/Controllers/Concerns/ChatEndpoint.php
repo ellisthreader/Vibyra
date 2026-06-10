@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\AutoModelRouter;
+use App\Services\Billing\BillingReservationException;
+use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\CreditDeductor;
+use App\Services\Billing\OpenRouterRequestPolicy;
 use App\Services\LevelProgression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +39,12 @@ trait ChatEndpoint
         $prompt = trim((string) $request->input('prompt', ''));
         $skillId = trim((string) $request->input('skill', ''));
         $skill = $skillId !== '' ? $this->resolveSkill($skillId) : null;
+        if ($prompt === '') {
+            return $this->json(['ok' => false, 'error' => 'Ask Vibyra something first.'], 422);
+        }
+        if (mb_strlen($prompt) > self::CHAT_PROMPT_MAX_CHARS) {
+            return $this->json(['ok' => false, 'error' => 'That prompt is too long. Trim it to under ' . self::CHAT_PROMPT_MAX_CHARS . ' characters.'], 413);
+        }
 
         $calc = app(CreditCalculator::class);
         $deductor = app(CreditDeductor::class);
@@ -53,6 +63,12 @@ trait ChatEndpoint
         if (! $calc->modelConfig($modelKey)) {
             $modelKey = $requestedModelKey;
         }
+        $autoRouting = null;
+        if ($requestedModelKey === 'auto' && $modelKey === 'auto') {
+            $routingPrompt = trim((string) $request->input('routingPrompt', $prompt)) ?: $prompt;
+            $autoRouting = app(AutoModelRouter::class)->route(mb_substr($routingPrompt, 0, self::CHAT_PROMPT_MAX_CHARS), $plan, $calc);
+            $modelKey = $autoRouting['modelKey'];
+        }
         if (! $calc->planAllowsModel($plan, $modelKey)) {
             return $this->json([
                 'ok' => false,
@@ -63,13 +79,6 @@ trait ChatEndpoint
         }
 
         $openRouterModel = $calc->resolveSlug($modelKey);
-
-        if ($prompt === '') {
-            return $this->json(['ok' => false, 'error' => 'Ask Vibyra something first.'], 422);
-        }
-        if (mb_strlen($prompt) > self::CHAT_PROMPT_MAX_CHARS) {
-            return $this->json(['ok' => false, 'error' => 'That prompt is too long. Trim it to under ' . self::CHAT_PROMPT_MAX_CHARS . ' characters.'], 413);
-        }
 
         $fileBody = (string) $request->input('fileBody', '');
         if (mb_strlen($fileBody) > self::CHAT_FILE_BODY_MAX_CHARS) {
@@ -91,39 +100,6 @@ trait ChatEndpoint
         $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext, $imageAttachments);
         $agentMode = $chatMode === 'build';
 
-        $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode);
-        if ($user->credits_balance < $estimatedCredits) {
-            return $this->json([
-                'ok' => false,
-                'error' => 'You do not have enough credits for this request. Top up or upgrade your plan to continue.',
-                'creditsBalance' => $user->credits_balance,
-                'creditsUsed' => $user->credits_used,
-                'estimatedCredits' => $estimatedCredits,
-            ], 402);
-        }
-
-        $burstCap = $deductor->burstCap($user);
-        if ($burstCap > 0 && (int) $user->burst_credits_used + $estimatedCredits > $burstCap) {
-            return $this->json([
-                'ok' => false,
-                'error' => '5-hour burst cap reached. Take a short break — your burst window resets every 5 hours.',
-                'burstCap' => $burstCap,
-                'burstCreditsUsed' => (int) $user->burst_credits_used,
-                'burstCreditsResetAt' => optional($user->burst_credits_reset_at)->toIso8601String(),
-            ], 429);
-        }
-
-        $weeklyCap = $deductor->weeklyCap($user);
-        if ($weeklyCap > 0 && (int) $user->weekly_credits_used + $estimatedCredits > $weeklyCap) {
-            return $this->json([
-                'ok' => false,
-                'error' => 'Weekly AI usage cap reached. The cap resets every 7 days; upgrade your plan for more headroom.',
-                'weeklyCap' => $weeklyCap,
-                'weeklyCreditsUsed' => (int) $user->weekly_credits_used,
-                'weeklyCreditsResetAt' => optional($user->weekly_credits_reset_at)->toIso8601String(),
-            ], 429);
-        }
-
         $apiKey = (string) config('services.openrouter.key');
         if ($apiKey === '') {
             return $this->json(['ok' => false, 'error' => 'OpenRouter is not configured on the Vibyra backend.'], 500);
@@ -140,6 +116,38 @@ trait ChatEndpoint
                 $reasoningPayload,
                 $skill
             );
+            $payload['provider'] = app(OpenRouterRequestPolicy::class)->provider($modelKey);
+            $maximumAttempts = $this->openRouterEmptyCompletionRetryPayload($payload) !== null ? 2 : 1;
+            $estimatedCredits = $calc->estimateCredits($modelKey, $estimatedInputTokens, $maxOutputTokens, $agentMode) * $maximumAttempts;
+            $estimatedMicroUsd = (int) ceil(
+                ($calc->estimateReservationUsd($modelKey, $estimatedInputTokens, $maxOutputTokens)
+                    + ((bool) ($skill['web_plugin'] ?? false)
+                        ? (float) config('billing.openrouter_pricing.web_search_reservation_usd', 0.15)
+                        : 0.0))
+                * $maximumAttempts
+                * 1_000_000
+            );
+            $reference = 'chat:' . Str::uuid()->toString();
+            $reservationService = app(ChatCostReservationService::class);
+            $reservation = $reservationService->reserve(
+                $user,
+                $reference,
+                $modelKey,
+                $estimatedCredits,
+                $estimatedMicroUsd,
+                ['skill' => $skillId ?: null, 'agent_mode' => $agentMode],
+            );
+        } catch (BillingReservationException $error) {
+            return $this->json(array_merge([
+                'ok' => false,
+                'error' => $error->getMessage(),
+                'code' => $error->errorCode,
+            ], $error->details), $error->status);
+        }
+
+        $attempts = [];
+        try {
+            $reservationService->markProviderStarted($reservation);
 
             $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel, $modelKey))
                 ->acceptJson()
@@ -154,16 +162,31 @@ trait ChatEndpoint
         }
 
         if (! $response->successful()) {
+            $usage = (array) ($response->json('usage') ?? []);
+            if ($usage !== []) {
+                $attempts[] = ['billable' => true, 'outcome' => 'provider_error', 'usage' => $usage];
+                $reservationService->settle($reservation, $attempts, ['outcome' => 'provider_error']);
+            } else {
+                $reservationService->release($reservation, 'provider_error_without_usage');
+            }
             $message = $response->json('error.message') ?: $response->json('message') ?: 'OpenRouter could not complete the request.';
             return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
         }
 
         $decoded = $response->json();
+        $attempts[] = [
+            'billable' => true,
+            'outcome' => 'completed',
+            'usage' => is_array($decoded) ? (array) ($decoded['usage'] ?? []) : [],
+            'estimated_input_tokens' => $estimatedInputTokens,
+            'estimated_output_tokens' => $maxOutputTokens,
+        ];
         $reply = is_array($decoded) ? $this->openRouterCompletionContent($decoded) : '';
         if ($reply === '' && is_array($decoded)) {
             $retryPayload = $this->openRouterEmptyCompletionRetryPayload($payload);
             if ($retryPayload !== null) {
                 try {
+                    $reservationService->markProviderStarted($reservation);
                     $response = Http::timeout($this->openRouterHttpTimeout($openRouterModel, $modelKey))
                         ->acceptJson()
                         ->withToken($apiKey)
@@ -173,40 +196,39 @@ trait ChatEndpoint
                         ])
                         ->post((string) config('services.openrouter.url'), $retryPayload);
                 } catch (Throwable) {
+                    $reservationService->settle($reservation, $attempts, ['outcome' => 'retry_transport_error']);
                     return $this->json(['ok' => false, 'error' => 'Could not reach OpenRouter. Please try again.'], 502);
                 }
 
                 if (! $response->successful()) {
+                    $usage = (array) ($response->json('usage') ?? []);
+                    if ($usage !== []) {
+                        $attempts[] = ['billable' => true, 'outcome' => 'retry_provider_error', 'usage' => $usage];
+                    }
+                    $reservationService->settle($reservation, $attempts, ['outcome' => 'retry_provider_error']);
                     $message = $response->json('error.message') ?: $response->json('message') ?: 'OpenRouter could not complete the Deep Research retry.';
                     return $this->json(['ok' => false, 'error' => $message], $response->status() >= 400 ? $response->status() : 502);
                 }
 
                 $decoded = $response->json();
+                $attempts[] = [
+                    'billable' => true,
+                    'outcome' => 'retry_completed',
+                    'usage' => is_array($decoded) ? (array) ($decoded['usage'] ?? []) : [],
+                    'estimated_input_tokens' => $estimatedInputTokens,
+                    'estimated_output_tokens' => $maxOutputTokens,
+                ];
                 $reply = is_array($decoded) ? $this->openRouterCompletionContent($decoded) : '';
             }
         }
         if ($reply === '') {
-            return $this->json(['ok' => false, 'error' => 'OpenRouter completed without answer content. No Vibyra credits were charged for this empty completion.'], 502);
+            $reservationService->settle($reservation, $attempts, ['outcome' => 'empty_completion']);
+            return $this->json(['ok' => false, 'error' => 'OpenRouter completed without answer content. Provider usage was charged.'], 502);
         }
         [$replyText, $app] = $this->extractRunnableApp($reply, $agentMode);
         $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode, $app !== null);
 
-        $usage = is_array($decoded) ? ($decoded['usage'] ?? []) : [];
-        $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
-        $outputTokens = (int) ($usage['completion_tokens'] ?? 0);
-        $openRouterUsd = isset($usage['cost']) ? (float) $usage['cost'] : null;
-
-        $reference = 'chat:' . Str::uuid()->toString();
-        $ledger = $deductor->chargeForChat(
-            $user,
-            $modelKey,
-            $openRouterUsd,
-            $inputTokens,
-            $outputTokens,
-            $agentMode,
-            $reference,
-            ['skill' => $skillId ?: null],
-        );
+        $ledger = $reservationService->settle($reservation, $attempts, ['outcome' => 'success']);
         $levelActivity = app(LevelProgression::class)->record(
             $user,
             $agentMode ? 'coding_agent_completed' : 'cloud_chat_completed',
@@ -224,6 +246,7 @@ trait ChatEndpoint
             'model' => $openRouterModel,
             'modelKey' => $modelKey,
             'requestedModelKey' => $requestedModelKey,
+            'autoRouting' => $autoRouting,
             'chatReference' => $reference,
             'creditCost' => abs($ledger->credits_delta),
             'creditsBalance' => $user->credits_balance,

@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { getBackendReachabilityMessage, getBackendStreamTimeoutMessage } from "./appApiMessages";
-import { AppApiError, appApiRequest, getAppApiCandidateUrls, getAppApiUrl, markBackendOffline, markBackendOnline, rememberAppApiUrl, resolveReachableAppApiUrl } from "./appApi";
+import { AppApiError, appApiRequest, getAppApiFetchRedirect, getAppApiRetryCandidateUrls, markBackendOffline, markBackendOnline, rememberAppApiUrl, resolveReachableAppApiUrl } from "./appApi";
 
 type ApiErrorPayload = {
   error?: string;
@@ -47,6 +47,7 @@ export async function appApiStreamChat<T = unknown>(
         Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(body),
+      redirect: getAppApiFetchRedirect(),
       signal: controller.signal
     });
   } catch (error) {
@@ -99,8 +100,7 @@ async function retryStreamOnFallbackUrl(
   token: string,
   signal: AbortSignal
 ) {
-  for (const candidate of getAppApiCandidateUrls()) {
-    if (!candidate || candidate === failedApiUrl) continue;
+  for (const candidate of getAppApiRetryCandidateUrls(failedApiUrl)) {
     try {
       const response = await fetch(`${candidate}/api/chat/stream`, {
         method: "POST",
@@ -110,6 +110,7 @@ async function retryStreamOnFallbackUrl(
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(body),
+        redirect: getAppApiFetchRedirect(),
         signal
       });
       rememberAppApiUrl(candidate);

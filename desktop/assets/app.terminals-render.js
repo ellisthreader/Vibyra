@@ -8,28 +8,35 @@ function renderTerminalsPage() {
     fitTerminalDraft(activeDraft.field);
     return;
   }
-  if (!terminals.length) {
+  if (terminalBatchSetupOpen || !terminals.length) {
     const activeSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
     const hasSetupPicker = nodes.content.querySelector('[data-terminal-model-picker="setup"]');
     const hasProjectMenu = terminalProjectMenuTarget === "setup" && nodes.content.querySelector('[data-terminal-project-menu="setup"]');
     if ((activeSearch?.target === "setup" || (setupModelMenuOpen && hasSetupPicker) || hasProjectMenu) && nodes.content.querySelector(".terminal-setup")) return;
+    const existingSetup = nodes.content.querySelector(".terminal-setup");
+    if (existingSetup && typeof patchTerminalSetupPanel === "function" && patchTerminalSetupPanel(existingSetup)) return;
     nodes.content.innerHTML = setupView();
     bindTerminalControls();
     return;
   }
-  const active = findTerminal(activeTerminalId) || terminals[0];
+  if (typeof syncTerminalFullscreenState === "function") syncTerminalFullscreenState();
+  const projectTerminals = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  const active = findTerminal(activeTerminalId) || projectTerminals[0] || terminals[0];
   const grid = terminalLayout === "grid";
-  const gridMeta = grid ? terminalGridMeta(terminals.length) : null;
+  const gridMeta = grid ? terminalGridMeta(projectTerminals.length) : null;
   const gridClass = grid ? `grid-mode ${gridMeta.className}` : "";
   const gridStyle = grid ? ` style="--terminal-grid-cols:${gridMeta.cols};--terminal-grid-rows:${gridMeta.rows};--terminal-grid-cols-narrow:${gridMeta.narrowCols};--terminal-grid-rows-narrow:${gridMeta.narrowRows};"` : "";
-  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}"${gridStyle}><div class="terminal-stage">${grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)}</div></section>`;
+  const fullscreenClass = typeof fullscreenTerminalId === "string" && fullscreenTerminalId ? " terminal-page--terminal-fullscreen" : "";
+  const emptyProject = projectTerminals.length ? "" : terminalWorkspaceEmptyHtml();
+  const terminalViews = projectTerminals.length ? (grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)) : "";
+  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}"${gridStyle}><div class="terminal-stage">${emptyProject}${terminalViews}</div></section>`;
   bindTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
 }
 
 function terminalGridMeta(count) {
   const total = Math.max(1, Math.min(maxTerminals, Number(count) || 1));
-  const cols = total <= 2 ? total : total <= 4 ? 2 : total <= 8 ? 4 : total === 9 ? 3 : 4;
+  const cols = total <= 2 ? total : total <= 4 ? 2 : total <= 6 ? 3 : total <= 8 ? 4 : total === 9 ? 3 : 4;
   const narrowCols = total <= 2 ? total : total <= 4 ? 2 : 3;
   return {
     className: total > 4 ? "terminal-grid-many" : "",
@@ -42,7 +49,7 @@ function terminalGridMeta(count) {
 
 function setupView() {
   const model = selectedSetupModel();
-  return `<section class="terminal-setup"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalSetupEffortPicker(model)}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></section>`;
+  return `<section class="terminal-setup"><div class="terminal-setup-stage"><div class="terminal-setup-panel"><div class="terminal-setup-copy"><span class="terminal-setup-icon">${icon("terminal")}</span><h2>Start AI terminals</h2></div><div class="terminal-setup-grid"><div class="terminal-setup-block"><p>How many?</p><div class="terminal-count-row">${[1, 2, 3, 4, 6, 12].map((count) => `<button class="${setupCount === count ? "active" : ""}" type="button" data-terminal-count="${count}">${count}</button>`).join("")}</div><label class="terminal-custom-count">${icon("edit")}<input type="number" min="1" max="${maxTerminals}" value="${setupCount}" data-terminal-custom-count aria-label="Custom terminal count" /><span>Custom</span></label></div><div class="terminal-setup-block terminal-preview-block"><p>Preview</p>${layoutPreview(setupCount)}</div></div><div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>${terminalSetupEffortPicker(model)}<button class="primary-button terminal-start-button" type="button" id="start-terminals">${icon("plus")}Open ${setupCount} terminal${setupCount === 1 ? "" : "s"}</button></div></div></section>`;
 }
 
 function terminalSetupEffortPicker(model = selectedSetupModel()) {

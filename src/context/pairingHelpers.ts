@@ -1,4 +1,5 @@
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
+import { trustedDesktopUrls } from "../utils/desktopUrls";
 
 export const HEALTH_SCAN_BATCH_SIZE = 48;
 export const PAIR_SCAN_BATCH_SIZE = 48;
@@ -56,7 +57,7 @@ export function mergeRememberedDesktops(current: RememberedDesktop[], updates: R
 }
 
 export function desktopConnectionUrls(url: string, connectionUrls: string[] = []) {
-  return uniqueValues([url, ...connectionUrls]);
+  return trustedDesktopUrls([url, ...connectionUrls]);
 }
 
 function mergeDesktop(current: RememberedDesktop, update: RememberedDesktop): RememberedDesktop {

@@ -41,10 +41,7 @@ function terminalMemoryFullscreenRibbonHtml() {
 }
 
 function terminalMemoryFullscreenImportHtml() {
-  return `<label class="terminal-memory-app-import" data-terminal-memory-pick="vault" title="Import memory">
-    ${icon("share")}<span>Import</span>
-    <input type="file" accept=".md,text/markdown" multiple webkitdirectory directory data-terminal-memory-vault-input>
-  </label>`;
+  return terminalMemoryImportMenuHtml("terminal-memory-app-import-menu");
 }
 
 function terminalMemoryFullscreenExplorerHtml(projectId, projectName) {

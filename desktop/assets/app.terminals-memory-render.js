@@ -22,23 +22,17 @@ function terminalMemoryWorkspaceHtml(terminal) {
         <small title="${escapeAttribute(projectName)}">${escapeHtml(projectName)}</small>
       </div>
       <div class="terminal-memory-toolbar-actions">
+        <span class="terminal-memory-toolbar-status" data-terminal-memory-status aria-live="polite">${escapeHtml(terminalMemoryState.status)}</span>
         <div class="terminal-memory-view-toggle" aria-label="Memory view">
           <button class="${terminalMemoryState.view === "graph" ? "active" : ""}" type="button" data-terminal-memory-view="graph" title="Graph view">${icon("network")}</button>
           <button class="${terminalMemoryState.view === "notes" ? "active" : ""}" type="button" data-terminal-memory-view="notes" title="Notes view">${icon("document")}</button>
         </div>
         <button type="button" data-terminal-memory-fullscreen aria-label="Open Memory workspace" aria-pressed="false" title="Open Memory workspace">${icon("square")}</button>
-        <label class="terminal-memory-toolbar-import" title="Import memory" data-terminal-memory-pick="vault">
-          ${icon("share")}<span>Import</span>
-          <input type="file" accept=".md,text/markdown" multiple webkitdirectory directory data-terminal-memory-vault-input>
-        </label>
+        ${terminalMemoryImportMenuHtml()}
         <button type="button" data-terminal-companion-close aria-label="Close Memory">${icon("close")}</button>
       </div>
     </header>
     ${terminalMemoryContentHtml(projectId, isDocument, selected, mode)}
-    <footer class="terminal-memory-footer">
-      <span data-terminal-memory-status aria-live="polite">${escapeHtml(terminalMemoryState.status)}</span>
-      <span>${terminalMemoryState.nodes.filter((node) => node.type === "document").length} notes</span>
-    </footer>
   </div>`;
 }
 
@@ -68,7 +62,7 @@ function terminalMemoryTreeHtml() {
   if (!terminalMemoryState.projectId) return '<p class="terminal-memory-empty">Choose a terminal project.</p>';
   const visible = terminalMemoryVisibleNodes();
   if (!visible.length) {
-    return `<p class="terminal-memory-empty">${terminalMemoryState.query ? "No matching notes." : "Create or import your first note."}</p>`;
+    return `<p class="terminal-memory-empty">${terminalMemoryState.query ? "No matching notes." : "Import notes to begin."}</p>`;
   }
   const ids = new Set(visible.map((node) => node.id));
   const roots = visible.filter((node) => !node.parentId || !ids.has(node.parentId));

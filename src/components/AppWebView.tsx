@@ -7,8 +7,10 @@ export type { PreviewRuntimeError };
 export type AppWebViewProps = {
   html?: string;
   onPreviewError?: (error: PreviewRuntimeError) => void;
+  publicDemo?: boolean;
   url?: string;
   reloadKey: number;
+  isolated?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 

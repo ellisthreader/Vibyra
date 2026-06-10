@@ -143,14 +143,14 @@ export const part12 = {
     fontWeight: "900"
   },
   communityBackdrop: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   communityBackdropImage: {
     borderRadius: 24,
     opacity: 0.44
   },
   communityBackdropShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(5, 7, 17, 0.74)",
     borderRadius: 24
   },

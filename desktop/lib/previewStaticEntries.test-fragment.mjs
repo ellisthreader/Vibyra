@@ -34,6 +34,8 @@ test("desktop preview serves nested build assets from the entry root", async () 
     const response = await requestPreview(project);
     const base = `/preview/project/${encodeURIComponent(project.id)}/${encodeURIComponent(TOKEN)}/`;
     assert.equal(response.status, 200);
+    assert.match(response.body, /__vibyraPreviewConsoleBridge/);
+    assert.match(response.body, /vibyra-preview-console/);
     assert.match(response.body, new RegExp(`${escapeRegExp(base)}dist/assets/app\\.js\\?v=2`));
     assert.match(response.body, new RegExp(`${escapeRegExp(base)}dist/style\\.css\\?v=1#sheet`));
 

@@ -15,6 +15,7 @@ function scheduleTerminalLayoutSync() {
   terminalLayoutFrame = schedule(() => {
     terminalLayoutFrame = 0;
     ensureActiveTerminalTabVisible();
+    positionTerminalSetupMenu();
     positionTerminalNewMenu();
     positionTerminalSettingsMenus();
     if (typeof mountVisibleXterms === "function") mountVisibleXterms();
@@ -60,6 +61,29 @@ function positionTerminalSettingsMenus() {
     menu.style.setProperty("--terminal-menu-left", `${Math.round(left)}px`);
     menu.style.setProperty("--terminal-menu-top", `${Math.round(top)}px`);
   });
+}
+
+function positionTerminalSetupMenu() {
+  const button = document.querySelector("[data-terminal-setup-model-toggle]");
+  const menu = document.querySelector('.terminal-model-select-wrap [data-terminal-model-picker="setup"]');
+  if (!button || !menu) return;
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const containingRect = terminalFixedContainingRect(menu);
+  const companionLeft = document.querySelector("[data-terminal-companion]")?.getBoundingClientRect().left;
+  const rightEdge = Number.isFinite(companionLeft) ? companionLeft : window.innerWidth;
+  const gap = 8;
+  const edge = 12;
+  const viewportLeft = Math.min(
+    rightEdge - menuRect.width - edge,
+    Math.max(edge, buttonRect.right - menuRect.width)
+  );
+  const viewportTop = buttonRect.bottom + gap;
+  const availableHeight = Math.max(0, window.innerHeight - viewportTop - edge);
+  menu.style.setProperty("--terminal-setup-menu-left", `${Math.round(viewportLeft - containingRect.left)}px`);
+  menu.style.setProperty("--terminal-setup-menu-top", `${Math.round(viewportTop - containingRect.top)}px`);
+  menu.style.setProperty("--terminal-setup-menu-max-height", `${Math.floor(availableHeight)}px`);
+  menu.classList.add("terminal-model-picker--positioned");
 }
 
 function positionTerminalNewMenu() {
@@ -109,5 +133,5 @@ refreshPtyTerminalSettingsMenus = function refreshReadableTerminalSettingsMenus(
 
 window.addEventListener("resize", scheduleTerminalLayoutSync);
 document.addEventListener("scroll", (event) => {
-  if (event.target?.closest?.(".terminal-stage")) scheduleTerminalLayoutSync();
+  if (event.target?.closest?.(".terminal-stage, .terminal-setup-stage")) scheduleTerminalLayoutSync();
 }, true);

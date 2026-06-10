@@ -13,8 +13,11 @@ function bindTerminalCompanion() {
   const companion = document.querySelector("[data-terminal-companion]");
   if (typeof bindTerminalCompanionLayout === "function") bindTerminalCompanionLayout(companion);
   if (typeof bindTerminalVoiceHotkey === "function") bindTerminalVoiceHotkey();
+  if (terminalCompanionMode === "editor" && typeof bindTerminalEditor === "function") bindTerminalEditor(companion);
   if (terminalCompanionMode === "chat" && typeof bindTerminalAiChat === "function") bindTerminalAiChat(companion);
-  if (terminalCompanionMode === "voice" && typeof bindTerminalVoice === "function") bindTerminalVoice(companion);
+  if (terminalCompanionMode === "preview" && typeof syncTerminalTestWorkspace === "function") {
+    syncTerminalTestWorkspace();
+  }
   if (companion?.querySelector("[data-terminal-memory-workspace]") && typeof bindTerminalMemory === "function") {
     bindTerminalMemory(companion);
   }
@@ -149,7 +152,8 @@ function interceptPtyPhoneInput(id, input, sendInput) {
     delete terminalPhonePtyBuffers[id];
     if (!mode) return false;
     sendInput(id, "\x15");
-    openTerminalCompanionPanel(mode, "pty");
+    if (mode === "voice" && typeof openTerminalAiVoice === "function") openTerminalAiVoice("pty");
+    else openTerminalCompanionPanel(mode, "pty");
     return true;
   }
   if (value === "\x7f" || value === "\b") {

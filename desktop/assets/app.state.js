@@ -1,4 +1,4 @@
-const emptyState = { machineName: "Vibyra Desktop", pairCode: "------", pairedDevice: null, pendingPair: null, latestPreview: null, events: [], projects: [], connectionUrls: [] };
+const emptyState = { appApiUrl: "", machineName: "Vibyra Desktop", pairCode: "------", pairedDevice: null, pendingPair: null, latestPreview: null, events: [], projects: [], connectionUrls: [] };
 const pages = [
   { key: "dashboard", label: "Home", icon: "home" },
   { key: "chat", label: "Chat", icon: "chat" },
@@ -14,19 +14,19 @@ const suggestions = [
 const projectFilterModes = ["All", "Desktop", "Phone"];
 const chatModelGroups = [
   { title: "", options: [{ hint: "Best model for your request", key: "auto", label: "Auto", provider: "auto" }] },
-  { title: "Claude Models", options: [{ badge: "New", hint: "Complex work", key: "claude-opus-4", label: "Claude Opus 4", provider: "claude" }, { hint: "Balanced coding", key: "claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" }, { hint: "Quick tasks", key: "claude-3-5-haiku", label: "Claude Haiku 3.5", provider: "claude" }] },
+  { title: "Claude Models", options: [{ badge: "New", hint: "Complex work", key: "claude-opus-4-8", label: "Claude Opus 4.8", provider: "claude" }, { hint: "Balanced coding", key: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", provider: "claude" }, { hint: "Quick tasks", key: "claude-haiku-4-5", label: "Claude Haiku 4.5", provider: "claude" }] },
   { title: "OpenAI models", options: [{ badge: "New", hint: "Best quality", key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }, { hint: "Reliable reasoning", key: "gpt-5.4", label: "GPT-5.4", provider: "openai" }, { hint: "Fast and efficient", key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai" }, { hint: "Purpose-built coding", key: "gpt-5-codex", label: "GPT-5 Codex", provider: "openai" }] },
-  { title: "Gemini Models", options: [{ badge: "New", hint: "Complex work", key: "gemini-2.5-pro", label: "Gemini 2.5 Pro", provider: "gemini" }, { hint: "Fast multimodal work", key: "gemini-2.5-flash", label: "Gemini 2.5 Flash", provider: "gemini" }, { hint: "Quick everyday tasks", key: "gemini-2.0-flash", label: "Gemini 2.0 Flash", provider: "gemini" }] }
+  { title: "Gemini Models", options: [{ badge: "New", hint: "Complex work", key: "google/gemini-3.1-pro-preview", label: "Gemini 3.1 Pro", provider: "gemini" }, { hint: "Fast multimodal work", key: "google/gemini-3.5-flash", label: "Gemini 3.5 Flash", provider: "gemini" }, { hint: "Quick everyday tasks", key: "google/gemini-3.1-flash-lite", label: "Gemini 3.1 Flash Lite", provider: "gemini" }] }
 ];
 const chatModels = chatModelGroups.flatMap((group) => group.options);
 const chatEfforts = [{ value: "low", label: "Fast", short: "Fast", hint: "Quick answers" }, { value: "medium", label: "Balanced", short: "Balanced", hint: "Best for most work" }, { value: "high", label: "Deep", short: "Deep", hint: "More careful reasoning" }, { value: "xhigh", label: "Max", short: "Max", hint: "Most thorough" }];
 const planTiers = [
   { key: "free", name: "Free", price: "£0", monthlyCredits: 50, annualCredits: 50, dailyCap: 5, agents: 0, projects: 1, modelAccess: "Budget models", perks: ["Budget AI models", "1 active project", "Community access"] },
-  { key: "starter", name: "Starter", price: "£19/mo", annualPrice: "£190/yr", monthlyCredits: 500, annualCredits: 550, dailyCap: 100, agents: 1, projects: 1, modelAccess: "All models", perks: ["500 monthly credits", "All AI models", "1 active project, 1 agent"] },
-  { key: "builder", name: "Builder", price: "£49/mo", annualPrice: "£490/yr", monthlyCredits: 1800, annualCredits: 1980, dailyCap: 360, agents: 2, projects: 3, modelAccess: "All models", badge: "Popular", perks: ["1,800 monthly credits", "All premium models", "3 projects, 2 agents"] },
-  { key: "pro", name: "Pro", price: "£99/mo", annualPrice: "£990/yr", monthlyCredits: 4500, annualCredits: 4950, dailyCap: 900, agents: 4, projects: 10, modelAccess: "All models", perks: ["4,500 monthly credits", "Priority routing", "10 projects, 4 agents"] }
+  { key: "starter", name: "Starter", price: "£20/mo", annualPrice: "£225/yr", monthlyCredits: 350, annualCredits: 350, dailyCap: 100, agents: 1, projects: 1, modelAccess: "All models", perks: ["350 monthly credits", "All AI models", "1 active project, 1 agent"] },
+  { key: "builder", name: "Builder", price: "£49/mo", annualPrice: "£585/yr", monthlyCredits: 1000, annualCredits: 1000, dailyCap: 360, agents: 2, projects: 3, modelAccess: "All models", badge: "Popular", perks: ["1,000 monthly credits", "All premium models", "3 projects, 2 agents"] },
+  { key: "pro", name: "Pro", price: "£99/mo", annualPrice: "£1,170/yr", monthlyCredits: 2000, annualCredits: 2000, dailyCap: 900, agents: 4, projects: 10, modelAccess: "All models", perks: ["2,000 monthly credits", "Priority routing", "10 projects, 4 agents"] }
 ];
-const modelTiers = { auto: "budget", "gpt-5.5": "premium", "gpt-5.4": "balanced", "gpt-5.4-mini": "budget", "gpt-5.4-nano": "budget", "gpt-5-codex": "premium", "claude-opus-4": "premium", "claude-sonnet-4": "balanced", "claude-3-5-haiku": "budget", "gemini-2.5-pro": "premium", "gemini-2.5-flash": "budget", "gemini-2.0-flash": "budget" };
+const modelTiers = { auto: "budget", "gpt-5.5": "premium", "gpt-5.4": "balanced", "gpt-5.4-mini": "budget", "gpt-5.4-nano": "budget", "gpt-5-codex": "premium", "claude-opus-4-8": "premium", "claude-sonnet-4-6": "balanced", "claude-haiku-4-5": "budget", "google/gemini-3.1-pro-preview": "premium", "google/gemini-3.5-flash": "budget", "google/gemini-3.1-flash-lite": "budget" };
 const planAllowedTiers = { free: ["free", "budget"], starter: ["free", "budget", "balanced", "premium"], builder: ["free", "budget", "balanced", "premium"], pro: ["free", "budget", "balanced", "premium"] };
 const chatAttachmentPrimaryActions = [
   { kind: "files", icon: "paperclip", label: "Files", hint: "Attach local files" },

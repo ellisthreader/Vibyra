@@ -1,0 +1,37 @@
+/*
+ * Waiting-state polish for Vibyra Auto. Keep the terminal-rendered ASCII V as
+ * the only logo and avoid decorative layers over the PTY.
+ */
+.terminal-provider-auto.terminal-auto-waiting .terminal-focus-head,
+.terminal-provider-auto.terminal-auto-waiting .terminal-tile-head {
+  background: var(--terminal-surface, #0b0b10);
+}
+
+.terminal-provider-auto.terminal-auto-waiting .terminal-name strong,
+.terminal-provider-auto.terminal-auto-waiting .terminal-tile-head > button:first-child strong {
+  color: var(--terminal-text, #f1eef8);
+}
+
+.terminal-provider-auto.terminal-auto-waiting .terminal-name small,
+.terminal-provider-auto.terminal-auto-waiting .terminal-tile-head > button:first-child small {
+  color: var(--terminal-muted, #aaa4b7);
+  letter-spacing: 0.015em;
+}
+
+.terminal-provider-auto.terminal-auto-waiting .terminal-status {
+  animation: vibyra-auto-ready 3.2s ease-in-out infinite;
+  background: #9a93a8;
+  box-shadow: none;
+}
+
+@keyframes vibyra-auto-ready {
+  0%, 100% { opacity: 0.58; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-provider-auto.terminal-auto-waiting .terminal-status {
+    animation: none !important;
+    transition: none !important;
+  }
+}

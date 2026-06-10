@@ -54,13 +54,16 @@ export function useWorkspaceFileActions(store: WorkspaceStore, requests: Workspa
     }
   }
 
-  async function loadProjectFiles(projectId: string): Promise<FileEntry[]> {
+  async function loadProjectFiles(projectId: string, projectPath = ""): Promise<FileEntry[]> {
     if (!state.connection) return [];
     try {
-      const result = await requests.agentRequest<{ files: FileEntry[] }>(`/files?projectId=${encodeURIComponent(projectId)}`);
+      const pathQuery = projectPath ? `&projectPath=${encodeURIComponent(projectPath)}` : "";
+      const result = await requests.agentRequest<{ files: FileEntry[] }>(
+        `/files?projectId=${encodeURIComponent(projectId)}${pathQuery}`
+      );
       const nextFiles = setLoadedFiles(result.files);
       return hydrateFirstFile(nextFiles, (path) => {
-        const endpoint = `/files/read?projectId=${encodeURIComponent(projectId)}&path=${encodeURIComponent(path)}`;
+        const endpoint = `/files/read?projectId=${encodeURIComponent(projectId)}&path=${encodeURIComponent(path)}${pathQuery}`;
         return requests.agentRequest<{ file: FileEntry }>(endpoint);
       });
     } catch (error) {

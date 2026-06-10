@@ -22,11 +22,26 @@ function rememberTerminalVoiceTurn(terminal, prompt, reply) {
 
 function appendTerminalVoiceMessage(terminal, role, text) {
   const thread = terminalVoiceThread(terminal);
-  thread.push({
+  const message = {
     role: role === "assistant" ? "assistant" : "user",
     text: String(text || "").slice(0, role === "assistant" ? 1600 : 1200)
-  });
+  };
+  thread.push(message);
   trimTerminalVoiceThread(thread);
+  return message;
+}
+
+function appendTerminalVoiceReply(userMessage, text, fallbackTerminal) {
+  const thread = Object.values(terminalVoiceThreads)
+    .find((candidate) => candidate.includes(userMessage))
+    || terminalVoiceThread(fallbackTerminal);
+  const message = {
+    role: "assistant",
+    text: String(text || "").slice(0, 1600)
+  };
+  thread.push(message);
+  trimTerminalVoiceThread(thread);
+  return message;
 }
 
 function transferTerminalVoiceThread(fromId, toId) {
@@ -57,7 +72,7 @@ function terminalVoiceConversationHtml(terminal = terminalCompanionActiveTermina
   return `<section class="terminal-voice-conversation" aria-label="Voice conversation">
     <div class="terminal-voice-conversation-head">
       <strong>Conversation</strong>
-      <span>${messages.length ? `${Math.ceil(messages.length / 2)} turn${messages.length > 2 ? "s" : ""}` : "Ready"}</span>
+      ${messages.length ? `<span>${Math.ceil(messages.length / 2)} turn${messages.length > 2 ? "s" : ""}</span>` : ""}
     </div>
     <div class="terminal-voice-conversation-list" data-terminal-voice-conversation>${rows}</div>
   </section>`;

@@ -1,7 +1,8 @@
 import { Platform } from "react-native";
 import { assertBackendReachableBeforeChat } from "./appApiReachability";
 import { getBackendReachabilityMessage } from "./appApiMessages";
-import { fetchWithTimeout, getExpoHost, normalizeAgentUrl, TimeoutError } from "./network";
+import { appApiRetryCandidates, approvedAppApiUrl, createAppApiOriginPolicy, isAllowedAppApiUrl } from "./appApiOrigins";
+import { fetchWithTimeout, getExpoHost, TimeoutError } from "./network";
 
 export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, ReferralSummary, ReferralSummaryResponse, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
 
@@ -25,37 +26,48 @@ export class AppApiError extends Error {
 }
 
 export function getAppApiUrl() {
-  if (runtimeAppApiUrl) return runtimeAppApiUrl;
-  return defaultAppApiUrl();
+  const policy = currentAppApiOriginPolicy();
+  if (runtimeAppApiUrl && isAllowedAppApiUrl(policy, runtimeAppApiUrl)) return runtimeAppApiUrl;
+  return policy.candidates[0];
 }
 
 export function rememberAppApiUrl(url: string) {
-  runtimeAppApiUrl = normalizeAgentUrl(url);
+  const policy = currentAppApiOriginPolicy();
+  const approvedUrl = approvedAppApiUrl(policy, url);
+  if (!approvedUrl) return false;
+  runtimeAppApiUrl = approvedUrl;
+  return true;
 }
 
 export function getAppApiCandidateUrls() {
-  const configured = defaultAppApiUrl();
-  const expoHost = getExpoHost();
-  const webHost = getWebLocationHost();
-  const candidates = [
-    configured,
-    expoHost ? `http://${expoHost}:8000` : "",
-    webHost ? `http://${webHost}:8000` : "",
-    Platform.OS === "web" ? "http://127.0.0.1:8000" : ""
-  ].map(normalizeAgentUrl).filter(Boolean);
-
-  return Array.from(new Set(candidates));
+  return currentAppApiOriginPolicy().candidates;
 }
 
-function defaultAppApiUrl() {
-  if (process.env.EXPO_PUBLIC_API_URL) return normalizeAgentUrl(process.env.EXPO_PUBLIC_API_URL);
+export function getAppApiRetryCandidateUrls(failedApiUrl: string) {
+  const policy = currentAppApiOriginPolicy();
+  return appApiRetryCandidates(policy, failedApiUrl);
+}
 
+export function getAppApiFetchRedirect() {
+  return currentAppApiOriginPolicy().redirect;
+}
+
+function currentAppApiOriginPolicy() {
   const host = getExpoHost();
-  if (host && Platform.OS !== "web") {
-    return `http://${host}:8000`;
-  }
-
-  return "http://127.0.0.1:8000";
+  const developmentDefaultUrl = host && Platform.OS !== "web"
+    ? `http://${host}:8000`
+    : "http://127.0.0.1:8000";
+  const webHost = getWebLocationHost();
+  return createAppApiOriginPolicy({
+    configuredUrl: process.env.EXPO_PUBLIC_API_URL,
+    developmentDefaultUrl,
+    developmentFallbackUrls: [
+      host ? `http://${host}:8000` : "",
+      webHost ? `http://${webHost}:8000` : "",
+      Platform.OS === "web" ? "http://127.0.0.1:8000" : ""
+    ],
+    isDevelopment: __DEV__
+  });
 }
 
 let runtimeAppApiUrl = "";
@@ -144,7 +156,8 @@ export async function appApiRequest<T>(
     }
     response = await fetchWithTimeout(url, {
       ...options,
-      headers
+      headers,
+      redirect: getAppApiFetchRedirect()
     }, requestTimeoutFor(endpoint));
   } catch (error) {
     if (!meta.background) {
@@ -197,10 +210,13 @@ async function retryAppApiRequestOnFallbackUrl(
   headers: Record<string, string>,
   failedApiUrl: string
 ) {
-  for (const candidate of getAppApiCandidateUrls()) {
-    if (!candidate || candidate === failedApiUrl) continue;
+  for (const candidate of getAppApiRetryCandidateUrls(failedApiUrl)) {
     try {
-      const response = await fetchWithTimeout(`${candidate}${endpoint}`, { ...options, headers }, requestTimeoutFor(endpoint));
+      const response = await fetchWithTimeout(`${candidate}${endpoint}`, {
+        ...options,
+        headers,
+        redirect: getAppApiFetchRedirect()
+      }, requestTimeoutFor(endpoint));
       rememberAppApiUrl(candidate);
       return response;
     } catch {
@@ -219,6 +235,7 @@ function requestTimeoutFor(endpoint: string) {
   if (endpoint === "/api/chat") return 240000;
   if (endpoint === "/api/chat/research-plan") return 25000;
   if (endpoint === "/api/community/assets/generate") return 100000;
+  if (endpoint === "/api/projects/publish") return 120000;
   if (endpoint === "/api/community/projects") return 5000;
   return 15000;
 }

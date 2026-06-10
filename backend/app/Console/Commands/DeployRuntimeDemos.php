@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PublishedProject;
 use App\Models\PublishedProjectDeployment;
 use App\Services\Deployments\RailwayRuntimeDeploymentService;
 use Illuminate\Console\Command;
@@ -18,12 +19,16 @@ class DeployRuntimeDemos extends Command
         $deployments = PublishedProjectDeployment::query()
             ->where('provider', PublishedProjectDeployment::PROVIDER_RAILWAY)
             ->where('status', PublishedProjectDeployment::STATUS_QUEUED)
+            ->whereHas('project', fn ($project) => $project
+                ->where('visibility', 'public')
+                ->where('review_status', PublishedProject::REVIEW_APPROVED))
             ->oldest()
             ->limit($limit)
             ->get();
 
         if ($deployments->isEmpty()) {
             $this->info('No queued runtime demos.');
+
             return self::SUCCESS;
         }
 

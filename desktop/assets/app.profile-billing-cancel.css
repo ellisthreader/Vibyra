@@ -1,0 +1,167 @@
+.profile-billing-cancel-entry,
+.profile-billing-cancel-panel {
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  padding: 18px 0;
+}
+
+.profile-billing-cancel-entry {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.profile-billing-cancel-entry div,
+.profile-billing-cancel-panel header {
+  display: grid;
+  gap: 5px;
+}
+
+.profile-billing-cancel-entry h2,
+.profile-billing-cancel-panel h2 {
+  color: var(--surface-text, var(--text));
+  font-size: 16px;
+  line-height: 22px;
+  margin: 0;
+}
+
+.profile-billing-cancel-entry p,
+.profile-billing-cancel-panel p {
+  color: var(--surface-muted, var(--muted));
+  font-size: 13px;
+  line-height: 19px;
+  margin: 0;
+}
+
+.profile-billing-cancel-entry button {
+  background: transparent;
+  border: 0;
+  color: var(--surface-danger, var(--danger));
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 8px 0;
+}
+
+.profile-billing-cancel-entry button:hover { text-decoration: underline; }
+
+.profile-billing-cancel-panel {
+  background: color-mix(in srgb, var(--surface-danger, #ff5d7a) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--surface-danger, #ff5d7a) 18%, transparent);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.profile-billing-cancel-panel header > span {
+  color: var(--surface-danger, var(--danger));
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.profile-billing-cancel-panel fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-billing-cancel-panel legend,
+.profile-billing-cancel-detail > span {
+  color: var(--surface-text, var(--text));
+  font-size: 13px;
+  font-weight: 680;
+  margin-bottom: 9px;
+}
+
+.profile-billing-cancel-reasons {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-billing-cancel-reason {
+  align-items: center;
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  border-radius: 7px;
+  color: var(--surface-muted, var(--muted));
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 9px;
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.profile-billing-cancel-reason:has(input:checked) {
+  border-color: var(--surface-border-strong, rgba(255, 255, 255, 0.18));
+  color: var(--surface-text, var(--text));
+}
+
+.profile-billing-cancel-reason input {
+  accent-color: var(--accent, #6d3bff);
+  margin: 0;
+}
+
+.profile-billing-cancel-detail {
+  display: grid;
+}
+
+.profile-billing-cancel-detail small {
+  color: var(--surface-muted, var(--muted));
+  font-weight: 500;
+}
+
+.profile-billing-cancel-detail textarea {
+  background: var(--surface-input, rgba(255, 255, 255, 0.035));
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.08));
+  border-radius: 7px;
+  color: var(--surface-text, var(--text));
+  font: inherit;
+  line-height: 20px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.profile-billing-cancel-confirm {
+  align-items: start;
+  color: var(--surface-text, var(--text));
+  display: flex;
+  font-size: 13px;
+  gap: 9px;
+  line-height: 18px;
+}
+
+.profile-billing-cancel-confirm input {
+  accent-color: var(--surface-danger, var(--danger));
+  margin: 2px 0 0;
+}
+
+.profile-billing-cancel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-billing-cancel-status {
+  color: var(--surface-muted, var(--muted));
+  font-size: 12px !important;
+}
+
+.profile-billing-cancel-status.is-danger {
+  color: var(--surface-danger, var(--danger));
+}
+
+@media (max-width: 720px) {
+  .profile-billing-cancel-entry,
+  .profile-billing-cancel-reasons {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-billing-cancel-entry button {
+    justify-self: start;
+  }
+}

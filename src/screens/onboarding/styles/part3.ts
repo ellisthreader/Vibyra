@@ -106,7 +106,7 @@ export const part3 = {
     lineHeight: 19
   },
   connectGuideScrim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(2, 1, 12, 0.32)"
   },
   connectGuideSectionTitle: {

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AccountEndpoints;
+use App\Http\Controllers\Concerns\AutoModelRouteEndpoint;
 use App\Http\Controllers\Concerns\AuthEndpoints;
+use App\Http\Controllers\Concerns\AuthRecoveryEndpoints;
 use App\Http\Controllers\Concerns\ChatEndpoint;
 use App\Http\Controllers\Concerns\ChatLearningFeedback;
 use App\Http\Controllers\Concerns\ChatStreamEndpoint;
@@ -13,7 +15,9 @@ use App\Http\Controllers\Concerns\ChatResearchPlan;
 use App\Http\Controllers\Concerns\CommunityAssetGeneration;
 use App\Http\Controllers\Concerns\CommunityPublishMedia;
 use App\Http\Controllers\Concerns\CommunityPublishing;
+use App\Http\Controllers\Concerns\CodexResponsesEndpoint;
 use App\Http\Controllers\Concerns\LevelEndpoints;
+use App\Http\Controllers\Concerns\NativeTerminalEndpoint;
 use App\Http\Controllers\Concerns\ProjectMemoryEndpoints;
 use App\Http\Controllers\Concerns\ReferralEndpoints;
 use App\Http\Controllers\Concerns\UserPayloads;
@@ -25,7 +29,9 @@ use Illuminate\Http\Request;
 class VibyraAppController extends Controller
 {
     use AccountEndpoints;
+    use AutoModelRouteEndpoint;
     use AuthEndpoints;
+    use AuthRecoveryEndpoints;
     use ChatEndpoint;
     use ChatLearningFeedback;
     use ChatStreamEndpoint;
@@ -35,7 +41,9 @@ class VibyraAppController extends Controller
     use CommunityAssetGeneration;
     use CommunityPublishMedia;
     use CommunityPublishing;
+    use CodexResponsesEndpoint;
     use LevelEndpoints;
+    use NativeTerminalEndpoint;
     use ProjectMemoryEndpoints;
     use ReferralEndpoints;
     use UserPayloads;

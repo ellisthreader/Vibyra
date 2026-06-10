@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class CreditDeductor
 {
-    public function __construct(private readonly CreditCalculator $calculator)
-    {
-    }
+    public function __construct(private readonly CreditCalculator $calculator) {}
 
     /**
      * Reset the user's daily / 5-hour burst / weekly counters if their
@@ -46,18 +44,21 @@ class CreditDeductor
     public function dailyCap(User $user): int
     {
         $plan = $user->plan ?: 'free';
+
         return (int) config("billing.plans.{$plan}.daily_credit_cap", 5);
     }
 
     public function burstCap(User $user): int
     {
         $plan = $user->plan ?: 'free';
+
         return (int) config("billing.plans.{$plan}.burst_credit_cap", 0);
     }
 
     public function weeklyCap(User $user): int
     {
         $plan = $user->plan ?: 'free';
+
         return (int) config("billing.plans.{$plan}.weekly_credit_cap", 0);
     }
 
@@ -160,9 +161,13 @@ class CreditDeductor
         });
     }
 
-    public function refresh(User $user, int $monthlyAllowance, ?array $meta = null): CreditLedger
-    {
-        return DB::transaction(function () use ($user, $monthlyAllowance, $meta) {
+    public function refresh(
+        User $user,
+        int $monthlyAllowance,
+        ?array $meta = null,
+        ?string $reference = null
+    ): CreditLedger {
+        return DB::transaction(function () use ($user, $monthlyAllowance, $meta, $reference) {
             $fresh = User::lockForUpdate()->find($user->id);
             $fresh->forceFill([
                 'credits_balance' => $monthlyAllowance,
@@ -187,7 +192,7 @@ class CreditDeductor
                 'kind' => 'refresh',
                 'credits_delta' => $monthlyAllowance,
                 'credits_balance_after' => $monthlyAllowance,
-                'reference' => 'refresh:' . now()->format('Y-m'),
+                'reference' => $reference ?: 'refresh:'.now()->format('Y-m'),
                 'meta' => $meta,
             ]);
         });

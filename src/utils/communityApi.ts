@@ -27,15 +27,25 @@ export type PublishProjectResponse = {
 
 export type PublishProjectVisibility = "public" | "unlisted" | "private";
 export type ProjectPublishStatus = {
+  allowedActions?: string[];
   appUrl?: string;
   backendPlatform?: string | null;
   backendStatus?: string | null;
+  candidateError?: string | null;
+  candidateReleaseState?: string | null;
+  currentPublicUrl?: string | null;
+  currentReleaseState?: string | null;
+  deploymentCreatedAt?: string | null;
   deploymentStatus?: string | null;
+  deploymentUpdatedAt?: string | null;
   description?: string;
   frontendStatus?: string | null;
   hostingMode?: string | null;
   id?: string;
+  isDiscoverable?: boolean;
+  isOpenable?: boolean;
   isPublic?: boolean;
+  listingState?: string | null;
   project?: CommunityPost;
   hostedDemoMessage?: string | null;
   hostedDemoStatus?: string | null;
@@ -75,6 +85,12 @@ export type PublishProjectResult = {
 };
 
 type ProjectPublishStatusesResponse = { ok: boolean; projects: ProjectPublishStatus[]; };
+type UpdateProjectListingResponse = {
+  action: "listing_updated";
+  ok?: boolean;
+  project: CommunityPost;
+  publishStatus: ProjectPublishStatus;
+};
 
 export type CommunityCommentResponse = {
   ok: boolean;
@@ -115,8 +131,8 @@ export function normalizeCommunityPost(post: CommunityPost): CommunityPost {
     logo: post.logo || "default",
     logoImageUrl: post.logoImageUrl ? absoluteApiUrl(post.logoImageUrl) : post.logoImageUrl,
     preview: post.preview || "analytics",
-    screenshots: post.screenshots?.length ? post.screenshots : ["Preview"],
-    screenshotUrls: post.screenshotUrls?.map(absoluteApiUrl) ?? [],
+    screenshots: post.screenshots ?? [],
+    screenshotUrls: post.screenshotUrls?.map((url) => url?.trim() ? absoluteApiUrl(url) : "") ?? [],
     tags: post.tags?.length ? post.tags : ["Vibyra"]
   };
 }
@@ -136,6 +152,10 @@ export async function fetchProjectPublishStatuses(authToken: string) {
 
 export async function publishProject(payload: {
   authToken: string;
+  capabilities?: {
+    backend: boolean;
+    frontend: boolean;
+  };
   description: string;
   hostedDemo?: HostedDemoPayload | null;
   logoImageUrl?: string;
@@ -183,6 +203,28 @@ export async function updatePublishedProjectVisibility(authToken: string, slug: 
   );
   return {
     ...result,
+    project: normalizeCommunityPost(result.project),
+    publishStatus: normalizePublishStatus(result.publishStatus)
+  };
+}
+
+export async function updatePublishedProjectListing(payload: {
+  authToken: string;
+  description: string;
+  logoImageUrl?: string;
+  screenshotUrls?: string[];
+  slug: string;
+  tags: string[];
+  title: string;
+}) {
+  const { authToken, slug, ...body } = payload;
+  const result = await appApiRequest<UpdateProjectListingResponse>(
+    `/api/projects/${encodeURIComponent(slug)}/listing`,
+    { method: "PATCH", body: JSON.stringify(body) },
+    authToken
+  );
+  return {
+    action: result.action,
     project: normalizeCommunityPost(result.project),
     publishStatus: normalizePublishStatus(result.publishStatus)
   };
@@ -249,6 +291,7 @@ function normalizePublishStatus(status?: ProjectPublishStatus) {
     hostedDemoUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.hostedDemoUrl || "")),
     logoImageUrl: status.logoImageUrl ? absoluteApiUrl(status.logoImageUrl) : status.logoImageUrl,
     publicUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.publicUrl || "")),
+    currentPublicUrl: sanitizePublicDemoUrl(absoluteApiUrl(status.currentPublicUrl || "")),
     screenshotUrls: status.screenshotUrls?.map(absoluteApiUrl) ?? [],
     project: status.project ? normalizeCommunityPost(status.project) : status.project
   };

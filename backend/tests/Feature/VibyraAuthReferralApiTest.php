@@ -145,6 +145,32 @@ class VibyraAuthReferralApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_current_session_device_name_can_be_refreshed_for_settings(): void
+    {
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Phone Owner',
+            'email' => 'phone-device@example.com',
+            'password' => 'secret123',
+            'deviceName' => 'Vibyra App',
+            'installId' => 'phone-install-1',
+        ])->assertCreated()->json('token');
+
+        $headers = ['Authorization' => "Bearer {$token}"];
+
+        $this->postJson('/api/account/session/device', [
+            'deviceName' => "Ellis's iPhone",
+            'installId' => 'phone-install-1',
+        ], $headers)
+            ->assertOk()
+            ->assertJsonPath('device.deviceName', "Ellis's iPhone")
+            ->assertJsonPath('device.current', true);
+
+        $this->getJson('/api/account/sessions', $headers)
+            ->assertOk()
+            ->assertJsonCount(1, 'devices')
+            ->assertJsonPath('devices.0.deviceName', "Ellis's iPhone");
+    }
+
     public function test_local_desktop_session_can_use_forwarded_public_ip_for_location(): void
     {
         $this->app->instance(\App\Services\SessionLocationResolver::class, new class {

@@ -38,6 +38,8 @@ return [
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'url' => env('OPENROUTER_API_URL', 'https://openrouter.ai/api/v1/chat/completions'),
+        'responses_url' => env('OPENROUTER_RESPONSES_URL', 'https://openrouter.ai/api/v1/responses'),
+        'anthropic_url' => env('OPENROUTER_ANTHROPIC_URL', 'https://openrouter.ai/api/v1/messages'),
         'image_model' => env('OPENROUTER_IMAGE_MODEL', 'openai/gpt-5.4-image-2'),
     ],
 
@@ -65,6 +67,20 @@ return [
     'google_iap' => [
         'package_name' => env('GOOGLE_IAP_PACKAGE_NAME'),
         'service_account_json' => env('GOOGLE_IAP_SERVICE_ACCOUNT_JSON'),
+        'api_url' => env(
+            'GOOGLE_IAP_API_URL',
+            'https://androidpublisher.googleapis.com/androidpublisher/v3'
+        ),
+    ],
+
+    'google_auth' => [
+        'audiences' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_AUTH_CLIENT_IDS', ''))))),
+        'jwks_url' => env('GOOGLE_AUTH_JWKS_URL', 'https://www.googleapis.com/oauth2/v3/certs'),
+    ],
+
+    'apple_auth' => [
+        'audiences' => array_values(array_filter(array_map('trim', explode(',', (string) env('APPLE_AUTH_CLIENT_IDS', ''))))),
+        'jwks_url' => env('APPLE_AUTH_JWKS_URL', 'https://appleid.apple.com/auth/keys'),
     ],
 
     'railway' => [
@@ -75,6 +91,7 @@ return [
         'runtime_environment' => env('RAILWAY_RUNTIME_ENVIRONMENT', 'production'),
         'runtime_project_prefix' => env('RAILWAY_RUNTIME_PROJECT_PREFIX', 'vibyra-demo'),
         'runtime_ready_timeout' => env('RAILWAY_RUNTIME_READY_TIMEOUT', 180),
+        'runtime_upload_mode' => env('RAILWAY_RUNTIME_UPLOAD_MODE', 'cli'),
         'max_active_demos_per_user' => env('RAILWAY_MAX_ACTIVE_DEMOS_PER_USER', 1),
     ],
 

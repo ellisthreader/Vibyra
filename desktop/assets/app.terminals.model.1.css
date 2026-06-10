@@ -102,15 +102,22 @@
 }
 .terminal-model-select-wrap .terminal-model-picker {
   bottom: auto;
-  left: auto;
-  margin-top: 8px;
-  max-height: min(520px, calc(100vh - 144px));
-  position: static;
-  top: auto;
-  width: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+  left: var(--terminal-setup-menu-left, 12px);
+  margin: 0;
+  max-height: min(520px, var(--terminal-setup-menu-max-height, calc(100vh - 144px)));
+  position: fixed;
+  top: var(--terminal-setup-menu-top, 96px);
+  visibility: hidden;
+  width: min(392px, calc(100vw - 24px));
+  z-index: 320;
+}
+.terminal-model-select-wrap .terminal-model-picker.terminal-model-picker--positioned {
+  visibility: visible;
 }
 .terminal-model-select-wrap .terminal-model-scroll {
-  max-height: min(440px, calc(100vh - 230px));
+  max-height: none;
+  min-height: 0;
 }
 .terminal-new-wrap .terminal-model-picker {
   left: var(--terminal-new-menu-left, 8px);
@@ -132,58 +139,73 @@ body.electron-shell .terminal-new-wrap .terminal-model-scroll {
   max-height: calc(100vh - var(--chrome-height, 54px) - 118px);
 }
 .terminal-settings-menu {
-  min-width: 300px;
+  min-width: 292px;
   padding: 8px;
   right: 0;
   top: calc(100% + 8px);
 }
 .terminal-rename-form {
+  align-items: center;
   border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  grid-template-columns: 18px minmax(0, 1fr) 30px;
   margin-bottom: 5px;
-  padding: 3px 8px 10px;
+  padding: 4px 8px 10px;
 }
-.terminal-rename-form > label {
-  color: var(--terminal-dim, #918ca1);
-  font-size: 10px;
-  font-weight: 740;
-  letter-spacing: .04em;
-  text-transform: uppercase;
+.terminal-rename-icon {
+  color: var(--terminal-accent, #8b5cff);
+  display: inline-flex;
 }
-.terminal-rename-form > div {
-  display: grid;
-  gap: 6px;
-  grid-template-columns: minmax(0, 1fr) auto;
+.terminal-rename-icon svg {
+  height: 16px;
+  width: 16px;
 }
 .terminal-rename-form input {
-  background: color-mix(in srgb, var(--terminal-elevated) 72%, transparent);
-  border: 1px solid var(--terminal-border);
-  border-radius: 7px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
   color: var(--terminal-text);
   font: inherit;
+  font-size: 13px;
+  font-weight: 650;
   min-width: 0;
   outline: 0;
-  padding: 8px 9px;
+  padding: 7px 0 6px;
 }
 .terminal-rename-form input:focus {
-  border-color: var(--terminal-accent-border);
+  border-bottom-color: var(--terminal-accent-border);
 }
 .terminal-rename-form button {
-  background: var(--terminal-accent-soft);
-  border: 1px solid var(--terminal-accent-border);
-  border-radius: 7px;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--terminal-accent, #8b5cff);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  width: 30px;
+}
+.terminal-rename-form button:hover {
+  background: var(--terminal-hover);
   color: var(--terminal-text);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 0 10px;
+}
+.terminal-rename-form button svg {
+  height: 15px;
+  width: 15px;
 }
 .terminal-rename-form button:disabled {
   opacity: .55;
 }
 .terminal-rename-form > small {
   color: var(--terminal-dim);
+  grid-column: 2 / -1;
   min-height: 0;
+}
+.terminal-rename-form > small:empty {
+  display: none;
 }
 .terminal-menu-section {
   display: grid;
@@ -235,26 +257,18 @@ body.electron-shell .terminal-new-wrap .terminal-model-scroll {
   font-size: 11px;
   font-style: normal;
 }
-.terminal-menu-advanced {
+.terminal-menu-technical {
   border-top: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
   margin-top: 5px;
   padding-top: 6px;
 }
-.terminal-menu-section-label {
-  margin: 0;
-  padding: 3px 8px 1px;
-}
-.terminal-menu-advanced .terminal-path-row {
+.terminal-menu-technical .terminal-path-row {
   min-height: 40px;
 }
-.terminal-menu-advanced .terminal-path-row strong {
+.terminal-menu-technical .terminal-path-row strong {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;
   font-weight: 560;
-}
-.terminal-menu-advanced .terminal-token-source {
-  min-width: 0;
-  padding: 6px 8px 4px;
 }
 .terminal-close-row {
   align-items: center;

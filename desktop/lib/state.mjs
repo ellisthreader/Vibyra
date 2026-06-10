@@ -1,16 +1,20 @@
+import { randomBytes, randomInt } from "node:crypto";
 import { networkInterfaces, hostname, homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
+import { desktopAppApiUrl } from "./appApiConfig.mjs";
+import { revokeAllPreviewCapabilities } from "./previewCapabilities.mjs";
 
 export const PORT = Number(process.env.VIBYRA_AGENT_PORT ?? 4317);
+export const APP_API_URL = desktopAppApiUrl();
 export const PAIR_CODE = process.env.VIBYRA_PAIR_CODE ?? makePairCode();
-export const TOKEN = process.env.VIBYRA_AGENT_TOKEN ?? loadDesktopToken();
+export const TOKEN = process.env.VIBYRA_AGENT_TOKEN ?? loadOrCreateDesktopToken();
 export const machineName = hostname();
 export const startedAt = new Date().toISOString();
 export const allowedCommands = new Set(["git status", "npm install", "npm run dev", "npm run build", "npm test", "pytest"]);
 export const PHONE_SESSION_TIMEOUT_MS = 30000;
-export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-08.1";
+export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-09.12";
 
 export const appState = {
   server: null,
@@ -21,7 +25,9 @@ export const appState = {
   pendingPair: null,
   selectedProjectId: null,
   latestPreview: null,
+  latestPreviewCredential: null,
   previewServers: {},
+  previewServices: {},
   agentRuns: {},
   pendingAgentApplies: {},
   rendererReloadRequest: null,
@@ -60,22 +66,24 @@ export function requestRendererProtocolReload(rendererProtocolVersion = "") {
 
 export function makePairCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 6 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return Array.from({ length: 6 }, () => alphabet[randomInt(alphabet.length)]).join("");
 }
 
-function loadDesktopToken() {
-  const tokenPath = join(homedir(), ".vibyra-agent", "desktop-token");
+export function loadOrCreateDesktopToken({
+  tokenPath = join(process.env.VIBYRA_AGENT_HOME || homedir(), ".vibyra-agent", "desktop-token"),
+  randomBytesImpl = randomBytes
+} = {}) {
   try {
     if (existsSync(tokenPath)) {
       const existing = readFileSync(tokenPath, "utf8").trim();
       if (existing) return existing;
     }
-    const token = `vibyra-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    mkdirSync(join(homedir(), ".vibyra-agent"), { recursive: true });
+    const token = `vibyra-${randomBytesImpl(32).toString("base64url")}`;
+    mkdirSync(dirname(tokenPath), { recursive: true });
     writeFileSync(tokenPath, `${token}\n`, { mode: 0o600 });
     return token;
   } catch {
-    return `vibyra-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return `vibyra-${randomBytesImpl(32).toString("base64url")}`;
   }
 }
 
@@ -130,6 +138,7 @@ export function markPhoneConnected(deviceName = appState.pairedDevice || approve
 
 export function disconnectPhone(message = "Phone disconnected from Vibyra Desktop") {
   const deviceName = appState.phoneSession?.deviceName || appState.pairedDevice;
+  revokePhonePreviewCapabilities();
   appState.pairedDevice = null;
   appState.phoneSession = null;
   if (appState.pendingPair?.status !== "pending") appState.pendingPair = null;
@@ -143,6 +152,7 @@ export function activePairedDevice(emitExpiredEvent = true) {
   if (!expired) return appState.phoneSession.deviceName || appState.pairedDevice;
 
   const deviceName = appState.phoneSession.deviceName || appState.pairedDevice || "Phone";
+  revokePhonePreviewCapabilities();
   appState.pairedDevice = null;
   appState.phoneSession = null;
   if (emitExpiredEvent) {
@@ -154,6 +164,7 @@ export function activePairedDevice(emitExpiredEvent = true) {
 export function publicState() {
   const pairedDevice = activePairedDevice();
   return {
+    appApiUrl: APP_API_URL,
     machineName,
     pairCode: PAIR_CODE,
     pairedDevice,
@@ -174,6 +185,11 @@ export function pushEvents(events) {
 
 function approvedPairDeviceName() {
   return appState.pendingPair?.status === "approved" ? appState.pendingPair.deviceName : null;
+}
+
+function revokePhonePreviewCapabilities() {
+  revokeAllPreviewCapabilities();
+  appState.latestPreviewCredential = null;
 }
 
 function hostnameFromRequestHost(requestHost) {

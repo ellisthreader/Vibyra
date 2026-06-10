@@ -4,23 +4,33 @@ import { join } from "node:path";
 import { isViteOutputUrl, portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
 import { choosePreviewPort } from "./previewPortAllocator.mjs";
 import { isLaravelViteProject, startLaravelViteDevServer } from "./previewLaravelDevServer.mjs";
+import { previewUnavailableReason } from "./previewDetection.mjs";
 import { devServerPortsFromPackage, npmRunArgs, npmRunEnv, previewCommand, previewFrameworkProfile } from "./previewFrameworkProfiles.mjs";
 import { existingProjectAppRoots, WEB_APP_DIRECTORIES } from "./projectAppRoots.mjs";
+import { expoHtmlMatchesProject, expoPreviewProfile, expoProjectTitles } from "./previewExpo.mjs";
+import { runtimePreviewContext, runtimePreviewLaunch } from "./previewRuntimeAdapters.mjs";
 import { isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
 import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
+import { activatePreviewService, previewService } from "./previewServices.mjs";
 import { appState, publicHostFromRequestHost } from "./state.mjs";
 
 export const PREVIEW_DEV_COMMAND = "npm run dev -- --host 0.0.0.0";
 
-export async function runningProjectDevServerUrl(project, requestHost) {
-  const context = await sourcePreviewContext(project);
+export async function runningProjectDevServerUrl(project, requestHost, appDirectory = "", targetId = "") {
+  const context = await sourcePreviewContext(project, appDirectory);
   if (!context) return null;
+  const tracked = targetId ? previewService(project.id, targetId) : appState.previewServers[project.id];
+  const trackedUrl = tracked?.appDirectory === context.appDirectory ? tracked.url : "";
+  if (trackedUrl && await profileServerLooksReady(trackedUrl, context.profile)) return trackedUrl;
+  if (context.reuseExisting === false) {
+    return null;
+  }
 
   for (const port of devServerPortsFromPackage(context.packageText, context.profile)) {
     const probe = await probeLoopbackPort(port);
     if (!probe) continue;
     const { localBase, localRoot } = probe;
-    if (!rootMatchesProject(localRoot, context.localScripts)) continue;
+    if (!rootMatchesExistingProject(localRoot, context)) continue;
     if (!await profileServerLooksReady(localBase, context.profile)) continue;
 
     const publicBase = publicDevServerBase(port, requestHost);
@@ -28,79 +38,114 @@ export async function runningProjectDevServerUrl(project, requestHost) {
     if (isLoopbackHost(publicBase)) return publicBase;
 
     const publicRoot = await fetchText(`${publicBase}/`);
-    if (publicRoot && rootMatchesProject(publicRoot, context.localScripts) && await profileServerLooksReady(publicBase, context.profile, publicRoot)) return publicBase;
+    if (publicRoot && rootMatchesExistingProject(publicRoot, context) && await profileServerLooksReady(publicBase, context.profile, publicRoot)) return publicBase;
   }
 
   return null;
 }
 
 export async function startProjectDevServer(project, requestHost, options = {}) {
-  const existingUrl = options.reuseExisting ? await runningProjectDevServerUrl(project, requestHost) : null;
+  const appDirectory = String(options.appDirectory || "");
+  const targetId = String(options.targetId || "");
+  const existingUrl = options.reuseExisting ? await runningProjectDevServerUrl(project, requestHost, appDirectory, targetId) : null;
   if (existingUrl) {
-    const tracked = appState.previewServers[project.id];
-    if (tracked) {
+    const launch = await projectPreviewLaunch(project, appDirectory);
+    const command = launch.command || PREVIEW_DEV_COMMAND;
+    const tracked = targetId ? previewService(project.id, targetId) : appState.previewServers[project.id];
+    if (tracked?.appDirectory === appDirectory) {
       tracked.url = existingUrl;
       tracked.proxyTargetUrl = loopbackBaseForUrl(existingUrl);
+      tracked.command = command;
+      tracked.state = "running";
+      if (options.activate !== false && targetId) activatePreviewService(project.id, targetId);
     } else {
-      trackPreviewServer(project.id, { command: PREVIEW_DEV_COMMAND, proxyTargetUrl: loopbackBaseForUrl(existingUrl), startedAt: new Date().toISOString(), url: existingUrl });
+      trackPreviewServer(project.id, targetId, { appDirectory, command, proxyTargetUrl: loopbackBaseForUrl(existingUrl), startedAt: new Date().toISOString(), state: "running", url: existingUrl }, { activate: options.activate });
     }
-    return { command: PREVIEW_DEV_COMMAND, started: false, url: existingUrl };
+    options.onOutput?.(`Verified existing ${launch.framework || "project"} preview at ${existingUrl}\n`);
+    return { command, framework: launch.framework || "", profileId: launch.profileId || "", started: false, url: existingUrl };
   }
 
-  const context = await startablePreviewContext(project);
-  if (!context) throw new Error("This project does not expose a recognized web dev script that Vibyra can start safely. Add a standard package.json script for Vite, SvelteKit, Next.js, Astro, Nuxt, Angular, Vue CLI, Create React App, or Remix Vite, then try Preview again.");
+  const context = await startablePreviewContext(project, appDirectory);
+  if (!context) throw new Error(await previewUnavailableReason(project));
 
   const launchProject = context.appPath === project.path ? project : { ...project, path: context.appPath };
   if (await isLaravelViteProject(context.appPath, context.packageText, context.profile)) {
     return startLaravelViteDevServer(launchProject, requestHost, context, options);
   }
 
-  stopTrackedPreviewServer(project.id);
+  stopTrackedPreviewServer(project.id, targetId);
   context.launchPort = options.port ?? await choosePreviewPort(context.packageText, context.profile);
-  context.command = previewCommand(context.profile, context.launchPort);
-  const executable = process.platform === "win32" ? "npm.cmd" : "npm";
-  const child = spawn(executable, npmRunArgs(context.profile, context.launchPort), {
+  context.targetId = targetId;
+  context.preexistingPorts = await occupiedScanPorts(context);
+  const runtimeLaunch = context.runtime ? runtimePreviewLaunch(context, context.launchPort) : null;
+  context.command = runtimeLaunch?.command || previewCommand(context.profile, context.launchPort);
+  const executable = runtimeLaunch?.executable || (process.platform === "win32" ? "npm.cmd" : "npm");
+  const args = runtimeLaunch?.args || npmRunArgs(context.profile, context.launchPort);
+  const child = spawn(executable, args, {
     cwd: context.appPath,
     detached: process.platform !== "win32",
-    env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, context.launchPort), ...(options.env ?? {}) },
+    env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, context.launchPort), ...(runtimeLaunch?.env || {}), ...(options.env ?? {}) },
     stdio: ["ignore", "pipe", "pipe"]
   });
   let output = "";
+  let launchFailure = null;
   const capture = (chunk) => {
     output = `${output}${String(chunk)}`.slice(-4000);
+    options.onOutput?.(chunk);
   };
   child.stdout?.on("data", capture);
   child.stderr?.on("data", capture);
-  trackPreviewServer(project.id, { command: context.command, process: child, startedAt: new Date().toISOString() });
+  child.on("error", (error) => { launchFailure = error; capture(error.message); });
+  const tracked = trackPreviewServer(project.id, targetId, {
+    appDirectory: context.appDirectory,
+    command: context.command,
+    process: child,
+    startedAt: new Date().toISOString()
+  }, { activate: options.activate });
 
-  const url = await waitForProjectDevServer(project, requestHost, context, () => output, options.timeoutMs ?? 30000);
+  const url = await waitForProjectDevServer(project, requestHost, context, () => output, options.timeoutMs ?? 30000, () => launchFailure || child.exitCode !== null);
   if (url) {
-    const tracked = appStatePreviewServer(project.id);
-    if (tracked) {
-      tracked.url = url;
-      tracked.proxyTargetUrl = loopbackBaseForUrl(url);
-    }
-    return { command: context.command, started: true, url };
+    tracked.url = url;
+    tracked.proxyTargetUrl = loopbackBaseForUrl(url);
+    tracked.state = "running";
+    return { command: context.command, framework: context.profile.label, profileId: context.profile.id, started: true, url };
   }
 
-  stopTrackedPreviewServer(project.id);
+  stopTrackedPreviewServer(project.id, targetId);
   const reason = output.trim() ? ` Last output: ${output.trim().slice(-900)}` : "";
   throw new Error(`Vibyra could not verify the dev server after starting it.${reason}`);
 }
 
-async function waitForProjectDevServer(project, requestHost, context, output, timeoutMs) {
+export async function projectPreviewLaunch(project, appDirectory = "") {
+  const context = await startablePreviewContext(project, appDirectory);
+  if (!context) return { available: false, reason: await previewUnavailableReason(project) };
+  return {
+    available: true,
+    appDirectory: context.appDirectory,
+    command: context.profile.command,
+    framework: context.profile.label,
+    profileId: context.profile.id
+  };
+}
+
+async function waitForProjectDevServer(project, requestHost, context, output, timeoutMs, stopped = () => false) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const url = await launchedDevServerUrl(context, requestHost, output())
-      ?? (context.localScripts.length > 0 ? await runningProjectDevServerUrl(project, requestHost) : null);
+      ?? (context.localScripts.length > 0 ? await runningProjectDevServerUrl(project, requestHost, context.appDirectory, context.targetId) : null);
     if (url) return url;
+    if (stopped()) return null;
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   return null;
 }
 
 async function launchedDevServerUrl(context, requestHost, output) {
-  const ports = uniquePorts([context.launchPort, ...portsFromOutput(output)]);
+  const scanPorts = context.profile.scanDefaultPorts
+    ? devServerPortsFromPackage(context.packageText, context.profile)
+    : [];
+  const ports = uniquePorts([context.launchPort, ...portsFromOutput(output), ...scanPorts])
+    .filter((port) => !context.preexistingPorts?.has(port));
   if (ports.length === 0) return null;
   for (const port of ports) {
     const probe = await probeLoopbackPort(port);
@@ -125,34 +170,41 @@ function uniquePorts(ports) {
   return Array.from(new Set(ports.filter((port) => Number.isInteger(port) && port > 0 && port < 65536)));
 }
 
-async function sourcePreviewContext(project) {
-  for (const root of await previewAppRoots(project.path)) {
+async function sourcePreviewContext(project, appDirectory = "") {
+  for (const root of await previewAppRoots(project.path, appDirectory)) {
+    const packageText = await readOptionalText(join(root.path, "package.json"));
+    const profile = previewProfile(packageText);
+    if (!profile) continue;
     const localHtml = await readProjectIndex(root.path);
+    if (profile.id === "expo-web") {
+      const appText = await readOptionalText(join(root.path, "app.json"));
+      return { appDirectory: root.directory, appPath: root.path, expoTitles: expoProjectTitles(appText, packageText), localHtml: "", localScripts: [], packageText, profile };
+    }
     if (!localHtml || !isSourceOnlyPreviewHtml(localHtml)) continue;
     const localScripts = sourceScriptPaths(localHtml);
     if (localScripts.length === 0) continue;
-    const packageText = await readOptionalText(join(root.path, "package.json"));
-    const profile = previewFrameworkProfile(packageText);
-    if (!profile) continue;
     if (profile.viteClient && !looksLikeViteProject(packageText, localHtml)) continue;
-    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile };
+    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile, reuseExisting: profile.reuseExisting };
   }
-  return null;
+  return runtimePreviewContext(project.path, appDirectory);
 }
 
-async function startablePreviewContext(project) {
-  for (const root of await previewAppRoots(project.path)) {
+async function startablePreviewContext(project, appDirectory = "") {
+  for (const root of await previewAppRoots(project.path, appDirectory)) {
     const packageText = await readOptionalText(join(root.path, "package.json"));
-    const profile = previewFrameworkProfile(packageText);
+    const profile = previewProfile(packageText);
     if (!profile) continue;
     const localHtml = await readProjectIndex(root.path);
     const localScripts = localHtml && isSourceOnlyPreviewHtml(localHtml) ? sourceScriptPaths(localHtml) : [];
-    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile };
+    return { appDirectory: root.directory, appPath: root.path, localHtml, localScripts, packageText, profile, reuseExisting: profile.reuseExisting };
   }
-  return null;
+  return runtimePreviewContext(project.path, appDirectory);
 }
 
-function previewAppRoots(projectPath) {
+function previewAppRoots(projectPath, appDirectory = "") {
+  if (appDirectory) {
+    return existingProjectAppRoots(projectPath, [appDirectory], ["package.json"]);
+  }
   return existingProjectAppRoots(projectPath, WEB_APP_DIRECTORIES, ["package.json"]);
 }
 
@@ -183,6 +235,7 @@ async function profileServerLooksReady(baseUrl, profile, rootHtml = "") {
   if (!/<!doctype\s+html|<html\b|<body\b/i.test(html)) html = await fetchText(`${baseUrl}/`) ?? "";
   if (!/<!doctype\s+html|<html\b|<body\b/i.test(html)) return false;
   if (profile?.markers?.length && !profile.markers.some((marker) => marker.test(html))) return false;
+  if (profile?.id === "expo-web" && !await expoBundleLooksReady(baseUrl, html)) return false;
   return !profile?.viteClient || await viteClientLooksReady(baseUrl);
 }
 function publicDevServerBase(port, requestHost) {
@@ -208,9 +261,6 @@ function loopbackBaseForUrl(url) {
   }
 }
 
-function appStatePreviewServer(projectId) {
-  return appState.previewServers[projectId] ?? null;
-}
 function isLoopbackHost(baseUrl) {
   try {
     const host = new URL(baseUrl).hostname;
@@ -246,6 +296,40 @@ async function fetchText(url, timeoutMs = 3000) {
   } catch {
     return null;
   }
+}
+
+async function expoBundleLooksReady(baseUrl, html) {
+  const src = html.match(/<script[^>]+src=["']([^"']*AppEntry\.bundle[^"']*)["']/i)?.[1];
+  if (!src) return false;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(new URL(src.replace(/&amp;/g, "&"), `${baseUrl}/`), { signal: controller.signal });
+    clearTimeout(timeout);
+    const ready = response.ok && /(?:application|text)\/javascript/i.test(response.headers.get("content-type") || "");
+    await response.body?.cancel();
+    return ready;
+  } catch {
+    return false;
+  }
+}
+
+function previewProfile(packageText) {
+  return expoPreviewProfile(packageText) || previewFrameworkProfile(packageText);
+}
+
+function rootMatchesExistingProject(html, context) {
+  if (context.profile?.id === "expo-web") return expoHtmlMatchesProject(html, context.expoTitles);
+  return rootMatchesProject(html, context.localScripts);
+}
+
+async function occupiedScanPorts(context) {
+  const occupied = new Set();
+  if (!context.profile.scanDefaultPorts) return occupied;
+  for (const port of devServerPortsFromPackage(context.packageText, context.profile)) {
+    if (await probeLoopbackPort(port)) occupied.add(port);
+  }
+  return occupied;
 }
 
 async function probeLoopbackPort(port) {

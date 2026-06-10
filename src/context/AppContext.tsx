@@ -14,6 +14,7 @@ import { useLiveSync } from "./useLiveSync";
 import { useLocalChatActions } from "./useLocalChatActions";
 import { useLogActions } from "./useLogActions";
 import { usePairingActions } from "./usePairingActions";
+import { usePairingDeepLink } from "./pairingDeepLink";
 import { useProjectBriefActions } from "./useProjectBriefActions";
 import { useProjectMemoryActions } from "./useProjectMemoryActions";
 import { useProjectBriefChatActions } from "./useProjectBriefChatActions";
@@ -39,6 +40,13 @@ export function AppProvider({ children }: PropsWithChildren) {
   });
   const workspace = useWorkspaceActions(store, requests, logs);
   const pairing = usePairingActions(store.state, setters, requests, logs, { loadProjectFilesWithConnection: workspace.loadProjectFilesWithConnection });
+  usePairingDeepLink({
+    accountId: state.accountId,
+    pairMachineAt: pairing.pairMachineAt,
+    setAgentUrl: setters.setAgentUrl,
+    setPairCode: setters.setPairCode,
+    setPairingMessage: setters.setPairingMessage
+  });
   const authActions = useAuthContextActions(store, logs);
   const agent = useAgentActions(store, requests, logs, authActions);
   const localChatActions = useLocalChatActions(store);

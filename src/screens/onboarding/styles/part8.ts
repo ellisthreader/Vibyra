@@ -118,7 +118,7 @@ export const part8 = {
     overflow: "hidden"
   },
   generatingTrackFillGradient: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   generatingVisual: {
     alignItems: "center",

@@ -150,7 +150,7 @@ export const part3 = {
     paddingTop: 24
   },
   chatBackgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     height: "100%",
     opacity: 0.78,
     width: "100%"

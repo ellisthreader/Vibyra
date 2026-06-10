@@ -13,6 +13,12 @@ test("desktop UI auth rejects foreign browser origins on loopback", () => {
   assert.equal(res.status, 403);
 });
 
+test("desktop UI auth rejects the isolated preview origin", () => {
+  const res = response();
+  assert.equal(authorizeDesktopUi(request(`http://preview.localhost:${PORT}`), res), false);
+  assert.equal(res.status, 403);
+});
+
 function request(origin) {
   return { headers: { origin }, socket: { remoteAddress: "127.0.0.1" } };
 }

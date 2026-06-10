@@ -52,7 +52,26 @@ For future deep diagnosis of "connected but cannot browse/open files" failures, 
 
 Auto Find no longer depends on or displays a pair code from `/health`. Nearby desktop candidates are discovered by `/health`/UDP, and tapping one sends a code-less `{ autoPair: true }` pairing request to `/pair`; the desktop still requires local approval before returning a token. Manual pairing by code remains the fallback when discovery cannot find the PC.
 
+Desktop QR pairing uses the registered `vibyra://` app scheme.
+`src/context/pairingDeepLink.ts` accepts only
+`vibyra://pair?code=<code>&url=<http(s)-desktop-url>`, pre-fills the existing
+pairing state, and calls the normal `pairMachineAt` approval flow. It does not
+accept credentials from the link. `WorkspaceScreen.tsx` opens the existing PC
+switcher while a QR-triggered request or phone confirmation is active so
+existing users can finish the flow without navigating manually.
+
+After desktop approval returns credentials, the phone still requires its local
+confirmation before starting the authenticated session. During this interval
+the desktop keeps the request at `approved` and displays a dedicated
+waiting-for-phone-confirmation state rather than returning to its QR screen.
+
 Pair requests include the phone's `accountId`; the desktop bridge only queues approval when its loopback-verified desktop account matches that id. Onboarding Step 2 may try reachable desktops until one accepts the same-account request, but it must not rely on account identity from `/health`.
+
+Pair requests use `src/utils/deviceIdentity.ts::appDeviceName()` rather than a
+hardcoded `Vibyra Phone` label. Auth login and startup session metadata refresh
+use the same value, so desktop approval, connection events, and account device
+history show one consistent phone name. Native APIs may return a model or
+platform fallback when a user-customized device name is unavailable.
 
 Desktop `/health` exposes `desktopAccountReady: boolean` only. Direct tap-to-pair checks this flag and surfaces "Log in to Vibyra Desktop with the same account as your phone." without appending generic approval instructions. LAN `/pair` and `/pair/status` timeouts are intentionally longer than health probes so slow Wi-Fi does not fail after 3 seconds while waiting for desktop approval.
 

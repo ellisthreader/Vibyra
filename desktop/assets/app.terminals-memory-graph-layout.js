@@ -1,4 +1,33 @@
-const terminalMemoryGraphSize = { width: 1000, height: 720 };
+let terminalMemoryGraphSize = { width: 1000, height: 720 };
+
+function terminalMemoryGraphSizeForViewport(width, height) {
+  const viewportWidth = Math.max(280, Number(width) || 0);
+  const viewportHeight = Math.max(320, Number(height) || 0);
+  const virtualWidth = 1000;
+  return {
+    width: virtualWidth,
+    height: Math.round(Math.max(720, Math.min(2400, virtualWidth * viewportHeight / viewportWidth)))
+  };
+}
+
+function terminalMemoryGraphMeasureSize() {
+  if (typeof document === "undefined") return { width: 1000, height: 720 };
+  const canvas = document.querySelector("[data-terminal-memory-graph-canvas]");
+  const workspace = document.querySelector("[data-terminal-memory-workspace]");
+  const companion = document.querySelector("[data-terminal-companion]");
+  const width = canvas?.clientWidth || workspace?.clientWidth || companion?.clientWidth || 1000;
+  const workspaceHeight = workspace?.clientHeight || companion?.clientHeight || 780;
+  const compactFallback = workspace?.classList.contains("terminal-memory-workspace--fullscreen")
+    ? workspaceHeight - 92
+    : (workspaceHeight - 92) * .5;
+  const height = Math.max(320, canvas?.clientHeight || compactFallback);
+  return terminalMemoryGraphSizeForViewport(width, height);
+}
+
+function terminalMemoryGraphSyncSize() {
+  terminalMemoryGraphSize = terminalMemoryGraphMeasureSize();
+  return terminalMemoryGraphSize;
+}
 
 function terminalMemoryGraphPositions(nodes, edges) {
   const { width, height } = terminalMemoryGraphSize;

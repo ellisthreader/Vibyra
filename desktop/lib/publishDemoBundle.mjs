@@ -22,15 +22,24 @@ const RUNTIME_EXTENSIONS = new Set([
 const TEXT_EXTENSIONS = new Set([".css", ".html", ".js", ".json", ".mjs", ".cjs", ".svg", ".txt", ".webmanifest", ".gltf"]);
 
 export async function buildProjectPublishDemoBundle(projectId, options = {}) {
-  const project = await requireProject(projectId);
   const limits = { ...DEFAULT_LIMITS, ...(options.limits ?? {}) };
+  let project;
+  try {
+    project = await requireProject(projectId, options.projectPath);
+  } catch (error) {
+    const code = projectId ? "project_not_found" : "no_project_selected";
+    const reason = projectId
+      ? `The selected project (${projectId}) could not be found. Reopen the app folder from Browse PC and publish again.`
+      : "No project was selected. Open the app folder from Browse PC and publish again.";
+    return failure(code, reason, { limits, projectId: projectId ?? "", warnings: [], skipped: [], error: error.message });
+  }
   const metadata = { limits, projectId: project.id, projectPath: project.path, skipped: [], warnings: [] };
   let entry = await publishDemoEntry(project);
   if (!entry && options.autoBuild !== false) {
     await buildStaticOutput(project, metadata, options);
     entry = await publishDemoEntry(project);
   }
-  if (!entry) return failure("no_static_preview_entry", "No built static browser entry was found for this project.", metadata);
+  if (!entry) return missingEntryFailure(metadata, options);
 
   const state = {
     project,
@@ -76,15 +85,15 @@ async function publishDemoEntry(project) {
 async function buildStaticOutput(project, metadata, options) {
   const buildPackage = await findBuildPackage(project.path);
   if (!buildPackage.packageFound) {
-    metadata.warnings.push({ code: "no_package_json", message: "No package.json build script was found for public demo capture." });
+    setCaptureFailure(metadata, "missing_build_script", "No package.json with a build script was found in the project or a supported frontend folder.");
     return false;
   }
   if (!buildPackage.pkg) {
     const code = buildPackage.invalidPackageFound ? "invalid_package_json" : "no_build_script";
     const message = buildPackage.invalidPackageFound
-      ? "package.json could not be parsed for public demo capture."
-      : "No package.json build script was found for public demo capture.";
-    metadata.warnings.push({ code, message });
+      ? "A package.json was found but could not be parsed."
+      : "package.json does not define a build script for the browser frontend.";
+    setCaptureFailure(metadata, code === "no_build_script" ? "missing_build_script" : code, message);
     return false;
   }
 
@@ -93,7 +102,14 @@ async function buildStaticOutput(project, metadata, options) {
   metadata.buildDirectory = directory || ".";
 
   const installResult = await installDependenciesIfNeeded(buildPath, pkg, metadata, options);
-  if (installResult.attempted && !installResult.ok) return false;
+  if (installResult.attempted && !installResult.ok) {
+    setCaptureFailure(
+      metadata,
+      installFailureCode(installResult),
+      commandFailureReason("Frontend dependency installation", installResult)
+    );
+    return false;
+  }
 
   const command = buildCommand(buildPath);
   metadata.autoBuild = { command: command.join(" "), cwd: metadata.buildDirectory, startedAt: new Date().toISOString() };
@@ -101,6 +117,7 @@ async function buildStaticOutput(project, metadata, options) {
   metadata.autoBuild = { ...metadata.autoBuild, ...result, finishedAt: new Date().toISOString() };
   if (!result.ok) {
     metadata.warnings.push({ code: "build_failed", message: result.output || "Build command failed before public demo capture." });
+    setCaptureFailure(metadata, buildFailureCode(result), commandFailureReason("Frontend build", result));
   }
   return result.ok;
 }
@@ -108,6 +125,7 @@ async function buildStaticOutput(project, metadata, options) {
 async function findBuildPackage(projectPath) {
   let packageFound = false;
   let invalidPackageFound = false;
+  const candidates = [];
   for (const directory of BUILD_PACKAGE_DIRECTORIES) {
     const packagePath = directory ? `${directory}/package.json` : "package.json";
     const packageText = await readOptionalProjectText(projectPath, packagePath);
@@ -120,9 +138,66 @@ async function findBuildPackage(projectPath) {
       invalidPackageFound = true;
       continue;
     }
-    if (pkg?.scripts?.build) return { directory, pkg, packageFound, invalidPackageFound };
+    if (pkg?.scripts?.build) candidates.push({ directory, pkg });
+  }
+  if (candidates.length) {
+    const composer = await readOptionalProjectText(projectPath, "composer.json");
+    const rootIsLaravel = /laravel\/framework/i.test(composer);
+    const selected = rootIsLaravel
+      ? candidates.find((candidate) => candidate.directory) ?? candidates[0]
+      : candidates[0];
+    return { ...selected, packageFound, invalidPackageFound };
   }
   return { directory: "", pkg: null, packageFound, invalidPackageFound };
+}
+
+function setCaptureFailure(metadata, code, reason) {
+  metadata.captureFailure = { code, reason };
+  metadata.warnings.push({ code, message: reason });
+}
+
+function missingEntryFailure(metadata, options) {
+  if (metadata.captureFailure) {
+    return failure(metadata.captureFailure.code, metadata.captureFailure.reason, metadata);
+  }
+  if (metadata.autoBuild?.ok) {
+    return failure(
+      "build_output_missing",
+      `The frontend build completed in ${metadata.buildDirectory || "."}, but it did not create a supported static index.html output.`,
+      metadata
+    );
+  }
+  if (options.autoBuild === false) {
+    return failure(
+      "static_preview_not_built",
+      "This frontend has source files but no built browser preview. Run its build script or enable automatic building, then publish again.",
+      metadata
+    );
+  }
+  return failure(
+    "no_static_preview_entry",
+    "No publishable browser entry was found. Open the frontend app folder or add a supported build script.",
+    metadata
+  );
+}
+
+function installFailureCode(result) {
+  if (result.code === "install_timeout") return "dependency_install_timeout";
+  if (result.code === "install_error") return "dependency_install_error";
+  return "dependency_install_failed";
+}
+
+function buildFailureCode(result) {
+  if (result.code === "build_timeout") return "frontend_build_timeout";
+  if (result.code === "build_error") return "frontend_build_error";
+  return "frontend_build_failed";
+}
+
+function commandFailureReason(label, result) {
+  const detail = result.output ? ` ${result.output}` : "";
+  if (result.code?.endsWith("_timeout")) return `${label} timed out.${detail}`;
+  if (result.code?.endsWith("_error")) return `${label} could not be started.${detail}`;
+  return `${label} failed.${detail}`;
 }
 
 async function installDependenciesIfNeeded(projectPath, pkg, metadata, options) {
@@ -253,11 +328,11 @@ async function readOptionalProjectText(projectPath, relativePath) {
   }
 }
 
-async function requireProject(projectId) {
+async function requireProject(projectId, projectPath = null) {
   if (!projectId) throw new Error("No project selected");
-  if (projectById(projectId)) return projectById(projectId);
+  if (projectById(projectId, projectPath)) return projectById(projectId, projectPath);
   await discoverProjects();
-  const project = projectById(projectId);
+  const project = projectById(projectId, projectPath);
   if (!project) throw new Error("Project not found");
   return project;
 }
@@ -278,11 +353,15 @@ async function addBundleFile(state, path, { required, mountDirectory, from = "",
   try {
     info = await stat(absolutePath);
   } catch {
-    return skipOrFail(state, safe, "missing_reference", false, from);
+    return skipOrFail(state, safe, "missing_reference", required, from);
   }
   if (!info.isFile()) return skipOrFail(state, safe, "not_a_file", required, from);
-  if (info.size > state.limits.maxFileBytes) return skipOrFail(state, safe, "file_too_large", required, from);
+  if (info.size > state.limits.maxFileBytes) {
+    state.oversizedFile = { path: safe, size: info.size };
+    return skipOrFail(state, safe, "file_too_large", required, from);
+  }
   if (state.files.length + 1 > state.limits.maxFiles || state.totalBytes + info.size > state.limits.maxTotalBytes) {
+    state.limitViolation = bundleLimitViolation(state, safe, info.size);
     return skipOrFail(state, safe, "bundle_limit_reached", required, from);
   }
 
@@ -308,7 +387,7 @@ async function addBundleFile(state, path, { required, mountDirectory, from = "",
 async function addOptionalStaticAssets(state, mountDirectory) {
   for (const directory of STATIC_DIRS.map((name) => (mountDirectory ? `${mountDirectory}/${name}` : name))) {
     await scanOptionalDirectory(state, directory, mountDirectory, 0);
-    if (state.files.length >= state.limits.maxFiles || state.totalBytes >= state.limits.maxTotalBytes) break;
+    if (state.failed) break;
   }
 }
 
@@ -318,8 +397,12 @@ async function addVirtualTextFile(state, path, body, { mountDirectory }) {
   const unsafeReason = unsafeBundlePathReason(safe);
   if (unsafeReason) return skipOrFail(state, safe, unsafeReason, true, "");
   const size = Buffer.byteLength(body, "utf8");
-  if (size > state.limits.maxFileBytes) return skipOrFail(state, safe, "file_too_large", true, "");
+  if (size > state.limits.maxFileBytes) {
+    state.oversizedFile = { path: safe, size };
+    return skipOrFail(state, safe, "file_too_large", true, "");
+  }
   if (state.files.length + 1 > state.limits.maxFiles || state.totalBytes + size > state.limits.maxTotalBytes) {
+    state.limitViolation = bundleLimitViolation(state, safe, size);
     return skipOrFail(state, safe, "bundle_limit_reached", true, "");
   }
   state.seen.add(safe);
@@ -331,7 +414,7 @@ async function addVirtualTextFile(state, path, body, { mountDirectory }) {
 }
 
 async function scanOptionalDirectory(state, directory, mountDirectory, depth) {
-  if (depth > 6 || state.files.length >= state.limits.maxFiles) return;
+  if (depth > 6 || state.failed) return;
   let entries;
   try {
     entries = await readdir(resolve(state.project.path, sourcePathForBundle(state, directory)), { withFileTypes: true });
@@ -346,7 +429,7 @@ async function scanOptionalDirectory(state, directory, mountDirectory, depth) {
     } else if (entry.isFile()) {
       await addBundleFile(state, child, { required: false, mountDirectory });
     }
-    if (state.files.length >= state.limits.maxFiles || state.totalBytes >= state.limits.maxTotalBytes) return;
+    if (state.failed) return;
   }
 }
 
@@ -356,9 +439,45 @@ function sourcePathForBundle(state, bundlePath) {
 
 function skipOrFail(state, path, reason, required, from) {
   state.metadata.skipped.push({ path, reason, ...(from ? { from } : {}) });
-  if (required && ["file_too_large", "bundle_limit_reached", "outside_project", "unsupported_runtime_type"].includes(reason)) {
-    state.failed = { code: "bundle_limit_exceeded", reason: `Static demo bundle could not include ${path}: ${reason.replace(/_/g, " ")}.` };
+  if (reason === "bundle_limit_reached") {
+    state.metadata.truncated = true;
+    state.failed = {
+      code: "bundle_limit_exceeded",
+      reason: state.limitViolation?.reason ?? `Static demo bundle could not include ${path}: bundle limit reached.`
+    };
+    return;
   }
+  if (required && ["missing_reference", "not_a_file"].includes(reason)) {
+    state.failed = { code: "missing_static_reference", reason: `Static demo bundle is missing required local reference ${path}.` };
+    return;
+  }
+  if (required && reason === "file_too_large") {
+    state.failed = {
+      code: "bundle_file_too_large",
+      reason: `Static asset ${path} is ${formatBytes(state.oversizedFile?.size ?? 0)}, above the ${formatBytes(state.limits.maxFileBytes)} per-file hosting limit.`
+    };
+    return;
+  }
+  if (required && ["outside_project", "unsupported_runtime_type"].includes(reason)) {
+    state.failed = { code: "bundle_validation_failed", reason: `Static demo bundle could not include ${path}: ${reason.replace(/_/g, " ")}.` };
+  }
+}
+
+function bundleLimitViolation(state, path, nextSize) {
+  if (state.files.length + 1 > state.limits.maxFiles) {
+    return {
+      reason: `Static demo bundle limit reached: at most ${state.limits.maxFiles} files can be hosted, and ${path} would exceed that limit. Reduce generated assets and publish again.`
+    };
+  }
+  return {
+    reason: `Static demo bundle limit reached: ${path} would exceed the ${formatBytes(state.limits.maxTotalBytes)} total hosting limit. Reduce the frontend build size and publish again.`
+  };
+}
+
+function formatBytes(bytes) {
+  if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(bytes % 1_000_000 ? 1 : 0)} MB`;
+  if (bytes >= 1_000) return `${(bytes / 1_000).toFixed(bytes % 1_000 ? 1 : 0)} KB`;
+  return `${bytes} bytes`;
 }
 
 function failure(code, reason, metadata) {

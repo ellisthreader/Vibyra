@@ -19,7 +19,11 @@ function terminalVoiceTargetId(terminal = terminalCompanionActiveTerminal()) {
 }
 
 function terminalVoiceSync() {
-  if (terminalCompanionMode === "voice") syncTerminalCompanion("voice");
+  if (terminalCompanionMode === "chat"
+    && typeof terminalAiSurface !== "undefined"
+    && terminalAiSurface === "voice") {
+    syncTerminalCompanion("voice");
+  }
 }
 
 function terminalVoiceSetStatus(status, sync = true) {

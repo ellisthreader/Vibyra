@@ -66,7 +66,7 @@
   padding: 0 8px;
 }
 .terminal-memory-app-actions button,
-.terminal-memory-app-import,
+.terminal-memory-app-import-menu summary,
 .terminal-memory-ribbon button {
   align-items: center;
   background: transparent;
@@ -84,24 +84,26 @@
   width: 28px;
 }
 .terminal-memory-app-actions button:hover,
-.terminal-memory-app-import:hover,
+.terminal-memory-app-import-menu summary:hover,
 .terminal-memory-ribbon button:hover,
 .terminal-memory-ribbon button.active {
   background: #3a3a3a;
   color: #eee;
 }
 .terminal-memory-app-actions svg,
-.terminal-memory-app-import svg,
+.terminal-memory-app-import-menu svg,
 .terminal-memory-ribbon svg {
   height: 14px;
   width: 14px;
 }
-.terminal-memory-app-import {
-  cursor: pointer;
+.terminal-memory-app-import-menu summary {
+  align-items: center;
+  display: inline-flex;
   gap: 6px;
-  position: relative;
+  padding: 0 8px;
+  width: auto;
 }
-.terminal-memory-app-import span {
+.terminal-memory-app-import-menu summary span {
   font-size: 10px;
 }
 .terminal-memory-app-body {

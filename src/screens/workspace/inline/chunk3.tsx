@@ -12,7 +12,6 @@ import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
 import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
 import { appApiRequest } from "../../../utils/appApi";
-import { normalizeAgentUrl } from "../../../utils/network";
 import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
 import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
 import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
@@ -46,10 +45,6 @@ export function getTopBarTitle(page: DashboardPage) {
   if (page === "community") return "Explore";
   if (page === "profile") return "Profile";
   return "AI Chat";
-}
-
-export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {
-  return `${normalizeAgentUrl(baseUrl)}/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
 }
 
 export function RenameChatModal({ draft, onCancel, onChangeDraft, onSave, visible }: {

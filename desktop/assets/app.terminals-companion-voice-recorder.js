@@ -13,6 +13,7 @@ function terminalVoiceRecorderAvailable() {
 
 async function startTerminalVoiceCapture() {
   if (terminalVoiceState.starting || terminalVoiceState.listening || terminalVoiceState.asking) return;
+  if (typeof cancelTerminalVoiceInput === "function") cancelTerminalVoiceInput();
   const Recognition = terminalVoiceApi();
   if ((!Recognition && !terminalVoiceRecorderAvailable()) || !navigator.mediaDevices?.getUserMedia) {
     terminalVoiceSetStatus("Microphone unavailable");

@@ -12,12 +12,13 @@ import { CommunityPostDetail } from "./chunk14";
 import { CommunityOpenedAppPage, hasCommunityRunnableDemo } from "./chunk15";
 
 export function CommunityPage({
-  authToken, currentUserName, openedPostId, onEditOwnPost, onLevelActivity, onOpenApp, onSelectPost, selectedPost
+  authToken, currentUserName, openedPostId, onCloseApp, onEditOwnPost, onLevelActivity, onOpenApp, onSelectPost, selectedPost
 }: {
   authToken: string;
   currentUserName: string;
   onEditOwnPost?: (post: CommunityPost) => void;
   openedPostId: string | null;
+  onCloseApp: () => void;
   onOpenApp: (postId: string) => void;
   onLevelActivity?: (action: string, contextId: string, meta?: Record<string, unknown>) => void;
   onSelectPost: (post: CommunityPost | null) => void;
@@ -46,7 +47,9 @@ export function CommunityPage({
     const livePost = c.posts.find((post) => post.id === selectedPost.id) ?? selectedPost;
     const added = c.commentsByPostId[livePost.id] ?? [];
     const opened = c.openedPostIds.includes(livePost.id);
-    if (openedPostId === livePost.id && hasCommunityRunnableDemo(livePost)) return <CommunityOpenedAppPage opened={opened} post={livePost} />;
+    if (openedPostId === livePost.id && hasCommunityRunnableDemo(livePost)) {
+      return <CommunityOpenedAppPage onClose={onCloseApp} post={livePost} />;
+    }
     return (
       <>
         <CommunityPostDetail

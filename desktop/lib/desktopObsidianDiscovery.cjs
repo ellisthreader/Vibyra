@@ -5,9 +5,10 @@ const { homedir, platform } = require("node:os");
 const path = require("node:path");
 const { readVaultFiles } = require("./desktopMemoryPicker.cjs");
 
-const MAX_SCAN_DEPTH = 4;
-const MAX_SCANNED_DIRECTORIES = 2500;
+const MAX_SCAN_DEPTH = 2;
+const MAX_SCANNED_DIRECTORIES = 180;
 const MAX_RESULTS = 12;
+const MAX_COUNTED_DIRECTORIES = 120;
 const IGNORED = new Set([
   ".git", ".expo", ".vibyra-agent", "node_modules", "vendor",
   "Library", "AppData", "Applications"
@@ -18,11 +19,14 @@ async function discoverObsidianVaults(options = {}) {
   const home = options.home || homedir();
   const registryPaths = options.registryPaths || obsidianRegistryPaths(home);
   const scanRoots = options.scanRoots || commonScanRoots(home);
-  const candidates = new Set(await readRegistryVaults(registryPaths));
-  const scanState = { directories: 0 };
-  for (const root of scanRoots) {
-    await scanForVaults(root, 0, candidates, scanState);
-    if (candidates.size >= MAX_RESULTS) break;
+  const registered = await readRegistryVaults(registryPaths);
+  const candidates = new Set(registered);
+  if (!candidates.size || options.scanWhenRegistered) {
+    const scanState = { directories: 0 };
+    for (const root of scanRoots) {
+      await scanForVaults(root, 0, candidates, scanState);
+      if (candidates.size >= MAX_RESULTS) break;
+    }
   }
 
   const vaults = [];
@@ -111,15 +115,18 @@ async function hasObsidianMarker(vaultPath) {
 
 async function countMarkdownFiles(root) {
   let count = 0;
+  let directories = 0;
   const walk = async (current) => {
-    if (count >= 500) return;
+    if (count >= 500 || directories >= MAX_COUNTED_DIRECTORIES) return;
     let children;
     try {
       children = await readdir(current, { withFileTypes: true });
     } catch {
       return;
     }
+    directories += 1;
     for (const child of children) {
+      if (count >= 500 || directories >= MAX_COUNTED_DIRECTORIES) break;
       if (child.name.startsWith(".") || IGNORED.has(child.name)) continue;
       if (child.isDirectory()) await walk(path.join(current, child.name));
       else if (child.isFile() && /\.md$/i.test(child.name)) count += 1;

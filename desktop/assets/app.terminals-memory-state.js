@@ -15,6 +15,9 @@ const terminalMemoryState = {
   saveTimer: 0,
   draftTitle: "",
   draftBody: "",
+  discoveryStatus: "idle",
+  discoveredVaults: [],
+  discoveryError: "",
   graphScale: 1,
   graphPanX: 0,
   graphPanY: 0
@@ -37,6 +40,9 @@ function terminalMemoryReset(projectId = "") {
   terminalMemoryState.status = "";
   terminalMemoryState.draftTitle = "";
   terminalMemoryState.draftBody = "";
+  terminalMemoryState.discoveryStatus = "idle";
+  terminalMemoryState.discoveredVaults = [];
+  terminalMemoryState.discoveryError = "";
   terminalMemoryState.graphScale = 1;
   terminalMemoryState.graphPanX = 0;
   terminalMemoryState.graphPanY = 0;

@@ -1,5 +1,4 @@
-function terminalMemoryHtml() {
-  const terminal = terminalCompanionActiveTerminal();
+function terminalMemoryHtml(terminal = terminalCompanionActiveTerminal()) {
   const projectId = String(terminal?.projectId || "");
   terminalMemoryEnsureProject(projectId);
   return terminalMemoryWorkspaceHtml(terminal);

@@ -32,7 +32,7 @@ test("renderer blocks actions until the bridge protocol matches", () => {
   assert.match(bootSource, /No terminal action ran/);
   assert.match(bootSource, /terminalActionProtocolReady = true/);
   assert.match(bootSource, /\/desktop\/runtime\/renderer-mismatch/);
-  assert.match(htmlSource, /app\.boot\.js\?v=terminal-action-protocol-20260608/);
+  assert.match(htmlSource, /app\.boot\.js\?v=terminal-action-protocol-20260609-12/);
 });
 
 test("Electron consumes each bridge reload request once and bypasses cache", () => {

@@ -27,6 +27,7 @@ export type HostedDemoPayload = {
 };
 export type HostedRuntimePayload = {
   buildCommand?: string;
+  code?: string;
   files?: HostedDemoAsset[];
   kind?: string;
   message?: string;
@@ -39,6 +40,7 @@ export type HostedRuntimePayload = {
   startCommand?: string;
   status: HostedDemoStatus;
 };
+export const RUNTIME_BUNDLE_TOO_LARGE_MESSAGE = "This project is too large for Vibyra hosting, so we can’t host it. Open a smaller app folder or remove unnecessary files, then try again.";
 type HostedDemoResponse = Partial<HostedDemoPayload> & {
   code?: string;
   demo?: Partial<HostedDemoPayload>;
@@ -58,6 +60,7 @@ type BundleRequest = {
   agentUrl: string;
   connection: AgentConnection | null;
   projectId: string;
+  projectPath?: string;
 };
 export function requestHostedDemoBundle(args: BundleRequest): Promise<HostedDemoPayload | null> {
   return requestDesktopBundle(args, "publish-demo-bundle", 330000, normalizeHostedDemo, failedHostedDemo);
@@ -65,8 +68,14 @@ export function requestHostedDemoBundle(args: BundleRequest): Promise<HostedDemo
 export function requestHostedRuntimeBundle(args: BundleRequest): Promise<HostedRuntimePayload | null> {
   return requestDesktopBundle(args, "publish-runtime-bundle", 180000, normalizeHostedRuntime, failedHostedRuntime);
 }
+export function runtimeBundleIncludesFrontend(bundle: HostedRuntimePayload | null | undefined) {
+  if (bundle?.ok !== true) return false;
+  if (bundle.platform === "laravel") return true;
+  const directory = String(bundle.metadata?.frontendDistDirectory ?? "");
+  return ["frontend/dist", "client/dist", "web/dist", "dist"].includes(directory);
+}
 async function requestDesktopBundle<T>(
-  { agentUrl, connection, projectId }: BundleRequest,
+  { agentUrl, connection, projectId, projectPath }: BundleRequest,
   route: string,
   timeoutMs: number,
   normalize: (payload: unknown) => T,
@@ -78,7 +87,7 @@ async function requestDesktopBundle<T>(
   for (const baseUrl of desktopUrls(agentUrl, connection)) {
     try {
       const response = await fetchWithTimeout(
-        `${baseUrl}/files/${route}?projectId=${encodeURIComponent(projectId)}`,
+        `${baseUrl}/files/${route}?projectId=${encodeURIComponent(projectId)}${projectPath ? `&projectPath=${encodeURIComponent(projectPath)}` : ""}`,
         { headers, method: "GET" },
         timeoutMs
       );
@@ -141,14 +150,19 @@ function normalizeHostedRuntime(value: unknown): HostedRuntimePayload {
   const reportedOk = payload.ok === true;
   const files = Array.isArray(payload.files) ? payload.files : undefined;
   const ok = reportedOk && hasUsableRuntimeBundle(payload.platform, files);
+  const tooLarge = payload.code === "runtime_bundle_limit_exceeded"
+    || payload.metadata?.truncated === true;
   const reportedMessage = payload.message
     ?? payload.reason
     ?? (Array.isArray(payload.failureReasons) ? payload.failureReasons[0] : undefined);
   return {
     buildCommand: payload.buildCommand,
+    code: payload.code,
     files,
     kind: payload.kind,
-    message: reportedOk && !ok
+    message: tooLarge
+      ? RUNTIME_BUNDLE_TOO_LARGE_MESSAGE
+      : reportedOk && !ok
       ? reportedMessage ?? "Desktop returned an incomplete runtime bundle."
       : reportedMessage,
     metadata: payload.metadata,
@@ -160,6 +174,14 @@ function normalizeHostedRuntime(value: unknown): HostedRuntimePayload {
     startCommand: payload.startCommand,
     status: ok ? "pending" : "unavailable"
   };
+}
+
+export function runtimeBundleHostingError(bundle: HostedRuntimePayload | null | undefined) {
+  if (bundle?.code === "runtime_bundle_limit_exceeded" || bundle?.metadata?.truncated === true) {
+    return RUNTIME_BUNDLE_TOO_LARGE_MESSAGE;
+  }
+
+  return "";
 }
 
 function failedHostedRuntime(payload: unknown): HostedRuntimePayload {

@@ -31,6 +31,7 @@ async function collectSignals(rootPath, rootEntries) {
     descriptions: [],
     descriptionEvidence: [],
     evidence: [],
+    rootNames: new Set(rootEntries),
     rootName: cleanText(rootPath.split("/").pop() ?? "")
   };
   const queue = [{ path: rootPath, depth: 0 }];

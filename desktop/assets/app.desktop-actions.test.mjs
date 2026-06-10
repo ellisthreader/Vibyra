@@ -196,6 +196,7 @@ test("desktop batch tasks preserve per-task launch settings", async () => {
     initialPrompt: "Review authentication",
     permissionMode: "standard",
     projectId: "auth-project",
+    tokenMode: "vibyra",
     workspaceMode: "shared"
   });
 });
@@ -609,11 +610,11 @@ test("desktop actions relaunch all Codex terminals with full permissions", async
   assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
   assert.equal(created.length, 2);
   assert.deepEqual(JSON.parse(JSON.stringify(created.map((item) => item.options))), [
-    { effort: "xhigh", permissionMode: "full", projectId: "saas", tokenMode: "vibyra" },
+    { effort: "xhigh", permissionMode: "full", projectId: "saas", tokenMode: "provider" },
     { effort: "high", permissionMode: "full", projectId: "saas", tokenMode: "provider" }
   ]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
-  assert.deepEqual(context.terminals.map((terminal) => terminal.tokenMode), ["provider", "vibyra"]);
+  assert.deepEqual(context.terminals.map((terminal) => terminal.tokenMode), ["provider", "provider"]);
   assert.equal(context.activeTerminalId, "new-1");
 });
 
@@ -655,7 +656,7 @@ test("desktop permissions safely convert compatible OpenAI wrappers to Codex", a
   assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
   assert.match(confirmation, /switch to the compatible Codex CLI model/);
   assert.deepEqual(created.map((item) => item.model), ["gpt-5.5", "gpt-5.5"]);
-  assert.deepEqual(created.map((item) => item.options.tokenMode), ["vibyra", "provider"]);
+  assert.deepEqual(created.map((item) => item.options.tokenMode), ["provider", "provider"]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.title), ["GPT-5.5 1", "GPT-5.5 2"]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
 });

@@ -138,8 +138,9 @@
 }
 
 .profile-session-list,
-.profile-device-list,
-.profile-device-row + .profile-device-row,
+.profile-device-table-wrap,
+.profile-device-row,
+.profile-device-row td,
 .profile-account-actions,
 .profile-account-action,
 .profile-account-action--danger.is-open,

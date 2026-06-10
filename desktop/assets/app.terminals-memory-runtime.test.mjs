@@ -91,11 +91,25 @@ test("large memory graphs spread across the canvas and support bounded zoom", ()
   assert.equal(result.minimum, .55);
 });
 
-test("graph guidance stays outside the interactive canvas", () => {
-  assert.match(graphSource, /<\/svg>\s*<\/div>\s*<footer class="terminal-memory-graph-footer">/);
-  assert.match(graphCss, /grid-template-rows:\s*auto minmax\(0, 1fr\) auto/);
+test("portrait Memory sidebars use a tall graph layout", () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(graphLayoutSource, context);
+  const portrait = vm.runInContext("terminalMemoryGraphSizeForViewport(360, 820)", context);
+  const landscape = vm.runInContext("terminalMemoryGraphSizeForViewport(1200, 700)", context);
+
+  assert.ok(portrait.height > 2000);
+  assert.equal(landscape.height, 720);
+  assert.match(graphSource, /terminalMemoryGraphSyncSize\(\)/);
+  assert.match(graphSource, /ResizeObserver/);
+});
+
+test("compact graph occupies half the workspace while fullscreen stays unconstrained", () => {
+  assert.doesNotMatch(graphSource, /terminal-memory-graph-footer|terminal-memory-graph-hint/);
+  assert.match(graphCss, /grid-template-rows:\s*auto minmax\(0, 1fr\)/);
+  assert.match(graphCss, /\.terminal-memory-graph\s*\{[^}]*height:\s*100%/s);
+  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) > \.terminal-memory-graph\s*\{[^}]*align-self:\s*center;[^}]*height:\s*50%/s);
+  assert.match(graphLayoutSource, /canvas\?\.clientHeight \|\| compactFallback/);
   assert.match(graphCss, /\.terminal-memory-graph-meta\s*\{[^}]*align-items:\s*flex-start/s);
-  assert.doesNotMatch(graphCss, /\.terminal-memory-graph-hint\s*\{[^}]*position:\s*absolute/s);
   assert.doesNotMatch(graphAdvancedCss, /\.terminal-memory-graph-legend\s*\{[^}]*position:\s*absolute/s);
 });
 
@@ -105,6 +119,28 @@ test("memory documents omit terminal insertion and footer deletion actions", () 
   assert.doesNotMatch(renderSource, /terminal-memory-document-actions/);
 });
 
+test("compact Memory constrains Notes to the remaining grid track without clipping its top", () => {
+  assert.doesNotMatch(renderSource, /terminal-memory-footer/);
+  assert.match(renderSource, /terminal-memory-toolbar-status/);
+  assert.match(renderSource, /data-terminal-memory-fullscreen/);
+  assert.match(memoryCss, /grid-template-rows:\s*auto minmax\(0, 1fr\)/);
+  assert.match(memoryCss, /\.terminal-memory-workbench\s*\{[^}]*min-height:\s*0;[^}]*overflow:\s*hidden/s);
+  assert.doesNotMatch(memoryCss, /\.terminal-memory-workbench\s*\{[^}]*height:\s*100%/s);
+  assert.match(memoryCss, /\.terminal-memory-document\s*\{[^}]*grid-template-rows:\s*auto minmax\(0, 1fr\);[^}]*min-height:\s*0;[^}]*overflow:\s*hidden/s);
+  assert.doesNotMatch(memoryCss, /\.terminal-memory-document\s*\{[^}]*height:\s*100%/s);
+  assert.match(memoryCss, /\.terminal-memory-editor\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*minmax\(0, 1fr\);[^}]*overflow:\s*hidden/s);
+  assert.match(memoryCss, /\.terminal-memory-editor textarea,\s*\.terminal-memory-preview\s*\{[^}]*grid-row:\s*1;[^}]*height:\s*auto;[^}]*min-height:\s*0;/s);
+  assert.doesNotMatch(memoryCss, /\.terminal-memory-editor textarea\s*\{[^}]*min-height:\s*100%/s);
+  assert.doesNotMatch(memoryCss, /max-height:\s*60vh/);
+  assert.match(memoryCss, /@media \(max-width: 860px\)[\s\S]*terminal-companion:has\(\.terminal-memory-workspace\)[^{]*\{[^}]*height:\s*100%;[^}]*max-height:\s*none;/);
+});
+
+test("fullscreen Memory keeps the current primary renderer visible", () => {
+  assert.match(companionLayoutCss, /\.terminal-page--memory-fullscreen \.terminal-companion-primary,[\s\S]*\{[^}]*display:\s*block;[^}]*min-height:\s*0;[^}]*overflow:\s*hidden;/s);
+  assert.doesNotMatch(companionLayoutCss, /\.terminal-page--memory-fullscreen \.terminal-companion-stack/);
+  assert.doesNotMatch(companionLayoutCss, /\.terminal-page--memory-fullscreen \.terminal-memory-section--stacked/);
+});
+
 test("Memory does not expose item creation controls or shortcuts", () => {
   assert.doesNotMatch(renderSource, /data-terminal-memory-new-(note|folder)|New (note|folder)/i);
   assert.doesNotMatch(eventsSource, /data-terminal-memory-new-(note|folder)|promptTerminalMemoryNode/);
@@ -112,7 +148,7 @@ test("Memory does not expose item creation controls or shortcuts", () => {
 
 test("memory companion width is user-resizable without shrinking the terminal below its floor", () => {
   assert.match(memoryCss, /has\(\.terminal-memory-workspace\)\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\) 340px/);
-  assert.match(companionLayoutCss, /minmax\(420px, 1fr\) var\(--terminal-companion-width, 340px\)/);
+  assert.match(companionLayoutCss, /minmax\(480px, 1fr\) var\(--terminal-companion-width, 520px\)/);
   assert.match(companionLayoutCss, /terminal-page--memory-fullscreen/);
 });
 
@@ -133,8 +169,10 @@ test("native Memory import accepts and reads Markdown files", async () => {
     ]
   );
   assert.equal((onboardingSource.match(/data-terminal-memory-pick="vault"/g) || []).length, 1);
+  assert.equal((onboardingSource.match(/data-terminal-memory-pick="markdown"/g) || []).length, 1);
   assert.match(onboardingSource, /data-terminal-memory-vault-input/);
-  assert.doesNotMatch(onboardingSource, /data-terminal-memory-ai|Create new vault|Find Obsidian|Import \.md files/);
+  assert.match(onboardingSource, /data-terminal-memory-markdown-input/);
+  assert.doesNotMatch(onboardingSource, /data-terminal-memory-ai|Create new vault/);
   assert.match(onboardingSource, /window\.vibyraDesktopMemory\?\.pick/);
 });
 
@@ -165,10 +203,30 @@ test("Electron picker removes the fallback input from mouse hit testing", () => 
   assert.equal(pickedKind, "vault");
 });
 
-test("Memory onboarding exposes one import choice", () => {
-  assert.equal((onboardingSource.match(/terminal-memory-import-option/g) || []).length, 1);
-  assert.equal((onboardingSource.match(/data-terminal-memory-pick=/g) || []).length, 1);
-  assert.doesNotMatch(onboardingSource, /discoverObsidian|importDiscoveredVault|createTerminalMemoryStarterVault/);
+test("Memory onboarding exposes Markdown, vault, and automatic Obsidian discovery", () => {
+  assert.equal((onboardingSource.match(/terminal-memory-import-option/g) || []).length, 2);
+  assert.equal((onboardingSource.match(/data-terminal-memory-pick=/g) || []).length, 2);
+  assert.match(onboardingSource, /discoverObsidian/);
+  assert.match(onboardingSource, /data-terminal-memory-discovered/);
+  assert.match(importSource, /importDiscoveredVault/);
+  assert.doesNotMatch(onboardingSource, /createTerminalMemoryStarterVault/);
+});
+
+test("Memory automatically suggests discovered Obsidian vaults", async () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(importSource, context);
+  vm.runInContext(onboardingSource, context);
+  context.window.vibyraDesktopMemory = {
+    async discoverObsidian() {
+      return [{ id: "vault-1", name: "Project Notes", location: "Documents", noteCount: 4 }];
+    }
+  };
+
+  await vm.runInContext("discoverTerminalMemoryVaults()", context);
+
+  assert.equal(context.terminalMemoryState.discoveryStatus, "found");
+  assert.equal(context.terminalMemoryState.discoveredVaults[0].id, "vault-1");
+  assert.match(vm.runInContext("terminalMemoryDiscoveryHtml()", context), /Project Notes/);
 });
 
 test("native picker manifests post directly to the canonical import route", async () => {

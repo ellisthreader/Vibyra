@@ -40,9 +40,36 @@ test("public demo URL sanitizer rejects private and local URLs", async () => {
 test("public demo URL selection skips blocked URLs", async () => {
   const { firstPublicDemoUrl } = await loadPublicDemoUrls();
   assert.equal(
-    firstPublicDemoUrl(["http://192.168.1.109:8000", "https://example.com/app"]),
-    "https://example.com/app"
+    firstPublicDemoUrl(["http://192.168.1.109:8000", "https://vibyra-demo.up.railway.app/app"]),
+    "https://vibyra-demo.up.railway.app/app"
   );
+});
+
+test("public demo URL sanitizer rejects unapproved origins and credentialed URLs", async () => {
+  const { publicDemoUrlBlockedReason, sanitizePublicDemoUrl } = await loadPublicDemoUrls();
+  for (const url of [
+    "https://example.com/app",
+    "https://user:secret@vibyra-demo.up.railway.app/app",
+    "https://vibyra-demo.up.railway.app:8443/app"
+  ]) {
+    assert.equal(sanitizePublicDemoUrl(url), undefined);
+    assert.match(publicDemoUrlBlockedReason(url), /approved|credentials|port/);
+  }
+});
+
+test("configured public demo hosts are accepted without allowing sibling domains", async () => {
+  const previous = process.env.EXPO_PUBLIC_DEMO_HOSTS;
+  process.env.EXPO_PUBLIC_DEMO_HOSTS = "demos.vibyra.app,*.apps.vibyra.app";
+  try {
+    const { sanitizePublicDemoUrl } = await loadPublicDemoUrls();
+    assert.equal(sanitizePublicDemoUrl("https://demos.vibyra.app/app"), "https://demos.vibyra.app/app");
+    assert.equal(sanitizePublicDemoUrl("https://one.apps.vibyra.app/app"), "https://one.apps.vibyra.app/app");
+    assert.equal(sanitizePublicDemoUrl("https://apps.vibyra.app/app"), undefined);
+    assert.equal(sanitizePublicDemoUrl("https://evilvibyra.app/app"), undefined);
+  } finally {
+    if (previous === undefined) delete process.env.EXPO_PUBLIC_DEMO_HOSTS;
+    else process.env.EXPO_PUBLIC_DEMO_HOSTS = previous;
+  }
 });
 
 test("public demo URL selection returns nothing for empty or blocked candidates", async () => {

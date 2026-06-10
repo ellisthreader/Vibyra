@@ -4,6 +4,7 @@ import test from "node:test";
 
 const layoutSource = readFileSync(new URL("./app.terminals-layout.js", import.meta.url), "utf8");
 const modelStyles = readFileSync(new URL("./app.terminals.model.1.css", import.meta.url), "utf8");
+const setupResponsiveStyles = readFileSync(new URL("./app.terminals.setup.2.css", import.meta.url), "utf8");
 const stateSource = readFileSync(new URL("./app.terminals-state.js", import.meta.url), "utf8");
 const renderSource = readFileSync(new URL("./app.terminals-render.js", import.meta.url), "utf8");
 const controlsSource = readFileSync(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
@@ -29,6 +30,29 @@ test("new terminal menu is anchored to the plus button", () => {
   assert.doesNotMatch(modelStyles, /left: 50vw/);
 });
 
+test("terminal starter model picker overlays without moving the setup card", () => {
+  assert.match(layoutSource, /positionTerminalSetupMenu\(\)/);
+  assert.match(layoutSource, /\[data-terminal-setup-model-toggle\]/);
+  assert.match(layoutSource, /buttonRect\.right - menuRect\.width/);
+  assert.match(layoutSource, /companionLeft/);
+  assert.match(layoutSource, /const viewportTop = buttonRect\.bottom \+ gap/);
+  assert.match(layoutSource, /window\.innerHeight - viewportTop - edge/);
+  assert.match(layoutSource, /--terminal-setup-menu-left/);
+  assert.match(layoutSource, /--terminal-setup-menu-top/);
+  assert.match(layoutSource, /--terminal-setup-menu-max-height/);
+  assert.doesNotMatch(
+    layoutSource.slice(layoutSource.indexOf("function positionTerminalSetupMenu"), layoutSource.indexOf("function positionTerminalNewMenu")),
+    /buttonRect\.top - menuRect\.height/
+  );
+  assert.match(modelStyles, /\.terminal-model-select-wrap \.terminal-model-picker \{[\s\S]*position: fixed/);
+  assert.match(modelStyles, /grid-template-rows: auto minmax\(0, 1fr\)/);
+  assert.match(modelStyles, /--terminal-setup-menu-max-height/);
+  assert.match(setupResponsiveStyles, /--terminal-setup-menu-max-height/);
+  assert.match(setupResponsiveStyles, /\.terminal-model-select-wrap \.terminal-model-scroll \{[\s\S]*max-height: none/);
+  assert.match(modelStyles, /\.terminal-model-select-wrap \.terminal-model-picker\.terminal-model-picker--positioned/);
+  assert.doesNotMatch(modelStyles, /\.terminal-model-select-wrap \.terminal-model-picker \{[\s\S]*position: static/);
+});
+
 test("PTY controls do not double-bind terminal menu buttons", () => {
   assert.match(controlsSource, /function bindTerminalClick/);
   assert.match(controlsSource, /dataset\.terminalClickBound/);
@@ -36,14 +60,21 @@ test("PTY controls do not double-bind terminal menu buttons", () => {
 });
 
 test("terminal options group user-facing context and separate close", () => {
+  const optionsSource = ptySource.slice(
+    ptySource.indexOf("settingsMenu = function ptySettingsMenu"),
+    ptySource.indexOf("terminalTopbarSubtitle = function"),
+  );
   assert.match(ptySource, /data-terminal-rename-form/);
   assert.match(controlsSource, /method: "PATCH"/);
   assert.match(controlsSource, /bindTerminalRenameControls/);
-  assert.match(ptySource, /"Project"/);
-  assert.match(ptySource, /"Workspace"/);
-  assert.match(ptySource, /"Access"/);
-  assert.match(ptySource, /terminal-menu-advanced/);
-  assert.match(ptySource, /terminal-close-row/);
+  assert.match(optionsSource, /aria-label="Save terminal name"/);
+  assert.match(optionsSource, /"Project"/);
+  assert.match(optionsSource, /"Workspace"/);
+  assert.match(optionsSource, /"Access"/);
+  assert.match(optionsSource, /terminal-menu-technical/);
+  assert.match(optionsSource, /terminal-close-row/);
+  assert.doesNotMatch(optionsSource, /terminalTokenSourcePanel/);
+  assert.doesNotMatch(optionsSource, />Advanced</);
 });
 
 test("terminal chrome uses Vibyra purple instead of provider green", () => {

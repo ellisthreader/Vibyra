@@ -2,18 +2,21 @@ import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { Animated, Image, KeyboardAvoidingView, Platform, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { VibyraLogo } from "../components/VibyraLogo";
 import { useAppContext } from "../context/AppContext";
-import { getAppApiUrl } from "../utils/appApi";
+import { AppleAuthChoice } from "./auth/AppleAuthChoice";
 import { AuthChoice } from "./auth/AuthChoice";
+import { AuthHero } from "./auth/AuthHero";
+import { AuthLegalLinks } from "./auth/AuthLegalLinks";
+import { AuthRecoveryForm } from "./auth/AuthRecoveryForm";
 import { EmailAuthForm } from "./auth/EmailAuthForm";
 import { FeatureStrip } from "./auth/FeatureStrip";
-import { GradientTitleWord } from "./auth/GradientTitleWord";
-import { AuthMethod, logoAspectRatio } from "./auth/types";
+import { AuthMethod } from "./auth/types";
 import { styles } from "./auth/styles";
 import { useAuthEntrance } from "./auth/useAuthEntrance";
+import { useAuthRecovery } from "./auth/useAuthRecovery";
+import { formatAuthError } from "./auth/authErrors";
 
 const frontPageBackground = require("../assets/front-auth.jpg");
 
@@ -25,6 +28,7 @@ export function AuthScreen() {
   const [authBusy, setAuthBusy] = useState<AuthMethod | null>(null);
   const [authError, setAuthError] = useState("");
   const [emailFormVisible, setEmailFormVisible] = useState(false);
+  const recovery = useAuthRecovery({ email: app.authEmail, setEmail: app.setAuthEmail });
   const entrance = useAuthEntrance();
   const scrollRef = useRef<ScrollView>(null);
   const availableHeight = height - insets.top - insets.bottom;
@@ -71,6 +75,10 @@ export function AuthScreen() {
     return () => clearTimeout(handle);
   }, [emailFormVisible]);
 
+  useEffect(() => {
+    if (recovery.mode) setEmailFormVisible(true);
+  }, [recovery.mode]);
+
   async function runAuth(method: AuthMethod, accountStatus: "new" | "existing") {
     setAuthBusy(method);
     setAuthError("");
@@ -85,6 +93,15 @@ export function AuthScreen() {
 
   async function submitEmailAuth() {
     await runAuth("email", app.authMode === "login" ? "existing" : "new");
+  }
+
+  async function resendVerification() {
+    setAuthError("");
+    try {
+      setAuthError(await recovery.resendVerification());
+    } catch (error) {
+      setAuthError(formatAuthError(error));
+    }
   }
 
   return (
@@ -102,34 +119,13 @@ export function AuthScreen() {
             showsVerticalScrollIndicator={false}
             style={styles.foreground}
           >
-          <View style={styles.heroStack}>
-            <Animated.View
-              style={[
-                styles.logoStage,
-                {
-                  opacity: entrance.logoOpacity,
-                  transform: [{ translateY: entrance.logoTranslateY }, { scale: entrance.logoScale }]
-                }
-              ]}
-            >
-              <VibyraLogo style={{ height: logoWidth / logoAspectRatio, width: logoWidth }} />
-            </Animated.View>
-            <Animated.View
-              style={[
-                styles.titleStage,
-                {
-                  opacity: entrance.titleOpacity,
-                  marginTop: (emailFormVisible ? 20 : 32) * fitScale,
-                  transform: [{ translateY: entrance.titleTranslateY }]
-                }
-              ]}
-            >
-              <View style={styles.titleRow}>
-                <Text style={[styles.title, { fontSize: titleFontSize, lineHeight: titleFontSize * 1.16 }]}>Welcome to </Text>
-                <GradientTitleWord fontSize={titleFontSize} text="Vibyra" />
-              </View>
-            </Animated.View>
-          </View>
+          <AuthHero
+            emailFormVisible={emailFormVisible}
+            entrance={entrance}
+            fitScale={fitScale}
+            logoWidth={logoWidth}
+            titleFontSize={titleFontSize}
+          />
 
           <Animated.View
             style={[
@@ -144,7 +140,7 @@ export function AuthScreen() {
           >
             {emailFormVisible ? null : <FeatureStrip scale={fitScale} />}
             <AuthChoice busy={authBusy === "google"} icon="logo-google" label="Continue with Google" method="google" scale={fitScale} onSelect={(method) => runAuth(method, "new")} />
-            <AuthChoice busy={authBusy === "apple"} icon="logo-apple" label="Continue with Apple" method="apple" scale={fitScale} onSelect={(method) => runAuth(method, "new")} />
+            <AppleAuthChoice busy={authBusy === "apple"} scale={fitScale} onPress={() => runAuth("apple", "new")} />
             <AuthChoice
               busy={authBusy === "email"}
               icon="mail-outline"
@@ -156,7 +152,21 @@ export function AuthScreen() {
                 setEmailFormVisible((visible) => !visible);
               }}
             />
-            {emailFormVisible ? (
+            {emailFormVisible && recovery.mode ? (
+              <AuthRecoveryForm
+                busy={recovery.busy}
+                email={app.authEmail}
+                message={recovery.message}
+                mode={recovery.mode}
+                onBack={recovery.close}
+                onEmailChange={app.setAuthEmail}
+                onPasswordChange={recovery.setPassword}
+                onSubmit={recovery.submit}
+                onTokenChange={recovery.setToken}
+                password={recovery.password}
+                token={recovery.token}
+              />
+            ) : emailFormVisible ? (
               <EmailAuthForm
                 busy={authBusy === "email"}
                 email={app.authEmail}
@@ -164,10 +174,12 @@ export function AuthScreen() {
                 mode={app.authMode}
                 name={app.authName}
                 onEmailChange={app.setAuthEmail}
+                onForgotPassword={recovery.openForgot}
                 onModeChange={app.setAuthMode}
                 onNameChange={app.setAuthName}
                 onPasswordChange={app.setAuthPassword}
                 onReferralCodeChange={app.setAuthReferralCode}
+                onResendVerification={resendVerification}
                 onSubmit={submitEmailAuth}
                 password={app.authPassword}
                 referralCode={app.authReferralCode}
@@ -176,29 +188,11 @@ export function AuthScreen() {
             ) : authError ? (
               <Text style={styles.authError}>{authError}</Text>
             ) : null}
-            <View style={[styles.legalBlock, { gap: 14 * fitScale, paddingTop: 21 * fitScale }]}>
-              <Text style={[styles.legalIntro, { fontSize: 14 * fitScale, lineHeight: 20 * fitScale }]}>By continuing, you agree to our</Text>
-              <View style={[styles.legalRow, { gap: 24 * fitScale }]}>
-                <Pressable style={({ pressed }) => pressed ? styles.legalPressed : null}>
-                  <Text style={[styles.legalLink, { fontSize: 15 * fitScale, lineHeight: 20 * fitScale }]}>Privacy Policy</Text>
-                </Pressable>
-                <View style={[styles.legalDivider, { height: 26 * fitScale }]} />
-                <Pressable style={({ pressed }) => pressed ? styles.legalPressed : null}>
-                  <Text style={[styles.legalLink, { fontSize: 15 * fitScale, lineHeight: 20 * fitScale }]}>Terms of Service</Text>
-                </Pressable>
-              </View>
-            </View>
+            <AuthLegalLinks scale={fitScale} />
           </Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
   );
-}
-
-function formatAuthError(error: unknown) {
-  const message = error instanceof Error ? error.message : "Could not sign in. Try again.";
-  if (!message.toLowerCase().includes("could not reach vibyra")) return message;
-
-  return `The login API at ${getAppApiUrl()} is not reachable from this app. If the backend is already running, update EXPO_PUBLIC_API_URL to this computer's current Wi-Fi/LAN IP and restart Expo.`;
 }

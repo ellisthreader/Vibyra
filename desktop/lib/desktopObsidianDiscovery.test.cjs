@@ -23,7 +23,8 @@ test("discovers registry and common-folder Obsidian vaults without exposing path
   const vaults = await discoverObsidianVaults({
     home,
     registryPaths: [registryPath],
-    scanRoots: [documents]
+    scanRoots: [documents],
+    scanWhenRegistered: true
   });
 
   assert.deepEqual(vaults.map(({ name, location, noteCount }) => ({ name, location, noteCount })), [
@@ -31,6 +32,26 @@ test("discovers registry and common-folder Obsidian vaults without exposing path
     { name: "Work", location: "Notes", noteCount: 1 }
   ]);
   assert.equal(vaults.every((vault) => !JSON.stringify(vault).includes(home)), true);
+});
+
+test("registered Obsidian vaults skip the fallback filesystem scan", async () => {
+  const home = await mkdtemp(path.join(tmpdir(), "vibyra-obsidian-fast-"));
+  const registeredVault = path.join(home, "Notes", "Work");
+  const scannedVault = path.join(home, "Documents", "Personal");
+  const registryPath = path.join(home, "obsidian.json");
+  await createVault(registeredVault, "Work.md");
+  await createVault(scannedVault, "Personal.md");
+  await writeFile(registryPath, JSON.stringify({
+    vaults: { work: { path: registeredVault } }
+  }));
+
+  const vaults = await discoverObsidianVaults({
+    home,
+    registryPaths: [registryPath],
+    scanRoots: [path.join(home, "Documents")]
+  });
+
+  assert.deepEqual(vaults.map((vault) => vault.name), ["Work"]);
 });
 
 test("imports a discovered vault by opaque id", async () => {

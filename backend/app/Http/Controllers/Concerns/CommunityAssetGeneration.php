@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use App\Services\Billing\CreditDeductor;
+use App\Services\Billing\BillingReservationException;
+use App\Services\Billing\ChatCostReservationService;
 use App\Services\CommunityAssetGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,11 @@ use RuntimeException;
 
 trait CommunityAssetGeneration
 {
-    public function generateCommunityAsset(Request $request, CommunityAssetGenerator $generator, CreditDeductor $credits): JsonResponse
+    public function generateCommunityAsset(
+        Request $request,
+        CommunityAssetGenerator $generator,
+        ChatCostReservationService $reservations
+    ): JsonResponse
     {
         $user = $this->authenticatedUser($request);
         $kind = (string) $request->input('kind', 'logo');
@@ -26,25 +31,52 @@ trait CommunityAssetGeneration
         $this->moderation->assertModerationInputAllowed([
             'text' => trim($title.' '.$description.' '.$prompt), 'images' => [],
         ], 'community.asset.generate', false);
-
-        $credits->maybeResetDaily($user);
-        if ((int) $user->credits_balance < $cost) {
-            return $this->json(['ok' => false, 'error' => "Generating this {$kind} costs {$cost} tokens."], 402);
-        }
-        if ((int) $user->daily_credits_used + $cost > $credits->dailyCap($user)) {
-            return $this->json(['ok' => false, 'error' => 'Daily credit cap reached. Try again tomorrow.'], 429);
+        if (! config('services.openrouter.key')) {
+            return $this->json([
+                'ok' => false,
+                'error' => 'OpenRouter image generation is not configured. Set OPENROUTER_API_KEY to generate publish images.',
+            ], 502);
         }
 
         try {
+            $reservation = $reservations->reserve(
+                $user,
+                'community-image:'.Str::uuid()->toString(),
+                'community-image',
+                $cost,
+                (int) ceil((float) config(
+                    "billing.openrouter_pricing.community_image_reservation_usd.{$kind}",
+                    $kind === 'screenshot' ? 0.25 : 0.15
+                ) * 1_000_000),
+                ['kind' => $kind],
+            );
+        } catch (BillingReservationException $error) {
+            return $this->json([
+                'ok' => false,
+                'error' => $error->getMessage(),
+                'code' => $error->errorCode,
+            ], $error->status);
+        }
+
+        try {
+            $reservations->markProviderStarted($reservation);
             $result = $generator->generate($kind, $title, $description, $prompt);
         } catch (RuntimeException $error) {
+            $reservations->settle($reservation, [[
+                'billable' => true,
+                'outcome' => 'provider_error_after_dispatch',
+                'charge_reserved_estimate' => true,
+            ]]);
             return $this->json(['ok' => false, 'error' => $error->getMessage()], 502);
         }
 
-        $ledger = $credits->spend($user, $cost, 'image_generate', 'community-image:'.(string) Str::uuid(), [
-            'kind' => $kind,
-            'provider' => $result['provider'],
-        ]);
+        $ledger = $reservations->settle($reservation, [[
+            'billable' => true,
+            'outcome' => 'completed',
+            'usage' => (array) ($result['usage'] ?? []),
+            'minimum_credits' => $cost,
+        ]], ['provider' => $result['provider']]);
+        $user->refresh();
 
         return $this->json([
             'ok' => true,

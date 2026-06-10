@@ -100,17 +100,18 @@ trait OpenAiStreaming
 
         return [
             'auto' => 'openai/gpt-4o-mini',
-            'gpt-5.5' => 'openai/gpt-4o',
-            'gpt-5.4' => 'openai/gpt-4o',
-            'gpt-5.4-mini' => 'openai/gpt-4o-mini',
-            'gpt-5.4-nano' => 'openai/gpt-4o-mini',
+            'gpt-5.5' => 'openai/gpt-5.5',
+            'gpt-5.4' => 'openai/gpt-5.4',
+            'gpt-5.4-mini' => 'openai/gpt-5.4-mini',
+            'gpt-5.4-nano' => 'openai/gpt-5.4-nano',
             'gpt-5-codex' => 'openai/gpt-4.1',
-            'claude-opus-4' => 'anthropic/claude-opus-4',
-            'claude-sonnet-4' => 'anthropic/claude-sonnet-4',
-            'claude-3-5-haiku' => 'anthropic/claude-3.5-haiku',
+            'claude-opus-4' => 'anthropic/claude-opus-4.8',
+            'claude-sonnet-4' => 'anthropic/claude-sonnet-4.6',
+            'claude-3-5-haiku' => 'anthropic/claude-haiku-4.5',
+            'claude-haiku-4-5' => 'anthropic/claude-haiku-4.5',
             'gemini-2.5-pro' => 'google/gemini-2.5-pro',
             'gemini-2.5-flash' => 'google/gemini-2.5-flash',
-            'gemini-2.0-flash' => 'google/gemini-2.0-flash-001',
+            'gemini-2.0-flash' => 'google/gemini-3.5-flash',
         ][$model] ?? 'openai/gpt-4o-mini';
     }
 

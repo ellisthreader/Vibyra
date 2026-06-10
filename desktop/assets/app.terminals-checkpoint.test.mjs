@@ -49,9 +49,11 @@ test("safe mode is recommended and defaults on for new users", () => {
   assert.match(stateSource, /storedSetupWorkspaceMode === null[\s\S]*"worktree"/);
 });
 
-test("terminal setup stays compact without hiding workspace safety", () => {
-  assert.match(setupSource, /data-terminal-setup-advanced/);
-  assert.match(setupSource, /terminalSetupAdvancedOpen/);
+test("terminal setup stays compact with optional advanced token settings", () => {
+  assert.match(setupSource, /const effort = terminalSetupEffortPicker\(model\)/);
+  assert.match(setupSource, /<details class="terminal-setup-advanced">/);
+  assert.match(setupSource, /Advanced options/);
+  assert.doesNotMatch(setupSource, /terminalSetupAdvancedOpen/);
   assert.doesNotMatch(setupSource, /terminal-preview-block/);
   assert.doesNotMatch(setupSource, /layoutPreview\(setupCount\)/);
 });

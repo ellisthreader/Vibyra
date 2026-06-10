@@ -24,14 +24,15 @@
 }
 .terminal-memory-pane-content {
   display: grid;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
 }
 .terminal-memory-pane-content > .terminal-memory-graph,
 .terminal-memory-pane-content > .terminal-memory-document,
 .terminal-memory-pane-content > .terminal-memory-onboarding {
-  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 .terminal-memory-pane-content .terminal-memory-graph-meta {
   padding: 10px 13px 0;

@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { readdir, stat } from "node:fs/promises";
 import { appState } from "./state.mjs";
-import { formatUpdated, isDirectory, projectFromInfo, projectFromPath } from "./projectInfo.mjs";
+import { formatUpdated, isDirectory, projectFromInfo, projectFromPath, projectIdFromPath } from "./projectInfo.mjs";
 
 export async function browseDesktopPath(path) {
   const targetPath = path ? resolve(String(path)) : null;
@@ -105,7 +105,7 @@ async function browseEntry(root, child) {
   }
   if (!child.isFile()) return null;
   return {
-    id: Buffer.from(childPath).toString("base64url"),
+    id: projectIdFromPath(childPath),
     name: child.name,
     path: childPath,
     kind: "file",

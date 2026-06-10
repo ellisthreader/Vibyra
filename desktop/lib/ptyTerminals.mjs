@@ -7,6 +7,7 @@ import {
   connectPersistentAiTerminalProcess,
   launchPersistentAiTerminalProcess,
   listPersistentAiTerminalSessions,
+  persistentAiTerminalConfigIsCurrent,
   removePersistentAiTerminalSession,
   updatePersistentAiTerminalSession
 } from "./aiTerminalPersistentProcess.mjs";
@@ -19,12 +20,28 @@ import {
   rollbackPreparedTerminalWorkspace
 } from "./terminalWorktrees.mjs";
 import { terminalMemoryInstructions } from "./desktopTerminalMemory.mjs";
+import { routeDesktopAutoModel } from "./desktopChat.mjs";
+import { resolveAiTerminalLaunchPlan } from "./aiTerminalLaunchPlan.mjs";
+import { terminalProviderAdapters } from "./aiTerminalProviderAdapters.mjs";
+import { terminalRuntimeExecutable } from "./aiTerminalRuntimes.mjs";
+import {
+  autoTerminalPrompt,
+  autoTerminalWaitingOutput,
+  consumeAutoTerminalInput
+} from "./aiTerminalAutoWaiting.mjs";
+import { providerAccountsState } from "./providerAccounts.mjs";
+import { appState } from "./state.mjs";
+import {
+  issueTerminalGatewayToken,
+  revokeTerminalGatewayTokensForTerminal
+} from "./terminalGatewayAuth.mjs";
 
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
 const MAX_OUTPUT_BUFFER = 50_000;
 const MAX_ASSIGNMENT_PROMPT = 8_000;
 const ASSIGNMENT_TIMEOUT_MS = 5_000;
+const STARTUP_ASSIGNMENT_TIMEOUT_MS = 30_000;
 const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
@@ -39,7 +56,29 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && route.action === "collection") {
-    send(res, 200, { session: await createPtyTerminal(await readBody(req)), agents: listAiTerminalAgentStatuses() });
+    const body = await readBody(req);
+    const session = await createPtyTerminal(body);
+    const prompt = sanitizeAssignmentPrompt(body.initialPrompt);
+    const assignment = prompt
+      ? await assignPtyTerminalTask(session.id, {
+        assignmentId: string(body.assignmentId) || `assignment-${session.id}-${Date.now()}`,
+        prompt
+      }, {
+        timeoutMs: STARTUP_ASSIGNMENT_TIMEOUT_MS
+      })
+      : null;
+    if (assignment && assignment.state !== "written-to-child") {
+      closePtyTerminal(session.id);
+      throw httpError(
+        assignment.state === "timed-out" ? 504 : 409,
+        assignment.reason || "The terminal task could not be delivered."
+      );
+    }
+    send(res, 200, {
+      session: sessions.has(session.id) ? publicSession(sessions.get(session.id)) : session,
+      ...(assignment ? { assignment } : {}),
+      agents: listAiTerminalAgentStatuses()
+    });
     return true;
   }
   if (req.method === "POST" && route.action === "workspace-preflight") {
@@ -56,7 +95,7 @@ export async function handlePtyTerminalRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && route.action === "input") {
-    writePtyInput(route.id, String((await readBody(req))?.input ?? ""));
+    await writePtyInput(route.id, String((await readBody(req))?.input ?? ""));
     send(res, 200, { ok: true });
     return true;
   }
@@ -75,6 +114,10 @@ export async function handlePtyTerminalRoutes(req, res, url) {
   if (req.method === "POST" && route.action === "resize") {
     resizePtyTerminal(route.id, await readBody(req));
     send(res, 200, { ok: true });
+    return true;
+  }
+  if (req.method === "POST" && route.action === "model") {
+    send(res, 200, { ok: true, session: switchPtyTerminalModel(route.id, await readBody(req)) });
     return true;
   }
   if (req.method === "PATCH" && route.action === "session") {
@@ -147,12 +190,43 @@ export function handlePtyTerminalUpgrade(req, socket) {
 export async function createPtyTerminal(body = {}) {
   const requestedId = string(body.id);
   const projectId = string(body.projectId);
-  const model = string(body.model).slice(0, 140);
-  const agent = normalizeAgent(body.agent, model);
+  const requestedModel = string(body.model).slice(0, 140);
+  let model = requestedModel;
+  const tokenMode = normalizeTokenMode(body.tokenMode);
+  const initialPrompt = sanitizeAssignmentPrompt(body.initialPrompt);
+  const waitingAuto = requestedModel.toLowerCase() === "auto" && !initialPrompt;
+  let autoRouting = null;
+  if (requestedModel.toLowerCase() === "auto") {
+    if (tokenMode !== "vibyra") {
+      throw httpError(409, "Auto terminal routing is only available with Vibyra tokens.");
+    }
+    if (!waitingAuto) {
+      const allowedProviders = managedTerminalProviders();
+      if (!allowedProviders.length) {
+        throw httpError(409, "No native Vibyra terminal runtime is currently ready for Auto.");
+      }
+      const routed = await routeDesktopAutoModel({
+        prompt: initialPrompt,
+        allowedProviders
+      });
+      model = string(routed.modelKey).slice(0, 140);
+      autoRouting = routed.autoRouting || null;
+    }
+  }
+  const agent = terminalAgentForTokenSource(model, tokenMode, providerAccountsState(), body.agent);
   const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort || body.effort);
   const permissionMode = normalizePermissionMode(body.permissionMode, agent);
-  const tokenMode = normalizeTokenMode(body.tokenMode);
-  const workspaceMode = normalizeTerminalWorkspaceMode(body.workspaceMode);
+  const launchPlan = waitingAuto || agent === "shell" || !model ? null : resolveAiTerminalLaunchPlan({
+    model: requestedModel || model,
+    billingMode: tokenMode,
+    permissionMode,
+    initialTask: initialPrompt,
+    routedModel: model
+  });
+  if (tokenMode === "vibyra" && launchPlan && !appState.desktopAccountToken) {
+    throw httpError(401, "Log in to Vibyra Desktop before opening a Vibyra-credit terminal.");
+  }
+  const workspaceMode = projectId ? normalizeTerminalWorkspaceMode(body.workspaceMode) : "shared";
   const existing = requestedId ? sessions.get(requestedId) : null;
   if (existing && existing.status !== "exited") {
     if (projectId !== existing.projectId) {
@@ -165,6 +239,7 @@ export async function createPtyTerminal(body = {}) {
       || permissionMode !== existing.permissionMode
       || tokenMode !== existing.tokenMode
       || workspaceMode !== existing.workspaceMode
+      || JSON.stringify(launchPlan) !== JSON.stringify(existing.launchPlan)
     ) {
       throw httpError(409, "That terminal ID is already running with different launch settings.");
     }
@@ -175,8 +250,10 @@ export async function createPtyTerminal(body = {}) {
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, "Vibyra Desktop supports up to " + MAX_PTY_TERMINAL_SESSIONS + " terminals at once.");
   const project = terminalProjectById(projectId);
   if (projectId && !project) throw httpError(404, "The selected terminal project is no longer available.");
-  const memoryInstructions = await officialTerminalMemory(agent, projectId);
-  const agentStatus = aiTerminalAgentStatus(agent);
+  const memoryInstructions = waitingAuto ? "" : await officialTerminalMemory(agent, projectId);
+  const agentStatus = waitingAuto
+    ? autoWaitingAgentStatus()
+    : aiTerminalAgentStatus(agent, model, launchPlan?.runtimeId);
   let workspace = {
     workspaceMode: "shared",
     cwd: project?.path || process.cwd(),
@@ -196,34 +273,58 @@ export async function createPtyTerminal(body = {}) {
   }
   const session = {
     id: requestedId || "pty-" + Date.now() + "-" + randomUUID().slice(0, 8),
-    title: string(body.title).slice(0, 72) || "Terminal",
+    title: autoRouting
+      ? routedTerminalTitle(model, body.title)
+      : string(body.title).slice(0, 72) || "Terminal",
     agent,
     agentStatus,
+    requestedModel: requestedModel || model,
     model,
+    autoRouting,
     reasoningEffort,
     permissionMode,
     tokenMode,
+    launchPlan,
     projectId,
     ...workspace,
     cols: clamp(body.cols, 100),
     rows: clamp(body.rows, 30),
-    output: "",
-    status: agentStatus.available ? "starting" : "unavailable",
-    providerState: !agentStatus.available ? "exited" : agent === "shell" ? "fallback-shell" : "starting",
+    output: waitingAuto ? autoTerminalWaitingOutput({ cwd: workspace.cwd, cols: body.cols }) : "",
+    status: waitingAuto ? "running" : agentStatus.available ? "starting" : "unavailable",
+    providerState: waitingAuto ? "ready" : !agentStatus.available ? "exited" : agent === "shell" ? "fallback-shell" : "starting",
     exitCode: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    autoAwaitingTask: waitingAuto,
+    autoInputBuffer: "",
+    autoPasteMode: false,
+    autoTitle: waitingAuto ? string(body.title).slice(0, 72) || "Auto" : "",
+    autoRoutingPromise: null,
     process: null
   };
+  const terminalGatewayToken = tokenMode === "vibyra" && launchPlan
+    ? issueTerminalGatewayToken(session.id, {
+      models: [...launchPlan.allowedModels, launchPlan.nativeModel],
+      runtimeId: launchPlan.runtimeId,
+      providerId: launchPlan.providerId,
+      adapterId: launchPlan.adapterId,
+      protocol: launchPlan.protocol,
+      nativeModel: launchPlan.nativeModel,
+      billingModel: launchPlan.billingModel
+    }).token
+    : "";
   sessions.set(session.id, session);
+  if (waitingAuto) return publicSession(session);
   if (!agentStatus.available) {
-    appendOutput(session, `${label(session.agent)} CLI is not available.\r\n${agentStatus.installHint}\r\n`);
+    appendOutput(session, `${agentStatus.label || label(session.agent)} is not available.\r\n${agentStatus.installHint}\r\n`);
     return publicSession(session);
   }
   try {
     session.process = launchPersistentAiTerminalProcess({
       agent: session.agent,
+      requestedModel: session.requestedModel,
       model: session.model,
+      autoRouting: session.autoRouting,
       reasoningEffort: session.reasoningEffort,
       permissionMode: session.permissionMode,
       tokenMode: session.tokenMode,
@@ -234,6 +335,8 @@ export async function createPtyTerminal(body = {}) {
       repositoryRoot: session.repositoryRoot,
       workspaceNotice: session.workspaceNotice,
       memoryInstructions,
+      terminalGatewayToken,
+      launchPlan,
       terminalId: session.id,
       title: session.title,
       cwd: session.cwd,
@@ -243,6 +346,7 @@ export async function createPtyTerminal(body = {}) {
     }, persistentHandlers(session));
   } catch (error) {
     sessions.delete(session.id);
+    if (terminalGatewayToken) revokeTerminalGatewayTokensForTerminal(session.id);
     await rollbackPreparedTerminalWorkspace(session);
     throw error;
   }
@@ -250,7 +354,7 @@ export async function createPtyTerminal(body = {}) {
 }
 
 async function officialTerminalMemory(agent, projectId) {
-  if (!["codex", "claude", "gemini"].includes(agent) || !projectId || projectId === "full-pc") return "";
+  if (!["vibyra", "codex", "claude", "gemini"].includes(agent) || !projectId || projectId === "full-pc") return "";
   try {
     return await terminalMemoryInstructions(projectId);
   } catch {
@@ -261,17 +365,25 @@ async function officialTerminalMemory(agent, projectId) {
 function persistentHandlers(session) {
   return {
     onSnapshot: (payload) => {
+      let changed = false;
       const output = String(payload.output || "").slice(-MAX_OUTPUT_BUFFER);
       if (output && output !== session.output) {
         session.output = output;
-        publish(session.id, { type: "session", session: publicSession(session), output });
+        changed = true;
       }
       const workerStatus = String(payload.state?.status || "");
-      if (workerStatus) session.status = workerStatus;
+      if (workerStatus && workerStatus !== session.status) {
+        session.status = workerStatus;
+        changed = true;
+      }
       const providerState = normalizeProviderState(payload.state?.providerState);
-      if (providerState) session.providerState = providerState;
+      if (providerState && providerState !== session.providerState) {
+        session.providerState = providerState;
+        changed = true;
+      }
       session.exitCode = payload.state?.exitCode ?? session.exitCode;
       session.updatedAt = payload.state?.updatedAt || session.updatedAt;
+      if (changed) publish(session.id, { type: "session", session: publicSession(session), output });
     },
     onData: (data, meta = {}) => {
       session.status = "running";
@@ -286,7 +398,9 @@ function persistentHandlers(session) {
     onExit: ({ code, signal }) => {
       session.process = null;
       session.status = "exited";
+      session.providerState = "exited";
       session.exitCode = Number.isFinite(Number(code)) ? Number(code) : null;
+      revokeTerminalGatewayTokensForTerminal(session.id);
       const data = `\r\n[${label(session.agent)} exited${signal ? `: ${signal}` : session.exitCode !== null ? `: ${session.exitCode}` : ""}]\r\n`;
       appendOutput(session, data);
       publish(session.id, { type: "exit", data, code: session.exitCode, signal: signal || "" });
@@ -301,6 +415,7 @@ export function closePtyTerminal(id) {
   else removePersistentAiTerminalSession(session.id);
   sessions.delete(session.id);
   subscribers.delete(session.id);
+  revokeTerminalGatewayTokensForTerminal(session.id);
   return true;
 }
 
@@ -316,6 +431,14 @@ export function renamePtyTerminal(id, body = {}) {
   return publicSession(session);
 }
 
+export function switchPtyTerminalModel(id, body = {}) {
+  const session = sessions.get(string(id));
+  if (!session) throw httpError(404, "Terminal not found.");
+  const model = string(body.model).trim().slice(0, 140);
+  if (model === session.model) return publicSession(session);
+  throw httpError(409, "Changing a terminal model requires a new terminal session.");
+}
+
 export function closeAllPtyTerminals() {
   const ids = Array.from(sessions.keys());
   ids.forEach(closePtyTerminal);
@@ -327,6 +450,10 @@ async function restorePersistentSessions() {
   for (const record of listPersistentAiTerminalSessions().slice(0, MAX_PTY_TERMINAL_SESSIONS)) {
     const config = record.config;
     const workerState = record.state;
+    if (!persistentAiTerminalConfigIsCurrent(config)) {
+      terminateUntrustedPersistentSession(config.terminalId);
+      continue;
+    }
     const location = await restoredTerminalLocation(config);
     if (!location) {
       terminateUntrustedPersistentSession(config.terminalId);
@@ -337,11 +464,14 @@ async function restorePersistentSessions() {
       id: string(config.terminalId),
       title: string(config.title).slice(0, 72) || "Recovered terminal",
       agent,
-      agentStatus: aiTerminalAgentStatus(agent),
+      agentStatus: aiTerminalAgentStatus(agent, config.model, config.launchPlan?.runtimeId),
+      requestedModel: string(config.requestedModel || config.model).slice(0, 140),
       model: string(config.model).slice(0, 140),
+      autoRouting: config.autoRouting || null,
       reasoningEffort: normalizeReasoningEffort(config.reasoningEffort),
       permissionMode: normalizePermissionMode(config.permissionMode, agent),
       tokenMode: normalizeTokenMode(config.tokenMode),
+      launchPlan: config.launchPlan || null,
       projectId: location.projectId,
       workspaceMode: location.workspaceMode,
       branchName: location.branchName,
@@ -397,6 +527,7 @@ export async function restoredTerminalLocation(config = {}) {
 function terminateUntrustedPersistentSession(terminalId) {
   const id = string(terminalId);
   if (!id) return;
+  revokeTerminalGatewayTokensForTerminal(id);
   connectPersistentAiTerminalProcess(id, {}, { waitForWorker: true }).kill("SIGTERM");
 }
 
@@ -404,8 +535,39 @@ export function listPtyTerminals() {
   return Array.from(sessions.values()).map(publicSession);
 }
 
-function writePtyInput(id, input) {
+export function terminalEditorWorkspace(id) {
   const session = sessions.get(string(id));
+  if (!session) throw httpError(404, "Terminal not found.");
+  if (!session.cwd) throw httpError(409, "This terminal does not have a workspace yet.");
+  return {
+    id: session.id,
+    title: session.title,
+    cwd: session.cwd,
+    branchName: session.branchName,
+    workspaceMode: session.workspaceMode
+  };
+}
+
+async function writePtyInput(id, input) {
+  const session = sessions.get(string(id));
+  if (session?.autoAwaitingTask) {
+    const consumed = consumeAutoTerminalInput({
+      buffer: session.autoInputBuffer,
+      pasteMode: session.autoPasteMode
+    }, input);
+    session.autoInputBuffer = consumed.buffer;
+    session.autoPasteMode = consumed.pasteMode;
+    if (consumed.output) {
+      appendOutput(session, consumed.output);
+      publish(session.id, { type: "output", data: consumed.output });
+    }
+    if (consumed.prompt) {
+      await activateAutoTerminal(session, consumed.prompt, `auto-${session.id}-${Date.now()}`);
+    } else if (/[\r\n]/.test(input)) {
+      appendAutoOutput(session, autoTerminalPrompt());
+    }
+    return;
+  }
   if (!session?.process?.stdin?.writable) throw httpError(409, "Terminal is not running.");
   session.process.stdin.write(input);
   session.updatedAt = new Date().toISOString();
@@ -418,6 +580,14 @@ export async function assignPtyTerminalTask(id, body = {}, options = {}) {
   const prompt = sanitizeAssignmentPrompt(body.prompt);
   if (!assignmentId) throw httpError(422, "Assignment ID is required.");
   if (!prompt) throw httpError(422, "Assignment prompt is required.");
+  if (session.autoAwaitingTask) {
+    return activateAutoTerminal(
+      session,
+      prompt,
+      assignmentId,
+      options.timeoutMs ?? 20_000
+    );
+  }
   if (session.agent === "shell" || session.providerState === "fallback-shell") {
     return rejectedAssignment(session, assignmentId, "The terminal is a project shell and cannot accept AI assignments.");
   }
@@ -443,14 +613,14 @@ export async function assignPtyTerminalTask(id, body = {}, options = {}) {
 }
 
 export function formatPtyTerminalAssignment(agent, prompt) {
-  return formatAssignmentInput(normalizeAgent(agent), sanitizeAssignmentPrompt(prompt));
+  return formatAssignmentInput(
+    normalizeAgent(agent),
+    sanitizeAssignmentPrompt(prompt)
+  );
 }
 
 function formatAssignmentInput(agent, prompt) {
-  const providerPrompt = agent === "vibyra"
-    ? prompt.split(/\r\n|\r|\n/).map((line) => line.trim()).filter(Boolean).join(" | ")
-    : prompt;
-  return `\x1b[200~${providerPrompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
+  return `\x1b[200~${prompt.replace(/\r?\n/g, "\r")}\x1b[201~\r`;
 }
 
 function sanitizeAssignmentPrompt(value) {
@@ -486,12 +656,17 @@ function resizePtyTerminal(id, size) {
 function subscribePtyTerminal(id, sendMessage) {
   const session = sessions.get(id);
   const list = subscribers.get(id) || new Set();
+  const firstSubscriber = list.size === 0;
   list.add(sendMessage);
   subscribers.set(id, list);
+  if (firstSubscriber) session?.process?.setRendererAttached?.(true);
   sendMessage({ type: "session", session: publicSession(session), output: session.output });
   return () => {
     list.delete(sendMessage);
-    if (!list.size) subscribers.delete(id);
+    if (!list.size) {
+      subscribers.delete(id);
+      session?.process?.setRendererAttached?.(false);
+    }
   };
 }
 
@@ -499,7 +674,13 @@ export function handlePtySocketMessage(id, message) {
   let payload = null;
   try { payload = JSON.parse(message); } catch { return; }
   try {
-    if (payload?.type === "input") writePtyInput(id, String(payload.data ?? ""));
+    if (payload?.type === "input") {
+      void writePtyInput(id, String(payload.data ?? "")).catch((error) => {
+        if (Number(error?.status) !== 409) {
+          console.error(error instanceof Error ? error.stack || error.message : error);
+        }
+      });
+    }
     if (payload?.type === "resize") resizePtyTerminal(id, payload);
   } catch (error) {
     if (Number(error?.status) !== 409) {
@@ -523,7 +704,14 @@ function ptyRoute(pathname) {
 
 function publicSession(session) {
   if (!session) return null;
-  const { process, ...safe } = session;
+  const {
+    process,
+    autoInputBuffer,
+    autoPasteMode,
+    autoTitle,
+    autoRoutingPromise,
+    ...safe
+  } = session;
   return safe;
 }
 
@@ -626,8 +814,34 @@ export function terminalAgentForModel(model) {
   return officialAgentForModel(model);
 }
 
+export function terminalAgentForTokenSource(model, tokenMode, accounts = {}, requestedAgent = "") {
+  const requested = normalizeAgent(requestedAgent, model);
+  if (requested === "shell") return "shell";
+  const key = string(model);
+  if (!key) return requested;
+  if (normalizeTokenMode(tokenMode) !== "provider") return "vibyra";
+
+  const official = officialAgentForModel(key);
+  if (official === "codex" && accounts?.codex?.available && accounts?.codex?.connected) {
+    return "codex";
+  }
+  if (["claude", "gemini"].includes(official) && aiTerminalAgentStatus(official).available) {
+    return official;
+  }
+  if (official === "codex") {
+    httpError(409, "Install Codex CLI and sign in with ChatGPT before using My AI accounts.");
+  }
+  if (official) {
+    httpError(409, `Install ${official === "claude" ? "Claude Code" : "Gemini CLI"} before using this model with My AI accounts.`);
+  }
+  httpError(409, "This model is only available with Vibyra tokens.");
+}
+
 function officialAgentForModel(model) {
   const key = string(model).toLowerCase();
+  if (key.startsWith("openai/")) return "codex";
+  if (key.startsWith("anthropic/")) return "claude";
+  if (key.startsWith("google/")) return "gemini";
   if (key.includes("/")) return "";
   if (key.startsWith("gpt-") || key.includes("codex")) return "codex";
   if (key.startsWith("claude-")) return "claude";
@@ -645,7 +859,7 @@ function normalizeTokenMode(value) {
 }
 
 function normalizePermissionMode(value, agent) {
-  return agent === "codex" && string(value).toLowerCase() === "full" ? "full" : "standard";
+  return ["codex", "vibyra"].includes(agent) && string(value).toLowerCase() === "full" ? "full" : "standard";
 }
 
 function clamp(value, fallback) {
@@ -659,7 +873,179 @@ function label(agent) {
 
 function normalizeProviderState(value) {
   const state = string(value);
-  return ["starting", "ready", "fallback-shell", "exited"].includes(state) ? state : "";
+  return ["starting", "ready", "busy", "fallback-shell", "exited"].includes(state) ? state : "";
+}
+
+function managedTerminalProviders() {
+  return terminalProviderAdapters()
+    .filter((adapter) => adapter.managedCreditsReady && terminalRuntimeExecutable(adapter.runtimeId))
+    .map((adapter) => adapter.providerId);
+}
+
+function autoWaitingAgentStatus() {
+  return {
+    key: "vibyra",
+    label: "Vibyra",
+    available: true,
+    command: "",
+    commandPath: "",
+    args: [],
+    installHint: "",
+    agentEnginePath: "",
+    agentEngineAvailable: false,
+    runtimeId: "auto",
+    launchMode: "deferred-auto"
+  };
+}
+
+async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 20_000) {
+  if (session.autoRoutingPromise) return session.autoRoutingPromise;
+  session.autoRoutingPromise = (async () => {
+    session.autoAwaitingTask = false;
+    session.providerState = "busy";
+    appendAutoOutput(session, "\x1b[?2004l\x1b[38;2;183;148;255mVibyra is choosing the best AI...\x1b[0m\r\n");
+    const allowedProviders = managedTerminalProviders();
+    if (!allowedProviders.length) {
+      return resetAutoWaitingSession(
+        session,
+        assignmentId,
+        "No native Vibyra terminal runtime is currently ready for Auto."
+      );
+    }
+
+    let gatewayToken = "";
+    try {
+      const routed = await routeDesktopAutoModel({ prompt, allowedProviders });
+      const model = string(routed.modelKey).slice(0, 140);
+      const launchPlan = resolveAiTerminalLaunchPlan({
+        model: "auto",
+        billingMode: session.tokenMode,
+        permissionMode: session.permissionMode,
+        initialTask: prompt,
+        routedModel: model
+      });
+      const agent = terminalAgentForTokenSource(model, session.tokenMode, providerAccountsState(), "vibyra");
+      const agentStatus = aiTerminalAgentStatus(agent, model, launchPlan.runtimeId);
+      if (!agentStatus.available) {
+        throw httpError(409, agentStatus.installHint || "The selected native AI runtime is not available.");
+      }
+      const memoryInstructions = await officialTerminalMemory(agent, session.projectId);
+      gatewayToken = issueTerminalGatewayToken(session.id, {
+        models: launchPlan.allowedModels,
+        runtimeId: launchPlan.runtimeId,
+        providerId: launchPlan.providerId,
+        adapterId: launchPlan.adapterId,
+        protocol: launchPlan.protocol,
+        nativeModel: launchPlan.nativeModel,
+        billingModel: launchPlan.billingModel
+      }).token;
+      session.agent = agent;
+      session.agentStatus = agentStatus;
+      session.model = model;
+      session.autoRouting = routed.autoRouting || null;
+      session.launchPlan = launchPlan;
+      session.title = routedTerminalTitle(model, session.autoTitle || session.title);
+      session.status = "starting";
+      session.providerState = "starting";
+      session.updatedAt = new Date().toISOString();
+      session.process = launchPersistentAiTerminalProcess({
+        agent,
+        requestedModel: "auto",
+        model,
+        autoRouting: session.autoRouting,
+        reasoningEffort: session.reasoningEffort,
+        permissionMode: session.permissionMode,
+        tokenMode: session.tokenMode,
+        projectId: session.projectId,
+        workspaceMode: session.workspaceMode,
+        branchName: session.branchName,
+        workspacePath: session.workspacePath,
+        repositoryRoot: session.repositoryRoot,
+        workspaceNotice: session.workspaceNotice,
+        memoryInstructions,
+        terminalGatewayToken: gatewayToken,
+        launchPlan,
+        terminalId: session.id,
+        title: session.title,
+        cwd: session.cwd,
+        cols: session.cols,
+        rows: session.rows,
+        createdAt: session.createdAt
+      }, persistentHandlers(session));
+      publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+      const acknowledgement = await session.process.assign({
+        assignmentId,
+        data: formatAssignmentInput(agent, prompt),
+        timeoutMs
+      });
+      session.providerState = normalizeProviderState(acknowledgement.providerState)
+        || session.providerState;
+      session.updatedAt = new Date().toISOString();
+      return {
+        assignmentId,
+        terminalId: session.id,
+        state: acknowledgement.state,
+        providerState: session.providerState,
+        duplicate: Boolean(acknowledgement.duplicate),
+        ...(acknowledgement.reason ? { reason: acknowledgement.reason } : {})
+      };
+    } catch (error) {
+      if (gatewayToken) revokeTerminalGatewayTokensForTerminal(session.id);
+      if (session.process) {
+        session.process.kill("SIGTERM");
+        session.process = null;
+      }
+      return resetAutoWaitingSession(
+        session,
+        assignmentId,
+        error instanceof Error ? error.message : "Vibyra could not route this task."
+      );
+    }
+  })();
+  try {
+    return await session.autoRoutingPromise;
+  } finally {
+    session.autoRoutingPromise = null;
+  }
+}
+
+function resetAutoWaitingSession(session, assignmentId, reason) {
+  session.agent = "vibyra";
+  session.agentStatus = autoWaitingAgentStatus();
+  session.model = "auto";
+  session.autoRouting = null;
+  session.launchPlan = null;
+  session.title = session.autoTitle || session.title || "Auto";
+  session.status = "running";
+  session.providerState = "ready";
+  session.autoAwaitingTask = true;
+  session.autoInputBuffer = "";
+  session.autoPasteMode = false;
+  appendAutoOutput(session, `\r\n\x1b[31m${reason}\x1b[0m\r\n${autoTerminalPrompt()}`);
+  return rejectedAssignment(session, assignmentId, reason);
+}
+
+function appendAutoOutput(session, data) {
+  appendOutput(session, data);
+  publish(session.id, { type: "output", data });
+  publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+}
+
+function routedTerminalTitle(model, requestedTitle) {
+  const requested = string(requestedTitle);
+  if (requested && !/^(?:auto|terminal)(?: \d+)?$/i.test(requested)) {
+    return requested.slice(0, 72);
+  }
+  const raw = string(model).replace(/^[^/]+\//, "");
+  const words = raw.split(/[-_]+/).filter(Boolean).map((word) => {
+    if (/^gpt$/i.test(word)) return "GPT";
+    if (/^\d+(?:\.\d+)*$/.test(word)) return word;
+    return `${word.charAt(0).toUpperCase()}${word.slice(1)}`;
+  });
+  const ordinal = string(requestedTitle).match(/\s(\d+)$/)?.[1] || "";
+  return `${words.join("-").replace(/-(Mini|Nano|Codex)$/i, " $1")}${ordinal ? ` ${ordinal}` : ""}`
+    .trim()
+    .slice(0, 72) || "Terminal";
 }
 
 function string(value) {

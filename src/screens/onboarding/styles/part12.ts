@@ -27,13 +27,13 @@ export const part12 = {
   planSummary: { color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 20, marginTop: 14 },
   planTitleRow: { alignItems: "center", flexDirection: "row", gap: 8 },
   paywallBackground: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   paywallBackgroundImage: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   paywallBackgroundShade: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   paywallAuraOne: {
     backgroundColor: "rgba(109, 59, 255, 0.08)",
@@ -54,7 +54,7 @@ export const part12 = {
     width: 220
   },
   paywallNoise: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(255, 255, 255, 0.012)"
   },
   paywallBadge: {

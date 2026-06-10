@@ -1,0 +1,51 @@
+env: load .env
+env: export EXPO_PUBLIC_API_URL EXPO_PUBLIC_DESKTOP_URL EXPO_PUBLIC_FAKE_BUILDS
+Starting project at /home/ellis/Desktop/SaaS
+🔍 [expo-iap] Config values: horizonAppId=undefined, isHorizonEnabled=false, isOnsideEnabled=false
+📦 [expo-iap] Using OpenIAP from CocoaPods
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  expo@54.0.33 - expected version: ~54.0.35
+  expo-asset@12.0.12 - expected version: ~12.0.13
+  babel-preset-expo@55.0.18 - expected version: ~54.0.10
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 2353ms node_modules/expo/AppEntry.js (1188 modules)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules/expo/AppEntry.js ▓░░░░░░░░░░░░░░░  9.8% (129/412)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 68.6% (616/793)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.0% ( 902/1037)
+Web Bundled 13358ms node_modules/expo/AppEntry.js (1242 modules)
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 929ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 67ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 130ms node_modules/expo/AppEntry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+/home/ellis/Desktop/SaaS/node_modules/expo/node_modules/@expo/cli/build/src/utils/errors.js:130
+    throw error;
+    ^
+
+Error: ENOENT: no such file or directory, watch '/home/ellis/Desktop/SaaS/backend/storage/app/runtime-deployments/1-YiIwuWTZ'
+    at FSWatcher.<computed> (node:internal/fs/watchers:247:19)
+    at Object.watch (node:fs:2503:36)
+    at FallbackWatcher._watchdir (/home/ellis/Desktop/SaaS/node_modules/@expo/metro/node_modules/metro-file-map/src/watchers/FallbackWatcher.js:119:33)
+    at /home/ellis/Desktop/SaaS/node_modules/@expo/metro/node_modules/metro-file-map/src/watchers/FallbackWatcher.js:219:22
+    at Walker.<anonymous> (/home/ellis/Desktop/SaaS/node_modules/@expo/metro/node_modules/metro-file-map/src/watchers/FallbackWatcher.js:358:5)
+    at Walker.emit (node:events:524:28)
+    at /home/ellis/Desktop/SaaS/node_modules/walker/lib/walker.js:69:16
+    at FSReqCallback.oncomplete (node:fs:187:23) {
+  errno: -2,
+  syscall: 'watch',
+  code: 'ENOENT',
+  path: '/home/ellis/Desktop/SaaS/backend/storage/app/runtime-deployments/1-YiIwuWTZ',
+  filename: '/home/ellis/Desktop/SaaS/backend/storage/app/runtime-deployments/1-YiIwuWTZ'
+}
+
+Node.js v20.20.1

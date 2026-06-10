@@ -5,6 +5,8 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
+import { issuePreviewCapability, revokePreviewCapability } from "./previewCapabilities.mjs";
+import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
 import { STATIC_PREVIEW_ENTRIES } from "./previewResolver.mjs";
 import { escapeRegExp, findFreePort, killTrackedPreview, makeFakeNpm, makeFakePhp, makeProject, makeRouteServer, makeViteLikeServer, occupyPort, proxyPathFor, requestPreview, requestPreviewProxyPath, requestPreviewRefererAsset, requestPreviewServerProxy, requestPreviewUrlProxy, viteErrorHtml } from "./previewTestHelpers.mjs";
@@ -33,6 +35,10 @@ test("external preview proxy rewrites nested Vite imports and assets against the
     "/resources/css/theme.css": { contentType: "text/css; charset=utf-8", body: "body { color: red; }" },
     "/resources/img/bg.png": { contentType: "image/png", body: Buffer.from("png") }
   });
+  const projectId = "external-preview-proxy-rewrite";
+  appState.previewServers[projectId] = {
+    viteProxyTargetUrl: `http://127.0.0.1:${vite.port}`
+  };
   try {
     const js = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/@vite/client`);
     assert.equal(js.status, 200);
@@ -69,7 +75,142 @@ test("external preview proxy rewrites nested Vite imports and assets against the
     assert.equal(theme.status, 200);
     assert.match(theme.body, /color: red/);
   } finally {
+    delete appState.previewServers[projectId];
     await vite.close();
+  }
+});
+
+test("external preview proxy rejects unsupported and untracked targets by default", async () => {
+  const targets = [
+    ["http://169.254.169.254/latest/meta-data/", 401],
+    ["https://example.com/private", 401],
+    ["http://[::1]:65530/private", 401],
+    ["http://2130706433:65530/private", 401],
+    ["file:///etc/passwd", 400]
+  ];
+
+  for (const [target, status] of targets) {
+    const response = await requestPreviewUrlProxy(target);
+    assert.equal(response.status, status, target);
+  }
+});
+
+test("external preview proxy accepts only the tracked origin for a scoped capability", async () => {
+  const tracked = await makeRouteServer({
+    "/asset.js": { contentType: "application/javascript; charset=utf-8", body: "window.__tracked = true;" }
+  });
+  const untracked = await makeRouteServer({
+    "/asset.js": { contentType: "application/javascript; charset=utf-8", body: "window.__untracked = true;" }
+  });
+  const projectId = "scoped-external-preview-proxy";
+  const credential = issuePreviewCapability(projectId);
+  appState.previewServers[projectId] = {
+    proxyTargetUrl: `http://127.0.0.1:${tracked.port}`,
+    url: `http://127.0.0.1:${tracked.port}`
+  };
+  try {
+    const allowedPath = `/preview/proxy-url/${encodeURIComponent(credential)}/?url=${encodeURIComponent(`http://127.0.0.1:${tracked.port}/asset.js`)}`;
+    const allowed = await requestPreviewProxyPath(allowedPath);
+    assert.equal(allowed.status, 200);
+    assert.match(allowed.body, /__tracked/);
+
+    const deniedPath = `/preview/proxy-url/${encodeURIComponent(credential)}/?url=${encodeURIComponent(`http://127.0.0.1:${untracked.port}/asset.js`)}`;
+    const denied = await requestPreviewProxyPath(deniedPath);
+    assert.equal(denied.status, 401);
+    assert.doesNotMatch(denied.body, /__untracked/);
+  } finally {
+    delete appState.previewServers[projectId];
+    revokePreviewCapability(credential);
+    await Promise.all([tracked.close(), untracked.close()]);
+  }
+});
+
+test("target-pinned credentials may proxy another tracked service in the same project", async () => {
+  const frontend = await makeRouteServer({
+    "/": { contentType: "text/html; charset=utf-8", body: "<!doctype html><main>frontend</main>" }
+  });
+  const backend = await makeRouteServer({
+    "/api/data": { contentType: "application/json", body: JSON.stringify({ source: "backend" }) }
+  });
+  const untracked = await makeRouteServer({
+    "/api/data": { contentType: "application/json", body: JSON.stringify({ source: "untracked" }) }
+  });
+  const projectId = "multi-service-external-preview";
+  trackPreviewServer(projectId, "frontend", {
+    proxyTargetUrl: `http://127.0.0.1:${frontend.port}`,
+    state: "running",
+    url: `http://127.0.0.1:${frontend.port}`
+  });
+  trackPreviewServer(projectId, "backend", {
+    proxyTargetUrl: `http://127.0.0.1:${backend.port}`,
+    state: "running",
+    url: `http://127.0.0.1:${backend.port}`
+  }, { activate: false });
+  const credential = issuePreviewCapability(projectId, { targetId: "frontend" });
+  try {
+    const allowed = await requestPreviewProxyPath(
+      `/preview/proxy-url/${encodeURIComponent(credential)}/?url=${encodeURIComponent(`http://localhost:${backend.port}/api/data`)}`
+    );
+    assert.equal(allowed.status, 200);
+    assert.match(allowed.body, /backend/);
+
+    const denied = await requestPreviewProxyPath(
+      `/preview/proxy-url/${encodeURIComponent(credential)}/?url=${encodeURIComponent(`http://127.0.0.1:${untracked.port}/api/data`)}`
+    );
+    assert.equal(denied.status, 401);
+  } finally {
+    stopTrackedPreviewServer(projectId, "frontend");
+    stopTrackedPreviewServer(projectId, "backend");
+    revokePreviewCapability(credential);
+    await Promise.all([frontend.close(), backend.close(), untracked.close()]);
+  }
+});
+
+test("legacy arbitrary preview proxy requires the explicit emergency rollback flag", async () => {
+  const upstream = await makeRouteServer({
+    "/legacy.js": { contentType: "application/javascript; charset=utf-8", body: "window.__legacy = true;" }
+  });
+  const previous = process.env.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED;
+  try {
+    const blocked = await requestPreviewUrlProxy(`http://127.0.0.1:${upstream.port}/legacy.js`);
+    assert.equal(blocked.status, 401);
+
+    process.env.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED = "true";
+    const allowed = await requestPreviewUrlProxy(`http://127.0.0.1:${upstream.port}/legacy.js`);
+    assert.equal(allowed.status, 200);
+    assert.match(allowed.body, /__legacy/);
+  } finally {
+    if (previous === undefined) delete process.env.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED;
+    else process.env.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED = previous;
+    await upstream.close();
+  }
+});
+
+test("external preview proxy returns redirects without following them", async () => {
+  let destinationRequests = 0;
+  const upstream = await makeRouteServer({
+    "/redirect": (_req, res) => {
+      res.writeHead(302, { Location: "/destination" });
+      res.end();
+    },
+    "/destination": (_req, res) => {
+      destinationRequests += 1;
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("followed");
+    }
+  });
+  const projectId = "external-preview-proxy-redirect";
+  appState.previewServers[projectId] = {
+    proxyTargetUrl: `http://127.0.0.1:${upstream.port}`,
+    url: `http://127.0.0.1:${upstream.port}`
+  };
+  try {
+    const response = await requestPreviewUrlProxy(`http://127.0.0.1:${upstream.port}/redirect`);
+    assert.equal(response.status, 302);
+    assert.equal(destinationRequests, 0);
+  } finally {
+    delete appState.previewServers[projectId];
+    await upstream.close();
   }
 });
 

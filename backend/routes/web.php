@@ -1,37 +1,53 @@
 <?php
 
 use App\Http\Controllers\BillingController;
-use App\Http\Controllers\VibyraDesktopController;
 use App\Http\Controllers\VibyraAppController;
+use App\Http\Controllers\VibyraDesktopController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [VibyraDesktopController::class, 'app']);
-Route::get('/desktop', [VibyraDesktopController::class, 'app']);
-Route::get('/desktop/state', [VibyraDesktopController::class, 'state']);
-Route::post('/desktop/approve', [VibyraDesktopController::class, 'approve']);
-Route::post('/desktop/deny', [VibyraDesktopController::class, 'deny']);
+if (config('desktop.legacy_routes_enabled')) {
+    Route::get('/', [VibyraDesktopController::class, 'app']);
+    Route::get('/desktop', [VibyraDesktopController::class, 'app']);
+    Route::get('/desktop/state', [VibyraDesktopController::class, 'state']);
+    Route::post('/desktop/approve', [VibyraDesktopController::class, 'approve']);
+    Route::post('/desktop/deny', [VibyraDesktopController::class, 'deny']);
 
-Route::get('/health', [VibyraDesktopController::class, 'health']);
-Route::post('/pair', [VibyraDesktopController::class, 'pair']);
-Route::get('/pair/status', [VibyraDesktopController::class, 'pairStatus']);
-Route::get('/projects', [VibyraDesktopController::class, 'projects']);
-Route::post('/projects/create', [VibyraDesktopController::class, 'createProject']);
-Route::get('/desktop/folders', [VibyraDesktopController::class, 'desktopFolders']);
-Route::get('/desktop/search', [VibyraDesktopController::class, 'desktopSearch']);
-Route::get('/files', [VibyraDesktopController::class, 'files']);
-Route::post('/files/create', [VibyraDesktopController::class, 'createFile']);
-Route::get('/files/read', [VibyraDesktopController::class, 'readFile']);
-Route::get('/events', [VibyraDesktopController::class, 'events']);
-Route::get('/preview/project/{projectId}/{token}/{path?}', [VibyraDesktopController::class, 'projectPreview'])->where('path', '.*');
-Route::post('/preview/start', [VibyraDesktopController::class, 'startPreview']);
-Route::post('/agents/start', [VibyraDesktopController::class, 'startAgent']);
-Route::post('/agents/apply', [VibyraDesktopController::class, 'applyAgent']);
-Route::post('/agents/discard', [VibyraDesktopController::class, 'discardAgent']);
-Route::post('/commands/run', [VibyraDesktopController::class, 'runCommand']);
+    Route::get('/health', [VibyraDesktopController::class, 'health']);
+    Route::post('/pair', [VibyraDesktopController::class, 'pair']);
+    Route::get('/pair/status', [VibyraDesktopController::class, 'pairStatus']);
+    Route::get('/projects', [VibyraDesktopController::class, 'projects']);
+    Route::post('/projects/create', [VibyraDesktopController::class, 'createProject']);
+    Route::get('/desktop/folders', [VibyraDesktopController::class, 'desktopFolders']);
+    Route::get('/desktop/search', [VibyraDesktopController::class, 'desktopSearch']);
+    Route::get('/files', [VibyraDesktopController::class, 'files']);
+    Route::post('/files/create', [VibyraDesktopController::class, 'createFile']);
+    Route::get('/files/read', [VibyraDesktopController::class, 'readFile']);
+    Route::get('/events', [VibyraDesktopController::class, 'events']);
+    Route::get('/preview/project/{projectId}/{token}/{path?}', [VibyraDesktopController::class, 'projectPreview'])->where('path', '.*');
+    Route::post('/preview/start', [VibyraDesktopController::class, 'startPreview']);
+    Route::post('/agents/start', [VibyraDesktopController::class, 'startAgent']);
+    Route::post('/agents/apply', [VibyraDesktopController::class, 'applyAgent']);
+    Route::post('/agents/discard', [VibyraDesktopController::class, 'discardAgent']);
+    Route::post('/commands/run', [VibyraDesktopController::class, 'runCommand']);
+}
 
-Route::post('/api/auth/signup', [VibyraAppController::class, 'signup']);
-Route::post('/api/auth/login', [VibyraAppController::class, 'login']);
+Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:5,1');
+Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:12,1');
+Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::get('/api/auth/password/open', [VibyraAppController::class, 'openPasswordReset'])->middleware('throttle:12,1');
+Route::get('/reset-password', [VibyraAppController::class, 'showPasswordResetLink'])->middleware('throttle:30,1');
+Route::get('/.well-known/apple-app-site-association', [VibyraAppController::class, 'appleAppSiteAssociation']);
+Route::get('/.well-known/assetlinks.json', [VibyraAppController::class, 'androidAssetLinks']);
+Route::post('/api/auth/email/resend', [VibyraAppController::class, 'resendEmailVerification'])->middleware('throttle:5,1');
+Route::delete('/api/auth/logout', [VibyraAppController::class, 'logoutCurrentSession']);
+Route::post('/api/auth/session/rotate', [VibyraAppController::class, 'rotateCurrentSession']);
+Route::get('/api/auth/email/verify/{id}/{hash}', [VibyraAppController::class, 'verifyEmail'])
+    ->middleware('throttle:12,1')
+    ->name('verification.verify');
 Route::post('/api/account/profile', [VibyraAppController::class, 'updateAccountProfile']);
+Route::post('/api/account/session/device', [VibyraAppController::class, 'updateAccountSessionDevice']);
 Route::get('/api/account/sessions', [VibyraAppController::class, 'accountSessions']);
 Route::delete('/api/account/devices/{deviceId}', [VibyraAppController::class, 'revokeAccountDevice']);
 Route::delete('/api/account/sessions', [VibyraAppController::class, 'revokeAccountSessions']);
@@ -50,8 +66,13 @@ Route::post('/api/project-memory/{projectId}/imports', [VibyraAppController::cla
 Route::post('/api/onboarding/complete', [VibyraAppController::class, 'completeOnboarding']);
 Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);
+Route::post('/api/chat/route', [VibyraAppController::class, 'chatAutoRoute']);
 Route::post('/api/chat/research-plan', [VibyraAppController::class, 'chatResearchPlan']);
 Route::post('/api/chat/stream', [VibyraAppController::class, 'chatStream']);
+Route::post('/api/codex/responses', [VibyraAppController::class, 'codexResponses']);
+Route::post('/api/terminal/anthropic/messages', [VibyraAppController::class, 'anthropicTerminalMessages']);
+Route::post('/api/terminal/anthropic/messages/count_tokens', [VibyraAppController::class, 'anthropicTerminalCountTokens']);
+Route::post('/api/terminal/gemini/models/{model}/{action}', [VibyraAppController::class, 'geminiTerminalRequest']);
 Route::post('/api/chat/learning/feedback', [VibyraAppController::class, 'chatLearningFeedback']);
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
 Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
@@ -65,6 +86,7 @@ Route::delete('/api/community/projects/{slug}/reaction', [VibyraAppController::c
 Route::post('/api/community/assets/generate', [VibyraAppController::class, 'generateCommunityAsset']);
 Route::get('/api/projects/publish-status', [VibyraAppController::class, 'publishedProjectStatuses']);
 Route::post('/api/projects/publish', [VibyraAppController::class, 'publishProject']);
+Route::patch('/api/projects/{slug}/listing', [VibyraAppController::class, 'updatePublishedProjectListing']);
 Route::patch('/api/projects/{slug}/publish', [VibyraAppController::class, 'updatePublishedProjectVisibility']);
 Route::delete('/api/projects/{slug}/publish', [VibyraAppController::class, 'deletePublishedProject']);
 Route::get('/api/projects/review-queue', [VibyraAppController::class, 'publishReviewQueue']);
@@ -72,7 +94,12 @@ Route::post('/api/projects/{slug}/review', [VibyraAppController::class, 'reviewP
 Route::get('/api/billing/plans', [BillingController::class, 'plans']);
 Route::post('/api/billing/checkout', [BillingController::class, 'checkout']);
 Route::post('/api/billing/portal', [BillingController::class, 'portal']);
+Route::post('/api/billing/change', [BillingController::class, 'changeMembership']);
+Route::post('/api/billing/cancel', [BillingController::class, 'cancelMembership']);
 Route::post('/api/billing/iap-receipt', [BillingController::class, 'iapReceipt']);
 Route::post('/api/billing/webhook', [BillingController::class, 'webhook']);
 Route::options('/api/{any}', [VibyraAppController::class, 'options'])->where('any', '.*');
-Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');
+
+if (config('desktop.legacy_routes_enabled')) {
+    Route::options('/{any}', [VibyraDesktopController::class, 'options'])->where('any', '.*');
+}

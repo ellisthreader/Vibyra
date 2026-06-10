@@ -34,15 +34,15 @@ function layoutContext(storedWidth = "") {
 test("companion width preserves a readable terminal area", () => {
   const context = layoutContext();
   const bounds = vm.runInContext("terminalCompanionWidthBounds(1200)", context);
-  assert.equal(bounds.minimum, 280);
+  assert.equal(bounds.minimum, 360);
   assert.equal(bounds.maximum, 720);
-  assert.equal(vm.runInContext("clampTerminalCompanionWidth(900, 1000)", context), 580);
-  assert.equal(vm.runInContext("clampTerminalCompanionWidth(100, 1000)", context), 280);
+  assert.equal(vm.runInContext("clampTerminalCompanionWidth(900, 1000)", context), 520);
+  assert.equal(vm.runInContext("clampTerminalCompanionWidth(100, 1000)", context), 360);
 });
 
 test("stored width is clamped against the current page", () => {
   const context = layoutContext("690");
-  assert.equal(vm.runInContext("clampTerminalCompanionWidth(terminalCompanionWidth, 900)", context), 480);
+  assert.equal(vm.runInContext("clampTerminalCompanionWidth(terminalCompanionWidth, 900)", context), 420);
 });
 
 test("fullscreen is Memory-only and restores terminal fitting", () => {
@@ -64,4 +64,9 @@ test("splitter supports pointer and keyboard resizing", () => {
   assert.match(source, /localStorage\.setItem\(terminalCompanionWidthKey/);
   assert.match(styles, /cursor: col-resize/);
   assert.match(styles, /focus-visible/);
+});
+
+test("narrow windows overlay the companion from the right", () => {
+  assert.match(styles, /@media \(max-width: 900px\)/);
+  assert.match(styles, /\.terminal-companion\s*\{[\s\S]*position: absolute;[\s\S]*right: 0;[\s\S]*width: min\(/);
 });

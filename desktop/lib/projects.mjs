@@ -1,8 +1,15 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { appState } from "./state.mjs";
-import { isDirectory, projectFromPath } from "./projectInfo.mjs";
+import {
+  isDirectory,
+  isRememberedProjectPath,
+  projectFromInfo,
+  projectFromPath,
+  projectPathFromId
+} from "./projectInfo.mjs";
 import { folderNameSearchScore, projectSearchScore } from "./searchScoring.mjs";
 
 export { browseDesktopPath } from "./projectBrowse.mjs";
@@ -31,12 +38,39 @@ export async function discoverProjects() {
   return appState.cachedProjects;
 }
 
-export function findProjectById(id) {
-  return appState.cachedProjects.find((project) => project.id === id) ?? null;
+export function findProjectById(id, projectPath = null) {
+  const value = String(id ?? "").trim();
+  const cached = appState.cachedProjects.find((project) => project.id === value);
+  if (cached) return cached;
+
+  const fallbackPath = projectPath ? resolve(String(projectPath)) : null;
+  const cachedByPath = fallbackPath
+    ? appState.cachedProjects.find((project) => resolve(project.path) === fallbackPath)
+    : null;
+  if (cachedByPath) return cachedByPath;
+
+  const candidatePath = fallbackPath ?? projectPathFromId(value);
+  if (!candidatePath || !isTrustedProjectDirectory(candidatePath)) return null;
+
+  try {
+    const info = statSync(candidatePath);
+    const project = projectFromInfo(candidatePath, readdirSync(candidatePath), info);
+    cacheProjects([project]);
+    return project;
+  } catch {
+    return null;
+  }
 }
 
-export function projectById(id) {
-  return findProjectById(id);
+export function projectById(id, projectPath = null) {
+  return findProjectById(id, projectPath);
+}
+
+export async function resolveDesktopProject(id, projectPath = null) {
+  const existing = projectById(id, projectPath);
+  if (existing) return existing;
+  await discoverProjects();
+  return projectById(id, projectPath);
 }
 
 export function terminalProjectById(id) {
@@ -182,6 +216,29 @@ function cacheProjects(projects) {
     if (next.length >= 80) break;
   }
   appState.cachedProjects = next;
+}
+
+function isTrustedProjectDirectory(path) {
+  if (!existsSync(path)) return false;
+  try {
+    if (!statSync(path).isDirectory()) return false;
+    if (isRememberedProjectPath(path)) return true;
+    const entries = new Set(readdirSync(path));
+    if ([
+      ".git",
+      "app.json",
+      "artisan",
+      "composer.json",
+      "index.html",
+      "package.json",
+      "pyproject.toml",
+      "requirements.txt"
+    ].some((marker) => entries.has(marker))) return true;
+    return ["build/index.html", "dist/index.html", "public/index.html", "public/index.php"]
+      .some((entry) => existsSync(join(path, entry)));
+  } catch {
+    return false;
+  }
 }
 
 function fullPcProject() {

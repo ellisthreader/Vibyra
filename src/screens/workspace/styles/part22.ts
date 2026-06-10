@@ -7,7 +7,7 @@ export const part22 = {
     opacity: 0.44
   },
   projectsBackdropShade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(5, 7, 17, 0.72)"
   },
   projectsCreateButton: {

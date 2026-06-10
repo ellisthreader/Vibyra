@@ -1,5 +1,6 @@
 import { RememberedDesktop } from "../types/domain";
 import { appendDesktopCandidates, getDesktopCandidates } from "../utils/network";
+import { makePairRequestId } from "../utils/desktopUrls";
 import {
   desktopConnectionUrls,
   DISCOVERY_SCAN_TIMEOUT_MS,
@@ -91,7 +92,7 @@ export async function scanPairByCode(
     rememberedDesktops.flatMap((desktop) => [desktop.url, ...(desktop.connectionUrls ?? [])])
   );
   const wrongCodeUrls: string[] = [];
-  const requestId = `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const requestId = makePairRequestId();
   let checked = 0;
   let timedOut = false;
   setHealthMessage("Finding Vibyra Desktop...");

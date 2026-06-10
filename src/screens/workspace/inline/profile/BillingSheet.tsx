@@ -32,7 +32,7 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
   const selectedTier = getPlanTier(selectedKey);
   const light = prefs.effectiveScheme === "light";
   const purchase = useProfileBillingPurchase(selectedKey, cycle);
-  const busy = checkoutBusy || purchase.isPurchasing;
+  const busy = checkoutBusy || purchase.isPurchasing || purchase.isRestoring;
 
   useEffect(() => {
     if (!visible) return;
@@ -90,6 +90,7 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
   }
 
   function primaryLabel() {
+    if (purchase.isRestoring) return "Restoring purchases...";
     if (busy) return "Opening secure checkout...";
     if (selectedKey === currentKey) return "Manage current plan";
     if (selectedKey === "free") return "Manage subscription";
@@ -176,6 +177,13 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
               {primaryLabel()}
             </Text>
           </Pressable>
+          {Platform.OS !== "web" ? (
+            <Pressable accessibilityRole="button" disabled={busy} onPress={purchase.restorePurchases}>
+              <Text style={{ color: prefs.colors.dim, fontSize: 12, fontWeight: "800", textAlign: "center", textDecorationLine: "underline" }}>
+                {purchase.isRestoring ? "Restoring purchases..." : "Restore Purchases"}
+              </Text>
+            </Pressable>
+          ) : null}
           <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center" }}>
             <Ionicons name="shield-checkmark" color={prefs.colors.dim} size={12} />
             <Text style={{ color: prefs.colors.dim, fontSize: 11, fontWeight: "700" }}>Cancel anytime. Plan access syncs to your account.</Text>

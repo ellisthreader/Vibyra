@@ -87,6 +87,22 @@ async function importTerminalMemoryManifest(files, kind = "markdown") {
   terminalMemoryUpdateStatus();
 }
 
+function terminalMemoryImportMenuHtml(className = "terminal-memory-toolbar-import-menu") {
+  return `<details class="${className}">
+    <summary title="Import memory">${icon("share")}<span>Import</span>${icon("chevron-down")}</summary>
+    <div class="terminal-memory-import-menu-popover" role="menu">
+      <label data-terminal-memory-pick="vault" role="menuitem">
+        ${icon("folder")}<span><strong>Obsidian vault</strong><small>Import a folder of linked notes</small></span>
+        <input type="file" accept=".md,text/markdown" multiple webkitdirectory directory data-terminal-memory-vault-input>
+      </label>
+      <label data-terminal-memory-pick="markdown" role="menuitem">
+        ${icon("document")}<span><strong>Markdown files</strong><small>Choose individual notes</small></span>
+        <input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple data-terminal-memory-markdown-input>
+      </label>
+    </div>
+  </details>`;
+}
+
 async function buildTerminalMemoryManifest(files, kind) {
   if (files.length > terminalMemoryImportLimits.maxFiles) {
     throw new Error(`Choose no more than ${terminalMemoryImportLimits.maxFiles} Markdown files.`);

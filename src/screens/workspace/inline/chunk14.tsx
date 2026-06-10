@@ -8,7 +8,7 @@ import { styles } from "../styles";
 import type { CommunityComment, CommunityPost } from "../types";
 import { formatCommunityTitle, getCommunitySeedComments, hasCommunityRunnableDemo } from "./chunk15";
 import { CommunityAppLogo, CommunityAuthorAvatar } from "./chunk16";
-import { CommunityPreview } from "./chunk17";
+import { confirmDeleteListing, confirmMakeListingPrivate } from "./ProjectListingConfirmations";
 import { ProjectMenuItem } from "./chunk21";
 
 export function CommunityPostDetail({
@@ -57,7 +57,10 @@ export function CommunityPostDetail({
   const visibleComments = comments.slice(0, 4);
   const canPostComment = canComment && commentDraft.trim().length > 0 && !commentPosting;
   const canOpenApp = hasCommunityRunnableDemo(post);
-
+  const screenshots = (post.screenshotUrls ?? []).flatMap((url, index) => {
+    const imageUrl = url?.trim();
+    return imageUrl ? [{ imageUrl, label: post.screenshots[index]?.trim() }] : [];
+  });
   return (
     <View style={styles.communityDetailScreen}>
       <View style={styles.communityDetailIdentity}>
@@ -111,32 +114,32 @@ export function CommunityPostDetail({
             {ownerMenuOpen ? (
               <View style={[styles.projectMenu, { position: "absolute", right: 0, top: 50, zIndex: 40 }]}>
                 {onEdit ? <ProjectMenuItem icon="create-outline" label="Edit listing" onPress={() => { setOwnerMenuOpen(false); onEdit(); }} /> : null}
-                {onMakePrivate ? <ProjectMenuItem icon="lock-closed-outline" label="Make private" onPress={() => { setOwnerMenuOpen(false); onMakePrivate(); }} /> : null}
-                {onDelete ? <ProjectMenuItem danger icon="trash-outline" label="Delete listing" onPress={() => { setOwnerMenuOpen(false); onDelete(); }} /> : null}
+                {onMakePrivate ? <ProjectMenuItem icon="lock-closed-outline" label="Make private" onPress={() => confirmMakePrivate()} /> : null}
+                {onDelete ? <ProjectMenuItem danger icon="trash-outline" label="Delete listing" onPress={() => confirmDelete()} /> : null}
               </View>
             ) : null}
           </View>
         ) : null}
       </View>
 
-      <View style={styles.communityDetailScreenshots}>
-        <Text style={styles.communityDetailPanelTitle}>Preview</Text>
-        <ScrollView
-          contentContainerStyle={styles.communityScreenshotGrid}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.communityScreenshotRail}
-        >
-          {post.screenshots.map((screenshot, index) => (
-            <View key={screenshot + "-" + index} style={styles.communityScreenshotPreview}>
-              {post.screenshotUrls?.[index]
-                ? <Image resizeMode="cover" source={{ uri: post.screenshotUrls[index] }} style={styles.communityScreenshotImage} />
-                : <CommunityPreview tone={post.accent} type={post.preview} />}
-              <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+      {screenshots.length ? (
+        <View style={styles.communityDetailScreenshots}>
+          <Text style={styles.communityDetailPanelTitle}>Preview</Text>
+          <ScrollView
+            contentContainerStyle={styles.communityScreenshotGrid}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.communityScreenshotRail}
+          >
+            {screenshots.map((screenshot, index) => (
+              <View key={screenshot.imageUrl + "-" + index} style={styles.communityScreenshotPreview}>
+                <Image resizeMode="cover" source={{ uri: screenshot.imageUrl }} style={styles.communityScreenshotImage} />
+                {screenshot.label ? <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot.label}</Text> : null}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
 
       <View style={styles.communityAboutBlock}>
         <Text style={styles.communityDetailPanelTitle}>About</Text>
@@ -186,4 +189,12 @@ export function CommunityPostDetail({
       </View>
     </View>
   );
+  function confirmMakePrivate() {
+    setOwnerMenuOpen(false);
+    if (onMakePrivate) confirmMakeListingPrivate(onMakePrivate);
+  }
+  function confirmDelete() {
+    setOwnerMenuOpen(false);
+    if (onDelete) confirmDeleteListing(onDelete);
+  }
 }

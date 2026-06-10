@@ -1,4 +1,5 @@
 const terminalAiChatThreads = {};
+let terminalAiSurface = "chat";
 
 function terminalAiChatThread(terminal = terminalCompanionActiveTerminal()) {
   const key = terminal?.id || "setup";
@@ -18,6 +19,25 @@ registerDesktopActionContextStore("terminal", {
 });
 
 function terminalAiChatHtml() {
+  const voice = terminalAiSurface === "voice";
+  return `<div class="terminal-ai-workspace">
+    <header class="terminal-ai-header">
+      <div class="terminal-ai-identity">
+        <span><img src="/app-assets/vibyra.png" alt=""></span>
+        <strong>Vibyra AI</strong>
+      </div>
+      <div class="terminal-ai-surface-switcher" role="tablist" aria-label="Vibyra AI">
+        <button class="${voice ? "" : "active"}" type="button" role="tab" aria-selected="${!voice}" data-terminal-ai-surface="chat">${icon("chat")}<span>Chat</span></button>
+        <button class="${voice ? "active" : ""}" type="button" role="tab" aria-selected="${voice}" data-terminal-ai-surface="voice">${icon("pulse")}<span>Talk</span></button>
+      </div>
+    </header>
+    <div class="terminal-ai-surface ${voice ? "terminal-ai-voice" : "terminal-ai-conversation"}">
+      ${voice && typeof terminalVoiceHtml === "function" ? terminalVoiceHtml() : terminalAiConversationHtml()}
+    </div>
+  </div>`;
+}
+
+function terminalAiConversationHtml() {
   const thread = terminalAiChatThread();
   const terminal = terminalCompanionActiveTerminal();
   const rows = thread.messages.length
@@ -26,9 +46,8 @@ function terminalAiChatHtml() {
   return `<div class="terminal-ai-chat">
     <div class="terminal-ai-chat-messages" data-terminal-ai-messages>${rows}</div>
     <form class="terminal-ai-chat-composer" data-terminal-ai-form>
-      <textarea rows="2" data-terminal-ai-input placeholder="Ask Vibyra AI..." ${thread.sending ? "disabled" : ""}>${escapeHtml(thread.draft)}</textarea>
+      <textarea rows="1" data-terminal-ai-input placeholder="Ask Vibyra AI..." ${thread.sending ? "disabled" : ""}>${escapeHtml(thread.draft)}</textarea>
       <div class="terminal-ai-chat-composer-foot">
-        <button class="terminal-ai-chat-voice" type="button" data-terminal-companion-open="voice" aria-label="Talk to Vibyra" title="Talk to Vibyra (Alt+V)">${icon("pulse")}</button>
         <button type="submit" aria-label="Send to Vibyra AI" ${thread.sending || !thread.draft.trim() ? "disabled" : ""}>${icon("send")}</button>
       </div>
     </form>
@@ -38,12 +57,13 @@ function terminalAiChatHtml() {
 function terminalAiChatEmptyHtml(terminal) {
   return `<div class="terminal-ai-chat-empty">
     <div class="terminal-ai-chat-intro">
-      <span class="terminal-ai-chat-avatar"><img src="/app-assets/vibyra.png" alt="" /></span>
-      <div><strong>How can I help?</strong><p>Ask Vibyra to work across your projects, terminals, and desktop.</p></div>
+      <span><img src="/app-assets/vibyra.png" alt=""></span>
+      <strong>How can Vibyra help?</strong>
+      <p>Ask a question or hand off a task.</p>
     </div>
     <div class="terminal-ai-chat-starters" aria-label="Suggested prompts">
-      <button type="button" data-terminal-ai-prompt="Review my current Vibyra workspace and suggest the most useful next step.">${icon("chat")}<span><strong>Plan my next step</strong><small>Review the workspace and suggest what to do</small></span>${icon("chevron")}</button>
-      <button type="button" data-terminal-ai-prompt="Check my projects and active work for errors, then suggest the safest fixes.">${icon("search")}<span><strong>Check my work</strong><small>Find issues across projects and active tasks</small></span>${icon("chevron")}</button>
+      <button type="button" data-terminal-ai-prompt="Review my current workspace and tell me the most useful next step.">${icon("arrow")}<strong>Plan my next step</strong>${icon("chevron")}</button>
+      <button type="button" data-terminal-ai-prompt="Check my active project and terminals for errors, then suggest the safest fixes.">${icon("search")}<strong>Review active work</strong>${icon("chevron")}</button>
     </div>
   </div>`;
 }
@@ -58,6 +78,13 @@ function terminalAiChatMessageHtml(message) {
 }
 
 function bindTerminalAiChat(root = document) {
+  root?.querySelectorAll?.("[data-terminal-ai-surface]").forEach((button) => {
+    button.addEventListener("click", () => setTerminalAiSurface(button.dataset.terminalAiSurface));
+  });
+  if (terminalAiSurface === "voice") {
+    if (typeof bindTerminalVoice === "function") bindTerminalVoice(root);
+    return;
+  }
   const thread = terminalAiChatThread();
   const form = root?.querySelector?.("[data-terminal-ai-form]");
   const input = root?.querySelector?.("[data-terminal-ai-input]");
@@ -92,6 +119,22 @@ function bindTerminalAiChat(root = document) {
     fitTerminalAiChatInput(input);
     input?.focus?.();
   });
+}
+
+function setTerminalAiSurface(surface = "chat") {
+  const next = surface === "voice" ? "voice" : "chat";
+  if (next === terminalAiSurface) return;
+  if (terminalAiSurface === "voice" && typeof stopTerminalVoiceForPanelClose === "function") {
+    stopTerminalVoiceForPanelClose();
+  }
+  terminalAiSurface = next;
+  terminalCompanionFocusSection = next === "voice" ? "voice" : "chat";
+  if (terminalCompanionMode === "chat") syncTerminalCompanion("ai-surface");
+}
+
+function openTerminalAiVoice(source = "terminal") {
+  terminalAiSurface = "voice";
+  openTerminalCompanionPanel("chat", source);
 }
 
 function fitTerminalAiChatInput(input) {

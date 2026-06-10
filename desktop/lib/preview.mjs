@@ -4,17 +4,22 @@ import { headers } from "./http.mjs";
 import { appState, TOKEN } from "./state.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
-import { runningProjectDevServerUrl } from "./previewDevServer.mjs";
+import { projectPreviewLaunch, runningProjectDevServerUrl } from "./previewDevServer.mjs";
 import { previewServerProxyUrl, previewUrl } from "./previewUrls.mjs";
+import { previewCredentialAllowsProject, previewCredentialTargetId } from "./previewCapabilities.mjs";
+import { previewService } from "./previewServices.mjs";
 import { contentTypeFor, isPreviewImagePath, missingPreviewImageSvg, previewEntryPath, previewMountDirectory, rewritePreviewCss, rewritePreviewHtml, safeProjectFile } from "./previewStatic.mjs";
 import { proxyPreviewResponse } from "./previewProxyResponse.mjs";
-import { activePreviewAssetReference, canProxyPreviewFallbackPath, laravelPublicAssetTargetForViteProxy, normalizeProxyTargetUrl, previewExternalUrl, previewReferenceFromReferer, previewTargetFromProject, safeUrl, trackedPreviewTarget } from "./previewProxyReferences.mjs";
+import { canProxyPreviewFallbackPath, laravelPublicAssetTargetForViteProxy, normalizeProxyTargetUrl, previewExternalUrl, previewProxyTargetAllowed, previewReferenceFromReferer, previewTargetFromProject, safeUrl, trackedPreviewTarget } from "./previewProxyReferences.mjs";
+import { injectProxyRuntimeErrorOverlay } from "./previewProxyRuntime.mjs";
 import { redirect, sendHtml, previewShell } from "./previewUi.mjs";
 
 export { previewServerProxyUrl, previewUrl } from "./previewUrls.mjs";
 export async function serveProjectPreview(res, url) {
   const match = url.pathname.match(/^\/preview\/project\/([^/]+)\/([^/]+)\/?(.*)$/);
-  if (!match || decodeURIComponent(match[2]) !== TOKEN) {
+  const projectId = match ? decodeURIComponent(match[1]) : "";
+  const credential = match ? decodeURIComponent(match[2]) : "";
+  if (!match || !credentialAllowsProject(credential, projectId)) {
     sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
     return;
   }
@@ -23,7 +28,6 @@ export async function serveProjectPreview(res, url) {
     await discoverProjects();
   }
 
-  const projectId = decodeURIComponent(match[1]);
   const project = await resolvePreviewProject(projectId);
   if (!project) {
     sendHtml(res, 404, previewShell("Project not found", "Vibyra Desktop could not find that workspace anymore."));
@@ -35,8 +39,8 @@ export async function serveProjectPreview(res, url) {
   const relativePath = requestedPath || entryPath;
 
   if (!relativePath) {
-    if (trackedPreviewTarget(projectId)) {
-      redirect(res, previewServerProxyUrl(projectId, TOKEN));
+    if (trackedPreviewTarget(projectId, credential)) {
+      redirect(res, previewServerProxyUrl(projectId, credential));
       return;
     }
     const devServerUrl = await runningProjectDevServerUrl(project, url.host);
@@ -50,8 +54,8 @@ export async function serveProjectPreview(res, url) {
 
   const filePath = await safeProjectFile(project.path, relativePath);
   if (!filePath) {
-    if (trackedPreviewTarget(projectId)) {
-      await servePreviewServerProxy(res, new URL(previewServerProxyUrl(projectId, TOKEN) + requestedPath, url));
+    if (trackedPreviewTarget(projectId, credential)) {
+      await servePreviewServerProxy(res, new URL(previewServerProxyUrl(projectId, credential) + requestedPath, url));
       return;
     }
     if (isPreviewImagePath(relativePath)) {
@@ -70,14 +74,14 @@ export async function serveProjectPreview(res, url) {
 
   if (contentType.startsWith("text/html")) {
     const documentDirectory = requestedPath ? dirname(relativePath) : mountDirectory;
-    content = Buffer.from(rewritePreviewHtml(content.toString("utf8"), {
+    content = Buffer.from(injectProxyRuntimeErrorOverlay(rewritePreviewHtml(content.toString("utf8"), {
       documentDirectory: documentDirectory === "." ? "" : documentDirectory,
       mountDirectory,
       projectId,
-      token: TOKEN
-    }));
+      token: credential
+    })));
   } else if (contentType.startsWith("text/css")) {
-    content = Buffer.from(rewritePreviewCss(content.toString("utf8"), { mountDirectory, projectId, token: TOKEN }));
+    content = Buffer.from(rewritePreviewCss(content.toString("utf8"), { mountDirectory, projectId, token: credential }));
   }
 
   res.writeHead(200, headers(contentType));
@@ -87,25 +91,27 @@ export async function serveProjectPreview(res, url) {
 export async function servePreviewServerProxy(reqOrRes, resOrUrl, maybeUrl) {
   const { req, res, url } = routeArgs(reqOrRes, resOrUrl, maybeUrl);
   const match = url.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)\/?(.*)$/);
-  if (!match || decodeURIComponent(match[2]) !== TOKEN) {
+  const projectId = match ? decodeURIComponent(match[1]) : "";
+  const credential = match ? decodeURIComponent(match[2]) : "";
+  if (!match || !credentialAllowsProject(credential, projectId)) {
     sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
     return;
   }
 
-  const projectId = decodeURIComponent(match[1]);
-  const tracked = appState.previewServers[projectId];
+  const targetId = previewCredentialTargetId(credential, { legacyToken: TOKEN });
+  const tracked = targetId ? previewService(projectId, targetId) : appState.previewServers[projectId];
   const targetBase = normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url));
   if (!targetBase) {
     sendHtml(res, 404, previewShell("Preview server not running", "Start the desktop preview server again from Vibyra."));
     return;
   }
 
-  const requestedPath = normalizePreviewServerRequestedPath(match[3] ?? "", projectId, TOKEN);
+  const requestedPath = normalizePreviewServerRequestedPath(match[3] ?? "", projectId, credential);
   const target = new URL(requestedPath, `${targetBase.toString().replace(/\/+$/, "")}/`);
   target.search = url.search;
   await proxyPreviewResponse(res, target, {
-    proxyBase: previewServerProxyUrl(projectId, TOKEN),
-    token: TOKEN,
+    proxyBase: previewServerProxyUrl(projectId, credential),
+    token: credential,
     req
   });
 }
@@ -113,22 +119,28 @@ export async function servePreviewServerProxy(reqOrRes, resOrUrl, maybeUrl) {
 export async function servePreviewUrlProxy(reqOrRes, resOrUrl, maybeUrl) {
   const { req, res, url } = routeArgs(reqOrRes, resOrUrl, maybeUrl);
   const match = url.pathname.match(/^\/preview\/proxy-url\/([^/]+)\/?$/);
-  if (!match || decodeURIComponent(match[1]) !== TOKEN) {
+  const credential = match ? decodeURIComponent(match[1]) : "";
+  const target = normalizeProxyTargetUrl(safeUrl(url.searchParams.get("url")));
+  if (!match) {
     sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
     return;
   }
 
-  const target = normalizeProxyTargetUrl(safeUrl(url.searchParams.get("url")));
-  if (!target) {
+  if (!target || !["http:", "https:"].includes(target.protocol)) {
     sendHtml(res, 400, previewShell("Preview asset unavailable", "Vibyra could not resolve that preview asset."));
     return;
   }
 
-  const proxyTarget = laravelPublicAssetTargetForViteProxy(target) ?? target;
+  if (!previewProxyTargetAllowed(target, credential)) {
+    sendHtml(res, 401, previewShell("Preview link expired", "Reconnect your phone to Vibyra Desktop and open the project again."));
+    return;
+  }
+
+  const proxyTarget = laravelPublicAssetTargetForViteProxy(target, credential) ?? target;
   await proxyPreviewResponse(res, proxyTarget, {
     externalProxy: true,
-    proxyBase: previewExternalUrl(proxyTarget, TOKEN),
-    token: TOKEN,
+    proxyBase: previewExternalUrl(proxyTarget, credential),
+    token: credential,
     req
   });
 }
@@ -138,15 +150,17 @@ export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer,
   const res = maybeReferer === undefined ? reqOrRes : resOrUrl;
   const url = maybeReferer === undefined ? resOrUrl : urlOrReferer;
   const referer = maybeReferer === undefined ? urlOrReferer : maybeReferer;
-  const previewRef = previewReferenceFromReferer(referer, url) ?? activePreviewAssetReference(url.pathname);
+  const previewRef = previewReferenceFromReferer(referer, url);
   if (!previewRef || !canProxyPreviewFallbackPath(url.pathname)) return false;
 
   const requestedPath = `${url.pathname}${url.search}`;
+  const credential = previewRef.token;
+  if (!credential) return false;
 
   if (previewRef.kind === "project") {
     const projectPath = await projectPreviewRefererPath(previewRef.projectId, requestedPath);
     const synthetic = new URL(
-      `/preview/project/${encodeURIComponent(previewRef.projectId)}/${encodeURIComponent(TOKEN)}${projectPath}`,
+      `/preview/project/${encodeURIComponent(previewRef.projectId)}/${encodeURIComponent(credential)}${projectPath}`,
       url
     );
     await serveProjectPreview(res, synthetic);
@@ -155,13 +169,13 @@ export async function servePreviewRefererAsset(reqOrRes, resOrUrl, urlOrReferer,
 
   const target = previewRef.kind === "external"
     ? new URL(requestedPath, previewRef.target)
-    : previewTargetFromProject(previewRef.projectId, requestedPath);
+    : previewTargetFromProject(previewRef.projectId, requestedPath, credential);
   if (!target) return false;
 
   await proxyPreviewResponse(res, target, {
     externalProxy: previewRef.kind === "external",
-    proxyBase: previewRef.kind === "external" ? previewExternalUrl(target, TOKEN) : previewServerProxyUrl(previewRef.projectId, TOKEN),
-    token: TOKEN,
+    proxyBase: previewRef.kind === "external" ? previewExternalUrl(target, credential) : previewServerProxyUrl(previewRef.projectId, credential),
+    token: credential,
     req
   });
   return true;
@@ -200,10 +214,22 @@ function normalizePreviewServerRequestedPath(rawPath, projectId, token) {
   return requestedPath;
 }
 
-export async function resolvedPreviewUrl(project, requestHost, token = TOKEN) {
+export async function resolvedPreviewUrl(project, requestHost, credential, options = {}) {
   if (!project) return null;
-  if (await previewEntryPath(project)) return previewUrl(project.id, token);
-  return await runningProjectDevServerUrl(project, requestHost) ?? null;
+  const runningUrl = await runningProjectDevServerUrl(project, requestHost);
+  if (runningUrl) {
+    if (!options.phoneVisible) return runningUrl;
+    await startProjectDevServer(project, requestHost, { reuseExisting: true });
+    return previewServerProxyUrl(project.id, credential);
+  }
+  const entryPath = await previewEntryPath(project);
+  if (!entryPath) return null;
+  if (entryPath === "index.html" && (await projectPreviewLaunch(project)).available) return null;
+  return previewUrl(project.id, credential);
+}
+
+function credentialAllowsProject(credential, projectId) {
+  return previewCredentialAllowsProject(credential, projectId, { legacyToken: TOKEN });
 }
 
 function routeArgs(reqOrRes, resOrUrl, maybeUrl) {

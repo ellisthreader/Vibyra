@@ -1,6 +1,7 @@
 import * as Network from "expo-network";
 import { NativeModules, Platform } from "react-native";
 import { DESKTOP_RELAY_URL } from "../data/appData";
+import { trustedDesktopUrl, trustedDesktopUrls } from "./desktopUrls";
 
 export function normalizeAgentUrl(value: string) {
   const trimmed = value.trim().replace(/\/+$/, "");
@@ -18,13 +19,13 @@ export function getExpoHost() {
 
 export function getDefaultAgentUrl() {
   if (process.env.EXPO_PUBLIC_DESKTOP_URL) {
-    return normalizeAgentUrl(process.env.EXPO_PUBLIC_DESKTOP_URL);
+    return trustedDesktopUrl(process.env.EXPO_PUBLIC_DESKTOP_URL) ?? "http://127.0.0.1:4317";
   }
 
   if (Platform.OS === "web") return "http://127.0.0.1:4317";
 
   const host = getExpoHost();
-  return host ? `http://${host}:4317` : "http://127.0.0.1:4317";
+  return trustedDesktopUrl(host ? `http://${host}:4317` : "") ?? "http://127.0.0.1:4317";
 }
 
 export async function getDesktopCandidates(seedUrl: string) {
@@ -32,7 +33,7 @@ export async function getDesktopCandidates(seedUrl: string) {
   const seedHost = getUrlHost(seedUrl);
   const deviceHost = await getDeviceIpAddress();
   const hosts = uniqueValues([deviceHost, expoHost, seedHost].filter(isPrivateIpv4Address));
-  const explicitDesktopUrl = normalizeAgentUrl(process.env.EXPO_PUBLIC_DESKTOP_URL ?? "");
+  const explicitDesktopUrl = trustedDesktopUrl(process.env.EXPO_PUBLIC_DESKTOP_URL ?? "") ?? "";
   const urls = uniqueValues([
     Platform.OS === "web" ? "http://127.0.0.1:4317" : ""
   ]);
@@ -145,21 +146,7 @@ function isPrivateIpv4Address(value: string) {
 }
 
 function filterDesktopProbeUrls(urls: string[]) {
-  return urls.filter((url) => {
-    try {
-      const parsed = new URL(normalizeAgentUrl(url));
-      if (parsed.protocol === "https:") return true;
-      if (parsed.protocol !== "http:") return false;
-      return isLocalDesktopHost(parsed.hostname);
-    } catch {
-      return false;
-    }
-  });
-}
-
-function isLocalDesktopHost(host: string) {
-  const normalized = host.toLowerCase();
-  return normalized === "localhost" || isPrivateIpv4Address(normalized);
+  return trustedDesktopUrls(urls);
 }
 
 async function getDeviceIpAddress() {

@@ -1,18 +1,26 @@
 function openPairModal() { nodes.pairModal.classList.add("open"); renderPairModal(); }
 function closePairModal() { nodes.pairModal.classList.remove("open"); }
 function renderPairModal() {
-  const pending = currentState.pendingPair && currentState.pendingPair.status === "pending";
+  const pairStatus = currentState.pendingPair?.status;
   const paired = Boolean(currentState.pairedDevice);
   if (paired) {
-    nodes.pairBody.innerHTML = `<section class="pair-v2 pair-v2-paired"><span class="pair-v2-check" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17.5 19 7.5"/></svg></span><p class="pair-v2-connected">Connected to ${escapeHtml(currentState.pairedDevice)}</p><button type="button" class="pair-v2-unpair" id="unpair-device">Unpair</button></section>`;
+    nodes.pairBody.innerHTML = pairingConnectedView(currentState.pairedDevice);
     document.getElementById("unpair-device")?.addEventListener("click", () => post("/desktop/disconnect"));
     return;
   }
   const code = String(currentState.pairCode || "------");
   const codeReady = code && code !== "------";
-  nodes.pairBody.innerHTML = `<section class="pair-v2"><button type="button" class="pair-v2-code" id="copy-pair-code" data-copy-pair-code aria-label="Copy pair code" ${codeReady ? "" : "disabled"}><span class="pair-v2-code-text">${escapeHtml(code)}</span><span class="pair-v2-copied" aria-hidden="true">Copied</span></button><p class="pair-v2-status"><span class="pair-v2-dot" aria-hidden="true"></span><span>Waiting for your phone…</span></p><p class="pair-v2-hint">Open Vibyra on your phone and enter this code.</p>${pending ? `<div class="pair-v2-approval"><span class="pair-v2-approval-icon">${icon("phone")}</span><div class="pair-v2-approval-copy"><strong>${escapeHtml(currentState.pendingPair.deviceName || "Vibyra Phone")}</strong><span>Approve only if this is your phone.</span></div><div class="pair-v2-approval-actions"><button class="danger-button" id="deny-pair" type="button" ${posting ? "disabled" : ""}>Deny</button><button class="primary-button" id="approve-pair" type="button" ${posting ? "disabled" : ""}>Allow</button></div></div>` : ""}</section>`;
+  const deviceName = currentState.pendingPair?.deviceName || "Vibyra Phone";
+  if (pairStatus === "pending") {
+    nodes.pairBody.innerHTML = pairingApprovalView(deviceName);
+  } else if (pairStatus === "approved") {
+    nodes.pairBody.innerHTML = pairingPhonePermissionView(deviceName);
+  } else {
+    nodes.pairBody.innerHTML = pairingWaitingView(code, codeReady && currentState.connectionUrls?.length);
+  }
   document.getElementById("approve-pair")?.addEventListener("click", () => post("/desktop/approve"));
   document.getElementById("deny-pair")?.addEventListener("click", () => post("/desktop/deny"));
+  document.getElementById("cancel-approved-pair")?.addEventListener("click", () => post("/desktop/deny"));
   const copyButton = document.getElementById("copy-pair-code");
   copyButton?.addEventListener("click", async () => {
     if (!codeReady) return;
@@ -27,6 +35,7 @@ function openTokenModal(view) {
   tokenModalView = tokenModalViews.includes(view) ? view : "profile";
   nodes.tokenModal.classList.add("open");
   renderTokenModal();
+  if (tokenModalView === "plans" && typeof loadDesktopBillingCatalog === "function") void loadDesktopBillingCatalog();
   if (typeof refreshDesktopAccountSession === "function") {
     refreshDesktopAccountSession()
       .then(() => { if (nodes.tokenModal.classList.contains("open") && tokenModalView !== "plans") renderTokenModal(); })
@@ -54,6 +63,9 @@ function closeProfileModal() {
   profileSectionSearch = "";
   profileFocus = "";
   profileSessionMenuId = "";
+  profileBillingPlanOpen = false;
+  profileBillingManageOpen = false;
+  profileBillingCancelOpen = false;
   nodes.profileModal.classList.remove("open");
 }
 function resetProfileModalScroll() {
@@ -62,14 +74,13 @@ function resetProfileModalScroll() {
 function setTokenModalView(view) {
   tokenModalView = tokenModalViews.includes(view) ? view : "profile";
   renderTokenModal();
+  if (tokenModalView === "plans" && typeof loadDesktopBillingCatalog === "function") void loadDesktopBillingCatalog();
 }
 function handleAccountAction(action) {
   topbarAccountMenuOpen = false;
   if (action === "upgrade") {
     renderTopbar();
-    const tier = currentPlanTier();
-    if (tier.key === "free") openTokenModal("plans");
-    else manageDesktopBilling();
+    openTokenModal("plans");
     return;
   }
   if (action === "profile") {
@@ -101,12 +112,14 @@ function accountMenu() {
   const avatar = avatarSrc
     ? `<img class="account-menu-avatar" src="${escapeAttribute(avatarSrc)}" alt="" />`
     : `<span class="account-menu-avatar account-menu-avatar--initials" aria-hidden="true">${escapeHtml(initials)}</span>`;
-  const upgradeLabel = tier.key === "free" ? "Upgrade plan" : "Manage billing";
+  const upgradeSection = tier.key === "free"
+    ? `<div class="account-menu-section">
+      <button type="button" data-account-action="upgrade">${icon("bolt")}<span>Upgrade plan</span></button>
+    </div>`
+    : "";
   return `<div class="topbar-menu account-menu" role="menu">
     <div class="account-menu-identity">${avatar}<div class="account-menu-copy"><strong>${escapeHtml(account.name || "Desktop account")}</strong><span>${escapeHtml(planLabel)}</span></div></div>
-    <div class="account-menu-section">
-      <button type="button" data-account-action="upgrade">${icon("bolt")}<span>${escapeHtml(upgradeLabel)}</span></button>
-    </div>
+    ${upgradeSection}
     <div class="account-menu-section">
       <button type="button" data-account-action="profile">${icon("user")}<span>Profile</span></button>
       <button type="button" data-account-action="settings">${icon("palette")}<span>Settings</span></button>
@@ -131,7 +144,9 @@ function renderTokenModal() {
   if (modalEl) modalEl.classList.toggle("modal--narrow", tokenModalView !== "plans");
   if (modalEl) modalEl.classList.toggle("modal--billing-revamp", tokenModalView === "plans");
   const titleEl = document.getElementById("token-title");
-  if (titleEl) titleEl.textContent = tokenModalTitles[tokenModalView] || "Profile";
+  if (titleEl) titleEl.textContent = tokenModalView === "plans" && tier.key === "free"
+    ? "Upgrade plan"
+    : tokenModalTitles[tokenModalView] || "Profile";
   if (tokenModalView === "plans") {
     nodes.tokenBody.innerHTML = renderPlanPicker(tier.key, cycle);
   } else if (tokenModalView === "help") {

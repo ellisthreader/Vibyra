@@ -1,9 +1,4 @@
 export { currentProjectReply, desktopConnectionRequiredReply } from "./chatProjectReplies";
-import { normalizeAgentUrl } from "../../../utils/network";
-
-export function projectPreviewUrl(baseUrl: string, projectId: string, token: string) {
-  return `${normalizeAgentUrl(baseUrl)}/preview/project/${encodeURIComponent(projectId)}/${encodeURIComponent(token)}/`;
-}
 
 const FIND_VERBS = String.raw`(?:find|open|oepn|opne|opem|opn|oen|locate|use|switch(?:\s+to)?|select|go(?:\s+to)?|work\s+(?:on|in|with)|connect(?:\s+to)?|attach(?:\s+to)?|load|pick|choose|show(?:\s+me)?|view|get|grab|link(?:\s+to)?|hook\s+up|set\s+up|set|pull\s+up|bring\s+up|jump\s+(?:to|into)|head\s+(?:to|into))`;
 

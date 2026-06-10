@@ -2,7 +2,6 @@ import { fetchWithTimeout, normalizeAgentUrl } from "./network";
 
 type DesktopPreviewConnection = {
   connectionUrls?: string[];
-  token?: string;
   url: string;
 };
 
@@ -28,9 +27,7 @@ export function desktopPreviewUrlCandidates(connection: DesktopPreviewConnection
   const desktopBases = uniqueValues([connection.url, ...(connection.connectionUrls ?? [])].map(normalizeAgentUrl));
   const primaryBase = desktopBases[0] ?? "";
   const firstUrl = /^https?:\/\//i.test(value) ? value : absoluteDesktopPreviewUrl(primaryBase, value);
-  const candidates = /^https?:\/\//i.test(value)
-    ? desktopProxyCandidates(desktopBases, connection.token, value)
-    : [firstUrl];
+  const candidates = [firstUrl];
 
   if (!/^https?:\/\//i.test(value)) {
     for (const base of desktopBases.slice(1)) candidates.push(absoluteDesktopPreviewUrl(base, value));
@@ -49,14 +46,6 @@ export function desktopPreviewUrlCandidates(connection: DesktopPreviewConnection
   }
 
   return uniqueValues(candidates);
-}
-
-function desktopProxyCandidates(desktopBases: string[], token: string | undefined, targetUrl: string) {
-  const cleanToken = String(token ?? "").trim();
-  const proxied = cleanToken
-    ? desktopBases.map((base) => `${base}/preview/proxy-url/${encodeURIComponent(cleanToken)}/?url=${encodeURIComponent(targetUrl)}`)
-    : [];
-  return [...proxied, targetUrl];
 }
 
 export async function resolveRunnableDesktopPreviewUrl(url: string) {

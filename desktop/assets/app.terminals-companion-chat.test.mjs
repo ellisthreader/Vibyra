@@ -8,7 +8,11 @@ const source = readFileSync(new URL("./app.terminals-companion-chat.js", import.
 test("companion keeps the empty chat and composer concise", () => {
   assert.equal((source.match(/data-terminal-ai-prompt="/g) || []).length, 2);
   assert.doesNotMatch(source, /Enter to send/);
-  assert.match(source, /projects, terminals, and desktop/);
+  assert.match(source, /Ask a question or hand off a task/);
+  assert.match(source, /Plan my next step/);
+  assert.match(source, /Review active work/);
+  assert.match(source, /data-terminal-ai-surface="voice"/);
+  assert.doesNotMatch(source, /Build, review, and manage your workspace/);
   assert.doesNotMatch(source, /Ask about this terminal|Using context from|active terminal context/);
 });
 

@@ -65,3 +65,22 @@ test("restaurant purpose requires food or venue terms beyond generic operations 
   });
   assert.equal(restaurantPurpose?.kindLabel, "Restaurant platform");
 });
+
+test("root Expo markers take precedence over a nested Laravel backend", async () => {
+  const root = await mkdtemp(join(tmpdir(), "vibyra-analysis-expo-monorepo-"));
+  try {
+    await writeFile(join(root, "app.json"), JSON.stringify({ expo: { name: "Mobile App" } }));
+    await writeFile(join(root, "package.json"), JSON.stringify({
+      main: "node_modules/expo/AppEntry.js",
+      dependencies: { expo: "latest", "react-native": "latest" }
+    }));
+    await mkdir(join(root, "backend"), { recursive: true });
+    await writeFile(join(root, "backend", "artisan"), "");
+    await writeFile(join(root, "backend", "composer.json"), JSON.stringify({ require: { "laravel/framework": "latest" } }));
+    const result = await analyzeProjectPath(root, await readdir(root));
+    assert.equal(result.detectedBrief.kindId, "mobile-app");
+    assert.equal(result.detectedBrief.frameworkId, "expo-react-native");
+  } finally {
+    await rm(root, { force: true, recursive: true });
+  }
+});

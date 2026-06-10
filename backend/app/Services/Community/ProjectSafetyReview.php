@@ -36,6 +36,26 @@ class ProjectSafetyReview
         $sourceFiles = $this->normalizeSourceFiles(Arr::get($input, 'sourceFiles', []));
         $sourceReview = (array) Arr::get($input, 'sourceReview', []);
 
+        if ($this->publishReviewTemporarilyDisabled()) {
+            $ignoredFindings = [];
+            $sanitizedHtml = $this->sanitizePreviewHtml($previewHtml, $ignoredFindings);
+            $findings[] = [
+                'code' => 'temp_publish_review_disabled',
+                'severity' => 'info',
+                'target' => 'review_status',
+                'message' => 'Publish safety review is temporarily disabled.',
+                'scoreImpact' => 0,
+            ];
+
+            return $this->decision(
+                self::APPROVED,
+                $findings,
+                $sanitizedHtml,
+                'Project approved while publish safety review is temporarily disabled.',
+                count($sourceFiles),
+            );
+        }
+
         $this->scanTextForSecrets($title."\n".$description."\n".$stack."\n".implode("\n", $tags), 'metadata', $findings);
         $this->scanTextForSecrets($previewHtml, 'preview_html', $findings);
         $this->scanImages($images, $findings);
@@ -46,7 +66,7 @@ class ProjectSafetyReview
             return $this->decision(self::DENIED, $findings, $sanitizedHtml, 'Project failed deterministic safety checks.', count($sourceFiles));
         }
 
-        if ((bool) config('moderation.publish_force_approve_under_review', false)) {
+        if ($this->forceApproveForTesting()) {
             try {
                 $this->moderation->assertLocalTextAllowed(
                     trim($title.' '.$description.' '.$stack.' '.implode(' ', $tags)),
@@ -70,11 +90,11 @@ class ProjectSafetyReview
                 'code' => 'temp_publish_force_approved',
                 'severity' => 'info',
                 'target' => 'review_status',
-                'message' => 'Temporary local testing override approved this project without remote review.',
+                'message' => 'Temporary testing override approved this project without remote review.',
                 'scoreImpact' => 0,
             ];
 
-            return $this->decision(self::APPROVED, $findings, $sanitizedHtml, 'Project force-approved for temporary local testing.', count($sourceFiles));
+            return $this->decision(self::APPROVED, $findings, $sanitizedHtml, 'Project force-approved for temporary testing.', count($sourceFiles));
         }
 
         try {
@@ -215,7 +235,7 @@ class ProjectSafetyReview
 
     private function maybeForceApproveUnderReviewForTesting(array $decision): array
     {
-        if (! (bool) config('moderation.publish_force_approve_under_review', false)
+        if (! $this->forceApproveForTesting()
             || ($decision['status'] ?? null) !== self::UNDER_REVIEW) {
             return $decision;
         }
@@ -224,7 +244,7 @@ class ProjectSafetyReview
             'code' => 'temp_under_review_force_approved',
             'severity' => 'info',
             'target' => 'review_status',
-            'message' => 'Temporary local testing override converted under-review status to approved.',
+            'message' => 'Temporary testing override converted under-review status to approved.',
             'scoreImpact' => 0,
         ];
 
@@ -236,6 +256,16 @@ class ProjectSafetyReview
             'summary' => 'Temporary testing override approved this project instantly.',
             'public' => true,
         ];
+    }
+
+    private function forceApproveForTesting(): bool
+    {
+        return (bool) config('moderation.publish_force_approve_under_review', false);
+    }
+
+    private function publishReviewTemporarilyDisabled(): bool
+    {
+        return (bool) config('moderation.publish_review_temporarily_disabled', false);
     }
 
     private function aiWouldOtherwiseRun(array $decision, array $config): bool
@@ -429,7 +459,7 @@ class ProjectSafetyReview
             'browser_storage_exfiltration' => '/\b(?:localStorage|sessionStorage|document\.cookie)\b[\s\S]{0,240}\b(?:fetch\s*\(|XMLHttpRequest|sendBeacon)\b/i',
             'sensitive_browser_api' => '/\b(?:getUserMedia|getDisplayMedia|geolocation|getCurrentPosition|clipboard\.read|Notification\.requestPermission)\b/i',
             'untrusted_network_endpoint' => '/\b(?:fetch|axios|XMLHttpRequest|sendBeacon)\b[\s\S]{0,160}\bhttps?:\/\/(?!api\.openai\.com|openrouter\.ai|fonts\.googleapis\.com|fonts\.gstatic\.com)[^\'"\s)]+/i',
-            'auth_payment_surface' => '/\b(?:stripe|checkout|payment|password|oauth|jwt|session_token|access_token|refresh_token)\b/i',
+            'auth_payment_surface' => '/\b(?:stripe|checkout|password|oauth|jwt|session_token|access_token|refresh_token|payment[_ -]?(?:intent|method|gateway|processor)|processPayment)\b/i',
             'crypto_or_wallet_behavior' => '/\b(?:ethereum|walletconnect|metamask|solana|web3|bitcoin|privateKey|seed phrase)\b/i',
             'tracking_or_fingerprint' => '/\b(?:fingerprint|canvas\.toDataURL|navigator\.userAgent|deviceMemory|hardwareConcurrency)\b/i',
             'obfuscated_code' => '/\b(?:atob|btoa|Buffer\.from)\b[\s\S]{0,120}\b(?:eval|Function|exec)\b/i',

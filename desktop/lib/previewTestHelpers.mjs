@@ -95,6 +95,11 @@ export async function makeFakeNpm() {
     "const port = Number(process.env.VIBYRA_FAKE_PREVIEW_PORT || process.env.VIBYRA_FAKE_VITE_PORT || process.env.PORT || argPort);",
     "const delay = Number(process.env.VIBYRA_FAKE_VITE_DELAY_MS || 0);",
     "const server = createServer((req, res) => {",
+    "  if (req.url.includes('AppEntry.bundle')) {",
+    "    res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });",
+    "    res.end('globalThis.__expo_preview_ready__ = true;');",
+    "    return;",
+    "  }",
     "  if (req.url === '/@vite/client') {",
     "    res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });",
     "    res.end('window.__vite_plugin_react_preamble_installed__ = true;');",
@@ -193,8 +198,9 @@ export async function requestPreview(project, path = "", { cacheProject = true, 
 }
 
 export async function requestPreviewServerProxy(project, path = "", host = "vibyra.test", reqOptions = {}) {
-  const url = new URL(`${previewServerProxyUrl(project.id, TOKEN)}${path}`, `http://${host}`);
-  return await requestPreviewRoute(url, servePreviewServerProxy, reqOptions);
+  const { token = TOKEN, ...requestOptions } = reqOptions;
+  const url = new URL(`${previewServerProxyUrl(project.id, token)}${path}`, `http://${host}`);
+  return await requestPreviewRoute(url, servePreviewServerProxy, requestOptions);
 }
 
 export async function requestPreviewUrlProxy(target, host = "vibyra.test") {
@@ -218,12 +224,21 @@ export async function requestPreviewRefererAsset(path, referer, host = "vibyra.t
 export async function requestPreviewRoute(url, handler, reqOptions = {}) {
   const response = { status: 0, headers: {}, body: "" };
   const res = {
+    headersSent: false,
     writeHead(status, headers) {
       response.status = status;
       response.headers = headers;
+      this.headersSent = true;
+    },
+    write(body) {
+      response.body += Buffer.isBuffer(body) ? body.toString("utf8") : String(body ?? "");
+      return true;
     },
     end(body) {
-      response.body = Buffer.isBuffer(body) ? body.toString("utf8") : String(body ?? "");
+      response.body += Buffer.isBuffer(body) ? body.toString("utf8") : String(body ?? "");
+    },
+    destroy(error) {
+      response.error = error;
     }
   };
   if (reqOptions.method || reqOptions.headers || reqOptions.body !== undefined) {

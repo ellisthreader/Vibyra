@@ -3,6 +3,7 @@ import { LogEvent, RememberedDesktop } from "../types/domain";
 import { mergeProjects } from "../utils/files";
 import { impact } from "../utils/haptics";
 import { normalizeAgentUrl } from "../utils/network";
+import { makePairRequestId } from "../utils/desktopUrls";
 import { useAppState } from "./useAppState";
 import { desktopConnectionUrls, mergeRememberedDesktops } from "./pairingHelpers";
 import { checkHealth, requestPairAtUrl } from "./pairingDiscovery";
@@ -89,7 +90,7 @@ export function usePairingConnectionActions(
       ...(health?.connectionUrls ?? [])
     ]);
     let lastFailure = { type: "failed" as const, url, message: "Could not reach Vibyra Desktop" };
-    const requestId = `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const requestId = makePairRequestId();
 
     for (const candidateUrl of urls) {
       const pair = await requestPairAtUrl(requests, candidateUrl, code, requestId, state.accountId);

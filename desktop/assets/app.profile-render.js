@@ -84,20 +84,6 @@ function renderReferralPanel() {
   return `<section class="profile-referral-panel"><h2>Refer & earn</h2><p>${escapeHtml(profileReferralError || "Load your invite code and share it from this desktop.")}</p><button class="secondary-button compact-button" type="button" data-profile-action="load-referral">Load invite code</button></section>`;
 }
 
-function profileBillingSection(meta) {
-  const price = meta.cycle === "annual" && meta.tier.annualPrice ? meta.tier.annualPrice : meta.tier.price;
-  const currentAction = meta.tier.key === "free" ? "Upgrade plan" : "Manage billing";
-  const planAction = meta.tier.key === "free" ? "open-plans" : "manage-billing";
-  const changePlan = meta.tier.key === "free" ? "" : profileActionList([
-    { key: "plans", icon: "rocket", label: "Change plan", detail: "Compare Starter, Builder, and Pro.", action: "open-plans" }
-  ]);
-  return `${profileHeader("", "Billing")}
-    <section class="profile-plan-panel"><div><span>Current plan</span><h2>${escapeHtml(meta.planLabel)}</h2><p>${escapeHtml(price || "£0")} · ${formatCredits(meta.allowance)} monthly credits</p></div><button class="primary-button compact-button" type="button" data-profile-action="${planAction}" data-profile-key="plan">${escapeHtml(currentAction)}</button></section>
-    <section class="profile-usage-panel profile-usage-panel--billing"><div class="profile-usage-line"><span>Credits used</span><strong>${formatCredits(meta.used)} / ${formatCredits(meta.allowance)}</strong></div><div class="${meta.allowance > 0 ? "credits-bar" : "credits-bar credits-bar--empty"}"><span style="width:${meta.pct}%"></span></div></section>
-    <section class="profile-stat-grid profile-stat-grid--wide profile-billing-limits">${profileUsageStat("5-hour limit", meta.burstUsed, meta.burstCap)}${profileUsageStat("Weekly limit", meta.weeklyUsed, meta.weeklyCap)}</section>
-    ${changePlan}`;
-}
-
 function profileUsageStat(label, used, cap) {
   const value = cap > 0 ? `${Math.min(100, Math.max(0, Math.round((Number(used || 0) / Number(cap)) * 100)))}%` : "No limit";
   return `<span><strong>${escapeHtml(value)}</strong>${escapeHtml(label)}</span>`;

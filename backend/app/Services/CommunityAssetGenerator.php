@@ -2,18 +2,22 @@
 
 namespace App\Services;
 
+use App\Services\Billing\OpenRouterRequestPolicy;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class CommunityAssetGenerator
 {
-    public function generate(string $kind, string $title, string $description, string $prompt): array
+    public function __construct(private readonly OpenRouterRequestPolicy $requestPolicy)
     {
-        $image = $this->generateWithOpenRouter($kind, $title, $description, $prompt);
-        return ['imageUrl' => $image, 'provider' => 'openrouter'];
     }
 
-    private function generateWithOpenRouter(string $kind, string $title, string $description, string $prompt): string
+    public function generate(string $kind, string $title, string $description, string $prompt): array
+    {
+        return $this->generateWithOpenRouter($kind, $title, $description, $prompt);
+    }
+
+    private function generateWithOpenRouter(string $kind, string $title, string $description, string $prompt): array
     {
         $apiKey = (string) config('services.openrouter.key', '');
         if ($apiKey === '') {
@@ -45,6 +49,8 @@ class CommunityAssetGenerator
                         'quality' => 'low',
                     ],
                     'stream' => false,
+                    'usage' => ['include' => true],
+                    'provider' => $this->requestPolicy->provider('community-image'),
                 ]);
         } catch (\Throwable $error) {
             throw new RuntimeException('OpenRouter image generation failed. Try again in a moment.', previous: $error);
@@ -56,7 +62,13 @@ class CommunityAssetGenerator
         }
 
         $image = $this->extractImageUrl($response->json());
-        if ($image !== '') return $image;
+        if ($image !== '') {
+            return [
+                'imageUrl' => $image,
+                'provider' => 'openrouter',
+                'usage' => (array) ($response->json('usage') ?? []),
+            ];
+        }
 
         throw new RuntimeException('OpenRouter image generation did not return an image.');
     }

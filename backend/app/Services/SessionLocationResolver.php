@@ -22,9 +22,18 @@ class SessionLocationResolver
             return 'Local network';
         }
 
-        return Cache::remember("geoip.label.{$ip}", now()->addDays(7), function () use ($ip) {
-            return $this->lookupPublicIp($ip);
-        });
+        $cacheKey = "geoip.label.{$this->databaseVersion()}.{$ip}";
+        $cached = Cache::get($cacheKey);
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        $label = $this->lookupPublicIp($ip);
+        if ($label !== $ip) {
+            Cache::put($cacheKey, $label, now()->addDays(7));
+        }
+
+        return $label;
     }
 
     private function lookupPublicIp(string $ip): string
@@ -68,5 +77,13 @@ class SessionLocationResolver
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function databaseVersion(): string
+    {
+        $path = (string) config('services.maxmind.database_path');
+        $modifiedAt = $path !== '' && is_file($path) ? filemtime($path) : false;
+
+        return $modifiedAt === false ? 'missing' : (string) $modifiedAt;
     }
 }

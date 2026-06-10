@@ -1,19 +1,23 @@
-import { basename } from "node:path";
+import { basename, isAbsolute, resolve } from "node:path";
 import { readdir, stat } from "node:fs/promises";
 import { analyzeProjectPath } from "./projectAnalysis.mjs";
 
+const rememberedProjectPaths = new Set();
+
 export async function projectFromPath(path) {
-  const entries = await readdir(path);
-  const info = await stat(path);
-  return projectFromInfo(path, entries, info, await analyzeProjectPath(path, entries));
+  const projectPath = resolve(path);
+  const entries = await readdir(projectPath);
+  const info = await stat(projectPath);
+  return projectFromInfo(projectPath, entries, info, await analyzeProjectPath(projectPath, entries));
 }
 
 export function projectFromInfo(path, entries, info, projectAnalysis = {}) {
+  const projectPath = rememberProjectPath(path);
   const detectedBrief = projectAnalysis.detectedBrief ?? null;
   return {
-    id: Buffer.from(path).toString("base64url"),
-    name: basename(path),
-    path,
+    id: projectIdFromPath(projectPath),
+    name: basename(projectPath),
+    path: projectPath,
     stack: detectedBrief ? `${detectedBrief.kindLabel} · ${detectedBrief.frameworkLabel}` : detectStack(entries),
     updated: formatUpdated(info.mtime),
     source: "desktop",
@@ -21,6 +25,36 @@ export function projectFromInfo(path, entries, info, projectAnalysis = {}) {
     detectedBrief,
     briefRequired: true
   };
+}
+
+export function projectIdFromPath(path) {
+  return Buffer.from(resolve(String(path ?? ""))).toString("base64url");
+}
+
+export function projectPathFromId(id) {
+  const value = String(id ?? "").trim();
+  if (!value) return null;
+  if (isAbsolute(value)) return resolve(value);
+
+  try {
+    const path = Buffer.from(value, "base64url").toString("utf8");
+    if (!path || path.includes("\0") || path.includes("\uFFFD") || !isAbsolute(path)) return null;
+    const normalizedId = value.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    if (projectIdFromPath(path) !== normalizedId) return null;
+    return resolve(path);
+  } catch {
+    return null;
+  }
+}
+
+export function rememberProjectPath(path) {
+  const projectPath = resolve(String(path ?? ""));
+  rememberedProjectPaths.add(projectPath);
+  return projectPath;
+}
+
+export function isRememberedProjectPath(path) {
+  return rememberedProjectPaths.has(resolve(String(path ?? "")));
 }
 
 export async function isDirectory(path) {

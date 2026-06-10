@@ -139,7 +139,7 @@ export type AgentStartTarget = {
 };
 
 export type AppActions = {
-  authenticateWith: (method: "apple" | "google" | "microsoft" | "email", accountStatus?: "new" | "existing") => Promise<void>;
+  authenticateWith: (method: "apple" | "google" | "email", accountStatus?: "new" | "existing") => Promise<void>;
   completeOnboarding: () => void;
   completePcSetup: () => void;
   skipPcSetup: () => void;
@@ -157,7 +157,7 @@ export type AppActions = {
   createFile: () => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
   selectProject: (projectId: string, projectOrOptions?: Project | ProjectOpenOptions, options?: ProjectOpenOptions) => Promise<FileEntry[]>;
-  loadProjectReviewFiles: (projectId: string) => Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }>;
+  loadProjectReviewFiles: (projectId: string, projectPath?: string) => Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }>;
   startPreviewServer: (projectId: string, projectName?: string, onProgress?: (phase: PreviewServerPhase, detail?: string) => void) => Promise<GeneratedApp>;
   startAgent: (target?: AgentStartTarget, promptOverride?: string, options?: AgentStartOptions) => Promise<boolean>;
   clearCurrentChat: (projectId?: string) => void;
@@ -180,6 +180,7 @@ export type AppActions = {
   undoCodeChange: (projectId: string, messageId: string, changeId: string, file: FileEntry) => Promise<void>;
   revertPreviewCode: (messageId: string) => void;
   clearCache: () => void;
+  deleteAccount: (password?: string) => Promise<void>;
   resetPromptMoney: () => void;
   reportLevelActivity: (action: string, contextId: string, meta?: Record<string, unknown>) => void;
   runTerminalCommand: (command: string, target?: AgentStartTarget) => Promise<import("./useTerminalCommandActions").TerminalCommandResult>;

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { appState } from "./state.mjs";
-import { sendDesktopChat } from "./desktopChat.mjs";
+import { routeDesktopAutoModel, sendDesktopChat } from "./desktopChat.mjs";
 
 test("desktop chat returns local desktop actions without a cloud account", async () => {
   resetDesktopChatState();
@@ -370,16 +370,30 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
     return jsonResponse({
       ok: true,
       reply: "Desktop answer",
-      modelKey: "gpt-5.4-mini",
+      modelKey: "google/gemini-3.1-pro-preview",
+      autoRouting: {
+        category: "visual_frontend",
+        modelKey: "google/gemini-3.1-pro-preview",
+        preferredModelKey: "google/gemini-3.1-pro-preview",
+        reason: "Strong fit for visual frontend work."
+      },
       app: { title: "Generated preview", html: "<main>Preview</main>" }
     });
   });
 
   assert.equal(result.reply, "Desktop answer");
+  assert.equal(result.modelKey, "google/gemini-3.1-pro-preview");
+  assert.deepEqual(result.autoRouting, {
+    category: "visual_frontend",
+    modelKey: "google/gemini-3.1-pro-preview",
+    preferredModelKey: "google/gemini-3.1-pro-preview",
+    reason: "Strong fit for visual frontend work."
+  });
   assert.deepEqual(result.app, { title: "Generated preview", url: "", html: "<main>Preview</main>" });
   assert.equal(requestBody.surface, "desktop");
   assert.equal(requestBody.mode, "chat");
   assert.equal(requestBody.model, "gpt-5.4-mini");
+  assert.equal(requestBody.routingPrompt, "Explain this project");
   assert.equal(requestBody.reasoningEffort, "xhigh");
   assert.equal(requestBody.skill, "review");
   assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
@@ -389,6 +403,79 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.match(requestBody.prompt, /User work: Founder/);
   assert.match(requestBody.prompt, /User instructions: Ask clarifying questions before detailed answers\./);
   assert.match(requestBody.prompt, /Attached local context names: README\.md/);
+});
+
+test("desktop Auto routing sends only the original prompt and returns the selected model", async () => {
+  resetDesktopChatState();
+  appState.desktopAccountToken = "account-token";
+  const prompt = "Review this exact API:\nPOST /widgets";
+  let requestBody = null;
+
+  const result = await routeDesktopAutoModel({ prompt }, async (url, options) => {
+    assert.equal(String(url).endsWith("/api/chat/route"), true);
+    assert.equal(options.headers.Authorization, "Bearer account-token");
+    requestBody = JSON.parse(options.body);
+    return jsonResponse({
+      ok: true,
+      modelKey: "anthropic/claude-opus-4.8",
+      autoRouting: {
+        category: "complex_review",
+        modelKey: "anthropic/claude-opus-4.8",
+        preferredModelKey: "anthropic/claude-opus-4.8",
+        reason: "Strong fit for difficult reviews."
+      }
+    });
+  });
+
+  assert.deepEqual(requestBody, { prompt });
+  assert.equal(result.modelKey, "anthropic/claude-opus-4.8");
+});
+
+test("desktop Auto routing can constrain selection to native-ready terminal providers", async () => {
+  resetDesktopChatState();
+  appState.desktopAccountToken = "account-token";
+  let requestBody = null;
+
+  const result = await routeDesktopAutoModel({
+    prompt: "Build the frontend",
+    allowedProviders: ["openai", "openai", ""]
+  }, async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return jsonResponse({
+      ok: true,
+      modelKey: "openai/gpt-5.5",
+      autoRouting: {
+        category: "visual_frontend",
+        modelKey: "openai/gpt-5.5",
+        preferredModelKey: "google/gemini-3.1-pro-preview",
+        allowedProviders: ["openai"],
+        reason: "Selected the strongest supported terminal model."
+      }
+    });
+  });
+
+  assert.deepEqual(requestBody, {
+    prompt: "Build the frontend",
+    allowedProviders: ["openai"]
+  });
+  assert.equal(result.modelKey, "openai/gpt-5.5");
+});
+
+test("desktop Auto routing clears an expired bridge account session", async () => {
+  resetDesktopChatState();
+  appState.desktopAccount = { id: 4, email: "user@example.test", name: "User", plan: "free" };
+  appState.desktopAccountToken = "expired-token";
+
+  await assert.rejects(
+    routeDesktopAutoModel({ prompt: "Write a poem" }, async () => jsonResponse({
+      ok: false,
+      error: "Your session expired. Please log in again."
+    }, 401)),
+    (error) => error?.status === 401 && /session expired/i.test(error?.message)
+  );
+
+  assert.equal(appState.desktopAccount, null);
+  assert.equal(appState.desktopAccountToken, null);
 });
 
 test("desktop chat loads canonical memory for the selected project", async () => {
@@ -423,29 +510,23 @@ test("desktop chat loads canonical memory for the selected project", async () =>
   assert.match(chatPayload.prompt, /Keep terminal memory project scoped\./);
 });
 
-test("desktop chat can use a connected OpenAI account without Vibyra credits", async () => {
+test("desktop chat does not treat an inherited OpenAI key as a personal account", async () => {
   resetDesktopChatState();
   const previousKey = process.env.OPENAI_API_KEY;
   process.env.OPENAI_API_KEY = "sk-test-openai-key-1234567890";
-  let requestBody = null;
   try {
-    const result = await sendDesktopChat({
-      model: "openai/gpt-4o-mini",
-      prompt: "Use my OpenAI account",
-      reasoningEffort: "high",
-      tokenMode: "provider"
-    }, async (url, options) => {
-      assert.equal(String(url), "https://api.openai.com/v1/responses");
-      assert.equal(options.headers.Authorization, "Bearer sk-test-openai-key-1234567890");
-      requestBody = JSON.parse(options.body);
-      return jsonResponse({ ok: true, output_text: "OpenAI answer", model: "gpt-4o-mini" });
-    });
-
-    assert.equal(result.reply, "OpenAI answer");
-    assert.equal(result.providerBilling, "openai");
-    assert.equal(result.creditCost, null);
-    assert.equal(requestBody.model, "gpt-4o-mini");
-    assert.match(requestBody.input, /Use my OpenAI account/);
+    await assert.rejects(
+      sendDesktopChat({
+        model: "openai/gpt-4o-mini",
+        prompt: "Use my OpenAI account",
+        reasoningEffort: "high",
+        tokenMode: "provider"
+      }, async () => {
+        assert.fail("An inherited company key must not reach OpenAI.");
+      }),
+      (error) => error?.status === 401
+        && error?.message === "Connect an OpenAI account before using provider tokens."
+    );
   } finally {
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = previousKey;

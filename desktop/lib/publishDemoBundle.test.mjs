@@ -78,7 +78,8 @@ test("publish demo bundle rejects source-only Vite entries", async () => {
     await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
     const result = await buildProjectPublishDemoBundle(project.id);
     assert.equal(result.ok, false);
-    assert.equal(result.code, "no_static_preview_entry");
+    assert.equal(result.code, "missing_build_script");
+    assert.match(result.reason, /build script/i);
     assert.deepEqual(result.files, []);
   } finally {
     appState.cachedProjects = previousProjects;
@@ -146,6 +147,43 @@ test("publish demo bundle builds a recognized nested frontend package", async ()
   }
 });
 
+test("publish demo bundle prefers a nested React frontend over a Laravel root package", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-full-stack-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "frontend"), { recursive: true });
+    await writeFile(join(project.path, "composer.json"), JSON.stringify({
+      require: { "laravel/framework": "^13.0" }
+    }));
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node -e \"process.exit(41)\"" }
+    }));
+    await writeFile(join(project.path, "frontend", "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" }
+    }));
+    await writeFile(join(project.path, "frontend", "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.tsx\"></script>");
+    await writeFile(join(project.path, "frontend", "build.mjs"), [
+      "import { mkdir, writeFile } from 'node:fs/promises';",
+      "await mkdir('dist/assets', { recursive: true });",
+      "await writeFile('dist/index.html', '<!doctype html><html><body><script type=\"module\" src=\"/assets/app.js\"></script></body></html>');",
+      "await writeFile('dist/assets/app.js', 'document.body.dataset.fullStack = \"ready\";');"
+    ].join("\n"));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000 });
+    assert.equal(result.ok, true);
+    assert.equal(result.metadata.buildDirectory, "frontend");
+    assert.equal(result.entryPath, "frontend/dist/index.html");
+    assert.deepEqual(result.files.map((file) => file.path).sort(), [
+      "frontend/dist/assets/app.js",
+      "frontend/dist/index.html"
+    ]);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
 test("publish demo bundle installs missing dependencies before building", async () => {
   const { project, cleanup } = await makeProject("vibyra-publish-install-");
   const fakeNpm = await makeFakePublishNpm();
@@ -200,7 +238,8 @@ test("publish demo bundle reports install failure before build", async () => {
 
     const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000, installTimeoutMs: 15000 });
     assert.equal(result.ok, false);
-    assert.equal(result.code, "no_static_preview_entry");
+    assert.equal(result.code, "dependency_install_failed");
+    assert.match(result.reason, /dependency installation failed/i);
     assert.equal(result.metadata.autoInstall.code, "install_failed");
     assert.equal(result.metadata.autoBuild, undefined);
     assert.equal(result.metadata.warnings.some((warning) => warning.code === "install_failed"), true);
@@ -233,6 +272,70 @@ test("publish demo bundle skips dependency install when node_modules exists", as
     assert.equal(result.ok, true);
     assert.deepEqual(result.metadata.autoInstall, { skipped: true, reason: "dependencies_present" });
     assert.equal(result.metadata.autoBuild.code, "build_ok");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle returns the frontend build error instead of hiding it", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-build-fail-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+    await writeFile(join(project.path, "build.mjs"), "throw new Error('Vite could not resolve src/missing.jsx');");
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000 });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "frontend_build_failed");
+    assert.match(result.reason, /Vite could not resolve src\/missing\.jsx/);
+    assert.equal(result.metadata.autoBuild.code, "build_failed");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle reports when a successful build creates no browser output", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-output-missing-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node -e \"process.exit(0)\"" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+
+    const result = await buildProjectPublishDemoBundle(project.id, { buildTimeoutMs: 15000 });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "build_output_missing");
+    assert.match(result.reason, /did not create a supported static index\.html/i);
+    assert.equal(result.metadata.autoBuild.code, "build_ok");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle explains when automatic building is disabled", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-build-disabled-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "package.json"), JSON.stringify({
+      scripts: { build: "node build.mjs" }
+    }));
+    await writeFile(join(project.path, "index.html"), "<div id=\"root\"></div><script type=\"module\" src=\"/src/main.jsx\"></script>");
+
+    const result = await buildProjectPublishDemoBundle(project.id, { autoBuild: false });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "static_preview_not_built");
+    assert.match(result.reason, /enable automatic building/i);
+    assert.equal(result.metadata.autoBuild, undefined);
   } finally {
     appState.cachedProjects = previousProjects;
     await cleanup();
@@ -344,6 +447,76 @@ test("publish demo bundle fails clearly when required dependencies exceed caps",
     assert.equal(result.code, "bundle_limit_exceeded");
     assert.match(result.reason, /bundle limit reached/i);
     assert.deepEqual(result.files, []);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle reports the asset and per-file size limit", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-file-size-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "index.html"), "<script src=\"app.js\"></script>");
+    await writeFile(join(project.path, "app.js"), "x".repeat(200));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { limits: { maxFileBytes: 100 } });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "bundle_file_too_large");
+    assert.match(result.reason, /app\.js is 200 bytes/);
+    assert.match(result.reason, /100 bytes per-file hosting limit/);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle rejects missing required local references", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-missing-ref-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await writeFile(join(project.path, "index.html"), "<img src=\"assets/missing.png\">");
+
+    const result = await buildProjectPublishDemoBundle(project.id);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "missing_static_reference");
+    assert.match(result.reason, /assets\/missing\.png/);
+    assert.deepEqual(result.files, []);
+    assert.deepEqual(
+      result.metadata.skipped.find((item) => item.path === "assets/missing.png"),
+      { path: "assets/missing.png", reason: "missing_reference", from: "index.html" }
+    );
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("publish demo bundle returns a structured failure when no project is selected", async () => {
+  const result = await buildProjectPublishDemoBundle("");
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "no_project_selected");
+  assert.match(result.reason, /Browse PC/);
+  assert.deepEqual(result.files, []);
+});
+
+test("publish demo bundle fails and reports optional file cap truncation", async () => {
+  const { project, cleanup } = await makeProject("vibyra-publish-file-cap-");
+  const previousProjects = appState.cachedProjects;
+  appState.cachedProjects = [project];
+  try {
+    await mkdir(join(project.path, "assets"), { recursive: true });
+    await writeFile(join(project.path, "index.html"), "<main>Demo</main>");
+    await writeFile(join(project.path, "assets", "a.png"), Buffer.from([1]));
+    await writeFile(join(project.path, "assets", "b.png"), Buffer.from([2]));
+
+    const result = await buildProjectPublishDemoBundle(project.id, { limits: { maxFiles: 2 } });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "bundle_limit_exceeded");
+    assert.equal(result.metadata.truncated, true);
+    assert.equal(result.metadata.skipped.some((item) => item.reason === "bundle_limit_reached"), true);
   } finally {
     appState.cachedProjects = previousProjects;
     await cleanup();

@@ -132,12 +132,24 @@ export function PricingScreen({ persona, onClose }: { persona: PersonaModel; onC
         >
           <LinearGradient colors={theme.button} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.paywallCta}>
             <Text style={styles.paywallCtaText}>
-              {purchase.isPurchasing ? "Opening secure checkout..." : `Upgrade to ${selected.name} ${billingLabel}`}
+              {purchase.isRestoring
+                ? "Restoring purchases..."
+                : purchase.isPurchasing
+                  ? "Opening secure checkout..."
+                  : `Upgrade to ${selected.name} ${billingLabel}`}
             </Text>
           </LinearGradient>
         </Pressable>
         {purchase.purchaseError ? <Text style={styles.paywallErrorText}>{purchase.purchaseError}</Text> : null}
         {purchase.purchaseMessage ? <Text style={styles.paywallSuccessText}>{purchase.purchaseMessage}</Text> : null}
+        <Pressable
+          disabled={purchase.isPurchasing || purchase.isRestoring}
+          onPress={purchase.restorePurchases}
+        >
+          <Text style={[styles.paywallFooterText, { textDecorationLine: "underline" }]}>
+            {purchase.isRestoring ? "Restoring purchases..." : "Restore Purchases"}
+          </Text>
+        </Pressable>
         <Text style={styles.paywallFooterText}>Subscribe for {selectedPrice}. Cancel anytime</Text>
       </View>
     </View>

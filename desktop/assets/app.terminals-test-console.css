@@ -1,0 +1,84 @@
+.terminal-test-console {
+  background: color-mix(in srgb, var(--terminal-elevated, #15151d) 96%, transparent);
+  border-top: 1px solid var(--terminal-border, rgba(151,161,190,.14));
+  color: var(--terminal-muted, #aaa3b8);
+  max-height: 360px;
+  min-height: 150px;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  resize: none;
+  width: 100%;
+  z-index: 3;
+}
+.terminal-test-console:not(.is-open) { height: 35px !important; min-height: 35px; }
+.terminal-test-console-resizer {
+  background: transparent;
+  border: 0;
+  display: none;
+  padding: 0;
+  position: absolute;
+  z-index: 2;
+}
+.terminal-test-console-resizer--height {
+  cursor: ns-resize;
+  height: 10px;
+  left: 0;
+  top: -5px;
+  width: 100%;
+}
+.terminal-test-console-resizer--height::after {
+  background: var(--terminal-border, rgba(151,161,190,.2));
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  transition: background-color 120ms ease, width 120ms ease;
+  width: 34px;
+}
+.terminal-test-console.is-open .terminal-test-console-resizer { display: block; }
+.terminal-test-console-resizer--height:hover::after,
+.terminal-test-console-resizer--height:focus-visible::after {
+  background: var(--terminal-accent, #8b5cff);
+  width: 52px;
+}
+.terminal-test-console header { align-items: center; display: flex; height: 34px; justify-content: space-between; padding: 0 5px; }
+.terminal-test-console header > div { display: none; }
+.terminal-test-console.is-open header > div { display: flex; }
+.terminal-test-console button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: inline-flex;
+  font: 700 10px/1 system-ui, sans-serif;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px;
+}
+.terminal-test-console button:hover { color: var(--terminal-text, #f1eef8); }
+.terminal-test-console button svg { height: 13px; width: 13px; }
+.terminal-test-console button svg:last-child { transition: transform .16s ease; }
+.terminal-test-console.is-open [data-terminal-test-console-toggle] svg:last-child { transform: rotate(180deg); }
+.terminal-test-console .terminal-test-console-close { border-left: 1px solid var(--terminal-border, rgba(151,161,190,.12)); margin-left: 2px; padding-inline: 8px; }
+.terminal-test-console .terminal-test-console-close svg:last-child { transform: none; }
+.terminal-test-console output { background: var(--terminal-hover, rgba(255,255,255,.06)); border-radius: 999px; color: var(--terminal-dim, #918ca1); font-size: 9px; min-width: 17px; padding: 3px 5px; }
+.terminal-test-console output.has-issues { background: rgba(255,111,118,.13); color: #ff8e93; }
+.terminal-test-console-body { border-top: 1px solid var(--terminal-border, rgba(151,161,190,.1)); display: none; height: calc(100% - 34px); width: 100%; }
+.terminal-test-console.is-open .terminal-test-console-body { display: block; }
+.terminal-test-console-list { height: 100%; overflow: auto; padding: 7px 12px; }
+.terminal-test-console-list article { align-items: start; display: grid; font: 11px/1.5 "SFMono-Regular", Consolas, monospace; gap: 8px; grid-template-columns: 54px minmax(0,1fr); margin: 0; padding: 5px 0; }
+.terminal-test-console-list time { color: var(--terminal-dim, #777282); }
+.terminal-test-console-list span { color: var(--terminal-text, #d8d5df); overflow-wrap: anywhere; white-space: pre-wrap; }
+.terminal-test-console-list small { color: var(--terminal-dim, #918ca1); display: block; margin-top: 2px; }
+.terminal-test-console-list article > button { border: 1px solid var(--terminal-border, rgba(151,161,190,.14)); border-radius: 6px; color: var(--terminal-accent, #9a6cff); grid-column: 2; justify-self: start; white-space: nowrap; }
+.terminal-test-console-list article > button svg { height: 12px; width: 12px; }
+.terminal-test-console-list .is-warn span { color: #e7bd68; }
+.terminal-test-console-list .is-error span { color: #ff898f; }
+.terminal-test-console-list .is-info span { color: #8ebcff; }
+.terminal-test-console-list .is-debug span { color: #9c96aa; }
+.terminal-test-console-list .is-system span { color: #ae8aff; }
+.terminal-test-console-list .terminal-test-console-empty { color: var(--terminal-dim, #918ca1); display: block; font-family: system-ui, sans-serif; padding: 10px 0; }

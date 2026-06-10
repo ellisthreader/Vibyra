@@ -9,6 +9,8 @@ if [ -f ".env" ]; then
   set +a
 fi
 
+export VIBYRA_DESKTOP_API_URL="${VIBYRA_DESKTOP_API_URL:-${VIBYRA_API_URL:-${EXPO_PUBLIC_API_URL:-http://127.0.0.1:8000}}}"
+
 PORT="${VIBYRA_AGENT_PORT:-4317}"
 APP_URL="http://127.0.0.1:${PORT}/desktop"
 CHROME_PROFILE="$HOME/.vibyra-desktop-window"

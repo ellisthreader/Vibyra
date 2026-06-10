@@ -75,6 +75,31 @@ npx expo start --web --port 8082
 
 Do not leave a needed dev server stopped. If you kill an Expo process to clear stale Metro state, restart it and verify the browser URL and bundle URL.
 
+## Desktop Test Preview
+
+When the desktop Test tab selects an Expo project, inspect
+`desktop/lib/previewExpo.mjs`, `previewDevServer.mjs`, and `preview.mjs`.
+The resolver must prefer a verified Metro runtime over a generic root
+`index.html`; large monorepos can contain stale placeholder HTML and nested
+Laravel markers that are not the selected app.
+
+Reuse an existing Expo port only when the served `<title>` matches the selected
+project's `app.json` or package identity and its `AppEntry.bundle` returns
+JavaScript. If no matching Metro server exists, the Test flow should expose the
+allowlisted `npm run <script> -- --host lan --port <port>` plan and run it only
+after the visible confirmation.
+
+When an Expo package also has wrapper scripts such as `start: npm run dev` or a
+shell-based `dev` command that starts backend plus Expo, the dedicated Expo web
+profile must win before generic project-script detection. Launch the Expo
+`web`/`start`/`dev` script directly with an explicit free `--port`; do not run
+the wrapper, restart a live backend, or allow an interactive port prompt.
+
+If no browser runtime is available, return a specific detected reason.
+Distinguish package-only folders, unrecognized package scripts, and non-web
+Python/CLI apps instead of returning one generic failure or showing a Start
+button that cannot succeed.
+
 ## Auth Fetch Failures
 
 For signup/login "Could not reach Vibyra" or `failed to fetch`, verify the Laravel backend before changing auth code.

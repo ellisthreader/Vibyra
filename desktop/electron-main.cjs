@@ -1,4 +1,17 @@
-const { app, BrowserWindow, dialog, ipcMain, session } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  clipboard,
+  desktopCapturer,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  nativeImage,
+  screen,
+  session,
+  shell,
+  systemPreferences
+} = require("electron");
 const { spawn } = require("node:child_process");
 const http = require("node:http");
 const path = require("node:path");
@@ -8,9 +21,13 @@ const {
   importDiscoveredObsidianVault
 } = require("./lib/desktopObsidianDiscovery.cjs");
 const { bindDesktopReloadShortcuts, reloadDesktopWindow } = require("./lib/electronReload.cjs");
+const { createDesktopScreenshot } = require("./lib/desktopScreenshot.cjs");
 
 app.commandLine.appendSwitch("disable-gpu");
 app.commandLine.appendSwitch("disable-gpu-compositing");
+if (process.platform === "linux") {
+  app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+}
 
 const port = process.env.VIBYRA_AGENT_PORT || "4317";
 const appUrl = process.env.VIBYRA_DESKTOP_URL || `http://127.0.0.1:${port}/desktop`;
@@ -22,6 +39,21 @@ let bridgeStartPending = false;
 let bridgeHealthTimer;
 let handledRendererReloadRequestId = "";
 let observedTerminalActionProtocolVersion = "";
+let screenshotCapturePending = false;
+let screenshotShortcutAvailable = true;
+const desktopScreenshot = createDesktopScreenshot({
+  clipboard,
+  desktopCapturer,
+  dialog,
+  globalShortcut,
+  nativeImage,
+  screen,
+  getParentWindow: () => mainWindow,
+  screenAccessStatus: () => process.platform === "darwin"
+    ? systemPreferences.getMediaAccessStatus("screen")
+    : "granted",
+  onShortcutError: (error) => sendScreenshotError(error)
+});
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -30,6 +62,30 @@ function revealWindow() {
   if (mainWindow.isMinimized()) mainWindow.restore();
   if (!mainWindow.isVisible()) mainWindow.show();
   mainWindow.focus();
+}
+
+function sendScreenshotError(error) {
+  const message = error instanceof Error ? error.message : "Screenshot capture failed.";
+  console.error(`Vibyra screenshot failed: ${message}`);
+  mainWindow?.webContents?.send("screenshot:error", message);
+}
+
+async function captureScreenshotForEditor() {
+  if (screenshotCapturePending) return;
+  screenshotCapturePending = true;
+  try {
+    const capture = await desktopScreenshot.captureDisplay();
+    revealWindow();
+    mainWindow?.webContents?.send("screenshot:captured", {
+      dataUrl: capture.dataUrl,
+      displayId: String(capture.display.id)
+    });
+  } catch (error) {
+    revealWindow();
+    sendScreenshotError(error);
+  } finally {
+    screenshotCapturePending = false;
+  }
 }
 
 function createWindow() {
@@ -74,6 +130,9 @@ function createWindow() {
     }
     clearTimeout(loadRetryTimer);
     loadRetryAttempt = 0;
+    if (!screenshotShortcutAvailable) {
+      mainWindow.webContents.send("screenshot:error", "F9 is already used by another application.");
+    }
     setTimeout(revealOnce, 100);
   });
   mainWindow.webContents.on("did-fail-load", (_event, code, description, url, isMainFrame) => {
@@ -86,6 +145,15 @@ function createWindow() {
     console.error(`Vibyra Desktop renderer exited: ${details.reason}`);
     if (!mainWindow || mainWindow.isDestroyed()) return;
     setTimeout(() => mainWindow?.reload(), 500);
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url === "about:blank") return { action: "deny" };
+    if (/^(https?:|mailto:)/i.test(url)) {
+      void shell.openExternal(url);
+      return { action: "deny" };
+    }
+    if (url.startsWith("blob:")) return { action: "allow" };
+    return { action: "deny" };
   });
   bindDesktopReloadShortcuts(mainWindow);
   mainWindow.on("close", (event) => {
@@ -233,12 +301,17 @@ if (!hasSingleInstanceLock) {
   app.on("before-quit", () => {
     quitting = true;
     clearInterval(bridgeHealthTimer);
+    desktopScreenshot.unregisterF9Shortcut();
   });
   app.on("second-instance", () => reloadDesktopWindow(mainWindow));
   app.whenReady().then(() => {
     configureDesktopPermissions();
     startBridgeHealthMonitor();
     createWindow();
+    screenshotShortcutAvailable = desktopScreenshot.registerF9Shortcut(captureScreenshotForEditor);
+    if (!screenshotShortcutAvailable) {
+      sendScreenshotError(new Error("F9 is already used by another application."));
+    }
   });
 }
 
@@ -275,3 +348,19 @@ ipcMain.handle("memory:pick", async (_event, kind) => {
 
 ipcMain.handle("memory:discover-obsidian", () => discoverObsidianVaults());
 ipcMain.handle("memory:import-discovered-vault", (_event, id) => importDiscoveredObsidianVault(id));
+ipcMain.handle("screenshot:copy", (_event, dataUrl) => {
+  try {
+    desktopScreenshot.copyPngDataUrl(dataUrl);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Copy failed." };
+  }
+});
+ipcMain.handle("screenshot:save", async (_event, dataUrl) => {
+  try {
+    const result = await desktopScreenshot.savePngDataUrl(dataUrl);
+    return result.canceled ? result : { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Save failed." };
+  }
+});

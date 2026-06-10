@@ -7,12 +7,26 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('burst_credits_used')->default(0)->after('daily_credits_reset_at');
-            $table->timestamp('burst_credits_reset_at')->nullable()->after('burst_credits_used');
-            $table->unsignedInteger('weekly_credits_used')->default(0)->after('burst_credits_reset_at');
-            $table->timestamp('weekly_credits_reset_at')->nullable()->after('weekly_credits_used');
-        });
+        if (! Schema::hasColumn('users', 'burst_credits_used')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->unsignedInteger('burst_credits_used')->default(0)->after('daily_credits_reset_at');
+            });
+        }
+        if (! Schema::hasColumn('users', 'burst_credits_reset_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('burst_credits_reset_at')->nullable()->after('burst_credits_used');
+            });
+        }
+        if (! Schema::hasColumn('users', 'weekly_credits_used')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->unsignedInteger('weekly_credits_used')->default(0)->after('burst_credits_reset_at');
+            });
+        }
+        if (! Schema::hasColumn('users', 'weekly_credits_reset_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('weekly_credits_reset_at')->nullable()->after('weekly_credits_used');
+            });
+        }
     }
 
     public function down(): void

@@ -1,4 +1,4 @@
-import { openAiAccountCredential, openAiHeaders } from "./providerAccounts.mjs";
+import { openAiHeaders, openAiVoiceCredential } from "./providerAccounts.mjs";
 
 const OPENAI_TRANSCRIPT_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_SPEECH_URL = "https://api.openai.com/v1/audio/speech";
@@ -22,8 +22,8 @@ const AUDIO_TYPES = new Map([
   ["audio/x-wav", "wav"]
 ]);
 
-export async function transcribeDesktopVoice(body = {}, fetchImpl = fetch, credential = openAiAccountCredential()) {
-  if (!credential) throw httpError(401, "Connect an OpenAI account to use Vibyra Voice transcription.");
+export async function transcribeDesktopVoice(body = {}, fetchImpl = fetch, credential = openAiVoiceCredential()) {
+  if (!credential) throw httpError(401, "Connect an OpenAI account or configure OPENAI_API_KEY to use Vibyra Voice transcription.");
   const encoded = String(body.audioBase64 || "").trim();
   if (!isCanonicalBase64(encoded)) throw httpError(422, "The voice recording is invalid.");
   const audio = Buffer.from(encoded, "base64");
@@ -58,10 +58,10 @@ export async function transcribeDesktopVoice(body = {}, fetchImpl = fetch, crede
 export async function speakDesktopVoice(
   body = {},
   fetchImpl = fetch,
-  credential = openAiAccountCredential(),
+  credential = openAiVoiceCredential(),
   timeoutMs = SPEECH_TIMEOUT_MS
 ) {
-  if (!credential) throw httpError(401, "Connect an OpenAI account to use Vibyra Voice speech.");
+  if (!credential) throw httpError(401, "Connect an OpenAI account or configure OPENAI_API_KEY to use Vibyra Voice speech.");
   const input = normalizeSpeechText(body.text);
   const voice = normalizeSpeechVoice(body.voice);
   const speed = normalizeSpeechSpeed(body.speed);

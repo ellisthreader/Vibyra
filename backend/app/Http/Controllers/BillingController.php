@@ -2,31 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\BillingCancellationActions;
 use App\Http\Controllers\Concerns\BillingCheckoutActions;
+use App\Http\Controllers\Concerns\BillingMembershipActions;
 use App\Http\Controllers\Concerns\UserPayloads;
-use App\Models\IapReceipt;
-use App\Models\User;
 use App\Services\Billing\CreditDeductor;
+use App\Services\Billing\IapPurchaseClaimer;
+use App\Services\Billing\IapPurchaseConflictException;
 use App\Services\Billing\IapReceiptVerifier;
+use App\Services\Billing\StripeWebhookProcessor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Stripe\Exception\SignatureVerificationException;
-use Stripe\StripeClient;
 use Stripe\Webhook;
 use Throwable;
 
 class BillingController extends Controller
 {
+    use BillingCancellationActions;
     use BillingCheckoutActions;
+    use BillingMembershipActions;
     use UserPayloads;
 
     public function __construct(
         private readonly CreditDeductor $deductor,
         private readonly IapReceiptVerifier $iapVerifier,
-    ) {
-    }
+        private readonly IapPurchaseClaimer $iapPurchaseClaimer,
+        private readonly StripeWebhookProcessor $stripeWebhookProcessor,
+    ) {}
 
     public function plans(): JsonResponse
     {
@@ -78,6 +82,7 @@ class BillingController extends Controller
         if ($kind === 'topup') {
             return $this->createTopupCheckout($stripe, $user, $request);
         }
+
         return $this->json(['ok' => false, 'error' => 'Unknown checkout kind.'], 422);
     }
 
@@ -99,6 +104,7 @@ class BillingController extends Controller
             ]);
         } catch (Throwable $e) {
             Log::error('Stripe portal session failed', ['error' => $e->getMessage()]);
+
             return $this->json(['ok' => false, 'error' => 'Could not open billing portal.'], 502);
         }
 
@@ -124,9 +130,13 @@ class BillingController extends Controller
         }
 
         try {
-            $this->handleWebhookEvent($event);
+            $this->stripeWebhookProcessor->process(
+                $event,
+                fn () => $this->handleWebhookEvent($event)
+            );
         } catch (Throwable $e) {
             Log::error('Stripe webhook handler failed', ['type' => $event->type ?? 'unknown', 'error' => $e->getMessage()]);
+
             return response()->json(['ok' => false, 'error' => 'Handler failed.'], 500);
         }
 
@@ -148,42 +158,63 @@ class BillingController extends Controller
             return $this->json(['ok' => false, 'error' => 'Missing IAP fields.'], 422);
         }
 
-        $product = (array) config("billing.iap_products.{$productId}", []);
+        $product = (array) ((array) config('billing.iap_products', []))[$productId] ?? [];
         if (empty($product)) {
             return $this->json(['ok' => false, 'error' => 'Unknown IAP product.'], 422);
         }
 
-        if (IapReceipt::where('platform', $platform)->where('transaction_id', $transactionId)->exists()) {
-            return $this->json(['ok' => true, 'idempotent' => true, 'user' => $this->userPayload($user->fresh())]);
-        }
-
         try {
             $verified = $this->iapVerifier->verify($platform, $productId, $receipt);
+            $claim = $this->iapPurchaseClaimer->claim(
+                $user,
+                $platform,
+                $productId,
+                $transactionId,
+                $verified,
+                function ($lockedUser, $claimedReceipt, string $canonicalTransactionId) use (
+                    $product,
+                    $platform,
+                    $productId
+                ): void {
+                    if (($product['kind'] ?? '') === 'subscription') {
+                        $this->applySubscription(
+                            $lockedUser,
+                            (string) $product['plan'],
+                            (string) $product['cycle'],
+                            'iap-'.$platform,
+                            null,
+                            "iap-subscription:{$platform}:{$canonicalTransactionId}"
+                        );
+
+                        return;
+                    }
+
+                    $topup = (array) config("billing.topups.{$product['topup']}", []);
+                    $credits = (int) ($topup['credits'] ?? 0);
+                    if ($credits > 0) {
+                        $this->deductor->grant(
+                            $lockedUser,
+                            $credits,
+                            'topup',
+                            "iap-{$platform}:{$canonicalTransactionId}",
+                            [
+                                'productId' => $productId,
+                                'receiptId' => $claimedReceipt->id,
+                            ]
+                        );
+                    }
+                }
+            );
+        } catch (IapPurchaseConflictException $e) {
+            return $this->json(['ok' => false, 'error' => $e->getMessage()], 409);
         } catch (Throwable $e) {
             return $this->json(['ok' => false, 'error' => $e->getMessage()], 400);
         }
 
-        IapReceipt::create([
-            'user_id' => $user->id,
-            'platform' => $platform,
-            'product_id' => $productId,
-            'transaction_id' => $transactionId,
-            'original_transaction_id' => $verified['originalTransactionId'] ?? null,
-            'expires_at' => $verified['expiresAt'] ?? null,
-            'payload' => $verified['payload'] ?? null,
+        return $this->json([
+            'ok' => true,
+            'idempotent' => $claim['idempotent'],
+            'user' => $this->userPayload($user->fresh()),
         ]);
-
-        if (($product['kind'] ?? '') === 'subscription') {
-            $this->applySubscription($user, (string) $product['plan'], (string) $product['cycle'], 'iap-' . $platform);
-        } else {
-            $topup = (array) config("billing.topups.{$product['topup']}", []);
-            $credits = (int) ($topup['credits'] ?? 0);
-            if ($credits > 0) {
-                $this->deductor->grant($user, $credits, 'topup', "iap-{$platform}:{$transactionId}", ['productId' => $productId]);
-            }
-        }
-
-        return $this->json(['ok' => true, 'user' => $this->userPayload($user->fresh())]);
     }
-
 }

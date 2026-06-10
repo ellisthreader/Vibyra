@@ -3,34 +3,56 @@
     "name": "Vibyra",
     "slug": "vibyra",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "scheme": "vibyra",
-    "icon": "./src/assets/vibyra.png",
-    "splash": {
-      "image": "./src/assets/vibyra.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#07070A"
-    },
+    "icon": "./src/assets/BG-transparent-vibyra.png",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.vibyra.mobile",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "associatedDomains": [
+        "applinks:links.vibyra.app"
+      ],
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
         "NSLocalNetworkUsageDescription": "Vibyra connects to the desktop app on your local Wi-Fi network.",
         "NSCameraUsageDescription": "Vibyra lets you take photos to add context to chat and project publishing.",
         "NSPhotoLibraryUsageDescription": "Vibyra lets you choose images for chat, your profile picture, and project publishing.",
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
+          "NSAllowsLocalNetworking": true
         }
       }
     },
     "android": {
       "package": "app.vibyra.mobile",
-      "usesCleartextTraffic": true
+      "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "links.vibyra.app",
+              "path": "/reset-password"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -41,7 +63,8 @@
         "expo-image-picker",
         {
           "cameraPermission": "Vibyra lets you take photos to add context to chat and project publishing.",
-          "photosPermission": "Vibyra lets you choose images for chat, your profile picture, and project publishing."
+          "photosPermission": "Vibyra lets you choose images for chat, your profile picture, and project publishing.",
+          "microphonePermission": false
         }
       ],
       [
@@ -55,10 +78,23 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "2.0.21"
+            "kotlinVersion": "2.0.21",
+            "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-apple-authentication",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/vibyra.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#07070A"
+        }
+      ],
+      "expo-status-bar"
     ]
   }
 }

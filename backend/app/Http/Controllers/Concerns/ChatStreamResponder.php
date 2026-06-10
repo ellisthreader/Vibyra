@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\ChatCostReservation;
+use App\Services\Billing\ChatCostReservationService;
 use App\Services\LevelProgression;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
@@ -13,12 +15,15 @@ trait ChatStreamResponder
 {
     private function streamChatResponse(
         $payload, $apiKey, $user, $deductor, $calc, $modelKey, $requestedModelKey, $openRouterModel,
-            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles, $chatMode, $streamProviderResponse
+            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles, $chatMode, $streamProviderResponse,
+            $autoRouting, ChatCostReservationService $reservationService, ChatCostReservation $reservation,
+            string $reference, int $maxOutputTokens
     ): StreamedResponse
     {
         return new StreamedResponse(function () use (
             $payload, $apiKey, $user, $deductor, $calc, $modelKey, $requestedModelKey, $openRouterModel,
-            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles, $chatMode, $streamProviderResponse
+            $agentMode, $estimatedInputTokens, $skillId, $request, $prompt, $projectFiles, $chatMode, $streamProviderResponse,
+            $autoRouting, $reservationService, $reservation, $reference, $maxOutputTokens
         ) {
             @ini_set('output_buffering', '0');
             @ini_set('zlib.output_compression', '0');
@@ -37,6 +42,7 @@ trait ChatStreamResponder
 
             $accumulated = '';
             $usage = [];
+            $attempts = [];
 
             try {
                 $client = app()->bound("vibyra.openrouter_stream_client")
@@ -47,6 +53,7 @@ trait ChatStreamResponder
                         "http_errors" => false,
                     ]);
 
+                $reservationService->markProviderStarted($reservation);
                 $response = $client->post((string) config('services.openrouter.url'), [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $apiKey,
@@ -61,6 +68,17 @@ trait ChatStreamResponder
 
                 if ($response->getStatusCode() >= 400) {
                     $body = (string) $response->getBody()->getContents();
+                    $decodedError = json_decode($body, true);
+                    $errorUsage = is_array($decodedError) ? (array) ($decodedError['usage'] ?? []) : [];
+                    if ($errorUsage !== []) {
+                        $reservationService->settle($reservation, [[
+                            'billable' => true,
+                            'outcome' => 'provider_error',
+                            'usage' => $errorUsage,
+                        ]], ['outcome' => 'provider_error']);
+                    } else {
+                        $reservationService->release($reservation, 'provider_error_without_usage');
+                    }
                     $emit('error', ['error' => 'OpenRouter returned ' . $response->getStatusCode() . ': ' . Str::limit($body, 400, '')]);
                     return;
                 }
@@ -68,14 +86,28 @@ trait ChatStreamResponder
                 if (! $streamProviderResponse) {
                     $decoded = json_decode((string) $response->getBody()->getContents(), true);
                     if (! is_array($decoded)) {
-                        $emit("error", ["error" => "OpenRouter returned an unreadable Deep Research response. No Vibyra credits were charged."]);
+                        $reservationService->settle($reservation, [[
+                            'billable' => true,
+                            'outcome' => 'unreadable_response',
+                            'estimated_input_tokens' => $estimatedInputTokens,
+                            'estimated_output_tokens' => $maxOutputTokens,
+                        ]], ['outcome' => 'unreadable_response']);
+                        $emit("error", ["error" => "OpenRouter returned an unreadable Deep Research response. Provider usage was charged."]);
                         return;
                     }
 
+                    $attempts[] = [
+                        'billable' => true,
+                        'outcome' => 'completed',
+                        'usage' => (array) ($decoded['usage'] ?? []),
+                        'estimated_input_tokens' => $estimatedInputTokens,
+                        'estimated_output_tokens' => $maxOutputTokens,
+                    ];
                     $delta = $this->openRouterCompletionContent($decoded);
                     if ($delta === "") {
                         $retryPayload = $this->openRouterEmptyCompletionRetryPayload($payload);
                         if ($retryPayload !== null) {
+                            $reservationService->markProviderStarted($reservation);
                             $retryResponse = $client->post((string) config('services.openrouter.url'), [
                                 'headers' => [
                                     'Authorization' => 'Bearer ' . $apiKey,
@@ -90,6 +122,12 @@ trait ChatStreamResponder
 
                             if ($retryResponse->getStatusCode() >= 400) {
                                 $body = (string) $retryResponse->getBody()->getContents();
+                                $retryError = json_decode($body, true);
+                                $retryUsage = is_array($retryError) ? (array) ($retryError['usage'] ?? []) : [];
+                                if ($retryUsage !== []) {
+                                    $attempts[] = ['billable' => true, 'outcome' => 'retry_provider_error', 'usage' => $retryUsage];
+                                }
+                                $reservationService->settle($reservation, $attempts, ['outcome' => 'retry_provider_error']);
                                 $emit('error', ['error' => 'OpenRouter returned ' . $retryResponse->getStatusCode() . ' on Deep Research retry: ' . Str::limit($body, 400, '')]);
                                 return;
                             }
@@ -97,6 +135,13 @@ trait ChatStreamResponder
                             $retryDecoded = json_decode((string) $retryResponse->getBody()->getContents(), true);
                             if (is_array($retryDecoded)) {
                                 $decoded = $retryDecoded;
+                                $attempts[] = [
+                                    'billable' => true,
+                                    'outcome' => 'retry_completed',
+                                    'usage' => (array) ($decoded['usage'] ?? []),
+                                    'estimated_input_tokens' => $estimatedInputTokens,
+                                    'estimated_output_tokens' => $maxOutputTokens,
+                                ];
                                 $delta = $this->openRouterCompletionContent($decoded);
                             }
                         }
@@ -129,14 +174,25 @@ trait ChatStreamResponder
                     foreach ($this->flushOpenRouterStreamEvents($buffer) as $rawEvent) {
                         $this->handleOpenRouterStreamEvent($rawEvent, $emit, $accumulated, $usage);
                     }
+                    $attempts[] = [
+                        'billable' => true,
+                        'outcome' => 'stream_completed',
+                        'usage' => $usage,
+                        'estimated_input_tokens' => $estimatedInputTokens,
+                        'estimated_output_tokens' => $maxOutputTokens,
+                    ];
                 }
             } catch (GuzzleException | Throwable $error) {
+                if ($attempts !== []) {
+                    $reservationService->settle($reservation, $attempts, ['outcome' => 'transport_error_after_attempt']);
+                }
                 $emit('error', ['error' => 'Could not reach OpenRouter: ' . $error->getMessage()]);
                 return;
             }
 
             if (trim($accumulated) === "") {
-                $emit("error", ["error" => "OpenRouter completed the stream without answer content. No Vibyra credits were charged for this empty completion."]);
+                $reservationService->settle($reservation, $attempts, ['outcome' => 'empty_completion']);
+                $emit("error", ["error" => "OpenRouter completed the stream without answer content. Provider usage was charged."]);
                 return;
             }
 
@@ -144,21 +200,7 @@ trait ChatStreamResponder
                 [$replyText, $app] = $this->extractRunnableApp($accumulated, $agentMode);
                 $replyText = $this->guardedChatReply($prompt, $replyText, $projectFiles, $agentMode, $app !== null);
 
-                $inputTokens = (int) ($usage['prompt_tokens'] ?? $estimatedInputTokens);
-                $outputTokens = (int) ($usage['completion_tokens'] ?? max(1, (int) ceil(mb_strlen($accumulated) / 3.5)));
-                $openRouterUsd = isset($usage['cost']) ? (float) $usage['cost'] : null;
-
-                $reference = 'chat:' . Str::uuid()->toString();
-                $ledger = $deductor->chargeForChat(
-                    $user,
-                    $modelKey,
-                    $openRouterUsd,
-                    $inputTokens,
-                    $outputTokens,
-                    $agentMode,
-                    $reference,
-                    ['skill' => $skillId ?: null],
-                );
+                $ledger = $reservationService->settle($reservation, $attempts, ['outcome' => 'success']);
                 $levelActivity = app(LevelProgression::class)->record(
                     $user,
                     $agentMode ? 'coding_agent_completed' : 'cloud_chat_completed',
@@ -176,6 +218,7 @@ trait ChatStreamResponder
                     'model' => $openRouterModel,
                     'modelKey' => $modelKey,
                     'requestedModelKey' => $requestedModelKey,
+                    'autoRouting' => $autoRouting,
                     'chatReference' => $reference,
                     'creditCost' => abs($ledger->credits_delta),
                     'creditsBalance' => $user->credits_balance,

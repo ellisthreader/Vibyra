@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
+import { issuePreviewCapability, revokePreviewCapability } from "./previewCapabilities.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
 import { STATIC_PREVIEW_ENTRIES } from "./previewResolver.mjs";
 import { escapeRegExp, findFreePort, killTrackedPreview, makeFakeNpm, makeFakePhp, makeProject, makeRouteServer, makeViteLikeServer, occupyPort, proxyPathFor, requestPreview, requestPreviewProxyPath, requestPreviewRefererAsset, requestPreviewServerProxy, requestPreviewUrlProxy, viteErrorHtml } from "./previewTestHelpers.mjs";
@@ -42,7 +43,7 @@ test("preview referer fallback proxies root app paths before phone auth", async 
   }
 });
 
-test("active preview fallback proxies root build chunks and public media without a preview referer", async () => {
+test("root preview assets require an authenticated preview referer", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-root-assets-");
   const app = await makeRouteServer({
     "/build/assets/HomeLanding-DXTU5TCo.js": {
@@ -62,9 +63,7 @@ test("active preview fallback proxies root build chunks and public media without
       body: "<!doctype html><html><body>Projects route</body></html>"
     }
   });
-  const previousSelectedProjectId = appState.selectedProjectId;
   try {
-    appState.selectedProjectId = project.id;
     appState.previewServers[project.id] = {
       command: "test preview",
       proxyTargetUrl: `http://0.0.0.0:${app.port}`,
@@ -73,22 +72,17 @@ test("active preview fallback proxies root build chunks and public media without
     };
 
     const chunk = await requestPreviewRefererAsset("/build/assets/HomeLanding-DXTU5TCo.js", "");
-    assert.equal(chunk.status, 200);
-    assert.match(chunk.body, /\/preview\/server\/.+\/build\/assets\/jsx-runtime-DTJ6URaS\.js/);
+    assert.equal(chunk.served, false);
 
     const nested = await requestPreviewRefererAsset("/build/assets/jsx-runtime-DTJ6URaS.js", "http://vibyra.test/build/assets/HomeLanding-DXTU5TCo.js");
-    assert.equal(nested.status, 200);
-    assert.match(nested.body, /__jsx/);
+    assert.equal(nested.served, false);
 
     const image = await requestPreviewRefererAsset("/images/aromatic-crispy-duck-sample.png", "");
-    assert.equal(image.status, 200);
-    assert.equal(image.headers["Content-Type"], "image/png");
-    assert.equal(image.body, "png");
+    assert.equal(image.served, false);
 
     const route = await requestPreviewRefererAsset("/projects", "");
     assert.equal(route.served, false);
   } finally {
-    appState.selectedProjectId = previousSelectedProjectId;
     delete appState.previewServers[project.id];
     await app.close();
     await cleanup();
@@ -97,6 +91,7 @@ test("active preview fallback proxies root build chunks and public media without
 
 test("preview server proxy forwards Inertia login requests with body, cookies, and rewritten redirects", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-inertia-login-");
+  const credential = issuePreviewCapability(project.id);
   const received = {};
   const app = createServer((req, res) => {
     if (req.url === "/login" && req.method === "POST") {
@@ -154,18 +149,19 @@ test("preview server proxy forwards Inertia login requests with body, cookies, a
         "content-type": "application/x-www-form-urlencoded",
         "cookie": "XSRF-TOKEN=csrf; hke_session=old",
         "origin": "http://vibyra.test",
-        "referer": `http://vibyra.test${previewServerProxyUrl(project.id, TOKEN)}login`,
+        "referer": `http://vibyra.test${previewServerProxyUrl(project.id, credential)}login`,
         "x-inertia": "true",
         "x-requested-with": "XMLHttpRequest",
         "x-xsrf-token": "csrf"
       },
-      method: "POST"
+      method: "POST",
+      token: credential
     });
     assert.equal(response.status, 303);
-    assert.equal(response.headers.Location, `${previewServerProxyUrl(project.id, TOKEN)}dashboard`);
+    assert.equal(response.headers.Location, `${previewServerProxyUrl(project.id, credential)}dashboard`);
     assert.deepEqual(response.headers["Set-Cookie"], [
-      `hke_session=abc; HttpOnly; SameSite=Lax; Path=${previewServerProxyUrl(project.id, TOKEN)}`,
-      `XSRF-TOKEN=csrf-token; SameSite=Lax; Path=${previewServerProxyUrl(project.id, TOKEN)}`
+      `hke_session=abc; HttpOnly; SameSite=Lax; Path=${previewServerProxyUrl(project.id, credential)}`,
+      `XSRF-TOKEN=csrf-token; SameSite=Lax; Path=${previewServerProxyUrl(project.id, credential)}`
     ]);
     assert.equal(response.headers["x-inertia"], "true");
     assert.equal(received.method, "POST");
@@ -177,14 +173,16 @@ test("preview server proxy forwards Inertia login requests with body, cookies, a
     assert.equal(received.origin, `http://127.0.0.1:${port}`);
     assert.equal(received.referer, `http://127.0.0.1:${port}/login`);
     assert.equal(received.forwardedHost, "vibyra.test");
-    assert.equal(received.forwardedPrefix, previewServerProxyUrl(project.id, TOKEN));
+    assert.equal(received.forwardedPrefix, previewServerProxyUrl(project.id, credential));
 
     const inertiaRedirect = await requestPreviewServerProxy(project, "external-redirect", "vibyra.test", {
-      headers: { "x-inertia": "true" }
+      headers: { "x-inertia": "true" },
+      token: credential
     });
     assert.equal(inertiaRedirect.status, 409);
-    assert.equal(inertiaRedirect.headers["X-Inertia-Location"], `${previewServerProxyUrl(project.id, TOKEN)}billing`);
+    assert.equal(inertiaRedirect.headers["X-Inertia-Location"], `${previewServerProxyUrl(project.id, credential)}billing`);
   } finally {
+    revokePreviewCapability(credential);
     delete appState.previewServers[project.id];
     await new Promise((resolve) => app.close(resolve));
     await cleanup();

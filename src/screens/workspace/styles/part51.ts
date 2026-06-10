@@ -1,4 +1,11 @@
 export const part51 = {
+  workspaceMenuAtmosphere: {
+    height: 230,
+    left: -18,
+    position: "absolute",
+    right: -18,
+    top: 0
+  },
   workspaceConnectionIconTile: {
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.06)",
@@ -50,7 +57,8 @@ export const part51 = {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4
+    marginBottom: 4,
+    position: "relative"
   },
   workspaceMenuIconButton: {
     alignItems: "center",

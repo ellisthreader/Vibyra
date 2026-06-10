@@ -1,7 +1,9 @@
 function bindProfileControls(root = profileRenderTarget() || document) {
   root.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
   root.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
+  root.querySelectorAll("[data-billing-plan]").forEach((button) => button.addEventListener("click", () => startDesktopBilling(button.dataset.billingPlan)));
   root.querySelectorAll("[data-profile-select]").forEach((select) => select.addEventListener("change", () => setDesktopPreference(select.dataset.profileSelect, select.value)));
+  bindPlanPickerControls(root);
   bindProfileAppearanceImages(root);
   root.querySelector("#profile-section-search")?.addEventListener("input", (event) => updateProfileSectionSearch(event.target.value));
   root.querySelectorAll("[data-device-menu]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); profileSessionMenuId = profileSessionMenuId === button.dataset.deviceMenu ? "" : button.dataset.deviceMenu; renderProfile(); }));
@@ -21,7 +23,6 @@ function bindProfileAppearanceImages(root = profileRenderTarget() || document) {
     image.addEventListener("error", showFallback, { once: true });
   });
 }
-
 function updateProfileSectionSearch(value) {
   profileSectionSearch = String(value || "");
   const query = profileSectionSearch.trim().toLowerCase();
@@ -33,19 +34,25 @@ function updateProfileSectionSearch(value) {
   });
   document.querySelector(".profile-section-empty")?.classList.toggle("is-visible", shown === 0);
 }
-
 function setProfileSection(section) {
   if (!profileSections().some((item) => item.key === section)) return;
+  if (section !== "billing") profileBillingPlanOpen = false;
   profileActiveSection = section;
   localStorage.setItem(profileSectionKey, section);
   renderProfile();
   if (typeof resetProfileModalScroll === "function") { resetProfileModalScroll(); requestAnimationFrame(() => resetProfileModalScroll()); }
 }
-
 function handleProfileRow(action, key, button) {
   if (action === "section") { setProfileSection(button.dataset.profileValue); return; }
-  if (action === "open-plans") { openTokenModal("plans"); return; }
+  if (action === "open-plans") { showProfilePlanPicker(); return; }
   if (action === "manage-billing") { manageDesktopBilling(); return; }
+  if (action === "change-membership") { showProfilePlanPicker(); return; }
+  if (action === "close-plans") { hideProfilePlanPicker(); return; }
+  if (action === "show-membership-management") { showMembershipManagement(); return; }
+  if (action === "hide-membership-management") { hideMembershipManagement(); return; }
+  if (action === "show-billing-cancel") { showBillingCancellation(); return; }
+  if (action === "hide-billing-cancel") { hideBillingCancellation(); return; }
+  if (action === "submit-billing-cancel") { submitBillingCancellation(); return; }
   if (action === "open-pair") { openPairModal(); return; }
   if (action === "mailto") { window.open("mailto:support@vibyra.app?subject=Vibyra%20Desktop%20support", "_blank", "noopener"); return; }
   if (action === "open-url") { window.open(button.dataset.profileValue, "_blank", "noopener"); return; }
@@ -64,7 +71,6 @@ function handleProfileRow(action, key, button) {
   if (action === "delete-account") { deleteDesktopAccount(); return; }
   if (action === "logout") { if (typeof desktopSignOut === "function") desktopSignOut(); }
 }
-
 function saveProfilePreferencesFromForm() {
   const prefs = desktopPreferences();
   const callName = document.getElementById("profile-call-name"), responseStyle = document.getElementById("profile-response-style"), workType = document.getElementById("profile-work-type"), workOther = document.getElementById("profile-work-other"), instructions = document.getElementById("profile-instructions");
@@ -75,7 +81,6 @@ function saveProfilePreferencesFromForm() {
   if (instructions) prefs.customInstructions = instructions.value.trim();
   saveDesktopPreferences(prefs);
 }
-
 async function saveDesktopProfile() {
   const token = desktopAuthSession()?.token;
   if (!token) { profileFormMessage = "Profile preferences saved. Log in again to update account name or email."; saveProfilePreferencesFromForm(); renderProfile(); return; }
@@ -104,7 +109,6 @@ async function saveDesktopProfile() {
     renderProfile();
   }
 }
-
 async function loadDesktopReferral() {
   const token = desktopAuthSession()?.token;
   if (!token) { profileReferralError = "Log in again to load your invite code."; renderProfile(); return; }
@@ -123,7 +127,6 @@ async function loadDesktopReferral() {
     renderProfile();
   }
 }
-
 async function copyDesktopReferralCode() {
   if (!profileReferral?.code) return;
   try { await navigator.clipboard.writeText(profileReferral.code); } catch {}
@@ -131,9 +134,7 @@ async function copyDesktopReferralCode() {
   renderProfile();
   setTimeout(() => { profileCopiedCode = false; renderProfile(); }, 1400);
 }
-
 function openDesktopReferralLink() { if (profileReferral?.link) window.open(profileReferral.link, "_blank", "noopener"); }
-
 function setDesktopPreference(key, value) {
   const prefs = desktopPreferences();
   if (key === "appearance") prefs.appearance = value;
@@ -143,7 +144,6 @@ function setDesktopPreference(key, value) {
   saveDesktopPreferences(prefs);
   syncProfilePreferenceControls(key, prefs);
 }
-
 function toggleDesktopPreference(key) {
   const prefs = desktopPreferences();
   if (key.startsWith("notifications.")) {
@@ -155,7 +155,6 @@ function toggleDesktopPreference(key) {
   saveDesktopPreferences(prefs);
   syncProfilePreferenceControls(key, prefs);
 }
-
 async function deleteDesktopAccount() {
   const token = desktopAuthSession()?.token;
   const password = document.getElementById("profile-delete-password")?.value || "";
@@ -182,7 +181,6 @@ async function deleteDesktopAccount() {
     if (!deleted) renderProfile();
   }
 }
-
 function confirmClearDesktopCache() {
   const ok = window.confirm("Clear local Vibyra cache? This removes desktop chat history, drafts, project state, terminal sessions, and UI preferences on this computer. Your account stays signed in.");
   if (!ok) return;

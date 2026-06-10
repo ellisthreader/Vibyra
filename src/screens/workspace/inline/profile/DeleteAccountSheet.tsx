@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../../../context/AppContext";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
-import { appApiRequest } from "../../../../utils/appApi";
+import { appApiRequest, RemoteUser } from "../../../../utils/appApi";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
@@ -15,7 +15,11 @@ export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; on
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const canDelete = confirmation.trim().toUpperCase() === "DELETE" && password.length > 0 && !deleting;
+  const [provider, setProvider] = useState<RemoteUser["provider"]>("email");
+  const requiresPassword = provider === "email";
+  const canDelete = confirmation.trim().toUpperCase() === "DELETE"
+    && (!requiresPassword || password.length > 0)
+    && !deleting;
   const email = app.authEmail.trim() || "your Vibyra account";
 
   useEffect(() => {
@@ -24,19 +28,18 @@ export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; on
     setPassword("");
     setError("");
     setDeleting(false);
-  }, [visible]);
+    appApiRequest<{ user: RemoteUser }>("/api/session", {}, app.authToken)
+      .then((result) => setProvider(result.user.provider ?? "email"))
+      .catch(() => setProvider("email"));
+  }, [app.authToken, visible]);
 
   async function confirm() {
     if (!canDelete || !app.authToken) return;
     setDeleting(true);
     setError("");
     try {
-      await appApiRequest<{ ok: true }>("/api/account", {
-        method: "DELETE",
-        body: JSON.stringify({ password })
-      }, app.authToken);
+      await app.deleteAccount(requiresPassword ? password : undefined);
       onCancel();
-      app.signOut();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Could not delete account.";
       setError(message);
@@ -53,7 +56,13 @@ export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; on
         This cannot be undone. If you have an active subscription, manage cancellation from Billing before deleting your account.
       </Text>
       <Field label="Type DELETE to confirm" value={confirmation} onChange={setConfirmation} placeholder="DELETE" />
-      <Field label="Password" value={password} onChange={setPassword} placeholder="Account password" secure />
+      {requiresPassword ? (
+        <Field label="Password" value={password} onChange={setPassword} placeholder="Account password" secure />
+      ) : (
+        <Text style={styles.profileSheetMuted}>
+          You will confirm with {provider === "apple" ? "Apple" : "Google"} before deletion.
+        </Text>
+      )}
       {error ? <Text style={styles.profileSheetMuted}>{error}</Text> : null}
       <View style={styles.profileSheetActionsStack}>
         <Pressable disabled={!canDelete} onPress={confirm} style={[styles.profileSheetDanger, { opacity: canDelete ? 1 : 0.42 }]}>

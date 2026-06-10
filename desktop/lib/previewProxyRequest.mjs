@@ -1,10 +1,11 @@
-import { Buffer } from "node:buffer";
 import { headers } from "./http.mjs";
+import { previewCredentialAllowsProject } from "./previewCapabilities.mjs";
+import { readRawRequestBody } from "./previewProxyBody.mjs";
 import { TOKEN } from "./state.mjs";
 import { rewriteProxyReference } from "./previewProxyReferences.mjs";
 
 
-export async function proxyRequestInit(req, target, proxyBase) {
+export async function proxyRequestInit(req, target, proxyBase, options = {}) {
   if (!req) return { headers: proxyRequestHeaders(req, target, proxyBase), redirect: "manual" };
   const method = String(req.method || "GET").toUpperCase();
   const init = {
@@ -13,7 +14,7 @@ export async function proxyRequestInit(req, target, proxyBase) {
     redirect: "manual"
   };
   if (!["GET", "HEAD"].includes(method)) {
-    init.body = await readRawRequestBody(req);
+    init.body = await readRawRequestBody(req, options.maxBodyBytes);
   }
   return init;
 }
@@ -81,7 +82,11 @@ export function previewRefererToTarget(referer, req, target) {
   try {
     const parsed = new URL(String(referer || ""), `http://${req.headers.host || "localhost"}`);
     const match = parsed.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)\/?(.*)$/);
-    if (!match || decodeURIComponent(match[2]) !== TOKEN) return target.toString();
+    const projectId = match ? decodeURIComponent(match[1]) : "";
+    const credential = match ? decodeURIComponent(match[2]) : "";
+    if (!match || !previewCredentialAllowsProject(credential, projectId, { legacyToken: TOKEN })) {
+      return target.toString();
+    }
     const upstream = new URL(decodeURIComponent(match[3] || ""), `${target.origin}/`);
     upstream.search = parsed.search;
     upstream.hash = parsed.hash;
@@ -89,25 +94,6 @@ export function previewRefererToTarget(referer, req, target) {
   } catch {
     return target.toString();
   }
-}
-
-export function readRawRequestBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (chunk) => {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-      size += buffer.length;
-      if (size > 10_000_000) {
-        reject(new Error("Preview request body too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(buffer);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks)));
-    req.on("error", reject);
-  });
 }
 
 export function proxyResponseHeaders(upstream, contentType, rewriteOptions) {

@@ -30,7 +30,7 @@ export const part19 = {
     backgroundColor: "#0B0D17",
     flex: 1,
     justifyContent: "center",
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   pageHeader: {
     alignItems: "flex-start",

@@ -1,6 +1,10 @@
+import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { appState, event, pushEvents } from "./state.mjs";
+import { desktopAppApiUrl } from "./appApiConfig.mjs";
 
-const API_URL = normalizeApiUrl(process.env.VIBYRA_DESKTOP_API_URL || "http://127.0.0.1:8000");
+const API_URL = desktopAppApiUrl();
 
 export async function verifyAndSetDesktopAccount(token, publicIpOrFetch = "", fetchImpl = fetch) {
   const publicIp = typeof publicIpOrFetch === "function" ? "" : String(publicIpOrFetch || "").trim();
@@ -21,6 +25,7 @@ export async function verifyAndSetDesktopAccount(token, publicIpOrFetch = "", fe
   });
   const payload = await readJson(response);
   if (!response.ok) {
+    clearDesktopAccount("Your Vibyra session expired. Sign in again to continue.");
     const error = new Error(payload?.error || payload?.message || "Vibyra account session could not be verified");
     error.status = response.status || 401;
     throw error;
@@ -44,13 +49,58 @@ export async function verifyAndSetDesktopAccount(token, publicIpOrFetch = "", fe
   return account;
 }
 
-export function clearDesktopAccount() {
+export function clearDesktopAccount(message = "Vibyra Desktop account signed out") {
   appState.desktopAccount = null;
   appState.desktopAccountToken = null;
   appState.pendingPair = null;
   appState.pairedDevice = null;
   appState.phoneSession = null;
-  pushEvents([event("Account", "Vibyra Desktop account signed out", "warning")]);
+  pushEvents([event("Account", message, "warning")]);
+}
+
+export function persistDesktopAccountSession(token, account, { sessionPath } = {}) {
+  const authToken = String(token || "").trim();
+  const accountId = normalizedAccountId(account?.id);
+  if (!authToken || accountId === null) {
+    throw new Error("A verified Vibyra account session is required before persistence");
+  }
+
+  const path = sessionPath || desktopAccountSessionPath();
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  writeFileSync(path, `${JSON.stringify({
+    token: authToken,
+    account,
+    savedAt: new Date().toISOString()
+  })}\n`, { encoding: "utf8", mode: 0o600 });
+  chmodSync(path, 0o600);
+  return path;
+}
+
+export function restoreDesktopAccountSessionSnapshot({ sessionPath } = {}) {
+  const path = sessionPath || desktopAccountSessionPath();
+  try {
+    const snapshot = JSON.parse(readFileSync(path, "utf8"));
+    const token = String(snapshot?.token || "").trim();
+    const account = snapshot?.account;
+    if (!token || normalizedAccountId(account?.id) === null) {
+      removeDesktopAccountSession({ sessionPath: path });
+      return null;
+    }
+    appState.desktopAccountToken = token;
+    appState.desktopAccount = account;
+    return { token, account };
+  } catch {
+    return null;
+  }
+}
+
+export function removeDesktopAccountSession({ sessionPath } = {}) {
+  rmSync(sessionPath || desktopAccountSessionPath(), { force: true });
+}
+
+function desktopAccountSessionPath() {
+  const agentHome = process.env.VIBYRA_AGENT_HOME || join(homedir(), ".vibyra-agent");
+  return join(agentHome, "desktop-account-session.json");
 }
 
 export function sameAccountPairCheck(body) {
@@ -88,6 +138,16 @@ function publicAccount(user) {
     plan,
     planBillingCycle: cycle,
     planRenewsAt: user?.planRenewsAt || user?.plan_renews_at || null,
+    creditsResetAt: user?.creditsResetAt || user?.credits_reset_at || user?.planRenewsAt || user?.plan_renews_at || null,
+    membershipEndsAt: user?.membershipEndsAt || user?.membership_ends_at || null,
+    membershipCancelAtPeriodEnd: Boolean(
+      user?.membershipCancelAtPeriodEnd ?? user?.membership_cancel_at_period_end
+    ),
+    billingProvider: String(user?.billingProvider || user?.billing_provider || ""),
+    canManageStripeBilling: Boolean(user?.canManageStripeBilling ?? user?.can_manage_stripe_billing),
+    planPricePence: numberOrZero(user?.planPricePence ?? user?.plan_price_pence),
+    billingCurrency: String(user?.billingCurrency || user?.billing_currency || "gbp"),
+    billingVatInclusive: Boolean(user?.billingVatInclusive ?? user?.billing_vat_inclusive ?? true),
     creditsBalance: numberOrZero(user?.creditsBalance ?? user?.credits_balance),
     creditsUsed: numberOrZero(user?.creditsUsed ?? user?.credits_used),
     monthlyCredits: numberOrZero(user?.monthlyCredits ?? user?.monthly_credits),
@@ -131,8 +191,4 @@ async function readJson(response) {
   } catch {
     return {};
   }
-}
-
-function normalizeApiUrl(url) {
-  return String(url || "").replace(/\/+$/, "");
 }

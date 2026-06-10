@@ -91,10 +91,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .terminal-model-select-wrap .terminal-model-picker {
-    max-height: min(380px, calc(100vh - 128px));
+    max-height: min(380px, var(--terminal-setup-menu-max-height, calc(100vh - 128px)));
   }
   .terminal-model-select-wrap .terminal-model-scroll {
-    max-height: min(312px, calc(100vh - 214px));
+    max-height: none;
+    min-height: 0;
   }
   .terminal-model-row button {
     width: 100%;

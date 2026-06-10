@@ -1,8 +1,8 @@
 const terminalCompanionWidthKey = "vibyra.desktop.terminalCompanionWidth";
-const terminalCompanionDefaultWidth = 340;
-const terminalCompanionMinimumWidth = 280;
-const terminalCompanionMaximumWidth = 720;
-const terminalCompanionMinimumTerminalWidth = 420;
+const terminalCompanionDefaultWidth = 520;
+const terminalCompanionMinimumWidth = 360;
+const terminalCompanionMaximumWidth = 920;
+const terminalCompanionMinimumTerminalWidth = 480;
 let terminalCompanionWidth = Number(localStorage.getItem(terminalCompanionWidthKey)) || terminalCompanionDefaultWidth;
 let terminalMemoryFullscreen = false;
 let terminalCompanionResizeFrame = 0;

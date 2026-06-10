@@ -1,6 +1,13 @@
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./previewUrls.mjs";
-
+import {
+  legacyPreviewTokenEnabled,
+  previewCredentialAllowsProject,
+  previewCredentialProjectId,
+  previewCredentialTargetId
+} from "./previewCapabilities.mjs";
+import { envFlagEnabled } from "./previewProxyLimits.mjs";
+import { allPreviewServices, previewService } from "./previewServices.mjs";
 
 export function previewReferenceFromReferer(referer, requestUrl) {
   const raw = String(referer || "").trim();
@@ -14,19 +21,22 @@ export function previewReferenceFromReferer(referer, requestUrl) {
   }
 
   let match = refUrl.pathname.match(/^\/preview\/server\/([^/]+)\/([^/]+)(?:\/|$)/);
-  if (match && decodeURIComponent(match[2]) === TOKEN) {
-    return { kind: "server", projectId: decodeURIComponent(match[1]) };
+  if (match && previewCredentialAllowsProject(decodeURIComponent(match[2]), decodeURIComponent(match[1]), { legacyToken: TOKEN })) {
+    return { kind: "server", projectId: decodeURIComponent(match[1]), token: decodeURIComponent(match[2]) };
   }
 
   match = refUrl.pathname.match(/^\/preview\/project\/([^/]+)\/([^/]+)(?:\/|$)/);
-  if (match && decodeURIComponent(match[2]) === TOKEN) {
-    return { kind: "project", projectId: decodeURIComponent(match[1]) };
+  if (match && previewCredentialAllowsProject(decodeURIComponent(match[2]), decodeURIComponent(match[1]), { legacyToken: TOKEN })) {
+    return { kind: "project", projectId: decodeURIComponent(match[1]), token: decodeURIComponent(match[2]) };
   }
 
   match = refUrl.pathname.match(/^\/preview\/proxy-url\/([^/]+)(?:\/|$)/);
-  if (match && decodeURIComponent(match[1]) === TOKEN) {
+  if (match) {
+    const credential = decodeURIComponent(match[1]);
     const target = normalizeProxyTargetUrl(safeUrl(refUrl.searchParams.get("url")));
-    return target ? { kind: "external", target } : null;
+    if (previewProxyTargetAllowed(target, credential)) {
+      return { kind: "external", target, token: credential };
+    }
   }
 
   return null;
@@ -43,34 +53,14 @@ export function canProxyPreviewFallbackPath(pathname) {
     && path !== "/pair/status";
 }
 
-export function activePreviewAssetReference(pathname) {
-  if (!isRootPreviewAssetPath(pathname)) return null;
-  const projectId = activePreviewProjectId();
-  return projectId ? { kind: "server", projectId } : null;
-}
-
-export function activePreviewProjectId() {
-  const selected = appState.selectedProjectId;
-  if (selected && trackedPreviewTarget(selected)) return selected;
-  const running = Object.entries(appState.previewServers)
-    .filter(([, tracked]) => normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url)));
-  return running.length === 1 ? running[0][0] : null;
-}
-
-export function isRootPreviewAssetPath(pathname) {
-  const path = String(pathname || "/").split(/[?#]/)[0];
-  if (!path.startsWith("/")) return false;
-  if (/^\/(?:build\/assets|assets|images|img|fonts|font|media|videos|video|storage)\//i.test(path)) return true;
-  return /\.(?:avif|bmp|css|gif|glb|gltf|ico|jpe?g|js|json|m4v|map|mjs|mov|mp3|mp4|ogg|otf|pdf|png|svg|ttf|wasm|wav|webmanifest|webm|webp|woff2?)$/i.test(path);
-}
-
-export function trackedPreviewTarget(projectId) {
-  const tracked = appState.previewServers[projectId];
+export function trackedPreviewTarget(projectId, credential = "") {
+  const targetId = previewCredentialTargetId(credential, { legacyToken: TOKEN });
+  const tracked = targetId ? previewService(projectId, targetId) : appState.previewServers[projectId];
   return normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url));
 }
 
-export function previewTargetFromProject(projectId, requestedPath) {
-  const targetBase = trackedPreviewTarget(projectId);
+export function previewTargetFromProject(projectId, requestedPath, credential = "") {
+  const targetBase = trackedPreviewTarget(projectId, credential);
   if (!targetBase) return null;
   return new URL(String(requestedPath || "/"), `${targetBase.toString().replace(/\/+$/, "")}/`);
 }
@@ -109,10 +99,15 @@ export function rewriteProxyReference(value, { externalProxy = false, proxyBase,
 export function previewPathForLocalUrl(value, { proxyContext, token, forceUpstream = false }) {
   const target = normalizeProxyTargetUrl(value);
   if (!target || !proxyContext) return null;
-  if (sameOrigin(target, proxyContext.appTarget)) return appProxyPath(proxyContext.appProxyBase, target);
+  if (sameOrigin(target, proxyContext.appTarget)) {
+    return proxyContext.appProxyBase ? appProxyPath(proxyContext.appProxyBase, target) : previewExternalUrl(target, token);
+  }
   if (sameOrigin(target, proxyContext.viteTarget)) {
     if (!forceUpstream && proxyContext.appTarget && isLaravelPublicAssetPath(target.pathname)) {
-      return appProxyPath(proxyContext.appProxyBase, target);
+      const appAsset = new URL(`${target.pathname}${target.search}${target.hash}`, proxyContext.appTarget);
+      return proxyContext.appProxyBase
+        ? appProxyPath(proxyContext.appProxyBase, appAsset)
+        : previewExternalUrl(appAsset, token);
     }
     return previewExternalUrl(target, token);
   }
@@ -130,23 +125,25 @@ export function previewExternalUrl(target, token) {
   return `/preview/proxy-url/${encodeURIComponent(token)}/?url=${encodeURIComponent(normalized.toString())}`;
 }
 
-export function laravelPublicAssetTargetForViteProxy(target) {
-  const context = previewProxyContext(target, TOKEN);
+export function laravelPublicAssetTargetForViteProxy(target, credential) {
+  const projectId = previewCredentialProjectId(credential, { legacyToken: TOKEN });
+  const context = previewProxyContext(target, credential, projectId);
   if (!context?.appTarget || !sameOrigin(normalizeProxyTargetUrl(target), context.viteTarget)) return null;
   if (!isLaravelPublicAssetPath(target.pathname)) return null;
   return new URL(`${target.pathname}${target.search}${target.hash}`, `${context.appTarget.toString().replace(/\/+$/, "")}/`);
 }
 
-export function previewProxyContext(target, token) {
+export function previewProxyContext(target, token, expectedProjectId = "") {
   const normalizedTarget = normalizeProxyTargetUrl(target);
   if (!normalizedTarget) return null;
-  for (const [projectId, tracked] of Object.entries(appState.previewServers)) {
+  for (const { projectId, service: tracked } of allPreviewServices()) {
+    if (expectedProjectId && projectId !== expectedProjectId) continue;
     const appTarget = normalizeProxyTargetUrl(safeUrl(tracked?.proxyTargetUrl || tracked?.url));
     const viteTarget = normalizeProxyTargetUrl(safeUrl(tracked?.viteProxyTargetUrl));
     if (!appTarget && !viteTarget) continue;
     if (sameOrigin(normalizedTarget, appTarget) || sameOrigin(normalizedTarget, viteTarget)) {
       return {
-        appProxyBase: previewServerProxyUrl(projectId, token),
+        appProxyBase: appState.previewServers[projectId] === tracked ? previewServerProxyUrl(projectId, token) : "",
         appTarget,
         projectId,
         viteTarget
@@ -154,6 +151,19 @@ export function previewProxyContext(target, token) {
     }
   }
   return null;
+}
+
+export function previewProxyTargetAllowed(target, credential) {
+  const normalizedTarget = normalizeProxyTargetUrl(target);
+  if (!normalizedTarget || !["http:", "https:"].includes(normalizedTarget.protocol)) return false;
+
+  const projectId = previewCredentialProjectId(credential, { legacyToken: TOKEN });
+  const contextProjectId = previewProxyContext(normalizedTarget, credential, projectId)?.projectId || "";
+  if (credential === TOKEN) {
+    if (!legacyPreviewTokenEnabled()) return false;
+    return Boolean(contextProjectId) || legacyArbitraryPreviewProxyEnabled();
+  }
+  return Boolean(projectId && projectId === contextProjectId);
 }
 
 export function sameOrigin(a, b) {
@@ -197,3 +207,5 @@ export function normalizeProxyTargetUrl(target) {
   if (isLocalPreviewHost(next.hostname)) next.hostname = "127.0.0.1";
   return next;
 }
+
+function legacyArbitraryPreviewProxyEnabled() { return envFlagEnabled("VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED"); }

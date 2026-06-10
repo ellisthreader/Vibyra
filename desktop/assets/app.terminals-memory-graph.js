@@ -1,18 +1,22 @@
 function terminalMemoryGraphHtml() {
+  terminalMemoryGraphSyncSize();
   const model = terminalMemoryGraphModel(terminalMemoryState.nodes);
   const transform = terminalMemoryGraphTransform();
   return `<section class="terminal-memory-graph" data-terminal-memory-graph>
     <div class="terminal-memory-graph-meta">
       <div><small>Project brain</small><strong>${model.documents} notes · ${model.edges.length} connections</strong></div>
-      <div class="terminal-memory-graph-controls" aria-label="Graph controls">
-        <button type="button" data-terminal-memory-graph-zoom="out" aria-label="Zoom out">${icon("minus")}</button>
-        <span data-terminal-memory-graph-scale>${Math.round(terminalMemoryState.graphScale * 100)}%</span>
-        <button type="button" data-terminal-memory-graph-zoom="in" aria-label="Zoom in">${icon("plus")}</button>
-        <button type="button" data-terminal-memory-graph-zoom="fit" aria-label="Reset graph view">Fit</button>
+      <div class="terminal-memory-graph-meta-actions">
+        ${terminalMemoryGraphSummaryHtml(model)}
+        <div class="terminal-memory-graph-controls" aria-label="Graph controls">
+          <button type="button" data-terminal-memory-graph-zoom="out" aria-label="Zoom out">${icon("minus")}</button>
+          <span data-terminal-memory-graph-scale>${Math.round(terminalMemoryState.graphScale * 100)}%</span>
+          <button type="button" data-terminal-memory-graph-zoom="in" aria-label="Zoom in">${icon("plus")}</button>
+          <button type="button" data-terminal-memory-graph-zoom="fit" aria-label="Reset graph view">Fit</button>
+        </div>
       </div>
     </div>
     <div class="terminal-memory-graph-canvas" data-terminal-memory-graph-canvas>
-      <svg viewBox="0 0 ${terminalMemoryGraphSize.width} ${terminalMemoryGraphSize.height}" role="img" aria-label="Project memory graph">
+      <svg viewBox="0 0 ${terminalMemoryGraphSize.width} ${terminalMemoryGraphSize.height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Project memory graph">
         ${terminalMemoryGraphVisualsHtml(model)}
         <g data-terminal-memory-graph-scene transform="${transform}">
           <g class="terminal-memory-graph-edges">
@@ -24,10 +28,6 @@ function terminalMemoryGraphHtml() {
         </g>
       </svg>
     </div>
-    <footer class="terminal-memory-graph-footer">
-      <span class="terminal-memory-graph-hint">Scroll to zoom · drag to move</span>
-      ${terminalMemoryGraphSummaryHtml(model)}
-    </footer>
   </section>`;
 }
 
@@ -109,6 +109,7 @@ function bindTerminalMemoryGraphEvents(root) {
 
 function bindTerminalMemoryGraphViewport(canvas) {
   if (!canvas) return;
+  bindTerminalMemoryGraphResize(canvas);
   let drag = null;
   canvas.addEventListener("wheel", (event) => {
     event.preventDefault();
@@ -134,6 +135,24 @@ function bindTerminalMemoryGraphViewport(canvas) {
   };
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointercancel", stop);
+}
+
+function bindTerminalMemoryGraphResize(canvas) {
+  if (typeof ResizeObserver === "undefined" || canvas.dataset.terminalMemoryGraphResizeBound) return;
+  canvas.dataset.terminalMemoryGraphResizeBound = "1";
+  let previous = `${terminalMemoryGraphSize.width}:${terminalMemoryGraphSize.height}`;
+  const observer = new ResizeObserver(() => {
+    const measured = terminalMemoryGraphMeasureSize();
+    const next = `${measured.width}:${measured.height}`;
+    if (next === previous || Math.abs(measured.height - terminalMemoryGraphSize.height) < 80) return;
+    previous = next;
+    observer.disconnect();
+    terminalMemoryGraphSize = measured;
+    terminalMemoryState.graphPanX = 0;
+    terminalMemoryState.graphPanY = 0;
+    terminalMemoryRefresh();
+  });
+  observer.observe(canvas);
 }
 
 function terminalMemoryGraphZoom(action) {
