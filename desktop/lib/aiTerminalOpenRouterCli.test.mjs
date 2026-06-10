@@ -20,7 +20,8 @@ import {
   resolveAutoTerminalModel,
   responsesOutputText,
   terminalColorEnabled,
-  vibyraAgentArgs
+  vibyraAgentArgs,
+  vibyraAgentRuntimeIdentity
 } from "./aiTerminalOpenRouterCli.mjs";
 
 const source = readFileSync(new URL("./aiTerminalOpenRouterCli.mjs", import.meta.url), "utf8");
@@ -35,6 +36,8 @@ test("Vibyra Agent keeps the real billed tool engine and serialized input", () =
 });
 
 test("agent arguments preserve standard, full, and persistent resume behavior", () => {
+  const previousInstructionsFile = process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE;
+  process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE = "/tmp/vibyra-agent-instructions.md";
   const standard = vibyraAgentArgs({
     desktopUrl: "http://127.0.0.1:4317",
     model: "deepseek/deepseek-chat-v3.1",
@@ -60,12 +63,26 @@ test("agent arguments preserve standard, full, and persistent resume behavior", 
   assert.ok(standard.includes('model_provider="vibyra"'));
   assert.ok(standard.includes('model_providers.vibyra.base_url="http://127.0.0.1:4317/desktop/v1"'));
   assert.ok(standard.includes('model_providers.vibyra.env_key="VIBYRA_TERMINAL_GATEWAY_TOKEN"'));
+  assert.ok(standard.includes('model_instructions_file="/tmp/vibyra-agent-instructions.md"'));
+  assert.ok(standard.some((value) => value.includes("Active inference model: deepseek/deepseek-chat-v3.1")));
   assert.ok(standard.includes('shell_environment_policy.exclude=["VIBYRA_TERMINAL_GATEWAY_TOKEN"]'));
   assert.ok(standard.includes("workspace-write"));
   assert.ok(full.includes("--dangerously-bypass-approvals-and-sandbox"));
   assert.deepEqual(resumed.slice(0, 3), ["exec", "resume", "--json"]);
   assert.equal(resumed.at(-2), "thread-123");
   assert.equal(resumed.at(-1), "-");
+  if (previousInstructionsFile === undefined) delete process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE;
+  else process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE = previousInstructionsFile;
+});
+
+test("Vibyra Agent gives every OpenRouter model a truthful runtime identity", () => {
+  const instructions = vibyraAgentRuntimeIdentity("deepseek/deepseek-v4-flash");
+
+  assert.match(instructions, /Active inference model: deepseek\/deepseek-v4-flash/);
+  assert.match(instructions, /API route: OpenRouter/);
+  assert.match(instructions, /User-facing runtime: Vibyra Agent/);
+  assert.match(instructions, /Codex is only the local file\/shell tool orchestrator/);
+  assert.match(instructions, /Do not identify as Codex, Codex CLI, OpenAI/);
 });
 
 test("gateway credentials stay out of direct shell commands and shutdown reaches active work", () => {

@@ -52,7 +52,7 @@ tool-capable catalog model without a registered official CLI uses the bundled
 foreground `Vibyra Agent` runtime. Vibyra Agent has one honest shared command
 set and varies only provider logo/mark, accent, name, model label, and status
 copy; it never claims to be that provider's native CLI. Launch contract version
-`11` invalidates stale workers. Runtime selection is model-family-aware rather
+`15` invalidates stale workers. Runtime selection is model-family-aware rather
 than company-wide: `google/gemini-*` remains native Gemini CLI, while
 `google/gemma-*` and equivalent API-only families from native-CLI companies use
 Vibyra Agent with the exact selected model.
@@ -103,6 +103,13 @@ separate Terminal tool panel. The picker labels rows `Native CLI`, `Vibyra
 Agent`, `Auto routing`, `Download`, or `Unavailable` while retaining each
 company's normal logo. Do not bundle Claude Code by default without explicit
 Anthropic redistribution permission.
+
+Vibyra Agent must replace the bundled Codex engine's model-visible base prompt
+with a Vibyra-owned `model_instructions_file`. Every new and resumed turn also
+passes `developer_instructions` containing the exact selected OpenRouter slug.
+The remote model may know that Codex supplies hidden local file/shell
+orchestration, but it must identify itself as the selected model running through
+OpenRouter via Vibyra Agent, never as Codex, OpenAI, or a provider-native CLI.
 
 The terminal project picker includes a synthetic `full-pc` scope labeled
 `Full PC`. `desktop/lib/projects.mjs` resolves that fixed ID to the current
@@ -1213,7 +1220,7 @@ below $5/M; balanced allows $5/M prompt and $20/M completion; anything higher
 is premium. This prevents a free-plan picker selection from becoming a 403
 only after terminal launch.
 
-The launch contract is version 12. Persisted terminals with earlier provider
+The launch contract is version 15. Persisted terminals with earlier provider
 ownership metadata must be rebuilt.
 
 ## June 10, 2026 - Permanent Terminal Bottom Anchoring

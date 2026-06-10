@@ -545,6 +545,7 @@ async function sendAgentPrompt({ prompt, model, reasoningEffort, color, agentSes
 }
 
 export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "standard", prompt, reasoningEffort = "medium", threadId = "" }) {
+  const instructionsFile = String(process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE || "").trim();
   const provider = [
     "-c", 'model_provider="vibyra"',
     "-c", 'model_providers.vibyra.name="Vibyra Agent"',
@@ -556,6 +557,10 @@ export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "
     "-c", 'shell_environment_policy.exclude=["VIBYRA_TERMINAL_GATEWAY_TOKEN"]',
     "-c", 'approval_policy="never"'
   ];
+  if (instructionsFile) {
+    provider.push("-c", `model_instructions_file=${JSON.stringify(instructionsFile)}`);
+  }
+  provider.push("-c", `developer_instructions=${JSON.stringify(vibyraAgentRuntimeIdentity(model))}`);
   const effort = normalizeReasoningEffort(reasoningEffort);
   if (effort !== "default" && effort !== "none") provider.push("-c", `model_reasoning_effort="${effort}"`);
   const access = normalizePermissionMode(permissionMode) === "full"
@@ -572,6 +577,18 @@ export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "
   return threadId
     ? ["exec", "resume", ...shared, threadId, "-"]
     : ["exec", "--color", "never", ...shared, "-"];
+}
+
+export function vibyraAgentRuntimeIdentity(model) {
+  const selectedModel = String(model || "auto").trim() || "auto";
+  return [
+    "Vibyra Agent runtime identity:",
+    `- Active inference model: ${selectedModel}`,
+    "- API route: OpenRouter",
+    "- User-facing runtime: Vibyra Agent",
+    "- Codex is only the local file/shell tool orchestrator. Do not identify as Codex, Codex CLI, OpenAI, or a provider-native CLI.",
+    `- If asked which model you are, answer that the active model is ${selectedModel}, running through OpenRouter via Vibyra Agent.`
+  ].join("\n");
 }
 
 export function parseAgentEvent(line) {

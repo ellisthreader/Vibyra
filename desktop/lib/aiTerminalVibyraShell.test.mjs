@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
@@ -150,6 +150,12 @@ test("Vibyra Agent receives the exact model and only its terminal-scoped gateway
 
     assert.equal(env.VIBYRA_OPENROUTER_MODEL, "deepseek/deepseek-v3");
     assert.equal(env.VIBYRA_TERMINAL_GATEWAY_TOKEN, "scoped-gateway-token");
+    assert.ok(env.VIBYRA_AGENT_INSTRUCTIONS_FILE);
+    assert.equal(existsSync(env.VIBYRA_AGENT_INSTRUCTIONS_FILE), true);
+    const instructions = readFileSync(env.VIBYRA_AGENT_INSTRUCTIONS_FILE, "utf8");
+    assert.match(instructions, /You are Vibyra Agent/);
+    assert.match(instructions, /exact model selected in the Vibyra terminal through OpenRouter/);
+    assert.match(instructions, /Never identify yourself as Codex, Codex CLI, OpenAI/);
     assert.equal(env.OPENROUTER_API_KEY, undefined);
     assert.match(env.CODEX_HOME, /managed-deepseek$/);
     assert.equal(env.VIBYRA_AGENT_ENGINE, "/usr/local/bin/codex");

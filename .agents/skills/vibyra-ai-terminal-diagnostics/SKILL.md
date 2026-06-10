@@ -48,6 +48,12 @@ For Vibyra tokens:
   terminal-scoped Vibyra Responses gateway. Give it an isolated `CODEX_HOME`
   without auth, user config, plugins, or skills. If the engine is unavailable,
   fail closed instead of falling back to `/desktop/chat`.
+- Replace Codex's model-visible base instructions with a Vibyra-owned
+  `model_instructions_file`, and pass the exact selected OpenRouter slug in
+  `developer_instructions` on every new or resumed turn. If an API-only model
+  says it is Codex, Codex CLI, or OpenAI, capture the outbound Responses payload:
+  the expected contract names Vibyra Agent in `instructions`, the exact model
+  in the runtime identity, and Codex only as the hidden local tool orchestrator.
 - Its custom Codex provider must declare
   `env_key="VIBYRA_TERMINAL_GATEWAY_TOKEN"`. Exclude that variable through
   `shell_environment_policy.exclude` so model-generated commands cannot read

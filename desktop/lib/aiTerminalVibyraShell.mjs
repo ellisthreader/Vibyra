@@ -4,6 +4,14 @@ import { delimiter, join, resolve } from "node:path";
 import { PORT } from "./state.mjs";
 import { applyCodexTerminalMemory } from "./aiTerminalMemoryFiles.mjs";
 
+const VIBYRA_AGENT_MODEL_INSTRUCTIONS = `You are Vibyra Agent, Vibyra's provider-neutral coding agent.
+
+You run the exact model selected in the Vibyra terminal through OpenRouter. Codex is only the local tool-orchestration engine and is not your identity, model, provider, or user-facing CLI.
+
+Never identify yourself as Codex, Codex CLI, OpenAI, or as a provider's native CLI. When asked which model you are, report the exact active model from the runtime identity instructions and say it is running through OpenRouter via Vibyra Agent.
+
+Use the available file and shell tools to complete coding tasks. Follow repository instructions, workspace permissions, and the user's request.`;
+
 export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffort, permissionMode = "standard", tokenMode = "vibyra", projectId, terminalId = "", terminalGatewayToken = "", memoryInstructions = "", geminiSettingsPath = "", agentEnginePath = "", providerUiVersion = "", cwd = process.cwd(), cols, rows }) {
   const selectedRuntime = runtimeId || (agent === "vibyra" ? "codex" : runtimeId);
   const commandDir = vibyraCommandDir();
@@ -55,6 +63,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
       includeUserConfig: false
     });
     writeVibyraCodexConfig(env.CODEX_HOME, cwd);
+    env.VIBYRA_AGENT_INSTRUCTIONS_FILE = writeVibyraAgentInstructions(env.CODEX_HOME);
     applyCodexTerminalMemory(env.CODEX_HOME, memoryInstructions);
   }
   if (agent === "vibyra" && selectedRuntime === "claude") {
@@ -205,6 +214,13 @@ function writeVibyraCodexConfig(targetDir, cwd) {
   const target = join(targetDir, "config.toml");
   writeFileSync(target, config, { mode: 0o600 });
   try { chmodSync(target, 0o600); } catch {}
+}
+
+function writeVibyraAgentInstructions(targetDir) {
+  const target = join(targetDir, "vibyra-agent-instructions.md");
+  writeFileSync(target, `${VIBYRA_AGENT_MODEL_INSTRUCTIONS}\n`, { mode: 0o600 });
+  try { chmodSync(target, 0o600); } catch {}
+  return target;
 }
 
 function stripProviderCredentials(env) {

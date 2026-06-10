@@ -96,7 +96,7 @@ test("unqualified unknown models and Auto have no adapter", () => {
 });
 
 test("registry and nested definitions are immutable", () => {
-  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 12);
+  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 15);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai.aliases), true);
