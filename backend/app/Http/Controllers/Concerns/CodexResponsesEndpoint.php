@@ -19,6 +19,7 @@ use Throwable;
 
 trait CodexResponsesEndpoint
 {
+    use CodexChatCompletionsCompatibility;
     use CodexResponsesStreaming;
 
     public function codexResponses(Request $request): Response
@@ -112,10 +113,19 @@ trait CodexResponsesEndpoint
         unset($payload['client_metadata']);
 
         try {
+            $reservationService->markProviderStarted($reservation);
+            if ($this->codexUsesChatCompletions($resolvedModel)) {
+                return $this->codexChatCompletions(
+                    $payload,
+                    $reservationService,
+                    $reservation,
+                    $inputTokens,
+                    $maxOutputTokens,
+                );
+            }
             $client = app()->bound('vibyra.openrouter_responses_client')
                 ? app('vibyra.openrouter_responses_client')
                 : new GuzzleClient(['timeout' => 300, 'connect_timeout' => 10, 'http_errors' => false]);
-            $reservationService->markProviderStarted($reservation);
             $provider = $client->post((string) config('services.openrouter.responses_url'), [
                 'headers' => [
                     'Authorization' => 'Bearer '.$apiKey,

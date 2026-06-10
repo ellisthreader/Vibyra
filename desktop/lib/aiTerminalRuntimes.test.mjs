@@ -3,13 +3,13 @@ import { test } from "node:test";
 import { TERMINAL_RUNTIMES } from "./aiTerminalRuntimeCatalog.mjs";
 import { terminalRuntimeForModel, terminalRuntimeState } from "./aiTerminalRuntimes.mjs";
 
-test("maps models with native coding CLIs to managed runtimes", () => {
+test("maps official CLI models natively and API-only models to Vibyra Agent", () => {
   assert.equal(terminalRuntimeForModel("gpt-5.5"), "codex");
   assert.equal(terminalRuntimeForModel("anthropic/claude-opus-4.8"), "claude");
   assert.equal(terminalRuntimeForModel("google/gemini-3.1-pro"), "gemini");
-  assert.equal(terminalRuntimeForModel("qwen/qwen3-coder"), "qwen");
-  assert.equal(terminalRuntimeForModel("mistralai/devstral-2"), "mistral");
-  assert.equal(terminalRuntimeForModel("moonshotai/kimi-k2"), "kimi");
+  assert.equal(terminalRuntimeForModel("qwen/qwen3-coder"), "vibyra-agent");
+  assert.equal(terminalRuntimeForModel("mistralai/devstral-2"), "vibyra-agent");
+  assert.equal(terminalRuntimeForModel("moonshotai/kimi-k2"), "vibyra-agent");
 });
 
 test("unknown qualified providers use Vibyra Agent while unqualified models fail closed", () => {

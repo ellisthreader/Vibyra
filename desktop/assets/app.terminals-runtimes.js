@@ -26,7 +26,12 @@ function terminalRuntimeById(id) {
 
 function terminalExecutionRuntimeForModel(model, tokenMode = "vibyra") {
   const nativeRuntime = terminalNativeRuntimeForModel(model);
-  if (tokenMode === "provider") return nativeRuntime;
+  if (tokenMode === "provider") {
+    return ["codex", "claude", "gemini"].includes(nativeRuntime) ? nativeRuntime : "";
+  }
+  if (["qwen", "kimi", "mistral"].includes(nativeRuntime)) {
+    return terminalBundledAgentRuntime.id;
+  }
   return nativeRuntime || terminalBundledAgentRuntime.id;
 }
 

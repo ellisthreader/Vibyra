@@ -84,9 +84,10 @@ function normalizeModel(model) {
   const label = trimCompany(String(model?.name || id), rawCompany).slice(0, MAX_LABEL);
   if (!isFeaturedCompany(rawCompany)) return null;
   if (!isGeneralChatModel(id, label, output)) return null;
-  const price = priceNumber(model?.pricing?.prompt) + priceNumber(model?.pricing?.completion);
-  const free = id.endsWith(":free") || price === 0;
-  const tier = modelTier(id, label, price, free);
+  const promptPrice = priceNumber(model?.pricing?.prompt);
+  const completionPrice = priceNumber(model?.pricing?.completion);
+  const free = id.endsWith(":free") || (promptPrice === 0 && completionPrice === 0);
+  const tier = modelTier(promptPrice, completionPrice, free);
   const quality = qualityScore(id, label, free);
   return {
     key: id,
@@ -198,12 +199,11 @@ function providerKey(id, company) {
   return slugProvider || "openrouter";
 }
 
-function modelTier(id, label, price, free) {
-  const text = `${id} ${label}`.toLowerCase();
+function modelTier(promptPrice, completionPrice, free) {
   if (free) return "free";
-  if (price >= 0.00002 || /\b(opus|ultra|max|pro)\b/.test(text)) return "premium";
-  if (price >= 0.000004 || /\b(sonnet|medium|large|70b|120b|reasoning)\b/.test(text)) return "balanced";
-  return "budget";
+  if (completionPrice <= 0.000005 && promptPrice <= 0.000001) return "budget";
+  if (completionPrice <= 0.00002 && promptPrice <= 0.000005) return "balanced";
+  return "premium";
 }
 
 function qualityScore(id, label, free) {

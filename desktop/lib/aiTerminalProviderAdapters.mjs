@@ -1,4 +1,4 @@
-export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 11;
+export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 12;
 
 const PROVIDER_DEFINITIONS = [
   {
@@ -34,30 +34,30 @@ const PROVIDER_DEFINITIONS = [
   {
     providerId: "qwen",
     aliases: ["qwen", "alibaba"],
-    runtimeId: "qwen",
-    adapterId: "chat-completions",
-    protocol: "openai-chat-completions",
-    managedCreditsReady: false,
+    runtimeId: "vibyra-agent",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    managedCreditsReady: true,
     personalAccountReady: false,
     modelPrefixes: ["qwen-", "qwen2", "qwen3"]
   },
   {
     providerId: "moonshot",
     aliases: ["moonshot", "moonshotai", "kimi"],
-    runtimeId: "kimi",
+    runtimeId: "vibyra-agent",
     adapterId: "responses",
     protocol: "openai-responses",
-    managedCreditsReady: false,
+    managedCreditsReady: true,
     personalAccountReady: false,
     modelPrefixes: ["kimi-"]
   },
   {
     providerId: "mistral",
     aliases: ["mistral", "mistralai"],
-    runtimeId: "mistral",
+    runtimeId: "vibyra-agent",
     adapterId: "responses",
     protocol: "openai-responses",
-    managedCreditsReady: false,
+    managedCreditsReady: true,
     personalAccountReady: false,
     modelPrefixes: ["mistral-", "ministral-", "codestral-", "devstral-"]
   }

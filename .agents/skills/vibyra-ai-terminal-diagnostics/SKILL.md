@@ -483,6 +483,14 @@ git diff --check
 - Copying ChatGPT auth or API credentials into Vibyra-token sessions.
 - Assuming a downloaded provider CLI can use Vibyra credits without a
   compatible protocol adapter.
+- Leaving a provider-qualified model attached to a disabled native adapter
+  after the bundled Vibyra Agent exists. Qwen, Moonshot/Kimi, and Mistral
+  models must use the exact-model Vibyra Agent route until their managed-credit
+  native adapters are enabled end to end.
+- Sending every exact-model Vibyra Agent request to OpenRouter's Responses
+  endpoint. Non-OpenAI models can advertise tools while that endpoint still
+  returns HTTP 500; use the backend Responses-to-Chat-Completions compatibility
+  adapter and synthesize Responses text and function-call events for Codex.
 - Trusting loopback requests without a terminal-bound gateway credential.
 - Falling through to an unrestricted interactive project shell after a
   Standard-access AI process exits.
@@ -508,6 +516,8 @@ git diff --check
 - Fix ownership and routing before styling.
 - Preserve real native TUI behavior where mapped; preserve the honest Vibyra
   Agent contract for API-only providers.
+- Keep picker tiers identical to backend dynamic pricing thresholds. A model
+  shown as budget in the picker must not resolve as balanced in billing.
 - Report actual provider failures.
 - Test both the rejected implementation and intended product boundary.
 - Update `Vibyra/_ai/Desktop/AI Terminals.md` when the contract changes.

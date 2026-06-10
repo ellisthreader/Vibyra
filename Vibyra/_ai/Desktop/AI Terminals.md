@@ -1192,6 +1192,30 @@ node --test desktop/lib/localAi.test.mjs desktop/lib/desktopActions.test.mjs des
 node --test desktop/lib/aiTerminalPersistentProcess.test.mjs desktop/lib/ptyTerminalsSocket.test.mjs desktop/lib/terminalWorktrees.test.mjs
 ```
 
+## June 10, 2026 - Generalized API-Only Provider Routing
+
+Every provider-qualified OpenRouter model without a production-ready managed
+native adapter uses the bundled exact-model Vibyra Agent runtime. This includes
+Qwen, Moonshot/Kimi, and Mistral as well as dynamically discovered providers
+such as DeepSeek and xAI. Their dormant native runtime catalog entries must not
+block Vibyra-credit launches or appear as required downloads.
+
+OpenRouter's Responses endpoint returns HTTP 500 for some valid non-OpenAI
+tool models, including observed DeepSeek V4 Flash and Qwen 3.5 9B requests.
+The backend therefore sends non-OpenAI Codex traffic through Chat Completions,
+translates Responses history and tools into chat messages, and synthesizes
+Responses text/function-call events back to the Codex engine. Billing settles
+from the Chat Completions usage payload under the exact selected model.
+
+Keep the picker and backend on the same dynamic pricing tier thresholds:
+budget requires prompt pricing at or below $1/M and completion pricing at or
+below $5/M; balanced allows $5/M prompt and $20/M completion; anything higher
+is premium. This prevents a free-plan picker selection from becoming a 403
+only after terminal launch.
+
+The launch contract is version 12. Persisted terminals with earlier provider
+ownership metadata must be rebuilt.
+
 ## June 10, 2026 - Permanent Terminal Bottom Anchoring
 
 Observed failure:

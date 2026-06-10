@@ -301,25 +301,28 @@ class VibyraCodexResponsesApiTest extends TestCase
             'google/gemini-3.5-flash' => ['tools'],
         ]);
         $history = [];
-        $event = [
-            'type' => 'response.completed',
-            'response' => [
-                'usage' => [
-                    'input_tokens' => 12_500,
-                    'output_tokens' => 100,
-                    'cost' => 0.02,
-                ],
-            ],
-        ];
         $stack = HandlerStack::create(new MockHandler([
             new GuzzleResponse(
                 200,
-                ['Content-Type' => 'text/event-stream'],
-                'data: '.json_encode($event)."\n\n"
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 'chat_gemini_quota',
+                    'choices' => [[
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => 'Gemini terminal ready.',
+                        ],
+                    ]],
+                    'usage' => [
+                        'prompt_tokens' => 12_500,
+                        'completion_tokens' => 100,
+                        'cost' => 0.02,
+                    ],
+                ])
             ),
         ]));
         $stack->push(Middleware::history($history));
-        app()->instance('vibyra.openrouter_responses_client', new GuzzleClient(['handler' => $stack]));
+        app()->instance('vibyra.openrouter_chat_client', new GuzzleClient(['handler' => $stack]));
 
         $token = $this->codexUserToken('gemini-realistic-burst@example.com');
         User::where('email', 'gemini-realistic-burst@example.com')->update([
@@ -345,7 +348,7 @@ class VibyraCodexResponsesApiTest extends TestCase
         ], ['Authorization' => "Bearer {$token}"]);
 
         $response->assertOk();
-        $response->streamedContent();
+        $this->assertStringContainsString('Gemini terminal ready.', $response->getContent());
         $this->assertCount(1, $history);
         $reservation = ChatCostReservation::latest('id')->firstOrFail();
         $this->assertGreaterThan(
@@ -447,19 +450,24 @@ class VibyraCodexResponsesApiTest extends TestCase
             ]),
         ]);
         $history = [];
-        $event = [
-            'type' => 'response.completed',
-            'response' => ['usage' => ['input_tokens' => 20, 'output_tokens' => 5]],
-        ];
         $stack = HandlerStack::create(new MockHandler([
             new GuzzleResponse(
                 200,
-                ['Content-Type' => 'text/event-stream'],
-                'data: '.json_encode($event)."\n\n"
+                ['Content-Type' => 'application/json'],
+                json_encode([
+                    'id' => 'chat_dynamic',
+                    'choices' => [[
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => 'Dynamic terminal ready.',
+                        ],
+                    ]],
+                    'usage' => ['prompt_tokens' => 20, 'completion_tokens' => 5],
+                ])
             ),
         ]));
         $stack->push(Middleware::history($history));
-        app()->instance('vibyra.openrouter_responses_client', new GuzzleClient(['handler' => $stack]));
+        app()->instance('vibyra.openrouter_chat_client', new GuzzleClient(['handler' => $stack]));
         $token = $this->codexUserToken('dynamic-terminal-model@example.com');
 
         $response = $this->post('/api/codex/responses', [
@@ -469,15 +477,75 @@ class VibyraCodexResponsesApiTest extends TestCase
         ], ['Authorization' => "Bearer {$token}"]);
 
         $response->assertOk();
-        $response->streamedContent();
+        $this->assertStringContainsString('Dynamic terminal ready.', $response->getContent());
+        $this->assertStringContainsString('response.completed', $response->getContent());
         $this->assertCount(1, $history);
         $payload = json_decode((string) $history[0]['request']->getBody(), true);
         $this->assertSame('deepseek/deepseek-v4-flash', $payload['model'] ?? null);
+        $this->assertFalse($payload['stream'] ?? true);
+        $this->assertSame('Inspect this repository.', $payload['messages'][0]['content'] ?? null);
         $this->assertDatabaseHas('chat_cost_reservations', [
             'model_key' => 'deepseek/deepseek-v4-flash',
             'status' => 'settled',
         ]);
         Http::assertSentCount(1);
+    }
+
+    public function test_dynamic_terminal_chat_compatibility_preserves_tool_calls(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $this->setTerminalModelCapabilities([
+            'qwen/qwen3.5-9b' => ['tools', 'reasoning'],
+        ]);
+        $history = [];
+        $stack = HandlerStack::create(new MockHandler([
+            new GuzzleResponse(200, ['Content-Type' => 'application/json'], json_encode([
+                'id' => 'chat_tool_call',
+                'choices' => [[
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [[
+                            'id' => 'call_shell_1',
+                            'type' => 'function',
+                            'function' => [
+                                'name' => 'shell',
+                                'arguments' => '{"command":"pwd"}',
+                            ],
+                        ]],
+                    ],
+                ]],
+                'usage' => ['prompt_tokens' => 30, 'completion_tokens' => 8],
+            ])),
+        ]));
+        $stack->push(Middleware::history($history));
+        app()->instance('vibyra.openrouter_chat_client', new GuzzleClient(['handler' => $stack]));
+        $token = $this->codexUserToken('dynamic-tool-call@example.com');
+
+        $response = $this->post('/api/codex/responses', [
+            'model' => 'qwen/qwen3.5-9b',
+            'input' => [
+                ['role' => 'user', 'content' => [['type' => 'input_text', 'text' => 'Inspect the folder.']]],
+                ['type' => 'function_call', 'id' => 'call_previous', 'name' => 'shell', 'arguments' => '{"command":"ls"}'],
+                ['type' => 'function_call_output', 'id' => 'call_previous', 'output' => 'README.md'],
+            ],
+            'tools' => [[
+                'type' => 'function',
+                'name' => 'shell',
+                'description' => 'Run a command',
+                'parameters' => ['type' => 'object', 'properties' => []],
+            ]],
+            'stream' => true,
+        ], ['Authorization' => "Bearer {$token}"]);
+
+        $response->assertOk();
+        $content = $response->getContent();
+        $this->assertStringContainsString('response.function_call_arguments.delta', $content);
+        $this->assertStringContainsString('"call_id":"call_shell_1"', $content);
+        $payload = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertSame('call_previous', $payload['messages'][1]['tool_calls'][0]['id'] ?? null);
+        $this->assertSame('call_previous', $payload['messages'][2]['tool_call_id'] ?? null);
+        $this->assertSame('shell', $payload['tools'][0]['function']['name'] ?? null);
     }
 
     public function test_codex_responses_rejects_chat_only_model_before_reservation_or_dispatch(): void

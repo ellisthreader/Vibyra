@@ -42,7 +42,7 @@ test("Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise", ()
   );
   assert.equal(
     vm.runInContext('terminalExecutionRuntimeForModel({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")', context),
-    "qwen"
+    "vibyra-agent"
   );
   assert.equal(
     vm.runInContext('terminalExecutionRuntimeForModel({ key: "deepseek/v3", provider: "deepseek" }, "vibyra")', context),
@@ -54,7 +54,7 @@ test("Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise", ()
   );
 });
 
-test("model picker owns CLI download state without a standalone terminal tool panel", () => {
+test("model picker shows Vibyra Agent for API-only provider models", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -70,19 +70,19 @@ test("model picker owns CLI download state without a standalone terminal tool pa
     'terminalModelCliControl({ key: "gpt-5.5", provider: "openai" }, "vibyra")',
     context
   );
-  const download = vm.runInContext(
+  const agent = vm.runInContext(
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
 
   assert.match(ready, /terminal-model-runtime-status native/);
   assert.match(ready, />Native CLI</);
-  assert.match(download, /data-terminal-runtime-install="qwen"/);
-  assert.match(download, /aria-label="Download Qwen Code"/);
-  assert.match(download, />Download</);
+  assert.match(agent, /terminal-model-runtime-status agent/);
+  assert.match(agent, />Vibyra Agent</);
+  assert.doesNotMatch(agent, /data-terminal-runtime-install/);
 });
 
-test("runtime downloads show visible bounded progress", () => {
+test("API-only providers do not expose dormant native runtime downloads", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -91,13 +91,12 @@ test("runtime downloads show visible bounded progress", () => {
     terminalRuntimeInstalling.add("qwen");
   `, context);
 
-  const downloading = vm.runInContext(
+  const agent = vm.runInContext(
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
-  assert.match(downloading, /terminal-model-download-spinner/);
-  assert.match(downloading, />Downloading</);
-  assert.match(downloading, /aria-busy="true"/);
+  assert.match(agent, /terminal-model-runtime-status agent/);
+  assert.doesNotMatch(agent, /terminal-model-download-spinner/);
 
   const source = readFileSync(new URL("./app.terminals-runtimes.js", import.meta.url), "utf8");
   assert.match(source, /controller\.abort\(\), 300_000/);
@@ -135,7 +134,7 @@ test("Auto opens blank with Vibyra tokens and rejects personal-account routing",
   );
 });
 
-test("Vibyra credits do not fall back to Codex when the native CLI is missing", () => {
+test("Vibyra credits use Vibyra Agent instead of Codex for API-only providers", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -151,7 +150,8 @@ test("Vibyra credits do not fall back to Codex when the native CLI is missing", 
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
-  assert.match(control, /data-terminal-runtime-install="qwen"/);
+  assert.match(control, /terminal-model-runtime-status agent/);
+  assert.match(control, />Vibyra Agent</);
   assert.doesNotMatch(control, /codex/i);
 });
 

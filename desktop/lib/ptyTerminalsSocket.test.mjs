@@ -264,7 +264,7 @@ test("blank Auto opens first, then routes in the same session and submits once",
     const body = JSON.parse(options.body);
     assert.ok(body.allowedProviders.includes("openai"));
     assert.ok(body.allowedProviders.every((provider) => (
-      ["openai", "anthropic", "google"].includes(provider)
+      ["openai", "anthropic", "google", "qwen", "moonshot", "mistral"].includes(provider)
     )));
     return {
       ok: true,

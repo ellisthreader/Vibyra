@@ -7,14 +7,14 @@ import {
   terminalProviderIdForModel
 } from "./aiTerminalProviderAdapters.mjs";
 
-test("maps supported model families to their native runtime and protocol", () => {
+test("maps official CLI families natively and API-only families to Vibyra Agent", () => {
   const cases = [
     ["openai/gpt-5.4-mini", "openai", "codex", "responses", "openai-responses"],
     ["anthropic/claude-sonnet-4", "anthropic", "claude", "anthropic-messages", "anthropic-messages"],
     ["google/gemini-3.1-pro", "google", "gemini", "gemini-generate-content", "gemini-generate-content"],
-    ["qwen/qwen3-coder", "qwen", "qwen", "chat-completions", "openai-chat-completions"],
-    ["moonshotai/kimi-k2", "moonshot", "kimi", "responses", "openai-responses"],
-    ["mistralai/devstral-2", "mistral", "mistral", "responses", "openai-responses"]
+    ["qwen/qwen3-coder", "qwen", "vibyra-agent", "responses", "openai-responses"],
+    ["moonshotai/kimi-k2", "moonshot", "vibyra-agent", "responses", "openai-responses"],
+    ["mistralai/devstral-2", "mistral", "vibyra-agent", "responses", "openai-responses"]
   ];
 
   for (const [model, providerId, runtimeId, adapterId, protocol] of cases) {
@@ -34,7 +34,7 @@ test("keeps managed-credit readiness separate from native personal accounts", ()
     assert.equal(AI_TERMINAL_PROVIDER_ADAPTERS[providerId].personalAccountReady, true);
   }
   for (const providerId of ["qwen", "moonshot", "mistral"]) {
-    assert.equal(AI_TERMINAL_PROVIDER_ADAPTERS[providerId].managedCreditsReady, false);
+    assert.equal(AI_TERMINAL_PROVIDER_ADAPTERS[providerId].managedCreditsReady, true);
     assert.equal(AI_TERMINAL_PROVIDER_ADAPTERS[providerId].personalAccountReady, false);
   }
 });
@@ -69,16 +69,23 @@ test("API-only model families from native CLI companies still use Vibyra Agent",
   assert.equal(adapter?.personalAccountReady, false);
 });
 
-test("registered native providers never fall through to Vibyra Agent", () => {
+test("official CLI providers never fall through to Vibyra Agent", () => {
   for (const model of [
     "openai/gpt-5.4-mini",
     "anthropic/claude-sonnet-4",
-    "google/gemini-3.1-pro",
+    "google/gemini-3.1-pro"
+  ]) {
+    assert.notEqual(terminalProviderAdapterForModel(model)?.runtimeId, "vibyra-agent");
+  }
+});
+
+test("registered API-only providers use Vibyra Agent", () => {
+  for (const model of [
     "qwen/qwen3-coder",
     "moonshotai/kimi-k2",
     "mistralai/devstral-2"
   ]) {
-    assert.notEqual(terminalProviderAdapterForModel(model)?.runtimeId, "vibyra-agent");
+    assert.equal(terminalProviderAdapterForModel(model)?.runtimeId, "vibyra-agent");
   }
 });
 
@@ -89,7 +96,7 @@ test("unqualified unknown models and Auto have no adapter", () => {
 });
 
 test("registry and nested definitions are immutable", () => {
-  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 11);
+  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 12);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai.aliases), true);

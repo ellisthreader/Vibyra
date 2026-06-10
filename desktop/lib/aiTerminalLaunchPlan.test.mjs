@@ -69,7 +69,7 @@ test("maps installed official CLIs to personal-account launch plans", () => {
   );
 });
 
-test("enables billed Claude and Gemini mappings while unfinished adapters fail closed", () => {
+test("uses native billed Claude and Gemini mappings and Vibyra Agent for API-only providers", () => {
   for (const model of [
     "anthropic/claude-sonnet-4.6",
     "google/gemini-3.1-pro-preview"
@@ -86,10 +86,11 @@ test("enables billed Claude and Gemini mappings while unfinished adapters fail c
     "moonshotai/kimi-k2",
     "mistralai/devstral-2"
   ]) {
-    assert.throws(
-      () => resolveAiTerminalLaunchPlan({ model, billingMode: "vibyra" }),
-      (error) => error.code === "adapter_not_ready"
-    );
+    const plan = resolveAiTerminalLaunchPlan({ model, billingMode: "vibyra" });
+    assert.equal(plan.runtimeId, "vibyra-agent");
+    assert.equal(plan.nativeModel, model);
+    assert.equal(plan.billingModel, model);
+    assert.deepEqual(plan.allowedModels, [model]);
   }
 });
 
@@ -119,6 +120,9 @@ test("every provider-qualified API-only model family uses Vibyra Agent", () => {
   const models = [
     "x-ai/grok-4.20",
     "deepseek/deepseek-v3.2",
+    "qwen/qwen3-coder",
+    "moonshotai/kimi-k2",
+    "mistralai/devstral-2",
     "google/gemma-4-31b-it",
     "meta-llama/llama-4",
     "microsoft/phi-4",

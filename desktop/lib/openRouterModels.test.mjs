@@ -102,3 +102,34 @@ test("OpenRouter terminal catalog fails closed without explicit tool support", (
   assert.deepEqual(models.map((model) => model.key), ["auto", "openai/tool-model"]);
   assert.deepEqual(models[1].supportedParameters, ["reasoning", "tools"]);
 });
+
+test("OpenRouter picker tiers match backend dynamic pricing thresholds", () => {
+  const payload = buildOpenRouterModelPayload([
+    {
+      id: "deepseek/deepseek-v4-flash",
+      name: "DeepSeek: DeepSeek V4 Flash",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.0000001", completion: "0.0000002" },
+      supported_parameters: ["tools"]
+    },
+    {
+      id: "x-ai/grok-4.20",
+      name: "xAI: Grok 4.20",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.00000125", completion: "0.0000025" },
+      supported_parameters: ["tools"]
+    },
+    {
+      id: "anthropic/claude-opus-expensive",
+      name: "Anthropic: Claude Opus Expensive",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.000006", completion: "0.000021" },
+      supported_parameters: ["tools"]
+    }
+  ]);
+  const models = payload.groups.flatMap((group) => group.options);
+
+  assert.equal(models.find((model) => model.key === "deepseek/deepseek-v4-flash").tier, "budget");
+  assert.equal(models.find((model) => model.key === "x-ai/grok-4.20").tier, "balanced");
+  assert.equal(models.find((model) => model.key === "anthropic/claude-opus-expensive").tier, "premium");
+});
