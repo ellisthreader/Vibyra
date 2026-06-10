@@ -1,3 +1,5 @@
+const { watch: watchFile } = require("node:fs");
+
 function reloadDesktopWindow(window) {
   if (!window || window.isDestroyed()) return;
   window.webContents.reloadIgnoringCache();
@@ -17,4 +19,21 @@ function bindDesktopReloadShortcuts(window) {
   });
 }
 
-module.exports = { bindDesktopReloadShortcuts, reloadDesktopWindow };
+function watchDesktopMainSources(electronApp, paths, watch = watchFile) {
+  let relaunchPending = false;
+  const watchers = paths.map((path) => watch(path, { persistent: false }, () => {
+    if (relaunchPending) return;
+    relaunchPending = true;
+    setTimeout(() => {
+      electronApp.relaunch();
+      electronApp.exit(0);
+    }, 120);
+  }));
+  return () => watchers.forEach((watcher) => watcher.close());
+}
+
+module.exports = {
+  bindDesktopReloadShortcuts,
+  reloadDesktopWindow,
+  watchDesktopMainSources
+};

@@ -103,11 +103,11 @@ test("portrait Memory sidebars use a tall graph layout", () => {
   assert.match(graphSource, /ResizeObserver/);
 });
 
-test("compact graph occupies half the workspace while fullscreen stays unconstrained", () => {
+test("compact graph occupies sixty percent of the workspace while fullscreen stays unconstrained", () => {
   assert.doesNotMatch(graphSource, /terminal-memory-graph-footer|terminal-memory-graph-hint/);
   assert.match(graphCss, /grid-template-rows:\s*auto minmax\(0, 1fr\)/);
   assert.match(graphCss, /\.terminal-memory-graph\s*\{[^}]*height:\s*100%/s);
-  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) > \.terminal-memory-graph\s*\{[^}]*align-self:\s*center;[^}]*height:\s*50%/s);
+  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) > \.terminal-memory-graph\s*\{[^}]*align-self:\s*start;[^}]*height:\s*60%/s);
   assert.match(graphLayoutSource, /canvas\?\.clientHeight \|\| compactFallback/);
   assert.match(graphCss, /\.terminal-memory-graph-meta\s*\{[^}]*align-items:\s*flex-start/s);
   assert.doesNotMatch(graphAdvancedCss, /\.terminal-memory-graph-legend\s*\{[^}]*position:\s*absolute/s);

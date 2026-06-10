@@ -26,6 +26,11 @@ test("terminal picker keeps official CLI providers separate from OpenRouter wrap
         options: [{ key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }]
       }]
     }),
+    terminalNativeRuntimeForModel(model) {
+      const key = String(model?.key || "");
+      if (key.startsWith("openai/gpt-") || key.startsWith("gpt-")) return "codex";
+      return "";
+    },
     window: { addEventListener() {} }
   };
   vm.runInNewContext(source, context);
@@ -40,10 +45,34 @@ test("terminal picker keeps official CLI providers separate from OpenRouter wrap
     label: "Qwen3 Coder",
     provider: "qwen"
   };
+  const gemmaWrapper = {
+    key: "google/gemma-4-31b-it",
+    label: "Gemma 4",
+    provider: "gemini",
+    company: "Google"
+  };
 
   assert.equal(context.terminalOpenRouterModelAllowed(officialWrapper), false);
   assert.equal(context.terminalOpenRouterModelAllowed(otherWrapper), true);
+  assert.equal(context.terminalOpenRouterModelAllowed(gemmaWrapper), true);
   assert.equal(context.terminalOfficialFallbackModelKey("openai/gpt-5.5-pro"), "gpt-5.5");
+});
+
+test("third-party qualified model names do not inherit OpenAI from a codex substring", () => {
+  const context = {
+    config: () => ({ chatModelGroups: [] }),
+    window: { addEventListener() {} }
+  };
+  vm.runInNewContext(source, context);
+
+  assert.equal(
+    context.terminalProviderKeyForModel({
+      key: "acme/codex-plus",
+      provider: "acme",
+      company: "Acme"
+    }),
+    "acme"
+  );
 });
 
 test("terminal launch agent follows token source instead of model branding alone", () => {

@@ -1,6 +1,7 @@
 import readline from "node:readline/promises";
 import { spawn } from "node:child_process";
 import { stdin as input, stdout as output } from "node:process";
+import { renderVibyraVLogo } from "./aiTerminalVibyraLogo.mjs";
 import { homedir } from "node:os";
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
@@ -32,21 +33,6 @@ const VIBYRA_PINK = "38;2;242;58;205";
 const VIBYRA_BLUE = "38;2;76;163;255";
 const VIBYRA_LOGO_PURPLE = "38;2;123;44;255";
 const VIBYRA_LOGO_PINK = "38;2;255;53;200";
-const VIBYRA_LOGO_AMBER = "38;2;255;184;77";
-const VIBYRA_V_ART = [
-  { inset: 0, left: "###\\", gap: 12, right: "/###", depth: "::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 1, left: "###\\", gap: 10, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 2, left: "###\\", gap: 8, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 3, left: "###\\", gap: 6, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 4, left: "###\\", gap: 4, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 5, left: "###\\", gap: 2, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 6, left: "###\\", gap: 0, right: "/###", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, rightColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 7, face: "######", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 8, face: "####", depth: ":::", faceColor: VIBYRA_LOGO_PURPLE, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 9, face: "##", depth: ":::", faceColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER },
-  { inset: 10, face: "", depth: ":::", faceColor: VIBYRA_LOGO_PINK, depthColor: VIBYRA_LOGO_AMBER }
-];
-const VIBYRA_V_WIDTH = 22;
 
 export function promptLabelForModel(modelKey, color = true) {
   const info = providerInfoForModel(modelKey);
@@ -98,7 +84,7 @@ function renderAutoIntro({ cwd, columns, color, permissionMode, tokenMode }) {
   const inner = width - 2;
   const lines = [
     "",
-    ...VIBYRA_V_ART.map((line) => center(renderVibyraVLine(line, color), inner)),
+    ...renderVibyraVLogo({ color }).map((line) => center(line, inner)),
     "",
     center(`${ansi("VIBYRA AGENT", VIBYRA_LOGO_PURPLE, color)} ${ansi("AUTO", VIBYRA_LOGO_PINK, color)}`, inner),
     center("Describe the job. Vibyra selects the model.", inner),
@@ -117,15 +103,6 @@ function renderAutoIntro({ cwd, columns, color, permissionMode, tokenMode }) {
     `${ansi("╰", VIBYRA_BLUE, color)}${"─".repeat(inner)}${ansi("╯", VIBYRA_PINK, color)}`,
     ""
   ].join("\r\n");
-}
-
-function renderVibyraVLine({ inset, left = "", gap = 0, right = "", face = "", faceColor, rightColor, depth, depthColor }, color) {
-  const spacing = " ".repeat(inset);
-  const front = face
-    ? ansiForeground(face, faceColor, color)
-    : `${ansiForeground(left, faceColor, color)}${" ".repeat(gap)}${ansiForeground(right, rightColor, color)}`;
-  const line = `${spacing}${front}${ansiForeground(depth, depthColor, color)}`;
-  return `${line}${" ".repeat(Math.max(0, VIBYRA_V_WIDTH - visibleLength(line)))}`;
 }
 
 export function formatAssistantReply(reply, modelKey = "auto", color = true, options = {}) {

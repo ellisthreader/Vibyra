@@ -32,15 +32,34 @@ function terminalExecutionRuntimeForModel(model, tokenMode = "vibyra") {
 
 function terminalNativeRuntimeForModel(model) {
   const key = String(model?.modelKey || model?.key || "").trim().toLowerCase();
+  const modelName = key.includes("/") ? key.split("/", 2)[1] : key;
   const provider = typeof terminalProviderKeyForModel === "function"
     ? terminalProviderKeyForModel(model)
     : String(model?.provider || "").trim().toLowerCase();
-  if (provider === "openai" || key.startsWith("gpt-") || key.includes("codex")) return "codex";
-  if (provider === "claude" || provider === "anthropic" || key.startsWith("claude-")) return "claude";
-  if (provider === "gemini" || provider === "google" || key.startsWith("gemini-")) return "gemini";
-  if (provider === "qwen" || provider === "alibaba") return "qwen";
-  if (provider === "mistral" || provider === "mistralai") return "mistral";
-  if (provider === "moonshot" || provider === "moonshotai" || provider === "kimi") return "kimi";
+  if (
+    (provider === "openai" || !key.includes("/"))
+    && /^(gpt-|codex|o1|o3|o4|chatgpt-)/.test(modelName)
+  ) return "codex";
+  if (
+    (provider === "claude" || provider === "anthropic" || !key.includes("/"))
+    && modelName.startsWith("claude-")
+  ) return "claude";
+  if (
+    (provider === "gemini" || provider === "google" || !key.includes("/"))
+    && modelName.startsWith("gemini-")
+  ) return "gemini";
+  if (
+    (provider === "qwen" || provider === "alibaba")
+    && /^(qwen-|qwen2|qwen3)/.test(modelName)
+  ) return "qwen";
+  if (
+    (provider === "mistral" || provider === "mistralai")
+    && /^(mistral-|ministral-|codestral-|devstral-)/.test(modelName)
+  ) return "mistral";
+  if (
+    (provider === "moonshot" || provider === "moonshotai" || provider === "kimi")
+    && modelName.startsWith("kimi-")
+  ) return "kimi";
   return "";
 }
 

@@ -39,6 +39,10 @@ For Vibyra tokens:
   truthful shared command profile; customize only the provider mark, name,
   accent, model label, and status copy. Never claim that this surface is the
   provider's official or native CLI.
+- Select official CLIs by model family, not company alone. For example,
+  `google/gemini-*` uses Gemini CLI while `google/gemma-*` uses Vibyra Agent.
+  Apply the same rule when a native-CLI company publishes another API-only
+  model family.
 - Vibyra Agent uses the bundled Codex `exec --json` engine internally for real
   file and shell tools, but sends the exact selected model through the
   terminal-scoped Vibyra Responses gateway. Give it an isolated `CODEX_HOME`
@@ -138,7 +142,13 @@ Classify the failure:
    - The PTY shows the wrong provider's native TUI, or Vibyra Agent falsely
      presents itself as an official provider CLI.
    - Inspect `aiTerminalProcess.mjs` and the live process tree. The visible child
-     must match `terminalRuntimeForModel(model)` and use its Vibyra adapter.
+   must match `terminalRuntimeForModel(model)` and use its Vibyra adapter.
+   If the on-disk resolver succeeds but the live create route reports
+   `unsupported_provider`, compare
+   `/desktop/runtime.aiTerminalLaunchContractVersion` with
+   `AI_TERMINAL_LAUNCH_CONTRACT_VERSION`. A stale bridge has cached the old
+   registry; relaunch through `Vibyra Desktop`, which replaces mismatched
+   bridge contracts before reopening the window.
 
 2. **Replica terminal or wrong runtime**
    - The screen copies provider styling but lacks the shared Vibyra Agent
@@ -156,6 +166,12 @@ Classify the failure:
 4. **Correct UI/capability, wrong billing**
    - Inspect token-source routing, isolated environment, Responses proxy,
      backend authentication, model resolution, and usage settlement.
+   - For Vibyra Agent capability mismatches where the expected and requested
+     model text is identical, inspect `/desktop/v1/responses`. It must pass the
+     registry-derived `runtimeId` and `providerId` as well as model, adapter,
+     protocol, and native model into `authorizeTerminalGatewayRequest`.
+     Omitting either identity makes every custom provider grant fail despite an
+     exact model match.
    - Read `GET /desktop/state` before querying a local database. The desktop
      may use the production API, and its `desktopAccount` contains the
      authoritative plan, remaining credits, burst usage/reset, and weekly

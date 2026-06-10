@@ -3,6 +3,7 @@ import { networkInterfaces, hostname, homedir } from "node:os";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
+import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 import { desktopAppApiUrl } from "./appApiConfig.mjs";
 import { revokeAllPreviewCapabilities } from "./previewCapabilities.mjs";
 
@@ -45,6 +46,7 @@ export function desktopRuntimeState(rendererProtocolVersion = "") {
   }
   return {
     terminalActionProtocolVersion: TERMINAL_ACTION_PROTOCOL_VERSION,
+    aiTerminalLaunchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
     rendererReloadRequestId: appState.rendererReloadRequest?.id || null
   };
 }

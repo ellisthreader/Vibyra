@@ -125,6 +125,19 @@ npm run dev
 
 Only inspect `src/utils/appApi.ts`, `src/context/AppContext.tsx`, and `backend/routes/web.php` after backend liveness is proven.
 
+For Vibyra Desktop email login, inspect the two-hop same-origin path instead:
+
+- renderer `POST /desktop/auth/login`
+- bridge `desktop/lib/desktopAuthProxy.mjs`
+- account API `/api/auth/login`
+
+Confirm `/desktop/state` reports the intended `appApiUrl`, then post invalid
+diagnostic credentials to `/desktop/auth/login`. A reachable account API should
+return its real `401` validation response, not a `502` network message.
+Transient bridge fetch failures should retry once with a bounded timeout, and
+persistent failures must describe the account service as unreachable without
+claiming the whole desktop has lost network connectivity.
+
 ## Verification
 
 For bundle fixes:

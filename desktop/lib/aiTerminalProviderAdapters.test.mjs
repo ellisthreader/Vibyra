@@ -59,6 +59,16 @@ test("unknown qualified providers use an exact dynamic Vibyra Agent adapter", ()
   assert.equal(Object.isFrozen(adapter), true);
 });
 
+test("API-only model families from native CLI companies still use Vibyra Agent", () => {
+  const adapter = terminalProviderAdapterForModel("google/gemma-4-31b-it");
+
+  assert.equal(terminalProviderIdForModel("google/gemma-4-31b-it"), "google");
+  assert.equal(adapter?.providerId, "google");
+  assert.equal(adapter?.runtimeId, "vibyra-agent");
+  assert.equal(adapter?.managedCreditsReady, true);
+  assert.equal(adapter?.personalAccountReady, false);
+});
+
 test("registered native providers never fall through to Vibyra Agent", () => {
   for (const model of [
     "openai/gpt-5.4-mini",
@@ -79,7 +89,7 @@ test("unqualified unknown models and Auto have no adapter", () => {
 });
 
 test("registry and nested definitions are immutable", () => {
-  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 8);
+  assert.equal(AI_TERMINAL_LAUNCH_CONTRACT_VERSION, 11);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai), true);
   assert.equal(Object.isFrozen(AI_TERMINAL_PROVIDER_ADAPTERS.openai.aliases), true);

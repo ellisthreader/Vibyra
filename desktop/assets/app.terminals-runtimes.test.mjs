@@ -29,6 +29,7 @@ test("native runtime mapping covers supported provider CLIs", () => {
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "gpt-5.5", provider: "openai" })', context), "codex");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "claude-opus-4", provider: "claude" })', context), "claude");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "google/gemini-pro", provider: "gemini" })', context), "gemini");
+  assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "google/gemma-4-31b-it", provider: "gemini" })', context), "");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "qwen/qwen3", provider: "qwen" })', context), "qwen");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "deepseek/v3", provider: "deepseek" })', context), "");
 });
@@ -45,6 +46,10 @@ test("Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise", ()
   );
   assert.equal(
     vm.runInContext('terminalExecutionRuntimeForModel({ key: "deepseek/v3", provider: "deepseek" }, "vibyra")', context),
+    "vibyra-agent"
+  );
+  assert.equal(
+    vm.runInContext('terminalExecutionRuntimeForModel({ key: "google/gemma-4-31b-it", provider: "gemini" }, "vibyra")', context),
     "vibyra-agent"
   );
 });

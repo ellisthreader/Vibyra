@@ -37,12 +37,29 @@ test("desktop auth proxy preserves backend validation errors", async () => {
 });
 
 test("desktop auth proxy reports upstream connectivity failures clearly", async () => {
+  let attempts = 0;
   await assert.rejects(
     requestDesktopAuth("login", {}, async () => {
+      attempts += 1;
       throw new TypeError("fetch failed");
     }),
-    (error) => error?.status === 502 && /internet connection/i.test(error.message)
+    (error) => error?.status === 502
+      && /account service/i.test(error.message)
+      && error.cause?.message === "fetch failed"
   );
+  assert.equal(attempts, 2);
+});
+
+test("desktop auth proxy recovers from a transient fetch failure", async () => {
+  let attempts = 0;
+  const result = await requestDesktopAuth("login", {}, async () => {
+    attempts += 1;
+    if (attempts === 1) throw new TypeError("temporary DNS failure");
+    return jsonResponse({ token: "token", user: { id: 7 } });
+  });
+
+  assert.equal(attempts, 2);
+  assert.equal(result.token, "token");
 });
 
 function jsonResponse(payload, status = 200) {

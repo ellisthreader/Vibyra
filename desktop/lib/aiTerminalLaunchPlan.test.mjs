@@ -51,6 +51,18 @@ test("maps installed official CLIs to personal-account launch plans", () => {
   assert.equal(claude.billingModel, "anthropic/claude-sonnet-4.6");
   assert.equal(gemini.runtimeId, "gemini");
   assert.equal(gemini.providerId, "google");
+  const aliasedClaude = resolveAiTerminalLaunchPlan({
+    model: "claude/claude-sonnet-4",
+    billingMode: "provider"
+  });
+  const aliasedGemini = resolveAiTerminalLaunchPlan({
+    model: "gemini/gemini-2.5-pro",
+    billingMode: "provider"
+  });
+  assert.equal(aliasedClaude.nativeModel, "claude-sonnet-4-6");
+  assert.equal(aliasedClaude.billingModel, "anthropic/claude-sonnet-4.6");
+  assert.equal(aliasedGemini.nativeModel, "gemini-2.5-pro");
+  assert.equal(aliasedGemini.billingModel, "google/gemini-2.5-pro");
   assert.throws(
     () => resolveAiTerminalLaunchPlan({ model: "qwen/qwen3-coder", billingMode: "provider" }),
     (error) => error.code === "personal_account_not_supported"
@@ -83,24 +95,59 @@ test("enables billed Claude and Gemini mappings while unfinished adapters fail c
 
 test("unknown qualified providers receive exact Vibyra Agent billing contracts", () => {
   const plan = resolveAiTerminalLaunchPlan({
-    model: "deepseek/deepseek-v3",
+    model: "x-ai/grok-4.20",
     billingMode: "vibyra"
   });
 
-  assert.equal(plan.providerId, "deepseek");
+  assert.equal(plan.providerId, "x-ai");
   assert.equal(plan.runtimeId, "vibyra-agent");
   assert.equal(plan.adapterId, "responses");
   assert.equal(plan.protocol, "openai-responses");
-  assert.equal(plan.nativeModel, "deepseek/deepseek-v3");
-  assert.equal(plan.billingModel, "deepseek/deepseek-v3");
-  assert.deepEqual(plan.allowedModels, ["deepseek/deepseek-v3"]);
+  assert.equal(plan.nativeModel, "x-ai/grok-4.20");
+  assert.equal(plan.billingModel, "x-ai/grok-4.20");
+  assert.deepEqual(plan.allowedModels, ["x-ai/grok-4.20"]);
   assert.throws(
     () => resolveAiTerminalLaunchPlan({
-      model: "deepseek/deepseek-v3",
+      model: "x-ai/grok-4.20",
       billingMode: "provider"
     }),
     (error) => error.code === "personal_account_not_supported"
   );
+});
+
+test("every provider-qualified API-only model family uses Vibyra Agent", () => {
+  const models = [
+    "x-ai/grok-4.20",
+    "deepseek/deepseek-v3.2",
+    "google/gemma-4-31b-it",
+    "meta-llama/llama-4",
+    "microsoft/phi-4",
+    "cohere/command-a",
+    "perplexity/sonar-pro",
+    "z-ai/glm-5",
+    "amazon/nova-pro",
+    "ai21/jamba-large",
+    "ibm-granite/granite-4",
+    "nvidia/nemotron-3",
+    "minimax/minimax-m2",
+    "tencent/hunyuan-a13b",
+    "baidu/ernie-4.5",
+    "bytedance-seed/seed-2",
+    "groq/compound",
+    "together-ai/stripedhyena",
+    "fireworks-ai/llama-v3",
+    "liquid-ai/lfm-2",
+    "nous-research/hermes-4",
+    "openrouter/auto-router"
+  ];
+
+  for (const model of models) {
+    const plan = resolveAiTerminalLaunchPlan({ model, billingMode: "vibyra" });
+    assert.equal(plan.runtimeId, "vibyra-agent", model);
+    assert.equal(plan.nativeModel, model, model);
+    assert.equal(plan.billingModel, model, model);
+    assert.deepEqual(plan.allowedModels, [model], model);
+  }
 });
 
 test("unqualified unknown providers and taskless Auto fail closed", () => {

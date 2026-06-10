@@ -5,6 +5,9 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  autoTerminalDecidingStart,
+  autoTerminalDecidingStop,
+  autoTerminalDecidingUpdate,
   autoTerminalPrompt,
   consumeAutoTerminalInput
 } from "./aiTerminalAutoWaiting.mjs";
@@ -21,6 +24,43 @@ async function waitUntil(check, timeoutMs = 3000) {
   }
   assert.fail("Timed out waiting for terminal process output.");
 }
+
+test("Auto deciding animation keeps one stable full-screen 3D V", () => {
+  const first = autoTerminalDecidingStart({ cols: 72, rows: 30, phase: 0 });
+  const update = autoTerminalDecidingUpdate({
+    cols: 72,
+    rows: 30,
+    phase: 3
+  });
+  const next = autoTerminalDecidingUpdate({
+    cols: 72,
+    rows: 30,
+    phase: 1
+  });
+  const compact = autoTerminalDecidingStart({ cols: 48, rows: 16, phase: 0 });
+  const micro = autoTerminalDecidingStart({ cols: 36, rows: 10, phase: 0 });
+  const stripAnsi = (value) => value.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
+
+  const firstText = stripAnsi(first.output);
+  const microText = stripAnsi(micro.output);
+
+  assert.ok(first.lineCount >= 15);
+  assert.match(first.output, /#####\\/);
+  assert.match(first.output, /\+/);
+  assert.match(firstText, /V I B Y R A\s+A U T O/);
+  assert.match(firstText, /SELECTING THE BEST MODEL/);
+  assert.match(first.output, /\x1b\[3J\x1b\[2J\x1b\[H/);
+  assert.match(first.output, /\x1b\[\?25l/);
+  assert.match(update, /^\x1b\[H/);
+  assert.match(update, /\x1b\[2K/);
+  assert.doesNotMatch(update, /\x1b7|\x1b8|\x1b\[[0-9]+A/);
+  assert.equal(stripAnsi(update).length, stripAnsi(next).length);
+  assert.match(stripAnsi(update), /\*|\./);
+  assert.ok(compact.lineCount <= 16);
+  assert.ok(micro.lineCount <= 10);
+  assert.match(microText, /VIBYRA AUTO \/\/ SELECTING MODEL/);
+  assert.equal(autoTerminalDecidingStop(), "\x1b[0m\x1b[?25h");
+});
 
 test("PTY socket input errors are contained inside the socket handler", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-socket-"));
@@ -175,6 +215,7 @@ test("API-only models launch Vibyra Agent with an exact terminal gateway grant",
       model: "deepseek/deepseek-v3.2",
       consume: false
     }), null);
+    await waitUntil(() => !existsSync(persistentTerminalPaths(session.id).dir), 5000);
   } finally {
     appState.desktopAccountToken = previousToken;
     rmSync(root, { recursive: true, force: true });

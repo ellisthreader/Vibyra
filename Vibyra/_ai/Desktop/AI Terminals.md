@@ -52,7 +52,22 @@ tool-capable catalog model without a registered official CLI uses the bundled
 foreground `Vibyra Agent` runtime. Vibyra Agent has one honest shared command
 set and varies only provider logo/mark, accent, name, model label, and status
 copy; it never claims to be that provider's native CLI. Launch contract version
-`8` invalidates stale workers.
+`11` invalidates stale workers. Runtime selection is model-family-aware rather
+than company-wide: `google/gemini-*` remains native Gemini CLI, while
+`google/gemma-*` and equivalent API-only families from native-CLI companies use
+Vibyra Agent with the exact selected model.
+
+`GET /desktop/runtime` exposes `aiTerminalLaunchContractVersion`. The
+`Vibyra Desktop` launcher compares it with the on-disk provider registry,
+gracefully stops a mismatched bridge, terminates any lingering stale bridge
+process, and starts current source before opening the window. This prevents new
+model-picker assets from talking to an old in-memory provider registry.
+
+The shared `/desktop/v1/responses` route authorizes custom terminals with the
+registry-derived runtime and provider identity in addition to exact model,
+adapter, protocol, and native-model constraints. Passing only the model and
+protocol causes a false `terminal_capability_mismatch` even when the displayed
+expected and requested model names are identical.
 
 The current native managed-credit implementation is enabled for OpenAI,
 Anthropic, and Google models. Codex uses `model_provider="vibyra"` with the
@@ -956,12 +971,22 @@ submission after routing. OpenAI/Codex, Anthropic/Claude, and Google/Gemini
 have managed-credit adapters; Qwen, Kimi, and Mistral remain disabled until
 their protocol adapters pass release gates.
 
-The Auto waiting presentation is renderer-only and keyed by the authoritative
+The Auto waiting presentation is keyed by the authoritative
 `autoAwaitingTask` session field. `app.terminals-pty-runtime.js` patches
 `.terminal-auto-waiting`, provider classes, and the visible model chip in place
-without remounting xterm. `app.terminals-auto-polish.css` owns the non-interactive
-readiness pulse and keeps the terminal-rendered ASCII V as the only logo; it
-must not add a watermark, orbit, or pseudo-element mark over the PTY.
+without remounting xterm. `aiTerminalVibyraLogo.mjs` owns the static straight,
+symmetric 3D ANSI V and its fixed-geometry color frames. During first-task
+routing, `ptyTerminals.mjs` clears visible content plus scrollback into that
+dedicated screen, anchors the Vibyra title on the terminal center row, persists
+one initial frame, and publishes home-position redraws ephemerally. The logo
+geometry remains fixed while a diagonal truecolor wave crosses its face/depth
+cells and one spark moves through a fixed-width signal track. The loop restores
+the cursor and stops before a provider starts so animation cannot corrupt native
+TUI output or recovery snapshots. Routing failure clears and redraws the normal Auto intro
+with the error rather than appending beneath the animation.
+`app.terminals-auto-polish.css` owns only the
+idle readiness pulse and must not add a watermark, orbit, or pseudo-element
+mark over the PTY.
 `app.terminals-chrome-polish.css` owns
 paint-only terminal chrome, focus, notice, and setup transitions. Both disable
 motion under `prefers-reduced-motion` and must never transform or resize xterm.

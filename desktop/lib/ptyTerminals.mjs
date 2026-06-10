@@ -25,6 +25,10 @@ import { resolveAiTerminalLaunchPlan } from "./aiTerminalLaunchPlan.mjs";
 import { terminalProviderAdapters } from "./aiTerminalProviderAdapters.mjs";
 import { terminalRuntimeExecutable } from "./aiTerminalRuntimes.mjs";
 import {
+  AUTO_DECIDING_FRAME_INTERVAL_MS,
+  autoTerminalDecidingStart,
+  autoTerminalDecidingStop,
+  autoTerminalDecidingUpdate,
   autoTerminalPrompt,
   autoTerminalWaitingOutput,
   consumeAutoTerminalInput
@@ -903,18 +907,18 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
   session.autoRoutingPromise = (async () => {
     session.autoAwaitingTask = false;
     session.providerState = "busy";
-    appendAutoOutput(session, "\x1b[?2004l\x1b[38;2;183;148;255mVibyra is choosing the best AI...\x1b[0m\r\n");
+    const decidingAnimation = startAutoDecidingAnimation(session);
     const allowedProviders = managedTerminalProviders();
-    if (!allowedProviders.length) {
-      return resetAutoWaitingSession(
-        session,
-        assignmentId,
-        "No native Vibyra terminal runtime is currently ready for Auto."
-      );
-    }
-
     let gatewayToken = "";
     try {
+      if (!allowedProviders.length) {
+        return resetAutoWaitingSession(
+          session,
+          assignmentId,
+          "No native Vibyra terminal runtime is currently ready for Auto."
+        );
+      }
+
       const routed = await routeDesktopAutoModel({ prompt, allowedProviders });
       const model = string(routed.modelKey).slice(0, 140);
       const launchPlan = resolveAiTerminalLaunchPlan({
@@ -939,6 +943,7 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         nativeModel: launchPlan.nativeModel,
         billingModel: launchPlan.billingModel
       }).token;
+      decidingAnimation.stop();
       session.agent = agent;
       session.agentStatus = agentStatus;
       session.model = model;
@@ -1000,6 +1005,8 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         assignmentId,
         error instanceof Error ? error.message : "Vibyra could not route this task."
       );
+    } finally {
+      decidingAnimation.stop();
     }
   })();
   try {
@@ -1007,6 +1014,37 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
   } finally {
     session.autoRoutingPromise = null;
   }
+}
+
+function startAutoDecidingAnimation(session) {
+  const firstFrame = autoTerminalDecidingStart({
+    cols: session.cols,
+    rows: session.rows
+  });
+  appendAutoOutput(session, firstFrame.output);
+  let phase = 1;
+  const timer = setInterval(() => {
+    if (!sessions.has(session.id) || session.autoAwaitingTask) return;
+    publish(session.id, {
+      type: "output",
+      data: autoTerminalDecidingUpdate({
+        cols: session.cols,
+        rows: session.rows,
+        phase
+      })
+    });
+    phase += 1;
+  }, AUTO_DECIDING_FRAME_INTERVAL_MS);
+  timer.unref?.();
+  let stopped = false;
+  return {
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timer);
+      publish(session.id, { type: "output", data: autoTerminalDecidingStop() });
+    }
+  };
 }
 
 function resetAutoWaitingSession(session, assignmentId, reason) {
@@ -1021,7 +1059,11 @@ function resetAutoWaitingSession(session, assignmentId, reason) {
   session.autoAwaitingTask = true;
   session.autoInputBuffer = "";
   session.autoPasteMode = false;
-  appendAutoOutput(session, `\r\n\x1b[31m${reason}\x1b[0m\r\n${autoTerminalPrompt()}`);
+  appendAutoOutput(session, `\x1b[2J\x1b[H${autoTerminalWaitingOutput({
+    cwd: session.cwd,
+    cols: session.cols,
+    error: reason
+  })}`);
   return rejectedAssignment(session, assignmentId, reason);
 }
 

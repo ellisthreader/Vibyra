@@ -1,6 +1,10 @@
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAiTerminalRoutes } from "./aiTerminals.mjs";
+import {
+  terminalProviderAdapterForModel,
+  terminalProviderIdForModel
+} from "./aiTerminalProviderAdapters.mjs";
 import { handleAiTerminalRuntimeRoutes } from "./aiTerminalRuntimeRoutes.mjs";
 import { handlePtyTerminalRoutes } from "./ptyTerminals.mjs";
 import { sendSafeAsset } from "./assetRoutes.mjs";
@@ -117,8 +121,11 @@ export async function handleDesktopRoutes(req, res, url) {
   }
   if (req.method === "POST" && url.pathname === "/desktop/v1/responses") {
     const body = await readBody(req);
+    const providerAdapter = terminalProviderAdapterForModel(body.model);
     const authorization = authorizeTerminalGatewayRequest(req, res, {
       model: body.model,
+      runtimeId: providerAdapter?.runtimeId,
+      providerId: terminalProviderIdForModel(body.model),
       adapterId: "responses",
       protocol: "openai-responses",
       nativeModel: body.model

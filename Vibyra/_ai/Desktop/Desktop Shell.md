@@ -210,6 +210,12 @@ an unhelpful `Failed to fetch`, while the local proxy returns a useful JSON
 error. Keep the bridge URL aligned so Railway phone accounts are not looked up
 in local SQLite. Validate with `desktop/lib/desktopAuthProxy.test.mjs` and
 `desktop/assets/app.auth-api.test.mjs`.
+The auth proxy retries one thrown upstream fetch failure after a short delay,
+uses a bounded request timeout, and only then reports that the account service
+could not be contacted. Do not label this condition as the desktop being
+offline. For live diagnosis, confirm `/desktop/state.appApiUrl`, then post
+invalid credentials to `/desktop/auth/login`; a reachable backend returns its
+real `401` credential error.
 
 OpenAI provider status is split intentionally. `desktop/lib/providerAccounts.mjs` reports `providers.openai` for optional OpenAI API-key billing through `~/.vibyra-agent/provider-accounts.json` or `OPENAI_API_KEY`, and separately reports `providers.codex` for ChatGPT/Codex CLI auth by detecting `codex` plus `~/.codex/auth.json` (or `CODEX_HOME/auth.json`). The terminal token UI should say `OpenAI API key` for direct API billing and show `ChatGPT via Codex CLI` as a separate Codex status; do not require an API key just to use a ChatGPT-signed-in Codex CLI terminal.
 

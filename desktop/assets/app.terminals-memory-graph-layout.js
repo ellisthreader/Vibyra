@@ -19,7 +19,7 @@ function terminalMemoryGraphMeasureSize() {
   const workspaceHeight = workspace?.clientHeight || companion?.clientHeight || 780;
   const compactFallback = workspace?.classList.contains("terminal-memory-workspace--fullscreen")
     ? workspaceHeight - 92
-    : (workspaceHeight - 92) * .5;
+    : (workspaceHeight - 92) * .6;
   const height = Math.max(320, canvas?.clientHeight || compactFallback);
   return terminalMemoryGraphSizeForViewport(width, height);
 }

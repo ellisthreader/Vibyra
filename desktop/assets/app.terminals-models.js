@@ -36,9 +36,15 @@ function terminalProviderKeyForModel(modelOrKey) {
   const provider = String(model?.provider || "").toLowerCase();
   const company = String(model?.company || "").toLowerCase();
   const value = String(key || model?.modelKey || "").toLowerCase();
+  const qualified = value.includes("/");
   if (provider === "claude" || provider === "anthropic" || company.includes("anthropic") || value.startsWith("anthropic/") || value.startsWith("claude-")) return "claude";
   if (provider === "gemini" || provider === "google" || company.includes("google") || value.startsWith("google/") || value.startsWith("gemini-")) return "gemini";
-  if (provider === "openai" || company.includes("openai") || value.startsWith("openai/") || value.startsWith("gpt-") || value.includes("codex")) return "openai";
+  if (
+    provider === "openai"
+    || company.includes("openai")
+    || value.startsWith("openai/")
+    || !qualified && (value.startsWith("gpt-") || value.includes("codex"))
+  ) return "openai";
   return provider || "auto";
 }
 function terminalModelForDisplay(key) {
@@ -389,7 +395,10 @@ function applyTerminalOpenRouterModels(groups) {
 }
 
 function terminalOpenRouterModelAllowed(model) {
-  return !["openai", "claude", "gemini"].includes(terminalProviderKeyForModel(model));
+  const runtime = typeof terminalNativeRuntimeForModel === "function"
+    ? terminalNativeRuntimeForModel(model)
+    : "";
+  return !["codex", "claude", "gemini"].includes(runtime);
 }
 
 function terminalOfficialFallbackModelKey(key) {

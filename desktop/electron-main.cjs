@@ -20,7 +20,11 @@ const {
   discoverObsidianVaults,
   importDiscoveredObsidianVault
 } = require("./lib/desktopObsidianDiscovery.cjs");
-const { bindDesktopReloadShortcuts, reloadDesktopWindow } = require("./lib/electronReload.cjs");
+const {
+  bindDesktopReloadShortcuts,
+  reloadDesktopWindow,
+  watchDesktopMainSources
+} = require("./lib/electronReload.cjs");
 const { createDesktopScreenshot } = require("./lib/desktopScreenshot.cjs");
 
 app.commandLine.appendSwitch("disable-gpu");
@@ -41,6 +45,7 @@ let handledRendererReloadRequestId = "";
 let observedTerminalActionProtocolVersion = "";
 let screenshotCapturePending = false;
 let screenshotShortcutAvailable = true;
+let stopDesktopSourceWatch = () => {};
 const desktopScreenshot = createDesktopScreenshot({
   clipboard,
   desktopCapturer,
@@ -73,6 +78,7 @@ function sendScreenshotError(error) {
 async function captureScreenshotForEditor() {
   if (screenshotCapturePending) return;
   screenshotCapturePending = true;
+  console.log("Vibyra screenshot capture requested");
   try {
     const capture = await desktopScreenshot.captureDisplay();
     revealWindow();
@@ -80,6 +86,7 @@ async function captureScreenshotForEditor() {
       dataUrl: capture.dataUrl,
       displayId: String(capture.display.id)
     });
+    console.log(`Vibyra screenshot editor opened for display ${capture.display.id}`);
   } catch (error) {
     revealWindow();
     sendScreenshotError(error);
@@ -302,15 +309,24 @@ if (!hasSingleInstanceLock) {
     quitting = true;
     clearInterval(bridgeHealthTimer);
     desktopScreenshot.unregisterF9Shortcut();
+    stopDesktopSourceWatch();
   });
   app.on("second-instance", () => reloadDesktopWindow(mainWindow));
   app.whenReady().then(() => {
     configureDesktopPermissions();
     startBridgeHealthMonitor();
     createWindow();
+    stopDesktopSourceWatch = watchDesktopMainSources(app, [
+      __filename,
+      path.join(__dirname, "electron-preload.cjs"),
+      path.join(__dirname, "lib/desktopScreenshot.cjs"),
+      path.join(__dirname, "lib/electronReload.cjs")
+    ]);
     screenshotShortcutAvailable = desktopScreenshot.registerF9Shortcut(captureScreenshotForEditor);
     if (!screenshotShortcutAvailable) {
       sendScreenshotError(new Error("F9 is already used by another application."));
+    } else {
+      console.log("Vibyra screenshot shortcut registered: F9");
     }
   });
 }

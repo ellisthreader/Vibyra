@@ -293,9 +293,9 @@ Keep it extremely simple.
 - The graph's virtual layout must follow the rendered canvas aspect ratio. A
   fixed landscape viewBox in the tall right sidebar leaves a large visual gap
   even when the DOM is technically full-height. In the compact portrait
-  sidebar, center the entire Graph section at 50% of the available content
-  height so it remains readable instead of vertically stretched. Notes and
-  fullscreen Graph remain full-height.
+  sidebar, keep the entire Graph section top-aligned at 60% of the available
+  content height so it remains readable instead of vertically stretched. Notes
+  and fullscreen Graph remain full-height.
 
 ## Pair Phone Modal
 
@@ -657,9 +657,10 @@ user explicitly requests Codex's visual design.
 - Auto terminals use a code-native ANSI Vibyra intro, not an image asset or an
   imitation provider banner. Keep the `V` compact, symmetrical, and built from
   reliable fixed-width ASCII strokes; dense block/shade glyphs render
-  inconsistently across xterm fonts. Use a solid symmetric `###\ /###` front
-  face plus a consistent right/down `:::` extrusion that continues below the
-  point; edge coloring alone still reads as flat. Use `desktop/icon.svg` as
+  inconsistently across xterm fonts. Use a solid symmetric `#####\ /#####`
+  face that closes into a clean point, with one consistent amber extrusion on
+  the outer right/down edge; never expose a duplicate rear face inside the V.
+  Do not add colon extrusion or a second CSS watermark. Use `desktop/icon.svg` as
   the canonical logo palette: violet `#7B2CFF`, pink `#FF35C8`, and amber
   `#FFB84D`. Map the left face, right face, and extrusion to those exact colors
   respectively, and preserve the default terminal background. Keep the panel concise: workspace, first-task automatic routing,
@@ -681,10 +682,17 @@ user explicitly requests Codex's visual design.
   selections fixed.
 - Scope Vibyra motion to the authoritative `.terminal-auto-waiting` state.
   Keep the terminal-rendered ASCII V as the only V logo: do not add a watermark,
-  orbit, or duplicate pseudo-element mark over the PTY. A restrained readiness
-  pulse may decorate that state, must stop under `prefers-reduced-motion`, and
-  must disappear before Codex, Claude, or Gemini owns the pane. Never animate,
-  transform, resize, hide, or rewrite
+  orbit, or duplicate pseudo-element mark over the PTY. While first-task routing
+  is pending, clear once into a dedicated full-screen ANSI V state and redraw
+  from terminal home after clearing visible content and scrollback. Anchor the
+  Vibyra title on the actual terminal center row. Keep logo geometry identical
+  while a diagonal truecolor wave crosses individual face/depth cells; a
+  fixed-width signal track may move one spark without changing line length.
+  Never use cursor-relative movement or changing status wording. Persist only
+  the initial frame, stop and restore the cursor before the provider process
+  starts, and never let animation ticks enter recovery snapshots. A restrained
+  readiness pulse may decorate the idle state. Never animate, transform,
+  resize, or hide
   `.terminal-xterm`, xterm viewport/screen elements, or authoritative PTY
   output. Shared terminal chrome may use short paint-only hover, focus, notice,
   and setup transitions without changing grid gaps or pane geometry.
@@ -928,6 +936,10 @@ user explicitly requests Codex's visual design.
 - Use a narrow preload API for capture events and PNG Copy/Save. Main-process
   code owns `globalShortcut`, `desktopCapturer`, clipboard, save dialogs, and
   platform screen-recording errors.
+- Main-process and preload changes require a real Electron relaunch, not a
+  renderer refresh. Keep the source watcher active and retain
+  `~/.vibyra-desktop/electron.log` so shortcut registration/capture failures are
+  diagnosable instead of being discarded.
 
 ## Theme Switching
 

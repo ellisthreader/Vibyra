@@ -179,8 +179,8 @@ Large vaults use the deterministic force layout in
 `app.terminals-memory-graph-layout.js`, with a 1000-wide virtual canvas whose
 height follows the rendered graph aspect ratio, visible folder/high-degree
 labels, bounded 55%-320% wheel/button zoom, Fit reset, and drag-to-pan. Tall
-sidebars use a compact Graph section centered at 50% of the available content
-height so relationships stay legible without a vertically stretched
+sidebars use a compact Graph section top-aligned at 60% of the available
+content height so relationships stay legible without a vertically stretched
 appearance. Notes and fullscreen Graph continue to fill their content area. The
 advanced visual layer adds real folder-region
 halos, cluster colors, hub orbits, curved Markdown links, a structural legend,

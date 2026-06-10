@@ -149,9 +149,10 @@ export function authorizeTerminalGatewayRequest(req, res, options = {}) {
   if (result.reason === "capability") {
     const expected = String(result.record?.nativeModel || result.record?.models?.[0] || "").trim();
     const requested = String(result.model || options.model || "").trim();
+    const changedModel = expected && requested && expected !== requested;
     sendGatewayError(res, 400, {
       code: "terminal_capability_mismatch",
-      message: expected && requested
+      message: changedModel
         ? `This terminal is locked to ${expected}. Open a new Vibyra terminal to use ${requested}; /model cannot change its billing authorization.`
         : "This request does not match the provider, model, or protocol authorized for this terminal."
     }, options.errorProtocol);

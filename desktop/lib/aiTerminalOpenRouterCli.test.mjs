@@ -167,6 +167,8 @@ test("Auto remains a truthful Vibyra Agent routing surface", () => {
   });
 
   assert.match(intro, /VIBYRA AGENT AUTO/);
+  assert.match(intro, /####\\\s+\/####/);
+  assert.doesNotMatch(intro, /:::/);
   assert.match(intro, /Describe the job\. Vibyra selects the model\./);
   assert.match(intro, /routing\s+best-fit model for first task/);
   assert.doesNotMatch(intro, /per prompt/);

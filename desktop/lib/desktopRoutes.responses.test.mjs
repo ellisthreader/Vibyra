@@ -9,6 +9,9 @@ test("Responses route uses terminal gateway auth instead of desktop UI trust", a
   )?.[1] || "";
 
   assert.match(route, /authorizeTerminalGatewayRequest/);
+  assert.match(route, /terminalProviderAdapterForModel\(body\.model\)/);
+  assert.match(route, /runtimeId: providerAdapter\?\.runtimeId/);
+  assert.match(route, /providerId: terminalProviderIdForModel\(body\.model\)/);
   assert.match(route, /adapterId: "responses"/);
   assert.match(route, /protocol: "openai-responses"/);
   assert.match(route, /model: authorization\.billingModel \|\| body\.model/);

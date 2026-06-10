@@ -11,6 +11,10 @@ import {
   revokeTerminalGatewayTokensForTerminal,
   verifyTerminalGatewayToken
 } from "./terminalGatewayAuth.mjs";
+import {
+  terminalProviderAdapterForModel,
+  terminalProviderIdForModel
+} from "./aiTerminalProviderAdapters.mjs";
 
 test("issues persisted terminal-scoped tokens with mode-0600 storage", async () => {
   const registryPath = await temporaryRegistryPath();
@@ -226,6 +230,83 @@ test("valid tokens report model switches as capability errors instead of login f
   assert.equal(rejected.payload.error.code, "terminal_capability_mismatch");
   assert.equal(rejected.payload.error.type, "invalid_request_error");
   assert.match(rejected.payload.error.message, /locked to claude-haiku-4-5/);
+});
+
+test("custom provider Responses grants authorize with registry-derived identities", async () => {
+  for (const model of [
+    "x-ai/grok-4.20",
+    "google/gemma-4-31b-it",
+    "deepseek/deepseek-v3.2",
+    "meta-llama/llama-4",
+    "cohere/command-a"
+  ]) {
+    const registryPath = await temporaryRegistryPath();
+    const providerId = terminalProviderIdForModel(model);
+    const runtimeId = terminalProviderAdapterForModel(model)?.runtimeId;
+    const issued = issueTerminalGatewayToken(`terminal-${providerId}`, {
+      registryPath,
+      now: 1_000,
+      models: [model],
+      runtimeId,
+      providerId,
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: model,
+      billingModel: model
+    });
+    const accepted = response();
+
+    const authorization = authorizeTerminalGatewayRequest(
+      request("127.0.0.1", issued.token),
+      accepted,
+      {
+        registryPath,
+        now: 1_001,
+        model,
+        runtimeId,
+        providerId,
+        adapterId: "responses",
+        protocol: "openai-responses",
+        nativeModel: model
+      }
+    );
+
+    assert.equal(authorization?.billingModel, model, model);
+    assert.equal(accepted.status, null, model);
+  }
+});
+
+test("same-model capability mismatches do not claim the model changed", async () => {
+  const registryPath = await temporaryRegistryPath();
+  const model = "x-ai/grok-4.20";
+  const issued = issueTerminalGatewayToken("terminal-grok", {
+    registryPath,
+    now: 1_000,
+    models: [model],
+    runtimeId: "vibyra-agent",
+    providerId: "x-ai",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: model,
+    billingModel: model
+  });
+  const rejected = response();
+
+  assert.equal(authorizeTerminalGatewayRequest(
+    request("127.0.0.1", issued.token),
+    rejected,
+    {
+      registryPath,
+      now: 1_001,
+      model,
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: model
+    }
+  ), null);
+  assert.equal(rejected.status, 400);
+  assert.doesNotMatch(rejected.payload.error.message, /Open a new Vibyra terminal/);
+  assert.match(rejected.payload.error.message, /provider, model, or protocol/);
 });
 
 async function temporaryRegistryPath() {

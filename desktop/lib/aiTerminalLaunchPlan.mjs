@@ -166,8 +166,7 @@ function nativeProviderModel(model, providerId) {
   const value = normalizeModel(model);
   if (terminalProviderAdapterForModel(value)?.runtimeId === "vibyra-agent") return value;
   if (providerId === "openai") return value;
-  const prefix = `${providerId}/`;
-  const native = value.startsWith(prefix) ? value.slice(prefix.length) : value;
+  const native = qualifiedModelName(value);
   if (providerId !== "anthropic") return native;
   return ({
     "claude-opus-4": "claude-opus-4-8",
@@ -182,7 +181,8 @@ function nativeProviderModel(model, providerId) {
 function billingProviderModel(model, providerId) {
   const value = normalizeModel(model);
   if (terminalProviderAdapterForModel(value)?.runtimeId === "vibyra-agent") return value;
-  if (providerId === "openai" || value.startsWith(`${providerId}/`)) return value;
+  if (providerId === "openai") return value;
+  const native = qualifiedModelName(value);
   if (providerId === "anthropic") {
     return ({
       "claude-opus-4": "anthropic/claude-opus-4.8",
@@ -191,9 +191,14 @@ function billingProviderModel(model, providerId) {
       "claude-sonnet-4-6": "anthropic/claude-sonnet-4.6",
       "claude-3-5-haiku": "anthropic/claude-haiku-4.5",
       "claude-haiku-4-5": "anthropic/claude-haiku-4.5"
-    })[value] || `anthropic/${value}`;
+    })[native] || `anthropic/${native}`;
   }
-  return `${providerId}/${value}`;
+  return `${providerId}/${native}`;
+}
+
+function qualifiedModelName(value) {
+  const separator = value.indexOf("/");
+  return separator >= 0 ? value.slice(separator + 1) : value;
 }
 
 function launchError(code, message) {

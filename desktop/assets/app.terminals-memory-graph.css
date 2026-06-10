@@ -8,8 +8,8 @@
   position: relative;
 }
 .terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) > .terminal-memory-graph {
-  align-self: center;
-  height: 50%;
+  align-self: start;
+  height: 60%;
 }
 .terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) > .terminal-memory-graph svg {
   min-height: 0;

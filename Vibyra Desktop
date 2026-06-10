@@ -13,8 +13,15 @@ export VIBYRA_DESKTOP_API_URL="${VIBYRA_DESKTOP_API_URL:-${VIBYRA_API_URL:-${EXP
 
 PORT="${VIBYRA_AGENT_PORT:-4317}"
 APP_URL="http://127.0.0.1:${PORT}/desktop"
+RUNTIME_URL="http://127.0.0.1:${PORT}/desktop/runtime"
 CHROME_PROFILE="$HOME/.vibyra-desktop-window"
+ELECTRON_LOG_DIR="$HOME/.vibyra-desktop"
+ELECTRON_LOG="$ELECTRON_LOG_DIR/electron.log"
 ELECTRON_BIN=""
+EXPECTED_TERMINAL_LAUNCH_CONTRACT="$(
+  node --input-type=module -e \
+    'import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION as version } from "./desktop/lib/aiTerminalProviderAdapters.mjs"; process.stdout.write(String(version));'
+)"
 
 if [ -x "node_modules/.bin/electron" ]; then
   ELECTRON_BIN="node_modules/.bin/electron"
@@ -24,7 +31,8 @@ fi
 
 open_window() {
   if [ -n "$ELECTRON_BIN" ] && [ -f "desktop/electron-main.cjs" ]; then
-    ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >/dev/null 2>&1 &
+    mkdir -p "$ELECTRON_LOG_DIR"
+    ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >>"$ELECTRON_LOG" 2>&1 &
   elif command -v google-chrome >/dev/null 2>&1; then
     google-chrome --app="$APP_URL" --class=VibyraDesktop --user-data-dir="$CHROME_PROFILE" --window-size=1040,760 >/dev/null 2>&1 &
   elif command -v chromium >/dev/null 2>&1; then
@@ -38,14 +46,40 @@ PORT_PIDS="$(lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN 2>/dev/null || true)"
 
 if [ -n "$PORT_PIDS" ]; then
   if curl -fsS "http://127.0.0.1:${PORT}/health" 2>/dev/null | grep -q '"ok":true'; then
-    open_window
-    exit 0
+    CURRENT_TERMINAL_LAUNCH_CONTRACT="$(
+      curl -fsS "$RUNTIME_URL" 2>/dev/null \
+        | node -e 'let body = ""; process.stdin.on("data", chunk => body += chunk); process.stdin.on("end", () => { try { process.stdout.write(String(JSON.parse(body).aiTerminalLaunchContractVersion || "")); } catch {} });'
+    )"
+    if [ "$CURRENT_TERMINAL_LAUNCH_CONTRACT" = "$EXPECTED_TERMINAL_LAUNCH_CONTRACT" ]; then
+      open_window
+      exit 0
+    fi
+
+    echo "Refreshing the Vibyra Desktop bridge..."
+    curl -fsS -X POST "http://127.0.0.1:${PORT}/desktop/quit" >/dev/null 2>&1 || kill $PORT_PIDS 2>/dev/null || true
+    for _ in {1..40}; do
+      if ! lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+    for stale_pid in $PORT_PIDS; do
+      if kill -0 "$stale_pid" 2>/dev/null; then
+        kill "$stale_pid" 2>/dev/null || true
+      fi
+    done
+    PORT_PIDS="$(lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN 2>/dev/null || true)"
+    if [ -n "$PORT_PIDS" ]; then
+      echo "The stale Vibyra Desktop bridge did not stop." >&2
+      exit 1
+    fi
+  else
+    echo "Port ${PORT} is already in use by a different local server." >&2
+    ps -o pid=,cmd= -p "$PORT_PIDS" >&2 || true
+    echo "Stop the old process first, then run npm run desktop again." >&2
+    echo "Try: kill ${PORT_PIDS}" >&2
+    exit 1
   fi
-  echo "Port ${PORT} is already in use by a different local server." >&2
-  ps -o pid=,cmd= -p "$PORT_PIDS" >&2 || true
-  echo "Stop the old Vibyra Desktop process first, then run npm run desktop again." >&2
-  echo "Try: kill ${PORT_PIDS}" >&2
-  exit 1
 fi
 
 if [ ! -f desktop/local-app.mjs ]; then

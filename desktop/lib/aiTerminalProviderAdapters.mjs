@@ -1,4 +1,4 @@
-export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 8;
+export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 11;
 
 const PROVIDER_DEFINITIONS = [
   {
@@ -9,7 +9,7 @@ const PROVIDER_DEFINITIONS = [
     protocol: "openai-responses",
     managedCreditsReady: true,
     personalAccountReady: true,
-    modelPrefixes: ["gpt-", "codex"]
+    modelPrefixes: ["gpt-", "codex", "o1", "o3", "o4", "chatgpt-"]
   },
   {
     providerId: "anthropic",
@@ -39,7 +39,7 @@ const PROVIDER_DEFINITIONS = [
     protocol: "openai-chat-completions",
     managedCreditsReady: false,
     personalAccountReady: false,
-    modelPrefixes: ["qwen-"]
+    modelPrefixes: ["qwen-", "qwen2", "qwen3"]
   },
   {
     providerId: "moonshot",
@@ -59,7 +59,7 @@ const PROVIDER_DEFINITIONS = [
     protocol: "openai-responses",
     managedCreditsReady: false,
     personalAccountReady: false,
-    modelPrefixes: ["mistral-", "codestral-", "devstral-"]
+    modelPrefixes: ["mistral-", "ministral-", "codestral-", "devstral-"]
   }
 ];
 
@@ -111,7 +111,14 @@ export function terminalProviderAdapter(providerId = "") {
 }
 
 export function terminalProviderAdapterForModel(model = "") {
-  return terminalProviderAdapter(terminalProviderIdForModel(model));
+  const value = normalizeModel(model);
+  const providerId = terminalProviderIdForModel(value);
+  const adapter = terminalProviderAdapter(providerId);
+  if (!adapter || !value.includes("/") || adapter.runtimeId === "vibyra-agent") return adapter;
+  const modelName = value.split("/", 2)[1];
+  return adapter.modelPrefixes.some((prefix) => modelName.startsWith(prefix))
+    ? adapter
+    : dynamicProviderAdapter(providerId);
 }
 
 export function terminalProviderAdapters() {
