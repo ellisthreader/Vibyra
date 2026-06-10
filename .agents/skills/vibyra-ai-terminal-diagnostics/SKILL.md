@@ -172,6 +172,14 @@ Classify the failure:
      protocol, and native model into `authorizeTerminalGatewayRequest`.
      Omitting either identity makes every custom provider grant fail despite an
      exact model match.
+   - If the local gateway succeeds but Laravel returns `422 Unknown Vibyra
+     terminal model`, inspect `CreditCalculator` injection and
+     `OpenRouterPricingCatalog`. The calculator must require its catalog
+     dependency; an optional nullable constructor leaves every dynamic model
+     permanently unknown. The backend must also refresh the catalog on demand
+     when a selected provider-qualified model is absent, stale, or the cache is
+     empty. Verify the exact screenshot slug through `modelConfig()` and
+     `supportsTerminalToolCalling()` after clearing the cache.
    - Read `GET /desktop/state` before querying a local database. The desktop
      may use the production API, and its `desktopAccount` contains the
      authoritative plan, remaining credits, burst usage/reset, and weekly

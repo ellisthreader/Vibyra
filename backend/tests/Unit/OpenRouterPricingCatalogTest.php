@@ -118,6 +118,48 @@ class OpenRouterPricingCatalogTest extends TestCase
         $this->assertFalse($catalog->supportsTerminalToolCalling('openai/missing'));
     }
 
+    public function test_refreshes_an_empty_catalog_for_a_selected_terminal_model(): void
+    {
+        Http::fake([
+            'https://openrouter.ai/api/v1/models/user' => Http::response([
+                'data' => [
+                    $this->model(
+                        'deepseek/deepseek-v4-flash',
+                        ['prompt' => '0.0000001', 'completion' => '0.0000004'],
+                        ['tools', 'reasoning'],
+                    ),
+                ],
+            ]),
+        ]);
+
+        $catalog = app(OpenRouterPricingCatalog::class);
+
+        $this->assertSame(
+            '0.0000001',
+            $catalog->refreshPricingFor('deepseek/deepseek-v4-flash')['prompt'] ?? null,
+        );
+        $this->assertTrue($catalog->supportsTerminalToolCalling('deepseek/deepseek-v4-flash'));
+        $this->assertSame(1, $catalog->status()['count']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_missing_terminal_models_are_negatively_cached_after_one_refresh(): void
+    {
+        Http::fake([
+            'https://openrouter.ai/api/v1/models/user' => Http::response([
+                'data' => [
+                    $this->model('openai/known', ['prompt' => '0.000001'], ['tools']),
+                ],
+            ]),
+        ]);
+
+        $catalog = app(OpenRouterPricingCatalog::class);
+
+        $this->assertNull($catalog->refreshPricingFor('unknown/not-real'));
+        $this->assertNull($catalog->refreshPricingFor('unknown/not-real'));
+        Http::assertSentCount(1);
+    }
+
     public function test_failed_sync_preserves_last_known_good_snapshot_and_reports_staleness(): void
     {
         $available = true;

@@ -150,6 +150,7 @@ return [
         'cache_key' => 'billing:openrouter-pricing:v1',
         'ttl_seconds' => 21600,
         'max_stale_seconds' => 86400,
+        'model_miss_seconds' => 60,
         'reservation_safety_multiplier' => 1.50,
         'dynamic_model_safety_multiplier' => 2.00,
         'web_search_reservation_usd' => 0.15,

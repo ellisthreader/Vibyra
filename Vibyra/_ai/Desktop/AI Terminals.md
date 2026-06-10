@@ -69,6 +69,16 @@ adapter, protocol, and native-model constraints. Passing only the model and
 protocol causes a false `terminal_capability_mismatch` even when the displayed
 expected and requested model names are identical.
 
+After local gateway authorization, Laravel resolves dynamic terminal models
+through `CreditCalculator` and `OpenRouterPricingCatalog`. The calculator's
+catalog dependency is required, not optional: nullable dependency injection
+makes every provider-qualified dynamic model return `422 Unknown Vibyra
+terminal model`. Catalog lookup self-heals by performing one synchronized
+on-demand refresh when the cache is empty, stale, or missing the selected slug;
+unknown slugs receive a short negative cache. This keeps the live desktop
+picker aligned with backend billing for newly listed tool-capable models such
+as DeepSeek and Grok without hard-coded model entries.
+
 The current native managed-credit implementation is enabled for OpenAI,
 Anthropic, and Google models. Codex uses `model_provider="vibyra"` with the
 authenticated local Responses gateway. Claude Code and Gemini CLI keep their

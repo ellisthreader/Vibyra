@@ -60,8 +60,62 @@ class OpenRouterPricingCatalog
         return $this->isStale() ? null : $this->pricingFor($slug);
     }
 
+    public function refreshPricingFor(string $slug): ?array
+    {
+        $slug = trim($slug);
+        if (! $this->validModelSlug($slug)) {
+            return null;
+        }
+
+        $pricing = $this->freshPricingFor($slug);
+        if (is_array($pricing)) {
+            return $pricing;
+        }
+        if (Cache::get($this->modelMissCacheKey($slug)) === true) {
+            return null;
+        }
+
+        try {
+            $pricing = Cache::lock(
+                $this->syncLockCacheKey(),
+                $this->timeoutSeconds() + 5,
+            )->block($this->timeoutSeconds() + 5, function () use ($slug) {
+                $current = $this->freshPricingFor($slug);
+                if (is_array($current)) {
+                    return $current;
+                }
+
+                try {
+                    $this->sync();
+                } catch (RuntimeException) {
+                    return null;
+                }
+
+                return $this->freshPricingFor($slug);
+            });
+        } catch (Throwable) {
+            $pricing = $this->freshPricingFor($slug);
+        }
+
+        if (! is_array($pricing)) {
+            Cache::put(
+                $this->modelMissCacheKey($slug),
+                true,
+                $this->modelMissSeconds(),
+            );
+            return null;
+        }
+
+        Cache::forget($this->modelMissCacheKey($slug));
+
+        return $pricing;
+    }
+
     public function supportsTerminalToolCalling(string $slug): bool
     {
+        if ($this->isStale() || ! isset($this->all()[trim($slug)])) {
+            $this->refreshPricingFor($slug);
+        }
         $model = $this->all()[trim($slug)] ?? null;
         $parameters = is_array($model) ? ($model['supported_parameters'] ?? null) : null;
 
@@ -152,6 +206,27 @@ class OpenRouterPricingCatalog
     private function timeoutSeconds(): int
     {
         return max(1, $this->integerConfig('timeout_seconds', 15));
+    }
+
+    private function modelMissSeconds(): int
+    {
+        return max(1, $this->integerConfig('model_miss_seconds', 60));
+    }
+
+    private function syncLockCacheKey(): string
+    {
+        return $this->snapshotCacheKey().':sync-lock';
+    }
+
+    private function modelMissCacheKey(string $slug): string
+    {
+        return $this->snapshotCacheKey().':model-miss:'.hash('sha256', $slug);
+    }
+
+    private function validModelSlug(string $slug): bool
+    {
+        return strlen($slug) <= 255
+            && preg_match('/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:-]*$/i', $slug) === 1;
     }
 
     private function syncUrl(): string

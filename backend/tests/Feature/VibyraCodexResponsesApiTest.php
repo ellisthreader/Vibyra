@@ -12,6 +12,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class VibyraCodexResponsesApiTest extends TestCase
@@ -425,6 +426,58 @@ class VibyraCodexResponsesApiTest extends TestCase
 
         $this->assertCount(0, $history);
         $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
+    public function test_codex_responses_refreshes_the_catalog_for_a_new_dynamic_terminal_model(): void
+    {
+        Cache::forget((string) config('billing.openrouter_pricing.cache_key'));
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        Http::fake([
+            'https://openrouter.ai/api/v1/models/user' => Http::response([
+                'data' => [[
+                    'id' => 'deepseek/deepseek-v4-flash',
+                    'canonical_slug' => 'deepseek/deepseek-v4-flash',
+                    'name' => 'DeepSeek V4 Flash',
+                    'pricing' => [
+                        'prompt' => '0.0000001',
+                        'completion' => '0.0000004',
+                    ],
+                    'supported_parameters' => ['tools', 'reasoning'],
+                ]],
+            ]),
+        ]);
+        $history = [];
+        $event = [
+            'type' => 'response.completed',
+            'response' => ['usage' => ['input_tokens' => 20, 'output_tokens' => 5]],
+        ];
+        $stack = HandlerStack::create(new MockHandler([
+            new GuzzleResponse(
+                200,
+                ['Content-Type' => 'text/event-stream'],
+                'data: '.json_encode($event)."\n\n"
+            ),
+        ]));
+        $stack->push(Middleware::history($history));
+        app()->instance('vibyra.openrouter_responses_client', new GuzzleClient(['handler' => $stack]));
+        $token = $this->codexUserToken('dynamic-terminal-model@example.com');
+
+        $response = $this->post('/api/codex/responses', [
+            'model' => 'deepseek/deepseek-v4-flash',
+            'input' => 'Inspect this repository.',
+            'stream' => true,
+        ], ['Authorization' => "Bearer {$token}"]);
+
+        $response->assertOk();
+        $response->streamedContent();
+        $this->assertCount(1, $history);
+        $payload = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertSame('deepseek/deepseek-v4-flash', $payload['model'] ?? null);
+        $this->assertDatabaseHas('chat_cost_reservations', [
+            'model_key' => 'deepseek/deepseek-v4-flash',
+            'status' => 'settled',
+        ]);
+        Http::assertSentCount(1);
     }
 
     public function test_codex_responses_rejects_chat_only_model_before_reservation_or_dispatch(): void

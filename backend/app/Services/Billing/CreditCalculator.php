@@ -4,7 +4,7 @@ namespace App\Services\Billing;
 
 class CreditCalculator
 {
-    public function __construct(private readonly ?OpenRouterPricingCatalog $pricingCatalog = null)
+    public function __construct(private readonly OpenRouterPricingCatalog $pricingCatalog)
     {
     }
 
@@ -60,7 +60,7 @@ class CreditCalculator
     public function estimateUsd(string $modelKey, int $inputTokens, int $outputTokens): float
     {
         $slug = $this->resolveSlug($modelKey);
-        $livePricing = $this->pricingCatalog?->freshPricingFor($slug);
+        $livePricing = $this->pricingCatalog->freshPricingFor($slug);
         if (is_array($livePricing)) {
             $inputMicroUsd = $this->microUsdForUnits((string) ($livePricing['prompt'] ?? ''), $inputTokens);
             $outputMicroUsd = $this->microUsdForUnits((string) ($livePricing['completion'] ?? ''), $outputTokens);
@@ -135,7 +135,8 @@ class CreditCalculator
             return null;
         }
 
-        $pricing = $this->pricingCatalog?->freshPricingFor($slug);
+        $pricing = $this->pricingCatalog->freshPricingFor($slug)
+            ?? $this->pricingCatalog->refreshPricingFor($slug);
         if (! is_array($pricing)) {
             return null;
         }
