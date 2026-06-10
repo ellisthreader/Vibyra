@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'platform',
     'product_id',
     'transaction_id',
+    'client_transaction_id',
     'original_transaction_id',
+    'environment',
+    'purchase_state',
     'expires_at',
     'payload',
 ])]

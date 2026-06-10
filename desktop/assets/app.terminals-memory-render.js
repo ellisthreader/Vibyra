@@ -4,6 +4,17 @@ function terminalMemoryWorkspaceHtml(terminal) {
   const selected = terminalMemorySelectedNode();
   const isDocument = selected?.type === "document";
   const mode = terminalMemoryState.mode;
+  if (typeof terminalMemoryIsFullscreen === "function"
+    && terminalMemoryIsFullscreen()
+    && typeof terminalMemoryFullscreenHtml === "function") {
+    return terminalMemoryFullscreenHtml(terminal);
+  }
+  const onboarding = Boolean(projectId) && (!terminalMemoryState.loaded || !terminalMemoryState.nodes.length);
+  if (onboarding) {
+    return `<div class="terminal-memory-workspace terminal-memory-workspace--onboarding" data-terminal-memory-workspace>
+      ${terminalMemoryOnboardingHtml()}
+    </div>`;
+  }
   return `<div class="terminal-memory-workspace" data-terminal-memory-workspace>
     <header class="terminal-memory-toolbar">
       <div class="terminal-memory-heading">
@@ -11,16 +22,26 @@ function terminalMemoryWorkspaceHtml(terminal) {
         <small title="${escapeAttribute(projectName)}">${escapeHtml(projectName)}</small>
       </div>
       <div class="terminal-memory-toolbar-actions">
-        <button type="button" data-terminal-memory-new-note title="New note" ${projectId ? "" : "disabled"}>${icon("document")}</button>
-        <button type="button" data-terminal-memory-new-folder title="New folder" ${projectId ? "" : "disabled"}>${icon("folder")}</button>
-        <button type="button" data-terminal-memory-import-files title="Import Markdown" ${projectId ? "" : "disabled"}>${icon("share")}</button>
-        <button type="button" data-terminal-memory-import-vault title="Import Obsidian vault" ${projectId ? "" : "disabled"}>${icon("archive")}</button>
+        <span class="terminal-memory-toolbar-status" data-terminal-memory-status aria-live="polite">${escapeHtml(terminalMemoryState.status)}</span>
+        <div class="terminal-memory-view-toggle" aria-label="Memory view">
+          <button class="${terminalMemoryState.view === "graph" ? "active" : ""}" type="button" data-terminal-memory-view="graph" title="Graph view">${icon("network")}</button>
+          <button class="${terminalMemoryState.view === "notes" ? "active" : ""}" type="button" data-terminal-memory-view="notes" title="Notes view">${icon("document")}</button>
+        </div>
+        <button type="button" data-terminal-memory-fullscreen aria-label="Open Memory workspace" aria-pressed="false" title="Open Memory workspace">${icon("square")}</button>
+        ${terminalMemoryImportMenuHtml()}
         <button type="button" data-terminal-companion-close aria-label="Close Memory">${icon("close")}</button>
       </div>
     </header>
-    <input class="terminal-memory-hidden-input" type="file" accept=".md,text/markdown" multiple data-terminal-memory-file-input>
-    <input class="terminal-memory-hidden-input" type="file" accept=".md,text/markdown" multiple webkitdirectory directory data-terminal-memory-vault-input>
-    <div class="terminal-memory-workbench">
+    ${terminalMemoryContentHtml(projectId, isDocument, selected, mode)}
+  </div>`;
+}
+
+function terminalMemoryContentHtml(projectId, isDocument, selected, mode) {
+  if (!projectId) return `<div class="terminal-memory-full-state">${terminalMemoryEmptyDocumentHtml("")}</div>`;
+  if (terminalMemoryState.view === "graph" && typeof terminalMemoryGraphHtml === "function") {
+    return terminalMemoryGraphHtml();
+  }
+  return `<div class="terminal-memory-workbench">
       <nav class="terminal-memory-explorer" aria-label="Memory explorer">
         <label class="terminal-memory-search">
           ${icon("search")}
@@ -33,12 +54,7 @@ function terminalMemoryWorkspaceHtml(terminal) {
       <main class="terminal-memory-document">
         ${isDocument ? terminalMemoryDocumentHtml(selected, mode) : terminalMemoryEmptyDocumentHtml(projectId)}
       </main>
-    </div>
-    <footer class="terminal-memory-footer">
-      <span data-terminal-memory-status aria-live="polite">${escapeHtml(terminalMemoryState.status)}</span>
-      <span>${terminalMemoryState.nodes.filter((node) => node.type === "document").length} notes</span>
-    </footer>
-  </div>`;
+    </div>`;
 }
 
 function terminalMemoryTreeHtml() {
@@ -46,7 +62,7 @@ function terminalMemoryTreeHtml() {
   if (!terminalMemoryState.projectId) return '<p class="terminal-memory-empty">Choose a terminal project.</p>';
   const visible = terminalMemoryVisibleNodes();
   if (!visible.length) {
-    return `<p class="terminal-memory-empty">${terminalMemoryState.query ? "No matching notes." : "Create or import your first note."}</p>`;
+    return `<p class="terminal-memory-empty">${terminalMemoryState.query ? "No matching notes." : "Import notes to begin."}</p>`;
   }
   const ids = new Set(visible.map((node) => node.id));
   const roots = visible.filter((node) => !node.parentId || !ids.has(node.parentId));
@@ -82,10 +98,6 @@ function terminalMemoryDocumentHtml(node, mode) {
     <div class="terminal-memory-editor ${mode === "preview" ? "preview" : "edit"}">
       <textarea spellcheck="true" aria-label="Markdown note" data-terminal-memory-body>${escapeHtml(body)}</textarea>
       <article class="terminal-memory-preview" data-terminal-memory-preview>${terminalMemoryMarkdownHtml(body)}</article>
-    </div>
-    <div class="terminal-memory-document-actions">
-      <button type="button" data-terminal-memory-insert>${icon("terminal")}<span>Insert into terminal</span></button>
-      <button type="button" class="danger" data-terminal-memory-delete="${escapeAttribute(node.id)}">${icon("trash")}<span>Delete</span></button>
     </div>`;
 }
 

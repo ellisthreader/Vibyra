@@ -1,0 +1,119 @@
+.profile-billing-manage-entry {
+  align-items: center;
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0 0 22px;
+}
+
+.profile-billing-manage-entry div { display: grid; gap: 4px; }
+
+.profile-billing-manage-entry h2,
+.profile-billing-manage-panel h2 {
+  color: var(--surface-text, var(--text));
+  font-size: 16px;
+  line-height: 22px;
+  margin: 0;
+}
+
+.profile-billing-manage-entry p {
+  color: var(--surface-muted, var(--muted));
+  font-size: 13px;
+  line-height: 19px;
+  margin: 0;
+}
+
+.profile-billing-manage-panel {
+  animation: profile-membership-reveal 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  display: grid;
+  overflow: hidden;
+  padding: 0 18px;
+  transform-origin: top center;
+}
+
+.profile-billing-manage-panel > header {
+  align-items: center;
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 0;
+}
+
+.profile-billing-manage-panel > header div { display: grid; gap: 2px; }
+
+.profile-billing-manage-panel > header span {
+  color: var(--surface-muted, var(--muted));
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.profile-billing-manage-panel > header button {
+  background: transparent;
+  border: 0;
+  color: var(--surface-muted, var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 0;
+}
+
+.profile-billing-manage-panel > .profile-billing-management { padding-top: 18px; }
+.profile-billing-manage-panel > :last-child { border-bottom: 0; }
+
+.profile-billing-membership-actions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding: 13px 0 15px;
+}
+
+.profile-billing-membership-actions button {
+  background: transparent;
+  border: 0;
+  color: var(--surface-muted, var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 5px 0;
+  transition: color 140ms ease;
+}
+
+.profile-billing-membership-actions button:hover {
+  color: var(--surface-text, var(--text));
+}
+
+.profile-billing-membership-actions button.is-danger {
+  color: var(--surface-danger, var(--danger));
+}
+
+.profile-billing-membership-actions button.is-danger:hover {
+  text-decoration: underline;
+}
+
+.profile-billing-membership-pending {
+  color: var(--surface-muted, var(--muted));
+  font-size: 12px;
+  font-weight: 650;
+}
+
+@keyframes profile-membership-reveal {
+  from { opacity: 0; transform: translateY(-7px) scaleY(0.985); }
+  to { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+@media (max-width: 720px) {
+  .profile-billing-manage-entry { grid-template-columns: 1fr; }
+  .profile-billing-manage-entry > button { width: 100%; }
+  .profile-billing-membership-actions { justify-content: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-billing-manage-panel { animation: none; }
+  .profile-billing-membership-actions button { transition: none; }
+}

@@ -15,7 +15,10 @@ function scheduleTerminalLayoutSync() {
   terminalLayoutFrame = schedule(() => {
     terminalLayoutFrame = 0;
     ensureActiveTerminalTabVisible();
+    positionTerminalSetupMenu();
+    positionTerminalNewMenu();
     positionTerminalSettingsMenus();
+    if (typeof mountVisibleXterms === "function") mountVisibleXterms();
   });
 }
 
@@ -60,6 +63,61 @@ function positionTerminalSettingsMenus() {
   });
 }
 
+function positionTerminalSetupMenu() {
+  const button = document.querySelector("[data-terminal-setup-model-toggle]");
+  const menu = document.querySelector('.terminal-model-select-wrap [data-terminal-model-picker="setup"]');
+  if (!button || !menu) return;
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const containingRect = terminalFixedContainingRect(menu);
+  const companionLeft = document.querySelector("[data-terminal-companion]")?.getBoundingClientRect().left;
+  const rightEdge = Number.isFinite(companionLeft) ? companionLeft : window.innerWidth;
+  const gap = 8;
+  const edge = 12;
+  const viewportLeft = Math.min(
+    rightEdge - menuRect.width - edge,
+    Math.max(edge, buttonRect.right - menuRect.width)
+  );
+  const viewportTop = buttonRect.bottom + gap;
+  const availableHeight = Math.max(0, window.innerHeight - viewportTop - edge);
+  menu.style.setProperty("--terminal-setup-menu-left", `${Math.round(viewportLeft - containingRect.left)}px`);
+  menu.style.setProperty("--terminal-setup-menu-top", `${Math.round(viewportTop - containingRect.top)}px`);
+  menu.style.setProperty("--terminal-setup-menu-max-height", `${Math.floor(availableHeight)}px`);
+  menu.classList.add("terminal-model-picker--positioned");
+}
+
+function positionTerminalNewMenu() {
+  const button = document.getElementById("open-terminal-new");
+  const menu = document.querySelector('.terminal-new-wrap [data-terminal-model-picker="new"]');
+  if (!button || !menu) return;
+  const buttonRect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  const containingRect = terminalFixedContainingRect(menu);
+  const gap = 8;
+  const edge = 8;
+  const viewportLeft = Math.min(
+    window.innerWidth - menuRect.width - edge,
+    Math.max(edge, buttonRect.left)
+  );
+  const below = buttonRect.bottom + gap;
+  const viewportTop = below + menuRect.height <= window.innerHeight - edge
+    ? below
+    : Math.max(edge, buttonRect.top - menuRect.height - gap);
+  menu.style.setProperty("--terminal-new-menu-left", `${Math.round(viewportLeft - containingRect.left)}px`);
+  menu.style.setProperty("--terminal-new-menu-top", `${Math.round(viewportTop - containingRect.top)}px`);
+  menu.classList.add("terminal-model-picker--positioned");
+}
+
+function terminalFixedContainingRect(node) {
+  for (let parent = node.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+    const styles = getComputedStyle(parent);
+    if (styles.transform !== "none" || styles.perspective !== "none" || styles.filter !== "none") {
+      return parent.getBoundingClientRect();
+    }
+  }
+  return { left: 0, top: 0 };
+}
+
 const previousBindPtyTopbarControlsForLayout = bindPtyTopbarControls;
 bindPtyTopbarControls = function bindReadableTerminalTopbarControls() {
   previousBindPtyTopbarControlsForLayout();
@@ -75,5 +133,5 @@ refreshPtyTerminalSettingsMenus = function refreshReadableTerminalSettingsMenus(
 
 window.addEventListener("resize", scheduleTerminalLayoutSync);
 document.addEventListener("scroll", (event) => {
-  if (event.target?.closest?.(".terminal-stage")) scheduleTerminalLayoutSync();
+  if (event.target?.closest?.(".terminal-stage, .terminal-setup-stage")) scheduleTerminalLayoutSync();
 }, true);

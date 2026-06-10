@@ -1,0 +1,67 @@
+.terminal-checkpoint-backdrop {
+  z-index: 180;
+}
+.terminal-checkpoint-dialog {
+  border-radius: 10px;
+  gap: 18px;
+  max-width: 440px;
+  overflow: visible;
+  padding: 22px;
+}
+.terminal-checkpoint-icon {
+  align-items: center;
+  background: var(--terminal-accent-soft);
+  border-radius: 8px;
+  color: var(--terminal-accent);
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+.terminal-checkpoint-icon svg {
+  height: 18px;
+  width: 18px;
+}
+.terminal-checkpoint-copy {
+  display: grid;
+  gap: 8px;
+}
+.terminal-checkpoint-copy h2,
+.terminal-checkpoint-copy p {
+  margin: 0;
+}
+.terminal-checkpoint-copy h2 {
+  color: var(--terminal-text);
+  font-size: 18px;
+}
+.terminal-checkpoint-copy p {
+  color: var(--terminal-copy);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.terminal-checkpoint-copy small {
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+.terminal-checkpoint-copy em {
+  color: var(--terminal-warning-text);
+  font-size: 12px;
+  font-style: normal;
+  min-height: 16px;
+}
+.terminal-checkpoint-actions {
+  display: flex;
+  gap: 9px;
+  justify-content: flex-end;
+}
+.terminal-checkpoint-actions button {
+  min-width: 110px;
+}
+@media (max-width: 520px) {
+  .terminal-checkpoint-actions {
+    flex-direction: column-reverse;
+  }
+  .terminal-checkpoint-actions button {
+    width: 100%;
+  }
+}

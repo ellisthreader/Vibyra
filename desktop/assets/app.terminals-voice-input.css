@@ -1,0 +1,104 @@
+.terminal-voice-input {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel, #111118) 94%, transparent);
+  border: 1px solid var(--border, rgba(151, 161, 190, 0.16));
+  border-radius: 999px;
+  bottom: 22px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  color: var(--text, #f1eef8);
+  display: flex;
+  gap: 10px;
+  left: 50%;
+  max-width: min(390px, calc(100vw - 32px));
+  min-height: 48px;
+  padding: 7px 10px;
+  position: fixed;
+  text-align: left;
+  transform: translateX(-50%);
+  z-index: 180;
+}
+.terminal-voice-input[hidden] { display: none; }
+.terminal-voice-input-mark {
+  align-items: center;
+  background: rgba(139, 92, 255, 0.13);
+  border: 1px solid rgba(139, 92, 255, 0.3);
+  border-radius: 50%;
+  color: #a98bff;
+  display: inline-flex;
+  flex: 0 0 32px;
+  gap: 2px;
+  height: 32px;
+  justify-content: center;
+}
+.terminal-voice-input-mark i {
+  background: currentColor;
+  border-radius: 3px;
+  height: 7px;
+  width: 2px;
+}
+.terminal-voice-input-copy {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+  min-width: 0;
+}
+.terminal-voice-input-copy strong {
+  font-size: 11px;
+  line-height: 15px;
+}
+.terminal-voice-input-copy small {
+  color: var(--muted, #918ca1);
+  font-size: 9px;
+  line-height: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-voice-input-stop {
+  color: var(--muted, #aaa3b8);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 7px;
+}
+.terminal-voice-input[data-phase="listening"] {
+  border-color: rgba(255, 102, 119, 0.42);
+}
+.terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark {
+  background: rgba(255, 75, 94, 0.12);
+  border-color: rgba(255, 102, 119, 0.46);
+  color: #ff6677;
+}
+.terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark i {
+  animation: terminal-voice-input-level 680ms ease-in-out infinite alternate;
+}
+.terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark i:nth-child(2) { animation-delay: -220ms; }
+.terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark i:nth-child(3) { animation-delay: -410ms; }
+.terminal-voice-input[data-phase="transcribing"] .terminal-voice-input-mark {
+  animation: terminal-voice-input-pulse 900ms ease-in-out infinite alternate;
+}
+.terminal-voice-input[data-phase="sent"] .terminal-voice-input-mark {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.34);
+  color: #65d98b;
+}
+.terminal-voice-input[data-phase="error"] .terminal-voice-input-mark {
+  background: rgba(255, 102, 119, 0.1);
+  border-color: rgba(255, 102, 119, 0.34);
+  color: #ff7b87;
+}
+@keyframes terminal-voice-input-level {
+  from { height: 6px; }
+  to { height: 18px; }
+}
+@keyframes terminal-voice-input-pulse {
+  from { opacity: 0.55; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-voice-input,
+  .terminal-voice-input-mark,
+  .terminal-voice-input-mark i {
+    animation: none !important;
+    transition: none !important;
+  }
+}

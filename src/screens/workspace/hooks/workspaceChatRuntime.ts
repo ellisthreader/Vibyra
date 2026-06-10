@@ -3,8 +3,6 @@ import { ChatMessage, DesktopConnectionPrompt, GeneratedApp, Project } from "../
 import { streamChatText, TYPING_CURSOR } from "../../../utils/chatStream";
 import { findIndexHtmlBody } from "../../../utils/files";
 import { hasLocalPreviewDependencies } from "../../../utils/previewHtml";
-import { resolveRunnableDesktopPreviewUrl } from "../../../utils/previewUrls";
-import { projectPreviewUrl } from "../helpers/chatPrompts";
 import { runFirstOpenDesktopAnalysis } from "../helpers/desktopFolderAnalysis";
 import { previewAppFromMessage } from "../inline/chatPreviewFallback";
 import { useWorkspaceDetachedChats } from "./workspaceDetachedChats";
@@ -88,13 +86,17 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     };
   }, [app.chatProjects, app.projects, app.selectedFile, app.selectedProject, s.selectedChatId]);
 
-  const desktopPreviewApp = useCallback((projectId: string, projectName: string): GeneratedApp | null => {
+  const desktopPreviewApp = useCallback(async (projectId: string, projectName: string): Promise<GeneratedApp | null> => {
     if (!app.connection) return null;
-    return { id: `desktop-preview-${projectId}`, projectId, source: "desktop", title: projectName, url: projectPreviewUrl(app.connection.url, projectId, app.connection.token) };
+    try {
+      return await app.startPreviewServer(projectId, projectName);
+    } catch {
+      return null;
+    }
   }, [app.connection]);
 
-  const showDesktopPreview = useCallback((project: Project) => {
-    const preview = desktopPreviewApp(project.id, project.name);
+  const showDesktopPreview = useCallback(async (project: Project) => {
+    const preview = await desktopPreviewApp(project.id, project.name);
     if (!preview) return false;
     s.setPreviewApp(preview);
     return true;
@@ -110,10 +112,9 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
     const filesForPreview = loadedFiles.length > 0 ? loadedFiles : app.files;
     const fileHtml = findIndexHtmlBody(filesForPreview);
     const html = fileHtml && !hasLocalPreviewDependencies(fileHtml) ? fileHtml : "";
-    const desktopUrl = app.connection && known ? projectPreviewUrl(app.connection.url, target.projectId, app.connection.token) : undefined;
-    const resolvedDesktopUrl = desktopUrl ? await resolveRunnableDesktopPreviewUrl(desktopUrl) : null;
-    if (resolvedDesktopUrl) {
-      return { id: `test-preview-${target.projectId}`, projectId: target.projectId, source: "desktop", title: target.project.name, url: resolvedDesktopUrl };
+    if (app.connection && known) {
+      const desktopPreview = await desktopPreviewApp(target.projectId, target.project.name);
+      if (desktopPreview) return desktopPreview;
     }
     if (html) return {
       id: `test-preview-${target.projectId}`,
@@ -125,7 +126,7 @@ export function useWorkspaceChatRuntime(s: WorkspaceState) {
 
     if (known && app.connection) return null;
     return latestDisplayableApp(currentThread);
-  }, [activeProjectTarget, app, s]);
+  }, [activeProjectTarget, app, desktopPreviewApp, s]);
 
   const openRunnablePreview = useCallback(async () => {
     const preview = await runnablePreviewApp();

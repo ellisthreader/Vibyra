@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VibyraResetPassword;
+use App\Notifications\VibyraVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,12 +15,15 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'name',
     'email',
+    'email_verified_at',
     'provider',
     'provider_id',
     'password',
     'plan',
     'plan_billing_cycle',
     'plan_renews_at',
+    'membership_ends_at',
+    'membership_cancel_at_period_end',
     'credits_balance',
     'credits_used',
     'level_xp_total',
@@ -30,6 +35,9 @@ use Illuminate\Notifications\Notifiable;
     'burst_credits_reset_at',
     'weekly_credits_used',
     'weekly_credits_reset_at',
+    'openrouter_reserved_micro_usd',
+    'openrouter_spent_micro_usd',
+    'openrouter_spend_period',
     'stripe_customer_id',
     'stripe_subscription_id',
     'billing_provider',
@@ -39,7 +47,7 @@ use Illuminate\Notifications\Notifiable;
     'app_state',
 ])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -65,10 +73,24 @@ class User extends Authenticatable
             'burst_credits_reset_at' => 'datetime',
             'weekly_credits_used' => 'integer',
             'weekly_credits_reset_at' => 'datetime',
+            'openrouter_reserved_micro_usd' => 'integer',
+            'openrouter_spent_micro_usd' => 'integer',
             'plan_renews_at' => 'datetime',
+            'membership_ends_at' => 'datetime',
+            'membership_cancel_at_period_end' => 'boolean',
             'onboarding_complete' => 'boolean',
             'remembered_desktops' => 'array',
             'app_state' => 'array',
         ];
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VibyraVerifyEmail);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new VibyraResetPassword($token));
     }
 }

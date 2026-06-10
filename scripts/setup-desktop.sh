@@ -47,6 +47,13 @@ fi
 
 (cd backend && php artisan migrate --force)
 
+if grep -Eq '^MAXMIND_ACCOUNT_ID=.+$' backend/.env && grep -Eq '^MAXMIND_LICENSE_KEY=.+$' backend/.env; then
+  echo "Preparing city and country lookup..."
+  (cd backend && php artisan maxmind:update) || echo "MaxMind setup failed; signed-in devices will show public IP addresses." >&2
+else
+  echo "MAXMIND_ACCOUNT_ID and MAXMIND_LICENSE_KEY are required; signed-in devices will show public IP addresses instead of city and country."
+fi
+
 if ! curl -fsS "$BACKEND_URL" >/dev/null 2>&1; then
   (cd backend && php artisan serve --host=127.0.0.1 --port=8000) &
   BACKEND_PID="$!"

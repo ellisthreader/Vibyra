@@ -1,4 +1,4 @@
-const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models?supported_parameters=tools";
 const CACHE_MS = 15 * 60 * 1000;
 const MAX_LABEL = 96;
 const DEFAULT_MODEL_LIMIT = 10;
@@ -56,13 +56,28 @@ export function buildOpenRouterModelPayload(models) {
     ok: true,
     source: "openrouter",
     loadedAt: new Date().toISOString(),
-    groups: [{ title: "", company: "Auto", options: [{ key: "auto", label: "Auto", provider: "auto", company: "Auto", tier: "budget" }] }, ...groups.map(({ score, newest, ...group }) => group)]
+    groups: [{
+      title: "",
+      company: "Auto",
+      options: [{
+        key: "auto",
+        label: "Auto",
+        provider: "auto",
+        company: "Auto",
+        tier: "budget",
+        supportedParameters: ["tools"],
+        supportsTools: true,
+        supportsReasoning: true
+      }]
+    }, ...groups.map(({ score, newest, ...group }) => group)]
   };
 }
 
 function normalizeModel(model) {
   const id = String(model?.id || "").trim();
   if (!isOpenRouterSlug(id)) return null;
+  const supportedParameters = normalizeSupportedParameters(model?.supported_parameters);
+  if (!supportedParameters.includes("tools")) return null;
   const output = model?.architecture?.output_modalities;
   const rawCompany = companyName(model, id);
   const created = Number(model?.created) || 0;
@@ -81,10 +96,22 @@ function normalizeModel(model) {
     company: rawCompany,
     tier,
     badge: created > Date.now() / 1000 - 45 * 24 * 60 * 60 ? "New" : "",
+    supportedParameters,
+    supportsTools: true,
+    supportsReasoning: supportedParameters.includes("reasoning"),
     contextLength: Number(model?.context_length || model?.top_provider?.context_length || 0) || 0,
     created,
     score: quality * 1_000_000_000 + created
   };
+}
+
+function normalizeSupportedParameters(parameters) {
+  if (!Array.isArray(parameters)) return [];
+  return Array.from(new Set(parameters
+    .filter((parameter) => typeof parameter === "string")
+    .map((parameter) => parameter.trim().toLowerCase())
+    .filter(Boolean)))
+    .sort();
 }
 
 function isGeneralChatModel(id, label, output) {

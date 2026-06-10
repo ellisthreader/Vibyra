@@ -45,6 +45,7 @@ class PublishedProjectDeployment extends Model
     public const STATUS_STARTING = 'starting';
     public const STATUS_LIVE = 'live';
     public const STATUS_STATIC_LIVE = 'static_live';
+    public const STATUS_PENDING_REVIEW = 'pending_review';
     public const STATUS_FAILED = 'failed';
     public const STATUS_STOPPED = 'stopped';
 

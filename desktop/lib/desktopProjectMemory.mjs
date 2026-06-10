@@ -1,6 +1,7 @@
+import { desktopAppApiUrl } from "./appApiConfig.mjs";
 import { appState } from "./state.mjs";
 
-const API_URL = String(process.env.VIBYRA_DESKTOP_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const API_URL = desktopAppApiUrl();
 
 export async function getDesktopProjectMemory(projectId, fetchImpl = fetch) {
   return requestProjectMemory(projectId, "", {}, fetchImpl);

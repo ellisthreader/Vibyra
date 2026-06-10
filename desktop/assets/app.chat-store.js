@@ -10,6 +10,7 @@ function loadDesktopChats() {
         pinned: Boolean(chat.pinned),
         archived: Boolean(chat.archived),
         updatedAt: Number(chat.updatedAt) || 0,
+        desktopActionContext: normalizeDesktopActionContext(chat.desktopActionContext),
         messages: chat.messages
           .filter((message) => message && (message.role === "user" || message.role === "assistant"))
           .map((message) => ({ role: message.role, text: String(message.text || ""), image: normalizeChatImage(message.image), app: normalizeChatApp(message.app, true) }))
@@ -37,7 +38,7 @@ function ensureActiveChat(seedText = "") {
   if (activeChatId && recentChats.some((chat) => chat.id === activeChatId)) return;
   activeChatId = `chat-${Date.now()}`;
   localStorage.setItem(activeChatKey, activeChatId);
-  recentChats.unshift({ id: activeChatId, title: chatTitleFromText(seedText), pinned: false, archived: false, updatedAt: Date.now(), messages: [] });
+  recentChats.unshift({ id: activeChatId, title: chatTitleFromText(seedText), pinned: false, archived: false, updatedAt: Date.now(), desktopActionContext: null, messages: [] });
 }
 function saveActiveChat(seedText = "") {
   if (!chatMessages.length) return;

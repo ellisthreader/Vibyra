@@ -39,30 +39,30 @@ test("desktop preview URL candidates rewrite dev-server ports onto known desktop
   ]);
 });
 
-test("desktop preview URL candidates prefer authenticated bridge proxies for absolute preview URLs", async () => {
+test("desktop preview URL candidates probe absolute URLs without the control bearer", async () => {
   const { desktopPreviewUrlCandidates } = await loadPreviewUrls();
   const target = "http://127.0.0.1:8000/";
-  assert.deepEqual(desktopPreviewUrlCandidates({
+  const candidates = desktopPreviewUrlCandidates({
     url: "http://192.168.1.20:4317",
     connectionUrls: ["http://10.0.0.9:4317"],
-    token: "pair token"
-  }, target), [
-    `http://192.168.1.20:4317/preview/proxy-url/pair%20token/?url=${encodeURIComponent(target)}`,
-    `http://10.0.0.9:4317/preview/proxy-url/pair%20token/?url=${encodeURIComponent(target)}`,
+    token: "control-bearer-must-not-leak"
+  }, target);
+  assert.deepEqual(candidates, [
     target,
     "http://192.168.1.20:8000/",
     "http://10.0.0.9:8000/"
   ]);
+  assert.equal(candidates.some((candidate) => candidate.includes("control-bearer-must-not-leak")), false);
+  assert.equal(candidates.some((candidate) => candidate.includes("/preview/proxy-url/")), false);
 });
 
-test("reachable desktop preview resolution uses the bridge proxy before a frame-blocked direct app URL", async () => {
+test("reachable desktop preview resolution probes an absolute URL directly", async () => {
   const target = "http://127.0.0.1:8000/";
-  const proxyUrl = `http://192.168.1.20:4317/preview/proxy-url/token/?url=${encodeURIComponent(target)}`;
   const calls = [];
   const { resolveReachableDesktopPreviewUrl } = await loadPreviewUrls({
     fetchWithTimeout: async (url) => {
       calls.push(url);
-      if (url !== proxyUrl) throw new Error("direct target is not frame-safe");
+      assert.equal(url, target);
       return response({
         body: "<!doctype html><html><body>ready</body></html>",
         url
@@ -72,22 +72,25 @@ test("reachable desktop preview resolution uses the bridge proxy before a frame-
 
   const resolved = await resolveReachableDesktopPreviewUrl({
     url: "http://192.168.1.20:4317",
-    token: "token"
+    token: "control-bearer-must-not-leak"
   }, target);
 
-  assert.equal(resolved, proxyUrl);
-  assert.deepEqual(calls, [proxyUrl]);
+  assert.equal(resolved, target);
+  assert.deepEqual(calls, [target]);
 });
 
-test("desktop preview URL candidates keep relative desktop preview paths on bridge hosts", async () => {
+test("desktop preview URL candidates keep relative scoped paths on remembered LAN bridge hosts", async () => {
   const { desktopPreviewUrlCandidates } = await loadPreviewUrls();
-  assert.deepEqual(desktopPreviewUrlCandidates({
+  const candidates = desktopPreviewUrlCandidates({
     url: "http://192.168.1.20:4317",
-    connectionUrls: ["http://10.0.0.9:4317"]
-  }, "/preview/project/app/token/"), [
-    "http://192.168.1.20:4317/preview/project/app/token/",
-    "http://10.0.0.9:4317/preview/project/app/token/"
+    connectionUrls: ["http://10.0.0.9:4317"],
+    token: "control-bearer-must-not-leak"
+  }, "/preview/project/app/preview-capability/");
+  assert.deepEqual(candidates, [
+    "http://192.168.1.20:4317/preview/project/app/preview-capability/",
+    "http://10.0.0.9:4317/preview/project/app/preview-capability/"
   ]);
+  assert.equal(candidates.some((candidate) => candidate.includes("control-bearer-must-not-leak")), false);
 });
 
 test("reachable desktop preview resolution skips unreachable returned host and uses LAN fallback", async () => {

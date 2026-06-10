@@ -1,16 +1,18 @@
 import { useEffect, useRef } from "react";
 import { appApiRequest, isAppSessionExpiredError, RemoteUser } from "../utils/appApi";
+import { appDeviceName } from "../utils/deviceIdentity";
 
 type SessionValidationOptions = {
   persistenceReady: boolean;
   authenticated: boolean;
   authToken: string;
+  installId: string;
   applyRemoteUser: (user: RemoteUser) => void;
   expireSession: (message?: string) => void;
 };
 
 export function useSessionValidation(options: SessionValidationOptions) {
-  const { persistenceReady, authenticated, authToken, applyRemoteUser, expireSession } = options;
+  const { persistenceReady, authenticated, authToken, installId, applyRemoteUser, expireSession } = options;
   const applyRemoteUserRef = useRef(applyRemoteUser);
   const expireSessionRef = useRef(expireSession);
 
@@ -23,6 +25,12 @@ export function useSessionValidation(options: SessionValidationOptions) {
     if (!persistenceReady || !authenticated || !authToken) return;
 
     let cancelled = false;
+    appApiRequest("/api/account/session/device", {
+      method: "POST",
+      body: JSON.stringify({ deviceName: appDeviceName(), installId })
+    }, authToken).catch(() => {
+      // Device metadata should not block session validation or app startup.
+    });
     appApiRequest<{ user?: RemoteUser }>("/api/session", undefined, authToken)
       .then((result) => {
         if (!cancelled && result.user) applyRemoteUserRef.current(result.user);
@@ -34,5 +42,5 @@ export function useSessionValidation(options: SessionValidationOptions) {
       });
 
     return () => { cancelled = true; };
-  }, [authToken, authenticated, persistenceReady]);
+  }, [authToken, authenticated, installId, persistenceReady]);
 }

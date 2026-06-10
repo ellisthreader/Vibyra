@@ -1,111 +1,107 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { PublicDemoWebView } from "../../../components/PublicDemoWebView";
 import { firstPublicDemoUrl, publicDemoUrlBlockedReason } from "../../../utils/publicDemoUrls";
-import { communityDetailAccent } from "../data/community";
 import { styles } from "../styles";
 import type { CommunityComment, CommunityPost } from "../types";
-import { CommunityAppLogo } from "./chunk16";
 
 export function getCommunitySeedComments(post: CommunityPost): CommunityComment[] {
   void post;
   return [];
 }
 
-export function CommunityOpenedAppPage({ opened, post }: { opened: boolean; post: CommunityPost }) {
-  const { height } = useWindowDimensions();
+export function CommunityOpenedAppPage({ onClose, post }: { onClose: () => void; post: CommunityPost }) {
+  const insets = useSafeAreaInsets();
   const demoUrl = useMemo(() => communityDemoUrl(post), [post]);
   const [reloadVersion, setReloadVersion] = useState(0);
   const [previewError, setPreviewError] = useState("");
-  const previewHeight = Math.max(520, height - 146);
-  const hostingStatus = communityHostingStatus(post);
   const unavailableMessage = previewError || communityUnavailableMessage(post, demoUrl);
-  const shouldRenderDemo = Boolean(post.previewHtml || demoUrl) && !previewError;
+  const shouldRenderDemo = Boolean(demoUrl) && !previewError;
 
   useEffect(() => {
     setPreviewError("");
     setReloadVersion(0);
-  }, [demoUrl, post.id, post.previewHtml]);
+  }, [demoUrl, post.id]);
 
   return (
-    <View style={[styles.communityAppPreviewPage, { minHeight: previewHeight }]}>
-      <View style={styles.communityAppPreviewHeader}>
-        <View style={styles.communityAppPreviewIdentity}>
-          <CommunityAppLogo accent={communityDetailAccent} post={post} size={42} />
-          <View style={styles.communityOpenedAppCopy}>
-            <Text style={styles.communityOpenedAppKicker}>{previewError ? "Preview unavailable" : opened ? "Opened preview" : "App preview"}</Text>
-            <Text numberOfLines={1} style={styles.communityOpenedAppTitle}>{formatCommunityTitle(post.title)}</Text>
-            {hostingStatus ? <Text numberOfLines={1} style={styles.communityOpenedAppSubtitle}>{hostingStatus}</Text> : null}
-          </View>
+    <Modal
+      animationType="slide"
+      navigationBarTranslucent
+      onRequestClose={onClose}
+      presentationStyle="fullScreen"
+      statusBarTranslucent
+      visible
+    >
+      <View style={styles.communityAppFullscreen}>
+        <View style={[styles.communityAppContent, { paddingTop: Math.max(insets.top, 12) }]}>
+          {shouldRenderDemo ? (
+            <PublicDemoWebView
+              onPreviewError={(error) => {
+                if (error.type === "webview") setPreviewError(cleanPreviewError(error.message || error.stack || ""));
+              }}
+              reloadKey={(post.id.length * 31) + reloadVersion}
+              style={styles.communityAppFullscreenWebView}
+              url={demoUrl || ""}
+            />
+          ) : (
+            <View style={styles.communityAppUnavailable}>
+              <View style={styles.communityDemoPanel}>
+                <Text style={styles.communityDemoLabel}>Live preview</Text>
+                <Text style={styles.communityDemoValue}>Unavailable</Text>
+                <Text style={styles.communityDemoLineText}>{unavailableMessage}</Text>
+              </View>
+            </View>
+          )}
         </View>
-        <Pressable accessibilityLabel="Reload app preview" accessibilityRole="button" onPress={() => { setPreviewError(""); setReloadVersion((value) => value + 1); }} style={styles.communityAppPreviewRefresh}>
-          <Ionicons name="refresh" color="#F6F2FF" size={19} />
-        </Pressable>
+        <View pointerEvents="box-none" style={[styles.communityAppFloatingControls, { paddingTop: Math.max(insets.top, 12) }]}>
+          <Pressable
+            accessibilityHint="Returns to the Explore app details"
+            accessibilityLabel="Close full-screen app"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onClose}
+            style={styles.communityAppFloatingButton}
+          >
+            <Ionicons name="close" color="#FFFFFF" size={24} />
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Reload full-screen app"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => { setPreviewError(""); setReloadVersion((value) => value + 1); }}
+            style={styles.communityAppFloatingButton}
+          >
+            <Ionicons name="refresh" color="#FFFFFF" size={21} />
+          </Pressable>
+        </View>
       </View>
-      {shouldRenderDemo ? (
-        <View style={styles.communityAppPreviewFrame}>
-          <PublicDemoWebView
-            html={post.previewHtml}
-            onPreviewError={(error) => {
-              if (error.type === "webview") setPreviewError(cleanPreviewError(error.message || error.stack || ""));
-            }}
-            reloadKey={(post.id.length * 31) + reloadVersion}
-            url={demoUrl}
-          />
-        </View>
-      ) : (
-        <View style={styles.communityDemoPanel}>
-          <Text style={styles.communityDemoLabel}>Live preview</Text>
-          <Text style={styles.communityDemoValue}>Unavailable</Text>
-          <Text style={styles.communityDemoLineText}>{unavailableMessage}</Text>
-        </View>
-      )}
-    </View>
+    </Modal>
   );
 }
 
-export function CommunityAppExperience({ post }: { post: CommunityPost }) {
-  return <CommunityOpenedAppPage opened post={post} />;
+export function CommunityAppExperience({ onClose, post }: { onClose: () => void; post: CommunityPost }) {
+  return <CommunityOpenedAppPage onClose={onClose} post={post} />;
 }
 
 export function hasCommunityRunnableDemo(post: CommunityPost) {
-  return Boolean(post.previewHtml || communityDemoUrl(post));
+  return Boolean(communityDemoUrl(post));
 }
 
 export function formatCommunityTitle(title: string) {
   return title.replace(/\b\w/g, (letter) => letter.toUpperCase()).replace(/\bAi\b/g, "AI").replace(/\bSaas\b/g, "SaaS");
 }
 
-function communityHostingStatus(post: CommunityPost) {
-  const status = post.hostedDemoStatus || post.deploymentStatus;
-  const hasDemo = hasCommunityRunnableDemo(post);
-  const capability = capabilityLabel(post);
-  if (status === "ready") return hasDemo ? capability : "Preview unavailable";
-  if (status === "pending") return capability;
-  if (status === "failed") return post.hostedDemoMessage || "Live preview unavailable";
-  if (status === "unavailable") return hasDemo ? capability : "Preview unavailable";
-  return hasDemo ? capability : "";
-}
-
 function communityDemoUrl(post: CommunityPost) {
   return firstPublicDemoUrl([post.hostedDemoUrl, post.previewUrl, post.publicUrl, post.appUrl]);
 }
 
-function capabilityLabel(post: CommunityPost) {
-  const frontend = post.frontendStatus === "unavailable" ? "Frontend unavailable" : "Frontend ready";
-  if (!post.backendStatus || post.backendStatus === "not_included") return `${frontend} | Backend not included`;
-  const platform = post.backendPlatform ? ` (${post.backendPlatform})` : "";
-  const backend = post.backendStatus === "ready"
-    ? `Backend live${platform}`
-    : post.backendStatus === "pending"
-      ? `Backend building${platform}`
-      : `Backend unavailable${platform}`;
-  return `${frontend} | ${backend}`;
-}
-
 function communityUnavailableMessage(post: CommunityPost, demoUrl?: string) {
-  if (post.previewHtml || demoUrl) return "";
+  if (demoUrl) return "";
+  if (post.previewHtml) {
+    return "This app only includes an inline preview. Publish an approved HTTPS demo before opening it in Explore.";
+  }
   const reason = publicDemoUrlBlockedReason(post.hostedDemoUrl || post.previewUrl || post.publicUrl || post.appUrl);
   if (reason) return `${reason} Publish a hosted HTTPS demo before opening this app in Explore.`;
   return "This community app does not expose a public preview yet.";

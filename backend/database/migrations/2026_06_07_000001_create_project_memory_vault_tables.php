@@ -19,7 +19,8 @@ return new class extends Migration
         });
 
         Schema::create('project_memory_nodes', function (Blueprint $table) {
-            $table->ulid('id')->primary();
+            $table->ulid('id');
+            $table->primary('id');
             $table->foreignId('vault_id')->constrained('project_memory_vaults')->cascadeOnDelete();
             $table->foreignUlid('parent_id')->nullable()->constrained('project_memory_nodes')->cascadeOnDelete();
             $table->string('type', 16);

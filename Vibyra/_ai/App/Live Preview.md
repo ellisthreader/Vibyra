@@ -22,6 +22,14 @@ Read this for in-app website/app previews, preview cards in chat, blank preview 
 
 `AppPreviewModal` renders through `AppWebView`, preferring inline `html` and using `url` as fallback. Desktop agent completions attach generated `index.html` from `result.files` when available, so fresh builds do not depend on the LAN preview route.
 
+Native `AppWebView` applies `webViewNavigationPolicy.ts`: URL previews may
+navigate only within their initial exact HTTP(S) origin, while inline previews
+remain on `about:blank`. Credentialed URLs, custom/dangerous schemes,
+cross-origin top-level navigation, mixed content, file/content access, and
+new-window escape are blocked. Public community demos request incognito,
+no-cache operation with shared and third-party cookies disabled. Keep physical
+iOS/Android HTTP-preview and storage-isolation tests in the release gate.
+
 On web, inline previews render in `AppWebView.web.tsx` via `iframe srcDoc`. The base `AppWebView.tsx` is also browser-safe and must not import `react-native-webview`; native WebView code belongs in `AppWebView.native.tsx` only, so Expo web cannot bundle the unsupported native module. The sandbox must include `allow-same-origin` along with `allow-scripts`; generated apps are allowed to use `localStorage`, and without same-origin the browser throws `SecurityError: Failed to read the 'localStorage' property from 'Window'`.
 
 `chatPreviewFallback.ts` strips imports/requires from fenced React snippets and provides browser shims for common React Native primitives, including `WebView`, so AI-generated mobile-flavored previews open as iframe-safe browser code instead of crashing with `react-native-webview does not support this platform`. Backend prompt guidance in `backend/app/Services/Concerns/OpenAiStreaming.php` tells models that phone previews run in a browser iframe and must use browser HTML/CSS/JavaScript rather than React Native/Expo native modules.
@@ -84,18 +92,32 @@ React/Laravel preview startup is a cold-start path, not a normal short desktop r
 
 Started preview servers are exposed to the phone through the Vibyra Desktop bridge, not direct Laravel/Vite ports. `/preview/start-server` returns `/preview/server/{projectId}/{token}/`; `desktop/lib/preview.mjs` proxies that route to the tracked local dev server and rewrites root-relative assets plus local/private Vite URLs through bridge proxy routes. This avoids same-Wi-Fi/firewall failures where the phone can reach port `4317` but cannot reach app ports like `8000` or `5174`.
 
-Older desktop builds can still return an absolute LAN preview URL. When the app
-has a desktop token, `src/utils/previewUrls.ts` should prefer the authenticated
-`/preview/proxy-url/{token}/?url=...` route on known bridge hosts before trying
-the direct LAN URL. The proxy rewrites dependent assets and omits upstream
-framing headers, avoiding target-app `frame-ancestors 'none'` failures inside
-the mobile web iframe.
+`/preview/proxy-url` may fetch only exact origins already tracked for the
+credential's project, including when a legacy global preview token is used.
+Unsupported, metadata, public, encoded-IP, IPv6 loopback, and untracked targets
+are rejected, and upstream redirects remain manual. Emergency rollback
+`VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED=true` restores the old arbitrary
+legacy-token proxy and must remain off in production.
+
+Scoped preview credentials must also survive proxy request metadata rewriting.
+`previewProxyRequest.mjs::previewRefererToTarget()` validates the credential
+against the project before restoring the upstream `Referer`; keep the scoped
+Inertia body/cookie/redirect regression in `desktop/lib/preview.test.mjs`.
+
+Mobile preview URLs must come from desktop preview endpoint responses such as
+`app.startPreviewServer()`; never construct a preview path or query from
+`connection.token`. `src/utils/previewUrls.ts` resolves relative scoped
+capability paths against the active and remembered LAN desktop bases. Absolute
+URLs may be probed directly and rewritten onto remembered LAN hosts, but must
+not be wrapped in a control-token proxy URL.
 
 Vite/Laravel output can reference `http://0.0.0.0:<port>/...`; the bridge proxy must normalize local/private proxy targets to `127.0.0.1` before fetching because `0.0.0.0` is only a bind address. Explicit project preview commands should prefer the real PC project route/files over older generated `ChatMessage.app` previews; source-only HTML with local scripts/styles such as `/resources/js/app.tsx`, `/src/main.jsx`, or `/style.css` is not self-contained phone HTML and should trigger desktop dev-server startup instead of being attached inline. Relevant files: `desktop/lib/preview.mjs`, `src/screens/workspace/hooks/workspaceChatRuntime.ts`, `src/utils/previewHtml.ts`.
 
 Community publishing has a separate public-demo path from local Live Preview. `src/screens/workspace/inline/chunk8.tsx` calls `src/utils/hostedDemo.ts` before `/api/projects/publish`; that helper treats authenticated `GET /files/publish-demo-bundle?projectId=...` as an optional desktop capability and falls back to ordinary publishing when older desktop builds return 404 or no static bundle. This request can take several minutes because desktop may install dependencies with scripts disabled and build before returning a static demo bundle. The same helper can request `GET /files/publish-runtime-bundle?projectId=...` and send a `runtimeBundle` for Node apps that need backend hosting. The publish API types carry `hostedDemo`, `runtimeBundle`, `hostedDemoStatus`, `hostedDemoUrl`, and `hostedDemoMessage`. Explore/community app opening uses `src/components/PublicDemoWebView.tsx`, a constrained wrapper around `AppWebView`, instead of the local preview modal/mini-chat path.
 
 Explore public demos must never open arbitrary private/LAN URLs such as `localhost`, `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`, or `.local` hosts in production. `src/utils/publicDemoUrls.ts` owns the sanitizer used by `communityApi.ts`, `PublicDemoWebView.tsx`, and `workspace/inline/chunk15.tsx`; production requires public HTTPS, while dev may allow only first-party Vibyra community demo/preview routes on the configured local backend for local testing. Blocked or failed demos should show the clean unavailable panel, not raw WebView browser errors. `CommunityPostDetail` and `CommunityPage` must only enter `CommunityOpenedAppPage` when `hasCommunityRunnableDemo(post)` is true, so `hostedDemoStatus: "ready"` without inline HTML or a sanitized public URL cannot show a fake opened app.
+
+Explore demos open as an immersive native full-screen modal owned by `CommunityOpenedAppPage`; do not keep the Vibyra top bar, app identity header, ordinary page padding, or framed preview around the published app. The demo WebView fills the available viewport below the device top safe area so camera cutouts do not cover app content, while small floating close and refresh controls remain safe-area-aware above it. Closing, including Android hardware back, returns to the selected Explore post rather than leaving Explore.
 
 Laravel+Vite projects must skip all static preview entries, including a stray root `index.html`, and go through the Laravel/PHP plus Vite dev-server path. Detect both `laravel/framework` and escaped composer JSON forms such as `laravel\/framework`; otherwise Vibyra can show a stale generated static page instead of the real Inertia app. Relevant files: `desktop/lib/preview.mjs`, `backend/app/Services/Concerns/ProjectPreview.php`, `desktop/lib/preview.test.mjs`, `backend/tests/Feature/VibyraAppApiTest.php`.
 

@@ -3,15 +3,27 @@
 return [
     'enabled' => env('MODERATION_ENABLED', true),
     'local_enabled' => env('LOCAL_MODERATION_ENABLED', true),
-    'remote_enabled' => env('OPENAI_MODERATION_ENABLED', true),
+    // Remote moderation is operational company spend and requires a separate
+    // budget before enabling; deterministic local moderation remains active.
+    'remote_enabled' => env('OPENAI_MODERATION_ENABLED', false),
     'fail_closed' => env('OPENAI_MODERATION_FAIL_CLOSED', true),
     'timeout_seconds' => env('OPENAI_MODERATION_TIMEOUT', 12),
     'max_text_characters' => 12000,
     'max_image_data_url_characters' => 7000000,
+    // legacy: verified email allowlist; bootstrap: consume each allowlisted
+    // email once into an immutable user assignment; database: roles only.
+    'privileged_role_mode' => env('VIBYRA_PRIVILEGED_ROLE_MODE', 'bootstrap'),
     'publish_reviewer_emails' => array_values(array_filter(array_map('trim', explode(',', env('VIBYRA_PUBLISH_REVIEWER_EMAILS', ''))))),
+    // Emergency launch switch. This skips publish review decisions but leaves
+    // bundle validation and preview sanitization active.
+    'publish_review_temporarily_disabled' => env('PUBLISH_REVIEW_TEMPORARILY_DISABLED', false),
+    // Explicit temporary testing switch. Hard deterministic/local moderation
+    // denials still block publication even when this is enabled.
     'publish_force_approve_under_review' => env('PUBLISH_REVIEW_FORCE_APPROVE_UNDER_REVIEW', false),
     'publish_ai_review' => [
-        'enabled' => env('PUBLISH_REVIEW_AI_ENABLED', true),
+        // This is company-funded operational AI, so it stays off until a
+        // separate operational budget and cap are configured.
+        'enabled' => env('PUBLISH_REVIEW_AI_ENABLED', false),
         'model' => env('PUBLISH_REVIEW_AI_MODEL', 'openai/gpt-5.4-nano'),
         'min_score' => (int) env('PUBLISH_REVIEW_AI_MIN_SCORE', 35),
         'max_score' => (int) env('PUBLISH_REVIEW_AI_MAX_SCORE', 74),

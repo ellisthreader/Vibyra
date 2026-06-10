@@ -3,7 +3,7 @@ import { colors } from "../../../styles/theme";
 
 export const part6 = {
   resultBackdropImage: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   frequencyHeader: {
     alignSelf: "stretch",
@@ -102,7 +102,7 @@ export const part6 = {
     position: "relative"
   },
   frequencySelectedGlow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(151, 54, 255, 0.04)",
     borderRadius: 18
   },

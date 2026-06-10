@@ -2,6 +2,8 @@ export type RemoteUser = {
   id: number;
   name: string;
   email: string;
+  provider?: "apple" | "google" | "email";
+  emailVerified?: boolean;
   plan: string;
   planBillingCycle?: "monthly" | "annual";
   planRenewsAt?: string | null;

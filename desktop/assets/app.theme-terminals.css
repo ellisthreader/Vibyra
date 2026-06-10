@@ -15,10 +15,11 @@ body {
   --terminal-shadow: rgba(0, 0, 0, 0.42);
   --terminal-warning-bg: rgba(255, 183, 77, 0.08);
   --terminal-warning-border: rgba(255, 192, 97, 0.14);
+  --terminal-warning-text: #e7b45f;
 }
 
 .terminal-provider-claude { --terminal-accent: #ff9b6a; --terminal-accent-soft: rgba(255, 155, 106, 0.12); --terminal-accent-border: rgba(255, 155, 106, 0.32); }
-.terminal-provider-openai { --terminal-accent: #69d6c7; --terminal-accent-soft: rgba(105, 214, 199, 0.12); --terminal-accent-border: rgba(105, 214, 199, 0.32); }
+.terminal-provider-openai { --terminal-accent: #8b5cff; --terminal-accent-soft: rgba(139, 92, 255, 0.13); --terminal-accent-border: rgba(139, 92, 255, 0.34); }
 .terminal-provider-gemini { --terminal-accent: #6aa8ff; --terminal-accent-soft: rgba(106, 168, 255, 0.12); --terminal-accent-border: rgba(106, 168, 255, 0.34); }
 .terminal-provider-auto { --terminal-accent: #b9a7f6; --terminal-accent-soft: rgba(139, 92, 255, 0.13); --terminal-accent-border: rgba(139, 92, 255, 0.34); }
 
@@ -35,7 +36,14 @@ body {
 .terminal-layout-preview { background: var(--terminal-surface); border-color: var(--terminal-border); }
 .terminal-menu,
 .terminal-model-picker,
-.terminal-command-menu { background: var(--terminal-elevated); border-color: var(--terminal-border-strong); box-shadow: 0 18px 48px var(--terminal-shadow); }
+.terminal-command-menu {
+  --terminal-accent: #8b5cff;
+  --terminal-accent-soft: rgba(139, 92, 255, 0.13);
+  --terminal-accent-border: rgba(139, 92, 255, 0.34);
+  background: var(--terminal-elevated);
+  border-color: var(--terminal-border-strong);
+  box-shadow: 0 18px 48px var(--terminal-shadow);
+}
 
 .terminal-focus-head,
 .terminal-tile-head,
@@ -55,6 +63,7 @@ body {
 .terminal-command-option,
 .terminal-model-select,
 .terminal-count-row button,
+.terminal-effort-row button,
 .terminal-model-row button,
 .terminal-custom-count,
 .terminal-settings-menu select,
@@ -66,6 +75,7 @@ body {
 .terminal-banner-tips,
 .terminal-line.user pre { color: var(--terminal-copy); }
 .terminal-meta-chip,
+.terminal-setup-advanced summary,
 .terminal-setup-block p,
 .terminal-agent-row small,
 .terminal-agent-option small,
@@ -107,6 +117,7 @@ body {
 .terminal-settings-menu label:hover,
 .terminal-model-select:hover,
 .terminal-count-row button:hover,
+.terminal-effort-row button:hover,
 .terminal-model-row button:hover,
 .terminal-custom-count:hover,
 .terminal-model-option:hover,
@@ -117,6 +128,7 @@ body {
 .terminal-agent-row button.active,
 .terminal-agent-option.active,
 .terminal-count-row button.active,
+.terminal-effort-row button.active,
 .terminal-model-row button.active,
 .terminal-model-option.active,
 .terminal-model-option.active:hover,
@@ -154,6 +166,7 @@ body {
 .terminal-line.mention pre,
 .terminal-line.approval pre,
 .terminal-line.review pre,
+.terminal-setup-advanced,
 .terminal-block,
 .terminal-cli-box,
 .terminal-banner-tips kbd,

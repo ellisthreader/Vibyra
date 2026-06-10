@@ -10,10 +10,12 @@ export function EmailAuthForm({
   mode,
   name,
   onEmailChange,
+  onForgotPassword,
   onModeChange,
   onNameChange,
   onPasswordChange,
   onReferralCodeChange,
+  onResendVerification,
   onSubmit,
   password,
   referralCode,
@@ -25,10 +27,12 @@ export function EmailAuthForm({
   mode: "login" | "signup";
   name: string;
   onEmailChange: (value: string) => void;
+  onForgotPassword: () => void;
   onModeChange: (mode: "login" | "signup") => void;
   onNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onReferralCodeChange: (value: string) => void;
+  onResendVerification: () => void;
   onSubmit: () => void | Promise<void>;
   password: string;
   referralCode: string;
@@ -85,6 +89,16 @@ export function EmailAuthForm({
         style={[emailStyles.emailInput, { height: inputHeight }]}
         value={password}
       />
+      {mode === "login" ? (
+        <View style={emailStyles.emailModeRow}>
+          <Pressable onPress={onForgotPassword}>
+            <Text style={styles.recoveryLink}>Forgot password?</Text>
+          </Pressable>
+          <Pressable onPress={onResendVerification}>
+            <Text style={styles.recoveryLink}>Resend verification</Text>
+          </Pressable>
+        </View>
+      ) : null}
       {mode === "signup" ? (
         <TextInput
           autoCapitalize="characters"

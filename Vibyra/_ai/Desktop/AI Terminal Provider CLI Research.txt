@@ -1,6 +1,6 @@
 # AI Terminal Provider CLI Research
 
-Date: 2026-05-20
+Date: 2026-06-09
 Scope: Vibyra desktop Terminals page (`desktop/assets/app.terminals.js`, `desktop/assets/app.terminals.css`, `desktop/lib/aiTerminals.mjs`).
 
 Purpose: implementation-ready research for making each AI provider terminal feel like its real CLI surface instead of one generic chat terminal.
@@ -9,15 +9,18 @@ Parity requirement:
 Implement against the captured/documented evidence below, not against generic "AI terminal" taste. Where a real CLI exposes an exact visible string, marker, or command behavior, copy that behavior. Where the provider does not expose stable public source for a visual state, use the local capture or official screenshot as the acceptance target.
 
 Current local/latest versions checked:
-- Local Codex: `codex-cli 0.131.0`; latest npm: `@openai/codex 0.132.0`.
-- Local Claude Code: `2.1.143`; latest npm: `@anthropic-ai/claude-code 2.1.145`.
-- Gemini CLI not installed locally; latest npm: `@google/gemini-cli 0.42.0`.
+- Local Codex: `codex-cli 0.130.0`; latest npm: `@openai/codex 0.138.0`.
+- Local Claude Code and latest npm: `2.1.169`.
+- Gemini CLI not installed globally; latest npm and captured package:
+  `@google/gemini-cli 0.45.2`.
 
 Evidence collected:
 - Local Claude Code TUI capture, 100x30 terminal: `script -q -c 'timeout 4s claude' /tmp/vibyra-claude.typescript`.
 - Local Codex TUI capture, 100x30 terminal: `script -q -c 'timeout 4s codex --no-alt-screen' /tmp/vibyra-codex.typescript`. This machine's Codex capture is dominated by the Linux sandbox/bubblewrap warning and permission tip; use the official splash image for normal initial layout.
 - Official Codex splash image: `https://raw.githubusercontent.com/openai/codex/main/.github/codex-cli-splash.png`, 1898x1190.
-- Gemini npm package unpacked from `@google/gemini-cli@0.42.0`; evidence files include `bundle/docs/assets/gemini-screenshot.png` (1089x582), `bundle/docs/reference/commands.md`, `bundle/docs/reference/keyboard-shortcuts.md`, `bundle/docs/cli/themes.md`, and `bundle/interactiveCli-*.js`.
+- Gemini npm package and live startup captured from
+  `@google/gemini-cli@0.45.2`; the current startup adds a folder-trust prompt
+  for untrusted workspaces and uses the four tips recorded below.
 - Gemini interactive code confirms prompt placeholder, prompt markers, shell-mode status text, startup header logic, tips display, and footer/status content.
 
 Source files reviewed:
@@ -184,12 +187,13 @@ Real CLI/product cues:
 - `/clear` clears the terminal screen and visible session history/scrollback.
 - `/chat` is an alias for `/resume`.
 - Packaged screenshot shows the startup logo as a large gradient `GEMINI` wordmark on black with a small Gemini icon to the left.
-- Startup tips are exact:
+- Startup tips captured from `0.45.2` are:
 ```
 Tips for getting started:
-1. Ask questions, edit files, or run commands.
-2. Be specific for the best results.
-3. /help for more information.
+1. Create GEMINI.md files to customize your interactions
+2. /help for more information
+3. Ask coding questions, edit code or run commands
+4. Be specific for the best results
 ```
 - User prompt line in screenshot starts with `>`.
 - Model response line starts with `✦`.

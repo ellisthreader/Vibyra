@@ -1,23 +1,29 @@
 function renderDashboard() {
-  const rows = liveBuildRows();
+  const terminalRows = homeTerminalRows();
+  const activeWork = liveBuildRows();
   const events = dashboardActivityEvents();
-  nodes.content.innerHTML = `<section class="builds-page builds-page--screenshot"><div class="builds-title-row"><div class="page-head"><h1>Builds on this desktop</h1><p class="body-copy">Builds running on this desktop will appear here.</p></div><button class="primary-button builds-new-chat" type="button" data-jump="chat">${icon("plus")}New chat</button></div><div class="summary-grid builds-summary-grid">${dashboardSummaryTile("pulse", "Active builds", rows.length, "running")}${dashboardSummaryTile("folder", "Local projects", (currentState.projects || []).length, "available", true)}${dashboardSummaryTile("desktop", "Desktop status", desktopStatusTitle(), currentState.machineName || "Desktop")}</div>${rows.length ? dashboardActiveBuildPanel(rows) : dashboardPairingPanel()}<section class="activity-panel builds-activity-panel"><div class="activity-head"><h2>Recent activity</h2><span class="activity-count">${events.length} event${events.length === 1 ? "" : "s"}</span></div><div class="activity-list builds-activity-list">${dashboardActivityRows(events.slice(0, 8))}</div></section></section>`;
+  const firstName = String(currentAccount()?.name || "").trim().split(/\s+/)[0];
+  const welcome = firstName ? `Welcome back, ${firstName}.` : "Welcome to Vibyra.";
+  const workingTerminals = terminalRows.filter(homeTerminalIsWorking).length;
+  const activityPanel = events.length ? `<section class="desktop-home-card desktop-home-activity" id="desktop-home-activity"><div class="desktop-home-section-head"><div><span>Latest</span><h2>Recent activity</h2></div></div><div class="desktop-home-activity-list">${dashboardActivityRows(events.slice(0, 4))}</div></section>` : "";
+  nodes.content.innerHTML = `<section class="desktop-home"><header class="desktop-home-header"><div><p>${escapeHtml(currentState.machineName || "Vibyra Desktop")}</p><h1>${escapeHtml(welcome)}</h1><span>Start something new or continue where you left off.</span></div><button class="primary-button desktop-home-new-chat" type="button" data-jump="chat">${icon("plus")}New chat</button></header><nav class="desktop-home-status" aria-label="Desktop overview">${homeStatusItem("phone", "Phone", homePhoneStatus(), "phone", currentState.pairedDevice ? "Your phone is ready." : "Pair your phone to get started.")}${homeStatusItem("terminal", "Terminals", `${terminalRows.length} open`, "terminals", workingTerminals ? `${workingTerminals} working now.` : terminalRows.length ? "All terminals ready." : "Launch your first workspace.", workingTerminals ? "working" : "")}${homeStatusItem("folder", "Projects", `${(currentState.projects || []).length} local`, "projects", "Available on this desktop.")}${homeStatusItem("clock", "Activity", `${events.length} recent`, "activity", "Latest desktop updates.")}</nav><div class="desktop-home-dashboard"><main class="desktop-home-primary"><section class="desktop-home-card desktop-home-workspace"><div class="desktop-home-section-head"><div><span>Workspace</span><h2>Terminals</h2></div><button class="desktop-home-text-button" type="button" data-jump="terminals">View all ${icon("arrow")}</button></div>${activeWork.length ? homeActiveWorkRow(activeWork[0]) : ""}${terminalRows.length ? `<div class="desktop-home-terminal-list">${terminalRows.slice(0, 5).map(homeTerminalRow).join("")}</div>` : homeEmptyTerminals()}</section>${activityPanel}</main><aside class="desktop-home-support">${homePhonePanel()}${homeProjectsPanel()}</aside></div></section>`;
   bindJumps();
   bindDashboardActions();
 }
 function bindDashboardActions() {
-  document.getElementById("copy-dashboard-pair-code")?.addEventListener("click", async () => {
-    const value = currentState.pairCode || "";
-    try {
-      await navigator.clipboard?.writeText(value);
-      const button = document.getElementById("copy-dashboard-pair-code");
-      button?.classList.add("is-copied");
-      setTimeout(() => button?.classList.remove("is-copied"), 1400);
-    } catch {
-    }
-  });
-  document.getElementById("dashboard-pair-phone")?.addEventListener("click", openPairModal);
-  document.getElementById("dashboard-pair-help")?.addEventListener("click", openPairModal);
+  document.querySelectorAll("[data-home-phone]").forEach((button) => button.addEventListener("click", openPairModal));
+  document.querySelectorAll("[data-home-activity]").forEach((button) => button.addEventListener("click", () => {
+    document.getElementById("desktop-home-activity")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }));
+  document.querySelectorAll("[data-home-terminal]").forEach((button) => button.addEventListener("click", () => {
+    if (typeof activeTerminalId !== "undefined") activeTerminalId = button.dataset.homeTerminal || activeTerminalId;
+    setPage("terminals");
+  }));
+  document.querySelectorAll("[data-home-project]").forEach((button) => button.addEventListener("click", () => {
+    selectedProjectId = button.dataset.homeProject || "";
+    if (selectedProjectId) localStorage.setItem("vibyra.desktop.project", selectedProjectId);
+    setPage("projects");
+  }));
 }
 function renderProjects() {
   const projects = filteredProjects();
@@ -36,13 +42,19 @@ function renderChat() {
   const cursor = restoreFocus ? previousInput.selectionStart : chatDraft.length;
   const runCard = activeRunCard();
   const isEmptyChat = !chatMessages.length && !runCard;
-  nodes.content.innerHTML = `<section class="chat-page${isEmptyChat ? " chat-page--empty" : ""}"><div class="chat-scroll" id="chat-scroll">${isEmptyChat ? chatEmptyState() : `<div class="messages">${chatMessages.map(messageRow).join("")}${runCard}</div>`}</div><div class="composer-shell">${chatNoticeBanner()}<div class="composer"><div class="composer-context">${projectContextChip()}${attachmentChips()}${toolChip()}${skillChip()}</div><textarea id="chat-input" placeholder="Message Vibyra..." rows="1">${escapeHtml(chatDraft)}</textarea>${slashMenu()}<input id="chat-attach" type="file" accept="*/*" multiple hidden /><div class="composer-bottom"><div class="composer-tools"><div class="tool-menu-wrap"><button class="icon-tool" id="open-attach-menu" type="button" aria-label="Attach context" title="Attach context">${icon("paperclip")}</button>${openChatMenu === "attach" ? attachMenu() : ""}</div><div class="tool-menu-wrap ai-menu-wrap"><button class="tool-pill quiet ai-selector" id="open-ai-menu" type="button" aria-haspopup="dialog" aria-expanded="${openChatMenu === "ai" ? "true" : "false"}"><span class="ai-selector-icon">${providerLogo(currentChatModel().provider)}</span><span class="ai-selector-copy"><strong>${escapeHtml(currentChatModel().label)}</strong><small>${escapeHtml(currentEffort().label)}</small></span>${icon("chevron-down")}</button>${openChatMenu === "ai" ? aiMenu() : ""}</div></div><button class="send-button" id="send-chat" type="button" aria-label="Send message" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button></div></div></div></section>`;
+  nodes.content.innerHTML = `<section class="chat-page${isEmptyChat ? " chat-page--empty" : ""}"><button class="chat-ai-corner" id="focus-vibyra-ai" type="button" aria-label="Focus Vibyra AI chat"><span class="chat-ai-corner-logo"><img src="/app-assets/vibyra.png" alt="" /></span><span><strong>Vibyra AI</strong><small>${chatSending ? "Thinking" : "Ready"}</small></span><i class="${chatSending ? "is-busy" : ""}"></i></button><div class="chat-scroll" id="chat-scroll">${isEmptyChat ? chatEmptyState() : `<div class="messages">${chatMessages.map(messageRow).join("")}${runCard}</div>`}</div><div class="composer-shell">${chatNoticeBanner()}<div class="composer"><div class="composer-context">${projectContextChip()}${attachmentChips()}${toolChip()}${skillChip()}</div><textarea id="chat-input" placeholder="Ask Vibyra anything..." rows="1">${escapeHtml(chatDraft)}</textarea>${slashMenu()}<input id="chat-attach" type="file" accept="*/*" multiple hidden /><div class="composer-bottom"><div class="composer-tools"><div class="tool-menu-wrap"><button class="icon-tool" id="open-attach-menu" type="button" aria-label="Attach context" title="Attach context">${icon("paperclip")}</button>${openChatMenu === "attach" ? attachMenu() : ""}</div><div class="tool-menu-wrap ai-menu-wrap"><button class="tool-pill quiet ai-selector" id="open-ai-menu" type="button" aria-haspopup="dialog" aria-expanded="${openChatMenu === "ai" ? "true" : "false"}"><span class="ai-selector-icon">${providerLogo(currentChatModel().provider)}</span><span class="ai-selector-copy"><strong>${escapeHtml(currentChatModel().label)}</strong><small>${escapeHtml(currentEffort().label)}</small></span>${icon("chevron-down")}</button>${openChatMenu === "ai" ? aiMenu() : ""}</div></div><span class="composer-key-hint">Enter to send</span><button class="send-button" id="send-chat" type="button" aria-label="Send message" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button></div></div></div></section>`;
   document.querySelectorAll("[data-suggestion]").forEach((button) => button.addEventListener("click", () => { const input = document.getElementById("chat-input"); input.value = button.dataset.suggestion; chatDraft = input.value; localStorage.setItem("vibyra.desktop.chatDraft", chatDraft); input.focus(); renderSendState(); }));
   document.getElementById("clear-project")?.addEventListener("click", () => { selectedProjectId = ""; localStorage.removeItem("vibyra.desktop.project"); render(); });
   document.getElementById("clear-attachments")?.addEventListener("click", () => { chatAttachments = []; renderChat(); });
   document.getElementById("clear-tool")?.addEventListener("click", () => { activeChatTool = ""; renderChat(); });
   document.getElementById("clear-skill")?.addEventListener("click", () => { activeChatSkill = ""; renderChat(); });
   document.getElementById("dismiss-chat-notice")?.addEventListener("click", () => { chatNotice = null; renderChat(); });
+  document.getElementById("focus-vibyra-ai")?.addEventListener("click", () => {
+    openChatMenu = "";
+    const input = document.getElementById("chat-input");
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus({ preventScroll: true });
+  });
   document.getElementById("open-attach-menu")?.addEventListener("click", () => toggleChatMenu("attach"));
   document.getElementById("open-ai-menu")?.addEventListener("click", () => toggleChatMenu("ai"));
   document.querySelectorAll("[data-model-group]").forEach((button) => button.addEventListener("click", () => selectModelMenuGroup(button.dataset.modelGroup)));

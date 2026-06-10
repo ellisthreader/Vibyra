@@ -26,6 +26,8 @@ Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
 - `/api/session/state`, cloud sync: `App/Cloud Sync.md`
 - Profile, billing, model locks: `App/Profile Billing.md`
 - Bottom nav, app shell, broad UI: `App/Navigation UI.md`
+- App Store and Google Play release audit: `App/App Store Production Readiness.md`
+- Mobile/backend/desktop cybersecurity release audit: `App/Mobile Cybersecurity Review.md`
 - Mobile/frontend design clarity from short-form product demos: `App/Short-Form Frontend Design Principles.md`
 
 ## Desktop Bridge
@@ -34,7 +36,9 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 
 - Shell UI/auth gate/launcher: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Local Vibyra AI, Ollama, model/runtime status: `Desktop/Local Vibyra AI.md`
 - AI-terminal voice and editable project memory: `Desktop/Voice And Project Memory.md`
+- System-wide screenshot hotkey, crop/annotation, Copy/Save: `Desktop/Screenshot Capture.md`
 - Pairing/phone session/LAN URLs: `Desktop/Pairing And Phone Session.md`
 - Discovery/browse/search/preview: `Desktop/Projects And Preview.md`
 - Agent runs/apply-discard/safe commands: `Desktop/Agent Runs And Commands.md`

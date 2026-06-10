@@ -1,0 +1,142 @@
+name: Security CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-policy:
+    name: Repository security policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Audit security automation
+        run: node scripts/security/audit-production-config.mjs --ci
+      - name: Lint GitHub Actions workflows
+        run: scripts/security/run-actionlint.sh
+      - name: Test production audit
+        run: node --test scripts/security/audit-production-config.test.mjs
+
+  secrets:
+    name: Secret history scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan with Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  mobile-desktop:
+    name: Mobile and desktop checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+      - name: Check Expo dependency alignment
+        run: npx expo install --check
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Run mobile tests
+        run: node --test $(find src -name '*.test.mjs' -print | sort)
+      - name: Run desktop security and preview tests
+        run: >-
+          node --test
+          desktop/lib/preview.test.mjs
+          desktop/lib/previewCapabilities.phaseA.test.mjs
+          desktop/lib/deviceCredentials.test.mjs
+          desktop/lib/pairingCredentials.test.mjs
+          desktop/lib/pairingSecurity.test.mjs
+          desktop/lib/pairingAccount.test.mjs
+          desktop/lib/pairingQr.test.mjs
+
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up PHP
+        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Audit Composer dependencies
+        run: composer audit --locked
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Audit backend npm dependencies
+        run: npm audit --audit-level=high
+      - name: Build backend assets
+        run: npm run build
+      - name: Run backend tests
+        run: php artisan test
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: vibyra.cdx.json
+          artifact-name: vibyra-cyclonedx-sbom
+          upload-artifact: true
+          upload-artifact-retention: 30
+          upload-release-assets: false

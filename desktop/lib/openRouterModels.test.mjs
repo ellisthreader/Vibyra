@@ -4,10 +4,10 @@ import { buildOpenRouterModelPayload } from "./openRouterModels.mjs";
 
 test("OpenRouter models are grouped by company and sorted by capability", () => {
   const payload = buildOpenRouterModelPayload([
-    { id: "openai/gpt-4o-mini", name: "OpenAI: GPT 4o Mini", created: 100, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.0000001", completion: "0.0000004" } },
-    { id: "openai/gpt-chat-latest", name: "OpenAI: GPT Chat Latest", created: 90, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.000005", completion: "0.00003" } },
-    { id: "anthropic/claude-opus-4.7", name: "Anthropic: Claude Opus 4.7", created: 80, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.00003", completion: "0.00015" } },
-    { id: "stability/image-only", name: "Stability: Image Only", created: 120, architecture: { output_modalities: ["image"] } }
+    { id: "openai/gpt-4o-mini", name: "OpenAI: GPT 4o Mini", created: 100, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.0000001", completion: "0.0000004" }, supported_parameters: ["tools"] },
+    { id: "openai/gpt-chat-latest", name: "OpenAI: GPT Chat Latest", created: 90, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.000005", completion: "0.00003" }, supported_parameters: ["tools"] },
+    { id: "anthropic/claude-opus-4.7", name: "Anthropic: Claude Opus 4.7", created: 80, architecture: { output_modalities: ["text"] }, pricing: { prompt: "0.00003", completion: "0.00015" }, supported_parameters: ["tools"] },
+    { id: "stability/image-only", name: "Stability: Image Only", created: 120, architecture: { output_modalities: ["image"] }, supported_parameters: ["tools"] }
   ]);
 
   const openAi = payload.groups.find((group) => group.company === "OpenAI");
@@ -20,17 +20,17 @@ test("OpenRouter models are grouped by company and sorted by capability", () => 
 
 test("OpenRouter model catalog hides non-chat and preview variants", () => {
   const payload = buildOpenRouterModelPayload([
-    { id: "openai/gpt-audio", name: "OpenAI: GPT Audio", architecture: { output_modalities: ["text", "audio"] } },
-    { id: "google/lyria-3-clip-preview", name: "Google: Lyria 3 Clip Preview", architecture: { output_modalities: ["text", "audio"] } },
-    { id: "openai/gpt-5-image", name: "OpenAI: GPT-5 Image", architecture: { output_modalities: ["image", "text"] } },
-    { id: "baidu/qianfan-ocr-fast", name: "Baidu: Qianfan-OCR-Fast", architecture: { output_modalities: ["text"] } },
-    { id: "meta-llama/llama-guard-3-8b", name: "Llama Guard 3 8B", architecture: { output_modalities: ["text"] } },
-    { id: "openai/gpt-4o-search-preview", name: "OpenAI: GPT-4o Search Preview", architecture: { output_modalities: ["text"] } },
-    { id: "qwen/qwen3-vl-32b-instruct", name: "Qwen: Qwen3 VL 32B Instruct", architecture: { output_modalities: ["text"] } },
-    { id: "openai/o3-deep-research", name: "OpenAI: o3 Deep Research", architecture: { output_modalities: ["text"] } },
-    { id: "deepseek/deepseek-v3.2-exp", name: "DeepSeek: DeepSeek V3.2 Exp", architecture: { output_modalities: ["text"] } },
-    { id: "openrouter/bodybuilder", name: "OpenRouter: Body Builder (beta)", architecture: { output_modalities: ["text"] } },
-    { id: "anthropic/claude-sonnet-4.5", name: "Anthropic: Claude Sonnet 4.5", architecture: { output_modalities: ["text"] } }
+    { id: "openai/gpt-audio", name: "OpenAI: GPT Audio", architecture: { output_modalities: ["text", "audio"] }, supported_parameters: ["tools"] },
+    { id: "google/lyria-3-clip-preview", name: "Google: Lyria 3 Clip Preview", architecture: { output_modalities: ["text", "audio"] }, supported_parameters: ["tools"] },
+    { id: "openai/gpt-5-image", name: "OpenAI: GPT-5 Image", architecture: { output_modalities: ["image", "text"] }, supported_parameters: ["tools"] },
+    { id: "baidu/qianfan-ocr-fast", name: "Baidu: Qianfan-OCR-Fast", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "meta-llama/llama-guard-3-8b", name: "Llama Guard 3 8B", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "openai/gpt-4o-search-preview", name: "OpenAI: GPT-4o Search Preview", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "qwen/qwen3-vl-32b-instruct", name: "Qwen: Qwen3 VL 32B Instruct", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "openai/o3-deep-research", name: "OpenAI: o3 Deep Research", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "deepseek/deepseek-v3.2-exp", name: "DeepSeek: DeepSeek V3.2 Exp", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "openrouter/bodybuilder", name: "OpenRouter: Body Builder (beta)", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "anthropic/claude-sonnet-4.5", name: "Anthropic: Claude Sonnet 4.5", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] }
   ]);
 
   const keys = payload.groups.flatMap((group) => group.options.map((model) => model.key));
@@ -42,12 +42,13 @@ test("OpenRouter model catalog keeps usable providers and caps noisy groups", ()
     ...Array.from({ length: 20 }, (_, index) => ({
       id: `openai/gpt-${index + 1}-pro`,
       name: `OpenAI: GPT ${index + 1} Pro`,
-      architecture: { output_modalities: ["text"] }
+      architecture: { output_modalities: ["text"] },
+      supported_parameters: ["tools"]
     })),
-    { id: "perplexity/sonar-pro", name: "Perplexity: Sonar Pro", architecture: { output_modalities: ["text"] } },
-    { id: "sao10k/l3-euryale-70b", name: "Sao10K: Euryale 70B", architecture: { output_modalities: ["text"] } },
-    { id: "mistralai/codestral-2508", name: "Mistral: Codestral 2508", architecture: { output_modalities: ["text"] } },
-    { id: "x-ai/grok-4", name: "xAI: Grok 4", architecture: { output_modalities: ["text"] } }
+    { id: "perplexity/sonar-pro", name: "Perplexity: Sonar Pro", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "sao10k/l3-euryale-70b", name: "Sao10K: Euryale 70B", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "mistralai/codestral-2508", name: "Mistral: Codestral 2508", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "x-ai/grok-4", name: "xAI: Grok 4", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] }
   ]);
 
   const openAi = payload.groups.find((group) => group.company === "OpenAI");
@@ -61,16 +62,43 @@ test("OpenRouter model catalog keeps usable providers and caps noisy groups", ()
 
 test("OpenRouter companies are canonicalized from provider slugs", () => {
   const payload = buildOpenRouterModelPayload([
-    { id: "qwen/qwen-2.5-coder-32b-instruct", name: "Qwen2.5 Coder 32B Instruct", architecture: { output_modalities: ["text"] } },
-    { id: "mistralai/mistral-large-2411", name: "Mistral Large 2411", architecture: { output_modalities: ["text"] } },
-    { id: "bytedance-seed/seed-1.6", name: "ByteDance Seed: Seed 1.6", architecture: { output_modalities: ["text"] } },
-    { id: "moonshotai/kimi-k2", name: "Moonshot AI: Kimi K2", architecture: { output_modalities: ["text"] } },
-    { id: "cohere/command-a", name: "Cohere: Command A", architecture: { output_modalities: ["text"] } },
-    { id: "ibm-granite/granite-3.3-8b-instruct", name: "IBM: Granite 3.3 8B Instruct", architecture: { output_modalities: ["text"] } }
+    { id: "qwen/qwen-2.5-coder-32b-instruct", name: "Qwen2.5 Coder 32B Instruct", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "mistralai/mistral-large-2411", name: "Mistral Large 2411", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "bytedance-seed/seed-1.6", name: "ByteDance Seed: Seed 1.6", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "moonshotai/kimi-k2", name: "Moonshot AI: Kimi K2", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "cohere/command-a", name: "Cohere: Command A", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] },
+    { id: "ibm-granite/granite-3.3-8b-instruct", name: "IBM: Granite 3.3 8B Instruct", architecture: { output_modalities: ["text"] }, supported_parameters: ["tools"] }
   ]);
 
   assert.deepEqual(
     payload.groups.filter((group) => group.company !== "Auto").map((group) => group.company).sort(),
     ["ByteDance", "Cohere", "IBM", "Mistral", "Moonshot AI", "Qwen"]
   );
+});
+
+test("OpenRouter reasoning capability follows each model's supported parameters", () => {
+  const payload = buildOpenRouterModelPayload([
+    { id: "openai/gpt-5.4", name: "OpenAI: GPT-5.4", architecture: { output_modalities: ["text"] }, supported_parameters: ["reasoning", "tools"] },
+    { id: "meta-llama/llama-3.3-70b-instruct", name: "Meta: Llama 3.3 70B Instruct", architecture: { output_modalities: ["text"] }, supported_parameters: ["temperature", "tools"] }
+  ]);
+  const models = payload.groups.flatMap((group) => group.options);
+
+  assert.equal(models.find((model) => model.key === "auto").supportsReasoning, true);
+  assert.equal(models.find((model) => model.key === "auto").supportsTools, true);
+  assert.equal(models.find((model) => model.key === "openai/gpt-5.4").supportsReasoning, true);
+  assert.equal(models.find((model) => model.key === "openai/gpt-5.4").supportsTools, true);
+  assert.deepEqual(models.find((model) => model.key === "openai/gpt-5.4").supportedParameters, ["reasoning", "tools"]);
+  assert.equal(models.find((model) => model.key === "meta-llama/llama-3.3-70b-instruct").supportsReasoning, false);
+});
+
+test("OpenRouter terminal catalog fails closed without explicit tool support", () => {
+  const payload = buildOpenRouterModelPayload([
+    { id: "openai/tool-model", name: "OpenAI: Tool Model", architecture: { output_modalities: ["text"] }, supported_parameters: [" Tools ", "reasoning", "tools"] },
+    { id: "openai/chat-only", name: "OpenAI: Chat Only", architecture: { output_modalities: ["text"] }, supported_parameters: ["reasoning"] },
+    { id: "anthropic/unknown-capabilities", name: "Anthropic: Unknown Capabilities", architecture: { output_modalities: ["text"] } }
+  ]);
+  const models = payload.groups.flatMap((group) => group.options);
+
+  assert.deepEqual(models.map((model) => model.key), ["auto", "openai/tool-model"]);
+  assert.deepEqual(models[1].supportedParameters, ["reasoning", "tools"]);
 });

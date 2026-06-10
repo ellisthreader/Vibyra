@@ -137,7 +137,6 @@ class VibyraDesktopController extends Controller
 
         return response($preview['body'], $preview['status'])
             ->withHeaders([
-                'Access-Control-Allow-Origin' => '*',
                 'Content-Type' => $preview['contentType'],
             ]);
     }

@@ -78,7 +78,7 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
 
     if (!state.connection) return [];
     try {
-      const files = await fileActions.loadProjectFiles(projectId);
+      const files = await fileActions.loadProjectFiles(projectId, project?.path);
       if (!startPreview) return files;
       const setupProject = project ?? state.chatProjects[projectId];
       if (setupProject?.briefRequired && !setupProject.brief) {
@@ -98,11 +98,12 @@ export function useWorkspaceActions(store: WorkspaceStore, requests: WorkspaceRe
     }
   }
 
-  async function loadProjectReviewFiles(projectId: string): Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }> {
+  async function loadProjectReviewFiles(projectId: string, projectPath = ""): Promise<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }> {
     if (!state.connection) return { files: [], totalFiles: 0, truncated: true };
     try {
+      const pathQuery = projectPath ? `&projectPath=${encodeURIComponent(projectPath)}` : "";
       return await requests.agentRequest<{ files: Pick<FileEntry, "body" | "language" | "path">[]; totalFiles?: number; truncated?: boolean }>(
-        `/files/review-bundle?projectId=${encodeURIComponent(projectId)}`
+        `/files/review-bundle?projectId=${encodeURIComponent(projectId)}${pathQuery}`
       );
     } catch (error) {
       logs.appendLog(error instanceof Error ? error.message : "Could not prepare project files for review", "Projects", "warning");

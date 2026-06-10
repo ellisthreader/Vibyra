@@ -7,10 +7,10 @@ export const welcome1 = {
     overflow: "hidden" as const
   },
   backdropImage: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   backdropShade: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
   body: {
     flex: 1,

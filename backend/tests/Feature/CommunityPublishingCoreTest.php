@@ -15,7 +15,12 @@ class CommunityPublishingCoreTest extends TestCase
 
     protected function fakeCleanModeration(): void
     {
-        config(['services.openai.key' => 'test-openai-key']);
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'moderation.remote_enabled' => true,
+            'moderation.publish_review_temporarily_disabled' => false,
+            'moderation.publish_force_approve_under_review' => false,
+        ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response([
                 'results' => [[
@@ -126,6 +131,63 @@ class CommunityPublishingCoreTest extends TestCase
         $this->getJson('/api/community/projects')
             ->assertOk()
             ->assertJsonCount(0, 'projects');
+    }
+
+    public function test_temporary_review_bypass_can_auto_approve_in_production_environment(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+        config([
+            'moderation.publish_force_approve_under_review' => true,
+            'moderation.remote_enabled' => false,
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Production Test Publisher',
+            'email' => 'production.testing@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+
+        $this->postJson('/api/projects/publish', [
+            'projectId' => 'production-testing-project',
+            'title' => 'Production Testing Project',
+            'description' => 'A temporary review bypass verification.',
+            'stack' => 'HTML',
+            'previewHtml' => '<!doctype html><html><body><h1>Testing</h1></body></html>',
+            'sourceFiles' => [],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertCreated()
+            ->assertJsonPath('reviewStatus', PublishedProject::REVIEW_APPROVED)
+            ->assertJsonPath('isPublic', true)
+            ->assertJsonFragment(['code' => 'temp_publish_force_approved']);
+    }
+
+    public function test_temporary_review_disable_skips_deterministic_denial(): void
+    {
+        config([
+            'moderation.publish_review_temporarily_disabled' => true,
+            'moderation.remote_enabled' => false,
+        ]);
+
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Temporary Review Disable',
+            'email' => 'review.disabled@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+
+        $this->postJson('/api/projects/publish', [
+            'projectId' => 'deterministic-bypass-project',
+            'title' => 'Deterministic Bypass Project',
+            'description' => 'Temporary launch validation.',
+            'stack' => 'React',
+            'previewHtml' => '<!doctype html><html><body><h1>Published</h1><script>alert(1)</script></body></html>',
+            'sourceFiles' => [
+                ['path' => 'src/App.tsx', 'language' => 'tsx', 'body' => 'eval("temporary test");'],
+            ],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertCreated()
+            ->assertJsonPath('reviewStatus', PublishedProject::REVIEW_APPROVED)
+            ->assertJsonPath('isPublic', true)
+            ->assertJsonFragment(['code' => 'temp_publish_review_disabled']);
     }
 
     public function test_public_publish_rejects_generated_source_preview_shell(): void
@@ -254,7 +316,11 @@ class CommunityPublishingCoreTest extends TestCase
 
     public function test_publish_goes_under_review_when_remote_moderation_is_unavailable(): void
     {
-        config(['services.openai.key' => 'test-openai-key']);
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
+        ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response(['error' => ['message' => 'Unavailable']], 503),
         ]);
@@ -355,7 +421,11 @@ class CommunityPublishingCoreTest extends TestCase
 
     public function test_missing_source_and_moderation_gap_is_not_labeled_high_risk(): void
     {
-        config(['services.openai.key' => 'test-openai-key']);
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
+        ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response(['error' => ['message' => 'Unavailable']], 503),
         ]);
@@ -442,6 +512,8 @@ class CommunityPublishingCoreTest extends TestCase
         config([
             'moderation.publish_ai_review.enabled' => true,
             'moderation.publish_ai_review.max_score' => 90,
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openai.key' => 'test-openai-key',
         ]);
@@ -486,6 +558,8 @@ class CommunityPublishingCoreTest extends TestCase
         config([
             'moderation.publish_ai_review.enabled' => true,
             'moderation.publish_ai_review.max_score' => 90,
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openai.key' => 'test-openai-key',
         ]);
@@ -541,6 +615,8 @@ class CommunityPublishingCoreTest extends TestCase
             'moderation.publish_ai_review.enabled' => true,
             'moderation.publish_ai_review.max_score' => 90,
             'moderation.publish_ai_review.max_source_files' => 2,
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openai.key' => 'test-openai-key',
         ]);
@@ -587,6 +663,8 @@ class CommunityPublishingCoreTest extends TestCase
     {
         config([
             'moderation.publish_reviewer_emails' => ['reviewer@example.com'],
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
             'services.openai.key' => 'test-openai-key',
         ]);
         Http::fake([
@@ -603,6 +681,7 @@ class CommunityPublishingCoreTest extends TestCase
             'email' => 'reviewer@example.com',
             'password' => 'secret123',
         ])->assertCreated()->json('token');
+        User::where('email', 'reviewer@example.com')->firstOrFail()->markEmailAsVerified();
 
         $publish = $this->postJson('/api/projects/publish', [
             'projectId' => 'queue-project',
@@ -640,7 +719,11 @@ class CommunityPublishingCoreTest extends TestCase
 
     public function test_publish_goes_under_review_when_preview_html_is_too_large(): void
     {
-        config(['services.openai.key' => 'test-openai-key']);
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'moderation.remote_enabled' => true,
+            'moderation.publish_force_approve_under_review' => false,
+        ]);
         Http::fake();
 
         $token = $this->postJson('/api/auth/signup', [

@@ -1,4 +1,10 @@
 import { createServer } from "node:http";
+import {
+  clearDesktopAccount,
+  removeDesktopAccountSession,
+  restoreDesktopAccountSessionSnapshot,
+  verifyAndSetDesktopAccount
+} from "./lib/desktopAccount.mjs";
 import { startDiscoveryBroadcast } from "./lib/discovery.mjs";
 import { discoverProjects } from "./lib/projects.mjs";
 import { handle } from "./lib/routes.mjs";
@@ -7,6 +13,14 @@ import { appState, connectionUrls, PAIR_CODE, PORT } from "./lib/state.mjs";
 import { openDesktopWindow } from "./lib/window.mjs";
 
 const shouldOpenDesktopWindow = process.env.VIBYRA_SKIP_DESKTOP_WINDOW !== "1";
+
+const restoredAccountSession = restoreDesktopAccountSessionSnapshot();
+if (restoredAccountSession) {
+  void verifyAndSetDesktopAccount(restoredAccountSession.token).catch(() => {
+    clearDesktopAccount("Your saved Vibyra session expired. Sign in again to continue.");
+    removeDesktopAccountSession();
+  });
+}
 
 appState.server = createServer(handle);
 appState.server.on("upgrade", handlePtyTerminalUpgrade);

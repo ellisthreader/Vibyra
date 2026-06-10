@@ -1,40 +1,42 @@
 export const part61 = {
-  communityAppPreviewFrame: {
-    backgroundColor: "#0B0D17",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    borderRadius: 8,
+  communityAppContent: {
+    flex: 1
+  },
+  communityAppFloatingButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(5, 6, 12, 0.82)",
+    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderRadius: 999,
     borderWidth: 1,
-    flex: 1,
-    minHeight: 480,
-    overflow: "hidden"
-  },
-  communityAppPreviewHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between"
-  },
-  communityAppPreviewIdentity: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    gap: 11,
-    minWidth: 0
-  },
-  communityAppPreviewPage: {
-    flexGrow: 1,
-    gap: 11,
-    paddingBottom: 10
-  },
-  communityAppPreviewRefresh: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderColor: "rgba(255, 255, 255, 0.09)",
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 40,
+    elevation: 10,
+    height: 44,
     justifyContent: "center",
-    width: 40
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.34,
+    shadowRadius: 12,
+    width: 44
+  },
+  communityAppFloatingControls: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    left: 12,
+    position: "absolute",
+    right: 12,
+    top: 0,
+    zIndex: 20
+  },
+  communityAppFullscreen: {
+    backgroundColor: "#0B0D17",
+    flex: 1
+  },
+  communityAppFullscreenWebView: {
+    flex: 1
+  },
+  communityAppUnavailable: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24
   },
   communityDetailActions: {
     alignItems: "center",

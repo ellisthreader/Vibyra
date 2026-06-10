@@ -116,17 +116,28 @@ body.electron-shell .content.chat-content {
 }
 
 .grid-mode .terminal-stage {
+  gap: 0;
   grid-template-columns: repeat(var(--terminal-grid-cols, 3), minmax(0, 1fr));
   grid-template-rows: repeat(var(--terminal-grid-rows, 2), minmax(0, 1fr));
   overflow: hidden;
 }
 
 .grid-mode .terminal-tile {
+  border: 0;
+  border-radius: 0;
+  box-shadow: inset -1px -1px 0 var(--terminal-border, rgba(151, 161, 190, 0.12));
+  contain: layout paint;
+  isolation: isolate;
   min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 .grid-mode.terminal-grid-many .terminal-tile-head {
+  background: var(--terminal-surface, #0b0b10);
   padding: 7px 8px;
+  position: relative;
+  z-index: 2;
 }
 
 .grid-mode.terminal-grid-many .terminal-tile-head strong {
@@ -145,8 +156,16 @@ body.electron-shell .content.chat-content {
 }
 
 .terminal-pty-lines {
+  contain: layout paint;
   overflow: hidden;
   padding: 0 !important;
+  position: relative;
+}
+
+.terminal-pty-lines:focus-within {
+  box-shadow:
+    inset 0 0 0 1px var(--terminal-accent-border, rgba(139, 92, 255, 0.42)),
+    inset 0 -2px 0 var(--terminal-accent, #8b5cff);
 }
 
 .terminal-pty-unavailable {
@@ -159,18 +178,18 @@ body.electron-shell .content.chat-content {
   box-sizing: border-box;
   height: 100%;
   overflow: hidden;
-  padding: 12px 14px;
+  padding: 0;
   width: 100%;
 }
 
 .terminal-xterm .xterm {
   height: 100%;
   max-width: 100%;
+  overflow: hidden;
   padding: 0;
   width: 100%;
 }
 
-.terminal-xterm .xterm-screen,
 .terminal-xterm .xterm-viewport {
   height: 100%;
 }

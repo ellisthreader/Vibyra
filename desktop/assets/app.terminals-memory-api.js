@@ -1,5 +1,6 @@
 async function terminalMemoryRequest(url, options = {}) {
   const response = await fetch(url, {
+    cache: "no-store",
     ...options,
     headers: {
       Accept: "application/json",
@@ -15,7 +16,11 @@ async function terminalMemoryRequest(url, options = {}) {
 }
 
 async function loadTerminalMemoryVault(projectId, force = false) {
-  if (!projectId || terminalMemoryState.loading) return;
+  if (!projectId) return;
+  if (terminalMemoryState.loading) {
+    if (force) terminalMemoryState.reloadQueued = true;
+    return;
+  }
   if (!force && terminalMemoryState.loaded && terminalMemoryState.projectId === projectId) return;
   terminalMemoryState.loading = true;
   terminalMemoryState.status = "Loading memory...";
@@ -35,36 +40,10 @@ async function loadTerminalMemoryVault(projectId, force = false) {
   } finally {
     terminalMemoryState.loading = false;
     terminalMemoryRefresh();
-  }
-}
-
-async function createTerminalMemoryNode(type, name) {
-  if (!terminalMemoryState.projectId) return null;
-  terminalMemoryState.status = "Creating...";
-  terminalMemoryUpdateStatus();
-  try {
-    const result = await terminalMemoryRequest("/desktop/project-memory/node", {
-      method: "POST",
-      body: JSON.stringify({
-        projectId: terminalMemoryState.projectId,
-        parentId: terminalMemoryActiveParentId() || null,
-        type,
-        name,
-        markdownContent: ""
-      })
-    });
-    const node = terminalMemoryReplaceNode(result.node || result.memoryNode || result);
-    if (node) {
-      terminalMemorySelect(node.id);
-      if (node.type === "folder") terminalMemoryState.expandedIds.add(node.id);
+    if (terminalMemoryState.reloadQueued && terminalMemoryState.projectId === projectId) {
+      terminalMemoryState.reloadQueued = false;
+      queueMicrotask(() => loadTerminalMemoryVault(projectId, true));
     }
-    terminalMemoryState.status = "Created";
-    terminalMemoryRefresh();
-    return node;
-  } catch (error) {
-    terminalMemoryState.status = terminalMemoryError(error, "Memory item could not be created.");
-    terminalMemoryUpdateStatus();
-    return null;
   }
 }
 

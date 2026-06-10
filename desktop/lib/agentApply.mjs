@@ -3,6 +3,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { putAgentRun, removeAgentRun, updateAgentRun } from "./agentRunState.mjs";
 import { readOptionalText, safeProjectPath } from "./agentGeneratedFiles.mjs";
 import { resolvedPreviewUrl } from "./preview.mjs";
+import {
+  replacePreviewCapability,
+  revokePreviewCapability
+} from "./previewCapabilities.mjs";
 import { appState, event, pushEvents } from "./state.mjs";
 
 export function makeAgentApplyPlan({
@@ -66,7 +70,10 @@ export async function applyAgentPlan(plan) {
   updateAgentRun(appState, runId, { progress: 82 });
 
   appState.selectedProjectId = project.id;
-  appState.latestPreview = await previewPayloadForProject(project, plan.requestHost);
+  const credential = replacePreviewCapability(project.id, appState.latestPreviewCredential);
+  appState.latestPreview = await previewPayloadForProject(project, plan.requestHost, credential);
+  if (!appState.latestPreview.url) revokePreviewCapability(credential);
+  appState.latestPreviewCredential = appState.latestPreview.url ? credential : null;
   const newEvents = [
     event("Preview", appState.latestPreview.url ? "Updated preview delivered to iPhone" : "No runnable browser preview found for this project yet", appState.latestPreview.url ? "success" : "warning"),
     event("Agent", generatedFiles.length ? `Applied ${generatedFiles.length} generated file edit(s)` : "Saved agent trace without file edits", generatedFiles.length ? "success" : "info"),
@@ -143,8 +150,8 @@ async function assertGeneratedFilesUnchanged(project, generatedFiles) {
   }
 }
 
-async function previewPayloadForProject(project, requestHost) {
-  const url = await resolvedPreviewUrl(project, requestHost);
+async function previewPayloadForProject(project, requestHost, credential) {
+  const url = await resolvedPreviewUrl(project, requestHost, credential, { phoneVisible: true });
   return {
     state: url ? "delivered" : "live",
     url,

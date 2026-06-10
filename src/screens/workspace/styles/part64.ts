@@ -5,7 +5,7 @@ export const part64 = {
     flex: 1
   },
   sidePanelScrim: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.62)",
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -19,18 +19,27 @@ export const part64 = {
     backgroundColor: colors.background,
     bottom: 0,
     position: "absolute",
+    shadowColor: "#000000",
+    shadowOffset: { width: 12, height: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 26,
     top: 0,
     width: "100%"
   },
   sidePanelSheetLeft: {
+    borderRightColor: "rgba(139, 92, 255, 0.18)",
+    borderRightWidth: 1,
     left: 0
   },
   sidePanelSheetRight: {
+    borderLeftColor: "rgba(139, 92, 255, 0.18)",
+    borderLeftWidth: 1,
     right: 0
   },
   menuPage: {
     flex: 1,
     gap: 16,
+    overflow: "hidden",
     paddingHorizontal: 18
   },
   menuPageScroll: {
@@ -54,10 +63,13 @@ export const part64 = {
   },
   menuHeaderAvatar: {
     alignItems: "center",
+    backgroundColor: "rgba(109, 59, 255, 0.08)",
+    borderColor: "rgba(139, 92, 255, 0.32)",
     borderRadius: 999,
-    height: 32,
+    borderWidth: 1,
+    height: 34,
     justifyContent: "center",
-    width: 32
+    width: 34
   },
   menuHeaderAvatarPressed: {
     opacity: 0.7,

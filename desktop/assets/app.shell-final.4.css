@@ -169,22 +169,7 @@
 }
 
 .app.rail-collapsed .rail-status-top {
-  display: flex;
-  height: 12px;
-  justify-content: center;
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  top: -10px;
-  z-index: 2;
-}
-
-.app.rail-collapsed .rail-status-top .dot {
-  border: 2px solid #08080c;
-  height: 10px;
-  margin: 0;
-  width: 10px;
+  display: none;
 }
 
 .app.rail-collapsed .rail-status-main {
@@ -198,9 +183,15 @@
 }
 
 .app.rail-collapsed .rail-phone-icon {
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
+  border-color: transparent;
   height: 32px;
   width: 32px;
+}
+
+.app.rail-collapsed .rail-phone-icon svg {
+  height: 18px;
+  width: 18px;
 }
 
 .app.rail-collapsed .rail .nav-button:after,

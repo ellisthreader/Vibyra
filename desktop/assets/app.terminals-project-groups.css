@@ -1,0 +1,226 @@
+.rail-nav-group {
+  display: grid;
+  min-width: 0;
+}
+
+.terminal-rail-heading {
+  min-width: 0;
+  position: relative;
+}
+
+.terminal-rail-heading .nav-button {
+  padding-right: 40px;
+  width: 100%;
+}
+
+.terminal-rail-create {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--shell-dim);
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: background 120ms ease, color 120ms ease;
+  width: 26px;
+  z-index: 2;
+}
+
+.terminal-rail-create:hover:not(:disabled) {
+  background: var(--shell-hover);
+  color: var(--shell-text);
+}
+
+.terminal-rail-create:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.terminal-rail-create svg {
+  height: 15px;
+  width: 15px;
+}
+
+.terminal-rail-projects {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 6px 18px;
+  max-height: min(260px, 32vh);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 2px 0 2px 11px;
+  position: relative;
+  scrollbar-color: color-mix(in srgb, var(--shell-muted) 30%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.terminal-rail-projects:before {
+  background: color-mix(in srgb, var(--shell-border) 72%, transparent);
+  bottom: 6px;
+  content: "";
+  left: 1px;
+  position: absolute;
+  top: 6px;
+  width: 1px;
+}
+
+.terminal-rail-project {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--shell-muted);
+  display: grid;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 590;
+  gap: 8px;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 8px 0 7px;
+  text-align: left;
+  transition: background 120ms ease, color 120ms ease;
+  width: 100%;
+}
+
+.terminal-rail-project:hover {
+  background: var(--shell-hover);
+  color: var(--shell-text);
+}
+
+.terminal-rail-project.active {
+  background: color-mix(in srgb, var(--shell-accent) 11%, transparent);
+  color: var(--shell-text);
+}
+
+.terminal-rail-project-icon {
+  align-items: center;
+  display: flex;
+  height: 16px;
+  justify-content: center;
+  position: relative;
+  width: 16px;
+}
+
+.terminal-rail-project-icon svg {
+  height: 14px;
+  width: 14px;
+}
+
+.terminal-rail-project.active .terminal-rail-project-icon {
+  color: var(--shell-accent);
+}
+
+.terminal-rail-project-running {
+  background: #55d98b;
+  border: 2px solid var(--shell-rail);
+  border-radius: 50%;
+  bottom: -2px;
+  height: 7px;
+  position: absolute;
+  right: -2px;
+  width: 7px;
+}
+
+.terminal-rail-project-state {
+  background: #6e687a;
+  border: 2px solid var(--shell-rail);
+  border-radius: 50%;
+  bottom: -2px;
+  height: 7px;
+  position: absolute;
+  right: -2px;
+  width: 7px;
+}
+
+.terminal-rail-project-state.working { background: #55d98b; }
+.terminal-rail-project-state.attention { background: #ffb85c; }
+.terminal-rail-project-state.stopped { background: #ff7088; }
+.terminal-rail-project-state.ready { background: #8b5cff; }
+.terminal-rail-project-state.closed { background: #5f596b; }
+
+.terminal-rail-project-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.terminal-rail-project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-rail-project-copy small {
+  color: var(--shell-dim);
+  font-size: 9px;
+  font-weight: 560;
+  line-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-rail-project-count {
+  color: var(--shell-dim);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  min-width: 14px;
+  text-align: right;
+}
+
+.terminal-project-hidden {
+  display: none !important;
+}
+
+.app.rail-collapsed .terminal-rail-projects {
+  display: none;
+}
+
+.app.rail-collapsed .terminal-rail-create {
+  display: none;
+}
+
+.terminal-setup-copy > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.terminal-setup-copy small {
+  color: var(--shell-dim);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.terminal-setup-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.terminal-setup-actions .terminal-start-button {
+  margin-top: 0;
+}
+
+.terminal-setup-cancel {
+  min-width: 94px;
+}
+
+@media (max-width: 900px) {
+  .terminal-rail-projects {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-rail-project,
+  .terminal-rail-create {
+    transition: none;
+  }
+}

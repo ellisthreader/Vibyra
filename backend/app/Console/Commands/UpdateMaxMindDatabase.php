@@ -19,6 +19,16 @@ class UpdateMaxMindDatabase extends Command
             return self::FAILURE;
         }
 
+        if ((string) config('services.maxmind.account_id') === '') {
+            $this->error('MAXMIND_ACCOUNT_ID is not configured. Device locations will use public IP addresses.');
+            return self::FAILURE;
+        }
+
+        if ((string) config('services.maxmind.license_key') === '') {
+            $this->error('MAXMIND_LICENSE_KEY is not configured. Device locations will use public IP addresses.');
+            return self::FAILURE;
+        }
+
         if (! $this->option('force') && $this->databaseIsFresh($databasePath)) {
             $this->info('MaxMind GeoLite2 City database is fresh; skipping download.');
             return self::SUCCESS;
@@ -52,11 +62,8 @@ class UpdateMaxMindDatabase extends Command
 
     private function downloadAndInstall(string $databasePath): void
     {
+        $accountId = (string) config('services.maxmind.account_id');
         $licenseKey = (string) config('services.maxmind.license_key');
-        if ($licenseKey === '') {
-            throw new \RuntimeException('MAXMIND_LICENSE_KEY is not configured.');
-        }
-
         $workDir = storage_path('app/maxmind/tmp-'.bin2hex(random_bytes(6)));
         $archivePath = "{$workDir}/GeoLite2-City.tar.gz";
         $tarPath = "{$workDir}/GeoLite2-City.tar";
@@ -69,10 +76,9 @@ class UpdateMaxMindDatabase extends Command
         try {
             $response = Http::timeout(120)
                 ->retry(2, 1500)
+                ->withBasicAuth($accountId, $licenseKey)
                 ->sink($archivePath)
-                ->get('https://download.maxmind.com/app/geoip_download', [
-                    'edition_id' => 'GeoLite2-City',
-                    'license_key' => $licenseKey,
+                ->get('https://download.maxmind.com/geoip/databases/GeoLite2-City/download', [
                     'suffix' => 'tar.gz',
                 ]);
 

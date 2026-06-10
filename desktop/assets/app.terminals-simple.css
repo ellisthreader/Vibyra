@@ -1,6 +1,14 @@
 .terminal-tabs {
   justify-content: flex-start;
 }
+body.electron-shell .desktop-chrome-page:has(.terminal-tabs) {
+  width: min(1200px, calc(100vw - 360px));
+}
+.desktop-chrome-page:has(.terminal-tabs) .top-title,
+.top-title.terminal-top-title {
+  max-width: none;
+  width: 100%;
+}
 .terminal-tab-list {
   flex: 1 1 auto;
   justify-content: flex-start;

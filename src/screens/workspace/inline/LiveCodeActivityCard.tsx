@@ -36,7 +36,7 @@ export function LiveCodeActivityCard({ text }: { text: string }) {
         colors={["rgba(142, 60, 255, 0.16)", "rgba(57, 130, 255, 0.08)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <View style={styles.iconWrap}>
         <Animated.View style={[styles.iconRing, { opacity: ringOpacity }]} />

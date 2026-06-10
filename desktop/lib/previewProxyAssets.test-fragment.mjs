@@ -78,6 +78,10 @@ test("external preview proxy turns Vite module 500 HTML into executable diagnost
       })
     }
   });
+  const projectId = "vite-module-error-preview-proxy";
+  appState.previewServers[projectId] = {
+    viteProxyTargetUrl: `http://0.0.0.0:${vite.port}`
+  };
   try {
     const js = await requestPreviewUrlProxy(`http://0.0.0.0:${vite.port}/resources/js/app.tsx`);
     assert.equal(js.status, 200);
@@ -88,6 +92,7 @@ test("external preview proxy turns Vite module 500 HTML into executable diagnost
     assert.match(js.body, /postMessage/);
     assert.match(js.body, /export \{\};/);
   } finally {
+    delete appState.previewServers[projectId];
     await vite.close();
   }
 });

@@ -23,7 +23,8 @@ function validateAuthForm() {
 
 async function requestAppAuth(endpoint, payload) {
   const publicIp = await desktopPublicIp();
-  const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
+  const action = endpoint.endsWith("/signup") ? "signup" : "login";
+  const response = await fetch(`/desktop/auth/${action}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -48,6 +49,7 @@ async function syncDesktopSession(token) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
+    fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
     localStorage.removeItem(authKey);
     document.body.classList.remove("desktop-authenticated");
     throw new Error(result.error || "Desktop could not verify this Vibyra account session.");
@@ -95,7 +97,9 @@ async function desktopPublicIp() {
 }
 
 function appApiBaseUrl() {
-  const configured = window.VIBYRA_API_URL || localStorage.getItem("vibyra.api.url");
+  const configured = window.VIBYRA_API_URL
+    || currentState?.appApiUrl
+    || localStorage.getItem("vibyra.api.url");
   if (configured) return String(configured).replace(/\/+$/, "");
   return `${window.location.protocol}//${window.location.hostname || "127.0.0.1"}:8000`;
 }

@@ -4,10 +4,14 @@ function initDesktopAuth() {
     const restoredPage = typeof activePage !== "undefined" && pages.some((page) => page.key === activePage) ? activePage : "dashboard";
     localStorage.setItem("vibyra.desktop.page", restoredPage);
     if (typeof activePage !== "undefined") activePage = restoredPage;
-    document.body.classList.add("desktop-authenticated");
-    syncDesktopSession(session.token).catch((error) => {
-      showAuthError(error instanceof Error ? error.message : "Desktop could not verify this Vibyra account session.");
-    });
+    syncDesktopSession(session.token)
+      .then(() => {
+        document.body.classList.add("desktop-authenticated");
+        if (typeof render === "function") render();
+      })
+      .catch((error) => {
+        showAuthError(error instanceof Error ? error.message : "Desktop could not verify this Vibyra account session.");
+      });
   }
   bindDesktopAuth();
   setAuthMode(authMode);

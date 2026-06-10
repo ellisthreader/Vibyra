@@ -1,0 +1,81 @@
+name: Production Security Gate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit production configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      APP_ENV: production
+      APP_DEBUG: ${{ vars.APP_DEBUG }}
+      APP_KEY: ${{ secrets.APP_KEY }}
+      APP_URL: ${{ vars.APP_URL }}
+      VIBYRA_CORS_ALLOWED_ORIGINS: ${{ vars.VIBYRA_CORS_ALLOWED_ORIGINS }}
+      VIBYRA_CORS_ALLOW_ANY_ORIGIN: ${{ vars.VIBYRA_CORS_ALLOW_ANY_ORIGIN }}
+      VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED: ${{ vars.VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED }}
+      VIBYRA_LEGACY_PHONE_TOKEN_ENABLED: ${{ vars.VIBYRA_LEGACY_PHONE_TOKEN_ENABLED }}
+      VIBYRA_LEGACY_PREVIEW_TOKEN_ENABLED: ${{ vars.VIBYRA_LEGACY_PREVIEW_TOKEN_ENABLED }}
+      VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED: ${{ vars.VIBYRA_LEGACY_PREVIEW_ARBITRARY_PROXY_ENABLED }}
+      VIBYRA_PAIR_RATE_LIMIT_ENABLED: ${{ vars.VIBYRA_PAIR_RATE_LIMIT_ENABLED }}
+      VIBYRA_LAN_V2_REQUIRED: ${{ vars.VIBYRA_LAN_V2_REQUIRED }}
+      EXPO_PUBLIC_LAN_V2_MODE: ${{ vars.EXPO_PUBLIC_LAN_V2_MODE }}
+      OPENAI_MODERATION_ENABLED: ${{ vars.OPENAI_MODERATION_ENABLED }}
+      OPENAI_MODERATION_FAIL_CLOSED: ${{ vars.OPENAI_MODERATION_FAIL_CLOSED }}
+      PUBLISH_REVIEW_TEMPORARILY_DISABLED: ${{ vars.PUBLISH_REVIEW_TEMPORARILY_DISABLED }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      APPLE_IAP_SHARED_SECRET: ${{ secrets.APPLE_IAP_SHARED_SECRET }}
+      GOOGLE_IAP_PACKAGE_NAME: ${{ vars.GOOGLE_IAP_PACKAGE_NAME }}
+      GOOGLE_IAP_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_IAP_SERVICE_ACCOUNT_JSON }}
+      GOOGLE_AUTH_CLIENT_IDS: ${{ vars.GOOGLE_AUTH_CLIENT_IDS }}
+      APPLE_AUTH_CLIENT_IDS: ${{ vars.APPLE_AUTH_CLIENT_IDS }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Run production audit
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          node scripts/security/audit-production-config.mjs \
+            --release \
+            --environment \
+            --format json \
+            --output production-security-audit.json
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload audit evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-security-audit
+          path: production-security-audit.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish manual gate reminder
+        if: always()
+        run: |
+          {
+            echo "## Manual production security gates"
+            echo
+            echo "Automation does not complete branch protection, secret revocation,"
+            echo "artifact signing, backup restoration, monitoring drills, or penetration testing."
+            echo "Record that evidence using docs/security/production-release-gates.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce audit result
+        if: always()
+        run: exit "${{ steps.audit.outputs.status }}"

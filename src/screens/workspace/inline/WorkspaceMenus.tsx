@@ -1,8 +1,9 @@
 import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useThemedColor } from "../../../context/PreferencesContext";
+import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { styles } from "../styles";
 import type { DashboardPage } from "../types";
 import { AccountAvatar } from "./AccountAvatar";
@@ -47,8 +48,12 @@ export function PrimaryMenuSheet({
   visible: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const prefs = usePreferences();
   const chevronColor = useThemedColor("#8F94A3");
   const pcIconColor = useThemedColor("#D5D9E4");
+  const atmosphereColors = prefs.effectiveScheme === "light"
+    ? ["rgba(109, 59, 255, 0.09)", "rgba(109, 59, 255, 0.025)", "rgba(109, 59, 255, 0)"] as const
+    : ["rgba(109, 59, 255, 0.16)", "rgba(109, 59, 255, 0.045)", "rgba(109, 59, 255, 0)"] as const;
   const activeRecent = recentChats.some((chat) => chat.id === selectedChatId);
   const rows: MenuRow[] = [
     { icon: "create-outline", label: "New chat", onPress: onNewChat, active: activePage === "chat" && !activeRecent },
@@ -60,6 +65,13 @@ export function PrimaryMenuSheet({
   return (
     <SidePanel side="left" visible={visible} onClose={onClose}>
       <View style={[styles.menuPage, { paddingTop: Math.max(insets.top + 16, 20) }]}>
+        <LinearGradient
+          colors={atmosphereColors}
+          end={{ x: 0.76, y: 1 }}
+          pointerEvents="none"
+          start={{ x: 0.18, y: 0 }}
+          style={styles.workspaceMenuAtmosphere}
+        />
         <View style={styles.workspaceMenuHeader}>
           <Text style={styles.workspaceMenuTitle}>Vibyra</Text>
           <Pressable

@@ -172,6 +172,6 @@ export const part21 = {
     lineHeight: 23
   },
   projectsBackdrop: {
-    ...StyleSheet.absoluteFillObject
+    ...StyleSheet.absoluteFill
   },
 } as const;

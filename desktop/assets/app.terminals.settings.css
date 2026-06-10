@@ -60,7 +60,7 @@
 .terminal-token-row button,
 .terminal-provider-row button,
 .terminal-provider-form button {
-  align-items: center;
+  align-items: flex-start;
   background: transparent;
   border: 1px solid rgba(151, 161, 190, 0.13);
   border-radius: 7px;
@@ -69,9 +69,10 @@
   font-size: 12px;
   font-weight: 680;
   gap: 6px;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 9px;
+  justify-content: flex-start;
+  min-height: 56px;
+  padding: 10px;
+  text-align: left;
 }
 .terminal-token-row button.active {
   background: rgba(139, 92, 255, 0.13);
@@ -87,8 +88,26 @@
   color: #b9a7f6;
 }
 .terminal-token-row svg {
+  flex: 0 0 auto;
   height: 14px;
+  margin-top: 2px;
   width: 14px;
+}
+
+.terminal-token-row button > span {
+  display: grid;
+  gap: 3px;
+}
+
+.terminal-token-row button strong {
+  font: inherit;
+}
+
+.terminal-token-row button small {
+  color: #918ca1;
+  font-size: 10px;
+  font-weight: 560;
+  line-height: 14px;
 }
 .terminal-provider-row {
   align-items: center;
@@ -158,6 +177,19 @@
 .terminal-notice p {
   font-size: 12px;
   line-height: 16px;
+}
+.terminal-notice p a {
+  color: #d5c5ff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.terminal-notice p a:hover {
+  color: #eee7ff;
+}
+.terminal-notice p a[aria-disabled="true"] {
+  opacity: 0.7;
+  pointer-events: none;
 }
 .terminal-notice button {
   background: transparent;

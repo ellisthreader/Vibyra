@@ -9,14 +9,22 @@ body {
   --terminal-active-muted: #bdb3df;
   --terminal-scroll-thumb: rgba(151, 161, 190, 0.28);
   --terminal-status-idle: #6e687a;
-  --terminal-status-running: #37d67a;
-  --terminal-status-running-ring: rgba(55, 214, 122, 0.09);
+  --terminal-status-running: #8b5cff;
+  --terminal-status-running-ring: rgba(139, 92, 255, 0.13);
   --terminal-phone-frame: linear-gradient(145deg, #3b3d45, #06070b 18%, #171923 64%, #030407);
   --terminal-phone-border: #3d4049;
   --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.07);
   --terminal-phone-screen: #05060a;
   --terminal-phone-camera: #000;
-  --terminal-companion-header: color-mix(in srgb, var(--terminal-elevated) 76%, transparent);
+  --terminal-companion-bg: #0d0d14;
+  --terminal-companion-header: #111119;
+  --terminal-companion-subtle: #09090e;
+  --terminal-companion-control: #15151f;
+  --terminal-workspace-chrome: #101016;
+  --terminal-workspace-connected: #18181f;
+  --terminal-workspace-divider: rgba(255, 255, 255, 0.07);
+  --terminal-editor-sidebar: #15151a;
+  --terminal-editor-canvas: #1e1e1e;
 }
 
 body[data-desktop-theme="light"] {
@@ -25,14 +33,22 @@ body[data-desktop-theme="light"] {
   --terminal-active-muted: #5a6170;
   --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
   --terminal-status-idle: #9aa3b2;
-  --terminal-status-running: #1f9d5b;
-  --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+  --terminal-status-running: #6842d8;
+  --terminal-status-running-ring: rgba(104, 66, 216, 0.12);
   --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
   --terminal-phone-border: #c4ccd9;
   --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);
   --terminal-phone-screen: #ffffff;
   --terminal-phone-camera: #d0d7e3;
+  --terminal-companion-bg: #ffffff;
   --terminal-companion-header: #f7f8fb;
+  --terminal-companion-subtle: #f5f6fa;
+  --terminal-companion-control: #ffffff;
+  --terminal-workspace-chrome: #f3f5f9;
+  --terminal-workspace-connected: #ffffff;
+  --terminal-workspace-divider: rgba(33, 42, 60, 0.12);
+  --terminal-editor-sidebar: #f7f8fb;
+  --terminal-editor-canvas: #ffffff;
 }
 
 @media (prefers-color-scheme: light) {
@@ -42,14 +58,22 @@ body[data-desktop-theme="light"] {
     --terminal-active-muted: #5a6170;
     --terminal-scroll-thumb: rgba(33, 42, 60, 0.2);
     --terminal-status-idle: #9aa3b2;
-    --terminal-status-running: #1f9d5b;
-    --terminal-status-running-ring: rgba(31, 157, 91, 0.11);
+    --terminal-status-running: #6842d8;
+    --terminal-status-running-ring: rgba(104, 66, 216, 0.12);
     --terminal-phone-frame: linear-gradient(145deg, #fbfcff, #e1e6ef 24%, #f8faff 70%, #d6dde8);
     --terminal-phone-border: #c4ccd9;
     --terminal-phone-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.86), 0 14px 34px rgba(35, 45, 66, 0.12);
     --terminal-phone-screen: #ffffff;
     --terminal-phone-camera: #d0d7e3;
+    --terminal-companion-bg: #ffffff;
     --terminal-companion-header: #f7f8fb;
+    --terminal-companion-subtle: #f5f6fa;
+    --terminal-companion-control: #ffffff;
+    --terminal-workspace-chrome: #f3f5f9;
+    --terminal-workspace-connected: #ffffff;
+    --terminal-workspace-divider: rgba(33, 42, 60, 0.12);
+    --terminal-editor-sidebar: #f7f8fb;
+    --terminal-editor-canvas: #ffffff;
   }
 }
 
@@ -73,6 +97,9 @@ body[data-desktop-theme="light"] {
   background: var(--terminal-accent-soft);
   border-color: var(--terminal-accent-border);
   color: var(--terminal-text);
+}
+.terminal-token-row button.active small {
+  color: var(--terminal-copy);
 }
 .terminal-token-row button.needs-connect,
 .terminal-provider-row button {
@@ -146,6 +173,16 @@ body[data-desktop-theme="light"] {
 }
 .terminal-companion-shell-head {
   background: var(--terminal-companion-header);
+}
+.terminal-companion {
+  background: var(--terminal-companion-bg);
+}
+.terminal-memory-explorer {
+  background: var(--terminal-companion-subtle);
+}
+.terminal-memory-search,
+.terminal-memory-ai textarea {
+  background: var(--terminal-companion-control);
 }
 .terminal-companion--memory {
   gap: 0;

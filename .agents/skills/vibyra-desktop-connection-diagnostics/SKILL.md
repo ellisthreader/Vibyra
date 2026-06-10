@@ -7,6 +7,9 @@ description: Diagnose Vibyra phone-to-desktop connection bugs where pairing hang
 
 Use this skill when Vibyra mobile cannot reliably pair with Vibyra Desktop, gets stuck on "Finding Vibyra Desktop", reports "Desktop lost the pairing request", or appears connected but authenticated desktop work fails: `/open`, Browse PC, file loading, previews, `/events`, or errors like "phone not connected", "needs to reconnect", `Missing or invalid desktop token`, 401, or request timeout.
 
+For AI terminal launch, PTY, token-source, provider branding, hidden-engine, or
+stale terminal-worker failures, use `vibyra-ai-terminal-diagnostics` instead.
+
 ## Required Memory Reads
 
 Before source exploration, read:
@@ -59,6 +62,19 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 2. For pairing hangs or lost requests, verify the pair state machine:
    `scanPairByCode` should send one shared phone `requestId` across the candidate URLs for a single attempt. Desktop `/pair` should store that as `clientRequestId` and return the existing pending/approved request for duplicate posts from that same attempt instead of replacing `appState.pendingPair`.
 
+   Pair requests should carry the shared mobile `appDeviceName()` value. The
+   same label is used at account login and refreshed through
+   `POST /api/account/session/device`, so the pairing modal, desktop activity,
+   and Settings device table identify the phone consistently.
+
+   For false “different Vibyra account” errors, inspect
+   `/desktop/state.appApiUrl` before weakening the account check. Phone and
+   desktop must verify their sessions against the same backend; equal emails
+   can have different numeric user IDs in local and production databases.
+   Direct `node desktop/local-app.mjs` startup must resolve the repo
+   `EXPO_PUBLIC_API_URL` through `desktop/lib/appApiConfig.mjs`, just like the
+   `Vibyra Desktop` launcher.
+
 3. Check desktop approval latency:
    `approvePairing` should mark `pendingPair.status = "approved"` before slow `discoverProjects()` work. Desktop startup should open the window and start discovery broadcast before background project discovery, so users can see the pair code and approval UI promptly.
 
@@ -89,6 +105,8 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 12. If Browse PC opens a full-stack parent folder but preview or publishing says no app was captured, inspect app-root discovery before changing the target project:
    `desktop/lib/projectAppRoots.mjs` is the shared source for common nested web and backend roots. Dev-server preview must launch from the detected web app root, static publishing must build a recognized web root, and runtime publishing must rebase the detected backend root into its bundle. Cover parent folders containing `frontend/`, `backend/`, `client/`, `server/`, `apps/web`, or `apps/api` with regression tests.
 
+13. If publishing reports duplicate `Project not found` errors, trace the identity used by every step. Mobile publishing must prefer `project.sourceProject.id`, forward the matching `projectPath` to file-review/static/runtime routes, and submit that same canonical ID to the backend. Desktop may recover a stale opaque ID only when the supplied path resolves to a validated project directory. Runtime collection must skip `.env`, `secrets/`, `credentials/`, `private/`, and `.ssh/` before backend validation.
+
 ## Proven Failure Patterns
 
 - Parallel LAN `/pair` probes can hit the same desktop through multiple URLs. Without an idempotent phone request ID, a later duplicate replaces the pending request and the phone sees "Desktop lost the pairing request".
@@ -98,6 +116,7 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 - Invalid remembered tokens must be deleted, not merged as `undefined`.
 - React Native LAN fetch may not reject promptly after `AbortController.abort()`. Use a `Promise.race` timer so scans and route timeouts actually settle.
 - A valid parent-folder project can still fail preview when code assumes `index.html` and `package.json` are at the selected root. Resolve the nested app root once and use it as the process working directory.
+- A healthy React/Laravel folder can produce both bundles locally while mobile still fails if its display/cloud ID is sent instead of the desktop source ID. Duplicate bundle-route failures are a symptom of one identity bug, not two broken builds.
 
 ## Fix Principles
 
@@ -125,3 +144,15 @@ node --check desktop/assets/app.1.js
 ```
 
 For desktop browse behavior, a local smoke test can call `browseDesktopPath()` and `browseDesktopPath(homedir())` from `desktop/lib/projectBrowse.mjs`.
+
+For publish failures after Browse PC, run the local bridge-to-Laravel integration
+without an external deployment:
+
+```bash
+node --test desktop/lib/publishIntegration.test.mjs
+```
+
+It verifies browsed project resolution, review/static/runtime bundles, backend
+publish statuses, exact unsafe/oversize errors, and the real
+`/home/ellis/Desktop/ReactLaravel` folder read-only when present. Review bundles
+must exclude `.env`, private keys, and credential-like paths before submission.

@@ -55,6 +55,8 @@ async function sendChat() {
   const mode = "chat";
   const skillPromptText = skill ? (text || (skill.promptPrefix ? "" : skill.label)) : text;
   const prompt = skill ? applySkillPrompt(skill, skillPromptText) : text;
+  ensureActiveChat(rawText);
+  const actionContextScope = desktopActionContextScope("chat", activeChatId);
   const history = chatMessages
     .filter((message) => (message.role === "user" || message.role === "assistant") && !message.pending && String(message.text || "").trim())
     .slice(-6)
@@ -72,10 +74,11 @@ async function sendChat() {
   try {
     const result = await requestDesktopChat({
       attachments,
+      desktopActionContext: desktopActionContextForScope(actionContextScope),
       history,
       model: selectedChatModel,
       mode,
-      projectId: project?.id || "",
+      projectId: project?.id || String(selectedProjectId || ""),
       profileContext: typeof desktopProfileContext === "function" ? desktopProfileContext() : null,
       prompt,
       reasoningEffort,
@@ -88,7 +91,7 @@ async function sendChat() {
     pendingMessage.pending = false;
     updateActiveChatTitle(result.title, rawText);
     if (typeof runDesktopActions === "function" && Array.isArray(result.actions) && result.actions.length) {
-      pendingMessage.text = await runDesktopActions(result.actions) || pendingMessage.text;
+      pendingMessage.text = await runDesktopActions(result.actions, { desktopActionContextScope: actionContextScope }) || pendingMessage.text;
     }
   } catch (error) {
     if (isChatUsageLimitError(error)) {

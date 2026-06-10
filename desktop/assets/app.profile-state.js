@@ -10,6 +10,15 @@ let profileReferralError = "";
 let profileCopiedCode = false;
 let profileFormMessage = "";
 let profileFormBusy = false;
+let profileBillingBusy = false;
+let profileBillingMessage = "";
+let profileBillingMessageDanger = false;
+let profileBillingPlanOpen = false;
+let profileBillingManageOpen = false;
+let profileBillingCancelOpen = false;
+let profileBillingCancelBusy = false;
+let profileBillingCancelMessage = "";
+let profileBillingCancelDanger = false;
 let profileDeleteBusy = false;
 let profileDeleteMessage = "";
 let profileDeleteOpen = false;
@@ -38,6 +47,8 @@ const desktopPreferenceDefaults = {
     responseCompletions: true
   },
   responseStyle: "balanced",
+  voice: "marin",
+  voiceSpeed: 1,
   improveVibyra: false,
   desktopLock: false,
   workOther: "",
@@ -103,8 +114,10 @@ function saveDesktopPreferences(next) {
 
 function applyDesktopPreferences(next = desktopPreferences()) {
   if (!document.body) return;
-  document.body.dataset.desktopTheme = next.appearance || "dark";
-  document.body.dataset.chatFont = next.chatFont || "vibyra-sans";
+  const appearance = next.appearance || "dark";
+  const chatFont = next.chatFont || "vibyra-sans";
+  if (document.body.dataset.desktopTheme !== appearance) document.body.dataset.desktopTheme = appearance;
+  if (document.body.dataset.chatFont !== chatFont) document.body.dataset.chatFont = chatFont;
 }
 
 function desktopProfileContext() {
@@ -133,11 +146,19 @@ function profileAccountMeta() {
     allowance,
     burstCap: Number(account.burstCreditsCap || 0),
     burstUsed: Number(account.burstCreditsUsed || 0),
+    billingCurrency: account.billingCurrency || "gbp",
+    billingProvider: account.billingProvider || "",
+    billingVatInclusive: account.billingVatInclusive !== false,
+    canManageStripeBilling: Boolean(account.canManageStripeBilling),
     cycle,
+    creditsResetAt: account.creditsResetAt || account.planRenewsAt || null,
+    membershipEndsAt: account.membershipEndsAt || null,
+    membershipCancelAtPeriodEnd: Boolean(account.membershipCancelAtPeriodEnd),
     email: account.email || "",
     name: account.name || "Desktop account",
     pct,
     planLabel: `${tier.name}${cycle === "annual" && tier.key !== "free" ? " annual" : ""}`,
+    planPricePence: Number(account.planPricePence || 0),
     tier,
     used,
     weeklyCap: Number(account.weeklyCreditsCap || 0),

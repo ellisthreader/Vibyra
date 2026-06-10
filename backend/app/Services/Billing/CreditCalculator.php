@@ -4,6 +4,10 @@ namespace App\Services\Billing;
 
 class CreditCalculator
 {
+    public function __construct(private readonly ?OpenRouterPricingCatalog $pricingCatalog = null)
+    {
+    }
+
     public function modelConfig(string $modelKey): ?array
     {
         $models = (array) config('billing.models', []);
@@ -35,18 +39,46 @@ class CreditCalculator
      */
     public function estimateCredits(string $modelKey, int $inputTokens, int $maxOutputTokens, bool $agentMode = false): int
     {
-        $usd = $this->estimateUsd($modelKey, $inputTokens, $maxOutputTokens);
+        $usd = $this->estimateReservationUsd($modelKey, $inputTokens, $maxOutputTokens);
         return $this->usdToCredits($modelKey, $usd, $inputTokens + $maxOutputTokens, $agentMode);
+    }
+
+    public function estimateUsageCredits(string $modelKey, int $inputTokens, int $outputTokens, bool $agentMode = false): int
+    {
+        $usd = $this->estimateUsd($modelKey, $inputTokens, $outputTokens);
+        return $this->usdToCredits($modelKey, $usd, $inputTokens + $outputTokens, $agentMode);
+    }
+
+    public function estimateReservationUsd(string $modelKey, int $inputTokens, int $outputTokens): float
+    {
+        $usd = $this->estimateUsd($modelKey, $inputTokens, $outputTokens);
+        $safety = (float) config('billing.openrouter_pricing.reservation_safety_multiplier', 1.5);
+
+        return max(0.0, $usd * max(1.0, $safety));
     }
 
     public function estimateUsd(string $modelKey, int $inputTokens, int $outputTokens): float
     {
         $slug = $this->resolveSlug($modelKey);
-        $fallbackPricing = (array) config('billing.fallback_pricing_per_million_usd', []);
-        $pricing = (array) ($fallbackPricing[$slug] ?? $fallbackPricing['default'] ?? ['input' => 1.0, 'output' => 3.0]);
-        $inputUsd = ($inputTokens / 1_000_000) * (float) ($pricing['input'] ?? 1.0);
-        $outputUsd = ($outputTokens / 1_000_000) * (float) ($pricing['output'] ?? 3.0);
-        return max(0.0, $inputUsd + $outputUsd);
+        $livePricing = $this->pricingCatalog?->freshPricingFor($slug);
+        if (is_array($livePricing)) {
+            $inputMicroUsd = $this->microUsdForUnits((string) ($livePricing['prompt'] ?? ''), $inputTokens);
+            $outputMicroUsd = $this->microUsdForUnits((string) ($livePricing['completion'] ?? ''), $outputTokens);
+            $requestMicroUsd = $this->microUsdForUnits((string) ($livePricing['request'] ?? ''), 1);
+            $liveUsd = ($inputMicroUsd + $outputMicroUsd + $requestMicroUsd) / 1_000_000;
+            $fallback = $this->fallbackEstimateForSlug($slug, $inputTokens, $outputTokens);
+
+            if ($fallback !== null) {
+                return max($liveUsd, $fallback);
+            }
+
+            return $liveUsd * max(
+                1.0,
+                (float) config('billing.openrouter_pricing.dynamic_model_safety_multiplier', 2.0)
+            );
+        }
+
+        return $this->fallbackEstimateForSlug($slug, $inputTokens, $outputTokens, true) ?? 0.0;
     }
 
     /**
@@ -59,11 +91,12 @@ class CreditCalculator
         ?float $openRouterUsd,
         int $inputTokens,
         int $outputTokens,
-        bool $agentMode = false
+        bool $agentMode = false,
+        float $fallbackCostMultiplier = 1.0,
     ): array {
-        $usd = $openRouterUsd !== null && $openRouterUsd > 0
+        $usd = $openRouterUsd !== null && $openRouterUsd >= 0
             ? $openRouterUsd
-            : $this->estimateUsd($modelKey, $inputTokens, $outputTokens);
+            : $this->estimateUsd($modelKey, $inputTokens, $outputTokens) * max(1.0, $fallbackCostMultiplier);
         $totalTokens = $inputTokens + $outputTokens;
         $credits = $this->usdToCredits($modelKey, $usd, $totalTokens, $agentMode);
         return [
@@ -102,7 +135,11 @@ class CreditCalculator
             return null;
         }
 
-        $tier = $this->dynamicTier($slug);
+        $pricing = $this->pricingCatalog?->freshPricingFor($slug);
+        if (! is_array($pricing)) {
+            return null;
+        }
+        $tier = $this->dynamicTier($pricing);
         return [
             'slug' => $slug,
             'tier' => $tier,
@@ -114,21 +151,43 @@ class CreditCalculator
         ];
     }
 
-    private function dynamicTier(string $slug): string
+    private function dynamicTier(array $pricing): string
     {
-        $value = strtolower($slug);
-        if (str_ends_with($value, ':free')) {
+        $inputPerMillion = $this->microUsdForUnits((string) ($pricing['prompt'] ?? ''), 1_000_000) / 1_000_000;
+        $outputPerMillion = $this->microUsdForUnits((string) ($pricing['completion'] ?? ''), 1_000_000) / 1_000_000;
+        if ($inputPerMillion <= 0.0 && $outputPerMillion <= 0.0) {
             return 'free';
         }
-        if (preg_match('/(opus|ultra|max|pro)/', $value)) {
-            return 'premium';
-        }
-        if (preg_match('/(sonnet|medium|large|70b|120b|reasoning)/', $value)) {
-            return 'balanced';
-        }
-        if (preg_match('/(mini|nano|haiku|flash|lite|small|8b|7b|3b)/', $value)) {
+        if ($outputPerMillion <= 5.0 && $inputPerMillion <= 1.0) {
             return 'budget';
         }
-        return 'premium';
+        return $outputPerMillion <= 20.0 && $inputPerMillion <= 5.0 ? 'balanced' : 'premium';
+    }
+
+    private function fallbackEstimateForSlug(
+        string $slug,
+        int $inputTokens,
+        int $outputTokens,
+        bool $includeDefault = false
+    ): ?float {
+        $fallbackPricing = (array) config('billing.fallback_pricing_per_million_usd', []);
+        $pricing = $fallbackPricing[$slug] ?? ($includeDefault ? ($fallbackPricing['default'] ?? null) : null);
+        if (! is_array($pricing)) {
+            return null;
+        }
+
+        $inputUsd = ($inputTokens / 1_000_000) * (float) ($pricing['input'] ?? 0);
+        $outputUsd = ($outputTokens / 1_000_000) * (float) ($pricing['output'] ?? 0);
+
+        return max(0.0, $inputUsd + $outputUsd);
+    }
+
+    private function microUsdForUnits(string $usdPerUnit, int $units): int
+    {
+        if ($units <= 0 || ! is_numeric($usdPerUnit) || (float) $usdPerUnit < 0) {
+            return 0;
+        }
+
+        return (int) ceil((float) $usdPerUnit * $units * 1_000_000);
     }
 }

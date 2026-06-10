@@ -1,27 +1,107 @@
 function bindTerminalControls() {
   const root = nodes?.content || document;
-  root.querySelector("#open-terminal-new")?.addEventListener("click", () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
-  root.querySelector("#toggle-terminal-layout")?.addEventListener("click", () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
-  root.querySelector("#start-terminals")?.addEventListener("click", () => createTerminals(root.querySelector("[data-terminal-custom-count]")?.value || setupCount, setupModel));
+  root.querySelectorAll("[data-terminal-setup-mode]").forEach((button) => button.addEventListener("click", () => {
+    selectTerminalSetupMode(button.dataset.terminalSetupMode);
+  }));
+  root.querySelectorAll("[data-terminal-setup-go]").forEach((button) => button.addEventListener("click", () => {
+    const step = button.dataset.terminalSetupGo;
+    if (!["mode", "setup"].includes(step)) return;
+    terminalSetupStep = step;
+    setupModelMenuOpen = false;
+    terminalProjectMenuTarget = "";
+    render();
+  }));
+  bindTerminalClick(root.querySelector("#open-terminal-new"), () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
+  bindTerminalClick(root.querySelector("#toggle-terminal-layout"), () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
+  root.querySelector("#start-terminals")?.addEventListener("click", async (event) => {
+    if (typeof terminalProjectReadyForSetup === "function" && !terminalProjectReadyForSetup()) return;
+    const model = selectedSetupModel();
+    setupTokenMode = typeof terminalTokenModeForModel === "function"
+      ? terminalTokenModeForModel(model, setupTokenMode)
+      : setupTokenMode;
+    localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
+    const sourceIssue = typeof terminalTokenSourceIssue === "function"
+      ? terminalTokenSourceIssue(model, setupTokenMode)
+      : "";
+    if (sourceIssue) {
+      providerConnectNotice = sourceIssue;
+      render();
+      return;
+    }
+    const runtimeIssue = typeof terminalRuntimeLaunchIssue === "function"
+      ? terminalRuntimeLaunchIssue(model, setupTokenMode)
+      : "";
+    if (runtimeIssue) {
+      terminalRuntimeNotice = runtimeIssue;
+      render();
+      return;
+    }
+    const button = event.currentTarget;
+    if (button?.dataset.terminalLaunchBusy) return;
+    const available = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
+    const count = Math.min(available, normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount));
+    if (count < 1) return;
+    const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
+      ? setupWorkspaceMode
+      : "shared";
+    if (workspaceMode === "worktree" && typeof prepareTerminalWorkspaceLaunch === "function") {
+      button.dataset.terminalLaunchBusy = "1";
+      button.disabled = true;
+      const original = button.innerHTML;
+      button.textContent = "Checking project...";
+      let ready = false;
+      try {
+        ready = await prepareTerminalWorkspaceLaunch(terminalProjectForSetup());
+      } finally {
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = original;
+      }
+      if (!ready) return;
+    }
+    if (terminalBatchSetupOpen) completeTerminalBatchSetup();
+    createTerminals(count, setupModel, {
+      effort: terminalEffortForModel(selectedSetupModel(), setupEffort),
+      tokenMode: setupTokenMode,
+      workspaceMode,
+      allowSharedFallback: workspaceMode !== "worktree"
+    });
+  });
+  root.querySelector("[data-terminal-batch-cancel]")?.addEventListener("click", () => closeTerminalBatchSetup());
   root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => { setupCount = normalizeCount(button.dataset.terminalCount); render(); }));
+  root.querySelectorAll("[data-terminal-setup-effort]").forEach((button) => button.addEventListener("click", () => {
+    setupEffort = terminalEffortForModel(selectedSetupModel(), button.dataset.terminalSetupEffort);
+    localStorage.setItem(setupEffortKey, setupEffort);
+    render();
+  }));
   root.querySelector("[data-terminal-custom-count]")?.addEventListener("change", (event) => { setupCount = normalizeCount(event.target.value); render(); });
+  root.querySelectorAll("[data-terminal-workspace-mode]").forEach((button) => button.addEventListener("click", () => {
+    setupWorkspaceMode = normalizeTerminalWorkspaceMode(button.dataset.terminalWorkspaceMode);
+    localStorage.setItem(setupWorkspaceModeKey, setupWorkspaceMode);
+    render();
+  }));
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(root);
   root.querySelector("[data-terminal-setup-model-toggle]")?.addEventListener("click", () => { setupModelMenuOpen = !setupModelMenuOpen; if (setupModelMenuOpen) { modelScrollTops.setup = 0; terminalProjectMenuTarget = ""; } render(); });
   root.querySelectorAll("[data-terminal-model-search]").forEach((input) => input.addEventListener("input", () => updateTerminalModelSearch(input)));
   root.querySelectorAll(".terminal-model-scroll").forEach(bindTerminalModelScroll);
   root.querySelectorAll("[data-terminal-setup-model]").forEach((button) => button.addEventListener("click", () => selectSetupModel(button.dataset.terminalSetupModel || "auto")));
-  root.querySelectorAll("[data-terminal-new-model]").forEach((button) => button.addEventListener("click", () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
-  root.querySelectorAll("[data-terminal-focus]").forEach((button) => button.addEventListener("click", () => setActiveTerminal(button.dataset.terminalFocus)));
+  root.querySelectorAll("[data-terminal-new-model]").forEach((button) => bindTerminalClick(button, () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
+  root.querySelectorAll("[data-terminal-focus]").forEach((button) => bindTerminalClick(button, () => setActiveTerminal(button.dataset.terminalFocus)));
   root.querySelectorAll("[data-terminal-drag]").forEach((tab) => bindTerminalDrag(tab));
-  root.querySelectorAll("[data-terminal-settings]").forEach((button) => button.addEventListener("click", () => toggleTerminalSettings(button.dataset.terminalSettings)));
-  root.querySelectorAll("[data-terminal-close]").forEach((button) => button.addEventListener("click", (event) => {
+  root.querySelectorAll("[data-terminal-settings]").forEach((button) => bindTerminalClick(button, () => toggleTerminalSettings(button.dataset.terminalSettings)));
+  if (typeof bindTerminalFullscreenControls === "function") bindTerminalFullscreenControls(root);
+  root.querySelectorAll("[data-terminal-close]").forEach((button) => bindTerminalClick(button, (event) => {
     event.preventDefault();
     event.stopPropagation();
     (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
   }));
-  root.querySelectorAll("[data-terminal-notice]").forEach((button) => button.addEventListener("click", () => updateTerminal(button.dataset.terminalNotice, { notice: null })));
+  bindTerminalNoticeControls(root);
+  if (typeof bindTerminalWorkspaceCheckpointLinks === "function") bindTerminalWorkspaceCheckpointLinks(root);
   root.querySelectorAll("[data-terminal-field]").forEach((field) => field.addEventListener("change", () => updateField(field)));
+  bindTerminalRenameControls(root);
   bindTerminalTokenControls(root);
+  if (typeof bindTerminalRuntimeControls === "function") bindTerminalRuntimeControls(root);
+  if (typeof bindTerminalProjectWorkspaceControls === "function") bindTerminalProjectWorkspaceControls(root);
   root.querySelectorAll("[data-terminal-draft]").forEach((field) => {
     fitTerminalDraft(field);
     field.addEventListener("keydown", (event) => handleTerminalDraftKeydown(event, field));
@@ -29,6 +109,28 @@ function bindTerminalControls() {
   });
   root.querySelectorAll("[data-terminal-form]").forEach((form) => form.addEventListener("submit", (event) => { event.preventDefault(); sendTerminal(form.dataset.terminalForm); }));
   bindTerminalCommandButtons(root);
+  if (typeof scheduleTerminalLayoutSync === "function") scheduleTerminalLayoutSync();
+}
+
+function bindTerminalClick(node, handler) {
+  if (!node || node.dataset.terminalClickBound) return;
+  node.dataset.terminalClickBound = "1";
+  node.addEventListener("click", handler);
+}
+
+function bindTerminalNoticeControls(root = document) {
+  root.querySelectorAll?.("[data-terminal-notice]").forEach((button) => bindTerminalClick(button, (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const terminal = findTerminal(button.dataset.terminalNotice);
+    if (!terminal) return;
+    terminal.notice = null;
+    terminal.updatedAt = Date.now();
+    saveTerminals();
+    const article = button.closest("[data-terminal]");
+    button.closest(".terminal-notice")?.remove();
+    article?.classList.remove("has-notice");
+  }));
 }
 
 function updateField(field) {
@@ -37,6 +139,49 @@ function updateField(field) {
     if (typeof modelLocked === "function" && modelLocked(model)) { openTokenModal("plans"); render(); return; }
   }
   updateTerminal(field.dataset.terminalId, { [field.dataset.terminalField]: field.value });
+}
+
+function bindTerminalRenameControls(root = document) {
+  root.querySelectorAll?.("[data-terminal-rename-form]").forEach((form) => {
+    if (form.dataset.terminalRenameBound) return;
+    form.dataset.terminalRenameBound = "1";
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = form.dataset.terminalRenameForm || "";
+      const input = form.querySelector("[data-terminal-rename-input]");
+      const status = form.querySelector("[data-terminal-rename-status]");
+      const title = String(input?.value || "").replace(/\s+/g, " ").trim().slice(0, 72);
+      if (!title) {
+        if (status) status.textContent = "Enter a terminal name.";
+        input?.focus();
+        return;
+      }
+      const button = form.querySelector('button[type="submit"]');
+      if (button) button.disabled = true;
+      if (status) status.textContent = "Saving...";
+      try {
+        const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.session) throw new Error(result.error || "The terminal name could not be saved.");
+        const terminal = findTerminal(id);
+        if (terminal) terminal.title = String(result.session.title || title);
+        settingsTerminalId = "";
+        saveTerminals();
+        renderTopbar();
+        if (!refreshPtyTerminalsDom()) {
+          forceTerminalRender = true;
+          render();
+        }
+      } catch (error) {
+        if (status) status.textContent = error instanceof Error ? error.message : "The terminal name could not be saved.";
+        if (button) button.disabled = false;
+      }
+    });
+  });
 }
 
 function updateDraft(field) {
@@ -142,6 +287,9 @@ function toggleTerminalSettings(id) {
 
 function setActiveTerminal(id) {
   activeTerminalId = id;
+  const terminal = findTerminal(id);
+  if (typeof activateTerminalProjectForTerminal === "function") activateTerminalProjectForTerminal(terminal);
+  if (typeof rememberActiveTerminalForProject === "function") rememberActiveTerminalForProject(terminal);
   settingsTerminalId = "";
   forceTerminalRender = true;
   saveTerminals();
@@ -220,9 +368,25 @@ function moveTerminal(fromId, toId) {
 }
 
 function closeTerminal(id) {
+  const closing = findTerminal(id);
+  const closingProjectKey = typeof terminalProjectGroupKey === "function"
+    ? terminalProjectGroupKey(closing)
+    : "";
   terminals = terminals.filter((terminal) => terminal.id !== id);
+  if (typeof fullscreenTerminalId === "string" && fullscreenTerminalId === id) {
+    fullscreenTerminalId = "";
+    localStorage.removeItem(terminalFullscreenKey);
+  }
   if (!terminals.length) activeTerminalId = "";
-  else if (activeTerminalId === id) activeTerminalId = terminals[0]?.id || "";
+  else if (activeTerminalId === id) {
+    const sameProject = closingProjectKey && typeof terminalProjectGroupKey === "function"
+      ? terminals.find((terminal) => terminalProjectGroupKey(terminal) === closingProjectKey)
+      : null;
+    activeTerminalId = sameProject?.id || terminals[0]?.id || "";
+  }
+  if (activeTerminalId && typeof rememberActiveTerminalForProject === "function") {
+    rememberActiveTerminalForProject(findTerminal(activeTerminalId));
+  }
   settingsTerminalId = "";
   forceTerminalRender = true;
   saveTerminals();
@@ -273,14 +437,21 @@ function setTerminalTokenMode(target, mode) {
   const model = target === "setup"
     ? (typeof selectedSetupModel === "function" ? selectedSetupModel() : null)
     : (typeof terminalModelForDisplay === "function" ? terminalModelForDisplay(findTerminal(target)?.model) : null);
-  if (next === "provider" && typeof terminalProviderKeyForModel === "function" && terminalProviderKeyForModel(model) === "openai" && !(providerAccounts.openai || {}).connected) {
-    providerConnectOpen = true;
-    providerConnectNotice = "Add an OpenAI API key to use API-key billing.";
-    render();
-    return;
-  }
   if (target === "setup") {
     setupTokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next;
+    if (setupTokenMode === "provider" && typeof terminalModelAvailableForTokenMode === "function" && !terminalModelAvailableForTokenMode(model, setupTokenMode)) {
+      const fallback = typeof terminalFirstModelForTokenMode === "function" ? terminalFirstModelForTokenMode(setupTokenMode) : null;
+      if (fallback) {
+        setupModel = fallback.key;
+        localStorage.setItem(setupModelKey, setupModel);
+        providerConnectNotice = "";
+      } else {
+        providerConnectOpen = true;
+        providerConnectNotice = "Connect an AI account before using My AI accounts.";
+      }
+    } else {
+      providerConnectNotice = "";
+    }
     localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
     render();
     return;

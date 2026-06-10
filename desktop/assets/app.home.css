@@ -1,0 +1,176 @@
+.desktop-home {
+  color: var(--text);
+  margin: 0 auto;
+  max-width: 1280px;
+  padding: 30px 34px 42px;
+  width: 100%;
+}
+
+.desktop-home-header {
+  align-items: end;
+  display: flex;
+  gap: 32px;
+  justify-content: space-between;
+  padding: 0 2px 20px;
+}
+
+.desktop-home-header p,
+.desktop-home-section-head span,
+.desktop-home-phone > small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.desktop-home-header h1 {
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 740;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.desktop-home-header > div > span {
+  color: var(--muted);
+  display: block;
+  font-size: 14px;
+  margin-top: 9px;
+}
+
+.desktop-home-new-chat {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding-inline: 20px;
+}
+
+.desktop-home-status {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.desktop-home-status-item {
+  align-items: center;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 38px minmax(0, 1fr) 16px;
+  min-height: 94px;
+  padding: 14px;
+  text-align: left;
+}
+
+.desktop-home-status-item:hover {
+  background: var(--panel);
+  border-color: var(--line-strong);
+}
+
+.desktop-home-status-icon {
+  align-items: center;
+  background: var(--accent-soft);
+  border-radius: 50%;
+  color: var(--accent);
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.desktop-home-status-icon svg { height: 19px; width: 19px; }
+.desktop-home-status-item.is-disconnected .desktop-home-status-icon { background: var(--color-error-soft); color: var(--danger); }
+.desktop-home-status-item.is-disconnected strong { color: var(--danger); }
+.desktop-home-status-item.is-success .desktop-home-status-icon { background: var(--color-success-soft); color: var(--success); }
+.desktop-home-status-item.is-success strong { color: var(--success); }
+.desktop-home-status-item.is-working .desktop-home-status-icon { background: var(--accent-soft); color: var(--accent); }
+.desktop-home-status-item.is-working strong { color: var(--accent); }
+.desktop-home-status-copy { min-width: 0; }
+.desktop-home-status-copy small { color: var(--muted); display: block; font-size: 11px; margin-bottom: 3px; }
+.desktop-home-status-copy strong { display: block; font-size: 14px; font-weight: 720; }
+.desktop-home-status-copy em {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.desktop-home-status-item > svg { color: var(--muted); height: 15px; width: 15px; }
+.desktop-home-connected-dot { background: var(--success); border-radius: 50%; height: 8px; width: 8px; }
+
+.desktop-home-dashboard {
+  align-items: stretch;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.95fr);
+}
+
+.desktop-home-primary {
+  align-content: start;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.desktop-home-support {
+  display: grid;
+  gap: 18px;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+}
+
+.desktop-home-card {
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  min-width: 0;
+  padding: 18px;
+}
+
+.desktop-home-projects { height: 100%; }
+.desktop-home-workspace { padding: 16px; }
+.desktop-home-activity { padding: 12px; }
+.desktop-home-activity .desktop-home-section-head { margin-bottom: 6px; }
+
+.desktop-home-section-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.desktop-home-section-head h2,
+.desktop-home-phone h2 {
+  font-size: 17px;
+  font-weight: 720;
+  line-height: 22px;
+  margin: 0;
+}
+
+.desktop-home-text-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 650;
+  gap: 6px;
+  padding: 5px 0;
+}
+
+.desktop-home-text-button:hover { color: var(--text); }
+.desktop-home-text-button svg { height: 15px; width: 15px; }
+.desktop-home-terminal-list,
+.desktop-home-project-list,
+.desktop-home-activity-list { display: grid; }

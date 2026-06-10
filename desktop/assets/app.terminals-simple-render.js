@@ -35,6 +35,13 @@ function terminalSimpleAgentLabel(terminal) {
   return agent.label;
 }
 
+function terminalSimpleTabLabel(terminal, index) {
+  const label = terminalSimpleAgentLabel(terminal);
+  const duplicates = terminals.filter((item) => terminalSimpleAgentLabel(item) === label);
+  if (duplicates.length < 2) return label;
+  return `${label} ${duplicates.findIndex((item) => item.id === terminal.id) + 1 || index + 1}`;
+}
+
 function terminalWindowActions(terminal) {
   const minimized = Boolean(terminal.minimized);
   const maximized = maximizedTerminalId === terminal.id;
@@ -97,9 +104,9 @@ newTerminalMenu = function simpleNewTerminalMenu() {
 };
 
 terminalTabs = function simpleTerminalTabs() {
-  const tabs = terminals.map((terminal) => {
+  const tabs = terminals.map((terminal, index) => {
     const active = terminal.id === activeTerminalId;
-    const label = terminalSimpleAgentLabel(terminal);
+    const label = terminalSimpleTabLabel(terminal, index);
     return `<div class="terminal-tab ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(terminal.title)}">
       <button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}">${terminalStatusDot(terminal)}<span>${escapeHtml(label)}</span></button>
       <button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(terminal.title)}">${icon("close")}</button>

@@ -39,7 +39,7 @@ export function ChatToolActivityCard({ status }: { status: ChatRunStatus }) {
 
   return (
     <View style={[styles.card, { borderColor: meta.borderColor }]}>
-      <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={meta.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={styles.iconWrap}>
         <Animated.View style={[styles.iconRing, { opacity: ringOpacity, transform: [{ rotate: spin }] }]} />
         <View style={[styles.iconCore, { backgroundColor: meta.iconBackground, borderColor: meta.borderColor }]}>

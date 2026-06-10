@@ -4,44 +4,22 @@ import { useIAP, Purchase } from "expo-iap";
 import { useAppContext } from "../../../context/AppContext";
 import { membershipProductIds, membershipSkus } from "../data/plans";
 import { BillingPeriod, Plan } from "../types";
-import { reportIapReceipt } from "../../../utils/billingApi";
+import { reportNativeIapPurchase, restoreNativeIapPurchases } from "../../../utils/nativeIap";
 
 export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPeriod, onClose: () => void) {
   const app = useAppContext();
   const [purchaseMessage, setPurchaseMessage] = useState("");
   const [purchaseError, setPurchaseError] = useState("");
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const selectedProductId = membershipProductIds[selectedPlan][billingPeriod];
 
   const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useIAP({
     onPurchaseSuccess: async (purchase: Purchase) => {
       try {
-        const platform: "apple" | "google" = Platform.OS === "ios" ? "apple" : "google";
-        const receipt = purchase.purchaseToken
-          ?? (purchase as { transactionReceipt?: string }).transactionReceipt
-          ?? "";
-        const transactionId = (purchase as { transactionId?: string }).transactionId
-          ?? (purchase as { purchaseToken?: string }).purchaseToken
-          ?? "";
-
-        if (receipt && transactionId && app.authToken) {
-          try {
-            const result = await reportIapReceipt(app.authToken, {
-              platform,
-              productId: purchase.productId,
-              transactionId,
-              receipt
-            });
-            if (result.user) {
-              app.applyRemoteUserFromIap(result.user);
-            }
-          } catch (error) {
-            setPurchaseError(error instanceof Error ? error.message : "Could not register your subscription with Vibyra.");
-            setPurchasingProductId(null);
-            return;
-          }
-        }
+        const result = await reportNativeIapPurchase(app.authToken, purchase);
+        if (result.user) app.applyRemoteUserFromIap(result.user);
 
         await finishTransaction({ purchase, isConsumable: false });
         setPurchaseError("");
@@ -106,11 +84,43 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
     }
   }
 
+  async function restorePurchases() {
+    setPurchaseError("");
+    setPurchaseMessage("");
+    if (!storeConnected) {
+      setPurchaseError("Restore Purchases needs a development or store build.");
+      return;
+    }
+
+    try {
+      setIsRestoring(true);
+      const result = await restoreNativeIapPurchases({
+        authToken: app.authToken,
+        finishTransaction,
+        applyRemoteUser: app.applyRemoteUserFromIap
+      });
+      if (result.restored === 0) {
+        setPurchaseMessage("No active purchases were found for this store account.");
+        return;
+      }
+      const partial = result.failed > 0 ? ` ${result.failed} store transaction${result.failed === 1 ? "" : "s"} still need retrying.` : "";
+      setPurchaseMessage(`Restored ${result.restored} purchase${result.restored === 1 ? "" : "s"}.${partial}`);
+      app.completeOnboarding();
+      setTimeout(onClose, 650);
+    } catch (error) {
+      setPurchaseError(error instanceof Error ? error.message : "Purchases could not be restored.");
+    } finally {
+      setIsRestoring(false);
+    }
+  }
+
   return {
     buyMembership,
+    isRestoring,
     isPurchasing,
     purchaseError,
     purchaseMessage,
+    restorePurchases,
     selectedProductId,
     selectedStoreProduct
   };

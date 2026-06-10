@@ -1,6 +1,6 @@
 function setPage(page) { activePage = page; topbarChatMenuOpen = false; localStorage.setItem("vibyra.desktop.page", page); render(); }
 function bindJumps() { document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.jump))); }
-function pageTitle(page) { return page === "dashboard" ? "Builds" : page === "projects" ? "Projects" : page === "terminals" ? "Terminals" : page === "profile" ? "Profile" : "New chat"; }
+function pageTitle(page) { return page === "dashboard" ? "Home" : page === "projects" ? "Projects" : page === "terminals" ? "Terminals" : page === "profile" ? "Profile" : "New chat"; }
 function statusTone() {
   if (currentState.pendingPair && currentState.pendingPair.status === "pending") return "warning";
   if (currentState.pendingPair && currentState.pendingPair.status === "denied") return "offline";
@@ -70,6 +70,43 @@ function desktopChromeStatusText() {
   if (currentState.pairedDevice) return "Ready • Connected to phone";
   return "Ready • Waiting for phone";
 }
+function homeTerminalRows() { return typeof terminals === "undefined" || !Array.isArray(terminals) ? [] : terminals; }
+function homePhoneStatus() { return currentState.pendingPair?.status === "pending" ? "Approval needed" : currentState.pairedDevice ? "Connected" : "Not connected"; }
+function homeStatusItem(iconName, label, value, target, detail, state = "") {
+  const action = target === "phone" ? "data-home-phone" : target === "activity" ? "data-home-activity" : `data-jump="${escapeAttribute(target)}"`;
+  const connected = target === "phone" && Boolean(currentState.pairedDevice);
+  const tone = state === "working" ? "is-working" : target === "phone" && !connected ? "is-disconnected" : target === "activity" ? "is-success" : "";
+  return `<button class="desktop-home-status-item ${tone}" type="button" ${action}><span class="desktop-home-status-icon">${icon(iconName)}</span><span class="desktop-home-status-copy"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong><em>${escapeHtml(detail)}</em></span>${connected ? `<i class="desktop-home-connected-dot"></i>` : icon("chevron")}</button>`;
+}
+function homeTerminalIsWorking(terminal) {
+  return Boolean(terminal) && (terminal.pending || terminal.providerBusy || terminal.providerState === "busy"
+    || terminal.ptyStatus === "starting");
+}
+function homeTerminalRow(terminal) {
+  const project = (currentState.projects || []).find((item) => item.id === terminal.projectId);
+  const model = typeof modelByKey === "function" ? modelByKey(terminal.model) : null;
+  const running = homeTerminalIsWorking(terminal);
+  const status = running ? "Working" : terminal.ptyStatus === "exited" ? "Stopped" : "Ready";
+  const statusClass = running ? "is-running" : terminal.ptyStatus === "exited" ? "is-stopped" : "is-ready";
+  return `<button class="desktop-home-terminal-row" type="button" data-home-terminal="${escapeAttribute(terminal.id)}"><span class="desktop-home-terminal-state ${running ? "is-running" : ""}"></span><span class="desktop-home-terminal-copy"><strong>${escapeHtml(terminal.title || "Terminal")}</strong><small>${escapeHtml(project?.name || model?.label || "AI workspace")}</small></span><span class="desktop-home-terminal-status ${statusClass}">${escapeHtml(status)}</span>${icon("chevron")}</button>`;
+}
+function homeEmptyTerminals() {
+  return `<div class="desktop-home-empty"><span>${icon("terminal")}</span><div><strong>No terminals open</strong><p>Launch an AI workspace when you are ready to build.</p></div><button class="secondary-button" type="button" data-jump="terminals">Launch terminal</button></div>`;
+}
+function homeActiveWorkRow(item) {
+  return `<button class="desktop-home-active-work" type="button" data-jump="chat"><span class="desktop-home-active-pulse"></span><span><small>Active work</small><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.subtitle)}</p></span><time>${escapeHtml(buildTimeLabel(item))}</time></button>`;
+}
+function homePhonePanel() {
+  const paired = Boolean(currentState.pairedDevice);
+  const pending = currentState.pendingPair?.status === "pending";
+  const title = pending ? "Phone approval needed" : paired ? "Phone connected" : "Connect your phone";
+  const detail = pending ? "Review the device waiting for access." : paired ? escapeHtml(currentState.pairedDevice) : "Control Vibyra from anywhere on your network.";
+  return `<section class="desktop-home-card desktop-home-phone"><small>Phone</small><div class="desktop-home-phone-body"><span class="desktop-home-side-icon ${paired ? "is-connected" : ""}">${icon("phone")}</span><div><h2>${escapeHtml(title)}</h2><p>${detail}</p><button class="${paired ? "desktop-home-text-button" : "primary-button"}" type="button" data-home-phone>${paired ? "Manage connection" : "Pair phone"}</button></div></div></section>`;
+}
+function homeProjectsPanel() {
+  const projects = (currentState.projects || []).slice(0, 3);
+  return `<section class="desktop-home-card desktop-home-projects"><div class="desktop-home-section-head"><div><span>Local</span><h2>Recent projects</h2></div><button class="desktop-home-text-button" type="button" data-jump="projects">View all ${icon("arrow")}</button></div>${projects.length ? `<div class="desktop-home-project-list">${projects.map((project) => `<button type="button" data-home-project="${escapeAttribute(project.id)}"><span>${icon("folder")}</span><span><strong>${escapeHtml(project.name || "Project")}</strong><small>${escapeHtml(project.stack || project.path || "Local project")}</small></span>${icon("chevron")}</button>`).join("")}</div>` : `<p class="desktop-home-quiet-empty">Projects discovered on this desktop will appear here.</p>`}</section>`;
+}
 function dashboardActiveBuildPanel(rows) {
   return `<section class="live-builds dashboard-live-builds"><div class="builds-head"><h2>Current work</h2><button class="text-link" type="button" data-jump="chat">New chat ${icon("arrow")}</button></div><div class="build-list">${buildRows(rows)}</div></section>`;
 }
@@ -78,13 +115,7 @@ function dashboardPairingPanel() {
   return `<section class="dashboard-pair-panel"><div class="dashboard-pair-visual" aria-hidden="true"><div class="dashboard-pair-orb"><span class="pair-phone-shape"></span><span class="pair-dash pair-dash-left"></span><span class="pair-vibyra-mark">${icon("pulse")}</span><span class="pair-dash pair-dash-right"></span><span class="pair-laptop-shape"><i></i></span></div></div><div class="dashboard-pair-divider"></div><div class="dashboard-pair-copy"><h2>${currentState.pairedDevice ? "Phone connected" : "Waiting for phone connection"}</h2><p>Pair your phone to start build work on this desktop.</p><label>Pair code</label><div class="dashboard-code-row"><strong>${escapeHtml(code)}</strong><button class="secondary-button" type="button" id="copy-dashboard-pair-code">${icon("copy")}<span class="copy-label">Copy code</span><span class="copied-label">Copied</span></button></div><div class="dashboard-pair-actions"><button class="primary-button" type="button" id="dashboard-pair-phone">${icon("phone")}Pair phone</button><button class="secondary-button" type="button" id="dashboard-pair-help">${icon("arrow")}View pairing instructions</button></div><p class="dashboard-pair-note">${icon("shield")}Builds started from your phone will appear here once running.</p></div></section>`;
 }
 function dashboardActivityEvents() {
-  const events = [...(currentState.events || [])];
-  const account = currentState.desktopAccount;
-  if (account && !events.some((event) => String(event.source || "").toLowerCase() === "account")) {
-    const name = account.name || account.email || "Account";
-    events.push({ id: "desktop-account-session", source: "Account", message: `${name} signed in on Vibyra Desktop`, tone: "success", time: "Just now" });
-  }
-  return events;
+  return [...(currentState.events || [])];
 }
 function dashboardActivityRows(events) {
   if (!events.length) return `<div class="empty dashboard-empty-activity">Nothing yet.</div>`;
@@ -116,7 +147,11 @@ function dashboardEventTime(event) {
   return `${hours}h ago`;
 }
 function projectCard(project, index) { const active = selectedProjectId ? selectedProjectId === project.id : index === 0; return `<article class="project-card ${active ? "active" : ""}"><div class="project-top"><div style="display:flex;gap:12px;min-width:0;"><span class="project-icon">${icon("folder")}</span><div><p class="project-name">${escapeHtml(project.name || "Project")}</p><p class="project-path">${escapeHtml(project.path || "")}</p></div></div><span class="tag">${escapeHtml(displayProjectSource(project))}</span></div><div class="project-footer"><span class="body-copy">${escapeHtml(project.stack || "Project")}</span><button class="secondary-button compact-button" type="button" data-project-chat="${escapeAttribute(project.id)}">${icon("chat")}Chat</button></div></article>`; }
-function chatEmptyState() { const project = currentProject(); const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?"; return `<div class="chat-empty">${project ? `<p class="kicker">${escapeHtml(project.name)}</p>` : ""}<h1>${escapeHtml(title)}</h1><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><span>${escapeHtml(item.title)}</span></button>`).join("")}</div></div>`; }
+function chatEmptyState() {
+  const project = currentProject();
+  const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?";
+  return `<div class="chat-empty"><div class="chat-empty-mark"><img src="/app-assets/vibyra.png" alt="" /></div>${project ? `<p class="kicker">${escapeHtml(project.name)}</p>` : ""}<h1>${escapeHtml(title)}</h1><div class="suggestions">${suggestions.map((item) => `<button class="suggestion" type="button" data-suggestion="${escapeAttribute(item.prompt)}"><span class="action-icon">${icon(item.icon)}</span><span class="suggestion-copy"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.description)}</small></span>${icon("arrow")}</button>`).join("")}</div></div>`;
+}
 function chatNoticeBanner() {
   if (!chatNotice) return "";
   const resetLabel = chatNotice.resetAt ? formatResetTime(chatNotice.resetAt) : "";

@@ -28,6 +28,9 @@ class CommunityPublishingAssetsTest extends TestCase
     {
         config([
             'billing.plans.free.daily_credit_cap' => 100,
+            'billing.plans.free.burst_credit_cap' => 100,
+            'billing.plans.free.weekly_credit_cap' => 100,
+            'billing.plans.free.usd_cap_per_month' => 1,
             'services.openai.key' => 'test-openai-key',
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
@@ -48,6 +51,7 @@ class CommunityPublishingAssetsTest extends TestCase
                         ]],
                     ],
                 ]],
+                'usage' => ['prompt_tokens' => 80, 'completion_tokens' => 2000, 'cost' => 0.05],
             ]),
         ]);
 
@@ -82,6 +86,9 @@ class CommunityPublishingAssetsTest extends TestCase
     {
         config([
             'billing.plans.free.daily_credit_cap' => 100,
+            'billing.plans.free.burst_credit_cap' => 100,
+            'billing.plans.free.weekly_credit_cap' => 100,
+            'billing.plans.free.usd_cap_per_month' => 1,
             'services.openai.key' => 'test-openai-key',
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
@@ -102,6 +109,7 @@ class CommunityPublishingAssetsTest extends TestCase
                         ]],
                     ],
                 ]],
+                'usage' => ['prompt_tokens' => 80, 'completion_tokens' => 3000, 'cost' => 0.08],
             ]),
         ]);
 
@@ -136,6 +144,9 @@ class CommunityPublishingAssetsTest extends TestCase
     {
         config([
             'billing.plans.free.daily_credit_cap' => 100,
+            'billing.plans.free.burst_credit_cap' => 100,
+            'billing.plans.free.weekly_credit_cap' => 100,
+            'billing.plans.free.usd_cap_per_month' => 1,
             'services.openai.key' => 'test-openai-key',
             'services.openrouter.key' => 'test-openrouter-key',
             'services.openrouter.image_model' => 'openai/gpt-5.4-image-2',
@@ -179,7 +190,14 @@ class CommunityPublishingAssetsTest extends TestCase
 
     public function test_publish_asset_generation_requires_openrouter_configuration_without_charging(): void
     {
-        config(['billing.plans.free.daily_credit_cap' => 100, 'services.openai.key' => 'test-openai-key', 'services.openrouter.key' => null]);
+        config([
+            'billing.plans.free.daily_credit_cap' => 100,
+            'billing.plans.free.burst_credit_cap' => 100,
+            'billing.plans.free.weekly_credit_cap' => 100,
+            'billing.plans.free.usd_cap_per_month' => 1,
+            'services.openai.key' => 'test-openai-key',
+            'services.openrouter.key' => null,
+        ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response([
                 'results' => [[

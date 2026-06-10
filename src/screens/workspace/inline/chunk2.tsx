@@ -31,7 +31,7 @@ export function TopBar({
   chatTitle,
   chatHasConversation,
   chatStarred,
-  communitySubPageTitle,
+  communitySubPageOpen,
   onBackFromCommunity,
   onChatHelp,
   onDeleteChat,
@@ -49,7 +49,7 @@ export function TopBar({
   chatTitle: string;
   chatHasConversation: boolean;
   chatStarred: boolean;
-  communitySubPageTitle: string;
+  communitySubPageOpen: boolean;
   onBackFromCommunity: () => void;
   onChatHelp: () => void;
   onDeleteChat: () => void;
@@ -104,16 +104,13 @@ export function TopBar({
     );
   }
 
-  if (activePage === "community" && communitySubPageTitle) {
+  if (activePage === "community" && communitySubPageOpen) {
     return (
       <View style={[styles.topBar, styles.chatTopBar]}>
         <View style={styles.chatTopLeft}>
           <Pressable accessibilityLabel="Back to community" style={styles.chatTopIconButton} onPress={onBackFromCommunity}>
             <Ionicons name="chevron-back" color={colors.text} size={26} />
           </Pressable>
-        </View>
-        <View style={[styles.chatTopTitleWrap, { pointerEvents: "none" }]}>
-          <Text numberOfLines={1} style={styles.chatTopTitle}>{communitySubPageTitle}</Text>
         </View>
         <View style={styles.chatTopActions}>
           <Pressable accessibilityLabel="Open account menu" style={styles.accountTopButton} onPress={onOpenAccount}>

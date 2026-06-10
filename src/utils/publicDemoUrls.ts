@@ -5,8 +5,9 @@ export function sanitizePublicDemoUrl(url?: string | null) {
   try {
     const parsed = new URL(value);
     if (isLocalOrPrivateHost(parsed.hostname) && isFirstPartyCommunityDemoPath(parsed) && localDemoUrlsAllowed()) return parsed.href;
-    if (parsed.protocol !== "https:") return undefined;
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port) return undefined;
     if (isLocalOrPrivateHost(parsed.hostname)) return undefined;
+    if (!isApprovedPublicDemoHost(parsed.hostname)) return undefined;
     return parsed.href;
   } catch {
     return undefined;
@@ -23,6 +24,8 @@ export function publicDemoUrlBlockedReason(url?: string | null) {
     if (isLocalOrPrivateHost(parsed.hostname) && isFirstPartyCommunityDemoPath(parsed) && localDemoUrlsAllowed()) return "";
     if (isLocalOrPrivateHost(parsed.hostname)) return "Demo URL points to a private or local network.";
     if (parsed.protocol !== "https:") return "Public demos must use HTTPS.";
+    if (parsed.username || parsed.password || parsed.port) return "Demo URL contains unsupported credentials or a custom port.";
+    if (!isApprovedPublicDemoHost(parsed.hostname)) return "Demo URL is not on an approved Vibyra hosting origin.";
   } catch {
     return "Demo URL is invalid.";
   }
@@ -40,8 +43,9 @@ export function firstPublicDemoUrl(urls: Array<string | null | undefined>) {
 
 function isLocalOrPrivateHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (!host || host === "localhost" || host.endsWith(".local")) return true;
-  if (host === "::1" || host === "0:0:0:0:0:0:0:1") return true;
+  if (!host || host === "localhost" || host.endsWith(".localhost") ||
+      host.endsWith(".local") || host.endsWith(".lan") || host.endsWith(".internal")) return true;
+  if (host === "::" || host === "::1" || host === "0:0:0:0:0:0:0:1") return true;
   if (host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) return true;
   if (!isIpv4Address(host)) return false;
 
@@ -49,9 +53,12 @@ function isLocalOrPrivateHost(hostname: string) {
   return first === 0
     || first === 10
     || first === 127
+    || first >= 224
+    || first === 100 && second >= 64 && second <= 127
     || first === 192 && second === 168
     || first === 172 && second >= 16 && second <= 31
-    || first === 169 && second === 254;
+    || first === 169 && second === 254
+    || first === 198 && second >= 18 && second <= 19;
 }
 
 function isIpv4Address(value: string) {
@@ -64,6 +71,40 @@ function isFirstPartyCommunityDemoPath(url: URL) {
   return url.pathname.endsWith("/demo")
     || url.pathname.includes("/demo/")
     || url.pathname.endsWith("/preview");
+}
+
+function isApprovedPublicDemoHost(hostname: string) {
+  const host = hostname.toLowerCase();
+  return approvedPublicDemoHosts().some((pattern) => (
+    pattern.startsWith("*.")
+      ? host.endsWith(pattern.slice(1)) && host !== pattern.slice(2)
+      : host === pattern
+  ));
+}
+
+function approvedPublicDemoHosts() {
+  const configured = String(process.env.EXPO_PUBLIC_DEMO_HOSTS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => /^(\*\.)?[a-z0-9.-]+$/.test(value));
+  const apiHost = httpsHostname(process.env.EXPO_PUBLIC_API_URL);
+  return Array.from(new Set([
+    "vibyra-production.up.railway.app",
+    "*.up.railway.app",
+    ...(apiHost ? [apiHost] : []),
+    ...configured
+  ]));
+}
+
+function httpsHostname(value?: string) {
+  try {
+    const parsed = new URL(String(value ?? "").trim());
+    return parsed.protocol === "https:" && !parsed.username && !parsed.password
+      ? parsed.hostname.toLowerCase()
+      : "";
+  } catch {
+    return "";
+  }
 }
 
 function localDemoUrlsAllowed() {

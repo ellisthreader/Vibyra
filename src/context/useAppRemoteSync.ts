@@ -3,7 +3,7 @@ import { useCloudSync } from "./useCloudSync";
 import { useSessionValidation } from "./useSessionValidation";
 
 type RemoteSyncState = Pick<AppContextValue,
-  "authenticated" | "authToken" | "persistenceReady" | "onboardingComplete" |
+  "authenticated" | "authToken" | "installId" | "persistenceReady" | "onboardingComplete" |
   "rememberedDesktops" | "chatThreads" | "chatTitles" | "detachedChatThreads" | "detachedChatTitles" | "detachedChatUpdatedAt" | "chatProjects" |
   "projectMemories" | "editApprovals" | "promptMoney" | "desktopPermissionMode" | "selectedChatModel" | "selectedModel"
 >;
@@ -36,6 +36,7 @@ export function useAppRemoteSync(state: RemoteSyncState, logs: Parameters<typeof
     persistenceReady: state.persistenceReady,
     authenticated: state.authenticated,
     authToken: state.authToken,
+    installId: state.installId,
     applyRemoteUser: auth.applyRemoteUserFromIap,
     expireSession: auth.expireSession
   });

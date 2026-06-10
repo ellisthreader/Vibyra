@@ -22,6 +22,19 @@ async function loadHostedDemo(mockNetwork = {}) {
   return module.exports;
 }
 
+test("full-stack runtime bundles avoid a duplicate static upload", async () => {
+  const { runtimeBundleIncludesFrontend } = await loadHostedDemo();
+  assert.equal(runtimeBundleIncludesFrontend({ ok: true, platform: "laravel", status: "pending" }), true);
+  assert.equal(runtimeBundleIncludesFrontend({
+    ok: true,
+    platform: "python",
+    metadata: { frontendDistDirectory: "frontend/dist" },
+    status: "pending"
+  }), true);
+  assert.equal(runtimeBundleIncludesFrontend({ ok: true, platform: "python", status: "pending" }), false);
+  assert.equal(runtimeBundleIncludesFrontend({ ok: false, platform: "laravel", status: "unavailable" }), false);
+});
+
 test("hosted demo request skips stale route and preserves a complete bundle from fallback URL", async () => {
   const calls = [];
   const { requestHostedDemoBundle } = await loadHostedDemo({
@@ -122,6 +135,29 @@ test("runtime request accepts a Python backend manifest", async () => {
   assert.equal(result.ok, true);
   assert.equal(result.platform, "python");
   assert.equal(result.status, "pending");
+});
+
+test("runtime request reports the exact hosting limit error", async () => {
+  const {
+    requestHostedRuntimeBundle, runtimeBundleHostingError, RUNTIME_BUNDLE_TOO_LARGE_MESSAGE
+  } = await loadHostedDemo({
+    fetchWithTimeout: async () => response(200, {
+      ok: false,
+      code: "runtime_bundle_limit_exceeded",
+      reason: "Runtime bundle exceeded safe upload limits.",
+      files: [],
+      metadata: { truncated: true }
+    })
+  });
+  const result = await requestHostedRuntimeBundle({
+    agentUrl: "http://desktop",
+    connection: { url: "http://desktop", token: "", machineName: "PC" },
+    projectId: "project"
+  });
+
+  assert.equal(result.code, "runtime_bundle_limit_exceeded");
+  assert.equal(result.message, RUNTIME_BUNDLE_TOO_LARGE_MESSAGE);
+  assert.equal(runtimeBundleHostingError(result), RUNTIME_BUNDLE_TOO_LARGE_MESSAGE);
 });
 
 function response(status, payload) {

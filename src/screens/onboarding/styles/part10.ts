@@ -87,7 +87,7 @@ export const part10 = {
     width: 52
   },
   persistentBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: "hidden"
   },
   optionIconShell: {

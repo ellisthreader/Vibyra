@@ -4,25 +4,26 @@ import { AppWebView, PreviewRuntimeError } from "./AppWebView";
 import { sanitizePublicDemoUrl } from "../utils/publicDemoUrls";
 
 export function PublicDemoWebView({
-  html,
   onPreviewError,
   reloadKey,
   style,
   url
 }: {
-  html?: string;
   onPreviewError?: (error: PreviewRuntimeError) => void;
   reloadKey: number;
   style?: StyleProp<ViewStyle>;
-  url?: string;
+  url: string;
 }) {
+  const approvedUrl = sanitizePublicDemoUrl(url);
+  if (!approvedUrl) return null;
+
   return (
     <AppWebView
-      html={html}
       onPreviewError={onPreviewError}
+      publicDemo
       reloadKey={reloadKey}
       style={style}
-      url={sanitizePublicDemoUrl(url)}
+      url={approvedUrl}
     />
   );
 }

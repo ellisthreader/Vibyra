@@ -1,3 +1,5 @@
+import { extraPreviewFrameworkProfile } from "./previewFrameworkProfilesExtra.mjs";
+
 const VITE_PORTS = [5173, 5174, 5175, 5176, 5177, 5178, 5179, 5180, 4173];
 
 const PROFILES = [
@@ -5,7 +7,7 @@ const PROFILES = [
     id: "sveltekit",
     label: "SvelteKit",
     packages: ["@sveltejs/kit"],
-    scripts: ["dev"],
+    scripts: ["dev", "start", "serve"],
     pattern: /^(?:vite|svelte-kit)(?:\s+dev)?(?:\s|$)/i,
     args: ["--host", "0.0.0.0"],
     portArg: "--port",
@@ -28,7 +30,7 @@ const PROFILES = [
     id: "vite",
     label: "Vite",
     packages: ["vite"],
-    scripts: ["dev"],
+    scripts: ["dev", "start", "serve"],
     pattern: /^vite(?:\s|$)/i,
     args: ["--host", "0.0.0.0"],
     portArg: "--port",
@@ -120,11 +122,12 @@ export function previewFrameworkProfile(packageText) {
   const scripts = parsed?.scripts && typeof parsed.scripts === "object" ? parsed.scripts : {};
   for (const profile of PROFILES) {
     if (!hasPackageEvidence(parsed, profile)) continue;
-    const scriptName = profile.scripts.find((name) => scriptMatchesProfile(String(scripts[name] ?? ""), profile));
+    const scriptName = candidateScriptNames(scripts, profile.scripts)
+      .find((name) => scriptMatchesProfile(String(scripts[name] ?? ""), profile));
     if (!scriptName) continue;
     return { ...profile, scriptName, command: displayCommand(scriptName, profile.args, profile.env) };
   }
-  return null;
+  return extraPreviewFrameworkProfile(packageText);
 }
 
 export function devServerPortsFromPackage(packageText, profile) {
@@ -159,6 +162,11 @@ function portArgs(profile, port) {
 function scriptMatchesProfile(script, profile) {
   const normalized = stripEnvAssignments(script.trim().replace(/\.cmd\b/gi, ""));
   return isSimpleScript(normalized) && profile.pattern.test(normalized);
+}
+
+function candidateScriptNames(scripts, preferred) {
+  const aliases = Object.keys(scripts).filter((name) => /^(?:web[:.-].+|.+[:.-]web)$/i.test(name));
+  return Array.from(new Set([...preferred, ...aliases]));
 }
 
 function stripEnvAssignments(script) {

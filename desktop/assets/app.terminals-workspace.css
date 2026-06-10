@@ -1,0 +1,56 @@
+.terminal-workspace-indicator {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--terminal-dim, #918ca1);
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-size: 11px;
+  gap: 5px;
+  min-height: 27px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+.terminal-workspace-indicator:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, 0.045));
+  color: var(--terminal-text, #f1eef8);
+}
+.terminal-workspace-indicator svg {
+  flex: 0 0 13px;
+  height: 13px;
+  width: 13px;
+}
+.terminal-workspace-indicator strong,
+.terminal-workspace-indicator span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.terminal-workspace-indicator strong {
+  font-weight: 700;
+}
+.terminal-workspace-indicator span {
+  color: var(--terminal-muted, #aaa3b8);
+  max-width: 150px;
+}
+.terminal-workspace-indicator.isolated,
+.terminal-workspace-indicator.preparing {
+  color: var(--terminal-accent, #8b5cff);
+}
+.terminal-workspace-indicator.fallback {
+  background: var(--terminal-warning-bg, rgba(255, 183, 77, 0.08));
+  color: var(--terminal-warning-text, #e7b45f);
+}
+.terminal-tile-head:has(.terminal-workspace-indicator) {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.terminal-tile-head .terminal-workspace-indicator span {
+  display: none;
+}
+@media (max-width: 760px) {
+  .terminal-focus-head .terminal-workspace-indicator span,
+  .terminal-focus-head .terminal-workspace-indicator strong {
+    display: none;
+  }
+}

@@ -12,7 +12,10 @@ class VibyraModerationTest extends TestCase
 
     public function test_community_comment_moderation_uses_local_filter_when_openai_is_unavailable(): void
     {
-        config(['services.openai.key' => 'test-openai-key']);
+        config([
+            'services.openai.key' => 'test-openai-key',
+            'moderation.remote_enabled' => true,
+        ]);
         Http::fake([
             'https://api.openai.com/v1/moderations' => Http::response(['error' => ['message' => 'Unavailable']], 503),
         ]);

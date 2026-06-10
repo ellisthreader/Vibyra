@@ -1,7 +1,7 @@
 export { BottomNav } from "./chunk1";
 export { PrimaryMenuSheet } from "./WorkspaceMenus";
 export { TopBar } from "./chunk2";
-export { TokenBalancePill, getTopBarTitle, projectPreviewUrl, RenameChatModal, getDesktopStatusLabel, getDesktopStatusStyle } from "./chunk3";
+export { TokenBalancePill, getTopBarTitle, RenameChatModal, getDesktopStatusLabel, getDesktopStatusStyle } from "./chunk3";
 export { PcSwitcherSheet } from "./chunk4";
 export { TokenMembershipSheet, formatPlanLabel, MobileConnectionCard } from "./chunk5";
 export { ProjectsPage } from "./chunk8";

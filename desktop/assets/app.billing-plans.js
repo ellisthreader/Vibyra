@@ -3,35 +3,106 @@ let planPickerCycle = localStorage.getItem(planCycleKey) === "annual" ? "annual"
 
 function renderPlanPicker(currentKey, accountCycle) {
   if (!localStorage.getItem(planCycleKey) && accountCycle === "annual") planPickerCycle = "annual";
-  const current = planTiers.find((plan) => plan.key === currentKey) || planTiers[0];
-  const paid = planTiers.filter((plan) => plan.key !== "free");
-  const featured = paid.find((plan) => plan.key === recommendedPlanKey(currentKey)) || paid[1] || paid[0];
-  const alternatives = paid.filter((plan) => plan.key !== featured.key).map((plan) => planOptionRow(plan, currentKey)).join("");
-  const title = currentKey === "pro" ? "Your plan is already at the top" : `${featured.name} is the cleanest next step`;
-  return `<button class="plans-back billing-back" type="button" data-token-view="profile" aria-label="Back to profile">${icon("chevron")}<span>Back</span></button><section class="billing-revamp"><header class="billing-revamp-head"><div><p>Current plan <strong>${escapeHtml(current.name)}</strong></p><h3>${escapeHtml(title)}</h3></div>${cycleToggle()}</header>${featuredPlan(featured, currentKey)}<div class="billing-plan-rows">${alternatives}</div></section>`;
+  const account = typeof currentAccount === "function" ? currentAccount() : {};
+  const plans = typeof billingPlanOptions === "function"
+    ? billingPlanOptions()
+    : planTiers.filter((plan) => plan.key !== "free");
+  const meta = {
+    billingProvider: account.billingProvider || "",
+    cycle: accountCycle,
+    tier: { key: currentKey }
+  };
+  return `<section class="profile-plan-picker token-plan-picker">
+    <header class="profile-plan-heading"><h2>Choose your plan</h2>${cycleToggle()}</header>
+    <div class="profile-plan-grid">${plans.map((plan) => profilePlanCard(plan, meta)).join("")}</div>
+  </section>`;
+}
+function renderProfilePlanPicker(meta) {
+  if (!localStorage.getItem(planCycleKey) && meta?.cycle === "annual") planPickerCycle = "annual";
+  const currentKey = meta?.tier?.key || "free";
+  const plans = typeof billingPlanOptions === "function"
+    ? billingPlanOptions()
+    : planTiers.filter((plan) => plan.key !== "free");
+  const status = profileBillingMessage
+    ? `<p class="profile-plan-status${profileBillingMessageDanger ? " is-danger" : ""}" role="${profileBillingMessageDanger ? "alert" : "status"}">${escapeHtml(profileBillingMessage)}</p>`
+    : "";
+  return `${profileHeader("", "Billing")}
+    <section class="profile-plan-picker">
+      <button class="profile-plan-back" type="button" data-profile-action="close-plans">${icon("chevron")}<span>Back</span></button>
+      <header class="profile-plan-heading">
+        <h2>Choose your plan</h2>
+        ${cycleToggle()}
+      </header>
+      ${status}
+      <div class="profile-plan-grid">${plans.map((plan) => profilePlanCard(plan, meta)).join("")}</div>
+      <p class="profile-plan-footnote">${icon("shield")}Change or end membership from Billing. Paid access continues through the billing period.</p>
+    </section>`;
+}
+function profilePlanCard(plan, meta) {
+  const currentKey = meta?.tier?.key || "free";
+  const currentCycle = meta?.cycle === "annual" ? "annual" : "monthly";
+  const current = plan.key === currentKey && planPickerCycle === currentCycle;
+  const popular = plan.key === "builder";
+  const busy = typeof profileBillingBusy !== "undefined" && profileBillingBusy;
+  const action = current
+    ? `<span class="profile-plan-current">${icon("check")}Current plan</span>`
+    : `<button class="${popular ? "primary-button" : "secondary-button"} profile-plan-action" data-billing-plan="${escapeAttribute(plan.key)}" type="button" ${busy ? "disabled" : ""}>${busy ? "Opening..." : escapeHtml(profilePlanButtonLabel(plan, meta))}</button>`;
+  return `<div class="profile-plan-card-wrap">
+    ${popular ? `<span class="profile-plan-badge">Most popular</span>` : ""}
+    <article class="profile-plan-card plan-tone-${escapeAttribute(plan.key)}${popular ? " is-recommended" : ""}${current ? " is-current" : ""}" style="--plan-card-image:url('${planImage(plan.key)}')">
+    <div class="profile-plan-card-top">
+      <img src="${planIcon(plan.key)}" alt="" />
+    </div>
+    <div class="profile-plan-name"><h3>${escapeHtml(plan.name)}</h3><p>${escapeHtml(profilePlanAudience(plan.key))}</p></div>
+    <div class="profile-plan-price"><strong>${planPrice(plan)}</strong><span>${planPickerCycle === "annual" ? "billed annually" : "billed monthly"}</span></div>
+    <ul>${profilePlanFeatures(plan).map((feature) => `<li>${icon("check")}<span>${escapeHtml(feature)}</span></li>`).join("")}</ul>
+    ${action}
+    </article>
+  </div>`;
+}
+function profilePlanButtonLabel(plan, meta) {
+  const currentKey = meta?.tier?.key || "free";
+  const currentCycle = meta?.cycle === "annual" ? "annual" : "monthly";
+  const provider = String(meta?.billingProvider || "").toLowerCase();
+  if (currentKey === "free") return `Upgrade to ${plan.name}`;
+  if (provider === "stripe") return "Manage with Stripe";
+  if (provider === "iap-apple") return "Manage with Apple";
+  if (provider === "iap-google") return "Manage with Google Play";
+  if (provider && provider !== "manual") return "Manage membership";
+  if (plan.key === currentKey && planPickerCycle !== currentCycle) return `Switch to ${planPickerCycle}`;
+  return `Switch to ${plan.name}`;
+}
+function profilePlanAudience(key) {
+  return ({ starter: "For focused personal projects", builder: "For building every day", pro: "For demanding multi-agent work" })[key] || "";
+}
+function profilePlanFeatures(plan) {
+  return [
+    `${formatCredits(planCredits(plan))} credits each month`,
+    plan.modelAccess,
+    `${plan.projects} active project${plan.projects === 1 ? "" : "s"}`,
+    `${plan.agents} coding agent${plan.agents === 1 ? "" : "s"}`
+  ];
+}
+function showProfilePlanPicker() {
+  profileBillingPlanOpen = true;
+  profileBillingManageOpen = false;
+  profileBillingCancelOpen = false;
+  renderProfile();
+  if (typeof loadDesktopBillingCatalog === "function") void loadDesktopBillingCatalog();
+  if (typeof resetProfileModalScroll === "function") requestAnimationFrame(() => resetProfileModalScroll());
+}
+function hideProfilePlanPicker() {
+  profileBillingPlanOpen = false;
+  renderProfile();
+  if (typeof resetProfileModalScroll === "function") requestAnimationFrame(() => resetProfileModalScroll());
 }
 function cycleToggle() {
   return `<div class="billing-cycle-toggle" role="group" aria-label="Billing cycle">${cycleButton("monthly", "Monthly")}${cycleButton("annual", "Annual")}</div>`;
 }
 function cycleButton(value, label) {
   const active = planPickerCycle === value;
-  return `<button class="${active ? "active" : ""}" type="button" data-plan-cycle="${value}" aria-pressed="${active ? "true" : "false"}">${label}</button>`;
-}
-function recommendedPlanKey(currentKey) {
-  if (currentKey === "starter") return "builder";
-  if (currentKey === "builder") return "pro";
-  if (currentKey === "pro") return "pro";
-  return "builder";
-}
-function featuredPlan(plan, currentKey) {
-  const current = plan.key === currentKey;
-  const button = current ? `<span class="billing-current-chip">Current plan</span>` : `<button class="primary-button billing-primary" data-billing-plan="${escapeAttribute(plan.key)}" type="button">${escapeHtml(planButtonLabel(plan, currentKey))}</button>`;
-  return `<article class="billing-hero plan-tone-${escapeAttribute(plan.key)}" style="--plan-image:url('${planImage(plan.key)}')"><div class="billing-hero-copy"><span>Recommended</span><h4>${escapeHtml(plan.name)}</h4><p>${planPrice(plan)} · ${formatCredits(planCredits(plan))} credits/month</p><small>${escapeHtml(planTagline(plan.key))}</small><div class="billing-hero-points">${planPoints(plan).map((point) => `<i>${escapeHtml(point)}</i>`).join("")}</div>${button}</div></article>`;
-}
-function planOptionRow(plan, currentKey) {
-  const current = plan.key === currentKey;
-  const action = current ? `<span class="billing-current-chip">Current</span>` : `<button class="secondary-button compact-button" data-billing-plan="${escapeAttribute(plan.key)}" type="button">${escapeHtml(planButtonLabel(plan, currentKey))}</button>`;
-  return `<article class="billing-plan-row plan-tone-${escapeAttribute(plan.key)}"><img src="${planIcon(plan.key)}" alt="" /><div><strong>${escapeHtml(plan.name)}</strong><span>${planPrice(plan)} · ${formatCredits(planCredits(plan))} credits/month</span><small>${escapeHtml(planTagline(plan.key))}</small></div>${action}</article>`;
+  const busy = typeof profileBillingBusy !== "undefined" && profileBillingBusy;
+  return `<button class="${active ? "active" : ""}" type="button" data-plan-cycle="${value}" aria-pressed="${active ? "true" : "false"}" ${busy ? "disabled" : ""}>${label}</button>`;
 }
 function planCredits(plan) {
   return planPickerCycle === "annual" && plan.key !== "free" ? plan.annualCredits : plan.monthlyCredits;
@@ -46,24 +117,20 @@ function planImage(key) {
 function planIcon(key) {
   return `/app-assets/plan-icons/${escapeAttribute(key)}.png`;
 }
-function planTagline(key) {
-  return ({ starter: "Ship your first real build.", builder: "Daily building with more projects and agents.", pro: "Multi-agent power for serious workflows." })[key] || "Tinker and try things out.";
-}
-function planPoints(plan) {
-  if (plan.key === "starter") return ["All AI models", "1 active project", "1 agent"];
-  if (plan.key === "builder") return ["All premium models", "3 projects", "2 agents"];
-  return ["Priority routing", "10 projects", "4 agents"];
-}
-function planButtonLabel(plan, currentKey) {
-  return currentKey === "free" ? `Upgrade to ${plan.name}` : `Switch to ${plan.name}`;
-}
-function bindPlanPickerControls() {
-  document.querySelectorAll("[data-plan-cycle]").forEach((button) => button.addEventListener("click", () => {
+function bindPlanPickerControls(root = document) {
+  root.querySelectorAll("[data-plan-cycle]").forEach((button) => button.addEventListener("click", () => {
     planPickerCycle = button.dataset.planCycle === "annual" ? "annual" : "monthly";
     localStorage.setItem(planCycleKey, planPickerCycle);
-    renderTokenModal();
+    if (typeof profileBillingPlanOpen !== "undefined" && profileBillingPlanOpen && typeof profileRenderTarget === "function" && profileRenderTarget()) renderProfile();
+    else renderTokenModal();
   }));
 }
 function startDesktopBilling(plan) {
+  const account = currentAccount();
+  const paid = String(account.plan || "free").toLowerCase() !== "free";
+  if (paid && typeof changeDesktopMembership === "function") {
+    changeDesktopMembership(plan, planPickerCycle);
+    return;
+  }
   if (typeof startDesktopBillingCheckout === "function") startDesktopBillingCheckout(plan, planPickerCycle);
 }

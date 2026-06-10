@@ -1,0 +1,17 @@
+.terminal-test-stage[hidden],
+.terminal-test-frame[hidden] { display: none !important; }
+body[data-desktop-theme="light"] .terminal-test-canvas {
+  background: radial-gradient(circle at 50% 36%, rgba(109,59,255,.07), transparent 42%), #ececf3;
+}
+@media (max-width: 1100px) {
+  .terminal-test-device-control { width: min(250px, 32vw); }
+}
+@media (max-width: 760px) {
+  .terminal-test-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .terminal-test-device-control { width: auto; }
+  .terminal-test-address form { right: -36px; width: min(400px, calc(100vw - 48px)); }
+  .terminal-test-canvas { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-test-actions [data-terminal-test-refresh].is-loading svg { animation: none; }
+}

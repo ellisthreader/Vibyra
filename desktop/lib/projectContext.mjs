@@ -33,6 +33,16 @@ export async function promptProjectContext(projectId, prompt = "") {
   return { files: context, scanned: files.length };
 }
 
+export async function promptProjectFilePaths(projectId, prompt = "", limit = 12) {
+  const project = await requireProject(projectId);
+  const files = [];
+  await scanContextFiles(project.path, "", files, 0);
+  return rankFiles(files, String(prompt ?? ""))
+    .filter((item) => !sensitiveContextPath(item.path))
+    .slice(0, Math.max(1, Math.min(24, Number(limit) || 12)))
+    .map((item) => ({ path: item.path, language: item.language }));
+}
+
 async function requireProject(projectId) {
   if (!projectId) throw new Error("No project selected");
   if (projectById(projectId)) return projectById(projectId);
@@ -206,6 +216,10 @@ function isTextFile(name) {
 function isIgnoredDirectory(path) {
   const normalized = toPosix(path);
   return Array.from(SKIP_DIRS).some((ignored) => normalized === ignored || normalized.startsWith(`${ignored}/`));
+}
+
+function sensitiveContextPath(path) {
+  return /(^|\/)(?:\.env(?:\.|$)|credentials?|secrets?|private[-_]?keys?)(?:\/|$)|\.(?:pem|key|p12|pfx|crt|cer)$/i.test(path);
 }
 
 function languageFor(filePath) {

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vibyra AI Terminal Diagnostics"
+  short_description: "Diagnose Vibyra terminal routing and UI ownership"
+  default_prompt: "Use $vibyra-ai-terminal-diagnostics to diagnose this Vibyra terminal launch, routing, branding, PTY, or provider-account problem before changing code."

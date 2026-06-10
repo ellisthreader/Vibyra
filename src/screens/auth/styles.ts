@@ -9,6 +9,19 @@ export const styles = StyleSheet.create({
     width: "92.5%"
   },
   actionsExpanded: { marginTop: 22, width: "100%" },
+  appleButtonBusy: {
+    ...StyleSheet.absoluteFill,
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.62)",
+    justifyContent: "center"
+  },
+  appleButtonWrap: {
+    borderColor: "rgba(176, 70, 255, 0.82)",
+    borderRadius: 999,
+    borderWidth: 1.2,
+    overflow: "hidden",
+    width: "100%"
+  },
   authChoice: {
     alignItems: "center",
     backgroundColor: "rgba(12, 5, 35, 0.34)",
@@ -50,12 +63,12 @@ export const styles = StyleSheet.create({
   },
   authIcon: { textAlign: "center", width: 40 },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     height: undefined,
     opacity: 1,
     width: undefined
   },
-  backgroundOverlay: { ...StyleSheet.absoluteFillObject },
+  backgroundOverlay: { ...StyleSheet.absoluteFill },
   content: { flexGrow: 1, justifyContent: "space-between", paddingHorizontal: 22 },
   contentExpanded: { justifyContent: "flex-start" },
   foreground: { flex: 1 },
@@ -79,6 +92,24 @@ export const styles = StyleSheet.create({
     gap: 24,
     justifyContent: "center",
     paddingTop: 0
+  },
+  recoveryLink: {
+    color: "#C182FF",
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center"
+  },
+  recoveryMessage: {
+    color: "#D8CBEA",
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center"
+  },
+  recoveryTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    textAlign: "center"
   },
   logoStage: { alignItems: "center", justifyContent: "center" },
   screen: { backgroundColor: colors.background, flex: 1 },

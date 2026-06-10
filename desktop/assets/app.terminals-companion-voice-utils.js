@@ -1,31 +1,53 @@
-function failTerminalVoiceRecorder(status) {
-  terminalVoiceGeneration += 1;
-  terminalVoiceStarting = false;
-  terminalVoiceListening = false;
-  terminalVoiceStatus = status;
-  releaseTerminalVoiceRecorder(true);
-  syncTerminalCompanion("voice");
+const terminalVoiceState = {
+  actionInFlight: false,
+  asking: false,
+  captureText: "",
+  generation: 0,
+  listening: false,
+  recognition: null,
+  recorder: null,
+  recorderChunks: [],
+  speaking: false,
+  starting: false,
+  status: "Ready",
+  stream: null,
+  targetId: ""
+};
+
+function terminalVoiceTargetId(terminal = terminalCompanionActiveTerminal()) {
+  return terminal?.id || "setup";
 }
 
-function releaseTerminalVoiceRecorder(stopRecorder) {
-  const recorder = terminalVoiceRecorder;
-  if (recorder) {
-    recorder.onerror = null;
-    recorder.onstop = null;
-    recorder.ondataavailable = null;
-    if (stopRecorder && recorder.state !== "inactive") {
-      try { recorder.stop(); } catch {}
-    }
+function terminalVoiceSync() {
+  if (terminalCompanionMode === "chat"
+    && typeof terminalAiSurface !== "undefined"
+    && terminalAiSurface === "voice") {
+    syncTerminalCompanion("voice");
   }
-  stopTerminalVoiceStream(terminalVoiceStream);
-  terminalVoiceRecorder = null;
-  terminalVoiceStream = null;
-  terminalVoiceChunks = [];
+}
+
+function terminalVoiceSetStatus(status, sync = true) {
+  terminalVoiceState.status = status;
+  if (sync) terminalVoiceSync();
+}
+
+function terminalVoiceInvalidate() {
+  terminalVoiceState.generation += 1;
+  terminalVoiceState.asking = false;
+  terminalVoiceState.starting = false;
+  terminalVoiceState.listening = false;
+  terminalVoiceState.captureText = "";
+}
+
+function terminalVoiceGenerationCurrent(generation) {
+  return generation === terminalVoiceState.generation;
 }
 
 function stopTerminalVoiceStream(stream) {
   stream?.getTracks?.().forEach((track) => {
-    try { track.stop(); } catch {}
+    try {
+      track.stop();
+    } catch {}
   });
 }
 
@@ -44,4 +66,8 @@ function terminalVoiceErrorStatus(error) {
   if (error === "audio-capture") return "Microphone unavailable";
   if (error === "no-speech") return "No speech heard";
   return error ? `Voice error: ${error}` : "Voice paused";
+}
+
+function terminalVoiceErrorMessage(error, fallback) {
+  return error instanceof Error && error.message ? error.message : fallback;
 }

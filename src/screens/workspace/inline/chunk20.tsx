@@ -1,27 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator, Animated, Image, ImageBackground, KeyboardAvoidingView, Linking, Modal,
-  NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View
-} from "react-native";
-import type { ImageStyle, StyleProp, TextStyle, ViewStyle } from "react-native";
+import React from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Defs, LinearGradient as SvgGradient, Path, Rect, Stop } from "react-native-svg";
-import { AppWebView } from "../../../components/AppWebView";
-import { VibyraLogo } from "../../../components/VibyraLogo";
 import { colors } from "../../../styles/theme";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
-import type { Agent, ChatMessage, GeneratedApp, ModelKey, Project, RememberedDesktop } from "../../../types/domain";
-import { appApiRequest } from "../../../utils/appApi";
 import type { ProjectPublishStatus } from "../../../utils/communityApi";
-import { fetchWithTimeout, normalizeAgentUrl } from "../../../utils/network";
-import { aiChatGlyph, chatBuildAiHero, communityHero, dashboardHeroArt, projectsBackdrop, projectsFoldersHero, vibyraLogo } from "../data/assets";
-import { chatModelGroups, chatModelOptions, providerLogoSources } from "../data/chatModels";
-import { COMMUNITY_COMMENTS_KEY, communityDetailAccent, communityDetailAccentDark, communityPosts } from "../data/community";
-import { chatSuggestions, pages, previousChats, projectFilterModes, projectStatuses, tokenMembership } from "../data/pages";
 import { styles } from "../styles";
-import type { ChatModelOption, ChatModelProvider, CommunityComment, CommunityDetailTab, CommunityFilter, CommunityLogoKind, CommunityPost, CommunityPreviewKind, DashboardPage, DesktopCandidate, ProjectDisplay, ProjectLayout, SettingsTab } from "../types";
+import type { ProjectDisplay, ProjectLayout } from "../types";
 import { ProjectMenuItem } from "./chunk21";
+import { hasFailedCandidate, projectPublishMenuLabel } from "./ProjectPublishLifecycle";
 import { publishStatusLabel } from "./ProjectPublishResult";
 
 export function ProjectCard({
@@ -64,8 +51,12 @@ export function ProjectCard({
   const archived = status === "Archived";
   const sourceIcon = status === "On PC" ? "desktop-outline" : status === "On mobile" ? "phone-portrait-outline" : null;
   const publishLabel = publishStatusLabel(publishStatus);
-  const publishDenied = publishStatus?.reviewStatus === "denied";
-  const publishApproved = publishStatus?.reviewStatus === "approved" && publishStatus?.visibility === "public";
+  const publishMenuLabel = projectPublishMenuLabel(publishStatus);
+  const publishDenied = hasFailedCandidate(publishStatus)
+    || publishStatus?.reviewStatus === "denied"
+    || publishStatus?.deploymentStatus === "failed"
+    || publishStatus?.deploymentStatus === "stopped";
+  const publishApproved = publishLabel === "Live";
   const prefs = usePreferences();
   const activeAccent = useThemedColor("#59E8A0");
   const publishedAccent = useThemedColor("#BE62FF");
@@ -152,7 +143,7 @@ export function ProjectCard({
       {menuOpen ? (
         <View style={[styles.projectMenuLayer, { pointerEvents: "box-none" }]}>
           <View style={styles.projectMenu}>
-            <ProjectMenuItem icon="create-outline" label="Edit listing" onPress={onPublish} />
+            <ProjectMenuItem icon="cloud-upload-outline" label={publishMenuLabel} onPress={onPublish} />
             <ProjectMenuItem icon="archive-outline" label="Archive" onPress={onArchive} />
             <ProjectMenuItem icon={project.pinned ? "remove-circle-outline" : "pin-outline"} label={project.pinned ? "Unpin" : "Pin"} onPress={onTogglePin} />
           </View>

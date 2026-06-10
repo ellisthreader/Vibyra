@@ -2,10 +2,14 @@ export function detectBrief(scan, purpose) {
   const deps = packageDeps(scan);
   const scripts = packageScripts(scan);
   const names = scan.names;
+  const rootNames = scan.rootNames ?? names;
   const kind = purpose?.kindId && purpose?.kindLabel
     ? { id: purpose.kindId, label: purpose.kindLabel }
     : { id: "saas", label: "SaaS product" };
 
+  if (has(rootNames, "app.json", "app.config.js", "app.config.ts") && deps.has("expo")) {
+    return brief("mobile-app", "Phone app", "expo-react-native", "Expo React Native", "Detected root Expo app markers.");
+  }
   if (names.has("artisan") && deps.has("@inertiajs/react")) {
     return brief(kind.id, kind.label, "laravel-inertia-react", "Laravel + Inertia React + Tailwind", "Detected Laravel, Inertia React, Vite, and Tailwind.");
   }

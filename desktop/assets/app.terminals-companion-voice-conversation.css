@@ -1,0 +1,86 @@
+.terminal-voice-conversation {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  gap: 6px;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.terminal-voice-conversation-head {
+  align-items: center;
+  border: 0;
+  display: flex;
+  justify-content: space-between;
+  min-height: 30px;
+  padding: 0 2px;
+}
+.terminal-voice-conversation-head strong {
+  color: var(--terminal-muted, #aaa3b8);
+  font-size: 11px;
+}
+.terminal-voice-conversation-head span {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 9px;
+}
+.terminal-voice-conversation-list {
+  align-content: start;
+  display: grid;
+  gap: 10px;
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 2px 10px;
+  scrollbar-width: thin;
+}
+.terminal-voice-conversation-empty {
+  align-self: center;
+  color: var(--terminal-dim, #918ca1);
+  font-size: 10px;
+  line-height: 15px;
+  margin: 22px 0;
+  text-align: center;
+}
+.terminal-voice-message {
+  display: grid;
+  gap: 3px;
+  max-width: 88%;
+}
+.terminal-voice-message.user {
+  justify-items: end;
+  justify-self: end;
+}
+.terminal-voice-message.assistant {
+  justify-items: start;
+  justify-self: start;
+}
+.terminal-voice-message > span {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 9px;
+  padding: 0 5px;
+}
+.terminal-voice-message.user > span {
+  text-align: right;
+}
+.terminal-voice-message p {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--terminal-text, #f1eef8);
+  font-size: 11px;
+  line-height: 16px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0 5px;
+  white-space: pre-wrap;
+}
+.terminal-voice-message.user p {
+  background: var(--terminal-accent-soft, rgba(109, 59, 255, 0.16));
+  border-radius: 10px 10px 3px 10px;
+  padding: 7px 9px;
+}
+.terminal-voice-message.assistant p {
+  background: transparent;
+}

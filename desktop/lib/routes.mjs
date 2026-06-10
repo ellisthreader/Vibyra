@@ -63,7 +63,7 @@ async function handlePairingRoutes(req, res, url) {
     return true;
   }
   if (req.method === "POST" && url.pathname === "/pair") { await pairDevice(req, res); return true; }
-  if (req.method === "GET" && url.pathname === "/pair/status") { await pairStatus(res, url.searchParams.get("requestId")); return true; }
+  if (req.method === "GET" && url.pathname === "/pair/status") { await pairStatus(res, url.searchParams.get("requestId"), req); return true; }
   return false;
 }
 
@@ -94,25 +94,38 @@ async function handleAuthedRoutes(req, res, url) {
     return true;
   }
   if (req.method === "GET" && url.pathname === "/files") {
-    send(res, 200, { files: await listProjectFiles(url.searchParams.get("projectId")) });
+    send(res, 200, {
+      files: await listProjectFiles(url.searchParams.get("projectId"), url.searchParams.get("projectPath"))
+    });
     return true;
   }
   if (req.method === "GET" && url.pathname === "/files/read") {
     send(res, 200, {
-      file: await readProjectFile(url.searchParams.get("projectId"), url.searchParams.get("path"))
+      file: await readProjectFile(
+        url.searchParams.get("projectId"),
+        url.searchParams.get("path"),
+        url.searchParams.get("projectPath")
+      )
     });
     return true;
   }
   if (req.method === "GET" && url.pathname === "/files/review-bundle") {
-    send(res, 200, await listProjectReviewFiles(url.searchParams.get("projectId")));
+    send(res, 200, await listProjectReviewFiles(
+      url.searchParams.get("projectId"),
+      url.searchParams.get("projectPath")
+    ));
     return true;
   }
   if (req.method === "GET" && url.pathname === "/files/publish-demo-bundle") {
-    send(res, 200, await buildProjectPublishDemoBundle(url.searchParams.get("projectId")));
+    send(res, 200, await buildProjectPublishDemoBundle(url.searchParams.get("projectId"), {
+      projectPath: url.searchParams.get("projectPath")
+    }));
     return true;
   }
   if (req.method === "GET" && url.pathname === "/files/publish-runtime-bundle") {
-    send(res, 200, await buildProjectPublishRuntimeBundle(url.searchParams.get("projectId")));
+    send(res, 200, await buildProjectPublishRuntimeBundle(url.searchParams.get("projectId"), {
+      projectPath: url.searchParams.get("projectPath")
+    }));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/files/create") {

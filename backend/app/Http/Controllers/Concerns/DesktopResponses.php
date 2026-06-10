@@ -21,12 +21,6 @@ trait DesktopResponses
 
     private function json(array $payload, int $status = 200): JsonResponse
     {
-        return response()
-            ->json($payload, $status)
-            ->withHeaders([
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Vibyra-Public-IP',
-                'Access-Control-Allow-Methods' => 'GET, POST, DELETE, OPTIONS',
-            ]);
+        return response()->json($payload, $status);
     }
 }

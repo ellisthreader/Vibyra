@@ -1,7 +1,7 @@
 import { basename, dirname, extname, isAbsolute, relative, resolve } from "node:path";
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { event, pushEvents } from "./state.mjs";
-import { discoverProjects, projectById } from "./projects.mjs";
+import { resolveDesktopProject } from "./projects.mjs";
 
 const ignoredDirectories = new Set([
   ".expo",
@@ -47,27 +47,28 @@ const maxReviewFiles = 80;
 const maxReviewBodyBytes = 24_000;
 const maxReviewTotalBytes = 420_000;
 
-export async function listProjectFiles(projectId) {
-  const project = await requireProject(projectId);
+export async function listProjectFiles(projectId, projectPath = null) {
+  const project = await requireProject(projectId, projectPath);
   const files = [];
   await scanFiles(project.path, "", files, 0);
   return files;
 }
 
-export async function listProjectReviewFiles(projectId) {
-  const listed = await listProjectFiles(projectId);
+export async function listProjectReviewFiles(projectId, projectPath = null) {
+  const listed = await listProjectFiles(projectId, projectPath);
   const files = [];
   let totalBytes = 0;
-  let truncated = listed.length > maxReviewFiles;
+  const reviewable = listed.filter((item) => !isSensitiveReviewPath(item.path));
+  let truncated = reviewable.length > maxReviewFiles;
 
-  for (const item of listed.slice(0, maxReviewFiles)) {
+  for (const item of reviewable.slice(0, maxReviewFiles)) {
     if (totalBytes >= maxReviewTotalBytes) {
       truncated = true;
       break;
     }
 
     try {
-      const file = await readProjectFile(projectId, item.path);
+      const file = await readProjectFile(projectId, item.path, projectPath);
       const body = String(file.body ?? "");
       const slice = body.slice(0, maxReviewBodyBytes);
       if (slice.length < body.length) truncated = true;
@@ -81,8 +82,8 @@ export async function listProjectReviewFiles(projectId) {
   return { files, totalFiles: listed.length, truncated };
 }
 
-export async function readProjectFile(projectId, path) {
-  const project = await requireProject(projectId);
+export async function readProjectFile(projectId, path, projectPath = null) {
+  const project = await requireProject(projectId, projectPath);
   const filePath = await safeProjectPath(project.path, path, { mustExist: true });
   const info = await stat(filePath);
   if (!info.isFile()) throw new Error("File not found");
@@ -103,11 +104,9 @@ export async function createProjectFile({ projectId, path, content = "" }) {
   return { file, files, events: [log] };
 }
 
-async function requireProject(projectId) {
+async function requireProject(projectId, projectPath = null) {
   if (!projectId) throw new Error("No project selected");
-  if (projectById(projectId)) return projectById(projectId);
-  await discoverProjects();
-  const project = projectById(projectId);
+  const project = await resolveDesktopProject(projectId, projectPath);
   if (!project) throw new Error("Project not found");
   return project;
 }
@@ -183,6 +182,16 @@ function makeFileEntry(root, filePath, changed, body) {
 
 function isReadableFile(name) {
   return readableNames.has(name) || readableExtensions.has(extname(name).toLowerCase());
+}
+
+function isSensitiveReviewPath(path) {
+  const segments = toPosix(path).split("/");
+  return segments.some((segment) => (
+    /^\.env(?:\.|$)/i.test(segment)
+    || /(?:^|[-_.])(secret|token|credential|password|private[-_.]?key|api[-_.]?key)(?:[-_.]|$)/i.test(segment)
+    || /^id_rsa/i.test(segment)
+    || /\.(?:pem|key|p12|pfx|crt|cer)$/i.test(segment)
+  ));
 }
 
 function isIgnoredDirectory(path) {

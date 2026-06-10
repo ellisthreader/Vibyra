@@ -1,0 +1,118 @@
+.pair-flow--connected .pair-flow-device {
+  animation: pair-success-device 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  border-color: color-mix(in srgb, var(--surface-success) 30%, var(--surface-border));
+  color: var(--surface-success);
+}
+
+.pair-flow--connected .pair-flow-desktop { animation-delay: 90ms; }
+.pair-flow--connected .pair-flow-line i { background: var(--surface-success); }
+.pair-flow--connected .pair-flow-line b {
+  animation: pair-success-signal 680ms ease-out 80ms both;
+  border-color: color-mix(in srgb, var(--surface-success) 35%, var(--surface-border));
+  color: var(--surface-success);
+}
+
+.pair-success-burst {
+  display: grid;
+  height: 104px;
+  isolation: isolate;
+  place-items: center;
+  position: relative;
+  width: 104px;
+}
+
+.pair-success-burst .pair-v2-check {
+  animation: pair-success-check 700ms cubic-bezier(0.16, 1.35, 0.36, 1) 120ms both;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--surface-success) 18%, transparent);
+  grid-area: 1 / 1;
+  position: relative;
+  z-index: 2;
+}
+
+.pair-success-ring {
+  animation: pair-success-ring 760ms ease-out 100ms both;
+  border: 2px solid var(--surface-success);
+  border-radius: 50%;
+  height: 62px;
+  position: absolute;
+  width: 62px;
+}
+
+.pair-success-particles {
+  inset: 0;
+  position: absolute;
+}
+
+.pair-success-particles i {
+  animation: pair-success-particle 720ms cubic-bezier(0.2, 0.7, 0.2, 1) 170ms both;
+  background: var(--surface-success);
+  border-radius: 50%;
+  height: 5px;
+  left: calc(50% - 2.5px);
+  position: absolute;
+  top: calc(50% - 2.5px);
+  width: 5px;
+}
+
+.pair-success-particles i:nth-child(even) {
+  background: var(--surface-accent, var(--accent));
+  height: 4px;
+  width: 4px;
+}
+
+.pair-flow--connected .pair-flow-heading,
+.pair-flow--connected .pair-connected-capabilities,
+.pair-flow--connected .pair-v2-unpair {
+  animation: pair-success-content 420ms ease-out both;
+}
+
+.pair-flow--connected .pair-flow-heading { animation-delay: 300ms; }
+.pair-flow--connected .pair-connected-capabilities { animation-delay: 390ms; }
+.pair-flow--connected .pair-v2-unpair { animation-delay: 460ms; }
+
+@keyframes pair-success-device {
+  from { opacity: 0.45; transform: scale(0.92); }
+}
+
+@keyframes pair-success-signal {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--surface-success) 24%, transparent); transform: scale(0.88); }
+  65% { box-shadow: 0 0 0 9px transparent; transform: scale(1.08); }
+}
+
+@keyframes pair-success-check {
+  0% { opacity: 0; transform: scale(0.35) rotate(-14deg); }
+  72% { opacity: 1; transform: scale(1.08) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes pair-success-ring {
+  0% { opacity: 0.8; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+
+@keyframes pair-success-particle {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--success-x), var(--success-y)) scale(1); }
+}
+
+@keyframes pair-success-content {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pair-flow--connected .pair-flow-device,
+  .pair-flow--connected .pair-flow-line b,
+  .pair-success-burst .pair-v2-check,
+  .pair-success-ring,
+  .pair-success-particles i,
+  .pair-flow--connected .pair-flow-heading,
+  .pair-flow--connected .pair-connected-capabilities,
+  .pair-flow--connected .pair-v2-unpair {
+    animation: none;
+  }
+
+  .pair-success-ring,
+  .pair-success-particles { display: none; }
+}

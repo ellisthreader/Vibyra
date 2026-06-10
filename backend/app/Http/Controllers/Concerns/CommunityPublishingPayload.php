@@ -20,6 +20,7 @@ trait CommunityPublishingPayload
         $publicUrl = $this->hostedDemoPublicUrl($project);
         $deploymentStatus = $this->hostedDemoStatus($project);
         $capabilities = $this->publishedAppCapabilities($project);
+        $lifecycle = $this->publishedProjectLifecycle($project);
         $viewerCanManage = $viewer !== null && (int) $project->user_id === (int) $viewer->id;
 
         return [
@@ -37,6 +38,7 @@ trait CommunityPublishingPayload
             'hostedDemoUrl' => $publicUrl,
             'hostedDemoMessage' => $this->hostedDemoClientMessage($deploymentStatus),
             ...$capabilities,
+            ...$lifecycle,
             'user' => $project->user?->name ?? 'Vibyra Builder',
             'makerBio' => 'Published from Vibyra',
             'tag' => 'Recent',
@@ -52,7 +54,7 @@ trait CommunityPublishingPayload
             'safetyRating' => $project->safety_rating,
             'safetyScore' => (int) $project->safety_score,
             'reviewSummary' => $project->review_summary,
-            'isPublic' => $project->isPubliclyVisible(),
+            'isPublic' => $lifecycle['isDiscoverable'],
             'publishedAt' => optional($project->published_at)->toIso8601String(),
             'time' => optional($project->published_at ?? $project->created_at)->diffForHumans() ?? 'Just now',
             'accent' => '#8B35FF',
@@ -66,8 +68,10 @@ trait CommunityPublishingPayload
     {
         $publicUrl = $this->hostedDemoPublicUrl($project);
         $deploymentStatus = $this->hostedDemoStatus($project);
+        $latestDeployment = $this->latestDeployment($project);
         $previewUrl = $this->hasPreviewHtml($project) ? "/api/community/projects/{$project->slug}/preview" : null;
         $capabilities = $this->publishedAppCapabilities($project);
+        $lifecycle = $this->publishedProjectLifecycle($project);
 
         return [
             'id' => $project->slug,
@@ -75,7 +79,7 @@ trait CommunityPublishingPayload
             'reviewStatus' => $project->review_status,
             'visibility' => $project->visibility,
             'viewerCanManage' => $viewer !== null && (int) $project->user_id === (int) $viewer->id,
-            'isPublic' => $project->isPubliclyVisible(),
+            'isPublic' => $lifecycle['isDiscoverable'],
             'title' => $project->title,
             'description' => $project->description,
             'tags' => $project->tags ?: [],
@@ -88,12 +92,15 @@ trait CommunityPublishingPayload
             'reviewSummary' => $project->review_summary,
             'hostingMode' => $this->hostedDemoMode($project),
             'deploymentStatus' => $deploymentStatus,
+            'deploymentCreatedAt' => optional($latestDeployment?->created_at)->toIso8601String(),
+            'deploymentUpdatedAt' => optional($latestDeployment?->updated_at)->toIso8601String(),
             'hostedDemoStatus' => $this->hostedDemoClientStatus($deploymentStatus),
             'hostedDemoUrl' => $publicUrl,
             'hostedDemoMessage' => $this->hostedDemoClientMessage($deploymentStatus),
             'publicUrl' => $publicUrl,
             'appUrl' => $publicUrl ?: $previewUrl,
             ...$capabilities,
+            ...$lifecycle,
             'updatedAt' => optional($project->updated_at)->toIso8601String(),
             'project' => $this->communityProjectPayload($project, $viewer),
         ];
@@ -210,6 +217,134 @@ trait CommunityPublishingPayload
         return $this->hasPreviewHtml($project) || $this->hostedDemoPublicUrl($project) !== null;
     }
 
+    private function isPublishedProjectDiscoverable(PublishedProject $project): bool
+    {
+        return $project->visibility === 'public'
+            && $project->review_status === PublishedProject::REVIEW_APPROVED
+            && $this->hasOpenablePublishedApp($project);
+    }
+
+    private function publishedProjectLifecycle(PublishedProject $project): array
+    {
+        $current = $this->openableSuccessfulHostedDemo($project);
+        $candidate = $this->latestDeployment($project);
+        $hasPreview = $this->hasPreviewHtml($project);
+        $isOpenable = $current !== null || $hasPreview;
+        $isDiscoverable = $project->visibility === 'public'
+            && $project->review_status === PublishedProject::REVIEW_APPROVED
+            && $isOpenable;
+
+        return [
+            'listingState' => $this->publishedProjectListingState(
+                $project,
+                $current,
+                $candidate,
+                $isDiscoverable
+            ),
+            'isDiscoverable' => $isDiscoverable,
+            'isOpenable' => $isOpenable,
+            'currentReleaseState' => $isOpenable ? 'live' : null,
+            'candidateReleaseState' => $this->publishedProjectCandidateState(
+                $current,
+                $candidate,
+                $hasPreview
+            ),
+            'currentPublicUrl' => $this->hostedDemoPublicUrl($project),
+            'candidateError' => $candidate?->status === PublishedProjectDeployment::STATUS_FAILED
+                ? $candidate->last_error
+                : null,
+            'allowedActions' => $this->publishedProjectAllowedActions($isDiscoverable),
+        ];
+    }
+
+    private function publishedProjectCandidateState(
+        ?PublishedProjectDeployment $current,
+        ?PublishedProjectDeployment $candidate,
+        bool $hasPreview
+    ): ?string {
+        if ($candidate === null) {
+            return null;
+        }
+
+        $hasCurrentRelease = $current !== null || $hasPreview;
+        $candidateIsCurrent = $current !== null && (int) $current->id === (int) $candidate->id;
+        if ($candidateIsCurrent) {
+            return 'live';
+        }
+        if ($candidate->status === PublishedProjectDeployment::STATUS_FAILED) {
+            return $hasCurrentRelease ? 'update_failed' : 'failed';
+        }
+        if ($this->isPendingDeploymentStatus((string) $candidate->status)) {
+            return $hasCurrentRelease ? 'updating' : 'building';
+        }
+        if ($candidate->isSuccessful() && $this->isOpenablePublishedDeployment($candidate)) {
+            return 'live';
+        }
+
+        return (string) $candidate->status;
+    }
+
+    private function publishedProjectListingState(
+        PublishedProject $project,
+        ?PublishedProjectDeployment $current,
+        ?PublishedProjectDeployment $candidate,
+        bool $isDiscoverable
+    ): string {
+        if ($project->visibility !== 'public') {
+            return $project->visibility;
+        }
+        if (in_array($project->review_status, [PublishedProject::REVIEW_PENDING, PublishedProject::REVIEW_UNDER_REVIEW], true)) {
+            return 'under_review';
+        }
+        if ($project->review_status === PublishedProject::REVIEW_DENIED) {
+            return 'denied';
+        }
+
+        $hasCurrentRelease = $current !== null || $this->hasPreviewHtml($project);
+        $candidateIsCurrent = $current !== null && $candidate !== null && (int) $current->id === (int) $candidate->id;
+        if ($hasCurrentRelease && $candidate !== null && ! $candidateIsCurrent) {
+            if ($candidate->status === PublishedProjectDeployment::STATUS_FAILED) {
+                return 'live_update_failed';
+            }
+            if ($this->isPendingDeploymentStatus((string) $candidate->status)) {
+                return 'live_updating';
+            }
+        }
+        if ($isDiscoverable) {
+            return 'live';
+        }
+        if ($candidate?->status === PublishedProjectDeployment::STATUS_FAILED) {
+            return 'failed';
+        }
+        if ($candidate !== null && $this->isPendingDeploymentStatus((string) $candidate->status)) {
+            return 'building';
+        }
+
+        return 'unavailable';
+    }
+
+    private function isPendingDeploymentStatus(string $status): bool
+    {
+        return in_array($status, [
+            PublishedProjectDeployment::STATUS_QUEUED,
+            PublishedProjectDeployment::STATUS_UPLOADING,
+            PublishedProjectDeployment::STATUS_BUILDING,
+            PublishedProjectDeployment::STATUS_STARTING,
+            PublishedProjectDeployment::STATUS_PENDING_REVIEW,
+        ], true);
+    }
+
+    private function publishedProjectAllowedActions(bool $isDiscoverable): array
+    {
+        return array_values(array_filter([
+            'update_listing',
+            'update_visibility',
+            'publish_release',
+            'delete_listing',
+            $isDiscoverable ? 'open' : null,
+        ]));
+    }
+
     private function hostedDemoClientStatus(string $status): string
     {
         if (in_array($status, [PublishedProjectDeployment::STATUS_LIVE, PublishedProjectDeployment::STATUS_STATIC_LIVE], true)) {
@@ -248,9 +383,16 @@ trait CommunityPublishingPayload
             ->where('provider', PublishedProjectDeployment::PROVIDER_RAILWAY)
             ->sortByDesc('id')
             ->first();
+        $runtimeIncludesFrontend = $runtime && (
+            filled(data_get($runtime->metadata, 'frontendDistDirectory'))
+            || (bool) data_get($runtime->metadata, 'frontendIncluded', false)
+        );
+        $runtimeFrontendStatus = $runtimeIncludesFrontend
+            ? $this->hostedDemoClientStatus((string) $runtime->status)
+            : 'unavailable';
 
         return [
-            'frontendStatus' => ($this->hasPreviewHtml($project) || $staticReady) ? 'ready' : 'unavailable',
+            'frontendStatus' => ($this->hasPreviewHtml($project) || $staticReady) ? 'ready' : $runtimeFrontendStatus,
             'backendStatus' => $runtime ? $this->hostedDemoClientStatus((string) $runtime->status) : 'not_included',
             'backendPlatform' => $runtime ? ($runtime->metadata['platform'] ?? null) : null,
         ];

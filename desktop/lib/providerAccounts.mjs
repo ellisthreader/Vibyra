@@ -1,13 +1,17 @@
 import { accessSync, chmodSync, constants, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
+import { openRouterConfigPaths, parseEnvConfigValue } from "./agentConfig.mjs";
+import { terminalRuntimeExecutable } from "./aiTerminalRuntimes.mjs";
 
 const OPENAI_API_URL = "https://api.openai.com/v1";
 
 export function providerAccountsState() {
   return {
     openai: publicOpenAiAccount(),
-    codex: publicCodexAccount()
+    codex: publicCodexAccount(),
+    claude: publicNativeCliAccount("claude", "Claude Code", ["VIBYRA_CLAUDE_CLI", "CLAUDE_CLI_PATH"]),
+    gemini: publicNativeCliAccount("gemini", "Gemini CLI", ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"])
   };
 }
 
@@ -36,8 +40,8 @@ export function disconnectOpenAiAccount() {
   return publicOpenAiAccount();
 }
 
-export function openAiAccountCredential() {
-  const stored = readStore().openai;
+export function openAiAccountCredential(store = readStore()) {
+  const stored = store?.openai;
   if (stored?.apiKey) {
     return {
       apiKey: String(stored.apiKey),
@@ -46,14 +50,46 @@ export function openAiAccountCredential() {
       source: "local"
     };
   }
-  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
-  if (!apiKey) return null;
-  return {
-    apiKey,
-    organization: String(process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ""),
-    project: String(process.env.OPENAI_PROJECT || ""),
-    source: "env"
-  };
+  return null;
+}
+
+export function openAiVoiceCredential({
+  store = readStore(),
+  env = process.env,
+  configPaths = openRouterConfigPaths()
+} = {}) {
+  const account = openAiAccountCredential(store);
+  if (account) return account;
+  const configured = openAiEnvironmentCredential(env, configPaths);
+  return configured ? { ...configured, source: "env" } : null;
+}
+
+function openAiEnvironmentCredential(env, configPaths) {
+  const processApiKey = String(env.OPENAI_API_KEY || "").trim();
+  if (processApiKey) {
+    return {
+      apiKey: processApiKey,
+      organization: String(env.OPENAI_ORG_ID || env.OPENAI_ORGANIZATION || "").trim(),
+      project: String(env.OPENAI_PROJECT || "").trim()
+    };
+  }
+  for (const path of configPaths) {
+    let body = "";
+    try {
+      body = readFileSync(path, "utf8");
+    } catch {
+      continue;
+    }
+    const apiKey = parseEnvConfigValue(body, "OPENAI_API_KEY");
+    if (!apiKey) continue;
+    return {
+      apiKey,
+      organization: parseEnvConfigValue(body, "OPENAI_ORG_ID")
+        || parseEnvConfigValue(body, "OPENAI_ORGANIZATION"),
+      project: parseEnvConfigValue(body, "OPENAI_PROJECT")
+    };
+  }
+  return null;
 }
 
 export function openAiHeaders(credential = openAiAccountCredential()) {
@@ -72,7 +108,7 @@ function publicOpenAiAccount() {
     provider: "openai",
     connected: true,
     source: credential.source,
-    label: credential.source === "env" ? "OPENAI_API_KEY" : "OpenAI account",
+    label: "OpenAI account",
     last4: credential.apiKey.slice(-4),
     organization: credential.organization ? "set" : "",
     project: credential.project ? "set" : ""
@@ -91,6 +127,20 @@ function publicCodexAccount() {
     authMode: auth.authMode,
     executable: executable ? "set" : "",
     updatedAt: auth.updatedAt
+  };
+}
+
+function publicNativeCliAccount(provider, label, envKeys) {
+  const executable = terminalRuntimeExecutable(provider) || resolveExecutable(envKeys, provider);
+  return {
+    provider,
+    available: Boolean(executable),
+    connected: Boolean(executable),
+    source: executable ? "native-cli" : "",
+    label,
+    authMode: "cli",
+    executable: executable ? "set" : "",
+    updatedAt: ""
   };
 }
 

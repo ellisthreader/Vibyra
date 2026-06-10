@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\User;
+use App\Services\Auth\ProviderIdentityException;
+use App\Services\Auth\ProviderIdentityVerifier;
+use App\Services\Auth\ProviderChallengeService;
 use App\Services\LevelProgression;
 use App\Services\Referrals\ReferralService;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +15,19 @@ use Illuminate\Support\Str;
 
 trait AuthEndpoints
 {
+    public function providerChallenge(Request $request): JsonResponse
+    {
+        try {
+            $challenge = app(ProviderChallengeService::class)->issue(
+                strtolower(trim((string) $request->input('provider', '')))
+            );
+        } catch (ProviderIdentityException) {
+            return $this->json(['ok' => false, 'error' => 'Unsupported challenge provider.'], 422);
+        }
+
+        return $this->json(['ok' => true, ...$challenge]);
+    }
+
     public function signup(Request $request): JsonResponse
     {
         $email = $this->normalizeEmail($request->input('email'));
@@ -19,8 +35,8 @@ trait AuthEndpoints
         $name = trim((string) $request->input('name', ''));
         $referralCode = $this->referralCodeFromRequest($request);
 
-        if (! $email || strlen($password) < 6) {
-            return $this->json(['ok' => false, 'error' => 'Enter a valid email and a password with at least 6 characters.'], 422);
+        if (! $email || strlen($password) < 8) {
+            return $this->json(['ok' => false, 'error' => 'Enter a valid email and a password with at least 8 characters.'], 422);
         }
 
         if (User::where('email', $email)->exists()) {
@@ -51,6 +67,12 @@ trait AuthEndpoints
         app(ReferralService::class)->registerSignup($user, $referralCode);
         $user = $user->fresh() ?? $user;
 
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable) {
+            // Account creation should remain usable when the mail provider is temporarily unavailable.
+        }
+
         return $this->json($this->sessionPayload($request, $user), 201);
     }
 
@@ -62,15 +84,27 @@ trait AuthEndpoints
             return $this->emailLogin($request);
         }
 
-        if (! in_array($provider, ['apple', 'google', 'microsoft'], true)) {
+        if (! in_array($provider, ['apple', 'google'], true)) {
             return $this->json(['ok' => false, 'error' => 'Unsupported login provider.'], 422);
         }
 
-        $providerId = trim((string) $request->input('providerId', $request->input('installId', '')));
-        if ($providerId === '') {
-            $providerId = (string) Str::uuid();
+        try {
+            $nonce = $provider === 'apple'
+                ? app(ProviderChallengeService::class)->consume(
+                    $provider,
+                    trim((string) $request->input('challengeId', ''))
+                )
+                : null;
+            $identity = app(ProviderIdentityVerifier::class)->verify(
+                $provider,
+                trim((string) $request->input('identityToken', '')),
+                $nonce,
+            );
+        } catch (ProviderIdentityException) {
+            return $this->json(['ok' => false, 'error' => 'The provider could not verify this sign-in. Try again.'], 401);
         }
 
+        $providerId = $identity['subject'];
         $user = User::where('provider', $provider)->where('provider_id', $providerId)->first();
         if (! $user) {
             $referralCode = $this->referralCodeFromRequest($request);
@@ -78,11 +112,13 @@ trait AuthEndpoints
                 return $this->json(['ok' => false, 'error' => 'That invite code was not found. Check it and try again.'], 422);
             }
 
-            $fallbackEmail = sprintf('%s.%s@vibyra.local', $provider, substr(hash('sha256', $providerId), 0, 12));
-            $email = $this->normalizeEmail($request->input('email')) ?: $fallbackEmail;
-            $name = trim((string) $request->input('name', '')) ?: ucfirst($provider).' User';
+            $email = $identity['email'];
+            if (! $email) {
+                return $this->json(['ok' => false, 'error' => 'The provider did not return a verified email address for this new account.'], 422);
+            }
+            $name = trim((string) $request->input('name', '')) ?: $identity['name'] ?: ucfirst($provider).' User';
             if (User::where('email', $email)->exists()) {
-                $email = $fallbackEmail;
+                return $this->json(['ok' => false, 'error' => 'An account already exists for that email. Log in with its original method.'], 409);
             }
 
             $this->moderation->assertLocalTextAllowed($name, 'auth.name');
@@ -101,6 +137,7 @@ trait AuthEndpoints
                 'onboarding_complete' => false,
                 'remembered_desktops' => [],
                 'app_state' => [],
+                'email_verified_at' => now(),
             ]);
             app(ReferralService::class)->registerSignup($user, $referralCode);
             $user = $user->fresh() ?? $user;
@@ -164,7 +201,7 @@ trait AuthEndpoints
         $password = (string) $request->input('password', '');
         $user = $email ? User::where('email', $email)->first() : null;
 
-        if (! $user || ! Hash::check($password, $user->password)) {
+        if (! $user || ($user->provider ?: 'email') !== 'email' || ! Hash::check($password, $user->password)) {
             return $this->json(['ok' => false, 'error' => 'Email or password is incorrect.'], 401);
         }
 

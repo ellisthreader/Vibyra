@@ -153,3 +153,34 @@ test("approved preview server start discovers a nested frontend app", async () =
     await cleanup();
   }
 });
+
+test("approved preview server start discovers a nested website app", async () => {
+  const { project, cleanup } = await makeProject("vibyra-preview-nested-website-");
+  const fakeNpm = await makeFakeNpm();
+  const port = await findFreePort();
+  const html = '<!doctype html><html><body><main>Nested website</main><script type="module" src="/src/main.tsx"></script></body></html>';
+  try {
+    await mkdir(join(project.path, "website", "src"), { recursive: true });
+    await writeFile(join(project.path, "website", "index.html"), html);
+    await writeFile(join(project.path, "website", "src", "main.tsx"), "console.log('website');");
+    await writeFile(join(project.path, "website", "package.json"), JSON.stringify({
+      scripts: { dev: "vite" },
+      devDependencies: { vite: "latest" }
+    }));
+    const result = await startProjectDevServer(project, "127.0.0.1:4317", {
+      env: {
+        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        VIBYRA_FAKE_VITE_HTML: html,
+        VIBYRA_FAKE_VITE_PORT: String(port)
+      },
+      port,
+      timeoutMs: 6000
+    });
+    assert.equal(result.started, true);
+    assert.equal(result.url, `http://127.0.0.1:${port}`);
+  } finally {
+    killTrackedPreview(project.id);
+    await fakeNpm.cleanup();
+    await cleanup();
+  }
+});

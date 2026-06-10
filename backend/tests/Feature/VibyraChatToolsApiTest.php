@@ -40,6 +40,7 @@ class VibyraChatToolsApiTest extends TestCase
                         ],
                     ])],
                 ]],
+                'usage' => ['prompt_tokens' => 80, 'completion_tokens' => 120, 'cost' => 0.0001],
             ]);
         });
 
@@ -62,7 +63,7 @@ class VibyraChatToolsApiTest extends TestCase
         $this->assertSame(260, $payloads[0]['max_completion_tokens'] ?? null);
         $this->assertTrue($payloads[0]['reasoning']['exclude'] ?? false);
         $this->assertSame(0.2, $payloads[0]['temperature'] ?? null);
-        $this->assertSame(0, DB::table('credit_ledger')->count());
+        $this->assertSame(1, DB::table('credit_ledger')->count());
     }
 
     public function test_chat_tool_skills_use_specialist_or_selected_openrouter_models(): void
@@ -139,13 +140,12 @@ class VibyraChatToolsApiTest extends TestCase
             ]);
         });
 
-        $token = $this->postJson('/api/auth/signup', [
-            'name' => 'Alex Carter',
-            'email' => 'alex-free-specialized-tools@example.com',
-            'password' => 'secret123',
-        ])->json('token');
-
-        foreach (['research', 'web', 'analyze'] as $skill) {
+        foreach (['research', 'web', 'analyze'] as $index => $skill) {
+            $token = $this->postJson('/api/auth/signup', [
+                'name' => 'Alex Carter',
+                'email' => "alex-free-specialized-tools-{$index}@example.com",
+                'password' => 'secret123',
+            ])->json('token');
             $this->postJson('/api/chat', [
                 'prompt' => "Run {$skill}.",
                 'skill' => $skill,
@@ -229,6 +229,10 @@ class VibyraChatToolsApiTest extends TestCase
         $this->assertSame(16000, $payloads[0]['max_completion_tokens'] ?? null);
         $this->assertSame(16000, $payloads[1]['max_completion_tokens'] ?? null);
         $this->assertStringContainsString('previous Deep Research attempt returned no final answer', $payloads[1]['messages'][array_key_last($payloads[1]['messages'])]['content'] ?? '');
-        $this->assertSame(1, DB::table('credit_ledger')->where('kind', 'chat')->count());
+        $ledger = DB::table('credit_ledger')->where('kind', 'chat')->first();
+        $this->assertNotNull($ledger);
+        $this->assertSame(-2, $ledger->credits_delta);
+        $this->assertCount(2, json_decode($ledger->meta, true)['attempts']);
+        $this->assertSame(498, User::where('email', 'alex-retry-deep-research@example.com')->value('credits_balance'));
     }
 }

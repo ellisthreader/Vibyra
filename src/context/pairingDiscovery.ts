@@ -1,4 +1,6 @@
 import { PairResponse } from "../types/domain";
+import { makePairRequestId, trustedDesktopUrl, trustedDesktopUrls } from "../utils/desktopUrls";
+import { appDeviceName } from "../utils/deviceIdentity";
 import { fetchWithTimeout } from "../utils/network";
 import { wait } from "../utils/ids";
 import {
@@ -21,16 +23,18 @@ type Requests = {
 };
 
 export async function checkHealth(url: string, code?: string): Promise<HealthResult | null> {
+  const trustedUrl = trustedDesktopUrl(url);
+  if (!trustedUrl) return null;
   try {
-    const response = await fetchWithTimeout(`${url}/health`, {}, url.startsWith("https://") ? RELAY_HEALTH_TIMEOUT_MS : LAN_HEALTH_TIMEOUT_MS);
+    const response = await fetchWithTimeout(`${trustedUrl}/health`, {}, trustedUrl.startsWith("https://") ? RELAY_HEALTH_TIMEOUT_MS : LAN_HEALTH_TIMEOUT_MS);
     if (!response.ok) return null;
     const payload = await response.json();
     const pairCode = String(payload?.pairCode ?? "").toUpperCase();
-    const connectionUrls = Array.isArray(payload?.connectionUrls)
+    const connectionUrls = trustedDesktopUrls(Array.isArray(payload?.connectionUrls)
       ? payload.connectionUrls.map((item: unknown) => String(item))
-      : [];
+      : []);
     return {
-      url,
+      url: trustedUrl,
       machineName: String(payload?.machineName ?? ""),
       pairCode: pairCode || undefined,
       connectionUrls,
@@ -68,31 +72,29 @@ export async function requestPairAtUrl(
   requestId = makePairRequestId(),
   accountId?: number | null
 ) {
+  const trustedUrl = trustedDesktopUrl(url);
+  if (!trustedUrl) return { type: "failed" as const, url, message: "Desktop URL is not trusted" };
   try {
     const normalizedCode = code.trim().toUpperCase();
     const result = await requests.desktopRequest<PairResponse>(
-      url,
+      trustedUrl,
       "/pair",
       {
         method: "POST",
         body: JSON.stringify({
-          deviceName: "Vibyra Phone",
+          deviceName: appDeviceName(),
           requestId,
           ...(accountId ? { accountId } : {}),
           ...(normalizedCode ? { code: normalizedCode } : { autoPair: true })
         })
       },
-      url.startsWith("https://") ? RELAY_PAIR_TIMEOUT_MS : LAN_PAIR_TIMEOUT_MS
+      trustedUrl.startsWith("https://") ? RELAY_PAIR_TIMEOUT_MS : LAN_PAIR_TIMEOUT_MS
     );
-    return { type: "paired" as const, url, result };
+    return { type: "paired" as const, url: trustedUrl, result };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Request failed";
     return { type: "failed" as const, url, message };
   }
-}
-
-function makePairRequestId() {
-  return `phone-pair-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export async function waitForDesktopApproval(
@@ -102,7 +104,7 @@ export async function waitForDesktopApproval(
   setStatus: (message: string) => void,
   desktopUrls: string[] = []
 ) {
-  const urls = uniqueValues([desktopUrl, ...desktopUrls]);
+  const urls = trustedDesktopUrls([desktopUrl, ...desktopUrls]);
   const deadline = Date.now() + APPROVAL_TIMEOUT_MS;
   let lastStatusError = "";
   while (Date.now() < deadline) {

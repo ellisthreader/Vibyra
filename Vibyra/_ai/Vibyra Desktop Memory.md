@@ -18,7 +18,10 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 
 - Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Native provider CLI rollout, protocol matrix, and release gates: `Desktop/Native Provider Terminal Plan.md`
+- Local Vibyra AI, Ollama runtime/model, local chat routing: `Desktop/Local Vibyra AI.md`
 - AI-terminal Voice and canonical project Memory: `Desktop/Voice And Project Memory.md`
+- System-wide F9 screenshot capture and annotation editor: `Desktop/Screenshot Capture.md`
 - Pairing, bearer token, `/health`, phone session, LAN discovery: `Desktop/Pairing And Phone Session.md`
 - Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`
 - Agent runs, apply/discard, safe commands, run artifacts: `Desktop/Agent Runs And Commands.md`
@@ -26,6 +29,9 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 ## Local Skills
 
 - Use `.agents/skills/VibyraDesktopFrontendDesign/SKILL.md` for desktop frontend design work: mobile-inspired dark UI, minimal topbar/sidebar chrome, auth welcome polish, logo handling, recent chats, and responsive screenshot checks.
+- Use `.agents/skills/vibyra-ai-terminal-diagnostics/SKILL.md` for AI terminal
+  launch, UI ownership, hidden-engine, token-source/billing, PTY input,
+  transcript, and recovered-worker failures.
 
 ## Route Groups
 

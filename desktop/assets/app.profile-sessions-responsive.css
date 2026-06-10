@@ -1,0 +1,46 @@
+@media (max-width: 720px) {
+  .profile-device-table-wrap { border: 0; }
+  .profile-device-table,
+  .profile-device-table tbody { display: block; }
+  .profile-device-table thead { display: none; }
+  .profile-device-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    display: grid;
+    gap: 0;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    padding: 12px 0;
+  }
+  .profile-device-row td {
+    border: 0;
+    display: grid;
+    gap: 3px;
+    grid-column: 1;
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding: 5px 0;
+    white-space: normal;
+  }
+  .profile-device-row td::before {
+    color: var(--subtle);
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .profile-device-row .profile-device-name {
+    display: flex;
+    grid-template-columns: none;
+    padding-right: 8px;
+  }
+  .profile-device-row .profile-device-name::before,
+  .profile-device-row .profile-session-actions::before { display: none; }
+  .profile-device-row .profile-session-actions {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0 !important;
+  }
+  .profile-device-location,
+  .profile-device-kind,
+  .profile-device-activity { overflow: visible; }
+}

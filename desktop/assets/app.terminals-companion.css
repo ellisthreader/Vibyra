@@ -1,26 +1,55 @@
 .terminal-page--with-companion {
   grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px);
 }
+.terminal-page,
+.terminal-setup {
+  grid-template-columns: minmax(0, 1fr) 0;
+  position: relative;
+  transition: grid-template-columns 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 .terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-  grid-template-columns: minmax(260px, 1fr) clamp(420px, 42vw, 640px);
+  grid-template-columns: minmax(0, 1fr) clamp(286px, 24vw, 340px);
 }
 .terminal-companion {
   background: var(--terminal-surface, #0b0b10);
   border-left: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
+  container-type: inline-size;
   display: grid;
-  gap: 10px;
-  grid-auto-rows: max-content;
+  gap: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
   min-height: 0;
   min-width: 0;
-  overflow: auto;
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
+}
+.terminal-companion--entering {
+  animation: terminal-companion-enter 160ms ease-out;
+}
+@keyframes terminal-companion-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-page,
+  .terminal-setup {
+    transition: none;
+  }
+  .terminal-companion--entering {
+    animation: none;
+  }
 }
 .terminal-companion-section {
-  border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
-  display: grid;
-  gap: 8px;
+  border-bottom: 0;
+  display: block;
   min-width: 0;
-  padding: 0 0 12px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 .terminal-companion-section:last-child {
   border-bottom: 0;
@@ -178,23 +207,18 @@
     grid-template-columns: minmax(0, 1fr) 286px;
   }
   .terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-    grid-template-columns: minmax(220px, 1fr) minmax(380px, 46vw);
+    grid-template-columns: minmax(0, 1fr) 286px;
   }
 }
-@media (max-width: 860px) {
-  .terminal-page--with-companion {
-    grid-template-columns: minmax(0, 1fr) 280px;
-  }
-
+@media (max-width: 900px) {
   .terminal-companion {
     border-left: 1px solid var(--terminal-border, rgba(151, 161, 190, 0.12));
-    border-top: 0;
+    bottom: 0;
     max-height: none;
-  }
-  .terminal-page--with-companion[data-terminal-companion-mode="memory"] {
-    grid-template-columns: minmax(180px, 1fr) minmax(360px, 46vw);
-  }
-  .terminal-companion-shell-actions button span {
-    display: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: min(var(--terminal-companion-width, 520px), calc(100% - 24px));
+    z-index: 20;
   }
 }
