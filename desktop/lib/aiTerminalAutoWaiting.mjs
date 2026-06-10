@@ -5,6 +5,7 @@ import {
 import { renderAutoDecidingFrame } from "./aiTerminalVibyraLogo.mjs";
 
 export const AUTO_DECIDING_FRAME_INTERVAL_MS = 240;
+export const AUTO_DECIDING_MINIMUM_MS = 960;
 
 export function autoTerminalWaitingOutput({ cwd, cols, error = "" }) {
   const safeError = String(error || "")

@@ -26,6 +26,7 @@ import { terminalProviderAdapters } from "./aiTerminalProviderAdapters.mjs";
 import { terminalRuntimeExecutable } from "./aiTerminalRuntimes.mjs";
 import {
   AUTO_DECIDING_FRAME_INTERVAL_MS,
+  AUTO_DECIDING_MINIMUM_MS,
   autoTerminalDecidingStart,
   autoTerminalDecidingStop,
   autoTerminalDecidingUpdate,
@@ -943,6 +944,7 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         nativeModel: launchPlan.nativeModel,
         billingModel: launchPlan.billingModel
       }).token;
+      await decidingAnimation.waitForMinimum();
       decidingAnimation.stop();
       session.agent = agent;
       session.agentStatus = agentStatus;
@@ -1017,6 +1019,7 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
 }
 
 function startAutoDecidingAnimation(session) {
+  const startedAt = Date.now();
   const firstFrame = autoTerminalDecidingStart({
     cols: session.cols,
     rows: session.rows
@@ -1038,6 +1041,12 @@ function startAutoDecidingAnimation(session) {
   timer.unref?.();
   let stopped = false;
   return {
+    async waitForMinimum() {
+      const remaining = AUTO_DECIDING_MINIMUM_MS - (Date.now() - startedAt);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+    },
     stop() {
       if (stopped) return;
       stopped = true;

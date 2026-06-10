@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  AUTO_DECIDING_MINIMUM_MS,
   autoTerminalDecidingStart,
   autoTerminalDecidingStop,
   autoTerminalDecidingUpdate,
@@ -45,8 +46,8 @@ test("Auto deciding animation keeps one stable full-screen 3D V", () => {
   const microText = stripAnsi(micro.output);
 
   assert.ok(first.lineCount >= 15);
-  assert.match(first.output, /#####\\/);
-  assert.match(first.output, /\+/);
+  assert.match(firstText, /####\\/);
+  assert.match(firstText, /\+/);
   assert.match(firstText, /V I B Y R A\s+A U T O/);
   assert.match(firstText, /SELECTING THE BEST MODEL/);
   assert.match(first.output, /\x1b\[3J\x1b\[2J\x1b\[H/);
@@ -59,6 +60,7 @@ test("Auto deciding animation keeps one stable full-screen 3D V", () => {
   assert.ok(compact.lineCount <= 16);
   assert.ok(micro.lineCount <= 10);
   assert.match(microText, /VIBYRA AUTO \/\/ SELECTING MODEL/);
+  assert.ok(AUTO_DECIDING_MINIMUM_MS >= 4 * 200);
   assert.equal(autoTerminalDecidingStop(), "\x1b[0m\x1b[?25h");
 });
 
