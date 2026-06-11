@@ -18,7 +18,9 @@ function patchTerminalSetupPanel(setup) {
   currentFlow.classList.toggle("terminal-setup-flow--mode", nextFlow.classList.contains("terminal-setup-flow--mode"));
   const currentStep = currentProgress.querySelector('[aria-current="step"] em')?.textContent;
   const nextStep = nextProgress.querySelector('[aria-current="step"] em')?.textContent;
-  if (currentStep !== nextStep) currentProgress.replaceWith(nextProgress);
+  const sameStep = currentStep === nextStep;
+  if (!sameStep) currentProgress.replaceWith(nextProgress);
+  if (sameStep) nextPanel.classList.add("terminal-setup-panel--stable");
   currentPanel.replaceWith(nextPanel);
   setup.scrollTop = scrollTop;
   bindTerminalControls();

@@ -12,6 +12,7 @@ import { routeDesktopAutoModel, sendDesktopChat } from "./desktopChat.mjs";
 import { proxyDesktopCodexResponse } from "./desktopCodexResponses.mjs";
 import { proxyNativeTerminalProtocol } from "./desktopNativeTerminalGateway.mjs";
 import { speakDesktopVoice, transcribeDesktopVoice } from "./desktopVoice.mjs";
+import { appendDesktopPromptTranscript } from "./desktopPromptTranscript.mjs";
 import {
   activateDesktopPreviewServer,
   desktopPreviewStartup,
@@ -21,7 +22,12 @@ import {
 } from "./desktopPreview.mjs";
 import { handleDesktopMemoryRoutes } from "./desktopMemoryRoutes.mjs";
 import { handleTerminalEditorRoutes } from "./terminalEditor.mjs";
-import { requestDesktopAuth } from "./desktopAuthProxy.mjs";
+import { handleTerminalTeamRoutes } from "./terminalTeamRoutes.mjs";
+import {
+  pollDesktopProviderAuth,
+  requestDesktopAuth,
+  startDesktopProviderAuth
+} from "./desktopAuthProxy.mjs";
 import { startPhonePreview } from "./phonePreview.mjs";
 import { stopAllTrackedPreviewServers } from "./previewServerProcesses.mjs";
 import {
@@ -38,6 +44,7 @@ import { localAiStatus } from "./localAi.mjs";
 import { pairingQrSvg } from "./pairingQr.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
+import { resolvePreviewElement } from "./previewElementResolver.mjs";
 import { authorizeTerminalGatewayRequest } from "./terminalGatewayAuth.mjs";
 import {
   appState,
@@ -131,10 +138,80 @@ export async function handleDesktopRoutes(req, res, url) {
       nativeModel: body.model
     });
     if (!authorization) return true;
-    await proxyDesktopCodexResponse(req, res, {
+    const requestBody = {
       ...body,
       model: authorization.billingModel || body.model
+    };
+    await proxyDesktopCodexResponse(req, res, requestBody);
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/grok/v1/chat/completions") {
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      authSchemes: ["bearer"],
+      model: body.model,
+      runtimeId: "grok",
+      providerId: "x-ai",
+      adapterId: "openai-chat-completions",
+      protocol: "openai-chat-completions",
+      nativeModel: body.model,
+      nativeModelAliases: ["grok-build"]
     });
+    if (!authorization) return true;
+    await proxyNativeTerminalProtocol(req, res, {
+      protocol: "openai-chat-completions",
+      billingModel: authorization.billingModel,
+      body
+    });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/qwen/v1/chat/completions") {
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      authSchemes: ["bearer"],
+      allowContainerNetwork: true,
+      model: body.model,
+      runtimeId: "qwen",
+      providerId: "qwen",
+      adapterId: "openai-chat-completions",
+      protocol: "openai-chat-completions",
+      nativeModel: body.model
+    });
+    if (!authorization) return true;
+    await proxyNativeTerminalProtocol(req, res, {
+      protocol: "openai-chat-completions",
+      billingModel: authorization.billingModel,
+      body
+    });
+    return true;
+  }
+  const nativeResponsesProvider = {
+    "/desktop/kimi/v1/responses": {
+      runtimeId: "kimi",
+      providerId: "moonshot"
+    },
+    "/desktop/mistral/v1/responses": {
+      runtimeId: "mistral",
+      providerId: "mistral"
+    }
+  }[url.pathname];
+  if (req.method === "POST" && nativeResponsesProvider) {
+    const body = await readBody(req);
+    const authorization = authorizeTerminalGatewayRequest(req, res, {
+      authSchemes: ["bearer"],
+      model: body.model,
+      runtimeId: nativeResponsesProvider.runtimeId,
+      providerId: nativeResponsesProvider.providerId,
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: body.model
+    });
+    if (!authorization) return true;
+    const requestBody = {
+      ...body,
+      model: authorization.billingModel || body.model
+    };
+    await proxyDesktopCodexResponse(req, res, requestBody);
     return true;
   }
   if (req.method === "POST" && ["/desktop/anthropic/v1/messages", "/desktop/anthropic/v1/messages/count_tokens"].includes(url.pathname)) {
@@ -196,7 +273,15 @@ export async function handleDesktopRoutes(req, res, url) {
   }
   if (req.method === "POST" && url.pathname === "/desktop/voice/transcribe") {
     if (!authorizeDesktopUi(req, res)) return true;
-    send(res, 200, await transcribeDesktopVoice(await readBody(req)));
+    const body = await readBody(req);
+    const result = await transcribeDesktopVoice(body);
+    const transcript = await appendDesktopPromptTranscript({ ...body, prompt: result.text });
+    send(res, 200, { ...result, transcript });
+    return true;
+  }
+  if (req.method === "POST" && ["/desktop/prompt/transcript", "/desktop/voice/transcript"].includes(url.pathname)) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await appendDesktopPromptTranscript(await readBody(req)));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/voice/speak") {
@@ -232,6 +317,10 @@ export async function handleDesktopRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     if (await handlePtyTerminalRoutes(req, res, url)) return true;
   }
+  if (url.pathname === "/desktop/terminal-teams" || url.pathname.startsWith("/desktop/terminal-teams/")) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    if (await handleTerminalTeamRoutes(req, res, url)) return true;
+  }
   if (url.pathname.startsWith("/desktop/terminal-editor/")) {
     if (!authorizeDesktopUi(req, res)) return true;
     if (await handleTerminalEditorRoutes(req, res, url)) return true;
@@ -258,6 +347,11 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/preview/stop-server") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await stopDesktopPreviewServer(await readBody(req)));
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/preview/resolve-element") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await resolvePreviewElement(await readBody(req)));
     return true;
   }
   if (req.method === "GET" && url.pathname === "/desktop/preview/startup") {
@@ -297,6 +391,18 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, { ok: true, user: account });
     return true;
   }
+  const providerStart = url.pathname.match(/^\/desktop\/auth\/(apple|google)\/start$/);
+  if (req.method === "POST" && providerStart) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await startDesktopProviderAuth(providerStart[1], await readBody(req)));
+    return true;
+  }
+  const providerStatus = url.pathname.match(/^\/desktop\/auth\/(apple|google)\/status\/([A-Za-z0-9]+)$/);
+  if (req.method === "GET" && providerStatus) {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, await pollDesktopProviderAuth(providerStatus[1], providerStatus[2]));
+    return true;
+  }
   if (req.method === "POST" && url.pathname.startsWith("/desktop/auth/")) {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, await requestDesktopAuth(url.pathname.slice("/desktop/auth/".length), await readBody(req)));
@@ -309,7 +415,7 @@ export async function handleDesktopRoutes(req, res, url) {
     send(res, 200, { ok: true });
     return true;
   }
-  if (req.method === "GET" && url.pathname === "/desktop") {
+  if (req.method === "GET" && (url.pathname === "/desktop" || url.pathname === "/desktop/")) {
     if (!authorizeDesktopUi(req, res, false)) return true;
     await sendFile(res, join(desktopDir, "app.html"));
     return true;

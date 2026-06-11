@@ -1,19 +1,25 @@
 const LOCAL_COMMANDS = [
   "/help", "/status", "/model", "/effort", "/permissions", "/clear", "/new",
-  "/resume", "/copy", "/export", "/context", "/cd", "/usage", "/stop", "/exit"
+  "/resume", "/copy", "/export", "/context", "/cd", "/usage", "/shell",
+  "/stop", "/exit"
 ];
 
 const WORKFLOW_COMMANDS = [
   "/plan", "/review", "/debug", "/doctor", "/diff", "/run", "/verify",
-  "/fix", "/refactor", "/simplify", "/explain", "/compact"
+  "/fix", "/refactor", "/simplify", "/explain", "/compact", "/test",
+  "/build", "/search", "/security-review", "/init"
 ];
 
 const ALIASES = {
   "/?": "/help",
   "/commands": "/help",
   "/about": "/status",
+  "/version": "/status",
   "/sandbox": "/permissions",
   "/reset": "/new",
+  "/thread": "/resume",
+  "/cwd": "/context",
+  "/billing": "/usage",
   "/quit": "/exit"
 };
 
@@ -84,6 +90,7 @@ export function providerCommandHint(command) {
     "/context": "show or stage a file or directory",
     "/cd": "change the working directory",
     "/usage": "show truthful billing and session information",
+    "/shell": "show direct shell syntax and access rules",
     "/stop": "cancel the current task when one is active",
     "/exit": "close this terminal",
     "/plan": "create a concrete implementation plan",
@@ -97,7 +104,12 @@ export function providerCommandHint(command) {
     "/refactor": "refactor while preserving behavior",
     "/simplify": "reduce complexity without changing behavior",
     "/explain": "explain using repository evidence",
-    "/compact": "summarize context for continuation"
+    "/compact": "summarize context for continuation",
+    "/test": "run the focused tests that prove the change",
+    "/build": "run the relevant build and diagnose failures",
+    "/search": "search the workspace and explain the evidence",
+    "/security-review": "review security findings and concrete fixes",
+    "/init": "inspect the repository and establish working context"
   };
   return hints[command] || "run a Vibyra Agent workflow";
 }
@@ -116,7 +128,12 @@ export function providerCommandPrompt(command, args) {
     "/refactor": "Refactor while preserving behavior, then run focused verification.",
     "/simplify": "Simplify the implementation while preserving behavior and tests.",
     "/explain": "Explain the target using concrete repository evidence.",
-    "/compact": "Summarize useful conversation and workspace context for continuation."
+    "/compact": "Summarize useful conversation and workspace context for continuation.",
+    "/test": "Run the narrowest useful tests for the target. Diagnose failures and fix regressions when appropriate.",
+    "/build": "Run the relevant build for the target. Diagnose and fix actionable build failures.",
+    "/search": "Search the workspace for the target and explain the concrete evidence with file references.",
+    "/security-review": "Perform a security-focused review. Put findings first with severity, evidence, and concrete remediation.",
+    "/init": "Inspect the repository instructions, structure, and current state. Establish concise working context before making changes."
   };
   return `${intents[command] || "Complete the requested Vibyra Agent workflow."}\n\nTarget: ${target}`;
 }

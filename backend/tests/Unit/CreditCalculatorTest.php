@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterPricingCatalog;
+use App\Services\Billing\TerminalOutputBudget;
 use Tests\TestCase;
 
 class CreditCalculatorTest extends TestCase
@@ -60,6 +61,38 @@ class CreditCalculatorTest extends TestCase
         $this->assertSame(
             7,
             $calc->estimateCredits('google/gemini-3.5-flash', 12_500, 2000, true)
+        );
+    }
+
+    public function test_terminal_output_budget_reduces_only_the_output_needed_to_fit_balance(): void
+    {
+        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog->method('freshPricingFor')->with('x-ai/grok-build-0.1')->willReturn([
+            'prompt' => '0.000001',
+            'completion' => '0.000002',
+        ]);
+        $calc = new CreditCalculator($catalog);
+        $budget = new TerminalOutputBudget;
+
+        $outputTokens = $budget->affordableOutputTokens(
+            $calc,
+            'x-ai/grok-build-0.1',
+            9000,
+            2000,
+            800,
+            2,
+        );
+
+        $this->assertGreaterThanOrEqual(800, $outputTokens);
+        $this->assertLessThan(2000, $outputTokens);
+        $this->assertLessThanOrEqual(
+            2,
+            $calc->estimateTerminalReservationCredits(
+                'x-ai/grok-build-0.1',
+                9000,
+                $outputTokens,
+                true
+            )
         );
     }
 }

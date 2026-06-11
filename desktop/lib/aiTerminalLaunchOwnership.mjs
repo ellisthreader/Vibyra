@@ -10,7 +10,7 @@ export function assertAiTerminalLaunchOwnership(status, args = []) {
     && args[0] === VIBYRA_AGENT_ENTRY_PATH;
   if (launchesVibyraAgent) return;
 
-  if (["claude", "gemini"].includes(status.runtimeId)
+  if (["claude", "gemini", "qwen", "kimi", "mistral", "grok"].includes(status.runtimeId)
     && Boolean(status.commandPath)
     && status.commandPath === status.agentEnginePath
     && !args.includes("exec")) {

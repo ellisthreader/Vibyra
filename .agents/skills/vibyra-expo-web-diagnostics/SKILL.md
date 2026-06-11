@@ -7,6 +7,10 @@ description: Diagnose Vibyra Expo/mobile web failures, especially AppEntry.bundl
 
 Use this skill when the Vibyra Expo app fails to load in the browser, the console reports `AppEntry.bundle` 500, strict MIME type refusal because the bundle is `application/json`, Metro says `UnableToResolveError`, or auth/signup/login reports "Could not reach Vibyra" / `failed to fetch`.
 
+For a healthy Expo runtime that fails only inside Desktop Test or phone
+Preview, use `vibyra-preview-diagnostics`; keep this skill focused on Metro,
+module resolution, Expo web startup, and backend reachability.
+
 ## Required Memory Reads
 
 Before broad source exploration, read:
@@ -137,6 +141,12 @@ return its real `401` validation response, not a `502` network message.
 Transient bridge fetch failures should retry once with a bounded timeout, and
 persistent failures must describe the account service as unreachable without
 claiming the whole desktop has lost network connectivity.
+
+On a fresh checkout, the root `.env` is not tracked. The desktop launcher must
+therefore default to the Railway production API, matching
+`desktop/lib/appApiConfig.mjs`; it must not inject localhost unless the user
+explicitly sets `VIBYRA_DESKTOP_API_URL`, `VIBYRA_API_URL`, or
+`EXPO_PUBLIC_API_URL` for local development.
 
 ## Verification
 

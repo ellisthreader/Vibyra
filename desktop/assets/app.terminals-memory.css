@@ -208,7 +208,10 @@
 .terminal-memory-tree-row {
   align-items: center;
   border-radius: 5px; display: grid; gap: 3px;
+  contain: layout paint style;
+  content-visibility: auto;
   grid-template-columns: 17px 17px minmax(0, 1fr) 24px;
+  contain-intrinsic-size: auto 28px;
   min-height: 28px; padding-left: calc((var(--memory-level, 1) - 1) * 12px);
 }
 .terminal-memory-tree-row:hover,

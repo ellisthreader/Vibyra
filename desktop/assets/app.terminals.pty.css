@@ -105,3 +105,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.terminal-xterm.terminal-path-dragover {
+  box-shadow: inset 0 0 0 2px rgba(139, 92, 255, .72);
+}

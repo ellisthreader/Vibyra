@@ -35,7 +35,7 @@ test("separate branches preflight explains and approves a local-only checkpoint"
 
 test("cancelled preflight does not launch and approved setup forbids shared fallback", () => {
   assert.match(controlsSource, /ready = await prepareTerminalWorkspaceLaunch/);
-  assert.match(controlsSource, /if \(!ready\) return/);
+  assert.match(controlsSource, /if \(!ready\) \{/);
   assert.match(controlsSource, /allowSharedFallback:\s*workspaceMode !== "worktree"/);
   assert.match(runtimeSource, /terminal\.allowSharedFallback !== false/);
 });
@@ -51,9 +51,9 @@ test("safe mode is recommended and defaults on for new users", () => {
 
 test("terminal setup stays compact with optional advanced token settings", () => {
   assert.match(setupSource, /const effort = terminalSetupEffortPicker\(model\)/);
-  assert.match(setupSource, /<details class="terminal-setup-advanced">/);
+  assert.match(setupSource, /data-terminal-advanced-toggle/);
   assert.match(setupSource, /Advanced options/);
-  assert.doesNotMatch(setupSource, /terminalSetupAdvancedOpen/);
-  assert.doesNotMatch(setupSource, /terminal-preview-block/);
-  assert.doesNotMatch(setupSource, /layoutPreview\(setupCount\)/);
+  assert.match(setupSource, /terminalSetupAdvancedOpen/);
+  assert.match(setupSource, /terminalSoloSetupHtml\(launchCount, setupCapacity\)/);
+  assert.match(setupSource, /terminalSetupGridPreview\(total\)/);
 });

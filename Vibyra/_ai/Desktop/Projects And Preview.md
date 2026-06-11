@@ -2,6 +2,10 @@
 
 Read this for project discovery, arbitrary folder browse/search, project ids, and desktop preview behavior.
 
+Use `.agents/skills/vibyra-preview-diagnostics/SKILL.md` as the operating
+checklist for Preview bugs across Desktop Test, phone WebViews, runtime
+startup, target routing, proxy transport, and shutdown.
+
 ## Files
 
 - `desktop/lib/projects.mjs`
@@ -43,6 +47,36 @@ Authenticated `GET /desktop/context?projectId=...&q=...` returns VS Code-style p
 Desktop `/agents/start` accepts `projectPath` alongside `projectId`; Node and Laravel paths use it as a trusted-home fallback when a newly opened arbitrary folder is not in cached discovery state.
 
 ## Preview
+
+Local element editing contract (implemented 2026-06-11): Desktop Preview
+intercepts ordinary right-click inside tracked project iframes, highlights the
+DOM element, resolves its owning source with explicit confidence, and opens one
+compact AI change composer. Shift+right-click preserves the app/browser context
+menu. React/Vue debug source metadata wins; fallback matching uses component,
+text, ID, ARIA, and class evidence inside the selected target's app directory.
+Ambiguous matches require user choice. The edit reuses the selected project
+terminal and existing permission model, while the source badge opens the
+existing Editor at the resolved line. Arbitrary custom URLs, public demos, and
+top-level phone WebViews do not install the desktop interceptor. Generic
+canvas/WebGL selection resolves the canvas and likely owning module, not an
+individual scene object without project instrumentation. First files:
+`previewInspectorRuntime.mjs`, `previewElementResolver.mjs`,
+`app.terminals-test-inspector-data.js`, `app.terminals-test-inspector.js`, and
+`app.terminals-test-inspector.css`. The authenticated resolver route is
+`POST /desktop/preview/resolve-element`. After upgrading an already-open
+Desktop renderer, reload/reopen Desktop and refresh the Preview so both the
+new shell asset and newly injected project runtime are active.
+
+Element-edit sending must not wait for source resolution. Exact React/Vue
+source metadata is resolved directly before scanning, fallback scans start
+inside the selected target app, and a typed instruction remains sendable with
+DOM/component context when no confident file match exists. Reused PTY terminal
+assignment requests have a 20-second acknowledgement timeout so the inspector
+returns to a retryable state instead of remaining on `Sending...`. Preview
+implementation prompts may reuse a standalone project terminal or an idle Team
+Builder/writer, but never a coordinator, reviewer, verifier, or other read-only
+Team role. Failed assignment acknowledgement keeps the inspector draft and
+shows the terminal error instead of reporting a successful send.
 
 `preview.mjs` serves static browser entries from `previewResolver.mjs` (`index.html`, `dist/`, `build/`, `out/`, `.output/public/`, app/client/frontend builds, docs/demo/game exports). If none exists, it returns a phone-viewable analyzed-project fallback instead of a blank/no-entry shell.
 
@@ -125,6 +159,8 @@ Laravel/Vite startup must reject Laravel HTTP error pages during readiness verif
 
 For any Laravel/Vite folder, `previewLaravelDevServer.mjs` applies a preview-only SQLite fallback when `.env` uses a container MySQL/MariaDB host such as `DB_HOST=mysql` and the project contains `database/database.sqlite`. It does not edit the project; it sets `DB_CONNECTION=sqlite`, `SESSION_DRIVER=file`, `QUEUE_CONNECTION=sync`, and `CACHE_STORE=file` only for the spawned PHP preview process. `previewLaravelDiagnostics.mjs` also classifies common Laravel 500 logs for live-chat errors, including container DB host failures, missing Vite manifests, missing session tables, and Composer/PHP runtime mismatches such as `ReflectionProperty::isVirtual()`.
 
+Laravel/Vite startup also treats `public/hot` as generated state: it removes a stale hot file before launch when the project is writable, fails immediately with an ownership repair command on `EACCES`, and does not recommend running Vite as root. Readiness stops when PHP or Vite exits instead of waiting for the full timeout. A Vite bind race gets one retry on a newly selected port, PHP/Vite allocations avoid choosing the same port, and the tracked Vite proxy uses the actual verified fallback port rather than the originally requested port.
+
 Preview startup must not silently run framework dev servers. Expo web is a
 recognized allowlisted profile: `previewExpo.mjs` accepts simple Expo scripts,
 checks common Metro ports, matches the served title to the selected project,
@@ -151,6 +187,11 @@ calls read-only `/desktop/preview`. `app.terminals-test-state.js` resolves the
 project from the active terminal first, then the active project group, setup
 selection, current desktop project, and persisted selected project while
 excluding `full-pc` and unassigned pseudo-projects.
+
+Desktop Preview start, activate, and stop responses are request-, project-, and
+target-scoped in `app.terminals-test-launch.js`. If the user changes project,
+target, or loads a custom URL while an async action is pending, the stale
+result must not overwrite the new frame or status.
 
 Approved startup has a real device-frame feed. `previewStartupFeed.mjs` keeps a
 bounded transient command/stdout/stderr transcript, exposed only through the
@@ -189,6 +230,15 @@ still explicitly approved and revalidated. Target-pinned capabilities keep an
 existing frame attached to its service, while `/preview/proxy-url` permits only
 other tracked services in the same project for frontend-to-backend loopback
 calls.
+
+Phone and Desktop Test preview starts converge on the same detected target IDs. `previewServerProcesses.mjs` owns target-scoped start generations: duplicate starts share one promise, Stop invalidates the old generation and permits an immediate replacement, and an older readiness/exit cannot claim or remove that replacement. `previewPortAllocator.mjs` keeps short-lived in-process reservations through spawn/readiness so concurrent targets and Laravel's PHP/Vite pair cannot select the same candidate port. Concurrent phone preview requests use newest-request-only capability commits, so a returned preview URL is not immediately revoked by an older request finishing later.
+
+Preview process ownership ends with the desktop bridge. `previewShutdown.mjs` stops tracked preview process groups on `SIGINT`, `SIGTERM`, fatal errors, and independent server close; `/desktop/quit` performs the same cleanup. Electron real application quit posts to loopback `/desktop/quit` with a bounded timeout before exiting, while normal titlebar close still hides the window. Cleanup is limited to recorded children and must not kill unrelated services by port or executable name.
+
+Shutdown remains fail-safe if child cleanup itself throws:
+`previewShutdown.mjs` logs the cleanup error but still closes the bridge and
+exits. `resolvedPreviewUrl()` must import `startProjectDevServer`; otherwise
+opening an already-running phone preview fails with a runtime `ReferenceError`.
 
 Preview viewport preferences are renderer-local and keyed by
 `projectId + targetId` in `app.terminals-test-viewports.js`. Each target restores

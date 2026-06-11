@@ -11,6 +11,15 @@ const runtimeSource = readFileSync(
   new URL("./app.terminals-pty-runtime.js", import.meta.url),
   "utf8",
 );
+const pathDropSource = readFileSync(
+  new URL("./app.terminals-path-drop.js", import.meta.url),
+  "utf8",
+);
+const promptLogSource = readFileSync(
+  new URL("./app.terminals-pty-prompt-log.js", import.meta.url),
+  "utf8",
+);
+const appSource = readFileSync(new URL("../app.html", import.meta.url), "utf8");
 
 test("PTY keyboard input has one browser event owner", () => {
   assert.match(legacySource, /bindPtyInput\(node\)/);
@@ -30,6 +39,55 @@ test("PTY keyboard input has one browser event owner", () => {
   assert.match(runtimeSource, /screenReaderMode: false/);
   assert.doesNotMatch(runtimeSource, /screenReaderMode: true/);
   assert.match(runtimeSource, /terminalXterms\[id\] !== xterm \|\| !xterm\.element\?\.isConnected/);
+  assert.match(runtimeSource, /terminalPtyCompletedPrompts\(id, input\)/);
+  assert.match(runtimeSource, /queueTerminalPtyInput\(id, prompts/);
+  assert.match(runtimeSource, /sendPtyInputNow[\s\S]*markTerminalProviderBusy\(terminal\)/);
+  assert.match(promptLogSource, /persistDesktopPromptTranscript\(prompt, "terminal-pty"/);
+  assert.ok(
+    appSource.indexOf("app.terminals-pty-prompt-log.js")
+      < appSource.indexOf("app.terminals-pty-runtime.js")
+  );
+});
+
+test("screenshot path drop inserts once through xterm paste", () => {
+  const listeners = {};
+  const node = {
+    classList: { add() {}, remove() {} },
+    contains: () => false,
+    dataset: { terminalInput: "terminal-1" },
+    addEventListener: (type, listener) => { listeners[type] = listener; }
+  };
+  const calls = [];
+  const context = {
+    focusPtyTerminal: (id) => calls.push(["focus", id]),
+    terminalCompanionInsertIntoTerminal: (...args) => calls.push(["fallback", ...args]),
+    terminalXterms: {
+      "terminal-1": {
+        element: { isConnected: true },
+        paste: (value) => calls.push(["paste", value])
+      }
+    }
+  };
+  vm.runInNewContext(`${pathDropSource}
+this.bind = bindTerminalPathDrop;`, context);
+  context.bind(node);
+  const dataTransfer = {
+    dropEffect: "none",
+    getData: () => '"/tmp/screen.png"',
+    types: ["application/x-vibyra-screenshot-path"]
+  };
+  let prevented = 0;
+
+  listeners.dragover({ dataTransfer, preventDefault: () => { prevented += 1; } });
+  listeners.drop({ dataTransfer, preventDefault: () => { prevented += 1; } });
+
+  assert.equal(dataTransfer.dropEffect, "copy");
+  assert.equal(prevented, 2);
+  assert.deepEqual(calls, [
+    ["focus", "terminal-1"],
+    ["paste", '"/tmp/screen.png"']
+  ]);
+  assert.match(runtimeSource, /bindTerminalPathDrop\(node\)/);
 });
 
 test("focusing a PTY updates the selected terminal styling", () => {
@@ -42,6 +100,65 @@ test("focusing a PTY updates the selected terminal styling", () => {
   assert.ok(
     focusSource.indexOf("activeTerminalId = id") < focusSource.indexOf("refreshPtyTerminalsDom()"),
   );
+});
+
+test("Auto deciding keeps the viewport at the top and disables bottom anchoring", () => {
+  const positionStart = runtimeSource.indexOf("function terminalAutoDeciding");
+  const positionEnd = runtimeSource.indexOf("\nfunction focusPtyTerminal", positionStart);
+  const positionContext = {
+    overscanCalls: 0,
+    applyPtyBottomOverscan: () => { positionContext.overscanCalls += 1; }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(positionStart, positionEnd)}
+this.position = positionPtyViewport;`,
+    positionContext
+  );
+
+  const decidingScrolls = [];
+  positionContext.position(
+    { autoDeciding: true },
+    {
+      scrollToTop: () => decidingScrolls.push("top"),
+      scrollToBottom: () => decidingScrolls.push("bottom")
+    }
+  );
+  assert.deepEqual(decidingScrolls, ["top"]);
+
+  const normalScrolls = [];
+  positionContext.position(
+    { autoDeciding: false },
+    {
+      scrollToTop: () => normalScrolls.push("top"),
+      scrollToBottom: () => normalScrolls.push("bottom")
+    }
+  );
+  assert.deepEqual(normalScrolls, ["bottom"]);
+  assert.equal(positionContext.overscanCalls, 2);
+
+  const overscanStart = runtimeSource.indexOf("function applyPtyBottomOverscan");
+  const overscanEnd = runtimeSource.indexOf("\nfunction terminalPtyBottomRowsContainContent", overscanStart);
+  const overscanContext = {
+    terminalAutoDeciding: (terminal) => Boolean(terminal?.autoDeciding)
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(overscanStart, overscanEnd)}
+this.apply = applyPtyBottomOverscan;`,
+    overscanContext
+  );
+  const element = {
+    style: {
+      height: "calc(100% + 20px)",
+      transform: "translateY(-20px)"
+    }
+  };
+  overscanContext.apply({ autoDeciding: true }, { element });
+  assert.equal(element.style.height, "");
+  assert.equal(element.style.transform, "");
+
+  assert.match(runtimeSource, /appendPtyOutput[\s\S]*positionPtyViewport\(terminal,\s*xterm\)/);
+  assert.match(runtimeSource, /writePtySnapshot[\s\S]*positionPtyViewport\(findTerminal\(id\),\s*xterm\)/);
+  assert.match(runtimeSource, /focusPtyTerminal[\s\S]*positionPtyViewport\(terminal,\s*xterm\)/);
 });
 
 test("assigned terminal tasks are transient and submitted after PTY creation", () => {
@@ -175,7 +292,9 @@ test("layout-driven PTY resizing waits for stable pane geometry", () => {
 test("Codex keeps its native bottom margin in a scrollable xterm overscan buffer", () => {
   const start = runtimeSource.indexOf("function backendPtySize");
   const end = runtimeSource.indexOf("\nfunction sendPtyResize", start);
-  const context = {};
+  const context = {
+    terminalAutoDeciding: () => false
+  };
   vm.runInNewContext(`${runtimeSource.slice(start, end)}
     this.backend = backendPtySize;
     this.rendererRows = rendererPtyRows;

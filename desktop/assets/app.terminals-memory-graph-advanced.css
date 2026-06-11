@@ -34,6 +34,12 @@
 .terminal-memory-graph-edges path.dimmed {
   opacity: .08;
 }
+.terminal-memory-graph.focusing .terminal-memory-graph-edges path {
+  opacity: .08;
+}
+.terminal-memory-graph.focusing .terminal-memory-graph-edges path.focused {
+  opacity: 1;
+}
 .terminal-memory-graph-node {
   color: var(--terminal-muted);
   cursor: pointer;
@@ -88,6 +94,8 @@
   stroke-width: 2;
 }
 .terminal-memory-graph-node.dimmed { opacity: .16; }
+.terminal-memory-graph.focusing .terminal-memory-graph-node { opacity: .16; }
+.terminal-memory-graph.focusing .terminal-memory-graph-node.related { opacity: 1; }
 .terminal-memory-graph-node:hover text,
 .terminal-memory-graph-node:focus text,
 .terminal-memory-graph-node.selected text { opacity: 1; }

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { isViteOutputUrl, portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
-import { choosePreviewPort } from "./previewPortAllocator.mjs";
+import { reservePreviewPort } from "./previewPortAllocator.mjs";
 import { isLaravelViteProject, startLaravelViteDevServer } from "./previewLaravelDevServer.mjs";
 import { previewUnavailableReason } from "./previewDetection.mjs";
 import { devServerPortsFromPackage, npmRunArgs, npmRunEnv, previewCommand, previewFrameworkProfile } from "./previewFrameworkProfiles.mjs";
@@ -10,7 +10,12 @@ import { existingProjectAppRoots, WEB_APP_DIRECTORIES } from "./projectAppRoots.
 import { expoHtmlMatchesProject, expoPreviewProfile, expoProjectTitles } from "./previewExpo.mjs";
 import { runtimePreviewContext, runtimePreviewLaunch } from "./previewRuntimeAdapters.mjs";
 import { isSourceOnlyPreviewHtml } from "./previewResolver.mjs";
-import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
+import {
+  isCurrentPreviewServerStart,
+  runPreviewServerStart,
+  stopTrackedPreviewServer,
+  trackPreviewServer
+} from "./previewServerProcesses.mjs";
 import { activatePreviewService, previewService } from "./previewServices.mjs";
 import { appState, publicHostFromRequestHost } from "./state.mjs";
 
@@ -45,6 +50,17 @@ export async function runningProjectDevServerUrl(project, requestHost, appDirect
 }
 
 export async function startProjectDevServer(project, requestHost, options = {}) {
+  const targetId = previewStartTargetId(options);
+  return runPreviewServerStart(project.id, targetId, (generation) => (
+    startProjectDevServerUnlocked(project, requestHost, {
+      ...options,
+      startGeneration: generation,
+      startTargetId: targetId
+    })
+  ));
+}
+
+async function startProjectDevServerUnlocked(project, requestHost, options = {}) {
   const appDirectory = String(options.appDirectory || "");
   const targetId = String(options.targetId || "");
   const existingUrl = options.reuseExisting ? await runningProjectDevServerUrl(project, requestHost, appDirectory, targetId) : null;
@@ -74,7 +90,10 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
   }
 
   stopTrackedPreviewServer(project.id, targetId);
-  context.launchPort = options.port ?? await choosePreviewPort(context.packageText, context.profile);
+  const portReservation = options.port == null
+    ? await reservePreviewPort(context.packageText, context.profile)
+    : null;
+  context.launchPort = options.port ?? portReservation.port;
   context.targetId = targetId;
   context.preexistingPorts = await occupiedScanPorts(context);
   const runtimeLaunch = context.runtime ? runtimePreviewLaunch(context, context.launchPort) : null;
@@ -103,17 +122,36 @@ export async function startProjectDevServer(project, requestHost, options = {}) 
     startedAt: new Date().toISOString()
   }, { activate: options.activate });
 
-  const url = await waitForProjectDevServer(project, requestHost, context, () => output, options.timeoutMs ?? 30000, () => launchFailure || child.exitCode !== null);
+  let url;
+  try {
+    url = await waitForProjectDevServer(project, requestHost, context, () => output, options.timeoutMs ?? 30000, () => launchFailure || child.exitCode !== null);
+  } finally {
+    portReservation?.release();
+  }
   if (url) {
+    if (!isCurrentPreviewServerStart(project.id, options.startTargetId, options.startGeneration, tracked, tracked.targetId)) {
+      stopTrackedPreviewServer(project.id, targetId, tracked);
+      throw supersededPreviewStartError();
+    }
     tracked.url = url;
     tracked.proxyTargetUrl = loopbackBaseForUrl(url);
     tracked.state = "running";
     return { command: context.command, framework: context.profile.label, profileId: context.profile.id, started: true, url };
   }
 
-  stopTrackedPreviewServer(project.id, targetId);
+  stopTrackedPreviewServer(project.id, targetId, tracked);
   const reason = output.trim() ? ` Last output: ${output.trim().slice(-900)}` : "";
   throw new Error(`Vibyra could not verify the dev server after starting it.${reason}`);
+}
+
+function previewStartTargetId(options) {
+  return String(options.targetId || "") || `legacy:${String(options.appDirectory || "active")}`;
+}
+
+function supersededPreviewStartError() {
+  const error = new Error("This preview start was superseded by a newer Run or Stop action.");
+  error.status = 409;
+  return error;
 }
 
 export async function projectPreviewLaunch(project, appDirectory = "") {

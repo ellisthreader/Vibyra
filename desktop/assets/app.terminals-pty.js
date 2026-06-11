@@ -8,14 +8,20 @@ const terminalXtermSnapshots = {};
 const terminalXtermReplayWrites = {};
 let ptyRenderedSignature = "";
 let terminalSetupStep = "mode";
+let terminalSetupAdvancedOpen = false;
 
 function resetTerminalSetupFlow() {
   terminalSetupStep = "mode";
+  terminalSetupAdvancedOpen = false;
+  if (typeof resetTerminalTeamSetup === "function") resetTerminalTeamSetup();
 }
 
 function selectTerminalSetupMode(mode) {
   const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
-  setupCount = mode === "team" ? Math.min(4, capacity) : 1;
+  terminalSetupMode = mode === "team" ? "team" : "solo";
+  setupCount = terminalSetupMode === "team"
+    ? Math.max(2, Math.min(4, setupCount, capacity))
+    : Math.min(normalizeCount(setupCount), capacity);
   terminalSetupStep = "setup";
   render();
 }
@@ -41,6 +47,48 @@ function terminalSetupGridPreview(count) {
   const meta = terminalGridMeta(total);
   const cells = Array.from({ length: total }, (_, index) => `<span><i>${index + 1}</i></span>`).join("");
   return `<div class="terminal-setup-grid-preview" style="--setup-preview-cols:${meta.cols};--setup-preview-rows:${meta.rows}" aria-label="${total} terminal grid preview">${cells}</div>`;
+}
+
+function terminalSoloSetupHtml(count, capacity) {
+  const total = Math.max(1, Math.min(normalizeCount(count), capacity));
+  const choices = [1, 2, 3, 4, 6, 12];
+  return `<div class="terminal-setup-count-layout" data-terminal-solo-count>
+    <div class="terminal-setup-count-picker">
+      <p>Terminal count</p>
+      <div class="terminal-setup-count-buttons" role="radiogroup" aria-label="Solo terminal count">
+        ${choices.map((size) => `<button class="${total === size ? "active" : ""}" type="button" role="radio" aria-checked="${total === size}" data-terminal-count="${size}" ${size > capacity ? "disabled" : ""}>${size}</button>`).join("")}
+      </div>
+      <label class="terminal-setup-custom-count"><span>Custom</span><input type="number" min="1" max="${capacity}" value="${total}" data-terminal-custom-count aria-label="Custom solo terminal count" /></label>
+      <small>Open up to ${capacity} terminal${capacity === 1 ? "" : "s"} in this workspace.</small>
+    </div>
+    <div class="terminal-setup-preview-wrap">
+      <span>Grid preview</span>
+      ${terminalSetupGridPreview(total)}
+      <small>The opened terminals use this grid when Grid view is selected.</small>
+    </div>
+  </div>`;
+}
+
+function terminalFullAccessSupported(model, tokenMode) {
+  if (String(model?.key || model?.modelKey || "").trim().toLowerCase() === "auto") return false;
+  const runtime = typeof terminalExecutionRuntimeForModel === "function"
+    ? terminalExecutionRuntimeForModel(model, tokenMode)
+    : "";
+  return ["codex", "claude", "gemini", "qwen", "kimi", "mistral", "grok", "vibyra-agent"].includes(runtime);
+}
+
+function terminalPermissionModeForSetup(model, tokenMode, requested = setupPermissionMode) {
+  return requested === "full" && terminalFullAccessSupported(model, tokenMode) ? "full" : "standard";
+}
+
+function terminalSetupPermissionPicker(model, tokenMode) {
+  const fullAccessSupported = terminalFullAccessSupported(model, tokenMode);
+  const selected = terminalPermissionModeForSetup(model, tokenMode);
+  const choice = (mode, title, detail, recommended = false, disabled = false) => `<button class="${selected === mode ? "active" : ""} ${recommended ? "recommended" : ""} ${mode === "full" ? "danger" : ""}" type="button" role="radio" aria-checked="${selected === mode}" data-terminal-permission-mode="${mode}" ${disabled ? "disabled" : ""}><span class="terminal-workspace-choice-title"><strong>${title}</strong>${recommended ? "<em>Recommended</em>" : ""}</span><small>${detail}</small></button>`;
+  const fullDetail = fullAccessSupported
+    ? "Disables approvals and sandboxing for every terminal in this batch"
+    : "Select a concrete AI model to enable full access";
+  return `<div class="terminal-setup-block"><p>Access</p><div class="terminal-workspace-row terminal-permission-row" role="radiogroup" aria-label="Terminal access">${choice("standard", "Standard", "Keeps approvals and workspace sandboxing enabled", true)}${choice("full", "Full access", fullDetail, false, !fullAccessSupported)}</div></div>`;
 }
 const terminalPtyRendererVersion = 2;
 const terminalAgents = [
@@ -83,7 +131,10 @@ normalizeTerminal = function normalizePtyTerminal(item) {
   if (!terminal) return null;
   terminal.agent = normalizePtyAgentForModel(item, terminal);
   terminal.agentStatus = item.agentStatus || null;
-  terminal.tokenMode = String(item.tokenMode || terminal.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra";
+  const reportedTokenMode = String(item.tokenMode || terminal.tokenMode || "vibyra");
+  terminal.tokenMode = ["vibyra", "provider"].includes(reportedTokenMode)
+    ? reportedTokenMode
+    : "vibyra";
   terminal.permissionMode = normalizeTerminalPermissionMode(item.permissionMode || terminal.permissionMode);
   terminal.workspaceMode = normalizeTerminalWorkspaceMode(item.workspaceMode || terminal.workspaceMode);
   terminal.branchName = String(item.branchName || terminal.branchName || "");
@@ -171,6 +222,20 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
     branchName: "",
     workspacePath: "",
     workspaceNotice: "",
+    teamId: String(options.teamId || ""),
+    teamSize: Math.max(0, Math.min(4, Number(options.teamSize) || 0)),
+    teamGoal: String(options.teamGoal || "").slice(0, 1200),
+    teamRole: String(options.teamRole || "").slice(0, 40),
+    teamRoleKey: String(options.teamRoleKey || "").slice(0, 40),
+    teamPhase: String(options.teamPhase || "").slice(0, 40),
+    teamCapability: String(options.teamCapability || "").slice(0, 40),
+    teamRoleContractVersion: Math.max(0, Number(options.teamRoleContractVersion) || 0),
+    teamRolePolicyHash: String(options.teamRolePolicyHash || "").slice(0, 128),
+    teamTask: String(options.teamTask || "").slice(0, 500),
+    teamPlanId: String(options.teamPlanId || "").slice(0, 120),
+    teamPlannerMode: String(options.teamPlannerMode || "").slice(0, 40),
+    teamPlannerModel: String(options.teamPlannerModel || "").slice(0, 120),
+    teamPlannerFallbackReason: String(options.teamPlannerFallbackReason || "").slice(0, 80),
     draft: "",
     shellMode: false,
     profileVersion: 1,
@@ -239,47 +304,61 @@ setupView = function ptySetupView() {
     setupTokenMode = tokenMode;
     localStorage.setItem("vibyra.desktop.terminalTokenMode", setupTokenMode);
   }
+  const permissionMode = terminalPermissionModeForSetup(model, tokenMode);
+  if (permissionMode !== setupPermissionMode) {
+    setupPermissionMode = permissionMode;
+    localStorage.setItem(setupPermissionModeKey, setupPermissionMode);
+  }
   const projectReady = typeof terminalProjectReadyForSetup !== "function" || terminalProjectReadyForSetup();
   const sourceIssue = typeof terminalTokenSourceIssue === "function" ? terminalTokenSourceIssue(model, tokenMode) : "";
   const runtimeLaunch = typeof terminalRuntimeLaunchState === "function"
     ? terminalRuntimeLaunchState(model, tokenMode)
     : { available: true, issue: "", reason: "", runtime: null };
   const runtimeIssue = runtimeLaunch.issue || "";
-  const launchReady = projectReady && !sourceIssue && !runtimeIssue;
+  const team = terminalSetupMode === "team";
+  const teamRuntimeIssue = team && typeof terminalTeamRuntimeIssue === "function"
+    ? terminalTeamRuntimeIssue(model, tokenMode)
+    : "";
+  const goalReady = !team || Boolean(normalizeTerminalTeamGoal(setupTeamGoal));
+  const baseLaunchReady = projectReady && !sourceIssue && !runtimeIssue && !teamRuntimeIssue;
+  const launchReady = baseLaunchReady && goalReady;
   const startDisabled = launchReady ? "" : "disabled";
   const launchCount = Math.min(setupCount, setupCapacity);
   const project = terminalProject(selectedProjectId);
-  const team = launchCount > 1;
   if (terminalSetupStep === "mode") return terminalSetupModeView(project, setupCapacity);
   const startLabel = !projectReady
     ? "Loading project..."
     : sourceIssue
       ? "Connect an AI account"
-      : `Start ${team ? "team" : "solo"} workspace`;
+      : teamRuntimeIssue
+        ? "Choose a Team-compatible model"
+      : team && !goalReady
+        ? "Describe the team goal"
+        : team
+          ? "Start team workspace"
+          : `Start ${launchCount} terminal${launchCount === 1 ? "" : "s"}`;
   const effort = terminalSetupEffortPicker(model);
   const advanced = terminalTokenSourcePanel(model, tokenMode, "setup");
-  const counts = Array.from({ length: maxTerminals }, (_, index) => index + 1);
   return `<section class="terminal-setup terminal-setup--configure"><div class="terminal-setup-stage"><div class="terminal-setup-flow">
     ${terminalSetupProgress("setup")}
     <div class="terminal-setup-panel terminal-setup-panel--combined">
-    <div class="terminal-setup-count-layout">
-      <div class="terminal-setup-count-picker">
-        <p>Terminal amount</p>
-        <div class="terminal-setup-count-buttons" role="radiogroup" aria-label="Terminal amount">${counts.map((count) => `<button class="${launchCount === count ? "active" : ""}" type="button" role="radio" aria-checked="${launchCount === count}" data-terminal-count="${count}" ${count > setupCapacity ? "disabled" : ""}>${count}</button>`).join("")}</div>
-        <small>${setupCapacity < maxTerminals ? `${setupCapacity} terminal slots available` : "Up to 12 terminals"}</small>
-      </div>
-      <div class="terminal-setup-preview-wrap"><span>Grid preview</span>${terminalSetupGridPreview(launchCount)}<small>${launchCount} terminal${launchCount === 1 ? "" : "s"}</small></div>
-    </div>
+    ${team ? terminalTeamSetupHtml(launchCount, setupCapacity) : ""}
+    ${team ? "" : terminalSoloSetupHtml(launchCount, setupCapacity)}
     <div class="terminal-setup-grid">
       <div class="terminal-setup-block"><p>Project</p>${terminalProjectSelect("setup")}</div>
       <div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>
     </div>
     ${terminalWorkspaceSetupPicker()}
+    ${terminalSetupPermissionPicker(model, tokenMode)}
     ${effort}
-    ${advanced ? `<details class="terminal-setup-advanced"><summary>${icon("settings")}<span>Advanced options</span>${icon("arrow")}</summary><div>${advanced}</div></details>` : ""}
+    ${teamRuntimeIssue ? `<p class="terminal-setup-notice" role="status">${escapeHtml(teamRuntimeIssue)}</p>` : ""}
+    ${advanced ? `<section class="terminal-setup-advanced${terminalSetupAdvancedOpen ? " open" : ""}">
+      <button class="terminal-setup-advanced-toggle" type="button" data-terminal-advanced-toggle aria-expanded="${terminalSetupAdvancedOpen}" aria-controls="terminal-setup-advanced-panel">${icon("settings")}<span>Advanced options</span>${icon("arrow")}</button>
+      <div class="terminal-setup-advanced-panel" id="terminal-setup-advanced-panel" aria-hidden="${!terminalSetupAdvancedOpen}"><div>${advanced}</div></div>
+    </section>` : ""}
     <div class="terminal-setup-actions">
       ${terminalBatchSetupOpen ? '<button class="secondary-button terminal-setup-cancel" type="button" data-terminal-batch-cancel>Cancel</button>' : ""}
-      <button class="primary-button terminal-start-button" type="button" id="start-terminals" ${startDisabled}>${icon("arrow")}${escapeHtml(startLabel)}</button>
+      <button class="primary-button terminal-start-button" type="button" id="start-terminals" data-terminal-launch-ready="${baseLaunchReady}" ${team ? 'data-terminal-team-requires-goal="true"' : ""} ${startDisabled}>${icon("arrow")}${escapeHtml(startLabel)}</button>
     </div>
   </div></div></div></section>`;
 };
@@ -301,8 +380,8 @@ function terminalSetupModeView(project, setupCapacity) {
       <p>Choose your workspace. You can adjust the details next.</p>
     </div>
     <div class="terminal-setup-mode-grid">
-      ${choice("solo", "terminal", "Solo", "Best for focused builds, fixes, and quick changes")}
-      ${choice("team", "people", "Team", "Best for larger work split across multiple agents", setupCapacity < 2)}
+      ${choice("solo", "terminal", "Solo", "Choose one or more independent agents")}
+      ${choice("team", "people", "Team", "Split one goal into coordinated agent roles", setupCapacity < 2)}
     </div>
     ${cancel}
   </div></div></div></section>`;

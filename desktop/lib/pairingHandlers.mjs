@@ -2,8 +2,12 @@ import { readBody, send } from "./http.mjs";
 import { sameAccountPairCheck } from "./desktopAccount.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
 import { previewServerProxyUrl, resolvedPreviewUrl } from "./preview.mjs";
+import { pinResolvedPreviewToActiveTarget } from "./previewCredentialResolution.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
+import { activatePreviewService } from "./previewServices.mjs";
+import { detectPreviewTargets, resolvePreviewTarget } from "./previewTargets.mjs";
 import {
+  issuePreviewCapability,
   replacePreviewCapability,
   revokeAllPreviewCapabilities,
   revokePreviewCapability
@@ -31,6 +35,7 @@ import { loadOrCreateDesktopIdentity } from "./lanV2Identity.mjs";
 import { LAN_V2_PROTOCOL, lanV2Enabled, lanV2Required } from "./lanV2Protocol.mjs";
 
 export { isAuthed };
+let phonePreviewGeneration = 0;
 
 export function healthPayload() {
   const pairedDevice = activePairedDevice();
@@ -160,16 +165,23 @@ export async function pairStatus(res, requestId, req = null) {
 }
 
 export async function startPreview(req, res) {
+  const generation = ++phonePreviewGeneration;
   const body = await readBody(req);
   appState.selectedProjectId = String(body.projectId ?? "");
   const project = projectById(appState.selectedProjectId);
-  const credential = project
-    ? replacePreviewCapability(project.id, appState.latestPreviewCredential)
-    : null;
-  const url = project
+  let credential = project ? issuePreviewCapability(project.id) : null;
+  let url = project
     ? await resolvedPreviewUrl(project, req.headers.host, credential, { phoneVisible: true })
     : null;
+  if (generation !== phonePreviewGeneration) {
+    revokePreviewCapability(credential);
+    throw supersededPhonePreviewError();
+  }
+  if (project && url) {
+    ({ credential, url } = pinResolvedPreviewToActiveTarget(project.id, url, credential));
+  }
   if (!url) revokePreviewCapability(credential);
+  if (url) revokePreviewCapability(appState.latestPreviewCredential);
   appState.latestPreview = {
     state: "live",
     url,
@@ -184,12 +196,26 @@ export async function startPreview(req, res) {
 }
 
 export async function startPreviewServer(req, res) {
+  const generation = ++phonePreviewGeneration;
   const body = await readBody(req);
   appState.selectedProjectId = String(body.projectId ?? "");
   const project = projectById(appState.selectedProjectId);
   if (!project) throw new Error("No project selected for preview.");
-  const result = await startProjectDevServer(project, req.headers.host, { timeoutMs: 80000 });
-  const credential = replacePreviewCapability(project.id, appState.latestPreviewCredential);
+  const requestedTargetId = String(body.targetId || "");
+  const target = requestedTargetId
+    ? await resolvePreviewTarget(project, requestedTargetId)
+    : (await detectPreviewTargets(project)).find((candidate) => candidate.available);
+  if (!target?.available) throw new Error("No approved browser runtime is available for this project.");
+  const result = await startProjectDevServer(project, req.headers.host, {
+    activate: false,
+    appDirectory: target.appDirectory,
+    reuseExisting: true,
+    targetId: target.id,
+    timeoutMs: 80000
+  });
+  if (generation !== phonePreviewGeneration) throw supersededPhonePreviewError();
+  activatePreviewService(project.id, target.id);
+  const credential = replacePreviewCapability(project.id, appState.latestPreviewCredential, { targetId: target.id });
   const url = previewServerProxyUrl(project.id, credential);
   appState.latestPreview = {
     state: "live",
@@ -202,4 +228,10 @@ export async function startPreviewServer(req, res) {
   const log = event("Preview", `${result.started ? "Started" : "Found"} live preview for ${project.name}`, "success");
   pushEvents([log]);
   send(res, 200, { command: result.command, events: [log], preview: appState.latestPreview });
+}
+
+function supersededPhonePreviewError() {
+  const error = new Error("A newer preview request replaced this one.");
+  error.status = 409;
+  return error;
 }

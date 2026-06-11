@@ -181,6 +181,50 @@ test("desktop preview preflight still rejects ordinary failed bundled assets", a
   assert.equal(await resolveRunnableDesktopPreviewUrl(rootUrl), null);
 });
 
+test("desktop preview preflight resolves relative assets against the document base href", async () => {
+  const rootUrl = "http://192.168.1.109:4317/preview/project/project/token/";
+  const scriptUrl = `${rootUrl}game/assets/main.js`;
+  const calls = [];
+  const { resolveRunnableDesktopPreviewUrl } = await loadPreviewUrls({
+    fetchWithTimeout: async (url) => {
+      calls.push(url);
+      if (url === rootUrl) {
+        return response({
+          body: '<!doctype html><html><head><base href="./game/"></head><body><script src="assets/main.js"></script></body></html>',
+          url
+        });
+      }
+      if (url === scriptUrl) return response({ body: "console.log('ready')", contentType: "application/javascript", url });
+      throw new Error(`Unexpected fetch ${url}`);
+    }
+  });
+
+  assert.equal(await resolveRunnableDesktopPreviewUrl(rootUrl), rootUrl);
+  assert.deepEqual(calls, [rootUrl, scriptUrl]);
+});
+
+test("desktop preview preflight ignores malformed mixed-quote base href values", async () => {
+  const rootUrl = "http://192.168.1.109:4317/preview/project/project/token/";
+  const scriptUrl = `${rootUrl}assets/main.js`;
+  const calls = [];
+  const { resolveRunnableDesktopPreviewUrl } = await loadPreviewUrls({
+    fetchWithTimeout: async (url) => {
+      calls.push(url);
+      if (url === rootUrl) {
+        return response({
+          body: '<!doctype html><html><head><base href="./game/\'>"></head><body><script src="assets/main.js"></script></body></html>',
+          url
+        });
+      }
+      if (url === scriptUrl) return response({ body: "console.log('ready')", contentType: "application/javascript", url });
+      throw new Error(`Unexpected fetch ${url}`);
+    }
+  });
+
+  assert.equal(await resolveRunnableDesktopPreviewUrl(rootUrl), rootUrl);
+  assert.deepEqual(calls, [rootUrl, scriptUrl]);
+});
+
 function response({ ok = true, status = 200, body = "", contentType = "text/html; charset=utf-8", url }) {
   return {
     ok,

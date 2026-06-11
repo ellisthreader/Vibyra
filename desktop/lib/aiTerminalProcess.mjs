@@ -1,6 +1,6 @@
 import { execFileSync, spawn } from "node:child_process";
 import { accessSync, constants, existsSync, readFileSync, readlinkSync } from "node:fs";
-import { delimiter } from "node:path";
+import { delimiter, dirname } from "node:path";
 import { assertAiTerminalLaunchOwnership } from "./aiTerminalLaunchOwnership.mjs";
 import {
   AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
@@ -19,19 +19,26 @@ const AGENT_CONFIG = {
   "vibyra-agent": { label: "Vibyra Agent", command: "vibyra-agent", args: [VIBYRA_AGENT_ENTRY_PATH], env: [], install: "Reinstall Vibyra Desktop to restore the bundled Vibyra Agent runtime." },
   codex: { label: "Codex", command: "codex", args: ["--no-alt-screen"], env: ["VIBYRA_CODEX_CLI", "CODEX_CLI_PATH"], install: "Install the Codex CLI or set VIBYRA_CODEX_CLI to its executable path." },
   claude: { label: "Claude", command: "claude", args: [], env: ["VIBYRA_CLAUDE_CLI", "CLAUDE_CLI_PATH"], install: "Install Claude Code or set VIBYRA_CLAUDE_CLI to its executable path." },
-  gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." }
+  gemini: { label: "Gemini", command: "gemini", args: [], env: ["VIBYRA_GEMINI_CLI", "GEMINI_CLI_PATH"], install: "Install the Gemini CLI so `gemini` is on PATH, or set VIBYRA_GEMINI_CLI to its executable path." },
+  qwen: { label: "Qwen Code", command: "qwen", args: [], env: ["VIBYRA_QWEN_CLI", "QWEN_CLI_PATH"], install: "Download Qwen Code from the model picker or set VIBYRA_QWEN_CLI to its executable path." },
+  kimi: { label: "Kimi Code", command: "kimi", args: [], env: ["VIBYRA_KIMI_CLI", "KIMI_CLI_PATH"], install: "Download Kimi Code from the model picker or set VIBYRA_KIMI_CLI to its executable path." },
+  mistral: { label: "Mistral Vibe", command: "vibe", runtimeId: "mistral", args: [], env: ["VIBYRA_MISTRAL_CLI", "MISTRAL_VIBE_PATH"], install: "Download Mistral Vibe from the model picker or set VIBYRA_MISTRAL_CLI to its executable path." },
+  grok: { label: "Grok Build", command: "grok", args: ["--no-auto-update", "--no-alt-screen"], env: ["VIBYRA_GROK_CLI", "GROK_CLI_PATH"], install: "Download Grok Build from the model picker or set VIBYRA_GROK_CLI to its executable path." }
 };
 
-export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPlan = null, reasoningEffort = "medium", permissionMode = "standard", tokenMode = "vibyra", projectId = "", terminalId = "", terminalGatewayToken = "", memoryInstructions = "", geminiSettingsPath = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
+export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPlan = null, reasoningEffort = "medium", permissionMode = "standard", sandboxMode = "", tokenMode = "vibyra", projectId = "", terminalId = "", terminalGatewayToken = "", memoryInstructions = "", roleInstructions = "", geminiSettingsPath = "", cwd = process.cwd(), cols = 100, rows = 30, onData, onExit }) {
   const shell = process.env.SHELL || "/bin/bash";
   assertLaunchPlanMatchesAgent(agent, model, launchPlan, tokenMode);
   const status = aiTerminalAgentStatus(agent, model, launchPlan?.runtimeId);
   const runtimeModel = launchPlan?.runtimeId && launchPlan.runtimeId !== "codex"
     ? launchPlan.nativeModel
     : model;
-  const launch = launchCommand(status, shell, { model: runtimeModel, reasoningEffort, permissionMode, memoryInstructions, cwd });
+  const launch = launchCommand(status, shell, { model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, memoryInstructions, roleInstructions, cwd });
   const providerUiVersion = status.key === "vibyra" ? aiTerminalProviderVersion(model) : "";
-  const env = terminalEnv({ agent: status.key, runtimeId: status.runtimeId, label: status.label, model: runtimeModel, reasoningEffort, permissionMode, tokenMode, projectId, terminalId, terminalGatewayToken, memoryInstructions, geminiSettingsPath, agentEnginePath: status.agentEnginePath, providerUiVersion, cwd, cols, rows });
+  const env = terminalEnv({ agent: status.key, runtimeId: status.runtimeId, label: status.label, model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, tokenMode, projectId, terminalId, terminalGatewayToken, memoryInstructions, roleInstructions, geminiSettingsPath, agentEnginePath: status.agentEnginePath, providerUiVersion, cwd, cols, rows });
+  if (["qwen", "kimi"].includes(status.runtimeId) && status.commandPath) {
+    env.PATH = `${dirname(status.commandPath)}${delimiter}${env.PATH || ""}`;
+  }
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
   if (existsSync("/usr/bin/script")) {
@@ -75,6 +82,26 @@ function assertLaunchPlanMatchesAgent(agent, model, launchPlan, tokenMode) {
     codex: { providerId: "openai", adapterId: "responses" },
     claude: { providerId: "anthropic", adapterId: "anthropic-messages" },
     gemini: { providerId: "google", adapterId: "gemini-generate-content" },
+    qwen: {
+      providerId: "qwen",
+      adapterId: "openai-chat-completions",
+      protocol: "openai-chat-completions"
+    },
+    kimi: {
+      providerId: "moonshot",
+      adapterId: "responses",
+      protocol: "openai-responses"
+    },
+    mistral: {
+      providerId: "mistral",
+      adapterId: "responses",
+      protocol: "openai-responses"
+    },
+    grok: {
+      providerId: "x-ai",
+      adapterId: "openai-chat-completions",
+      protocol: "openai-chat-completions"
+    },
     "vibyra-agent": {
       providerId: launchPlan.providerId,
       adapterId: "responses",
@@ -117,7 +144,8 @@ export function aiTerminalProviderVersion(model = "") {
 }
 
 export function listAiTerminalAgentStatuses() {
-  return ["vibyra", "codex", "claude", "gemini", "shell"].map((agent) => aiTerminalAgentStatus(agent));
+  return ["vibyra", "codex", "claude", "gemini", "qwen", "kimi", "mistral", "grok", "shell"]
+    .map((agent) => aiTerminalAgentStatus(agent));
 }
 
 export function aiTerminalAgentStatus(agent = "vibyra", model = "", runtimeId = "") {
@@ -225,7 +253,7 @@ function resolveAgentExecutable(config) {
     if (value && canExecute(value)) return value;
   }
   if (config.command.includes("/") && canExecute(config.command)) return config.command;
-  const managed = terminalRuntimeExecutable(config.command);
+  const managed = terminalRuntimeExecutable(config.runtimeId || config.command);
   if (managed) return managed;
   for (const dir of String(process.env.PATH || "").split(delimiter)) {
     const path = `${dir}/${config.command}`;
@@ -269,12 +297,43 @@ export function aiTerminalAgentArgs(agent, options = {}) {
   }
   const args = [...(AGENT_CONFIG[key].args || [])];
   const memoryInstructions = String(options.memoryInstructions || "").trim();
-  if (key === "claude" && memoryInstructions) {
+  const roleInstructions = String(options.roleInstructions || "").trim();
+  if (key === "claude" && roleInstructions) {
+    args.push("--append-system-prompt", roleInstructions);
+  } else if (key === "claude" && memoryInstructions) {
     args.push("--append-system-prompt", memoryInstructions);
   }
-  if (key === "claude" || key === "gemini") {
+  if (["claude", "gemini", "qwen", "kimi", "mistral", "grok"].includes(key)) {
     const model = nativeCliModelName(options.model, key);
-    if (model) args.push("--model", model);
+    if (model && !["kimi", "mistral"].includes(key)) args.push("--model", model);
+    if (normalizeSandboxMode(options.sandboxMode, options.permissionMode) === "read-only") {
+      if (key === "claude") {
+        args.push("--permission-mode", "plan", "--tools", "Read,Glob,Grep", "--disable-slash-commands", "--strict-mcp-config");
+      } else if (key === "gemini") {
+        args.push("--approval-mode", "plan");
+      } else if (key === "qwen") {
+        args.push("--approval-mode", "plan", "--sandbox");
+      } else if (key === "kimi") {
+        args.push("--plan");
+      } else if (key === "mistral") {
+        args.push("--agent", "plan");
+      } else {
+        throw new Error(`${AGENT_CONFIG[key].label} cannot enforce this Team capability.`);
+      }
+    } else if (normalizePermissionMode(options.permissionMode) === "full") {
+      if (key === "claude") args.push("--dangerously-skip-permissions");
+      if (key === "gemini") args.push("--approval-mode", "yolo", "--no-sandbox");
+      if (key === "qwen") args.push("--approval-mode", "yolo");
+      if (key === "kimi") args.push("--yolo");
+      if (key === "mistral") args.push("--agent", "auto-approve");
+      if (key === "grok") args.push("--permission-mode", "bypassPermissions", "--sandbox", "off");
+    } else if (key === "qwen") {
+      args.push("--approval-mode", "default", "--sandbox");
+    } else if (key === "mistral") {
+      args.push("--agent", "default");
+    } else if (key === "grok") {
+      args.push("--permission-mode", "default", "--sandbox", "workspace");
+    }
     return args;
   }
   if (key === "vibyra-agent") return args;
@@ -299,12 +358,24 @@ export function aiTerminalAgentArgs(agent, options = {}) {
   }
   const effort = normalizeReasoningEffort(options.reasoningEffort);
   if (effort !== "default") args.push("-c", `model_reasoning_effort="${effort}"`);
-  if (normalizePermissionMode(options.permissionMode) === "full") {
+  if (roleInstructions) args.push("-c", `developer_instructions=${JSON.stringify(roleInstructions)}`);
+  const sandboxMode = normalizeSandboxMode(options.sandboxMode, options.permissionMode);
+  if (sandboxMode === "read-only") {
+    args.push("--sandbox", "read-only", "--ask-for-approval", "never");
+  } else if (normalizePermissionMode(options.permissionMode) === "full") {
     args.push("--dangerously-bypass-approvals-and-sandbox");
   } else if (key === "vibyra") {
     args.push("--sandbox", "workspace-write", "--ask-for-approval", "on-request");
   }
   return args;
+}
+
+function normalizeSandboxMode(value, permissionMode) {
+  const mode = String(value || "").trim().toLowerCase();
+  if (["read-only", "workspace-write", "danger-full-access"].includes(mode)) return mode;
+  return normalizePermissionMode(permissionMode) === "full"
+    ? "danger-full-access"
+    : "workspace-write";
 }
 
 function normalizeReasoningEffort(value) {
@@ -321,7 +392,17 @@ function codexModelName(value) {
 }
 
 function nativeCliModelName(value, agent) {
-  const prefix = agent === "claude" ? /^anthropic\//i : /^google\//i;
+  const prefix = agent === "claude"
+    ? /^anthropic\//i
+    : agent === "grok"
+      ? /^x-ai\//i
+      : agent === "qwen"
+        ? /^(?:qwen|alibaba)\//i
+        : agent === "kimi"
+          ? /^(?:moonshot|moonshotai|kimi)\//i
+          : agent === "mistral"
+            ? /^(?:mistral|mistralai)\//i
+            : /^google\//i;
   return String(value || "").trim().replace(prefix, "");
 }
 
@@ -329,6 +410,10 @@ function providerAgentForModel(value) {
   const model = String(value || "").trim().toLowerCase();
   if (model.startsWith("claude-") || model.startsWith("anthropic/")) return "claude";
   if (model.startsWith("gemini-") || model.startsWith("google/")) return "gemini";
+  if (model.startsWith("qwen-") || model.startsWith("qwen2") || model.startsWith("qwen3") || model.startsWith("qwen/") || model.startsWith("alibaba/")) return "qwen";
+  if (model.startsWith("kimi-") || model.startsWith("moonshot/") || model.startsWith("moonshotai/") || model.startsWith("kimi/")) return "kimi";
+  if (/^(?:mistral-|ministral-|codestral-|devstral-|mistral\/|mistralai\/)/.test(model)) return "mistral";
+  if (model.startsWith("grok-") || model.startsWith("x-ai/")) return "grok";
   if (model.startsWith("gpt-") || model.startsWith("openai/") || model.includes("codex")) return "codex";
   return "";
 }

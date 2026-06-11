@@ -47,6 +47,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
 
   const project = await resolveProject(body?.projectId);
   const attachments = normalizeAttachments(body?.attachments);
+  const imageAttachments = normalizeImageAttachments(body?.imageAttachments);
   const skill = normalizeSkill(body?.skill);
   const mode = normalizeMode(body?.mode);
   const tool = normalizeTool(body?.tool);
@@ -57,6 +58,7 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
     fileBody: "",
     filePath: "",
     history: normalizeHistory(body?.history),
+    imageAttachments,
     model,
     mode,
     project: project?.name || "",
@@ -375,6 +377,14 @@ function normalizeDesktopActionContext(value) {
 function normalizeAttachments(attachments) {
   if (!Array.isArray(attachments)) return [];
   return attachments.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8);
+}
+
+function normalizeImageAttachments(attachments) {
+  if (!Array.isArray(attachments)) return [];
+  return attachments.slice(0, 3).map((item) => ({
+    name: String(item?.name || "image").trim().slice(0, 90),
+    url: String(item?.url || item?.dataUrl || "").trim()
+  })).filter((item) => /^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(item.url));
 }
 
 function normalizeModel(model) {

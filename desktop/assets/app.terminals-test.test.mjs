@@ -9,6 +9,10 @@ const targetsSource = source("app.terminals-test-targets.js");
 const launchSource = source("app.terminals-test-launch.js");
 const feedSource = source("app.terminals-test-feed.js");
 const loadingSource = source("app.terminals-test-loading.js");
+const consoleSource = source("app.terminals-test-console.js");
+const inspectorDataSource = source("app.terminals-test-inspector-data.js");
+const inspectorSource = source("app.terminals-test-inspector.js");
+const inspectorStyles = source("app.terminals-test-inspector.css");
 const viewportSource = source("app.terminals-test-viewports.js");
 const runtimeSource = source("app.terminals-test.js");
 const viewSource = source("app.terminals-test-view.js");
@@ -114,6 +118,28 @@ test("startup remains explicit and its live feed is target scoped", () => {
   assert.match(loadingSource, /data-terminal-test-runner-output/);
 });
 
+test("stale preview actions cannot overwrite a newly selected project or target", () => {
+  const context = stateContext();
+  vm.runInContext(launchSource, context);
+  const result = vm.runInContext(`(() => {
+    terminalTestRequest = 4;
+    terminalTestProjectId = "project-a";
+    terminalTestTargetId = "web";
+    const current = terminalTestOperationIsCurrent(4, "project-a", "web");
+    terminalTestRequest = 5;
+    const staleRequest = terminalTestOperationIsCurrent(4, "project-a", "web");
+    const staleProject = terminalTestOperationIsCurrent(5, "project-b", "web");
+    terminalTestTargetId = "api";
+    const staleTarget = terminalTestOperationIsCurrent(5, "project-a", "web");
+    return { current, staleRequest, staleProject, staleTarget };
+  })()`, context);
+  assert.equal(result.current, true);
+  assert.equal(result.staleRequest, false);
+  assert.equal(result.staleProject, false);
+  assert.equal(result.staleTarget, false);
+  assert.match(launchSource, /if \(!terminalTestOperationIsCurrent\(request, projectId, targetId\)\) return;/);
+});
+
 test("inspection consumes targets and concurrent service status without launching", () => {
   assert.match(runtimeSource, /terminalTestTargets = Array\.isArray\(preview\.targets\)/);
   assert.match(runtimeSource, /applyTerminalTestServiceState\(preview\)/);
@@ -144,6 +170,28 @@ test("preview keeps one frame, one compact toolbar, and no extra dashboard chrom
   assert.match(styles, /\.terminal-test-footer/);
 });
 
+test("right-click element editing resolves source and reuses the project terminal", () => {
+  assert.match(viewSource, /data-terminal-test-inspector/);
+  assert.match(inspectorSource, /vibyra-preview-inspector/);
+  assert.match(inspectorSource, /"\/desktop\/preview\/resolve-element"/);
+  assert.match(inspectorSource, /terminalTestProjectTerminal\(terminalTestProjectId\)/);
+  assert.match(inspectorSource, /assignTerminalTestFix\(reusable, prompt\)/);
+  assert.match(inspectorSource, /if \(!assigned\) throw new Error/);
+  assert.match(consoleSource, /terminalTestTerminalCanEdit\(terminal\)/);
+  assert.match(consoleSource, /teamRoleKey[\s\S]*=== "builder"/);
+  assert.match(consoleSource, /teamCapability[\s\S]*=== "writer"/);
+  assert.match(inspectorSource, /openTerminalEditorFile\(terminal\.id, match\.path/);
+  assert.match(inspectorSource, /Describe the change/);
+  assert.match(inspectorSource, /Resolved source:/);
+  assert.match(inspectorSource, /terminalTestInspectorSelection && !terminalTestInspectorSending/);
+  assert.match(inspectorSource, /Resolved source: not confirmed/);
+  assert.match(inspectorDataSource, /normalizeTerminalTestInspectorElement/);
+  assert.match(inspectorDataSource, /inspectorStringList/);
+  assert.doesNotMatch(inspectorSource, /<select\b/);
+  assert.match(inspectorStyles, /pointer-events: auto/);
+  assert.match(inspectorStyles, /border: 1px solid rgba\(142,60,255/);
+});
+
 test("project preview URLs use the isolated local origin", () => {
   const context = stateContext();
   assert.equal(
@@ -160,6 +208,8 @@ test("owned preview assets retain load order and concurrent cache busts", () => 
     "app.terminals-test-viewports.js",
     "app.terminals-test-targets.js",
     "app.terminals-test-loading.js",
+    "app.terminals-test-inspector-data.js",
+    "app.terminals-test-inspector.js",
     "app.terminals-test-launch.js",
     "app.terminals-test-view.js",
     "app.terminals-test.js"
@@ -177,11 +227,14 @@ test("owned preview assets retain load order and concurrent cache busts", () => 
     "app.terminals-test-context.js",
     "app.terminals-test-viewports.js",
     "app.terminals-test-targets.js",
-    "app.terminals-test-launch.js",
     "app.terminals-test.js"
   ]) {
     assert.match(appSource, new RegExp(`${asset.replaceAll(".", "\\.")}\\?v=terminal-preview-target-viewports-20260610`));
   }
+  assert.match(appSource, /app\.terminals-test-launch\.js\?v=terminal-preview-stale-guard-20260610/);
+  assert.match(appSource, /app\.terminals-test-inspector\.js\?v=preview-element-editor-20260611/);
+  assert.match(appSource, /app\.terminals-test-inspector-data\.js\?v=preview-element-editor-20260611/);
+  assert.match(appSource, /app\.terminals-test-inspector\.css\?v=preview-element-editor-20260611/);
   assert.match(appSource, /app\.terminals-test\.css\?v=terminal-preview-services-20260610/);
   assert.match(appSource, /app\.terminals-test-targets\.css\?v=terminal-preview-services-20260610/);
 });

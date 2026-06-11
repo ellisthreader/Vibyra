@@ -1,4 +1,9 @@
-const { writeFile: defaultWriteFile } = require("node:fs/promises");
+const {
+  mkdir: defaultMkdir,
+  readFile: defaultReadFile,
+  writeFile: defaultWriteFile
+} = require("node:fs/promises");
+const { basename, join, resolve, sep } = require("node:path");
 
 const PNG_DATA_URL_PREFIX = "data:image/png;base64,";
 const MAX_PNG_BYTES = 100 * 1024 * 1024;
@@ -12,7 +17,10 @@ function createDesktopScreenshot(dependencies) {
     nativeImage,
     screen,
     getParentWindow = () => undefined,
+    getScreenshotsDirectory = () => "",
+    mkdir = defaultMkdir,
     now = () => new Date(),
+    readFile = defaultReadFile,
     screenAccessStatus = () => "granted",
     writeFile = defaultWriteFile,
     onShortcutError = (error) => console.error("Screenshot shortcut failed:", error)
@@ -62,6 +70,22 @@ function createDesktopScreenshot(dependencies) {
     return dataUrl;
   }
 
+  async function copySavedScreenshot(filePath) {
+    const directory = resolve(getScreenshotsDirectory());
+    const target = resolve(String(filePath || ""));
+    if (!target.startsWith(`${directory}${sep}`)) {
+      throw new Error("The screenshot file is outside the Vibyra screenshot library.");
+    }
+    const png = await readFile(target);
+    const image = nativeImage.createFromBuffer(png);
+    if (image.isEmpty?.()) throw new Error("The saved screenshot PNG could not be decoded.");
+    clipboard.write({
+      image,
+      text: shellQuotedPath(target)
+    });
+    return target;
+  }
+
   async function captureAndCopy() {
     const capture = await captureDisplay();
     copyPngDataUrl(capture.dataUrl);
@@ -70,20 +94,28 @@ function createDesktopScreenshot(dependencies) {
 
   async function savePngDataUrl(dataUrl) {
     const png = pngBuffer(dataUrl);
-    const options = {
-      title: "Save screenshot",
-      defaultPath: timestampedPngName(now()),
-      buttonLabel: "Save",
-      filters: [{ name: "PNG image", extensions: ["png"] }],
-      properties: ["createDirectory", "showOverwriteConfirmation"]
+    const directory = getScreenshotsDirectory();
+    if (!directory) throw new Error("The Vibyra screenshot folder is unavailable.");
+    await mkdir(directory, { recursive: true });
+    const filePath = join(directory, timestampedPngName(now()));
+    await writeFile(filePath, png);
+    return savedScreenshot(filePath, png);
+  }
+
+  function savedScreenshot(filePath, png, modifiedAt = now().getTime()) {
+    const image = nativeImage.createFromBuffer(png);
+    if (image.isEmpty?.()) throw new Error("The saved screenshot PNG could not be decoded.");
+    const size = image.getSize();
+    const thumbnail = image.resize({
+      width: Math.min(320, size.width),
+      quality: "good"
+    });
+    return {
+      filePath,
+      name: basename(filePath),
+      modifiedAt,
+      thumbnailDataUrl: thumbnail.toDataURL()
     };
-    const parent = getParentWindow();
-    const result = parent
-      ? await dialog.showSaveDialog(parent, options)
-      : await dialog.showSaveDialog(options);
-    if (result.canceled || !result.filePath) return { canceled: true };
-    await writeFile(result.filePath, png);
-    return { canceled: false, filePath: result.filePath };
   }
 
   function registerF9Shortcut(handler = captureAndCopy) {
@@ -104,11 +136,16 @@ function createDesktopScreenshot(dependencies) {
     captureAndCopy,
     captureDisplay,
     copyPngDataUrl,
+    copySavedScreenshot,
     registerF9Shortcut,
     savePngDataUrl,
     selectDisplayUnderCursor,
     unregisterF9Shortcut
   };
+}
+
+function shellQuotedPath(filePath) {
+  return `'${String(filePath).replace(/'/g, `'\\''`)}'`;
 }
 
 function assertPngDataUrl(dataUrl) {
@@ -130,8 +167,8 @@ function pngBuffer(dataUrl) {
 }
 
 function timestampedPngName(date) {
-  const stamp = date.toISOString().replace(/\.\d{3}Z$/, "Z").replace(/[:T]/g, "-");
+  const stamp = date.toISOString().replace(/[.:T]/g, "-");
   return `Vibyra-Screenshot-${stamp}.png`;
 }
 
-module.exports = { createDesktopScreenshot, timestampedPngName };
+module.exports = { createDesktopScreenshot, shellQuotedPath, timestampedPngName };

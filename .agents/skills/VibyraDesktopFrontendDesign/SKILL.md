@@ -1,5 +1,5 @@
 ---
-name: VibyraDesktopFrontendDesign
+name: vibyra-desktop-frontend-design
 description: Apply Vibyra desktop app frontend design rules. Use when changing, reviewing, or proposing UI for the Vibyra desktop shell, especially the welcome/auth screen, top bar, sidebar, dashboard, chat surface, light/dark theme switching, modals, terminal surfaces, responsive layout, Vibyra logo, profile/avatar, phone connection indicators, recent chats, or desktop visual polish.
 metadata:
   short-description: Vibyra desktop frontend design rules
@@ -37,6 +37,20 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
 - Use the restrained mobile palette: `#07070A`, `#12121A`, `#160D2A`, `#6D3BFF`, `#8B5CFF`.
 - Keep card radius modest, usually `8px` or less unless the existing shell pattern says otherwise.
 - Avoid glow-heavy, marketing-heavy, or decorative dashboard styling.
+- Keep the saved screenshot tray as a quiet bottom-left vertical stack. The
+  newest capture stays nearest the bottom, older captures rise above it, and
+  each image card owns only its Copy and dismiss controls. Never lay captures
+  out side by side or add status copy, filenames, or container chrome. A
+  saved card exists only for the current renderer session; renderer reloads and
+  app restarts begin with an empty tray without deleting saved PNGs. Make the
+  thumbnail itself a native draggable path source; keep click-to-reveal and use
+  a grab cursor instead of adding another visible button. The browser drag
+  payload contains the shell-safe quoted absolute path. Vibyra Chat appends it
+  to the composer, while terminals insert it through xterm paste without
+  submitting. Ordinary external image drops may still stage bounded image data
+  for the next chat message. Put screenshot-folder selection in Settings >
+  Preferences as one quiet path row with a native folder picker and expose the
+  default-folder reset only while a custom folder is active.
 - When a sidebar has a strong secondary palette worth preserving, keep its
   canvas and navigation semantic/neutral and limit that palette to roughly
   10% of the surface through a faint atmosphere, edge, avatar, or contextual
@@ -86,13 +100,22 @@ Judge every screen the way a TikTok viewer judges a clip: instantly, without exp
 - Treat `src/assets/vibyra.png` as the canonical shared UI brand mark used by
   mobile and desktop. Never replace it to satisfy App Store or Play Store icon
   requirements; create a separate opaque square store-icon asset instead.
-- The desktop auth session is visual-only local shell state stored in `localStorage["vibyra.desktop.auth"]`; do not imply real billing/account balance unless a desktop account API exists.
+- Electron OS branding must display only `Vibyra` and use
+  `desktop/vibyra-login-logo.png`, a transparent square export of the exact V
+  from `src/assets/vibyra.png`. Never substitute a generated, redrawn, full
+  wordmark, tiled, or opaque-background icon. On Linux keep
+  `app.setDesktopName("vibyra.desktop")`, `WM_CLASS=vibyra`, and the
+  `vibyra-login-logo` hicolor icon key aligned.
+- Desktop auth is a real backend account session mirrored in `localStorage["vibyra.desktop.auth"]`. Email uses the local `/desktop/auth/login|signup` proxy; Google and Apple use `/desktop/auth/{provider}/start`, the system browser, and one-time `/status/{flowId}` polling before `/desktop/session` verifies the returned Vibyra bearer token.
+- Never replace social auth with a fake success or email-only warning. Provider secrets and authorization-code exchange stay in the backend; the renderer receives only the provider authorization URL and the final one-time Vibyra session result.
+- Keep social-auth progress and errors in the always-visible provider-button area. Do not route Google/Apple failures through the email form's error element because that form is collapsed by default and makes clicks appear inert.
 - Keep the same first-page feature labels as mobile: Beautiful, Fast, Code.
 - Hide the feature strip while the email form is expanded.
 - Keep the Vibyra logo visible and unclipped: use `object-fit: contain`, avoid negative offsets, and avoid hidden overflow around the logo.
 - Provider buttons must stay on one line: `Continue with Google`, `Continue with Apple`, `Continue with email`.
 - Use real provider marks/SVGs, not placeholder letters.
 - Do not add quizzes, onboarding flows, or connect pages. After login, go straight to Home through the compatibility `dashboard` route key.
+- A newly created account's first authenticated desktop launch says `Welcome to Vibyra, <first name>.`; later launches and ordinary logins say `Welcome back, <first name>.`. Drive this from backend `isNewUser` and a current-renderer `sessionStorage` flag, not from permanent local account state or a timestamp guess.
 - The account modal owns session controls; `Log out` should clear the local desktop session and return to the auth screen.
 
 ## Top Bar
@@ -105,7 +128,26 @@ Keep it extremely simple.
 - Do not show `Desktop session`, plan text, email text, or a boxed account chip in the top bar.
 - Controls should be unboxed by default; use hover feedback only.
 
+## Dropdown Controls
+
+- Never ship browser-native `select`, `option`, `optgroup`, or `datalist`
+  controls in the desktop renderer. Use
+  `desktop/assets/app.custom-select.js` and
+  `desktop/assets/app.custom-select.css`.
+- Preserve existing feature contracts through the custom dropdown's hidden
+  value input and bubbling `change` event. Bind with `bindCustomSelects()` after
+  rendering and patch dynamic choices with `updateCustomSelectOptions()` so
+  the once-per-second shell refresh does not close an unchanged open menu.
+- Keep button/listbox semantics, selected-option state, arrow/Home/End/Escape
+  keyboard support, outside-click dismissal, and reduced-motion behavior.
+- Run `node --test desktop/assets/app.custom-select.test.mjs`; its production
+  source gate must remain clean before claiming every dropdown is custom.
+
 ## Terminal Live Preview
+
+Use `vibyra-preview-diagnostics` for functional Preview failures involving
+project detection, startup, target routing, proxying, WebView state, or
+shutdown. Keep this section focused on presentation and interaction design.
 
 - Keep Live Preview in the same resizable right workspace as Editor, AI, and
   Memory. Use one compact Editor / Preview / AI / Memory switcher
@@ -135,6 +177,9 @@ Keep it extremely simple.
   compact per-app Starting/Running state and reuse one contextual Run, View, or
   Stop action instead of adding preview tabs, duplicate frames, or a services
   dashboard. Every new process still requires explicit approval.
+- Scope async Preview start, activate, and stop results to the request, project,
+  and target that initiated them. Switching project, app, or custom URL must
+  invalidate stale responses so they cannot replace the user's current frame.
 - Persist Preview device state per project target. Switching between running
   apps must restore that app's preset, orientation, zoom, and custom dimensions
   before displaying it, so a mobile target can remain on an iPhone while a
@@ -152,12 +197,27 @@ Keep it extremely simple.
 - Keep zoom out, fit percentage, and zoom in as one compact group in the
   Preview toolbar. The canvas should contain only the preview frame and its
   in-frame loading state.
+- For local Preview element editing, right-click should create one focused
+  selection state: a thin accent outline inside the frame, a small component
+  and source label, and one compact AI composer clamped near the selection.
+  Do not add a permanent inspector sidebar, property grid, DOM tree, or second
+  chat panel. Escape clears the selection, Shift+right-click preserves the
+  app/browser context menu, and ambiguous source matches must ask the user to
+  choose a file instead of presenting a guess as certain.
 - Keep the workspace resizable on normal desktop widths while preserving at
   least 480px for the terminal. At narrow widths, overlay it from the right
   instead of compressing the terminal into an unusable column.
 
 ## Terminal Surfaces
 
+- Treat light mode as a complete terminal product, not a shell recolor. Setup,
+  PTY controls, menus, Editor/Monaco, Preview startup output, AI/Voice, Memory,
+  and fullscreen Memory must resolve through semantic `--terminal-*` tokens.
+  Keep `app.terminals-theme-audit.css` and
+  `app.terminals-workspace-theme-audit.css` after every terminal feature sheet
+  so later hardcoded dark fallbacks cannot win the cascade. Embedded xterm and
+  Monaco themes must update in place for explicit appearance changes and for
+  OS changes while appearance is `auto`; do not require a terminal remount.
 - Treat the right workspace switcher, editor file tabs, and active-file toolbar
   as one connected header system. Use one neutral chrome family, one divider
   color, and only a thin accent indicator for active modes/files; avoid stacked
@@ -190,17 +250,24 @@ Keep it extremely simple.
   Present it as a quiet horizontal stepper with evenly centered nodes, labels
   beneath each node, one continuous connector, and a restrained active ring.
   Hide the entire progress rail after launch so the terminal dock keeps its
-  compact navigation. Setup combines counts
-  `1–12`, a live preview
-  driven by the same grid rules as the real terminal stage, project, model,
-  workspace safety, reasoning, and token source. Keep reasoning effort visible
+  compact navigation. Solo setup configures one terminal. Team setup asks for
+  one outcome-focused goal and defaults roles to `Automatic`, with optional
+  `2`, `3`, or `4` under Advanced; it never exposes the old arbitrary `1–12`
+  terminal count or a decorative grid preview. Keep project, model, workspace
+  safety, reasoning, and token source concise. Keep reasoning effort visible
   in the main form, while token/account settings live in a collapsed
   `Advanced options` disclosure. Explain its two payment choices without
   provider implementation details: Vibyra tokens use Vibyra credits; My AI
-  accounts use the user's connected account and its billing. Do not show an
-  initial-goal textarea, repeat
-  the selected mode, or add a second setup title. The completed `Workspace`
-  step is the Back control. Team retains Safe
+  accounts use the user's connected account and its billing. Use an accessible
+  button disclosure that animates its panel height and opacity in place,
+  preserves open state across setup panel patches, and disables motion for
+  `prefers-reduced-motion`; do not use an instant native-details jump. Do not
+  repeat the selected mode or add a second setup title. Team planning remains
+  in the setup panel with stable `Planning team...`, concise plan-preview, and
+  blocker states; it must not open a separate dashboard or remount the panel.
+  Setup option patches must not replay panel or preview entrance
+  animations; reserve those animations for real Workspace/Setup step changes.
+  The completed `Workspace` step is the Back control. Team retains Safe
   mode as the default. Setup must not create filesystem projects or launch
   sessions immediately, and it disables at the global terminal limit. Within
   setup, the project selector must use the same neutral field surface, border,
@@ -208,6 +275,19 @@ Keep it extremely simple.
 - Keep PTY/xterm terminals edge-to-edge in both focus and grid layouts. Do not
   add wrapper padding around `.terminal-xterm`; native provider TUIs own their
   internal spacing.
+- Treat Auto model selection as a temporary full-terminal presentation state.
+  Center the complete V logo, title, status, and signal as one balanced block,
+  use the full 3D mark when normal pane height allows it, and keep motion inside
+  the ANSI artwork. While `autoDeciding` is true, the renderer must clear PTY
+  bottom transforms and hold xterm at the top so its centered frame is not
+  forced to the pane bottom. At provider handoff, replace the authoritative
+  transcript with a cleared screen and publish the provider identity before
+  launching its process; never let the old V frame enter normal bottom
+  scrolling. Launch the provider behind the animation, keep the animation for
+  at least 1.44 seconds, and buffer initial provider bytes until that minimum
+  has elapsed. Slow providers keep the animation until their first real output;
+  then clear and flush in one handoff. Routing failures replace the frame with
+  the normal Auto prompt.
 - Give each newly launched terminal a short common human name and persist it as
   the authoritative terminal title. Pane headers show that name plus the agent
   identity, followed by quiet full-screen, details, and close controls.
@@ -292,10 +372,16 @@ Keep it extremely simple.
   owns the current fullscreen renderer.
 - The graph's virtual layout must follow the rendered canvas aspect ratio. A
   fixed landscape viewBox in the tall right sidebar leaves a large visual gap
-  even when the DOM is technically full-height. In the compact portrait
-  sidebar, keep the entire Graph section top-aligned at 60% of the available
-  content height so it remains readable instead of vertically stretched. Notes
-  and fullscreen Graph remain full-height.
+  even when the DOM is technically full-height. The compact Graph surface must
+  fill the sidebar so its background reaches the bottom, while the actual brain
+  remains top-aligned in its original 60% viewport. Do not stretch, squash, or
+  progressively expand compact node bounds as note count grows. Notes and
+  fullscreen Graph remain full-height.
+- Large Memory graphs must not recompute force positions on ordinary companion
+  rerenders. Cache topology by vault revision and positions by viewport size,
+  invalidate on vault load/save/delete, batch base SVG edges into a few paths,
+  and use delegated graph events with one dynamic neighborhood highlight path.
+  Keep offscreen explorer rows contained with `content-visibility`.
 
 ## Pair Phone Modal
 
@@ -440,17 +526,38 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
 - The desktop paperclip menu should be a simple vertical list, not a top action grid. Use the same row shape for every option: icon, short label, short description. Include Photos, Files, Create image, Deep research, Agent web search, and Analyze files. Do not include Camera on desktop. Keep local AI skills such as Plan/Debug/Review in `/` slash suggestions, not in the paperclip menu.
 - Do not make desktop chat start `/agents/start` directly unless there is an intentional desktop-authenticated agent contract; that route is phone-authenticated.
 - After desktop auth, default to Home via the compatibility route key `vibyra.desktop.page = "dashboard"` unless a stored page intentionally overrides it.
-- Home must use real desktop state only. Phone/project/activity data comes from `/desktop/state`; terminal rows come from the reconciled frontend `terminals` store because PTY sessions are not part of `/desktop/state`.
+- Home must use real desktop state only. Phone/project data comes from
+  `/desktop/state`; terminal rows come from the reconciled frontend `terminals`
+  store because PTY sessions are not part of `/desktop/state`.
 - Namespace the current Home DOM and late stylesheet with `desktop-home-*`.
   Legacy chunks still contain `.home-page`, `.home-side`, and related rules;
   reusing those selectors mixes two layout systems and misaligns Home sections.
-- Keep Home aligned to the approved desktop reference: a compact greeting and
-  New chat action, four equal summary cards, then a wide primary column for
-  Terminals and Recent activity beside a narrower Phone and Recent projects
-  column. The fourth summary is real recent activity, never fake usage.
-- Home cards may use the existing Vibyra panel, border, and modest-radius tokens
-  to create that structure. Preserve the current palette and avoid added glow,
-  decorative metrics, or a separate dashboard color scheme.
+- Keep Home prompt-led and editorial, not dashboard-led. Use a borderless hero
+  with one identity row, one large headline, one supporting sentence, and one
+  full-width high-contrast command that opens Chat. Do not wrap the hero in a
+  card or add a detached secondary action.
+- Put Phone, AI workspaces, and Local projects in one inline equal-width context
+  row directly below the command. Separate items with hairlines instead of an
+  enclosing status card. Use real state and make every item actionable; do not
+  restore summary cards or a large standalone phone card.
+- Present AI workspaces and Recent projects as one `Recent work` section with
+  two equal columns and one shared divider. Do not wrap it in an outer
+  workbench card, nest row cards, or add Recent activity merely to fill space.
+- Scope Home to a warm neutral charcoal/stone palette through
+  `body.desktop-home-active`; avoid blue or navy casts and avoid stark white
+  focal surfaces. Keep the Vibyra mark as the only ordinary saturated brand
+  color and reserve green/amber/red for truthful state. The selected Home
+  navigation item is neutral rather than purple.
+- Keep the composition ordered with whitespace and hairlines. Do not add grid
+  textures, watermark logos, floating badges, gradients, decorative metrics,
+  or multiple competing bordered surfaces.
+- Home styling is split across `app.home.css`, `app.home-launch.css`,
+  `app.home-content.css`, `app.home-rows.css`, and
+  `app.home-responsive.css`, all loaded late from `desktop/app.html`. Toggle
+  the route owner class in the shell instead of using route-wide `body:has`.
+  Keep each stylesheet focused and under 200 lines. Do not transition the
+  command surface background across theme changes; animate only movement and
+  shadow so light/dark switching cannot retain the prior theme color.
 - Home terminal status must distinguish an open PTY from active AI work. Show
   `Working` only for startup, pending state, or authoritative provider-busy
   state; an otherwise open shell remains `Ready`. Never use an elapsed-output
@@ -609,6 +716,18 @@ user explicitly requests Codex's visual design.
   Show only a transient bottom-center status pill with the target terminal and
   clear starting, red listening, transcribing, sent, and error states. Do not
   add microphone buttons to every terminal or reuse the Talk transcript.
+- Persist every submitted spoken or typed prompt verbatim to the local
+  Git-ignored Obsidian document `Vibyra/Prompt Transcripts.md`, with timestamp,
+  surface, terminal, and project context. Cover AI Talk, F8 terminal dictation,
+  Desktop Chat, terminal AI Chat, the legacy terminal composer, and native PTY
+  submissions. Give every prompt a stable turn/session ID, then append its
+  assistant response, final action result, action payload, model, status, and
+  duration as a linked outcome event. Never store raw audio or base64. Recorder
+  paths log in the bridge after transcription; browser and typed paths log
+  through `/desktop/prompt/transcript` before sending or executing the prompt.
+  Treat prompt logging failure as a failed turn so prompts are never sent
+  without their required local record. F8 delivery must disable the second PTY
+  prompt log and carry the original turn into PTY output tracking.
 - Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
 - Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
 - Keep the terminal creation button, tabs, and options button together as one
@@ -645,9 +764,11 @@ user explicitly requests Codex's visual design.
   Gemini built-ins. If an API wrapper is restored through older state, label it
   as Vibyra/OpenRouter and never render official CLI branding or slash-command
   expectations.
-- Show provider setup state directly on each model row: `Download` before an
-  install, a visible rotating ring plus `Downloading` during the bounded
-  request, then no installation badge once the CLI is available. Never expose
+- Show provider setup state directly on each model row using icons only: a
+  download icon before installation and a visible rotating ring during the
+  bounded request, then no installation or runtime badge once available. Keep
+  accessible labels and tooltips, but never show `Native CLI`, `Vibyra Agent`,
+  `Download`, or `Downloading` as visible row text. Never expose
   internal adapter terminology or represent download work with the terminal
   canvas loading wheel. Keep unavailable rows from creating a local terminal.
 - Auto is immediately launchable with Vibyra tokens and does not require a
@@ -932,6 +1053,21 @@ user explicitly requests Codex's visual design.
   transient; write or copy the PNG only after explicit Save or Copy.
 - Default to Crop and keep Box, Pen, undo, reset, Copy, and Save in one quiet
   toolbar/footer system. Show Apply crop only after a valid crop selection.
+- Save auto-applies a pending crop, writes to the app-owned screenshot library,
+  closes both editor layers, and shows the newest capture in a persistent
+  bottom-left tray on every desktop screen. The tray may reveal the file or be
+  dismissed; it must not be tied to `#content` rendering.
+- Keep an explicit Apply changes action for committing pending edits without
+  leaving the editor. The top-left X and Escape must always hide both the
+  editor and its fixed host so the shell becomes usable immediately.
+- Keep exactly one editor session active. Ignore repeated F9 while capture is
+  pending or the editor is open. Make X and Escape idempotent, and invalidate
+  any in-flight image decode on close so rapid capture/close input cannot
+  restore the overlay or leave shell scrolling locked.
+- In the frameless Electron shell, the screenshot host, toolbar controls, and
+  canvas must explicitly use `-webkit-app-region: no-drag` and remain above
+  every app menu/overlay. Validate top-row controls with real pointer clicks;
+  keyboard-only testing will not catch Electron drag-region interception.
 - Keep annotation coordinates at native image resolution while fitting the
   canvas responsively. Bound full-resolution undo history to avoid 4K memory
   spikes.
@@ -948,6 +1084,16 @@ user explicitly requests Codex's visual design.
 - Desktop appearance is local profile preference state: `localStorage["vibyra.desktop.profilePreferences"].appearance` drives `body[data-desktop-theme]`. Do not add another theme store.
 - Keep `desktop/app.html` applying saved `data-desktop-theme` and `data-chat-font` before visible shell content renders, so launch does not flash the wrong theme.
 - Theme CSS must be late-loaded and token-based. Use `app.theme.css` for semantic tokens, `app.theme-shell.css` for shell/topbar/sidebar, `app.theme-chat.css` for chat/composer/menu states, `app.theme-surfaces*.css` for modals/profile/forms, `app.theme-terminals*.css` for terminal surfaces, and `app.theme-auth.css` for the always-dark logged-out welcome screen.
+- Keep `app.desktop-theme-audit.css` after Home, chat polish, screenshot,
+  billing, and Profile feature sheets. It owns compatibility surface aliases
+  and final screenshot/Profile overrides so late dark fallbacks cannot win.
+- A whole-desktop theme audit must render Home, Projects, Chat menus, account,
+  pairing, billing artwork, every Profile section, screenshot editor/tray, and
+  responsive chrome in explicit light and dark. Also emulate light OS
+  appearance while the preference is `auto`.
+- Full-screen screenshot editing must lock shell scrolling through
+  `body.screenshot-editing`. Its toolbar, stage, hint, footer, saved tray, and
+  notices must resolve through semantic screenshot or shared surface tokens.
 - Home CSS loads late as `app.home.css`, but it must stay scoped to `.home-*` selectors and must not own global shell chrome. Do not use route-wide `body:has(...)` overrides for `.app`, `.rail`, `.topbar`, navigation, or account/phone controls.
 - Profile, account, token, pair, and shared form controls must resolve through late `--surface-*` tokens. Do not leave white-alpha dark literals on modal inputs, selects, textareas, session menus, toggles, appearance cards, delete panels, or profile dividers.
 - The billing plan picker keeps its image-led layout, but `app.billing-plans.css` must route colors through `--billing-*` variables defined in `app.billing-plans.theme.css`; verify `#token-modal .modal--billing-revamp`, plan rows, segmented controls, hero copy, chips, and secondary buttons in light and dark.

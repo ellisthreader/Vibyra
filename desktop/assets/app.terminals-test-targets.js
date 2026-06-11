@@ -8,6 +8,7 @@ function clearTerminalTestTargets() {
 
 function selectTerminalTestTarget(targetId) {
   if (terminalTestLoading || terminalTestTargetPendingId) return;
+  clearTerminalTestInspector();
   selectTerminalTestViewport(targetId);
   terminalTestLaunch = terminalTestSelectedTarget();
   terminalTestUrl = "";
@@ -18,12 +19,12 @@ function selectTerminalTestTarget(targetId) {
 
 function refreshTerminalTestTargetControl(toolbar) {
   const control = toolbar.querySelector("[data-terminal-test-app-control]");
-  const select = toolbar.querySelector("[data-terminal-test-target]");
+  const input = toolbar.querySelector("[data-terminal-test-target]");
   control.hidden = terminalTestTargets.length < 2;
-  select.innerHTML = terminalTestTargets.map((target) => (
-    `<option value="${escapeAttribute(target.id)}">${escapeHtml(target.name)} · ${escapeHtml(target.framework)}${terminalTestServiceRunning(terminalTestService(target.id)) ? " · Running" : target.available ? "" : " · unavailable"}</option>`
-  )).join("");
-  select.value = terminalTestTargetId;
+  updateCustomSelectOptions(input, terminalTestTargets.map((target) => ({
+    value: target.id,
+    label: `${target.name} · ${target.framework}${terminalTestServiceRunning(terminalTestService(target.id)) ? " · Running" : target.available ? "" : " · unavailable"}`
+  })), terminalTestTargetId);
 }
 
 function refreshTerminalTestTargets(empty) {

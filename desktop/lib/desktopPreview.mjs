@@ -7,12 +7,10 @@ import { recommendPreviewViewport } from "./previewRecommendation.mjs";
 import { previewServerProxyUrl } from "./previewUrls.mjs";
 import { detectPreviewTargets, resolvePreviewTarget } from "./previewTargets.mjs";
 import { appendPreviewStartup, beginPreviewStartup, finishPreviewStartup, previewStartupFeed } from "./previewStartupFeed.mjs";
-import { stopTrackedPreviewServer } from "./previewServerProcesses.mjs";
+import { cancelPreviewServerStart, stopTrackedPreviewServer } from "./previewServerProcesses.mjs";
 import { activatePreviewService, previewService } from "./previewServices.mjs";
 import { previewRuntimePayload } from "./previewServicePayload.mjs";
 import { appState, event, pushEvents } from "./state.mjs";
-
-const pendingStarts = new Map();
 
 export async function openDesktopPreview(body, requestHost) {
   const project = await desktopPreviewProject(body?.projectId);
@@ -95,6 +93,7 @@ export async function stopDesktopPreviewServer(body) {
   const project = await desktopPreviewProject(body?.projectId);
   const targetId = requiredTargetId(body?.targetId);
   if (!previewService(project.id, targetId)) throw previewServiceError("That preview target is not running.", 404);
+  cancelPreviewServerStart(project.id, targetId);
   stopTrackedPreviewServer(project.id, targetId);
   const activeTargetId = appState.previewServers[project.id]?.targetId || "";
   const credential = issuePreviewCapability(project.id, { targetId: activeTargetId });
@@ -132,31 +131,22 @@ async function desktopPreviewProject(value) {
 }
 
 async function startTargetService(project, target, requestHost) {
-  const key = `${project.id}\n${target.id}`;
-  if (!pendingStarts.has(key)) {
-    const pending = (async () => {
-      beginPreviewStartup(project.id, target);
-      try {
-        const result = await startProjectDevServer(project, requestHost, {
-          activate: false,
-          appDirectory: target.appDirectory,
-          onOutput: (chunk) => appendPreviewStartup(project.id, target.id, chunk),
-          reuseExisting: true,
-          targetId: target.id,
-          timeoutMs: 80000
-        });
-        finishPreviewStartup(project.id, target.id, "live", result.started ? "Preview is live." : "Using the verified running preview.");
-        return result;
-      } catch (error) {
-        finishPreviewStartup(project.id, target.id, "error", error instanceof Error ? error.message : "Preview failed to start.");
-        throw error;
-      } finally {
-        pendingStarts.delete(key);
-      }
-    })();
-    pendingStarts.set(key, pending);
+  beginPreviewStartup(project.id, target);
+  try {
+    const result = await startProjectDevServer(project, requestHost, {
+      activate: false,
+      appDirectory: target.appDirectory,
+      onOutput: (chunk) => appendPreviewStartup(project.id, target.id, chunk),
+      reuseExisting: true,
+      targetId: target.id,
+      timeoutMs: 80000
+    });
+    finishPreviewStartup(project.id, target.id, "live", result.started ? "Preview is live." : "Using the verified running preview.");
+    return result;
+  } catch (error) {
+    finishPreviewStartup(project.id, target.id, "error", error instanceof Error ? error.message : "Preview failed to start.");
+    throw error;
   }
-  return pendingStarts.get(key);
 }
 
 async function previewServiceResponse(project, credential, message) {

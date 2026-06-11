@@ -8,10 +8,8 @@
   position: relative;
 }
 .terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) > .terminal-memory-graph {
-  align-self: start;
-  height: 60%;
-}
-.terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) > .terminal-memory-graph svg {
+  align-self: stretch;
+  height: 100%;
   min-height: 0;
 }
 .terminal-memory-graph-meta {
@@ -84,6 +82,15 @@
   overflow: hidden;
   position: relative;
   user-select: none;
+}
+.terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) .terminal-memory-graph-canvas {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--terminal-muted) 5.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--terminal-muted) 5.5%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.terminal-memory-workspace:not(.terminal-memory-workspace--fullscreen) .terminal-memory-graph-grid {
+  display: none;
 }
 .terminal-memory-graph-canvas.dragging {
   cursor: grabbing;

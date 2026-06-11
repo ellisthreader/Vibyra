@@ -5,7 +5,7 @@ import {
 import { renderAutoDecidingFrame } from "./aiTerminalVibyraLogo.mjs";
 
 export const AUTO_DECIDING_FRAME_INTERVAL_MS = 240;
-export const AUTO_DECIDING_MINIMUM_MS = 960;
+export const AUTO_DECIDING_MINIMUM_MS = 1_440;
 
 export function autoTerminalWaitingOutput({ cwd, cols, error = "" }) {
   const safeError = String(error || "")
@@ -108,6 +108,10 @@ export function autoTerminalDecidingUpdate({ cols, rows, phase = 0 } = {}) {
 
 export function autoTerminalDecidingStop() {
   return "\x1b[0m\x1b[?25h";
+}
+
+export function autoTerminalDecidingHandoff() {
+  return "\x1b[0m\x1b[?25h\x1b[3J\x1b[2J\x1b[H";
 }
 
 function paintFrame(lines) {

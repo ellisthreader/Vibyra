@@ -21,6 +21,7 @@ test("runtime exposes the terminal action protocol and coalesces stale renderer 
 
   assert.equal(first.terminalActionProtocolVersion, TERMINAL_ACTION_PROTOCOL_VERSION);
   assert.equal(first.aiTerminalLaunchContractVersion, AI_TERMINAL_LAUNCH_CONTRACT_VERSION);
+  assert.equal(first.terminalTeamRoleContractVersion, 2);
   assert.ok(first.rendererReloadRequestId);
   assert.equal(second.rendererReloadRequestId, first.rendererReloadRequestId);
   assert.equal(
@@ -42,7 +43,7 @@ test("renderer blocks actions until the bridge protocol matches", () => {
   assert.match(bootSource, /No terminal action ran/);
   assert.match(bootSource, /terminalActionProtocolReady = true/);
   assert.match(bootSource, /\/desktop\/runtime\/renderer-mismatch/);
-  assert.match(htmlSource, /app\.boot\.js\?v=terminal-action-protocol-20260609-12/);
+  assert.match(htmlSource, /app\.boot\.js\?v=terminal-action-protocol-20260611-16/);
 });
 
 test("Electron consumes each bridge reload request once and bypasses cache", () => {

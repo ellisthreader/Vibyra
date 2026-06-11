@@ -10,8 +10,10 @@
   border-top: 1px solid rgba(151, 161, 190, 0.1);
   padding-top: 4px;
 }
-.terminal-setup-advanced summary {
+.terminal-setup-advanced-toggle {
   align-items: center;
+  background: transparent;
+  border: 0;
   color: #aaa3b8;
   cursor: pointer;
   display: grid;
@@ -19,26 +21,44 @@
   font-weight: 680;
   gap: 8px;
   grid-template-columns: 16px minmax(0, 1fr) 14px;
-  list-style: none;
   min-height: 36px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
 }
-.terminal-setup-advanced summary::-webkit-details-marker {
-  display: none;
-}
-.terminal-setup-advanced summary svg {
+.terminal-setup-advanced-toggle svg {
   height: 14px;
   width: 14px;
 }
-.terminal-setup-advanced summary svg:last-child {
-  transition: transform 120ms ease;
+.terminal-setup-advanced-toggle svg:last-child {
+  transition: transform 180ms ease;
 }
-.terminal-setup-advanced[open] summary svg:last-child {
+.terminal-setup-advanced.open .terminal-setup-advanced-toggle svg:last-child {
   transform: rotate(90deg);
 }
-.terminal-setup-advanced > div {
+.terminal-setup-advanced-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  padding-top: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows 220ms ease,
+    opacity 160ms ease,
+    padding-top 220ms ease;
+}
+.terminal-setup-advanced-panel > div {
   display: grid;
   gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+.terminal-setup-advanced.open .terminal-setup-advanced-panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
   padding-top: 10px;
+  pointer-events: auto;
 }
 .terminal-start-button {
   justify-self: stretch;
@@ -102,5 +122,11 @@
   }
   .grid-mode .terminal-stage {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal-setup-advanced-toggle svg:last-child,
+  .terminal-setup-advanced-panel {
+    transition: none;
   }
 }

@@ -1,11 +1,41 @@
-async function sendTerminal(id) {
+async function sendTerminal(id, options = {}) {
   const terminal = findTerminal(id);
   if (!terminal || terminal.pending) return;
   const text = terminal.draft.trim();
   if (!text) return;
+  const transcriptOptions = {
+    model: terminal.model,
+    sessionId: `terminal-chat:${terminal.id}`,
+    terminal
+  };
+  const transcriptSource = options.transcriptSource || "terminal-chat";
+  let transcriptTurn = options.transcriptTurn || null;
+  if (options.logPrompt !== false) {
+    try {
+      transcriptTurn = await persistDesktopPromptTranscript(text, transcriptSource, transcriptOptions);
+    } catch (error) {
+      terminal.notice = error instanceof Error ? error.message : "Prompt transcript could not be saved.";
+      terminal.updatedAt = Date.now();
+      saveTerminals();
+      render();
+      return;
+    }
+  }
   const profile = terminalProviderProfile(terminal);
+  const previousMessageCount = terminal.messages.length;
   const parsed = parseTerminalInput(terminal, text, profile);
-  if (parsed.handled) return;
+  if (parsed.handled) {
+    const localResult = terminal.messages
+      .slice(previousMessageCount)
+      .map((message) => String(message?.text || ""))
+      .filter(Boolean)
+      .join("\n") || "Terminal command completed.";
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      result: localResult,
+      status: "completed"
+    }, transcriptSource, transcriptOptions);
+    return;
+  }
   const model = modelByKey(terminal.model);
   if (typeof modelLocked === "function" && modelLocked(model) && typeof firstUnlockedModel === "function") terminal.model = firstUnlockedModel();
   const history = terminal.messages.filter((message) => ["user", "assistant"].includes(message.role)).slice(-8).map((message) => ({ role: message.role, text: message.text }));
@@ -19,14 +49,27 @@ async function sendTerminal(id) {
   forceTerminalRender = true;
   saveTerminals();
   render();
+  let transcriptDetails = { status: "failed" };
   try {
     const result = await requestDesktopChat({ history, model: terminal.model, mode: "chat", profileContext: typeof desktopProfileContext === "function" ? desktopProfileContext() : null, projectId: terminal.projectId, prompt: parsed.backendPrompt || text, reasoningEffort: terminal.effort, skill: "", tool: "", attachments: [] });
     pending.text = result.reply || "I received an empty response from Vibyra AI.";
+    transcriptDetails = {
+      actions: result.actions,
+      response: result.reply || "",
+      result: pending.text,
+      status: "completed"
+    };
     if (result.title && /^Terminal \d+$/i.test(terminal.title)) terminal.title = String(result.title).slice(0, 72);
   } catch (error) {
     pending.text = error instanceof Error ? error.message : "Vibyra AI terminal failed. Try again.";
+    transcriptDetails = { error: pending.text, status: "failed" };
     if (isUsageLimit(error)) terminal.notice = pending.text;
   } finally {
+    try {
+      await persistDesktopPromptOutcome(transcriptTurn, transcriptDetails, transcriptSource, transcriptOptions);
+    } catch (error) {
+      terminal.notice = error instanceof Error ? error.message : "Prompt outcome could not be saved.";
+    }
     terminal.pending = false;
     terminal.updatedAt = Date.now();
     forceTerminalRender = true;

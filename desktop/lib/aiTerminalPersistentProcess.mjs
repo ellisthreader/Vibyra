@@ -11,8 +11,9 @@ const moduleDir = dirname(fileURLToPath(import.meta.url));
 const workerPath = join(moduleDir, "aiTerminalWorker.mjs");
 const sessionRoot = process.env.VIBYRA_TERMINAL_SESSION_ROOT
   || join(homedir(), ".vibyra-agent", "terminal-sessions");
-export const AI_TERMINAL_RUNTIME_VERSION = 13;
+export const AI_TERMINAL_RUNTIME_VERSION = 17;
 export const AI_TERMINAL_GEMINI_PROFILE_VERSION = 1;
+const TERMINAL_STARTUP_TIMEOUT_MS = 5_000;
 
 export function launchPersistentAiTerminalProcess(config, handlers = {}) {
   const paths = persistentTerminalPaths(config.terminalId);
@@ -28,6 +29,26 @@ export function launchPersistentAiTerminalProcess(config, handlers = {}) {
   closeSync(logFd);
   child.unref();
   return connectPersistentAiTerminalProcess(config.terminalId, handlers, { waitForWorker: true });
+}
+
+export async function waitForPersistentAiTerminalStartup(
+  terminalId,
+  timeoutMs = TERMINAL_STARTUP_TIMEOUT_MS
+) {
+  const paths = persistentTerminalPaths(terminalId);
+  const deadline = Date.now() + Math.max(250, Number(timeoutMs) || TERMINAL_STARTUP_TIMEOUT_MS);
+  while (Date.now() < deadline) {
+    const state = readJson(paths.state);
+    if (state?.status === "running" && Number(state.childPid) > 0) return state;
+    if (state?.status === "exited") {
+      throw persistentStartupError(readTail(paths.output, 12_000), state);
+    }
+    await delay(25);
+  }
+  const error = new Error("The terminal worker did not start its AI provider in time.");
+  error.code = "terminal_worker_startup_timeout";
+  error.status = 504;
+  throw error;
 }
 
 function isolatedLaunch(command, args) {
@@ -256,6 +277,9 @@ function serializableConfig(config) {
     autoRouting: config.autoRouting,
     reasoningEffort: config.reasoningEffort,
     permissionMode: config.permissionMode,
+    sandboxMode: config.sandboxMode,
+    roleInstructions: config.roleInstructions,
+    team: config.team,
     tokenMode: config.tokenMode,
     projectId: config.projectId,
     workspaceMode: config.workspaceMode,
@@ -277,8 +301,6 @@ function serializableConfig(config) {
 export function persistentAiTerminalConfigIsCurrent(config = {}) {
   if (config.agent === "shell") return true;
   if (Number(config.runtimeVersion) !== AI_TERMINAL_RUNTIME_VERSION) return false;
-  const managedCreditSession = config.tokenMode === "vibyra" || config.agent === "vibyra";
-  if (!managedCreditSession) return true;
   if (
     config.launchPlan?.runtimeId === "gemini"
     && Number(config.geminiProfileVersion) !== AI_TERMINAL_GEMINI_PROFILE_VERSION
@@ -292,6 +314,24 @@ function readJson(path) {
 
 function readTail(path, limit) {
   try { return readFileSync(path, "utf8").slice(-limit); } catch { return ""; }
+}
+
+function persistentStartupError(output, state) {
+  const text = String(output || "");
+  const contractMismatch = /mismatched billing or model metadata|stale launch contract/i.test(text);
+  const error = new Error(contractMismatch
+    ? "Vibyra Desktop changed while this terminal was starting. Reopen the terminal after the desktop bridge refreshes."
+    : "The AI provider could not start.");
+  error.code = contractMismatch
+    ? "terminal_launch_contract_mismatch"
+    : "terminal_provider_startup_failed";
+  error.status = 409;
+  error.exitCode = state?.exitCode ?? null;
+  return error;
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function processIsAlive(pid) {

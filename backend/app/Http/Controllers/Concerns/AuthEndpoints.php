@@ -6,12 +6,13 @@ use App\Models\User;
 use App\Services\Auth\ProviderIdentityException;
 use App\Services\Auth\ProviderIdentityVerifier;
 use App\Services\Auth\ProviderChallengeService;
+use App\Services\Auth\ProviderAccountException;
+use App\Services\Auth\ProviderAccountService;
 use App\Services\LevelProgression;
 use App\Services\Referrals\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 trait AuthEndpoints
 {
@@ -73,7 +74,10 @@ trait AuthEndpoints
             // Account creation should remain usable when the mail provider is temporarily unavailable.
         }
 
-        return $this->json($this->sessionPayload($request, $user), 201);
+        return $this->json([
+            ...$this->sessionPayload($request, $user),
+            'isNewUser' => true,
+        ], 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -104,46 +108,16 @@ trait AuthEndpoints
             return $this->json(['ok' => false, 'error' => 'The provider could not verify this sign-in. Try again.'], 401);
         }
 
-        $providerId = $identity['subject'];
-        $user = User::where('provider', $provider)->where('provider_id', $providerId)->first();
-        if (! $user) {
-            $referralCode = $this->referralCodeFromRequest($request);
-            if ($referralCode && ! app(ReferralService::class)->referrerFor($referralCode)) {
-                return $this->json(['ok' => false, 'error' => 'That invite code was not found. Check it and try again.'], 422);
-            }
-
-            $email = $identity['email'];
-            if (! $email) {
-                return $this->json(['ok' => false, 'error' => 'The provider did not return a verified email address for this new account.'], 422);
-            }
-            $name = trim((string) $request->input('name', '')) ?: $identity['name'] ?: ucfirst($provider).' User';
-            if (User::where('email', $email)->exists()) {
-                return $this->json(['ok' => false, 'error' => 'An account already exists for that email. Log in with its original method.'], 409);
-            }
-
-            $this->moderation->assertLocalTextAllowed($name, 'auth.name');
-
-            $user = User::create([
-                'name' => $name,
-                'email' => $email,
-                'provider' => $provider,
-                'provider_id' => $providerId,
-                'password' => Str::random(48),
-                'plan' => 'free',
-                'plan_billing_cycle' => 'monthly',
-                'plan_renews_at' => now()->addMonth(),
-                'credits_balance' => (int) (config('billing.plans.free.monthly_credits') ?? 50),
-                'credits_used' => 0,
-                'onboarding_complete' => false,
-                'remembered_desktops' => [],
-                'app_state' => [],
-                'email_verified_at' => now(),
-            ]);
-            app(ReferralService::class)->registerSignup($user, $referralCode);
-            $user = $user->fresh() ?? $user;
+        try {
+            $account = app(ProviderAccountService::class)->resolveWithStatus($request, $provider, $identity);
+        } catch (ProviderAccountException $error) {
+            return $this->json(['ok' => false, 'error' => $error->getMessage()], $error->status);
         }
 
-        return $this->json($this->sessionPayload($request, $user));
+        return $this->json([
+            ...$this->sessionPayload($request, $account['user']),
+            'isNewUser' => $account['created'],
+        ]);
     }
 
     public function session(Request $request): JsonResponse

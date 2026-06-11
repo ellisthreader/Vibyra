@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { putAgentRun, removeAgentRun, updateAgentRun } from "./agentRunState.mjs";
 import { readOptionalText, safeProjectPath } from "./agentGeneratedFiles.mjs";
 import { resolvedPreviewUrl } from "./preview.mjs";
+import { pinResolvedPreviewToActiveTarget } from "./previewCredentialResolution.mjs";
 import {
   replacePreviewCapability,
   revokePreviewCapability
@@ -70,8 +71,13 @@ export async function applyAgentPlan(plan) {
   updateAgentRun(appState, runId, { progress: 82 });
 
   appState.selectedProjectId = project.id;
-  const credential = replacePreviewCapability(project.id, appState.latestPreviewCredential);
+  let credential = replacePreviewCapability(project.id, appState.latestPreviewCredential);
   appState.latestPreview = await previewPayloadForProject(project, plan.requestHost, credential);
+  if (appState.latestPreview.url) {
+    const pinned = pinResolvedPreviewToActiveTarget(project.id, appState.latestPreview.url, credential);
+    credential = pinned.credential;
+    appState.latestPreview.url = pinned.url;
+  }
   if (!appState.latestPreview.url) revokePreviewCapability(credential);
   appState.latestPreviewCredential = appState.latestPreview.url ? credential : null;
   const newEvents = [

@@ -1,0 +1,147 @@
+/* Theme ownership for terminal workspace modes rendered beside the PTY. */
+.terminal-editor-explorer > header span,
+.terminal-editor-folder summary,
+.terminal-editor-toolbar > div:first-child span,
+.terminal-editor-tab.active button,
+.terminal-editor-statusbar,
+.terminal-editor-empty strong {
+  color: var(--terminal-text);
+}
+
+.terminal-editor-explorer button,
+.terminal-editor-toolbar button,
+.terminal-editor-tab button,
+.terminal-editor-toolbar > div:first-child small,
+.terminal-editor-state,
+.terminal-editor-empty,
+.terminal-editor-files-empty {
+  color: var(--terminal-dim);
+}
+
+.terminal-editor-explorer button:hover,
+.terminal-editor-toolbar button:hover:not(:disabled) {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+
+.terminal-editor-tab {
+  border-right-color: var(--terminal-workspace-divider);
+}
+
+.terminal-editor-dirty {
+  background: var(--terminal-accent);
+}
+
+.terminal-editor-empty kbd,
+.terminal-editor-files-error button {
+  background: var(--terminal-elevated);
+  border-color: var(--terminal-border-strong);
+  color: var(--terminal-copy);
+}
+
+.terminal-editor-monaco .monaco-editor .scroll-decoration {
+  box-shadow: 0 6px 8px -8px var(--terminal-shadow);
+}
+
+.terminal-editor-monaco .monaco-editor .sticky-widget {
+  border-bottom-color: var(--terminal-workspace-divider);
+}
+
+.terminal-memory-workspace--fullscreen,
+.terminal-memory-main-pane {
+  background: var(--terminal-bg);
+  color: var(--terminal-copy);
+}
+
+.terminal-memory-appbar,
+.terminal-memory-tabs button,
+.terminal-memory-ribbon,
+.terminal-memory-vault-pane,
+.terminal-memory-links-pane {
+  background: var(--terminal-elevated);
+  border-color: var(--terminal-border);
+  color: var(--terminal-muted);
+}
+
+.terminal-memory-tabs button.active,
+.terminal-memory-main-pane,
+.terminal-memory-pane-content {
+  background: var(--terminal-surface);
+  color: var(--terminal-text);
+}
+
+.terminal-memory-app-brand,
+.terminal-memory-vault-head strong,
+.terminal-memory-pane-head,
+.terminal-memory-links-pane header strong {
+  color: var(--terminal-text);
+}
+
+.terminal-memory-app-actions button,
+.terminal-memory-app-import-menu summary,
+.terminal-memory-ribbon button,
+.terminal-memory-vault-head small,
+.terminal-memory-vault-pane footer,
+.terminal-memory-links-pane,
+.terminal-memory-links-list button,
+.terminal-memory-links-list p,
+.terminal-memory-links-pane section small,
+.terminal-memory-links-pane section strong {
+  color: var(--terminal-dim);
+}
+
+.terminal-memory-app-actions button:hover,
+.terminal-memory-app-import-menu summary:hover,
+.terminal-memory-ribbon button:hover,
+.terminal-memory-ribbon button.active,
+.terminal-memory-links-list button:hover {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+
+.terminal-memory-vault-search {
+  background: var(--terminal-surface);
+  border-color: var(--terminal-border-strong);
+}
+
+.terminal-memory-vault-pane footer,
+.terminal-memory-pane-head,
+.terminal-memory-links-pane header,
+.terminal-memory-links-pane section {
+  border-color: var(--terminal-border);
+}
+
+.terminal-test-runner {
+  background: var(--terminal-bg);
+  color: var(--terminal-text);
+}
+
+.terminal-test-runner-feed,
+.terminal-test-runner-details code {
+  background: var(--terminal-surface);
+  border-color: var(--terminal-border-strong);
+  box-shadow: var(--terminal-panel-shadow);
+}
+
+.terminal-test-runner-feed > div {
+  border-color: var(--terminal-border);
+}
+
+.terminal-test-runner-feed pre,
+.terminal-test-runner-details code {
+  color: var(--terminal-copy);
+}
+
+.terminal-test-runner-copy p,
+.terminal-test-runner-details,
+.terminal-test-runner-details[open] summary {
+  color: var(--terminal-dim);
+}
+
+.terminal-test-runner-progress {
+  background: var(--terminal-border);
+}
+
+.terminal-test-runner.is-error .terminal-test-runner-copy p {
+  color: var(--terminal-danger);
+}

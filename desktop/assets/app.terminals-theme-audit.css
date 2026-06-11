@@ -1,0 +1,166 @@
+/* Final terminal theme ownership. Keep this after every terminal feature sheet. */
+body {
+  --terminal-selection: rgba(109, 59, 255, 0.22);
+  --terminal-selection-inactive: rgba(109, 59, 255, 0.14);
+  --terminal-panel-shadow: 0 18px 42px color-mix(in srgb, var(--terminal-shadow) 72%, transparent);
+  --terminal-danger-soft: color-mix(in srgb, var(--terminal-danger) 12%, transparent);
+  --terminal-danger-border: color-mix(in srgb, var(--terminal-danger) 28%, transparent);
+}
+
+body[data-desktop-theme="light"] {
+  --terminal-selection: rgba(104, 66, 216, 0.2);
+  --terminal-selection-inactive: rgba(104, 66, 216, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  body:not([data-desktop-theme="dark"]) {
+    --terminal-selection: rgba(104, 66, 216, 0.2);
+    --terminal-selection-inactive: rgba(104, 66, 216, 0.12);
+  }
+}
+
+.terminal-page,
+.terminal-page--project-empty .terminal-stage,
+.terminal-setup-grid-preview,
+.terminal-pty-lines {
+  background: var(--terminal-bg);
+}
+
+.terminal-setup-progress :is(span, button),
+.terminal-setup-mode-intro p,
+.terminal-setup-mode-copy small,
+.terminal-setup-mode-cancel,
+.terminal-setup-count-picker > p,
+.terminal-setup-custom-count,
+.terminal-setup-preview-wrap > span,
+.terminal-objective > span small {
+  color: var(--terminal-dim);
+}
+
+.terminal-setup-progress i,
+.terminal-setup-grid-preview > span {
+  background: var(--terminal-elevated);
+  border-color: var(--terminal-border-strong);
+}
+
+.terminal-setup-progress .current,
+.terminal-setup-mode-intro h1,
+.terminal-setup-mode-copy strong,
+.terminal-setup-count-buttons button:hover:not(:disabled) {
+  color: var(--terminal-text);
+}
+
+.terminal-setup-progress .complete,
+.terminal-setup-mode-card,
+.terminal-setup-count-buttons button {
+  color: var(--terminal-muted);
+}
+
+.terminal-setup-progress .complete i,
+.terminal-setup-count-buttons button.active {
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+  color: var(--terminal-accent);
+}
+
+.terminal-workspace-row button.active {
+  color: var(--terminal-text);
+}
+
+.terminal-setup-progress .current i {
+  background: var(--terminal-accent);
+  border-color: var(--terminal-accent-border);
+  box-shadow: 0 0 0 4px var(--terminal-accent-soft);
+}
+
+.terminal-setup-progress :is(span, button):not(:last-child)::after {
+  background: var(--terminal-border);
+}
+
+.terminal-setup-progress .complete:not(:last-child)::after {
+  background: var(--terminal-accent-border);
+}
+
+.terminal-setup-mode-intro > small,
+.terminal-setup-mode-icon,
+.terminal-setup-grid-preview > span:first-child i {
+  color: var(--terminal-accent);
+}
+
+.terminal-setup-mode-card:hover .terminal-setup-mode-icon {
+  color: var(--terminal-accent);
+  filter: none;
+}
+
+.terminal-setup .terminal-project-select:hover,
+.terminal-setup .terminal-project-select.open,
+.terminal-setup-count-buttons button:hover:not(:disabled) {
+  background: var(--terminal-hover);
+}
+
+.terminal-setup-count-buttons button,
+.terminal-setup-custom-count input,
+.terminal-setup-grid-preview,
+.terminal-setup-grid-preview > span {
+  border-color: var(--terminal-border);
+}
+
+.terminal-setup-custom-count input {
+  color: var(--terminal-text);
+}
+
+.terminal-agent-row button,
+.terminal-agent-option {
+  background: var(--terminal-surface);
+  border-color: var(--terminal-border-strong);
+  color: var(--terminal-text);
+}
+
+.terminal-agent-row button.unavailable,
+.terminal-agent-option.unavailable,
+.terminal-pty-composer,
+.terminal-cwd-row {
+  color: var(--terminal-dim);
+}
+
+.terminal-agent-row small,
+.terminal-agent-option small {
+  color: var(--terminal-muted);
+}
+
+.terminal-pty-lines pre {
+  color: var(--terminal-copy);
+}
+
+.terminal-pty-lines:focus,
+.terminal-pty-lines:focus-within {
+  box-shadow: inset 0 0 0 1px var(--terminal-accent-border);
+}
+
+.terminal-add,
+.terminal-layout-button,
+.terminal-settings-button,
+.terminal-tab,
+.terminal-tab-close {
+  color: var(--terminal-muted);
+}
+
+.terminal-add:hover,
+.terminal-layout-button:hover,
+.terminal-settings-button:hover,
+.terminal-tab:hover,
+.terminal-tab-close:hover {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+
+.terminal-notice > span {
+  color: var(--terminal-warning-text);
+}
+
+.terminal-setup-panel,
+.terminal-toolbar-menu,
+.terminal-agent-menu,
+.terminal-details-menu {
+  box-shadow: var(--terminal-panel-shadow);
+}

@@ -1,6 +1,7 @@
 function desktopSignOut() {
   fetch("/desktop/session/clear", { method: "POST" }).catch(() => {});
   localStorage.removeItem(authKey);
+  sessionStorage.removeItem("vibyra.desktop.firstWelcomeUserId");
   if (typeof resetProfileSessions === "function") resetProfileSessions();
   document.body.classList.remove("desktop-authenticated");
   if (typeof renderTopbar === "function") renderTopbar();
@@ -59,6 +60,9 @@ async function syncDesktopSession(token) {
     if (typeof currentState !== "undefined") {
       currentState = { ...currentState, desktopAccount: result.user };
     }
+    window.dispatchEvent(new CustomEvent("vibyra:desktop-session-ready", {
+      detail: { accountId: result.user.id }
+    }));
   }
   return result?.user || null;
 }

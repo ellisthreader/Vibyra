@@ -34,6 +34,16 @@ if (config('desktop.legacy_routes_enabled')) {
 Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:5,1');
 Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:12,1');
+Route::post('/api/auth/desktop/{provider}/start', [VibyraAppController::class, 'desktopProviderStart'])
+    ->whereIn('provider', ['apple', 'google'])
+    ->middleware('throttle:12,1');
+Route::get('/api/auth/desktop/{provider}/status/{flowId}', [VibyraAppController::class, 'desktopProviderStatus'])
+    ->whereIn('provider', ['apple', 'google'])
+    ->middleware('throttle:120,1');
+Route::match(['get', 'post'], '/api/auth/desktop/{provider}/callback', [VibyraAppController::class, 'desktopProviderCallback'])
+    ->whereIn('provider', ['apple', 'google'])
+    ->middleware('throttle:30,1')
+    ->name('auth.desktop.callback');
 Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:5,1');
 Route::post('/api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::get('/api/auth/password/open', [VibyraAppController::class, 'openPasswordReset'])->middleware('throttle:12,1');
@@ -68,6 +78,7 @@ Route::post('/api/moderation', [VibyraAppController::class, 'moderate']);
 Route::post('/api/chat', [VibyraAppController::class, 'chat']);
 Route::post('/api/chat/route', [VibyraAppController::class, 'chatAutoRoute']);
 Route::post('/api/chat/research-plan', [VibyraAppController::class, 'chatResearchPlan']);
+Route::post('/api/chat/team-plan', [VibyraAppController::class, 'chatTeamPlan'])->middleware('throttle:12,1');
 Route::post('/api/chat/stream', [VibyraAppController::class, 'chatStream']);
 Route::post('/api/codex/responses', [VibyraAppController::class, 'codexResponses']);
 Route::post('/api/terminal/anthropic/messages', [VibyraAppController::class, 'anthropicTerminalMessages']);

@@ -156,24 +156,45 @@ function toggleTerminalVoice() {
   else void startTerminalVoiceCapture();
 }
 
-async function submitTerminalVoicePrompt(text, generation = terminalVoiceState.generation) {
+async function submitTerminalVoicePrompt(text, generation = terminalVoiceState.generation, transcriptTurn = null) {
   const prompt = String(text || "").trim();
   if (!prompt || terminalVoiceState.asking || !terminalVoiceGenerationCurrent(generation)) return;
   const terminal = terminalCompanionActiveTerminal();
   if (terminalVoiceTargetId(terminal) !== terminalVoiceState.targetId) return;
   terminalVoiceState.asking = true;
   terminalVoiceSetStatus("Vibyra is thinking");
+  const transcriptOptions = {
+    model: terminal?.model || selectedSetupModel()?.key || "auto",
+    sessionId: `terminal-voice:${terminal?.id || "setup"}`,
+    terminal
+  };
+  let outcomeSaved = false;
   try {
     const replyRequest = requestTerminalVoiceReply(prompt, terminal, generation);
     const userMessage = appendTerminalVoiceMessage(terminal, "user", prompt);
     terminalVoiceSync();
-    const reply = await replyRequest;
+    const { reply, result } = await replyRequest;
     if (!terminalVoiceGenerationCurrent(generation)) return;
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      actions: result.actions,
+      response: result.reply || "",
+      result: reply,
+      status: "completed"
+    }, "ai-talk", transcriptOptions);
+    outcomeSaved = true;
     terminalVoiceState.asking = false;
     appendTerminalVoiceReply(userMessage, reply, terminal);
     terminalVoiceSync();
     await playTerminalVoiceReply(reply, generation);
   } catch (error) {
+    if (!outcomeSaved) {
+      try {
+        await persistDesktopPromptOutcome(transcriptTurn, {
+          error: error instanceof Error ? error.message : "Vibyra AI could not reply",
+          status: terminalVoiceGenerationCurrent(generation) ? "failed" : "cancelled"
+        }, "ai-talk", transcriptOptions);
+      } catch {}
+    }
     if (!terminalVoiceGenerationCurrent(generation)) return;
     terminalVoiceState.asking = false;
     terminalVoiceSetStatus(terminalVoiceErrorMessage(error, "Vibyra AI could not reply"));

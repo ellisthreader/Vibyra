@@ -1,9 +1,10 @@
 let terminalMemoryGraphSize = { width: 1000, height: 720 };
 
-function terminalMemoryGraphSizeForViewport(width, height) {
+function terminalMemoryGraphSizeForViewport(width, height, fullscreen = terminalMemoryGraphIsFullscreen()) {
   const viewportWidth = Math.max(280, Number(width) || 0);
   const viewportHeight = Math.max(320, Number(height) || 0);
   const virtualWidth = 1000;
+  if (!fullscreen) return { width: virtualWidth, height: 720 };
   return {
     width: virtualWidth,
     height: Math.round(Math.max(720, Math.min(2400, virtualWidth * viewportHeight / viewportWidth)))
@@ -17,10 +18,8 @@ function terminalMemoryGraphMeasureSize() {
   const companion = document.querySelector("[data-terminal-companion]");
   const width = canvas?.clientWidth || workspace?.clientWidth || companion?.clientWidth || 1000;
   const workspaceHeight = workspace?.clientHeight || companion?.clientHeight || 780;
-  const compactFallback = workspace?.classList.contains("terminal-memory-workspace--fullscreen")
-    ? workspaceHeight - 92
-    : (workspaceHeight - 92) * .6;
-  const height = Math.max(320, canvas?.clientHeight || compactFallback);
+  const availableHeight = canvas?.clientHeight || workspaceHeight - 92;
+  const height = terminalMemoryGraphViewportHeight(availableHeight);
   return terminalMemoryGraphSizeForViewport(width, height);
 }
 
@@ -48,7 +47,7 @@ function terminalMemoryGraphPositions(nodes, edges) {
     linked.get(edge.from)?.push(edge);
     linked.get(edge.to)?.push(edge);
   });
-  for (let step = 0; step < 150; step += 1) {
+  for (let step = 0; step < terminalMemoryGraphIterations(nodes.length); step += 1) {
     terminalMemoryGraphRepel(nodes, positions, velocity);
     terminalMemoryGraphSpring(edges, positions, velocity);
     nodes.forEach((node) => {
@@ -65,6 +64,24 @@ function terminalMemoryGraphPositions(nodes, edges) {
   }
   terminalMemoryGraphNormalizePositions(positions, width, height);
   return positions;
+}
+
+function terminalMemoryGraphViewportHeight(availableHeight, fullscreen = terminalMemoryGraphIsFullscreen()) {
+  const height = Math.max(320, Number(availableHeight) || 0);
+  return fullscreen ? height : Math.max(320, height * .6);
+}
+
+function terminalMemoryGraphIsFullscreen() {
+  if (typeof terminalMemoryIsFullscreen === "function") return terminalMemoryIsFullscreen();
+  if (typeof document === "undefined") return false;
+  return Boolean(document.querySelector(".terminal-memory-workspace--fullscreen"));
+}
+
+function terminalMemoryGraphIterations(nodeCount) {
+  if (nodeCount > 140) return 32;
+  if (nodeCount > 80) return 40;
+  if (nodeCount > 40) return 56;
+  return 80;
 }
 
 function terminalMemoryGraphNormalizePositions(positions, width, height) {

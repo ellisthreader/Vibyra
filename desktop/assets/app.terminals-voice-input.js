@@ -107,7 +107,10 @@ async function finishTerminalVoiceInput(generation, mimeType) {
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify({
         audioBase64: await terminalVoiceInputBlobBase64(blob),
-        mimeType: blob.type
+        mimeType: blob.type,
+        ...desktopPromptTranscriptMetadata("terminal-dictation", {
+          terminal: desktopPromptTranscriptTarget(terminalVoiceInputState.targetId)
+        })
       })
     });
     const result = await response.json().catch(() => ({}));
@@ -115,19 +118,27 @@ async function finishTerminalVoiceInput(generation, mimeType) {
       throw new Error(result.error || "Voice transcription failed.");
     }
     if (generation !== terminalVoiceInputState.generation) return;
-    const terminal = deliverTerminalVoiceInput(result.text, terminalVoiceInputState.targetId);
+    const terminal = deliverTerminalVoiceInput(
+      result.text,
+      terminalVoiceInputState.targetId,
+      result.transcript
+    );
     showTerminalVoiceInput("sent", "Sent to terminal", terminal.title);
   } catch (error) {
     failTerminalVoiceInput(error instanceof Error ? error.message : "Voice transcription failed");
   }
 }
 
-function deliverTerminalVoiceInput(text, targetId) {
+function deliverTerminalVoiceInput(text, targetId, transcriptTurn = null) {
   const prompt = String(text || "").trim();
   if (!prompt) throw new Error("No speech heard");
   const terminal = findTerminal(targetId);
   if (!terminal) throw new Error("The selected terminal was closed");
-  if (!terminalCompanionInsertIntoTerminal(targetId, prompt, true)) {
+  if (!terminalCompanionInsertIntoTerminal(targetId, prompt, true, {
+    logPrompt: false,
+    transcriptSource: "terminal-dictation",
+    transcriptTurn
+  })) {
     throw new Error("Terminal input could not be delivered");
   }
   return terminal;

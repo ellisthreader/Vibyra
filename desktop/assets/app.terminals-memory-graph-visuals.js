@@ -24,7 +24,7 @@ function terminalMemoryGraphRegionsHtml(model) {
     center.y /= points.length;
     const radiusX = Math.max(48, Math.min(170, Math.max(...points.map((point) => Math.abs(point.x - center.x))) + 34));
     const radiusY = Math.max(40, Math.min(135, Math.max(...points.map((point) => Math.abs(point.y - center.y))) + 28));
-    const cluster = terminalMemoryGraphCluster(folder, model.nodes);
+    const cluster = model.clusters[folder.id] || 0;
     return `<ellipse class="cluster-${cluster}" cx="${center.x.toFixed(1)}" cy="${center.y.toFixed(1)}" rx="${radiusX.toFixed(1)}" ry="${radiusY.toFixed(1)}"></ellipse>`;
   }).join("");
 }
@@ -57,26 +57,53 @@ function terminalMemoryGraphEdgePath(edge, from, to) {
   return `M${from.x.toFixed(1)} ${from.y.toFixed(1)}Q${middleX.toFixed(1)} ${middleY.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
 }
 
-function terminalMemoryGraphCluster(node, nodes) {
-  let current = node;
-  const byId = new Map(nodes.map((item) => [item.id, item]));
-  while (current?.parentId && byId.has(current.parentId)) current = byId.get(current.parentId);
-  return terminalMemoryGraphHash(current?.id || node.id) % 6;
+function terminalMemoryGraphFocus(graph, nodeId = "") {
+  const index = terminalMemoryGraphInteractionIndex(graph);
+  index.activeNodes.forEach((node) => node.classList.remove("related"));
+  index.activeNodes = [];
+  graph.classList.toggle("focusing", Boolean(nodeId));
+  if (!nodeId) {
+    index.focusEdge.setAttribute("d", "");
+    return;
+  }
+  const relatedIds = new Set([nodeId]);
+  (index.edgesByNode.get(nodeId) || []).forEach((edge) => {
+    relatedIds.add(edge.from);
+    relatedIds.add(edge.to);
+  });
+  index.focusEdge.setAttribute("d", (index.edgesByNode.get(nodeId) || []).map((edge) => {
+    const from = index.model.positions[edge.from];
+    const to = index.model.positions[edge.to];
+    return from && to ? terminalMemoryGraphEdgePath(edge, from, to) : "";
+  }).join(""));
+  relatedIds.forEach((id) => {
+    const node = index.nodes.get(id);
+    if (!node) return;
+    node.classList.add("related");
+    index.activeNodes.push(node);
+  });
 }
 
-function terminalMemoryGraphFocus(graph, nodeId = "") {
-  const related = new Set([nodeId]);
-  graph.querySelectorAll("[data-terminal-memory-graph-edge]").forEach((edge) => {
-    const active = nodeId && (edge.dataset.from === nodeId || edge.dataset.to === nodeId);
-    edge.classList.toggle("focused", Boolean(active));
-    edge.classList.toggle("dimmed", Boolean(nodeId && !active));
-    if (active) {
-      related.add(edge.dataset.from);
-      related.add(edge.dataset.to);
-    }
-  });
+function terminalMemoryGraphInteractionIndex(graph) {
+  if (graph.terminalMemoryGraphInteractionIndex) return graph.terminalMemoryGraphInteractionIndex;
+  const nodes = new Map();
+  const edgesByNode = new Map();
+  const model = terminalMemoryGraphModel(terminalMemoryState.nodes);
   graph.querySelectorAll("[data-terminal-memory-graph-node]").forEach((node) => {
-    node.classList.toggle("related", Boolean(nodeId && related.has(node.dataset.terminalMemoryGraphNode)));
-    node.classList.toggle("dimmed", Boolean(nodeId && !related.has(node.dataset.terminalMemoryGraphNode)));
+    nodes.set(node.dataset.terminalMemoryGraphNode, node);
   });
+  model.edges.forEach((edge) => {
+    [edge.from, edge.to].forEach((id) => {
+      if (!edgesByNode.has(id)) edgesByNode.set(id, []);
+      edgesByNode.get(id).push(edge);
+    });
+  });
+  graph.terminalMemoryGraphInteractionIndex = {
+    nodes,
+    edgesByNode,
+    model,
+    focusEdge: graph.querySelector("[data-terminal-memory-graph-focus-edge]"),
+    activeNodes: []
+  };
+  return graph.terminalMemoryGraphInteractionIndex;
 }

@@ -151,6 +151,11 @@ body {
   animation: terminal-polish-setup-in 220ms cubic-bezier(.2, .8, .2, 1) both;
 }
 
+.terminal-setup-panel--stable,
+.terminal-setup-panel--stable .terminal-setup-grid-preview > span {
+  animation: none !important;
+}
+
 .terminal-setup :is(
   .terminal-model-select,
   .terminal-project-select,

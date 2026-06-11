@@ -1,11 +1,17 @@
 import { createServer } from "node:net";
 import { devServerPortsFromPackage } from "./previewFrameworkProfiles.mjs";
 
-export async function choosePreviewPort(packageText, profile) {
+const reservedPorts = new Set();
+
+export async function reservePreviewPort(packageText, profile, options = {}) {
+  const excluded = new Set((options.exclude ?? []).map(Number));
   for (const port of devServerPortsFromPackage(packageText, profile)) {
-    if (await portLooksFree(port)) return port;
+    if (excluded.has(port) || reservedPorts.has(port)) continue;
+    reservedPorts.add(port);
+    if (await portLooksFree(port)) return reservation(port, true);
+    reservedPorts.delete(port);
   }
-  return randomFreePort();
+  return reservation(await randomFreePort(excluded), true);
 }
 
 export async function portLooksFree(port) {
@@ -22,13 +28,34 @@ export async function portLooksFree(port) {
   });
 }
 
-async function randomFreePort() {
-  return new Promise((resolve) => {
-    const server = createServer();
-    server.listen(0, "0.0.0.0", () => {
-      const address = server.address();
-      const port = typeof address === "object" && address ? address.port : 0;
-      server.close(() => resolve(port));
+function reservation(port, alreadyReserved = false) {
+  if (!alreadyReserved) reservedPorts.add(port);
+  let released = false;
+  return {
+    port,
+    release() {
+      if (released) return;
+      released = true;
+      reservedPorts.delete(port);
+    }
+  };
+}
+
+async function randomFreePort(excluded) {
+  while (true) {
+    const port = await new Promise((resolve) => {
+      const server = createServer();
+      server.listen(0, "0.0.0.0", () => {
+        const address = server.address();
+        const selected = typeof address === "object" && address ? address.port : 0;
+        if (!selected || excluded.has(selected) || reservedPorts.has(selected)) {
+          server.close(() => resolve(0));
+          return;
+        }
+        reservedPorts.add(selected);
+        server.close(() => resolve(selected));
+      });
     });
-  });
+    if (port) return port;
+  }
 }

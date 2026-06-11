@@ -1,5 +1,5 @@
 ---
-name: VibyraObsiden
+name: vibyra-obsidian
 description: Keep Vibyra Obsidian memory accurate before, during, and after repo work. Use when working in this repo on code, architecture, workflows, permissions, routes, debugging, or durable project decisions, especially when changes should be recorded in Vibyra/_ai so future sessions do not rediscover them.
 metadata:
   short-description: Maintain Vibyra Obsidian memory

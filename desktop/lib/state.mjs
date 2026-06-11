@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { currentAgentRun, listAgentRuns } from "./agentRunState.mjs";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
+import { TERMINAL_TEAM_ROLE_CONTRACT_VERSION } from "./terminalTeamPromptRoles.mjs";
 import { desktopAppApiUrl } from "./appApiConfig.mjs";
 import { revokeAllPreviewCapabilities } from "./previewCapabilities.mjs";
 
@@ -15,7 +16,7 @@ export const machineName = hostname();
 export const startedAt = new Date().toISOString();
 export const allowedCommands = new Set(["git status", "npm install", "npm run dev", "npm run build", "npm test", "pytest"]);
 export const PHONE_SESSION_TIMEOUT_MS = 30000;
-export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-09.12";
+export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-11.16";
 
 export const appState = {
   server: null,
@@ -47,6 +48,7 @@ export function desktopRuntimeState(rendererProtocolVersion = "") {
   return {
     terminalActionProtocolVersion: TERMINAL_ACTION_PROTOCOL_VERSION,
     aiTerminalLaunchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
+    terminalTeamRoleContractVersion: TERMINAL_TEAM_ROLE_CONTRACT_VERSION,
     rendererReloadRequestId: appState.rendererReloadRequest?.id || null
   };
 }

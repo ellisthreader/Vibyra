@@ -52,6 +52,33 @@ test("phone preview handlers issue scoped credentials instead of the global toke
   }
 });
 
+test("concurrent phone preview requests only commit the newest capability", async () => {
+  const { project, cleanup } = await makeProject("phone-preview-generation-");
+  const previous = snapshotState();
+  try {
+    await writeFile(join(project.path, "index.html"), "<!doctype html><title>Phone preview</title>");
+    appState.cachedProjects = [project];
+
+    const results = await Promise.allSettled([
+      invokeJsonHandler(startPreview, { projectId: project.id }),
+      invokeJsonHandler(startPreview, { projectId: project.id })
+    ]);
+    const fulfilled = results.filter((result) => result.status === "fulfilled");
+    const rejected = results.filter((result) => result.status === "rejected");
+
+    assert.equal(fulfilled.length, 1);
+    assert.equal(rejected.length, 1);
+    assert.equal(rejected[0].reason.status, 409);
+    const credential = previewCredentialFromUrl(fulfilled[0].value.body.preview.url);
+    assert.equal(previewCredentialAllowsProject(credential, project.id), true);
+    assert.equal(appState.latestPreviewCredential, credential);
+  } finally {
+    restoreState(previous);
+    revokeAllPreviewCapabilities();
+    await cleanup();
+  }
+});
+
 test("phone preview server URLs use scoped credentials", async () => {
   const { project, cleanup } = await makeProject("phone-preview-server-capability-");
   const fakeNpm = await makeFakeNpm();
@@ -80,6 +107,12 @@ test("phone preview server URLs use scoped credentials", async () => {
     assert.notEqual(credential, TOKEN);
     assert.equal(response.body.preview.url.includes(encodeURIComponent(TOKEN)), false);
     assert.equal(previewCredentialAllowsProject(credential, project.id), true);
+    const targetId = appState.previewServers[project.id].targetId;
+    assert.equal(previewCredentialTargetId(credential), targetId);
+
+    const reopened = await invokeJsonHandler(startPreview, { projectId: project.id });
+    const reopenedCredential = previewCredentialFromUrl(reopened.body.preview.url);
+    assert.equal(previewCredentialTargetId(reopenedCredential), targetId);
   } finally {
     killTrackedPreview(project.id);
     restoreState(previous);

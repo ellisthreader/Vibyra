@@ -19,3 +19,36 @@ test("Responses route uses terminal gateway auth instead of desktop UI trust", a
   assert.doesNotMatch(route, /providerId: "openai"/);
   assert.doesNotMatch(route, /authorizeDesktopUi/);
 });
+
+test("official Qwen, Kimi, and Mistral routes enforce native runtime ownership", async () => {
+  const source = await readFile(new URL("./desktopRoutes.mjs", import.meta.url), "utf8");
+
+  assert.match(source, /"\/desktop\/qwen\/v1\/chat\/completions"/);
+  assert.match(
+    source,
+    /"\/desktop\/qwen\/v1\/chat\/completions"[\s\S]{0,500}allowContainerNetwork:\s*true/
+  );
+  assert.match(source, /runtimeId: "qwen"/);
+  assert.match(source, /providerId: "qwen"/);
+  assert.match(source, /adapterId: "openai-chat-completions"/);
+  assert.match(source, /protocol: "openai-chat-completions"/);
+  assert.match(source, /"\/desktop\/kimi\/v1\/responses"[\s\S]*runtimeId: "kimi"[\s\S]*providerId: "moonshot"/);
+  assert.match(source, /"\/desktop\/mistral\/v1\/responses"[\s\S]*runtimeId: "mistral"[\s\S]*providerId: "mistral"/);
+});
+
+test("desktop shell accepts a trailing slash without falling through to phone auth", async () => {
+  const source = await readFile(new URL("./desktopRoutes.mjs", import.meta.url), "utf8");
+  assert.match(
+    source,
+    /url\.pathname === "\/desktop" \|\| url\.pathname === "\/desktop\/"/
+  );
+});
+
+test("Team planning routes are desktop-authorized and delegated", async () => {
+  const source = await readFile(new URL("./desktopRoutes.mjs", import.meta.url), "utf8");
+  assert.match(source, /handleTerminalTeamRoutes/);
+  assert.match(
+    source,
+    /url\.pathname === "\/desktop\/terminal-teams" \|\| url\.pathname\.startsWith\("\/desktop\/terminal-teams\/"\)/
+  );
+});

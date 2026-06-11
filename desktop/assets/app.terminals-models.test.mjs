@@ -83,6 +83,13 @@ test("terminal launch agent follows token source instead of model branding alone
   assert.match(ptySource, /terminalAgents\.some\(\(agent\) => agent\.key === reportedAgent\)\) return reportedAgent/);
 });
 
+test("terminal setup keeps OpenRouter behind Vibyra tokens", () => {
+  assert.doesNotMatch(source, /data-terminal-token-mode="openrouter"/);
+  assert.doesNotMatch(source, /Bills your local OpenRouter key directly/);
+  assert.match(stateSource, /\["vibyra", "provider"\]/);
+  assert.match(ptySource, /\["provider", "vibyra"\]/);
+});
+
 test("CLI downloads live in model rows instead of Advanced settings", () => {
   assert.match(source, /terminalModelCliControl\(model, tokenMode\)/);
   assert.match(source, /terminal-model-option-row/);
@@ -149,7 +156,7 @@ test("personal-account filtering keeps API-only rows visible and searchable", ()
   assert.equal(groups[0].options[0].key, "deepseek/deepseek-v3");
 });
 
-test("model rows show Native CLI, Vibyra Agent, and unavailable states without replacing provider logos", () => {
+test("model rows keep provider logos and hide runtime implementation labels", () => {
   const context = {
     config: () => ({ chatModelGroups: [] }),
     currentPage: "",
@@ -191,13 +198,12 @@ test("model rows show Native CLI, Vibyra Agent, and unavailable states without r
   );
 
   assert.match(nativeRow, /provider-logo openai/);
-  assert.match(nativeRow, />Native CLI</);
+  assert.doesNotMatch(nativeRow, /Native CLI|Vibyra Agent|Unavailable/);
   assert.match(agentRow, /provider-logo deepseek/);
-  assert.match(agentRow, />Vibyra Agent</);
+  assert.doesNotMatch(agentRow, /Native CLI|Vibyra Agent|Unavailable/);
   assert.match(unavailableRow, /disabled/);
-  assert.match(unavailableRow, />Unavailable</);
-  assert.match(modelStyles, /\.terminal-model-runtime-status\s*\{[\s\S]*font-family: ui-monospace/);
-  assert.doesNotMatch(modelStyles, /\.terminal-model-runtime-status\s*\{[^}]*background:/);
+  assert.doesNotMatch(unavailableRow, /Native CLI|Vibyra Agent|Unavailable/);
+  assert.doesNotMatch(modelStyles, /\.terminal-model-runtime-status/);
 });
 
 test("token source choices explain billing without provider implementation details", () => {

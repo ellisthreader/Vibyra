@@ -75,6 +75,7 @@ function bindTerminalTestWorkspace(root) {
   });
   bindTerminalTestConsole(root);
   root.querySelector("[data-terminal-test-frame-content]").addEventListener("load", () => {
+    clearTerminalTestInspector(false);
     postTerminalTestDevice(root);
     if (!terminalTestRefreshing) return;
     terminalTestRefreshing = false;
@@ -88,6 +89,7 @@ function bindTerminalTestTopbar(root) {
   const toolbar = document.querySelector("[data-terminal-test-toolbar]");
   if (!toolbar || toolbar.dataset.bound) return;
   toolbar.dataset.bound = "1";
+  bindCustomSelects(toolbar);
   toolbar.querySelector("[data-terminal-test-url-form]").addEventListener("submit", (event) => {
     event.preventDefault();
     saveTerminalTestViewportState();
@@ -125,7 +127,7 @@ function refreshTerminalTestWorkspace(root) {
   const size = terminalTestViewportSize(preset);
   if (toolbar) {
     toolbar.querySelector("[data-terminal-test-url]").value = terminalTestUrl;
-    toolbar.querySelector("[data-terminal-test-preset]").value = terminalTestPreset;
+    setCustomSelectValue(toolbar.querySelector("[data-terminal-test-preset]"), terminalTestPreset);
     toolbar.querySelector("[data-terminal-test-custom]").hidden = terminalTestPreset !== "custom";
     toolbar.querySelector("[data-terminal-test-width]").value = terminalTestWidth;
     toolbar.querySelector("[data-terminal-test-height]").value = terminalTestHeight;
@@ -144,6 +146,7 @@ function refreshTerminalTestWorkspace(root) {
   setTerminalTestFrameUrl(root, terminalTestUrl);
   refreshTerminalTestRunner(root);
   refreshTerminalTestConsole(root);
+  refreshTerminalTestInspector(root);
   syncTerminalTestScale(root);
 }
 
@@ -188,6 +191,7 @@ async function loadTerminalProjectPreview(projectId) {
 }
 
 function setTerminalTestUrl(value, status) {
+  if (terminalTestUrl !== terminalTestIsolatedUrl(value)) clearTerminalTestInspector();
   terminalTestUrl = terminalTestIsolatedUrl(value);
   terminalTestStatus = status || (terminalTestUrl ? "Live preview" : "Preview unavailable");
   syncTerminalTestWorkspace();

@@ -29,9 +29,6 @@ function terminalExecutionRuntimeForModel(model, tokenMode = "vibyra") {
   if (tokenMode === "provider") {
     return ["codex", "claude", "gemini"].includes(nativeRuntime) ? nativeRuntime : "";
   }
-  if (["qwen", "kimi", "mistral"].includes(nativeRuntime)) {
-    return terminalBundledAgentRuntime.id;
-  }
   return nativeRuntime || terminalBundledAgentRuntime.id;
 }
 
@@ -65,6 +62,10 @@ function terminalNativeRuntimeForModel(model) {
     (provider === "moonshot" || provider === "moonshotai" || provider === "kimi")
     && modelName.startsWith("kimi-")
   ) return "kimi";
+  if (
+    (provider === "x-ai" || provider === "xai")
+    && modelName.startsWith("grok-")
+  ) return "grok";
   return "";
 }
 
@@ -201,15 +202,14 @@ function terminalModelCliControl(model, tokenMode = "vibyra") {
   const runtime = launch.runtime;
   const installing = runtime && (runtime.installing || terminalRuntimeInstalling.has(runtime.id));
   if (launch.surface === "download" && installing) {
-    return `<button class="terminal-model-cli-download installing" type="button" disabled aria-busy="true" aria-label="Downloading ${escapeAttribute(runtime.label || "CLI")}"><span class="terminal-model-download-spinner" aria-hidden="true"></span><span>Downloading</span></button>`;
+    const label = `Downloading ${runtime.label || "CLI"}`;
+    return `<button class="terminal-model-cli-download installing" type="button" disabled aria-busy="true" aria-label="${escapeAttribute(label)}" title="${escapeAttribute(label)}"><span class="terminal-model-download-spinner" aria-hidden="true"></span></button>`;
   }
   if (launch.surface === "download" && runtime) {
     const label = `Download ${runtime.label || "CLI"}`;
-    return `<button class="terminal-model-cli-download" type="button" data-terminal-runtime-install="${escapeAttribute(runtime.id)}" aria-label="${escapeAttribute(label)}" title="${escapeAttribute(label)}">${icon("download")}<span>Download</span></button>`;
+    return `<button class="terminal-model-cli-download" type="button" data-terminal-runtime-install="${escapeAttribute(runtime.id)}" aria-label="${escapeAttribute(label)}" title="${escapeAttribute(label)}">${icon("download")}</button>`;
   }
-  const label = launch.label || (launch.available ? "Native CLI" : "Unavailable");
-  const title = launch.issue || label;
-  return `<em class="terminal-model-runtime-status ${escapeAttribute(launch.surface || "unavailable")}" title="${escapeAttribute(title)}">${escapeHtml(label)}</em>`;
+  return "";
 }
 
 function bindTerminalRuntimeControls(root = document) {

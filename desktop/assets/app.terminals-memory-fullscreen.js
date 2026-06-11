@@ -72,15 +72,15 @@ function terminalMemoryFullscreenContentHtml(projectId, selected) {
 }
 
 function terminalMemoryFullscreenLinksHtml(selected) {
-  const model = terminalMemoryGraphModel(terminalMemoryState.nodes);
+  const topology = terminalMemoryGraphTopology(terminalMemoryState.nodes);
   const connectedIds = new Set();
   if (selected) {
-    model.edges.forEach((edge) => {
+    topology.edges.forEach((edge) => {
       if (edge.from === selected.id) connectedIds.add(edge.to);
       if (edge.to === selected.id) connectedIds.add(edge.from);
     });
   }
-  const connected = model.nodes.filter((node) => connectedIds.has(node.id));
+  const connected = topology.nodes.filter((node) => connectedIds.has(node.id));
   const rows = connected.length
     ? connected.map((node) => `<button type="button" data-terminal-memory-open-node="${escapeAttribute(node.id)}">${icon(node.type === "folder" ? "folder" : "document")}<span>${escapeHtml(node.name)}</span></button>`).join("")
     : `<p>${selected ? "No links for this note yet." : "Select a note to inspect its links."}</p>`;

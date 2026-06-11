@@ -55,7 +55,7 @@ function terminalWorkspaceEmptyHtml() {
     </div>
     <div class="terminal-project-home-actions">
       <button class="terminal-work-mode primary" type="button" data-terminal-workspace-launch="1" data-terminal-workspace-project="${escapeAttribute(projectId)}">${icon("sparkles")}<span><strong>Solo</strong><small>One focused AI agent</small></span></button>
-      <button class="terminal-work-mode" type="button" data-terminal-workspace-launch="4" data-terminal-workspace-project="${escapeAttribute(projectId)}">${icon("people")}<span><strong>Team</strong><small>Four isolated agents</small></span></button>
+      <button class="terminal-work-mode" type="button" data-terminal-workspace-launch="4" data-terminal-workspace-project="${escapeAttribute(projectId)}">${icon("people")}<span><strong>Team</strong><small>One goal, coordinated roles</small></span></button>
     </div>
     ${project ? `<div class="terminal-project-capabilities">${capabilities.map((item) => `<span>${icon(item.icon)}${escapeHtml(item.label)}</span>`).join("")}</div>` : ""}
   </section>`;

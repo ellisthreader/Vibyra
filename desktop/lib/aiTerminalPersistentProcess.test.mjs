@@ -115,6 +115,63 @@ test("explicit close stops the worker and removes its saved session", async () =
   }
 });
 
+test("startup handshake accepts a spawned provider child", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-startup-ready-"));
+  const cli = fakeCli(root, "startup-ready-cli", [
+    "#!/bin/bash",
+    "printf 'Write tests for @filename\\n'",
+    "sleep 2"
+  ]);
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  process.env.VIBYRA_CODEX_CLI = cli;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?startupReady=${Date.now()}`, import.meta.url);
+  const {
+    launchPersistentAiTerminalProcess,
+    waitForPersistentAiTerminalStartup
+  } = await import(moduleUrl);
+  const terminalId = `startup-ready-${Date.now()}`;
+
+  try {
+    const handle = launchPersistentAiTerminalProcess(terminalConfig(terminalId));
+    const state = await waitForPersistentAiTerminalStartup(terminalId);
+    assert.equal(state.status, "running");
+    assert.ok(Number(state.childPid) > 0);
+    handle.kill("SIGTERM");
+  } finally {
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
+test("startup handshake reports stale launch contracts immediately", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-startup-stale-"));
+  const cli = fakeCli(root, "startup-stale-cli", ["#!/bin/bash", "sleep 2"]);
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  process.env.VIBYRA_CODEX_CLI = cli;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?startupStale=${Date.now()}`, import.meta.url);
+  const {
+    launchPersistentAiTerminalProcess,
+    waitForPersistentAiTerminalStartup
+  } = await import(moduleUrl);
+  const terminalId = `startup-stale-${Date.now()}`;
+  const config = terminalConfig(terminalId);
+  config.launchPlan.launchContractVersion = AI_TERMINAL_LAUNCH_CONTRACT_VERSION - 1;
+
+  try {
+    launchPersistentAiTerminalProcess(config);
+    await assert.rejects(
+      waitForPersistentAiTerminalStartup(terminalId),
+      (error) => error.code === "terminal_launch_contract_mismatch"
+        && error.status === 409
+    );
+  } finally {
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
 test("immediate close is delivered while the worker socket is still connecting", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-immediate-close-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
@@ -209,7 +266,7 @@ test("legacy Vibyra launch sessions are not compatible with the current runtime"
   } = await import(moduleUrl);
 
   try {
-    assert.equal(AI_TERMINAL_RUNTIME_VERSION, 13);
+    assert.equal(AI_TERMINAL_RUNTIME_VERSION, 17);
     assert.equal(persistentAiTerminalConfigIsCurrent({ agent: "vibyra" }), false);
     assert.equal(persistentAiTerminalConfigIsCurrent({
       agent: "vibyra",
@@ -246,7 +303,8 @@ test("legacy Vibyra launch sessions are not compatible with the current runtime"
     assert.equal(persistentAiTerminalConfigIsCurrent({
       agent: "claude",
       tokenMode: "provider",
-      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION
+      runtimeVersion: AI_TERMINAL_RUNTIME_VERSION,
+      launchPlan: { launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION }
     }), true);
     assert.equal(persistentAiTerminalConfigIsCurrent({ agent: "shell" }), true);
   } finally {

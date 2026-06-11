@@ -14,7 +14,10 @@ function terminalMemoryEnsureProject(projectId) {
     terminalMemoryReset("");
     return;
   }
-  if (terminalMemoryState.projectId === projectId && (terminalMemoryState.loading || terminalMemoryState.loaded)) return;
+  if (
+    terminalMemoryState.projectId === projectId
+    && (terminalMemoryState.loading || terminalMemoryState.loaded || terminalMemoryState.loadFailed)
+  ) return;
   terminalMemoryReset(projectId);
   queueMicrotask(() => loadTerminalMemoryVault(projectId));
 }

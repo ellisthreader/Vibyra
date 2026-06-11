@@ -1,4 +1,5 @@
-import { access, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { access, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 const CONTAINER_DB_HOSTS = new Set(["db", "database", "mariadb", "mysql"]);
@@ -17,12 +18,50 @@ export async function laravelPreviewEnv(projectPath) {
   };
 }
 
+export async function prepareLaravelViteHotFile(projectPath) {
+  const publicPath = join(projectPath, "public");
+  const hotPath = join(publicPath, "hot");
+  try {
+    await access(publicPath, constants.W_OK);
+    await rm(hotPath, { force: true });
+  } catch (error) {
+    if (error?.code === "ENOENT") return;
+    if (error?.code === "EACCES" || error?.code === "EPERM") {
+      throw new Error(laravelHotFilePermissionFailure(projectPath));
+    }
+    throw error;
+  }
+}
+
+export function laravelViteStartupFailure(projectPath, output) {
+  const text = String(output ?? "");
+  const permissionDenied = /EACCES|EPERM/i.test(text) && /public[\\/]hot/i.test(text);
+  if (permissionDenied) {
+    return {
+      message: laravelHotFilePermissionFailure(projectPath),
+      retryPort: false
+    };
+  }
+  const portMatch = text.match(/\bPort\s+(\d{2,5})\s+is already in use\b/i);
+  if (portMatch) {
+    return {
+      message: `Vite could not bind port ${portMatch[1]}. Vibyra will retry once with another free port. If it still fails, stop the process using that port or remove a fixed server.hmr.port/server.port value from vite.config.*.`,
+      retryPort: true
+    };
+  }
+  return null;
+}
+
 export async function laravelHttpFailure(projectPath, status, target = "/") {
   const prefix = `Laravel returned HTTP ${status} for ${target}.`;
   const log = await readRecentLog(projectPath);
   const diagnostic = classifyLaravelLog(log);
   if (diagnostic) return `${prefix} ${diagnostic}`;
   return `${prefix} Check ${projectPath}/storage/logs/laravel.log for the application error.`;
+}
+
+function laravelHotFilePermissionFailure(projectPath) {
+  return `Vite cannot write Laravel's generated hot-file at ${join(projectPath, "public", "hot")}. The project is not writable by the current desktop user, commonly because npm, PHP, or Composer was previously run with sudo. From the project directory run: sudo chown -R "$USER":"$(id -gn)" public storage bootstrap/cache && chmod -R u+rwX public storage bootstrap/cache. Then retry Preview. Do not run Vite with sudo.`;
 }
 
 function classifyLaravelLog(log) {

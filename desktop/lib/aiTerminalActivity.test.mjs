@@ -21,6 +21,10 @@ test("Vibyra completion recognizes every provider-native composer prompt", () =>
   assert.equal(providerActivitySignal("vibyra", "\x1b[1G\x1b[0J❯ \x1b[3G"), "ready");
   assert.equal(providerActivitySignal("vibyra", "\x1b[1G\x1b[0J│ > \x1b[5G"), "ready");
   assert.equal(providerActivitySignal("vibyra", "\x1b[1G\x1b[0Jdeepseek › \x1b[12G"), "ready");
+  assert.equal(
+    providerActivitySignal("vibyra", "\r\n> Type your message or @path/to/file\r\n? for shortcuts"),
+    "ready"
+  );
 });
 
 test("Vibyra activity remains compatible with recovered legacy Codex-backed sessions", () => {

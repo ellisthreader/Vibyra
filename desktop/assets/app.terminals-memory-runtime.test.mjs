@@ -6,12 +6,15 @@ import vm from "node:vm";
 const stateSource = await readFile(new URL("./app.terminals-memory-state.js", import.meta.url), "utf8");
 const apiSource = await readFile(new URL("./app.terminals-memory-api.js", import.meta.url), "utf8");
 const graphLayoutSource = await readFile(new URL("./app.terminals-memory-graph-layout.js", import.meta.url), "utf8");
+const graphModelSource = await readFile(new URL("./app.terminals-memory-graph-model.js", import.meta.url), "utf8");
 const graphVisualsSource = await readFile(new URL("./app.terminals-memory-graph-visuals.js", import.meta.url), "utf8");
 const graphSource = await readFile(new URL("./app.terminals-memory-graph.js", import.meta.url), "utf8");
 const importSource = await readFile(new URL("./app.terminals-memory-import.js", import.meta.url), "utf8");
 const onboardingSource = await readFile(new URL("./app.terminals-memory-onboarding.js", import.meta.url), "utf8");
 const renderSource = await readFile(new URL("./app.terminals-memory-render.js", import.meta.url), "utf8");
 const eventsSource = await readFile(new URL("./app.terminals-memory-events.js", import.meta.url), "utf8");
+const companionMemorySource = await readFile(new URL("./app.terminals-companion-memory.js", import.meta.url), "utf8");
+const authHelpersSource = await readFile(new URL("./app.auth-helpers.js", import.meta.url), "utf8");
 const memoryCss = await readFile(new URL("./app.terminals-memory.css", import.meta.url), "utf8");
 const graphCss = await readFile(new URL("./app.terminals-memory-graph.css", import.meta.url), "utf8");
 const graphAdvancedCss = await readFile(new URL("./app.terminals-memory-graph-advanced.css", import.meta.url), "utf8");
@@ -41,9 +44,40 @@ test("forced vault reloads queue while an earlier load is active", async () => {
   assert.equal(context.terminalMemoryState.nodes[0].name, "Imported");
 });
 
+test("memory retries a pre-auth startup failure when the desktop session becomes ready", async () => {
+  let requests = 0;
+  const context = memoryContext(async () => {
+    requests += 1;
+    if (requests === 1) {
+      return {
+        ok: false,
+        status: 401,
+        async json() { return { error: "Log in to Vibyra Desktop to use project memory." }; }
+      };
+    }
+    return jsonResponse({
+      ok: true,
+      vault: { nodes: [{ id: "note-1", type: "document", name: "Persistent memory" }] }
+    });
+  });
+
+  await vm.runInContext('loadTerminalMemoryVault("project-1")', context);
+  assert.equal(context.terminalMemoryState.loaded, false);
+  assert.equal(context.terminalMemoryState.loadFailed, true);
+  assert.match(companionMemorySource, /terminalMemoryState\.loadFailed/);
+
+  context.window.dispatchEvent({ type: "vibyra:desktop-session-ready" });
+  await waitFor(() => requests === 2 && context.terminalMemoryState.loaded);
+
+  assert.equal(context.terminalMemoryState.loadFailed, false);
+  assert.equal(context.terminalMemoryState.nodes[0].name, "Persistent memory");
+  assert.match(authHelpersSource, /vibyra:desktop-session-ready/);
+});
+
 test("memory graph uses folders and wikilinks as real connections", () => {
   const context = memoryContext(async () => jsonResponse({ ok: true }));
   vm.runInContext(graphLayoutSource, context);
+  vm.runInContext(graphModelSource, context);
   vm.runInContext(graphVisualsSource, context);
   vm.runInContext(graphSource, context);
   const model = vm.runInContext(`terminalMemoryGraphModel([
@@ -62,6 +96,7 @@ test("memory graph uses folders and wikilinks as real connections", () => {
 test("large memory graphs spread across the canvas and support bounded zoom", () => {
   const context = memoryContext(async () => jsonResponse({ ok: true }));
   vm.runInContext(graphLayoutSource, context);
+  vm.runInContext(graphModelSource, context);
   vm.runInContext(graphVisualsSource, context);
   vm.runInContext(graphSource, context);
   context.graphNodes = Array.from({ length: 48 }, (_, index) => ({
@@ -91,24 +126,82 @@ test("large memory graphs spread across the canvas and support bounded zoom", ()
   assert.equal(result.minimum, .55);
 });
 
-test("portrait Memory sidebars use a tall graph layout", () => {
+test("memory graph reuses topology and positions until vault data or size changes", () => {
   const context = memoryContext(async () => jsonResponse({ ok: true }));
   vm.runInContext(graphLayoutSource, context);
-  const portrait = vm.runInContext("terminalMemoryGraphSizeForViewport(360, 820)", context);
-  const landscape = vm.runInContext("terminalMemoryGraphSizeForViewport(1200, 700)", context);
+  vm.runInContext(graphModelSource, context);
+  const result = vm.runInContext(`(() => {
+    terminalMemoryState.nodes = [
+      { id: "folder", type: "folder", name: "Project", parentId: "", body: "" },
+      { id: "note", type: "document", name: "Note", parentId: "folder", body: "" }
+    ];
+    terminalMemoryTouchGraph();
+    const first = terminalMemoryGraphModel(terminalMemoryState.nodes);
+    const repeated = terminalMemoryGraphModel(terminalMemoryState.nodes);
+    terminalMemoryReplaceNode({ id: "note", type: "document", name: "Note", parentId: "folder", body: "[[Project]]" });
+    const changed = terminalMemoryGraphModel(terminalMemoryState.nodes);
+    terminalMemoryGraphSize = { width: 1000, height: 1200 };
+    const resized = terminalMemoryGraphModel(terminalMemoryState.nodes);
+    globalThis.graphFullscreen = true;
+    globalThis.terminalMemoryIsFullscreen = () => graphFullscreen;
+    const fullscreen = terminalMemoryGraphModel(terminalMemoryState.nodes);
+    return {
+      repeated: first === repeated,
+      changed: repeated !== changed,
+      resized: changed !== resized,
+      fullscreen: resized !== fullscreen
+    };
+  })()`, context);
 
-  assert.ok(portrait.height > 2000);
-  assert.equal(landscape.height, 720);
+  assert.equal(result.repeated, true);
+  assert.equal(result.changed, true);
+  assert.equal(result.resized, true);
+  assert.equal(result.fullscreen, true);
+  assert.equal(vm.runInContext("terminalMemoryGraphIterations(180)", context), 32);
+  assert.equal(vm.runInContext("terminalMemoryGraphIterations(100)", context), 40);
+  assert.match(graphSource, /terminalMemoryGraphBound/);
+  assert.match(graphVisualsSource, /terminalMemoryGraphInteractionIndex/);
+  assert.match(graphSource, /class="tree edge-batch"/);
+  assert.match(graphSource, /data-terminal-memory-graph-focus-edge/);
+  assert.doesNotMatch(graphSource, /data-terminal-memory-graph-edge data-from/);
+  assert.match(graphAdvancedCss, /\.terminal-memory-graph\.focusing \.terminal-memory-graph-node/);
+  assert.match(apiSource, /terminalMemoryTouchGraph\(\)/);
+});
+
+test("compact Memory keeps stable graph proportions as the side panel narrows", () => {
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(graphLayoutSource, context);
+  const narrow = vm.runInContext("terminalMemoryGraphSizeForViewport(280, 820, false)", context);
+  const partial = vm.runInContext("terminalMemoryGraphSizeForViewport(360, 820, false)", context);
+  const wide = vm.runInContext("terminalMemoryGraphSizeForViewport(720, 820, false)", context);
+  const fullscreenPortrait = vm.runInContext("terminalMemoryGraphSizeForViewport(360, 820, true)", context);
+
+  assert.equal(narrow.width, 1000);
+  assert.equal(narrow.height, 720);
+  assert.equal(partial.width, narrow.width);
+  assert.equal(partial.height, narrow.height);
+  assert.equal(wide.width, narrow.width);
+  assert.equal(wide.height, narrow.height);
+  assert.ok(fullscreenPortrait.height > 2000);
   assert.match(graphSource, /terminalMemoryGraphSyncSize\(\)/);
   assert.match(graphSource, /ResizeObserver/);
 });
 
-test("compact graph occupies sixty percent of the workspace while fullscreen stays unconstrained", () => {
+test("compact graph fills the workspace without clipping or stretching the brain", () => {
   assert.doesNotMatch(graphSource, /terminal-memory-graph-footer|terminal-memory-graph-hint/);
   assert.match(graphCss, /grid-template-rows:\s*auto minmax\(0, 1fr\)/);
   assert.match(graphCss, /\.terminal-memory-graph\s*\{[^}]*height:\s*100%/s);
-  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) > \.terminal-memory-graph\s*\{[^}]*align-self:\s*start;[^}]*height:\s*60%/s);
-  assert.match(graphLayoutSource, /canvas\?\.clientHeight \|\| compactFallback/);
+  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) > \.terminal-memory-graph\s*\{[^}]*align-self:\s*stretch;[^}]*height:\s*100%/s);
+  assert.match(graphCss, /\.terminal-memory-graph svg\s*\{[^}]*height:\s*100%;[^}]*width:\s*100%/s);
+  assert.doesNotMatch(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\)[^{]*svg\s*\{[^}]*height:\s*60%/s);
+  assert.match(graphCss, /\.terminal-memory-workspace:not\(\.terminal-memory-workspace--fullscreen\) \.terminal-memory-graph-canvas\s*\{[^}]*background-image:/s);
+  assert.match(graphSource, /canvas\.addEventListener\("pointermove"/);
+  assert.doesNotMatch(graphSource, /graphPan[XY]\s*=\s*Math\.(?:max|min)/);
+  const context = memoryContext(async () => jsonResponse({ ok: true }));
+  vm.runInContext(graphLayoutSource, context);
+  assert.equal(vm.runInContext("terminalMemoryGraphViewportHeight(1200, false)", context), 720);
+  assert.equal(vm.runInContext("terminalMemoryGraphViewportHeight(1200, true)", context), 1200);
+  assert.doesNotMatch(graphLayoutSource, /nodeCount.*viewportHeight|growth \* \.4/);
   assert.match(graphCss, /\.terminal-memory-graph-meta\s*\{[^}]*align-items:\s*flex-start/s);
   assert.doesNotMatch(graphAdvancedCss, /\.terminal-memory-graph-legend\s*\{[^}]*position:\s*absolute/s);
 });
@@ -244,13 +337,26 @@ test("native picker manifests post directly to the canonical import route", asyn
 });
 
 function memoryContext(fetchImpl) {
+  const listeners = new Map();
+  const window = {
+    clearTimeout,
+    setTimeout,
+    addEventListener(type, listener) {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type).add(listener);
+    },
+    dispatchEvent(event) {
+      for (const listener of listeners.get(event?.type) || []) listener(event);
+      return true;
+    }
+  };
   const context = vm.createContext({
     console,
     fetch: fetchImpl,
     queueMicrotask,
     setTimeout,
     clearTimeout,
-    window: { clearTimeout, setTimeout },
+    window,
     terminalMemoryRefresh() {},
     terminalMemoryUpdateStatus() {},
     terminalMemoryUpdateTree() {},

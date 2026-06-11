@@ -19,8 +19,9 @@ function screenshotDocumentCanvas() {
   return screenshotState.documentCanvas;
 }
 
-async function loadScreenshotDocument(dataUrl, resetOriginal = false) {
+async function loadScreenshotDocument(dataUrl, resetOriginal = false, shouldCommit = null) {
   const image = await screenshotLoadImage(dataUrl);
+  if (shouldCommit && !shouldCommit()) return false;
   const canvas = screenshotDocumentCanvas();
   canvas.width = image.naturalWidth || image.width;
   canvas.height = image.naturalHeight || image.height;
@@ -33,6 +34,7 @@ async function loadScreenshotDocument(dataUrl, resetOriginal = false) {
   screenshotState.drag = null;
   renderScreenshotCanvas();
   updateScreenshotControls();
+  return true;
 }
 
 function screenshotLoadImage(dataUrl) {
@@ -164,7 +166,7 @@ async function resetScreenshotDocument() {
 async function applyScreenshotCrop() {
   const crop = screenshotState.crop;
   const source = screenshotState.documentCanvas;
-  if (!crop || crop.width < 8 || crop.height < 8 || !source) return;
+  if (!crop || crop.width < 8 || crop.height < 8 || !source) return false;
   const next = document.createElement("canvas");
   next.width = Math.max(1, Math.round(crop.width));
   next.height = Math.max(1, Math.round(crop.height));
@@ -185,6 +187,7 @@ async function applyScreenshotCrop() {
   screenshotState.crop = null;
   renderScreenshotCanvas();
   updateScreenshotControls();
+  return true;
 }
 
 function screenshotDataUrl() {

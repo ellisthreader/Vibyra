@@ -18,6 +18,9 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 
 - Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Dynamic Team decomposition, planner models, authoritative plan storage,
+  transactional launch, rollout, and evaluation:
+  `Desktop/AI Team Dynamic Planner Implementation Plan.md`
 - Native provider CLI rollout, protocol matrix, and release gates: `Desktop/Native Provider Terminal Plan.md`
 - Local Vibyra AI, Ollama runtime/model, local chat routing: `Desktop/Local Vibyra AI.md`
 - AI-terminal Voice and canonical project Memory: `Desktop/Voice And Project Memory.md`
@@ -32,6 +35,17 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 - Use `.agents/skills/vibyra-ai-terminal-diagnostics/SKILL.md` for AI terminal
   launch, UI ownership, hidden-engine, token-source/billing, PTY input,
   transcript, and recovered-worker failures.
+- Use `.agents/skills/vibyra-preview-diagnostics/SKILL.md` for Desktop Test or
+  phone Preview project detection, runtime startup, target/capability routing,
+  proxy transport, WebView state, and shutdown failures.
+
+## Runtime Branding
+
+For Electron/GNOME app name, taskbar grouping, launcher metadata, or logo
+problems, read `Desktop/Desktop Shell.md`. The visible app name is `Vibyra`;
+the Linux identity is `vibyra.desktop` / `WM_CLASS=vibyra`; and the native
+icon is the transparent login-page V exported as
+`desktop/vibyra-login-logo.png`.
 
 ## Route Groups
 

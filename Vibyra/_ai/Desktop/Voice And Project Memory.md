@@ -14,6 +14,7 @@ permissions, transcription, and editable project memory.
 - `desktop/lib/desktopMemoryRoutes.mjs`
 - `desktop/lib/desktopMemoryVault.mjs`
 - `desktop/lib/desktopVoice.mjs`
+- `desktop/lib/desktopPromptTranscript.mjs`
 - `desktop/lib/desktopProjectMemory.mjs`
 - `desktop/lib/desktopChat.mjs`
 - `backend/app/Http/Controllers/Concerns/ProjectMemoryEndpoints.php`
@@ -103,6 +104,36 @@ message to the Talk transcript, or retargets when focus changes.
 `F8` is a renderer key listener, not an OS-global shortcut; it requires the
 Vibyra window to have keyboard focus.
 
+Every submitted spoken or typed user prompt is appended verbatim to the local
+Obsidian document `Vibyra/Prompt Transcripts.md`. The file is intentionally
+Git-ignored and mode `0600`. Each prompt event receives stable `turnId` and
+`sessionId` values; a linked outcome event records the model, status, duration,
+raw assistant response, final user-visible result after desktop actions, action
+payload, or error. Surfaces are `AI Talk`, `Terminal Dictation`, `Desktop Chat`,
+`Terminal AI Chat`, `Terminal Chat`, and `Native Terminal`. Raw audio and base64
+recordings are never written.
+
+Recorder transcription logs in the bridge immediately after
+`gpt-4o-mini-transcribe` succeeds and returns the created turn record with the
+text. Browser Web Speech and typed paths post to
+`POST /desktop/prompt/transcript` before sending or executing the prompt.
+Structured chat and Talk append outcomes after actions resolve. Native PTY
+keystrokes are reconstructed into submitted lines and serialized with delivery;
+cleaned output closes the same turn when the provider returns to ready, exits,
+or is output-idle for four seconds. F8 carries its transcription turn into PTY
+tracking and disables the duplicate typed-prompt write.
+
+Client metadata and structured prompt persistence are owned by
+`desktop/assets/app.prompt-transcript.js`; PTY reconstruction is
+`desktop/assets/app.terminals-pty-prompt-log.js`; bridge persistence is
+`desktop/lib/desktopPromptTranscript.mjs`. Validate with
+`desktop/assets/app.prompt-transcript.test.mjs`,
+`desktop/lib/desktopPromptTranscript.test.mjs`,
+`desktop/assets/app.terminals-pty-prompt-log.test.mjs`,
+`desktop/assets/app.terminals-companion-rail.test.mjs`,
+`desktop/assets/app.terminals-input.test.mjs`, and
+`desktop/assets/app.terminals-voice-input.test.mjs`.
+
 Desktop Settings > Preferences owns local Voice preferences. The built-in
 selector mirrors the 13 voices accepted by `gpt-4o-mini-tts`: `alloy`, `ash`,
 `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`,
@@ -178,16 +209,32 @@ gradients, or filled cluster halos behind Memory.
 Large vaults use the deterministic force layout in
 `app.terminals-memory-graph-layout.js`, with a 1000-wide virtual canvas whose
 height follows the rendered graph aspect ratio, visible folder/high-degree
-labels, bounded 55%-320% wheel/button zoom, Fit reset, and drag-to-pan. Tall
-sidebars use a compact Graph section top-aligned at 60% of the available
-content height so relationships stay legible without a vertically stretched
-appearance. Notes and fullscreen Graph continue to fill their content area. The
-advanced visual layer adds real folder-region
+labels, bounded 55%-320% wheel/button zoom, Fit reset, and drag-to-pan. The
+compact Graph surface fills the remaining sidebar height so its canvas
+background and subtle grid reach the bottom. The actual compact brain keeps
+a fixed 1000-by-720 virtual layout regardless of note count or companion width;
+the SVG itself must fill the complete canvas so nodes and links are never cut
+off at an internal percentage-height boundary and drag-to-pan works to the
+bottom. Never derive compact layout height from a narrow or partially opened
+panel because normalization stretches the brain vertically, and never
+progressively expand node bounds to fill the background. Fullscreen Graph
+remains responsive to its rendered aspect ratio, and Notes continues to fill
+its content area.
+The advanced visual layer adds real folder-region
 halos, cluster colors, hub orbits, curved Markdown links, a structural legend,
 and hover neighborhood isolation; these remain derived from vault data rather
 than decorative fake connections. Keep `Project brain` in the graph's top
 header. Keep the compact graph footer-free: place the small folder/link legend
 beside the graph controls and let the canvas consume all remaining height.
+Graph performance is revision-based: topology is cached until vault data
+changes, force positions are cached per compact/fullscreen viewport, and load,
+save, replace, and delete paths call `terminalMemoryTouchGraph()`. Use adaptive
+force iterations for the bounded 180-node graph. Render base tree/link edges as
+batched SVG paths rather than one DOM path per connection; hover uses delegated
+events, a cached adjacency index, and one dynamic highlight path. Fullscreen
+Links consumes cached topology only and must not request force positions.
+Explorer rows use rendering containment so large expanded vaults do less
+offscreen layout/paint work.
 
 The terminal companion has a persisted drag width owned by
 `app.terminals-companion-layout.js`, clamped to 280px-720px while reserving at
@@ -211,6 +258,11 @@ Vault GET requests use `cache: "no-store"`, and a forced reload requested while
 another vault load is active must be queued rather than discarded. Import file
 inputs are cleared immediately after consuming their `FileList`, so selecting
 the same notes again still fires a change and the post-import graph reloads.
+On desktop relaunch, Memory may render before the saved account session finishes
+verification. A failed pre-auth vault request must remain a retryable load
+failure, not become an empty loaded vault; `syncDesktopSession()` dispatches
+`vibyra:desktop-session-ready`, and the Memory runtime force-reloads the current
+project then. Failed loads also retry when browser connectivity returns.
 Electron Markdown import controls use the main-process native file dialog
 through the preload `vibyraDesktopMemory.pick()` API; browser file inputs and
 setup drag-and-drop remain fallbacks outside Electron. The picker implementation

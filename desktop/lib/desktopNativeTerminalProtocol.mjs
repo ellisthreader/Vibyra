@@ -1,12 +1,13 @@
 export function nativeRequestToResponses(protocol, body, billingModel) {
   if (protocol === "anthropic") return anthropicToResponses(body, billingModel);
+  if (protocol === "openai-chat-completions") return openAiChatCompletionsToResponses(body, billingModel);
   return geminiToResponses(body, billingModel);
 }
 
 export function createNativeStreamTranslator(protocol, write) {
-  return protocol === "anthropic"
-    ? anthropicStreamTranslator(write)
-    : geminiStreamTranslator(write);
+  if (protocol === "anthropic") return anthropicStreamTranslator(write);
+  if (protocol === "openai-chat-completions") return openAiChatCompletionsStreamTranslator(write);
+  return geminiStreamTranslator(write);
 }
 
 function anthropicToResponses(body, model) {
@@ -94,6 +95,60 @@ function geminiToResponses(body, model) {
     instructions: geminiText(body.systemInstruction?.parts),
     tools: geminiTools(body.tools),
     max_output_tokens: Number(config.maxOutputTokens) || 2000,
+    stream: true,
+    store: false
+  };
+}
+
+function openAiChatCompletionsToResponses(body, model) {
+  const input = [];
+  const instructions = [];
+  for (const message of Array.isArray(body.messages) ? body.messages : []) {
+    const role = String(message?.role || "user");
+    if (role === "system" || role === "developer") {
+      const text = openAiContentText(message?.content);
+      if (text) instructions.push(text);
+      continue;
+    }
+    if (role === "tool") {
+      input.push({
+        type: "function_call_output",
+        call_id: String(message?.tool_call_id || ""),
+        output: openAiContentText(message?.content)
+      });
+      continue;
+    }
+    const text = openAiContentText(message?.content);
+    if (text) {
+      input.push({
+        role: role === "assistant" ? "assistant" : "user",
+        content: [{ type: "input_text", text }]
+      });
+    }
+    if (role === "assistant") {
+      for (const toolCall of Array.isArray(message?.tool_calls) ? message.tool_calls : []) {
+        input.push({
+          type: "function_call",
+          id: String(toolCall?.id || ""),
+          call_id: String(toolCall?.id || ""),
+          name: String(toolCall?.function?.name || ""),
+          arguments: String(toolCall?.function?.arguments || "{}")
+        });
+      }
+    }
+  }
+  return {
+    model,
+    input,
+    instructions: instructions.join("\n\n"),
+    tools: (Array.isArray(body.tools) ? body.tools : []).map((tool) => ({
+      type: "function",
+      name: String(tool?.function?.name || ""),
+      description: String(tool?.function?.description || ""),
+      parameters: tool?.function?.parameters || {}
+    })),
+    max_output_tokens: Number(body.max_completion_tokens || body.max_tokens) || 2000,
+    ...(body.reasoning_effort ? { reasoning: { effort: String(body.reasoning_effort) } } : {}),
     stream: true,
     store: false
   };
@@ -217,6 +272,96 @@ function geminiStreamTranslator(write) {
   };
 }
 
+function openAiChatCompletionsStreamTranslator(write) {
+  const state = {
+    id: `chatcmpl_${Date.now()}`,
+    model: "",
+    started: false,
+    completed: false,
+    sawTool: false,
+    calls: new Map()
+  };
+  const emit = (delta = {}, finishReason = null, usage = null) => {
+    const payload = {
+      id: state.id,
+      object: "chat.completion.chunk",
+      created: Math.floor(Date.now() / 1000),
+      model: state.model,
+      choices: [{ index: 0, delta, finish_reason: finishReason }]
+    };
+    if (usage) payload.usage = usage;
+    write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
+  const start = () => {
+    if (state.started) return;
+    state.started = true;
+    emit({ role: "assistant", content: "" });
+  };
+  return {
+    event(event) {
+      const data = event.data || {};
+      const type = data.type || event.name;
+      if (type === "response.created") {
+        state.id = String(data.response?.id || state.id).replace(/^resp_/, "chatcmpl_");
+        state.model = String(data.response?.model || "");
+        start();
+      } else if (type === "response.output_text.delta") {
+        start();
+        emit({ content: String(data.delta || "") });
+      } else if (type === "response.output_item.added" && data.item?.type === "function_call") {
+        start();
+        state.sawTool = true;
+        const index = state.calls.size;
+        const key = String(data.item.id || data.item.call_id || index);
+        const call = {
+          index,
+          id: String(data.item.call_id || data.item.id || `call_${index}`),
+          name: String(data.item.name || "")
+        };
+        state.calls.set(key, call);
+        emit({
+          tool_calls: [{
+            index,
+            id: call.id,
+            type: "function",
+            function: { name: call.name, arguments: "" }
+          }]
+        });
+      } else if (type === "response.function_call_arguments.delta") {
+        start();
+        const key = String(data.item_id || data.output_index || "");
+        const call = state.calls.get(key) || [...state.calls.values()].at(-1);
+        if (call) {
+          emit({
+            tool_calls: [{
+              index: call.index,
+              function: { arguments: String(data.delta || "") }
+            }]
+          });
+        }
+      } else if (type === "response.completed" && !state.completed) {
+        state.completed = true;
+        start();
+        const source = data.response?.usage || {};
+        emit({}, state.sawTool ? "tool_calls" : "stop", {
+          prompt_tokens: Number(source.input_tokens) || 0,
+          completion_tokens: Number(source.output_tokens) || 0,
+          total_tokens: (Number(source.input_tokens) || 0) + (Number(source.output_tokens) || 0)
+        });
+        write("data: [DONE]\n\n");
+      } else if (type === "response.failed" || type === "error") {
+        write(`data: ${JSON.stringify({
+          error: {
+            message: responseErrorMessage(data),
+            type: "server_error",
+            code: "vibyra_upstream_error"
+          }
+        })}\n\ndata: [DONE]\n\n`);
+      }
+    }
+  };
+}
+
 function emitAnthropic(write, name, data) {
   write(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`);
 }
@@ -242,6 +387,18 @@ function anthropicContentText(content) {
 
 function geminiText(parts) {
   return (Array.isArray(parts) ? parts : []).map((part) => String(part?.text || "")).filter(Boolean).join("\n");
+}
+
+function openAiContentText(content) {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content.map((part) => {
+    if (typeof part === "string") return part;
+    if (part?.type === "text" || part?.type === "input_text" || part?.type === "output_text") {
+      return String(part.text || "");
+    }
+    return "";
+  }).filter(Boolean).join("\n");
 }
 
 function geminiTools(groups) {

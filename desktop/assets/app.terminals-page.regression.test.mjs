@@ -10,7 +10,7 @@ const actionSource = readFileSync(
   "utf8"
 );
 
-test("rejects full access for provider-qualified GPT-5.5 Pro wrappers", async () => {
+test("launches provider-qualified GPT-5.5 Pro wrappers with full access", async () => {
   const plan = desktopActionsForPrompt(
     "Open four GPT 5.5 Pro terminals with full permission.",
     { projectId: "saas" }
@@ -34,8 +34,17 @@ test("rejects full access for provider-qualified GPT-5.5 Pro wrappers", async ()
 
   const summary = await context.runDesktopActions(plan.actions);
 
-  assert.equal(summary, "Full-access launches are currently supported only for Codex terminals.");
-  assert.deepEqual(launches, []);
+  assert.match(summary, /Opening 4 GPT-5\.5 Pro terminals with full access/);
+  assert.deepEqual(JSON.parse(JSON.stringify(launches)), [{
+    count: 4,
+    model: "openai/gpt-5.5-pro",
+    options: {
+      effort: "medium",
+      permissionMode: "full",
+      projectId: "saas",
+      workspaceMode: "worktree"
+    }
+  }]);
 });
 
 function actionContext(overrides = {}) {
@@ -73,6 +82,7 @@ function actionContext(overrides = {}) {
     setPage() {},
     settingsTerminalId: "",
     syncPtyTerminals: async () => {},
+    terminalFullAccessSupported: (model) => String(model?.key || "") !== "auto",
     terminalProviderKeyForModel: (model) => model.provider,
     terminals: [],
     window: { confirm: () => true },

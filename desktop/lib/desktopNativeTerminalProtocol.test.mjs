@@ -49,6 +49,36 @@ test("translates Gemini GenerateContent requests into billed Responses requests"
   assert.equal(payload.max_output_tokens, 900);
 });
 
+test("translates Grok Chat Completions requests into billed Responses requests", () => {
+  const payload = nativeRequestToResponses("openai-chat-completions", {
+    messages: [
+      { role: "system", content: "Follow repository instructions." },
+      { role: "user", content: "Inspect the repo." },
+      {
+        role: "assistant",
+        tool_calls: [{
+          id: "call_1",
+          type: "function",
+          function: { name: "shell", arguments: "{\"command\":\"pwd\"}" }
+        }]
+      },
+      { role: "tool", tool_call_id: "call_1", content: "/workspace" }
+    ],
+    tools: [{
+      type: "function",
+      function: { name: "shell", description: "Run a command", parameters: { type: "object" } }
+    }],
+    max_completion_tokens: 1200
+  }, "x-ai/grok-build-0.1");
+
+  assert.equal(payload.model, "x-ai/grok-build-0.1");
+  assert.equal(payload.instructions, "Follow repository instructions.");
+  assert.equal(payload.input[1].type, "function_call");
+  assert.equal(payload.input[2].type, "function_call_output");
+  assert.equal(payload.tools[0].name, "shell");
+  assert.equal(payload.max_output_tokens, 1200);
+});
+
 test("translates native multi-turn assistant history as Responses input text", () => {
   const gemini = nativeRequestToResponses("gemini", {
     contents: [
@@ -107,4 +137,26 @@ test("translates Responses streaming text back to Gemini SSE", () => {
   assert.match(output, /"text":"Done"/);
   assert.match(output, /"finishReason":"STOP"/);
   assert.match(output, /"totalTokenCount":12/);
+});
+
+test("translates Responses streaming text and tools back to Grok Chat Completions", () => {
+  let output = "";
+  const translator = createNativeStreamTranslator("openai-chat-completions", (chunk) => {
+    output += chunk;
+  });
+  for (const data of [
+    { type: "response.created", response: { id: "resp_1", model: "x-ai/grok-build-0.1" } },
+    { type: "response.output_text.delta", delta: "Checking" },
+    { type: "response.output_item.added", item: { type: "function_call", id: "fc_1", call_id: "call_1", name: "shell" } },
+    { type: "response.function_call_arguments.delta", item_id: "fc_1", delta: "{\"command\":\"pwd\"}" },
+    { type: "response.completed", response: { usage: { input_tokens: 10, output_tokens: 4 } } }
+  ]) translator.event({ data });
+
+  assert.match(output, /"object":"chat\.completion\.chunk"/);
+  assert.match(output, /"content":"Checking"/);
+  assert.match(output, /"name":"shell"/);
+  assert.match(output, /"arguments":"{\\"command\\":\\"pwd\\"}"/);
+  assert.match(output, /"finish_reason":"tool_calls"/);
+  assert.match(output, /"total_tokens":14/);
+  assert.match(output, /data: \[DONE\]/);
 });

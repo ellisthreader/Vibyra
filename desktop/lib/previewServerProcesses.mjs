@@ -9,6 +9,35 @@ import {
   storePreviewService
 } from "./previewServices.mjs";
 
+const pendingStarts = new Map();
+const startGenerations = new Map();
+
+export function runPreviewServerStart(projectId, targetId, factory) {
+  const key = startKey(projectId, targetId);
+  const existing = pendingStarts.get(key);
+  if (existing) return existing.promise;
+  const generation = (startGenerations.get(key) ?? 0) + 1;
+  startGenerations.set(key, generation);
+  const promise = Promise.resolve()
+    .then(() => factory(generation))
+    .finally(() => {
+      if (pendingStarts.get(key)?.generation === generation) pendingStarts.delete(key);
+    });
+  pendingStarts.set(key, { generation, promise });
+  return promise;
+}
+
+export function cancelPreviewServerStart(projectId, targetId) {
+  const key = startKey(projectId, targetId);
+  startGenerations.set(key, (startGenerations.get(key) ?? 0) + 1);
+  pendingStarts.delete(key);
+}
+
+export function isCurrentPreviewServerStart(projectId, targetId, generation, tracked, trackedTargetId = targetId) {
+  return startGenerations.get(startKey(projectId, targetId)) === generation
+    && previewService(projectId, trackedTargetId) === tracked;
+}
+
 export function trackPreviewServer(projectId, targetIdOrTracked, maybeTracked, options = {}) {
   const explicitTarget = typeof targetIdOrTracked === "string";
   const tracked = explicitTarget ? maybeTracked : targetIdOrTracked;
@@ -58,4 +87,8 @@ export function stopAllTrackedPreviewServers() {
 
 function legacyTargetId(tracked) {
   return `legacy:${String(tracked?.appDirectory || "active")}`;
+}
+
+function startKey(projectId, targetId) {
+  return `${String(projectId || "")}\n${String(targetId || "")}`;
 }

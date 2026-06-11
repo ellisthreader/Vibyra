@@ -349,6 +349,43 @@
   font-size: 10px;
 }
 
+.terminal-setup-custom-count {
+  align-items: center;
+  border-bottom: 1px solid rgba(151, 161, 190, .13);
+  color: #918ca1;
+  display: grid;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 10px;
+  grid-template-columns: 1fr 72px;
+  padding: 3px 0 9px;
+}
+
+.terminal-setup-custom-count input {
+  appearance: textfield;
+  background: transparent;
+  border: 1px solid rgba(151, 161, 190, .16);
+  border-radius: 7px;
+  color: #f1eef8;
+  font: inherit;
+  height: 34px;
+  min-width: 0;
+  padding: 0 9px;
+  text-align: center;
+}
+
+.terminal-setup-custom-count input:focus-visible {
+  border-color: rgba(139, 92, 255, .62);
+  outline: 2px solid rgba(139, 92, 255, .18);
+  outline-offset: 1px;
+}
+
+.terminal-setup-custom-count input::-webkit-inner-spin-button,
+.terminal-setup-custom-count input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
 .terminal-setup-preview-wrap {
   display: grid;
   gap: 9px;

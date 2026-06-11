@@ -8,6 +8,7 @@ const terminalMemoryState = {
   view: "graph",
   loading: false,
   loaded: false,
+  loadFailed: false,
   reloadQueued: false,
   saving: false,
   dirty: false,
@@ -20,8 +21,13 @@ const terminalMemoryState = {
   discoveryError: "",
   graphScale: 1,
   graphPanX: 0,
-  graphPanY: 0
+  graphPanY: 0,
+  graphRevision: 0
 };
+
+function terminalMemoryTouchGraph() {
+  terminalMemoryState.graphRevision += 1;
+}
 
 function terminalMemoryReset(projectId = "") {
   window.clearTimeout(terminalMemoryState.saveTimer);
@@ -34,6 +40,7 @@ function terminalMemoryReset(projectId = "") {
   terminalMemoryState.view = "graph";
   terminalMemoryState.loading = false;
   terminalMemoryState.loaded = false;
+  terminalMemoryState.loadFailed = false;
   terminalMemoryState.reloadQueued = false;
   terminalMemoryState.saving = false;
   terminalMemoryState.dirty = false;
@@ -46,6 +53,7 @@ function terminalMemoryReset(projectId = "") {
   terminalMemoryState.graphScale = 1;
   terminalMemoryState.graphPanX = 0;
   terminalMemoryState.graphPanY = 0;
+  terminalMemoryTouchGraph();
 }
 
 function terminalMemoryNormalizeVault(value) {
@@ -126,5 +134,6 @@ function terminalMemoryReplaceNode(value) {
   const index = terminalMemoryState.nodes.findIndex((item) => item.id === node.id);
   if (index >= 0) terminalMemoryState.nodes.splice(index, 1, node);
   else terminalMemoryState.nodes.push(node);
+  terminalMemoryTouchGraph();
   return node;
 }

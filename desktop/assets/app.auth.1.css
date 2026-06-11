@@ -154,6 +154,17 @@ body.desktop-authenticated .desktop-auth { display: none; }
 .auth-choice .apple-mark { color: #fff; }
 .auth-choice .apple-mark svg { fill: currentColor; height: 35px; width: 35px; }
 .auth-choice strong { font-size: 17px; font-weight: 800; min-width: 0; white-space: nowrap; }
+.auth-social-status {
+  color: rgba(232, 224, 255, 0.76);
+  display: none;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  margin: -2px 14px 0;
+  text-align: center;
+}
+.auth-social-status.visible { display: block; }
+.auth-social-status.error { color: #ff8ba0; }
 .email-auth {
   background: rgba(10, 5, 31, 0.62);
   border: 1px solid rgba(183, 80, 255, 0.42);

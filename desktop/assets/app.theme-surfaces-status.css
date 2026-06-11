@@ -70,7 +70,7 @@
 .profile-action-copy strong,
 .profile-referral-code strong,
 .profile-stat-grid strong,
-.profile-select-row span {
+.profile-select-row > span {
   color: var(--surface-text);
 }
 
@@ -92,9 +92,7 @@
 .profile-section-search,
 .profile-appearance-card,
 .profile-field input,
-.profile-field select,
 .profile-field textarea,
-.profile-select-row select,
 .profile-session-menu {
   background: var(--surface-bg);
   border-color: var(--surface-border);
@@ -120,12 +118,6 @@
 .profile-session-menu {
   background: var(--surface-elevated);
   box-shadow: 0 16px 36px color-mix(in srgb, var(--color-shadow, #000) 26%, transparent);
-}
-
-.profile-field select option,
-.profile-select-row select option {
-  background: var(--surface-elevated);
-  color: var(--surface-text);
 }
 
 .profile-device-dot,
@@ -169,30 +161,9 @@ body[data-desktop-theme="light"] .modal-backdrop {
   background: rgba(20, 16, 32, 0.28);
 }
 
-body[data-desktop-theme="light"] .profile-field select,
-body[data-desktop-theme="light"] .profile-select-row select {
-  color-scheme: light;
-}
-
-body[data-desktop-theme="light"] .profile-field select option,
-body[data-desktop-theme="light"] .profile-select-row select option {
-  background: var(--color-elevated, #fff);
-  color: var(--surface-text);
-}
-
 @media (prefers-color-scheme: light) {
   body[data-desktop-theme="auto"] .modal-backdrop {
     background: rgba(20, 16, 32, 0.28);
   }
 
-  body[data-desktop-theme="auto"] .profile-field select,
-  body[data-desktop-theme="auto"] .profile-select-row select {
-    color-scheme: light;
-  }
-
-  body[data-desktop-theme="auto"] .profile-field select option,
-  body[data-desktop-theme="auto"] .profile-select-row select option {
-    background: var(--color-elevated, #fff);
-    color: var(--surface-text);
-  }
 }

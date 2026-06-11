@@ -5,7 +5,8 @@ function config() {
 function loadTerminals() {
   try {
     const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    return Array.isArray(parsed) ? parsed.map(normalizeTerminal).filter(Boolean).slice(0, maxTerminals) : [];
+    const loaded = Array.isArray(parsed) ? parsed.map(normalizeTerminal).filter(Boolean).slice(0, maxTerminals) : [];
+    return typeof repairTerminalTeamIds === "function" ? repairTerminalTeamIds(loaded) : loaded;
   } catch {
     return [];
   }
@@ -19,13 +20,29 @@ function normalizeTerminal(item) {
     model: String(item.model || "auto"),
     effort: normalizeTerminalEffort(item.effort),
     permissionMode: normalizeTerminalPermissionMode(item.permissionMode),
-    tokenMode: String(item.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
+    tokenMode: ["vibyra", "provider"].includes(String(item.tokenMode || ""))
+      ? String(item.tokenMode)
+      : "vibyra",
     projectId: String(item.projectId || ""),
     workspaceMode: normalizeTerminalWorkspaceMode(item.workspaceMode),
     allowSharedFallback: item.allowSharedFallback !== false,
     branchName: String(item.branchName || ""),
     workspacePath: String(item.workspacePath || ""),
     workspaceNotice: String(item.workspaceNotice || ""),
+    teamId: String(item.teamId || ""),
+    teamSize: Math.max(0, Math.min(4, Number(item.teamSize) || 0)),
+    teamGoal: String(item.teamGoal || "").slice(0, 1200),
+    teamRole: String(item.teamRole || "").slice(0, 40),
+    teamRoleKey: String(item.teamRoleKey || "").slice(0, 40),
+    teamPhase: String(item.teamPhase || "").slice(0, 40),
+    teamCapability: String(item.teamCapability || "").slice(0, 40),
+    teamRoleContractVersion: Math.max(0, Number(item.teamRoleContractVersion) || 0),
+    teamRolePolicyHash: String(item.teamRolePolicyHash || "").slice(0, 128),
+    teamTask: String(item.teamTask || "").slice(0, 500),
+    teamPlanId: String(item.teamPlanId || "").slice(0, 120),
+    teamPlannerMode: String(item.teamPlannerMode || "").slice(0, 40),
+    teamPlannerModel: String(item.teamPlannerModel || "").slice(0, 120),
+    teamPlannerFallbackReason: String(item.teamPlannerFallbackReason || "").slice(0, 80),
     draft: String(item.draft || ""),
     shellMode: Boolean(item.shellMode),
     profileVersion: 1,
@@ -109,6 +126,16 @@ function createTerminal(modelKey = setupModel, shouldRender = true, options = {}
     branchName: "",
     workspacePath: "",
     workspaceNotice: "",
+    teamId: String(options.teamId || ""),
+    teamSize: Math.max(0, Math.min(4, Number(options.teamSize) || 0)),
+    teamGoal: String(options.teamGoal || "").slice(0, 1200),
+    teamRole: String(options.teamRole || "").slice(0, 40),
+    teamRoleKey: String(options.teamRoleKey || "").slice(0, 40),
+    teamPhase: String(options.teamPhase || "").slice(0, 40),
+    teamCapability: String(options.teamCapability || "").slice(0, 40),
+    teamRoleContractVersion: Math.max(0, Number(options.teamRoleContractVersion) || 0),
+    teamRolePolicyHash: String(options.teamRolePolicyHash || "").slice(0, 128),
+    teamTask: String(options.teamTask || "").slice(0, 500),
     draft: "",
     shellMode: false,
     profileVersion: 1,

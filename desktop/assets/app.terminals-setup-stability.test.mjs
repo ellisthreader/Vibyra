@@ -6,6 +6,7 @@ const renderSource = await readFile(new URL("./app.terminals-render.js", import.
 const ptySource = await readFile(new URL("./app.terminals-pty.js", import.meta.url), "utf8");
 const stabilitySource = await readFile(new URL("./app.terminals-setup-stability.js", import.meta.url), "utf8");
 const setupStyles = await readFile(new URL("./app.terminals.setup.1.css", import.meta.url), "utf8");
+const polishStyles = await readFile(new URL("./app.terminals-chrome-polish.css", import.meta.url), "utf8");
 const companionBaseStyles = await readFile(new URL("./app.terminals-companion.css", import.meta.url), "utf8");
 const companionStyles = await readFile(new URL("./app.terminals-companion-tools.css", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
@@ -13,13 +14,21 @@ const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8"
 test("terminal setup preferences preserve the outer setup and companion DOM", () => {
   assert.match(renderSource, /patchTerminalSetupPanel\(existingSetup\)/);
   assert.match(stabilitySource, /currentProgress\.querySelector/);
-  assert.match(stabilitySource, /if \(currentStep !== nextStep\) currentProgress\.replaceWith\(nextProgress\)/);
+  assert.match(stabilitySource, /const sameStep = currentStep === nextStep/);
+  assert.match(stabilitySource, /if \(!sameStep\) currentProgress\.replaceWith\(nextProgress\)/);
+  assert.match(stabilitySource, /if \(sameStep\) nextPanel\.classList\.add\("terminal-setup-panel--stable"\)/);
   assert.match(stabilitySource, /currentFlow\.classList\.toggle\("terminal-setup-flow--mode"/);
   assert.match(stabilitySource, /currentPanel\.replaceWith\(nextPanel\)/);
   assert.match(stabilitySource, /classList\.toggle\("terminal-setup--mode"/);
   assert.match(stabilitySource, /classList\.toggle\("terminal-setup--configure"/);
   assert.doesNotMatch(stabilitySource, /setup\.outerHTML|nodes\.content\.innerHTML/);
   assert.match(appSource, /app\.terminals-setup-stability\.js/);
+});
+
+test("setup option changes do not replay panel or preview entrance animations", () => {
+  assert.match(polishStyles, /\.terminal-setup-panel--stable/);
+  assert.match(polishStyles, /\.terminal-setup-panel--stable \.terminal-setup-grid-preview > span/);
+  assert.match(polishStyles, /animation: none !important/);
 });
 
 test("terminal setup stays safely centered while conditional settings change", () => {

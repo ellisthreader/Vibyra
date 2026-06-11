@@ -89,6 +89,7 @@ function startNewChat() {
   activeChatId = "";
   chatMessages = [];
   chatAttachments = [];
+  chatImageAttachments = [];
   chatDraft = "";
   activeChatTool = "";
   activeChatSkill = "";

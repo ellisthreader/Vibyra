@@ -31,8 +31,9 @@ async function openTerminalsFromDesktopAction(action, executionContext = {}) {
     return `${model.label} is not available on the current Vibyra plan.`;
   }
   const fullAccess = action.permissionMode === "full";
-  if (fullAccess && !isCodexDesktopActionModel(model)) {
-    return "Full-access launches are currently supported only for Codex terminals.";
+  const tokenMode = typeof setupTokenMode === "string" ? setupTokenMode : "vibyra";
+  if (fullAccess && !desktopActionFullAccessSupported(model, tokenMode)) {
+    return "Full access is unavailable for that terminal runtime.";
   }
   if (fullAccess && !window.confirm(`Open ${count} ${model.label} terminal${count === 1 ? "" : "s"} with full access? This bypasses approval and sandbox protections.`)) {
     return "Full-access terminal launch was cancelled.";
@@ -51,7 +52,7 @@ async function openTerminalsFromDesktopAction(action, executionContext = {}) {
     workspaceMode
   };
   const runtimeIssue = typeof terminalRuntimeLaunchIssueForRequest === "function"
-    ? terminalRuntimeLaunchIssueForRequest(model, fullAccess ? "provider" : setupTokenMode, "")
+    ? terminalRuntimeLaunchIssueForRequest(model, tokenMode, "")
     : "";
   if (runtimeIssue) return runtimeIssue;
   setPage("terminals");
@@ -97,8 +98,9 @@ async function runTerminalTasksFromDesktopAction(action, executionContext = {}) 
     openTokenModal("plans");
     return `${locked.model.label} is not available on the current Vibyra plan.`;
   }
-  if (queued.some((task) => task.permissionMode === "full" && !isCodexDesktopActionModel(task.model))) {
-    return "Full-access launches are currently supported only for Codex terminals.";
+  const defaultTokenMode = typeof setupTokenMode === "string" ? setupTokenMode : "vibyra";
+  if (queued.some((task) => task.permissionMode === "full" && !desktopActionFullAccessSupported(task.model, defaultTokenMode))) {
+    return "Full access is unavailable for one or more selected terminal runtimes.";
   }
   const fullAccessCount = queued.filter((task) => task.permissionMode === "full").length;
   if (fullAccessCount && !window.confirm(`Run ${fullAccessCount} terminal task${fullAccessCount === 1 ? "" : "s"} with full access? This bypasses approval and sandbox protections.`)) {
@@ -106,14 +108,13 @@ async function runTerminalTasksFromDesktopAction(action, executionContext = {}) 
   }
 
   const workspaceMode = desktopActionWorkspaceMode(action, queued.length, queued.map((task) => task.projectId));
-  const defaultTokenMode = typeof setupTokenMode === "string" ? setupTokenMode : "vibyra";
   setPage("terminals");
   const launches = queued.map((task) => createTerminal(task.model.key, false, {
     effort: task.effort,
     initialPrompt: task.prompt,
     permissionMode: task.permissionMode,
     projectId: task.projectId,
-    tokenMode: task.permissionMode === "full" ? "provider" : defaultTokenMode,
+    tokenMode: defaultTokenMode,
     workspaceMode
   })).filter(Boolean);
   forceTerminalRender = true;
@@ -420,28 +421,23 @@ async function setTerminalPermissionsFromDesktopAction(action) {
   }
   const relaunches = targets.map((terminal) => ({
     terminal,
-    model: codexFullAccessModel(terminal)
+    model: desktopActionModel(terminal.model),
+    tokenMode: ["vibyra", "provider"].includes(terminal.tokenMode)
+      ? terminal.tokenMode
+      : "vibyra"
   }));
-  const unsupported = relaunches.find((item) => !item.model);
-  if (unsupported) return "Full access requires a Codex-compatible OpenAI terminal.";
-  if (typeof loadProviderAccounts === "function") await loadProviderAccounts();
-  if (
-    typeof providerAccounts !== "undefined"
-    && providerAccounts.codex
-    && (!providerAccounts.codex.available || !providerAccounts.codex.connected)
-  ) {
-    return "Codex CLI must be installed and signed in before Vibyra can relaunch terminals with full access.";
-  }
+  const unsupported = relaunches.find(({ terminal, model, tokenMode }) =>
+    !model || terminal.agent === "shell" || !desktopActionFullAccessSupported(model, tokenMode)
+  );
+  if (unsupported) return "Full access is unavailable for one or more selected terminal runtimes.";
   const unavailable = relaunches.find(({ model }) =>
     typeof modelLocked === "function" && modelLocked(model)
   );
   if (unavailable) {
     return "A terminal model is no longer available on the current plan, so no terminals were relaunched.";
   }
-  if (relaunches.every(({ terminal, model }) =>
+  if (relaunches.every(({ terminal }) =>
     terminal.permissionMode === "full"
-    && terminal.agent === "codex"
-    && terminal.model === model.key
   )) {
     return targets.length === 1 ? "That terminal already has full access." : "All open terminals already have full access.";
   }
@@ -449,23 +445,17 @@ async function setTerminalPermissionsFromDesktopAction(action) {
     return "Isolated terminals cannot be relaunched with different permissions yet because their local Git branches must stay attached to the same workspace.";
   }
   const count = targets.length;
-  const conversions = relaunches.filter(({ terminal, model }) =>
-    terminal.agent !== "codex" || terminal.model !== model.key
-  );
-  const conversionNotice = conversions.length
-    ? ` ${conversions.length} OpenAI terminal${conversions.length === 1 ? "" : "s"} will switch to the compatible Codex CLI model because OpenRouter wrappers cannot bypass local approvals.`
-    : "";
-  if (!window.confirm(`Relaunch ${count} Codex terminal${count === 1 ? "" : "s"} with full access? This ends the current processes and bypasses approval and sandbox protections.${conversionNotice}`)) {
+  if (!window.confirm(`Relaunch ${count} terminal${count === 1 ? "" : "s"} with full access? This ends the current processes and bypasses approval and sandbox protections.`)) {
     return "Full-access terminal relaunch was cancelled.";
   }
 
-  const snapshots = relaunches.map(({ terminal, model }) => ({
+  const snapshots = relaunches.map(({ terminal, model, tokenMode }) => ({
     id: terminal.id,
-    title: codexRelaunchTitle(terminal, model),
+    title: terminal.title,
     model: model.key,
     effort: terminal.effort,
     projectId: terminal.projectId,
-    tokenMode: "provider"
+    tokenMode
   }));
   const previousActiveId = activeTerminalId;
   await closeDesktopActionTargets(targets, action.scope);
@@ -486,24 +476,7 @@ async function setTerminalPermissionsFromDesktopAction(action) {
   saveTerminals();
   setPage("terminals");
   render();
-  return `Relaunched ${count} Codex terminal${count === 1 ? "" : "s"} with full access.`;
-}
-function codexFullAccessModel(terminal) {
-  const current = desktopActionModel(terminal?.model);
-  if ((!terminal?.agent || terminal.agent === "codex") && current && isCodexDesktopActionModel(current)) return current;
-  const key = String(terminal?.model || "").trim().toLowerCase();
-  if (terminal?.agent !== "vibyra" || !key.startsWith("openai/")) return null;
-  const tail = key.slice("openai/".length);
-  const candidates = [tail, tail.replace(/-pro$/, "")];
-  const choices = typeof modelChoices === "function" ? modelChoices() : chatModels;
-  return candidates
-    .map((candidate) => choices.find((model) => String(model.key || "").toLowerCase() === candidate))
-    .find((model) => model && isCodexDesktopActionModel(model)) || null;
-}
-function codexRelaunchTitle(terminal, model) {
-  if (terminal?.agent === "codex" && terminal.model === model.key) return terminal.title;
-  const suffix = String(terminal?.title || "").match(/\s+\d+$/)?.[0] || "";
-  return `${model.label}${suffix}`;
+  return `Relaunched ${count} terminal${count === 1 ? "" : "s"} with full access.`;
 }
 async function closeDesktopActionTargets(targets, scope) {
   const ids = targets.map((terminal) => terminal.id);
@@ -588,6 +561,12 @@ function isCodexDesktopActionModel(modelOrKey) {
       : modelOrKey?.modelKey || modelOrKey?.key || ""
   ).trim();
   return Boolean(key) && !key.includes("/") && terminalProviderKeyForModel(modelOrKey) === "openai";
+}
+function desktopActionFullAccessSupported(model, tokenMode) {
+  if (typeof terminalFullAccessSupported === "function") {
+    return terminalFullAccessSupported(model, tokenMode);
+  }
+  return isCodexDesktopActionModel(model);
 }
 function normalizeDesktopActionModel(value) {
   return String(value || "")

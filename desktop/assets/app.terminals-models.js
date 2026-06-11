@@ -128,6 +128,9 @@ function createTerminalFromModel(key) {
   terminalProjectMenuTarget = "";
   createTerminal(model.key, true, {
     effort: terminalEffortForModel(model, setupEffort),
+    permissionMode: typeof terminalPermissionModeForSetup === "function"
+      ? terminalPermissionModeForSetup(model, tokenMode)
+      : "standard",
     tokenMode
   });
 }
@@ -293,7 +296,7 @@ function providerTokenLabelForModel(model) {
   return terminalOwnAccountRoute(model).label || "My AI account";
 }
 function terminalTokenModeForModel(model, mode) {
-  return mode === "provider" ? "provider" : "vibyra";
+  return ["vibyra", "provider"].includes(mode) ? mode : "vibyra";
 }
 function terminalOwnAccountRoute(model) {
   const provider = terminalProviderKeyForModel(model);
@@ -352,7 +355,7 @@ function terminalTokenSourcePanel(model, selectedMode, target) {
   const route = terminalOwnAccountRoute(model);
   const issue = terminalTokenSourceIssue(model, mode);
   const notice = providerConnectNotice || issue;
-  return `<div class="terminal-token-source"><p>Pay with</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode !== "provider" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span><strong>Vibyra tokens</strong><small>Uses your Vibyra credits</small></span></button><button class="${mode === "provider" ? "active" : ""} ${route.available ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider">${icon("lock")}<span><strong>My AI accounts</strong><small>Uses your account and its billing</small></span></button></div>${notice ? `<em class="terminal-provider-notice">${escapeHtml(notice)}</em>` : ""}</div>`;
+  return `<div class="terminal-token-source"><p>Pay with</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode === "vibyra" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span><strong>Vibyra tokens</strong><small>Uses your Vibyra credits</small></span></button><button class="${mode === "provider" ? "active" : ""} ${route.available ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider">${icon("lock")}<span><strong>My AI accounts</strong><small>Uses your account and its billing</small></span></button></div>${notice ? `<em class="terminal-provider-notice">${escapeHtml(notice)}</em>` : ""}</div>`;
 }
 
 function openAiConnectForm() {

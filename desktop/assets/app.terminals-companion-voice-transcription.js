@@ -10,10 +10,15 @@ async function finishTerminalVoiceRecording(generation) {
     return;
   }
   try {
+    const target = desktopPromptTranscriptTarget(terminalVoiceState.targetId);
     const response = await fetch("/desktop/voice/transcribe", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ audioBase64: await blobToBase64(blob), mimeType: blob.type })
+      body: JSON.stringify({
+        audioBase64: await blobToBase64(blob),
+        mimeType: blob.type,
+        ...desktopPromptTranscriptMetadata("ai-talk", { terminal: target })
+      })
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result.ok === false) {
@@ -21,7 +26,7 @@ async function finishTerminalVoiceRecording(generation) {
     }
     if (!terminalVoiceGenerationCurrent(generation)) return;
     const text = String(result.text || "").trim();
-    if (text) await submitTerminalVoicePrompt(text, generation);
+    if (text) await submitTerminalVoicePrompt(text, generation, result.transcript);
     else terminalVoiceSetStatus("No speech heard");
   } catch (error) {
     if (terminalVoiceGenerationCurrent(generation)) {

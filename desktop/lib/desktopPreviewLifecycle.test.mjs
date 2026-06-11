@@ -70,6 +70,45 @@ test("desktop preview runs targets concurrently and keeps visual URLs target-pin
   }
 });
 
+test("concurrent preview targets launch on distinct reserved ports", async () => {
+  const { project, cleanup } = await makeProject("desktop-preview-concurrent-ports-");
+  const fakeNpm = await makeFakeNpm();
+  const previousProjects = appState.cachedProjects;
+  const previousPath = process.env.PATH;
+  const previousHtml = process.env.VIBYRA_FAKE_VITE_HTML;
+  const previousDelay = process.env.VIBYRA_FAKE_VITE_DELAY_MS;
+  try {
+    await makeViteTarget(project.path, "apps/one", "one");
+    await makeViteTarget(project.path, "apps/two", "two");
+    appState.cachedProjects = [project];
+    process.env.PATH = `${fakeNpm.bin}:${previousPath || ""}`;
+    process.env.VIBYRA_FAKE_VITE_HTML = viteHtml("concurrent");
+    process.env.VIBYRA_FAKE_VITE_DELAY_MS = "400";
+    const targets = await detectPreviewTargets(project);
+    const one = targets.find((target) => target.appDirectory === "apps/one");
+    const two = targets.find((target) => target.appDirectory === "apps/two");
+
+    await Promise.all([
+      startDesktopPreviewServer({ projectId: project.id, targetId: one.id }, "127.0.0.1:4317"),
+      startDesktopPreviewServer({ projectId: project.id, targetId: two.id }, "127.0.0.1:4317")
+    ]);
+
+    const ports = previewServicesForProject(project.id).map((service) => new URL(service.proxyTargetUrl).port);
+    assert.equal(ports.length, 2);
+    assert.equal(new Set(ports).size, 2);
+  } finally {
+    for (const service of previewServicesForProject(project.id)) {
+      stopTrackedPreviewServer(project.id, service.targetId);
+    }
+    appState.cachedProjects = previousProjects;
+    restoreEnv("PATH", previousPath);
+    restoreEnv("VIBYRA_FAKE_VITE_HTML", previousHtml);
+    restoreEnv("VIBYRA_FAKE_VITE_DELAY_MS", previousDelay);
+    await fakeNpm.cleanup();
+    await cleanup();
+  }
+});
+
 async function makeViteTarget(projectPath, directory, label) {
   const root = join(projectPath, directory);
   await mkdir(join(root, "src"), { recursive: true });

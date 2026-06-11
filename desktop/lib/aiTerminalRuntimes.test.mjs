@@ -7,14 +7,14 @@ test("maps official CLI models natively and API-only models to Vibyra Agent", ()
   assert.equal(terminalRuntimeForModel("gpt-5.5"), "codex");
   assert.equal(terminalRuntimeForModel("anthropic/claude-opus-4.8"), "claude");
   assert.equal(terminalRuntimeForModel("google/gemini-3.1-pro"), "gemini");
-  assert.equal(terminalRuntimeForModel("qwen/qwen3-coder"), "vibyra-agent");
-  assert.equal(terminalRuntimeForModel("mistralai/devstral-2"), "vibyra-agent");
-  assert.equal(terminalRuntimeForModel("moonshotai/kimi-k2"), "vibyra-agent");
+  assert.equal(terminalRuntimeForModel("qwen/qwen3-coder"), "qwen");
+  assert.equal(terminalRuntimeForModel("mistralai/devstral-2"), "mistral");
+  assert.equal(terminalRuntimeForModel("moonshotai/kimi-k2"), "kimi");
+  assert.equal(terminalRuntimeForModel("x-ai/grok-build-0.1"), "grok");
 });
 
 test("unknown qualified providers use Vibyra Agent while unqualified models fail closed", () => {
   assert.equal(terminalRuntimeForModel("deepseek/deepseek-v3"), "vibyra-agent");
-  assert.equal(terminalRuntimeForModel("x-ai/grok-code-fast"), "vibyra-agent");
   assert.equal(terminalRuntimeForModel("meta-llama/llama-4"), "vibyra-agent");
   assert.equal(terminalRuntimeForModel("deepseek-v3"), null);
   assert.equal(terminalRuntimeForModel("auto"), null);
@@ -50,20 +50,25 @@ test("runtime state separates executable availability from adapter readiness", (
 
 test("runtime catalog exposes pinned installers and host requirements", () => {
   assert.equal(TERMINAL_RUNTIMES.mistral.installer.version, "2.14.1");
-  assert.deepEqual(TERMINAL_RUNTIMES.mistral.requirements, {
-    python: ">=3.12",
-    commands: ["uv"]
-  });
+  assert.deepEqual(TERMINAL_RUNTIMES.mistral.requirements, { python: ">=3.12" });
   assert.deepEqual(TERMINAL_RUNTIMES.qwen.requirements, { node: ">=22" });
   assert.deepEqual(TERMINAL_RUNTIMES.kimi.requirements, { node: ">=22" });
+  assert.equal(TERMINAL_RUNTIMES.qwen.installer.version, "0.17.1");
+  assert.equal(TERMINAL_RUNTIMES.qwen.installer.nodeVersion, "22.19.0");
+  assert.equal(TERMINAL_RUNTIMES.kimi.installer.version, "0.14.0");
+  assert.equal(TERMINAL_RUNTIMES.kimi.installer.nodeVersion, "22.19.0");
+  assert.equal(TERMINAL_RUNTIMES.mistral.installer.type, "python");
+  assert.equal(TERMINAL_RUNTIMES.grok.installer.type, "xai");
+  assert.equal(TERMINAL_RUNTIMES.grok.installer.version, "0.2.39");
+  assert.equal(TERMINAL_RUNTIMES.grok.adapter.ready, true);
 });
 
-test("unsupported managed adapters remain disabled with precise reasons", () => {
+test("remaining official managed adapters are enabled", () => {
   const runtimes = terminalRuntimeState().runtimes;
   for (const id of ["qwen", "kimi", "mistral"]) {
     const runtime = runtimes.find((entry) => entry.id === id);
-    assert.equal(runtime?.adapterReady, false);
-    assert.equal(runtime?.ready, false);
-    assert.ok((runtime?.adapterReason || "").length > 30);
+    assert.equal(runtime?.adapterReady, true);
+    assert.equal(runtime?.ready, runtime?.available);
+    assert.equal(runtime?.adapterReason, "");
   }
 });

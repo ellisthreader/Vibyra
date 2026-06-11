@@ -127,7 +127,7 @@ skill, update the smallest relevant skill before final response. Keep Obsidian
 as the routing memory for when to use a skill; keep detailed operating rules in
 the skill itself.
 
-`VibyraOptimse` lives at `.agents/skills/VibyraOptimse/SKILL.md`. Use it for future app audits that combine permission approval boundaries, code organization, optimization, and the source-file line limit.
+`vibyra-optimise` lives at `.agents/skills/VibyraOptimse/SKILL.md`. Use it for future app audits that combine permission approval boundaries, code organization, optimization, and the source-file line limit.
 
 Its standard workflow is:
 
@@ -136,9 +136,9 @@ Its standard workflow is:
 - enforce no app source file over 200 lines, excluding generated folders such as `tmp`, `node_modules`, `backend/vendor`, `.git`, `.expo`, and `.vibyra-agent`
 - validate with `npm run typecheck`, `node --check` for changed desktop JS/MJS, and `php -l` for changed PHP
 
-`VibyraRefactor` lives at `.agents/skills/VibyraRefactor/SKILL.md`. Use it when the task is primarily safe code cleanup: oversized files, messy organization, too many parameters, weak typing, missing contexts/hooks/modules, or a no-source-file-over-250-lines gate. It exists because broad refactors must not be declared complete until the final line gate is clean and validation commands have clean exit codes. It also records the lessons from the May 2026 refactor: check the full source scope, investigate non-zero test exits even when assertions pass, delete empty placeholder tests after splitting, and state generated/cache/temp/vendor exclusions explicitly.
+`vibyra-refactor` lives at `.agents/skills/VibyraRefactor/SKILL.md`. Use it when the task is primarily safe code cleanup: oversized files, messy organization, too many parameters, weak typing, missing contexts/hooks/modules, or a no-source-file-over-250-lines gate. It exists because broad refactors must not be declared complete until the final line gate is clean and validation commands have clean exit codes. It also records the lessons from the May 2026 refactor: check the full source scope, investigate non-zero test exits even when assertions pass, delete empty placeholder tests after splitting, and state generated/cache/temp/vendor exclusions explicitly.
 
-`VibyraObsiden` lives at `.agents/skills/VibyraObsiden/SKILL.md`. Use it whenever repo work should consume and maintain the Obsidian memory layer. It encodes the rule that durable architecture, workflow, route/API, permission, validation, debugging, and local-skill changes must be written to the smallest relevant note before final response.
+`vibyra-obsidian` lives at `.agents/skills/VibyraObsiden/SKILL.md`. Use it whenever repo work should consume and maintain the Obsidian memory layer. It encodes the rule that durable architecture, workflow, route/API, permission, validation, debugging, and local-skill changes must be written to the smallest relevant note before final response.
 
 `vibyra-desktop-connection-diagnostics` lives at `.agents/skills/vibyra-desktop-connection-diagnostics/SKILL.md`. Use it for phone-to-desktop pairing hangs, "Finding Vibyra Desktop", "Desktop lost the pairing request", stale remembered desktop tokens, Browse PC or `/open` timeouts, and connected-but-authenticated-route failures. It encodes the proven checks for idempotent `/pair` request IDs, approval UI visibility, fallback URL promotion, explicit stale-token deletion, and live-sync tolerance.
 

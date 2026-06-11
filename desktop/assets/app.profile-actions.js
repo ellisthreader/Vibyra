@@ -1,4 +1,5 @@
 function bindProfileControls(root = profileRenderTarget() || document) {
+  bindCustomSelects(root);
   root.querySelectorAll("[data-profile-section]").forEach((button) => button.addEventListener("click", () => setProfileSection(button.dataset.profileSection)));
   root.querySelectorAll("[data-profile-action]").forEach((button) => button.addEventListener("click", () => handleProfileRow(button.dataset.profileAction, button.dataset.profileKey, button)));
   root.querySelectorAll("[data-billing-plan]").forEach((button) => button.addEventListener("click", () => startDesktopBilling(button.dataset.billingPlan)));
@@ -57,6 +58,8 @@ function handleProfileRow(action, key, button) {
   if (action === "mailto") { window.open("mailto:support@vibyra.app?subject=Vibyra%20Desktop%20support", "_blank", "noopener"); return; }
   if (action === "open-url") { window.open(button.dataset.profileValue, "_blank", "noopener"); return; }
   if (action === "clear-cache") { confirmClearDesktopCache(); return; }
+  if (action === "change-screenshot-folder") { void chooseProfileScreenshotDirectory(); return; }
+  if (action === "reset-screenshot-folder") { void resetProfileScreenshotDirectory(); return; }
   if (action === "save-profile") { saveDesktopProfile(); return; }
   if (action === "load-referral") { loadDesktopReferral(); return; }
   if (action === "copy-referral") { copyDesktopReferralCode(); return; }
@@ -193,6 +196,6 @@ function confirmClearDesktopCache() {
   chatMessages = [];
   chatDraft = "";
   chatAttachments = [];
-  profileReferral = null;
-  render();
+  chatImageAttachments = [];
+  profileReferral = null; render();
 }

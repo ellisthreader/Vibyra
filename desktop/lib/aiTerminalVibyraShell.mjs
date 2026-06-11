@@ -12,7 +12,7 @@ Never identify yourself as Codex, Codex CLI, OpenAI, or as a provider's native C
 
 Use the available file and shell tools to complete coding tasks. Follow repository instructions, workspace permissions, and the user's request.`;
 
-export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffort, permissionMode = "standard", tokenMode = "vibyra", projectId, terminalId = "", terminalGatewayToken = "", memoryInstructions = "", geminiSettingsPath = "", agentEnginePath = "", providerUiVersion = "", cwd = process.cwd(), cols, rows }) {
+export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffort, permissionMode = "standard", sandboxMode = "", tokenMode = "vibyra", projectId, terminalId = "", terminalGatewayToken = "", memoryInstructions = "", roleInstructions = "", geminiSettingsPath = "", agentEnginePath = "", providerUiVersion = "", cwd = process.cwd(), cols, rows }) {
   const selectedRuntime = runtimeId || (agent === "vibyra" ? "codex" : runtimeId);
   const commandDir = vibyraCommandDir();
   const env = {
@@ -32,6 +32,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
     VIBYRA_OPENROUTER_MODEL: String(model || ""),
     VIBYRA_REASONING_EFFORT: String(reasoningEffort || "medium"),
     VIBYRA_PERMISSION_MODE: String(permissionMode || "standard"),
+    VIBYRA_SANDBOX_MODE: String(sandboxMode || ""),
     VIBYRA_TOKEN_MODE: String(tokenMode || "vibyra"),
     VIBYRA_TERMINAL_COLOR: agent === "vibyra" ? "1" : "",
     VIBYRA_AGENT_ENGINE: String(agentEnginePath || ""),
@@ -39,6 +40,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
     VIBYRA_TERMINAL_PROJECT_ID: String(projectId || ""),
     VIBYRA_TERMINAL_ID: String(terminalId || "")
   };
+  if (roleInstructions) env.VIBYRA_TEAM_ROLE_INSTRUCTIONS = String(roleInstructions);
   delete env.NO_COLOR;
   delete env.VIBYRA_TERMINAL_GATEWAY_TOKEN;
   if (agent === "vibyra") stripProviderCredentials(env);
@@ -91,6 +93,42 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
       env.GEMINI_CLI_HOME,
       geminiSettingsPath
     );
+  }
+  if (agent === "vibyra" && selectedRuntime === "qwen") {
+    stripProviderCredentials(env);
+    env.VIBYRA_TERMINAL_GATEWAY_TOKEN = String(terminalGatewayToken);
+    env.OPENAI_API_KEY = String(terminalGatewayToken);
+    env.QWEN_HOME = managedProviderHome("qwen", terminalId);
+    env.QWEN_RUNTIME_DIR = join(env.QWEN_HOME, "runtime");
+    const qwenSandboxed = normalizePermissionMode(permissionMode) !== "full";
+    env.QWEN_CODE_SYSTEM_SETTINGS_PATH = configureManagedQwenHome(
+      env.QWEN_HOME,
+      model,
+      qwenSandboxed
+    );
+    env.QWEN_SANDBOX = qwenSandboxed ? "true" : "false";
+    env.QWEN_CODE_SUPPRESS_YOLO_WARNING = "1";
+  }
+  if (agent === "vibyra" && selectedRuntime === "kimi") {
+    stripProviderCredentials(env);
+    env.VIBYRA_TERMINAL_GATEWAY_TOKEN = String(terminalGatewayToken);
+    env.KIMI_CODE_HOME = managedProviderHome("kimi", terminalId);
+    env.KIMI_CODE_NO_AUTO_UPDATE = "1";
+    env.KIMI_DISABLE_TELEMETRY = "1";
+    configureManagedKimiHome(env.KIMI_CODE_HOME, model, terminalGatewayToken);
+  }
+  if (agent === "vibyra" && selectedRuntime === "mistral") {
+    stripProviderCredentials(env);
+    env.VIBYRA_TERMINAL_GATEWAY_TOKEN = String(terminalGatewayToken);
+    env.VIBE_HOME = managedProviderHome("mistral", terminalId);
+    configureManagedMistralHome(env.VIBE_HOME, model, cwd);
+  }
+  if (agent === "vibyra" && selectedRuntime === "grok") {
+    stripProviderCredentials(env);
+    env.VIBYRA_TERMINAL_GATEWAY_TOKEN = String(terminalGatewayToken);
+    env.GROK_HOME = managedProviderHome("grok", terminalId);
+    env.GROK_TELEMETRY_ENABLED = "false";
+    configureManagedGrokHome(env.GROK_HOME, model);
   }
   if (agent === "gemini" && geminiSettingsPath) {
     env.GEMINI_CLI_SYSTEM_SETTINGS_PATH = geminiSettingsPath;
@@ -185,6 +223,133 @@ function configureManagedGeminiSettings(dir, sourcePath) {
   return path;
 }
 
+function configureManagedGrokHome(dir, model) {
+  const nativeModel = String(model || "").trim();
+  const config = `[cli]
+auto_update = false
+
+[models]
+default = ${tomlString(nativeModel)}
+web_search = ${tomlString(nativeModel)}
+
+[ui]
+simple_mode = true
+default_selected_permission = "allow_once"
+
+[features]
+telemetry = false
+feedback = false
+
+[session]
+load_envrc = false
+
+[model.${tomlBareKey(nativeModel)}]
+model = ${tomlString(nativeModel)}
+base_url = ${tomlString(`http://127.0.0.1:${PORT}/desktop/grok/v1`)}
+name = "Grok via Vibyra"
+env_key = "VIBYRA_TERMINAL_GATEWAY_TOKEN"
+api_backend = "chat_completions"
+context_window = 200000
+`;
+  const target = join(dir, "config.toml");
+  writeFileSync(target, config, { mode: 0o600 });
+  try { chmodSync(target, 0o600); } catch {}
+}
+
+function configureManagedQwenHome(dir, model, sandboxed) {
+  const nativeModel = String(model || "").trim();
+  const gatewayHost = sandboxed ? "host.docker.internal" : "127.0.0.1";
+  const settings = {
+    modelProviders: {
+      openai: [{
+        id: nativeModel,
+        name: nativeModel,
+        baseUrl: `http://${gatewayHost}:${PORT}/desktop/qwen/v1`,
+        envKey: "OPENAI_API_KEY"
+      }]
+    },
+    security: {
+      auth: {
+        selectedType: "openai",
+        enforcedType: "openai"
+      },
+      folderTrust: { enabled: false }
+    },
+    model: { name: nativeModel },
+    general: { enableAutoUpdate: false },
+    privacy: { usageStatisticsEnabled: false },
+    telemetry: { enabled: false },
+    mcpServers: {},
+    hooks: { enabled: false },
+    extensions: { disabled: true }
+  };
+  mkdirSync(join(dir, "runtime"), { recursive: true, mode: 0o700 });
+  const target = join(dir, "settings.json");
+  writeFileSync(target, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+  return target;
+}
+
+function configureManagedKimiHome(dir, model, terminalGatewayToken) {
+  const nativeModel = String(model || "").trim();
+  const config = `default_model = "vibyra-selected"
+default_permission_mode = "manual"
+merge_all_available_skills = false
+telemetry = false
+
+[providers.vibyra]
+type = "openai_responses"
+base_url = ${tomlString(`http://127.0.0.1:${PORT}/desktop/kimi/v1`)}
+api_key = ${tomlString(terminalGatewayToken)}
+
+[models.vibyra-selected]
+provider = "vibyra"
+model = ${tomlString(nativeModel)}
+max_context_size = 262144
+`;
+  writeFileSync(join(dir, "config.toml"), config, { mode: 0o600 });
+  writeFileSync(join(dir, "tui.toml"), "[upgrade]\nauto_install = false\n", { mode: 0o600 });
+}
+
+function configureManagedMistralHome(dir, model, cwd) {
+  const nativeModel = String(model || "").trim();
+  const modelAlias = `${nativeModel}-vibyra`;
+  const config = `active_model = ${tomlString(modelAlias)}
+enable_telemetry = false
+enable_update_checks = false
+enable_notifications = false
+enable_connectors = false
+voice_mode_enabled = false
+narrator_enabled = false
+enable_experimental_hooks = false
+vibe_code_enabled = false
+autocopy_to_clipboard = false
+enabled_skills = ["vibe"]
+
+[experiments]
+enable = false
+
+[[providers]]
+name = "vibyra"
+api_base = ${tomlString(`http://127.0.0.1:${PORT}/desktop/mistral/v1`)}
+api_key_env_var = "VIBYRA_TERMINAL_GATEWAY_TOKEN"
+api_style = "openai-responses"
+backend = "generic"
+
+[[models]]
+name = ${tomlString(nativeModel)}
+provider = "vibyra"
+alias = ${tomlString(modelAlias)}
+temperature = 0.2
+thinking = "high"
+`;
+  writeFileSync(join(dir, "config.toml"), config, { mode: 0o600 });
+  writeFileSync(
+    join(dir, "trusted_folders.toml"),
+    `trusted = []\nuntrusted = [${tomlString(resolve(String(cwd || process.cwd())))}]\n`,
+    { mode: 0o600 }
+  );
+}
+
 function seedCodexHome(targetDir, options = {}) {
   const sourceDir = String(process.env.CODEX_HOME || "").trim() || join(homedir(), ".codex");
   if (!existsSync(sourceDir) || sourceDir === targetDir) return;
@@ -225,7 +390,7 @@ function writeVibyraAgentInstructions(targetDir) {
 
 function stripProviderCredentials(env) {
   for (const key of Object.keys(env)) {
-    if (/^(?:ANTHROPIC|AWS|AZURE|GEMINI|GOOGLE|GROQ|MISTRAL|OPENAI|OPENROUTER|TOGETHER|XAI)_/i.test(key)) {
+    if (/^(?:ANTHROPIC|AWS|AZURE|GEMINI|GOOGLE|GROK|GROQ|KIMI|MISTRAL|MOONSHOT|OPENAI|OPENROUTER|QWEN|TOGETHER|XAI)_/i.test(key)) {
       delete env[key];
     }
   }
@@ -233,6 +398,15 @@ function stripProviderCredentials(env) {
 
 function tomlString(value) {
   return JSON.stringify(String(value));
+}
+
+function tomlBareKey(value) {
+  const key = String(value || "").trim();
+  return /^[A-Za-z0-9_-]+$/.test(key) ? key : tomlString(key);
+}
+
+function normalizePermissionMode(value) {
+  return String(value || "").toLowerCase() === "full" ? "full" : "standard";
 }
 
 export function terminalSessionCommand({ status, launch, shell, cols, rows }) {

@@ -63,13 +63,36 @@ test("maps installed official CLIs to personal-account launch plans", () => {
   assert.equal(aliasedClaude.billingModel, "anthropic/claude-sonnet-4.6");
   assert.equal(aliasedGemini.nativeModel, "gemini-2.5-pro");
   assert.equal(aliasedGemini.billingModel, "google/gemini-2.5-pro");
+  const fullClaude = resolveAiTerminalLaunchPlan({
+    model: "claude-sonnet-4",
+    billingMode: "provider",
+    permissionMode: "full"
+  });
+  const fullGemini = resolveAiTerminalLaunchPlan({
+    model: "gemini-2.5-pro",
+    billingMode: "provider",
+    permissionMode: "full"
+  });
+  assert.equal(fullClaude.sandboxMode, "danger-full-access");
+  assert.equal(fullGemini.sandboxMode, "danger-full-access");
   assert.throws(
     () => resolveAiTerminalLaunchPlan({ model: "qwen/qwen3-coder", billingMode: "provider" }),
     (error) => error.code === "personal_account_not_supported"
   );
 });
 
-test("uses native billed Claude and Gemini mappings and Vibyra Agent for API-only providers", () => {
+test("rejects direct OpenRouter billing as a terminal source", () => {
+  assert.throws(
+    () => resolveAiTerminalLaunchPlan({
+      model: "x-ai/grok-build-0.1",
+      billingMode: "openrouter",
+      permissionMode: "standard"
+    }),
+    (error) => error.code === "invalid_billing_mode"
+  );
+});
+
+test("uses each official provider's native CLI with exact Vibyra billing models", () => {
   for (const model of [
     "anthropic/claude-sonnet-4.6",
     "google/gemini-3.1-pro-preview"
@@ -81,30 +104,48 @@ test("uses native billed Claude and Gemini mappings and Vibyra Agent for API-onl
       model.startsWith("anthropic/") ? "claude-sonnet-4-6" : model.split("/")[1]
     );
   }
-  for (const model of [
-    "qwen/qwen3-coder",
-    "moonshotai/kimi-k2",
-    "mistralai/devstral-2"
-  ]) {
+  const nativeCases = [
+    ["qwen/qwen3-coder", "qwen", "openai-chat-completions", "openai-chat-completions", "qwen3-coder"],
+    ["moonshotai/kimi-k2", "kimi", "responses", "openai-responses", "kimi-k2"],
+    ["mistralai/devstral-2", "mistral", "responses", "openai-responses", "devstral-2"]
+  ];
+  for (const [model, runtimeId, adapterId, protocol, nativeModel] of nativeCases) {
     const plan = resolveAiTerminalLaunchPlan({ model, billingMode: "vibyra" });
-    assert.equal(plan.runtimeId, "vibyra-agent");
-    assert.equal(plan.nativeModel, model);
+    assert.equal(plan.runtimeId, runtimeId);
+    assert.equal(plan.adapterId, adapterId);
+    assert.equal(plan.protocol, protocol);
+    assert.equal(plan.nativeModel, nativeModel);
     assert.equal(plan.billingModel, model);
     assert.deepEqual(plan.allowedModels, [model]);
   }
 });
 
-test("unknown qualified providers receive exact Vibyra Agent billing contracts", () => {
+test("legacy Kimi and Mistral aliases resolve to canonical OpenRouter billing slugs", () => {
+  const cases = [
+    ["kimi-k2", "moonshotai/kimi-k2"],
+    ["moonshot/kimi-k2", "moonshotai/kimi-k2"],
+    ["devstral-2", "mistralai/devstral-2"],
+    ["mistral/devstral-2", "mistralai/devstral-2"]
+  ];
+  for (const [model, billingModel] of cases) {
+    assert.equal(
+      resolveAiTerminalLaunchPlan({ model, billingMode: "vibyra" }).billingModel,
+      billingModel
+    );
+  }
+});
+
+test("xAI models receive native Grok Build billing contracts", () => {
   const plan = resolveAiTerminalLaunchPlan({
     model: "x-ai/grok-4.20",
     billingMode: "vibyra"
   });
 
   assert.equal(plan.providerId, "x-ai");
-  assert.equal(plan.runtimeId, "vibyra-agent");
-  assert.equal(plan.adapterId, "responses");
-  assert.equal(plan.protocol, "openai-responses");
-  assert.equal(plan.nativeModel, "x-ai/grok-4.20");
+  assert.equal(plan.runtimeId, "grok");
+  assert.equal(plan.adapterId, "openai-chat-completions");
+  assert.equal(plan.protocol, "openai-chat-completions");
+  assert.equal(plan.nativeModel, "grok-4.20");
   assert.equal(plan.billingModel, "x-ai/grok-4.20");
   assert.deepEqual(plan.allowedModels, ["x-ai/grok-4.20"]);
   assert.throws(
@@ -118,11 +159,7 @@ test("unknown qualified providers receive exact Vibyra Agent billing contracts",
 
 test("every provider-qualified API-only model family uses Vibyra Agent", () => {
   const models = [
-    "x-ai/grok-4.20",
     "deepseek/deepseek-v3.2",
-    "qwen/qwen3-coder",
-    "moonshotai/kimi-k2",
-    "mistralai/devstral-2",
     "google/gemma-4-31b-it",
     "meta-llama/llama-4",
     "microsoft/phi-4",

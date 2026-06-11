@@ -47,12 +47,13 @@ levels than its normalized interface.
 Vibyra-token terminals use a hybrid execution contract. Registered official
 providers keep their genuine foreground CLI: Codex for OpenAI, Claude Code for
 Anthropic, Gemini CLI for Google, Qwen Code for Qwen, Kimi Code for Moonshot,
-and Mistral Vibe where its gateway contract is supported. A provider-qualified,
+Mistral Vibe where its gateway contract is supported, and Grok Build for
+`x-ai/grok-*`. A provider-qualified,
 tool-capable catalog model without a registered official CLI uses the bundled
 foreground `Vibyra Agent` runtime. Vibyra Agent has one honest shared command
 set and varies only provider logo/mark, accent, name, model label, and status
 copy; it never claims to be that provider's native CLI. Launch contract version
-`15` invalidates stale workers. Runtime selection is model-family-aware rather
+`21` invalidates stale workers. Runtime selection is model-family-aware rather
 than company-wide: `google/gemini-*` remains native Gemini CLI, while
 `google/gemma-*` and equivalent API-only families from native-CLI companies use
 Vibyra Agent with the exact selected model.
@@ -80,14 +81,29 @@ picker aligned with backend billing for newly listed tool-capable models such
 as DeepSeek and Grok without hard-coded model entries.
 
 The current native managed-credit implementation is enabled for OpenAI,
-Anthropic, and Google models. Codex uses `model_provider="vibyra"` with the
-authenticated local Responses gateway. Claude Code and Gemini CLI keep their
-native wire protocols and isolated provider homes while the local gateway
-translates requests onto the metered Vibyra/OpenRouter path. Qwen, Kimi, and
-Mistral Vibe remain unavailable for Vibyra tokens until their native adapters
-pass release gates. Models from providers with no official CLI mapping use
-Vibyra Agent with an exact-model gateway grant instead of falling back to a
-different provider CLI.
+Anthropic, Google, Qwen, Moonshot/Kimi, Mistral, and xAI Grok models. Codex uses
+`model_provider="vibyra"` with the authenticated local Responses gateway.
+Claude Code and Gemini CLI keep their native wire protocols and isolated
+provider homes while the local gateway translates requests onto the metered
+Vibyra/OpenRouter path. Grok Build uses an isolated `GROK_HOME`, the official
+`grok` foreground executable, and a local OpenAI Chat Completions adapter. Its
+fixed `grok-build` session-title request is accepted only as a native alias and
+settled under the terminal's exact selected billing model. Qwen Code uses an
+isolated `QWEN_HOME`, managed Node 22, and
+`/desktop/qwen/v1/chat/completions`. Sandboxed Qwen launches forward the
+terminal-scoped gateway token through Qwen's supported `OPENAI_API_KEY`
+variable and use `host.docker.internal` because loopback is container-local.
+The Qwen route accepts exact-token requests only from loopback or a detected
+Docker bridge subnet, and native readiness includes the
+`Type your message or @path/to/file` composer; otherwise semantic assignments
+remain queued until timeout. Unsandboxed full access keeps the loopback
+gateway. Kimi Code and Mistral Vibe use isolated
+`KIMI_CODE_HOME` and `VIBE_HOME` profiles with
+`/desktop/kimi/v1/responses` and `/desktop/mistral/v1/responses`. Models from
+providers with no official CLI mapping use Vibyra Agent with an exact-model
+gateway grant instead of falling back to a different provider CLI.
+Vibe workspaces are explicitly untrusted in its isolated trust file so project
+configuration cannot replace the Vibyra-owned provider contract.
 
 Acceptance for mapped providers is the same native interaction shown by a
 connected provider account, with auth/billing changed to Vibyra. Acceptance for
@@ -97,12 +113,13 @@ serialized input, and persistent resume. `aiTerminalOpenRouterCli.mjs` must not
 copy a provider's native banners, tips, slash commands, or composer identity.
 
 Codex is bundled as an exact app dependency and also supplies Vibyra Agent's
-isolated non-interactive tool engine. Native Claude, Gemini, Qwen, Kimi, and
-Mistral download actions live directly on their model-picker rows; there is no
-separate Terminal tool panel. The picker labels rows `Native CLI`, `Vibyra
-Agent`, `Auto routing`, `Download`, or `Unavailable` while retaining each
-company's normal logo. Do not bundle Claude Code by default without explicit
-Anthropic redistribution permission.
+isolated non-interactive tool engine. Native Claude, Gemini, Qwen, Kimi,
+Mistral, and Grok download actions live directly on their model-picker rows; there is no
+separate Terminal tool panel. The picker retains each company's normal logo
+and hides runtime implementation/status text. It shows only an icon button when
+a CLI must be downloaded and a rotating icon while that download is active,
+with accessible labels and tooltips. Do not bundle Claude Code by default
+without explicit Anthropic redistribution permission.
 
 Vibyra Agent must replace the bundled Codex engine's model-visible base prompt
 with a Vibyra-owned `model_instructions_file`. Every new and resumed turn also
@@ -110,6 +127,40 @@ passes `developer_instructions` containing the exact selected OpenRouter slug.
 The remote model may know that Codex supplies hidden local file/shell
 orchestration, but it must identify itself as the selected model running through
 OpenRouter via Vibyra Agent, never as Codex, OpenAI, or a provider-native CLI.
+
+Treat transport, identity, billing, and live behavior as separate acceptance
+layers. A successful request or correctly branded banner does not prove that
+the selected model received the right identity instructions. Before declaring
+an API-only model fixed, verify all of the following:
+
+- The authoritative session and gateway grant agree on the exact model,
+  `vibyra-agent` runtime, and billing model.
+- A captured outbound Responses payload contains the exact model, Vibyra-owned
+  top-level instructions, and dynamic developer identity for that model.
+- The backend settles the reservation under the exact selected model key.
+- A fresh turn and a resumed turn identify the exact model, OpenRouter route,
+  and Vibyra Agent runtime in the authoritative PTY transcript.
+
+Model self-reports, screenshots, release-date answers, HTTP success, and unit
+tests alone are not routing proof because model output can hallucinate while
+transport still succeeds. Changes to model-visible instructions or immutable
+launch metadata must increment `AI_TERMINAL_LAUNCH_CONTRACT_VERSION` so
+recovered workers cannot retain stale identity behavior. If live verification
+fails before dispatch, first check backend migrations, account state, and the
+active backend target rather than misclassifying an environment failure as a
+provider-routing defect.
+
+Detached provider child spawn is part of PTY creation.
+`createPtyTerminal()` waits through
+`waitForPersistentAiTerminalStartup()` until worker state contains
+`status=running` and a provider child PID. An immediate worker exit removes the
+failed session, revokes its grant, rolls back its workspace, and returns a
+bounded startup error before semantic assignment. Personal provider sessions
+also require the current launch-contract version during recovery. This prevents
+a stale bridge plan, such as contract 21 against worker source contract 22,
+from appearing later as `Terminal startup timed out` or
+`AI provider has exited`. Runtime compatibility version 17 invalidates workers
+created before this handshake.
 
 The terminal project picker includes a synthetic `full-pc` scope labeled
 `Full PC`. `desktop/lib/projects.mjs` resolves that fixed ID to the current
@@ -137,8 +188,75 @@ with one large semantic icon and outcome-based supporting copy. They have no
 individual card surfaces, borders, shadows, divider, boxed icon backgrounds, or
 directional arrows. Centered titles, generous whitespace, staggered entrance,
 and a slight icon/choice hover lift provide hierarchy; disable motion under
-`prefers-reduced-motion`. Solo is best for focused builds, fixes, and quick
-changes. Team is best for larger work split across multiple agents.
+`prefers-reduced-motion`. Solo is best for independent focused builds, fixes,
+and quick changes and can launch `1–12` terminals with a truthful preview based
+on the same grid geometry used after launch. Team turns one required goal
+into `2–4` scoped roles: Builder + Reviewer, optionally Coordinator and
+Verifier. The desktop bridge compiles a versioned trusted role policy and keeps
+the user goal in separate untrusted assignment data. Exactly one Builder owns
+production edits; support roles receive enforced read-only launch profiles.
+Codex uses `developer_instructions`, Claude uses
+`--append-system-prompt` plus Plan Mode and read-only tools, and Vibyra Agent
+composes the role policy with its runtime identity. Gemini, Grok, Shell, and
+unresolved Auto Team launches fail closed until they expose a verified trusted
+role channel. Team ID, size, role, phase, capability, contract version, and
+policy hash persist through bridge recovery. This is scoped
+coordination, not a claim of automatic dependency scheduling, cross-terminal
+messaging, merge completion, or reviewer-enforced gates.
+`teamId` is an opaque correlation key rather than an authorization boundary.
+The bridge preserves current `team-...` identifiers and deterministically
+canonicalizes any non-empty legacy value into that bounded format, so renderer
+version skew cannot make every member fail with `Invalid Team identifier`.
+Missing IDs, invalid role topology, empty goals, and untrusted runtime channels
+still fail closed.
+Role contract V2 gives each worker a distinct concise workflow, forbidden
+actions, evidence standard, and stopping rule. It explicitly states that roles
+currently run independently in parallel, so Verifier and Reviewer must not
+assume Builder output is visible.
+
+For the researched provider-specific prompt contract and the work required to
+make these roles genuinely sequential and enforceable, use these deep
+references:
+
+- `Desktop/AI Team Prompting Research.md`
+- `Desktop/AI Team Role Prompt Specification.md`
+- `Desktop/AI Team Orchestration Plan.md`
+- `Desktop/AI Team Dynamic Planner Implementation Plan.md`
+
+The current Team implementation still starts roles concurrently and does not
+relay validated artifacts or Builder revisions. Do not describe Coordinator,
+Verifier, or Reviewer as enforcing a real gate until the orchestration plan's
+sequencing, authoritative state, and artifact requirements are implemented.
+The reviewed dynamic-planner decision is deterministic policy plus GPT-5.4
+mini for bounded decomposition, GPT-5.4 nano only for optional narrow
+classification, and Ollama only as an explicit private mode. Planner output is
+untrusted assignment data. Vibyra code owns role topology, capabilities,
+permissions, trusted prompts, validation, persistence, and launch.
+The Team renderer now posts the selected goal, size, project, model, and
+truthful parallel execution mode to `/desktop/terminal-teams/plan` before
+creating terminals. It keeps the setup mounted while showing an in-place
+planning state, validates the returned goal and fixed topology, normalizes
+assignments into deterministic role order, previews each bridge-specialized
+title and one-line objective, then launches every role with that objective as
+untrusted assignment data. A bridge-issued `teamId` groups the terminals;
+`planId` is the compatibility fallback and is always persisted separately as
+`teamPlanId`. Cloud authentication, quota, timeout, transport, or invalid-model
+output falls back to a bridge-generated deterministic plan that passes the same
+local invariants. A malformed desktop route response or renderer validation
+failure creates no terminals and leaves setup available for retry. Renderer
+planning state, bridge requests, validation, preview transitions, assignment
+prompts, and plan-derived terminal creation live in
+`app.terminals-team-planning.js`. Load it immediately before
+`app.terminals-team.js`, which owns the fixed role catalog, recovery metadata,
+setup markup, and active Team bar. The roles still start concurrently.
+The planning preview and active Team bar must expose the authoritative plan
+source. Show `AI-planned` with `plannerModel` only when `plannerMode` is not
+`deterministic`; otherwise show `Built-in fallback` with the bounded
+`fallbackReason`. Persist this metadata from the bridge-owned stored plan into
+public PTY session state. A planning animation or generic role objective is not
+evidence that the AI planner ran; zero credits, missing auth, timeout, provider
+failure, an undeployed `/api/chat/team-plan` endpoint, or invalid output can all
+produce the deterministic templates.
 
 A shared progress rail names `Workspace`, `Setup`, and `Terminals`. Render it
 once on the setup page, centered above and outside the setup card, never in the
@@ -147,24 +265,41 @@ connector, completed-state tint, and a restrained active ring. Remove the rail
 after launch so the terminal dock retains its compact project identity, add
 action, tabs, quick actions, and options.
 
-Step 2 combines counts `1–12`, the live
-`terminalGridMeta()` preview, project, model, workspace safety, reasoning,
-token source, and launch in one scrollable panel. Reasoning effort stays visible
-in the main form; token/account settings live in a collapsed `Advanced options`
-disclosure. That disclosure describes only two simple payment choices: Vibyra
-tokens use Vibyra credits; My AI accounts use the user's connected account and
-its billing. It omits provider implementation/status rows. It has no
-initial-goal field, does not repeat the selected mode, and does not render a
-second setup heading. The setup project selector uses the same
-neutral field surface and hover treatment as the model selector. The completed
-`Workspace` step provides Back navigation. Multi-agent projects retain visible
-Safe mode. Setup selects an existing discovered project; it never creates a
-filesystem project implicitly. Start with
+Step 2 keeps Solo direct: terminal count with `1/2/3/4/6/12` presets and a
+bounded custom value, truthful grid preview, project, model, access, workspace
+safety when applicable, reasoning, token source, and launch. Team adds one
+outcome-focused goal textarea, a `2/3/4` size picker, and a live role preview;
+it does not expose the Solo arbitrary count or grid preview. Team launch remains
+disabled until the goal is non-empty. Reasoning effort stays visible in the
+main form; token/account settings live in a collapsed `Advanced options`
+disclosure. That disclosure describes only two payment choices: Vibyra tokens
+use Vibyra credits and the backend-owned OpenRouter transport; My AI accounts
+use the user's connected official account and its billing. OpenRouter is never
+presented as a direct terminal billing source because the Vibyra gateway must
+protect the provider credential and enforce account credits and quotas. The
+disclosure uses an accessible button and an in-place
+height/opacity transition, preserves its open state when setup preferences
+patch the panel, and disables motion for reduced-motion users. It omits
+provider implementation/status rows and does not repeat the selected mode or
+render a second setup heading. Same-step option patches mark the replacement
+panel stable so entrance animations do not replay; those animations are
+reserved for actual Workspace/Setup navigation. The setup project selector
+uses the same neutral field surface and hover treatment as the model selector.
+The completed `Workspace` step provides Back navigation. Team workspaces retain
+visible Safe mode. Setup selects an existing discovered project; it never
+creates a filesystem project implicitly. Start with
+`desktop/assets/app.terminals-team.js`,
+`desktop/assets/app.terminals-team-setup.css`,
+`desktop/assets/app.terminals-team-bar.css`,
 `desktop/assets/app.terminals-pty.js`,
 `desktop/assets/app.terminals-setup-flow.css`,
 `desktop/assets/app.terminals-controls.js`, and
 `desktop/assets/app.terminals-project-picker.js`. Validate with the terminal
-asset test suite, especially `app.terminals-setup-flow.test.mjs`.
+asset test suite, especially `app.terminals-team.test.mjs` and
+`app.terminals-setup-flow.test.mjs`. Once launched, a compact Team bar shows
+the shared goal and only observed role states such as Working, Ready, Needs
+attention, or Stopped. It must not invent percentages, merge state, or
+completion claims.
 `patchTerminalSetupPanel()` must synchronize the in-page progress rail and the
 `terminal-setup-flow--mode` wrapper class when moving between Workspace and
 Setup. The rail sits outside `.terminal-setup-panel`, so replacing only the
@@ -184,6 +319,16 @@ xterm and must become inert if xterm later becomes available. Keep xterm
 `screenReaderMode` disabled in Electron, and ignore `onData` from detached or
 replaced xterm instances. Keep `desktop/assets/app.terminals-input.test.mjs`
 passing whenever terminal input binding changes.
+Saved screenshot Copy deliberately writes both native PNG data and a quoted
+absolute path as clipboard text. Let xterm consume that text through its normal
+paste path; do not add an image-specific keydown or paste listener to the
+terminal host, because that would violate the single input-owner contract.
+Screenshot drag uses the private
+`application/x-vibyra-screenshot-path` browser drag type. The terminal host is
+a drop target only for that type and calls `xterm.paste(path)` exactly once,
+without Enter. Do not replace this with Electron `webContents.startDrag()`:
+native file drag cannot supply the browser text payload required for terminal
+path insertion.
 Keep echoed keystrokes off synchronous persistence paths. The detached worker
 broadcasts output immediately, batches transcript appends asynchronously, and
 debounces ordinary `state.json` updates. Browser localStorage stores PTY
@@ -320,6 +465,26 @@ The switcher, Editor file tabs, and active-file toolbar share one neutral
 workspace chrome family and divider token. Active modes/files use only a thin
 purple edge plus a quiet connected surface; do not stack unrelated black,
 purple, and editor-gray header bands or use a large purple active block.
+
+Terminal light-mode ownership is centralized at the end of the stylesheet
+cascade in `app.terminals-theme-audit.css` and
+`app.terminals-workspace-theme-audit.css`. Those sheets convert legacy
+feature-level dark literals to semantic `--terminal-*` surfaces for setup, PTY
+controls, Editor chrome, Preview startup, and fullscreen Memory. Keep them
+after every terminal feature sheet in `desktop/app.html`. Xterm reads semantic
+ANSI and selection tokens through `terminalXtermTheme()`, while Monaco defines
+paired `vibyra-dark-plus` and `vibyra-light-plus` themes. Both mounted
+renderers observe explicit appearance changes and OS color-scheme changes
+while appearance is `auto`; changing theme must not remount or reset a PTY or
+editor model. Validate with `app.terminals-theme-audit.test.mjs`, the desktop
+AI suite, and a real Chromium render of setup plus Editor/Preview/Memory.
+
+When reporting a broad terminal audit, never say every problem was found unless
+every reachable terminal state, provider TUI, responsive layout, workspace
+mode, modal, and theme transition was actually exercised. State exactly which
+surfaces were verified, name any untested or externally owned provider states,
+and describe remaining risk. Passing tests and representative screenshots prove
+the covered paths only; they do not justify an absolute completeness claim.
 Do not render AI, Voice, Memory, Preview, or project quick actions beside the
 terminal tabs. The sidebar launcher toggles the whole workspace and opens AI by
 default.
@@ -734,9 +899,18 @@ remains visible.
 Terminal launch actions carry `count`, `model`, `effort`, `permissionMode`, and
 `projectId`. `permissionMode` defaults to `standard`; only explicit full-access
 phrases may set `full`. The browser persists and displays that mode, the PTY
-route forwards it, and Codex alone receives
-`--dangerously-bypass-approvals-and-sandbox`. Strip an `openai/` OpenRouter
-prefix before passing the selected model to Codex CLI.
+route forwards it, and each native runtime receives its own verified launch
+mode: Codex `--dangerously-bypass-approvals-and-sandbox`, Claude Code
+`--dangerously-skip-permissions`, and Gemini CLI
+`--approval-mode yolo --no-sandbox`. Strip an `openai/` OpenRouter prefix
+before passing the selected model to Codex CLI.
+Manual Solo/Team setup also exposes one persisted Access choice for the whole
+new batch. Full access is selectable for concrete Codex, Claude, Gemini, and
+Vibyra Agent runtimes; unresolved Auto and shell sessions remain Standard.
+Provider adapter permission/sandbox capability lists are the backend authority
+for this boundary. Launch contract version `22` invalidates workers created
+before current native provider ownership and permission metadata were part of
+the immutable plan.
 Explicit follow-ups such as `give all terminals full permissions` resolve to
 `set_terminal_permissions`. Permission mode cannot change inside a running CLI
 process, so the renderer must confirm the destructive boundary, close the
@@ -984,9 +1158,8 @@ persist the immutable launch plan, rename the tab, launch the native CLI under
 the same terminal ID, then run the original prompt exactly once. The waiting
 prompt is only a pre-provider input layer; it must not become a hidden
 long-running model wrapper. Do not add a paid classifier call or a second prompt
-submission after routing. OpenAI/Codex, Anthropic/Claude, and Google/Gemini
-have managed-credit adapters; Qwen, Kimi, and Mistral remain disabled until
-their protocol adapters pass release gates.
+submission after routing. OpenAI/Codex, Anthropic/Claude, Google/Gemini, Qwen
+Code, Kimi Code, Mistral Vibe, and Grok Build have managed-credit adapters.
 
 The Auto waiting presentation is keyed by the authoritative
 `autoAwaitingTask` session field. `app.terminals-pty-runtime.js` patches
@@ -1128,9 +1301,9 @@ batches, and permission relaunches cannot manufacture a loading-only terminal.
 Blank Auto is the exception to concrete runtime validation: it opens a
 bridge-authoritative Vibyra waiting session and defers provider selection until
 the first prompt. Concrete Vibyra-token models require both an installed native
-CLI and a ready billing adapter. Model rows show `Download`, a rotating
-`Downloading` ring during the five-minute-bounded install request, then no
-installation badge once available. Internal managed-credit adapter readiness
+CLI and a ready billing adapter. Model rows show a download icon, then a
+rotating icon during the five-minute-bounded install request, then no
+installation or runtime badge once available. Internal managed-credit adapter readiness
 is never presented as installation/account state. Token mode never changes
 implicitly. Claude and Gemini managed-credit launches run their genuine native
 CLIs with terminal-scoped gateway credentials, not personal provider
@@ -1156,8 +1329,9 @@ rejects later Gemini and Anthropic prompts as an invalid Responses request.
 Exact terminal capabilities still bind native and billing models. Native Claude
 and Gemini composers transition authoritative provider state from `starting`
 to `ready`, so a visible real CLI cannot remain covered by a loading state.
-Missing Qwen, Kimi, and Mistral runtimes remain downloadable, but installation
-alone does not enable Vibyra-credit billing.
+Missing Qwen, Kimi, and Mistral runtimes remain downloadable. Their enabled
+native adapters become ready once the pinned managed executable and required
+runtime are present.
 
 Claude and Gemini gateway requests recover `billingModel` from the
 terminal-scoped token rather than requiring native CLIs to duplicate it.
@@ -1179,6 +1353,13 @@ while terminal endpoints use unsafed expected usage with
 `terminal_quota_output_tokens` for burst and weekly quota. Reservation metadata
 stores `quota_reserved_credits`, and release/settlement reconciles quota to
 exact provider usage, including actual usage above the estimate.
+Dynamic OpenRouter terminal models use their live catalog price plus the normal
+terminal reservation margin for balance and quota admission; the separate
+general dynamic-model uncertainty multiplier must not be stacked on top. When
+the requested output allowance is the remaining affordability problem,
+`TerminalOutputBudget` lowers it to the largest funded value at or above the
+800-token terminal floor and the backend sends that cap upstream. Exact usage
+settlement remains authoritative.
 
 Deep recovery record: `Vibyra/_ai/Runs/2026-06-10 Vibyra Gemini Terminal
 Recovery.md`.
@@ -1202,10 +1383,10 @@ node --test desktop/lib/aiTerminalPersistentProcess.test.mjs desktop/lib/ptyTerm
 ## June 10, 2026 - Generalized API-Only Provider Routing
 
 Every provider-qualified OpenRouter model without a production-ready managed
-native adapter uses the bundled exact-model Vibyra Agent runtime. This includes
-Qwen, Moonshot/Kimi, and Mistral as well as dynamically discovered providers
-such as DeepSeek and xAI. Their dormant native runtime catalog entries must not
-block Vibyra-credit launches or appear as required downloads.
+native adapter uses the bundled exact-model Vibyra Agent runtime. Qwen,
+Moonshot/Kimi, Mistral, and xAI are excluded because their official native
+adapters are enabled. Dynamically discovered API-only providers such as
+DeepSeek continue to use Vibyra Agent.
 
 OpenRouter's Responses endpoint returns HTTP 500 for some valid non-OpenAI
 tool models, including observed DeepSeek V4 Flash and Qwen 3.5 9B requests.
@@ -1220,8 +1401,73 @@ below $5/M; balanced allows $5/M prompt and $20/M completion; anything higher
 is premium. This prevents a free-plan picker selection from becoming a 403
 only after terminal launch.
 
-The launch contract is version 15. Persisted terminals with earlier provider
+The launch contract is version 20. Persisted terminals with earlier provider
 ownership metadata must be rebuilt.
+
+## June 10, 2026 - Vibyra Agent Presentation And CLI Review
+
+API-only provider terminals now share one richer, truthful Vibyra Agent
+presentation:
+
+- `aiTerminalVibyraAgentPresentation.mjs` owns raised provider wordmarks based
+  on the real company symbol/name, ANSI Markdown emphasis, terminal-safe OSC-8
+  hyperlinks, and elapsed task copy.
+- The surface always says `via Vibyra Agent`; provider art never implies that
+  the generalized runtime is an official company CLI.
+- Long tasks announce `still working` after 30 seconds and once per minute,
+  then print the measured `Worked for` duration.
+- `/help` lists only local handlers or real agent workflows. The implemented
+  set includes shell/context/session controls plus `/test`, `/build`,
+  `/search`, `/security-review`, and `/init`.
+- Presentation and later Team launch metadata changes incremented the launch
+  contract to `20`, so recovered workers cannot retain stale identity, command,
+  or role behavior.
+
+Official-source review found native coding CLIs for xAI Grok Build, Qwen Code,
+Kimi Code, and Mistral Vibe. These belong on the native adapter/release-gate
+path and must not be visually copied by Vibyra Agent. The production pins are
+Grok Build `0.2.39`, Qwen Code `0.17.1`, Kimi Code `0.14.0`, and Mistral Vibe
+`2.14.1`. MiniMax `mmx-cli` is a capability bridge into other agents,
+Meta Llama CLI manages Llama Stack, and Z.AI's coding helper configures
+third-party agents; none is a model-family native coding terminal for current
+Vibyra routing. DeepSeek, Perplexity, Cohere, NVIDIA, IBM Granite, and the other
+API-only catalog families continue to use the custom Vibyra Agent surface
+unless primary provider documentation establishes an applicable native coding
+CLI and its Vibyra adapter passes release gates.
+
+## June 10, 2026 - Centered Auto Deciding Presentation
+
+Auto model selection owns a short explicit `autoDeciding` session state between
+the first submitted prompt and provider launch. During that state:
+
+- `aiTerminalVibyraLogo.mjs` centers the complete logo, title, status, and
+  signal block vertically and uses the full symmetric 3D V for normal-height
+  panes.
+- `app.terminals-pty-runtime.js` clears bottom overscan transforms and calls
+  `scrollToTop()` after live writes, replay, and focus. Normal terminals still
+  use their existing bottom scrolling and provider-specific geometry.
+- `ptyTerminals.mjs` publishes `autoDeciding: true` before the first animation
+  frame and clears it before launching the routed provider or restoring the
+  waiting Auto prompt.
+- The provider handoff is an authoritative output replacement, not an appended
+  clear sequence. The bridge replaces the stored transcript with a full
+  clear-screen sequence, the renderer honors `replaceOutput` by resetting
+  xterm instead of merging local scrollback, and the provider session identity
+  is published before its process can emit startup output. This prevents the
+  completed V frame from reappearing at the bottom during launch.
+- Routing failures use the same replacement path to remove the animation before
+  restoring the normal Auto prompt.
+- Provider startup runs concurrently with the animation. Auto displays for at
+  least 1.44 seconds, and `persistentHandlers()` suppresses worker snapshot
+  output plus buffers live provider bytes while `autoDeciding` is true. The
+  first provider output is released only after the minimum display time; slow
+  providers therefore keep the centered animation until they actually render.
+  A 30-second bounded fallback prevents a silent provider from leaving the
+  animation indefinitely.
+
+Do not infer this presentation state from `model === "auto"` or
+`providerState === "busy"`; both have broader meanings. Keep the explicit flag
+and the renderer regression in `app.terminals-input.test.mjs`.
 
 ## June 10, 2026 - Permanent Terminal Bottom Anchoring
 
@@ -1298,3 +1544,35 @@ npm run test:desktop-ai
 Result: 292 tests passed, 0 failed. JavaScript syntax checks and
 `git diff --check` also passed. The running Electron renderer was reloaded
 without restarting or closing the authoritative terminal workers.
+
+## June 11, 2026 - Team Identifier Lifecycle And Official CLI Corrections
+
+`Invalid Team identifier.` is emitted only when a request contains role, size,
+or goal metadata with an empty ID. The generated bridge Team IDs were already
+valid; the repeat failure came from lifecycle skew and incomplete restored
+renderer records.
+
+Permanent contract:
+
+- The renderer repairs blank Team IDs for a complete restored group before any
+  member starts and serializes Team fields through one all-or-none preflight.
+- The bridge lowercases current-format IDs and deterministically canonicalizes
+  every non-empty legacy value.
+- Desktop boot immediately reconciles `GET /desktop/pty-terminals`, including
+  when local storage is stale or empty.
+- Team renderer payload changes increment the shared terminal action protocol.
+  Protocol `2026-06-11.13` is exposed with Team role contract `2`; Team assets
+  use the `terminal-team-identity-20260611` cache key.
+- Planner metadata survives renderer persistence.
+
+Official CLI follow-up:
+
+- Managed Mistral Vibe resolves runtime ID `mistral` to executable `vibe`.
+- Legacy Kimi and Mistral model aliases normalize to OpenRouter billing slugs
+  under `moonshotai/...` and `mistralai/...`.
+- Live runtime status confirmed Codex, Claude, Gemini, Qwen, Kimi, Mistral, and
+  Grok ready. The recovered four-member Team remained running under one shared
+  ID after the bridge and Electron reloaded.
+
+Validation: `npm run test:desktop-ai` passed 398 tests; focused Team/PTY tests
+passed 44; runtime/launch tests passed 38; `git diff --check` passed.

@@ -26,6 +26,7 @@ function screenshotEditorMarkup() {
       <div class="screenshot-actions">
         <button class="screenshot-secondary-button" type="button" data-screenshot-apply-crop hidden>Apply crop</button>
         <button class="screenshot-secondary-button" type="button" data-screenshot-copy>${icon("copy")}<span>Copy</span></button>
+        <button class="screenshot-secondary-button" type="button" data-screenshot-apply>${icon("check")}<span>Apply changes</span></button>
         <button class="screenshot-primary-button" type="button" data-screenshot-save>${icon("download")}<span>Save</span></button>
       </div>
     </footer>
@@ -84,6 +85,7 @@ function bindScreenshotEditorActions(root) {
   root.querySelector("[data-screenshot-reset]")?.addEventListener("click", () => void resetScreenshotDocument());
   root.querySelector("[data-screenshot-apply-crop]")?.addEventListener("click", () => void applyScreenshotCrop());
   root.querySelector("[data-screenshot-copy]")?.addEventListener("click", () => void copyScreenshot());
+  root.querySelector("[data-screenshot-apply]")?.addEventListener("click", () => void applyScreenshotChanges());
   root.querySelector("[data-screenshot-save]")?.addEventListener("click", () => void saveScreenshot());
   root.querySelectorAll("[data-screenshot-tool]").forEach((button) => {
     button.addEventListener("click", () => selectScreenshotTool(button.dataset.screenshotTool));

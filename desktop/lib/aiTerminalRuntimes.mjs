@@ -40,7 +40,7 @@ export function terminalRuntimeExecutable(id) {
     if (canExecute(candidate)) return candidate;
   }
   for (const candidate of executableCandidates(runtime)) {
-    if (canExecute(candidate)) return candidate;
+    if (runtimeExecutableUsable(runtime, candidate)) return candidate;
   }
   return "";
 }
@@ -61,22 +61,55 @@ async function runInstall(runtime) {
   mkdirSync(target, { recursive: true, mode: 0o700 });
   const installer = runtime.installer;
   if (installer.type === "npm") {
+    const packages = [
+      ...(installer.nodeVersion ? [`node@${installer.nodeVersion}`] : []),
+      `${installer.package}@${installer.version}`
+    ];
     await run("npm", [
       "install",
       "--prefix", target,
       "--no-audit",
       "--no-fund",
       "--save-exact",
-      `${installer.package}@${installer.version}`
+      ...packages
     ]);
   } else {
-    const uv = findOnPath("uv");
-    if (!uv) throw httpError(409, "Install uv before downloading Mistral Vibe.");
-    await run(uv, ["tool", "install", "--force", `${installer.package}==${installer.version}`], {
-      ...process.env,
-      UV_TOOL_DIR: join(target, "tools"),
-      UV_TOOL_BIN_DIR: join(target, "bin")
-    });
+    if (installer.type === "python") {
+      const python = findOnPath("python3") || findOnPath("python");
+      if (!python) throw httpError(409, "Python 3.12 or newer is required to download Mistral Vibe.");
+      const venv = join(target, "venv");
+      await run(python, ["-m", "venv", venv]);
+      const pip = process.platform === "win32"
+        ? join(venv, "Scripts", "pip.exe")
+        : join(venv, "bin", "pip");
+      await run(pip, [
+        "install",
+        "--disable-pip-version-check",
+        "--no-input",
+        `${installer.package}==${installer.version}`
+      ]);
+    } else if (installer.type === "xai") {
+      if (process.platform === "win32") {
+        throw httpError(409, "Grok Build managed download currently requires macOS, Linux, or WSL.");
+      }
+      const response = await fetch(installer.url);
+      if (!response.ok) throw httpError(502, "Could not download the official Grok Build installer.");
+      const home = join(target, "home");
+      mkdirSync(home, { recursive: true, mode: 0o700 });
+      await runWithInput(
+        "bash",
+        ["-s", "--", installer.version],
+        await response.text(),
+        {
+          ...process.env,
+          HOME: home,
+          GROK_BIN_DIR: join(target, "bin"),
+          SHELL: "/bin/false"
+        }
+      );
+    } else {
+      throw httpError(500, `Unsupported installer type "${installer.type}".`);
+    }
   }
   const result = publicRuntime(runtime);
   if (!result.available) throw httpError(500, `${runtime.label} installed but its executable was not found.`);
@@ -111,6 +144,9 @@ function executableCandidates(runtime) {
     join(repoRoot, "node_modules", ".bin", `${runtime.executable}${suffix}`),
     join(runtimeRoot, runtime.id, "node_modules", ".bin", `${runtime.executable}${suffix}`),
     join(runtimeRoot, runtime.id, "bin", `${runtime.executable}${suffix}`),
+    process.platform === "win32"
+      ? join(runtimeRoot, runtime.id, "venv", "Scripts", `${runtime.executable}.exe`)
+      : join(runtimeRoot, runtime.id, "venv", "bin", runtime.executable),
     findOnPath(runtime.executable)
   ].filter(Boolean);
 }
@@ -120,6 +156,13 @@ function runtimeSource(runtime, executable) {
   if (executable.includes(join(repoRoot, "node_modules"))) return "bundled";
   if (executable.includes(join(runtimeRoot, runtime.id))) return "managed";
   return "system";
+}
+
+function runtimeExecutableUsable(runtime, executable) {
+  if (!canExecute(executable)) return false;
+  if (!runtime.installer?.nodeVersion) return true;
+  if (!executable.includes(join(runtimeRoot, runtime.id))) return true;
+  return canExecute(join(runtimeRoot, runtime.id, "node_modules", ".bin", "node"));
 }
 
 function findOnPath(command) {
@@ -156,6 +199,23 @@ function run(command, args, env = process.env) {
       if (code === 0) resolvePromise();
       else reject(httpError(500, stderr.trim().split(/\r?\n/).at(-1) || `Installer exited with code ${code}.`));
     });
+  });
+}
+
+function runWithInput(command, args, input, env = process.env) {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command, args, { env, stdio: ["pipe", "ignore", "pipe"] });
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk) => {
+      stderr = `${stderr}${chunk}`.slice(-4000);
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolvePromise();
+      else reject(httpError(500, stderr.trim().split(/\r?\n/).at(-1) || `Installer exited with code ${code}.`));
+    });
+    child.stdin.end(input);
   });
 }
 

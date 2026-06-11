@@ -5,6 +5,8 @@ let terminalEditorMonacoEditor = null;
 let terminalEditorMonacoTabKey = "";
 let terminalEditorMonacoDisposables = [];
 let terminalEditorMonacoDecorations = null;
+let terminalEditorThemeObserver = null;
+let terminalEditorThemeMedia = null;
 
 function loadTerminalEditorMonaco() {
   if (window.monaco?.editor) return Promise.resolve(window.monaco);
@@ -47,6 +49,59 @@ function defineTerminalEditorTheme(monaco) {
       "scrollbarSlider.activeBackground": "#bfbfbf66"
     }
   });
+  monaco.editor.defineTheme("vibyra-light-plus", {
+    base: "vs",
+    inherit: true,
+    rules: [],
+    colors: {
+      "editor.background": "#ffffff",
+      "editor.foreground": "#303646",
+      "editorCursor.foreground": "#171923",
+      "editor.lineHighlightBackground": "#f3f5f9",
+      "editorLineNumber.foreground": "#8a90a0",
+      "editorLineNumber.activeForeground": "#303646",
+      "editor.selectionBackground": "#d8ccff",
+      "editor.inactiveSelectionBackground": "#ebe6fb",
+      "editorIndentGuide.background1": "#e3e6ee",
+      "editorIndentGuide.activeBackground1": "#b9bfcc",
+      "editorWhitespace.foreground": "#d1d5df",
+      "editorOverviewRuler.border": "#00000000",
+      "minimap.background": "#ffffff",
+      "scrollbarSlider.background": "#68718333",
+      "scrollbarSlider.hoverBackground": "#68718355",
+      "scrollbarSlider.activeBackground": "#68718377"
+    }
+  });
+  ensureTerminalEditorThemeObserver(monaco);
+}
+
+function terminalEditorEffectiveTheme() {
+  const requested = document.body?.dataset.desktopTheme || "dark";
+  if (requested === "auto") return window.matchMedia?.("(prefers-color-scheme: light)")?.matches
+    ? "vibyra-light-plus"
+    : "vibyra-dark-plus";
+  return requested === "light" ? "vibyra-light-plus" : "vibyra-dark-plus";
+}
+
+function applyTerminalEditorTheme(monaco = window.monaco) {
+  if (!monaco?.editor) return;
+  monaco.editor.setTheme(terminalEditorEffectiveTheme());
+}
+
+function ensureTerminalEditorThemeObserver(monaco) {
+  const apply = () => applyTerminalEditorTheme(monaco);
+  if (!terminalEditorThemeObserver && document.body && typeof MutationObserver === "function") {
+    terminalEditorThemeObserver = new MutationObserver(apply);
+    terminalEditorThemeObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-desktop-theme"]
+    });
+  }
+  if (!terminalEditorThemeMedia && typeof window.matchMedia === "function") {
+    terminalEditorThemeMedia = window.matchMedia("(prefers-color-scheme: light)");
+    terminalEditorThemeMedia.addEventListener?.("change", apply);
+  }
+  apply();
 }
 
 async function mountTerminalEditorMonaco(host, tab) {
@@ -60,7 +115,7 @@ async function mountTerminalEditorMonaco(host, tab) {
     host.replaceChildren();
     terminalEditorMonacoEditor = monaco.editor.create(host, {
       model,
-      theme: "vibyra-dark-plus",
+      theme: terminalEditorEffectiveTheme(),
       automaticLayout: true,
       fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
       fontSize: 13,

@@ -9,7 +9,7 @@ if [ -f ".env" ]; then
   set +a
 fi
 
-export VIBYRA_DESKTOP_API_URL="${VIBYRA_DESKTOP_API_URL:-${VIBYRA_API_URL:-${EXPO_PUBLIC_API_URL:-http://127.0.0.1:8000}}}"
+export VIBYRA_DESKTOP_API_URL="${VIBYRA_DESKTOP_API_URL:-${VIBYRA_API_URL:-${EXPO_PUBLIC_API_URL:-https://vibyra-production.up.railway.app}}}"
 
 PORT="${VIBYRA_AGENT_PORT:-4317}"
 APP_URL="http://127.0.0.1:${PORT}/desktop"
@@ -18,10 +18,15 @@ CHROME_PROFILE="$HOME/.vibyra-desktop-window"
 ELECTRON_LOG_DIR="$HOME/.vibyra-desktop"
 ELECTRON_LOG="$ELECTRON_LOG_DIR/electron.log"
 ELECTRON_BIN=""
+DESKTOP_LAUNCHER="$PWD/scripts/install-desktop-launcher.sh"
 EXPECTED_TERMINAL_LAUNCH_CONTRACT="$(
   node --input-type=module -e \
     'import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION as version } from "./desktop/lib/aiTerminalProviderAdapters.mjs"; process.stdout.write(String(version));'
 )"
+
+if [ -x "$DESKTOP_LAUNCHER" ]; then
+  "$DESKTOP_LAUNCHER"
+fi
 
 if [ -x "node_modules/.bin/electron" ]; then
   ELECTRON_BIN="node_modules/.bin/electron"
@@ -32,7 +37,7 @@ fi
 open_window() {
   if [ -n "$ELECTRON_BIN" ] && [ -f "desktop/electron-main.cjs" ]; then
     mkdir -p "$ELECTRON_LOG_DIR"
-    ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >>"$ELECTRON_LOG" 2>&1 &
+    ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --class=vibyra --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >>"$ELECTRON_LOG" 2>&1 &
   elif command -v google-chrome >/dev/null 2>&1; then
     google-chrome --app="$APP_URL" --class=VibyraDesktop --user-data-dir="$CHROME_PROFILE" --window-size=1040,760 >/dev/null 2>&1 &
   elif command -v chromium >/dev/null 2>&1; then

@@ -98,7 +98,7 @@ export function renderAutoDecidingFrame({
 } = {}) {
   const width = Math.max(36, Number(columns) || 80);
   const height = Number(rows) || 30;
-  const size = height >= 24 ? "compact" : "nano";
+  const size = height >= 26 ? "full" : height >= 16 ? "compact" : "nano";
   const logo = renderVibyraVLogo({ color, phase, size });
   const palette = MOTION_PALETTES[phase % MOTION_PALETTES.length];
   const title = paintSpacedTitle("VIBYRA AUTO", phase, color);
@@ -115,9 +115,7 @@ export function renderAutoDecidingFrame({
     centerVisible(status, width),
     centerVisible(signal, width)
   ];
-  const centerRow = Math.max(1, Math.floor((height - 1) / 2));
-  const titleOffset = logo.length + 1;
-  const topPadding = Math.max(0, centerRow - titleOffset);
+  const topPadding = Math.max(0, Math.floor((height - content.length) / 2));
   return [...Array(topPadding).fill(""), ...content];
 }
 

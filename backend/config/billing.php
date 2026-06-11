@@ -109,6 +109,7 @@ return [
         'gemini-3.1-pro-preview' => ['slug' => 'google/gemini-3.1-pro-preview', 'tier' => 'premium', 'multiplier' => 1.35],
         'gemini-3.5-flash' => ['slug' => 'google/gemini-3.5-flash', 'tier' => 'budget', 'multiplier' => 1.0],
         'community-image' => ['slug' => 'openai/gpt-5.4-image-2', 'tier' => 'balanced', 'multiplier' => 1.2, 'tool_only' => true],
+        'team-plan' => ['slug' => 'openai/gpt-5.4-mini', 'tier' => 'budget', 'multiplier' => 1.0, 'tool_only' => true],
         'tool-deep-research' => ['slug' => 'google/gemini-2.5-flash-lite', 'tier' => 'budget', 'multiplier' => 1.0, 'tool_only' => true],
         'tool-web-search' => ['slug' => 'google/gemini-2.5-flash-lite', 'tier' => 'budget', 'multiplier' => 1.0, 'tool_only' => true],
         'tool-analyze-files' => ['slug' => 'google/gemini-2.5-flash-lite', 'tier' => 'budget', 'multiplier' => 1.0, 'tool_only' => true],

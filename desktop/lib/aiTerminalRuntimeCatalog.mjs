@@ -73,11 +73,16 @@ export const TERMINAL_RUNTIMES = {
     adapter: {
       id: "openai-chat-completions",
       protocol: "openai-chat-completions",
-      ready: false,
-      reason: "The billed OpenAI Chat Completions gateway adapter is not implemented yet."
+      ready: true,
+      reason: ""
     },
     requirements: { node: ">=22" },
-    installer: { type: "npm", package: "@qwen-code/qwen-code", version: "0.17.1" }
+    installer: {
+      type: "npm",
+      package: "@qwen-code/qwen-code",
+      version: "0.17.1",
+      nodeVersion: "22.19.0"
+    }
   },
   kimi: {
     id: "kimi",
@@ -87,11 +92,16 @@ export const TERMINAL_RUNTIMES = {
     adapter: {
       id: "openai-responses",
       protocol: "openai-responses",
-      ready: false,
-      reason: "Kimi's Responses launch, credential isolation, and billing smoke tests are not complete."
+      ready: true,
+      reason: ""
     },
     requirements: { node: ">=22" },
-    installer: { type: "npm", package: "@moonshot-ai/kimi-code", version: "0.12.1" }
+    installer: {
+      type: "npm",
+      package: "@moonshot-ai/kimi-code",
+      version: "0.14.0",
+      nodeVersion: "22.19.0"
+    }
   },
   mistral: {
     id: "mistral",
@@ -101,11 +111,29 @@ export const TERMINAL_RUNTIMES = {
     adapter: {
       id: "openai-responses",
       protocol: "openai-responses",
-      ready: false,
-      reason: "Mistral Vibe's Responses launch, credential isolation, and billing smoke tests are not complete."
+      ready: true,
+      reason: ""
     },
-    requirements: { python: ">=3.12", commands: ["uv"] },
-    installer: { type: "uv", package: "mistral-vibe", version: "2.14.1" }
+    requirements: { python: ">=3.12" },
+    installer: { type: "python", package: "mistral-vibe", version: "2.14.1" }
+  },
+  grok: {
+    id: "grok",
+    label: "Grok Build",
+    executable: "grok",
+    env: ["VIBYRA_GROK_CLI", "GROK_CLI_PATH"],
+    adapter: {
+      id: "openai-chat-completions",
+      protocol: "openai-chat-completions",
+      ready: true,
+      reason: ""
+    },
+    requirements: {},
+    installer: {
+      type: "xai",
+      version: "0.2.39",
+      url: "https://x.ai/cli/install.sh"
+    }
   }
 };
 
@@ -121,5 +149,7 @@ export const TERMINAL_PROVIDER_RUNTIMES = new Map([
   ["mistralai", "mistral"],
   ["moonshot", "kimi"],
   ["moonshotai", "kimi"],
-  ["kimi", "kimi"]
+  ["kimi", "kimi"],
+  ["x-ai", "grok"],
+  ["xai", "grok"]
 ]);

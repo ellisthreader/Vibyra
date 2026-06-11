@@ -1,5 +1,5 @@
 ---
-name: VibyraRefactor
+name: vibyra-refactor
 description: Safely refactor and optimize Vibyra code when files are too long, messy, over-parameterized, weakly typed, not using appropriate context/hooks/modules, or generally unorganized. Use when asked to clean up code, enforce a no-source-file-over-250-lines limit, split oversized files, reduce parameter sprawl, add focused types/contexts/hooks/components, or verify that behavior still works after a refactor.
 metadata:
   short-description: Safe refactors and 250-line gate

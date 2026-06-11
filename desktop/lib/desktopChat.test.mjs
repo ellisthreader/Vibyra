@@ -356,6 +356,10 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   const result = await sendDesktopChat({
     attachments: ["README.md"],
     history: [{ role: "user", text: "Earlier" }],
+    imageAttachments: [{
+      name: "screen.png",
+      url: "data:image/png;base64,iVBORw0KGgo="
+    }],
     mode: "chat",
     model: "gpt-5.4-mini",
     profileContext: { callName: "Ellis", work: "Founder", responseStyle: "Code-first: prioritize implementation details.", customInstructions: "Ask clarifying questions before detailed answers." },
@@ -396,6 +400,10 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.equal(requestBody.routingPrompt, "Explain this project");
   assert.equal(requestBody.reasoningEffort, "xhigh");
   assert.equal(requestBody.skill, "review");
+  assert.deepEqual(requestBody.imageAttachments, [{
+    name: "screen.png",
+    url: "data:image/png;base64,iVBORw0KGgo="
+  }]);
   assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
   assert.match(requestBody.prompt, /Desktop profile preferences:/);
   assert.match(requestBody.prompt, /Call the user: Ellis/);

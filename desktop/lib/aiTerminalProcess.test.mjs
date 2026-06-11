@@ -179,6 +179,19 @@ test("Codex standard mode does not bypass approvals or sandboxing", () => {
   assert.equal(args.includes("--dangerously-bypass-approvals-and-sandbox"), false);
 });
 
+test("Codex Team roles use developer instructions and an enforced read-only sandbox", () => {
+  const args = aiTerminalAgentArgs("codex", {
+    model: "gpt-5.5",
+    permissionMode: "standard",
+    sandboxMode: "read-only",
+    roleInstructions: "Role: Reviewer"
+  });
+
+  assert.ok(args.includes('developer_instructions="Role: Reviewer"'));
+  assert.deepEqual(args.slice(-4), ["--sandbox", "read-only", "--ask-for-approval", "never"]);
+  assert.equal(args.includes("--dangerously-bypass-approvals-and-sandbox"), false);
+});
+
 test("Claude launch appends Vibyra Memory as system context", () => {
   const args = aiTerminalAgentArgs("claude", {
     memoryInstructions: "Vibyra project memory snapshot"
@@ -188,6 +201,29 @@ test("Claude launch appends Vibyra Memory as system context", () => {
     "--append-system-prompt",
     "Vibyra project memory snapshot"
   ]);
+});
+
+test("Claude Team roles replace memory context and restrict tools in plan mode", () => {
+  const args = aiTerminalAgentArgs("claude", {
+    model: "anthropic/claude-sonnet-4",
+    memoryInstructions: "Untrusted repository memory",
+    roleInstructions: "Role: Reviewer",
+    sandboxMode: "read-only"
+  });
+
+  assert.deepEqual(args, [
+    "--append-system-prompt",
+    "Role: Reviewer",
+    "--model",
+    "claude-sonnet-4",
+    "--permission-mode",
+    "plan",
+    "--tools",
+    "Read,Glob,Grep",
+    "--disable-slash-commands",
+    "--strict-mcp-config"
+  ]);
+  assert.equal(args.includes("Untrusted repository memory"), false);
 });
 
 test("personal Claude and Gemini launches pass the selected native model", () => {
@@ -203,6 +239,111 @@ test("personal Claude and Gemini launches pass the selected native model", () =>
     "--model",
     "gemini-2.5-pro"
   ]);
+});
+
+test("Claude and Gemini full access use their native bypass launch modes", () => {
+  assert.deepEqual(aiTerminalAgentArgs("claude", {
+    model: "anthropic/claude-sonnet-4",
+    permissionMode: "full"
+  }), [
+    "--model",
+    "claude-sonnet-4",
+    "--dangerously-skip-permissions"
+  ]);
+  assert.deepEqual(aiTerminalAgentArgs("gemini", {
+    model: "google/gemini-2.5-pro",
+    permissionMode: "full"
+  }), [
+    "--model",
+    "gemini-2.5-pro",
+    "--approval-mode",
+    "yolo",
+    "--no-sandbox"
+  ]);
+});
+
+test("Grok Build uses its native model, permissions, and sandbox flags", () => {
+  assert.deepEqual(aiTerminalAgentArgs("grok", {
+    model: "x-ai/grok-build-0.1",
+    permissionMode: "standard"
+  }), [
+    "--no-auto-update",
+    "--no-alt-screen",
+    "--model",
+    "grok-build-0.1",
+    "--permission-mode",
+    "default",
+    "--sandbox",
+    "workspace"
+  ]);
+  assert.deepEqual(aiTerminalAgentArgs("grok", {
+    model: "x-ai/grok-build-0.1",
+    permissionMode: "full"
+  }), [
+    "--no-auto-update",
+    "--no-alt-screen",
+    "--model",
+    "grok-build-0.1",
+    "--permission-mode",
+    "bypassPermissions",
+    "--sandbox",
+    "off"
+  ]);
+});
+
+test("Qwen Code uses its official model, approval, and sandbox flags", () => {
+  assert.deepEqual(aiTerminalAgentArgs("qwen", {
+    model: "qwen/qwen3-coder",
+    permissionMode: "standard"
+  }), [
+    "--model",
+    "qwen3-coder",
+    "--approval-mode",
+    "default",
+    "--sandbox"
+  ]);
+  assert.deepEqual(aiTerminalAgentArgs("qwen", {
+    model: "qwen/qwen3-coder",
+    permissionMode: "full"
+  }), [
+    "--model",
+    "qwen3-coder",
+    "--approval-mode",
+    "yolo"
+  ]);
+  assert.deepEqual(aiTerminalAgentArgs("qwen", {
+    model: "qwen/qwen3-coder",
+    sandboxMode: "read-only"
+  }), [
+    "--model",
+    "qwen3-coder",
+    "--approval-mode",
+    "plan",
+    "--sandbox"
+  ]);
+});
+
+test("Kimi Code and Mistral Vibe use their official permission modes", () => {
+  assert.deepEqual(aiTerminalAgentArgs("kimi", {
+    model: "moonshotai/kimi-k2",
+    sandboxMode: "read-only"
+  }), ["--plan"]);
+  assert.deepEqual(aiTerminalAgentArgs("kimi", {
+    model: "moonshotai/kimi-k2",
+    permissionMode: "full"
+  }), ["--yolo"]);
+  assert.deepEqual(aiTerminalAgentArgs("mistral", {
+    model: "mistralai/devstral-2",
+    permissionMode: "standard"
+  }), ["--agent", "default"]);
+  assert.deepEqual(aiTerminalAgentArgs("mistral", {
+    model: "mistralai/devstral-2",
+    permissionMode: "full"
+  }), ["--agent", "auto-approve"]);
+  assert.deepEqual(aiTerminalAgentArgs("mistral", {
+    model: "mistralai/devstral-2",
+    sandboxMode: "read-only"
+  }), ["--agent", "plan"]);
 });
 
 test("PTY terminal env carries selected OpenRouter model metadata", () => {

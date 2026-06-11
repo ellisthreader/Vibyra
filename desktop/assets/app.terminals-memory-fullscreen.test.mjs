@@ -21,7 +21,8 @@ test("expanded Memory renders a full Obsidian-style application shell", () => {
 
 test("fullscreen explorer and links use canonical vault data", () => {
   assert.match(source, /terminalMemoryTreeHtml\(\)/);
-  assert.match(source, /terminalMemoryGraphModel\(terminalMemoryState\.nodes\)/);
+  assert.match(source, /terminalMemoryGraphTopology\(terminalMemoryState\.nodes\)/);
+  assert.doesNotMatch(source, /terminalMemoryGraphModel\(terminalMemoryState\.nodes\)/);
   assert.match(source, /data-terminal-memory-open-node/);
   assert.match(contentStyles, /terminal-memory-links-pane/);
 });

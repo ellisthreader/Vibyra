@@ -130,6 +130,121 @@ test("managed Claude and Gemini receive only terminal-scoped gateway credentials
   assert.equal(geminiSettings.security.auth.enforcedType, "gemini-api-key");
 });
 
+test("managed Grok receives an isolated exact-model Chat Completions profile", () => {
+  const previousHome = process.env.HOME;
+  const home = mkdtempSync(join(tmpdir(), "vibyra-grok-home-"));
+  process.env.HOME = home;
+  try {
+    const grok = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "grok",
+      model: "grok-build-0.1",
+      terminalId: "managed-grok",
+      terminalGatewayToken: "grok-token",
+      cols: 100,
+      rows: 30
+    });
+    const config = readFileSync(join(grok.GROK_HOME, "config.toml"), "utf8");
+
+    assert.equal(grok.VIBYRA_TERMINAL_GATEWAY_TOKEN, "grok-token");
+    assert.equal(grok.XAI_API_KEY, undefined);
+    assert.match(grok.GROK_HOME, /grok-terminals\/managed-grok$/);
+    assert.match(config, /\[model\."grok-build-0\.1"\]/);
+    assert.match(config, /base_url = "http:\/\/127\.0\.0\.1:\d+\/desktop\/grok\/v1"/);
+    assert.match(config, /env_key = "VIBYRA_TERMINAL_GATEWAY_TOKEN"/);
+    assert.match(config, /api_backend = "chat_completions"/);
+    assert.equal(statSync(join(grok.GROK_HOME, "config.toml")).mode & 0o777, 0o600);
+  } finally {
+    if (previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME = previousHome;
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () => {
+  const previousHome = process.env.HOME;
+  const home = mkdtempSync(join(tmpdir(), "vibyra-native-homes-"));
+  process.env.HOME = home;
+  try {
+    const qwen = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "qwen",
+      model: "qwen3-coder",
+      terminalId: "managed-qwen",
+      terminalGatewayToken: "qwen-token",
+      cols: 100,
+      rows: 30
+    });
+    const qwenSettings = JSON.parse(readFileSync(qwen.QWEN_CODE_SYSTEM_SETTINGS_PATH, "utf8"));
+    assert.match(qwen.QWEN_HOME, /qwen-terminals\/managed-qwen$/);
+    assert.equal(qwen.VIBYRA_TERMINAL_GATEWAY_TOKEN, "qwen-token");
+    assert.equal(qwen.OPENAI_API_KEY, "qwen-token");
+    assert.equal(qwenSettings.model.name, "qwen3-coder");
+    assert.equal(qwenSettings.modelProviders.openai[0].id, "qwen3-coder");
+    assert.match(qwenSettings.modelProviders.openai[0].baseUrl, /^http:\/\/host\.docker\.internal:\d+\/desktop\/qwen\/v1$/);
+    assert.equal(qwenSettings.modelProviders.openai[0].envKey, "OPENAI_API_KEY");
+
+    const fullAccessQwen = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "qwen",
+      model: "qwen3-coder",
+      permissionMode: "full",
+      terminalId: "managed-qwen-full",
+      terminalGatewayToken: "qwen-full-token",
+      cols: 100,
+      rows: 30
+    });
+    const fullAccessSettings = JSON.parse(
+      readFileSync(fullAccessQwen.QWEN_CODE_SYSTEM_SETTINGS_PATH, "utf8")
+    );
+    assert.equal(fullAccessQwen.QWEN_SANDBOX, "false");
+    assert.match(fullAccessSettings.modelProviders.openai[0].baseUrl, /^http:\/\/127\.0\.0\.1:\d+\/desktop\/qwen\/v1$/);
+
+    const kimi = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "kimi",
+      model: "kimi-k2",
+      terminalId: "managed-kimi",
+      terminalGatewayToken: "kimi-token",
+      cols: 100,
+      rows: 30
+    });
+    const kimiConfig = readFileSync(join(kimi.KIMI_CODE_HOME, "config.toml"), "utf8");
+    assert.match(kimi.KIMI_CODE_HOME, /kimi-terminals\/managed-kimi$/);
+    assert.match(kimiConfig, /type = "openai_responses"/);
+    assert.match(kimiConfig, /base_url = "http:\/\/127\.0\.0\.1:\d+\/desktop\/kimi\/v1"/);
+    assert.match(kimiConfig, /api_key = "kimi-token"/);
+    assert.match(kimiConfig, /model = "kimi-k2"/);
+
+    const mistral = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "mistral",
+      model: "devstral-2",
+      terminalId: "managed-mistral",
+      terminalGatewayToken: "mistral-token",
+      cwd: "/tmp/Vibyra Project",
+      cols: 100,
+      rows: 30
+    });
+    const mistralConfig = readFileSync(join(mistral.VIBE_HOME, "config.toml"), "utf8");
+    assert.match(mistral.VIBE_HOME, /mistral-terminals\/managed-mistral$/);
+    assert.match(mistralConfig, /api_style = "openai-responses"/);
+    assert.match(mistralConfig, /api_key_env_var = "VIBYRA_TERMINAL_GATEWAY_TOKEN"/);
+    assert.match(mistralConfig, /name = "devstral-2"/);
+    assert.match(mistralConfig, /active_model = "devstral-2-vibyra"/);
+    assert.match(mistralConfig, /enabled_skills = \["vibe"\]/);
+    assert.equal(mistral.VIBYRA_TERMINAL_GATEWAY_TOKEN, "mistral-token");
+    assert.match(
+      readFileSync(join(mistral.VIBE_HOME, "trusted_folders.toml"), "utf8"),
+      /untrusted = \["\/tmp\/Vibyra Project"\]/
+    );
+  } finally {
+    if (previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME = previousHome;
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
 test("Vibyra Agent receives the exact model and only its terminal-scoped gateway", () => {
   const previousOpenRouterKey = process.env.OPENROUTER_API_KEY;
   const previousCodexHome = process.env.CODEX_HOME;

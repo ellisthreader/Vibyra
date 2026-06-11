@@ -87,6 +87,7 @@ export async function proxyNativeTerminalProtocol(
 
   let response;
   try {
+    const requestBody = nativeRequestToResponses(protocol, body, billingModel);
     response = await fetchImpl(`${API_URL}/api/codex/responses`, {
       method: "POST",
       headers: {
@@ -94,7 +95,7 @@ export async function proxyNativeTerminalProtocol(
         Authorization: `Bearer ${appState.desktopAccountToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(nativeRequestToResponses(protocol, body, billingModel)),
+      body: JSON.stringify(requestBody),
       signal: controller.signal
     });
   } catch (error) {
@@ -203,6 +204,16 @@ async function nativeErrorPayload(protocol, response) {
         type: response.status === 429 ? "rate_limit_error" : "invalid_request_error",
         message,
         ...(code ? { code } : {}),
+        ...(Object.keys(details).length ? { details } : {})
+      }
+    };
+  }
+  if (protocol === "openai-chat-completions") {
+    return {
+      error: {
+        message,
+        type: response.status === 429 ? "rate_limit_error" : "invalid_request_error",
+        code: code || response.status,
         ...(Object.keys(details).length ? { details } : {})
       }
     };

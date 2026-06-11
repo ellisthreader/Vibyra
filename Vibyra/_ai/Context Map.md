@@ -6,9 +6,9 @@ Use this map to choose the smallest useful context. Read one domain index and on
 
 For memory/skill optimization, broad planning, or agent workflow changes, read
 `Memory And Skills Optimization.md` plus the matching local skill. Common
-matches: `VibyraObsiden`, `plan`, `VibyraRefactor`, `VibyraOptimse`,
-`VibyraDesktopFrontendDesign`, `vibyra-desktop-connection-diagnostics`, and
-`vibyra-expo-web-diagnostics`.
+matches: `vibyra-obsidian`, `plan`, `vibyra-refactor`, `vibyra-optimise`,
+`vibyra-desktop-frontend-design`, `vibyra-desktop-connection-diagnostics`,
+`vibyra-preview-diagnostics`, and `vibyra-expo-web-diagnostics`.
 
 ## Mobile App
 
@@ -48,6 +48,7 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 Read `Vibyra Backend Memory.md`, then one focused note from `Vibyra/_ai/Backend/`.
 
 - `/api/chat`, OpenRouter, token caps: `Backend/Chat And Cost Controls.md`
+- `/api/chat/team-plan`, strict Team assignment proposals: `Backend/Team Planning.md`
 - Billing, credits, levels: `Backend/Billing Credits And Levels.md`
 - Auth and cloud sync: `Backend/Auth And Cloud Sync.md`
 - Community publish/moderation/assets: `Backend/Community Publishing.md`

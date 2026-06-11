@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, networkInterfaces } from "node:os";
 import { dirname, join } from "node:path";
 import { send } from "./http.mjs";
 
@@ -71,18 +71,23 @@ function verifyTerminalGatewayTokenResult(token, options = {}) {
 
   const record = registry.tokens[storedHash];
   const model = String(options.model || "").trim();
+  const nativeModelAliases = normalizedModels(options.nativeModelAliases);
+  const nativeModelAlias = nativeModelAliases.includes(model)
+    && constraintMatches(record.runtimeId, options.runtimeId)
+    && constraintMatches(record.providerId, options.providerId);
+  const authorizedNativeModel = nativeModelAlias ? record.nativeModel : options.nativeModel;
   if (record.expiresAt <= now) {
     delete registry.tokens[storedHash];
     writeRegistry(registry, options.registryPath);
     return { authorization: null, reason: "expired" };
   }
   if (
-    (record.models.length && !record.models.includes(model))
+    (record.models.length && !record.models.includes(model) && !nativeModelAlias)
     || !constraintMatches(record.runtimeId, options.runtimeId)
     || !constraintMatches(record.providerId, options.providerId)
     || !constraintMatches(record.adapterId, options.adapterId)
     || !constraintMatches(record.protocol, options.protocol)
-    || !constraintMatches(record.nativeModel, options.nativeModel)
+    || !constraintMatches(record.nativeModel, authorizedNativeModel)
     || (
       options.billingModel !== undefined
       && !constraintMatches(record.billingModel, options.billingModel)
@@ -137,7 +142,7 @@ export function revokeTerminalGatewayTokensForTerminal(terminalId, options = {})
 }
 
 export function authorizeTerminalGatewayRequest(req, res, options = {}) {
-  if (!isLoopbackRequest(req)) {
+  if (!isAllowedGatewayRequest(req, options)) {
     sendGatewayError(res, 403, {
       code: "terminal_gateway_forbidden",
       message: "The terminal gateway is only available on this computer."
@@ -254,9 +259,51 @@ function requestToken(req, options) {
   return "";
 }
 
-function isLoopbackRequest(req) {
-  const address = req.socket?.remoteAddress || "";
+function isAllowedGatewayRequest(req, options) {
+  const address = normalizedIpv4Address(req.socket?.remoteAddress);
+  if (isLoopbackAddress(address)) return true;
+  if (!options.allowContainerNetwork) return false;
+  const networks = Array.isArray(options.containerNetworks)
+    ? options.containerNetworks
+    : dockerBridgeNetworks();
+  return networks.some((network) => sameIpv4Subnet(address, network.address, network.netmask));
+}
+
+function isLoopbackAddress(address) {
   return address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
+}
+
+function dockerBridgeNetworks() {
+  return Object.entries(networkInterfaces())
+    .filter(([name]) => name === "docker0" || name.startsWith("br-"))
+    .flatMap(([, entries]) => entries || [])
+    .filter((entry) => entry.family === "IPv4" && !entry.internal)
+    .map((entry) => ({ address: entry.address, netmask: entry.netmask }));
+}
+
+function normalizedIpv4Address(value) {
+  const address = String(value || "").trim();
+  return address.startsWith("::ffff:") ? address.slice(7) : address;
+}
+
+function sameIpv4Subnet(remoteAddress, localAddress, netmask) {
+  const remote = ipv4Integer(remoteAddress);
+  const local = ipv4Integer(localAddress);
+  const mask = ipv4Integer(netmask);
+  return remote !== null && local !== null && mask !== null
+    && (remote & mask) === (local & mask);
+}
+
+function ipv4Integer(value) {
+  const parts = String(value || "").split(".");
+  if (parts.length !== 4) return null;
+  let result = 0;
+  for (const part of parts) {
+    const octet = Number(part);
+    if (!Number.isInteger(octet) || octet < 0 || octet > 255) return null;
+    result = ((result << 8) | octet) >>> 0;
+  }
+  return result;
 }
 
 function normalizedTerminalId(terminalId) {

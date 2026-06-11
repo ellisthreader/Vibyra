@@ -22,21 +22,6 @@
   height: 15px;
   width: 15px;
 }
-.terminal-settings-menu select {
-  background: transparent;
-  border: 0;
-  color: #eeeaf8;
-  font-size: 13px;
-  font-weight: 620;
-  min-width: 0;
-  outline: 0;
-  width: 100%;
-}
-.terminal-settings-menu option,
-.terminal-settings-menu optgroup {
-  background: #12121a;
-  color: #eeeaf8;
-}
 .terminal-close-row {
   color: #ff9aad;
   margin-top: 3px;
@@ -55,7 +40,7 @@
 .terminal-token-row {
   display: grid;
   gap: 6px;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .terminal-token-row button,
 .terminal-provider-row button,

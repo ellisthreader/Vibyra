@@ -1,3 +1,20 @@
+function retryTerminalMemoryVault() {
+  const projectId = terminalMemoryState.projectId;
+  if (!projectId) return;
+  if (terminalMemoryState.loading) {
+    terminalMemoryState.reloadQueued = true;
+    return;
+  }
+  terminalMemoryState.loadFailed = false;
+  terminalMemoryState.loaded = false;
+  void loadTerminalMemoryVault(projectId, true);
+}
+
+window.addEventListener?.("vibyra:desktop-session-ready", retryTerminalMemoryVault);
+window.addEventListener?.("online", () => {
+  if (terminalMemoryState.loadFailed) retryTerminalMemoryVault();
+});
+
 async function terminalMemoryRequest(url, options = {}) {
   const response = await fetch(url, {
     cache: "no-store",
@@ -23,19 +40,23 @@ async function loadTerminalMemoryVault(projectId, force = false) {
   }
   if (!force && terminalMemoryState.loaded && terminalMemoryState.projectId === projectId) return;
   terminalMemoryState.loading = true;
+  terminalMemoryState.loadFailed = false;
   terminalMemoryState.status = "Loading memory...";
   terminalMemoryRefresh();
   try {
     const result = await terminalMemoryRequest(`/desktop/project-memory/vault?projectId=${encodeURIComponent(projectId)}`);
     if (terminalMemoryState.projectId !== projectId) return;
     terminalMemoryState.nodes = terminalMemoryNormalizeVault(result.vault || result.memory || result);
+    terminalMemoryTouchGraph();
     terminalMemoryState.loaded = true;
+    terminalMemoryState.loadFailed = false;
     terminalMemoryState.status = "";
     const preferred = terminalMemoryState.nodes.find((node) => node.id === result.selectedId)
       || terminalMemoryState.nodes.find((node) => node.type === "document");
     terminalMemorySelect(preferred?.id || "");
   } catch (error) {
-    terminalMemoryState.loaded = true;
+    terminalMemoryState.loaded = false;
+    terminalMemoryState.loadFailed = true;
     terminalMemoryState.status = terminalMemoryError(error, "Project memory could not load.");
   } finally {
     terminalMemoryState.loading = false;
@@ -95,6 +116,7 @@ async function deleteTerminalMemoryNode(nodeId) {
     });
     const removed = new Set([node.id, ...descendants]);
     terminalMemoryState.nodes = terminalMemoryState.nodes.filter((item) => !removed.has(item.id));
+    terminalMemoryTouchGraph();
     terminalMemorySelect(terminalMemoryState.nodes.find((item) => item.type === "document")?.id || "");
     terminalMemoryState.status = "Deleted";
     terminalMemoryRefresh();

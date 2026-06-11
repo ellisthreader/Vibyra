@@ -25,11 +25,13 @@ const companionVoiceSource = companionVoiceFiles
   .map((file) => readFileSync(new URL(`./${file}`, import.meta.url), "utf8"))
   .join("\n");
 const companionVoiceHistorySource = readFileSync(new URL("./app.terminals-companion-voice-history.js", import.meta.url), "utf8");
+const promptTranscriptSource = readFileSync(new URL("./app.prompt-transcript.js", import.meta.url), "utf8");
 const ptyRuntimeSource = readFileSync(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
 const chatSendSource = readFileSync(new URL("./app.chat-send.js", import.meta.url), "utf8");
 const projectPickerSource = readFileSync(new URL("./app.terminals-project-picker.js", import.meta.url), "utf8");
 const terminalControlsSource = readFileSync(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
 const terminalPtySource = readFileSync(new URL("./app.terminals-pty.js", import.meta.url), "utf8");
+const terminalSendSource = readFileSync(new URL("./app.terminals-send.js", import.meta.url), "utf8");
 
 test("terminal companion temporarily owns the collapsed rail", () => {
   assert.match(shellSource, /terminal-companion-active/);
@@ -115,6 +117,13 @@ test("terminal voice is a one-control AI conversation", () => {
   assert.match(appSource, /app\.terminals-companion-voice-history\.js/);
   assert.match(appSource, /app\.terminals-companion-voice-request\.js/);
   assert.match(appSource, /app\.terminals-companion-voice-playback\.js/);
+  assert.ok(
+    appSource.indexOf("app.prompt-transcript.js")
+      < appSource.indexOf("app.terminals-companion-voice-transcription.js")
+  );
+  assert.match(companionVoiceSource, /desktopPromptTranscriptMetadata\("ai-talk"/);
+  assert.match(companionVoiceSource, /persistDesktopPromptTranscript\(text, "ai-talk"/);
+  assert.match(promptTranscriptSource, /fetch\("\/desktop\/prompt\/transcript"/);
   assert.doesNotMatch(companionVoiceSource, /sendTerminalAiPrompt/);
   assert.doesNotMatch(companionVoiceSource, /terminalCompanionInsertIntoTerminal/);
   assert.doesNotMatch(companionVoiceSource, /data-terminal-voice-enter/);
@@ -151,6 +160,13 @@ test("terminal voice makes listening, processing, and speaking visually explicit
 });
 
 test("terminal chat companion executes actions and keeps their result visible", () => {
+  assert.match(companionChatSource, /persistDesktopPromptTranscript\(prompt, "terminal-ai-chat"/);
+  assert.match(chatSendSource, /persistDesktopPromptTranscript\(rawText, "desktop-chat"/);
+  assert.match(terminalSendSource, /persistDesktopPromptTranscript\(text, transcriptSource/);
+  assert.match(companionChatSource, /persistDesktopPromptOutcome/);
+  assert.match(chatSendSource, /persistDesktopPromptOutcome/);
+  assert.match(terminalSendSource, /persistDesktopPromptOutcome/);
+  assert.match(companionVoiceSource, /persistDesktopPromptOutcome/);
   assert.match(companionChatSource, /await terminalAiChatResultText\(result, actionContextScope\)/);
   assert.match(companionChatSource, /await runDesktopActions\(result\.actions, \{ desktopActionContextScope: actionContextScope \}\)/);
   assert.match(companionChatSource, /moveTerminalAiActionMessages\(thread, userMessage, pending\)/);

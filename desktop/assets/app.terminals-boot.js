@@ -9,3 +9,4 @@ window.renderTerminalsPage = renderTerminalsPage;
 window.terminalTopbarSubtitle = terminalTopbarSubtitle;
 window.terminalTopbarHtml = terminalTopbarHtml;
 if (typeof render === "function" && activePage === "terminals") render();
+if (typeof syncPtyTerminals === "function") void syncPtyTerminals();

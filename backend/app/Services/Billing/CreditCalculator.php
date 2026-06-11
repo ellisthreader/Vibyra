@@ -43,9 +43,29 @@ class CreditCalculator
         return $this->usdToCredits($modelKey, $usd, $inputTokens + $maxOutputTokens, $agentMode);
     }
 
+    public function estimateTerminalReservationCredits(
+        string $modelKey,
+        int $inputTokens,
+        int $maxOutputTokens,
+        bool $agentMode = true,
+    ): int {
+        $usd = $this->estimateTerminalReservationUsd($modelKey, $inputTokens, $maxOutputTokens);
+        return $this->usdToCredits($modelKey, $usd, $inputTokens + $maxOutputTokens, $agentMode);
+    }
+
     public function estimateUsageCredits(string $modelKey, int $inputTokens, int $outputTokens, bool $agentMode = false): int
     {
         $usd = $this->estimateUsd($modelKey, $inputTokens, $outputTokens);
+        return $this->usdToCredits($modelKey, $usd, $inputTokens + $outputTokens, $agentMode);
+    }
+
+    public function estimateTerminalUsageCredits(
+        string $modelKey,
+        int $inputTokens,
+        int $outputTokens,
+        bool $agentMode = true,
+    ): int {
+        $usd = $this->estimateUsd($modelKey, $inputTokens, $outputTokens, false);
         return $this->usdToCredits($modelKey, $usd, $inputTokens + $outputTokens, $agentMode);
     }
 
@@ -57,7 +77,23 @@ class CreditCalculator
         return max(0.0, $usd * max(1.0, $safety));
     }
 
-    public function estimateUsd(string $modelKey, int $inputTokens, int $outputTokens): float
+    public function estimateTerminalReservationUsd(
+        string $modelKey,
+        int $inputTokens,
+        int $outputTokens,
+    ): float {
+        $usd = $this->estimateUsd($modelKey, $inputTokens, $outputTokens, false);
+        $safety = (float) config('billing.openrouter_pricing.reservation_safety_multiplier', 1.5);
+
+        return max(0.0, $usd * max(1.0, $safety));
+    }
+
+    public function estimateUsd(
+        string $modelKey,
+        int $inputTokens,
+        int $outputTokens,
+        bool $applyDynamicModelSafety = true,
+    ): float
     {
         $slug = $this->resolveSlug($modelKey);
         $livePricing = $this->pricingCatalog->freshPricingFor($slug);
@@ -72,10 +108,12 @@ class CreditCalculator
                 return max($liveUsd, $fallback);
             }
 
-            return $liveUsd * max(
-                1.0,
-                (float) config('billing.openrouter_pricing.dynamic_model_safety_multiplier', 2.0)
-            );
+            return $liveUsd * ($applyDynamicModelSafety
+                ? max(
+                    1.0,
+                    (float) config('billing.openrouter_pricing.dynamic_model_safety_multiplier', 2.0)
+                )
+                : 1.0);
         }
 
         return $this->fallbackEstimateForSlug($slug, $inputTokens, $outputTokens, true) ?? 0.0;

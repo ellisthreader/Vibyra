@@ -1,20 +1,82 @@
 function renderDashboard() {
   const terminalRows = homeTerminalRows();
-  const activeWork = liveBuildRows();
-  const events = dashboardActivityEvents();
-  const firstName = String(currentAccount()?.name || "").trim().split(/\s+/)[0];
-  const welcome = firstName ? `Welcome back, ${firstName}.` : "Welcome to Vibyra.";
+  const account = currentAccount();
+  const firstName = String(account?.name || "").trim().split(/\s+/)[0];
+  const firstWelcome = String(sessionStorage.getItem("vibyra.desktop.firstWelcomeUserId") || "")
+    === String(account?.id || "");
+  const welcome = firstWelcome
+    ? (firstName ? `Welcome to Vibyra, ${firstName}.` : "Welcome to Vibyra.")
+    : (firstName ? `Welcome back, ${firstName}.` : "Welcome back.");
   const workingTerminals = terminalRows.filter(homeTerminalIsWorking).length;
-  const activityPanel = events.length ? `<section class="desktop-home-card desktop-home-activity" id="desktop-home-activity"><div class="desktop-home-section-head"><div><span>Latest</span><h2>Recent activity</h2></div></div><div class="desktop-home-activity-list">${dashboardActivityRows(events.slice(0, 4))}</div></section>` : "";
-  nodes.content.innerHTML = `<section class="desktop-home"><header class="desktop-home-header"><div><p>${escapeHtml(currentState.machineName || "Vibyra Desktop")}</p><h1>${escapeHtml(welcome)}</h1><span>Start something new or continue where you left off.</span></div><button class="primary-button desktop-home-new-chat" type="button" data-jump="chat">${icon("plus")}New chat</button></header><nav class="desktop-home-status" aria-label="Desktop overview">${homeStatusItem("phone", "Phone", homePhoneStatus(), "phone", currentState.pairedDevice ? "Your phone is ready." : "Pair your phone to get started.")}${homeStatusItem("terminal", "Terminals", `${terminalRows.length} open`, "terminals", workingTerminals ? `${workingTerminals} working now.` : terminalRows.length ? "All terminals ready." : "Launch your first workspace.", workingTerminals ? "working" : "")}${homeStatusItem("folder", "Projects", `${(currentState.projects || []).length} local`, "projects", "Available on this desktop.")}${homeStatusItem("clock", "Activity", `${events.length} recent`, "activity", "Latest desktop updates.")}</nav><div class="desktop-home-dashboard"><main class="desktop-home-primary"><section class="desktop-home-card desktop-home-workspace"><div class="desktop-home-section-head"><div><span>Workspace</span><h2>Terminals</h2></div><button class="desktop-home-text-button" type="button" data-jump="terminals">View all ${icon("arrow")}</button></div>${activeWork.length ? homeActiveWorkRow(activeWork[0]) : ""}${terminalRows.length ? `<div class="desktop-home-terminal-list">${terminalRows.slice(0, 5).map(homeTerminalRow).join("")}</div>` : homeEmptyTerminals()}</section>${activityPanel}</main><aside class="desktop-home-support">${homePhonePanel()}${homeProjectsPanel()}</aside></div></section>`;
+  const projects = (currentState.projects || []).slice(0, 4);
+  const pendingPhone = currentState.pendingPair?.status === "pending";
+  const phoneDetail = pendingPhone ? "Review pending request" : currentState.pairedDevice || "Pair this desktop";
+  const terminalSummary = workingTerminals
+    ? `${workingTerminals} working now`
+    : terminalRows.length ? `${terminalRows.length} ready` : "None open";
+
+  nodes.content.innerHTML = `
+    <section class="desktop-home">
+      <header class="desktop-home-header">
+        <div>
+          <p>${escapeHtml(currentState.machineName || "Vibyra Desktop")}</p>
+          <h1>${escapeHtml(welcome)}</h1>
+        </div>
+        <span class="desktop-home-ready"><i></i>Desktop ready</span>
+      </header>
+
+      <section class="desktop-home-hero" aria-label="Start with Vibyra">
+        <div class="desktop-home-hero-brand">
+          <img src="/app-assets/vibyra.png" alt="" />
+          <span>Vibyra AI</span>
+        </div>
+        <h2>Build what's next.</h2>
+        <p>Describe the outcome. Vibyra brings your desktop, projects, and AI workspaces with it.</p>
+        <button class="desktop-home-command" type="button" data-jump="chat">
+          <span class="desktop-home-command-mark"><img src="/app-assets/vibyra.png" alt="" /></span>
+          <span class="desktop-home-command-copy">
+            <small>Ask Vibyra anything</small>
+            <strong>What do you want to create, fix, or improve?</strong>
+          </span>
+          <span class="desktop-home-command-arrow">${icon("arrow")}</span>
+        </button>
+
+        <nav class="desktop-home-context" aria-label="Desktop overview">
+          ${homeStatusItem("phone", "Phone", homePhoneStatus(), "phone", phoneDetail)}
+          ${homeStatusItem("terminal", "AI workspaces", terminalSummary, "terminals", terminalRows.length ? `${terminalRows.length} open` : "Launch a workspace", workingTerminals ? "working" : "")}
+          ${homeStatusItem("folder", "Local projects", `${(currentState.projects || []).length} available`, "projects", "Ready on this desktop")}
+        </nav>
+      </section>
+
+      <section class="desktop-home-recent">
+        <div class="desktop-home-recent-head">
+          <div><span>Recent work</span><h2>Pick up where you left off</h2></div>
+          <button class="desktop-home-text-button" type="button" data-jump="terminals">All workspaces ${icon("arrow")}</button>
+        </div>
+        <div class="desktop-home-recent-grid">
+          <section class="desktop-home-recent-column desktop-home-workspace">
+            <div class="desktop-home-section-head">
+              <div><span>${icon("terminal")}</span><h3>AI workspaces</h3></div>
+              <small>${terminalRows.length} open</small>
+            </div>
+            ${terminalRows.length ? `<div class="desktop-home-terminal-list">${terminalRows.slice(0, 4).map(homeTerminalRow).join("")}</div>` : homeEmptyTerminals()}
+          </section>
+
+          <section class="desktop-home-recent-column desktop-home-projects">
+            <div class="desktop-home-section-head">
+              <div><span>${icon("folder")}</span><h3>Recent projects</h3></div>
+              <button class="desktop-home-text-button" type="button" data-jump="projects">View all</button>
+            </div>
+            ${projects.length ? `<div class="desktop-home-project-list">${projects.map(homeProjectRow).join("")}</div>` : `<p class="desktop-home-quiet-empty">Projects discovered on this desktop will appear here.</p>`}
+          </section>
+        </div>
+      </section>
+    </section>`;
   bindJumps();
   bindDashboardActions();
 }
 function bindDashboardActions() {
   document.querySelectorAll("[data-home-phone]").forEach((button) => button.addEventListener("click", openPairModal));
-  document.querySelectorAll("[data-home-activity]").forEach((button) => button.addEventListener("click", () => {
-    document.getElementById("desktop-home-activity")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }));
   document.querySelectorAll("[data-home-terminal]").forEach((button) => button.addEventListener("click", () => {
     if (typeof activeTerminalId !== "undefined") activeTerminalId = button.dataset.homeTerminal || activeTerminalId;
     setPage("terminals");
@@ -45,7 +107,7 @@ function renderChat() {
   nodes.content.innerHTML = `<section class="chat-page${isEmptyChat ? " chat-page--empty" : ""}"><button class="chat-ai-corner" id="focus-vibyra-ai" type="button" aria-label="Focus Vibyra AI chat"><span class="chat-ai-corner-logo"><img src="/app-assets/vibyra.png" alt="" /></span><span><strong>Vibyra AI</strong><small>${chatSending ? "Thinking" : "Ready"}</small></span><i class="${chatSending ? "is-busy" : ""}"></i></button><div class="chat-scroll" id="chat-scroll">${isEmptyChat ? chatEmptyState() : `<div class="messages">${chatMessages.map(messageRow).join("")}${runCard}</div>`}</div><div class="composer-shell">${chatNoticeBanner()}<div class="composer"><div class="composer-context">${projectContextChip()}${attachmentChips()}${toolChip()}${skillChip()}</div><textarea id="chat-input" placeholder="Ask Vibyra anything..." rows="1">${escapeHtml(chatDraft)}</textarea>${slashMenu()}<input id="chat-attach" type="file" accept="*/*" multiple hidden /><div class="composer-bottom"><div class="composer-tools"><div class="tool-menu-wrap"><button class="icon-tool" id="open-attach-menu" type="button" aria-label="Attach context" title="Attach context">${icon("paperclip")}</button>${openChatMenu === "attach" ? attachMenu() : ""}</div><div class="tool-menu-wrap ai-menu-wrap"><button class="tool-pill quiet ai-selector" id="open-ai-menu" type="button" aria-haspopup="dialog" aria-expanded="${openChatMenu === "ai" ? "true" : "false"}"><span class="ai-selector-icon">${providerLogo(currentChatModel().provider)}</span><span class="ai-selector-copy"><strong>${escapeHtml(currentChatModel().label)}</strong><small>${escapeHtml(currentEffort().label)}</small></span>${icon("chevron-down")}</button>${openChatMenu === "ai" ? aiMenu() : ""}</div></div><span class="composer-key-hint">Enter to send</span><button class="send-button" id="send-chat" type="button" aria-label="Send message" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button></div></div></div></section>`;
   document.querySelectorAll("[data-suggestion]").forEach((button) => button.addEventListener("click", () => { const input = document.getElementById("chat-input"); input.value = button.dataset.suggestion; chatDraft = input.value; localStorage.setItem("vibyra.desktop.chatDraft", chatDraft); input.focus(); renderSendState(); }));
   document.getElementById("clear-project")?.addEventListener("click", () => { selectedProjectId = ""; localStorage.removeItem("vibyra.desktop.project"); render(); });
-  document.getElementById("clear-attachments")?.addEventListener("click", () => { chatAttachments = []; renderChat(); });
+  document.getElementById("clear-attachments")?.addEventListener("click", () => { chatAttachments = []; chatImageAttachments = []; renderChat(); });
   document.getElementById("clear-tool")?.addEventListener("click", () => { activeChatTool = ""; renderChat(); });
   document.getElementById("clear-skill")?.addEventListener("click", () => { activeChatSkill = ""; renderChat(); });
   document.getElementById("dismiss-chat-notice")?.addEventListener("click", () => { chatNotice = null; renderChat(); });
@@ -69,6 +131,7 @@ function renderChat() {
   document.getElementById("chat-input").addEventListener("input", (event) => { const wasSlashMenuOpen = Boolean(chatDraft.match(/^\/(\w*)$/)); chatDraft = event.target.value; localStorage.setItem("vibyra.desktop.chatDraft", chatDraft); const isSlashMenuOpen = Boolean(chatDraft.match(/^\/(\w*)$/)); isSlashMenuOpen || wasSlashMenuOpen ? renderChat() : renderSendState(); });
   document.getElementById("chat-input").addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendChat(); } });
   bindChatTools();
+  bindChatAttachmentDrop();
   bindGeneratedAppCards();
   requestAnimationFrame(() => {
     const input = document.getElementById("chat-input");

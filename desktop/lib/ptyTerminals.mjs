@@ -9,6 +9,7 @@ import {
   listPersistentAiTerminalSessions,
   persistentAiTerminalConfigIsCurrent,
   removePersistentAiTerminalSession,
+  waitForPersistentAiTerminalStartup,
   updatePersistentAiTerminalSession
 } from "./aiTerminalPersistentProcess.mjs";
 import {
@@ -28,6 +29,7 @@ import {
   AUTO_DECIDING_FRAME_INTERVAL_MS,
   AUTO_DECIDING_MINIMUM_MS,
   autoTerminalDecidingStart,
+  autoTerminalDecidingHandoff,
   autoTerminalDecidingStop,
   autoTerminalDecidingUpdate,
   autoTerminalPrompt,
@@ -40,6 +42,11 @@ import {
   issueTerminalGatewayToken,
   revokeTerminalGatewayTokensForTerminal
 } from "./terminalGatewayAuth.mjs";
+import {
+  compileTerminalTeamAssignment,
+  normalizeTerminalTeamLaunch
+} from "./terminalTeamPromptRoles.mjs";
+import { terminalTeamAssignmentForPlan } from "./terminalTeamPlanner.mjs";
 
 export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
@@ -198,8 +205,8 @@ export async function createPtyTerminal(body = {}) {
   const requestedModel = string(body.model).slice(0, 140);
   let model = requestedModel;
   const tokenMode = normalizeTokenMode(body.tokenMode);
-  const initialPrompt = sanitizeAssignmentPrompt(body.initialPrompt);
-  const waitingAuto = requestedModel.toLowerCase() === "auto" && !initialPrompt;
+  const requestedInitialPrompt = sanitizeAssignmentPrompt(body.initialPrompt);
+  const waitingAuto = requestedModel.toLowerCase() === "auto" && !requestedInitialPrompt;
   let autoRouting = null;
   if (requestedModel.toLowerCase() === "auto") {
     if (tokenMode !== "vibyra") {
@@ -211,7 +218,7 @@ export async function createPtyTerminal(body = {}) {
         throw httpError(409, "No native Vibyra terminal runtime is currently ready for Auto.");
       }
       const routed = await routeDesktopAutoModel({
-        prompt: initialPrompt,
+        prompt: requestedInitialPrompt,
         allowedProviders
       });
       model = string(routed.modelKey).slice(0, 140);
@@ -220,14 +227,48 @@ export async function createPtyTerminal(body = {}) {
   }
   const agent = terminalAgentForTokenSource(model, tokenMode, providerAccountsState(), body.agent);
   const reasoningEffort = normalizeReasoningEffort(body.reasoningEffort || body.effort);
-  const permissionMode = normalizePermissionMode(body.permissionMode, agent);
-  const launchPlan = waitingAuto || agent === "shell" || !model ? null : resolveAiTerminalLaunchPlan({
+  let permissionMode = normalizePermissionMode(body.permissionMode, agent);
+  let launchPlan = waitingAuto || agent === "shell" || !model ? null : resolveAiTerminalLaunchPlan({
     model: requestedModel || model,
     billingMode: tokenMode,
     permissionMode,
-    initialTask: initialPrompt,
+    initialTask: requestedInitialPrompt,
     routedModel: model
   });
+  const plannedAssignment = body.teamPlanId
+    ? terminalTeamAssignmentForPlan(body.teamPlanId, body.teamRoleKey, body.teamId)
+    : null;
+  if (body.teamPlanId && !plannedAssignment) {
+    throw httpError(409, "That Team plan is missing, stale, or does not match this role.");
+  }
+  const teamBody = plannedAssignment ? {
+    ...body,
+    teamId: plannedAssignment.teamId,
+    teamSize: plannedAssignment.teamSize,
+    teamGoal: plannedAssignment.goal,
+    teamPlanId: plannedAssignment.planId,
+    teamPlannerMode: plannedAssignment.plannerMode,
+    teamPlannerModel: plannedAssignment.plannerModel,
+    teamPlannerFallbackReason: plannedAssignment.fallbackReason || "",
+    teamAssignment: plannedAssignment.assignment
+  } : body;
+  const team = launchPlan
+    ? normalizeTerminalTeamLaunch(teamBody, launchPlan.runtimeId)
+    : normalizeTerminalTeamLaunch(teamBody, "");
+  if (team) {
+    permissionMode = team.permissionMode;
+    launchPlan = resolveAiTerminalLaunchPlan({
+      model: requestedModel || model,
+      billingMode: tokenMode,
+      permissionMode,
+      sandboxMode: team.sandboxMode,
+      initialTask: requestedInitialPrompt,
+      routedModel: model
+    });
+  }
+  const initialPrompt = team
+    ? sanitizeAssignmentPrompt(compileTerminalTeamAssignment(team))
+    : requestedInitialPrompt;
   if (tokenMode === "vibyra" && launchPlan && !appState.desktopAccountToken) {
     throw httpError(401, "Log in to Vibyra Desktop before opening a Vibyra-credit terminal.");
   }
@@ -245,6 +286,7 @@ export async function createPtyTerminal(body = {}) {
       || tokenMode !== existing.tokenMode
       || workspaceMode !== existing.workspaceMode
       || JSON.stringify(launchPlan) !== JSON.stringify(existing.launchPlan)
+      || JSON.stringify(publicTeam(team)) !== JSON.stringify(publicTeam(existing.team))
     ) {
       throw httpError(409, "That terminal ID is already running with different launch settings.");
     }
@@ -252,10 +294,11 @@ export async function createPtyTerminal(body = {}) {
     return publicSession(existing);
   }
   if (existing) closePtyTerminal(existing.id);
+  assertTeamRoleAvailable(team, { terminalId: requestedId, projectId, model, tokenMode });
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, "Vibyra Desktop supports up to " + MAX_PTY_TERMINAL_SESSIONS + " terminals at once.");
   const project = terminalProjectById(projectId);
   if (projectId && !project) throw httpError(404, "The selected terminal project is no longer available.");
-  const memoryInstructions = waitingAuto ? "" : await officialTerminalMemory(agent, projectId);
+  const memoryInstructions = waitingAuto || team ? "" : await officialTerminalMemory(agent, projectId);
   const agentStatus = waitingAuto
     ? autoWaitingAgentStatus()
     : aiTerminalAgentStatus(agent, model, launchPlan?.runtimeId);
@@ -288,8 +331,10 @@ export async function createPtyTerminal(body = {}) {
     autoRouting,
     reasoningEffort,
     permissionMode,
+    sandboxMode: launchPlan?.sandboxMode || "workspace-write",
     tokenMode,
     launchPlan,
+    team,
     projectId,
     ...workspace,
     cols: clamp(body.cols, 100),
@@ -301,6 +346,7 @@ export async function createPtyTerminal(body = {}) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     autoAwaitingTask: waitingAuto,
+    autoDeciding: false,
     autoInputBuffer: "",
     autoPasteMode: false,
     autoTitle: waitingAuto ? string(body.title).slice(0, 72) || "Auto" : "",
@@ -332,6 +378,7 @@ export async function createPtyTerminal(body = {}) {
       autoRouting: session.autoRouting,
       reasoningEffort: session.reasoningEffort,
       permissionMode: session.permissionMode,
+      sandboxMode: session.sandboxMode,
       tokenMode: session.tokenMode,
       projectId: session.projectId,
       workspaceMode: session.workspaceMode,
@@ -340,6 +387,8 @@ export async function createPtyTerminal(body = {}) {
       repositoryRoot: session.repositoryRoot,
       workspaceNotice: session.workspaceNotice,
       memoryInstructions,
+      roleInstructions: team?.roleInstructions || "",
+      team,
       terminalGatewayToken,
       launchPlan,
       terminalId: session.id,
@@ -349,7 +398,10 @@ export async function createPtyTerminal(body = {}) {
       rows: session.rows,
       createdAt: session.createdAt
     }, persistentHandlers(session));
+    await waitForPersistentAiTerminalStartup(session.id);
   } catch (error) {
+    session.process?.kill("SIGTERM");
+    removePersistentAiTerminalSession(session.id);
     sessions.delete(session.id);
     if (terminalGatewayToken) revokeTerminalGatewayTokensForTerminal(session.id);
     await rollbackPreparedTerminalWorkspace(session);
@@ -367,12 +419,12 @@ async function officialTerminalMemory(agent, projectId) {
   }
 }
 
-function persistentHandlers(session) {
+function persistentHandlers(session, options = {}) {
   return {
     onSnapshot: (payload) => {
       let changed = false;
       const output = String(payload.output || "").slice(-MAX_OUTPUT_BUFFER);
-      if (output && output !== session.output) {
+      if (!session.autoDeciding && output && output !== session.output) {
         session.output = output;
         changed = true;
       }
@@ -391,14 +443,8 @@ function persistentHandlers(session) {
       if (changed) publish(session.id, { type: "session", session: publicSession(session), output });
     },
     onData: (data, meta = {}) => {
-      session.status = "running";
-      appendOutput(session, data);
-      publish(session.id, {
-        type: "output",
-        data,
-        ...(meta.assignmentId ? { assignmentId: meta.assignmentId } : {}),
-        ...(meta.emittedAt ? { emittedAt: meta.emittedAt } : {})
-      });
+      if (options.onData?.(data, meta) === true) return;
+      publishPersistentOutput(session, data, meta);
     },
     onExit: ({ code, signal }) => {
       session.process = null;
@@ -411,6 +457,17 @@ function persistentHandlers(session) {
       publish(session.id, { type: "exit", data, code: session.exitCode, signal: signal || "" });
     }
   };
+}
+
+function publishPersistentOutput(session, data, meta = {}) {
+  session.status = "running";
+  appendOutput(session, data);
+  publish(session.id, {
+    type: "output",
+    data,
+    ...(meta.assignmentId ? { assignmentId: meta.assignmentId } : {}),
+    ...(meta.emittedAt ? { emittedAt: meta.emittedAt } : {})
+  });
 }
 
 export function closePtyTerminal(id) {
@@ -465,6 +522,11 @@ async function restorePersistentSessions() {
       continue;
     }
     const agent = normalizeAgent(config.agent, config.model);
+    const restoredTeam = normalizeRestoredTeam(config.team, config.launchPlan?.runtimeId);
+    if (config.team && !restoredTeam) {
+      terminateUntrustedPersistentSession(config.terminalId);
+      continue;
+    }
     const session = {
       id: string(config.terminalId),
       title: string(config.title).slice(0, 72) || "Recovered terminal",
@@ -474,9 +536,15 @@ async function restorePersistentSessions() {
       model: string(config.model).slice(0, 140),
       autoRouting: config.autoRouting || null,
       reasoningEffort: normalizeReasoningEffort(config.reasoningEffort),
-      permissionMode: normalizePermissionMode(config.permissionMode, agent),
+      permissionMode: restoredTeam?.permissionMode
+        || normalizePermissionMode(config.permissionMode, agent),
+      sandboxMode: restoredTeam?.sandboxMode
+        || string(config.sandboxMode)
+        || config.launchPlan?.sandboxMode
+        || "workspace-write",
       tokenMode: normalizeTokenMode(config.tokenMode),
       launchPlan: config.launchPlan || null,
+      team: restoredTeam,
       projectId: location.projectId,
       workspaceMode: location.workspaceMode,
       branchName: location.branchName,
@@ -717,7 +785,64 @@ function publicSession(session) {
     autoRoutingPromise,
     ...safe
   } = session;
-  return safe;
+  return {
+    ...safe,
+    ...publicTeam(session.team)
+  };
+}
+
+function assertTeamRoleAvailable(team, context = {}) {
+  if (!team) return;
+  for (const session of sessions.values()) {
+    if (session.id === context.terminalId || session.team?.teamId !== team.teamId) continue;
+    if (
+      session.team.teamSize !== team.teamSize
+      || session.projectId !== context.projectId
+      || session.model !== context.model
+      || session.tokenMode !== context.tokenMode
+    ) {
+      throw httpError(409, "That Team is already running with different launch settings.");
+    }
+    if (session.team.roleKey === team.roleKey) {
+      throw httpError(409, `The ${team.roleTitle} role is already running for this Team.`);
+    }
+  }
+}
+
+function normalizeRestoredTeam(value, runtimeId) {
+  if (!value || typeof value !== "object") return null;
+  try {
+    return normalizeTerminalTeamLaunch({
+      teamId: value.teamId,
+      teamSize: value.teamSize,
+      teamRoleKey: value.roleKey,
+      teamGoal: value.goal,
+      teamPlanId: value.planId,
+      teamAssignment: value.assignment,
+      permissionMode: value.permissionMode
+    }, runtimeId || "");
+  } catch {
+    return null;
+  }
+}
+
+function publicTeam(team) {
+  if (!team) return {};
+  return {
+    teamId: team.teamId,
+    teamSize: team.teamSize,
+    teamGoal: team.goal,
+    teamRole: team.roleTitle,
+    teamRoleKey: team.roleKey,
+    teamPhase: team.phase,
+    teamCapability: team.capability,
+    teamRoleContractVersion: team.contractVersion,
+    teamRolePolicyHash: team.rolePolicyHash,
+    teamPlanId: team.planId || "",
+    teamPlannerMode: team.plannerMode || "",
+    teamPlannerModel: team.plannerModel || "",
+    teamPlannerFallbackReason: team.plannerFallbackReason || ""
+  };
 }
 
 function appendOutput(session, data) {
@@ -860,11 +985,12 @@ function normalizeReasoningEffort(value) {
 }
 
 function normalizeTokenMode(value) {
-  return string(value).toLowerCase() === "provider" ? "provider" : "vibyra";
+  const mode = string(value).toLowerCase();
+  return ["vibyra", "provider"].includes(mode) ? mode : "vibyra";
 }
 
 function normalizePermissionMode(value, agent) {
-  return ["codex", "vibyra"].includes(agent) && string(value).toLowerCase() === "full" ? "full" : "standard";
+  return agent !== "shell" && string(value).toLowerCase() === "full" ? "full" : "standard";
 }
 
 function clamp(value, fallback) {
@@ -907,10 +1033,13 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
   if (session.autoRoutingPromise) return session.autoRoutingPromise;
   session.autoRoutingPromise = (async () => {
     session.autoAwaitingTask = false;
+    session.autoDeciding = true;
     session.providerState = "busy";
+    publish(session.id, { type: "session", session: publicSession(session), output: session.output });
     const decidingAnimation = startAutoDecidingAnimation(session);
     const allowedProviders = managedTerminalProviders();
     let gatewayToken = "";
+    let providerOutputGate = null;
     try {
       if (!allowedProviders.length) {
         return resetAutoWaitingSession(
@@ -944,8 +1073,6 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         nativeModel: launchPlan.nativeModel,
         billingModel: launchPlan.billingModel
       }).token;
-      await decidingAnimation.waitForMinimum();
-      decidingAnimation.stop();
       session.agent = agent;
       session.agentStatus = agentStatus;
       session.model = model;
@@ -955,6 +1082,8 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
       session.status = "starting";
       session.providerState = "starting";
       session.updatedAt = new Date().toISOString();
+      publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+      providerOutputGate = createAutoProviderOutputGate(session, decidingAnimation);
       session.process = launchPersistentAiTerminalProcess({
         agent,
         requestedModel: "auto",
@@ -978,8 +1107,7 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         cols: session.cols,
         rows: session.rows,
         createdAt: session.createdAt
-      }, persistentHandlers(session));
-      publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+      }, persistentHandlers(session, { onData: providerOutputGate.onData }));
       const acknowledgement = await session.process.assign({
         assignmentId,
         data: formatAssignmentInput(agent, prompt),
@@ -997,6 +1125,8 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         ...(acknowledgement.reason ? { reason: acknowledgement.reason } : {})
       };
     } catch (error) {
+      providerOutputGate?.cancel();
+      decidingAnimation.stop();
       if (gatewayToken) revokeTerminalGatewayTokensForTerminal(session.id);
       if (session.process) {
         session.process.kill("SIGTERM");
@@ -1007,8 +1137,6 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
         assignmentId,
         error instanceof Error ? error.message : "Vibyra could not route this task."
       );
-    } finally {
-      decidingAnimation.stop();
     }
   })();
   try {
@@ -1016,6 +1144,44 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
   } finally {
     session.autoRoutingPromise = null;
   }
+}
+
+function createAutoProviderOutputGate(session, decidingAnimation) {
+  const queued = [];
+  let minimumMet = false;
+  let released = false;
+  const timeout = setTimeout(() => release(true), 30_000);
+  timeout.unref?.();
+  void decidingAnimation.waitForMinimum().then(() => {
+    minimumMet = true;
+    release(false);
+  });
+
+  function release(force) {
+    if (released || !minimumMet || (!force && !queued.length)) return;
+    released = true;
+    clearTimeout(timeout);
+    session.autoDeciding = false;
+    decidingAnimation.handoff();
+    for (const item of queued.splice(0)) {
+      publishPersistentOutput(session, item.data, item.meta);
+    }
+  }
+
+  return {
+    onData(data, meta = {}) {
+      if (released) return false;
+      queued.push({ data, meta });
+      release(false);
+      return true;
+    },
+    cancel() {
+      if (released) return;
+      released = true;
+      clearTimeout(timeout);
+      queued.length = 0;
+    }
+  };
 }
 
 function startAutoDecidingAnimation(session) {
@@ -1027,7 +1193,7 @@ function startAutoDecidingAnimation(session) {
   appendAutoOutput(session, firstFrame.output);
   let phase = 1;
   const timer = setInterval(() => {
-    if (!sessions.has(session.id) || session.autoAwaitingTask) return;
+    if (!sessions.has(session.id) || !session.autoDeciding) return;
     publish(session.id, {
       type: "output",
       data: autoTerminalDecidingUpdate({
@@ -1052,6 +1218,12 @@ function startAutoDecidingAnimation(session) {
       stopped = true;
       clearInterval(timer);
       publish(session.id, { type: "output", data: autoTerminalDecidingStop() });
+    },
+    handoff() {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timer);
+      replaceAutoOutput(session, autoTerminalDecidingHandoff());
     }
   };
 }
@@ -1066,9 +1238,10 @@ function resetAutoWaitingSession(session, assignmentId, reason) {
   session.status = "running";
   session.providerState = "ready";
   session.autoAwaitingTask = true;
+  session.autoDeciding = false;
   session.autoInputBuffer = "";
   session.autoPasteMode = false;
-  appendAutoOutput(session, `\x1b[2J\x1b[H${autoTerminalWaitingOutput({
+  replaceAutoOutput(session, `\x1b[0m\x1b[?25h\x1b[3J\x1b[2J\x1b[H${autoTerminalWaitingOutput({
     cwd: session.cwd,
     cols: session.cols,
     error: reason
@@ -1080,6 +1253,17 @@ function appendAutoOutput(session, data) {
   appendOutput(session, data);
   publish(session.id, { type: "output", data });
   publish(session.id, { type: "session", session: publicSession(session), output: session.output });
+}
+
+function replaceAutoOutput(session, data) {
+  session.output = String(data || "").slice(-MAX_OUTPUT_BUFFER);
+  session.updatedAt = new Date().toISOString();
+  publish(session.id, {
+    type: "session",
+    session: publicSession(session),
+    output: session.output,
+    replaceOutput: true
+  });
 }
 
 function routedTerminalTitle(model, requestedTitle) {

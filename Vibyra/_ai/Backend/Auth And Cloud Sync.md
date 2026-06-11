@@ -49,6 +49,21 @@ Apple nonce mismatch. `POST /api/auth/provider/challenge` issues single-use
 Apple nonce challenges. Configure `GOOGLE_AUTH_CLIENT_IDS` and
 `APPLE_AUTH_CLIENT_IDS` as comma-separated accepted audiences.
 
+Desktop Google/Apple login uses backend-owned authorization-code flows under
+`/api/auth/desktop/{provider}/start`, `/callback`, and `/status/{flowId}`.
+`DesktopProviderOAuthFlow` stores short-lived state, nonce, PKCE verifier, and
+desktop device metadata; `DesktopProviderTokenExchange` exchanges the code;
+the existing `ProviderIdentityVerifier` still performs final JWT/JWKS
+verification. Callback results are picked up once by the polling desktop and
+become normal `vibyra_sessions` bearer sessions. Configure the exact HTTPS
+callbacks plus `GOOGLE_DESKTOP_CLIENT_ID/SECRET` and
+`APPLE_DESKTOP_CLIENT_ID` with either a client secret or Team/Key/private-key
+fields. Provider secrets and identity tokens never pass through Electron.
+Signup and provider-login responses include `isNewUser`: true only when that
+request created the account, false for an existing provider identity. Desktop
+uses it solely for the current-launch first welcome; it is not persisted as
+account state.
+
 Email signup sends `VibyraVerifyEmail`; resend is
 `POST /api/auth/email/resend`, and the signed verification route redirects to
 `vibyra://email-verified`. Password recovery uses

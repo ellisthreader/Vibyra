@@ -27,16 +27,14 @@ function bindDesktopAuth() {
     clearAuthError();
   });
   document.querySelectorAll("[data-auth-social]").forEach((button) => {
-    button.addEventListener("click", () => {
-      showAuthError("Use email on desktop so Vibyra can match this computer to the same signed-in phone account.");
-    });
+    button.addEventListener("click", () => beginDesktopSocialAuth(button.dataset.authSocial));
   });
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
   });
   document.querySelectorAll("[data-auth-link]").forEach((button) => {
     button.addEventListener("click", () => {
-      const path = button.dataset.authLink === "terms" ? "/terms" : "/privacy";
+      const path = button.dataset.authLink === "terms" ? "/legal/terms" : "/legal/privacy";
       window.open(`https://vibyra.app${path}`, "_blank", "noopener");
     });
   });

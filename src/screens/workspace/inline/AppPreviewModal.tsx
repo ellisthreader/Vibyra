@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Keyboard, Modal, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,6 +12,7 @@ import { chatModelOptionFor } from "../data/chatModels";
 import { AppPreviewEditStatus, PreviewEditStatus } from "./AppPreviewEditStatus";
 import { PreviewErrorPanel } from "./AppPreviewErrorPanel";
 import { AppPreviewMiniChat } from "./AppPreviewMiniChat";
+import { previewAppFingerprint } from "./previewAppFingerprint";
 import { buildFixPrompt } from "./previewFixPrompt";
 
 export function AppPreviewModal({
@@ -40,7 +41,7 @@ export function AppPreviewModal({
   const modelLabel = chatModelOptionFor(modelKey)?.label ?? String(modelKey || "AI");
   const headerIconColor = useThemedColor("#FFFFFF");
 
-  const appFingerprint = `${app?.id ?? ""}:${app?.html?.length ?? 0}:${app?.url ?? ""}`;
+  const appFingerprint = useMemo(() => previewAppFingerprint(app), [app?.html, app?.id, app?.url]);
 
   useEffect(() => {
     if (!app) return;
@@ -58,7 +59,7 @@ export function AppPreviewModal({
       stiffness: 135,
       useNativeDriver: true
     }).start();
-  }, [app, appFingerprint, entrance]);
+  }, [appFingerprint, entrance]);
 
   useEffect(() => () => {
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);

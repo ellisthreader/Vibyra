@@ -23,7 +23,12 @@ const storedSetupWorkspaceMode = localStorage.getItem(setupWorkspaceModeKey);
 let setupWorkspaceMode = storedSetupWorkspaceMode === null
   ? "worktree"
   : storedSetupWorkspaceMode === "worktree" ? "worktree" : "shared";
-let setupTokenMode = localStorage.getItem("vibyra.desktop.terminalTokenMode") === "provider" ? "provider" : "vibyra";
+const setupPermissionModeKey = "vibyra.desktop.terminalPermissionMode";
+let setupPermissionMode = localStorage.getItem(setupPermissionModeKey) === "full" ? "full" : "standard";
+const storedTerminalTokenMode = localStorage.getItem("vibyra.desktop.terminalTokenMode");
+let setupTokenMode = ["vibyra", "provider"].includes(storedTerminalTokenMode)
+  ? storedTerminalTokenMode
+  : "vibyra";
 let setupModelMenuOpen = false;
 let setupModelSearch = "";
 let providerAccounts = {

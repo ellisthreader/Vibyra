@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   AUTO_DECIDING_MINIMUM_MS,
+  autoTerminalDecidingHandoff,
   autoTerminalDecidingStart,
   autoTerminalDecidingStop,
   autoTerminalDecidingUpdate,
@@ -44,9 +45,14 @@ test("Auto deciding animation keeps one stable full-screen 3D V", () => {
 
   const firstText = stripAnsi(first.output);
   const microText = stripAnsi(micro.output);
+  const firstLines = firstText.split("\r\n");
+  const firstContentRow = firstLines.findIndex((line) => line.trim());
+  const remainingRows = 30 - first.lineCount;
 
-  assert.ok(first.lineCount >= 15);
-  assert.match(firstText, /####\\/);
+  assert.ok(first.lineCount >= 20);
+  assert.equal(firstContentRow, 5);
+  assert.ok(Math.abs(firstContentRow - remainingRows) <= 1);
+  assert.match(firstText, /#####\\/);
   assert.match(firstText, /\+/);
   assert.match(firstText, /V I B Y R A\s+A U T O/);
   assert.match(firstText, /SELECTING THE BEST MODEL/);
@@ -58,10 +64,12 @@ test("Auto deciding animation keeps one stable full-screen 3D V", () => {
   assert.equal(stripAnsi(update).length, stripAnsi(next).length);
   assert.match(stripAnsi(update), /\*|\./);
   assert.ok(compact.lineCount <= 16);
+  assert.match(stripAnsi(compact.output), /####\\/);
   assert.ok(micro.lineCount <= 10);
   assert.match(microText, /VIBYRA AUTO \/\/ SELECTING MODEL/);
-  assert.ok(AUTO_DECIDING_MINIMUM_MS >= 4 * 200);
+  assert.ok(AUTO_DECIDING_MINIMUM_MS >= 6 * 200);
   assert.equal(autoTerminalDecidingStop(), "\x1b[0m\x1b[?25h");
+  assert.equal(autoTerminalDecidingHandoff(), "\x1b[0m\x1b[?25h\x1b[3J\x1b[2J\x1b[H");
 });
 
 test("PTY socket input errors are contained inside the socket handler", async () => {
@@ -168,6 +176,49 @@ test("concrete Vibyra-credit terminals require a desktop account session", async
   }
 });
 
+test("PTY Team launch canonicalizes legacy identifiers before starting the provider", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-team-id-"));
+  const cli = join(root, "codex");
+  const { appState } = await import("./state.mjs");
+  const previousToken = appState.desktopAccountToken;
+  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
+  process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
+  process.env.VIBYRA_CODEX_CLI = cli;
+  appState.desktopAccountToken = "account-token";
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?teamId=${Date.now()}`, import.meta.url);
+    const { closePtyTerminal, createPtyTerminal } = await import(moduleUrl);
+    const { persistentTerminalPaths } = await import("./aiTerminalPersistentProcess.mjs");
+    const session = await createPtyTerminal({
+      id: "legacy-team-reviewer",
+      agent: "vibyra",
+      model: "openai/gpt-5.5",
+      tokenMode: "vibyra",
+      permissionMode: "full",
+      teamId: "550e8400-e29b-41d4-a716-446655440000",
+      teamSize: 2,
+      teamGoal: "Review the terminal launch path.",
+      teamRoleKey: "reviewer"
+    });
+
+    assert.match(session.teamId, /^team-[a-f0-9]{24}$/);
+    assert.equal(session.teamRoleKey, "reviewer");
+    assert.equal(session.teamCapability, "read-only");
+    assert.equal(session.permissionMode, "standard");
+    assert.equal(session.launchPlan.sandboxMode, "read-only");
+
+    closePtyTerminal(session.id);
+    await waitUntil(() => !existsSync(persistentTerminalPaths(session.id).dir), 5000);
+  } finally {
+    appState.desktopAccountToken = previousToken;
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_AGENT_HOME;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
 test("API-only models launch Vibyra Agent with an exact terminal gateway grant", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-api-agent-"));
   const engine = join(root, "codex");
@@ -264,7 +315,7 @@ test("blank Auto opens first, then routes in the same session and submits once",
     const body = JSON.parse(options.body);
     assert.ok(body.allowedProviders.includes("openai"));
     assert.ok(body.allowedProviders.every((provider) => (
-      ["openai", "anthropic", "google", "qwen", "moonshot", "mistral"].includes(provider)
+      ["openai", "anthropic", "google", "qwen", "moonshot", "mistral", "x-ai"].includes(provider)
     )));
     return {
       ok: true,
@@ -302,22 +353,40 @@ test("blank Auto opens first, then routes in the same session and submits once",
     });
     assert.equal(session.model, "auto");
     assert.equal(session.autoAwaitingTask, true);
+    assert.equal(session.autoDeciding, false);
     assert.equal(session.projectId, "");
     assert.equal(session.workspaceMode, "shared");
     assert.equal(session.launchPlan, null);
     assert.match(session.output, /VIBYRA/);
     assert.match(session.output, /auto/);
 
-    const assignment = await assignPtyTerminalTask(session.id, {
+    const decidingStartedAt = Date.now();
+    const assignmentPromise = assignPtyTerminalTask(session.id, {
       assignmentId: "auto-job-1",
       prompt: "Implement the terminal fix."
     });
+    await waitUntil(() => {
+      const decidingSession = listPtyTerminals().find((item) => item.id === session.id);
+      return decidingSession?.autoAwaitingTask === false
+        && decidingSession?.autoDeciding === true;
+    });
+    const assignment = await assignmentPromise;
     await waitUntil(() => existsSync(argsPath) && existsSync(promptPath));
+    await waitUntil(() => {
+      const visibleSession = listPtyTerminals().find((item) => item.id === session.id);
+      return visibleSession?.autoDeciding === false;
+    });
 
     const routedSession = listPtyTerminals().find((item) => item.id === session.id);
     assert.equal(routedSession.model, "openai/gpt-5.5");
     assert.equal(routedSession.requestedModel, "auto");
     assert.equal(routedSession.autoAwaitingTask, false);
+    assert.equal(routedSession.autoDeciding, false);
+    assert.ok(Date.now() - decidingStartedAt >= AUTO_DECIDING_MINIMUM_MS - 100);
+    assert.match(routedSession.output, /^\x1b\[0m\x1b\[\?25h\x1b\[3J\x1b\[2J\x1b\[H/);
+    assert.doesNotMatch(routedSession.output, /SELECTING THE BEST MODEL/);
+    assert.doesNotMatch(routedSession.output, /V I B Y R A\s+A U T O/);
+    assert.match(routedSession.output, /Write tests for @filename/);
     assert.equal(routedSession.title, "Alex");
     assert.equal(routedSession.launchPlan.runtimeId, "codex");
     assert.equal(routedSession.launchPlan.providerId, "openai");
@@ -537,6 +606,8 @@ test("reusing a running terminal ID cannot switch its project", async () => {
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
   const { appState } = await import("./state.mjs");
   const previousProjects = appState.cachedProjects;
+  mkdirSync("/tmp/project-a", { recursive: true });
+  mkdirSync("/tmp/project-b", { recursive: true });
   appState.cachedProjects = [
     { id: "project-a", name: "A", path: "/tmp/project-a" },
     { id: "project-b", name: "B", path: "/tmp/project-b" }
@@ -553,6 +624,8 @@ test("reusing a running terminal ID cannot switch its project", async () => {
     closeAllPtyTerminals();
   } finally {
     appState.cachedProjects = previousProjects;
+    rmSync("/tmp/project-a", { recursive: true, force: true });
+    rmSync("/tmp/project-b", { recursive: true, force: true });
     rmSync(root, { recursive: true, force: true });
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }

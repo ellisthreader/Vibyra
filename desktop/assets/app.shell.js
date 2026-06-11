@@ -121,12 +121,19 @@ function render() {
   if (typeof captureTerminalModelScrolls === "function") captureTerminalModelScrolls(document);
   const terminalModelSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
   if (!pages.some((page) => page.key === activePage)) activePage = "chat";
+  document.body.classList.toggle("desktop-home-active", activePage === "dashboard");
   applyRailState();
   renderNav();
   renderRecentChats();
   const terminalNewPickerOpen = activePage === "terminals" && newTerminalMenuOpen && document.querySelector('[data-terminal-model-picker="new"]');
   if (!(activePage === "terminals" && (terminalModelSearch?.target === "new" || terminalNewPickerOpen))) renderTopbar();
-  nodes.content.className = activePage === "chat" ? "content chat-content" : activePage === "terminals" ? "content terminal-content" : "content";
+  nodes.content.className = activePage === "chat"
+    ? "content chat-content"
+    : activePage === "terminals"
+      ? "content terminal-content"
+      : activePage === "dashboard"
+        ? "content home-content"
+        : "content";
   if (activePage === "chat") renderChat();
   if (activePage === "terminals") {
     if (typeof renderTerminalsPage === "function") renderTerminalsPage();

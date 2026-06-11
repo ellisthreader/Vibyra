@@ -1,0 +1,187 @@
+body {
+  --surface-bg-elevated: var(--surface-elevated);
+  --surface-input: var(--surface-bg);
+  --screenshot-bg: #07070a;
+  --screenshot-surface: rgba(13, 13, 18, 0.97);
+  --screenshot-stage: #0a0a0f;
+  --screenshot-text: #f8f7fe;
+  --screenshot-muted: #aaa5b5;
+  --screenshot-dim: #918ca1;
+  --screenshot-line: rgba(255, 255, 255, 0.09);
+  --screenshot-control: rgba(255, 255, 255, 0.045);
+  --screenshot-hover: rgba(255, 255, 255, 0.08);
+  --screenshot-selected: rgba(255, 255, 255, 0.12);
+  --screenshot-hint: rgba(8, 8, 12, 0.76);
+  --screenshot-secondary: rgba(255, 255, 255, 0.07);
+  --screenshot-primary: #f4f1ff;
+  --screenshot-primary-text: #111118;
+  --screenshot-shadow: rgba(0, 0, 0, 0.48);
+  --screenshot-tray-control: rgba(7, 7, 10, 0.82);
+  --screenshot-tray-control-text: #f8f7fe;
+}
+
+body.screenshot-editing {
+  overflow: hidden;
+}
+
+body[data-desktop-theme="light"] {
+  --screenshot-bg: var(--color-background);
+  --screenshot-surface: rgba(255, 255, 255, 0.97);
+  --screenshot-stage: #eef0f6;
+  --screenshot-text: var(--color-text);
+  --screenshot-muted: var(--color-muted);
+  --screenshot-dim: var(--color-dim);
+  --screenshot-line: var(--color-line);
+  --screenshot-control: var(--color-surface);
+  --screenshot-hover: var(--color-hover);
+  --screenshot-selected: var(--color-accent-soft);
+  --screenshot-hint: rgba(255, 255, 255, 0.94);
+  --screenshot-secondary: var(--color-surface);
+  --screenshot-primary: var(--color-accent);
+  --screenshot-primary-text: #fff;
+  --screenshot-shadow: rgba(28, 31, 42, 0.2);
+  --screenshot-tray-control: rgba(255, 255, 255, 0.9);
+  --screenshot-tray-control-text: var(--color-text);
+}
+
+.screenshot-editor {
+  background: var(--screenshot-bg);
+  color: var(--screenshot-text);
+}
+
+.screenshot-header,
+.screenshot-footer {
+  background: var(--screenshot-surface);
+  border-color: var(--screenshot-line);
+}
+
+.screenshot-title small,
+.screenshot-status {
+  color: var(--screenshot-dim);
+}
+
+.screenshot-tools {
+  background: var(--screenshot-control);
+  border-color: var(--screenshot-line);
+}
+
+.screenshot-icon-button,
+.screenshot-text-button,
+.screenshot-tool {
+  color: var(--screenshot-muted);
+}
+
+.screenshot-icon-button:hover,
+.screenshot-text-button:hover,
+.screenshot-tool:hover {
+  background: var(--screenshot-hover);
+  color: var(--screenshot-text);
+}
+
+.screenshot-tool[aria-pressed="true"] {
+  background: var(--screenshot-selected);
+  color: var(--screenshot-text);
+}
+
+.screenshot-divider {
+  background: var(--screenshot-line);
+}
+
+.screenshot-color[aria-pressed="true"] {
+  border-color: var(--screenshot-surface);
+  box-shadow: 0 0 0 2px var(--screenshot-text);
+}
+
+.screenshot-stage {
+  background:
+    radial-gradient(circle at 50% 42%, var(--color-accent-soft), transparent 34%),
+    var(--screenshot-stage);
+}
+
+[data-screenshot-canvas] {
+  box-shadow: 0 22px 70px var(--screenshot-shadow);
+}
+
+.screenshot-hint {
+  background: var(--screenshot-hint);
+  border-color: var(--screenshot-line);
+  color: var(--screenshot-muted);
+}
+
+.screenshot-secondary-button {
+  background: var(--screenshot-secondary);
+  border: 1px solid var(--screenshot-line);
+  color: var(--screenshot-text);
+}
+
+.screenshot-primary-button {
+  background: var(--screenshot-primary);
+  color: var(--screenshot-primary-text);
+}
+
+.screenshot-secondary-button:hover {
+  background: var(--screenshot-hover);
+}
+
+.screenshot-primary-button:hover {
+  background: var(--color-accent-hover, #8b5cff);
+  color: #fff;
+}
+
+.screenshot-tray-item {
+  background: var(--surface-elevated);
+  border-color: var(--surface-border);
+  box-shadow: 0 12px 34px var(--screenshot-shadow);
+}
+
+.screenshot-tray-close,
+.screenshot-tray-copy {
+  background: var(--screenshot-tray-control);
+  border-color: var(--screenshot-line);
+  color: var(--screenshot-tray-control-text);
+}
+
+.screenshot-tray-close:hover,
+.screenshot-tray-copy:hover {
+  background: var(--screenshot-surface);
+}
+
+.screenshot-notice {
+  background: var(--surface-elevated);
+  border-color: var(--surface-danger);
+  color: var(--surface-text);
+}
+
+.profile-voice-speed-controls button {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.profile-voice-speed-controls button:hover,
+.profile-voice-speed-controls button:focus-visible {
+  background: var(--surface-hover);
+  border-color: var(--surface-border-strong);
+}
+
+@media (prefers-color-scheme: light) {
+  body[data-desktop-theme="auto"] {
+    --screenshot-bg: var(--color-background);
+    --screenshot-surface: rgba(255, 255, 255, 0.97);
+    --screenshot-stage: #eef0f6;
+    --screenshot-text: var(--color-text);
+    --screenshot-muted: var(--color-muted);
+    --screenshot-dim: var(--color-dim);
+    --screenshot-line: var(--color-line);
+    --screenshot-control: var(--color-surface);
+    --screenshot-hover: var(--color-hover);
+    --screenshot-selected: var(--color-accent-soft);
+    --screenshot-hint: rgba(255, 255, 255, 0.94);
+    --screenshot-secondary: var(--color-surface);
+    --screenshot-primary: var(--color-accent);
+    --screenshot-primary-text: #fff;
+    --screenshot-shadow: rgba(28, 31, 42, 0.2);
+    --screenshot-tray-control: rgba(255, 255, 255, 0.9);
+    --screenshot-tray-control-text: var(--color-text);
+  }
+}

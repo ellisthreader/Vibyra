@@ -20,7 +20,7 @@ export function openDesktopWindow() {
     const electronEnv = { ...process.env, VIBYRA_DESKTOP_URL: url };
     delete electronEnv.ELECTRON_RUN_AS_NODE;
     const electronArgs = [
-      ...(platform() === "linux" ? ["--no-sandbox"] : []),
+      ...(platform() === "linux" ? ["--class=vibyra", "--no-sandbox"] : []),
       "--disable-gpu",
       "--disable-gpu-compositing",
       electronEntrypoint

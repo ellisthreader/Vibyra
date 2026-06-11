@@ -157,10 +157,28 @@ async function sendTerminalAiPrompt(prompt, source = "chat") {
   const userMessage = { role: "user", text: prompt };
   const pending = { role: "assistant", text: "", pending: true };
   const history = thread.messages.slice(-8).map(({ role, text }) => ({ role, text }));
+  const transcriptOptions = {
+    model: terminal?.model || selectedSetupModel()?.key || "auto",
+    sessionId: `terminal-ai:${terminal?.id || "setup"}`,
+    terminal
+  };
+  let transcriptTurn = null;
+  try {
+    transcriptTurn = await persistDesktopPromptTranscript(prompt, "terminal-ai-chat", transcriptOptions);
+  } catch (error) {
+    thread.messages.push(userMessage, {
+      role: "assistant",
+      text: error instanceof Error ? error.message : "Prompt transcript could not be saved."
+    });
+    thread.draft = "";
+    syncTerminalCompanion(source);
+    return "";
+  }
   thread.messages.push(userMessage, pending);
   thread.draft = "";
   thread.sending = true;
   syncTerminalCompanion(source);
+  let transcriptDetails = { status: "failed" };
   try {
     const model = terminal?.model || selectedSetupModel()?.key || "auto";
     const result = await requestDesktopChat({
@@ -179,10 +197,27 @@ async function sendTerminalAiPrompt(prompt, source = "chat") {
       tool: ""
     });
     pending.text = await terminalAiChatResultText(result, actionContextScope);
+    transcriptDetails = {
+      actions: result.actions,
+      response: result.reply || "",
+      result: pending.text,
+      status: "completed"
+    };
     moveTerminalAiActionMessages(thread, userMessage, pending);
   } catch (error) {
     pending.text = error instanceof Error ? error.message : "Vibyra AI could not reply.";
+    transcriptDetails = { error: pending.text, status: "failed" };
   } finally {
+    try {
+      await persistDesktopPromptOutcome(
+        transcriptTurn,
+        transcriptDetails,
+        "terminal-ai-chat",
+        transcriptOptions
+      );
+    } catch (error) {
+      if (terminal) terminal.notice = error instanceof Error ? error.message : "Prompt outcome could not be saved.";
+    }
     pending.pending = false;
     thread.sending = false;
     syncTerminalCompanion(source);

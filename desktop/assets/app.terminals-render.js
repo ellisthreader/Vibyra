@@ -29,7 +29,9 @@ function renderTerminalsPage() {
   const fullscreenClass = typeof fullscreenTerminalId === "string" && fullscreenTerminalId ? " terminal-page--terminal-fullscreen" : "";
   const emptyProject = projectTerminals.length ? "" : terminalWorkspaceEmptyHtml();
   const terminalViews = projectTerminals.length ? (grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)) : "";
-  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}"${gridStyle}><div class="terminal-stage">${emptyProject}${terminalViews}</div></section>`;
+  const teamBar = typeof terminalTeamBarHtml === "function" ? terminalTeamBarHtml(projectTerminals) : "";
+  const teamClass = teamBar ? " terminal-page--team" : "";
+  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}${teamClass}"${gridStyle}>${teamBar}<div class="terminal-stage">${emptyProject}${terminalViews}</div></section>`;
   bindTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
 }
@@ -103,19 +105,42 @@ function settingsMenu(terminal) {
 }
 
 function selectRow(field, iconName, terminal, options) {
-  return `<label>${icon(iconName)}<select data-terminal-field="${field}" data-terminal-id="${escapeAttribute(terminal.id)}">${options}</select></label>`;
+  const labels = { effort: "Reasoning effort", model: "Model", projectId: "Project" };
+  return `<div class="terminal-settings-row">${icon(iconName)}${customSelectHtml({
+    id: `terminal-${terminal.id}-${field}`,
+    ariaLabel: labels[field] || field,
+    value: terminal[field] || "",
+    options,
+    inputAttributes: {
+      "data-terminal-field": field,
+      "data-terminal-id": terminal.id
+    }
+  })}</div>`;
 }
 
 function modelOptions(terminal) {
-  return terminalModelGroups().map((group) => `${group.title ? `<optgroup label="${escapeAttribute(group.title)}">` : ""}${group.options.map((model) => `<option value="${escapeAttribute(model.key)}" ${terminal.model === model.key ? "selected" : ""}>${escapeHtml(model.label)}</option>`).join("")}${group.title ? "</optgroup>" : ""}`).join("");
+  return terminalModelGroups().flatMap((group) => group.options.map((model) => ({
+    value: model.key,
+    label: model.label,
+    group: group.title || ""
+  })));
 }
 
 function effortOptions(terminal) {
-  return terminalReasoningEfforts(terminal.model).map((effort) => `<option value="${escapeAttribute(effort.value)}" ${terminal.effort === effort.value ? "selected" : ""}>${escapeHtml(effort.label)}</option>`).join("");
+  return terminalReasoningEfforts(terminal.model).map((effort) => ({
+    value: effort.value,
+    label: effort.label
+  }));
 }
 
 function projectOptions(terminal) {
-  return `<option value="">No project</option>${(currentState.projects || []).map((project) => `<option value="${escapeAttribute(project.id)}" ${terminal.projectId === project.id ? "selected" : ""}>${escapeHtml(project.name || "Project")}</option>`).join("")}`;
+  return [
+    { value: "", label: "No project" },
+    ...(currentState.projects || []).map((project) => ({
+      value: project.id,
+      label: project.name || "Project"
+    }))
+  ];
 }
 
 function terminalNotice(terminal) {
@@ -183,7 +208,9 @@ function terminalContext(terminal, profile, compact) {
   const effortShort = String(effort?.short || effort?.label || terminal.effort || "medium").toLowerCase();
   const effortLabel = String(effort?.label || terminal.effort || "medium").toLowerCase();
   const planLabel = typeof currentPlanTier === "function" ? `Vibyra ${currentPlanTier()?.name || "Free"}` : "Vibyra";
-  const tokenLabel = terminal.tokenMode === "provider" ? providerTokenLabelForModel(model) : planLabel;
+  const tokenLabel = terminal.tokenMode === "provider"
+    ? providerTokenLabelForModel(model)
+    : planLabel;
   const account = typeof currentAccount === "function" ? currentAccount() : {};
   const firstName = String(account?.name || "").trim().split(/\s+/)[0] || "";
   const project = projectForTerminal(terminal);

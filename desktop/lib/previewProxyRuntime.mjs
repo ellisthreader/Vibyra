@@ -1,4 +1,5 @@
 import { previewCrashScreenHtml } from "./previewUi.mjs";
+import { PREVIEW_INSPECTOR_RUNTIME_SCRIPT } from "./previewInspectorRuntime.mjs";
 
 
 const PROXY_RUNTIME_ERROR_SCRIPT = `
@@ -189,6 +190,7 @@ const PROXY_RUNTIME_ERROR_SCRIPT = `
   }, true);
   window.addEventListener("error", function (event) { if (!event.target || event.target === window) handle(event, "error"); }, true);
   window.addEventListener("unhandledrejection", function (event) { handle(event, "unhandledrejection"); });
+  ${PREVIEW_INSPECTOR_RUNTIME_SCRIPT}
 })();
 `;
 

@@ -26,11 +26,21 @@ const {
   watchDesktopMainSources
 } = require("./lib/electronReload.cjs");
 const { createDesktopScreenshot } = require("./lib/desktopScreenshot.cjs");
+const { createDesktopScreenshotSettings } = require("./lib/desktopScreenshotSettings.cjs");
 
+const APP_NAME = "Vibyra";
+const APP_ICON_PATH = path.join(__dirname, "vibyra-login-logo.png");
+const LINUX_DESKTOP_NAME = "vibyra.desktop";
+
+app.setName(APP_NAME);
 app.commandLine.appendSwitch("disable-gpu");
 app.commandLine.appendSwitch("disable-gpu-compositing");
 if (process.platform === "linux") {
+  app.setDesktopName(LINUX_DESKTOP_NAME);
   app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+}
+if (process.platform === "win32") {
+  app.setAppUserModelId("app.vibyra.desktop");
 }
 
 const port = process.env.VIBYRA_AGENT_PORT || "4317";
@@ -41,11 +51,18 @@ let loadRetryTimer;
 let loadRetryAttempt = 0;
 let bridgeStartPending = false;
 let bridgeHealthTimer;
+let bridgeShutdownPending;
+let bridgeShutdownComplete = false;
 let handledRendererReloadRequestId = "";
 let observedTerminalActionProtocolVersion = "";
 let screenshotCapturePending = false;
+let screenshotEditorOpen = false;
 let screenshotShortcutAvailable = true;
 let stopDesktopSourceWatch = () => {};
+
+const screenshotSettings = createDesktopScreenshotSettings({ app, dialog });
+const screenshotDirectory = () => screenshotSettings.directory();
+
 const desktopScreenshot = createDesktopScreenshot({
   clipboard,
   desktopCapturer,
@@ -54,6 +71,7 @@ const desktopScreenshot = createDesktopScreenshot({
   nativeImage,
   screen,
   getParentWindow: () => mainWindow,
+  getScreenshotsDirectory: screenshotDirectory,
   screenAccessStatus: () => process.platform === "darwin"
     ? systemPreferences.getMediaAccessStatus("screen")
     : "granted",
@@ -76,18 +94,23 @@ function sendScreenshotError(error) {
 }
 
 async function captureScreenshotForEditor() {
-  if (screenshotCapturePending) return;
+  if (screenshotCapturePending || screenshotEditorOpen) return;
   screenshotCapturePending = true;
   console.log("Vibyra screenshot capture requested");
   try {
     const capture = await desktopScreenshot.captureDisplay();
     revealWindow();
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      throw new Error("Screenshot editor is unavailable.");
+    }
+    screenshotEditorOpen = true;
     mainWindow?.webContents?.send("screenshot:captured", {
       dataUrl: capture.dataUrl,
       displayId: String(capture.display.id)
     });
     console.log(`Vibyra screenshot editor opened for display ${capture.display.id}`);
   } catch (error) {
+    screenshotEditorOpen = false;
     revealWindow();
     sendScreenshotError(error);
   } finally {
@@ -108,7 +131,8 @@ function createWindow() {
     minHeight: 620,
     backgroundColor: "#07070a",
     frame: false,
-    title: "Vibyra Desktop",
+    icon: APP_ICON_PATH,
+    title: APP_NAME,
     titleBarStyle: "hidden",
     show: false,
     webPreferences: {
@@ -126,6 +150,7 @@ function createWindow() {
   };
 
   mainWindow.webContents.on("did-finish-load", async () => {
+    screenshotEditorOpen = false;
     let loadedUrl = "";
     try {
       loadedUrl = await mainWindow.webContents.executeJavaScript("location.href", true);
@@ -149,6 +174,7 @@ function createWindow() {
     scheduleLoadRetry();
   });
   mainWindow.webContents.on("render-process-gone", (_event, details) => {
+    screenshotEditorOpen = false;
     console.error(`Vibyra Desktop renderer exited: ${details.reason}`);
     if (!mainWindow || mainWindow.isDestroyed()) return;
     setTimeout(() => mainWindow?.reload(), 500);
@@ -170,6 +196,7 @@ function createWindow() {
   });
   mainWindow.on("closed", () => {
     clearTimeout(loadRetryTimer);
+    screenshotEditorOpen = false;
     mainWindow = undefined;
   });
 
@@ -184,7 +211,9 @@ function isDesktopPage(url) {
   try {
     const expected = new URL(appUrl);
     const loaded = new URL(url);
-    return loaded.origin === expected.origin && loaded.pathname === expected.pathname;
+    const normalizedPath = (value) => value.replace(/\/+$/, "") || "/";
+    return loaded.origin === expected.origin
+      && normalizedPath(loaded.pathname) === normalizedPath(expected.pathname);
   } catch {
     return false;
   }
@@ -264,6 +293,29 @@ function startBridgeHealthMonitor() {
   bridgeHealthTimer.unref?.();
 }
 
+function stopDesktopBridge() {
+  if (bridgeShutdownPending) return bridgeShutdownPending;
+  bridgeShutdownPending = new Promise((resolve) => {
+    const origin = new URL(appUrl).origin;
+    const request = http.request(`${origin}/desktop/quit`, {
+      method: "POST",
+      headers: {
+        "Content-Length": "0",
+        Origin: origin
+      },
+      timeout: 1500
+    }, (response) => {
+      response.resume();
+      response.on("end", resolve);
+      response.on("close", resolve);
+    });
+    request.on("timeout", () => request.destroy());
+    request.on("error", resolve);
+    request.end();
+  });
+  return bridgeShutdownPending;
+}
+
 function scheduleLoadRetry() {
   if (quitting || !mainWindow || mainWindow.isDestroyed() || loadRetryTimer) return;
   loadRetryAttempt += 1;
@@ -305,14 +357,21 @@ function configureDesktopPermissions() {
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on("before-quit", () => {
+  app.on("before-quit", (event) => {
     quitting = true;
     clearInterval(bridgeHealthTimer);
     desktopScreenshot.unregisterF9Shortcut();
     stopDesktopSourceWatch();
+    if (bridgeShutdownComplete) return;
+    event.preventDefault();
+    void stopDesktopBridge().finally(() => {
+      bridgeShutdownComplete = true;
+      app.quit();
+    });
   });
   app.on("second-instance", () => reloadDesktopWindow(mainWindow));
   app.whenReady().then(() => {
+    if (process.platform === "darwin") app.dock.setIcon(APP_ICON_PATH);
     configureDesktopPermissions();
     startBridgeHealthMonitor();
     createWindow();
@@ -320,6 +379,7 @@ if (!hasSingleInstanceLock) {
       __filename,
       path.join(__dirname, "electron-preload.cjs"),
       path.join(__dirname, "lib/desktopScreenshot.cjs"),
+      path.join(__dirname, "lib/desktopScreenshotSettings.cjs"),
       path.join(__dirname, "lib/electronReload.cjs")
     ]);
     screenshotShortcutAvailable = desktopScreenshot.registerF9Shortcut(captureScreenshotForEditor);
@@ -364,6 +424,10 @@ ipcMain.handle("memory:pick", async (_event, kind) => {
 
 ipcMain.handle("memory:discover-obsidian", () => discoverObsidianVaults());
 ipcMain.handle("memory:import-discovered-vault", (_event, id) => importDiscoveredObsidianVault(id));
+ipcMain.on("screenshot:editor-state", (event, open) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) return;
+  screenshotEditorOpen = open === true;
+});
 ipcMain.handle("screenshot:copy", (_event, dataUrl) => {
   try {
     desktopScreenshot.copyPngDataUrl(dataUrl);
@@ -372,11 +436,41 @@ ipcMain.handle("screenshot:copy", (_event, dataUrl) => {
     return { ok: false, error: error instanceof Error ? error.message : "Copy failed." };
   }
 });
+ipcMain.handle("screenshot:copy-saved", async (_event, filePath) => {
+  try {
+    await desktopScreenshot.copySavedScreenshot(filePath);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Copy failed." };
+  }
+});
 ipcMain.handle("screenshot:save", async (_event, dataUrl) => {
   try {
-    const result = await desktopScreenshot.savePngDataUrl(dataUrl);
-    return result.canceled ? result : { ok: true };
+    return { ok: true, screenshot: await desktopScreenshot.savePngDataUrl(dataUrl) };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Save failed." };
   }
+});
+ipcMain.handle("screenshot:settings", () => ({
+  ok: true,
+  ...screenshotSettings.state()
+}));
+ipcMain.handle("screenshot:choose-directory", async () => {
+  try {
+    return { ok: true, ...(await screenshotSettings.choose(mainWindow)) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Screenshot folder could not be changed." };
+  }
+});
+ipcMain.handle("screenshot:reset-directory", () => ({
+  ok: true,
+  ...screenshotSettings.reset()
+}));
+ipcMain.handle("screenshot:reveal", (_event, filePath) => {
+  if (typeof filePath !== "string" || !filePath) return { ok: false };
+  const directory = path.resolve(screenshotDirectory());
+  const target = path.resolve(filePath);
+  if (!target.startsWith(`${directory}${path.sep}`)) return { ok: false };
+  shell.showItemInFolder(target);
+  return { ok: true };
 });

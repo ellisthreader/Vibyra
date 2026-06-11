@@ -33,7 +33,8 @@ export function providerActivitySignal(agent, output) {
 
 function vibyraPromptReady(value) {
   const plain = plainTerminalOutput(value);
-  return /(?:^|[\r\n])(?:│\s*)?(?:[a-z0-9._-]+\s+)?[❯›>](?:\s+auto)?\s*$/i.test(plain);
+  return /Type your message or @path\/to\/file/i.test(plain)
+    || /(?:^|[\r\n])(?:│\s*)?(?:[a-z0-9._-]+\s+)?[❯›>](?:\s+auto)?\s*$/i.test(plain);
 }
 
 function plainTerminalOutput(value) {

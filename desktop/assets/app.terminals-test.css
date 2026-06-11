@@ -42,25 +42,6 @@
   padding-left: 9px;
 }
 .terminal-test-device-control > svg { color: var(--terminal-dim, #918ca1); flex: 0 0 14px; height: 14px; width: 14px; }
-.terminal-test-toolbar select {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: var(--terminal-text, #f1eef8);
-  font: 650 12px/1 system-ui, sans-serif;
-  height: 34px;
-  min-width: 0;
-  outline: 0;
-  padding: 0 26px 0 8px;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-.terminal-test-toolbar select,
-.terminal-test-toolbar option,
-.terminal-test-toolbar optgroup { background-color: #12121a; color: #f1eef8; color-scheme: dark; }
-body[data-desktop-theme="light"] .terminal-test-toolbar select,
-body[data-desktop-theme="light"] .terminal-test-toolbar option,
-body[data-desktop-theme="light"] .terminal-test-toolbar optgroup { background-color: #f4f4f8; color: #1b1821; color-scheme: light; }
 .terminal-test-device-control small {
   background: rgba(139,92,255,.12);
   border-radius: 5px;
@@ -209,8 +190,8 @@ body[data-desktop-theme="light"] .terminal-test-toolbar optgroup { background-co
 .terminal-test-run:hover { background: #825af0; }
 .terminal-test-run.is-stop { background: #17171e; border-color: rgba(255,255,255,.16); }
 .terminal-test-footer small { color: #777181; font-size: 9px; white-space: nowrap; }
-.terminal-test-stage :is(button,input,select,summary):focus-visible,
-.terminal-test-toolbar :is(button,input,select,summary):focus-visible { outline: 2px solid #8b5cff; outline-offset: 1px; }
+.terminal-test-stage :is(button,input,summary):focus-visible,
+.terminal-test-toolbar :is(button,input,summary):focus-visible { outline: 2px solid #8b5cff; outline-offset: 1px; }
 @container (max-width: 430px) {
   .terminal-test-toolbar { grid-template-columns: minmax(0, 1fr); }
   .terminal-test-toolbar-center, .terminal-test-actions { width: 100%; }

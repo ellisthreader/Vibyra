@@ -4,7 +4,7 @@ import { headers } from "./http.mjs";
 import { appState, TOKEN } from "./state.mjs";
 import { discoverProjects, findProjectById } from "./projects.mjs";
 import { isDirectory, projectFromPath } from "./projectInfo.mjs";
-import { projectPreviewLaunch, runningProjectDevServerUrl } from "./previewDevServer.mjs";
+import { projectPreviewLaunch, runningProjectDevServerUrl, startProjectDevServer } from "./previewDevServer.mjs";
 import { previewServerProxyUrl, previewUrl } from "./previewUrls.mjs";
 import { previewCredentialAllowsProject, previewCredentialTargetId } from "./previewCapabilities.mjs";
 import { previewService } from "./previewServices.mjs";

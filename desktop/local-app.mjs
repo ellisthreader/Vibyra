@@ -9,6 +9,7 @@ import { startDiscoveryBroadcast } from "./lib/discovery.mjs";
 import { discoverProjects } from "./lib/projects.mjs";
 import { handle } from "./lib/routes.mjs";
 import { handlePtyTerminalUpgrade } from "./lib/ptyTerminals.mjs";
+import { installPreviewShutdownHandlers } from "./lib/previewShutdown.mjs";
 import { appState, connectionUrls, PAIR_CODE, PORT } from "./lib/state.mjs";
 import { openDesktopWindow } from "./lib/window.mjs";
 
@@ -24,6 +25,7 @@ if (restoredAccountSession) {
 
 appState.server = createServer(handle);
 appState.server.on("upgrade", handlePtyTerminalUpgrade);
+installPreviewShutdownHandlers({ server: appState.server });
 
 appState.server.listen(PORT, "0.0.0.0", async () => {
   startDiscoveryBroadcast();

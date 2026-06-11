@@ -111,6 +111,17 @@ capability paths against the active and remembered LAN desktop bases. Absolute
 URLs may be probed directly and rewritten onto remembered LAN hosts, but must
 not be wrapped in a control-token proxy URL.
 
+Phone preview credentials for a running desktop service are target-pinned.
+`/preview/start-server`, reopening an already-running preview, and agent-apply
+preview payloads must keep the opened frame attached to that runtime even when
+Desktop Preview activates another target in the same project. A phone start
+must activate its target only after the request is still the newest phone
+preview request.
+
+Phone reachability probes resolve relative scripts and styles against a valid
+document `<base href>` before rejecting a preview. The base parser requires
+matching quote delimiters so malformed markup cannot redirect asset probes.
+
 Vite/Laravel output can reference `http://0.0.0.0:<port>/...`; the bridge proxy must normalize local/private proxy targets to `127.0.0.1` before fetching because `0.0.0.0` is only a bind address. Explicit project preview commands should prefer the real PC project route/files over older generated `ChatMessage.app` previews; source-only HTML with local scripts/styles such as `/resources/js/app.tsx`, `/src/main.jsx`, or `/style.css` is not self-contained phone HTML and should trigger desktop dev-server startup instead of being attached inline. Relevant files: `desktop/lib/preview.mjs`, `src/screens/workspace/hooks/workspaceChatRuntime.ts`, `src/utils/previewHtml.ts`.
 
 Community publishing has a separate public-demo path from local Live Preview. `src/screens/workspace/inline/chunk8.tsx` calls `src/utils/hostedDemo.ts` before `/api/projects/publish`; that helper treats authenticated `GET /files/publish-demo-bundle?projectId=...` as an optional desktop capability and falls back to ordinary publishing when older desktop builds return 404 or no static bundle. This request can take several minutes because desktop may install dependencies with scripts disabled and build before returning a static demo bundle. The same helper can request `GET /files/publish-runtime-bundle?projectId=...` and send a `runtimeBundle` for Node apps that need backend hosting. The publish API types carry `hostedDemo`, `runtimeBundle`, `hostedDemoStatus`, `hostedDemoUrl`, and `hostedDemoMessage`. Explore/community app opening uses `src/components/PublicDemoWebView.tsx`, a constrained wrapper around `AppWebView`, instead of the local preview modal/mini-chat path.
@@ -128,6 +139,11 @@ For Laravel/Inertia phone-preview HTTP 419 reports, first distinguish target-pro
 `WorkspaceScreen` must not replace an already-open `AppPreviewModal` from the latest chat message. Project previews and generated chat cards are separate user selections; auto-following the newest `ChatMessage.app` can swap a real project preview for an older connection/setup UI. Preview changes should enter through explicit card taps, `openRunnablePreview()`, or successful preview-server launch.
 
 `AppPreviewModal` owns the runnable-preview overlay UI. `AppPreviewMiniChat` should stay preview-first and phone-simple: default to a compact bottom `Ask AI` trigger, then expand into one composer surface with close and send controls. Do not wrap the composer in a second background card or add a `Preview AI` header/helper subtitle. Preview edit submits must call `useWorkspaceActions.submitPreviewEdit`, which chooses `runtime.activeProjectTarget()`, opens that project chat, and then calls `app.startAgent(target, prompt)`; do not route mini-preview edits through the generic `onStartChat` path. After send, `AppPreviewEditStatus` shows a compact model-aware status pill over the preview. The preview modal tracks native keyboard height and positions diagnostics above the current collapsed or expanded chat surface; crash UI must not overlap behind or under the composer.
+
+Preview content identity uses `previewAppFingerprint.ts`, including a hash of
+the HTML rather than only its length, so same-size updates reset diagnostics
+and mini-chat state correctly. A failed mini-chat submission keeps the user's
+draft available for retry and must not leave an unhandled promise rejection.
 
 Preview opening should feel like a full page entering from the top. `AppPreviewModal.tsx` uses a custom `Animated.Value` with `Modal animationType="none"` and translates the whole preview surface down from above the viewport; keep the top chrome compact and let `AppWebView` own the rest of the page. The preview header should stay preview-first: close button, app title, and one overflow menu for secondary actions such as Refresh. Do not put refresh/edit/diagnostic controls permanently across the header.
 

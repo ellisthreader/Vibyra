@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import type { GeneratedApp } from "../../../types/domain";
 import { createThemedStyleSheet } from "../styles/themeTransform";
 import { matchChatCommand } from "../data/chatCommands";
+import { previewAppFingerprint } from "./previewAppFingerprint";
 
 export function AppPreviewMiniChat({
   agentRequesting,
@@ -31,6 +32,7 @@ export function AppPreviewMiniChat({
   const inputPlaceholder = useThemedColor("#8D879D");
   const busy = agentRequesting || submitting;
   const trimmed = draft.trim();
+  const appFingerprint = useMemo(() => previewAppFingerprint(app), [app.html, app.id, app.url]);
 
   useEffect(() => {
     setOpen(false);
@@ -38,7 +40,7 @@ export function AppPreviewMiniChat({
     setDraft("");
     setCommandBlocked(false);
     setSubmitting(false);
-  }, [app.id, onOpenChange]);
+  }, [appFingerprint, onOpenChange]);
 
   function setChatOpen(value: boolean) {
     setOpen(value);
@@ -54,9 +56,11 @@ export function AppPreviewMiniChat({
     const prompt = buildPreviewPrompt(app, trimmed);
     setCommandBlocked(false);
     setSubmitting(true);
-    setDraft("");
     try {
-      await onSubmit(prompt);
+      const submitted = await onSubmit(prompt);
+      if (submitted) setDraft("");
+    } catch {
+      // The preview status surface reports the failure; keep the user's draft for retry.
     } finally {
       setSubmitting(false);
     }

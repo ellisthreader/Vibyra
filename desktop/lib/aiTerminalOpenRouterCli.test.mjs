@@ -75,6 +75,23 @@ test("agent arguments preserve standard, full, and persistent resume behavior", 
   else process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE = previousInstructionsFile;
 });
 
+test("Vibyra Agent Team roles compose with runtime identity and enforce read-only access", () => {
+  const args = vibyraAgentArgs({
+    desktopUrl: "http://127.0.0.1:4317",
+    model: "deepseek/deepseek-chat-v3.1",
+    permissionMode: "full",
+    sandboxMode: "read-only",
+    roleInstructions: "Role: Reviewer",
+    prompt: "Review checkout"
+  });
+  const developerInstructions = args.find((value) => value.startsWith("developer_instructions="));
+
+  assert.match(developerInstructions, /Active inference model: deepseek\/deepseek-chat-v3\.1/);
+  assert.match(developerInstructions, /Role: Reviewer/);
+  assert.ok(args.includes("read-only"));
+  assert.equal(args.includes("--dangerously-bypass-approvals-and-sandbox"), false);
+});
+
 test("Vibyra Agent gives every OpenRouter model a truthful runtime identity", () => {
   const instructions = vibyraAgentRuntimeIdentity("deepseek/deepseek-v4-flash");
 
@@ -127,7 +144,8 @@ test("API-only intro is modern, customized, and explicit about runtime ownership
     permissionMode: "standard"
   });
 
-  assert.match(intro, /◆ \[ DS \]/);
+  assert.match(intro, /◒  DEEPSEEK/);
+  assert.match(intro, /[▓▀]/);
   assert.match(intro, /DeepSeek via Vibyra Agent/);
   assert.match(intro, /model\s+deepseek\/deepseek-chat-v3\.1/);
   assert.match(intro, /workspace\s+~\/Desktop\/SaaS/);
@@ -158,6 +176,7 @@ test("prompt, response, working, and activity output use one shared language", (
     "◆ Qwen via Vibyra Agent · qwen/qwen3-coder\r\n  Ready"
   );
   assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false), "› Qwen via Vibyra Agent · working");
+  assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false, 64_000), "› Qwen via Vibyra Agent · working · 1m 04s");
   assert.equal(
     renderAgentEvent({
       type: "item.started",

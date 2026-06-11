@@ -15,8 +15,14 @@ contextBridge.exposeInMainWorld("vibyraDesktopMemory", {
 
 contextBridge.exposeInMainWorld("vibyraDesktopScreenshot", {
   isElectron: true,
+  chooseDirectory: () => ipcRenderer.invoke("screenshot:choose-directory"),
   copy: (dataUrl) => ipcRenderer.invoke("screenshot:copy", dataUrl),
+  copySaved: (filePath) => ipcRenderer.invoke("screenshot:copy-saved", filePath),
+  getSettings: () => ipcRenderer.invoke("screenshot:settings"),
+  resetDirectory: () => ipcRenderer.invoke("screenshot:reset-directory"),
+  reveal: (filePath) => ipcRenderer.invoke("screenshot:reveal", filePath),
   save: (dataUrl) => ipcRenderer.invoke("screenshot:save", dataUrl),
+  setEditorOpen: (open) => ipcRenderer.send("screenshot:editor-state", open === true),
   onCapture: (listener) => {
     const handler = (_event, payload) => listener(payload);
     ipcRenderer.on("screenshot:captured", handler);

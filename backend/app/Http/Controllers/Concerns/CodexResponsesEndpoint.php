@@ -8,6 +8,7 @@ use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterPricingCatalog;
 use App\Services\Billing\OpenRouterRequestPolicy;
+use App\Services\Billing\TerminalOutputBudget;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,7 +52,18 @@ trait CodexResponsesEndpoint
 
         $inputTokens = max(1, (int) ceil(strlen(json_encode($payload)) / 4));
         $requestedOutputTokens = (int) ($payload['max_output_tokens'] ?? 2000);
-        $maxOutputTokens = max(800, min(2000, $requestedOutputTokens));
+        $requestedOutputTokens = max(800, min(2000, $requestedOutputTokens));
+        $requestCostMultiplier = $this->codexRequestCostMultiplier($payload);
+        $maxOutputTokens = app(TerminalOutputBudget::class)->affordableOutputTokens(
+            $calc,
+            $modelKey,
+            $inputTokens,
+            $requestedOutputTokens,
+            800,
+            (int) $user->credits_balance,
+            $requestCostMultiplier,
+        );
+        $payload['max_output_tokens'] = $maxOutputTokens;
         $quotaOutputTokens = min(
             $maxOutputTokens,
             max(1, (int) config('billing.openrouter_pricing.terminal_quota_output_tokens', 256))
@@ -62,9 +74,8 @@ trait CodexResponsesEndpoint
         }
         $reservationService = app(ChatCostReservationService::class);
         $reference = 'codex:'.Str::uuid();
-        $requestCostMultiplier = $this->codexRequestCostMultiplier($payload);
         $quotaCredits = (int) ceil(
-            $calc->estimateUsageCredits(
+            $calc->estimateTerminalUsageCredits(
                 $modelKey,
                 $inputTokens,
                 $quotaOutputTokens,
@@ -77,11 +88,20 @@ trait CodexResponsesEndpoint
                 $reference,
                 $modelKey,
                 (int) ceil(
-                    $calc->estimateCredits($modelKey, $inputTokens, $maxOutputTokens, true)
+                    $calc->estimateTerminalReservationCredits(
+                        $modelKey,
+                        $inputTokens,
+                        $maxOutputTokens,
+                        true
+                    )
                     * $requestCostMultiplier
                 ),
                 (int) ceil(
-                    $calc->estimateReservationUsd($modelKey, $inputTokens, $maxOutputTokens)
+                    $calc->estimateTerminalReservationUsd(
+                        $modelKey,
+                        $inputTokens,
+                        $maxOutputTokens
+                    )
                     * $requestCostMultiplier
                     * 1_000_000
                 ),

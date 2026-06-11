@@ -72,8 +72,8 @@ test("blocks one-shot Codex exec from owning the Vibyra terminal", () => {
   ]), /selected native provider/);
 });
 
-test("accepts managed Claude and Gemini as foreground Vibyra providers", () => {
-  for (const runtimeId of ["claude", "gemini"]) {
+test("accepts every managed official CLI as the foreground Vibyra provider", () => {
+  for (const runtimeId of ["claude", "gemini", "qwen", "kimi", "mistral", "grok"]) {
     assert.doesNotThrow(() => assertAiTerminalLaunchOwnership({
       key: "vibyra",
       commandPath: `/opt/vibyra/${runtimeId}`,

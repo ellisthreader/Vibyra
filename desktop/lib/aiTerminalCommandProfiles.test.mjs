@@ -27,6 +27,8 @@ test("every API model gets the same truthful Vibyra Agent command profile", () =
   assert.equal(profiles[0].label, "Vibyra Agent");
   assert.equal(commandIsKnown(profiles[0], "/review"), true);
   assert.equal(commandIsKnown(profiles[0], "/permissions"), true);
+  assert.equal(commandIsKnown(profiles[0], "/security-review"), true);
+  assert.equal(commandIsKnown(profiles[0], "/build"), true);
   assert.equal(commandIsKnown(profiles[0], "/plugins"), false);
   assert.equal(commandIsKnown(profiles[0], "/extensions"), false);
   assert.equal(commandIsKnown(profiles[0], "/claude-api"), false);
@@ -62,6 +64,8 @@ test("help lists only commands Vibyra Agent implements", () => {
   assert.match(help, /\/status\s+show runtime, model, thread, and access/);
   assert.match(help, /\/stop\s+cancel the current task/);
   assert.match(help, /\/plan\s+create a concrete implementation plan/);
+  assert.match(help, /\/shell\s+show direct shell syntax and access rules/);
+  assert.match(help, /\/test\s+run the focused tests that prove the change/);
   assert.doesNotMatch(help, /\/plugins|\/extensions|\/mcp|\/hooks/);
   assert.equal(commandIsLocal("/status"), true);
   assert.equal(commandIsLocal("/review"), false);
@@ -73,4 +77,6 @@ test("workflow commands become executable agent prompts", () => {
   assert.match(prompt, /Put findings first/);
   assert.match(prompt, /Target: current changes/);
   assert.doesNotMatch(prompt, /Claude|Codex|Gemini/);
+  assert.match(providerCommandPrompt("/security-review", "auth flow"), /severity, evidence/);
+  assert.match(providerCommandPrompt("/build", "desktop"), /relevant build/);
 });

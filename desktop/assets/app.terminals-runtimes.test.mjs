@@ -31,6 +31,9 @@ test("native runtime mapping covers supported provider CLIs", () => {
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "google/gemini-pro", provider: "gemini" })', context), "gemini");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "google/gemma-4-31b-it", provider: "gemini" })', context), "");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "qwen/qwen3", provider: "qwen" })', context), "qwen");
+  assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "moonshotai/kimi-k2", provider: "moonshot" })', context), "kimi");
+  assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "mistralai/devstral-2", provider: "mistral" })', context), "mistral");
+  assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "x-ai/grok-build-0.1", provider: "x-ai" })', context), "grok");
   assert.equal(vm.runInContext('terminalNativeRuntimeForModel({ key: "deepseek/v3", provider: "deepseek" })', context), "");
 });
 
@@ -42,7 +45,11 @@ test("Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise", ()
   );
   assert.equal(
     vm.runInContext('terminalExecutionRuntimeForModel({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")', context),
-    "vibyra-agent"
+    "qwen"
+  );
+  assert.equal(
+    vm.runInContext('terminalExecutionRuntimeForModel({ key: "x-ai/grok-build-0.1", provider: "x-ai" }, "vibyra")', context),
+    "grok"
   );
   assert.equal(
     vm.runInContext('terminalExecutionRuntimeForModel({ key: "deepseek/v3", provider: "deepseek" }, "vibyra")', context),
@@ -54,7 +61,7 @@ test("Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise", ()
   );
 });
 
-test("model picker shows Vibyra Agent for API-only provider models", () => {
+test("missing official CLIs expose a quiet icon-only download control", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -70,19 +77,17 @@ test("model picker shows Vibyra Agent for API-only provider models", () => {
     'terminalModelCliControl({ key: "gpt-5.5", provider: "openai" }, "vibyra")',
     context
   );
-  const agent = vm.runInContext(
+  const qwen = vm.runInContext(
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
 
-  assert.match(ready, /terminal-model-runtime-status native/);
-  assert.match(ready, />Native CLI</);
-  assert.match(agent, /terminal-model-runtime-status agent/);
-  assert.match(agent, />Vibyra Agent</);
-  assert.doesNotMatch(agent, /data-terminal-runtime-install/);
+  assert.equal(ready, "");
+  assert.match(qwen, /data-terminal-runtime-install="qwen"/);
+  assert.doesNotMatch(qwen, />Download<|Native CLI|Vibyra Agent/);
 });
 
-test("API-only providers do not expose dormant native runtime downloads", () => {
+test("official CLI downloads expose an installing spinner", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -91,16 +96,58 @@ test("API-only providers do not expose dormant native runtime downloads", () => 
     terminalRuntimeInstalling.add("qwen");
   `, context);
 
-  const agent = vm.runInContext(
+  const qwen = vm.runInContext(
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
-  assert.match(agent, /terminal-model-runtime-status agent/);
-  assert.doesNotMatch(agent, /terminal-model-download-spinner/);
+  assert.match(qwen, /terminal-model-download-spinner/);
+  assert.match(qwen, /aria-busy="true"/);
 
   const source = readFileSync(new URL("./app.terminals-runtimes.js", import.meta.url), "utf8");
   assert.match(source, /controller\.abort\(\), 300_000/);
   assert.match(source, /The CLI download timed out/);
+});
+
+test("Grok exposes the official CLI download instead of Vibyra Agent", () => {
+  const context = runtimeContext();
+  vm.runInContext(`
+    terminalRuntimeState = {
+      runtimes: [{ id: "grok", label: "Grok Build", available: false, adapterReady: true, installable: true }]
+    };
+  `, context);
+
+  const control = vm.runInContext(
+    'terminalModelCliControl({ key: "x-ai/grok-build-0.1", provider: "x-ai" }, "vibyra")',
+    context
+  );
+  assert.match(control, /data-terminal-runtime-install="grok"/);
+  assert.doesNotMatch(control, /Vibyra Agent/);
+});
+
+test("installable runtimes use icon-only download and downloading controls", () => {
+  const context = runtimeContext();
+  vm.runInContext(`
+    terminalRuntimeState = {
+      runtimes: [{ id: "claude", label: "Claude Code", available: false, adapterReady: true, installable: true }]
+    };
+  `, context);
+
+  const download = vm.runInContext(
+    'terminalModelCliControl({ key: "anthropic/claude-opus-4", provider: "anthropic" }, "vibyra")',
+    context
+  );
+  assert.match(download, /data-terminal-runtime-install="claude"/);
+  assert.match(download, /<svg><\/svg>/);
+  assert.doesNotMatch(download, />Download<|Native CLI|Vibyra Agent/);
+
+  vm.runInContext('terminalRuntimeInstalling.add("claude")', context);
+  const downloading = vm.runInContext(
+    'terminalModelCliControl({ key: "anthropic/claude-opus-4", provider: "anthropic" }, "vibyra")',
+    context
+  );
+  assert.match(downloading, /aria-busy="true"/);
+  assert.match(downloading, /terminal-model-download-spinner/);
+  assert.doesNotMatch(downloading, />Downloading<|Native CLI|Vibyra Agent/);
 });
 
 test("Auto opens blank with Vibyra tokens and rejects personal-account routing", () => {
@@ -134,7 +181,7 @@ test("Auto opens blank with Vibyra tokens and rejects personal-account routing",
   );
 });
 
-test("Vibyra credits use Vibyra Agent instead of Codex for API-only providers", () => {
+test("Vibyra credits expose Qwen Code instead of a synthetic agent", () => {
   const context = runtimeContext();
   vm.runInContext(`
     terminalRuntimeState = {
@@ -150,9 +197,9 @@ test("Vibyra credits use Vibyra Agent instead of Codex for API-only providers", 
     'terminalModelCliControl({ key: "qwen/qwen3", provider: "qwen" }, "vibyra")',
     context
   );
-  assert.match(control, /terminal-model-runtime-status agent/);
-  assert.match(control, />Vibyra Agent</);
+  assert.match(control, /data-terminal-runtime-install="qwen"/);
   assert.doesNotMatch(control, /codex/i);
+  assert.doesNotMatch(control, /Vibyra Agent/);
 });
 
 test("adapter failures use one quiet unavailable state instead of an install action", () => {
@@ -184,8 +231,7 @@ test("adapter failures use one quiet unavailable state instead of an install act
     context
   );
   assert.equal(issue, "Claude billing adapter is temporarily unavailable.");
-  assert.match(control, /terminal-model-runtime-status unavailable/);
-  assert.match(control, />Unavailable</);
+  assert.equal(control, "");
   assert.equal(picker.issue, "Claude billing adapter is temporarily unavailable.");
   assert.equal(picker.surface, "unavailable");
   assert.doesNotMatch(control, /data-terminal-runtime-install|>Download</);
@@ -224,17 +270,17 @@ test("API-only providers use bundled Vibyra Agent while Auto stays a routing sur
     vm.runInContext('terminalRuntimeLaunchIssue({ key: "deepseek/v3", provider: "deepseek" }, "vibyra")', context),
     ""
   );
-  assert.match(
+  assert.equal(
     vm.runInContext('terminalModelCliControl({ key: "deepseek/v3", provider: "deepseek" }, "vibyra")', context),
-    /terminal-model-runtime-status agent[\s\S]*>Vibyra Agent</
+    ""
   );
   assert.equal(
     vm.runInContext('terminalRuntimeLaunchIssue({ key: "auto", provider: "auto" }, "vibyra")', context),
     ""
   );
-  assert.match(
+  assert.equal(
     vm.runInContext('terminalModelCliControl({ key: "auto", provider: "auto" }, "vibyra")', context),
-    /terminal-model-runtime-status auto[\s\S]*>Auto routing</
+    ""
   );
 });
 
@@ -254,9 +300,9 @@ test("personal accounts never route API-only providers through a different CLI",
     vm.runInContext('terminalRuntimeLaunchIssue({ key: "deepseek/v3", provider: "deepseek" }, "provider")', context),
     /only available with Vibyra tokens/
   );
-  assert.match(
+  assert.equal(
     vm.runInContext('terminalModelCliControl({ key: "deepseek/v3", provider: "deepseek" }, "provider")', context),
-    /terminal-model-runtime-status unavailable[\s\S]*>Unavailable</
+    ""
   );
 });
 

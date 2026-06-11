@@ -33,6 +33,9 @@ test("started preview servers are proxied through the desktop bridge", async () 
     const response = await requestPreviewServerProxy(project);
     assert.equal(response.status, 200);
     assert.match(response.body, /vibyra-preview-runtime-error/);
+    assert.match(response.body, /vibyra-preview-inspector/);
+    assert.match(response.body, /contextmenu/);
+    assert.match(response.body, /event\.shiftKey/);
     assert.match(response.body, new RegExp(`${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}assets/app\\.js`));
     assert.match(response.body, new RegExp(`url\\('${escapeRegExp(previewServerProxyUrl(project.id, TOKEN))}hero-neon-background\\.png'\\)`));
     assert.match(response.body, /\/preview\/proxy-url\//);

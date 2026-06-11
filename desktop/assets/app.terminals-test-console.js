@@ -157,12 +157,20 @@ async function openTerminalTestErrorInTerminal(entryId) {
 
 function terminalTestProjectTerminal(projectId) {
   const reusable = (terminal) => terminal.projectId === projectId
+    && terminalTestTerminalCanEdit(terminal)
     && !terminal.pending
     && !terminal.providerBusy
     && !["unavailable", "exited"].includes(terminal.ptyStatus);
   return terminals.find((terminal) => terminal.id === activeTerminalId && reusable(terminal))
     || terminals.find(reusable)
     || null;
+}
+
+function terminalTestTerminalCanEdit(terminal) {
+  const hasTeamRole = Boolean(String(terminal?.teamId || "").trim() || String(terminal?.teamRoleKey || "").trim());
+  if (!hasTeamRole) return true;
+  return String(terminal?.teamRoleKey || "").trim().toLowerCase() === "builder"
+    || String(terminal?.teamCapability || "").trim().toLowerCase() === "writer";
 }
 
 async function assignTerminalTestFix(terminal, prompt) {
@@ -174,8 +182,10 @@ async function assignTerminalTestFix(terminal, prompt) {
   try {
     await submitInitialPtyPrompt(terminal);
     terminal.notice = null;
+    return true;
   } catch (error) {
     terminal.notice = error instanceof Error ? error.message : "The preview fix could not be sent to this terminal.";
+    return false;
   } finally {
     terminal.pending = false;
     terminal.updatedAt = Date.now();

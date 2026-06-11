@@ -9,6 +9,9 @@ Use this skill when Vibyra mobile cannot reliably pair with Vibyra Desktop, gets
 
 For AI terminal launch, PTY, token-source, provider branding, hidden-engine, or
 stale terminal-worker failures, use `vibyra-ai-terminal-diagnostics` instead.
+For a Preview process, target, capability, proxy, asset, WebView, or shutdown
+failure after desktop authentication is proven valid, use
+`vibyra-preview-diagnostics` instead.
 
 ## Required Memory Reads
 
@@ -104,6 +107,10 @@ rg -n "Missing or invalid desktop token|isAuthed|TOKEN|setConnection\\(|disconne
 
 12. If Browse PC opens a full-stack parent folder but preview or publishing says no app was captured, inspect app-root discovery before changing the target project:
    `desktop/lib/projectAppRoots.mjs` is the shared source for common nested web and backend roots. Dev-server preview must launch from the detected web app root, static publishing must build a recognized web root, and runtime publishing must rebase the detected backend root into its bundle. Cover parent folders containing `frontend/`, `backend/`, `client/`, `server/`, `apps/web`, or `apps/api` with regression tests.
+
+   For Laravel/Vite Preview failures mentioning both `Port 5173 is already in use` and `EACCES ... public/hot`, treat the hot-file permission failure as the primary blocker. `desktop/lib/previewLaravelDevServer.mjs` removes a stale generated `public/hot` when the project directory is writable, stops readiness polling when PHP or Vite exits, retries one bind race on a fresh Vite port, and records the actual verified fallback Vite port. If removal is denied, restore user ownership/write access for `public`, `storage`, and `bootstrap/cache`; never solve it by running Vite with sudo.
+
+   Preview starts from phone and Desktop Test must resolve the same detected target ID before calling `startProjectDevServer()`. `previewServerProcesses.mjs` owns the cross-route pending-start generation: duplicate starts share one promise, Stop invalidates the old generation and permits an immediate replacement, and old readiness/exit events cannot claim or remove the replacement. `previewPortAllocator.mjs` reserves candidate ports during asynchronous launch verification so concurrent targets cannot select the same free port. Only the newest concurrent phone preview request may commit `latestPreview` and its capability. On bridge `SIGINT`, `SIGTERM`, fatal error, independent server close, `/desktop/quit`, or Electron application quit, cleanup must stop only tracked preview process groups; never kill by executable name or port.
 
 13. If publishing reports duplicate `Project not found` errors, trace the identity used by every step. Mobile publishing must prefer `project.sourceProject.id`, forward the matching `projectPath` to file-review/static/runtime routes, and submit that same canonical ID to the backend. Desktop may recover a stale opaque ID only when the supplied path resolves to a validated project directory. Runtime collection must skip `.env`, `secrets/`, `credentials/`, `private/`, and `.ssh/` before backend validation.
 

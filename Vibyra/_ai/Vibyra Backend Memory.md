@@ -21,6 +21,7 @@ The backend is the cloud companion to the phone app. It owns auth, account/credi
 ## Focused Notes
 
 - `/api/chat`, OpenRouter request shape, skills, reasoning, token caps: `Backend/Chat And Cost Controls.md`
+- `/api/chat/team-plan`, strict Team assignment proposals: `Backend/Team Planning.md`
 - Detailed mobile AI live chat backend handoff: `Backend/AI Live Chat Backend Context.txt`
 - Membership, Stripe/IAP, credits, level rewards: `Backend/Billing Credits And Levels.md`
 - App auth, `/api/session/state`, cloud sync: `Backend/Auth And Cloud Sync.md`

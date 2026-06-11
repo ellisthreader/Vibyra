@@ -2,10 +2,19 @@ import { spawn } from "node:child_process";
 import { access, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
-import { choosePreviewPort } from "./previewPortAllocator.mjs";
+import { reservePreviewPort } from "./previewPortAllocator.mjs";
 import { npmRunArgs, npmRunEnv, previewCommand } from "./previewFrameworkProfiles.mjs";
-import { laravelHttpFailure, laravelPreviewEnv } from "./previewLaravelDiagnostics.mjs";
-import { stopTrackedPreviewServer, trackPreviewServer } from "./previewServerProcesses.mjs";
+import {
+  laravelHttpFailure,
+  laravelPreviewEnv,
+  laravelViteStartupFailure,
+  prepareLaravelViteHotFile
+} from "./previewLaravelDiagnostics.mjs";
+import {
+  isCurrentPreviewServerStart,
+  stopTrackedPreviewServer,
+  trackPreviewServer
+} from "./previewServerProcesses.mjs";
 import { publicHostFromRequestHost } from "./state.mjs";
 
 const LARAVEL_PORTS = [8000, 8001, 8002, 8003, 8004, 8005, 8080, 8888];
@@ -20,8 +29,15 @@ export async function isLaravelViteProject(projectPath, packageText, profile) {
 export async function startLaravelViteDevServer(project, requestHost, context, options = {}) {
   const targetId = String(options.targetId || "");
   stopTrackedPreviewServer(project.id, targetId);
-  const vitePort = options.port ?? await choosePreviewPort(context.packageText, context.profile);
-  const laravelPort = options.laravelPort ?? await choosePreviewPort("", { defaultPorts: LARAVEL_PORTS });
+  await prepareLaravelViteHotFile(project.path);
+  const viteReservation = options.port == null
+    ? await reservePreviewPort(context.packageText, context.profile)
+    : null;
+  const vitePort = options.port ?? viteReservation.port;
+  const laravelReservation = options.laravelPort == null
+    ? await reservePreviewPort("", { defaultPorts: LARAVEL_PORTS }, { exclude: [vitePort] })
+    : null;
+  const laravelPort = options.laravelPort ?? laravelReservation.port;
   const npmExecutable = process.platform === "win32" ? "npm.cmd" : "npm";
   const phpEnv = { ...process.env, ...await laravelPreviewEnv(project.path), ...(options.env ?? {}) };
   const php = spawn("php", ["artisan", "serve", "--host", "0.0.0.0", "--port", String(laravelPort)], {
@@ -37,6 +53,7 @@ export async function startLaravelViteDevServer(project, requestHost, context, o
     stdio: ["ignore", "pipe", "pipe"]
   });
   let output = "";
+  let launchFailure = null;
   const capture = (chunk) => {
     output = `${output}${String(chunk)}`.slice(-5000);
     options.onOutput?.(chunk);
@@ -44,7 +61,14 @@ export async function startLaravelViteDevServer(project, requestHost, context, o
   for (const child of [php, npm]) {
     child.stdout?.on("data", capture);
     child.stderr?.on("data", capture);
-    child.on("error", (error) => capture(`${error.message}\n`));
+    child.on("error", (error) => {
+      launchFailure ||= error;
+      capture(`${error.message}\n`);
+    });
+    child.on("exit", (code, signal) => {
+      if (code === null && !signal) return;
+      launchFailure ||= new Error(`${child === npm ? "Vite" : "PHP"} exited before preview readiness${code === null ? "" : ` with code ${code}`}.`);
+    });
   }
 
   const command = `php artisan serve --host 0.0.0.0 --port ${laravelPort} + ${previewCommand(context.profile, vitePort)}`;
@@ -56,25 +80,53 @@ export async function startLaravelViteDevServer(project, requestHost, context, o
     startedAt: new Date().toISOString()
   }, { activate: options.activate });
 
-  const ready = await waitForLaravelVite(project, requestHost, laravelPort, vitePort, () => output, options.timeoutMs ?? 30000);
+  let ready;
+  try {
+    ready = await waitForLaravelVite(
+      project,
+      requestHost,
+      laravelPort,
+      vitePort,
+      () => output,
+      options.timeoutMs ?? 30000,
+      () => launchFailure || php.exitCode !== null || npm.exitCode !== null
+    );
+  } finally {
+    viteReservation?.release();
+    laravelReservation?.release();
+  }
   if (ready.url) {
+    if (!isCurrentPreviewServerStart(project.id, options.startTargetId, options.startGeneration, tracked, tracked.targetId)) {
+      stopTrackedPreviewServer(project.id, targetId, tracked);
+      const error = new Error("This preview start was superseded by a newer Run or Stop action.");
+      error.status = 409;
+      throw error;
+    }
     tracked.url = ready.url;
     tracked.proxyTargetUrl = `http://127.0.0.1:${laravelPort}`;
-    tracked.viteProxyTargetUrl = `http://127.0.0.1:${vitePort}`;
+    tracked.viteProxyTargetUrl = `http://127.0.0.1:${ready.vitePort}`;
     tracked.state = "running";
     return { command, started: true, url: ready.url };
   }
 
-  stopTrackedPreviewServer(project.id, targetId);
+  stopTrackedPreviewServer(project.id, targetId, tracked);
+  const diagnostic = laravelViteStartupFailure(project.path, output);
+  if (diagnostic?.retryPort && options.port == null && !options._portRetry) {
+    options.onOutput?.("Vibyra detected a Vite port conflict and is retrying with another free port.\n");
+    return startLaravelViteDevServer(project, requestHost, context, { ...options, _portRetry: true });
+  }
+  if (diagnostic?.message) {
+    throw new Error(diagnostic.message);
+  }
   const reason = ready.failure ? ` ${ready.failure}` : output.trim() ? ` Last output: ${output.trim().slice(-900)}` : "";
   throw new Error(`Vibyra could not verify the Laravel dev server after starting PHP and Vite.${reason}`);
 }
 
-async function waitForLaravelVite(project, requestHost, laravelPort, vitePort, output, timeoutMs) {
+async function waitForLaravelVite(project, requestHost, laravelPort, vitePort, output, timeoutMs, stopped = () => false) {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const [viteReady, localRoot] = await Promise.all([
-      viteLooksReady(vitePort, output()),
+      viteReadyPort(vitePort, output()),
       fetchProbe(`http://127.0.0.1:${laravelPort}/`, { htmlOnly: true })
     ]);
     if (localRoot && !localRoot.ok) {
@@ -82,27 +134,28 @@ async function waitForLaravelVite(project, requestHost, laravelPort, vitePort, o
     }
     if (viteReady && localRoot?.body) {
       const publicBase = publicLaravelBase(laravelPort, requestHost);
-      if (isLoopbackHost(publicBase)) return { url: publicBase };
+      if (isLoopbackHost(publicBase)) return { url: publicBase, vitePort: viteReady };
       const publicRoot = await fetchProbe(`${publicBase}/`, { htmlOnly: true });
       if (publicRoot && !publicRoot.ok) {
         return { failure: await laravelHttpFailure(project.path, publicRoot.status, `${publicBase}/`) };
       }
-      if (publicRoot?.body) return { url: publicBase };
+      if (publicRoot?.body) return { url: publicBase, vitePort: viteReady };
     }
+    if (stopped()) return {};
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   return {};
 }
 
-async function viteLooksReady(launchPort, output) {
+async function viteReadyPort(launchPort, output) {
   const ports = Array.from(new Set([launchPort, ...portsFromOutput(output)]));
   for (const port of ports) {
     for (const base of publicDevServerBases(port, "127.0.0.1", output, `http://127.0.0.1:${port}`)) {
       const client = await fetchText(`${base}/@vite/client`, { jsOnly: true });
-      if (client && /vite/i.test(client)) return true;
+      if (client && /vite/i.test(client)) return port;
     }
   }
-  return false;
+  return 0;
 }
 
 function publicLaravelBase(port, requestHost) {

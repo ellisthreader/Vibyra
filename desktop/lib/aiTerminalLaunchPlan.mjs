@@ -6,7 +6,7 @@ import {
 
 const BILLING_MODES = new Set(["vibyra", "provider"]);
 const PERMISSION_MODES = new Set(["standard", "full"]);
-const SANDBOX_MODES = new Set(["workspace-write", "danger-full-access"]);
+const SANDBOX_MODES = new Set(["read-only", "workspace-write", "danger-full-access"]);
 
 export function resolveAiTerminalLaunchPlan(options = {}) {
   const requestedModel = normalizeModel(options.model);
@@ -104,8 +104,8 @@ function normalizeSandboxMode(value, permissionMode) {
   if (!SANDBOX_MODES.has(mode)) {
     throw launchError("invalid_sandbox_mode", `Unsupported terminal sandbox mode "${mode}".`);
   }
-  if (permissionMode === "standard" && mode !== "workspace-write") {
-    throw launchError("unsafe_sandbox_mode", "Standard permission mode requires workspace-write sandboxing.");
+  if (permissionMode === "standard" && !["read-only", "workspace-write"].includes(mode)) {
+    throw launchError("unsafe_sandbox_mode", "Standard permission mode requires read-only or workspace-write sandboxing.");
   }
   if (permissionMode === "full" && mode !== "danger-full-access") {
     throw launchError("permission_sandbox_mismatch", "Full permission mode requires danger-full-access sandboxing.");
@@ -193,6 +193,8 @@ function billingProviderModel(model, providerId) {
       "claude-haiku-4-5": "anthropic/claude-haiku-4.5"
     })[native] || `anthropic/${native}`;
   }
+  if (providerId === "moonshot") return `moonshotai/${native}`;
+  if (providerId === "mistral") return `mistralai/${native}`;
   return `${providerId}/${native}`;
 }
 

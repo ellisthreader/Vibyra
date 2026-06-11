@@ -27,13 +27,14 @@ Keep these concerns separate:
 | Visible process owner | Native CLI when an approved provider adapter exists; otherwise Vibyra Agent for tool-capable API models without an official CLI | Native CLI for the connected account |
 | Presentation | Genuine native TUI or an explicitly labeled Vibyra Agent surface with provider logo/accent | Selected provider's native TUI |
 | Agent capability | Native provider tools or Vibyra Agent's shared real commands, file/shell tools, cancellation, and resume | Official CLI process |
-| Billing/auth | Vibyra account and backend credits | Connected official account |
+| Billing/auth | Vibyra account and backend credits; backend-owned OpenRouter transport | Connected official account |
 
 For Vibyra tokens:
 
 - Launch Codex for OpenAI models, Claude Code for Anthropic models, Gemini CLI
   for Google models, Qwen Code for Qwen models, Kimi Code for Moonshot models,
-  and Mistral Vibe for supported Mistral models.
+  Mistral Vibe for supported Mistral models, and Grok Build for `x-ai/grok-*`
+  models.
 - For a provider-qualified, tool-capable catalog model that has no registered
   official CLI, launch the bundled foreground `Vibyra Agent` runtime. Keep one
   truthful shared command profile; customize only the provider mark, name,
@@ -54,6 +55,25 @@ For Vibyra tokens:
   says it is Codex, Codex CLI, or OpenAI, capture the outbound Responses payload:
   the expected contract names Vibyra Agent in `instructions`, the exact model
   in the runtime identity, and Codex only as the hidden local tool orchestrator.
+- Do not declare a generalized-terminal fix complete from a branded banner,
+  HTTP success, unit tests, or the model's self-report. Prove the authoritative
+  session and grant, captured outbound model and instructions, settled billing
+  reservation under the exact model key, and a live authoritative PTY response.
+  Exercise both a fresh and resumed turn when instruction persistence changes.
+  Screenshots and factual answers such as release dates are not routing evidence
+  because model output can hallucinate.
+- Changes to model-visible instructions or immutable launch metadata must
+  increment `AI_TERMINAL_LAUNCH_CONTRACT_VERSION` so recovered workers cannot
+  keep stale identity behavior.
+- Treat provider child spawn as part of terminal creation. After launching a
+  detached worker, wait for persisted state to report `running` with a real
+  child PID before returning success or assigning the initial prompt. If the
+  worker exits first, return its bounded startup category immediately, remove
+  the failed session, revoke its gateway grant, and roll back its workspace.
+  A bridge/worker launch-contract mismatch means source changed under a stale
+  bridge; refresh the bridge and never surface it as a generic assignment
+  timeout. Apply launch-contract compatibility checks to personal provider
+  sessions as well as Vibyra-credit sessions.
 - Its custom Codex provider must declare
   `env_key="VIBYRA_TERMINAL_GATEWAY_TOKEN"`. Exclude that variable through
   `shell_environment_policy.exclude` so model-generated commands cannot read
@@ -74,15 +94,108 @@ For Vibyra tokens:
 - Never use Vibyra Agent for a provider that is registered to an official CLI.
   Do not copy that provider's native TUI, commands, or identity into the
   generalized surface.
+- Grok Build uses OpenAI Chat Completions through
+  `/desktop/grok/v1/chat/completions`. It sends a fixed `grok-build` request for
+  session titles before the selected coding-model request; authorize that value
+  only as a native alias and settle it under the terminal's exact billing model.
+- Qwen Code uses OpenAI Chat Completions through
+  `/desktop/qwen/v1/chat/completions`, an isolated `QWEN_HOME`, and managed
+  Node 22. In sandboxed Qwen modes, pass the terminal-scoped gateway token as
+  `OPENAI_API_KEY` because Qwen's Docker launcher forwards that supported
+  variable but not arbitrary terminal credential variables. Point Qwen at
+  `host.docker.internal`, authorize only token-authenticated traffic from a
+  detected Docker bridge subnet on the Qwen route, and recognize
+  `Type your message or @path/to/file` as the native ready composer. Keep
+  loopback routing for unsandboxed full access. Kimi Code and Mistral Vibe use
+  OpenAI Responses through
+  `/desktop/kimi/v1/responses` and `/desktop/mistral/v1/responses` with isolated
+  `KIMI_CODE_HOME` and `VIBE_HOME`. Bind every route to the exact runtime,
+  provider, protocol, native model, and billing model in the terminal grant.
+  Mark Vibe's workspace explicitly untrusted so it skips the trust prompt while
+  refusing project `.vibe` config, hooks, agents, and skills.
 - Keep `CODEX_HOME` isolated without auth, user config, plugins, or skills, and
   strip inherited provider credentials. Generate a mode-0600 Vibyra-owned
   `config.toml` containing only the active terminal workspace trust entry;
   otherwise native Codex blocks every fresh Vibyra terminal on its trust
   prompt because the user's trusted-project config is intentionally excluded.
-- Codex is bundled. Native Claude, Gemini, Qwen, Kimi, and Mistral CLIs are
-  downloaded from the model picker. A download does not enable Vibyra billing:
-  each CLI also needs a matching authentication, streaming, tool, and usage
-  adapter before it can run behind Vibyra billing.
+- Treat full access as an explicit launch-time capability, not a cosmetic
+  terminal label. The setup choice applies to the whole new batch and persists
+  for later launches. Use each foreground runtime's real bypass command:
+  Codex `--dangerously-bypass-approvals-and-sandbox`, Claude Code
+  `--dangerously-skip-permissions`, Gemini CLI
+  `--approval-mode yolo --no-sandbox`, Qwen Code `--approval-mode yolo`,
+  Kimi Code `--yolo`, Mistral Vibe `--agent auto-approve`, Grok Build
+  `--permission-mode bypassPermissions --sandbox off`, and the bundled Vibyra
+  Agent's existing full-access engine mode. Never label a shell or unresolved
+  Auto session as full access.
+- Treat Team role policy as bridge-owned launch metadata, never renderer-owned
+  prompt text. Keep the goal and repository content in untrusted assignment
+  data. Codex uses `developer_instructions`; Claude uses
+  `--append-system-prompt`; Vibyra Agent composes the role with its runtime
+  identity. Support roles must launch with real read-only controls.
+- Treat `teamId` as an opaque correlation key, not an authorization boundary.
+  Preserve current `team-...` values and deterministically canonicalize any
+  non-empty legacy renderer value in the bridge. Continue to reject missing
+  IDs, invalid roles or sizes, empty goals, and runtimes without a trusted role
+  channel.
+- `Invalid Team identifier.` now means the request contained some Team metadata
+  but an empty `teamId`; a non-empty legacy ID is canonicalized. Check renderer
+  and bridge version skew before changing the validator. Team renderer changes
+  must bump `TERMINAL_ACTION_PROTOCOL_VERSION`, expose the Team role contract
+  through `/desktop/runtime`, and use new immutable asset query versions.
+- On renderer load, repair blank IDs across the complete restored Team before
+  any member starts, then build the POST through `terminalTeamRequestFields()`
+  so requests contain either all required Team fields or none. Boot must also
+  call `syncPtyTerminals()` even when local storage is empty or stale, allowing
+  authoritative detached sessions to be recovered.
+- Fail Team launch closed when a runtime lacks a verified higher-priority role
+  channel. As of June 10, 2026, Gemini, Grok, Shell, and unresolved Auto are not
+  Team-compatible. Do not downgrade them to prompt-only roles.
+- Changes to the Team role contract must increment
+  `TERMINAL_TEAM_ROLE_CONTRACT_VERSION`; changes to process launch metadata
+  must also increment the AI terminal launch/runtime compatibility versions so
+  stale detached workers are rejected.
+- Treat dynamic Team planning as untrusted decomposition. The renderer submits
+  intent, while the bridge issues and persists the authoritative plan. GPT-5.4
+  mini may propose bounded assignments, scope, criteria, and risks under strict
+  schema; it cannot create roles, permissions, tools, trusted prompts,
+  lifecycle transitions, or provider policy. GPT-5.4 nano is classifier-only
+  unless evaluations promote it. Ollama planning is explicit private mode and
+  falls back locally to deterministic planning. Read
+  `Vibyra/_ai/Desktop/AI Team Dynamic Planner Implementation Plan.md` before
+  changing Team planning, persistence, launch, or recovery.
+- Never infer that a Team used AI planning from the planning animation or role
+  titles. Inspect the authoritative plan's `plannerMode`, `plannerModel`, and
+  `fallbackReason`. Deterministic objectives such as “Implement the smallest
+  complete change” indicate fallback, commonly because the account is signed
+  out, has no credits, the planner timed out, or its output failed validation.
+  Preserve fallback reliability, but label the preview and active Team bar as
+  `AI-planned` or `Built-in fallback` with the bounded reason.
+- Resolve dynamic PTY assignments through
+  `terminalTeamAssignmentForPlan(planId, roleKey, teamId)` or
+  `teamPlanById(planId)` from `desktop/lib/terminalTeamPlanner.mjs`. Never
+  accept renderer-authored `teamTask` as the dynamic assignment authority.
+- Keep Team renderer planning/request/validation/preview and plan-derived
+  launch helpers in `app.terminals-team-planning.js`, loaded immediately before
+  `app.terminals-team.js`; the latter owns fixed roles, recovery metadata,
+  setup markup, and the active Team bar.
+- Solo setup may launch `1–12` independent terminals. Keep its preset/custom
+  count and grid preview bound to the actual available terminal capacity, use
+  `terminalGridMeta()` for preview geometry, and pass the selected count to
+  `createTerminals()`. Team keeps its separate `2–4` role topology and must not
+  inherit the Solo arbitrary count or preview.
+- Keep the current planning store's limitation explicit: it is immutable but
+  process-local until durable restart persistence is added. Do not claim plan
+  recovery across a bridge restart from the core implementation alone.
+- Codex is bundled. Native Claude, Gemini, Qwen, Kimi, Mistral, and Grok CLIs are
+  downloaded from the model picker. Qwen `0.17.1`, Kimi `0.14.0`, Mistral Vibe
+  `2.14.1`, and Grok Build `0.2.39` have enabled Vibyra adapters; future runtime
+  additions still require matching authentication, streaming, tool, and usage
+  adapters before they can run behind Vibyra billing.
+- Managed Mistral lookup uses runtime ID `mistral` even though its executable is
+  named `vibe`. Canonical OpenRouter billing namespaces are
+  `moonshotai/...` and `mistralai/...`; normalize legacy `moonshot/...`,
+  `mistral/...`, and unqualified Kimi/Devstral aliases before issuing a grant.
 - Do not bundle Claude Code by default without Anthropic redistribution
   permission.
 - Protect the local Vibyra model gateway with a short-lived terminal-bound
@@ -118,6 +231,14 @@ For a Voice transcript that shows `You` but omits a spoken `Vibyra` response,
 trace the initiating user-message object through setup-to-terminal transfers.
 The assistant row must be appended to the thread that still contains that exact
 user object, not whichever terminal is active when the AI request finishes.
+
+For local prompt-history or Hermes-ingestion gaps, verify a prompt event and a
+linked outcome event share the same `turnId` and `sessionId` in
+`Vibyra/Prompt Transcripts.md`. Structured chat and Talk close their own turns
+after desktop actions resolve. Native PTY and F8 dictation are paired in
+`app.terminals-pty-prompt-log.js`; completion occurs when the provider returns
+to ready, exits, or remains output-idle for four seconds. Do not log raw audio
+or duplicate F8 as a second typed PTY prompt.
 
 For bottom clipping, anchoring, or “almost correct” screenshot reports, use a
 measurement-first workflow:
@@ -351,6 +472,12 @@ Classify the failure:
      expected usage with the configured terminal quota output allowance.
      Settlement must reconcile both balance and quota to exact provider usage;
      never weaken the final charge or hard quota caps.
+   - For dynamically priced OpenRouter terminal models, use the live catalog
+     price plus the terminal reservation margin. Do not also apply the general
+     dynamic-model uncertainty multiplier to terminal balance or quota
+     admission. If output allowance is the remaining affordability problem,
+     cap it to the largest funded value at or above the terminal floor and send
+     that cap upstream. Keep exact settlement authoritative.
    - `desktop/lib/openRouterModels.mjs` must require explicit
      `supported_parameters: ["tools", ...]` for concrete terminal catalog
      entries. Preserve `auto`, because it routes before execution.
@@ -489,10 +616,9 @@ git diff --check
 - Copying ChatGPT auth or API credentials into Vibyra-token sessions.
 - Assuming a downloaded provider CLI can use Vibyra credits without a
   compatible protocol adapter.
-- Leaving a provider-qualified model attached to a disabled native adapter
-  after the bundled Vibyra Agent exists. Qwen, Moonshot/Kimi, and Mistral
-  models must use the exact-model Vibyra Agent route until their managed-credit
-  native adapters are enabled end to end.
+- Sending Qwen, Moonshot/Kimi, Mistral, or xAI models through Vibyra Agent after
+  their native managed-credit adapters are enabled. These providers must keep
+  their official CLI as the foreground PTY owner.
 - Sending every exact-model Vibyra Agent request to OpenRouter's Responses
   endpoint. Non-OpenAI models can advertise tools while that endpoint still
   returns HTTP 500; use the backend Responses-to-Chat-Completions compatibility
@@ -546,6 +672,12 @@ git diff --check
   login. When this managed profile contract changes, increment the scoped
   Gemini profile compatibility version so recovery retires only stale Gemini
   workers instead of reconnecting them with old environment settings.
+- OpenRouter is an internal provider transport for `Vibyra tokens`, not a
+  user-selectable terminal billing source. Keep the real provider credential
+  behind the authenticated Vibyra backend, issue only a terminal-scoped local
+  gateway credential to the CLI, and enforce Vibyra credit and quota checks
+  before provider dispatch. Never place the raw OpenRouter key in the PTY,
+  child shell environment, renderer account state, or terminal setup UI.
 - Desktop translates Anthropic Messages and Gemini GenerateContent to the
   deployed Vibyra Responses billing gateway, then translates streamed
   text/tool events back to each native protocol. Keep exact billing-model
@@ -571,3 +703,17 @@ git diff --check
   focus, user input, live output, and snapshot completion. Use `:focus-within`
   for the visible terminal focus ring because keyboard focus belongs to
   xterm's hidden textarea, not the outer terminal region.
+- Keep Vibyra Agent presentation in
+  `aiTerminalVibyraAgentPresentation.mjs`: provider-raised wordmarks may use
+  the real company symbol/name and accent, but the surrounding product must
+  remain visibly `Vibyra Agent`. Render assistant Markdown with ANSI emphasis
+  and OSC-8 links, announce elapsed work after 30 seconds and at minute
+  boundaries, and finish with the measured duration. Every command listed by
+  `/help` must map to a local handler or a real agent workflow prompt.
+- Recheck official CLI ownership against primary provider documentation before
+  adding a provider to the generalized runtime. As of June 10, 2026, xAI Grok
+  Build joins Qwen Code, Kimi Code, and Mistral Vibe as an official coding CLI
+  that needs a native Vibyra protocol/billing adapter and release gates. Do not
+  imitate it in Vibyra Agent. MiniMax `mmx-cli`, Meta Llama CLI, and Z.AI's
+  coding helper are integration or infrastructure tools, not model-family
+  native coding terminals for Vibyra routing.

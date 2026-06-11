@@ -66,7 +66,6 @@ body {
 .terminal-effort-row button,
 .terminal-model-row button,
 .terminal-custom-count,
-.terminal-settings-menu select,
 .terminal-close-row { color: var(--terminal-text); }
 .terminal-line pre,
 .terminal-pty-lines pre,
@@ -75,7 +74,7 @@ body {
 .terminal-banner-tips,
 .terminal-line.user pre { color: var(--terminal-copy); }
 .terminal-meta-chip,
-.terminal-setup-advanced summary,
+.terminal-setup-advanced-toggle,
 .terminal-setup-block p,
 .terminal-agent-row small,
 .terminal-agent-option small,

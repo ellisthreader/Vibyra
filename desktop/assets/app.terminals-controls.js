@@ -1,5 +1,6 @@
 function bindTerminalControls() {
   const root = nodes?.content || document;
+  bindCustomSelects(root);
   root.querySelectorAll("[data-terminal-setup-mode]").forEach((button) => button.addEventListener("click", () => {
     selectTerminalSetupMode(button.dataset.terminalSetupMode);
   }));
@@ -11,6 +12,28 @@ function bindTerminalControls() {
     terminalProjectMenuTarget = "";
     render();
   }));
+  root.querySelector("[data-terminal-advanced-toggle]")?.addEventListener("click", (event) => {
+    terminalSetupAdvancedOpen = !terminalSetupAdvancedOpen;
+    const disclosure = event.currentTarget.closest(".terminal-setup-advanced");
+    disclosure?.classList.toggle("open", terminalSetupAdvancedOpen);
+    event.currentTarget.setAttribute("aria-expanded", String(terminalSetupAdvancedOpen));
+    disclosure?.querySelector(".terminal-setup-advanced-panel")
+      ?.setAttribute("aria-hidden", String(!terminalSetupAdvancedOpen));
+  });
+  root.querySelector("[data-terminal-team-goal]")?.addEventListener("input", (event) => {
+    setupTeamGoal = normalizeTerminalTeamGoal(event.target.value);
+    terminalTeamPlanningError = "";
+    const button = root.querySelector("#start-terminals");
+    if (!button?.dataset.terminalTeamRequiresGoal) return;
+    const ready = button.dataset.terminalLaunchReady === "true";
+    button.disabled = !ready || !setupTeamGoal;
+    const label = button.querySelector("svg")?.outerHTML || icon("arrow");
+    button.innerHTML = `${label}${escapeHtml(setupTeamGoal ? "Plan and start team" : "Describe the team goal")}`;
+  });
+  const teamLaunchButton = root.querySelector("#start-terminals[data-terminal-team-requires-goal]");
+  if (teamLaunchButton && setupTeamGoal && !teamLaunchButton.dataset.terminalLaunchBusy) {
+    teamLaunchButton.innerHTML = `${teamLaunchButton.querySelector("svg")?.outerHTML || icon("arrow")}Plan and start team`;
+  }
   bindTerminalClick(root.querySelector("#open-terminal-new"), () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
   bindTerminalClick(root.querySelector("#toggle-terminal-layout"), () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
   root.querySelector("#start-terminals")?.addEventListener("click", async (event) => {
@@ -38,12 +61,43 @@ function bindTerminalControls() {
     }
     const button = event.currentTarget;
     if (button?.dataset.terminalLaunchBusy) return;
+    const teamMode = terminalSetupMode === "team";
+    const teamGoal = teamMode ? normalizeTerminalTeamGoal(setupTeamGoal) : "";
+    if (teamMode && !teamGoal) return;
     const available = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
     const count = Math.min(available, normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount));
     if (count < 1) return;
     const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
       ? setupWorkspaceMode
       : "shared";
+    let teamPlan = null;
+    if (teamMode) {
+      const requestId = ++terminalTeamPlanRequest;
+      button.dataset.terminalLaunchBusy = "1";
+      button.disabled = true;
+      button.innerHTML = `${icon("loading")}Designing team...`;
+      setTerminalTeamPlanningUi(root, "planning");
+      try {
+        teamPlan = await requestTerminalTeamPlan({
+          goal: teamGoal,
+          teamSize: count,
+          projectId: setupProjectId,
+          model: setupModel
+        });
+        if (requestId !== terminalTeamPlanRequest) return;
+        setTerminalTeamPlanningUi(root, "planned");
+        previewTerminalTeamPlan(root, teamPlan);
+        button.innerHTML = `${icon("check")}Team ready`;
+        await revealTerminalTeamPlan();
+      } catch (error) {
+        if (requestId !== terminalTeamPlanRequest) return;
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = `${icon("arrow")}Plan and start team`;
+        setTerminalTeamPlanningUi(root, "error", error instanceof Error ? error.message : "Vibyra could not plan this team.");
+        return;
+      }
+    }
     if (workspaceMode === "worktree" && typeof prepareTerminalWorkspaceLaunch === "function") {
       button.dataset.terminalLaunchBusy = "1";
       button.disabled = true;
@@ -53,31 +107,75 @@ function bindTerminalControls() {
       try {
         ready = await prepareTerminalWorkspaceLaunch(terminalProjectForSetup());
       } finally {
-        delete button.dataset.terminalLaunchBusy;
-        button.disabled = false;
-        button.innerHTML = original;
+        if (!teamMode) {
+          delete button.dataset.terminalLaunchBusy;
+          button.disabled = false;
+          button.innerHTML = original;
+        }
       }
-      if (!ready) return;
+      if (!ready) {
+        if (teamMode) {
+          delete button.dataset.terminalLaunchBusy;
+          button.disabled = false;
+          button.innerHTML = `${icon("arrow")}Plan and start team`;
+          setTerminalTeamPlanningUi(root, "error", "The project workspace could not be prepared.");
+        }
+        return;
+      }
     }
-    if (terminalBatchSetupOpen) completeTerminalBatchSetup();
-    createTerminals(count, setupModel, {
+    const launchOptions = {
       effort: terminalEffortForModel(selectedSetupModel(), setupEffort),
+      permissionMode: terminalPermissionModeForSetup(selectedSetupModel(), setupTokenMode),
       tokenMode: setupTokenMode,
       workspaceMode,
       allowSharedFallback: workspaceMode !== "worktree"
-    });
+    };
+    if (teamMode) {
+      const created = createTerminalTeam(teamPlan, setupModel, launchOptions);
+      if (created.length !== teamPlan.teamSize) {
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = `${icon("arrow")}Plan and start team`;
+        setTerminalTeamPlanningUi(root, "error", "The planned Team could not be launched.");
+        return;
+      }
+      if (terminalBatchSetupOpen) completeTerminalBatchSetup();
+      resetTerminalSetupFlow();
+      forceTerminalRender = true;
+      render();
+    } else {
+      if (terminalBatchSetupOpen) completeTerminalBatchSetup();
+      createTerminals(count, setupModel, launchOptions);
+    }
   });
   root.querySelector("[data-terminal-batch-cancel]")?.addEventListener("click", () => closeTerminalBatchSetup());
-  root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => { setupCount = normalizeCount(button.dataset.terminalCount); render(); }));
+  root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => {
+    const count = normalizeCount(button.dataset.terminalCount);
+    const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
+    setupCount = terminalSetupMode === "team"
+      ? Math.max(2, Math.min(4, count, capacity))
+      : Math.min(count, capacity);
+    render();
+  }));
   root.querySelectorAll("[data-terminal-setup-effort]").forEach((button) => button.addEventListener("click", () => {
     setupEffort = terminalEffortForModel(selectedSetupModel(), button.dataset.terminalSetupEffort);
     localStorage.setItem(setupEffortKey, setupEffort);
     render();
   }));
-  root.querySelector("[data-terminal-custom-count]")?.addEventListener("change", (event) => { setupCount = normalizeCount(event.target.value); render(); });
+  root.querySelector("[data-terminal-custom-count]")?.addEventListener("change", (event) => {
+    const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
+    setupCount = Math.min(normalizeCount(event.target.value), capacity);
+    render();
+  });
   root.querySelectorAll("[data-terminal-workspace-mode]").forEach((button) => button.addEventListener("click", () => {
     setupWorkspaceMode = normalizeTerminalWorkspaceMode(button.dataset.terminalWorkspaceMode);
     localStorage.setItem(setupWorkspaceModeKey, setupWorkspaceMode);
+    render();
+  }));
+  root.querySelectorAll("[data-terminal-permission-mode]").forEach((button) => button.addEventListener("click", () => {
+    const requested = normalizeTerminalPermissionMode(button.dataset.terminalPermissionMode);
+    setupPermissionMode = terminalPermissionModeForSetup(selectedSetupModel(), setupTokenMode, requested);
+    localStorage.setItem(setupPermissionModeKey, setupPermissionMode);
     render();
   }));
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(root);
@@ -433,20 +531,20 @@ function bindTerminalTokenControls(root) {
 }
 
 function setTerminalTokenMode(target, mode) {
-  const next = mode === "provider" ? "provider" : "vibyra";
+  const next = ["vibyra", "provider"].includes(mode) ? mode : "vibyra";
   const model = target === "setup"
     ? (typeof selectedSetupModel === "function" ? selectedSetupModel() : null)
     : (typeof terminalModelForDisplay === "function" ? terminalModelForDisplay(findTerminal(target)?.model) : null);
   if (target === "setup") {
     setupTokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next;
-    if (setupTokenMode === "provider" && typeof terminalModelAvailableForTokenMode === "function" && !terminalModelAvailableForTokenMode(model, setupTokenMode)) {
+    if (setupTokenMode !== "vibyra" && typeof terminalModelAvailableForTokenMode === "function" && !terminalModelAvailableForTokenMode(model, setupTokenMode)) {
       const fallback = typeof terminalFirstModelForTokenMode === "function" ? terminalFirstModelForTokenMode(setupTokenMode) : null;
       if (fallback) {
         setupModel = fallback.key;
         localStorage.setItem(setupModelKey, setupModel);
         providerConnectNotice = "";
       } else {
-        providerConnectOpen = true;
+        providerConnectOpen = setupTokenMode === "provider";
         providerConnectNotice = "Connect an AI account before using My AI accounts.";
       }
     } else {

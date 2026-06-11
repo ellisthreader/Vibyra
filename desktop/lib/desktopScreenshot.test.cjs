@@ -2,19 +2,31 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   createDesktopScreenshot,
+  shellQuotedPath,
   timestampedPngName
 } = require("./desktopScreenshot.cjs");
 
 function createMocks(overrides = {}) {
   const calls = { clipboard: [], dialogs: [], registered: [], unregistered: [], writes: [] };
-  const image = { isEmpty: () => false };
+  const thumbnailImage = { toDataURL: () => "data:image/png;base64,dGh1bWI=" };
+  const image = {
+    getSize: () => ({ width: 1920, height: 1080 }),
+    isEmpty: () => false,
+    resize: (options) => {
+      calls.resizeOptions = options;
+      return thumbnailImage;
+    }
+  };
   const display = { id: 42, size: { width: 1440, height: 900 }, scaleFactor: 2 };
   const thumbnail = {
     isEmpty: () => false,
     toPNG: () => Buffer.from("png bytes")
   };
   const dependencies = {
-    clipboard: { writeImage: (value) => calls.clipboard.push(value) },
+    clipboard: {
+      write: (value) => calls.clipboard.push(value),
+      writeImage: (value) => calls.clipboard.push(value)
+    },
     desktopCapturer: {
       getSources: async (options) => {
         calls.captureOptions = options;
@@ -36,6 +48,10 @@ function createMocks(overrides = {}) {
       unregister: (key) => calls.unregistered.push(key)
     },
     nativeImage: {
+      createFromBuffer: (buffer) => {
+        calls.decodedBuffer = buffer;
+        return image;
+      },
       createFromDataURL: (dataUrl) => {
         calls.decodedDataUrl = dataUrl;
         return image;
@@ -49,6 +65,9 @@ function createMocks(overrides = {}) {
       }
     },
     now: () => new Date("2026-06-10T14:05:09.123Z"),
+    getScreenshotsDirectory: () => "/tmp/vibyra-screenshots",
+    mkdir: async (...args) => { calls.mkdir = args; },
+    readFile: async () => Buffer.from("recent"),
     screenAccessStatus: () => "granted",
     writeFile: async (filePath, contents) => calls.writes.push([filePath, contents]),
     ...overrides
@@ -87,6 +106,25 @@ test("copies PNG data URLs through Electron nativeImage and clipboard", () => {
   assert.throws(() => screenshots.copyPngDataUrl("data:image/png;base64,not valid"), {
     name: "TypeError"
   });
+});
+
+test("copies the original saved screenshot and rejects paths outside the library", async () => {
+  const { calls, dependencies, image } = createMocks({
+    readFile: async (filePath) => Buffer.from(filePath)
+  });
+  const screenshots = createDesktopScreenshot(dependencies);
+
+  await screenshots.copySavedScreenshot("/tmp/vibyra-screenshots/original.png");
+
+  assert.equal(calls.decodedBuffer.toString(), "/tmp/vibyra-screenshots/original.png");
+  assert.deepEqual(calls.clipboard, [{
+    image,
+    text: "'/tmp/vibyra-screenshots/original.png'"
+  }]);
+  await assert.rejects(
+    screenshots.copySavedScreenshot("/tmp/other.png"),
+    /outside the Vibyra screenshot library/
+  );
 });
 
 test("uses the single portal source and explains denied macOS access", async () => {
@@ -158,38 +196,31 @@ test("default F9 action captures and copies the display under the cursor", async
   assert.equal(calls.decodedDataUrl, "data:image/png;base64,cG5nIGJ5dGVz");
 });
 
-test("save dialog uses a timestamped PNG default and writes decoded bytes", async () => {
-  const parent = { id: "main-window" };
-  const { calls, dependencies } = createMocks({ getParentWindow: () => parent });
+test("save writes to the Vibyra screenshot library and returns tray metadata", async () => {
+  const { calls, dependencies } = createMocks();
   const screenshots = createDesktopScreenshot(dependencies);
 
   const result = await screenshots.savePngDataUrl("data:image/png;base64,c2F2ZWQ=");
 
-  assert.deepEqual(result, { canceled: false, filePath: "/tmp/screenshot.png" });
-  assert.equal(calls.dialogs[0][0], parent);
-  assert.equal(
-    calls.dialogs[0][1].defaultPath,
-    "Vibyra-Screenshot-2026-06-10-14-05-09Z.png"
-  );
-  assert.equal(calls.writes[0][0], "/tmp/screenshot.png");
+  assert.equal(result.filePath, "/tmp/vibyra-screenshots/Vibyra-Screenshot-2026-06-10-14-05-09-123Z.png");
+  assert.equal(result.name, "Vibyra-Screenshot-2026-06-10-14-05-09-123Z.png");
+  assert.equal(result.thumbnailDataUrl, "data:image/png;base64,dGh1bWI=");
+  assert.deepEqual(calls.mkdir, ["/tmp/vibyra-screenshots", { recursive: true }]);
+  assert.equal(calls.writes[0][0], result.filePath);
   assert.equal(calls.writes[0][1].toString(), "saved");
-});
-
-test("save cancellation does not write a file", async () => {
-  const { calls, dependencies } = createMocks({
-    dialog: { showSaveDialog: async () => ({ canceled: true }) }
-  });
-  const screenshots = createDesktopScreenshot(dependencies);
-
-  assert.deepEqual(await screenshots.savePngDataUrl("data:image/png;base64,eA=="), {
-    canceled: true
-  });
-  assert.deepEqual(calls.writes, []);
+  assert.deepEqual(calls.resizeOptions, { width: 320, quality: "good" });
 });
 
 test("timestamped filename is deterministic", () => {
   assert.equal(
     timestampedPngName(new Date("2026-01-02T03:04:05.999Z")),
-    "Vibyra-Screenshot-2026-01-02-03-04-05Z.png"
+    "Vibyra-Screenshot-2026-01-02-03-04-05-999Z.png"
+  );
+});
+
+test("saved screenshot paths are shell-safe", () => {
+  assert.equal(
+    shellQuotedPath("/tmp/user's screenshots/$capture.png"),
+    "'/tmp/user'\\''s screenshots/$capture.png'"
   );
 });

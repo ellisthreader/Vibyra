@@ -20,7 +20,7 @@ async function requestTerminalVoiceReply(prompt, terminal, generation) {
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
   const reply = await terminalVoiceResultText(result, actionContextScope);
   if (!terminalVoiceGenerationCurrent(generation)) throw new Error("Voice request cancelled.");
-  return reply;
+  return { reply, result };
 }
 
 function terminalVoiceProfileContext() {

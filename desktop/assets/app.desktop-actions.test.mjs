@@ -109,7 +109,7 @@ test("desktop actions match provider-qualified Pro model aliases", async () => {
   assert.match(summary, /Opening 5 GPT-5\.5 Pro terminals/);
 });
 
-test("desktop actions do not claim full access for OpenRouter wrapper models", async () => {
+test("desktop actions launch supported provider models with full access", async () => {
   const calls = [];
   const context = actionContext({
     createTerminals: (...args) => calls.push(args),
@@ -127,8 +127,9 @@ test("desktop actions do not claim full access for OpenRouter wrapper models", a
     projectId: "project-1"
   }]);
 
-  assert.equal(summary, "Full-access launches are currently supported only for Codex terminals.");
-  assert.deepEqual(calls, []);
+  assert.match(summary, /Opening 1 GPT-5\.5 Pro terminal with full access/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][2].permissionMode, "full");
 });
 
 test("desktop batch tasks assign transient prompts without dispatching input early", async () => {
@@ -607,18 +608,18 @@ test("desktop actions relaunch all Codex terminals with full permissions", async
     terminalId: ""
   }]);
 
-  assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
+  assert.equal(summary, "Relaunched 2 terminals with full access.");
   assert.equal(created.length, 2);
   assert.deepEqual(JSON.parse(JSON.stringify(created.map((item) => item.options))), [
-    { effort: "xhigh", permissionMode: "full", projectId: "saas", tokenMode: "provider" },
+    { effort: "xhigh", permissionMode: "full", projectId: "saas", tokenMode: "vibyra" },
     { effort: "high", permissionMode: "full", projectId: "saas", tokenMode: "provider" }
   ]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
-  assert.deepEqual(context.terminals.map((terminal) => terminal.tokenMode), ["provider", "provider"]);
+  assert.deepEqual(context.terminals.map((terminal) => terminal.tokenMode), ["provider", "vibyra"]);
   assert.equal(context.activeTerminalId, "new-1");
 });
 
-test("desktop permissions safely convert compatible OpenAI wrappers to Codex", async () => {
+test("desktop permissions preserve OpenAI wrapper models and token sources", async () => {
   const created = [];
   let confirmation = "";
   const context = actionContext({
@@ -632,7 +633,7 @@ test("desktop permissions safely convert compatible OpenAI wrappers to Codex", a
       { key: "openai/gpt-5.5-pro", label: "GPT-5.5 Pro", provider: "openai" }
     ],
     createTerminal(model, shouldRender, options) {
-      const terminal = { id: `new-${created.length + 1}`, agent: "codex", model, ...options };
+      const terminal = { id: `new-${created.length + 1}`, agent: "vibyra", model, ...options };
       created.push({ model, shouldRender, options, terminal });
       context.terminals.unshift(terminal);
       context.activeTerminalId = terminal.id;
@@ -653,29 +654,35 @@ test("desktop permissions safely convert compatible OpenAI wrappers to Codex", a
     permissionMode: "full"
   }]);
 
-  assert.equal(summary, "Relaunched 2 Codex terminals with full access.");
-  assert.match(confirmation, /switch to the compatible Codex CLI model/);
-  assert.deepEqual(created.map((item) => item.model), ["gpt-5.5", "gpt-5.5"]);
-  assert.deepEqual(created.map((item) => item.options.tokenMode), ["provider", "provider"]);
-  assert.deepEqual(context.terminals.map((terminal) => terminal.title), ["GPT-5.5 1", "GPT-5.5 2"]);
+  assert.equal(summary, "Relaunched 2 terminals with full access.");
+  assert.doesNotMatch(confirmation, /switch to the compatible Codex CLI model/);
+  assert.deepEqual(created.map((item) => item.model), ["openai/gpt-5.5-pro", "openai/gpt-5.5-pro"]);
+  assert.deepEqual(created.map((item) => item.options.tokenMode), ["vibyra", "provider"]);
+  assert.deepEqual(context.terminals.map((terminal) => terminal.title), ["GPT-5.5 Pro 1", "GPT-5.5 Pro 2"]);
   assert.deepEqual(context.terminals.map((terminal) => terminal.permissionMode), ["full", "full"]);
 });
 
-test("desktop permissions keep non-OpenAI wrappers blocked", async () => {
-  let fetchCalls = 0;
+test("desktop permissions relaunch Claude with its original model and token source", async () => {
+  const created = [];
   const context = actionContext({
     terminals: [{
       id: "one",
       title: "Claude Sonnet",
       agent: "vibyra",
       model: "anthropic/claude-sonnet-4",
-      permissionMode: "standard"
+      permissionMode: "standard",
+      tokenMode: "vibyra"
     }],
     modelChoices: () => [
       { key: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4", provider: "claude" }
     ],
+    createTerminal(model, shouldRender, options) {
+      const terminal = { id: "new-claude", agent: "vibyra", model, ...options };
+      created.push({ model, options });
+      context.terminals.unshift(terminal);
+      return terminal;
+    },
     fetch: async () => {
-      fetchCalls += 1;
       return jsonResponse({ ok: true, closed: 1 });
     }
   });
@@ -686,12 +693,14 @@ test("desktop permissions keep non-OpenAI wrappers blocked", async () => {
     permissionMode: "full"
   }]);
 
-  assert.equal(summary, "Full access requires a Codex-compatible OpenAI terminal.");
-  assert.equal(fetchCalls, 0);
+  assert.equal(summary, "Relaunched 1 terminal with full access.");
+  assert.equal(created[0].model, "anthropic/claude-sonnet-4");
+  assert.equal(created[0].options.tokenMode, "vibyra");
+  assert.equal(created[0].options.permissionMode, "full");
 });
 
-test("desktop permissions do not close terminals when Codex is unavailable", async () => {
-  let fetchCalls = 0;
+test("desktop permissions do not depend on Codex availability for provider models", async () => {
+  const created = [];
   const context = actionContext({
     terminals: [{
       id: "one",
@@ -707,8 +716,13 @@ test("desktop permissions do not close terminals when Codex is unavailable", asy
     providerAccounts: {
       codex: { available: false, connected: false }
     },
+    createTerminal(model, shouldRender, options) {
+      const terminal = { id: "new-wrapper", agent: "vibyra", model, ...options };
+      created.push({ model, options });
+      context.terminals.unshift(terminal);
+      return terminal;
+    },
     fetch: async () => {
-      fetchCalls += 1;
       return jsonResponse({ ok: true, closed: 1 });
     }
   });
@@ -719,8 +733,8 @@ test("desktop permissions do not close terminals when Codex is unavailable", asy
     permissionMode: "full"
   }]);
 
-  assert.match(summary, /Codex CLI must be installed and signed in/);
-  assert.equal(fetchCalls, 0);
+  assert.equal(summary, "Relaunched 1 terminal with full access.");
+  assert.equal(created[0].model, "openai/gpt-5.5-pro");
 });
 
 test("desktop permission relaunch leaves terminals open when their model is locked", async () => {
@@ -841,6 +855,9 @@ function actionContext(overrides = {}) {
     syncCalls: 0,
     async syncPtyTerminals() {
       context.syncCalls += 1;
+    },
+    terminalFullAccessSupported(model) {
+      return String(model?.key || "").toLowerCase() !== "auto";
     },
     terminalProviderKeyForModel: (model) => model.provider,
     terminals: [],

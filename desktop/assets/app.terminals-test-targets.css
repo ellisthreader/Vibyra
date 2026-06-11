@@ -9,7 +9,7 @@
   padding-left: 9px;
 }
 .terminal-test-app-control[hidden] { display: none; }
-.terminal-test-app-control svg {
+.terminal-test-app-control > svg {
   color: var(--terminal-dim, #918ca1);
   flex: 0 0 14px;
   height: 14px;

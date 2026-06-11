@@ -24,12 +24,11 @@
   border-radius: 5px;
   color: var(--terminal-dim, #918ca1);
   display: inline-flex;
-  gap: 6px;
   height: 30px;
   justify-content: center;
   margin-right: 8px;
-  min-width: 30px;
-  padding: 0 7px;
+  padding: 0;
+  width: 30px;
 }
 .terminal-model-cli-download svg {
   height: 16px;
@@ -42,8 +41,6 @@
 .terminal-model-cli-download.installing {
   color: var(--terminal-text, #eeeaf8);
   cursor: wait;
-  font-size: 10px;
-  font-weight: 700;
   opacity: 1;
 }
 .terminal-model-download-spinner {
@@ -53,36 +50,6 @@
   height: 14px;
   width: 14px;
   animation: terminal-model-download-spin 720ms linear infinite;
-}
-.terminal-model-runtime-status {
-  align-items: center;
-  color: var(--terminal-dim, #918ca1);
-  display: inline-flex;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 9.5px;
-  font-style: normal;
-  font-weight: 650;
-  gap: 6px;
-  letter-spacing: .015em;
-  line-height: 14px;
-  white-space: nowrap;
-}
-.terminal-model-runtime-status::before {
-  background: currentColor;
-  border-radius: 50%;
-  content: "";
-  height: 4px;
-  opacity: .72;
-  width: 4px;
-}
-.terminal-model-runtime-status.agent {
-  color: color-mix(in srgb, var(--terminal-accent, #8b5cff) 74%, var(--terminal-text, #eeeaf8));
-}
-.terminal-model-runtime-status.auto {
-  color: var(--terminal-muted, #aaa3b9);
-}
-.terminal-model-runtime-status.unavailable {
-  color: var(--terminal-disabled, #777181);
 }
 .terminal-model-option.unavailable {
   cursor: not-allowed;

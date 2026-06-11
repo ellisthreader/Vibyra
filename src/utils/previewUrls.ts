@@ -87,13 +87,14 @@ async function referencedAssetsLookRunnable(baseUrl: string, html: string) {
 
 function referencedPreviewAssetUrls(baseUrl: string, html: string) {
   const urls: string[] = [];
+  const documentBaseUrl = previewDocumentBaseUrl(baseUrl, html);
   const collect = (pattern: RegExp) => {
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(html)) !== null) {
       const raw = match[1] ?? "";
       if (!raw || /^(?:data:|blob:|mailto:|tel:|#)/i.test(raw)) continue;
       try {
-        urls.push(new URL(raw, baseUrl).toString());
+        urls.push(new URL(raw, documentBaseUrl).toString());
       } catch {
         urls.push(raw);
       }
@@ -102,6 +103,16 @@ function referencedPreviewAssetUrls(baseUrl: string, html: string) {
   collect(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi);
   collect(/<link\b(?=[^>]*\brel\s*=\s*["']?(?:stylesheet|modulepreload|preload))[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi);
   return uniqueValues(urls);
+}
+
+function previewDocumentBaseUrl(responseUrl: string, html: string) {
+  const baseHref = html.match(/<base\b[^>]*\bhref\s*=\s*(["'])([^"']+)\1[^>]*>/i)?.[2];
+  if (!baseHref) return responseUrl;
+  try {
+    return new URL(baseHref, responseUrl).toString();
+  } catch {
+    return responseUrl;
+  }
 }
 
 function isDevSourceModuleFailure(url: string, status: number) {

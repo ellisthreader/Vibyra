@@ -17,10 +17,10 @@ function terminalMemoryGraphHtml() {
     </div>
     <div class="terminal-memory-graph-canvas" data-terminal-memory-graph-canvas>
       <svg viewBox="0 0 ${terminalMemoryGraphSize.width} ${terminalMemoryGraphSize.height}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Project memory graph">
-        ${terminalMemoryGraphVisualsHtml(model)}
+          ${terminalMemoryGraphVisualsHtml(model)}
         <g data-terminal-memory-graph-scene transform="${transform}">
           <g class="terminal-memory-graph-edges">
-            ${model.edges.map((edge) => terminalMemoryGraphEdgeHtml(edge, model.positions)).join("")}
+            ${terminalMemoryGraphEdgesHtml(model)}
           </g>
           <g class="terminal-memory-graph-nodes">
             ${model.nodes.map((node) => terminalMemoryGraphNodeHtml(node, model)).join("")}
@@ -31,40 +31,6 @@ function terminalMemoryGraphHtml() {
   </section>`;
 }
 
-function terminalMemoryGraphModel(source) {
-  const nodes = Array.isArray(source) ? source.slice(0, 180) : [];
-  const edges = terminalMemoryGraphEdges(nodes);
-  return {
-    nodes,
-    edges,
-    positions: terminalMemoryGraphPositions(nodes, edges),
-    documents: nodes.filter((node) => node.type === "document").length,
-    degrees: terminalMemoryGraphDegrees(edges)
-  };
-}
-
-function terminalMemoryGraphEdges(nodes) {
-  const ids = new Set(nodes.map((node) => node.id));
-  const names = new Map();
-  nodes.forEach((node) => terminalMemoryGraphNames(node).forEach((name) => names.set(name, node.id)));
-  const edges = [];
-  nodes.forEach((node) => {
-    if (node.parentId && ids.has(node.parentId)) edges.push({ from: node.parentId, to: node.id, kind: "tree" });
-    if (node.type !== "document") return;
-    terminalMemoryGraphLinks(node.body).forEach((name) => {
-      const target = names.get(name);
-      if (target && target !== node.id) edges.push({ from: node.id, to: target, kind: "link" });
-    });
-  });
-  const seen = new Set();
-  return edges.filter((edge) => {
-    const key = [edge.from, edge.to].sort().join(":");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function terminalMemoryGraphNodeHtml(node, model) {
   const point = model.positions[node.id] || { x: 500, y: 360 };
   const selected = node.id === terminalMemoryState.selectedId;
@@ -72,7 +38,7 @@ function terminalMemoryGraphNodeHtml(node, model) {
   const radius = node.type === "folder" ? Math.min(11, 6.5 + degree * .38) : Math.min(8.5, 4 + degree * .3);
   const hub = node.type === "folder" || degree >= 5;
   const label = node.name.length > 28 ? `${node.name.slice(0, 27)}…` : node.name;
-  const cluster = terminalMemoryGraphCluster(node, model.nodes);
+  const cluster = model.clusters[node.id] || 0;
   return `<g class="terminal-memory-graph-node cluster-${cluster} ${node.type} ${hub ? "hub" : ""} ${selected ? "selected" : ""}" transform="translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})" data-terminal-memory-graph-node="${escapeAttribute(node.id)}" tabindex="0" role="button" aria-label="${escapeAttribute(node.name)}">
     ${terminalMemoryGraphNodeShapesHtml(node, radius, degree)}
     <text x="${(radius + 7).toFixed(1)}" y="4">${escapeHtml(label)}</text>
@@ -80,31 +46,53 @@ function terminalMemoryGraphNodeHtml(node, model) {
   </g>`;
 }
 
-function terminalMemoryGraphEdgeHtml(edge, positions) {
-  const from = positions[edge.from];
-  const to = positions[edge.to];
-  if (!from || !to) return "";
-  const selected = [edge.from, edge.to].includes(terminalMemoryState.selectedId);
-  return `<path class="${edge.kind} ${selected ? "selected" : ""}" d="${terminalMemoryGraphEdgePath(edge, from, to)}" data-terminal-memory-graph-edge data-from="${escapeAttribute(edge.from)}" data-to="${escapeAttribute(edge.to)}"></path>`;
+function terminalMemoryGraphEdgesHtml(model) {
+  const pathFor = (edges) => edges.map((edge) => {
+    const from = model.positions[edge.from];
+    const to = model.positions[edge.to];
+    return from && to ? terminalMemoryGraphEdgePath(edge, from, to) : "";
+  }).join("");
+  const tree = model.edges.filter((edge) => edge.kind === "tree");
+  const links = model.edges.filter((edge) => edge.kind === "link");
+  const selected = terminalMemoryState.selectedId
+    ? model.edges.filter((edge) => edge.from === terminalMemoryState.selectedId || edge.to === terminalMemoryState.selectedId)
+    : [];
+  return `<path class="tree edge-batch" d="${pathFor(tree)}"></path>
+    <path class="link edge-batch" d="${pathFor(links)}"></path>
+    <path class="selected" d="${pathFor(selected)}"></path>
+    <path class="focused" data-terminal-memory-graph-focus-edge d=""></path>`;
 }
 
 function bindTerminalMemoryGraphEvents(root) {
-  root.querySelectorAll("[data-terminal-memory-graph-node]").forEach((node) => {
-    const open = () => openTerminalMemoryGraphNode(node.dataset.terminalMemoryGraphNode);
-    node.addEventListener("click", open);
-    node.addEventListener("pointerenter", () => terminalMemoryGraphFocus(root, node.dataset.terminalMemoryGraphNode));
-    node.addEventListener("pointerleave", () => terminalMemoryGraphFocus(root));
-    node.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        open();
-      }
-    });
+  const graph = root.matches?.("[data-terminal-memory-graph]")
+    ? root
+    : root.querySelector("[data-terminal-memory-graph]");
+  if (!graph || graph.dataset.terminalMemoryGraphBound) return;
+  graph.dataset.terminalMemoryGraphBound = "1";
+  graph.addEventListener("click", (event) => {
+    const node = event.target.closest("[data-terminal-memory-graph-node]");
+    if (node) openTerminalMemoryGraphNode(node.dataset.terminalMemoryGraphNode);
+    const control = event.target.closest("[data-terminal-memory-graph-zoom]");
+    if (control) terminalMemoryGraphZoom(control.dataset.terminalMemoryGraphZoom);
   });
-  root.querySelectorAll("[data-terminal-memory-graph-zoom]").forEach((button) => {
-    button.addEventListener("click", () => terminalMemoryGraphZoom(button.dataset.terminalMemoryGraphZoom));
+  graph.addEventListener("pointerover", (event) => {
+    const node = event.target.closest("[data-terminal-memory-graph-node]");
+    if (!node || node.contains(event.relatedTarget)) return;
+    terminalMemoryGraphFocus(graph, node.dataset.terminalMemoryGraphNode);
   });
-  bindTerminalMemoryGraphViewport(root.querySelector("[data-terminal-memory-graph-canvas]"));
+  graph.addEventListener("pointerout", (event) => {
+    const node = event.target.closest("[data-terminal-memory-graph-node]");
+    if (!node || node.contains(event.relatedTarget)) return;
+    terminalMemoryGraphFocus(graph);
+  });
+  graph.addEventListener("keydown", (event) => {
+    const node = event.target.closest("[data-terminal-memory-graph-node]");
+    if (node && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      openTerminalMemoryGraphNode(node.dataset.terminalMemoryGraphNode);
+    }
+  });
+  bindTerminalMemoryGraphViewport(graph.querySelector("[data-terminal-memory-graph-canvas]"));
 }
 
 function bindTerminalMemoryGraphViewport(canvas) {
@@ -191,28 +179,4 @@ function openTerminalMemoryGraphNode(nodeId) {
   terminalMemorySelect(node.id);
   if (node.type === "document") terminalMemoryState.view = "notes";
   terminalMemoryRefresh();
-}
-
-function terminalMemoryGraphLinks(markdown) {
-  const found = [];
-  String(markdown || "").replace(/\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]/g, (_, name) => found.push(terminalMemoryGraphKey(name)));
-  String(markdown || "").replace(/\[[^\]]*\]\(([^)]+\.md)(?:#[^)]+)?\)/gi, (_, name) => found.push(terminalMemoryGraphKey(name)));
-  return found.filter(Boolean);
-}
-
-function terminalMemoryGraphNames(node) {
-  return [node.name, node.sourcePath].map(terminalMemoryGraphKey).filter(Boolean);
-}
-
-function terminalMemoryGraphKey(value) {
-  return String(value || "").replace(/\\/g, "/").split("/").pop().replace(/\.md$/i, "").trim().toLowerCase();
-}
-
-function terminalMemoryGraphDegrees(edges) {
-  const degrees = {};
-  edges.forEach((edge) => {
-    degrees[edge.from] = (degrees[edge.from] || 0) + 1;
-    degrees[edge.to] = (degrees[edge.to] || 0) + 1;
-  });
-  return degrees;
 }

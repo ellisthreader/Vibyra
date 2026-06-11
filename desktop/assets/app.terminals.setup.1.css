@@ -107,6 +107,14 @@
 .terminal-workspace-row button.recommended {
   border-color: rgba(139, 92, 255, 0.24);
 }
+.terminal-workspace-row button.danger.active {
+  background: rgba(239, 92, 116, 0.1);
+  border-color: rgba(239, 92, 116, 0.42);
+}
+.terminal-workspace-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
 .terminal-workspace-choice-title {
   align-items: center;
   display: flex;

@@ -1,12 +1,17 @@
 .screenshot-editor-host {
+  -webkit-app-region: no-drag;
   inset: 0;
+  isolation: isolate;
+  pointer-events: auto;
   position: fixed;
-  z-index: 260;
+  z-index: 1000;
 }
+.screenshot-editor-host[hidden] { display: none; }
 .screenshot-editor-host:has(.screenshot-editor[hidden]) {
   display: none;
 }
 .screenshot-editor {
+  -webkit-app-region: no-drag;
   background: #07070a;
   color: #f8f7fe;
   display: grid;
@@ -14,6 +19,11 @@
   height: 100%;
   min-height: 0;
   width: 100%;
+}
+.screenshot-editor button,
+[data-screenshot-canvas] {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
 }
 .screenshot-editor[hidden] { display: none; }
 .screenshot-header,

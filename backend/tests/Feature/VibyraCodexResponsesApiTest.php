@@ -358,6 +358,53 @@ class VibyraCodexResponsesApiTest extends TestCase
         $this->assertSame(3, $reservation->meta['quota_reserved_credits']);
     }
 
+    public function test_terminal_reduces_output_cap_to_fit_remaining_credit_balance(): void
+    {
+        config(['services.openrouter.key' => 'test-openrouter-key']);
+        $this->setTerminalModelCapabilities([
+            'x-ai/grok-build-0.1' => [
+                'supported_parameters' => ['tools'],
+                'pricing' => ['prompt' => '0.000001', 'completion' => '0.000002'],
+            ],
+        ]);
+        $history = [];
+        $stack = HandlerStack::create(new MockHandler([
+            new GuzzleResponse(200, ['Content-Type' => 'application/json'], json_encode([
+                'id' => 'chat_affordable_grok',
+                'choices' => [[
+                    'message' => ['role' => 'assistant', 'content' => 'Hello.'],
+                ]],
+                'usage' => [
+                    'prompt_tokens' => 9000,
+                    'completion_tokens' => 20,
+                    'cost' => 0.00904,
+                ],
+            ])),
+        ]));
+        $stack->push(Middleware::history($history));
+        app()->instance('vibyra.openrouter_chat_client', new GuzzleClient(['handler' => $stack]));
+        $token = $this->codexUserToken('affordable-grok-terminal@example.com');
+        User::where('email', 'affordable-grok-terminal@example.com')->update([
+            'plan' => 'free',
+            'credits_balance' => 2,
+            'weekly_credits_used' => 48,
+            'weekly_credits_reset_at' => now()->addDays(6),
+        ]);
+
+        $response = $this->post('/api/codex/responses', [
+            'model' => 'x-ai/grok-build-0.1',
+            'input' => str_repeat('a', 35_000),
+            'max_output_tokens' => 2000,
+            'stream' => true,
+        ], ['Authorization' => "Bearer {$token}"]);
+
+        $response->assertOk();
+        $this->assertCount(1, $history);
+        $payload = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertGreaterThanOrEqual(800, $payload['max_tokens'] ?? 0);
+        $this->assertLessThan(2000, $payload['max_tokens'] ?? 2000);
+    }
+
     public function test_codex_responses_rejects_models_outside_the_plan(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);
@@ -616,10 +663,11 @@ class VibyraCodexResponsesApiTest extends TestCase
     private function setTerminalModelCapabilities(array $models): void
     {
         $catalog = [];
-        foreach ($models as $slug => $supportedParameters) {
+        foreach ($models as $slug => $model) {
+            $configured = array_key_exists('supported_parameters', $model);
             $catalog[$slug] = [
-                'pricing' => [],
-                'supported_parameters' => $supportedParameters,
+                'pricing' => $configured ? ($model['pricing'] ?? []) : [],
+                'supported_parameters' => $configured ? $model['supported_parameters'] : $model,
             ];
         }
 

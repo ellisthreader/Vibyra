@@ -12,8 +12,11 @@ test("terminal voice input uses a distinct global shortcut and captures the sele
   assert.doesNotMatch(source, /event\.altKey/);
   assert.doesNotMatch(source, /event\.shiftKey/);
   assert.match(source, /terminalVoiceInputState\.targetId = terminal\.id/);
-  assert.match(source, /deliverTerminalVoiceInput\(result\.text, terminalVoiceInputState\.targetId\)/);
-  assert.match(source, /terminalCompanionInsertIntoTerminal\(targetId, prompt, true\)/);
+  assert.match(source, /desktopPromptTranscriptMetadata\("terminal-dictation"/);
+  assert.match(source, /desktopPromptTranscriptTarget\(terminalVoiceInputState\.targetId\)/);
+  assert.match(source, /deliverTerminalVoiceInput\([\s\S]*result\.transcript/);
+  assert.match(source, /transcriptSource: "terminal-dictation"/);
+  assert.match(source, /transcriptTurn/);
   assert.match(source, /terminalVoiceInputState\.phase === "starting"[\s\S]*cancelTerminalVoiceInput\(\)/);
   assert.match(source, /60_000/);
 });
@@ -35,8 +38,8 @@ test("terminal voice input delivers to its captured target even if selection cha
     navigator: {},
     setTimeout,
     clearTimeout,
-    terminalCompanionInsertIntoTerminal(id, text, submit) {
-      delivered.push({ id, text, submit });
+    terminalCompanionInsertIntoTerminal(id, text, submit, options) {
+      delivered.push({ id, text, submit, options });
       return true;
     },
     window: { addEventListener() {} }
@@ -45,7 +48,16 @@ test("terminal voice input delivers to its captured target even if selection cha
   const terminal = vm.runInContext(`deliverTerminalVoiceInput("Review this change.", "terminal-1")`, context);
 
   assert.equal(terminal.id, "terminal-1");
-  assert.deepEqual(delivered, [{ id: "terminal-1", text: "Review this change.", submit: true }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(delivered)), [{
+    id: "terminal-1",
+    text: "Review this change.",
+    submit: true,
+    options: {
+      logPrompt: false,
+      transcriptSource: "terminal-dictation",
+      transcriptTurn: null
+    }
+  }]);
 });
 
 test("terminal voice input has a transient accessible listening overlay", () => {
@@ -56,5 +68,9 @@ test("terminal voice input has a transient accessible listening overlay", () => 
   assert.match(source, /aria-live/);
   assert.match(source, /F8 to send/);
   assert.match(app, /app\.terminals-voice-input\.css/);
+  assert.ok(
+    app.indexOf("app.prompt-transcript.js")
+      < app.indexOf("app.terminals-voice-input.js")
+  );
   assert.match(app, /app\.terminals-voice-input\.js/);
 });

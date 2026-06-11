@@ -7,6 +7,7 @@ const controlsSource = await readFile(new URL("./app.terminals-controls.js", imp
 const runtimeSource = await readFile(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
 const groupSource = await readFile(new URL("./app.terminals-project-groups.js", import.meta.url), "utf8");
 const styles = await readFile(new URL("./app.terminals-setup-flow.css", import.meta.url), "utf8");
+const setupStyles = await readFile(new URL("./app.terminals.setup.2.css", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
 
 test("terminal setup opens with a dedicated Solo or Team choice", () => {
@@ -14,8 +15,8 @@ test("terminal setup opens with a dedicated Solo or Team choice", () => {
   assert.match(ptySource, /terminalSetupStep === "mode"/);
   assert.match(ptySource, /choice\("solo"/);
   assert.match(ptySource, /choice\("team"/);
-  assert.match(ptySource, /Best for focused builds, fixes, and quick changes/);
-  assert.match(ptySource, /Best for larger work split across multiple agents/);
+  assert.match(ptySource, /Choose one or more independent agents/);
+  assert.match(ptySource, /Split one goal into coordinated agent roles/);
   assert.doesNotMatch(ptySource, /terminal-setup-mode-arrow/);
   assert.match(ptySource, /How do you want to work\?/);
   assert.match(controlsSource, /\[data-terminal-setup-mode\]/);
@@ -40,32 +41,59 @@ test("setup progress sits above the centered setup card and never enters the nav
   assert.match(styles, /box-shadow: 0 0 0 4px/);
 });
 
-test("combined setup offers one through twelve with the real grid preview", () => {
-  assert.match(ptySource, /Array\.from\(\{ length: maxTerminals \}/);
-  assert.match(ptySource, /terminalSetupGridPreview\(launchCount\)/);
-  assert.match(ptySource, /terminalGridMeta\(total\)/);
-  assert.match(ptySource, /terminal-setup-grid-preview/);
-  assert.match(styles, /--setup-preview-cols/);
-  assert.match(styles, /--setup-preview-rows/);
+test("Solo restores batch count and grid preview while Team owns role count", () => {
+  assert.match(ptySource, /team \? terminalTeamSetupHtml\(launchCount, setupCapacity\) : ""/);
+  assert.match(ptySource, /team \? "" : terminalSoloSetupHtml\(launchCount, setupCapacity\)/);
+  assert.match(ptySource, /function terminalSoloSetupHtml/);
+  assert.match(ptySource, /terminalSetupGridPreview\(total\)/);
+  assert.match(ptySource, /\[1, 2, 3, 4, 6, 12\]/);
+  assert.match(ptySource, /data-terminal-custom-count/);
+  assert.match(controlsSource, /createTerminals\(count, setupModel, launchOptions\)/);
+  assert.match(controlsSource, /Math\.max\(2, Math\.min\(4, count, capacity\)\)/);
+  assert.match(controlsSource, /Math\.min\(count, capacity\)/);
 });
 
 test("combined setup keeps reasoning visible and token settings in advanced options", () => {
-  assert.match(ptySource, /Terminal amount/);
   assert.match(ptySource, /<p>Project<\/p>/);
   assert.match(ptySource, /<p>Model<\/p>/);
-  assert.doesNotMatch(ptySource, /What are we building\?|data-terminal-objective/);
+  assert.doesNotMatch(ptySource, /data-terminal-objective/);
+  assert.match(ptySource, /terminalTeamSetupHtml/);
   assert.match(ptySource, /data-terminal-setup-go="\$\{step\.key\}"/);
   assert.doesNotMatch(ptySource, /data-terminal-setup-go="details"/);
   assert.doesNotMatch(ptySource, /Team workspace|Set up your terminals/);
   assert.match(ptySource, /const effort = terminalSetupEffortPicker\(model\)/);
   assert.match(ptySource, /\$\{effort\}/);
   assert.match(ptySource, /Advanced options/);
-  assert.match(ptySource, /<details class="terminal-setup-advanced">/);
+  assert.match(ptySource, /data-terminal-advanced-toggle/);
+  assert.match(ptySource, /aria-expanded="\$\{terminalSetupAdvancedOpen\}"/);
   assert.match(ptySource, /const advanced = terminalTokenSourcePanel/);
   assert.doesNotMatch(ptySource, /const advanced = `\$\{terminalSetupEffortPicker/);
-  assert.doesNotMatch(controlsSource, /data-terminal-objective|initialPrompt:/);
+  assert.doesNotMatch(controlsSource, /data-terminal-objective/);
+  assert.match(controlsSource, /await requestTerminalTeamPlan/);
+  assert.match(controlsSource, /createTerminalTeam\(teamPlan, setupModel/);
+  assert.match(controlsSource, /previewTerminalTeamPlan\(root, teamPlan\)/);
   assert.match(styles, /\.terminal-setup \.terminal-project-select/);
   assert.match(styles, /background: transparent/);
+});
+
+test("advanced setup options animate open and closed while preserving setup state", () => {
+  assert.match(ptySource, /let terminalSetupAdvancedOpen = false/);
+  assert.match(controlsSource, /terminalSetupAdvancedOpen = !terminalSetupAdvancedOpen/);
+  assert.match(controlsSource, /classList\.toggle\("open", terminalSetupAdvancedOpen\)/);
+  assert.match(setupStyles, /\.terminal-setup-advanced-panel\s*\{[\s\S]*grid-template-rows: 0fr/);
+  assert.match(setupStyles, /\.terminal-setup-advanced\.open \.terminal-setup-advanced-panel\s*\{[\s\S]*grid-template-rows: 1fr/);
+  assert.match(setupStyles, /@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("combined setup applies one truthful access mode to the whole terminal batch", () => {
+  assert.match(ptySource, /terminalFullAccessSupported/);
+  assert.match(ptySource, /\["codex", "claude", "gemini", "qwen", "kimi", "mistral", "grok", "vibyra-agent"\]\.includes\(runtime\)/);
+  assert.match(ptySource, /<p>Access<\/p>/);
+  assert.match(ptySource, /Keeps approvals and workspace sandboxing enabled/);
+  assert.match(ptySource, /Disables approvals and sandboxing for every terminal in this batch/);
+  assert.match(controlsSource, /permissionMode: terminalPermissionModeForSetup/);
+  assert.match(controlsSource, /\[data-terminal-permission-mode\]/);
+  assert.match(controlsSource, /localStorage\.setItem\(setupPermissionModeKey, setupPermissionMode\)/);
 });
 
 test("every new batch resets to the mode choice and loads its focused styles", () => {

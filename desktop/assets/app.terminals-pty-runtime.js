@@ -2,6 +2,20 @@ async function startPtyTerminal(terminal) {
   if (!terminal || !findTerminal(terminal.id)) return;
   const size = backendPtySize(terminal, initialPtyStartSize(terminal.id));
   const initialPrompt = normalizeInitialTerminalPrompt(terminal.initialPrompt);
+  let teamFields = {};
+  try {
+    teamFields = typeof terminalTeamRequestFields === "function"
+      ? terminalTeamRequestFields(terminal, terminals)
+      : {};
+  } catch (error) {
+    terminal.pending = false;
+    terminal.ptyStatus = "exited";
+    terminal.providerState = "exited";
+    terminal.notice = error instanceof Error ? error.message : "This Team record is incomplete.";
+    saveTerminals();
+    if (activePage === "terminals") render();
+    return;
+  }
   const assignmentId = initialPrompt
     ? (terminal.initialAssignmentId
       || (typeof terminalTaskActivityStart === "function"
@@ -12,7 +26,7 @@ async function startPtyTerminal(terminal) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
-    const response = await fetch("/desktop/pty-terminals", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, cols: size.cols, rows: size.rows, ...(initialPrompt ? { initialPrompt, assignmentId } : {}) }) });
+    const response = await fetch("/desktop/pty-terminals", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, ...teamFields, cols: size.cols, rows: size.rows, ...(initialPrompt ? { initialPrompt, assignmentId } : {}) }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.session) throw new Error(result.error || "Terminal failed to start.");
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
@@ -82,9 +96,12 @@ async function submitInitialPtyPrompt(terminal) {
       ? terminalTaskActivityStart(terminal, prompt)
       : `assignment-${terminal.id}-${Date.now()}`);
   terminal.initialAssignmentId = assignmentId;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
     const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/assign`, {
       method: "POST",
+      signal: controller.signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ assignmentId, prompt })
     });
@@ -109,8 +126,11 @@ async function submitInitialPtyPrompt(terminal) {
     if (typeof terminalTaskActivityFailed === "function") {
       terminalTaskActivityFailed(terminal, assignmentId);
     }
-    throw error;
+    throw error?.name === "AbortError"
+      ? new Error("The terminal did not accept the task in time. Try sending it again.")
+      : error;
   } finally {
+    clearTimeout(timeout);
     delete terminal.initialPrompt;
     delete terminal.initialAssignmentId;
   }
@@ -205,7 +225,7 @@ function handlePtySocketMessage(id, raw) {
   try { payload = JSON.parse(raw); } catch { return; }
   let shouldRender = false;
   if (payload.type === "session" && payload.session) {
-    const localOutput = String(terminal.output || "");
+    const localOutput = payload.replaceOutput ? "" : String(terminal.output || "");
     const patch = ptySessionPatch(payload.session);
     patch.output = mergePtySnapshotOutput(localOutput, patch.output);
     Object.assign(terminal, patch);
@@ -224,6 +244,9 @@ function handlePtySocketMessage(id, raw) {
     terminal.ptyStatus = "exited";
     terminal.pending = false;
     terminal.exitCode = payload.code ?? null;
+    if (typeof terminalPtyTranscriptExit === "function") {
+      terminalPtyTranscriptExit(terminal, terminal.exitCode);
+    }
     shouldRender = true;
   }
   if (shouldRender) schedulePtyRender(terminal.id);
@@ -370,6 +393,7 @@ function bindPtyTopbarControls() {
 function bindPtyInput(node) {
   if (!node || node.dataset.ptyInputBound) return;
   node.dataset.ptyInputBound = "1";
+  if (typeof bindTerminalPathDrop === "function") bindTerminalPathDrop(node);
   if (!window.Terminal) {
     node.addEventListener("keydown", (event) => {
       if (window.Terminal) return;
@@ -404,7 +428,12 @@ function handlePtyKeydown(event, id) {
   sendPtyInput(id, input);
 }
 
-function sendPtyInput(id, input) {
+function sendPtyInput(id, input, options = {}) {
+  const prompts = options.logPrompt === false ? [] : terminalPtyCompletedPrompts(id, input);
+  queueTerminalPtyInput(id, prompts, () => sendPtyInputNow(id, input));
+}
+
+function sendPtyInputNow(id, input) {
   const terminal = findTerminal(id);
   if (terminal && /[\r\n]/.test(input)) markTerminalProviderBusy(terminal);
   const socket = terminalPtySockets[id];
@@ -434,12 +463,14 @@ function appendPtyOutput(terminal, data, meta = {}) {
   terminal.pending = false;
   applyTerminalProviderActivity(terminal, data);
   terminal.updatedAt = Date.now();
+  if (typeof terminalPtyTranscriptOutput === "function") {
+    terminalPtyTranscriptOutput(terminal, data, previousState);
+  }
   if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data, meta);
   const xterm = terminalXterms[terminal.id];
   if (xterm?.element?.isConnected) {
     xterm.write(terminalDisplayOutput(terminal, data), () => {
-      applyPtyBottomOverscan(terminal, xterm);
-      xterm.scrollToBottom?.();
+      positionPtyViewport(terminal, xterm);
     });
     terminalXtermSnapshots[terminal.id] = terminal.output;
   }
@@ -605,13 +636,25 @@ function writePtySnapshot(id, xterm, output) {
   xterm.write(terminalDisplayOutput(findTerminal(id), output), () => {
     terminalXtermReplayWrites[id] = Math.max(0, (terminalXtermReplayWrites[id] || 1) - 1);
     if (!terminalXtermReplayWrites[id]) delete terminalXtermReplayWrites[id];
-    applyPtyBottomOverscan(findTerminal(id), xterm);
-    xterm.scrollToBottom?.();
+    positionPtyViewport(findTerminal(id), xterm);
   });
 }
 
 function terminalDisplayOutput(_terminal, value) {
   return value;
+}
+
+function terminalAutoDeciding(terminal) {
+  return Boolean(terminal?.autoDeciding);
+}
+
+function positionPtyViewport(terminal, xterm) {
+  applyPtyBottomOverscan(terminal, xterm);
+  if (terminalAutoDeciding(terminal)) {
+    xterm.scrollToTop?.();
+    return;
+  }
+  xterm.scrollToBottom?.();
 }
 
 function focusPtyTerminal(id) {
@@ -625,7 +668,7 @@ function focusPtyTerminal(id) {
   }
   const xterm = terminalXterms[id];
   if (xterm) {
-    xterm.scrollToBottom?.();
+    positionPtyViewport(terminal, xterm);
     xterm.focus?.();
     return;
   }
@@ -772,6 +815,11 @@ function terminalPtyBottomInsetForGeometry(availableHeight, cellHeight, rows) {
 function applyPtyBottomOverscan(terminal, xterm, measuredSize = null) {
   const element = xterm?.element;
   if (!element) return;
+  if (terminalAutoDeciding(terminal)) {
+    element.style.height = "";
+    element.style.transform = "";
+    return;
+  }
   const rows = terminalPtyBottomOverscanRows(terminal);
   const cellHeight = Number(xterm?._core?._renderService?.dimensions?.css?.cell?.height) || 0;
   const extraHeight = rows * cellHeight;
@@ -1027,8 +1075,8 @@ function terminalXtermTheme(node) {
     background: css("--terminal-bg", "#08080c"),
     foreground: css("--terminal-copy", "#f7f4ff"),
     cursor: css("--terminal-text", "#f7f4ff"),
-    selectionBackground: "rgba(109, 59, 255, 0.22)",
-    selectionInactiveBackground: "rgba(109, 59, 255, 0.14)",
+    selectionBackground: css("--terminal-selection", "rgba(109, 59, 255, 0.22)"),
+    selectionInactiveBackground: css("--terminal-selection-inactive", "rgba(109, 59, 255, 0.14)"),
     black: css("--terminal-ansi-black", "#24242d"),
     red: css("--terminal-ansi-red", "#ff6b81"),
     green: css("--terminal-ansi-green", "#55d98b"),
@@ -1060,13 +1108,21 @@ function applyTerminalXtermThemes() {
 }
 
 let terminalThemeObserver = null;
+let terminalThemeMedia = null;
 function ensureTerminalThemeObserver() {
-  if (terminalThemeObserver || !document.body || typeof MutationObserver !== "function") return;
-  terminalThemeObserver = new MutationObserver(() => {
+  if (!document.body) return;
+  const scheduleTheme = () => {
     const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
     schedule(applyTerminalXtermThemes);
-  });
-  terminalThemeObserver.observe(document.body, { attributes: true, attributeFilter: ["data-desktop-theme"] });
+  };
+  if (!terminalThemeObserver && typeof MutationObserver === "function") {
+    terminalThemeObserver = new MutationObserver(scheduleTheme);
+    terminalThemeObserver.observe(document.body, { attributes: true, attributeFilter: ["data-desktop-theme"] });
+  }
+  if (!terminalThemeMedia && typeof window.matchMedia === "function") {
+    terminalThemeMedia = window.matchMedia("(prefers-color-scheme: light)");
+    terminalThemeMedia.addEventListener?.("change", scheduleTheme);
+  }
 }
 
 ensureTerminalThemeObserver();
@@ -1108,10 +1164,25 @@ function ptySessionPatch(session) {
     model: String(session.model || ""),
     autoRouting: session.autoRouting || null,
     autoAwaitingTask: Boolean(session.autoAwaitingTask),
+    autoDeciding: Boolean(session.autoDeciding),
     launchPlan: session.launchPlan || null,
     effort: normalizeTerminalEffort(session.reasoningEffort),
     permissionMode: normalizeTerminalPermissionMode(session.permissionMode),
-    tokenMode: String(session.tokenMode || "vibyra") === "provider" ? "provider" : "vibyra",
+    teamId: String(session.teamId || ""),
+    teamSize: Math.max(0, Math.min(4, Number(session.teamSize) || 0)),
+    teamGoal: String(session.teamGoal || "").slice(0, 1200),
+    teamRole: String(session.teamRole || "").slice(0, 40),
+    teamRoleKey: String(session.teamRoleKey || "").slice(0, 40),
+    teamPhase: String(session.teamPhase || "").slice(0, 40),
+    teamCapability: String(session.teamCapability || "").slice(0, 40),
+    teamRoleContractVersion: Math.max(0, Number(session.teamRoleContractVersion) || 0),
+    teamRolePolicyHash: String(session.teamRolePolicyHash || "").slice(0, 128),
+    teamPlannerMode: String(session.teamPlannerMode || "").slice(0, 40),
+    teamPlannerModel: String(session.teamPlannerModel || "").slice(0, 120),
+    teamPlannerFallbackReason: String(session.teamPlannerFallbackReason || "").slice(0, 80),
+    tokenMode: ["vibyra", "provider"].includes(String(session.tokenMode || ""))
+      ? String(session.tokenMode)
+      : "vibyra",
     projectId: String(session.projectId || ""),
     workspaceMode: normalizeTerminalWorkspaceMode(session.workspaceMode),
     branchName: String(session.branchName || ""),

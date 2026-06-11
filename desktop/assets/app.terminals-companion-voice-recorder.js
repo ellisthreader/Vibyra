@@ -82,15 +82,30 @@ function handleTerminalVoiceResult(event) {
   if (finalText) terminalVoiceSetStatus("Transcribing");
 }
 
-function finishTerminalVoiceRecognition(generation) {
+async function finishTerminalVoiceRecognition(generation) {
   if (!terminalVoiceGenerationCurrent(generation)) return;
   const text = terminalVoiceState.captureText;
   terminalVoiceState.recognition = null;
   terminalVoiceState.starting = false;
   terminalVoiceState.listening = false;
   terminalVoiceState.captureText = "";
-  if (text) void submitTerminalVoicePrompt(text, generation);
-  else terminalVoiceSetStatus("No speech heard");
+  if (!text) {
+    terminalVoiceSetStatus("No speech heard");
+    return;
+  }
+  try {
+    const target = desktopPromptTranscriptTarget(terminalVoiceState.targetId);
+    const transcriptTurn = await persistDesktopPromptTranscript(text, "ai-talk", {
+      model: target?.model || selectedSetupModel()?.key || "auto",
+      sessionId: `terminal-voice:${target?.id || "setup"}`,
+      terminal: target
+    });
+    await submitTerminalVoicePrompt(text, generation, transcriptTurn);
+  } catch (error) {
+    if (terminalVoiceGenerationCurrent(generation)) {
+      terminalVoiceSetStatus(terminalVoiceErrorMessage(error, "Voice transcript could not be saved"));
+    }
+  }
 }
 
 function startTerminalVoiceRecorder(stream, generation) {

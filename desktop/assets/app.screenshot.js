@@ -1,4 +1,12 @@
 let screenshotStatusTimer = null;
+let screenshotEditorGeneration = 0;
+let screenshotEditorOpen = false;
+
+function setScreenshotEditorOpen(open) {
+  if (screenshotEditorOpen === open) return;
+  screenshotEditorOpen = open;
+  window.vibyraDesktopScreenshot?.setEditorOpen?.(open);
+}
 
 function bindDesktopScreenshot() {
   const api = window.vibyraDesktopScreenshot;
@@ -11,23 +19,36 @@ function bindDesktopScreenshot() {
 
 async function openScreenshotEditor(payload) {
   if (!payload?.dataUrl) return;
+  const generation = ++screenshotEditorGeneration;
   const root = ensureScreenshotEditor();
+  const host = root.closest(".screenshot-editor-host");
+  if (host) host.hidden = false;
   root.hidden = false;
   document.body.classList.add("screenshot-editing");
+  setScreenshotEditorOpen(true);
   selectScreenshotTool("crop");
   try {
-    await loadScreenshotDocument(payload.dataUrl, true);
+    const loaded = await loadScreenshotDocument(
+      payload.dataUrl,
+      true,
+      () => generation === screenshotEditorGeneration && !root.hidden
+    );
+    if (!loaded || generation !== screenshotEditorGeneration || root.hidden) return;
     root.querySelector("[data-screenshot-close]")?.focus();
   } catch (error) {
+    if (generation !== screenshotEditorGeneration) return;
     closeScreenshotEditor();
     showScreenshotNotice(error instanceof Error ? error.message : "Screenshot could not be opened.");
   }
 }
 
 function closeScreenshotEditor() {
+  screenshotEditorGeneration += 1;
+  setScreenshotEditorOpen(false);
   const root = document.querySelector("[data-screenshot-editor]");
-  if (!root || root.hidden) return;
-  root.hidden = true;
+  const host = root?.closest(".screenshot-editor-host");
+  if (root) root.hidden = true;
+  if (host) host.hidden = true;
   document.body.classList.remove("screenshot-editing");
   screenshotState.crop = null;
   screenshotState.drag = null;
@@ -36,15 +57,31 @@ function closeScreenshotEditor() {
   screenshotState.documentCanvas = null;
 }
 
+async function applyPendingScreenshotCrop() {
+  if (!screenshotState.crop) return;
+  await applyScreenshotCrop();
+}
+
+async function applyScreenshotChanges() {
+  await applyPendingScreenshotCrop();
+  showScreenshotStatus("Changes applied");
+}
+
 async function copyScreenshot() {
+  await applyPendingScreenshotCrop();
   const result = await window.vibyraDesktopScreenshot.copy(screenshotDataUrl());
   showScreenshotStatus(result?.ok ? "Copied to clipboard" : result?.error || "Copy failed");
 }
 
 async function saveScreenshot() {
+  await applyPendingScreenshotCrop();
   const result = await window.vibyraDesktopScreenshot.save(screenshotDataUrl());
-  if (result?.canceled) return;
-  showScreenshotStatus(result?.ok ? "Saved" : result?.error || "Save failed");
+  if (!result?.ok || !result.screenshot) {
+    showScreenshotStatus(result?.error || "Save failed");
+    return;
+  }
+  addSavedScreenshot(result.screenshot);
+  closeScreenshotEditor();
 }
 
 function showScreenshotStatus(message) {
@@ -86,6 +123,16 @@ function handleScreenshotKeyboard(event) {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
     event.preventDefault();
     void undoScreenshotMutation();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    void saveScreenshot();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") {
+    event.preventDefault();
+    void copyScreenshot();
     return;
   }
   if (event.ctrlKey || event.metaKey || event.altKey) return;

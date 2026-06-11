@@ -15,8 +15,36 @@ async function sendChat() {
   const skillText = skill && slashSkill?.[1].toLowerCase() === skill.id ? (slashSkill[2] || "").trim() : rawText;
   const text = skill ? skillText : rawText;
   if (!text && !skill) return;
-  if (!skill && (text === "/clear" || text === "/new")) { startNewChat(); return; }
+  const project = currentProject();
+  ensureActiveChat(rawText);
+  const transcriptOptions = {
+    model: selectedChatModel,
+    projectId: project?.id || String(selectedProjectId || ""),
+    projectName: project?.name || "",
+    sessionId: `desktop-chat:${activeChatId}`
+  };
+  let transcriptTurn = null;
+  try {
+    transcriptTurn = await persistDesktopPromptTranscript(rawText, "desktop-chat", transcriptOptions);
+  } catch (error) {
+    chatNotice = {
+      title: "Prompt not sent",
+      message: error instanceof Error ? error.message : "Prompt transcript could not be saved.",
+      resetAt: ""
+    };
+    render();
+    return;
+  }
+  if (!skill && (text === "/clear" || text === "/new")) {
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      result: "Started a new desktop chat.",
+      status: "completed"
+    }, "desktop-chat", transcriptOptions);
+    startNewChat();
+    return;
+  }
   if (!skill && text === "/phone") {
+    const localResult = "Opened Phone Preview in AI terminals.";
     chatMessages.push({ role: "user", text }, { role: "assistant", text: "Opened Phone Preview in AI terminals." });
     chatDraft = "";
     localStorage.removeItem("vibyra.desktop.chatDraft");
@@ -24,38 +52,51 @@ async function sendChat() {
     saveActiveChat(text);
     if (typeof openTerminalPhonePanel === "function") openTerminalPhonePanel("chat");
     else setPage("terminals");
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      result: localResult,
+      status: "completed"
+    }, "desktop-chat", transcriptOptions);
     return;
   }
   if (!skill && text === "/help") {
-    chatMessages.push({ role: "user", text }, { role: "assistant", text: chatHelpText() });
+    const localResult = chatHelpText();
+    chatMessages.push({ role: "user", text }, { role: "assistant", text: localResult });
     chatDraft = "";
     localStorage.removeItem("vibyra.desktop.chatDraft");
     input.value = "";
     saveActiveChat(text);
     render();
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      result: localResult,
+      status: "completed"
+    }, "desktop-chat", transcriptOptions);
     return;
   }
   if (!skill && text === "/open") {
-    chatMessages.push({ role: "user", text }, { role: "assistant", text: "Open Projects to choose a desktop project, then come back here and ask Vibyra about it." });
+    const localResult = "Open Projects to choose a desktop project, then come back here and ask Vibyra about it.";
+    chatMessages.push({ role: "user", text }, { role: "assistant", text: localResult });
     chatDraft = "";
     localStorage.removeItem("vibyra.desktop.chatDraft");
     input.value = "";
     saveActiveChat(text);
     render();
+    await persistDesktopPromptOutcome(transcriptTurn, {
+      result: localResult,
+      status: "completed"
+    }, "desktop-chat", transcriptOptions);
     return;
   }
-  const project = currentProject();
   if (modelLocked(chatModels.find((model) => model.key === selectedChatModel))) {
     selectedChatModel = firstUnlockedModel();
     localStorage.setItem("vibyra.desktop.chatModel", selectedChatModel);
   }
   const attachments = [...chatAttachments];
+  const imageAttachments = [...chatImageAttachments];
   const tool = activeChatTool;
   const skillId = skill?.skill || skill?.id || toolSkillId(tool);
   const mode = "chat";
   const skillPromptText = skill ? (text || (skill.promptPrefix ? "" : skill.label)) : text;
   const prompt = skill ? applySkillPrompt(skill, skillPromptText) : text;
-  ensureActiveChat(rawText);
   const actionContextScope = desktopActionContextScope("chat", activeChatId);
   const history = chatMessages
     .filter((message) => (message.role === "user" || message.role === "assistant") && !message.pending && String(message.text || "").trim())
@@ -64,6 +105,7 @@ async function sendChat() {
   const pendingMessage = { role: "assistant", text: "Thinking...", pending: true };
   chatMessages.push({ role: "user", text: displayChatText(rawText, skill, tool) }, pendingMessage);
   chatAttachments = [];
+  chatImageAttachments = [];
   activeChatTool = "";
   activeChatSkill = "";
   chatDraft = "";
@@ -71,11 +113,13 @@ async function sendChat() {
   input.value = "";
   chatSending = true;
   render();
+  let transcriptDetails = { status: "failed" };
   try {
     const result = await requestDesktopChat({
       attachments,
       desktopActionContext: desktopActionContextForScope(actionContextScope),
       history,
+      imageAttachments,
       model: selectedChatModel,
       mode,
       projectId: project?.id || String(selectedProjectId || ""),
@@ -85,7 +129,8 @@ async function sendChat() {
       skill: skillId,
       tool
     });
-    pendingMessage.text = result.reply || "I received an empty response from Vibyra AI.";
+    const assistantResponse = result.reply || "I received an empty response from Vibyra AI.";
+    pendingMessage.text = assistantResponse;
     pendingMessage.image = normalizeChatImage(result.image);
     pendingMessage.app = normalizeChatApp(result.app);
     pendingMessage.pending = false;
@@ -93,16 +138,33 @@ async function sendChat() {
     if (typeof runDesktopActions === "function" && Array.isArray(result.actions) && result.actions.length) {
       pendingMessage.text = await runDesktopActions(result.actions, { desktopActionContextScope: actionContextScope }) || pendingMessage.text;
     }
+    transcriptDetails = {
+      actions: result.actions,
+      response: assistantResponse,
+      result: pendingMessage.text,
+      status: "completed"
+    };
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Vibyra AI chat failed. Try again.";
+    transcriptDetails = { error: message, status: "failed" };
     if (isChatUsageLimitError(error)) {
       const pendingIndex = chatMessages.indexOf(pendingMessage);
       if (pendingIndex >= 0) chatMessages.splice(pendingIndex, 1);
       chatNotice = chatUsageLimitNotice(error);
     } else {
-      pendingMessage.text = error instanceof Error ? error.message : "Vibyra AI chat failed. Try again.";
+      pendingMessage.text = message;
       pendingMessage.pending = false;
     }
   } finally {
+    try {
+      await persistDesktopPromptOutcome(transcriptTurn, transcriptDetails, "desktop-chat", transcriptOptions);
+    } catch (error) {
+      chatNotice = {
+        title: "Response log failed",
+        message: error instanceof Error ? error.message : "Prompt outcome could not be saved.",
+        resetAt: ""
+      };
+    }
     chatSending = false;
     saveActiveChat(rawText);
     render();

@@ -83,9 +83,7 @@ function bindProjectActions() {
 }
 function bindChatTools() {
   document.getElementById("chat-attach")?.addEventListener("change", (event) => {
-    chatAttachments = Array.from(event.target.files || []).map((file) => file.webkitRelativePath || file.name).slice(0, 6);
-    openChatMenu = "";
-    renderChat();
+    void stageChatAttachmentFiles(event.target.files);
   });
 }
 function bindGeneratedAppCards() {

@@ -19,6 +19,13 @@ import {
   providerInfoForModel,
   providerTokens
 } from "./aiTerminalVibyraAgentBranding.mjs";
+import {
+  formatElapsedDuration,
+  renderProviderBrandLogo,
+  renderTerminalMarkdown,
+  taskCompletionText,
+  taskProgressText
+} from "./aiTerminalVibyraAgentPresentation.mjs";
 
 export { providerInfoForModel };
 
@@ -58,14 +65,14 @@ export function renderIntroForModel({
   const family = info.modelFamily ? `${info.modelFamily} · ` : "";
   const lines = [
     "",
-    center(providerArt(info, color), inner),
+    ...renderProviderBrandLogo(info, color).map((line) => center(line, inner)),
     center(`${ansi(info.name, info.color, color)} via Vibyra Agent`, inner),
     "",
     `model      ${family}${displayModel(modelKey)}`,
     `workspace  ${displayDirectory(cwd)}`,
     `reasoning  ${reasoningEffort}`,
     `access     ${accessLabel(permissionMode)}`,
-    `billing    ${tokenMode === "provider" ? "connected provider account" : "Vibyra tokens"}`,
+    `billing    ${terminalBillingLabel(tokenMode)}`,
     "",
     "Real file tools, shell activity, and persistent thread resume.",
     "/help commands · ! shell · Ctrl+C cancel"
@@ -92,7 +99,7 @@ function renderAutoIntro({ cwd, columns, color, permissionMode, tokenMode }) {
     `workspace  ${displayDirectory(cwd)}`,
     "routing    best-fit model for first task",
     `access     ${accessLabel(permissionMode)}`,
-    `billing    ${tokenMode === "provider" ? "connected provider account" : "Vibyra tokens"}`,
+    `billing    ${terminalBillingLabel(tokenMode)}`,
     "",
     "Real tools start after routing. The selected provider stays visible.",
     "/help commands · ! shell · Ctrl+C cancel"
@@ -108,7 +115,7 @@ function renderAutoIntro({ cwd, columns, color, permissionMode, tokenMode }) {
 export function formatAssistantReply(reply, modelKey = "auto", color = true, options = {}) {
   const info = providerInfoForModel(modelKey);
   const token = providerTokens().assistant;
-  const lines = String(reply || "").trim().split(/\r?\n/);
+  const lines = renderTerminalMarkdown(reply, color).split(/\r?\n/);
   if (options.showModel) {
     return [
       `${ansi(token, info.color, color)} ${info.name} via Vibyra Agent · ${displayModel(modelKey)}`,
@@ -164,10 +171,11 @@ export function autoRoutingUsesAgent(result = {}) {
   return String(result?.autoRouting?.category || "").trim() !== "fast_general";
 }
 
-export function formatProviderWorkingStatus(modelKey, color = true) {
+export function formatProviderWorkingStatus(modelKey, color = true, elapsedMs = 0) {
   const info = providerInfoForModel(modelKey);
   const token = providerTokens().activity;
-  return `${ansi(token, info.color, color)} ${info.name} via Vibyra Agent · working`;
+  const elapsed = elapsedMs > 0 ? ` · ${formatElapsedDuration(elapsedMs)}` : "";
+  return `${ansi(token, info.color, color)} ${info.name} via Vibyra Agent · working${elapsed}`;
 }
 
 export function interactivePromptForModel(modelKey, _columns = 100, color = true) {
@@ -460,10 +468,14 @@ async function sendAgentPrompt({ prompt, model, reasoningEffort, color, agentSes
     desktopUrl: normalizeDesktopUrl(process.env.VIBYRA_DESKTOP_URL, process.env.VIBYRA_DESKTOP_PORT),
     model,
     permissionMode: process.env.VIBYRA_PERMISSION_MODE,
+    sandboxMode: process.env.VIBYRA_SANDBOX_MODE,
+    roleInstructions: process.env.VIBYRA_TEAM_ROLE_INSTRUCTIONS,
     prompt,
     reasoningEffort,
     threadId: agentSession.threadId
   });
+  const startedAt = Date.now();
+  const progress = startTaskProgress(model, color, startedAt);
   output.write(`\r\n${formatProviderWorkingStatus(model, color)}\r\n`);
   let finalMessage = "";
   let agentError = "";
@@ -532,11 +544,13 @@ async function sendAgentPrompt({ prompt, model, reasoningEffort, color, agentSes
       if (terminalState) appendTranscript(terminalState, "assistant", finalMessage);
       output.write(`\r\n${formatAssistantReply(finalMessage, model, color)}\r\n`);
     }
+    output.write(`${ansi("✓", 32, color)} ${taskCompletionText(Date.now() - startedAt)}\r\n`);
     output.write("\r\n");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Vibyra could not complete this task.";
     output.write(`\r\n${ansi("⚠", 31, color)} ${message}\r\n\r\n`);
   } finally {
+    progress.stop();
     if (terminalState) {
       terminalState.activeProcess = null;
       terminalState.cancellationRequested = false;
@@ -544,7 +558,7 @@ async function sendAgentPrompt({ prompt, model, reasoningEffort, color, agentSes
   }
 }
 
-export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "standard", prompt, reasoningEffort = "medium", threadId = "" }) {
+export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "standard", sandboxMode = "", roleInstructions = "", prompt, reasoningEffort = "medium", threadId = "" }) {
   const instructionsFile = String(process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE || "").trim();
   const provider = [
     "-c", 'model_provider="vibyra"',
@@ -560,10 +574,15 @@ export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "
   if (instructionsFile) {
     provider.push("-c", `model_instructions_file=${JSON.stringify(instructionsFile)}`);
   }
-  provider.push("-c", `developer_instructions=${JSON.stringify(vibyraAgentRuntimeIdentity(model))}`);
+  provider.push("-c", `developer_instructions=${JSON.stringify([
+    vibyraAgentRuntimeIdentity(model),
+    String(roleInstructions || "").trim()
+  ].filter(Boolean).join("\n\n"))}`);
   const effort = normalizeReasoningEffort(reasoningEffort);
   if (effort !== "default" && effort !== "none") provider.push("-c", `model_reasoning_effort="${effort}"`);
-  const access = normalizePermissionMode(permissionMode) === "full"
+  const access = String(sandboxMode || "").trim().toLowerCase() === "read-only"
+    ? ["--sandbox", "read-only"]
+    : normalizePermissionMode(permissionMode) === "full"
     ? ["--dangerously-bypass-approvals-and-sandbox"]
     : threadId ? [] : ["--sandbox", "workspace-write"];
   const shared = [
@@ -606,18 +625,39 @@ export function renderAgentEvent(event, color = true, modelKey = "auto") {
   const tokens = providerTokens();
   const command = compactCommand(item.command);
   if (event?.type === "item.started" && item.type === "command_execution") {
-    return `${ansi(tokens.activity, info.color, color)} shell  ${command}`;
+    return `${ansi(tokens.activity, info.color, color)} ${ansi("shell", "1;37", color)}  ${ansi(command, "2", color)}`;
   }
   if (event?.type === "item.completed" && item.type === "command_execution") {
     const outputText = String(item.aggregated_output || "").trim();
     const status = Number(item.exit_code) === 0 ? ansi("✓", 32, color) : ansi("⚠", 31, color);
     const result = outputText ? lastUsefulLine(outputText) : command;
-    return `${status} shell  ${result}`;
+    return `${status} ${ansi("shell", "1;37", color)}  ${result}`;
   }
   if (event?.type === "item.completed" && item.type === "file_change") {
-    return `${ansi(tokens.result, 32, color)} files  workspace updated`;
+    return `${ansi(tokens.result, 32, color)} ${ansi("files", "1;37", color)}  workspace updated`;
   }
   return "";
+}
+
+function startTaskProgress(model, color, startedAt) {
+  const info = providerInfoForModel(model);
+  output.write(`\x1b]0;⠋ ${info.name} via Vibyra Agent\x07`);
+  let interval = null;
+  const first = setTimeout(() => {
+    output.write(`\r\n${ansi("›", info.color, color)} ${taskProgressText(info.name, Date.now() - startedAt)}\r\n`);
+    interval = setInterval(() => {
+      output.write(`${ansi("›", info.color, color)} ${taskProgressText(info.name, Date.now() - startedAt)}\r\n`);
+    }, 60_000);
+    interval.unref?.();
+  }, 30_000);
+  first.unref?.();
+  return {
+    stop() {
+      clearTimeout(first);
+      clearInterval(interval);
+      output.write("\x1b]0;Vibyra Agent ready\x07");
+    }
+  };
 }
 
 function compactCommand(value) {
@@ -752,8 +792,12 @@ function handleLocalProviderCommand({ command, args, profile, rl, state, color }
     return true;
   }
   if (command === "/usage") {
-    const billing = state.tokenMode === "provider" ? "connected provider account" : "Vibyra account";
+    const billing = terminalBillingLabel(state.tokenMode);
     writeSystemLine(state, state.model, `billing: ${billing}\nmodel: ${state.model}\ntranscript entries: ${state.transcript.length}\nlive credit totals are shown in Vibyra Billing`, color);
+    return true;
+  }
+  if (command === "/shell") {
+    writeSystemLine(state, state.model, shellHelp(state), color);
     return true;
   }
   if (command === "/stop") {
@@ -943,7 +987,7 @@ function writeSystemLine(state, model, message, color, warning = false) {
   const info = providerInfoForModel(model);
   const marker = warning ? "⚠" : providerTokens().assistant;
   const code = warning ? 31 : info.color;
-  const lines = String(message || "").split(/\r?\n/);
+  const lines = renderTerminalMarkdown(message, color).split(/\r?\n/);
   output.write(`\r\n${ansi(marker, code, color)} ${lines.join("\r\n  ")}\r\n\r\n`);
   appendTranscript(state, warning ? "error" : "system", message);
   return true;
@@ -991,11 +1035,6 @@ function trimHistory(history) {
 
 function displayModel(modelKey) {
   return modelKey || "auto";
-}
-
-function providerArt(info, color) {
-  const mark = String(info.mark || "OR").slice(0, 4).toUpperCase();
-  return `${ansi("◆", info.color, color)} ${ansi(`[ ${mark} ]`, info.color, color)}`;
 }
 
 function boxLine(value, inner, colorCode, color) {
@@ -1049,7 +1088,13 @@ function normalizeReasoningEffort(value) {
 }
 
 function normalizeTokenMode(value) {
-  return String(value || "vibyra").trim().toLowerCase() === "provider" ? "provider" : "vibyra";
+  const mode = String(value || "vibyra").trim().toLowerCase();
+  return ["vibyra", "provider"].includes(mode) ? mode : "vibyra";
+}
+
+function terminalBillingLabel(tokenMode) {
+  if (tokenMode === "provider") return "connected provider account";
+  return "Vibyra tokens";
 }
 
 function normalizePermissionMode(value) {

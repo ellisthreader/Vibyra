@@ -161,7 +161,7 @@ function openAttachmentPicker(kind) {
   const input = document.getElementById("chat-attach");
   if (!input) return;
   openChatMenu = "";
-  if (kind === "clear") { chatAttachments = []; activeChatTool = ""; activeChatSkill = ""; renderChat(); return; }
+  if (kind === "clear") { chatAttachments = []; chatImageAttachments = []; activeChatTool = ""; activeChatSkill = ""; renderChat(); return; }
   input.value = "";
   if (kind === "folder") {
     input.setAttribute("webkitdirectory", "");

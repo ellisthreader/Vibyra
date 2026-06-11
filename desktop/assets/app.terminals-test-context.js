@@ -3,6 +3,7 @@ function syncTerminalTestProjectContext(force = false) {
   const projectId = terminalTestContextProjectId();
   if (projectId === terminalTestProjectId && (terminalTestLoading || !force)) return;
   terminalTestRequest += 1;
+  clearTerminalTestInspector();
   saveTerminalTestViewportState();
   terminalTestProjectId = projectId;
   terminalTestUrl = "";

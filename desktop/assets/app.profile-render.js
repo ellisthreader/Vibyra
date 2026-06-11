@@ -10,6 +10,9 @@ function renderProfile() {
   </div>`;
   bindProfileControls(target);
   if (profileActiveSection === "account" && typeof ensureDesktopSessions === "function") ensureDesktopSessions();
+  if (profileActiveSection === "preferences" && typeof ensureProfileScreenshotSettings === "function") {
+    void ensureProfileScreenshotSettings();
+  }
   profileFocus = "";
 }
 
@@ -24,7 +27,7 @@ function profileRenderTarget() {
 function profileHasActiveControl() {
   const active = document.activeElement;
   const target = profileRenderTarget();
-  return Boolean(active && target?.contains(active) && active.closest?.(".profile-page") && active.matches?.("input, select, textarea"));
+  return Boolean(active && target?.contains(active) && active.closest?.(".profile-page") && active.matches?.("input, textarea, [data-custom-select-trigger]"));
 }
 
 function renderProfileSectionRail(sections, meta) {
@@ -72,7 +75,7 @@ function profileAccountSection(meta) {
 }
 
 function renderProfileForm(meta, prefs) {
-  return `<section class="profile-form profile-form--general" aria-label="Profile information"><h2>Profile</h2><label class="profile-field"><span>Full name</span><input id="profile-name" type="text" value="${escapeAttribute(meta.name === "Desktop account" ? "" : meta.name)}" placeholder="Your name" autocomplete="name" /></label><label class="profile-field"><span>Email</span><input id="profile-email" type="email" value="${escapeAttribute(meta.email)}" placeholder="you@vibyra.app" autocomplete="email" /></label><label class="profile-field"><span>What should Vibyra call you?</span><input id="profile-call-name" type="text" value="${escapeAttribute(prefs.callName || firstName(meta.name))}" placeholder="Preferred name" autocomplete="nickname" /></label><label class="profile-field"><span>What best describes your work?</span><select id="profile-work-type">${profileWorkOptions.map((item) => `<option value="${escapeAttribute(item.key)}" ${prefs.workType === item.key ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><label class="profile-field"><span>Preferred response style</span><select id="profile-response-style">${profileResponseStyleOptions.map((item) => `<option value="${escapeAttribute(item.key)}" ${prefs.responseStyle === item.key ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select></label><label class="profile-field"><span>Other work description</span><input id="profile-work-other" type="text" value="${escapeAttribute(prefs.workOther || "")}" placeholder="Describe your work" /></label><label class="profile-field profile-field--wide"><span>Instructions for Vibyra</span><textarea id="profile-instructions" rows="4" placeholder="e.g. ask clarifying questions before detailed implementation, keep changes small, explain tradeoffs clearly">${escapeHtml(prefs.customInstructions || "")}</textarea></label><div class="profile-inline-actions"><button class="primary-button compact-button" type="button" data-profile-action="save-profile" ${profileFormBusy ? "disabled" : ""}>${profileFormBusy ? "Saving..." : "Save profile"}</button>${profileFormMessage ? `<p class="profile-status">${escapeHtml(profileFormMessage)}</p>` : ""}</div></section>`;
+  return `<section class="profile-form profile-form--general" aria-label="Profile information"><h2>Profile</h2><label class="profile-field"><span>Full name</span><input id="profile-name" type="text" value="${escapeAttribute(meta.name === "Desktop account" ? "" : meta.name)}" placeholder="Your name" autocomplete="name" /></label><label class="profile-field"><span>Email</span><input id="profile-email" type="email" value="${escapeAttribute(meta.email)}" placeholder="you@vibyra.app" autocomplete="email" /></label><label class="profile-field"><span>What should Vibyra call you?</span><input id="profile-call-name" type="text" value="${escapeAttribute(prefs.callName || firstName(meta.name))}" placeholder="Preferred name" autocomplete="nickname" /></label>${profileSelectField("What best describes your work?", "profile-work-type", profileWorkOptions, prefs.workType)}${profileSelectField("Preferred response style", "profile-response-style", profileResponseStyleOptions, prefs.responseStyle)}<label class="profile-field"><span>Other work description</span><input id="profile-work-other" type="text" value="${escapeAttribute(prefs.workOther || "")}" placeholder="Describe your work" /></label><label class="profile-field profile-field--wide"><span>Instructions for Vibyra</span><textarea id="profile-instructions" rows="4" placeholder="e.g. ask clarifying questions before detailed implementation, keep changes small, explain tradeoffs clearly">${escapeHtml(prefs.customInstructions || "")}</textarea></label><div class="profile-inline-actions"><button class="primary-button compact-button" type="button" data-profile-action="save-profile" ${profileFormBusy ? "disabled" : ""}>${profileFormBusy ? "Saving..." : "Save profile"}</button>${profileFormMessage ? `<p class="profile-status">${escapeHtml(profileFormMessage)}</p>` : ""}</div></section>`;
 }
 
 function renderReferralPanel() {
@@ -116,6 +119,7 @@ function profilePreferencesSection() {
   const prefs = desktopPreferences();
   return `${profileHeader("Preferences", "Preferences", "Desktop preferences are saved locally for this computer.")}
     ${renderAppearancePanel(prefs.appearance)}
+    ${profileScreenshotSettingsPanel()}
     <section class="profile-choice-list profile-settings-list"><h2>Chat</h2>${profileSelectRow("Chat font", "chatFont", profileChatFontOptions, prefs.chatFont)}</section>
     ${profileVoiceSettingsPanel(prefs)}
     <section class="profile-choice-list"><h2>Language</h2>${profileLanguages.map((language) => profileChoiceButton("language", language, language, "Display language preference", "globe", prefs.language === language)).join("")}</section>
@@ -156,7 +160,31 @@ function profileChoiceButton(group, value, title, detail, iconName, active) { re
 
 function profileToggleList(rows) { return rows.map((row) => `<button class="profile-toggle-row${row.value ? " is-on" : ""}" type="button" data-profile-action="toggle-pref" data-profile-key="${escapeAttribute(row.key)}"><span class="profile-toggle"><span></span></span><span class="profile-action-copy"><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail)}</small></span></button>`).join(""); }
 
-function profileSelectRow(label, key, options, value) { return `<label class="profile-select-row"><span>${escapeHtml(label)}</span><select data-profile-select="${escapeAttribute(key)}">${options.map((item) => `<option value="${escapeAttribute(item.key)}" ${value === item.key ? "selected" : ""}>${escapeHtml(item.label || item.title)}</option>`).join("")}</select></label>`; }
+function profileSelectField(label, id, options, value) {
+  return `<div class="profile-field"><span>${escapeHtml(label)}</span>${customSelectHtml({
+    id,
+    ariaLabel: label,
+    value,
+    options: profileDropdownOptions(options)
+  })}</div>`;
+}
+
+function profileSelectRow(label, key, options, value) {
+  return `<div class="profile-select-row"><span>${escapeHtml(label)}</span>${customSelectHtml({
+    id: `profile-select-${key}`,
+    ariaLabel: label,
+    value,
+    options: profileDropdownOptions(options),
+    inputAttributes: { "data-profile-select": key }
+  })}</div>`;
+}
+
+function profileDropdownOptions(options) {
+  return options.map((item) => ({
+    value: item.value ?? item.key,
+    label: item.label || item.title
+  }));
+}
 
 function firstName(name) {
   const value = String(name || "").trim().split(/\s+/).filter(Boolean)[0];

@@ -1,4 +1,4 @@
-export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 15;
+export const AI_TERMINAL_LAUNCH_CONTRACT_VERSION = 22;
 
 const PROVIDER_DEFINITIONS = [
   {
@@ -34,9 +34,9 @@ const PROVIDER_DEFINITIONS = [
   {
     providerId: "qwen",
     aliases: ["qwen", "alibaba"],
-    runtimeId: "vibyra-agent",
-    adapterId: "responses",
-    protocol: "openai-responses",
+    runtimeId: "qwen",
+    adapterId: "openai-chat-completions",
+    protocol: "openai-chat-completions",
     managedCreditsReady: true,
     personalAccountReady: false,
     modelPrefixes: ["qwen-", "qwen2", "qwen3"]
@@ -44,7 +44,7 @@ const PROVIDER_DEFINITIONS = [
   {
     providerId: "moonshot",
     aliases: ["moonshot", "moonshotai", "kimi"],
-    runtimeId: "vibyra-agent",
+    runtimeId: "kimi",
     adapterId: "responses",
     protocol: "openai-responses",
     managedCreditsReady: true,
@@ -54,12 +54,22 @@ const PROVIDER_DEFINITIONS = [
   {
     providerId: "mistral",
     aliases: ["mistral", "mistralai"],
-    runtimeId: "vibyra-agent",
+    runtimeId: "mistral",
     adapterId: "responses",
     protocol: "openai-responses",
     managedCreditsReady: true,
     personalAccountReady: false,
     modelPrefixes: ["mistral-", "ministral-", "codestral-", "devstral-"]
+  },
+  {
+    providerId: "x-ai",
+    aliases: ["x-ai", "xai"],
+    runtimeId: "grok",
+    adapterId: "openai-chat-completions",
+    protocol: "openai-chat-completions",
+    managedCreditsReady: true,
+    personalAccountReady: false,
+    modelPrefixes: ["grok-"]
   }
 ];
 
@@ -75,7 +85,7 @@ export const AI_TERMINAL_PROVIDER_ADAPTERS = deepFreeze(Object.fromEntries(
         ...(definition.personalAccountReady ? ["provider"] : [])
       ],
       permissionModes: ["standard", "full"],
-      sandboxModes: ["workspace-write", "danger-full-access"]
+      sandboxModes: ["read-only", "workspace-write", "danger-full-access"]
     }
   ])
 ));
@@ -149,7 +159,7 @@ function dynamicProviderAdapter(providerId) {
     modelPrefixes: [],
     billingModes: ["vibyra"],
     permissionModes: ["standard", "full"],
-    sandboxModes: ["workspace-write", "danger-full-access"]
+    sandboxModes: ["read-only", "workspace-write", "danger-full-access"]
   });
   DYNAMIC_PROVIDER_ADAPTERS.set(providerId, adapter);
   return adapter;

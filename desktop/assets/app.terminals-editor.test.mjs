@@ -85,7 +85,11 @@ test("terminal editor loads before the companion and attaches through xterm link
 test("terminal editor uses Monaco with VS Code editing features", () => {
   assert.match(viewSource, /class="terminal-editor-monaco"/);
   assert.doesNotMatch(viewSource, /<textarea/);
-  assert.match(monacoSource, /theme: "vibyra-dark-plus"/);
+  assert.match(monacoSource, /defineTheme\("vibyra-dark-plus"/);
+  assert.match(monacoSource, /defineTheme\("vibyra-light-plus"/);
+  assert.match(monacoSource, /theme: terminalEditorEffectiveTheme\(\)/);
+  assert.match(monacoSource, /prefers-color-scheme: light/);
+  assert.match(monacoSource, /data-desktop-theme/);
   assert.match(monacoSource, /minimap: \{ enabled: true/);
   assert.match(monacoSource, /bracketPairColorization: \{ enabled: true/);
   assert.match(monacoSource, /stickyScroll: \{ enabled: true/);

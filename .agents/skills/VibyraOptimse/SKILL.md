@@ -1,5 +1,5 @@
 ---
-name: VibyraOptimse
+name: vibyra-optimise
 description: Audit and refactor an app for permission breaches, code organization, file-size limits, and optimization. Use when asked to find places where users should approve or decline potentially sensitive actions, add balanced approval UI, split large files, organize code into focused types/contexts/hooks/components, or enforce a no-source-file-over-200-lines standard.
 metadata:
   short-description: Permission and code-size audit

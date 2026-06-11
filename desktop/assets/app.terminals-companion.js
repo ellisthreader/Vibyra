@@ -138,7 +138,7 @@ function terminalCompanionInsertIntoActiveTerminal(text = "", submit = false) {
   return terminalCompanionInsertIntoTerminal(terminal?.id || activeTerminalId || "", text, submit);
 }
 
-function terminalCompanionInsertIntoTerminal(id, text = "", submit = false) {
+function terminalCompanionInsertIntoTerminal(id, text = "", submit = false, options = {}) {
   const terminal = findTerminal(id);
   if (!id) return false;
   const safeId = window.CSS?.escape ? CSS.escape(id) : id.replace(/\"/g, "\\\"");
@@ -153,14 +153,21 @@ function terminalCompanionInsertIntoTerminal(id, text = "", submit = false) {
     saveTerminals();
     fitTerminalDraft(field);
     updateTerminalCommandPalette(field, terminal);
-    if (submit) sendTerminal(id);
+    if (submit) sendTerminal(id, {
+      logPrompt: options.logPrompt !== false,
+      transcriptSource: options.transcriptSource,
+      transcriptTurn: options.transcriptTurn
+    });
     return true;
   }
   if (typeof focusPtyTerminal === "function") focusPtyTerminal(id);
   if (typeof sendPtyInput === "function") {
     const nextText = String(text || "");
-    if (nextText) sendPtyInput(id, `\x1b[200~${nextText.replace(/\r?\n/g, "\r")}\x1b[201~`);
-    if (submit) sendPtyInput(id, "\r");
+    if (options.transcriptTurn && typeof terminalPtyTrackTurn === "function") {
+      terminalPtyTrackTurn(id, nextText, options.transcriptTurn, options.transcriptSource);
+    }
+    if (nextText) sendPtyInput(id, `\x1b[200~${nextText.replace(/\r?\n/g, "\r")}\x1b[201~`, { logPrompt: options.logPrompt !== false });
+    if (submit) sendPtyInput(id, "\r", { logPrompt: options.logPrompt !== false });
     return true;
   }
   return false;

@@ -1,29 +1,89 @@
-@media (max-width: 1180px) {
-  .desktop-home { padding: 28px 26px 40px; }
-  .desktop-home-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .desktop-home-dashboard { grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr); }
+@media (max-width: 900px) {
+  .desktop-home {
+    padding-inline: 32px;
+  }
+
+  .desktop-home-hero {
+    padding-top: 54px;
+  }
+
+  .desktop-home-recent-grid {
+    gap: 30px;
+  }
+
+  .desktop-home-recent-column + .desktop-home-recent-column {
+    padding-left: 30px;
+  }
 }
 
-@media (max-width: 880px) {
-  .desktop-home-dashboard { grid-template-columns: 1fr; }
-  .desktop-home-support { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .desktop-home-phone,
-  .desktop-home-projects { min-height: 100%; }
+@media (max-width: 700px) {
+  .desktop-home {
+    padding: 28px 20px 88px;
+  }
+
+  .desktop-home-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .desktop-home-ready {
+    padding: 0;
+  }
+
+  .desktop-home-hero {
+    padding: 46px 0 36px;
+  }
+
+  .desktop-home-hero > h2 {
+    font-size: clamp(50px, 16vw, 70px);
+  }
+
+  .desktop-home-command {
+    grid-template-columns: 42px minmax(0, 1fr) 34px;
+    min-height: 84px;
+    padding: 15px;
+    gap: 13px;
+  }
+
+  .desktop-home-command-mark {
+    width: 42px;
+    height: 42px;
+  }
+
+  .desktop-home-context {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-home-context-item,
+  .desktop-home-context-item:first-child {
+    padding: 11px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--home-line);
+  }
+
+  .desktop-home-context-item:last-child {
+    border-bottom: 0;
+  }
+
+  .desktop-home-recent-grid {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  .desktop-home-recent-column + .desktop-home-recent-column {
+    padding: 0;
+    border-left: 0;
+  }
 }
 
-@media (max-width: 680px) {
-  .desktop-home { padding: 24px 16px 92px; }
-  .desktop-home-header { align-items: stretch; flex-direction: column; gap: 18px; }
-  .desktop-home-new-chat { width: 100%; }
-  .desktop-home-status,
-  .desktop-home-support { grid-template-columns: 1fr; }
-  .desktop-home-status-item { min-height: 88px; }
-  .desktop-home-phone-body { grid-template-columns: 52px minmax(0, 1fr); }
-  .desktop-home-phone .desktop-home-side-icon { height: 52px; width: 52px; }
-  .desktop-home-terminal-status { display: none; }
-  .desktop-home-terminal-row { grid-template-columns: 9px minmax(0, 1fr) 16px; }
-  .desktop-home-empty { grid-template-columns: 38px minmax(0, 1fr); }
-  .desktop-home-empty button { grid-column: 1 / -1; width: 100%; }
-  .desktop-home-activity .dashboard-event-row { grid-template-columns: 30px minmax(0, 1fr); }
-  .desktop-home-activity time { grid-column: 2; }
+@media (max-width: 460px) {
+  .desktop-home-recent-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .desktop-home-command-copy strong {
+    font-size: 13px;
+  }
 }

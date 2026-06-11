@@ -103,9 +103,6 @@ body[data-desktop-theme="light"] .terminal-inline-command { color: #1d6fa7; }
 body[data-desktop-theme="light"] .terminal-inline-mention { color: #315fc1; }
 body[data-desktop-theme="light"] .terminal-inline-shell,
 body[data-desktop-theme="light"] .terminal-banner-box { color: #16764e; }
-body[data-desktop-theme="light"] .terminal-settings-menu option,
-body[data-desktop-theme="light"] .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
-
 @media (prefers-color-scheme: light) {
   body:not([data-desktop-theme="dark"]) {
     --terminal-bg: #f7f8fb;
@@ -158,6 +155,4 @@ body[data-desktop-theme="light"] .terminal-settings-menu optgroup { background: 
   body:not([data-desktop-theme="dark"]) .terminal-inline-mention { color: #315fc1; }
   body:not([data-desktop-theme="dark"]) .terminal-inline-shell,
   body:not([data-desktop-theme="dark"]) .terminal-banner-box { color: #16764e; }
-  body:not([data-desktop-theme="dark"]) .terminal-settings-menu option,
-  body:not([data-desktop-theme="dark"]) .terminal-settings-menu optgroup { background: #ffffff; color: #171923; }
 }

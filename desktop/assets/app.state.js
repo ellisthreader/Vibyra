@@ -172,6 +172,7 @@ registerDesktopActionContextStore("chat", {
 let activeChatId = localStorage.getItem(activeChatKey) || "";
 let chatMessages = activeChatId ? messagesForChat(activeChatId) : [];
 let chatAttachments = [];
+let chatImageAttachments = [];
 let chatDraft = localStorage.getItem("vibyra.desktop.chatDraft") || "";
 let chatSending = false;
 let chatNotice = null;

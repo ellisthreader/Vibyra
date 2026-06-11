@@ -25,6 +25,10 @@ research file is a deep reference only.
 `Vibyra/_ai/Desktop App Implementation Spec.md` and `Vibyra/_ai/Mobile App Desktop Recreation Spec.md` are deep references only. Use them when recreating broad desktop screens, not for routine bridge/debug tasks.
 
 `/desktop` serves `desktop/app.html`, a static Vibyra shell with a compact left rail, top bar, Home, Chat, Terminals, Projects, pairing modal, account/token modal, and responsive mobile dock. `desktop/index.html` remains the legacy bridge screen.
+Treat `/desktop` and `/desktop/` as the same local shell route. The trailing
+slash must never fall through to phone bearer authentication, and Electron's
+loaded-page check must normalize trailing slashes to avoid a retry loop that
+displays `Missing or invalid desktop token`.
 
 `desktop/lib/routes.mjs` serves mobile app imagery under `/app-assets/...` from `src/assets/` so the shell can reuse app assets.
 
@@ -39,11 +43,16 @@ Wording is desktop-owned and phone-facing: connection status says `Connected to 
 
 ## Auth Gate
 
-`/desktop` loads a mobile-auth-style front screen before the shell. The local desktop session is visual-only and stored in `localStorage` under `vibyra.desktop.auth`; billing/token balances still require real mobile account data.
+`/desktop` loads a mobile-auth-style front screen before the shell. Desktop auth uses the real backend account system and mirrors the verified bearer session in `localStorage` under `vibyra.desktop.auth`.
 
 The desktop auth gate mirrors the mobile `AuthScreen` first page: `desktop/app.html` uses `/app-assets/front-auth.jpg`, `/app-assets/vibyra.png`, the same Beautiful/Fast/Code feature labels, real Google/Apple/email SVG marks, and hides the feature strip while the email form is expanded. In Electron logged-out state, keep the custom titlebar transparent over the auth image while preserving clickable window controls; the auth background should extend under the titlebar and the content stack should remain below it. Keep its layout rules in `desktop/assets/app.auth.css`: tall windows center the logo/title/actions as one stack with a slight downward nudge, short windows compact the logo/features/buttons and allow auth-screen scrolling, and auth provider labels should stay on one line.
 
 The top-bar account pill opens the account modal. Its session section includes `Log out`, which calls `desktopSignOut()` in `desktop/assets/app.auth.js`, clears `/desktop/session/clear`, removes `vibyra.desktop.auth`, closes the account modal, and returns to the auth screen so the user can switch accounts.
+
+Google and Apple buttons use a real external-browser authorization-code flow. `desktop/assets/app.auth-social.js` starts and polls same-origin bridge routes, `desktop/lib/desktopAuthProxy.mjs` forwards them to backend `/api/auth/desktop/{provider}/*`, and the backend callback exchanges/verifies provider tokens before returning a one-time Vibyra session through polling. Keep provider secrets and token exchange out of Electron. Live deployment requires the exact HTTPS callback URLs and `GOOGLE_DESKTOP_*` / `APPLE_DESKTOP_*` backend environment values documented in `backend/.env.example`.
+Social-auth progress and errors render in `#desktop-social-auth-status` beside the provider buttons; do not reuse the collapsed email form's `#desktop-auth-error` for these messages.
+After provider applications are created, run `npm run desktop:configure-social-auth` to prompt for their identifiers/key and save them directly to the linked Railway service without committing secrets.
+Auth creation responses include `isNewUser`. `completeDesktopAuth()` stores the matching user ID in `sessionStorage["vibyra.desktop.firstWelcomeUserId"]` only for the current renderer launch; Home then says `Welcome to Vibyra, <first name>.`. A later app launch or normal login has no flag and says `Welcome back, <first name>.`.
 
 ## Account Dropdown And Modals (Pair Phone, Account)
 
@@ -114,23 +123,30 @@ profile/billing/account details in the account modal.
 
 Home is rendered by `desktop/assets/app.pages.js` with helpers in
 `desktop/assets/app.render-helpers.js` and scoped late styles in
-`desktop/assets/app.home.css`. It shows real phone state, local projects,
-recent real events, active agent work, and reconciled frontend terminal rows.
+`desktop/assets/app.home.css`, `app.home-launch.css`, `app.home-content.css`,
+`app.home-rows.css`, and `app.home-responsive.css`. It shows real phone state,
+local projects, and reconciled frontend terminal rows.
 PTY terminals are not included in `/desktop/state`, so Home reads the shared
 `terminals` store and `app.terminals-pty-runtime.js` refreshes Home after PTY
 reconciliation. Current Home markup and styles use the isolated
 `desktop-home-*` namespace because legacy CSS chunks still own `.home-page`,
 `.home-side`, and related selectors; reusing those names combines incompatible
-grid systems. The approved Home layout uses a compact greeting, four real
-summary cards (Phone, Terminals, Projects, Activity), then Terminals and Recent
-activity in the wide column with Phone and Recent projects in the supporting
-column. Keep the established Vibyra palette; do not copy reference-screen
-colors or invent the reference's usage analytics.
+grid systems. The approved Home layout is prompt-led: a compact greeting feeds
+one borderless editorial hero with a strict identity/headline/command
+hierarchy. The full-width command is the only elevated focal surface. An
+equal-width inline context row for Phone, AI workspaces, and Local projects
+sits directly below it without an enclosing card. AI workspaces and Recent
+projects share one borderless `Recent work` section with one column divider.
+`body.desktop-home-active` scopes a warm neutral charcoal/stone shell palette
+and neutral Home navigation selection. Avoid navy/blue casts and stark white
+command surfaces; the Vibyra mark and truthful semantic status colors are the
+only saturated accents. Do not restore a launch card, status card,
+workbench card, Recent activity filler, grid textures, watermark artwork,
+gradients, floating badges, fake usage, or decorative dashboard metrics.
 Home terminal rows and the Terminals summary distinguish active work from an
-open PTY. `desktop/assets/app.terminals-pty-runtime.js` stamps `lastWorkAt`
-when an assignment is accepted or real output arrives; Home also honors
-pending/provider-busy/startup state, then returns the row to `Ready` after the
-short output-activity lease expires.
+open PTY. Home shows `Working` only for pending, provider-busy, or PTY startup
+state; an otherwise open terminal is `Ready`. Do not infer work from
+`lastWorkAt` or an elapsed-output lease.
 Keep the internal route key; change visible copy and layout without introducing
 fake analytics, generated activity, progress bars, or route-wide `body:has(...)`
 theme overrides.
@@ -216,12 +232,26 @@ could not be contacted. Do not label this condition as the desktop being
 offline. For live diagnosis, confirm `/desktop/state.appApiUrl`, then post
 invalid credentials to `/desktop/auth/login`; a reachable backend returns its
 real `401` credential error.
+Root `.env` is intentionally untracked, so a fresh checkout has no
+`EXPO_PUBLIC_API_URL`. The `Vibyra Desktop` launcher and
+`desktop/lib/appApiConfig.mjs` must both default to the Railway production API;
+localhost is local-development opt-in through `VIBYRA_DESKTOP_API_URL`,
+`VIBYRA_API_URL`, or `EXPO_PUBLIC_API_URL`.
 
 OpenAI provider status is split intentionally. `desktop/lib/providerAccounts.mjs` reports `providers.openai` for optional OpenAI API-key billing through `~/.vibyra-agent/provider-accounts.json` or `OPENAI_API_KEY`, and separately reports `providers.codex` for ChatGPT/Codex CLI auth by detecting `codex` plus `~/.codex/auth.json` (or `CODEX_HOME/auth.json`). The terminal token UI should say `OpenAI API key` for direct API billing and show `ChatGPT via Codex CLI` as a separate Codex status; do not require an API key just to use a ChatGPT-signed-in Codex CLI terminal.
 
 When no OpenAI API key is connected, the `OpenAI API key` token-source button must remain clickable and open the API-key form; do not render it as a disabled button. The form only switches terminals to provider billing after the key verifies successfully.
 
 Desktop light/dark theme ownership lives in the late-loaded `desktop/assets/app.theme*.css` files. `app.theme.css` defines the mobile-matched semantic tokens and legacy aliases, while `app.theme-shell.css`, `app.theme-chat.css`, `app.theme-surfaces.css`, `app.theme-terminals.css`, and `app.theme-auth.css` own targeted overrides for shell, chat, shared surfaces, terminals, and auth. Keep `desktop/app.html` loading those theme files after the existing CSS chunks so they remain the final theme authority. The existing Profile appearance preference stores `vibyra.desktop.profilePreferences.appearance` and applies `body[data-desktop-theme]`; do not replace it with a separate theme state. Theme alias variables for shell, chat, shared surfaces, and terminals must be scoped on `body`, not `:root`, so light-mode body tokens can override the dark root defaults; otherwise cards, inputs, dropdowns, and rail status text inherit dark-mode colors in light mode. Terminal PTY output and helper text must be themed explicitly in `app.theme-terminals.css` via `.terminal-pty-lines pre`, `.terminal-pty-composer`, and provider prompt-token selectors because `app.terminals.pty.css` and provider focus chunks contain dark-mode hardcoded colors that otherwise leave white text on white light-mode panes. The xterm renderer in `desktop/assets/app.terminals-pty-runtime.js` must derive its `theme` from the terminal CSS variables, and `desktop/assets/app.runtime-fixes.css` must not hardcode the xterm background, because xterm does not inherit foreground/background colors from normal CSS text rules. Profile/account/token/pair modal forms and menus are covered by the late shared surface theme files: use `app.theme-surfaces.css` for base `--surface-*` aliases and `app.theme-surfaces-status.css` for follow-up selectors such as `.profile-field`, `.profile-select-row`, `.profile-session-menu`, `.profile-toggle`, and delete-account danger panels so light mode does not inherit white-alpha dark controls. The billing plan picker is theme-aware through `desktop/assets/app.billing-plans.theme.css`, which defines `--billing-*` variables consumed by `app.billing-plans.css`; keep the plan artwork but do not hardcode dark modal text, rows, segmented controls, or secondary buttons. The logged-out auth screen is always a dark image-led welcome surface; `app.theme-auth.css` must not inherit the saved light desktop theme for auth text, buttons, or email inputs.
+
+Desktop dropdowns are renderer-owned custom controls. Never add native
+`select`, `option`, `optgroup`, or `datalist` elements. Use
+`desktop/assets/app.custom-select.js` plus `app.custom-select.css`; preserve
+feature values through its hidden input and bubbling `change` event, and use
+`updateCustomSelectOptions()` for dynamic Preview choices so unchanged open
+menus survive refresh ticks. `desktop/assets/app.custom-select.test.mjs`
+scans all production desktop HTML/JS/MJS/CJS and fails if a native dropdown is
+reintroduced; it is part of `npm run test:desktop-ai`.
 
 The sidebar rail is part of the shell canvas, not an elevated panel. In `desktop/assets/app.theme-shell.css`, keep its background on the same semantic shell background token as `.main`; rely on the soft right border plus nav hover/active states for visual separation in both light and dark modes.
 In the manually collapsed rail, keep the bottom phone control to its icon and
@@ -266,20 +296,54 @@ Opening the account dropdown's Settings action must render the Profile modal on 
 The Profile Preferences appearance picker must show the `dark`, `light`, and `auto/system` cards even if PNG thumbnails are slow or fail: `desktop/assets/app.profile.css` owns CSS fallback previews behind the images, while `desktop/assets/app.profile-actions.js` hides failed thumbnail images instead of leaving broken image chrome.
 
 If dark/light switching appears broken only on launch or Home, check the
-late-loaded `desktop/assets/app.home.css` for hardcoded colors or selectors
+late-loaded `desktop/assets/app.home*.css` files for hardcoded colors or selectors
 escaping `.home-*`. Home replaced the old Builds screenshot CSS specifically
 to remove route-wide `body:has(...)` theme overrides. The compatibility route
 key is still `dashboard`, and `desktop/app.html` applies saved
 `data-desktop-theme`/`data-chat-font` before visible shell content to prevent
-launch flash.
+launch flash. Keep the Home command background out of its transition list:
+Chromium can retain the prior resolved theme color while a custom-property
+background transition is active. Border color and transform may still animate.
 
 Desktop theme regression checklist: before closing desktop visual work, test explicit light and dark via `body[data-desktop-theme]` or the Profile Appearance picker. Sample computed styles for dashboard launch, Profile modal inputs/selects/textareas, Token billing plan modal rows and controls, Pair modal, chat menus/send button, and terminal setup/model/settings surfaces. If a surface stays dark in light mode, first check the late owner CSS chunk: `app.theme-shell.css`, `app.theme-chat.css`, `app.theme-surfaces*.css`, `app.billing-plans.theme.css`, or `app.theme-terminals*.css`. Avoid fixing by adding new theme state; route colors through the existing local token variables.
 
 When shell/chat light-dark bugs remain after base panels switch correctly, check late theme selectors for interactive state leaks: topbar/account/chat action menu `.danger` and `:disabled` rules, plus light-mode `.send-button:not(:disabled)`. These are owned by `desktop/assets/app.theme-shell.css` and `desktop/assets/app.theme-chat.css`; verify with computed styles for account menu, chat actions menu, attach menu, model menu, slash menu, composer textarea, send button, Projects search, rail, and topbar in explicit light and dark.
 
+The whole-shell light audit has a final owner in `desktop/assets/app.desktop-theme-audit.css`, loaded after Home and chat polish. It defines compatibility aliases such as `--surface-bg-elevated` for profile billing artwork and themes the full-screen screenshot editor, saved screenshot tray, notices, and remaining Profile voice controls. Keep screenshot opening tied to `body.screenshot-editing` so the underlying shell cannot scroll. Validate explicit light, explicit dark, and `auto` with an emulated light OS preference; include wide and narrow renders of billing plan cards and screenshot surfaces because image overlays and responsive chrome can hide dark fallbacks that panel-only checks miss.
+
 Launcher port checks should use `lsof -nP -tiTCP:${PORT} -sTCP:LISTEN`. If a non-Vibyra listener owns the port, print `ps -o pid=,cmd= -p "$PORT_PIDS"` and suggest `kill <pid>`.
 
 Electron launcher visibility is owned by `desktop/electron-main.cjs` and `desktop/lib/window.mjs`. Keep a fallback `show()` path independent of Electron's `ready-to-show` event, and keep `requestSingleInstanceLock()` so repeated `npm run desktop` calls focus the existing Vibyra window instead of spawning extra hidden Electron processes. `desktop/lib/window.mjs` should launch Electron with `spawn(..., detached: true)` and inherit stderr so startup failures are visible in the desktop command terminal.
+
+Electron runtime branding is also owned by `desktop/electron-main.cjs`.
+Keep the visible application name as `Vibyra`, the Linux desktop identity as
+`vibyra.desktop`, the Windows AppUserModelID as `app.vibyra.desktop`, and the
+native window/macOS dock icon pointed at `desktop/vibyra-login-logo.png`.
+That PNG is a transparent square rendering cropped directly from the canonical
+`src/assets/vibyra.png` V artwork. Do not redraw the mark, add a background,
+or use the full wordmark as a small operating-system icon.
+On Linux, setting the name or `BrowserWindow.icon` is not enough for GNOME.
+Call Electron's supported `app.setDesktopName("vibyra.desktop")`
+before `ready`, keep both launch paths passing `--class=vibyra` as a
+fallback, and let `scripts/install-desktop-launcher.sh` keep
+`~/.local/share/applications/vibyra.desktop` aligned with that
+`StartupWMClass`. The installer copies `desktop/vibyra-login-logo.png` into
+the user hicolor icon theme under the unique `vibyra-login-logo` key and
+refreshes the icon cache. The app icon must be exported directly from
+`src/assets/vibyra.png`, with transparent pixels cleaned, restrained padding
+matching the login-page presentation, and no generated or redrawn substitute.
+Otherwise GNOME can retain an older icon or group the window under Electron.
+The installed Linux files are
+`~/.local/share/applications/vibyra.desktop` and
+`~/.local/share/icons/hicolor/512x512/apps/vibyra-login-logo.png`; the
+installer removes the obsolete `vibyra-desktop.desktop` entry. The desktop
+entry must expose `Name=Vibyra`, `Icon=vibyra-login-logo`, and
+`StartupWMClass=vibyra`. Validate the source PNG as 512x512 RGBA with fully
+transparent corners, run `desktop-file-validate`, compare the installed icon
+bytes with the source, and inspect the running X11 window with `xprop`.
+The final live properties should be `WM_CLASS = "vibyra", "vibyra"` and
+`_NET_WM_NAME = "Vibyra"`. Run `node --test desktop/electron-main.test.mjs`
+after changing desktop branding.
 On Linux, both the repo-root `Vibyra Desktop` launcher and `desktop/lib/window.mjs` must pass `--no-sandbox` to Electron. The npm-installed `chrome-sandbox` is user-owned rather than root/setuid, so omitting the flag aborts Electron before `desktop/electron-main.cjs` can run.
 Electron close controls should hide the window instead of quitting the app so desktop PTY agents keep running in the background; explicit app quit can still exit the backend and will rely on terminal restore/restart behavior on next launch.
 
