@@ -6,7 +6,10 @@ import { spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
 import { providerActivitySignal } from "./aiTerminalActivity.mjs";
 import { prepareAiTerminalMemoryFiles } from "./aiTerminalMemoryFiles.mjs";
 import { terminalStartupProbeResponder } from "./aiTerminalProbeResponse.mjs";
-import { renewTerminalGatewayToken } from "./terminalGatewayAuth.mjs";
+import {
+  renewTerminalGatewayToken,
+  revokeTerminalGatewayToken
+} from "./terminalGatewayAuth.mjs";
 
 const configPath = process.argv[2];
 if (!configPath || !existsSync(configPath)) process.exit(2);
@@ -31,6 +34,7 @@ let closing = false;
 let child = null;
 let providerOutputTail = "";
 let providerBusyObserved = false;
+let gatewayTokenRevoked = false;
 const gatewayRenewalTimer = startGatewayTokenRenewal(config.terminalGatewayToken);
 const startupProbeResponder = terminalStartupProbeResponder(config);
 let state = {
@@ -318,6 +322,7 @@ function stopChild(signal) {
 
 function shutdown() {
   if (gatewayRenewalTimer) clearInterval(gatewayRenewalTimer);
+  revokeGatewayToken();
   flushOutputWrites();
   flushStateWrite();
   for (const socket of clients) socket.end();
@@ -328,6 +333,13 @@ function shutdown() {
       process.exit(0);
     });
   });
+}
+
+function revokeGatewayToken() {
+  const token = String(config.terminalGatewayToken || "").trim();
+  if (!token || gatewayTokenRevoked) return;
+  gatewayTokenRevoked = true;
+  try { revokeTerminalGatewayToken(token); } catch {}
 }
 
 function startGatewayTokenRenewal(token) {

@@ -11,29 +11,24 @@ class DesktopProviderOAuthFlow
 
     public function start(string $provider, array $client): array
     {
-        $settings = $this->settings($provider);
-        $flowId = Str::random(64);
-        $state = Str::random(64);
-        $nonce = Str::random(64);
-        $verifier = Str::random(96);
-        $flow = [
-            'provider' => $provider,
-            'state' => $state,
-            'nonce' => $nonce,
-            'verifier' => $verifier,
+        return $this->create($provider, [
             'deviceName' => mb_substr(trim((string) ($client['deviceName'] ?? 'Vibyra Desktop')), 0, 120),
             'installId' => mb_substr(trim((string) ($client['installId'] ?? '')), 0, 128),
             'publicIp' => trim((string) ($client['publicIp'] ?? '')),
-        ];
+        ]);
+    }
 
-        Cache::put($this->flowKey($flowId), $flow, now()->addMinutes(self::FLOW_MINUTES));
-        Cache::put($this->stateKey($state), $flowId, now()->addMinutes(self::FLOW_MINUTES));
+    public function startDeletion(string $provider, int $accountId, string $providerSubject): array
+    {
+        if ($accountId < 1 || trim($providerSubject) === '') {
+            throw new ProviderIdentityException('The account cannot be verified for deletion.');
+        }
 
-        return [
-            'flowId' => $flowId,
-            'authUrl' => $this->authorizationUrl($provider, $settings, $flow),
-            'expiresIn' => self::FLOW_MINUTES * 60,
-        ];
+        return $this->create($provider, [
+            'purpose' => 'deletion',
+            'accountId' => $accountId,
+            'providerSubject' => $providerSubject,
+        ]);
     }
 
     public function consumeState(string $provider, string $state): array
@@ -51,15 +46,24 @@ class DesktopProviderOAuthFlow
 
     public function finish(string $flowId, array $result): void
     {
+        $flow = Cache::get($this->flowKey($flowId));
         Cache::forget($this->flowKey($flowId));
-        Cache::put($this->resultKey($flowId), $result, now()->addMinutes(5));
+        Cache::put($this->resultKey($flowId), [
+            'provider' => is_array($flow) ? ($flow['provider'] ?? null) : null,
+            'result' => $result,
+        ], now()->addMinutes(5));
     }
 
     public function status(string $provider, string $flowId): array
     {
-        $result = Cache::pull($this->resultKey($flowId));
-        if (is_array($result)) {
-            return $result;
+        $completed = Cache::get($this->resultKey($flowId));
+        if (is_array($completed) && ($completed['provider'] ?? null) === $provider) {
+            $claimed = Cache::pull($this->resultKey($flowId));
+            if (is_array($claimed) && ($claimed['provider'] ?? null) === $provider) {
+                return (array) ($claimed['result'] ?? []);
+            }
+
+            return ['ok' => false, 'status' => 'expired', 'error' => 'This sign-in attempt expired. Try again.'];
         }
 
         $flow = Cache::get($this->flowKey($flowId));
@@ -68,6 +72,29 @@ class DesktopProviderOAuthFlow
         }
 
         return ['ok' => false, 'status' => 'expired', 'error' => 'This sign-in attempt expired. Try again.'];
+    }
+
+    private function create(string $provider, array $details): array
+    {
+        $settings = $this->settings($provider);
+        $flowId = Str::random(64);
+        $state = Str::random(64);
+        $flow = [
+            'provider' => $provider,
+            'state' => $state,
+            'nonce' => Str::random(64),
+            'verifier' => Str::random(96),
+            ...$details,
+        ];
+
+        Cache::put($this->flowKey($flowId), $flow, now()->addMinutes(self::FLOW_MINUTES));
+        Cache::put($this->stateKey($state), $flowId, now()->addMinutes(self::FLOW_MINUTES));
+
+        return [
+            'flowId' => $flowId,
+            'authUrl' => $this->authorizationUrl($provider, $settings, $flow),
+            'expiresIn' => self::FLOW_MINUTES * 60,
+        ];
     }
 
     private function authorizationUrl(string $provider, array $settings, array $flow): string

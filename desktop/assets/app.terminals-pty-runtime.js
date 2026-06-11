@@ -32,6 +32,7 @@ async function startPtyTerminal(terminal) {
     if (Array.isArray(result.agents)) updateTerminalAgents(result.agents);
     Object.assign(terminal, ptySessionPatch(result.session), { pending: Boolean(initialPrompt) });
     if (terminal.workspaceNotice && !terminal.notice) terminal.notice = terminal.workspaceNotice;
+    if (terminal.ptyStatus !== "unavailable") connectPtyTerminal(terminal);
     try {
       if (result.assignment) {
         acceptInitialPtyAssignment(terminal, result.assignment, assignmentId);
@@ -44,7 +45,6 @@ async function startPtyTerminal(terminal) {
       terminal.notice = error instanceof Error ? error.message : "The terminal task could not be delivered.";
     }
     terminal.pending = false;
-    if (terminal.ptyStatus !== "unavailable") connectPtyTerminal(terminal);
   } catch (error) {
     if (assignmentId && typeof terminalTaskActivityFailed === "function") {
       terminalTaskActivityFailed(terminal, assignmentId);
@@ -143,6 +143,7 @@ function terminalTaskInputPrompt(terminal, value) {
 let ptyCollectionSyncTimer = null;
 let ptyCollectionSyncPromise = null;
 let terminalXtermResizeFrame = 0;
+let preservingPtyXtermElements = false;
 let terminalXtermResizeObserver = null;
 const terminalXtermObservedNodes = new WeakSet();
 const terminalXtermPendingResizeNodes = new Set();
@@ -271,9 +272,37 @@ renderTerminalsPage = function renderPtyTerminalsPage() {
     bindPtyTopbarControls();
     return;
   }
-  previousRenderTerminalsPage();
+  const preservedXterms = preserveConnectedXtermElements();
+  preservingPtyXtermElements = true;
+  try {
+    previousRenderTerminalsPage();
+  } finally {
+    preservingPtyXtermElements = false;
+  }
+  restoreConnectedXtermElements(preservedXterms);
+  mountVisibleXterms();
   ptyRenderedSignature = ptyTerminalDomSignature();
 };
+
+function preserveConnectedXtermElements() {
+  const preserved = new Map();
+  for (const [id, xterm] of Object.entries(terminalXterms)) {
+    if (!xterm?.element?.isConnected) continue;
+    preserved.set(id, xterm.element);
+    xterm.element.remove();
+  }
+  return preserved;
+}
+
+function restoreConnectedXtermElements(preserved) {
+  for (const [id, element] of preserved) {
+    const host = document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`);
+    if (!host || !findTerminal(id)) continue;
+    host.replaceChildren(element);
+    observeTerminalXtermNode(host);
+    schedulePtyXtermFit(id);
+  }
+}
 
 
 const previousSetActiveTerminal = setActiveTerminal;
@@ -553,6 +582,7 @@ function terminalPlainActivityOutput(value) {
 }
 
 function mountVisibleXterms() {
+  if (preservingPtyXtermElements) return;
   ensureTerminalXtermResizeObserver();
   document.querySelectorAll("[data-terminal-xterm]").forEach((node) => {
     const id = node.dataset.terminalXterm || "";
@@ -571,7 +601,7 @@ function mountVisibleXterms() {
         convertEol: false,
         cursorBlink: true,
         disableStdin: false,
-        screenReaderMode: false,
+        screenReaderMode: true,
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
         fontSize: 13,
         lineHeight: 1.18,
@@ -594,7 +624,7 @@ function mountVisibleXterms() {
       });
     } else {
       xterm.options.theme = terminalXtermTheme(node);
-      xterm.options.screenReaderMode = false;
+      xterm.options.screenReaderMode = true;
     }
     if (typeof attachTerminalEditorLinkProvider === "function") {
       attachTerminalEditorLinkProvider(id, xterm);

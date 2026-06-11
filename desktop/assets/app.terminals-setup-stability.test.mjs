@@ -15,6 +15,7 @@ test("terminal setup preferences preserve the outer setup and companion DOM", ()
   assert.match(renderSource, /patchTerminalSetupPanel\(existingSetup\)/);
   assert.match(stabilitySource, /currentProgress\.querySelector/);
   assert.match(stabilitySource, /const sameStep = currentStep === nextStep/);
+  assert.match(stabilitySource, /sameStep && typeof terminalTeamPlanning === "boolean" && terminalTeamPlanning/);
   assert.match(stabilitySource, /if \(!sameStep\) currentProgress\.replaceWith\(nextProgress\)/);
   assert.match(stabilitySource, /if \(sameStep\) nextPanel\.classList\.add\("terminal-setup-panel--stable"\)/);
   assert.match(stabilitySource, /currentFlow\.classList\.toggle\("terminal-setup-flow--mode"/);

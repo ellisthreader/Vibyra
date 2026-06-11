@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
@@ -42,6 +43,42 @@ test("Vibyra terminal env exposes only the supplied gateway token", () => {
     if (previousRoot === undefined) delete process.env.VIBYRA_CODEX_HOME_ROOT;
     else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
     rmSync(isolatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("Vibyra Agent strips unregistered provider and generic credentials", () => {
+  const previous = new Map();
+  const secrets = {
+    DEEPSEEK_API_KEY: "deepseek-secret",
+    COHERE_API_KEY: "cohere-secret",
+    PERPLEXITY_API_KEY: "perplexity-secret",
+    NVIDIA_API_KEY: "nvidia-secret",
+    FIREWORKS_API_KEY: "fireworks-secret",
+    GITHUB_TOKEN: "github-secret",
+    DATABASE_PASSWORD: "database-secret"
+  };
+  for (const [key, value] of Object.entries(secrets)) {
+    previous.set(key, process.env[key]);
+    process.env[key] = value;
+  }
+  try {
+    const env = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "vibyra-agent",
+      label: "Vibyra Agent",
+      model: "deepseek/deepseek-chat",
+      terminalGatewayToken: "scoped-token",
+      terminalId: "credential-test",
+      cols: 100,
+      rows: 30
+    });
+    for (const key of Object.keys(secrets)) assert.equal(env[key], undefined);
+    assert.equal(env.VIBYRA_TERMINAL_GATEWAY_TOKEN, "scoped-token");
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });
 
@@ -179,6 +216,33 @@ test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () 
     assert.match(qwen.QWEN_HOME, /qwen-terminals\/managed-qwen$/);
     assert.equal(qwen.VIBYRA_TERMINAL_GATEWAY_TOKEN, "qwen-token");
     assert.equal(qwen.OPENAI_API_KEY, "qwen-token");
+    assert.match(qwen.NODE_OPTIONS, /^--require=/);
+    const qwenGuard = qwen.NODE_OPTIONS.slice("--require=".length);
+    assert.equal(statSync(qwenGuard).mode & 0o777, 0o600);
+    assert.doesNotMatch(readFileSync(qwenGuard, "utf8"), /qwen-token/);
+    assert.match(readFileSync(qwenGuard, "utf8"), /OPENAI_API_KEY/);
+    const fakeBin = join(home, "bin");
+    const dockerArgs = join(home, "docker-args.txt");
+    mkdirSync(fakeBin, { recursive: true });
+    writeFileSync(
+      join(fakeBin, "docker"),
+      `#!/bin/sh\nprintf '%s\\n' "$@" > ${JSON.stringify(dockerArgs)}\n`,
+      { mode: 0o755 }
+    );
+    execFileSync(process.execPath, [
+      "-e",
+      "require('node:child_process').spawnSync('docker', ['run', '--env', 'OPENAI_API_KEY=' + process.env.OPENAI_API_KEY])"
+    ], {
+      env: {
+        ...process.env,
+        NODE_OPTIONS: qwen.NODE_OPTIONS,
+        OPENAI_API_KEY: "qwen-token",
+        PATH: `${fakeBin}:${process.env.PATH || ""}`
+      }
+    });
+    const guardedArgs = readFileSync(dockerArgs, "utf8");
+    assert.match(guardedArgs, /OPENAI_API_KEY(?:\n|$)/);
+    assert.doesNotMatch(guardedArgs, /qwen-token/);
     assert.equal(qwenSettings.model.name, "qwen3-coder");
     assert.equal(qwenSettings.modelProviders.openai[0].id, "qwen3-coder");
     assert.match(qwenSettings.modelProviders.openai[0].baseUrl, /^http:\/\/host\.docker\.internal:\d+\/desktop\/qwen\/v1$/);

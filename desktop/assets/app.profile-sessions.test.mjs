@@ -29,6 +29,61 @@ function renderSessions(sessions) {
   return vm.runInNewContext("renderProfileSessionsPanel()", context);
 }
 
+async function runFailedSessionLoad() {
+  let attempts = 0;
+  const context = vm.createContext({
+    AbortController,
+    clearTimeout,
+    currentState: { machineName: "Ellis PC" },
+    desktopAuthSession: () => ({ token: "renderer-token-must-not-be-sent" }),
+    escapeAttribute: (value) => String(value),
+    escapeHtml: (value) => String(value),
+    fetch: async (path, options = {}) => {
+      attempts += 1;
+      assert.equal(path, "/desktop/account-api/sessions");
+      assert.equal(options.headers, undefined);
+      throw new Error("Account service unavailable.");
+    },
+    icon: (name) => `<svg data-icon="${name}"></svg>`,
+    profileDeleteOpen: false,
+    profileLogoutAllBusy: false,
+    profileSessionBusyId: "",
+    profileSessionMenuId: "",
+    profileSessions: [],
+    profileSessionsError: "",
+    profileSessionsLoaded: false,
+    profileSessionsLoading: false,
+    renderProfile: () => {},
+    setTimeout
+  });
+  vm.runInContext(locationSource, context);
+  vm.runInContext(source, context);
+  vm.runInContext("renderProfile = () => ensureDesktopSessions()", context);
+  await vm.runInContext("loadDesktopSessions()", context);
+  return {
+    attempts,
+    error: vm.runInContext("profileSessionsError", context),
+    loaded: vm.runInContext("profileSessionsLoaded", context),
+    panel: vm.runInContext("renderProfileSessionsPanel()", context)
+  };
+}
+
+test("one failed session load settles with a stable explicit Retry", async () => {
+  const result = await runFailedSessionLoad();
+
+  assert.equal(result.attempts, 1);
+  assert.equal(result.loaded, true);
+  assert.equal(result.error, "Could not load active sessions.");
+  assert.match(result.panel, /data-profile-action="reload-sessions"/);
+  assert.match(result.panel, />Retry</);
+});
+
+test("session operations use the local account bridge without renderer auth headers", () => {
+  assert.match(source, /fetch\("\/desktop\/account-api\/sessions", \{ signal: controller\.signal \}\)/);
+  assert.match(source, /`\/desktop\/account-api\/devices\/\$\{encodeURIComponent\(deviceId\)\}`/);
+  assert.doesNotMatch(source, /appApiBaseUrl|desktopAccountHeaders|Authorization|Bearer|\/api\/account/);
+});
+
 test("signed-in devices render as a semantic account table", () => {
   const html = renderSessions([{
     current: true,

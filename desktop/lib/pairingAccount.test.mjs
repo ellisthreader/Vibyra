@@ -41,6 +41,9 @@ test("desktop account verification keeps billing and model tier fields", async (
       creditsUsed: 30,
       monthlyCredits: 550,
       dailyCreditsCap: 100,
+      maxConcurrentAgents: 1,
+      maxActiveProjects: 1,
+      contextTokenCap: 32000,
       allowedModelTiers: ["free", "budget", "balanced", "premium"]
     }
   }));
@@ -53,8 +56,30 @@ test("desktop account verification keeps billing and model tier fields", async (
   assert.equal(account.planPricePence, 9900);
   assert.equal(account.creditsBalance, 520);
   assert.equal(account.monthlyCredits, 550);
+  assert.equal(account.maxConcurrentAgents, 1);
+  assert.equal(account.maxActiveProjects, 1);
+  assert.equal(account.contextTokenCap, 32000);
   assert.deepEqual(account.allowedModelTiers, ["free", "budget", "balanced", "premium"]);
   assert.equal(appState.desktopAccountToken, "session-token");
+});
+
+test("desktop account verification preserves plan fallback when limits are omitted", async () => {
+  resetPairingState();
+
+  const account = await verifyAndSetDesktopAccount("session-token", async () => jsonResponse({
+    user: {
+      id: 4,
+      email: "builder@example.test",
+      name: "Builder",
+      plan: "builder",
+      onboardingComplete: true,
+      rememberedDesktops: []
+    }
+  }));
+
+  assert.equal(Object.hasOwn(account, "maxConcurrentAgents"), false);
+  assert.equal(Object.hasOwn(account, "maxActiveProjects"), false);
+  assert.equal(Object.hasOwn(account, "contextTokenCap"), false);
 });
 
 test("desktop state exposes the backend used for account verification", () => {

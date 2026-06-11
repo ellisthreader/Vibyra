@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
 
-import { installPreviewShutdownHandlers } from "./previewShutdown.mjs";
+import {
+  installPreviewShutdownHandlers,
+  requestPreviewShutdown
+} from "./previewShutdown.mjs";
 
 test("preview shutdown handlers stop children and exit after server close", () => {
   const processRef = fakeProcess();
@@ -23,6 +26,56 @@ test("preview shutdown handlers stop children and exit after server close", () =
     processRef.emit("SIGTERM");
     processRef.emit("SIGINT");
     assert.equal(stopCalls, 1);
+    assert.deepEqual(processRef.exitCalls, [0]);
+  } finally {
+    remove();
+  }
+});
+
+test("desktop shutdown requests use the installed shutdown path", () => {
+  const processRef = fakeProcess();
+  const server = new EventEmitter();
+  server.listening = false;
+  let stopCalls = 0;
+  const remove = installPreviewShutdownHandlers({
+    processRef,
+    server,
+    stopPreviews: () => { stopCalls += 1; }
+  });
+  try {
+    assert.equal(requestPreviewShutdown(server), true);
+    assert.equal(stopCalls, 1);
+    assert.deepEqual(processRef.exitCalls, [0]);
+  } finally {
+    remove();
+  }
+  assert.equal(requestPreviewShutdown(server), false);
+});
+
+test("preview shutdown forces upgraded sockets closed after its deadline", async () => {
+  const processRef = fakeProcess();
+  const server = new EventEmitter();
+  server.listening = true;
+  server.close = () => {
+    server.listening = false;
+  };
+  let closeAllCalls = 0;
+  server.closeAllConnections = () => { closeAllCalls += 1; };
+  const socket = new EventEmitter();
+  let destroyCalls = 0;
+  socket.destroy = () => { destroyCalls += 1; };
+  const remove = installPreviewShutdownHandlers({
+    processRef,
+    server,
+    shutdownTimeoutMs: 5,
+    stopPreviews: () => {}
+  });
+  try {
+    server.emit("connection", socket);
+    processRef.emit("SIGTERM");
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    assert.equal(destroyCalls, 1);
+    assert.equal(closeAllCalls, 1);
     assert.deepEqual(processRef.exitCalls, [0]);
   } finally {
     remove();

@@ -226,8 +226,9 @@ test("manual memberships expose concise billing data and membership actions", ()
   };
   vm.runInNewContext(`${cancellationSource}\n${source}`, context);
   const manual = vm.runInNewContext(`profileBillingSection(${JSON.stringify({ ...paidMeta, billingProvider: "manual", canManageStripeBilling: false })})`, context);
-  assert.match(manual, /Test card ···· 4242/);
-  assert.match(manual, /DEMO-0001 <span>Paid<\/span>/);
+  assert.match(manual, /Test membership/);
+  assert.match(manual, /Billing<\/dt><dd>Not charged/);
+  assert.doesNotMatch(manual, /4242|DEMO-0001|Latest invoice/);
   assert.match(manual, /data-profile-action="change-membership"/);
   assert.match(manual, /data-profile-action="show-billing-cancel"/);
   assert.doesNotMatch(manual, /protected demo billing data|cannot create charges|Test environment/);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Services\Billing\PlanEntitlements;
 
 trait ChatEndpointHelpers
 {
@@ -43,6 +44,18 @@ trait ChatEndpointHelpers
         }
 
         return null;
+    }
+
+    private function contextLimitResponse(string $plan): JsonResponse
+    {
+        $cap = app(PlanEntitlements::class)->contextTokenCap($plan);
+
+        return $this->json([
+            'ok' => false,
+            'error' => "This request exceeds your plan's {$cap}-token context limit. Reduce attached context or upgrade your plan.",
+            'code' => 'membership_context_limit',
+            'contextTokenCap' => $cap,
+        ], 413);
     }
 
 }

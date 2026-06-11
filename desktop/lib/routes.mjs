@@ -7,6 +7,7 @@ import { authorizePhone, handleDesktopRoutes } from "./desktopRoutes.mjs";
 import { readBody, send } from "./http.mjs";
 import { createDesktopProject, discoverProjects } from "./projects.mjs";
 import { appState, disconnectPhone, event, publicState, pushEvents } from "./state.mjs";
+import { maxActiveProjects } from "./membershipEntitlements.mjs";
 import { servePreviewRefererAsset, servePreviewServerProxy, servePreviewUrlProxy, serveProjectPreview } from "./preview.mjs";
 import {
   approvePairing,
@@ -79,7 +80,9 @@ async function handleAuthedRoutes(req, res, url) {
   }
   if (req.method === "POST" && url.pathname === "/projects/create") {
     const body = await readBody(req);
-    const project = await createDesktopProject(body.name);
+    const project = await createDesktopProject(body.name, {
+      maxActiveProjects: maxActiveProjects(appState.desktopAccount)
+    });
     const files = await listProjectFiles(project.id);
     const projects = [project, ...(await discoverProjects()).filter((item) => item.id !== project.id)].slice(0, 12);
     const log = event("Projects", `Created ${project.name}`, "success");

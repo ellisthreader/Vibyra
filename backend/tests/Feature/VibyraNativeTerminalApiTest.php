@@ -138,6 +138,83 @@ class VibyraNativeTerminalApiTest extends TestCase
             ->assertJsonPath('error.type', 'invalid_request_error');
     }
 
+    public function test_free_plan_cannot_use_a_premium_native_terminal_model(): void
+    {
+        $token = $this->terminalUserToken('native-plan-lock@example.com');
+        User::where('email', 'native-plan-lock@example.com')->update([
+            'plan' => 'free',
+            'credits_balance' => 500,
+        ]);
+
+        $this->postJson('/api/terminal/anthropic/messages', [
+            'model' => 'claude-sonnet-4.6',
+            'messages' => [['role' => 'user', 'content' => 'Inspect this repository.']],
+            'max_tokens' => 800,
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertForbidden()
+            ->assertJsonPath('error.message', 'Your Vibyra plan does not include this terminal model.');
+    }
+
+    public function test_native_terminal_rejects_context_over_the_plan_cap_before_reservation(): void
+    {
+        config([
+            'billing.plans.starter.context_token_cap' => 1,
+        ]);
+        $token = $this->terminalUserToken('native-context-limit@example.com');
+
+        $this->postJson('/api/terminal/anthropic/messages', [
+            'model' => 'claude-haiku-4.5',
+            'messages' => [['role' => 'user', 'content' => 'Inspect this repository.']],
+            'max_tokens' => 1,
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(413)
+            ->assertJsonPath('error.code', 'membership_context_limit');
+
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
+    public function test_native_terminal_forwards_the_context_clipped_output_limit(): void
+    {
+        config(['billing.plans.starter.context_token_cap' => 300]);
+        $history = [];
+        $this->bindNativeClient($history, json_encode([
+            'id' => 'msg_1',
+            'type' => 'message',
+            'content' => [['type' => 'text', 'text' => 'Done.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 4],
+        ]));
+        $token = $this->terminalUserToken('native-context-clip@example.com');
+
+        $this->postJson('/api/terminal/anthropic/messages', [
+            'model' => 'claude-haiku-4.5',
+            'messages' => [['role' => 'user', 'content' => 'Inspect this repository.']],
+            'max_tokens' => 1000,
+        ], ['Authorization' => "Bearer {$token}"])->assertOk();
+
+        $payload = json_decode((string) $history[0]['request']->getBody(), true);
+        $this->assertGreaterThan(0, $payload['max_tokens']);
+        $this->assertLessThan(300, $payload['max_tokens']);
+    }
+
+    public function test_plan_downgrade_blocks_premium_model_on_the_next_request(): void
+    {
+        $token = $this->terminalUserToken('native-downgrade-lock@example.com');
+        User::where('email', 'native-downgrade-lock@example.com')->update([
+            'plan' => 'free',
+            'credits_balance' => 500,
+        ]);
+
+        $this->postJson('/api/terminal/anthropic/messages', [
+            'model' => 'claude-sonnet-4.6',
+            'messages' => [['role' => 'user', 'content' => 'Inspect this repository.']],
+            'max_tokens' => 800,
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertForbidden()
+            ->assertJsonPath('error.message', 'Your Vibyra plan does not include this terminal model.');
+
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
     public function test_native_billing_limits_are_non_retryable_and_keep_details(): void
     {
         $token = $this->terminalUserToken('native-billing-limit@example.com');

@@ -86,7 +86,8 @@ function normalizeModel(model) {
   if (!isGeneralChatModel(id, label, output)) return null;
   const promptPrice = priceNumber(model?.pricing?.prompt);
   const completionPrice = priceNumber(model?.pricing?.completion);
-  const free = id.endsWith(":free") || (promptPrice === 0 && completionPrice === 0);
+  const free = id.endsWith(":free")
+    || (promptPrice === 0 && completionPrice === 0);
   const tier = modelTier(promptPrice, completionPrice, free);
   const quality = qualityScore(id, label, free);
   return {
@@ -201,6 +202,7 @@ function providerKey(id, company) {
 
 function modelTier(promptPrice, completionPrice, free) {
   if (free) return "free";
+  if (promptPrice === null || completionPrice === null) return "premium";
   if (completionPrice <= 0.000005 && promptPrice <= 0.000001) return "budget";
   if (completionPrice <= 0.00002 && promptPrice <= 0.000005) return "balanced";
   return "premium";
@@ -231,7 +233,7 @@ function modelLimitForCompany(company) { return COMPANY_MODEL_LIMITS.get(company
 
 function priceNumber(value) {
   const numeric = Number.parseFloat(String(value ?? ""));
-  return Number.isFinite(numeric) ? numeric : 0;
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : null;
 }
 
 function isOpenRouterSlug(value) {

@@ -37,7 +37,7 @@ async function sendTerminal(id, options = {}) {
     return;
   }
   const model = modelByKey(terminal.model);
-  if (typeof modelLocked === "function" && modelLocked(model) && typeof firstUnlockedModel === "function") terminal.model = firstUnlockedModel();
+  if (typeof terminalModelLocked === "function" && terminalModelLocked(model, terminal.tokenMode) && typeof firstUnlockedModel === "function") terminal.model = firstUnlockedModel();
   const history = terminal.messages.filter((message) => ["user", "assistant"].includes(message.role)).slice(-8).map((message) => ({ role: message.role, text: message.text }));
   const pending = makeTerminalMessage("assistant", "Thinking...", { provider: profile.key });
   const before = Array.isArray(parsed.messagesBefore) ? parsed.messagesBefore : [];
@@ -157,7 +157,7 @@ function modelTerminalCommand(terminal, args, profile, command) {
   const query = args.toLowerCase();
   const model = modelChoices().find((item) => [item.key, item.label, item.provider, item.company].some((value) => String(value || "").toLowerCase().includes(query)));
   if (!model) { appendTerminalMessages(terminal, [makeTerminalMessage("system", "No model matched " + args + ". Open /model with no argument to pick one.", { provider: profile.key, meta: { command, args } })], { clearDraft: true }); return { handled: true }; }
-  if (typeof modelLocked === "function" && modelLocked(model)) { if (typeof openTokenModal === "function") openTokenModal("plans"); appendTerminalMessages(terminal, [makeTerminalMessage("system", model.label + " requires a plan upgrade.", { provider: profile.key, meta: { command, args } })], { clearDraft: true }); return { handled: true }; }
+  if (typeof terminalModelLocked === "function" && terminalModelLocked(model, terminal.tokenMode)) { if (typeof openTokenModal === "function") openTokenModal("plans"); appendTerminalMessages(terminal, [makeTerminalMessage("system", model.label + " requires a plan upgrade when using Vibyra tokens.", { provider: profile.key, meta: { command, args } })], { clearDraft: true }); return { handled: true }; }
   terminal.model = model.key;
   appendTerminalMessages(terminal, [makeTerminalMessage("system", "Model changed to " + model.label + ".", { type: "tool", provider: profile.key, meta: { command, args } })], { clearDraft: true });
   return { handled: true };

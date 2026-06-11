@@ -1,5 +1,9 @@
-function openPairModal() { nodes.pairModal.classList.add("open"); renderPairModal(); }
-function closePairModal() { nodes.pairModal.classList.remove("open"); }
+function openPairModal() {
+  const opener = document.activeElement;
+  showModal(nodes.pairModal, closePairModal, opener);
+  renderPairModal();
+}
+function closePairModal() { hideModal(nodes.pairModal); }
 function renderPairModal() {
   const pairStatus = currentState.pendingPair?.status;
   const paired = Boolean(currentState.pairedDevice);
@@ -31,9 +35,9 @@ function renderPairModal() {
 }
 const tokenModalViews = ["profile", "plans", "help"];
 const tokenModalTitles = { profile: "Profile", plans: "Change plan", help: "Help" };
-function openTokenModal(view) {
+function openTokenModal(view, opener = document.activeElement) {
   tokenModalView = tokenModalViews.includes(view) ? view : "profile";
-  nodes.tokenModal.classList.add("open");
+  showModal(nodes.tokenModal, closeTokenModal, opener, document.getElementById("open-account-menu"));
   renderTokenModal();
   if (tokenModalView === "plans" && typeof loadDesktopBillingCatalog === "function") void loadDesktopBillingCatalog();
   if (typeof refreshDesktopAccountSession === "function") {
@@ -43,17 +47,18 @@ function openTokenModal(view) {
   }
 }
 function closeTokenModal() {
-  nodes.tokenModal.classList.remove("open");
+  hideModal(nodes.tokenModal);
   tokenModalView = "profile";
 }
-function openProfileModal(focus = "") {
+function openProfileModal(focus = "profile", opener = document.activeElement) {
   profileSectionSearch = "";
   if (typeof setProfileFocus === "function") setProfileFocus(focus);
+  if (typeof profileActiveSection !== "undefined") profileActiveSection = focus === "app" ? "app" : "profile";
   profileModalOpen = true;
   topbarAccountMenuOpen = false;
   topbarChatMenuOpen = false;
-  nodes.profileModal.classList.add("open");
   renderTopbar();
+  showModal(nodes.profileModal, closeProfileModal, opener, document.getElementById("open-account-menu"));
   renderProfileModal();
   resetProfileModalScroll();
   requestAnimationFrame(() => resetProfileModalScroll());
@@ -66,7 +71,7 @@ function closeProfileModal() {
   profileBillingPlanOpen = false;
   profileBillingManageOpen = false;
   profileBillingCancelOpen = false;
-  nodes.profileModal.classList.remove("open");
+  hideModal(nodes.profileModal);
 }
 function resetProfileModalScroll() {
   if (nodes.profileBody) nodes.profileBody.scrollTop = 0;
@@ -77,23 +82,24 @@ function setTokenModalView(view) {
   if (tokenModalView === "plans" && typeof loadDesktopBillingCatalog === "function") void loadDesktopBillingCatalog();
 }
 function handleAccountAction(action) {
+  const opener = document.activeElement;
   topbarAccountMenuOpen = false;
   if (action === "upgrade") {
     renderTopbar();
-    openTokenModal("plans");
+    openTokenModal("plans", opener);
     return;
   }
   if (action === "profile") {
-    openProfileModal("");
+    openProfileModal("profile", opener);
     return;
   }
   if (action === "settings") {
-    openProfileModal("preferences");
+    openProfileModal("app", opener);
     return;
   }
   if (action === "help") {
     renderTopbar();
-    openTokenModal("help");
+    openTokenModal("help", opener);
     return;
   }
   if (action === "logout") {

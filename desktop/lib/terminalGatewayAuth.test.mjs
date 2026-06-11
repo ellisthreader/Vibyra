@@ -68,18 +68,25 @@ test("issues persisted terminal-scoped tokens with mode-0600 storage", async () 
 test("enforces expiry, rate limits, and token or terminal revocation", async () => {
   const registryPath = await temporaryRegistryPath();
   const first = issueTerminalGatewayToken("terminal-1", {
+    ...exactGrant(),
     registryPath, now: 1_000, ttlMs: 100, maxRequestsPerMinute: 1
   });
-  assert.ok(verifyTerminalGatewayToken(first.token, { registryPath, now: 1_001 }));
-  assert.equal(verifyTerminalGatewayToken(first.token, { registryPath, now: 1_002 }), null);
-  assert.equal(verifyTerminalGatewayToken(first.token, { registryPath, now: 1_101 }), null);
+  assert.ok(verifyTerminalGatewayToken(first.token, exactAuthorization({ registryPath, now: 1_001 })));
+  assert.equal(verifyTerminalGatewayToken(first.token, exactAuthorization({ registryPath, now: 1_002 })), null);
+  assert.equal(verifyTerminalGatewayToken(first.token, exactAuthorization({ registryPath, now: 1_101 })), null);
 
-  const second = issueTerminalGatewayToken("terminal-2", { registryPath, now: 2_000 });
+  const second = issueTerminalGatewayToken("terminal-2", {
+    ...exactGrant(), registryPath, now: 2_000
+  });
   assert.equal(revokeTerminalGatewayToken(second.token, { registryPath, now: 2_001 }), true);
-  assert.equal(verifyTerminalGatewayToken(second.token, { registryPath, now: 2_002 }), null);
+  assert.equal(verifyTerminalGatewayToken(second.token, exactAuthorization({ registryPath, now: 2_002 })), null);
 
-  const third = issueTerminalGatewayToken("terminal-3", { registryPath, now: 3_000 });
-  issueTerminalGatewayToken("terminal-3", { registryPath, now: 3_000 });
+  const third = issueTerminalGatewayToken("terminal-3", {
+    ...exactGrant(), registryPath, now: 3_000
+  });
+  issueTerminalGatewayToken("terminal-3", {
+    ...exactGrant(), registryPath, now: 3_000
+  });
   assert.equal(revokeTerminalGatewayTokensForTerminal("terminal-3", {
     registryPath, now: 3_001
   }), 2);
@@ -89,40 +96,86 @@ test("enforces expiry, rate limits, and token or terminal revocation", async () 
 test("detached workers can renew a terminal token without changing its capabilities", async () => {
   const registryPath = await temporaryRegistryPath();
   const issued = issueTerminalGatewayToken("terminal-renew", {
+    ...exactGrant({
+      models: ["deepseek/deepseek-v3"],
+      runtimeId: "vibyra-agent",
+      providerId: "deepseek",
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: "deepseek/deepseek-v3",
+      billingModel: "deepseek/deepseek-v3"
+    }),
     registryPath,
     now: 1_000,
-    ttlMs: 100,
-    models: ["deepseek/deepseek-v3"],
-    runtimeId: "vibyra-agent"
+    ttlMs: 100
   });
 
   const renewed = renewTerminalGatewayToken(issued.token, {
     registryPath,
-    now: 1_200,
+    now: 1_050,
     ttlMs: 500
   });
   assert.equal(renewed?.terminalId, "terminal-renew");
   assert.ok(verifyTerminalGatewayToken(issued.token, {
     registryPath,
-    now: 1_201,
+    now: 1_101,
     model: "deepseek/deepseek-v3",
-    runtimeId: "vibyra-agent"
+    runtimeId: "vibyra-agent",
+    providerId: "deepseek",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: "deepseek/deepseek-v3",
+    billingModel: "deepseek/deepseek-v3"
   }));
   assert.equal(verifyTerminalGatewayToken(issued.token, {
     registryPath,
     now: 1_202,
     model: "deepseek/other",
-    runtimeId: "vibyra-agent"
+    runtimeId: "vibyra-agent",
+    providerId: "deepseek",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: "deepseek/deepseek-v3",
+    billingModel: "deepseek/deepseek-v3"
   }), null);
+});
+
+test("expired terminal tokens cannot be renewed", async () => {
+  const registryPath = await temporaryRegistryPath();
+  const issued = issueTerminalGatewayToken("terminal-expired", {
+    ...exactGrant(),
+    registryPath,
+    now: 1_000,
+    ttlMs: 100
+  });
+
+  assert.equal(renewTerminalGatewayToken(issued.token, {
+    registryPath,
+    now: 1_101,
+    ttlMs: 500
+  }), null);
+  assert.equal(
+    verifyTerminalGatewayToken(issued.token, exactAuthorization({ registryPath, now: 1_102 })),
+    null
+  );
+});
+
+test("terminal gateway grants fail closed without exact capabilities", () => {
+  assert.throws(
+    () => issueTerminalGatewayToken("terminal-broad", { model: "openai/gpt-5" }),
+    /require exact model, runtime, provider, adapter, protocol/
+  );
 });
 
 test("gateway request authorization requires an approved local transport and bearer token", async () => {
   const registryPath = await temporaryRegistryPath();
-  const issued = issueTerminalGatewayToken("terminal-1", { registryPath, now: 1_000 });
+  const issued = issueTerminalGatewayToken("terminal-1", {
+    ...exactGrant(), registryPath, now: 1_000
+  });
 
   const forbidden = response();
   assert.equal(authorizeTerminalGatewayRequest(request("192.168.1.9", issued.token), forbidden, {
-    registryPath, now: 1_001
+    ...exactAuthorization(), registryPath, now: 1_001
   }), null);
   assert.equal(forbidden.status, 403);
 
@@ -134,13 +187,14 @@ test("gateway request authorization requires an approved local transport and bea
 
   const allowed = response();
   assert.equal(authorizeTerminalGatewayRequest(request("::ffff:127.0.0.1", issued.token), allowed, {
-    registryPath, now: 1_001
+    ...exactAuthorization(), registryPath, now: 1_001
   })?.terminalId, "terminal-1");
 
   const container = response();
   assert.equal(authorizeTerminalGatewayRequest(request("172.17.0.2", issued.token), container, {
     registryPath,
     now: 1_002,
+    ...exactAuthorization(),
     allowContainerNetwork: true,
     containerNetworks: [{
       address: "172.17.0.1",
@@ -152,6 +206,7 @@ test("gateway request authorization requires an approved local transport and bea
   assert.equal(authorizeTerminalGatewayRequest(request("192.168.1.9", issued.token), lan, {
     registryPath,
     now: 1_003,
+    ...exactAuthorization(),
     allowContainerNetwork: true,
     containerNetworks: [{
       address: "172.17.0.1",
@@ -166,10 +221,13 @@ test("gateway authorization can accept Gemini API-key headers when explicitly en
   const issued = issueTerminalGatewayToken("terminal-gemini", {
     registryPath,
     now: 1_000,
+    models: ["gemini-3.5-flash"],
     runtimeId: "gemini",
     providerId: "google",
     adapterId: "gemini-generate-content",
-    protocol: "gemini"
+    protocol: "gemini",
+    nativeModel: "gemini-3.5-flash",
+    billingModel: "google/gemini-3.5-flash"
   });
   const allowed = response();
   const req = request("127.0.0.1", "");
@@ -179,10 +237,12 @@ test("gateway authorization can accept Gemini API-key headers when explicitly en
     registryPath,
     now: 1_001,
     authSchemes: ["x-goog-api-key"],
+    model: "gemini-3.5-flash",
     runtimeId: "gemini",
     providerId: "google",
     adapterId: "gemini-generate-content",
-    protocol: "gemini"
+    protocol: "gemini",
+    nativeModel: "gemini-3.5-flash"
   })?.terminalId, "terminal-gemini");
 });
 
@@ -368,6 +428,40 @@ test("Grok session-title requests may use the fixed native alias without widenin
   assert.equal(accepted.status, null);
 });
 
+test("native model aliases cannot cross runtime or provider capabilities", async () => {
+  const registryPath = await temporaryRegistryPath();
+  const issued = issueTerminalGatewayToken("terminal-grok-alias", {
+    registryPath,
+    now: 1_000,
+    models: ["x-ai/grok-4.20", "grok-4.20"],
+    runtimeId: "grok",
+    providerId: "x-ai",
+    adapterId: "openai-chat-completions",
+    protocol: "openai-chat-completions",
+    nativeModel: "grok-4.20",
+    billingModel: "x-ai/grok-4.20"
+  });
+  const rejected = response();
+
+  assert.equal(authorizeTerminalGatewayRequest(
+    request("127.0.0.1", issued.token),
+    rejected,
+    {
+      registryPath,
+      now: 1_001,
+      model: "grok-build",
+      runtimeId: "claude",
+      providerId: "anthropic",
+      adapterId: "openai-chat-completions",
+      protocol: "openai-chat-completions",
+      nativeModel: "grok-build",
+      nativeModelAliases: ["grok-build"]
+    }
+  ), null);
+  assert.equal(rejected.status, 400);
+  assert.equal(rejected.payload.error.code, "terminal_capability_mismatch");
+});
+
 test("same-model capability mismatches do not claim the model changed", async () => {
   const registryPath = await temporaryRegistryPath();
   const model = "deepseek/deepseek-v3.2";
@@ -403,6 +497,32 @@ test("same-model capability mismatches do not claim the model changed", async ()
 
 async function temporaryRegistryPath() {
   return join(await mkdtemp(join(tmpdir(), "vibyra-gateway-")), "auth.json");
+}
+
+function exactGrant(overrides = {}) {
+  return {
+    models: ["openai/gpt-5"],
+    runtimeId: "codex",
+    providerId: "openai",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: "openai/gpt-5",
+    billingModel: "openai/gpt-5",
+    ...overrides
+  };
+}
+
+function exactAuthorization(overrides = {}) {
+  return {
+    model: "openai/gpt-5",
+    runtimeId: "codex",
+    providerId: "openai",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: "openai/gpt-5",
+    billingModel: "openai/gpt-5",
+    ...overrides
+  };
 }
 
 function request(remoteAddress, token) {

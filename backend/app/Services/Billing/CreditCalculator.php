@@ -103,6 +103,14 @@ class CreditCalculator
             $requestMicroUsd = $this->microUsdForUnits((string) ($livePricing['request'] ?? ''), 1);
             $liveUsd = ($inputMicroUsd + $outputMicroUsd + $requestMicroUsd) / 1_000_000;
             $fallback = $this->fallbackEstimateForSlug($slug, $inputTokens, $outputTokens);
+            if ($fallback === null && ! $this->hasCompleteTokenPricing($livePricing)) {
+                $fallback = $this->fallbackEstimateForSlug(
+                    $slug,
+                    $inputTokens,
+                    $outputTokens,
+                    true
+                );
+            }
 
             if ($fallback !== null) {
                 return max($liveUsd, $fallback);
@@ -192,6 +200,9 @@ class CreditCalculator
 
     private function dynamicTier(array $pricing): string
     {
+        if (! $this->hasCompleteTokenPricing($pricing)) {
+            return 'premium';
+        }
         $inputPerMillion = $this->microUsdForUnits((string) ($pricing['prompt'] ?? ''), 1_000_000) / 1_000_000;
         $outputPerMillion = $this->microUsdForUnits((string) ($pricing['completion'] ?? ''), 1_000_000) / 1_000_000;
         if ($inputPerMillion <= 0.0 && $outputPerMillion <= 0.0) {
@@ -219,6 +230,17 @@ class CreditCalculator
         $outputUsd = ($outputTokens / 1_000_000) * (float) ($pricing['output'] ?? 0);
 
         return max(0.0, $inputUsd + $outputUsd);
+    }
+
+    private function hasCompleteTokenPricing(array $pricing): bool
+    {
+        return $this->validUnitPrice($pricing['prompt'] ?? null)
+            && $this->validUnitPrice($pricing['completion'] ?? null);
+    }
+
+    private function validUnitPrice(mixed $price): bool
+    {
+        return is_numeric($price) && (float) $price >= 0;
     }
 
     private function microUsdForUnits(string $usdPerUnit, int $units): int

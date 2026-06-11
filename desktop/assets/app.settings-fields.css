@@ -33,6 +33,14 @@
 .profile-inline-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; }
 .profile-status { color: var(--muted); font-size: 12px; font-weight: 560; margin: 0; }
 .profile-status--danger { color: var(--danger); }
+.profile-field-note,
+.profile-section-copy {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 19px;
+  margin: 0;
+}
+[data-profile-work-other][hidden] { display: none; }
 .profile-referral-code { border-bottom: 1px solid rgba(255, 255, 255, 0.06); border-top: 1px solid rgba(255, 255, 255, 0.06); display: grid; gap: 5px; padding: 14px 0; }
 .profile-referral-code strong { color: var(--text); font-size: 26px; font-weight: 760; letter-spacing: 0.04em; line-height: 32px; }
 .profile-referral-code span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -64,6 +72,7 @@
   .profile-inline-actions > button { width: 100%; }
 }
 
+/* Settings account and preference field layouts. */
 .profile-identity-panel--editor {
   align-items: center;
   grid-template-columns: 82px minmax(0, 1fr);

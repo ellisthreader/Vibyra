@@ -182,12 +182,12 @@ modelMetaChip = function terminalAgentMetaChip(terminal) {
 
 createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
-  const model = unlockedModel(modelKey);
-  const effort = terminalEffortForModel(model, options.effort);
-  const initialPrompt = normalizeInitialTerminalPrompt(options.initialPrompt);
   const requestedTokenMode = ["provider", "vibyra"].includes(options.tokenMode)
     ? options.tokenMode
     : setupTokenMode;
+  const model = unlockedModel(modelKey, requestedTokenMode);
+  const effort = terminalEffortForModel(model, options.effort);
+  const initialPrompt = normalizeInitialTerminalPrompt(options.initialPrompt);
   const tokenMode = typeof terminalTokenModeForModel === "function"
     ? terminalTokenModeForModel(model, requestedTokenMode)
     : requestedTokenMode;
@@ -262,7 +262,7 @@ createTerminal = function createPtyTerminal(modelKey = setupModel, shouldRender 
   settingsTerminalId = "";
   saveTerminals();
   if (shouldRender) { forceTerminalRender = true; render(); }
-  queueStartPtyTerminal(terminal);
+  if (!options.deferStart) queueStartPtyTerminal(terminal);
   return terminal;
 };
 
@@ -275,7 +275,10 @@ function normalizeInitialTerminalPrompt(value) {
 
 createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel, options = {}) {
   const total = Math.min(maxTerminals - terminals.length, normalizeCount(count));
-  const model = unlockedModel(modelKey);
+  const tokenMode = ["provider", "vibyra"].includes(options.tokenMode)
+    ? options.tokenMode
+    : setupTokenMode;
+  const model = unlockedModel(modelKey, tokenMode);
   for (let index = 0; index < total; index += 1) {
     createTerminal(model.key, false, { ...options, initialPrompt: index === 0 ? options.initialPrompt : "" });
   }
@@ -362,7 +365,11 @@ setupView = function ptySetupView() {
       <div class="terminal-setup-advanced-panel" id="terminal-setup-advanced-panel" aria-hidden="${!terminalSetupAdvancedOpen}"><div>${advanced}</div></div>
     </section>` : ""}
     <div class="terminal-setup-actions">
-      ${terminalBatchSetupOpen ? '<button class="secondary-button terminal-setup-cancel" type="button" data-terminal-batch-cancel>Cancel</button>' : ""}
+      ${team
+        ? '<button class="secondary-button terminal-setup-cancel terminal-team-cancel" type="button" data-terminal-team-cancel>Cancel</button>'
+        : terminalBatchSetupOpen
+          ? '<button class="secondary-button terminal-setup-cancel" type="button" data-terminal-batch-cancel>Cancel</button>'
+          : ""}
       <button class="primary-button terminal-start-button" type="button" id="start-terminals" data-terminal-launch-ready="${baseLaunchReady}" ${team ? 'data-terminal-team-requires-goal="true"' : ""} ${startDisabled}>${icon("arrow")}${escapeHtml(startLabel)}</button>
     </div>
   </div></div></div></section>`;
@@ -381,12 +388,12 @@ function terminalSetupModeView(project, setupCapacity) {
     <div class="terminal-setup-panel terminal-setup-panel--mode">
     <div class="terminal-setup-mode-intro">
       <small>${escapeHtml(project?.name || "New AI workspace")}</small>
-      <h1>How do you want to work?</h1>
-      <p>Choose your workspace. You can adjust the details next.</p>
+      <h1>How should your AI agents work?</h1>
+      <p>Run separate agents for different tasks, or coordinate them around one shared goal.</p>
     </div>
     <div class="terminal-setup-mode-grid">
-      ${choice("solo", "terminal", "Solo", "Choose one or more independent agents")}
-      ${choice("team", "people", "Team", "Split one goal into coordinated agent roles", setupCapacity < 2)}
+      ${choice("solo", "grid", "Independent agents", "Each agent gets its own terminal and works on a separate task")}
+      ${choice("team", "teamwork", "Coordinated team", "Give Vibyra one goal; it assigns roles and coordinates the agents", setupCapacity < 2)}
     </div>
     ${cancel}
   </div></div></div></section>`;
@@ -462,7 +469,7 @@ terminalTabs = function ptyTerminalTabs() {
   const tabs = projectTerminals.map((terminal, index) => {
     const active = terminal.id === activeTerminalId;
     const label = terminalTabAgentLabel(terminal, index);
-    return `<div class="terminal-tab ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(`${label}, ${terminalAgentDisplayName(terminal)}`)}"><button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(label)}">${terminalStatusDot(terminal)}<span>${escapeHtml(label)}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(label)}">${icon("close")}</button></div>`;
+    return `<div class="terminal-tab ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(`${label}, ${terminalAgentDisplayName(terminal)}`)}"><button class="terminal-tab-open" type="button" role="tab" aria-selected="${active}" aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(label)}. Alt plus left or right arrow reorders this tab.">${terminalStatusDot(terminal)}<span>${escapeHtml(label)}</span></button><button class="terminal-tab-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(label)}">${icon("close")}</button></div>`;
   }).join("");
   const companionTools = typeof terminalCompanionToolbarHtml === "function" ? terminalCompanionToolbarHtml() : "";
   const menu = terminalToolbarMenuOpen ? `<div class="terminal-menu terminal-toolbar-menu" role="menu">

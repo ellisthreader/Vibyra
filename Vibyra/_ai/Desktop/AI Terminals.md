@@ -34,6 +34,15 @@ reference.
 Terminal composers intentionally have no send button. Enter submits and
 Shift+Enter inserts a newline.
 
+The first terminal setup picker keeps the internal `solo` / `team` modes but
+labels them by outcome for first-time clarity: `Independent agents` opens
+separate terminals for separate tasks, while `Coordinated team` takes one
+shared goal and has Vibyra assign and coordinate roles. Keep the existing
+minimal two-choice layout and use grid/connected-agent icon semantics rather than a
+generic terminal/person pair. The renderer lives in
+`desktop/assets/app.terminals-pty.js` with presentation in
+`app.terminals-setup-flow.css`.
+
 The empty terminal setup persists its reasoning default in
 `localStorage["vibyra.desktop.terminalSetupEffort"]`. The OpenRouter catalog
 normalizer copies each model's `supported_parameters` into
@@ -64,7 +73,7 @@ terminal's launch workspace. Start with
 `aiTerminalVibyraAgentPresentation.mjs`,
 `aiTerminalCommandProfiles.mjs`, and
 `aiTerminalVibyraAgentWorkspace.mjs` for this surface. Launch contract version
-`22` invalidates stale workers. Runtime selection is model-family-aware rather
+`25` invalidates stale workers. Runtime selection is model-family-aware rather
 than company-wide: `google/gemini-*` remains native Gemini CLI, while
 `google/gemma-*` and equivalent API-only families from native-CLI companies use
 Vibyra Agent with the exact selected model.
@@ -177,10 +186,59 @@ Detached provider child spawn is part of PTY creation.
 failed session, revokes its grant, rolls back its workspace, and returns a
 bounded startup error before semantic assignment. Personal provider sessions
 also require the current launch-contract version during recovery. This prevents
-a stale bridge plan, such as contract 21 against worker source contract 22,
+a stale bridge plan, such as contract 23 against worker source contract 24,
 from appearing later as `Terminal startup timed out` or
 `AI provider has exited`. Runtime compatibility version 17 invalidates workers
 created before this handshake.
+
+Creation responsiveness is separate from provider readiness. The collection
+route returns immediately after the authoritative child-PID handshake; it does
+not wait for the provider's idle composer or initial assignment acceptance.
+The renderer connects the PTY WebSocket before submitting the initial semantic
+assignment, so native startup output remains visible while the assignment
+queues safely in the worker. `spawnAiTerminalProcess()` must not execute a
+synchronous provider `--version` probe on this path.
+
+Codex startup can be blocked by its own interactive model-migration notice
+before the composer exists. The launch path reads the selected model's current
+`upgrade.model` from the user's `models_cache.json` and supplies Codex's
+supported `notice.model_migrations={...}` override. This acknowledges the
+notice while preserving the model the user selected; do not automate the menu
+with blind terminal input. Personal Codex sessions still receive isolated
+auth, config, memory, and state homes, while their plugin marketplace checkout
+is linked from the existing user cache. Safe account-level startup files
+(`models_cache.json`, `version.json`, `installation_id`, and migration markers)
+are seeded into each home, and bundled Codex defers MCP tool schemas through
+tool discovery without disabling configured servers. A cold four-terminal
+June 11, 2026 benchmark showed first visible output for every terminal by about
+1.0 second, compared with 11-13 seconds before this batch fix. Full composer
+readiness measured about 12.3-13.8 seconds instead of roughly 20 seconds; the
+remaining interval is Codex's own MCP connection phase.
+
+Do not treat that isolated benchmark as a guaranteed user-facing result. A
+later live four-terminal launch on the same date created all Vibyra sessions
+within about 160 ms, but Codex produced first output only after about 21
+seconds and reached authoritative ready state after roughly 26-39 seconds.
+The host had an approximately 6.8 load average on 8 CPU cores and several
+other Codex processes, so machine contention and network-dependent Codex/MCP
+startup materially affect batch latency. This proves the bridge and renderer
+are not the dominant delay, but it does not make the remaining delay
+acceptable or unchangeable.
+
+Future startup work should preserve native CLI functionality while evaluating:
+
+- launch staggering or a bounded Codex startup queue to reduce four-way CPU,
+  disk, database, and network contention;
+- safe warm-process or prewarmed-runtime reuse if Codex exposes a supported
+  session boundary that preserves per-terminal isolation;
+- further reduction of repeated per-terminal state/database initialization;
+- immediate mounted terminal presentation with accurate initializing state,
+  independent of native composer readiness.
+
+Benchmark both isolated and loaded-host four-terminal launches. Record child
+spawn, first PTY output, native composer readiness, CPU/load, existing Codex
+process count, and MCP startup status. Never attribute the result solely to
+Vibyra or solely to user hardware without those measurements.
 
 The terminal project picker includes a synthetic `full-pc` scope labeled
 `Full PC`. `desktop/lib/projects.mjs` resolves that fixed ID to the current
@@ -328,10 +386,24 @@ collapsed `Advanced options`. Team does not expose the Solo arbitrary
 count or grid preview and does not render generic role cards before planning.
 While the authoritative request runs, transform the bottom launch action into
 the compact live planning surface; do not insert a second activity strip near
-the goal. The action uses a semantic sweep, expanding people-icon rings, and
-pulsing dots. Its copy stays truthful and stable; do not show percentages,
-invented stages, or rotating claims, and disable motion under
-`prefers-reduced-motion`. After the authoritative plan returns, reveal compact
+the goal. Keep a visible secondary Cancel action beside it; cancellation must
+abort the browser request and propagate through the bridge to terminate the
+active cloud request or provider subprocess, then restore the editable form.
+The planning action stays graphite rather than becoming a solid purple box and
+uses a semantic sweep, expanding people-icon rings, pulsing dots, and short
+copy transitions. Show only observable phases: request analysis while the
+provider is pending, advance once at spaced elapsed-time thresholds from prompt
+analysis to `Planning team roles` after about 3 seconds and `Assigning
+individual roles` after about 7 seconds, then hold the last pending message
+without looping. These are present-progress descriptions, not completion
+claims. Response validation starts only after the provider returns, followed
+by terminal preparation before launch. Clear every pending transition on
+response, failure, or cancellation.
+Store the current phase in renderer state, and while Team planning is active do
+not let the periodic desktop-state patch replace the setup panel; otherwise
+each refresh resets the visible copy to the initial analysis phase.
+Do not show percentages or completion claims, and disable motion
+under `prefers-reduced-motion`. After the authoritative plan returns, reveal compact
 flat role rows containing only each generated title and one-line objective.
 Team launch remains disabled until the goal is non-empty. An unassigned Team
 gets its own left-rail group keyed by persisted `teamId`, a concise name
@@ -715,14 +787,16 @@ requires both loopback transport and a valid token, then enforces optional
 model and per-minute request constraints. It never delegates to
 `authorizeDesktopUi` or trusts a missing Origin header as spending authority.
 The raw gateway token exists only in the private mode-0600 detached-worker
-config/environment, never in public PTY session payloads, and is revoked when
-the terminal closes. The detached worker renews the same scoped record every
-six hours while the terminal remains alive so a persistent terminal does not
-expire after twelve hours. Renewal does not widen models, runtime, provider,
-adapter, protocol, native/billing model, or request-rate constraints.
+config/environment, never in public PTY session payloads, and is revoked by the
+worker itself whenever the provider exits or worker shutdown begins. Bridge
+close/exit revocation remains defense in depth. The detached worker renews the
+same scoped record every six hours while the terminal remains alive so a
+persistent terminal does not expire after twelve hours. Renewal does not widen
+models, runtime, provider, adapter, protocol, native/billing model, or
+request-rate constraints.
 `terminalSessionCommand()` exits with an AI CLI instead of falling through to
 an unrestricted project shell. Explicit `shell` sessions remain interactive.
-Persistent configs carry runtime contract version `5`; restoration terminates
+Persistent configs carry runtime contract version `18`; restoration terminates
 older Vibyra wrapper workers rather than reconnecting them after an upgrade.
 The Responses proxy propagates local client disconnects to the backend fetch
 through `AbortController` and contains upstream stream errors. The backend
@@ -770,6 +844,42 @@ native CLIs. The PTY
 bridge independently derives the agent from token source and rejects
 unsupported combinations. Existing recovered workers keep their persisted
 agent/source until closed; enforce this contract on new launches.
+Membership model-tier locks apply only to `Vibyra tokens`. `My AI accounts`
+must keep provider-supported native models selectable regardless of the
+Vibyra plan because the provider account owns entitlement and billing.
+Vibyra-funded terminals remain exact-model capabilities: the local gateway
+rejects native `/model` switches, and Laravel independently applies
+`CreditCalculator::planAllowsModel()` before reserving credits. The current
+billing config gives every paid plan all model tiers, so this lock materially
+distinguishes Free from paid accounts. The authenticated account payload also
+exposes `maxConcurrentAgents`, `maxActiveProjects`, and `contextTokenCap`.
+Desktop rejects new Vibyra-funded PTYs at the terminal cap before provider
+startup, while Laravel transactionally rejects overlapping pending/settling
+`desktop-terminal` reservations across devices. Personal-account terminals are
+exempt. Free keeps one foreground Vibyra terminal for the supported budget
+workflow, but legacy/background agent runs honor its configured zero allowance.
+Local admission includes pending launches, preventing parallel project-memory
+or worktree preparation from racing past the cap.
+Managed project caps apply only to new folders under
+`~/Desktop/Vibyra Projects`; existing managed projects and arbitrary opened
+repositories remain usable. Count-and-create is serialized by a root lock file
+across desktop processes, and symlink entries count conservatively. Context
+caps run before reservation/provider
+dispatch and clip output to the remaining allowance or return
+`membership_context_limit` when the endpoint minimum cannot fit. Native
+protocol adapters forward the clipped output value upstream, and Deep Research
+retry instructions consume the existing context allowance rather than
+restoring a larger output budget.
+Terminal gateway grants fail closed unless every model/runtime/provider/
+adapter/protocol/native-model/billing-model constraint is present. Expired
+grants cannot be renewed, and Auto grants include the native alias without
+widening the billing model.
+Dynamic OpenRouter pricing also fails closed for membership and admission.
+Missing or invalid prompt/completion prices are premium in both the desktop
+picker and backend tier resolver rather than becoming zero-cost budget models.
+Credit reservations and provider `max_price` constraints use the conservative
+default fallback for an incomplete token-price pair. Explicit complete
+zero/zero pricing, including genuine `:free` models, remains free.
 Setup preference changes patch only `.terminal-setup-panel` through
 `app.terminals-setup-stability.js`. Keep the outer `.terminal-setup` and its
 right-side companion mounted and preserve setup scroll. Safely center the panel
@@ -972,7 +1082,7 @@ Manual Solo/Team setup also exposes one persisted Access choice for the whole
 new batch. Full access is selectable for concrete Codex, Claude, Gemini, and
 Vibyra Agent runtimes; unresolved Auto and shell sessions remain Standard.
 Provider adapter permission/sandbox capability lists are the backend authority
-for this boundary. Launch contract version `22` invalidates workers created
+for this boundary. Launch contract version `25` invalidates workers created
 before current native provider ownership and permission metadata were part of
 the immutable plan.
 Explicit follow-ups such as `give all terminals full permissions` resolve to
@@ -1687,3 +1797,82 @@ Permanent contract:
 Validation covered 29 unique, nonblank screenshots with content clear of the
 terminal bounds, provider logo unit tests, presentation/runtime tests, and the
 full `npm run test:desktop-ai` suite.
+
+User acceptance: on June 11, 2026, the 29 asset-backed provider terminal logos
+and Desktop review PDF were explicitly approved as the desired visual quality.
+Preserve the large, distinct, true-color logo treatment and do not regress to
+small generic marks, shared frames, or hand-authored ASCII approximations.
+
+## June 11, 2026 - Terminal Adversarial Lifecycle Audit
+
+- Vibyra Agent now strips inherited provider credentials by generic credential
+  suffix, confines Standard paths through canonical real paths and existing
+  ancestors, and resumes read-only Codex threads through config sandbox mode.
+- Script-backed close terminates the Linux provider session. Startup includes a
+  short stability check, first semantic assignments allow 30 seconds for cold
+  composers, detached workers revoke their own gateway grant, and persistent
+  runtime compatibility is version `18`.
+- Desktop Quit and signal shutdown track HTTP/upgraded sockets, attempt normal
+  close, then force remaining connections closed after one second.
+- Team cancellation remains active through cloud response decoding and clears
+  revealed previews. Automatic sizing derives bounded complexity signals from
+  goals and paths. Personal Codex plans reject duplicate JSON keys, recovered
+  Team workers must match the current role contract. Team planning UI uses a
+  one-way pending sequence rather than a loop: prompt analysis immediately,
+  role planning after about 3 seconds, and individual-role assignment after
+  about 7 seconds; real validation and preparation remain response-driven.
+
+Validation: `npm run test:desktop-ai` passed 440 tests before final Team
+hardening; `npm run test:desktop-team-planner` then passed 53 tests and focused
+lifecycle/process/shutdown coverage passed 47 tests. Processes launched before
+runtime version `18` retain old code until closed or retired during recovery.
+
+## June 11, 2026 - Team Planning Progress Acceptance
+
+- The accepted Team setup keeps planning feedback inside the graphite launch
+  action with the people/rings/dots animation and a visible `Cancel` action.
+- Pending copy advances once: `Analyzing your prompt` immediately, `Planning
+  team roles` after 3 seconds, and `Assigning individual roles` after 7
+  seconds. It then holds until the provider responds and never loops.
+- `Validating assignments` is shown only after a provider response, and
+  `Preparing terminals` is shown immediately before launch.
+- Phase state survives periodic desktop refreshes because an active Team setup
+  panel is not replaced. Cancellation aborts the request, clears scheduled
+  phase transitions and previews, and restores the editable setup form.
+- The renderer assets use the `terminal-team-spaced-phases-20260611` cache key.
+  Verify with `node --test desktop/assets/app.terminals-team.test.mjs
+  desktop/assets/app.terminals-setup-stability.test.mjs`; the accepted focused
+  suite passes 19 tests, including the one-way no-loop schedule assertion.
+
+## June 11, 2026 - Atomic Team Launch And Native Runtime Hardening
+
+- Team creation now uses one authorized `POST /desktop/terminal-teams/launch`
+  operation. The renderer creates deferred local records, while the bridge
+  reserves capacity, starts every member, delivers the bridge-compiled trusted
+  assignments, and rolls back every created session, gateway grant, and
+  prepared worktree when any member fails.
+- The renderer must never queue independent PTY starts for a planned Team.
+  Failed aggregate launch also removes all deferred local records.
+- Managed Qwen loads a private mode-0600 Node preload guard. Before Docker or
+  Podman is spawned it changes `OPENAI_API_KEY=<scoped token>` to the
+  name-only `OPENAI_API_KEY` argument, allowing Docker to inherit the value
+  without exposing it through host process argv. Live `/proc/<pid>/cmdline`
+  validation confirmed the value is absent.
+- Full terminal rerenders detach and restore connected xterm elements instead
+  of disposing and replaying them. Tab reordering supports
+  `Alt+ArrowLeft/Right`, and xterm screen-reader mode is enabled.
+- Live native readiness checks confirmed Kimi Code reaches `ready` quickly and
+  Mistral Vibe reaches `ready` after a roughly 20-second cold initialization.
+  Do not classify a silent Mistral startup as failed before that bounded cold
+  start completes.
+- Six verified stale bridge processes, two detached `/tmp` test workers, and
+  one orphaned Vibyra-owned Qwen container were removed. The active bridge and
+  its four current user terminal workers were preserved.
+
+Validation: `npm run test:desktop-ai` passed 449 tests, including aggregate
+Team rollback, Qwen argv rewriting, xterm preservation, keyboard accessibility,
+and native runtime contracts. Live Kimi, Mistral, and Qwen checks left no test
+container or test terminal session running.
+
+Full audit record:
+`Vibyra/_ai/Runs/2026-06-11 AI Terminal Security And Reliability Audit.md`.

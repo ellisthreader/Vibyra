@@ -33,6 +33,11 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
 - Prefer UX shapes that make the job visually obvious over defaulting every AI surface to a generic chatbot.
 - Make Vibyra feel distinct through real workflow interaction, project/build state, and mobile identity, not decorative glow, fake metrics, or feature clutter.
 - Prefer fewer boxes, fewer labels, fewer pills, and fewer explanatory captions.
+- Use one professional graphite system across Home, Chat, Terminals, Projects,
+  Settings, menus, and modals. Dark foundations are `#121214` canvas,
+  `#19191D` surface, `#222226` elevated, and `#17171B` rail. Keep selected
+  navigation and ordinary selected rows neutral; reserve purple for primary
+  actions, focus, AI identity, provider identity, and meaningful state.
 - Home should greet the account once as its main headline. Do not stack a
   separate machine header, readiness label, brand eyebrow, marketing slogan,
   and supporting paragraph above the primary command action.
@@ -40,8 +45,22 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
   surface close to the page canvas, a neutral hairline, modest radius, and crisp
   light content. Keep purple localized to the Vibyra mark and hover feedback;
   do not make the whole command a floating promotional card.
+- The Home command is a real compact composer: one auto-growing textarea and
+  one embedded Send action. Enter sends, Shift+Enter adds a line, and submission
+  continues through the full Chat surface and its existing send pipeline.
 - Keep controls familiar and quiet: icon buttons, simple avatars, concise nav rows.
-- Use the restrained mobile palette: `#07070A`, `#12121A`, `#160D2A`, `#6D3BFF`, `#8B5CFF`.
+- Keep light mode warm and software-like rather than cool blue-gray: use an
+  off-white canvas, a slightly lighter rail, near-white surfaces, graphite
+  text, neutral hairlines, and the same restrained purple interaction accent.
+- Treat the Electron top chrome and left rail as one continuous L-shaped
+  application frame. Move the existing Vibyra rail identity and collapse button
+  into the top-left titlebar segment, keep that segment the exact rail width and
+  color, and use that same solid rail color across the full authenticated top
+  bar. Continue one identical divider through both regions and center the page
+  title within the content area to the right of the rail. Reserve the far-right
+  titlebar area for account and native window controls on an explicit
+  non-draggable layer. Keep phone pairing as one compact bottom rail row, with
+  an icon-only state when the rail is collapsed.
 - Keep card radius modest, usually `8px` or less unless the existing shell pattern says otherwise.
 - Avoid glow-heavy, marketing-heavy, or decorative dashboard styling.
 - Keep the saved screenshot tray as a quiet bottom-left vertical stack. The
@@ -108,7 +127,8 @@ Judge every screen the way a TikTok viewer judges a clip: instantly, without exp
 ## Auth Welcome Screen
 
 - Match the mobile first welcome page.
-- Use `/app-assets/front-auth.jpg` and `/app-assets/vibyra.png`.
+- Use the widescreen `/app-assets/front-auth-desktop-4k.webp` on desktop and
+  `/app-assets/vibyra.png`. Keep the portrait `front-auth.jpg` for mobile.
 - Treat `src/assets/vibyra.png` as the canonical shared UI brand mark used by
   mobile and desktop. Never replace it to satisfy App Store or Play Store icon
   requirements; create a separate opaque square store-icon asset instead.
@@ -134,11 +154,19 @@ Judge every screen the way a TikTok viewer judges a clip: instantly, without exp
 
 Keep it extremely simple.
 
-- Phone status: show only a phone icon, plus a small green dot when connected.
-- Do not show a bordered connection pill with repeated text.
+- Do not place phone status or pairing in the top bar. The left rail owns one
+  compact bottom phone row with a small state dot.
 - Profile: show only a Google-style avatar/image or first initial.
 - Do not show `Desktop session`, plan text, email text, or a boxed account chip in the top bar.
 - Controls should be unboxed by default; use hover feedback only.
+- The centered draggable page title must stop before the right action/control
+  cluster. Window minimize, maximize/restore, and close buttons must remain on
+  a higher `no-drag` layer with direct pointer ownership.
+- In Electron, `.desktop-chrome-right` must occupy only its real right-aligned
+  width and keep its empty container area out of pointer hit testing. Restore
+  pointer events only on `.desktop-chrome-actions` and
+  `.desktop-window-controls`; otherwise the stretched grid item silently blocks
+  terminal tabs, Add, workspace tools, and Options beneath it.
 
 ## Dropdown Controls
 
@@ -160,6 +188,12 @@ Keep it extremely simple.
 Use `vibyra-preview-diagnostics` for functional Preview failures involving
 project detection, startup, target routing, proxying, WebView state, or
 shutdown. Keep this section focused on presentation and interaction design.
+
+- In the first terminal setup choice, describe outcomes rather than internal
+  mode names. Use `Independent agents` for separate terminals/tasks and
+  `Coordinated team` for one shared goal that Vibyra splits into assigned
+  roles. Pair them with separate-unit and connected-agent icons; do not expose
+  ambiguous `Solo` / `Team` labels to first-time users.
 
 - Keep Live Preview in the same resizable right workspace as Editor, AI, and
   Memory. Use one compact Editor / Preview / AI / Memory switcher
@@ -231,10 +265,23 @@ shutdown. Keep this section focused on presentation and interaction design.
 
 - In Team setup, keep live planning feedback inside the bottom primary action:
   transform that button into the animated people/rings/dots state while the
-  real planner request is active, then resolve it before launch. Do not add a
-  duplicate status card between the goal and generated roles. Unassigned Teams
-  need a concise goal/Builder-derived rail name and the people icon; reserve
-  the General/folder identity for ordinary unassigned Solo terminals.
+  real planner request is active, then resolve it before launch. Keep the action
+  graphite with restrained accent motion instead of a solid purple fill. Keep
+  a visible Cancel action that aborts the provider/cloud work, and change phase
+  copy throughout a long request using bounded present-progress planning
+  activity, then switch to real validation and terminal-preparation events when
+  those occur. Never phrase the waiting sequence as completed milestones, and
+  stop it on response, cancellation, or failure. Persist the current phase in
+  renderer state and do not replace the active setup panel during background
+  shell refreshes, otherwise the button will reset to its first message. Keep
+  the waiting sequence small and spread it across elapsed request time. Advance
+  once from prompt analysis to role planning after about 3 seconds and
+  individual assignment after about 7 seconds, then hold; never loop back to
+  an earlier message. Stop pending transitions when the provider responds, the
+  request fails, or the user cancels. Do not add a duplicate status
+  card between the goal and generated roles. Unassigned Teams need a concise goal/Builder-derived
+  rail name and the people icon; reserve the General/folder identity for
+  ordinary unassigned Solo terminals.
 - Treat light mode as a complete terminal product, not a shell recolor. Setup,
   PTY controls, menus, Editor/Monaco, Preview startup output, AI/Voice, Memory,
   and fullscreen Memory must resolve through semantic `--terminal-*` tokens.
@@ -287,8 +334,10 @@ shutdown. Keep this section focused on presentation and interaction design.
   in the collapsed `Advanced options` disclosure. While the authoritative
   planner request is active, replace the otherwise empty role area with one
   compact semantic planning strip: subtle moving surface, expanding role icon
-  rings, and three pulsing dots. Use stable truthful copy, no percentages,
-  invented stages, or rotating claims, and disable all motion under
+  rings, and three pulsing dots. Use bounded truthful present-progress copy
+  about prompt analysis, work mapping, individual role assignment, ownership,
+  and constraint review; use no percentages, invented completion claims, or
+  unrelated filler, and disable all motion under
   `prefers-reduced-motion`. Explain its two payment choices without
   provider implementation details: Vibyra tokens use Vibyra credits; My AI
   accounts use the user's connected account and its billing. Use an accessible
@@ -446,11 +495,33 @@ shutdown. Keep this section focused on presentation and interaction design.
 - Scope profile queries and event binding to `#profile-modal-body`; do not scan
   the whole document after each section render.
 - Patch ordinary preference controls in place. Full modal rerenders are for
-  section changes and appearance/theme changes, not voice speed, voice choice,
-  language, font, notifications, or privacy toggles.
+  initial open only. Section changes and async section updates preserve the
+  mounted rail and replace only `.profile-detail`; ordinary preference changes
+  patch their controls in place.
+- Keep the Settings panel at one stable viewport height across short and long
+  sections so the centered modal does not jump vertically. Validate repeated
+  tab changes at `1180x780`, `860x620`, and a narrow responsive width.
 - Do not use `backdrop-filter` on the Settings backdrop. Vibyra's Linux
   Electron launch disables GPU compositing, making live blur over terminals
   expensive and visibly laggy.
+- Route authenticated Settings account requests through same-origin desktop
+  bridge endpoints. Direct cloud API requests from the renderer can fail CORS.
+- Use the allowlisted `/desktop/account-api/*` routes owned by
+  `desktop/lib/desktopAccountProxy.mjs`; renderer Settings code never receives
+  or forwards the account bearer token.
+- A failed Settings load must settle into a stable error state with an explicit
+  Retry action. Never start or retry a request as a side effect of rendering.
+- Treat Settings as a real modal: move focus inside on open, trap focus, make
+  the background inert, close on Escape, and restore opener focus on close.
+- Keep Settings organized as six sections: Profile, Personalization, App,
+  Devices & privacy, Billing, and Help. Do not restore the label-only search,
+  unfinished telemetry/lock/language/notification controls, or separate
+  Account/Devices/Privacy sections.
+- Patch appearance-card selection in place when switching themes. Keep preview
+  image nodes mounted so light/dark changes do not flash or reload screenshots.
+- Use inline confirmation panels for destructive Settings actions instead of
+  `window.confirm`. Apple and Google account deletion must reauthenticate
+  through the provider-specific desktop OAuth deletion flow.
 
 ## Account Settings
 
@@ -507,6 +578,8 @@ shutdown. Keep this section focused on presentation and interaction design.
   layer behind its Settings plan card. Preserve the small plan icon, fade the
   artwork into the semantic card surface before pricing/features, and verify
   the crop in Chromium rather than replacing strong existing assets.
+- Keep the current plan on the same card surface as every other tier. Communicate
+  current state with the check/status row only; do not add a full-card gray fill.
 - Treat plan plus billing cycle as the current selection. Load numeric prices,
   credits, project limits, and agent limits from `/api/billing/plans`, while
   retaining local marketing copy and artwork as the offline fallback.
@@ -1136,6 +1209,12 @@ user explicitly requests Codex's visual design.
 ## Terminal Theme Checks
 
 - For AI terminals, keep split CSS files (`app.terminals*.css`, `app.terminals-companion.css`, `app.terminals.pty.css`) routed through `app.theme-terminals.css`, `app.theme-terminals-states.css`, and `app.theme-terminals-controls.css` tokens for surfaces, text, disabled states, model picker rows, settings/token-source forms, PTY fallback text, and companion panels. Do not leave hardcoded dark text boxes in terminal setup/model/settings UI.
+- `app.theme-terminals-states.css` must map dark terminal foundations back to
+  the shared `--color-*` graphite tokens instead of redefining legacy dark
+  literals. Keep `app.terminals-theme-audit.css` and
+  `app.terminals-workspace-theme-audit.css` after every terminal feature sheet;
+  those final layers own setup, PTY/xterm, menus, companion, editor, memory, and
+  preview foundations.
 - Existing xterm instances do not automatically repaint from CSS variable changes. Keep the PTY runtime reapplying `terminalXtermTheme()` when `body[data-desktop-theme]` changes, without remounting xterm nodes.
 - Persisted xterm transcript replay must temporarily suppress `onData` forwarding; terminal device-response sequences emitted during replay are renderer output, not user keyboard input.
 - Xterm owns keyboard input whenever it is available. Keep fallback host

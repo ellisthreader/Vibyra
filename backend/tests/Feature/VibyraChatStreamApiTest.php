@@ -39,6 +39,28 @@ class VibyraChatStreamApiTest extends TestCase
             ->assertJsonPath('error', 'Ask Vibyra something first.');
     }
 
+    public function test_chat_stream_rejects_context_over_the_plan_cap_before_dispatch(): void
+    {
+        config([
+            'services.openrouter.key' => 'test-openrouter-key',
+            'billing.plans.free.context_token_cap' => 100,
+        ]);
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Stream Context User',
+            'email' => 'stream-context@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/stream', [
+            'prompt' => str_repeat('context ', 100),
+            'model' => 'gpt-5.4-mini',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(413)
+            ->assertJsonPath('code', 'membership_context_limit');
+
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
     public function test_chat_stream_rejects_unsupported_plan_model(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);
@@ -252,7 +274,10 @@ class VibyraChatStreamApiTest extends TestCase
 
     public function test_chat_stream_retries_empty_deep_research_completion_before_erroring(): void
     {
-        config(["services.openrouter.key" => "test-openrouter-key"]);
+        config([
+            "services.openrouter.key" => "test-openrouter-key",
+            "billing.plans.starter.context_token_cap" => 6000,
+        ]);
         $history = [];
         $emptyProviderResponse = [
             "choices" => [[
@@ -303,8 +328,11 @@ class VibyraChatStreamApiTest extends TestCase
 
         $firstPayload = json_decode((string) $history[0]["request"]->getBody(), true);
         $retryPayload = json_decode((string) $history[1]["request"]->getBody(), true);
-        $this->assertSame(16000, $firstPayload["max_completion_tokens"] ?? null);
-        $this->assertSame(16000, $retryPayload["max_completion_tokens"] ?? null);
+        $this->assertLessThan(8000, $firstPayload["max_completion_tokens"] ?? 8000);
+        $this->assertLessThan(
+            $firstPayload["max_completion_tokens"] ?? 0,
+            $retryPayload["max_completion_tokens"] ?? PHP_INT_MAX
+        );
         $this->assertStringContainsString("previous Deep Research attempt returned no final answer", $retryPayload["messages"][array_key_last($retryPayload["messages"])]["content"] ?? "");
         $this->assertSame(1, DB::table("credit_ledger")->where("kind", "chat")->count());
     }

@@ -176,6 +176,97 @@ test("concrete Vibyra-credit terminals require a desktop account session", async
   }
 });
 
+test("Vibyra-funded terminal creation enforces the account concurrency limit", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-membership-cap-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const { appState } = await import("./state.mjs");
+  const previousAccount = appState.desktopAccount;
+  const previousToken = appState.desktopAccountToken;
+  appState.desktopAccount = { id: 1, plan: "starter", maxConcurrentAgents: 1 };
+  appState.desktopAccountToken = "account-token";
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?membershipCap=${Date.now()}`, import.meta.url);
+    const { closeAllPtyTerminals, createPtyTerminal } = await import(moduleUrl);
+    await createPtyTerminal({
+      id: "membership-cap-first",
+      model: "auto",
+      tokenMode: "vibyra"
+    });
+
+    await assert.rejects(
+      createPtyTerminal({
+        id: "membership-cap-second",
+        model: "auto",
+        tokenMode: "vibyra"
+      }),
+      (error) => error?.status === 403 && /supports 1 concurrent agent/.test(error.message)
+    );
+    closeAllPtyTerminals();
+  } finally {
+    appState.desktopAccount = previousAccount;
+    appState.desktopAccountToken = previousToken;
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
+test("parallel project-bound Vibyra terminal launches cannot race past the cap", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-membership-race-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const { appState } = await import("./state.mjs");
+  const previousAccount = appState.desktopAccount;
+  const previousToken = appState.desktopAccountToken;
+  const previousProjects = appState.cachedProjects;
+  const previousPath = process.env.PATH;
+  const previousFetch = global.fetch;
+  appState.desktopAccount = { id: 1, plan: "starter", maxConcurrentAgents: 1 };
+  appState.desktopAccountToken = "account-token";
+  appState.cachedProjects = [{ id: "membership-race-project", name: "Race", path: root }];
+  process.env.PATH = "";
+  global.fetch = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    return {
+      ok: true,
+      status: 200,
+      async json() { return { ok: true, vault: { nodes: [] } }; }
+    };
+  };
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?membershipRace=${Date.now()}`, import.meta.url);
+    const { closeAllPtyTerminals, createPtyTerminal } = await import(moduleUrl);
+    const results = await Promise.allSettled([
+      createPtyTerminal({
+        id: "membership-race-first",
+        model: "openai/gpt-5.5",
+        tokenMode: "vibyra",
+        projectId: "membership-race-project"
+      }),
+      createPtyTerminal({
+        id: "membership-race-second",
+        model: "openai/gpt-5.5",
+        tokenMode: "vibyra",
+        projectId: "membership-race-project"
+      })
+    ]);
+
+    assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+    assert.equal(results.filter((result) => (
+      result.status === "rejected"
+      && result.reason?.status === 403
+      && /supports 1 concurrent agent/.test(result.reason.message)
+    )).length, 1);
+    closeAllPtyTerminals();
+  } finally {
+    appState.desktopAccount = previousAccount;
+    appState.desktopAccountToken = previousToken;
+    appState.cachedProjects = previousProjects;
+    process.env.PATH = previousPath;
+    global.fetch = previousFetch;
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("PTY Team launch canonicalizes legacy identifiers before starting the provider", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-team-id-"));
   const cli = join(root, "codex");
@@ -210,6 +301,59 @@ test("PTY Team launch canonicalizes legacy identifiers before starting the provi
 
     closePtyTerminal(session.id);
     await waitUntil(() => !existsSync(persistentTerminalPaths(session.id).dir), 5000);
+  } finally {
+    appState.desktopAccountToken = previousToken;
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_AGENT_HOME;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
+test("aggregate Team launch removes every session when a later member fails", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-team-rollback-"));
+  const cli = join(root, "codex");
+  const { appState } = await import("./state.mjs");
+  const previousToken = appState.desktopAccountToken;
+  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
+  process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
+  process.env.VIBYRA_CODEX_CLI = cli;
+  appState.desktopAccountToken = "account-token";
+  try {
+    const moduleUrl = new URL(`./ptyTerminals.mjs?teamRollback=${Date.now()}`, import.meta.url);
+    const { launchPtyTerminalTeam, listPtyTerminals } = await import(moduleUrl);
+    const { persistentTerminalPaths } = await import("./aiTerminalPersistentProcess.mjs");
+    await assert.rejects(
+      () => launchPtyTerminalTeam([
+        {
+          id: "rollback-team-builder",
+          title: "Builder",
+          agent: "vibyra",
+          model: "openai/gpt-5.5",
+          tokenMode: "vibyra",
+          teamId: "team-rollback-1234",
+          teamSize: 2,
+          teamGoal: "Verify atomic Team launch.",
+          teamRoleKey: "builder"
+        },
+        {
+          id: "rollback-team-reviewer",
+          title: "Reviewer",
+          agent: "vibyra",
+          model: "openai/gpt-5.5",
+          tokenMode: "vibyra",
+          projectId: "missing-project",
+          teamId: "team-rollback-1234",
+          teamSize: 2,
+          teamGoal: "Verify atomic Team launch.",
+          teamRoleKey: "reviewer"
+        }
+      ]),
+      /different launch settings/i
+    );
+    assert.equal(listPtyTerminals().length, 0);
+    await waitUntil(() => !existsSync(persistentTerminalPaths("rollback-team-builder").dir), 5000);
   } finally {
     appState.desktopAccountToken = previousToken;
     rmSync(root, { recursive: true, force: true });

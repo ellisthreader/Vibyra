@@ -128,7 +128,7 @@ test("shell and terminal renderers scope navigation and panes to the active proj
   assert.match(renderSource, /terminalBatchSetupOpen \|\| !terminals\.length/);
   assert.match(renderSource, /terminalGridMeta\(projectTerminals\.length\)/);
   assert.match(ptySource, /projectTerminals\.map\(\(terminal, index\)/);
-  assert.match(ptySource, /How do you want to work\?/);
+  assert.match(ptySource, /How should your AI agents work\?/);
   assert.match(ptySource, /terminalSetupProgress\("mode"\)/);
   assert.match(ptySource, /terminalSetupProgress\("setup"\)/);
   assert.doesNotMatch(ptySource, /terminal-tabs-progress/);

@@ -1,6 +1,8 @@
 import { execFileSync, spawn } from "node:child_process";
-import { accessSync, constants, existsSync, readFileSync, readlinkSync } from "node:fs";
-import { delimiter, dirname } from "node:path";
+import { accessSync, constants, existsSync, readFileSync, readdirSync, readlinkSync } from "node:fs";
+import { homedir } from "node:os";
+import { delimiter, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { assertAiTerminalLaunchOwnership } from "./aiTerminalLaunchOwnership.mjs";
 import {
   AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
@@ -12,6 +14,8 @@ import { terminalRuntimeExecutable, terminalRuntimeForModel } from "./aiTerminal
 import { PORT } from "./state.mjs";
 
 const scriptResizeStates = new WeakMap();
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const bundledNodeModules = resolve(moduleDir, "..", "..", "node_modules");
 
 const AGENT_CONFIG = {
   shell: { label: "Shell", command: "", args: [], env: [], install: "" },
@@ -33,9 +37,18 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPla
   const runtimeModel = launchPlan?.runtimeId && launchPlan.runtimeId !== "codex"
     ? launchPlan.nativeModel
     : model;
-  const launch = launchCommand(status, shell, { model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, memoryInstructions, roleInstructions, cwd });
-  const providerUiVersion = status.key === "vibyra" ? aiTerminalProviderVersion(model) : "";
-  const env = terminalEnv({ agent: status.key, runtimeId: status.runtimeId, label: status.label, model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, tokenMode, projectId, terminalId, terminalGatewayToken, memoryInstructions, roleInstructions, geminiSettingsPath, agentEnginePath: status.agentEnginePath, providerUiVersion, cwd, cols, rows });
+  const launch = launchCommand(status, shell, {
+    model: runtimeModel,
+    modelMigration: codexModelMigration(runtimeModel),
+    deferMcpTools: agent === "codex" && bundledCodexExecutable(status.commandPath),
+    reasoningEffort,
+    permissionMode,
+    sandboxMode: sandboxMode || launchPlan?.sandboxMode,
+    memoryInstructions,
+    roleInstructions,
+    cwd
+  });
+  const env = terminalEnv({ agent: status.key, runtimeId: status.runtimeId, label: status.label, model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, tokenMode, projectId, terminalId, terminalGatewayToken, memoryInstructions, roleInstructions, geminiSettingsPath, agentEnginePath: status.agentEnginePath, cwd, cols, rows });
   if (["qwen", "kimi"].includes(status.runtimeId) && status.commandPath) {
     env.PATH = `${dirname(status.commandPath)}${delimiter}${env.PATH || ""}`;
   }
@@ -185,6 +198,12 @@ export function aiTerminalAgentStatus(agent = "vibyra", model = "", runtimeId = 
 function spawnWithScript({ command, cwd, env, cols, rows, onData, onExit }) {
   const ptyCommand = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)}; ${command}`;
   const child = spawn("/usr/bin/script", ["-qf", "-e", "-E", "never", "-c", ptyCommand, "/dev/null"], { cwd, env, stdio: "pipe" });
+  const killScript = child.kill.bind(child);
+  child.kill = (signal = "SIGTERM") => {
+    const session = scriptSession(child.pid);
+    if (session) killLinuxProcessTree(session.pid, signal);
+    return killScript(signal);
+  };
   child.resize = (nextCols, nextRows) => queueScriptPtyResize(child, nextCols, nextRows);
   attachProcess(child, onData, onExit);
   return child;
@@ -239,6 +258,41 @@ function scriptSession(scriptPid) {
   }
 }
 
+function killLinuxProcessTree(rootPid, signal) {
+  const descendants = descendantProcessIds(rootPid);
+  for (const pid of descendants.reverse()) {
+    try { process.kill(pid, signal); } catch {}
+  }
+  try { process.kill(-rootPid, signal); } catch {}
+  try { process.kill(rootPid, signal); } catch {}
+}
+
+function descendantProcessIds(rootPid) {
+  if (process.platform !== "linux") return [];
+  const childrenByParent = new Map();
+  try {
+    for (const entry of readdirSync("/proc", { withFileTypes: true })) {
+      if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
+      const pid = Number(entry.name);
+      if (pid === process.pid) continue;
+      const stat = readFileSync(`/proc/${entry.name}/stat`, "utf8");
+      const closeParen = stat.lastIndexOf(")");
+      const fields = stat.slice(closeParen + 2).trim().split(/\s+/);
+      const parentPid = Number(fields[1]);
+      if (!childrenByParent.has(parentPid)) childrenByParent.set(parentPid, []);
+      childrenByParent.get(parentPid).push(pid);
+    }
+  } catch {}
+  const ids = [];
+  const pending = [...(childrenByParent.get(rootPid) || [])];
+  while (pending.length) {
+    const pid = pending.shift();
+    ids.push(pid);
+    pending.push(...(childrenByParent.get(pid) || []));
+  }
+  return ids;
+}
+
 function attachProcess(child, onData, onExit) {
   child.stdout?.on("data", (chunk) => onData?.(chunk.toString("utf8")));
   child.stderr?.on("data", (chunk) => onData?.(chunk.toString("utf8")));
@@ -273,6 +327,10 @@ function canExecute(path) {
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, "'\\''")}'`;
+}
+
+function tomlString(value) {
+  return JSON.stringify(String(value));
 }
 
 function integer(value, fallback) {
@@ -342,6 +400,16 @@ export function aiTerminalAgentArgs(agent, options = {}) {
     ? String(options.model || "auto").trim() || "auto"
     : codexModelName(options.model);
   if (model && (key === "vibyra" || model !== "auto")) args.push("--model", model);
+  const migration = options.modelMigration;
+  if (migration?.from === model && migration.to) {
+    args.push(
+      "-c",
+      `notice.model_migrations={${tomlString(migration.from)}=${tomlString(migration.to)}}`
+    );
+  }
+  if (key === "codex" && options.deferMcpTools) {
+    args.push("--enable", "tool_search_always_defer_mcp_tools");
+  }
   if (key === "vibyra") {
     args.push(
       "-c",
@@ -389,6 +457,32 @@ function normalizePermissionMode(value) {
 
 function codexModelName(value) {
   return String(value || "").trim().replace(/^openai\//i, "");
+}
+
+function bundledCodexExecutable(path) {
+  const executable = resolve(String(path || ""));
+  return executable.startsWith(`${bundledNodeModules}/`);
+}
+
+export function codexModelMigration(value, codexHome = "") {
+  const model = codexModelName(value);
+  if (!model || model === "auto") return null;
+  const defaultHome = join(homedir(), ".codex");
+  const requestedHome = String(codexHome || process.env.CODEX_HOME || "").trim();
+  const homes = [...new Set([requestedHome, defaultHome].filter(Boolean))];
+  for (const home of homes) {
+    try {
+      const cache = JSON.parse(readFileSync(join(home, "models_cache.json"), "utf8"));
+      const source = Array.isArray(cache?.models)
+        ? cache.models.find((item) => String(item?.slug || "") === model)
+        : null;
+      const target = String(source?.upgrade?.model || "").trim();
+      if (target && target !== model) return { from: model, to: target };
+    } catch {
+      // Fall through to the standard Codex home when an override is stale.
+    }
+  }
+  return null;
 }
 
 function nativeCliModelName(value, agent) {

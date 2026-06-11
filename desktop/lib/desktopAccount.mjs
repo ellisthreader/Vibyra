@@ -131,10 +131,12 @@ function publicAccount(user) {
   if (id === null) return null;
   const plan = String(user?.plan || "free");
   const cycle = String(user?.planBillingCycle || user?.plan_billing_cycle || "monthly");
-  return {
+  const account = {
     id,
     email: String(user?.email || ""),
     name: String(user?.name || ""),
+    provider: String(user?.provider || "email"),
+    emailVerified: Boolean(user?.emailVerified ?? user?.email_verified),
     plan,
     planBillingCycle: cycle,
     planRenewsAt: user?.planRenewsAt || user?.plan_renews_at || null,
@@ -164,6 +166,10 @@ function publicAccount(user) {
     profileImageUri: String(user?.profileImageUri || user?.profileImageUrl || user?.avatarUrl || user?.avatar || ""),
     signedInAt: new Date().toISOString()
   };
+  copyOptionalNumber(account, user, "maxConcurrentAgents", "max_concurrent_agents");
+  copyOptionalNumber(account, user, "maxActiveProjects", "max_active_projects");
+  copyOptionalNumber(account, user, "contextTokenCap", "context_token_cap");
+  return account;
 }
 
 export function syncDesktopAccountFromUser(user) {
@@ -177,6 +183,13 @@ export function syncDesktopAccountFromUser(user) {
 function numberOrZero(value) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function copyOptionalNumber(target, source, camelKey, snakeKey) {
+  const value = source?.[camelKey] ?? source?.[snakeKey];
+  if (value === undefined || value === null || value === "") return;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) target[camelKey] = numeric;
 }
 
 function allowedTiersForPlan(plan) {

@@ -91,6 +91,36 @@ For Vibyra tokens:
   child PID before returning success or assigning the initial prompt. If the
   worker exits first, return its bounded startup category immediately, remove
   the failed session, revoke its gateway grant, and roll back its workspace.
+  Do not hold the creation response open until the provider reaches its idle
+  composer or accepts the initial assignment. Return after the child-PID
+  handshake, attach the renderer WebSocket immediately, and deliver the
+  initial assignment through the semantic assignment route while startup
+  output is already visible. Keep synchronous `--version` probes off the
+  provider spawn path.
+  Native CLIs can also block before their composer on an interactive migration
+  or upgrade notice. Inspect the authoritative PTY transcript before treating
+  this as slow startup. For Codex, read the selected model's current
+  `upgrade.model` from `models_cache.json` and pass the supported
+  `notice.model_migrations={...}` config override so the selected model is
+  preserved without sending blind menu keystrokes. Personal Codex terminals
+  keep auth, config, memory, and runtime state in their isolated `CODEX_HOME`,
+  but reuse safe account-level startup caches and the existing `.tmp/plugins`
+  marketplace checkout so every terminal does not repeat model discovery,
+  update checks, migrations, or marketplace cloning. Bundled Codex versions
+  that support `tool_search_always_defer_mcp_tools` should defer MCP tool
+  schemas from the critical startup path while keeping those tools available
+  through discovery. Do not disable configured MCP servers merely to improve
+  startup time.
+  Test batch startup under both idle and loaded host conditions. Capture the
+  bridge session-creation span, first authoritative PTY output, composer-ready
+  span, system load/CPU, existing Codex process count, and MCP startup state.
+  A live four-terminal run created Vibyra sessions in about 160 ms while Codex
+  took about 21 seconds to emit output and 26-39 seconds to become ready on an
+  8-core host near 6.8 load. Treat this as combined Codex startup plus host and
+  network contention, not as proof that Vibyra has no remaining optimization
+  work. Preserve a backlog for bounded launch staggering, supported warm
+  runtime reuse, reduced isolated-home initialization, and immediate truthful
+  terminal presentation.
   A bridge/worker launch-contract mismatch means source changed under a stale
   bridge; refresh the bridge and never surface it as a generic assignment
   timeout. Apply launch-contract compatibility checks to personal provider
@@ -99,10 +129,13 @@ For Vibyra tokens:
   `env_key="VIBYRA_TERMINAL_GATEWAY_TOKEN"`. Exclude that variable through
   `shell_environment_policy.exclude` so model-generated commands cannot read
   the spending credential, and remove it from the environment used by direct
-  `!` shell commands.
+  `!` shell commands. Strip inherited provider credentials by generic
+  credential suffix as well as known provider prefix.
 - The detached worker renews the same scoped token every six hours while the
   terminal is alive. Renewal preserves its terminal, model, runtime, provider,
-  adapter, protocol, and rate-limit constraints; close still revokes it.
+  adapter, protocol, and rate-limit constraints. The worker must revoke its own
+  token when the provider exits or shutdown begins; bridge revocation alone is
+  insufficient because the bridge may be detached.
 - Blank Auto opens an authoritative Vibyra waiting terminal without a project,
   provider worker, launch plan, or billing credential. Its first submitted
   prompt is routed before native worker creation; the same terminal ID then
@@ -216,6 +249,13 @@ For Vibyra tokens:
   provider planner and allow one complete corrective retry containing only the
   bounded validator reason. Validate the retry again and fail closed if it is
   still invalid; never sanitize unsafe scope or launch the first rejected plan.
+- Reject duplicate JSON object keys before parsing provider-authored Team
+  output. Automatic sizing must derive bounded complexity signals from the goal
+  and candidate paths, and recovered Team sessions must match the current role
+  contract version.
+- Team planning UI may report only observable request analysis, response
+  validation, and terminal preparation. Never rotate timer-authored mapping,
+  role, assignment, or review claims without bridge evidence.
 - Resolve dynamic PTY assignments through
   `terminalTeamAssignmentForPlan(planId, roleKey, teamId)` or
   `teamPlanById(planId)` from `desktop/lib/terminalTeamPlanner.mjs`. Never
@@ -523,6 +563,11 @@ Classify the failure:
      admission. If output allowance is the remaining affordability problem,
      cap it to the largest funded value at or above the terminal floor and send
      that cap upstream. Keep exact settlement authoritative.
+   - Treat missing or invalid dynamic prompt/completion pricing as premium,
+     never as zero. The desktop picker and backend tier calculation must agree.
+     Reservations and provider `max_price` constraints must fill incomplete
+     token pricing from the conservative default fallback so partial catalog
+     metadata cannot bypass Free-plan locks or understate admission cost.
    - `desktop/lib/openRouterModels.mjs` must require explicit
      `supported_parameters: ["tools", ...]` for concrete terminal catalog
      entries. Preserve `auto`, because it routes before execution.
@@ -706,6 +751,45 @@ git diff --check
   corresponding official CLI through `My AI accounts`; API-only providers use
   the clearly labeled Vibyra Agent only with Vibyra tokens and never
   impersonate native CLIs.
+- Apply membership model-tier locks only when `tokenMode === "vibyra"`.
+  Personal-account terminals use the connected provider's entitlement and
+  billing, so Free-plan Vibyra model tiers must not hide, replace, or block a
+  supported native CLI model. Keep the authoritative Vibyra path protected by
+  exact-model terminal grants plus backend `planAllowsModel()` checks; a native
+  `/model` switch must not widen that grant.
+- Treat the authenticated membership payload as the source for
+  `maxConcurrentAgents`, `maxActiveProjects`, and `contextTokenCap`; retain
+  plan-derived fallbacks when an older cached payload omits those fields.
+  Vibyra-funded foreground terminals allow at least one active terminal so the
+  Free budget-terminal workflow remains usable, while legacy/background agent
+  runs honor Free's literal zero-agent allowance.
+- Enforce Vibyra-funded concurrency twice: reject new local PTY capacity before
+  provider startup, then have `ChatCostReservationService` transactionally
+  reject overlapping pending/settling `desktop-terminal` requests. Personal
+  provider-account terminals are exempt because their provider owns billing.
+  Include pending local launches in admission so parallel project-memory or
+  worktree setup cannot race past the cap. Do not terminate recovered or
+  already-running sessions after a downgrade.
+- Apply `maxActiveProjects` only when creating managed folders under
+  `~/Desktop/Vibyra Projects`. Existing managed projects and arbitrary opened
+  repositories remain accessible. Serialize the count-and-create operation
+  with the root lock file so separate desktop processes cannot race past the
+  cap, and count symlink entries conservatively.
+- Enforce `contextTokenCap` before reservation and provider dispatch. Reduce
+  output tokens to the remaining context where the endpoint's minimum response
+  budget still fits; otherwise return `membership_context_limit` without
+  spending credits or calling the provider. Native protocol translation must
+  forward the clipped value to the upstream `max_tokens`, and retry
+  instructions must reduce the retry output allowance instead of widening the
+  original context budget.
+- Issue terminal gateway credentials only with non-empty exact model, runtime,
+  provider, adapter, protocol, native-model, and billing-model constraints.
+  Reject legacy incomplete grant records and never renew a token after its
+  expiry; Auto-routed terminals must include both billing and native aliases in
+  the same exact grant.
+- Keep Laravel's unmetered legacy desktop routes impossible to enable in
+  production even when their environment flags are set. They are local/testing
+  compatibility paths, not a fallback for membership-funded requests.
 - Never silently change Vibyra tokens to `My AI accounts`. Claude and Gemini
   managed launches run the genuine provider CLI with an isolated profile and a
   terminal-scoped gateway token. Claude's private profile must pre-complete
@@ -771,3 +855,21 @@ git diff --check
   imitate it in Vibyra Agent. MiniMax `mmx-cli`, Meta Llama CLI, and Z.AI's
   coding helper are integration or infrastructure tools, not model-family
   native coding terminals for Vibyra routing.
+- Treat planned Team launch as one bridge transaction. Use
+  `/desktop/terminal-teams/launch`; do not let the renderer independently queue
+  each PTY. On any provisioning or assignment failure, remove every created
+  session, revoke its scoped gateway grant, and roll back prepared worktrees
+  before reporting failure.
+- For sandboxed Qwen, never pass a scoped gateway credential as
+  `--env OPENAI_API_KEY=<value>` to Docker or Podman. The managed preload guard
+  must rewrite it before spawn to name-only `--env OPENAI_API_KEY`. Validate
+  the real child with `/proc/<docker-pid>/cmdline`; broad `ps | rg` checks can
+  falsely match the diagnostic command itself.
+- Preserve connected xterm elements across structural renderer fallback. A
+  reorder or unrelated shell render must not dispose the terminal, clear it,
+  and replay its transcript. Keep screen-reader mode enabled and retain a
+  keyboard reorder path in addition to drag-and-drop.
+- Allow a bounded cold-start window for Mistral Vibe. Version 2.14.1 can remain
+  silent for about 20 seconds while local imports and capability discovery run,
+  then render its composer and become `ready`. Kimi normally becomes ready
+  much sooner.

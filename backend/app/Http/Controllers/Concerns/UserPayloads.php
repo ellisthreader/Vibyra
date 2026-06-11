@@ -162,6 +162,9 @@ trait UserPayloads
             'monthlyCredits' => (int) ($cycle === 'annual'
                 ? ($planConfig['annual_credits'] ?? $planConfig['monthly_credits'] ?? 0)
                 : ($planConfig['monthly_credits'] ?? 0)),
+            'maxConcurrentAgents' => (int) ($planConfig['max_concurrent_agents'] ?? 0),
+            'maxActiveProjects' => (int) ($planConfig['max_active_projects'] ?? 0),
+            'contextTokenCap' => (int) ($planConfig['context_token_cap'] ?? 0),
             'allowedModelTiers' => array_values((array) ($planConfig['allowed_tiers'] ?? ['free', 'budget'])),
             'onboardingComplete' => (bool) $user->onboarding_complete,
             'rememberedDesktops' => $this->normalizeRememberedDesktops($user->remembered_desktops),

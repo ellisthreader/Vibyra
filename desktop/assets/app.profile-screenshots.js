@@ -42,7 +42,7 @@ async function ensureProfileScreenshotSettings() {
     profileScreenshotSettingsError = error instanceof Error ? error.message : "Screenshot folder could not be loaded.";
   } finally {
     profileScreenshotSettingsBusy = false;
-    if (profileActiveSection === "preferences") renderProfile();
+    if (profileActiveSection === "app") renderProfile();
   }
 }
 

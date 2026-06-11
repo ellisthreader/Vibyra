@@ -13,7 +13,9 @@ import {
 
 test("agent run cap defaults to 12 and honors account cap when present", () => {
   assert.equal(maxConcurrentAgentRuns(null), 12);
-  assert.equal(maxConcurrentAgentRuns({}), 12);
+  assert.equal(maxConcurrentAgentRuns({}), 0);
+  assert.equal(maxConcurrentAgentRuns({ plan: "starter" }), 1);
+  assert.equal(maxConcurrentAgentRuns({ plan: "builder" }), 2);
   assert.equal(maxConcurrentAgentRuns({ maxConcurrentAgents: 4 }), 4);
   assert.equal(maxConcurrentAgentRuns({ max_concurrent_agents: "2" }), 2);
   assert.equal(maxConcurrentAgentRuns({ maxConcurrentAgents: 30 }), 12);

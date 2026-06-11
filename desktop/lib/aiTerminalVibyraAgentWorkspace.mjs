@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 const HIDDEN_DIRECTORIES = new Set([
   ".git",
@@ -72,7 +72,7 @@ export function resolveWorkspacePath(value, {
 } = {}) {
   const path = String(value || "").trim().replace(/^~(?=\/|$)/, homedir());
   const resolved = resolve(isAbsolute(path) ? path : join(cwd, path));
-  if (permissionMode !== "full" && !pathWithinRoot(resolved, workspaceRoot)) {
+  if (permissionMode !== "full" && !pathWithinRoot(canonicalPath(resolved), canonicalPath(workspaceRoot))) {
     throw new Error(`Standard access is limited to ${workspaceRoot}.`);
   }
   return resolved;
@@ -127,4 +127,20 @@ function pathWithinRoot(path, root) {
   const base = resolve(String(root || process.cwd()));
   const target = resolve(String(path || base));
   return target === base || target.startsWith(`${base}/`);
+}
+
+function canonicalPath(path) {
+  let current = resolve(String(path || process.cwd()));
+  const suffix = [];
+  while (!existsSync(current)) {
+    const parent = dirname(current);
+    if (parent === current) break;
+    suffix.unshift(basename(current));
+    current = parent;
+  }
+  try {
+    return resolve(realpathSync(current), ...suffix);
+  } catch {
+    return resolve(String(path || process.cwd()));
+  }
 }

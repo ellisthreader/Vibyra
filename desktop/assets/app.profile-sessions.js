@@ -1,7 +1,14 @@
+const profileSessionsRequestTimeoutMs = 12000;
+let profileSessionsRequestId = 0;
+let profileSessionsAbortController = null;
+
 function ensureDesktopSessions() {
   if (!profileSessionsLoaded && !profileSessionsLoading) loadDesktopSessions();
 }
 function resetProfileSessions() {
+  profileSessionsRequestId += 1;
+  profileSessionsAbortController?.abort();
+  profileSessionsAbortController = null;
   profileSessions = [];
   profileSessionsError = "";
   profileSessionsLoaded = false;
@@ -14,7 +21,7 @@ function resetProfileSessions() {
 function renderProfileSessionsPanel() {
   const count = profileSessions.length;
   if (profileSessionsLoading && !profileSessionsLoaded) {
-    return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2></div><p class="profile-session-empty">Loading devices...</p></section>`;
+    return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2></div><p class="profile-session-empty" role="status" aria-live="polite">Loading devices...</p></section>`;
   }
   if (profileSessionsError) {
     return `<section class="profile-session-list"><div class="profile-session-head"><h2>Signed-in devices</h2></div><p class="profile-session-empty profile-session-empty--danger">${escapeHtml(profileSessionsError)}</p><button class="secondary-button compact-button" type="button" data-profile-action="reload-sessions">Retry</button></section>`;
@@ -42,14 +49,14 @@ function profileSessionRow(session) {
   const current = session.current ? `<em>Current</em>` : "";
   const updated = profileShortDate(session.updatedAt);
   const menu = menuOpen
-    ? `<div class="profile-session-menu"><button type="button" data-device-revoke="${escapeAttribute(id)}" ${busy ? "disabled" : ""}>${busy ? "Terminating..." : "Terminate"}</button></div>`
+    ? `<div class="profile-session-menu" role="menu"><button type="button" role="menuitem" data-device-revoke="${escapeAttribute(id)}" ${busy ? "disabled" : ""}>${busy ? "Terminating..." : "Terminate"}</button></div>`
     : "";
   return `<tr class="profile-device-row${session.current ? " is-current" : ""}">
     <td class="profile-device-name" data-label="Device"><span class="profile-device-dot" aria-hidden="true"></span><strong>${escapeHtml(name)}</strong>${current}</td>
     <td class="profile-device-kind" data-label="Type">${escapeHtml(kind)}</td>
     <td class="profile-device-location" data-label="Location"><span>${escapeHtml(location)}</span>${ipAddress ? `<small>${escapeHtml(ipAddress)}</small>` : ""}</td>
     <td class="profile-device-activity" data-label="Last active"><time datetime="${escapeAttribute(session.updatedAt || "")}">${escapeHtml(updated)}</time></td>
-    <td class="profile-session-actions"><button class="profile-session-menu-button" type="button" data-device-menu="${escapeAttribute(id)}" aria-label="Actions for ${escapeAttribute(name)}" aria-expanded="${menuOpen ? "true" : "false"}">${icon("menu")}</button>${menu}</td>
+    <td class="profile-session-actions"><button class="profile-session-menu-button" type="button" data-device-menu="${escapeAttribute(id)}" aria-label="Actions for ${escapeAttribute(name)}" aria-haspopup="menu" aria-expanded="${menuOpen ? "true" : "false"}">${icon("menu")}</button>${menu}</td>
   </tr>`;
 }
 
@@ -113,7 +120,15 @@ function renderAccountActionsPanel(meta) {
 function renderDeleteAccountPanel(meta) {
   if (!profileDeleteOpen) return "";
   const target = meta.email || "this account";
-  return `<div class="profile-delete-confirm"><div class="profile-delete-warning"><span>${icon("alert")}</span><div><strong>Delete ${escapeHtml(target)} permanently?</strong><p>Everything tied to this Vibyra account will be deleted, including synced data, saved account details, and active sessions. This cannot be undone.</p></div></div><label class="profile-field"><span>Password</span><input id="profile-delete-password" type="password" autocomplete="current-password" placeholder="Confirm with your password" /></label><div class="profile-inline-actions"><button class="danger-button compact-button profile-delete-submit" type="button" data-profile-action="delete-account" ${profileDeleteBusy ? "disabled" : ""}>${profileDeleteBusy ? "Deleting..." : "Delete permanently"}</button><button class="secondary-button compact-button" type="button" data-profile-action="hide-delete-account">Cancel</button>${profileDeleteMessage ? `<p class="profile-status profile-status--danger">${escapeHtml(profileDeleteMessage)}</p>` : ""}</div></div>`;
+  const provider = String(meta.account.provider || "email").toLowerCase();
+  const providerLabel = provider === "apple" ? "Apple" : "Google";
+  const verification = provider === "email"
+    ? `<label class="profile-field"><span>Password</span><input id="profile-delete-password" type="password" autocomplete="current-password" placeholder="Confirm with your password" /></label>`
+    : `<p class="profile-section-copy">You will reauthenticate with ${providerLabel} in your browser before deletion.</p>`;
+  const action = profileDeleteBusy
+    ? (provider === "email" ? "Deleting..." : `Waiting for ${providerLabel}...`)
+    : (provider === "email" ? "Delete permanently" : `Continue with ${providerLabel}`);
+  return `<div class="profile-delete-confirm"><div class="profile-delete-warning"><span>${icon("alert")}</span><div><strong>Delete ${escapeHtml(target)} permanently?</strong><p>Everything tied to this Vibyra account will be deleted, including synced data, saved account details, and active sessions. This cannot be undone.</p></div></div>${verification}<div class="profile-inline-actions"><button class="danger-button compact-button profile-delete-submit" type="button" data-profile-action="delete-account" ${profileDeleteBusy ? "disabled" : ""}>${action}</button><button class="secondary-button compact-button" type="button" data-profile-action="hide-delete-account">Cancel</button>${profileDeleteMessage ? `<p class="profile-status profile-status--danger" role="status" aria-live="polite">${escapeHtml(profileDeleteMessage)}</p>` : ""}</div></div>`;
 }
 
 async function loadDesktopSessions(force = false) {
@@ -125,36 +140,48 @@ async function loadDesktopSessions(force = false) {
     renderProfile();
     return;
   }
+  const requestId = ++profileSessionsRequestId;
+  const controller = new AbortController();
+  profileSessionsAbortController = controller;
+  const timeoutId = setTimeout(() => controller.abort(), profileSessionsRequestTimeoutMs);
   profileSessionsLoading = true;
   profileSessionsError = "";
   renderProfile();
   try {
-    const response = await fetch(`${appApiBaseUrl()}/api/account/sessions`, {
-      headers: await desktopAccountHeaders(token)
-    });
+    const response = await fetch("/desktop/account-api/sessions", { signal: controller.signal });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result?.ok === false) throw new Error(result?.error || result?.message || "Could not load active sessions.");
+    if (requestId !== profileSessionsRequestId) return;
     profileSessions = Array.isArray(result.devices) ? result.devices : Array.isArray(result.sessions) ? result.sessions : [];
     profileSessionsLoaded = true;
   } catch (error) {
-    profileSessionsError = error instanceof Error ? error.message : "Could not load active sessions.";
+    if (requestId !== profileSessionsRequestId) return;
+    profileSessionsError = error?.name === "AbortError"
+      ? "Loading active sessions timed out."
+      : error instanceof Error ? error.message : "Could not load active sessions.";
+    profileSessionsLoaded = true;
   } finally {
+    clearTimeout(timeoutId);
+    if (requestId !== profileSessionsRequestId) return;
+    profileSessionsAbortController = null;
     profileSessionsLoading = false;
     renderProfile();
   }
 }
 
-async function revokeDesktopDevice(deviceId) {
+async function revokeDesktopDevice(deviceId, confirmed = false) {
   const token = desktopAuthSession()?.token;
   if (!token || !deviceId) return;
   const target = profileSessions.find((device) => profileDeviceId(device) === String(deviceId));
-  if (target?.current && !window.confirm("Terminate this device? This desktop will be signed out.")) return;
+  if (target?.current && !confirmed) {
+    requestSettingsConfirmation(`revoke:${deviceId}`);
+    return;
+  }
   profileSessionBusyId = String(deviceId);
   renderProfile();
   try {
-    const response = await fetch(`${appApiBaseUrl()}/api/account/devices/${encodeURIComponent(deviceId)}`, {
-      method: "DELETE",
-      headers: await desktopAccountHeaders(token)
+    const response = await fetch(`/desktop/account-api/devices/${encodeURIComponent(deviceId)}`, {
+      method: "DELETE"
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result?.ok === false) throw new Error(result?.error || result?.message || "Could not terminate this device.");
@@ -173,18 +200,17 @@ async function revokeDesktopDevice(deviceId) {
   }
 }
 
-async function logoutAllDesktopSessions() {
+async function logoutAllDesktopSessions(confirmed = false) {
   const token = desktopAuthSession()?.token;
   if (!token || profileLogoutAllBusy) return;
-  const ok = window.confirm("Log out of all Vibyra devices? This ends every active session, including this desktop.");
-  if (!ok) return;
+  if (!confirmed) {
+    requestSettingsConfirmation("logout-all");
+    return;
+  }
   profileLogoutAllBusy = true;
   renderProfile();
   try {
-    const response = await fetch(`${appApiBaseUrl()}/api/account/sessions`, {
-      method: "DELETE",
-      headers: await desktopAccountHeaders(token)
-    });
+    const response = await fetch("/desktop/account-api/sessions", { method: "DELETE" });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result?.ok === false) throw new Error(result?.error || result?.message || "Could not log out all devices.");
     if (typeof desktopSignOut === "function") desktopSignOut();

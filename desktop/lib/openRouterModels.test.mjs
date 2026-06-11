@@ -133,3 +133,34 @@ test("OpenRouter picker tiers match backend dynamic pricing thresholds", () => {
   assert.equal(models.find((model) => model.key === "x-ai/grok-4.20").tier, "balanced");
   assert.equal(models.find((model) => model.key === "anthropic/claude-opus-expensive").tier, "premium");
 });
+
+test("OpenRouter picker treats incomplete or invalid pricing as premium", () => {
+  const payload = buildOpenRouterModelPayload([
+    {
+      id: "openai/missing-output-price",
+      name: "OpenAI: Missing Output Price",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.0000001" },
+      supported_parameters: ["tools"]
+    },
+    {
+      id: "anthropic/invalid-input-price",
+      name: "Anthropic: Invalid Input Price",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "unknown", completion: "0.0000002" },
+      supported_parameters: ["tools"]
+    },
+    {
+      id: "google/actually-free:free",
+      name: "Google: Actually Free",
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0", completion: "0" },
+      supported_parameters: ["tools"]
+    }
+  ]);
+  const models = payload.groups.flatMap((group) => group.options);
+
+  assert.equal(models.find((model) => model.key === "openai/missing-output-price").tier, "premium");
+  assert.equal(models.find((model) => model.key === "anthropic/invalid-input-price").tier, "premium");
+  assert.equal(models.find((model) => model.key === "google/actually-free:free").tier, "free");
+});

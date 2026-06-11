@@ -1,4 +1,4 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { PORT } from "./state.mjs";
@@ -106,6 +106,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
       model,
       qwenSandboxed
     );
+    env.NODE_OPTIONS = `--require=${writeQwenDockerEnvGuard(env.QWEN_HOME)}`;
     env.QWEN_SANDBOX = qwenSandboxed ? "true" : "false";
     env.QWEN_CODE_SUPPRESS_YOLO_WARNING = "1";
   }
@@ -134,6 +135,30 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
     env.GEMINI_CLI_SYSTEM_SETTINGS_PATH = geminiSettingsPath;
   }
   return env;
+}
+
+function writeQwenDockerEnvGuard(dir) {
+  const target = join(dir, "vibyra-docker-env-guard.cjs");
+  const source = `'use strict';
+const childProcess = require('node:child_process');
+const path = require('node:path');
+delete process.env.NODE_OPTIONS;
+function guardedArgs(command, args) {
+  if (!Array.isArray(args) || !['docker', 'podman'].includes(path.basename(String(command || '')))) return args;
+  const secret = String(process.env.OPENAI_API_KEY || '');
+  if (!secret) return args;
+  return args.map((value) => value === 'OPENAI_API_KEY=' + secret ? 'OPENAI_API_KEY' : value);
+}
+for (const name of ['spawn', 'spawnSync', 'execFile', 'execFileSync']) {
+  const original = childProcess[name];
+  childProcess[name] = function guardedChildProcess(command, args, ...rest) {
+    return original.call(this, command, guardedArgs(command, args), ...rest);
+  };
+}
+`;
+  writeFileSync(target, source, { mode: 0o600 });
+  try { chmodSync(target, 0o600); } catch {}
+  return target;
 }
 
 function embeddedCodexHome(terminalId, options = {}) {
@@ -360,7 +385,17 @@ function seedCodexHome(targetDir, options = {}) {
     return;
   }
   if (!options.includeAuth) rmSync(join(targetDir, "auth.json"), { force: true });
-  const names = ["config.toml", "requirements.toml", "AGENTS.md", "skills", "plugins"];
+  const names = [
+    "config.toml",
+    "requirements.toml",
+    "AGENTS.md",
+    "skills",
+    "plugins",
+    "models_cache.json",
+    "version.json",
+    "installation_id",
+    ".personality_migration"
+  ];
   if (options.includeAuth) names.unshift("auth.json");
   for (const name of names) {
     const source = join(sourceDir, name);
@@ -371,6 +406,18 @@ function seedCodexHome(targetDir, options = {}) {
       if (name === "auth.json") chmodSync(target, 0o600);
     } catch {}
   }
+  seedSharedCodexMarketplace(sourceDir, targetDir);
+}
+
+function seedSharedCodexMarketplace(sourceDir, targetDir) {
+  const source = join(sourceDir, ".tmp", "plugins");
+  const tempDir = join(targetDir, ".tmp");
+  const target = join(tempDir, "plugins");
+  if (!existsSync(source) || existsSync(target)) return;
+  try {
+    mkdirSync(tempDir, { recursive: true, mode: 0o700 });
+    symlinkSync(source, target, "dir");
+  } catch {}
 }
 
 function writeVibyraCodexConfig(targetDir, cwd) {
@@ -390,7 +437,10 @@ function writeVibyraAgentInstructions(targetDir) {
 
 function stripProviderCredentials(env) {
   for (const key of Object.keys(env)) {
-    if (/^(?:ANTHROPIC|AWS|AZURE|GEMINI|GOOGLE|GROK|GROQ|KIMI|MISTRAL|MOONSHOT|OPENAI|OPENROUTER|QWEN|TOGETHER|XAI)_/i.test(key)) {
+    if (
+      /^(?:ANTHROPIC|AWS|AZURE|COHERE|DEEPSEEK|FIREWORKS|GEMINI|GOOGLE|GROK|GROQ|KIMI|MISTRAL|MOONSHOT|NVIDIA|OPENAI|OPENROUTER|PERPLEXITY|QWEN|TOGETHER|XAI)_/i.test(key)
+      || /(?:^|_)(?:API_KEY|ACCESS_KEY_ID|SECRET_ACCESS_KEY|AUTH_TOKEN|ACCESS_TOKEN|SESSION_TOKEN|BEARER_TOKEN|CLIENT_SECRET|PRIVATE_KEY|PASSWORD|TOKEN)$/i.test(key)
+    ) {
       delete env[key];
     }
   }

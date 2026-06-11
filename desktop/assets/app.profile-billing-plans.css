@@ -76,7 +76,9 @@
   border-color: color-mix(in srgb, var(--plan-accent) 55%, var(--surface-border));
   box-shadow: inset 0 2px 0 var(--plan-accent);
 }
-.profile-plan-card.is-current { background: var(--surface-hover, rgba(255, 255, 255, 0.04)); }
+.profile-plan-card.is-current {
+  background: var(--surface-bg-elevated, rgba(255, 255, 255, 0.025));
+}
 .profile-plan-card-top {
   align-items: center;
   display: flex;
@@ -148,13 +150,15 @@
 
 .profile-plan-current {
   align-items: center;
-  color: var(--surface-muted, var(--muted));
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.08));
+  color: var(--surface-text, var(--text));
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
   gap: 6px;
   justify-content: center;
   min-height: 38px;
+  padding-top: 10px;
 }
 
 .profile-plan-current svg { color: var(--surface-success, #57d39b); height: 15px; width: 15px; }

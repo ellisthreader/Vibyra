@@ -1,6 +1,9 @@
 let terminalTeamPlanning = false;
 let terminalTeamPlanningError = "";
 let terminalTeamPlanRequest = 0;
+let terminalTeamPlanController = null;
+let terminalTeamPlanningPhaseTimeouts = [];
+let terminalTeamPlanningPhase = "analyzing";
 
 function normalizeTerminalTeamText(value, limit = 500) {
   return String(value || "")
@@ -78,20 +81,63 @@ function terminalTeamPlanSourceLabel(plan) {
   return `Built-in fallback: ${reasons[plan?.fallbackReason] || "AI planning was unavailable"}`;
 }
 
-function terminalTeamPlanningButtonHtml() {
+function terminalTeamPlanningPhaseCopy(phase = "analyzing") {
+  const phases = {
+    analyzing: ["Analyzing your prompt", "Reading the outcome and project context"],
+    roles: ["Planning team roles", "Shaping focused responsibilities for each agent"],
+    assignments: ["Assigning individual roles", "Separating ownership and avoiding overlap"],
+    validating: ["Validating assignments", "Checking roles, scope, and safety"],
+    preparing: ["Preparing terminals", "Applying the approved team plan"]
+  };
+  return phases[phase] || phases.analyzing;
+}
+
+function terminalTeamPlanningButtonHtml(phase = terminalTeamPlanningPhase) {
+  const [title, detail] = terminalTeamPlanningPhaseCopy(phase);
   return `<span class="terminal-team-planning-mark" aria-hidden="true">${icon("people")}<i></i><i></i></span>
-    <span class="terminal-team-planning-copy"><strong>Planning your team</strong><small>Matching focused roles to your outcome</small></span>
+    <span class="terminal-team-planning-copy" data-terminal-team-planning-copy><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></span>
     <span class="terminal-team-planning-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
 }
 
-async function requestTerminalTeamPlan(payload = {}) {
+function setTerminalTeamPlanningPhase(root, phase) {
+  terminalTeamPlanningPhase = phase;
+  const copy = root?.querySelector?.("[data-terminal-team-planning-copy]");
+  if (!copy) return;
+  const [title, detail] = terminalTeamPlanningPhaseCopy(phase);
+  copy.innerHTML = `<strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small>`;
+  copy.classList.remove("is-changing");
+  void copy.offsetWidth;
+  copy.classList.add("is-changing");
+}
+
+function startTerminalTeamPlanningPhases(root) {
+  stopTerminalTeamPlanningPhases();
+  terminalTeamPlanningPhase = "analyzing";
+  [
+    { phase: "roles", delay: 3000 },
+    { phase: "assignments", delay: 7000 }
+  ].forEach(({ phase, delay }) => {
+    terminalTeamPlanningPhaseTimeouts.push(setTimeout(() => {
+      if (terminalTeamPlanning) setTerminalTeamPlanningPhase(root, phase);
+    }, delay));
+  });
+}
+
+function stopTerminalTeamPlanningPhases() {
+  terminalTeamPlanningPhaseTimeouts.forEach((timeout) => clearTimeout(timeout));
+  terminalTeamPlanningPhaseTimeouts = [];
+}
+
+async function requestTerminalTeamPlan(payload = {}, options = {}) {
   const goal = normalizeTerminalTeamGoal(payload.goal);
   const teamSize = [2, 3, 4].includes(Number(payload.teamSize))
     ? Number(payload.teamSize)
     : 0;
   if (!goal) throw new Error("Describe what the team should accomplish.");
+  options.onPhase?.("analyzing");
   const response = await fetch("/desktop/terminal-teams/plan", {
     method: "POST",
+    signal: options.signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       goal,
@@ -104,6 +150,8 @@ async function requestTerminalTeamPlan(payload = {}) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || "Vibyra could not plan this team.");
+  stopTerminalTeamPlanningPhases();
+  options.onPhase?.("validating");
   return validateTerminalTeamPlan(result, { goal, teamSize });
 }
 
@@ -119,7 +167,12 @@ function setTerminalTeamPlanningUi(root, state, detail = "") {
   button?.classList.toggle("is-team-planning", terminalTeamPlanning);
   if (button) {
     button.setAttribute("aria-busy", String(terminalTeamPlanning));
-    if (terminalTeamPlanning) button.innerHTML = terminalTeamPlanningButtonHtml();
+    if (terminalTeamPlanning) button.innerHTML = terminalTeamPlanningButtonHtml(terminalTeamPlanningPhase);
+  }
+  const cancel = root?.querySelector?.("[data-terminal-team-cancel]");
+  if (cancel) {
+    cancel.textContent = "Cancel";
+    cancel.classList.toggle("is-planning", terminalTeamPlanning);
   }
   const preview = setup?.querySelector?.(".terminal-team-role-preview");
   if (preview && state === "planning") {
@@ -136,6 +189,34 @@ function setTerminalTeamPlanningUi(root, state, detail = "") {
     status.textContent = terminalTeamPlanningError;
     status.classList.toggle("is-visible", Boolean(terminalTeamPlanningError));
   }
+}
+
+function cancelTerminalTeamPlanning(root) {
+  stopTerminalTeamPlanningPhases();
+  terminalTeamPlanningPhase = "analyzing";
+  terminalTeamPlanController?.abort();
+  terminalTeamPlanController = null;
+  terminalTeamPlanRequest += 1;
+  const button = root?.querySelector?.("#start-terminals");
+  if (button) {
+    delete button.dataset.terminalLaunchBusy;
+    button.disabled = button.dataset.terminalLaunchReady !== "true"
+      || !normalizeTerminalTeamGoal(setupTeamGoal);
+    button.innerHTML = `${icon("arrow")}Plan and start team`;
+  }
+  const preview = root?.querySelector?.(".terminal-team-role-preview");
+  if (preview) {
+    preview.hidden = true;
+    preview.innerHTML = "";
+    preview.classList.remove("is-planned");
+    preview.removeAttribute?.("data-planner-source");
+  }
+  const status = root?.querySelector?.("[data-terminal-team-status]");
+  if (status) {
+    status.textContent = "";
+    status.classList.remove("is-visible");
+  }
+  setTerminalTeamPlanningUi(root, "idle");
 }
 
 function previewTerminalTeamPlan(root, plan) {
@@ -179,17 +260,21 @@ function terminalTeamPrompt(assignment, goal, index, total, planId) {
   ].join("\n");
 }
 
-function createTerminalTeam(plan, modelKey, options = {}) {
+async function createTerminalTeam(plan, modelKey, options = {}) {
   const goal = normalizeTerminalTeamGoal(plan?.goal);
   const planId = normalizeTerminalTeamText(plan?.planId, 120);
-  const teamId = normalizeTerminalTeamText(plan?.teamId, 120) || planId;
+  const rawTeamId = normalizeTerminalTeamText(plan?.teamId, 120) || planId;
+  const teamId = typeof normalizeRendererTerminalTeamId === "function"
+    ? normalizeRendererTerminalTeamId(rawTeamId)
+    : rawTeamId;
   const assignments = Array.isArray(plan?.assignments) ? plan.assignments : [];
   if (!goal || !planId || !teamId || !assignments.length) return [];
-  return assignments.map((assignment, index) => {
+  const created = assignments.map((assignment, index) => {
     const role = terminalTeamRoleCatalog[assignment.roleKey];
     if (!role) return null;
     return createTerminal(modelKey, false, {
       ...options,
+      deferStart: true,
       initialPrompt: terminalTeamPrompt(assignment, goal, index, assignments.length, planId),
       teamId,
       teamSize: assignments.length,
@@ -212,4 +297,59 @@ function createTerminalTeam(plan, modelKey, options = {}) {
       title: assignment.title
     });
   }).filter(Boolean);
+  if (created.length !== assignments.length) {
+    rollbackLocalTerminalTeam(created);
+    return [];
+  }
+  try {
+    const requests = created.map((terminal) => ({
+      id: terminal.id,
+      title: terminal.title,
+      agent: terminal.agent,
+      model: terminal.model,
+      reasoningEffort: terminal.effort,
+      permissionMode: terminal.permissionMode,
+      tokenMode: terminal.tokenMode,
+      projectId: terminal.projectId,
+      workspaceMode: terminal.workspaceMode,
+      allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false,
+      ...terminalTeamRequestFields(terminal, created),
+      cols: terminal.cols || 100,
+      rows: terminal.rows || 30,
+      initialPrompt: terminal.initialPrompt,
+      assignmentId: `team-${terminal.id}-${Date.now()}`
+    }));
+    const response = await fetch("/desktop/terminal-teams/launch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terminals: requests })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !Array.isArray(result.sessions) || result.sessions.length !== created.length) {
+      throw new Error(result.error || "The planned Team could not be launched.");
+    }
+    const sessions = new Map(result.sessions.map((session) => [String(session.id), session]));
+    for (const terminal of created) {
+      const session = sessions.get(terminal.id);
+      if (!session) throw new Error("The bridge returned an incomplete Team.");
+      Object.assign(terminal, ptySessionPatch(session), { pending: false });
+      delete terminal.initialPrompt;
+      if (terminal.ptyStatus !== "unavailable" && terminal.ptyStatus !== "exited") connectPtyTerminal(terminal);
+    }
+    saveTerminals();
+    return created;
+  } catch (error) {
+    rollbackLocalTerminalTeam(created);
+    throw error;
+  }
+}
+
+function rollbackLocalTerminalTeam(created) {
+  const ids = new Set(created.map((terminal) => terminal.id));
+  for (const terminal of created) {
+    if (typeof removeLocalPtyTerminal === "function") removeLocalPtyTerminal(terminal);
+  }
+  terminals = terminals.filter((terminal) => !ids.has(terminal.id));
+  ensureTerminal();
+  saveTerminals();
 }

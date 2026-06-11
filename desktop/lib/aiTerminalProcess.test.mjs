@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, listAiTerminalAgentStatuses, spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
+import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, codexModelMigration, listAiTerminalAgentStatuses, spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
 import { VIBYRA_AGENT_ENTRY_PATH } from "./aiTerminalRuntimeCatalog.mjs";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 import { PORT } from "./state.mjs";
@@ -34,6 +35,41 @@ test("provider presentation versions come from installed CLIs when available", (
   if (codex) assert.match(codex, /^\d+\.\d+\.\d+$/);
   if (claude) assert.match(claude, /^\d+\.\d+\.\d+$/);
   assert.equal(aiTerminalProviderVersion("deepseek/deepseek-chat"), "");
+});
+
+test("Codex launch acknowledges the selected model's current migration notice", () => {
+  const home = mkdtempSync(join(tmpdir(), "vibyra-codex-migration-"));
+  writeFileSync(join(home, "models_cache.json"), JSON.stringify({
+    models: [{
+      slug: "gpt-5.4",
+      upgrade: { model: "gpt-5.5", migration_markdown: "Introducing GPT-5.5" }
+    }]
+  }));
+
+  try {
+    const migration = codexModelMigration("openai/gpt-5.4", home);
+    assert.deepEqual(migration, { from: "gpt-5.4", to: "gpt-5.5" });
+    assert.deepEqual(
+      aiTerminalAgentArgs("codex", {
+        model: "gpt-5.4",
+        modelMigration: migration,
+        deferMcpTools: true,
+        reasoningEffort: "default"
+      }),
+      [
+        "--no-alt-screen",
+        "--model",
+        "gpt-5.4",
+        "-c",
+        'notice.model_migrations={"gpt-5.4"="gpt-5.5"}',
+        "--enable",
+        "tool_search_always_defer_mcp_tools"
+      ]
+    );
+    assert.equal(codexModelMigration("gpt-5.5", home), null);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
 
 test("concrete Vibyra OpenAI terminals launch managed Codex with the Vibyra Responses provider", () => {
@@ -444,6 +480,12 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
   process.env.VIBYRA_CODEX_HOME_ROOT = isolatedRoot;
   writeFileSync(join(sourceHome, "auth.json"), "{\"auth_mode\":\"chatgpt\"}\n");
   writeFileSync(join(sourceHome, "config.toml"), "model = \"gpt-5.5\"\n");
+  writeFileSync(join(sourceHome, "models_cache.json"), "{\"models\":[]}\n");
+  writeFileSync(join(sourceHome, "version.json"), "{\"latest_version\":\"0.138.0\"}\n");
+  writeFileSync(join(sourceHome, "installation_id"), "installation-id\n");
+  writeFileSync(join(sourceHome, ".personality_migration"), "v1\n");
+  mkdirSync(join(sourceHome, ".tmp", "plugins"), { recursive: true });
+  writeFileSync(join(sourceHome, ".tmp", "plugins", "README.md"), "cached marketplace\n");
 
   try {
     const first = terminalEnv({
@@ -462,7 +504,16 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
     assert.equal(second.CODEX_HOME, join(isolatedRoot, "terminal-b"));
     assert.equal(existsSync(join(first.CODEX_HOME, "auth.json")), true);
     assert.equal(existsSync(join(first.CODEX_HOME, "config.toml")), true);
+    assert.equal(readFileSync(join(first.CODEX_HOME, "models_cache.json"), "utf8"), "{\"models\":[]}\n");
+    assert.equal(readFileSync(join(first.CODEX_HOME, "version.json"), "utf8"), "{\"latest_version\":\"0.138.0\"}\n");
+    assert.equal(readFileSync(join(first.CODEX_HOME, "installation_id"), "utf8"), "installation-id\n");
+    assert.equal(readFileSync(join(first.CODEX_HOME, ".personality_migration"), "utf8"), "v1\n");
     assert.match(readFileSync(join(first.CODEX_HOME, "AGENTS.md"), "utf8"), /Project memory/);
+    assert.equal(lstatSync(join(first.CODEX_HOME, ".tmp", "plugins")).isSymbolicLink(), true);
+    assert.equal(
+      readlinkSync(join(first.CODEX_HOME, ".tmp", "plugins")),
+      join(sourceHome, ".tmp", "plugins")
+    );
   } finally {
     if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
     else process.env.CODEX_HOME = previousCodexHome;
@@ -518,6 +569,74 @@ test("script-backed terminal resize updates the real PTY dimensions", async (t) 
     if (child?.exitCode === null) child.kill("SIGTERM");
   }
 });
+
+test("closing a script-backed terminal stops nested provider processes", async (t) => {
+  if (process.platform !== "linux" || !existsSync("/usr/bin/script")) {
+    t.skip("Linux script PTY is required");
+    return;
+  }
+  let output = "";
+  let child;
+  let nestedPid = 0;
+  const unrelated = spawn("sleep", ["30"], { stdio: "ignore" });
+  const exited = new Promise((resolve) => {
+    child = spawnAiTerminalProcess({
+      agent: "shell",
+      cwd: process.cwd(),
+      cols: 90,
+      rows: 24,
+      onData: (data) => { output += data; },
+      onExit: resolve
+    });
+  });
+
+  try {
+    child.stdin.write("sleep 30 & printf 'NESTED_PID:%s\\n' $!\r");
+    nestedPid = await waitForNestedPid(() => output);
+    assert.equal(processIsAlive(nestedPid), true);
+    child.kill("SIGTERM");
+    await Promise.race([
+      exited,
+      delay(3_000).then(() => { throw new Error("script PTY did not exit"); })
+    ]);
+    await waitForProcessExit(nestedPid);
+    assert.equal(processIsAlive(unrelated.pid), true);
+  } finally {
+    if (child?.exitCode === null) child.kill("SIGKILL");
+    if (unrelated.exitCode === null) unrelated.kill("SIGKILL");
+    if (nestedPid && processIsAlive(nestedPid)) {
+      try { process.kill(nestedPid, "SIGKILL"); } catch {}
+    }
+  }
+});
+
+async function waitForNestedPid(readOutput) {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    const match = String(readOutput()).match(/NESTED_PID:(\d+)/);
+    if (match) return Number(match[1]);
+    await delay(25);
+  }
+  throw new Error("nested provider process did not start");
+}
+
+async function waitForProcessExit(pid) {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    if (!processIsAlive(pid)) return;
+    await delay(25);
+  }
+  throw new Error("nested provider process survived terminal close");
+}
+
+function processIsAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

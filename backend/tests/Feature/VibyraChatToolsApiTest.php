@@ -20,6 +20,29 @@ class VibyraChatToolsApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_research_plan_rejects_context_over_the_plan_cap_before_reservation(): void
+    {
+        config([
+            'services.openrouter.key' => 'test-openrouter-key',
+            'billing.plans.free.context_token_cap' => 1,
+        ]);
+        Http::fake();
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Research Context User',
+            'email' => 'research-context-limit@example.com',
+            'password' => 'secret123',
+        ])->json('token');
+
+        $this->postJson('/api/chat/research-plan', [
+            'prompt' => 'Research secure membership enforcement.',
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(413)
+            ->assertJsonPath('code', 'membership_context_limit');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
     public function test_deep_research_plan_uses_budget_ai_planner(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);
@@ -227,7 +250,10 @@ class VibyraChatToolsApiTest extends TestCase
 
         $this->assertCount(2, $payloads);
         $this->assertSame(16000, $payloads[0]['max_completion_tokens'] ?? null);
-        $this->assertSame(16000, $payloads[1]['max_completion_tokens'] ?? null);
+        $this->assertLessThan(
+            $payloads[0]['max_completion_tokens'],
+            $payloads[1]['max_completion_tokens']
+        );
         $this->assertStringContainsString('previous Deep Research attempt returned no final answer', $payloads[1]['messages'][array_key_last($payloads[1]['messages'])]['content'] ?? '');
         $ledger = DB::table('credit_ledger')->where('kind', 'chat')->first();
         $this->assertNotNull($ledger);

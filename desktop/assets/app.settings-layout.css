@@ -1,3 +1,4 @@
+/* Settings shell, navigation, and section layout. */
 .profile-content { padding: 0; }
 .profile-page--desktop {
   align-items: start;
@@ -14,7 +15,7 @@
   align-content: start;
   display: grid;
   gap: 22px;
-  min-height: 560px;
+  min-height: 0;
   min-width: 0;
   width: 100%;
 }

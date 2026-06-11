@@ -7,6 +7,7 @@ use App\Services\Billing\BillingReservationException;
 use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterRequestPolicy;
+use App\Services\Billing\PlanEntitlements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -40,15 +41,30 @@ trait TeamPlanEndpoint
         $modelSlug = $calculator->resolveSlug('team-plan');
         $payload = $planner->payload($plannerRequest, $modelSlug);
         $inputTokens = $planner->estimatedInputTokens($payload);
+        $maxOutputTokens = app(PlanEntitlements::class)->boundedOutputTokens(
+            $user->plan ?: 'free',
+            $inputTokens,
+            TeamAssignmentPlanner::MAX_OUTPUT_TOKENS,
+        );
+        if ($maxOutputTokens === null) {
+            $cap = app(PlanEntitlements::class)->contextTokenCap($user->plan ?: 'free');
+            return $this->json([
+                'ok' => false,
+                'error' => "This Team plan exceeds your plan's {$cap}-token context limit.",
+                'code' => 'membership_context_limit',
+                'contextTokenCap' => $cap,
+            ], 413);
+        }
+        $payload['max_completion_tokens'] = $maxOutputTokens;
         $estimatedCredits = max(1, $calculator->estimateCredits(
             'team-plan',
             $inputTokens,
-            TeamAssignmentPlanner::MAX_OUTPUT_TOKENS
+            $maxOutputTokens
         ));
         $estimatedMicroUsd = (int) ceil($calculator->estimateReservationUsd(
             'team-plan',
             $inputTokens,
-            TeamAssignmentPlanner::MAX_OUTPUT_TOKENS
+            $maxOutputTokens
         ) * 1_000_000);
 
         try {
@@ -128,7 +144,7 @@ trait TeamPlanEndpoint
                 'outcome' => 'invalid_schema',
                 'usage' => $usage,
                 'estimated_input_tokens' => $inputTokens,
-                'estimated_output_tokens' => TeamAssignmentPlanner::MAX_OUTPUT_TOKENS,
+                'estimated_output_tokens' => $maxOutputTokens,
                 'minimum_credits' => 1,
             ]], [
                 'operation' => 'team-plan',
@@ -147,7 +163,7 @@ trait TeamPlanEndpoint
             'outcome' => 'completed',
             'usage' => $usage,
             'estimated_input_tokens' => $inputTokens,
-            'estimated_output_tokens' => TeamAssignmentPlanner::MAX_OUTPUT_TOKENS,
+            'estimated_output_tokens' => $maxOutputTokens,
             'minimum_credits' => 1,
         ]], [
             'operation' => 'team-plan',

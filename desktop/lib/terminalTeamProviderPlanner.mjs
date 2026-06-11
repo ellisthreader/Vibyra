@@ -3,6 +3,7 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promi
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { terminalRuntimeExecutable } from "./aiTerminalRuntimes.mjs";
+import { parseStrictJson } from "./strictJson.mjs";
 import { validateTerminalTeamProposal } from "./terminalTeamPlanner.mjs";
 import { terminalTeamProviderOutputSchema } from "./terminalTeamProviderSchema.mjs";
 
@@ -12,7 +13,8 @@ const MAX_PLAN_ATTEMPTS = 2;
 export async function requestProviderTeamPlan(
   input,
   spawnImpl = spawn,
-  prepareHome = prepareCodexHome
+  prepareHome = prepareCodexHome,
+  signal
 ) {
   const executable = terminalRuntimeExecutable("codex");
   if (!executable) throw plannerError("Codex is not available for AI Team planning.");
@@ -32,8 +34,8 @@ export async function requestProviderTeamPlan(
         plannerPrompt(input, validationIssue), TIMEOUT_MS, {
           ...process.env,
           CODEX_HOME: codexHome
-        }, directory);
-      const proposal = JSON.parse(await readFile(outputPath, "utf8"));
+        }, directory, signal);
+      const proposal = parseStrictJson(await readFile(outputPath, "utf8"));
       try {
         validateTerminalTeamProposal(proposal, {
           ...input,
@@ -53,7 +55,7 @@ export async function requestProviderTeamPlan(
       "invalid_team_plan"
     );
   } catch (error) {
-    if (["provider_planner_timeout", "invalid_team_plan"].includes(error?.code)) throw error;
+    if (["provider_planner_timeout", "provider_planner_cancelled", "invalid_team_plan"].includes(error?.code)) throw error;
     throw plannerError(error?.message || "Codex could not create the Team plan.");
   } finally {
     await rm(directory, { recursive: true, force: true });
@@ -117,29 +119,44 @@ async function prepareCodexHome(target) {
   }
 }
 
-function runPlanner(spawnImpl, executable, args, prompt, timeoutMs, env, cwd) {
+function runPlanner(spawnImpl, executable, args, prompt, timeoutMs, env, cwd, signal) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(plannerError("Team planning was cancelled.", "provider_planner_cancelled"));
+      return;
+    }
     const child = spawnImpl(executable, args, {
       cwd,
       env,
       stdio: ["pipe", "ignore", "pipe"]
     });
     let stderr = "";
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", cancel);
+      callback(value);
+    };
+    const cancel = () => {
+      child.kill("SIGKILL");
+      finish(reject, plannerError("Team planning was cancelled.", "provider_planner_cancelled"));
+    };
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(plannerError("Codex Team planning timed out.", "provider_planner_timeout"));
+      finish(reject, plannerError("Codex Team planning timed out.", "provider_planner_timeout"));
     }, timeoutMs);
+    signal?.addEventListener("abort", cancel, { once: true });
     child.stderr?.on("data", (chunk) => {
       stderr = `${stderr}${chunk}`.slice(-2000);
     });
     child.on("error", (error) => {
-      clearTimeout(timer);
-      reject(error);
+      finish(reject, error);
     });
     child.on("exit", (code) => {
-      clearTimeout(timer);
-      if (code === 0) resolve();
-      else reject(new Error(stderr.trim() || `Codex Team planner exited with code ${code}.`));
+      if (code === 0) finish(resolve);
+      else finish(reject, new Error(stderr.trim() || `Codex Team planner exited with code ${code}.`));
     });
     child.stdin.end(prompt);
   });

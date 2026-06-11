@@ -5,10 +5,10 @@ import test from "node:test";
 const source = readFileSync(new URL("./app.profile-billing-cancel.js", import.meta.url), "utf8");
 const actions = readFileSync(new URL("./app.profile-actions.js", import.meta.url), "utf8");
 
-test("cancellation submits structured feedback to the authenticated endpoint", () => {
-  assert.match(source, /\/api\/billing\/cancel/);
+test("cancellation submits structured feedback through the local account bridge", () => {
+  assert.match(source, /\/desktop\/account-api\/billing\/cancel/);
   assert.match(source, /JSON\.stringify\(\{ reason, details, confirmed: true \}\)/);
-  assert.match(source, /desktopAccountHeaders\(token/);
+  assert.doesNotMatch(source, /appApiBaseUrl|desktopAccountHeaders|Authorization|Bearer|\/api\/billing/);
 });
 
 test("manual scheduling preserves the desktop account while provider flows open externally", () => {

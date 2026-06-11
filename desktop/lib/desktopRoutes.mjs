@@ -29,6 +29,7 @@ import {
   startDesktopProviderAuth
 } from "./desktopAuthProxy.mjs";
 import { startPhonePreview } from "./phonePreview.mjs";
+import { requestPreviewShutdown } from "./previewShutdown.mjs";
 import { stopAllTrackedPreviewServers } from "./previewServerProcesses.mjs";
 import {
   clearDesktopAccount,
@@ -36,6 +37,7 @@ import {
   removeDesktopAccountSession,
   verifyAndSetDesktopAccount
 } from "./desktopAccount.mjs";
+import { handleDesktopAccountProxy } from "./desktopAccountProxy.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { headers, readBody, send, sendFile } from "./http.mjs";
 import { openRouterModelPayload } from "./openRouterModels.mjs";
@@ -62,6 +64,7 @@ const desktopAssetsDir = join(desktopDir, "assets");
 const monacoAssetsDir = join(__dirname, "..", "..", "node_modules", "monaco-editor", "min", "vs");
 
 export async function handleDesktopRoutes(req, res, url) {
+  if (await handleDesktopAccountProxy(req, res, url)) return true;
   if (req.method === "GET" && url.pathname === "/desktop/folders") {
     if (!authorizePhone(req, res)) return true;
     send(res, 200, { folders: await listDesktopFolders() });
@@ -390,8 +393,13 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "POST" && url.pathname === "/desktop/quit") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { ok: true });
-    stopAllTrackedPreviewServers();
-    appState.server?.close(() => process.exit(0));
+    if (!requestPreviewShutdown(appState.server)) {
+      stopAllTrackedPreviewServers();
+      appState.server?.closeAllConnections?.();
+      appState.server?.close(() => process.exit(0));
+      const forcedExit = setTimeout(() => process.exit(0), 1_000);
+      forcedExit.unref?.();
+    }
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/session") {

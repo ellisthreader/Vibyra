@@ -1,3 +1,5 @@
+import { maxConcurrentAgents } from "./membershipEntitlements.mjs";
+
 export const LOCAL_AGENT_RUN_CAP = 12;
 
 const ACTIVE_STATES = new Set(["running", "applying"]);
@@ -25,12 +27,7 @@ export function activeAgentRunCount(state) {
 }
 
 export function maxConcurrentAgentRuns(account) {
-  const value = account?.maxConcurrentAgents ?? account?.max_concurrent_agents;
-  if (value !== undefined && value !== null && value !== "") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return Math.min(LOCAL_AGENT_RUN_CAP, Math.max(0, Math.floor(parsed)));
-  }
-  return LOCAL_AGENT_RUN_CAP;
+  return Math.min(LOCAL_AGENT_RUN_CAP, maxConcurrentAgents(account));
 }
 
 export function assertCanStartAgentRun(state) {

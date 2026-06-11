@@ -70,11 +70,15 @@ function bindTerminalControls() {
       : Math.min(available, normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount));
     if (!teamMode && count < 1) return;
     let teamPlan = null;
+    let teamRequestId = 0;
     if (teamMode) {
-      const requestId = ++terminalTeamPlanRequest;
+      teamRequestId = ++terminalTeamPlanRequest;
+      terminalTeamPlanController?.abort();
+      terminalTeamPlanController = new AbortController();
       button.dataset.terminalLaunchBusy = "1";
       button.disabled = true;
       setTerminalTeamPlanningUi(root, "planning");
+      startTerminalTeamPlanningPhases(root);
       try {
         teamPlan = await requestTerminalTeamPlan({
           goal: teamGoal,
@@ -82,14 +86,22 @@ function bindTerminalControls() {
           projectId: setupProjectId,
           model: setupModel,
           tokenMode: setupTokenMode
+        }, {
+          signal: terminalTeamPlanController.signal,
+          onPhase: (phase) => setTerminalTeamPlanningPhase(root, phase)
         });
-        if (requestId !== terminalTeamPlanRequest) return;
-        setTerminalTeamPlanningUi(root, "planned");
+        if (teamRequestId !== terminalTeamPlanRequest) return;
+        terminalTeamPlanController = null;
+        setTerminalTeamPlanningPhase(root, "preparing");
         previewTerminalTeamPlan(root, teamPlan);
-        button.innerHTML = `${icon("check")}Team ready`;
         await revealTerminalTeamPlan();
+        if (teamRequestId !== terminalTeamPlanRequest) return;
+        setTerminalTeamPlanningUi(root, "planned");
+        button.innerHTML = `${icon("check")}Team ready`;
       } catch (error) {
-        if (requestId !== terminalTeamPlanRequest) return;
+        if (teamRequestId !== terminalTeamPlanRequest) return;
+        stopTerminalTeamPlanningPhases();
+        terminalTeamPlanController = null;
         delete button.dataset.terminalLaunchBusy;
         button.disabled = false;
         button.innerHTML = `${icon("arrow")}Plan and start team`;
@@ -123,6 +135,7 @@ function bindTerminalControls() {
           button.innerHTML = original;
         }
       }
+      if (teamMode && teamRequestId !== terminalTeamPlanRequest) return;
       if (!ready) {
         if (teamMode) {
           delete button.dataset.terminalLaunchBusy;
@@ -141,7 +154,16 @@ function bindTerminalControls() {
       allowSharedFallback: workspaceMode !== "worktree"
     };
     if (teamMode) {
-      const created = createTerminalTeam(teamPlan, setupModel, launchOptions);
+      let created = [];
+      try {
+        created = await createTerminalTeam(teamPlan, setupModel, launchOptions);
+      } catch (error) {
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = `${icon("arrow")}Plan and start team`;
+        setTerminalTeamPlanningUi(root, "error", error instanceof Error ? error.message : "The planned Team could not be launched.");
+        return;
+      }
       if (created.length !== teamPlan.teamSize) {
         delete button.dataset.terminalLaunchBusy;
         button.disabled = false;
@@ -157,6 +179,19 @@ function bindTerminalControls() {
       if (terminalBatchSetupOpen) completeTerminalBatchSetup();
       createTerminals(count, setupModel, launchOptions);
     }
+  });
+  root.querySelector("[data-terminal-team-cancel]")?.addEventListener("click", () => {
+    if (terminalTeamPlanning || root.querySelector("#start-terminals")?.dataset.terminalLaunchBusy) {
+      cancelTerminalTeamPlanning(root);
+      return;
+    }
+    if (terminalBatchSetupOpen) {
+      closeTerminalBatchSetup();
+      return;
+    }
+    terminalSetupStep = "mode";
+    resetTerminalTeamSetup();
+    render();
   });
   root.querySelector("[data-terminal-batch-cancel]")?.addEventListener("click", () => closeTerminalBatchSetup());
   root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => {
@@ -250,7 +285,8 @@ function bindTerminalNoticeControls(root = document) {
 function updateField(field) {
   if (field.dataset.terminalField === "model") {
     const model = (config().chatModels || []).find((item) => item.key === field.value);
-    if (typeof modelLocked === "function" && modelLocked(model)) { openTokenModal("plans"); render(); return; }
+    const terminal = findTerminal(field.dataset.terminalId);
+    if (typeof terminalModelLocked === "function" && terminalModelLocked(model, terminal?.tokenMode)) { openTokenModal("plans"); render(); return; }
   }
   updateTerminal(field.dataset.terminalId, { [field.dataset.terminalField]: field.value });
 }
@@ -411,6 +447,16 @@ function setActiveTerminal(id) {
 }
 
 function bindTerminalDrag(tab) {
+  tab.querySelector("[data-terminal-focus]")?.addEventListener("keydown", (event) => {
+    if (!event.altKey || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    const id = tab.dataset.terminalDrag || "";
+    const index = terminals.findIndex((terminal) => terminal.id === id);
+    const target = event.key === "ArrowLeft" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= terminals.length) return;
+    moveTerminal(id, terminals[target].id);
+    requestAnimationFrame(() => document.querySelector(`[data-terminal-focus="${CSS.escape(id)}"]`)?.focus());
+  });
   tab.addEventListener("dragstart", (event) => {
     if (event.target?.closest?.("button")) {
       event.preventDefault();

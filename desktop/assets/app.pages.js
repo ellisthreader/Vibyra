@@ -19,14 +19,11 @@ function renderDashboard() {
     <section class="desktop-home">
       <section class="desktop-home-hero" aria-label="Start with Vibyra">
         <h1>${escapeHtml(welcome)}</h1>
-        <button class="desktop-home-command" type="button" data-jump="chat">
+        <form class="desktop-home-command" id="home-ai-form">
           <span class="desktop-home-command-mark"><img src="/app-assets/vibyra.png" alt="" /></span>
-          <span class="desktop-home-command-copy">
-            <small>Ask Vibyra anything</small>
-            <strong>What do you want to create, fix, or improve?</strong>
-          </span>
-          <span class="desktop-home-command-arrow">${icon("arrow")}</span>
-        </button>
+          <textarea id="home-ai-input" aria-label="Ask Vibyra AI" placeholder="Ask Vibyra anything..." rows="1">${escapeHtml(chatDraft)}</textarea>
+          <button class="desktop-home-command-send" id="home-ai-send" type="submit" aria-label="Send prompt" ${chatDraft.trim() && !chatSending ? "" : "disabled"}>${icon("send")}</button>
+        </form>
 
         <nav class="desktop-home-context" aria-label="Desktop overview">
           ${homeStatusItem("phone", "Phone", homePhoneStatus(), "phone", phoneDetail)}
@@ -63,6 +60,39 @@ function renderDashboard() {
   bindDashboardActions();
 }
 function bindDashboardActions() {
+  const homeForm = document.getElementById("home-ai-form");
+  const homeInput = document.getElementById("home-ai-input");
+  const homeSend = document.getElementById("home-ai-send");
+  const resizeHomeInput = () => {
+    if (!homeInput) return;
+    homeInput.style.height = "auto";
+    homeInput.style.height = `${Math.min(homeInput.scrollHeight, 120)}px`;
+  };
+  const updateHomePrompt = () => {
+    if (!homeInput) return;
+    chatDraft = homeInput.value;
+    localStorage.setItem("vibyra.desktop.chatDraft", chatDraft);
+    if (homeSend) homeSend.disabled = chatSending || !chatDraft.trim();
+    resizeHomeInput();
+  };
+  const submitHomePrompt = () => {
+    if (!homeInput || chatSending || !homeInput.value.trim()) return;
+    chatDraft = homeInput.value.trim();
+    localStorage.setItem("vibyra.desktop.chatDraft", chatDraft);
+    setPage("chat");
+    sendChat();
+  };
+  homeInput?.addEventListener("input", updateHomePrompt);
+  homeInput?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    event.preventDefault();
+    submitHomePrompt();
+  });
+  homeForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitHomePrompt();
+  });
+  resizeHomeInput();
   document.querySelectorAll("[data-home-phone]").forEach((button) => button.addEventListener("click", openPairModal));
   document.querySelectorAll("[data-home-terminal]").forEach((button) => button.addEventListener("click", () => {
     if (typeof activeTerminalId !== "undefined") activeTerminalId = button.dataset.homeTerminal || activeTerminalId;

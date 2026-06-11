@@ -6,6 +6,7 @@ use App\Services\Billing\BillingReservationException;
 use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterRequestPolicy;
+use App\Services\Billing\PlanEntitlements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -38,6 +39,20 @@ trait ChatResearchPlan
         $calculator = app(CreditCalculator::class);
         $reservations = app(ChatCostReservationService::class);
         $inputTokens = max(1, (int) ceil(mb_strlen($prompt) / 4));
+        $maxOutputTokens = app(PlanEntitlements::class)->boundedOutputTokens(
+            $user->plan ?: 'free',
+            $inputTokens,
+            self::RESEARCH_PLAN_MAX_TOKENS,
+        );
+        if ($maxOutputTokens === null) {
+            $cap = app(PlanEntitlements::class)->contextTokenCap($user->plan ?: 'free');
+            return $this->json([
+                'ok' => false,
+                'error' => "This research plan exceeds your plan's {$cap}-token context limit.",
+                'code' => 'membership_context_limit',
+                'contextTokenCap' => $cap,
+            ], 413);
+        }
         try {
             $reservation = $reservations->reserve(
                 $user,
@@ -46,12 +61,12 @@ trait ChatResearchPlan
                 max(1, $calculator->estimateCredits(
                     'tool-deep-research',
                     $inputTokens,
-                    self::RESEARCH_PLAN_MAX_TOKENS
+                    $maxOutputTokens
                 )),
                 (int) ceil($calculator->estimateReservationUsd(
                     'tool-deep-research',
                     $inputTokens,
-                    self::RESEARCH_PLAN_MAX_TOKENS
+                    $maxOutputTokens
                 ) * 1_000_000),
                 ['tool' => 'research-plan'],
             );
@@ -73,7 +88,7 @@ trait ChatResearchPlan
                     'X-Title' => 'Vibyra',
                 ])
                 ->post((string) config('services.openrouter.url'), [
-                    ...$this->researchPlanPayload($prompt),
+                    ...$this->researchPlanPayload($prompt, $maxOutputTokens),
                     'provider' => app(OpenRouterRequestPolicy::class)->provider('tool-deep-research'),
                 ]);
         } catch (Throwable) {
@@ -107,7 +122,7 @@ trait ChatResearchPlan
             'outcome' => $plan === null ? 'malformed_response' : 'completed',
             'usage' => $usage,
             'estimated_input_tokens' => $inputTokens,
-            'estimated_output_tokens' => self::RESEARCH_PLAN_MAX_TOKENS,
+            'estimated_output_tokens' => $maxOutputTokens,
             'minimum_credits' => 1,
         ]]);
         if ($plan === null) {
@@ -123,7 +138,7 @@ trait ChatResearchPlan
         ]);
     }
 
-    private function researchPlanPayload(string $prompt): array
+    private function researchPlanPayload(string $prompt, int $maxOutputTokens): array
     {
         return [
             'model' => self::RESEARCH_PLAN_MODEL,
@@ -145,7 +160,7 @@ trait ChatResearchPlan
                     'content' => Str::limit($prompt, self::RESEARCH_PLAN_MAX_CHARS, ''),
                 ],
             ],
-            'max_completion_tokens' => self::RESEARCH_PLAN_MAX_TOKENS,
+            'max_completion_tokens' => $maxOutputTokens,
             'reasoning' => ['exclude' => true],
             'temperature' => 0.2,
             'usage' => ['include' => true],

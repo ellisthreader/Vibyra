@@ -8,6 +8,7 @@ use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterPricingCatalog;
 use App\Services\Billing\OpenRouterRequestPolicy;
+use App\Services\Billing\PlanEntitlements;
 use App\Services\Billing\TerminalOutputBudget;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Http\JsonResponse;
@@ -53,6 +54,21 @@ trait CodexResponsesEndpoint
         $inputTokens = max(1, (int) ceil(strlen(json_encode($payload)) / 4));
         $requestedOutputTokens = (int) ($payload['max_output_tokens'] ?? 2000);
         $requestedOutputTokens = max(800, min(2000, $requestedOutputTokens));
+        $requestedOutputTokens = app(PlanEntitlements::class)->boundedOutputTokens(
+            $user->plan ?: 'free',
+            $inputTokens,
+            $requestedOutputTokens,
+            800,
+        );
+        if ($requestedOutputTokens === null) {
+            $cap = app(PlanEntitlements::class)->contextTokenCap($user->plan ?: 'free');
+            return $this->codexError(
+                "This terminal request exceeds your plan's {$cap}-token context limit.",
+                413,
+                'membership_context_limit',
+                ['contextTokenCap' => $cap],
+            );
+        }
         $requestCostMultiplier = $this->codexRequestCostMultiplier($payload);
         $maxOutputTokens = app(TerminalOutputBudget::class)->affordableOutputTokens(
             $calc,

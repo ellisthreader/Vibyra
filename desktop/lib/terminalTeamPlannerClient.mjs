@@ -11,8 +11,14 @@ export async function requestCloudTeamPlan(input, fetchImpl = fetch) {
   }
 
   const controller = new AbortController();
+  const cancel = () => controller.abort();
+  if (input?.signal?.aborted) {
+    throw plannerError("Team planning was cancelled.", 503, "planner_cancelled");
+  }
+  input?.signal?.addEventListener("abort", cancel, { once: true });
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
+  let result;
   try {
     response = await fetchImpl(`${API_URL}/api/chat/team-plan`, {
       method: "POST",
@@ -31,18 +37,33 @@ export async function requestCloudTeamPlan(input, fetchImpl = fetch) {
         }
       })
     });
+    result = await readJson(response);
+    if (input?.signal?.aborted) {
+      throw plannerError("Team planning was cancelled.", 503, "planner_cancelled");
+    }
   } catch (error) {
-    const code = error?.name === "AbortError" ? "planner_timeout" : "planner_unavailable";
+    const cancelled = Boolean(input?.signal?.aborted);
+    const code = error?.code === "planner_cancelled"
+      ? error.code
+      : cancelled
+      ? "planner_cancelled"
+      : error?.name === "AbortError"
+        ? "planner_timeout"
+        : "planner_unavailable";
     throw plannerError(
-      code === "planner_timeout" ? "AI Team planning timed out." : "AI Team planning is unavailable.",
+      cancelled
+        ? "Team planning was cancelled."
+        : code === "planner_timeout"
+          ? "AI Team planning timed out."
+          : "AI Team planning is unavailable.",
       503,
       code
     );
   } finally {
     clearTimeout(timer);
+    input?.signal?.removeEventListener("abort", cancel);
   }
 
-  const result = await readJson(response);
   if (!response.ok || result?.ok === false) {
     if (response.status === 401) clearDesktopAccount();
     const providerCode = String(result?.code || "").trim().toLowerCase();

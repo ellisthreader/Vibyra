@@ -21,6 +21,9 @@ export type RemoteUser = {
   weeklyCreditsCap?: number;
   weeklyCreditsResetAt?: string | null;
   monthlyCredits?: number;
+  maxConcurrentAgents?: number;
+  maxActiveProjects?: number;
+  contextTokenCap?: number;
   allowedModelTiers?: string[];
   onboardingComplete: boolean;
   rememberedDesktops: unknown[];

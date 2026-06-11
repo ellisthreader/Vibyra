@@ -93,6 +93,47 @@ class ChatCostReservationServiceTest extends TestCase
         $this->assertSame(ChatCostReservation::STATUS_RELEASED, $reservation->fresh()->status);
     }
 
+    public function test_terminal_agent_limit_is_transactional_and_releases_capacity(): void
+    {
+        $user = $this->user(['plan' => 'starter']);
+        $service = app(ChatCostReservationService::class);
+        $first = $service->reserve(
+            $user,
+            'terminal:first',
+            'gpt-5.4-mini',
+            1,
+            1_000,
+            ['surface' => 'desktop-terminal', 'agent_mode' => true],
+        );
+
+        try {
+            $service->reserve(
+                $user,
+                'terminal:second',
+                'gpt-5.4-mini',
+                1,
+                1_000,
+                ['surface' => 'desktop-terminal', 'agent_mode' => true],
+            );
+            $this->fail('Expected the concurrent terminal membership limit to fail.');
+        } catch (BillingReservationException $error) {
+            $this->assertSame(429, $error->status);
+            $this->assertSame('membership_agent_limit', $error->errorCode);
+            $this->assertSame(1, $error->details['maxConcurrentAgents']);
+        }
+
+        $service->release($first, 'test_complete');
+        $second = $service->reserve(
+            $user,
+            'terminal:second',
+            'gpt-5.4-mini',
+            1,
+            1_000,
+            ['surface' => 'desktop-terminal', 'agent_mode' => true],
+        );
+        $this->assertSame(ChatCostReservation::STATUS_PENDING, $second->status);
+    }
+
     public function test_terminal_reservation_can_hold_more_balance_than_burst_quota(): void
     {
         $user = $this->user([

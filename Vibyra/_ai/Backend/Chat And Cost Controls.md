@@ -86,7 +86,11 @@ OpenRouter request safeguards:
 - `OpenRouterRequestPolicy` adds `provider.max_price` ceilings to chat, stream, research-plan, image, and Responses API requests. The ceilings use the higher of live and curated per-million pricing and expand for Priority/Fast requests, preventing a routed fallback from silently exceeding the unit prices used for reservation.
 - Web-search chat tools add a fixed conservative USD allowance per possible attempt because search request charges are not represented by prompt/completion token prices alone.
 - Publish image generation uses the same reservation ledger, reserves a configured USD amount by image kind, records `usage.cost`, and charges at least the advertised 12/20 credits.
-- Legacy Laravel and Node desktop-agent paths that use a company OpenRouter key are disabled by default. Re-enable only with the explicit unmetered operational-spend flags after assigning a separate company budget.
+- `PlanEntitlements` enforces each plan's context cap before reservation and provider dispatch across chat, stream, research plan, Codex Responses, native terminal, and Team-plan endpoints. It clips requested output to the remaining context when the endpoint minimum still fits and returns `membership_context_limit` otherwise.
+- Native Anthropic/Gemini translation estimates both client and translated payload size and writes the plan-clipped allowance into the actual upstream `max_tokens`. Empty Deep Research retries subtract their added system instruction from the existing output allowance and skip retry when that instruction cannot fit.
+- `ChatCostReservationService` treats pending/settling reservations with `meta.surface = desktop-terminal` as active Vibyra-funded terminal requests. Under the locked user row it rejects cross-device overlap above the plan's terminal allowance with `membership_agent_limit`; ordinary chat/build reservations and personal provider accounts are outside this count.
+- Legacy Laravel and Node desktop-agent paths that use a company OpenRouter key are disabled by default. In local/testing only, re-enable them with the explicit unmetered operational-spend flags after assigning a separate company budget.
+- Laravel legacy desktop routes and unmetered legacy agents are restricted to local/testing environments; production environment flags cannot re-enable them.
 - Remote OpenAI moderation and AI-assisted publish review are disabled by default because they are operational company spend. Local deterministic moderation remains enabled. The publish force-approval override is valid only in `local` or `testing`, never production.
 
 ## Remaining Economics Work
@@ -94,7 +98,7 @@ OpenRouter request safeguards:
 - `php artisan vibyra:audit-billing-economics` enforces a 60% conservative contribution-margin floor under stressed FX, 20% VAT, 30% store commission, OpenRouter's 5.5% funding fee, and configured operations reserves. This is not a whole-company net-profit guarantee because hosting, support, refunds, chargebacks, marketing, corporation tax, and real channel mix remain external.
 - Do not broadly roll out paid top-ups until Stripe/App Store refund and chargeback events can identify the original grant and reverse only unspent refundable credits safely.
 - Google Play purchases fail closed until real Play Developer API verification is implemented. Apple receipts must be current, and expired IAP plans are revoked by the refresh command.
-- Context caps and terminal concurrency limits remain separate from cost reservation and still need enforcement before broad agent concurrency is enabled.
+- Keep load-testing concurrent terminal reservations and recovery paths before broad agent concurrency is enabled; entitlement admission itself is enforced transactionally.
 
 ## Reasoning
 

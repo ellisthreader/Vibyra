@@ -1,17 +1,17 @@
 body.desktop-home-active {
-  --home-bg: #121214;
-  --home-rail: #0c0c0f;
-  --home-raised: #222226;
-  --home-line: rgba(255, 255, 255, 0.075);
-  --home-text: #ecebea;
-  --home-muted: #8d8990;
-  --home-command-bg: #19191d;
-  --home-command-hover: #1d1d22;
-  --home-command-border: rgba(255, 255, 255, 0.085);
-  --home-command-text: #f5f2fb;
-  --home-command-muted: #a8a2b2;
-  --home-command-control: rgba(109, 59, 255, 0.11);
-  --home-hover: rgba(255, 255, 255, 0.04);
+  --home-bg: var(--color-background);
+  --home-rail: var(--color-rail);
+  --home-raised: var(--color-elevated);
+  --home-line: var(--color-line);
+  --home-text: var(--color-text);
+  --home-muted: var(--color-muted);
+  --home-command-bg: var(--color-surface);
+  --home-command-hover: var(--color-elevated);
+  --home-command-border: var(--color-line);
+  --home-command-text: var(--color-text);
+  --home-command-muted: var(--color-muted);
+  --home-command-control: var(--color-accent-soft);
+  --home-hover: var(--color-hover);
 }
 
 body.desktop-home-active .main,
@@ -22,21 +22,6 @@ body.desktop-home-active .content.home-content {
 body.desktop-home-active .rail {
   background: var(--home-rail);
   border-right-color: var(--home-line);
-}
-
-body.desktop-home-active.electron-shell .desktop-chrome {
-  background: rgba(12, 12, 15, 0.96);
-  border-bottom-color: var(--home-line);
-}
-
-body.desktop-home-active .rail .nav-button.active:not(:hover) {
-  color: var(--home-text);
-  background: rgba(255, 255, 255, 0.065);
-  box-shadow: inset 2px 0 0 rgba(255, 255, 255, 0.72);
-}
-
-body.desktop-home-active .rail .nav-button.active svg {
-  color: var(--home-text);
 }
 
 .home-content {
@@ -63,58 +48,4 @@ body.desktop-home-active .rail .nav-button.active svg {
   font-weight: 760;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-}
-
-body.desktop-home-active[data-desktop-theme="light"] {
-  --home-bg: #ecebe8;
-  --home-rail: #f4f3f0;
-  --home-raised: #dfddd8;
-  --home-line: rgba(30, 28, 31, 0.1);
-  --home-text: #1b1a1d;
-  --home-muted: #706d73;
-  --home-command-bg: #202024;
-  --home-command-hover: #25252b;
-  --home-command-border: rgba(255, 255, 255, 0.1);
-  --home-command-text: #f5f2fb;
-  --home-command-muted: #aaa4b5;
-  --home-command-control: rgba(109, 59, 255, 0.13);
-  --home-hover: rgba(30, 28, 31, 0.045);
-}
-
-body.desktop-home-active[data-desktop-theme="light"].electron-shell .desktop-chrome {
-  background: rgba(244, 243, 240, 0.96);
-}
-
-body.desktop-home-active[data-desktop-theme="light"] .rail .nav-button.active:not(:hover) {
-  color: var(--home-text);
-  background: rgba(20, 28, 39, 0.055);
-  box-shadow: inset 2px 0 0 rgba(20, 28, 39, 0.68);
-}
-
-@media (prefers-color-scheme: light) {
-  body.desktop-home-active[data-desktop-theme="auto"] {
-    --home-bg: #ecebe8;
-    --home-rail: #f4f3f0;
-    --home-raised: #dfddd8;
-    --home-line: rgba(30, 28, 31, 0.1);
-    --home-text: #1b1a1d;
-    --home-muted: #706d73;
-    --home-command-bg: #202024;
-    --home-command-hover: #25252b;
-    --home-command-border: rgba(255, 255, 255, 0.1);
-    --home-command-text: #f5f2fb;
-    --home-command-muted: #aaa4b5;
-    --home-command-control: rgba(109, 59, 255, 0.13);
-    --home-hover: rgba(30, 28, 31, 0.045);
-  }
-
-  body.desktop-home-active[data-desktop-theme="auto"].electron-shell .desktop-chrome {
-    background: rgba(244, 243, 240, 0.96);
-  }
-
-  body.desktop-home-active[data-desktop-theme="auto"] .rail .nav-button.active:not(:hover) {
-    color: var(--home-text);
-    background: rgba(20, 28, 39, 0.055);
-    box-shadow: inset 2px 0 0 rgba(20, 28, 39, 0.68);
-  }
 }

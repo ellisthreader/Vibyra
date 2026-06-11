@@ -1,9 +1,9 @@
 body {
   --surface-bg-elevated: var(--surface-elevated);
   --surface-input: var(--surface-bg);
-  --screenshot-bg: #07070a;
-  --screenshot-surface: rgba(13, 13, 18, 0.97);
-  --screenshot-stage: #0a0a0f;
+  --screenshot-bg: var(--color-background);
+  --screenshot-surface: color-mix(in srgb, var(--color-elevated) 97%, transparent);
+  --screenshot-stage: var(--color-rail);
   --screenshot-text: #f8f7fe;
   --screenshot-muted: #aaa5b5;
   --screenshot-dim: #918ca1;
@@ -18,6 +18,63 @@ body {
   --screenshot-shadow: rgba(0, 0, 0, 0.48);
   --screenshot-tray-control: rgba(7, 7, 10, 0.82);
   --screenshot-tray-control-text: #f8f7fe;
+}
+
+.project-card,
+.community-card,
+.panel,
+.card,
+.suggestion,
+.composer,
+.modal,
+.topbar-menu {
+  box-shadow: none;
+}
+
+.project-card,
+.community-card,
+.panel,
+.card,
+.suggestion {
+  border-radius: 9px;
+}
+
+.composer {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  border-radius: 10px;
+  backdrop-filter: none;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.chat-page--empty .composer {
+  border-color: var(--color-line);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.composer:focus-within,
+.chat-page--empty .composer:focus-within {
+  border-color: var(--color-line-accent);
+}
+
+.chat-page--empty .suggestion {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  border-radius: 9px;
+  transform: none;
+}
+
+.chat-page--empty .suggestion:hover {
+  background: var(--color-elevated);
+  border-color: var(--color-line);
+  transform: none;
+}
+
+.project-card.active,
+.plan-card.featured,
+.membership-plan.active {
+  background: var(--color-surface);
+  border-color: var(--color-line-accent);
 }
 
 body.screenshot-editing {

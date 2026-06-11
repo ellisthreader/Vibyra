@@ -6,14 +6,16 @@ import { fileURLToPath } from "node:url";
 import { createConnection } from "node:net";
 import { spawn } from "node:child_process";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
+import { TERMINAL_TEAM_ROLE_CONTRACT_VERSION } from "./terminalTeamPromptRoles.mjs";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const workerPath = join(moduleDir, "aiTerminalWorker.mjs");
 const sessionRoot = process.env.VIBYRA_TERMINAL_SESSION_ROOT
   || join(homedir(), ".vibyra-agent", "terminal-sessions");
-export const AI_TERMINAL_RUNTIME_VERSION = 17;
+export const AI_TERMINAL_RUNTIME_VERSION = 18;
 export const AI_TERMINAL_GEMINI_PROFILE_VERSION = 1;
 const TERMINAL_STARTUP_TIMEOUT_MS = 5_000;
+const TERMINAL_STARTUP_STABILITY_MS = 100;
 
 export function launchPersistentAiTerminalProcess(config, handlers = {}) {
   const paths = persistentTerminalPaths(config.terminalId);
@@ -39,7 +41,16 @@ export async function waitForPersistentAiTerminalStartup(
   const deadline = Date.now() + Math.max(250, Number(timeoutMs) || TERMINAL_STARTUP_TIMEOUT_MS);
   while (Date.now() < deadline) {
     const state = readJson(paths.state);
-    if (state?.status === "running" && Number(state.childPid) > 0) return state;
+    if (state?.status === "running" && Number(state.childPid) > 0) {
+      await delay(TERMINAL_STARTUP_STABILITY_MS);
+      const stableState = readJson(paths.state);
+      if (stableState?.status === "running" && Number(stableState.childPid) > 0) {
+        return stableState;
+      }
+      if (stableState?.status === "exited") {
+        throw persistentStartupError(readTail(paths.output, 12_000), stableState);
+      }
+    }
     if (state?.status === "exited") {
       throw persistentStartupError(readTail(paths.output, 12_000), state);
     }
@@ -130,7 +141,7 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
     setRendererAttached(attached) {
       return send({ type: "renderer_attached", attached: Boolean(attached) });
     },
-    assign({ assignmentId, data, timeoutMs = 5_000 }) {
+    assign({ assignmentId, data, timeoutMs = 30_000 }) {
       const messageId = createHash("sha256")
         .update(`${terminalId}:${assignmentId}:${Date.now()}:${Math.random()}`)
         .digest("hex")
@@ -148,7 +159,7 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
             state: "timed-out",
             reason: "The terminal worker did not acknowledge the assignment in time."
           });
-        }, Math.max(100, Math.min(30_000, Number(timeoutMs) || 5_000)));
+        }, Math.max(100, Math.min(30_000, Number(timeoutMs) || 30_000)));
         pendingAssignments.set(messageId, { resolve, timer });
         if (!send({ type: "assign", messageId, assignmentId, data })) {
           clearTimeout(timer);
@@ -301,6 +312,10 @@ function serializableConfig(config) {
 export function persistentAiTerminalConfigIsCurrent(config = {}) {
   if (config.agent === "shell") return true;
   if (Number(config.runtimeVersion) !== AI_TERMINAL_RUNTIME_VERSION) return false;
+  if (
+    config.team
+    && Number(config.team.contractVersion) !== TERMINAL_TEAM_ROLE_CONTRACT_VERSION
+  ) return false;
   if (
     config.launchPlan?.runtimeId === "gemini"
     && Number(config.geminiProfileVersion) !== AI_TERMINAL_GEMINI_PROFILE_VERSION

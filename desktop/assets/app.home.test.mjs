@@ -40,7 +40,11 @@ test("Home is a borderless editorial surface instead of a card dashboard", () =>
   assert.doesNotMatch(pages, /desktop-home-hero-brand/);
   assert.doesNotMatch(pages, /desktop-home-header/);
   assert.doesNotMatch(pages, /Desktop ready/);
-  assert.match(pages, /Ask Vibyra anything/);
+  assert.match(pages, /id="home-ai-input"/);
+  assert.match(pages, /placeholder="Ask Vibyra anything\.\.\."/);
+  assert.match(pages, /id="home-ai-send"/);
+  assert.match(pages, /setPage\("chat"\);\s+sendChat\(\);/);
+  assert.match(pages, /event\.key !== "Enter" \|\| event\.shiftKey/);
   assert.match(pages, /desktop-home-context/);
   assert.match(pages, /homeProjectRow/);
   assert.match(pages, /desktop-home-recent/);
@@ -52,11 +56,13 @@ test("Home is a borderless editorial surface instead of a card dashboard", () =>
   assert.doesNotMatch(pages, /homePhonePanel/);
   assert.doesNotMatch(styles, /\.desktop-home-card/);
   assert.match(launchStyles, /grid-template-columns: repeat\(3/);
-  assert.match(styles, /--home-command-bg: #19191d/);
+  assert.match(styles, /--home-command-bg: var\(--color-surface\)/);
   assert.match(launchStyles, /var\(--home-command-bg\)/);
   assert.match(launchStyles, /border-radius: 9px/);
   assert.doesNotMatch(launchStyles, /radial-gradient/);
   assert.doesNotMatch(launchStyles, /translateY/);
+  assert.match(launchStyles, /\.desktop-home-command textarea/);
+  assert.match(launchStyles, /\.desktop-home-command-send/);
 });
 
 test("Home welcomes newly created accounts once and returning accounts back", () => {

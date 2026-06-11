@@ -20,10 +20,115 @@ body[data-desktop-theme="light"] {
 }
 
 .terminal-page,
+.terminal-stage,
+.terminal-setup,
+.terminal-setup-stage,
 .terminal-page--project-empty .terminal-stage,
 .terminal-setup-grid-preview,
-.terminal-pty-lines {
+.terminal-lines,
+.terminal-pty-lines,
+.terminal-xterm,
+.terminal-xterm .xterm,
+.terminal-xterm .xterm-viewport,
+.terminal-xterm .xterm-screen {
   background: var(--terminal-bg);
+}
+
+.terminal-focus,
+.terminal-tile,
+.terminal-setup-panel,
+.terminal-composer,
+.terminal-composer-wrap,
+.terminal-command-menu,
+.terminal-test-device-control,
+.terminal-test-canvas-zoom,
+.terminal-test-address input,
+.terminal-test-custom input {
+  background: var(--terminal-surface);
+}
+
+.terminal-focus-head,
+.terminal-tile-head,
+.terminal-team-bar,
+.terminal-companion-shell-head,
+.terminal-test-toolbar,
+.terminal-test-console {
+  background: var(--terminal-rail);
+}
+
+.terminal-menu,
+.terminal-model-picker,
+.terminal-settings-menu,
+.terminal-toolbar-menu,
+.terminal-agent-menu,
+.terminal-details-menu,
+.terminal-memory-import-menu-popover,
+.terminal-test-address form,
+.terminal-test-inspector-card {
+  background: var(--terminal-elevated);
+  border-color: var(--terminal-border-strong);
+}
+
+.terminal-model-search,
+.terminal-model-option,
+.terminal-agent-row button,
+.terminal-agent-option,
+.terminal-setup-mode-card,
+.terminal-setup-count-buttons button,
+.terminal-setup-custom-count input,
+.terminal-workspace-row button,
+.terminal-effort-row button,
+.terminal-model-select,
+.terminal-count-row button,
+.terminal-model-row button,
+.terminal-custom-count,
+.terminal-layout-preview,
+.terminal-test-target {
+  background-color: transparent;
+  border-color: var(--terminal-border);
+}
+
+.terminal-model-option:hover,
+.terminal-test-target:hover {
+  background: var(--terminal-hover);
+}
+
+.terminal-model-option.active,
+.terminal-test-target.is-selected {
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+}
+
+.terminal-companion,
+.terminal-memory-graph {
+  background: var(--terminal-surface);
+}
+
+.terminal-memory-explorer,
+.terminal-memory-search,
+.terminal-memory-ai textarea {
+  background: var(--terminal-bg);
+}
+
+.terminal-test-stage {
+  background: var(--terminal-bg);
+}
+
+.terminal-test-canvas {
+  background:
+    radial-gradient(circle at 50% 36%, color-mix(in srgb, var(--terminal-accent) 7%, transparent), transparent 42%),
+    var(--terminal-bg);
+}
+
+.terminal-test-frame {
+  background: var(--terminal-surface);
+  border-color: var(--terminal-border-strong);
+}
+
+.terminal-test-frame[data-device-kind="phone"],
+.terminal-test-frame[data-device-kind="tablet"],
+.terminal-test-frame[data-device-kind="foldable"] {
+  border-color: var(--terminal-elevated);
 }
 
 .terminal-setup-progress :is(span, button),
@@ -159,8 +264,13 @@ body[data-desktop-theme="light"] {
 }
 
 .terminal-setup-panel,
+.terminal-menu,
+.terminal-model-picker,
 .terminal-toolbar-menu,
 .terminal-agent-menu,
-.terminal-details-menu {
+.terminal-details-menu,
+.terminal-settings-menu,
+.terminal-test-address form,
+.terminal-test-inspector-card {
   box-shadow: var(--terminal-panel-shadow);
 }

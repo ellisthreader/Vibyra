@@ -36,8 +36,8 @@ test("PTY keyboard input has one browser event owner", () => {
   );
   assert.equal([...runtimeSource.matchAll(/xterm\.onData\(/g)].length, 1);
   assert.match(runtimeSource, /if \(window\.Terminal\) return;/);
-  assert.match(runtimeSource, /screenReaderMode: false/);
-  assert.doesNotMatch(runtimeSource, /screenReaderMode: true/);
+  assert.match(runtimeSource, /screenReaderMode: true/);
+  assert.doesNotMatch(runtimeSource, /screenReaderMode: false/);
   assert.match(runtimeSource, /terminalXterms\[id\] !== xterm \|\| !xterm\.element\?\.isConnected/);
   assert.match(runtimeSource, /terminalPtyCompletedPrompts\(id, input\)/);
   assert.match(runtimeSource, /queueTerminalPtyInput\(id, prompts/);
@@ -167,6 +167,10 @@ test("assigned terminal tasks are transient and submitted after PTY creation", (
   assert.match(legacySource, /initialPrompt,\s*updatedAt/);
   assert.match(runtimeSource, /Object\.assign\(terminal,\s*ptySessionPatch\(result\.session\)/);
   assert.match(runtimeSource, /await submitInitialPtyPrompt\(terminal\)/);
+  assert.ok(
+    runtimeSource.indexOf("connectPtyTerminal(terminal)")
+      < runtimeSource.indexOf("await submitInitialPtyPrompt(terminal)"),
+  );
   assert.match(runtimeSource, /\/desktop\/pty-terminals\/\$\{encodeURIComponent\(terminal\.id\)\}\/assign/);
   assert.match(runtimeSource, /JSON\.stringify\(\{\s*assignmentId,\s*prompt\s*\}\)/);
   assert.match(runtimeSource, /if \(!response\.ok\) throw new Error/);

@@ -58,6 +58,14 @@ test("agent arguments preserve standard, full, and persistent resume behavior", 
     prompt: "Now run the tests",
     threadId: "thread-123"
   });
+  const resumedReadOnly = vibyraAgentArgs({
+    desktopUrl: "http://127.0.0.1:4317",
+    model: "deepseek/deepseek-chat-v3.1",
+    permissionMode: "standard",
+    sandboxMode: "read-only",
+    prompt: "Review the latest changes",
+    threadId: "thread-review"
+  });
 
   assert.deepEqual(standard.slice(0, 4), ["exec", "--color", "never", "--json"]);
   assert.ok(standard.includes('model_provider="vibyra"'));
@@ -71,6 +79,8 @@ test("agent arguments preserve standard, full, and persistent resume behavior", 
   assert.deepEqual(resumed.slice(0, 3), ["exec", "resume", "--json"]);
   assert.equal(resumed.at(-2), "thread-123");
   assert.equal(resumed.at(-1), "-");
+  assert.equal(resumedReadOnly.includes("--sandbox"), false);
+  assert.ok(resumedReadOnly.includes('sandbox_mode="read-only"'));
   if (previousInstructionsFile === undefined) delete process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE;
   else process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE = previousInstructionsFile;
 });
@@ -104,7 +114,8 @@ test("Vibyra Agent gives every OpenRouter model a truthful runtime identity", ()
 
 test("gateway credentials stay out of direct shell commands and shutdown reaches active work", () => {
   assert.match(source, /env: shellCommandEnvironment\(\)/);
-  assert.match(source, /delete env\.VIBYRA_TERMINAL_GATEWAY_TOKEN/);
+  assert.match(source, /key === "VIBYRA_TERMINAL_GATEWAY_TOKEN"/);
+  assert.match(source, /API_KEY\|ACCESS_KEY_ID\|SECRET_ACCESS_KEY/);
   assert.match(source, /process\.on\("SIGTERM", handleTerminate\)/);
   assert.match(source, /child\.kill\("SIGTERM"\)/);
   assert.match(source, /child\.kill\("SIGKILL"\)/);

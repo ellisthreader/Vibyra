@@ -14,6 +14,9 @@ class OpenRouterRequestPolicy
         $fallbacks = (array) config('billing.fallback_pricing_per_million_usd', []);
         $fallback = (array) ($fallbacks[$slug] ?? []);
         $live = $this->catalog->freshPricingFor($slug) ?? [];
+        if ($fallback === [] && ! $this->hasCompleteTokenPricing($live)) {
+            $fallback = (array) ($fallbacks['default'] ?? []);
+        }
         $dynamicSafety = max(1.0, (float) config(
             'billing.openrouter_pricing.dynamic_model_safety_multiplier',
             2.0
@@ -37,6 +40,12 @@ class OpenRouterRequestPolicy
         ], fn ($value) => $value !== null);
 
         return $maxPrice === [] ? [] : ['max_price' => $maxPrice];
+    }
+
+    private function hasCompleteTokenPricing(array $pricing): bool
+    {
+        return $this->numeric($pricing['prompt'] ?? null) !== null
+            && $this->numeric($pricing['completion'] ?? null) !== null;
     }
 
     private function perMillion(mixed $perToken, float $multiplier): ?float

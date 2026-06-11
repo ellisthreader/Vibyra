@@ -5,6 +5,10 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
+import {
+  issueTerminalGatewayToken,
+  verifyTerminalGatewayToken
+} from "./terminalGatewayAuth.mjs";
 
 test("detached terminal worker finishes after the bridge client disconnects", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-safe-rails-"));
@@ -144,6 +148,98 @@ test("startup handshake accepts a spawned provider child", async () => {
   }
 });
 
+test("startup handshake rejects a provider that exits immediately after spawn", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-startup-crash-"));
+  const cli = fakeCli(root, "startup-crash-cli", [
+    "#!/bin/bash",
+    "exit 7"
+  ]);
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  process.env.VIBYRA_CODEX_CLI = cli;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?startupCrash=${Date.now()}`, import.meta.url);
+  const {
+    launchPersistentAiTerminalProcess,
+    waitForPersistentAiTerminalStartup
+  } = await import(moduleUrl);
+  const terminalId = `startup-crash-${Date.now()}`;
+
+  try {
+    launchPersistentAiTerminalProcess(terminalConfig(terminalId));
+    await assert.rejects(
+      waitForPersistentAiTerminalStartup(terminalId),
+      (error) => error.code === "terminal_provider_startup_failed"
+        && error.exitCode === 7
+    );
+  } finally {
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
+test("detached worker revokes its gateway token when the provider exits", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-worker-revoke-"));
+  const agentHome = join(root, "agent-home");
+  const cli = fakeCli(root, "worker-revoke-cli", [
+    "#!/bin/bash",
+    "sleep 0.1",
+    "exit 0"
+  ]);
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  process.env.VIBYRA_AGENT_HOME = agentHome;
+  process.env.VIBYRA_CODEX_CLI = cli;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?workerRevoke=${Date.now()}`, import.meta.url);
+  const {
+    launchPersistentAiTerminalProcess,
+    listPersistentAiTerminalSessions
+  } = await import(moduleUrl);
+  const terminalId = `worker-revoke-${Date.now()}`;
+  const grant = issueTerminalGatewayToken(terminalId, {
+    models: ["openai/gpt-5.5"],
+    runtimeId: "codex",
+    providerId: "openai",
+    adapterId: "responses",
+    protocol: "openai-responses",
+    nativeModel: "openai/gpt-5.5",
+    billingModel: "openai/gpt-5.5"
+  });
+  const config = {
+    ...terminalConfig(terminalId),
+    terminalGatewayToken: grant.token
+  };
+
+  try {
+    launchPersistentAiTerminalProcess(config).disconnect();
+    assert.ok(verifyTerminalGatewayToken(grant.token, {
+      model: "openai/gpt-5.5",
+      runtimeId: "codex",
+      providerId: "openai",
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: "openai/gpt-5.5",
+      billingModel: "openai/gpt-5.5",
+      consume: false
+    }));
+    await waitFor(() => listPersistentAiTerminalSessions()
+      .find((item) => item.config.terminalId === terminalId)?.state.status === "exited", 5_000);
+    await waitFor(() => verifyTerminalGatewayToken(grant.token, {
+      model: "openai/gpt-5.5",
+      runtimeId: "codex",
+      providerId: "openai",
+      adapterId: "responses",
+      protocol: "openai-responses",
+      nativeModel: "openai/gpt-5.5",
+      billingModel: "openai/gpt-5.5",
+      consume: false
+    }) === null, 5_000);
+  } finally {
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+    delete process.env.VIBYRA_AGENT_HOME;
+    delete process.env.VIBYRA_CODEX_CLI;
+  }
+});
+
 test("startup handshake reports stale launch contracts immediately", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-startup-stale-"));
   const cli = fakeCli(root, "startup-stale-cli", ["#!/bin/bash", "sleep 2"]);
@@ -266,7 +362,7 @@ test("legacy Vibyra launch sessions are not compatible with the current runtime"
   } = await import(moduleUrl);
 
   try {
-    assert.equal(AI_TERMINAL_RUNTIME_VERSION, 17);
+    assert.equal(AI_TERMINAL_RUNTIME_VERSION, 18);
     assert.equal(persistentAiTerminalConfigIsCurrent({ agent: "vibyra" }), false);
     assert.equal(persistentAiTerminalConfigIsCurrent({
       agent: "vibyra",
@@ -311,6 +407,17 @@ test("legacy Vibyra launch sessions are not compatible with the current runtime"
     await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
+});
+
+test("stale Team role contracts are not compatible with the current runtime", async () => {
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?teamContract=${Date.now()}`, import.meta.url);
+  const { persistentAiTerminalConfigIsCurrent } = await import(moduleUrl);
+  const config = terminalConfig("stale-team-contract");
+  config.runtimeVersion = 18;
+  config.team = { contractVersion: 1 };
+  assert.equal(persistentAiTerminalConfigIsCurrent(config), false);
+  config.team.contractVersion = 2;
+  assert.equal(persistentAiTerminalConfigIsCurrent(config), true);
 });
 
 test("semantic assignments queue before worker attach and deliver each assignment ID exactly once", async () => {

@@ -51,6 +51,25 @@ export function chooseTerminalTeamTopology(intent) {
   return ["coordinator", "builder", "reviewer"];
 }
 
+export function inferTerminalTeamSignals(input = {}) {
+  const text = String(input.goal || "").toLowerCase();
+  const paths = Array.isArray(input.projectFiles)
+    ? input.projectFiles.map((file) => String(file?.path || "")).filter(Boolean)
+    : [];
+  const topLevels = new Set(paths.map((path) => path.split("/")[0]).filter(Boolean));
+  return {
+    ambiguous: /\b(investigate|analy[sz]e|unknown|explore|diagnose|audit everything)\b/.test(text),
+    crossLayer: topLevels.size > 1
+      || /\b(frontend|renderer|desktop|backend|api|database|mobile)\b.*\b(frontend|renderer|desktop|backend|api|database|mobile)\b/.test(text),
+    securityRisk: /\b(security|credential|secret|token|permission|auth|sandbox|vulnerab)\w*/.test(text),
+    migrationRisk: /\b(migration|schema|database|backfill|rollback)\b/.test(text),
+    billingRisk: /\b(billing|credit|payment|quota|charge)\w*/.test(text),
+    concurrencyRisk: /\b(concurren|race|parallel|transaction|atomic|deadlock)\w*/.test(text),
+    runtimeRisk: /\b(runtime|process|worker|pty|terminal|recovery|resume|shutdown|launch)\w*/.test(text),
+    validationHeavy: /\b(exhaustive|every possibility|regression|compatib|end[- ]to[- ]end|all functions)\w*/.test(text)
+  };
+}
+
 function normalizeSignals(value) {
   if (value == null) return Object.freeze({});
   assertPlainObject(value, "Team planning signals");

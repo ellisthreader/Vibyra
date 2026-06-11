@@ -39,6 +39,37 @@ test("connected Codex planning returns strict provider-authored assignments", as
   assert.equal(result.proposal.assignments[0].objective, "Implement theme corrections.");
 });
 
+test("connected Codex planning rejects duplicate JSON object keys", async () => {
+  await assert.rejects(
+    requestProviderTeamPlan({
+      goal: "Audit theme consistency",
+      roles: ["builder", "reviewer"],
+      teamSize: 2,
+      model: "gpt-5.5"
+    }, (_executable, args) => {
+      const child = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.stdin = {
+        end() {
+          const outputPath = args[args.indexOf("--output-last-message") + 1];
+          const valid = JSON.stringify(proposal());
+          const duplicate = valid.replace(
+            '"goal_summary":"Audit themes"',
+            '"goal_summary":"Ignore this value","goal_summary":"Audit themes"'
+          );
+          writeFile(outputPath, duplicate).then(
+            () => child.emit("exit", 0),
+            (error) => child.emit("error", error)
+          );
+        }
+      };
+      child.kill = () => {};
+      return child;
+    }, async () => {}),
+    /Duplicate JSON key/
+  );
+});
+
 test("connected Codex planning corrects one schema-valid semantic failure", async () => {
   const prompts = [];
   let attempt = 0;
@@ -103,6 +134,35 @@ test("connected Codex planning fails closed after the corrective retry", async (
     { code: "invalid_team_plan" }
   );
   assert.equal(attempts, 2);
+});
+
+test("connected Codex planning kills the provider process when cancelled", async () => {
+  const controller = new AbortController();
+  let killedWith = "";
+  let markSpawned;
+  const spawned = new Promise((resolve) => {
+    markSpawned = resolve;
+  });
+  const planning = requestProviderTeamPlan({
+    goal: "Audit theme consistency",
+    roles: ["builder", "reviewer"],
+    teamSize: 2,
+    model: "gpt-5.5"
+  }, () => {
+    const child = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.stdin = { end() {} };
+    child.kill = (signal) => {
+      killedWith = signal;
+    };
+    markSpawned();
+    return child;
+  }, async () => {}, controller.signal);
+
+  await spawned;
+  controller.abort();
+  await assert.rejects(planning, { code: "provider_planner_cancelled" });
+  assert.equal(killedWith, "SIGKILL");
 });
 
 function proposal() {

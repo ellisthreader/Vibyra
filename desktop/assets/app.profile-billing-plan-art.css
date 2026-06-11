@@ -49,8 +49,8 @@
 
 .profile-plan-card.is-current::after {
   background:
-    linear-gradient(180deg, transparent 0, transparent 10%, var(--surface-hover, #181820) 46%, var(--surface-hover, #181820) 100%),
-    linear-gradient(90deg, var(--surface-hover, #181820) 0, transparent 58%);
+    linear-gradient(180deg, transparent 0, transparent 12%, var(--surface-bg-elevated, #12121a) 46%, var(--surface-bg-elevated, #12121a) 100%),
+    linear-gradient(90deg, var(--surface-bg-elevated, #12121a) 0, transparent 58%);
 }
 
 .profile-plan-card-top {

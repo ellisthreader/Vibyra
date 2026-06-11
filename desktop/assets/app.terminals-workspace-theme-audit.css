@@ -1,4 +1,18 @@
 /* Theme ownership for terminal workspace modes rendered beside the PTY. */
+.terminal-companion--editor,
+.terminal-editor-section,
+.terminal-editor-monaco {
+  background: var(--terminal-bg);
+}
+
+.terminal-editor-explorer,
+.terminal-editor-toolbar,
+.terminal-editor-tabs,
+.terminal-editor-statusbar {
+  background: var(--terminal-rail);
+  border-color: var(--terminal-workspace-divider);
+}
+
 .terminal-editor-explorer > header span,
 .terminal-editor-folder summary,
 .terminal-editor-toolbar > div:first-child span,
@@ -58,7 +72,7 @@
 .terminal-memory-ribbon,
 .terminal-memory-vault-pane,
 .terminal-memory-links-pane {
-  background: var(--terminal-elevated);
+  background: var(--terminal-rail);
   border-color: var(--terminal-border);
   color: var(--terminal-muted);
 }

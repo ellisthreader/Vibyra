@@ -1,14 +1,15 @@
 body {
-  --terminal-bg: var(--color-background, #07070a);
-  --terminal-surface: var(--color-surface, #0b0b10);
-  --terminal-elevated: var(--color-elevated, #12121a);
+  --terminal-bg: var(--color-background, #121214);
+  --terminal-rail: var(--color-rail, #17171b);
+  --terminal-surface: var(--color-surface, #19191d);
+  --terminal-elevated: var(--color-elevated, #222226);
   --terminal-hover: var(--color-hover, rgba(255, 255, 255, 0.045));
   --terminal-border: var(--color-line-soft, rgba(151, 161, 190, 0.12));
   --terminal-border-strong: var(--color-line, rgba(151, 161, 190, 0.18));
-  --terminal-text: var(--color-text, #f1eef8);
-  --terminal-copy: var(--color-muted, #cdc6dc);
-  --terminal-muted: var(--color-muted, #aaa3b8);
-  --terminal-dim: var(--color-dim, #918ca1);
+  --terminal-text: var(--color-text, #ecebea);
+  --terminal-copy: var(--color-muted, #a8a2b2);
+  --terminal-muted: var(--color-muted, #a8a2b2);
+  --terminal-dim: var(--color-dim, #77717f);
   --terminal-accent: var(--color-accent, #8b5cff);
   --terminal-accent-soft: var(--color-accent-soft, rgba(139, 92, 255, 0.13));
   --terminal-accent-border: rgba(139, 92, 255, 0.36);

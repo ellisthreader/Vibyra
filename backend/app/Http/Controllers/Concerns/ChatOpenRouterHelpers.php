@@ -158,11 +158,17 @@ trait ChatOpenRouterHelpers
         }
 
         $retry = $payload;
-        $retry['max_completion_tokens'] = max(8000, (int) ($payload['max_completion_tokens'] ?? 0));
-        $retry['messages'][] = [
+        $retryInstruction = [
             'role' => 'system',
             'content' => 'The previous Deep Research attempt returned no final answer. Produce a concise final answer in plain text now. If research is incomplete, say what was confirmed and what remains uncertain.',
         ];
+        $instructionTokens = max(1, (int) ceil(strlen(json_encode($retryInstruction)) / 4));
+        $currentOutputTokens = max(1, (int) ($payload['max_completion_tokens'] ?? 1));
+        if ($currentOutputTokens <= $instructionTokens) {
+            return null;
+        }
+        $retry['max_completion_tokens'] = $currentOutputTokens - $instructionTokens;
+        $retry['messages'][] = $retryInstruction;
 
         return $retry;
     }

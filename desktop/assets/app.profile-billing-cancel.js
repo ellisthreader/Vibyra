@@ -96,9 +96,9 @@ async function submitBillingCancellation() {
   profileBillingCancelDanger = false;
   renderProfile();
   try {
-    const response = await fetch(`${appApiBaseUrl()}/api/billing/cancel`, {
+    const response = await fetch("/desktop/account-api/billing/cancel", {
       method: "POST",
-      headers: await desktopAccountHeaders(token, { "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reason, details, confirmed: true })
     });
     const result = await response.json().catch(() => ({}));

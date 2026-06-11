@@ -1,18 +1,19 @@
 body,
 body[data-desktop-theme="dark"] {
-  --terminal-bg: #07070a;
-  --terminal-surface: #12121a;
-  --terminal-elevated: #0d0d12;
-  --terminal-hover: rgba(255, 255, 255, 0.045);
-  --terminal-border: rgba(255, 255, 255, 0.06);
-  --terminal-border-strong: rgba(255, 255, 255, 0.09);
-  --terminal-text: #ffffff;
-  --terminal-copy: #cdc6dc;
-  --terminal-muted: #b8b8c8;
-  --terminal-dim: #7a7a8c;
-  --terminal-accent: #8b5cff;
-  --terminal-accent-soft: rgba(109, 59, 255, 0.18);
-  --terminal-accent-border: rgba(139, 92, 255, 0.36);
+  --terminal-bg: var(--color-background);
+  --terminal-rail: var(--color-rail);
+  --terminal-surface: var(--color-surface);
+  --terminal-elevated: var(--color-elevated);
+  --terminal-hover: var(--color-hover);
+  --terminal-border: var(--color-line-soft);
+  --terminal-border-strong: var(--color-line);
+  --terminal-text: var(--color-text);
+  --terminal-copy: var(--color-muted);
+  --terminal-muted: var(--color-muted);
+  --terminal-dim: var(--color-dim);
+  --terminal-accent: var(--color-accent);
+  --terminal-accent-soft: var(--color-accent-soft);
+  --terminal-accent-border: var(--color-line-accent);
   --terminal-shadow: rgba(0, 0, 0, 0.42);
   --terminal-disabled: rgba(247, 244, 255, 0.46);
   --terminal-danger: #ff9aad;

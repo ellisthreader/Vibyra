@@ -45,6 +45,29 @@ class CreditCalculatorTest extends TestCase
         $this->assertEqualsWithDelta(0.045, $calc->estimateReservationUsd('vendor/model', 1000, 2000), 0.000001);
     }
 
+    public function test_incomplete_dynamic_pricing_is_premium_and_uses_default_fallback(): void
+    {
+        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog->method('freshPricingFor')->with('vendor/partial')->willReturn([
+            'completion' => '0.000001',
+        ]);
+        config([
+            'billing.fallback_pricing_per_million_usd.default' => [
+                'input' => 30.0,
+                'output' => 180.0,
+            ],
+        ]);
+        $calc = new CreditCalculator($catalog);
+
+        $this->assertSame('premium', $calc->tier('vendor/partial'));
+        $this->assertFalse($calc->planAllowsModel('free', 'vendor/partial'));
+        $this->assertEqualsWithDelta(
+            0.39,
+            $calc->estimateUsd('vendor/partial', 1000, 2000),
+            0.000001
+        );
+    }
+
     public function test_usage_estimate_excludes_reservation_safety_margin(): void
     {
         $catalog = $this->createMock(OpenRouterPricingCatalog::class);

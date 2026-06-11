@@ -593,8 +593,11 @@ export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "
   ].filter(Boolean).join("\n\n"))}`);
   const effort = normalizeReasoningEffort(reasoningEffort);
   if (effort !== "default" && effort !== "none") provider.push("-c", `model_reasoning_effort="${effort}"`);
-  const access = String(sandboxMode || "").trim().toLowerCase() === "read-only"
-    ? ["--sandbox", "read-only"]
+  const readOnly = String(sandboxMode || "").trim().toLowerCase() === "read-only";
+  const access = readOnly
+    ? threadId
+      ? ["-c", 'sandbox_mode="read-only"']
+      : ["--sandbox", "read-only"]
     : normalizePermissionMode(permissionMode) === "full"
     ? ["--dangerously-bypass-approvals-and-sandbox"]
     : threadId ? [] : ["--sandbox", "workspace-write"];
@@ -1044,7 +1047,14 @@ function terminateTerminal(state, rl) {
 
 function shellCommandEnvironment() {
   const env = { ...process.env };
-  delete env.VIBYRA_TERMINAL_GATEWAY_TOKEN;
+  for (const key of Object.keys(env)) {
+    if (
+      key === "VIBYRA_TERMINAL_GATEWAY_TOKEN"
+      || /(?:^|_)(?:API_KEY|ACCESS_KEY_ID|SECRET_ACCESS_KEY|AUTH_TOKEN|ACCESS_TOKEN|SESSION_TOKEN|BEARER_TOKEN|CLIENT_SECRET|PRIVATE_KEY|PASSWORD|TOKEN)$/i.test(key)
+    ) {
+      delete env[key];
+    }
+  }
   return env;
 }
 

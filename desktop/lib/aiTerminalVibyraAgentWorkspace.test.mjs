@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
@@ -56,9 +56,16 @@ test("Git status is read-only and strips the terminal gateway credential", async
 });
 
 test("Standard paths stay inside the launch workspace while Full access may leave it", () => {
-  const root = resolve("/tmp/vibyra-agent-root");
+  const root = mkdtempSync(join(tmpdir(), "vibyra-agent-root-"));
+  const outside = mkdtempSync(join(tmpdir(), "vibyra-agent-outside-"));
+  mkdirSync(join(root, "src"));
+  symlinkSync(outside, join(root, "escape"));
 
   assert.equal(resolveWorkspacePath("src", { cwd: root, workspaceRoot: root }), resolve(root, "src"));
+  assert.throws(
+    () => resolveWorkspacePath("escape", { cwd: root, workspaceRoot: root }),
+    /Standard access is limited/
+  );
   assert.throws(
     () => resolveWorkspacePath("/etc", { cwd: root, workspaceRoot: root }),
     /Standard access is limited/

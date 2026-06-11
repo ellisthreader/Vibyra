@@ -13,6 +13,16 @@ test("PTY Team launch resolves stored plan assignments instead of renderer task 
   assert.match(source, /missing, stale, or does not match this role/);
 });
 
+test("PTY creation returns after provider child spawn without waiting for initial assignment readiness", async () => {
+  const source = await readFile(new URL("./ptyTerminals.mjs", import.meta.url), "utf8");
+  const routeStart = source.indexOf('if (req.method === "POST" && route.action === "collection")');
+  const routeEnd = source.indexOf('if (req.method === "POST" && route.action === "workspace-preflight")', routeStart);
+  const createRoute = source.slice(routeStart, routeEnd);
+
+  assert.match(createRoute, /await createPtyTerminal\(body\)/);
+  assert.doesNotMatch(createRoute, /assignPtyTerminalTask|STARTUP_ASSIGNMENT_TIMEOUT_MS/);
+});
+
 test("renderer includes the bridge plan id in the authoritative PTY request", async () => {
   const teamSource = await readFile(
     new URL("../assets/app.terminals-team.js", import.meta.url),

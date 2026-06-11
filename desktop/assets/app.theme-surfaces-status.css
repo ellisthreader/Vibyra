@@ -146,11 +146,13 @@
 }
 
 .profile-delete-confirm,
+.profile-inline-confirm,
 .profile-account-action--danger.is-open {
   background: var(--surface-danger-soft);
 }
 
-.profile-delete-confirm { border-color: color-mix(in srgb, var(--surface-danger) 32%, transparent); }
+.profile-delete-confirm,
+.profile-inline-confirm { border-color: color-mix(in srgb, var(--surface-danger) 32%, transparent); }
 
 .profile-delete-warning {
   background: var(--surface-danger-soft);

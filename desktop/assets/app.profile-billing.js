@@ -92,11 +92,10 @@ function profileBillingManagement(meta, paid) {
     if (provider === "manual") {
       const renewal = profileBillingCreditRefresh(meta) || "Not scheduled";
       return `<section class="profile-billing-management profile-billing-management--secure">
-        <div class="profile-billing-security-copy"><h2>Billing details</h2></div>
+        <div class="profile-billing-security-copy"><h2>Test membership</h2><p>This membership is managed internally and has no payment method or invoice.</p></div>
         <dl class="profile-billing-security-details">
-          <div><dt>Payment method</dt><dd>Test card ···· 4242</dd></div>
-          <div><dt>Next billing date</dt><dd>${escapeHtml(renewal)}</dd></div>
-          <div><dt>Latest invoice</dt><dd>DEMO-0001 <span>Paid</span></dd></div>
+          <div><dt>Access review</dt><dd>${escapeHtml(renewal)}</dd></div>
+          <div><dt>Billing</dt><dd>Not charged</dd></div>
         </dl>
       </section>`;
     }

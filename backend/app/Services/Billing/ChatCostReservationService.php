@@ -13,6 +13,7 @@ class ChatCostReservationService
         private readonly CreditCalculator $calculator,
         private readonly ChatCostQuotaGuard $quotaGuard,
         private readonly ChatCostSettlementService $settlementService,
+        private readonly PlanEntitlements $entitlements,
     ) {
     }
 
@@ -43,6 +44,7 @@ class ChatCostReservationService
             }
 
             $fresh = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $this->assertAgentCapacity($fresh, $meta);
             $this->quotaGuard->prepare($fresh);
             $query = DB::table('users')->where('id', $fresh->id)
                 ->where('credits_balance', '>=', $credits);
@@ -166,5 +168,32 @@ class ChatCostReservationService
         return max(0, (int) (
             $reservation->meta['quota_reserved_credits'] ?? $reservation->reserved_credits
         ));
+    }
+
+    private function assertAgentCapacity(User $user, array $meta): void
+    {
+        if (($meta['surface'] ?? null) !== 'desktop-terminal') {
+            return;
+        }
+        $limit = $this->entitlements->maxConcurrentTerminalAgents($user->plan ?: 'free');
+        $active = ChatCostReservation::where('user_id', $user->id)
+            ->whereIn('status', [
+                ChatCostReservation::STATUS_PENDING,
+                ChatCostReservation::STATUS_SETTLING,
+            ])
+            ->get()
+            ->filter(fn (ChatCostReservation $reservation): bool => (
+                ($reservation->meta['surface'] ?? null) === 'desktop-terminal'
+            ))
+            ->count();
+        if ($active >= $limit) {
+            throw new BillingReservationException(
+                "Your Vibyra plan supports {$limit} concurrent terminal agent".
+                    ($limit === 1 ? '' : 's').'. Wait for an active request to finish or upgrade.',
+                429,
+                'membership_agent_limit',
+                ['maxConcurrentAgents' => $limit],
+            );
+        }
     }
 }

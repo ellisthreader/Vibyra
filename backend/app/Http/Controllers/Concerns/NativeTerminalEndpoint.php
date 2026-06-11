@@ -7,6 +7,7 @@ use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\OpenRouterRequestPolicy;
 use App\Services\Billing\OpenRouterPricingCatalog;
+use App\Services\Billing\PlanEntitlements;
 use GuzzleHttp\Client as GuzzleClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -76,20 +77,40 @@ trait NativeTerminalEndpoint
                 'This model does not support terminal tool calling.', 422, $providerId
             );
         }
-        $inputTokens = max(1, (int) ceil(strlen(json_encode($payload)) / 4));
+        $upstreamPayload = $protocol === 'anthropic'
+            ? $this->anthropicTerminalPayload($payload, $resolvedModel, $forceStream ?? (($payload['stream'] ?? false) === true))
+            : $this->geminiChatPayload($payload, $resolvedModel);
+        $inputTokens = max(
+            1,
+            (int) ceil(strlen(json_encode($payload)) / 4),
+            (int) ceil(strlen(json_encode($upstreamPayload)) / 4),
+        );
         $maxOutputTokens = max(1, min(8192, (int) (
             $payload['max_tokens'] ?? $payload['generationConfig']['maxOutputTokens'] ?? 2000
         )));
+        $maxOutputTokens = app(PlanEntitlements::class)->boundedOutputTokens(
+            $user->plan ?: 'free',
+            $inputTokens,
+            $maxOutputTokens,
+        );
+        if ($maxOutputTokens === null) {
+            $cap = app(PlanEntitlements::class)->contextTokenCap($user->plan ?: 'free');
+            return $this->nativeTerminalError(
+                "This terminal request exceeds your plan's {$cap}-token context limit.",
+                413,
+                $providerId,
+                'membership_context_limit',
+                ['contextTokenCap' => $cap],
+            );
+        }
         $quotaOutputTokens = min(
             $maxOutputTokens,
             max(1, (int) config('billing.openrouter_pricing.terminal_quota_output_tokens', 256))
         );
         $stream = $forceStream ?? (($payload['stream'] ?? false) === true);
-        $upstreamPayload = $protocol === 'anthropic'
-            ? $this->anthropicTerminalPayload($payload, $resolvedModel, $stream)
-            : $this->geminiChatPayload($payload, $resolvedModel);
-        $upstreamPayload['provider'] = app(OpenRouterRequestPolicy::class)->provider($modelKey);
+        $upstreamPayload['max_tokens'] = $maxOutputTokens;
         $upstreamPayload['stream'] = $stream;
+        $upstreamPayload['provider'] = app(OpenRouterRequestPolicy::class)->provider($modelKey);
         if ($stream && $protocol === 'gemini') {
             $upstreamPayload['stream_options'] = ['include_usage' => true];
         }

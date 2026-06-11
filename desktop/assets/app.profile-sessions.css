@@ -194,6 +194,17 @@
 .profile-delete-warning strong { color: var(--danger); font-size: 14px; font-weight: 720; line-height: 19px; }
 .profile-delete-confirm p { color: var(--muted); font-size: 13px; line-height: 19px; margin: 0; }
 .profile-delete-submit { min-width: 132px; }
+.profile-inline-confirm {
+  background: rgba(255, 93, 122, 0.035);
+  border: 1px solid rgba(255, 93, 122, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+.profile-inline-confirm > div:first-child { display: grid; gap: 4px; }
+.profile-inline-confirm strong { color: var(--text); font-size: 14px; line-height: 19px; }
+.profile-inline-confirm p { color: var(--muted); font-size: 13px; line-height: 19px; margin: 0; }
 @keyframes profileDeleteDrop {
   from { opacity: 0; transform: translateY(-6px) scaleY(0.97); } to { opacity: 1; transform: translateY(0) scaleY(1); }
 }

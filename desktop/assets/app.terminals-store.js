@@ -111,7 +111,10 @@ function ensureTerminal() {
 
 function createTerminal(modelKey = setupModel, shouldRender = true, options = {}) {
   if (terminals.length >= maxTerminals) return null;
-  const model = unlockedModel(modelKey);
+  const tokenMode = ["provider", "vibyra"].includes(options.tokenMode)
+    ? options.tokenMode
+    : setupTokenMode;
+  const model = unlockedModel(modelKey, tokenMode);
   const effort = terminalEffortForModel(model, options.effort);
   const terminal = {
     id: terminalId(),
@@ -119,7 +122,7 @@ function createTerminal(modelKey = setupModel, shouldRender = true, options = {}
     model: model.key,
     effort,
     permissionMode: normalizeTerminalPermissionMode(options.permissionMode),
-    tokenMode: setupTokenMode,
+    tokenMode,
     projectId: options.projectId === undefined ? (typeof selectedProjectId === "string" ? selectedProjectId : "") : String(options.projectId || ""),
     workspaceMode: normalizeTerminalWorkspaceMode(options.workspaceMode),
     allowSharedFallback: options.allowSharedFallback !== false,

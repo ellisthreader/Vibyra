@@ -8,6 +8,11 @@ import {
   validateTerminalTeamProposal
 } from "./terminalTeamPlanner.mjs";
 import { clearTerminalTeamPlansForTests } from "./terminalTeamPlanStore.mjs";
+import {
+  chooseTerminalTeamTopology,
+  inferTerminalTeamSignals,
+  normalizeTerminalTeamInput
+} from "./terminalTeamPlannerInput.mjs";
 
 const input = {
   goal: "Add strict Team planning without changing parallel execution.",
@@ -50,6 +55,24 @@ function proposal(overrides = {}) {
 }
 
 test.beforeEach(() => clearTerminalTeamPlansForTests());
+
+test("automatic Team sizing expands complex cross-layer terminal audits", () => {
+  const signals = inferTerminalTeamSignals({
+    goal: "Audit terminal security, billing, concurrency, recovery, and every regression path.",
+    projectFiles: [
+      { path: "desktop/assets/app.terminals.js" },
+      { path: "desktop/lib/ptyTerminals.mjs" },
+      { path: "backend/app/Billing.php" }
+    ]
+  });
+  const intent = normalizeTerminalTeamInput({
+    goal: "Audit terminal security, billing, concurrency, recovery, and every regression path.",
+    teamSize: 0,
+    signals
+  });
+  assert.deepEqual(chooseTerminalTeamTopology(intent),
+    ["coordinator", "builder", "verifier", "reviewer"]);
+});
 
 test("accepts a strict AI proposal and stores bridge-issued identifiers", () => {
   const plan = planTerminalTeam(input, { proposal: proposal() });

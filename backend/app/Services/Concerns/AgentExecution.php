@@ -57,7 +57,10 @@ trait AgentExecution
         if (! config('services.openrouter.key')) {
             abort(response()->json(['ok' => false, 'error' => 'OPENROUTER_API_KEY is not configured on the desktop backend'], 422));
         }
-        if (! (bool) config('billing.economics.allow_unmetered_legacy_desktop_agents', false)) {
+        if (
+            ! app()->environment(['local', 'testing'])
+            || ! (bool) config('billing.economics.allow_unmetered_legacy_desktop_agents', false)
+        ) {
             abort(response()->json([
                 'ok' => false,
                 'error' => 'This legacy company-funded agent path is disabled. Use a Vibyra-token terminal or your own AI account.',

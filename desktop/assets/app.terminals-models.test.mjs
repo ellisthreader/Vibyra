@@ -136,6 +136,35 @@ test("My AI accounts exposes native mappings and rejects API-only models", () =>
   assert.match(apiOnly.reason, /only available with Vibyra tokens/);
 });
 
+test("membership model locks apply only when Vibyra pays for the terminal", () => {
+  const context = {
+    config: () => ({
+      chatModelGroups: [{
+        title: "OpenAI models",
+        options: [
+          { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+          { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai" }
+        ]
+      }]
+    }),
+    firstUnlockedModel: () => "gpt-5.4-mini",
+    modelLocked: (model) => model?.key === "gpt-5.5",
+    providerAccounts: {
+      codex: { available: true, connected: true, label: "ChatGPT via Codex CLI" }
+    },
+    setupTokenMode: "provider",
+    terminalNativeRuntimeForModel: () => "codex",
+    window: { addEventListener() {} }
+  };
+  vm.runInNewContext(source, context);
+
+  const premium = { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" };
+  assert.equal(context.terminalModelLocked(premium, "vibyra"), true);
+  assert.equal(context.terminalModelLocked(premium, "provider"), false);
+  assert.equal(context.unlockedModel("gpt-5.5", "provider").key, "gpt-5.5");
+  assert.equal(context.terminalFirstModelForTokenMode("provider").key, "gpt-5.5");
+});
+
 test("personal-account filtering keeps API-only rows visible and searchable", () => {
   const context = {
     config: () => ({

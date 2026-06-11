@@ -44,7 +44,12 @@ function bootstrapDesktop() {
   document.getElementById("rail-collapse")?.addEventListener("click", () => setRailCollapsed(!railCollapsed));
   document.getElementById("rail-expand")?.addEventListener("click", () => setRailCollapsed(false));
   document.querySelectorAll("[data-window-action]").forEach((button) => button.addEventListener("click", () => handleWindowAction(button.dataset.windowAction)));
-  if (window.vibyraDesktopWindow?.isElectron) document.body.classList.add("electron-shell");
+  if (window.vibyraDesktopWindow?.isElectron) {
+    document.body.classList.add("electron-shell");
+    const chrome = document.querySelector(".desktop-chrome");
+    const railLogo = document.querySelector(".rail-logo");
+    if (chrome && railLogo) chrome.prepend(railLogo);
+  }
   applyRailState();
   renderNav();
   loadDesktopProjects();
@@ -197,7 +202,6 @@ function renderTopbar() {
     if (nodes.topbar) nodes.topbar.innerHTML = "";
     return;
   }
-  const connected = Boolean(currentState.pairedDevice);
   const selected = currentProject();
   const projectCount = filteredProjects().length;
   if (activePage !== "chat") topbarChatMenuOpen = false;
@@ -214,7 +218,6 @@ function renderTopbar() {
   const avatarName = account.name || "Vibyra User";
   const avatar = avatarUrl ? `<img src="${escapeAttribute(avatarUrl)}" alt="" />` : escapeHtml(accountInitials(avatarName));
   const terminalTopbar = terminalPage && typeof terminalTopbarHtml === "function" ? terminalTopbarHtml() : "";
-  const left = `<div class="top-left"><button class="connection-chip" type="button" id="open-pair" aria-label="${escapeAttribute(statusLabel())}" title="${escapeAttribute(statusLabel())}">${icon("phone")}${connected ? `<span class="dot"></span>` : ""}</button></div>`;
   const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
   const terminalAiAction = terminalPage && typeof terminalAiTopbarButtonHtml === "function" ? terminalAiTopbarButtonHtml() : "";
   const accountAction = `<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
@@ -223,14 +226,13 @@ function renderTopbar() {
   if (isElectronShell()) {
     nodes.topbar.innerHTML = "";
     if (nodes.chromePage) nodes.chromePage.innerHTML = center;
-    if (nodes.chromeActions) nodes.chromeActions.innerHTML = `${left}<div class="top-actions">${actions}</div>`;
+    if (nodes.chromeActions) nodes.chromeActions.innerHTML = `<div class="top-actions">${actions}</div>`;
     if (nodes.chromeStatus) nodes.chromeStatus.textContent = statusLabel();
   } else {
     if (nodes.chromePage) nodes.chromePage.innerHTML = "";
     if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
-    nodes.topbar.innerHTML = `${left}${center}<div class="top-actions">${actions}</div>`;
+    nodes.topbar.innerHTML = `<div></div>${center}<div class="top-actions">${actions}</div>`;
   }
-  document.getElementById("open-pair")?.addEventListener("click", openPairModal);
   document.getElementById("clear-chat")?.addEventListener("click", startNewChat);
   document.getElementById("open-account-menu")?.addEventListener("click", (event) => { event.stopPropagation(); topbarAccountMenuOpen = !topbarAccountMenuOpen; topbarChatMenuOpen = false; renderTopbar(); });
   document.querySelectorAll("[data-account-action]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); handleAccountAction(button.dataset.accountAction); }));
@@ -248,6 +250,7 @@ function renderRecentChats() {
 function renderRailStatus() {
   const paired = Boolean(currentState.pairedDevice);
   const pending = currentState.pendingPair && currentState.pendingPair.status === "pending";
-  nodes.railStatus.innerHTML = `<button class="rail-status-card ${pending ? "pending" : ""}" type="button" id="rail-pair" aria-label="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}" title="${escapeAttribute(pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone")}"><span class="rail-status-top"><span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span><span>${pending ? "Approval needed" : statusLabel()}</span></span><span class="rail-status-main"><span class="rail-phone-icon">${icon(pending ? "clock" : paired ? "phone" : "link")}</span><span><strong>${pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone"}</strong><small>${pending ? "A phone is waiting for access." : paired ? currentState.pairedDevice : "Connect your phone to start builds."}</small></span></span></button>`;
+  const label = pending ? "Review pairing" : paired ? "Phone connected" : "Pair phone";
+  nodes.railStatus.innerHTML = `<button class="rail-status-card ${pending ? "pending" : paired ? "connected" : ""}" type="button" id="rail-pair" aria-label="${escapeAttribute(label)}" title="${escapeAttribute(label)}"><span class="rail-phone-icon">${icon(pending ? "clock" : "phone")}<span class="dot ${pending ? "warning" : paired ? "" : "offline"}"></span></span><span class="rail-status-copy"><strong>${escapeHtml(label)}</strong><small>${escapeHtml(pending ? "Approval needed" : paired ? currentState.pairedDevice : "Connect a device")}</small></span></button>`;
   document.getElementById("rail-pair")?.addEventListener("click", openPairModal);
 }

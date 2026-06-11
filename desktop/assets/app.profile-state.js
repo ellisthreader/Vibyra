@@ -3,11 +3,15 @@ let profileModalOpen = false;
 let profileSectionSearch = "";
 const profileSectionKey = "vibyra.desktop.profileSection";
 const profilePrefsKey = "vibyra.desktop.profilePreferences";
-let profileActiveSection = localStorage.getItem(profileSectionKey) || "general";
-let profileReferral = null;
-let profileReferralLoading = false;
-let profileReferralError = "";
-let profileCopiedCode = false;
+const profileSectionAliases = {
+  account: "devices",
+  general: "profile",
+  preferences: "app",
+  privacy: "devices",
+  support: "help"
+};
+const storedProfileSection = localStorage.getItem(profileSectionKey) || "profile";
+let profileActiveSection = profileSectionAliases[storedProfileSection] || storedProfileSection;
 let profileFormMessage = "";
 let profileFormBusy = false;
 let profileBillingBusy = false;
@@ -29,32 +33,19 @@ let profileSessionsLoading = false;
 let profileSessionBusyId = "";
 let profileSessionMenuId = "";
 let profileLogoutAllBusy = false;
+let profileConfirmAction = "";
 
 const desktopPreferenceDefaults = {
   appearance: "dark",
   callName: "",
   chatFont: "vibyra-sans",
   customInstructions: "",
-  language: "English",
-  notifications: {
-    buildUpdates: true,
-    chatReplies: true,
-    codeNotifications: true,
-    dispatchMessages: false,
-    emailUpdates: false,
-    permissionRequests: true,
-    productUpdates: false,
-    responseCompletions: true
-  },
   responseStyle: "balanced",
   voice: "marin",
   voiceSpeed: 1,
-  improveVibyra: false,
-  desktopLock: false,
   workOther: "",
   workType: "other"
 };
-const profileLanguages = ["English", "Espanol", "Francais", "Deutsch", "Japanese", "Chinese", "Portuguese"];
 const profileWorkOptions = [
   { key: "software", label: "Software and product" },
   { key: "design", label: "Design and creative" },
@@ -74,36 +65,29 @@ const profileChatFontOptions = [
   { key: "system", label: "System" },
   { key: "mono", label: "Mono" }
 ];
-const profileFaqs = [
-  { q: "What are credits?", a: "Credits cover AI usage across desktop chats, builds, and connected Vibyra workflows." },
-  { q: "How do I connect another device?", a: "Use Devices to show the pairing code, then approve only devices you recognize." },
-  { q: "Where are my projects stored?", a: "Project metadata is shown in Vibyra; source files stay in the local folders you choose." },
-  { q: "Can I change my plan?", a: "Use Billing to open checkout or the billing portal for your current membership." }
-];
-
 function setProfileFocus(focus) {
   profileFocus = focus || "";
-  if (profileFocus === "preferences") profileActiveSection = "preferences";
+  if (profileFocus === "preferences" || profileFocus === "app") profileActiveSection = "app";
+  if (profileFocus === "profile" || profileFocus === "general") profileActiveSection = "profile";
 }
 
 function profileSections() {
   return [
-    { key: "general", icon: "user", label: "General" },
-    { key: "account", icon: "card", label: "Account" },
+    { key: "profile", icon: "user", label: "Profile" },
+    { key: "personalization", icon: "sparkles", label: "Personalization" },
+    { key: "app", icon: "palette", label: "App" },
+    { key: "devices", icon: "desktop", label: "Devices & privacy" },
     { key: "billing", icon: "bolt", label: "Billing" },
-    { key: "devices", icon: "desktop", label: "Devices" },
-    { key: "privacy", icon: "lock", label: "Privacy" },
-    { key: "preferences", icon: "palette", label: "Preferences" },
-    { key: "support", icon: "help", label: "Support" }
+    { key: "help", icon: "help", label: "Help" }
   ];
 }
 
 function desktopPreferences() {
   try {
     const parsed = JSON.parse(localStorage.getItem(profilePrefsKey) || "{}");
-    return { ...desktopPreferenceDefaults, ...parsed, notifications: { ...desktopPreferenceDefaults.notifications, ...(parsed.notifications || {}) } };
+    return { ...desktopPreferenceDefaults, ...parsed };
   } catch {
-    return { ...desktopPreferenceDefaults, notifications: { ...desktopPreferenceDefaults.notifications } };
+    return { ...desktopPreferenceDefaults };
   }
 }
 

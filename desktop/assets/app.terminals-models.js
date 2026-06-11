@@ -58,24 +58,34 @@ function terminalModelForDisplay(key) {
     company: ""
   };
 }
-function unlockedModel(key) {
+function terminalModelLocked(model, mode = setupTokenMode) {
+  const tokenMode = terminalTokenModeForModel(model, mode);
+  return tokenMode === "vibyra"
+    && typeof modelLocked === "function"
+    && modelLocked(model);
+}
+function unlockedModel(key, mode = setupTokenMode) {
   const model = modelByKey(key);
-  if (typeof modelLocked === "function" && modelLocked(model) && typeof firstUnlockedModel === "function") return modelByKey(firstUnlockedModel());
+  if (terminalModelLocked(model, mode)) {
+    const fallback = terminalFirstModelForTokenMode(mode);
+    if (fallback) return fallback;
+    if (typeof firstUnlockedModel === "function") return modelByKey(firstUnlockedModel());
+  }
   return model;
 }
 function selectedSetupModel() {
-  const model = unlockedModel(setupModel);
+  const model = unlockedModel(setupModel, setupTokenMode);
   setupModel = model.key;
   setupEffort = terminalEffortForModel(model, setupEffort);
   return model;
 }
 function selectSetupModel(key) {
   const model = modelByKey(key);
-  if (typeof modelLocked === "function" && modelLocked(model)) {
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  if (terminalModelLocked(model, tokenMode)) {
     if (typeof openTokenModal === "function") openTokenModal("plans");
     return;
   }
-  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
   if (!terminalModelAvailableForTokenMode(model, tokenMode)) {
     providerConnectNotice = terminalTokenSourceIssue(model, tokenMode);
     render();
@@ -109,13 +119,13 @@ function updateTerminalModelSearch(input) {
 }
 function createTerminalFromModel(key) {
   const model = modelByKey(key);
-  if (typeof modelLocked === "function" && modelLocked(model)) {
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  if (terminalModelLocked(model, tokenMode)) {
     newTerminalMenuOpen = false;
     if (typeof openTokenModal === "function") openTokenModal("plans");
     render();
     return;
   }
-  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
   const runtimeIssue = typeof terminalRuntimeLaunchIssue === "function"
     ? terminalRuntimeLaunchIssue(model, tokenMode)
     : "";
@@ -190,8 +200,8 @@ function terminalModelSection(group, selectedKey, optionAttribute) {
   return `<section class="terminal-model-section" aria-label="${escapeAttribute(title)}"><p class="terminal-model-section-title">${headerLogo}<span>${escapeHtml(title)}</span></p><div class="terminal-model-list">${group.options.map((model) => terminalModelButton(model, selectedKey, optionAttribute)).join("")}</div></section>`;
 }
 function terminalModelButton(model, selectedKey, optionAttribute, extraClass = "") {
-  const locked = typeof modelLocked === "function" && modelLocked(model);
   const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  const locked = terminalModelLocked(model, tokenMode);
   const launch = typeof terminalRuntimePickerState === "function"
     ? terminalRuntimePickerState(model, tokenMode)
     : typeof terminalRuntimeLaunchState === "function"
@@ -343,7 +353,7 @@ function terminalModelAvailableForTokenMode(model, mode) {
 function terminalFirstModelForTokenMode(mode) {
   return modelChoices().find((model) =>
     terminalModelAvailableForTokenMode(model, mode)
-    && !(typeof modelLocked === "function" && modelLocked(model))
+    && !terminalModelLocked(model, mode)
   ) || null;
 }
 function terminalTokenSourceIssue(model, mode) {

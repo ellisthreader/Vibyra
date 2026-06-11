@@ -11,19 +11,14 @@ const DEFAULT_REQUESTS_PER_MINUTE = 120;
 export function issueTerminalGatewayToken(terminalId, options = {}) {
   const id = normalizedTerminalId(terminalId);
   const now = options.now ?? Date.now();
+  const grant = normalizedGrant(options);
   const token = `vibyra-terminal-${randomBytes(32).toString("base64url")}`;
   const registry = readRegistry(options.registryPath, now);
   registry.tokens[tokenHash(token)] = {
     terminalId: id,
     issuedAt: now,
     expiresAt: now + boundedPositiveInteger(options.ttlMs, DEFAULT_TTL_MS, MAX_TTL_MS),
-    models: normalizedModels(options.models ?? (options.model ? [options.model] : [])),
-    runtimeId: normalizedConstraint(options.runtimeId),
-    providerId: normalizedConstraint(options.providerId),
-    adapterId: normalizedConstraint(options.adapterId),
-    protocol: normalizedConstraint(options.protocol),
-    nativeModel: normalizedConstraint(options.nativeModel),
-    billingModel: normalizedConstraint(options.billingModel),
+    ...grant,
     maxRequestsPerMinute: positiveInteger(
       options.maxRequestsPerMinute,
       DEFAULT_REQUESTS_PER_MINUTE
@@ -50,6 +45,11 @@ export function renewTerminalGatewayToken(token, options = {}) {
   const hash = tokenHash(value);
   const storedHash = Object.keys(registry.tokens).find((candidate) => secureEqual(candidate, hash));
   if (!storedHash || !validRecord(registry.tokens[storedHash])) return null;
+  if (registry.tokens[storedHash].expiresAt <= now) {
+    delete registry.tokens[storedHash];
+    writeRegistry(registry, options.registryPath);
+    return null;
+  }
   registry.tokens[storedHash].expiresAt = now
     + boundedPositiveInteger(options.ttlMs, DEFAULT_TTL_MS, MAX_TTL_MS);
   writeRegistry(registry, options.registryPath);
@@ -317,6 +317,30 @@ function normalizedModels(models) {
   return [...new Set(models.map((model) => String(model || "").trim()).filter(Boolean))];
 }
 
+function normalizedGrant(options) {
+  const grant = {
+    models: normalizedModels(options.models ?? (options.model ? [options.model] : [])),
+    runtimeId: normalizedConstraint(options.runtimeId),
+    providerId: normalizedConstraint(options.providerId),
+    adapterId: normalizedConstraint(options.adapterId),
+    protocol: normalizedConstraint(options.protocol),
+    nativeModel: normalizedConstraint(options.nativeModel),
+    billingModel: normalizedConstraint(options.billingModel)
+  };
+  if (
+    grant.models.length === 0
+    || !grant.runtimeId
+    || !grant.providerId
+    || !grant.adapterId
+    || !grant.protocol
+    || !grant.nativeModel
+    || !grant.billingModel
+  ) {
+    throw new TypeError("Terminal gateway grants require exact model, runtime, provider, adapter, protocol, native-model, and billing-model constraints.");
+  }
+  return grant;
+}
+
 function normalizedConstraint(value) {
   return String(value || "").trim().slice(0, 200);
 }
@@ -351,16 +375,17 @@ function validRecord(record) {
     && typeof record.terminalId === "string"
     && Number.isFinite(record.expiresAt)
     && Array.isArray(record.models)
-    && optionalString(record.runtimeId)
-    && optionalString(record.providerId)
-    && optionalString(record.adapterId)
-    && optionalString(record.protocol)
-    && optionalString(record.nativeModel)
-    && optionalString(record.billingModel)
+    && record.models.length > 0
+    && requiredString(record.runtimeId)
+    && requiredString(record.providerId)
+    && requiredString(record.adapterId)
+    && requiredString(record.protocol)
+    && requiredString(record.nativeModel)
+    && requiredString(record.billingModel)
     && Number.isInteger(record.maxRequestsPerMinute)
     && Array.isArray(record.requests);
 }
 
-function optionalString(value) {
-  return value === undefined || typeof value === "string";
+function requiredString(value) {
+  return typeof value === "string" && value.trim() !== "";
 }

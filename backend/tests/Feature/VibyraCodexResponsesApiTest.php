@@ -470,6 +470,27 @@ class VibyraCodexResponsesApiTest extends TestCase
             ->assertJsonPath('error.message', 'Your Vibyra plan does not include this terminal model.');
     }
 
+    public function test_codex_responses_rejects_context_over_the_plan_cap_before_reservation(): void
+    {
+        config([
+            'services.openrouter.key' => 'test-openrouter-key',
+            'billing.plans.starter.context_token_cap' => 800,
+        ]);
+        $token = $this->codexUserToken('codex-context-limit@example.com');
+
+        $this->postJson('/api/codex/responses', [
+            'model' => 'gpt-5.5',
+            'input' => 'Inspect this repository.',
+            'max_output_tokens' => 800,
+            'stream' => true,
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(413)
+            ->assertJsonPath('error.code', 'membership_context_limit')
+            ->assertJsonPath('error.details.contextTokenCap', 800);
+
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
     public function test_codex_responses_surfaces_nested_provider_error_details(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);

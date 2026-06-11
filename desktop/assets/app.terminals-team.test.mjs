@@ -10,20 +10,43 @@ const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8"
 
 function createContext() {
   const created = [];
+  const launched = [];
   const saved = [];
   const context = vm.createContext({
     activeTerminalId: "",
     created,
+    launched,
     Date,
     Math,
     escapeAttribute: (value) => String(value),
     escapeHtml: (value) => String(value),
-    fetch: async () => ({ ok: true, json: async () => ({}) }),
+    fetch: async (url, options = {}) => {
+      if (url === "/desktop/terminal-teams/launch") {
+        const body = JSON.parse(options.body || "{}");
+        launched.push(...body.terminals);
+        return {
+          ok: true,
+          json: async () => ({
+            sessions: body.terminals.map((terminal) => ({
+              ...terminal,
+              status: "running",
+              providerState: "ready"
+            }))
+          })
+        };
+      }
+      return { ok: true, json: async () => ({}) };
+    },
     icon: (name) => `<svg data-icon="${name}"></svg>`,
     JSON,
     Promise,
+    clearInterval,
+    clearTimeout,
+    setInterval,
     setTimeout,
     saveTerminals: () => saved.push(created.length),
+    ptySessionPatch: (session) => session,
+    connectPtyTerminal: () => {},
     createTerminal: (model, shouldRender, options) => {
       const terminal = {
         id: `terminal-${created.length + 1}`,
@@ -63,11 +86,11 @@ test("Team sizes map to scoped roles with exactly one production-code owner", ()
   assert.equal(vm.runInContext("terminalTeamRoles(8).length", context), 4);
 });
 
-test("creating a Team launches distinct assignments under one team id", () => {
+test("creating a Team launches distinct assignments under one team id", async () => {
   const context = createContext();
   vm.runInContext(`globalThis.plan = {
     planId: "team-plan-123",
-    teamId: "team-run-456",
+    teamId: "team-run-4567",
     teamSize: 4,
     goal: "Fix checkout safely and verify the result.",
     plannerMode: "cloud",
@@ -78,24 +101,24 @@ test("creating a Team launches distinct assignments under one team id", () => {
       { roleKey: "reviewer", title: "Checkout Reviewer", objective: "Review the resulting changes for regressions and security risks." }
     ]
   };`, context);
-  const terminals = vm.runInContext(
+  const terminals = await vm.runInContext(
     'createTerminalTeam(plan, "codex", { permissionMode: "safe" })',
     context
   );
   assert.equal(terminals.length, 4);
   assert.equal(new Set(terminals.map((terminal) => terminal.teamId)).size, 1);
-  assert.equal(terminals[0].teamId, "team-run-456");
+  assert.equal(terminals[0].teamId, "team-run-4567");
   assert.ok(terminals.every((terminal) => terminal.teamPlanId === "team-plan-123"));
   assert.ok(terminals.every((terminal) => terminal.teamPlannerMode === "cloud"));
   assert.equal(new Set(terminals.map((terminal) => terminal.teamRoleKey)).size, 4);
-  assert.equal(new Set(terminals.map((terminal) => terminal.initialPrompt)).size, 4);
+  assert.equal(new Set(context.launched.map((terminal) => terminal.initialPrompt)).size, 4);
   assert.equal(terminals.filter((terminal) => terminal.teamRoleKey === "builder").length, 1);
   assert.equal(terminals.filter((terminal) => terminal.teamCapability === "writer").length, 1);
   assert.equal(terminals.filter((terminal) => terminal.teamCapability === "read-only").length, 3);
   assert.ok(terminals.every((terminal) => terminal.teamSize === 4));
-  assert.ok(terminals.every((terminal) => terminal.initialPrompt.includes("Fix checkout safely")));
-  assert.ok(terminals.every((terminal) => terminal.initialPrompt.includes("trusted role and capability policy separately")));
-  assert.ok(terminals.some((terminal) => terminal.initialPrompt.includes("Map the checkout flow")));
+  assert.ok(context.launched.every((terminal) => terminal.initialPrompt.includes("Fix checkout safely")));
+  assert.ok(context.launched.every((terminal) => terminal.initialPrompt.includes("trusted role and capability policy separately")));
+  assert.ok(context.launched.some((terminal) => terminal.initialPrompt.includes("Map the checkout flow")));
   assert.ok(terminals.some((terminal) => terminal.teamTask.includes("confirmed checkout fixes")));
   assert.ok(terminals.every((terminal) => terminal.permissionMode === "safe"));
 });
@@ -120,9 +143,9 @@ test("the Team bar reports observed terminal state without fake progress claims"
   assert.doesNotMatch(html, /\d+%|merged|conflict-free|complete/i);
 });
 
-test("empty or control-only goals cannot launch a Team", () => {
+test("empty or control-only goals cannot launch a Team", async () => {
   const context = createContext();
-  assert.equal(vm.runInContext('createTerminalTeam({ planId: "plan-1", goal: "\\u0000\\u0007", assignments: [] }, "codex").length', context), 0);
+  assert.equal((await vm.runInContext('createTerminalTeam({ planId: "plan-1", goal: "\\u0000\\u0007", assignments: [] }, "codex")', context)).length, 0);
   assert.equal(vm.runInContext('normalizeTerminalTeamGoal("  ship\\n safely  ")', context), "ship safely");
 });
 
@@ -298,7 +321,58 @@ test("automatic Team sizing lets the planner choose the smallest valid topology"
   assert.equal(plan.teamSize, 2);
 });
 
-test("Team setup is outcome-first and moves live planning feedback into the launch action", () => {
+test("Team planning reports only real request phases", async () => {
+  const context = createContext();
+  const phases = [];
+  context.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      ok: true,
+      plan: {
+        planId: "plan-phases",
+        teamSize: 2,
+        goal: "Audit theme consistency",
+        assignments: [
+          { roleKey: "builder", title: "Theme Builder", objective: "Fix theme inconsistencies." },
+          { roleKey: "reviewer", title: "Theme Reviewer", objective: "Review both themes." }
+        ]
+      }
+    })
+  });
+  context.recordPhase = (phase) => phases.push(phase);
+  await vm.runInContext(`requestTerminalTeamPlan({
+    goal: "Audit theme consistency",
+    teamSize: 2
+  }, { onPhase: recordPhase })`, context);
+  assert.deepEqual(phases, ["analyzing", "validating"]);
+});
+
+test("Team planning spreads waiting phases once without looping", () => {
+  const context = createContext();
+  const scheduled = [];
+  const copy = {
+    classList: { add() {}, remove() {} },
+    innerHTML: "",
+    offsetWidth: 120
+  };
+  context.phaseRoot = {
+    querySelector: (selector) => selector === "[data-terminal-team-planning-copy]" ? copy : null
+  };
+  context.setTimeout = (callback, delay) => {
+    scheduled.push({ callback, delay });
+    return scheduled.length;
+  };
+  context.clearTimeout = () => {};
+  vm.runInContext("terminalTeamPlanning = true; startTerminalTeamPlanningPhases(phaseRoot)", context);
+  assert.deepEqual(scheduled.map(({ delay }) => delay), [3000, 7000]);
+  scheduled[0].callback();
+  assert.match(copy.innerHTML, /Planning team roles/);
+  scheduled[1].callback();
+  assert.match(copy.innerHTML, /Assigning individual roles/);
+  assert.equal(scheduled.length, 2);
+});
+
+test("Team setup keeps Cancel visible and moves live planning feedback into the launch action", () => {
   assert.match(source, /Describe the outcome/);
   assert.match(source, /Vibyra will plan the smallest useful team\./);
   assert.doesNotMatch(source, /data-terminal-team-planning-activity/);
@@ -306,8 +380,24 @@ test("Team setup is outcome-first and moves live planning feedback into the laun
   assert.match(source, /label: "Automatic"/);
   assert.doesNotMatch(source, /terminal-team-role-card/);
   assert.match(planningSource, /function terminalTeamPlanningButtonHtml/);
-  assert.match(planningSource, /Planning your team/);
-  assert.match(planningSource, /Matching focused roles to your outcome/);
+  assert.match(planningSource, /Analyzing your prompt/);
+  assert.match(planningSource, /Planning team roles/);
+  assert.match(planningSource, /Assigning individual roles/);
+  assert.match(planningSource, /Validating assignments/);
+  assert.match(planningSource, /Preparing terminals/);
+  assert.match(planningSource, /delay: 3000/);
+  assert.match(planningSource, /delay: 7000/);
+  assert.doesNotMatch(planningSource, /setInterval/);
+  assert.match(planningSource, /function startTerminalTeamPlanningPhases/);
+  assert.match(planningSource, /function stopTerminalTeamPlanningPhases/);
+  assert.match(planningSource, /terminalTeamPlanningPhase = phase/);
+  assert.match(planningSource, /terminalTeamPlanningButtonHtml\(terminalTeamPlanningPhase\)/);
+  assert.doesNotMatch(planningSource, /Cancel planning/);
+  assert.match(planningSource, /function cancelTerminalTeamPlanning/);
+  assert.match(planningSource, /terminalTeamPlanController\?\.abort/);
+  assert.match(planningSource, /preview\.hidden = true/);
+  assert.match(planningSource, /preview\.innerHTML = ""/);
+  assert.match(planningSource, /status\.textContent = ""/);
   assert.match(planningSource, /button\?\.classList\.toggle\("is-team-planning"/);
   assert.match(planningSource, /aria-busy/);
   assert.match(planningSource, /\[data-terminal-team-size\]/);
@@ -316,6 +406,7 @@ test("Team setup is outcome-first and moves live planning feedback into the laun
   assert.match(styles, /terminal-team-planning-sweep/);
   assert.match(styles, /terminal-team-planning-ring/);
   assert.match(styles, /terminal-team-planning-dot/);
+  assert.match(styles, /terminal-team-phase-change/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
 

@@ -134,36 +134,18 @@
   margin: -2px 0 4px 55px;
   padding: 0 12px;
 }
-@media (max-width: 820px) {
+@media (max-width: 720px) {
   .profile-page--desktop {
     grid-template-columns: minmax(0, 1fr);
-    padding: 22px 22px 38px;
-  }
-  .profile-section-rail {
-    grid-row: 1;
-    position: static;
+    padding: 0 14px 36px;
   }
   .profile-section-card { width: 100%; }
-  .profile-section-title { font-size: 22px; line-height: 28px; margin-bottom: 8px; }
   .profile-section-identity { display: none; }
-  .profile-section-list {
-    display: grid;
-    gap: 6px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    padding-top: 0;
-  }
-  .profile-section-button {
-    grid-template-columns: 18px auto;
-    font-size: 14px;
-    min-height: 38px;
-    padding: 0 11px;
-  }
 }
 @media (max-width: 720px) {
   .main:has(.profile-content) { overflow: auto; }
   .profile-content { padding-bottom: 118px; }
-  .profile-page--desktop { gap: 16px; padding: 16px 10px 118px; }
-  .profile-section-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-page--desktop { gap: 16px; padding: 0 14px 36px; }
   .profile-section-button { min-width: 0; }
   .profile-detail-head h1 { font-size: 28px; line-height: 34px; }
   .profile-content-grid--two { grid-template-columns: 1fr; }
@@ -174,6 +156,7 @@
   .profile-action-copy small { white-space: normal; }
 }
 
+/* Settings content rows, fields, and responsive content. */
 .profile-form,
 .profile-referral-panel,
 .profile-danger-panel,

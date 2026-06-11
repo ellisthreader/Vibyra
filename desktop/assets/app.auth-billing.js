@@ -1,17 +1,17 @@
 async function startDesktopBillingCheckout(plan, cycle = "monthly") {
   const planKey = String(plan || "starter").toLowerCase();
   if (!["starter", "builder", "pro"].includes(planKey)) return;
-  await requestDesktopBilling("/api/billing/checkout", { kind: "subscription", plan: planKey, cycle });
+  await requestDesktopBilling("/desktop/account-api/billing/checkout", { kind: "subscription", plan: planKey, cycle });
 }
 
 async function changeDesktopMembership(plan, cycle = "monthly") {
   const planKey = String(plan || "").toLowerCase();
   if (!["starter", "builder", "pro"].includes(planKey)) return;
-  await requestDesktopBilling("/api/billing/change", { plan: planKey, cycle }, true);
+  await requestDesktopBilling("/desktop/account-api/billing/change", { plan: planKey, cycle }, true);
 }
 
 async function openDesktopBillingPortal() {
-  await requestDesktopBilling("/api/billing/portal", {});
+  await requestDesktopBilling("/desktop/account-api/billing/portal", {});
 }
 
 async function requestDesktopBilling(endpoint, payload, acceptUser = false) {
@@ -26,9 +26,9 @@ async function requestDesktopBilling(endpoint, payload, acceptUser = false) {
   if (popup) popup.opener = null;
   setDesktopBillingStatus(true, "Opening secure billing...");
   try {
-    const response = await fetch(`${appApiBaseUrl()}${endpoint}`, {
+    const response = await fetch(endpoint, {
       method: "POST",
-      headers: await desktopAccountHeaders(token, { "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     const result = await response.json().catch(() => ({}));

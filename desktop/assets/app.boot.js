@@ -1,4 +1,4 @@
-const terminalActionProtocolVersion = "2026-06-11.16";
+const terminalActionProtocolVersion = "2026-06-11.20";
 const compatibleDesktopActionRunner = window.runDesktopActions;
 let terminalActionProtocolReady = false;
 

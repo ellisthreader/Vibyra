@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Models\User;
 use App\Services\Auth\DesktopProviderOAuthFlow;
 use App\Services\Auth\DesktopProviderTokenExchange;
 use App\Services\Auth\ProviderAccountException;
@@ -17,8 +18,27 @@ trait DesktopProviderAuthEndpoints
 {
     public function desktopProviderStart(Request $request, string $provider): JsonResponse
     {
+        $provider = strtolower($provider);
         try {
-            $flow = app(DesktopProviderOAuthFlow::class)->start(strtolower($provider), $request->all());
+            $purpose = strtolower(trim((string) $request->input('purpose', '')));
+            if ($purpose === '') {
+                $flow = app(DesktopProviderOAuthFlow::class)->start($provider, $request->all());
+            } elseif ($purpose === 'deletion') {
+                $user = $this->authenticatedUser($request);
+                if (($user->provider ?: 'email') !== $provider || trim((string) $user->provider_id) === '') {
+                    return $this->json([
+                        'ok' => false,
+                        'error' => 'Sign in with the provider linked to this Vibyra account.',
+                    ], 403);
+                }
+                $flow = app(DesktopProviderOAuthFlow::class)->startDeletion(
+                    $provider,
+                    (int) $user->getKey(),
+                    (string) $user->provider_id,
+                );
+            } else {
+                throw new ProviderIdentityException('Unsupported desktop OAuth purpose.');
+            }
         } catch (ProviderIdentityException $error) {
             return $this->json(['ok' => false, 'error' => $error->getMessage()], 422);
         }
@@ -55,6 +75,16 @@ trait DesktopProviderAuthEndpoints
                 $tokens['identityToken'],
                 $flow['nonce']
             );
+            if (($flow['purpose'] ?? null) === 'deletion') {
+                $this->deleteVerifiedProviderAccount($provider, $flow, $identity);
+                app(DesktopProviderOAuthFlow::class)->finish($flow['flowId'], [
+                    'ok' => true,
+                    'status' => 'complete',
+                    'deleted' => true,
+                ]);
+
+                return $this->desktopProviderResultPage(true, '', true);
+            }
             $sessionRequest = Request::create('/api/auth/desktop/session', 'POST', [
                 'deviceName' => $flow['deviceName'],
                 'installId' => $flow['installId'],
@@ -108,9 +138,33 @@ trait DesktopProviderAuthEndpoints
         return trim("{$first} {$last}");
     }
 
-    private function desktopProviderResultPage(bool $success, string $error = ''): Response
+    private function deleteVerifiedProviderAccount(string $provider, array $flow, array $identity): void
     {
-        $title = $success ? 'Signed in to Vibyra' : 'Vibyra sign-in failed';
+        $expectedSubject = (string) ($flow['providerSubject'] ?? '');
+        $returnedSubject = (string) ($identity['subject'] ?? '');
+        if ($expectedSubject === '' || ! hash_equals($expectedSubject, $returnedSubject)) {
+            throw new ProviderIdentityException('The provider account does not match this Vibyra account.');
+        }
+
+        $user = User::find((int) ($flow['accountId'] ?? 0));
+        if (! $user
+            || ($user->provider ?: 'email') !== $provider
+            || ! hash_equals($expectedSubject, (string) $user->provider_id)) {
+            throw new ProviderIdentityException('The Vibyra account is no longer valid for this deletion.');
+        }
+
+        $user->delete();
+    }
+
+    private function desktopProviderResultPage(
+        bool $success,
+        string $error = '',
+        bool $deleted = false,
+    ): Response
+    {
+        $title = $success
+            ? ($deleted ? 'Vibyra account deleted' : 'Signed in to Vibyra')
+            : 'Vibyra sign-in failed';
         $message = $success
             ? 'You can close this browser tab and return to Vibyra Desktop.'
             : $error;

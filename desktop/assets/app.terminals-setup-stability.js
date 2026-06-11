@@ -19,6 +19,9 @@ function patchTerminalSetupPanel(setup) {
   const currentStep = currentProgress.querySelector('[aria-current="step"] em')?.textContent;
   const nextStep = nextProgress.querySelector('[aria-current="step"] em')?.textContent;
   const sameStep = currentStep === nextStep;
+  if (sameStep && typeof terminalTeamPlanning === "boolean" && terminalTeamPlanning) {
+    return true;
+  }
   if (!sameStep) currentProgress.replaceWith(nextProgress);
   if (sameStep) nextPanel.classList.add("terminal-setup-panel--stable");
   currentPanel.replaceWith(nextPanel);

@@ -10,15 +10,16 @@ const styles = await readFile(new URL("./app.terminals-setup-flow.css", import.m
 const setupStyles = await readFile(new URL("./app.terminals.setup.2.css", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
 
-test("terminal setup opens with a dedicated Solo or Team choice", () => {
+test("terminal setup opens with clear independent or coordinated choices", () => {
   assert.match(ptySource, /let terminalSetupStep = "mode"/);
   assert.match(ptySource, /terminalSetupStep === "mode"/);
-  assert.match(ptySource, /choice\("solo"/);
-  assert.match(ptySource, /choice\("team"/);
-  assert.match(ptySource, /Choose one or more independent agents/);
-  assert.match(ptySource, /Split one goal into coordinated agent roles/);
+  assert.match(ptySource, /choice\("solo", "grid", "Independent agents"/);
+  assert.match(ptySource, /choice\("team", "teamwork", "Coordinated team"/);
+  assert.match(ptySource, /Each agent gets its own terminal and works on a separate task/);
+  assert.match(ptySource, /Give Vibyra one goal; it assigns roles and coordinates the agents/);
   assert.doesNotMatch(ptySource, /terminal-setup-mode-arrow/);
-  assert.match(ptySource, /How do you want to work\?/);
+  assert.match(ptySource, /How should your AI agents work\?/);
+  assert.doesNotMatch(ptySource, />Solo<|>Team</);
   assert.match(controlsSource, /\[data-terminal-setup-mode\]/);
 });
 
@@ -76,6 +77,8 @@ test("combined Team setup keeps workspace safety and reasoning visible", () => {
   assert.match(controlsSource, /await requestTerminalTeamPlan/);
   assert.match(controlsSource, /createTerminalTeam\(teamPlan, setupModel/);
   assert.match(controlsSource, /previewTerminalTeamPlan\(root, teamPlan\)/);
+  assert.match(ptySource, /data-terminal-team-cancel/);
+  assert.match(controlsSource, /cancelTerminalTeamPlanning\(root\)/);
   assert.doesNotMatch(controlsSource, /data-terminal-objective/);
   assert.match(styles, /\.terminal-setup \.terminal-project-select/);
   assert.match(styles, /background: transparent/);

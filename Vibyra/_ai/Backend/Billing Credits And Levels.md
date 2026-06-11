@@ -21,7 +21,7 @@ Current paid allowances/caps are Starter £20 with 350/$3.50, Builder £49 with 
 
 `vibyra:audit-billing-economics` enforces at least 60% conservative contribution margin after 20% VAT, 30% store commission, stressed GBP/USD conversion, OpenRouter's funding fee, and configured operations reserves. It must pass before plan, cap, annual, top-up, VAT, store-fee, FX, OpenRouter-fee, or operations-reserve changes ship. This is a contribution-margin policy, not a guarantee of whole-company net profit after support, refunds, hosting, marketing, or corporation tax.
 
-`userPayload` exposes `plan`, `planBillingCycle`, the legacy `planRenewsAt`, `creditsResetAt`, `membershipEndsAt`, `membershipCancelAtPeriodEnd`, `billingProvider`, `canManageStripeBilling`, backend-owned `planPricePence`, `billingCurrency`, `billingVatInclusive`, credit counters, and `allowedModelTiers`. Treat `plan_renews_at`/`creditsResetAt` as the next monthly credit refresh. `membership_ends_at` is the separate paid-through date and must control period-end cancellation.
+`userPayload` exposes `plan`, `planBillingCycle`, the legacy `planRenewsAt`, `creditsResetAt`, `membershipEndsAt`, `membershipCancelAtPeriodEnd`, `billingProvider`, `canManageStripeBilling`, backend-owned `planPricePence`, `billingCurrency`, `billingVatInclusive`, credit counters, `allowedModelTiers`, `maxConcurrentAgents`, `maxActiveProjects`, and `contextTokenCap`. Treat `plan_renews_at`/`creditsResetAt` as the next monthly credit refresh. `membership_ends_at` is the separate paid-through date and must control period-end cancellation.
 
 New auth accounts must start on the Free plan with `billing.plans.free.monthly_credits`; paid plan credits should only come from IAP/Stripe/topup paths.
 

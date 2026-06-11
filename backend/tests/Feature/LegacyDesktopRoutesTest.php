@@ -18,7 +18,7 @@ class LegacyDesktopRoutesTest extends TestCase
             if ($this->name() === 'test_production_disables_legacy_desktop_routes_by_default') {
                 $this->setEnvironment('APP_ENV', 'production');
                 $this->setEnvironment('VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED');
-            } elseif ($this->name() === 'test_production_can_enable_legacy_desktop_routes_explicitly') {
+            } elseif ($this->name() === 'test_production_cannot_enable_legacy_desktop_routes_explicitly') {
                 $this->setEnvironment('APP_ENV', 'production');
                 $this->setEnvironment('VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED', 'true');
             } else {
@@ -54,13 +54,12 @@ class LegacyDesktopRoutesTest extends TestCase
         $this->assertContains('OPTIONS {any}', $this->legacyDesktopRoutes());
     }
 
-    public function test_production_can_enable_legacy_desktop_routes_explicitly(): void
+    public function test_production_cannot_enable_legacy_desktop_routes_explicitly(): void
     {
-        $this->get('/desktop')->assertOk();
-        $this->getJson('/health')
-            ->assertOk()
-            ->assertJsonPath('ok', true);
-        $this->assertContains('OPTIONS {any}', $this->legacyDesktopRoutes());
+        $this->get('/desktop')->assertNotFound();
+        $this->get('/health')->assertNotFound();
+        $this->postJson('/pair')->assertNotFound();
+        $this->assertSame([], $this->legacyDesktopRoutes());
     }
 
     /**

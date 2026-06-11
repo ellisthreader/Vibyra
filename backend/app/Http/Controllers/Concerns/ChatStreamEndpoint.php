@@ -8,6 +8,7 @@ use App\Services\Billing\ChatCostReservationService;
 use App\Services\Billing\CreditCalculator;
 use App\Services\Billing\CreditDeductor;
 use App\Services\Billing\OpenRouterRequestPolicy;
+use App\Services\Billing\PlanEntitlements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -89,6 +90,14 @@ trait ChatStreamEndpoint
         $maxOutputTokens = $this->resolveMaxTokens($request, $prompt, $skill);
         $learningContext = $this->chatLearningContext($user, $request, $prompt, $chatMode);
         $estimatedInputTokens = $this->estimateInputTokens($prompt, $fileBody, is_array($history) ? $history : [], $projectFiles."\n".$learningContext, $imageAttachments);
+        $maxOutputTokens = app(PlanEntitlements::class)->boundedOutputTokens(
+            $plan,
+            $estimatedInputTokens,
+            $maxOutputTokens,
+        );
+        if ($maxOutputTokens === null) {
+            return $this->contextLimitResponse($plan);
+        }
         $agentMode = $chatMode === 'build';
 
         $apiKey = (string) config('services.openrouter.key');

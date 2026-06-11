@@ -1,6 +1,7 @@
 body {
+  --shell-rail-width: 236px;
   --shell-bg: var(--color-background, var(--bg));
-  --shell-rail: var(--shell-bg);
+  --shell-rail: var(--color-rail, var(--shell-bg));
   --shell-surface: var(--color-surface, var(--shell));
   --shell-elevated: var(--color-elevated, var(--panel));
   --shell-border: var(--color-border, var(--line));
@@ -11,6 +12,9 @@ body {
   --shell-accent: var(--color-accent, var(--accent));
   --shell-accent-soft: var(--color-accent-soft, var(--accent-soft));
   --shell-hover: var(--color-hover, rgba(255, 255, 255, 0.055));
+  --shell-control-size: 34px;
+  --shell-row-height: 38px;
+  --shell-radius: 7px;
 }
 
 body,
@@ -24,13 +28,128 @@ body,
 .rail,
 .app.rail-collapsed .rail {
   background: var(--shell-rail);
-  border-right-color: var(--shell-border-soft);
+  border-right-color: var(--shell-border-soft) !important;
 }
 
 body.electron-shell .desktop-chrome {
-  background: color-mix(in srgb, var(--shell-bg) 88%, transparent);
+  background: var(--shell-rail);
   border-bottom-color: var(--shell-border-soft);
   color: var(--shell-text);
+}
+
+body.desktop-authenticated.electron-shell .desktop-chrome::before {
+  background: var(--shell-rail);
+  border-right: 1px solid var(--shell-border-soft);
+  content: "";
+  inset: 0 auto 0 0;
+  pointer-events: none;
+  position: absolute;
+  width: var(--shell-rail-width);
+}
+
+body.desktop-authenticated.electron-shell .app {
+  grid-template-columns: var(--shell-rail-width) minmax(0, 1fr);
+}
+
+body.desktop-authenticated.electron-shell .desktop-chrome-page {
+  left: var(--shell-rail-width);
+  right: 176px;
+  transform: none;
+  width: auto;
+}
+
+.desktop-chrome-right {
+  -webkit-app-region: no-drag;
+  isolation: isolate;
+  grid-column: 2;
+  justify-self: end;
+  pointer-events: none;
+  position: relative;
+  width: max-content;
+  z-index: 4;
+}
+
+.desktop-chrome-actions {
+  pointer-events: auto;
+}
+
+.desktop-window-controls {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+  position: relative;
+  z-index: 5;
+}
+
+.desktop-window-controls button {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+}
+
+.rail {
+  padding: 10px 10px 12px;
+}
+
+body.electron-shell .rail-logo,
+.rail-logo {
+  gap: 9px;
+  height: var(--shell-row-height);
+  margin: 0 2px 12px;
+}
+
+body.electron-shell .desktop-chrome > .rail-logo {
+  -webkit-app-region: drag;
+  background: var(--shell-rail);
+  border-bottom: 1px solid var(--shell-border-soft);
+  border-right: 1px solid var(--shell-border-soft);
+  box-sizing: border-box;
+  height: var(--chrome-height);
+  left: 0;
+  margin: 0;
+  padding: 0 10px 0 12px;
+  position: absolute;
+  top: 0;
+  width: var(--shell-rail-width);
+  z-index: 221;
+}
+
+body:not(.desktop-authenticated).electron-shell .desktop-chrome > .rail-logo {
+  display: none;
+}
+
+body.electron-shell .rail-logo strong,
+.rail-logo strong {
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+}
+
+body.electron-shell .rail-logo .rail-collapse-button,
+.rail-logo .rail-collapse-button {
+  flex-basis: var(--shell-control-size);
+  height: var(--shell-control-size);
+  width: var(--shell-control-size);
+}
+
+body.electron-shell .desktop-chrome > .rail-logo .rail-collapse-button {
+  -webkit-app-region: no-drag;
+}
+
+.nav {
+  gap: 2px;
+}
+
+.rail .nav-button {
+  border-radius: var(--shell-radius);
+  font-size: 13px;
+  font-weight: 580;
+  gap: 10px;
+  height: var(--shell-row-height);
+  padding: 0 10px;
+}
+
+.rail .nav-button svg {
+  height: 17px;
+  width: 17px;
 }
 
 .desktop-chrome h1,
@@ -52,9 +171,8 @@ body.electron-shell .desktop-chrome {
 .rail .nav-button,
 .rail-chat,
 .rail-status-card,
-.rail-status-top,
-.rail-status-main strong,
-.rail-status-main small,
+.rail-status-copy strong,
+.rail-status-copy small,
 .desktop-window-controls button,
 .connection-chip,
 .token-pill,
@@ -66,15 +184,34 @@ body.electron-shell .desktop-chrome {
 
 .rail .nav-button.active:not(:hover),
 .rail-chat.active:not(:hover) {
-  background: color-mix(in srgb, var(--shell-accent) 9%, transparent);
+  background: var(--shell-hover);
   border-color: transparent;
-  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--shell-accent) 72%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--shell-text) 68%, transparent);
   color: var(--shell-text);
 }
 
 .rail .nav-button.active svg,
 .rail-chat.active svg {
-  color: var(--shell-accent);
+  color: var(--shell-text);
+}
+
+.rail-section-head {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  margin-top: 8px;
+  padding: 0 10px;
+  text-transform: uppercase;
+  color: var(--shell-dim);
+}
+
+.rail-section-head button {
+  color: var(--shell-muted);
+}
+
+.rail-section-head button:hover {
+  background: var(--shell-hover);
+  color: var(--shell-text);
 }
 
 .rail .nav-button:hover,
@@ -92,8 +229,25 @@ body.electron-shell .desktop-chrome {
 }
 
 .rail-status-card {
+  align-items: center;
   background: transparent;
   border-color: transparent;
+  border-radius: var(--shell-radius);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 30px minmax(0, 1fr);
+  min-height: 46px;
+  padding: 6px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.rail-status-card:hover {
+  background: var(--shell-hover);
+}
+
+.rail-status-card.pending {
+  border-color: color-mix(in srgb, var(--color-warning) 34%, transparent);
 }
 
 .rail-phone-icon,
@@ -107,6 +261,75 @@ body.electron-shell .desktop-chrome {
   color: var(--shell-muted);
 }
 
+.rail-status {
+  display: block;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.rail-phone-icon {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  position: relative;
+  width: 30px;
+}
+
+.rail-phone-icon svg {
+  height: 17px;
+  width: 17px;
+}
+
+.rail-phone-icon .dot {
+  border: 2px solid var(--shell-rail);
+  bottom: 2px;
+  height: 8px;
+  position: absolute;
+  right: 1px;
+  width: 8px;
+}
+
+.rail-status-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rail-status-copy strong,
+.rail-status-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-status-copy strong {
+  color: var(--shell-text);
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 16px;
+}
+
+.rail-status-copy small {
+  color: var(--shell-dim);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 14px;
+}
+
+.rail-status-card.pending .rail-status-copy strong {
+  color: var(--color-warning);
+}
+
+.rail-chat {
+  border-radius: var(--shell-radius);
+  font-size: 12px;
+  height: 32px;
+  padding: 0 10px;
+}
+
 .connection-chip,
 .token-pill,
 .icon-button,
@@ -114,6 +337,40 @@ body.electron-shell .desktop-chrome {
 .chat-actions-button {
   background: transparent;
   border-color: transparent;
+}
+
+.desktop-chrome .connection-chip,
+.desktop-chrome .token-pill,
+.desktop-chrome .icon-button,
+.desktop-window-controls button,
+.topbar .connection-chip,
+.topbar .token-pill,
+.topbar .icon-button {
+  border-radius: var(--shell-radius);
+  height: var(--shell-control-size);
+  min-height: var(--shell-control-size);
+  width: var(--shell-control-size);
+}
+
+.desktop-chrome-actions .top-actions,
+.top-actions {
+  gap: 2px;
+}
+
+.top-title {
+  gap: 0;
+}
+
+.top-title h1 {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 17px;
+}
+
+.top-title p {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
 }
 
 .connection-chip .dot,
@@ -127,6 +384,10 @@ body.electron-shell .desktop-chrome {
   border-color: transparent;
 }
 
+.topbar {
+  color: var(--shell-text);
+}
+
 .topbar-menu,
 .app.rail-collapsed .rail .nav-button:after,
 .app.rail-collapsed .rail-status-card:before,
@@ -136,6 +397,14 @@ body.electron-shell .desktop-chrome {
   border-color: var(--shell-border);
   box-shadow: 0 18px 44px color-mix(in srgb, var(--shell-bg) 34%, transparent);
   color: var(--shell-text);
+}
+
+.app.rail-collapsed .rail .nav-button:after,
+.app.rail-collapsed .rail-status-card:before,
+.rail .nav-button:after,
+.rail-profile:after {
+  border-radius: 7px;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--shell-bg) 48%, transparent);
 }
 
 .topbar-menu button,
@@ -158,6 +427,12 @@ body.electron-shell .desktop-chrome {
 .topbar-avatar {
   background: var(--shell-elevated);
   color: var(--shell-text);
+}
+
+.topbar-avatar {
+  border: 1px solid var(--shell-border-soft);
+  height: 28px;
+  width: 28px;
 }
 
 body[data-desktop-theme="light"] .desktop-chrome,
@@ -183,8 +458,9 @@ body[data-desktop-theme="light"].electron-shell .rail-logo strong {
 
 body[data-desktop-theme="light"] .topbar-avatar,
 body[data-desktop-theme="light"] .account-menu-avatar--initials {
-  background: var(--shell-accent-soft);
-  color: var(--shell-accent);
+  background: var(--shell-elevated);
+  border-color: var(--shell-border-soft);
+  color: var(--shell-text);
 }
 
 body[data-desktop-theme="light"] .desktop-window-controls button[data-window-action="close"]:hover {
@@ -216,13 +492,95 @@ body[data-desktop-theme="light"] .desktop-window-controls button[data-window-act
 
   body[data-desktop-theme="auto"] .topbar-avatar,
   body[data-desktop-theme="auto"] .account-menu-avatar--initials {
-    background: var(--shell-accent-soft);
-    color: var(--shell-accent);
+    background: var(--shell-elevated);
+    border-color: var(--shell-border-soft);
+    color: var(--shell-text);
   }
 
   body[data-desktop-theme="auto"] .desktop-window-controls button[data-window-action="close"]:hover {
     background: #d94155;
     color: #ffffff;
+  }
+}
+
+@media (max-width: 900px) {
+  body {
+    --shell-rail-width: 72px;
+  }
+
+  .rail {
+    padding: 10px 8px 12px;
+  }
+
+  .rail .nav-button {
+    height: var(--shell-row-height);
+  }
+
+  body.electron-shell .desktop-chrome > .rail-logo {
+    justify-content: center;
+    padding: 0;
+  }
+
+  body.electron-shell .desktop-chrome > .rail-logo strong {
+    display: none;
+  }
+
+  body.electron-shell .desktop-chrome > .rail-logo .rail-collapse-button {
+    margin: 0;
+  }
+}
+
+body:has(.app.rail-collapsed) {
+  --shell-rail-width: 68px;
+}
+
+.app.rail-collapsed .rail-status {
+  padding-top: 8px;
+}
+
+.app.rail-collapsed .rail-status-card {
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0;
+}
+
+.app.rail-collapsed .rail-status-copy {
+  display: none;
+}
+
+.app.rail-collapsed .rail-phone-icon {
+  height: 32px;
+  width: 32px;
+}
+
+body.desktop-authenticated.electron-shell:has(.app.rail-collapsed) .desktop-chrome > .rail-logo {
+  justify-content: center;
+  padding: 0;
+}
+
+body.desktop-authenticated.electron-shell:has(.app.rail-collapsed) .desktop-chrome > .rail-logo strong {
+  display: none;
+}
+
+body.desktop-authenticated.electron-shell:has(.app.rail-collapsed) .desktop-chrome > .rail-logo .rail-collapse-button {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  body,
+  body:has(.app.rail-collapsed) {
+    --shell-rail-width: 0px;
+  }
+
+  body.desktop-authenticated.electron-shell .desktop-chrome::before,
+  body.desktop-authenticated.electron-shell .desktop-chrome > .rail-logo {
+    display: none;
+  }
+
+  body.desktop-authenticated.electron-shell .app {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

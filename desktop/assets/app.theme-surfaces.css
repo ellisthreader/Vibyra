@@ -52,7 +52,12 @@ body {
 .chip.active,
 .project-card.active,
 .plan-card.featured,
-.membership-plan.active { background: var(--surface-accent-soft); border-color: var(--surface-line-accent); box-shadow: none; color: var(--surface-text); }
+.membership-plan.active {
+  background: var(--surface-hover);
+  border-color: var(--surface-line-accent);
+  box-shadow: none;
+  color: var(--surface-text);
+}
 
 .search input,
 .profile-field input,

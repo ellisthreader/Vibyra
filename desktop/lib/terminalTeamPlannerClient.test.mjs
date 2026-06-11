@@ -40,6 +40,50 @@ test("cloud Team planner requires a desktop account", async () => {
   );
 });
 
+test("cloud Team planner does not dispatch after cancellation", async () => {
+  appState.desktopAccountToken = "desktop-token";
+  const controller = new AbortController();
+  controller.abort();
+  let dispatched = false;
+
+  await assert.rejects(
+    requestCloudTeamPlan({
+      goal: "Plan the work.",
+      roles: ["builder", "reviewer"],
+      projectFiles: [],
+      signal: controller.signal
+    }, async () => {
+      dispatched = true;
+      return jsonResponse({});
+    }),
+    { code: "planner_cancelled" }
+  );
+  assert.equal(dispatched, false);
+});
+
+test("cloud Team planner remains cancellable while decoding the response", async () => {
+  appState.desktopAccountToken = "desktop-token";
+  const controller = new AbortController();
+  let releaseJson;
+  const jsonReady = new Promise((resolve) => { releaseJson = resolve; });
+  const planning = requestCloudTeamPlan({
+    goal: "Plan the work.",
+    roles: ["builder", "reviewer"],
+    projectFiles: [],
+    signal: controller.signal
+  }, async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      await jsonReady;
+      return { ok: true, plan: { assignments: [] } };
+    }
+  }));
+  controller.abort();
+  releaseJson();
+  await assert.rejects(planning, { code: "planner_cancelled" });
+});
+
 test("cloud Team planner reports credit failures as a bounded fallback reason", async () => {
   appState.desktopAccountToken = "desktop-token";
   await assert.rejects(

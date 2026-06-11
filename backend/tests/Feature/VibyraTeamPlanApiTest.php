@@ -20,6 +20,26 @@ class VibyraTeamPlanApiTest extends TestCase
         ])->assertUnauthorized();
     }
 
+    public function test_team_plan_rejects_context_over_the_plan_cap_before_reservation(): void
+    {
+        config([
+            'services.openrouter.key' => 'test-openrouter-key',
+            'billing.plans.free.context_token_cap' => 1,
+        ]);
+        Http::fake();
+        $token = $this->signup('team-plan-context-limit@example.com');
+
+        $this->postJson('/api/chat/team-plan', [
+            'goal' => 'Add secure profile editing.',
+            'roles' => ['builder', 'reviewer'],
+        ], ['Authorization' => "Bearer {$token}"])
+            ->assertStatus(413)
+            ->assertJsonPath('code', 'membership_context_limit');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('chat_cost_reservations', 0);
+    }
+
     public function test_team_plan_uses_strict_gpt_mini_output_and_returns_normalized_untrusted_proposal(): void
     {
         config(['services.openrouter.key' => 'test-openrouter-key']);

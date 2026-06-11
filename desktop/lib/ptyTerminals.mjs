@@ -38,13 +38,15 @@ import {
 } from "./aiTerminalAutoWaiting.mjs";
 import { providerAccountsState } from "./providerAccounts.mjs";
 import { appState } from "./state.mjs";
+import { maxConcurrentTerminalAgents } from "./membershipEntitlements.mjs";
 import {
   issueTerminalGatewayToken,
   revokeTerminalGatewayTokensForTerminal
 } from "./terminalGatewayAuth.mjs";
 import {
   compileTerminalTeamAssignment,
-  normalizeTerminalTeamLaunch
+  normalizeTerminalTeamLaunch,
+  TERMINAL_TEAM_ROLE_CONTRACT_VERSION
 } from "./terminalTeamPromptRoles.mjs";
 import { terminalTeamAssignmentForPlan } from "./terminalTeamPlanner.mjs";
 
@@ -52,11 +54,11 @@ export const MAX_PTY_TERMINAL_SESSIONS = 12;
 
 const MAX_OUTPUT_BUFFER = 50_000;
 const MAX_ASSIGNMENT_PROMPT = 8_000;
-const ASSIGNMENT_TIMEOUT_MS = 5_000;
-const STARTUP_ASSIGNMENT_TIMEOUT_MS = 30_000;
+const ASSIGNMENT_TIMEOUT_MS = 30_000;
 const agents = new Set(["shell", "vibyra", "codex", "claude", "gemini"]);
 const sessions = new Map();
 const subscribers = new Map();
+let pendingVibyraAgentLaunches = 0;
 
 await restorePersistentSessions();
 
@@ -70,25 +72,8 @@ export async function handlePtyTerminalRoutes(req, res, url) {
   if (req.method === "POST" && route.action === "collection") {
     const body = await readBody(req);
     const session = await createPtyTerminal(body);
-    const prompt = sanitizeAssignmentPrompt(body.initialPrompt);
-    const assignment = prompt
-      ? await assignPtyTerminalTask(session.id, {
-        assignmentId: string(body.assignmentId) || `assignment-${session.id}-${Date.now()}`,
-        prompt
-      }, {
-        timeoutMs: STARTUP_ASSIGNMENT_TIMEOUT_MS
-      })
-      : null;
-    if (assignment && assignment.state !== "written-to-child") {
-      closePtyTerminal(session.id);
-      throw httpError(
-        assignment.state === "timed-out" ? 504 : 409,
-        assignment.reason || "The terminal task could not be delivered."
-      );
-    }
     send(res, 200, {
       session: sessions.has(session.id) ? publicSession(sessions.get(session.id)) : session,
-      ...(assignment ? { assignment } : {}),
       agents: listAiTerminalAgentStatuses()
     });
     return true;
@@ -295,6 +280,8 @@ export async function createPtyTerminal(body = {}) {
   }
   if (existing) closePtyTerminal(existing.id);
   assertTeamRoleAvailable(team, { terminalId: requestedId, projectId, model, tokenMode });
+  const releaseAgentCapacity = reserveVibyraAgentCapacity(tokenMode, agent);
+  try {
   if (sessions.size >= MAX_PTY_TERMINAL_SESSIONS) throw httpError(429, "Vibyra Desktop supports up to " + MAX_PTY_TERMINAL_SESSIONS + " terminals at once.");
   const project = terminalProjectById(projectId);
   if (projectId && !project) throw httpError(404, "The selected terminal project is no longer available.");
@@ -342,6 +329,7 @@ export async function createPtyTerminal(body = {}) {
     output: waitingAuto ? autoTerminalWaitingOutput({ cwd: workspace.cwd, cols: body.cols }) : "",
     status: waitingAuto ? "running" : agentStatus.available ? "starting" : "unavailable",
     providerState: waitingAuto ? "ready" : !agentStatus.available ? "exited" : agent === "shell" ? "fallback-shell" : "starting",
+    initialAssignmentPrompt: initialPrompt,
     exitCode: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -355,7 +343,7 @@ export async function createPtyTerminal(body = {}) {
   };
   const terminalGatewayToken = tokenMode === "vibyra" && launchPlan
     ? issueTerminalGatewayToken(session.id, {
-      models: [...launchPlan.allowedModels, launchPlan.nativeModel],
+      models: terminalGatewayModels(launchPlan),
       runtimeId: launchPlan.runtimeId,
       providerId: launchPlan.providerId,
       adapterId: launchPlan.adapterId,
@@ -408,6 +396,9 @@ export async function createPtyTerminal(body = {}) {
     throw error;
   }
   return publicSession(session);
+  } finally {
+    releaseAgentCapacity();
+  }
 }
 
 async function officialTerminalMemory(agent, projectId) {
@@ -479,6 +470,46 @@ export function closePtyTerminal(id) {
   subscribers.delete(session.id);
   revokeTerminalGatewayTokensForTerminal(session.id);
   return true;
+}
+
+export async function rollbackPtyTerminalCreation(id) {
+  const session = sessions.get(string(id));
+  if (!session) return false;
+  if (session.process) session.process.kill("SIGTERM");
+  else removePersistentAiTerminalSession(session.id);
+  sessions.delete(session.id);
+  subscribers.delete(session.id);
+  revokeTerminalGatewayTokensForTerminal(session.id);
+  await rollbackPreparedTerminalWorkspace(session);
+  return true;
+}
+
+export async function launchPtyTerminalTeam(requests = []) {
+  const createdIds = [];
+  const launched = [];
+  const assignments = [];
+  try {
+    for (const request of requests) {
+      const session = await createPtyTerminal(request);
+      createdIds.push(session.id);
+      launched.push(session);
+    }
+    for (let index = 0; index < requests.length; index += 1) {
+      const request = requests[index];
+      const prompt = String(request.initialPrompt || "").trim();
+      if (!prompt) continue;
+      const assignmentId = String(request.assignmentId || `team-${launched[index].id}-${Date.now()}`);
+      const assignment = await assignPtyTerminalTask(launched[index].id, { assignmentId, prompt });
+      if (assignment.state !== "written-to-child") {
+        throw httpError(409, assignment.reason || "A Team terminal did not accept its assignment.");
+      }
+      assignments.push(assignment);
+    }
+    return { sessions: launched, assignments };
+  } catch (error) {
+    await Promise.allSettled(createdIds.map((id) => rollbackPtyTerminalCreation(id)));
+    throw error;
+  }
 }
 
 export function renamePtyTerminal(id, body = {}) {
@@ -571,6 +602,8 @@ async function restorePersistentSessions() {
         persistentHandlers(session),
         { waitForWorker: true }
       );
+    } else {
+      revokeTerminalGatewayTokensForTerminal(session.id);
     }
   }
 }
@@ -606,6 +639,29 @@ function terminateUntrustedPersistentSession(terminalId) {
 
 export function listPtyTerminals() {
   return Array.from(sessions.values()).map(publicSession);
+}
+
+function reserveVibyraAgentCapacity(tokenMode, agent) {
+  if (tokenMode !== "vibyra" || agent === "shell") return () => {};
+  const limit = maxConcurrentTerminalAgents(appState.desktopAccount);
+  const active = Array.from(sessions.values()).filter((session) => (
+    session.tokenMode === "vibyra"
+    && session.agent !== "shell"
+    && session.status !== "exited"
+  )).length;
+  if (active + pendingVibyraAgentLaunches >= limit) {
+    throw httpError(
+      403,
+      `Your Vibyra plan supports ${limit} concurrent agent${limit === 1 ? "" : "s"}. Close a Vibyra-funded terminal or upgrade before opening another.`
+    );
+  }
+  pendingVibyraAgentLaunches += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    pendingVibyraAgentLaunches = Math.max(0, pendingVibyraAgentLaunches - 1);
+  };
 }
 
 export function terminalEditorWorkspace(id) {
@@ -650,7 +706,7 @@ export async function assignPtyTerminalTask(id, body = {}, options = {}) {
   const session = sessions.get(string(id));
   if (!session) throw httpError(404, "Terminal not found.");
   const assignmentId = string(body.assignmentId).slice(0, 160);
-  const prompt = sanitizeAssignmentPrompt(body.prompt);
+  const prompt = sanitizeAssignmentPrompt(session.initialAssignmentPrompt || body.prompt);
   if (!assignmentId) throw httpError(422, "Assignment ID is required.");
   if (!prompt) throw httpError(422, "Assignment prompt is required.");
   if (session.autoAwaitingTask) {
@@ -674,6 +730,7 @@ export async function assignPtyTerminalTask(id, body = {}, options = {}) {
   });
   session.providerState = normalizeProviderState(acknowledgement.providerState)
     || session.providerState;
+  if (acknowledgement.state === "written-to-child") delete session.initialAssignmentPrompt;
   session.updatedAt = new Date().toISOString();
   return {
     assignmentId,
@@ -783,6 +840,7 @@ function publicSession(session) {
     autoPasteMode,
     autoTitle,
     autoRoutingPromise,
+    initialAssignmentPrompt,
     ...safe
   } = session;
   return {
@@ -811,6 +869,7 @@ function assertTeamRoleAvailable(team, context = {}) {
 
 function normalizeRestoredTeam(value, runtimeId) {
   if (!value || typeof value !== "object") return null;
+  if (Number(value.contractVersion) !== TERMINAL_TEAM_ROLE_CONTRACT_VERSION) return null;
   try {
     return normalizeTerminalTeamLaunch({
       teamId: value.teamId,
@@ -1065,7 +1124,7 @@ async function activateAutoTerminal(session, prompt, assignmentId, timeoutMs = 2
       }
       const memoryInstructions = await officialTerminalMemory(agent, session.projectId);
       gatewayToken = issueTerminalGatewayToken(session.id, {
-        models: launchPlan.allowedModels,
+        models: terminalGatewayModels(launchPlan),
         runtimeId: launchPlan.runtimeId,
         providerId: launchPlan.providerId,
         adapterId: launchPlan.adapterId,
@@ -1285,6 +1344,10 @@ function routedTerminalTitle(model, requestedTitle) {
 
 function string(value) {
   return String(value ?? "").trim();
+}
+
+function terminalGatewayModels(launchPlan) {
+  return [...new Set([...launchPlan.allowedModels, launchPlan.nativeModel])];
 }
 
 function httpError(status, message) {

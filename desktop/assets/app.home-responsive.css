@@ -30,15 +30,15 @@
   }
 
   .desktop-home-command {
-    grid-template-columns: 42px minmax(0, 1fr) 34px;
-    min-height: 84px;
-    padding: 15px;
-    gap: 13px;
+    grid-template-columns: 38px minmax(0, 1fr) 34px;
+    min-height: 66px;
+    padding: 11px;
+    gap: 11px;
   }
 
   .desktop-home-command-mark {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
   }
 
   .desktop-home-context {
@@ -73,7 +73,7 @@
     flex-direction: column;
   }
 
-  .desktop-home-command-copy strong {
-    font-size: 13px;
+  .desktop-home-command textarea {
+    font-size: 14px;
   }
 }

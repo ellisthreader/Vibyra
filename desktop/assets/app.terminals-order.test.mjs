@@ -5,6 +5,8 @@ import vm from "node:vm";
 
 const renderSource = readFileSync(new URL("./app.terminals-render.js", import.meta.url), "utf8");
 const ptySource = readFileSync(new URL("./app.terminals-pty.js", import.meta.url), "utf8");
+const controlsSource = readFileSync(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
+const runtimeSource = readFileSync(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
 
 test("wide grid orders eight terminals from top-left to bottom-right", () => {
   const context = { maxTerminals: 12 };
@@ -28,4 +30,13 @@ test("new PTY terminals append so terminal one stays first", () => {
   assert.match(ptySource, /terminals\.push\(terminal\)/);
   assert.doesNotMatch(ptySource, /terminals\.unshift\(terminal\)/);
   assert.match(ptySource, /terminal-grid-number/);
+});
+
+test("terminal reordering preserves xterm DOM and is keyboard accessible", () => {
+  assert.match(runtimeSource, /preserveConnectedXtermElements\(\)/);
+  assert.match(runtimeSource, /restoreConnectedXtermElements\(preservedXterms\)/);
+  assert.match(runtimeSource, /if \(preservingPtyXtermElements\) return/);
+  assert.match(ptySource, /aria-keyshortcuts="Alt\+ArrowLeft Alt\+ArrowRight"/);
+  assert.match(controlsSource, /event\.altKey/);
+  assert.match(controlsSource, /\["ArrowLeft", "ArrowRight"\]/);
 });
