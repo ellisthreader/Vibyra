@@ -65,24 +65,23 @@ function bindTerminalControls() {
     const teamGoal = teamMode ? normalizeTerminalTeamGoal(setupTeamGoal) : "";
     if (teamMode && !teamGoal) return;
     const available = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
-    const count = Math.min(available, normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount));
-    if (count < 1) return;
-    const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
-      ? setupWorkspaceMode
-      : "shared";
+    let count = teamMode
+      ? 0
+      : Math.min(available, normalizeCount(root.querySelector("[data-terminal-custom-count]")?.value || setupCount));
+    if (!teamMode && count < 1) return;
     let teamPlan = null;
     if (teamMode) {
       const requestId = ++terminalTeamPlanRequest;
       button.dataset.terminalLaunchBusy = "1";
       button.disabled = true;
-      button.innerHTML = `${icon("loading")}Designing team...`;
       setTerminalTeamPlanningUi(root, "planning");
       try {
         teamPlan = await requestTerminalTeamPlan({
           goal: teamGoal,
-          teamSize: count,
+          teamSize: setupTeamSize,
           projectId: setupProjectId,
-          model: setupModel
+          model: setupModel,
+          tokenMode: setupTokenMode
         });
         if (requestId !== terminalTeamPlanRequest) return;
         setTerminalTeamPlanningUi(root, "planned");
@@ -97,7 +96,18 @@ function bindTerminalControls() {
         setTerminalTeamPlanningUi(root, "error", error instanceof Error ? error.message : "Vibyra could not plan this team.");
         return;
       }
+      count = teamPlan.teamSize;
+      if (count > available) {
+        delete button.dataset.terminalLaunchBusy;
+        button.disabled = false;
+        button.innerHTML = `${icon("arrow")}Plan and start team`;
+        setTerminalTeamPlanningUi(root, "error", "The planned Team needs more available terminal slots.");
+        return;
+      }
     }
+    const workspaceMode = count > 1 && setupProjectId && setupProjectId !== "full-pc"
+      ? setupWorkspaceMode
+      : "shared";
     if (workspaceMode === "worktree" && typeof prepareTerminalWorkspaceLaunch === "function") {
       button.dataset.terminalLaunchBusy = "1";
       button.disabled = true;
@@ -152,9 +162,15 @@ function bindTerminalControls() {
   root.querySelectorAll("[data-terminal-count]").forEach((button) => button.addEventListener("click", () => {
     const count = normalizeCount(button.dataset.terminalCount);
     const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
-    setupCount = terminalSetupMode === "team"
-      ? Math.max(2, Math.min(4, count, capacity))
-      : Math.min(count, capacity);
+    setupCount = Math.min(count, capacity);
+    render();
+  }));
+  root.querySelectorAll("[data-terminal-team-size]").forEach((button) => button.addEventListener("click", () => {
+    const requested = Number(button.dataset.terminalTeamSize);
+    const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
+    setupTeamSize = [2, 3, 4].includes(requested) && requested <= capacity
+      ? requested
+      : 0;
     render();
   }));
   root.querySelectorAll("[data-terminal-setup-effort]").forEach((button) => button.addEventListener("click", () => {

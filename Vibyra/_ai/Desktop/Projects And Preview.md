@@ -54,8 +54,9 @@ DOM element, resolves its owning source with explicit confidence, and opens one
 compact AI change composer. Shift+right-click preserves the app/browser context
 menu. React/Vue debug source metadata wins; fallback matching uses component,
 text, ID, ARIA, and class evidence inside the selected target's app directory.
-Ambiguous matches require user choice. The edit reuses the selected project
-terminal and existing permission model, while the source badge opens the
+Ambiguous fallback matches automatically use the highest-ranked candidate and
+remain labeled `best-match` in the agent prompt. The edit reuses the selected
+project terminal and existing permission model, while the source badge opens the
 existing Editor at the resolved line. Arbitrary custom URLs, public demos, and
 top-level phone WebViews do not install the desktop interceptor. Generic
 canvas/WebGL selection resolves the canvas and likely owning module, not an
@@ -77,6 +78,29 @@ implementation prompts may reuse a standalone project terminal or an idle Team
 Builder/writer, but never a coordinator, reviewer, verifier, or other read-only
 Team role. Failed assignment acknowledgement keeps the inspector draft and
 shows the terminal error instead of reporting a successful send.
+Inspector prompts separate TASK, TARGET, IMPLEMENTATION, and SECURITY; the
+user request is explicitly delimited, source-resolution confidence is included,
+and all selected-page metadata is marked untrusted. Semantic DOM paths prefer
+IDs, test IDs, roles, and ARIA labels rather than generated CSS-module classes.
+The right-click editor UI is a maximum-270px floating composer: one short
+project-relative source path, one integrated input with an icon-only Send
+action, and conditional status text. It has no component title, selected-text
+quote block, boxed source row, persistent helper footer, heavy accent border,
+or source-choice list.
+React source ownership prefers a fiber's own debug source before a broad owner
+source. `AppWebView`, WebView, iframe, preview-frame, and browser-frame metadata
+is treated as container context for inner DOM elements, so it cannot receive an
+unconditional exact-source score; fallback ranking uses text, ID, test ID,
+ARIA, role, and class evidence. Selecting the iframe element itself still
+resolves to its WebView source. Regression coverage lives in
+`previewInspectorRuntime.test.mjs` and `previewElementResolver.test.mjs`.
+Exact React source acceptance is line-corroborated: the reported source window
+must contain the selected DOM tag, and broad App/Page/Screen/Layout/Root/Main/
+Index/Shell files require another nearby element signal. Fallback scoring uses
+visible JSX/HTML text rather than arbitrary substrings and includes `name`,
+`placeholder`, `title`, `alt`, and `href`, which prevents imported child names
+or prop strings in parent files from outranking the component that renders the
+actual element.
 
 `preview.mjs` serves static browser entries from `previewResolver.mjs` (`index.html`, `dist/`, `build/`, `out/`, `.output/public/`, app/client/frontend builds, docs/demo/game exports). If none exists, it returns a phone-viewable analyzed-project fallback instead of a blank/no-entry shell.
 

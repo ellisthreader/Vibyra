@@ -69,6 +69,45 @@ test("direct burst-limit codes retain exact account capacity and reset details",
   assert.match(payload.error.message, /2026-06-09T18:31:53\+00:00/);
 });
 
+test("Grok credit exhaustion identifies Vibyra billing instead of the CLI key", async () => {
+  appState.desktopAccountToken = "account-token";
+  appState.desktopAccount = {
+    creditsBalance: 0,
+    creditsResetAt: "2026-07-11T13:31:53+00:00",
+    weeklyCreditsUsed: 50,
+    weeklyCreditsCap: 50,
+    weeklyCreditsResetAt: "2026-06-16T13:31:53+00:00"
+  };
+  const res = responseStream();
+
+  await proxyNativeTerminalProtocol(new EventEmitter(), res, {
+    protocol: "openai-chat-completions",
+    billingModel: "x-ai/grok-build-0.1",
+    body: { messages: [] }
+  }, async () => new Response(JSON.stringify({
+    error: {
+      message: "You do not have enough credits for this request.",
+      code: "billing_credits_exhausted",
+      details: {
+        creditsBalance: 0,
+        estimatedCredits: 4,
+        billingStatus: 402
+      }
+    }
+  }), {
+    status: 400,
+    headers: { "content-type": "application/json" }
+  }));
+
+  const payload = JSON.parse(res.body);
+  assert.equal(res.statusCode, 400);
+  assert.equal(payload.error.code, "billing_credits_exhausted");
+  assert.match(payload.error.message, /Vibyra token balance has 0 credits remaining/);
+  assert.match(payload.error.message, /needs about 4 credits/);
+  assert.match(payload.error.message, /weekly window is also full \(50\/50\)/);
+  assert.match(payload.error.message, /not a company CLI API-key error/);
+});
+
 test("genuine provider rate limits remain retryable in native protocols", async () => {
   appState.desktopAccountToken = "account-token";
   const res = responseStream();

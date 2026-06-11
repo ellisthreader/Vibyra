@@ -16,7 +16,7 @@ export async function makeBillingFailureNonRetryable(response) {
   const code = String(payload?.error?.code || "");
   if (!code.startsWith("billing_")) return response;
 
-  const inferred = billingWindowDetails(code);
+  const inferred = billingFailureDetails(code, payload.error.details);
   const message = inferred.message || String(payload.error.message || "Vibyra could not reserve credits for this request.");
   const details = {
     ...inferred,
@@ -35,8 +35,36 @@ export async function makeBillingFailureNonRetryable(response) {
   });
 }
 
-function billingWindowDetails(code) {
+function billingFailureDetails(code, payloadDetails = {}) {
   const account = appState.desktopAccount || {};
+  if (code === "billing_credits_exhausted") {
+    const balance = finiteNumber(payloadDetails.creditsBalance, account.creditsBalance);
+    const estimated = finiteNumber(payloadDetails.estimatedCredits);
+    const resetAt = payloadDetails.creditsResetAt || account.creditsResetAt || null;
+    const weeklyUsed = finiteNumber(payloadDetails.weeklyCreditsUsed, account.weeklyCreditsUsed);
+    const weeklyCap = finiteNumber(payloadDetails.weeklyCreditsCap, account.weeklyCreditsCap);
+    const weeklyResetAt = payloadDetails.weeklyCreditsResetAt || account.weeklyCreditsResetAt || null;
+    const balanceText = balance === null
+      ? "does not have enough credits"
+      : `has ${balance} credit${balance === 1 ? "" : "s"} remaining`;
+    const estimateText = estimated === null ? "" : ` This request needs about ${estimated} credits.`;
+    const resetText = resetAt ? ` Vibyra credits reset at ${resetAt}.` : "";
+    const weeklyText = weeklyCap !== null && weeklyCap > 0 && weeklyUsed !== null && weeklyUsed >= weeklyCap
+      ? ` Your weekly window is also full (${weeklyUsed}/${weeklyCap})${weeklyResetAt ? ` until ${weeklyResetAt}` : ""}.`
+      : "";
+
+    return {
+      inferredCode: code,
+      creditsBalance: balance,
+      estimatedCredits: estimated,
+      resetAt,
+      weeklyCreditsUsed: weeklyUsed,
+      weeklyCreditsCap: weeklyCap,
+      weeklyCreditsResetAt: weeklyResetAt,
+      message: `Your Vibyra token balance ${balanceText}.${estimateText}${resetText}${weeklyText} This is not a company CLI API-key error. Top up or upgrade your Vibyra plan to continue.`
+    };
+  }
+
   const windows = [
     {
       code: "billing_burst_cap",
@@ -67,4 +95,12 @@ function billingWindowDetails(code) {
     resetAt: window.resetAt || null,
     message: `Your ${window.label} AI usage window does not have enough capacity for this request (${window.used}/${window.cap} credits used).${reset}`
   };
+}
+
+function finiteNumber(...values) {
+  for (const value of values) {
+    const number = Number(value);
+    if (Number.isFinite(number)) return number;
+  }
+  return null;
 }

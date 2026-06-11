@@ -70,6 +70,9 @@ test("screenshot editor is wired through a narrow Electron preload API", () => {
   assert.match(tray, /data-screenshot-reveal/);
   assert.match(tray, /data-screenshot-copy/);
   assert.match(tray, /copySaved\(item\.filePath\)/);
+  assert.match(tray, /showSavedScreenshotCopied\(button\)/);
+  assert.match(tray, /button\.innerHTML = icon\("check"\)/);
+  assert.match(tray, /button\.setAttribute\("aria-label", "Screenshot copied"\)/);
   assert.match(tray, /draggable="true"/);
   assert.match(tray, /preview\.ondragstart/);
   assert.match(tray, /application\/x-vibyra-screenshot-path/);
@@ -87,6 +90,10 @@ test("screenshot editor is wired through a narrow Electron preload API", () => {
   assert.match(trayStyles, /flex-direction:\s*column/);
   assert.match(trayStyles, /\.screenshot-tray-item/);
   assert.match(trayStyles, /cursor:\s*grab/);
+  assert.match(trayStyles, /\.screenshot-tray-copy\.is-copied/);
+  assert.match(trayStyles, /@keyframes screenshot-copy-pop/);
+  assert.match(trayStyles, /@keyframes screenshot-copy-check/);
+  assert.match(trayStyles, /prefers-reduced-motion:\s*reduce/);
 });
 
 test("closing during an in-flight screenshot load stays closed", async () => {

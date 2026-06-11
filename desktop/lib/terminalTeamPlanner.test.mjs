@@ -170,6 +170,7 @@ test("stored assignment lookup binds plan, team, goal, and role", () => {
   assert.equal(resolved.planId, plan.planId);
   assert.equal(resolved.teamId, plan.teamId);
   assert.equal(resolved.goal, input.goal);
+  assert.equal(resolved.fallbackReason, plan.fallbackReason);
   assert.equal(resolved.assignment.roleKey, "builder");
   assert.equal(resolved.assignment.objective, "builder objective");
   assert.equal(terminalTeamAssignmentForPlan(plan.planId, "builder", "team-wrong"), null);

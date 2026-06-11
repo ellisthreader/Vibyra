@@ -1,3 +1,5 @@
+import { renderProviderPixelLogo } from "./aiTerminalProviderPixelLogo.mjs";
+
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 const DIM = "\x1b[2m";
@@ -6,54 +8,12 @@ const CODE = "\x1b[38;2;245;192;120m";
 const LINK = "\x1b[38;2;105;170;255m";
 const HEADING = "\x1b[1;38;2;236;230;255m";
 
-const BRAND_MARKS = {
-  xai: ["X", "xAI"],
-  deepseek: ["◒", "DEEPSEEK"],
-  qwen: ["◈", "QWEN"],
-  mistral: ["▟", "MISTRAL"],
-  meta: ["∞", "META"],
-  microsoft: ["⊞", "MICROSOFT"],
-  cohere: ["●", "COHERE"],
-  perplexity: ["⌘", "PERPLEXITY"],
-  moonshot: ["◐", "KIMI"],
-  zhipu: ["GLM", "Z.AI"],
-  alibaba: ["A", "ALIBABA"],
-  tencent: ["✦", "TENCENT"],
-  baidu: ["✣", "BAIDU"],
-  bytedance: ["♪", "BYTEDANCE"],
-  xiaomi: ["MI", "XIAOMI"],
-  nvidia: ["◉", "NVIDIA"],
-  minimax: ["M", "MINIMAX"],
-  amazon: ["a→", "AMAZON"],
-  ai21: ["21", "AI21"],
-  ibm: ["≡", "IBM"],
-  groq: ["G", "GROQ"],
-  together: ["T", "TOGETHER AI"],
-  fireworks: ["✺", "FIREWORKS"],
-  liquid: ["≈", "LIQUID AI"],
-  nous: ["N", "NOUS"],
-  openrouter: ["OR", "OPENROUTER"],
-  anthropic: ["AI", "ANTHROPIC"],
-  openai: ["◎", "OPENAI"],
-  google: ["✦", "GOOGLE"],
-  vibyra: ["V", "VIBYRA"]
-};
-
-export function renderProviderBrandLogo(info, color = true) {
-  const [symbol, wordmark] = BRAND_MARKS[info.prompt]
-    || BRAND_MARKS[info.provider]
-    || [String(info.mark || "AI"), String(info.name || "AI").toUpperCase()];
-  const face = `  ${symbol}  ${wordmark}  `;
-  const top = `╭${"─".repeat(face.length)}╮`;
-  const body = `│${face}│▓`;
-  const bottom = `╰${"─".repeat(face.length)}╯▓`;
-  const shadow = ` ${"▀".repeat(face.length + 2)}▓`;
-  return [
-    paint(top, info.color, color, true),
-    paint(body, info.color, color, true),
-    paint(bottom, info.color, color),
-    color ? `${DIM}${shadow}${RESET}` : shadow
-  ];
+export function renderProviderBrandLogo(info, color = true, options = {}) {
+  return renderProviderPixelLogo(info?.theme?.logoId, {
+    color,
+    maxWidth: Math.max(12, Number(options.maxWidth || options.width) || 70),
+    fallbackLabel: info?.name || info?.mark || "AI"
+  });
 }
 
 export function renderTerminalMarkdown(value, color = true) {

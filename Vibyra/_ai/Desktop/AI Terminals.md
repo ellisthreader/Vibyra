@@ -51,9 +51,20 @@ Mistral Vibe where its gateway contract is supported, and Grok Build for
 `x-ai/grok-*`. A provider-qualified,
 tool-capable catalog model without a registered official CLI uses the bundled
 foreground `Vibyra Agent` runtime. Vibyra Agent has one honest shared command
-set and varies only provider logo/mark, accent, name, model label, and status
-copy; it never claims to be that provider's native CLI. Launch contract version
-`21` invalidates stale workers. Runtime selection is model-family-aware rather
+set and never claims to be that provider's native CLI. Its provider registry
+now gives every known API-only company an original dimensional terminal theme
+with distinct logo geometry, palette, prompt token, activity language, and
+status copy; unknown qualified providers receive a deterministic fallback.
+The shared structured command catalog separates real local actions from agent
+workflows. Local `/pwd`, `/files`, `/git`, `/history`, `/unstage`, and
+`/identity` commands use bounded helpers, `/stop` can cancel active work
+immediately, and Standard-mode path commands/file mentions cannot leave the
+terminal's launch workspace. Start with
+`aiTerminalVibyraAgentBranding.mjs`,
+`aiTerminalVibyraAgentPresentation.mjs`,
+`aiTerminalCommandProfiles.mjs`, and
+`aiTerminalVibyraAgentWorkspace.mjs` for this surface. Launch contract version
+`22` invalidates stale workers. Runtime selection is model-family-aware rather
 than company-wide: `google/gemini-*` remains native Gemini CLI, while
 `google/gemma-*` and equivalent API-only families from native-CLI companies use
 Vibyra Agent with the exact selected model.
@@ -141,6 +152,15 @@ an API-only model fixed, verify all of the following:
 - A fresh turn and a resumed turn identify the exact model, OpenRouter route,
   and Vibyra Agent runtime in the authoritative PTY transcript.
 
+`billing_credits_exhausted` is a Vibyra account admission failure before
+OpenRouter dispatch, not evidence that the native company CLI has an invalid
+key. Keep zero-credit accounts fail-closed. The desktop gateway rewrites this
+failure to name Vibyra tokens, include known balance/reset/window data, and
+state that the company CLI key is not the problem. The protected Grok path was
+live-proven with Grok Build 0.2.39, a disposable funded account, exact
+`x-ai/grok-build-0.1` settlement, and a child environment containing only the
+short-lived terminal gateway token rather than `OPENROUTER_API_KEY`.
+
 Model self-reports, screenshots, release-date answers, HTTP success, and unit
 tests alone are not routing proof because model output can hallucinate while
 transport still succeeds. Changes to model-visible instructions or immutable
@@ -167,6 +187,19 @@ The terminal project picker includes a synthetic `full-pc` scope labeled
 user's home directory, so the browser never sends an arbitrary filesystem
 path. This changes the terminal working directory only; permission mode remains
 independent and defaults to standard.
+
+Project selection now has three layers: bounded discovery scans common roots
+through two nested levels, the open picker performs local filtering plus
+debounced deep name/path search, and Electron exposes native `Choose folder`
+and `Choose file` actions. File selection uses its containing folder.
+The visible `Browse full PC` project row invokes the native folder picker
+directly rather than selecting the synthetic `full-pc` home scope.
+Explicitly selected locations are registered through
+`POST /desktop/projects/select` and persisted in
+`~/.vibyra-agent/recent-projects.json`, so plain folders without project
+markers remain available after restart. Start with
+`app.terminals-project-discovery.js`, `app.terminals-project-picker.js`,
+`projectDiscovery.mjs`, `projectSearch.mjs`, and `projectRecents.mjs`.
 
 PTY-backed terminals must preserve mounted xterm DOM nodes across
 `/desktop/state` refreshes. Patch status, helper text, active/hidden classes,
@@ -258,6 +291,25 @@ evidence that the AI planner ran; zero credits, missing auth, timeout, provider
 failure, an undeployed `/api/chat/team-plan` endpoint, or invalid output can all
 produce the deterministic templates.
 
+For `My AI accounts` Team setup with a Codex/OpenAI model, the bridge now uses
+the connected Codex account to produce the strict structured assignment plan.
+The planner runs ephemerally with an isolated `CODEX_HOME` containing only the
+existing auth, ignores user config/rules, uses read-only mode, and validates
+the proposal against the same bridge-owned topology and scope rules. Successful
+plans persist as `plannerMode=provider`; timeout, auth, process, or semantic
+validation failure stops setup instead of silently launching generic
+assignments. The renderer must send `tokenMode` and the selected model to
+`POST /desktop/terminal-teams/plan`. Vibyra-credit planning remains the cloud
+`/api/chat/team-plan` path with a visibly labeled deterministic fallback.
+The provider output schema is generated for the selected topology, including
+the exact assignment count and allowed role keys. Because structured output
+cannot express every semantic invariant, the provider planner validates the
+proposal locally before returning it. A schema-valid failure such as
+support-role write scope, duplicate roles, overlapping paths, or invalid
+criterion references receives one complete corrective Codex retry with the
+bounded validator reason. The retry is validated again and still fails closed
+if unsafe; rejected scope is never silently sanitized or launched.
+
 A shared progress rail names `Workspace`, `Setup`, and `Terminals`. Render it
 once on the setup page, centered above and outside the setup card, never in the
 terminal topbar. Use evenly centered nodes, labels beneath, one continuous
@@ -267,12 +319,24 @@ action, tabs, quick actions, and options.
 
 Step 2 keeps Solo direct: terminal count with `1/2/3/4/6/12` presets and a
 bounded custom value, truthful grid preview, project, model, access, workspace
-safety when applicable, reasoning, token source, and launch. Team adds one
-outcome-focused goal textarea, a `2/3/4` size picker, and a live role preview;
-it does not expose the Solo arbitrary count or grid preview. Team launch remains
-disabled until the goal is non-empty. Reasoning effort stays visible in the
-main form; token/account settings live in a collapsed `Advanced options`
-disclosure. That disclosure describes only two payment choices: Vibyra tokens
+safety when applicable, reasoning, token source, and launch. Team is
+outcome-first: it leads with `Describe the outcome`, one generous goal
+textarea, and `Vibyra will plan the smallest useful team.` Project, Model,
+Workspace safety, and Reasoning effort remain visible. Team size defaults to
+`Automatic`; the optional `2/3/4` override, Access, and token source live in
+collapsed `Advanced options`. Team does not expose the Solo arbitrary
+count or grid preview and does not render generic role cards before planning.
+While the authoritative request runs, transform the bottom launch action into
+the compact live planning surface; do not insert a second activity strip near
+the goal. The action uses a semantic sweep, expanding people-icon rings, and
+pulsing dots. Its copy stays truthful and stable; do not show percentages,
+invented stages, or rotating claims, and disable motion under
+`prefers-reduced-motion`. After the authoritative plan returns, reveal compact
+flat role rows containing only each generated title and one-line objective.
+Team launch remains disabled until the goal is non-empty. An unassigned Team
+gets its own left-rail group keyed by persisted `teamId`, a concise name
+derived from the Builder assignment or shared goal, and the people icon rather
+than Solo's General/folder identity. The disclosure describes only two payment choices: Vibyra tokens
 use Vibyra credits and the backend-owned OpenRouter transport; My AI accounts
 use the user's connected official account and its billing. OpenRouter is never
 presented as a direct terminal billing source because the Vibyra gateway must
@@ -1576,3 +1640,50 @@ Official CLI follow-up:
 
 Validation: `npm run test:desktop-ai` passed 398 tests; focused Team/PTY tests
 passed 44; runtime/launch tests passed 38; `git diff --check` passed.
+
+## June 11, 2026 - Outcome-First Team Setup
+
+Team Step 2 now defaults size to `Automatic` and sends `teamSize: 0` so the
+authoritative planner can choose the smallest valid `2–4` role topology. The
+renderer adopts the returned size for workspace preparation and launch.
+Predefined role cards stay hidden before planning; an active request shows a
+compact reduced-motion-safe planning strip, and successful plans reveal compact
+generated role rows in place. Project, Model, Workspace safety, and Reasoning
+effort remain visible, while size override, Access, and payment live under
+Advanced. The launch action reads `Plan and start team`.
+
+This renderer contract uses terminal action protocol `2026-06-11.19` and the
+`terminal-team-planning-motion-20260611` Team asset cache key. Validate with
+`npm run test:desktop-team-planner`.
+
+## June 11, 2026 - Asset-Backed Provider Terminal Logos
+
+The generalized Vibyra Agent provider intros no longer use three-line,
+hand-authored ASCII monograms or one shared dimensional frame.
+
+Permanent contract:
+
+- Each registered provider theme exposes a canonical `theme.logoId`.
+- Versioned provider SVGs, provenance, checksums, and generated 64x64 RGBA data
+  live under `desktop/assets/provider-logos/`.
+- `desktop/lib/aiTerminalProviderPixelLogo.mjs` decodes the compact generated
+  data and renders true-color ANSI half blocks, with transparent silhouettes,
+  monochrome output, bounded widths, and deterministic unknown-provider
+  fallback art.
+- Product-family marks win where a distinct published identity exists, such
+  as Grok, Qwen, Kimi, Mistral, and Gemma. The surrounding runtime remains
+  truthfully labeled `via Vibyra Agent`; logo treatment never implies a native
+  provider CLI.
+- Rebuild assets with `node scripts/provider-logo-assets/build.mjs` and verify
+  registry parity with `node scripts/provider-logo-assets/validate.mjs`.
+- Generate the visual acceptance artifact with
+  `node scripts/provider-terminal-review/run.mjs`. It renders the real
+  `renderIntroForModel()` output through bundled xterm and headless Chrome,
+  captures every registered provider, and writes one 29-page PDF to
+  `~/Desktop/Vibyra-Agent-Provider-Terminal-Visual-Review.pdf`.
+- The capture xterm uses 38 rows for the current 35-line intro. Fewer rows can
+  scroll the full-size logo before the screenshot and invalidate the review.
+
+Validation covered 29 unique, nonblank screenshots with content clear of the
+terminal bounds, provider logo unit tests, presentation/runtime tests, and the
+full `npm run test:desktop-ai` suite.

@@ -42,7 +42,7 @@ import { openRouterModelPayload } from "./openRouterModels.mjs";
 import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } from "./providerAccounts.mjs";
 import { localAiStatus } from "./localAi.mjs";
 import { pairingQrSvg } from "./pairingQr.mjs";
-import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects } from "./projects.mjs";
+import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects, selectDesktopProject } from "./projects.mjs";
 import { promptProjectContext } from "./projectContext.mjs";
 import { resolvePreviewElement } from "./previewElementResolver.mjs";
 import { authorizeTerminalGatewayRequest } from "./terminalGatewayAuth.mjs";
@@ -109,6 +109,17 @@ export async function handleDesktopRoutes(req, res, url) {
   if (req.method === "GET" && url.pathname === "/desktop/projects") {
     if (!authorizeDesktopUi(req, res)) return true;
     send(res, 200, { projects: await discoverProjects() });
+    return true;
+  }
+  if (req.method === "GET" && url.pathname === "/desktop/projects/search") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    send(res, 200, { projects: await searchDesktopProjects(url.searchParams.get("q")) });
+    return true;
+  }
+  if (req.method === "POST" && url.pathname === "/desktop/projects/select") {
+    if (!authorizeDesktopUi(req, res)) return true;
+    const project = await selectDesktopProject((await readBody(req)).path);
+    send(res, 200, { project });
     return true;
   }
   if (req.method === "GET" && url.pathname === "/desktop/openrouter-models") {

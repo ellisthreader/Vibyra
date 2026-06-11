@@ -41,7 +41,7 @@ test("setup progress sits above the centered setup card and never enters the nav
   assert.match(styles, /box-shadow: 0 0 0 4px/);
 });
 
-test("Solo restores batch count and grid preview while Team owns role count", () => {
+test("Solo owns batch count while Team uses automatic or explicit planned size", () => {
   assert.match(ptySource, /team \? terminalTeamSetupHtml\(launchCount, setupCapacity\) : ""/);
   assert.match(ptySource, /team \? "" : terminalSoloSetupHtml\(launchCount, setupCapacity\)/);
   assert.match(ptySource, /function terminalSoloSetupHtml/);
@@ -49,11 +49,13 @@ test("Solo restores batch count and grid preview while Team owns role count", ()
   assert.match(ptySource, /\[1, 2, 3, 4, 6, 12\]/);
   assert.match(ptySource, /data-terminal-custom-count/);
   assert.match(controlsSource, /createTerminals\(count, setupModel, launchOptions\)/);
-  assert.match(controlsSource, /Math\.max\(2, Math\.min\(4, count, capacity\)\)/);
+  assert.match(controlsSource, /teamSize: setupTeamSize/);
+  assert.match(controlsSource, /count = teamPlan\.teamSize/);
+  assert.match(controlsSource, /\[data-terminal-team-size\]/);
   assert.match(controlsSource, /Math\.min\(count, capacity\)/);
 });
 
-test("combined setup keeps reasoning visible and token settings in advanced options", () => {
+test("combined Team setup keeps workspace safety and reasoning visible", () => {
   assert.match(ptySource, /<p>Project<\/p>/);
   assert.match(ptySource, /<p>Model<\/p>/);
   assert.doesNotMatch(ptySource, /data-terminal-objective/);
@@ -62,16 +64,19 @@ test("combined setup keeps reasoning visible and token settings in advanced opti
   assert.doesNotMatch(ptySource, /data-terminal-setup-go="details"/);
   assert.doesNotMatch(ptySource, /Team workspace|Set up your terminals/);
   assert.match(ptySource, /const effort = terminalSetupEffortPicker\(model\)/);
+  assert.match(ptySource, /terminalTeamSizePicker\(setupCapacity\)/);
+  assert.match(ptySource, /terminalWorkspaceSetupPicker\(team \? 2 : launchCount\)/);
+  assert.match(ptySource, /\? `\$\{terminalTeamSizePicker\(setupCapacity\)\}\$\{access\}\$\{payment\}`/);
+  assert.match(ptySource, /: payment;/);
+  assert.match(ptySource, /\$\{workspace\}/);
   assert.match(ptySource, /\$\{effort\}/);
   assert.match(ptySource, /Advanced options/);
   assert.match(ptySource, /data-terminal-advanced-toggle/);
   assert.match(ptySource, /aria-expanded="\$\{terminalSetupAdvancedOpen\}"/);
-  assert.match(ptySource, /const advanced = terminalTokenSourcePanel/);
-  assert.doesNotMatch(ptySource, /const advanced = `\$\{terminalSetupEffortPicker/);
-  assert.doesNotMatch(controlsSource, /data-terminal-objective/);
   assert.match(controlsSource, /await requestTerminalTeamPlan/);
   assert.match(controlsSource, /createTerminalTeam\(teamPlan, setupModel/);
   assert.match(controlsSource, /previewTerminalTeamPlan\(root, teamPlan\)/);
+  assert.doesNotMatch(controlsSource, /data-terminal-objective/);
   assert.match(styles, /\.terminal-setup \.terminal-project-select/);
   assert.match(styles, /background: transparent/);
 });

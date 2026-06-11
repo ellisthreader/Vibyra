@@ -60,8 +60,9 @@
     <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.1.css?v=terminal-full-access-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.setup.2.css?v=terminal-advanced-motion-20260610" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals.project-picker.css" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals-project-groups.css?v=terminal-project-rail-20260609" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals.project-picker.css?v=terminal-project-discovery-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-project-discovery.css?v=terminal-project-discovery-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-project-groups.css?v=terminal-team-rail-20260611" />
     <link rel="stylesheet" href="/desktop/assets/vendor.xterm.css" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals.pty.css?v=screenshot-path-drop-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-workspace.css?v=terminal-workspace-ui-20260608" />
@@ -74,7 +75,7 @@
     <link rel="stylesheet" href="/desktop/assets/app.terminals-voice-input.css?v=terminal-voice-input-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.screenshot.css?v=screenshot-controls-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.screenshot-responsive.css?v=screenshot-editor-20260610" />
-    <link rel="stylesheet" href="/desktop/assets/app.screenshot-tray.css?v=screenshot-library-drag-20260610" />
+    <link rel="stylesheet" href="/desktop/assets/app.screenshot-tray.css?v=screenshot-copy-feedback-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-companion-chat.css?v=terminal-ai-polish-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-memory.css?v=memory-render-performance-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-graph.css?v=memory-full-canvas-pan-20260611" />
@@ -87,7 +88,7 @@
     <link rel="stylesheet" href="/desktop/assets/app.terminals-test-targets.css?v=terminal-preview-services-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-test-loading.css?v=terminal-preview-live-startup-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-test-console.css?v=terminal-preview-sidebar-cleanup-20260610" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals-test-inspector.css?v=preview-element-editor-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-test-inspector.css?v=preview-element-pinpoint-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-test-responsive.css?v=terminal-preview-sidebar-cleanup-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-fullscreen.css?v=simple-memory-import-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-memory-fullscreen-content.css?v=memory-notes-grid-fix-20260610" />
@@ -109,17 +110,17 @@
     <link rel="stylesheet" href="/desktop/assets/app.terminals-window.css?v=terminal-window-controls-20260609" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-project-workspace.css?v=terminal-ai-unified-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-setup-flow.css?v=solo-terminal-grid-20260611" />
-    <link rel="stylesheet" href="/desktop/assets/app.terminals-team-setup.css?v=terminal-team-goals-20260610" />
+    <link rel="stylesheet" href="/desktop/assets/app.terminals-team-setup.css?v=terminal-team-action-motion-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-team-bar.css?v=terminal-team-goals-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-chrome-polish.css?v=terminal-setup-stable-options-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-auto-polish.css?v=terminal-vibyra-polish-20260610" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-theme-audit.css?v=solo-terminal-grid-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.terminals-workspace-theme-audit.css?v=terminal-light-audit-20260610" />
-    <link rel="stylesheet" href="/desktop/assets/app.home.css?v=home-editorial-20260611" />
-    <link rel="stylesheet" href="/desktop/assets/app.home-launch.css?v=home-editorial-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.home.css?v=home-command-integrated-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.home-launch.css?v=home-command-integrated-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.home-content.css?v=home-editorial-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.home-rows.css?v=home-editorial-20260611" />
-    <link rel="stylesheet" href="/desktop/assets/app.home-responsive.css?v=home-editorial-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.home-responsive.css?v=home-welcome-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.chat-polish.css" />
     <link rel="stylesheet" href="/desktop/assets/app.desktop-theme-audit.css?v=desktop-light-audit-20260610" />
   </head>
@@ -255,7 +256,7 @@
     <script src="/desktop/assets/app.screenshot-state.js?v=screenshot-editor-20260610"></script>
     <script src="/desktop/assets/app.screenshot-tools.js?v=screenshot-editor-20260610"></script>
     <script src="/desktop/assets/app.screenshot-view.js?v=screenshot-editor-20260610"></script>
-    <script src="/desktop/assets/app.screenshot-tray.js?v=screenshot-path-drag-20260610"></script>
+    <script src="/desktop/assets/app.screenshot-tray.js?v=screenshot-copy-feedback-20260611"></script>
     <script src="/desktop/assets/app.screenshot.js?v=screenshot-editor-20260610"></script>
     <script src="/desktop/assets/app.profile-state.js?v=period-end-cancellation-20260609"></script>
     <script src="/desktop/assets/app.profile-screenshots.js?v=screenshot-directory-20260610"></script>
@@ -269,26 +270,27 @@
     <script src="/desktop/assets/app.profile-sessions.js?v=account-location-format-20260609"></script>
     <script src="/desktop/assets/app.state.js?v=shared-account-api-20260609"></script>
     <script src="/desktop/assets/app.shell.js?v=terminal-right-workspace-20260610"></script>
-    <script src="/desktop/assets/app.pages.js?v=home-editorial-20260611"></script>
+    <script src="/desktop/assets/app.pages.js?v=home-welcome-20260611"></script>
     <script src="/desktop/assets/app.terminals.js"></script>
     <script src="/desktop/assets/app.terminals-state.js?v=vibyra-billing-boundary-20260611"></script>
     <script src="/desktop/assets/app.terminals-window.js?v=terminal-window-controls-20260609"></script>
     <script src="/desktop/assets/app.terminals-store.js?v=vibyra-billing-boundary-20260611"></script>
-    <script src="/desktop/assets/app.terminals-team-planning.js?v=terminal-team-plan-source-20260611"></script>
-    <script src="/desktop/assets/app.terminals-team.js?v=terminal-team-plan-source-20260611"></script>
+    <script src="/desktop/assets/app.terminals-team-planning.js?v=terminal-team-action-motion-20260611"></script>
+    <script src="/desktop/assets/app.terminals-team.js?v=terminal-team-action-motion-20260611"></script>
     <script src="/desktop/assets/app.terminals-render.js?v=vibyra-billing-boundary-20260611"></script>
-    <script src="/desktop/assets/app.terminals-controls.js?v=solo-terminal-grid-20260611"></script>
+    <script src="/desktop/assets/app.terminals-controls.js?v=terminal-team-outcome-20260611"></script>
     <script src="/desktop/assets/app.terminals-send.js"></script>
     <script src="/desktop/assets/app.terminals-text.js"></script>
     <script src="/desktop/assets/app.terminals-models.js?v=vibyra-billing-boundary-20260611"></script>
     <script src="/desktop/assets/app.terminals-runtimes.js?v=terminal-runtime-icons-only-20260610"></script>
-    <script src="/desktop/assets/app.terminals-project-picker.js"></script>
-    <script src="/desktop/assets/app.terminals-project-groups.js?v=terminal-project-rail-20260609"></script>
+    <script src="/desktop/assets/app.terminals-project-discovery.js?v=terminal-project-discovery-20260611"></script>
+    <script src="/desktop/assets/app.terminals-project-picker.js?v=terminal-full-pc-browse-20260611"></script>
+    <script src="/desktop/assets/app.terminals-project-groups.js?v=terminal-team-rail-20260611"></script>
     <script src="/desktop/assets/app.terminals-project-workspace.js?v=terminal-team-goals-20260610"></script>
     <script src="/desktop/assets/app.terminals-checkpoint.js?v=terminal-checkpoint-20260608"></script>
     <script src="/desktop/assets/vendor.xterm.js"></script>
     <script src="/desktop/assets/app.terminals-activity.js?v=terminal-task-silent-20260608"></script>
-    <script src="/desktop/assets/app.terminals-pty.js?v=solo-terminal-grid-20260611"></script>
+    <script src="/desktop/assets/app.terminals-pty.js?v=terminal-team-action-motion-20260611"></script>
     <script src="/desktop/assets/app.terminals-path-drop.js?v=screenshot-path-drop-20260610"></script>
     <script src="/desktop/assets/app.terminals-pty-prompt-log.js?v=prompt-transcript-log-20260610"></script>
     <script src="/desktop/assets/app.terminals-pty-runtime.js?v=vibyra-billing-boundary-20260611"></script>
@@ -334,8 +336,8 @@
     <script src="/desktop/assets/app.terminals-test-targets.js?v=terminal-preview-target-viewports-20260610"></script>
     <script src="/desktop/assets/app.terminals-test-loading.js?v=terminal-preview-services-20260610"></script>
     <script src="/desktop/assets/app.terminals-test-console.js?v=terminal-preview-sidebar-cleanup-20260610"></script>
-    <script src="/desktop/assets/app.terminals-test-inspector-data.js?v=preview-element-editor-20260611"></script>
-    <script src="/desktop/assets/app.terminals-test-inspector.js?v=preview-element-editor-20260611"></script>
+    <script src="/desktop/assets/app.terminals-test-inspector-data.js?v=preview-element-pinpoint-20260611"></script>
+    <script src="/desktop/assets/app.terminals-test-inspector.js?v=preview-element-pinpoint-20260611"></script>
     <script src="/desktop/assets/app.terminals-test-launch.js?v=terminal-preview-stale-guard-20260610"></script>
     <script src="/desktop/assets/app.terminals-test-view.js?v=terminal-preview-services-20260610"></script>
     <script src="/desktop/assets/app.terminals-test.js?v=terminal-preview-target-viewports-20260610"></script>

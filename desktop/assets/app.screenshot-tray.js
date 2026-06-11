@@ -46,11 +46,40 @@ function renderSavedScreenshotTray() {
     });
     node.querySelector("[data-screenshot-copy]")?.addEventListener("click", async (event) => {
       event.stopPropagation();
-      const result = await window.vibyraDesktopScreenshot.copySaved(item.filePath);
-      if (!result?.ok) showScreenshotNotice(result?.error || "Copy failed");
+      const button = event.currentTarget;
+      button.setAttribute("aria-busy", "true");
+      try {
+        const result = await window.vibyraDesktopScreenshot.copySaved(item.filePath);
+        if (!result?.ok) {
+          showScreenshotNotice(result?.error || "Copy failed");
+          return;
+        }
+        showSavedScreenshotCopied(button);
+      } catch (error) {
+        showScreenshotNotice(error instanceof Error ? error.message : "Copy failed");
+      } finally {
+        button.removeAttribute("aria-busy");
+      }
     });
   });
   tray.scrollTop = tray.scrollHeight;
+}
+
+function showSavedScreenshotCopied(button) {
+  clearTimeout(button._copiedTimer);
+  button.classList.remove("is-copied");
+  void button.offsetWidth;
+  button.innerHTML = icon("check");
+  button.classList.add("is-copied");
+  button.setAttribute("aria-label", "Screenshot copied");
+  button.title = "Copied";
+  button._copiedTimer = setTimeout(() => {
+    if (!button.isConnected) return;
+    button.classList.remove("is-copied");
+    button.innerHTML = icon("copy");
+    button.setAttribute("aria-label", "Copy screenshot");
+    button.title = "Copy screenshot";
+  }, 1400);
 }
 
 function setScreenshotPathDragData(dataTransfer, preview, filePath) {

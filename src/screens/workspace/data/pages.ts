@@ -33,7 +33,7 @@ export const buildExamplePrompts: Array<{ icon: keyof typeof Ionicons.glyphMap; 
 
 export const chatSuggestions = [
   { description: "Find & resolve\nissues", icon: "construct-outline" as const, prompt: "Find and fix the main bug in this project.", title: "Fix a bug" },
-  { description: "Add something\nnew", icon: "cube-outline" as const, prompt: "Build a new feature for this project.", title: "Build a feature" },
+  { description: "Add something\nnew", icon: "cube-outline" as const, prompt: "Build a new feature for this project.", title: "Build a function" },
   { description: "Improve code\nquality", icon: "code-slash-outline" as const, prompt: "Refactor this project and improve the code quality.", title: "Refactor code" },
   { description: "Prepare and\ndeploy", icon: "rocket-outline" as const, prompt: "Prepare this project to ship.", title: "Ship it" }
 ];

@@ -317,6 +317,7 @@ test("terminal setup keeps CLI downloads in model-row icon controls", () => {
   const source = readFileSync(new URL("./app.terminals-pty.js", import.meta.url), "utf8");
   assert.doesNotMatch(source, /data-terminal-runtime-install=/);
   assert.doesNotMatch(source, /Start Auto with a task/);
-  assert.match(source, /`Start \$\{team \? "team" : "solo"\} workspace`/);
+  assert.match(source, /"Plan and start team"/);
+  assert.match(source, /`Start \$\{launchCount\} terminal/);
   assert.doesNotMatch(source, /Download CLI from model list/);
 });

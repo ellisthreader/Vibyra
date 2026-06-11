@@ -69,6 +69,7 @@ export function terminalTeamAssignmentForPlan(planId, roleKey, teamId = "") {
     goal: plan.goal,
     plannerMode: plan.plannerMode,
     plannerModel: plan.plannerModel,
+    fallbackReason: plan.fallbackReason,
     assignment
   });
 }

@@ -1,5 +1,6 @@
 let terminalSetupMode = "";
 let setupTeamGoal = "";
+let setupTeamSize = 0;
 
 const terminalTeamRoleCatalog = {
   coordinator: {
@@ -39,6 +40,7 @@ const terminalTeamRoleCatalog = {
 function resetTerminalTeamSetup() {
   terminalSetupMode = "";
   setupTeamGoal = "";
+  setupTeamSize = 0;
   terminalTeamPlanning = false;
   terminalTeamPlanningError = "";
   terminalTeamPlanRequest += 1;
@@ -155,24 +157,28 @@ function terminalTeamRuntimeIssue(model, tokenMode) {
 }
 
 function terminalTeamSetupHtml(count, capacity) {
-  const roles = terminalTeamRoles(count);
-  const choices = [2, 3, 4];
   return `<div class="terminal-team-setup${terminalTeamPlanning ? " is-planning" : ""}" data-terminal-team-setup>
     <label class="terminal-team-goal">
-      <span><strong>What should the team accomplish?</strong><small>One clear outcome works best</small></span>
-      <textarea rows="3" maxlength="1200" data-terminal-team-goal placeholder="Audit checkout, fix confirmed issues, and verify payment flows." ${terminalTeamPlanning ? "disabled" : ""}>${escapeHtml(setupTeamGoal)}</textarea>
+      <strong>Describe the outcome</strong>
+      <textarea rows="4" maxlength="1200" data-terminal-team-goal placeholder="Audit light and dark mode across mobile and desktop, fix inconsistencies, and verify both themes." ${terminalTeamPlanning ? "disabled" : ""}>${escapeHtml(setupTeamGoal)}</textarea>
+      <small>Vibyra will plan the smallest useful team.</small>
     </label>
-    <div class="terminal-team-plan">
-      <div class="terminal-team-size">
-        <p>Team size</p>
-        <div role="radiogroup" aria-label="Team size">${choices.map((size) => `<button class="${count === size ? "active" : ""}" type="button" role="radio" aria-checked="${count === size}" data-terminal-count="${size}" ${size > capacity || terminalTeamPlanning ? "disabled" : ""}>${size}</button>`).join("")}</div>
-        <small>One Builder owns production code</small>
-      </div>
-      <div class="terminal-team-role-preview" aria-label="Planned team roles" aria-busy="${terminalTeamPlanning}">
-        ${terminalTeamRolePreviewHtml(roles, terminalTeamPlanning)}
-      </div>
-    </div>
-    <p class="terminal-team-planning-status${terminalTeamPlanning ? " is-visible" : ""}" data-terminal-team-status role="status" aria-live="polite">${escapeHtml(terminalTeamPlanning ? "Designing focused assignments..." : terminalTeamPlanningError)}</p>
+    <div class="terminal-team-role-preview" aria-label="Planned team roles" aria-busy="${terminalTeamPlanning}" hidden></div>
+    <p class="terminal-team-planning-status${terminalTeamPlanningError ? " is-visible" : ""}" data-terminal-team-status role="status" aria-live="polite">${escapeHtml(terminalTeamPlanningError)}</p>
+  </div>`;
+}
+
+function terminalTeamSizePicker(capacity) {
+  const choices = [
+    { value: 0, label: "Automatic" },
+    { value: 2, label: "2" },
+    { value: 3, label: "3" },
+    { value: 4, label: "4" }
+  ];
+  return `<div class="terminal-setup-block terminal-team-size">
+    <p>Team size</p>
+    <div role="radiogroup" aria-label="Team size">${choices.map(({ value, label }) => `<button class="${setupTeamSize === value ? "active" : ""}" type="button" role="radio" aria-checked="${setupTeamSize === value}" data-terminal-team-size="${value}" ${value > capacity || terminalTeamPlanning ? "disabled" : ""}>${label}</button>`).join("")}</div>
+    <small>Automatic chooses the smallest useful team. One Builder owns production code.</small>
   </div>`;
 }
 

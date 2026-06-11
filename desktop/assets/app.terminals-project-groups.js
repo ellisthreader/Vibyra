@@ -1,6 +1,7 @@
 const terminalProjectActiveKey = "vibyra.desktop.terminalProjectActiveIds";
 const terminalActiveWorkspaceKey = "vibyra.desktop.terminalActiveProject";
 const terminalUnassignedProjectKey = "__unassigned__";
+const terminalTeamProjectPrefix = "__team__:";
 let terminalProjectActiveIds = loadTerminalProjectActiveIds();
 let terminalActiveProjectKey = localStorage.getItem(terminalActiveWorkspaceKey) || "";
 let terminalBatchSetupOpen = false;
@@ -16,10 +17,28 @@ function loadTerminalProjectActiveIds() {
 }
 
 function terminalProjectGroupKey(terminal) {
-  return String(terminal?.projectId || "") || terminalUnassignedProjectKey;
+  const projectId = String(terminal?.projectId || "");
+  if (projectId) return projectId;
+  const teamId = String(terminal?.teamId || "").trim();
+  return teamId ? `${terminalTeamProjectPrefix}${teamId}` : terminalUnassignedProjectKey;
 }
 
-function terminalProjectGroupLabel(key) {
+function terminalTeamProjectLabel(items = []) {
+  const builder = items.find((terminal) => terminal?.teamRoleKey === "builder");
+  const assignmentTitle = String(builder?.teamRole || builder?.title || "")
+    .replace(/\s+(builder|coordinator|reviewer|verifier)$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const goal = String(items[0]?.teamGoal || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/[.!?]/, 1)[0];
+  const label = assignmentTitle ? `${assignmentTitle} Team` : goal || "AI Team";
+  return label.length > 42 ? `${label.slice(0, 39).trimEnd()}...` : label;
+}
+
+function terminalProjectGroupLabel(key, items = []) {
+  if (key.startsWith(terminalTeamProjectPrefix)) return terminalTeamProjectLabel(items);
   if (key === terminalUnassignedProjectKey) return "General";
   if (typeof terminalFullPcProjectId === "string" && key === terminalFullPcProjectId) return "Full PC";
   return terminalProject(key)?.name || "Project";
@@ -29,10 +48,14 @@ function terminalProjectGroups() {
   const groups = new Map();
   for (const terminal of terminals) {
     const key = terminalProjectGroupKey(terminal);
-    if (!groups.has(key)) groups.set(key, { key, label: terminalProjectGroupLabel(key), project: terminalProject(key), terminals: [] });
+    if (!groups.has(key)) groups.set(key, { key, label: "", project: terminalProject(terminal.projectId), terminals: [] });
     groups.get(key).terminals.push(terminal);
   }
-  return Array.from(groups.values());
+  return Array.from(groups.values(), (group) => {
+    const teamId = String(group.terminals[0]?.teamId || "");
+    const isTeam = Boolean(teamId) && group.terminals.every((terminal) => terminal.teamId === teamId);
+    return { ...group, isTeam, label: terminalProjectGroupLabel(group.key, group.terminals) };
+  });
 }
 
 function activeTerminalProjectKey() {
@@ -69,10 +92,10 @@ function setActiveTerminalProject(key) {
   if (!group) return;
   if (terminalBatchSetupOpen) closeTerminalBatchSetup({ shouldRender: false });
   setTerminalActiveProjectKey(key);
-  setupProjectId = key === terminalUnassignedProjectKey ? "" : key;
+  const terminal = group.terminals.find((candidate) => candidate.id === terminalProjectActiveIds[key]) || group.terminals[0];
+  setupProjectId = String(terminal?.projectId || "");
   if (setupProjectId) localStorage.setItem(setupProjectKey, setupProjectId);
   else localStorage.removeItem(setupProjectKey);
-  const terminal = group.terminals.find((candidate) => candidate.id === terminalProjectActiveIds[key]) || group.terminals[0];
   if (!terminal) return;
   setActiveTerminal(terminal.id);
   if (activePage !== "terminals") setPage("terminals");
@@ -146,9 +169,10 @@ function terminalRailProjectsHtml() {
       : { key: group.terminals.length ? "ready" : "closed", label: group.terminals.length ? "Ready" : "Not open" };
     const count = group.terminals.length;
     const title = `${group.label}, ${status.label}, ${count} terminal${count === 1 ? "" : "s"}`;
+    const detail = group.isTeam ? `Team · ${status.label}` : group.project?.stack || status.label;
     return `<button class="terminal-rail-project ${active ? "active" : ""}" type="button" role="listitem" aria-current="${active ? "page" : "false"}" data-terminal-project-group="${escapeAttribute(group.key)}" title="${escapeAttribute(title)}">
-      <span class="terminal-rail-project-icon" aria-hidden="true">${icon("folder")}<i class="terminal-rail-project-state ${escapeAttribute(status.key)}"></i></span>
-      <span class="terminal-rail-project-copy"><span class="terminal-rail-project-name">${escapeHtml(group.label)}</span><small>${escapeHtml(group.project?.stack || status.label)}</small></span>
+      <span class="terminal-rail-project-icon${group.isTeam ? " is-team" : ""}" aria-hidden="true">${icon(group.isTeam ? "people" : "folder")}<i class="terminal-rail-project-state ${escapeAttribute(status.key)}"></i></span>
+      <span class="terminal-rail-project-copy"><span class="terminal-rail-project-name">${escapeHtml(group.label)}</span><small>${escapeHtml(detail)}</small></span>
       <span class="terminal-rail-project-count">${count || ""}</span>
     </button>`;
   }).join("");

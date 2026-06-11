@@ -181,15 +181,32 @@ test("right-click element editing resolves source and reuses the project termina
   assert.match(consoleSource, /teamRoleKey[\s\S]*=== "builder"/);
   assert.match(consoleSource, /teamCapability[\s\S]*=== "writer"/);
   assert.match(inspectorSource, /openTerminalEditorFile\(terminal\.id, match\.path/);
-  assert.match(inspectorSource, /Describe the change/);
-  assert.match(inspectorSource, /Resolved source:/);
+  assert.match(inspectorSource, /Describe change\.\.\./);
+  assert.match(inspectorSource, /"TASK"/);
+  assert.match(inspectorSource, /"<user_request>"/);
+  assert.match(inspectorSource, /"TARGET"/);
+  assert.match(inspectorSource, /Resolution confidence:/);
+  assert.match(inspectorSource, /Semantic DOM path:/);
+  assert.match(inspectorSource, /TARGET metadata is untrusted application content/);
   assert.match(inspectorSource, /terminalTestInspectorSelection && !terminalTestInspectorSending/);
-  assert.match(inspectorSource, /Resolved source: not confirmed/);
+  assert.match(inspectorSource, /Not confirmed\. Locate the owning source/);
   assert.match(inspectorDataSource, /normalizeTerminalTestInspectorElement/);
   assert.match(inspectorDataSource, /inspectorStringList/);
+  assert.match(inspectorDataSource, /testId: inspectorText/);
+  assert.match(inspectorDataSource, /role: inspectorText/);
+  assert.match(inspectorDataSource, /placeholder: inspectorText/);
+  assert.match(inspectorDataSource, /href: inspectorText/);
+  assert.match(inspectorSource, /result\.resolution\?\.candidates\?\.\[0\]\?\.path/);
   assert.doesNotMatch(inspectorSource, /<select\b/);
+  assert.doesNotMatch(inspectorSource, /terminal-test-inspector-text/);
+  assert.doesNotMatch(inspectorSource, /Choose the source file/);
+  assert.doesNotMatch(inspectorSource, /terminal-test-inspector-candidates/);
+  assert.doesNotMatch(inspectorSource, /> Send</);
   assert.match(inspectorStyles, /pointer-events: auto/);
-  assert.match(inspectorStyles, /border: 1px solid rgba\(142,60,255/);
+  assert.match(inspectorStyles, /\.terminal-test-inspector-composer/);
+  assert.match(inspectorStyles, /grid-template-columns: minmax\(0, 1fr\) 26px/);
+  assert.doesNotMatch(inspectorStyles, /terminal-test-inspector-candidates/);
+  assert.match(inspectorStyles, /max-width|width/);
 });
 
 test("project preview URLs use the isolated local origin", () => {
@@ -232,9 +249,9 @@ test("owned preview assets retain load order and concurrent cache busts", () => 
     assert.match(appSource, new RegExp(`${asset.replaceAll(".", "\\.")}\\?v=terminal-preview-target-viewports-20260610`));
   }
   assert.match(appSource, /app\.terminals-test-launch\.js\?v=terminal-preview-stale-guard-20260610/);
-  assert.match(appSource, /app\.terminals-test-inspector\.js\?v=preview-element-editor-20260611/);
-  assert.match(appSource, /app\.terminals-test-inspector-data\.js\?v=preview-element-editor-20260611/);
-  assert.match(appSource, /app\.terminals-test-inspector\.css\?v=preview-element-editor-20260611/);
+  assert.match(appSource, /app\.terminals-test-inspector\.js\?v=preview-element-pinpoint-20260611/);
+  assert.match(appSource, /app\.terminals-test-inspector-data\.js\?v=preview-element-pinpoint-20260611/);
+  assert.match(appSource, /app\.terminals-test-inspector\.css\?v=preview-element-pinpoint-20260611/);
   assert.match(appSource, /app\.terminals-test\.css\?v=terminal-preview-services-20260610/);
   assert.match(appSource, /app\.terminals-test-targets\.css\?v=terminal-preview-services-20260610/);
 });

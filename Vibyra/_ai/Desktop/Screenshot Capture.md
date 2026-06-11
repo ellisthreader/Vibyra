@@ -40,6 +40,11 @@ PNG export.
   writes a dual-format native clipboard payload:
   full-resolution PNG for image-aware chats plus the shell-safe quoted absolute
   file path as text so xterm/PTY terminals can paste and reference the image.
+  After a successful tray copy, the icon changes to a checkmark with a subtle
+  scale/draw animation, exposes `Screenshot copied` to assistive technology,
+  and restores the copy icon after 1.4 seconds. Keep the existing button colors.
+  Copy failures retain the existing notice path and must not show success
+  feedback. Reduced-motion users keep the checkmark without animation.
   Clicking the image reveals only files inside the currently configured
   screenshot directory. X dismisses only the current card and does not delete
   the saved PNG. Tray cards are renderer-session state only: renderer reloads

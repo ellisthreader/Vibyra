@@ -26,8 +26,12 @@ function validateTerminalTeamPlan(result, expected = {}) {
   const goal = normalizeTerminalTeamGoal(plan?.goal);
   const teamSize = Number(plan?.teamSize);
   const expectedGoal = normalizeTerminalTeamGoal(expected.goal);
-  const expectedSize = Math.max(2, Math.min(4, Number(expected.teamSize) || 4));
-  if (!plan || !planId || goal !== expectedGoal || teamSize !== expectedSize) {
+  const requestedSize = [2, 3, 4].includes(Number(expected.teamSize))
+    ? Number(expected.teamSize)
+    : 0;
+  if (!plan || !planId || goal !== expectedGoal
+    || ![2, 3, 4].includes(teamSize)
+    || (requestedSize && teamSize !== requestedSize)) {
     throw new Error("Vibyra returned a Team plan that did not match this setup.");
   }
   if (!Array.isArray(plan.assignments) || plan.assignments.length !== teamSize) {
@@ -74,9 +78,17 @@ function terminalTeamPlanSourceLabel(plan) {
   return `Built-in fallback: ${reasons[plan?.fallbackReason] || "AI planning was unavailable"}`;
 }
 
+function terminalTeamPlanningButtonHtml() {
+  return `<span class="terminal-team-planning-mark" aria-hidden="true">${icon("people")}<i></i><i></i></span>
+    <span class="terminal-team-planning-copy"><strong>Planning your team</strong><small>Matching focused roles to your outcome</small></span>
+    <span class="terminal-team-planning-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+}
+
 async function requestTerminalTeamPlan(payload = {}) {
   const goal = normalizeTerminalTeamGoal(payload.goal);
-  const teamSize = Math.max(2, Math.min(4, Number(payload.teamSize) || 4));
+  const teamSize = [2, 3, 4].includes(Number(payload.teamSize))
+    ? Number(payload.teamSize)
+    : 0;
   if (!goal) throw new Error("Describe what the team should accomplish.");
   const response = await fetch("/desktop/terminal-teams/plan", {
     method: "POST",
@@ -86,6 +98,7 @@ async function requestTerminalTeamPlan(payload = {}) {
       teamSize,
       projectId: String(payload.projectId || ""),
       model: String(payload.model || ""),
+      tokenMode: payload.tokenMode === "provider" ? "provider" : "vibyra",
       executionMode: "parallel"
     })
   });
@@ -99,20 +112,29 @@ function setTerminalTeamPlanningUi(root, state, detail = "") {
   terminalTeamPlanningError = state === "error" ? normalizeTerminalTeamText(detail, 240) : "";
   const setup = root?.querySelector?.("[data-terminal-team-setup]");
   setup?.classList.toggle("is-planning", terminalTeamPlanning);
-  setup?.querySelectorAll("textarea, [data-terminal-count]").forEach((control) => {
+  setup?.querySelectorAll("textarea, [data-terminal-count], [data-terminal-team-size]").forEach((control) => {
     control.disabled = terminalTeamPlanning;
   });
+  const button = root?.querySelector?.("#start-terminals");
+  button?.classList.toggle("is-team-planning", terminalTeamPlanning);
+  if (button) {
+    button.setAttribute("aria-busy", String(terminalTeamPlanning));
+    if (terminalTeamPlanning) button.innerHTML = terminalTeamPlanningButtonHtml();
+  }
   const preview = setup?.querySelector?.(".terminal-team-role-preview");
+  if (preview && state === "planning") {
+    preview.hidden = true;
+    preview.innerHTML = "";
+    preview.classList.remove("is-planned");
+  }
   preview?.setAttribute("aria-busy", String(terminalTeamPlanning));
   preview?.querySelectorAll("[data-terminal-team-role]").forEach((row) => {
     row.classList.toggle("is-planning", terminalTeamPlanning);
   });
   const status = setup?.querySelector?.("[data-terminal-team-status]");
   if (status) {
-    status.textContent = terminalTeamPlanning
-      ? "Designing focused assignments..."
-      : terminalTeamPlanningError;
-    status.classList.toggle("is-visible", terminalTeamPlanning || Boolean(terminalTeamPlanningError));
+    status.textContent = terminalTeamPlanningError;
+    status.classList.toggle("is-visible", Boolean(terminalTeamPlanningError));
   }
 }
 
@@ -125,6 +147,7 @@ function previewTerminalTeamPlan(root, plan) {
     objective: assignment.objective
   }));
   preview.innerHTML = terminalTeamRolePreviewHtml(roles);
+  preview.hidden = false;
   preview.setAttribute("aria-busy", "false");
   preview.setAttribute("data-planner-source", plan.plannerMode || "");
   preview.classList.remove("is-planning");

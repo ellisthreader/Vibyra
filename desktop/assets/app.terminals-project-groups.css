@@ -118,6 +118,10 @@
   color: var(--shell-accent);
 }
 
+.terminal-rail-project-icon.is-team {
+  color: color-mix(in srgb, var(--shell-accent) 78%, var(--shell-text));
+}
+
 .terminal-rail-project-running {
   background: #55d98b;
   border: 2px solid var(--shell-rail);

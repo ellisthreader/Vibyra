@@ -16,6 +16,7 @@ const { spawn } = require("node:child_process");
 const http = require("node:http");
 const path = require("node:path");
 const { pickMemoryFiles } = require("./lib/desktopMemoryPicker.cjs");
+const { pickDesktopProjectPath } = require("./lib/desktopProjectPicker.cjs");
 const {
   discoverObsidianVaults,
   importDiscoveredObsidianVault
@@ -420,6 +421,13 @@ ipcMain.handle("window:close", () => {
 ipcMain.handle("memory:pick", async (_event, kind) => {
   if (!mainWindow || mainWindow.isDestroyed()) return { canceled: true, files: [] };
   return pickMemoryFiles(dialog, mainWindow, kind === "vault" ? "vault" : "markdown");
+});
+
+ipcMain.handle("projects:pick", async (event, kind) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) {
+    return { canceled: true, path: "" };
+  }
+  return pickDesktopProjectPath(dialog, mainWindow, kind === "file" ? "file" : "folder");
 });
 
 ipcMain.handle("memory:discover-obsidian", () => discoverObsidianVaults());

@@ -41,6 +41,7 @@ test("Electron registers the F9 screenshot editor bridge and cleans it up", () =
   assert.match(source, /createDesktopScreenshotSettings/);
   assert.match(source, /ipcMain\.handle\("screenshot:settings"/);
   assert.match(source, /ipcMain\.handle\("screenshot:choose-directory"/);
+  assert.match(source, /ipcMain\.handle\("projects:pick"/);
   assert.match(source, /ipcMain\.handle\("screenshot:reset-directory"/);
   assert.doesNotMatch(source, /ipcMain\.handle\("screenshot:recent"/);
   assert.match(source, /ipcMain\.handle\("screenshot:reveal"/);

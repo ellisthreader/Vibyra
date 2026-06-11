@@ -4,7 +4,7 @@
   }
 
   .desktop-home-hero {
-    padding-top: 54px;
+    padding-top: 24px;
   }
 
   .desktop-home-recent-grid {
@@ -21,22 +21,12 @@
     padding: 28px 20px 88px;
   }
 
-  .desktop-home-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .desktop-home-ready {
-    padding: 0;
-  }
-
   .desktop-home-hero {
-    padding: 46px 0 36px;
+    padding: 20px 0 36px;
   }
 
-  .desktop-home-hero > h2 {
-    font-size: clamp(50px, 16vw, 70px);
+  .desktop-home-hero > h1 {
+    font-size: clamp(38px, 12vw, 54px);
   }
 
   .desktop-home-command {

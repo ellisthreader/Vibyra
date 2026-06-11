@@ -1,6 +1,6 @@
 .terminal-team-setup {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .terminal-team-setup.is-planning {
@@ -9,37 +9,40 @@
 
 .terminal-team-goal {
   display: grid;
-  gap: 9px;
+  gap: 10px;
 }
 
-.terminal-team-goal > span {
-  align-items: baseline;
-  display: flex;
-  justify-content: space-between;
-}
-
-.terminal-team-goal strong,
-.terminal-team-size > p {
+.terminal-team-goal strong {
   color: var(--terminal-text, #f1eef8);
-  font-size: 11px;
-  font-weight: 720;
+  font-size: 16px;
+  font-weight: 740;
+  letter-spacing: -.015em;
+}
+
+.terminal-team-size > p {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .terminal-team-goal small,
 .terminal-team-size > small {
   color: var(--terminal-dim, #918ca1);
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 .terminal-team-goal textarea {
-  background: var(--terminal-bg, #07070a);
+  background: color-mix(in srgb, var(--terminal-bg, #07070a) 72%, transparent);
   border: 1px solid var(--terminal-border, rgba(151, 161, 190, .14));
   border-radius: 8px;
   color: var(--terminal-text, #f1eef8);
-  font: inherit;
-  line-height: 19px;
-  min-height: 82px;
-  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+  min-height: 118px;
+  padding: 15px 16px;
   resize: vertical;
   width: 100%;
 }
@@ -50,22 +53,16 @@
   outline-offset: 1px;
 }
 
-.terminal-team-plan {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: 150px minmax(0, 1fr);
-}
-
 .terminal-team-size {
   align-content: start;
   display: grid;
-  gap: 9px;
+  gap: 8px;
 }
 
 .terminal-team-size > div {
   display: grid;
   gap: 7px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1.4fr repeat(3, minmax(0, .7fr));
 }
 
 .terminal-team-size button {
@@ -87,22 +84,129 @@
   opacity: .28;
 }
 
+.terminal-start-button.is-team-planning {
+  align-items: center;
+  background:
+    linear-gradient(100deg, transparent 15%, color-mix(in srgb, var(--terminal-accent, #8b5cff) 8%, transparent) 48%, transparent 80%),
+    color-mix(in srgb, var(--terminal-accent, #8b5cff) 72%, #171020);
+  background-size: 220% 100%, 100% 100%;
+  border: 1px solid color-mix(in srgb, var(--terminal-accent, #8b5cff) 52%, transparent);
+  border-radius: 8px;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  justify-content: stretch;
+  min-height: 58px;
+  opacity: 1;
+  overflow: hidden;
+  padding: 8px 12px;
+  position: relative;
+  text-align: left;
+  animation: terminal-team-planning-sweep 2.4s linear infinite;
+}
+
+.terminal-start-button.is-team-planning:disabled {
+  cursor: progress;
+  opacity: 1;
+}
+
+.terminal-team-planning-mark {
+  align-items: center;
+  color: var(--terminal-accent, #a98dff);
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  position: relative;
+  width: 36px;
+}
+
+.terminal-team-planning-mark svg {
+  height: 17px;
+  position: relative;
+  width: 17px;
+  z-index: 2;
+}
+
+.terminal-team-planning-mark i {
+  border: 1px solid color-mix(in srgb, var(--terminal-accent, #8b5cff) 48%, transparent);
+  border-radius: 50%;
+  inset: 4px;
+  position: absolute;
+  animation: terminal-team-planning-ring 1.8s ease-out infinite;
+}
+
+.terminal-team-planning-mark i:nth-of-type(2) {
+  animation-delay: .6s;
+}
+
+.terminal-team-planning-copy {
+  min-width: 0;
+}
+
+.terminal-team-planning-copy strong,
+.terminal-team-planning-copy small {
+  display: block;
+}
+
+.terminal-team-planning-copy strong {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.terminal-team-planning-copy small {
+  color: rgba(255, 255, 255, .68);
+  font-size: 10px;
+  line-height: 15px;
+  margin-top: 2px;
+}
+
+.terminal-team-planning-dots {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+  padding-right: 2px;
+}
+
+.terminal-team-planning-dots i {
+  background: var(--terminal-accent, #8b5cff);
+  border-radius: 50%;
+  height: 4px;
+  opacity: .35;
+  width: 4px;
+  animation: terminal-team-planning-dot 1s ease-in-out infinite;
+}
+
+.terminal-team-planning-dots i:nth-child(2) {
+  animation-delay: .16s;
+}
+
+.terminal-team-planning-dots i:nth-child(3) {
+  animation-delay: .32s;
+}
+
 .terminal-team-role-preview {
   display: grid;
-  gap: 7px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--terminal-border, rgba(151, 161, 190, .11));
+  gap: 0;
+  padding-top: 8px;
+}
+
+.terminal-team-role-preview[hidden] {
+  display: none;
 }
 
 .terminal-team-role-preview > div {
   align-items: center;
-  background: color-mix(in srgb, var(--terminal-surface, #0b0b10) 88%, transparent);
-  border: 1px solid var(--terminal-border, rgba(151, 161, 190, .11));
-  border-radius: 8px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .08));
+  border-radius: 0;
   display: grid;
-  gap: 9px;
-  grid-template-columns: 30px minmax(0, 1fr);
-  min-height: 58px;
-  padding: 8px 10px;
+  gap: 10px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  min-height: 52px;
+  padding: 8px 2px;
   transition: border-color 180ms ease, opacity 180ms ease, transform 180ms ease;
 }
 
@@ -136,8 +240,8 @@
 }
 
 .terminal-team-role-preview svg {
-  height: 17px;
-  width: 17px;
+  height: 16px;
+  width: 16px;
 }
 
 .terminal-team-role-preview strong,
@@ -152,8 +256,8 @@
 
 .terminal-team-role-preview small {
   color: var(--terminal-dim, #918ca1);
-  font-size: 9.5px;
-  line-height: 14px;
+  font-size: 10px;
+  line-height: 15px;
   margin-top: 2px;
 }
 
@@ -161,7 +265,7 @@
   color: var(--terminal-dim, #918ca1);
   font-size: 10px;
   line-height: 15px;
-  margin: -9px 0 0;
+  margin: -2px 0 0;
   min-height: 15px;
   opacity: 0;
   transform: translateY(-3px);
@@ -178,6 +282,36 @@
   to { opacity: 1; }
 }
 
+@keyframes terminal-team-planning-sweep {
+  from { background-position: 110% 0, 0 0; }
+  to { background-position: -110% 0, 0 0; }
+}
+
+@keyframes terminal-team-planning-ring {
+  0% {
+    opacity: .75;
+    transform: scale(.72);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes terminal-team-planning-dot {
+  0%,
+  70%,
+  100% {
+    opacity: .3;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 @keyframes terminal-team-plan-reveal {
   from {
     opacity: .35;
@@ -189,21 +323,18 @@
   }
 }
 
-@media (max-width: 760px) {
-  .terminal-team-plan {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 520px) {
-  .terminal-team-role-preview {
-    grid-template-columns: minmax(0, 1fr);
+  .terminal-team-size > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .terminal-team-goal textarea,
   .terminal-team-size button,
+  .terminal-start-button.is-team-planning,
+  .terminal-team-planning-mark i,
+  .terminal-team-planning-dots i,
   .terminal-team-role-preview > div,
   .terminal-team-role-preview > div.is-planning > span:last-child,
   .terminal-team-planning-status {

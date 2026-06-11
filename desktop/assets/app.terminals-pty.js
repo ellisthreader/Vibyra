@@ -20,7 +20,7 @@ function selectTerminalSetupMode(mode) {
   const capacity = terminalBatchSetupOpen ? terminalBatchAvailableSlots() : maxTerminals;
   terminalSetupMode = mode === "team" ? "team" : "solo";
   setupCount = terminalSetupMode === "team"
-    ? Math.max(2, Math.min(4, setupCount, capacity))
+    ? setupCount
     : Math.min(normalizeCount(setupCount), capacity);
   terminalSetupStep = "setup";
   render();
@@ -335,10 +335,15 @@ setupView = function ptySetupView() {
       : team && !goalReady
         ? "Describe the team goal"
         : team
-          ? "Start team workspace"
+          ? "Plan and start team"
           : `Start ${launchCount} terminal${launchCount === 1 ? "" : "s"}`;
   const effort = terminalSetupEffortPicker(model);
-  const advanced = terminalTokenSourcePanel(model, tokenMode, "setup");
+  const workspace = terminalWorkspaceSetupPicker(team ? 2 : launchCount);
+  const access = terminalSetupPermissionPicker(model, tokenMode);
+  const payment = terminalTokenSourcePanel(model, tokenMode, "setup");
+  const advanced = team
+    ? `${terminalTeamSizePicker(setupCapacity)}${access}${payment}`
+    : payment;
   return `<section class="terminal-setup terminal-setup--configure"><div class="terminal-setup-stage"><div class="terminal-setup-flow">
     ${terminalSetupProgress("setup")}
     <div class="terminal-setup-panel terminal-setup-panel--combined">
@@ -348,8 +353,8 @@ setupView = function ptySetupView() {
       <div class="terminal-setup-block"><p>Project</p>${terminalProjectSelect("setup")}</div>
       <div class="terminal-setup-block"><p>Model</p><div class="terminal-model-select-wrap">${terminalModelSelectButton("setup", model)}${setupModelMenuOpen ? terminalModelMenu("setup", model.key) : ""}</div></div>
     </div>
-    ${terminalWorkspaceSetupPicker()}
-    ${terminalSetupPermissionPicker(model, tokenMode)}
+    ${workspace}
+    ${team ? "" : access}
     ${effort}
     ${teamRuntimeIssue ? `<p class="terminal-setup-notice" role="status">${escapeHtml(teamRuntimeIssue)}</p>` : ""}
     ${advanced ? `<section class="terminal-setup-advanced${terminalSetupAdvancedOpen ? " open" : ""}">
@@ -387,8 +392,8 @@ function terminalSetupModeView(project, setupCapacity) {
   </div></div></div></section>`;
 }
 
-function terminalWorkspaceSetupPicker() {
-  if (setupCount < 2 || !setupProjectId || setupProjectId === "full-pc") return "";
+function terminalWorkspaceSetupPicker(count = setupCount) {
+  if (count < 2 || !setupProjectId || setupProjectId === "full-pc") return "";
   const choice = (mode, title, detail, recommended = false) => `<button class="${setupWorkspaceMode === mode ? "active" : ""} ${recommended ? "recommended" : ""}" type="button" role="radio" aria-checked="${setupWorkspaceMode === mode}" data-terminal-workspace-mode="${mode}"><span class="terminal-workspace-choice-title"><strong>${title}</strong>${recommended ? "<em>Recommended</em>" : ""}</span><small>${detail}</small></button>`;
   return `<div class="terminal-setup-block"><p>Workspace safety</p><div class="terminal-workspace-row" role="radiogroup" aria-label="Terminal workspace safety">${choice("worktree", "Safe mode", "Each terminal gets separate files to prevent overlap", true)}${choice("shared", "Shared folder", "Advanced: terminals can edit the same files")}</div></div>`;
 }

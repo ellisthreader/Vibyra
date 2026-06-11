@@ -16,7 +16,7 @@ export const machineName = hostname();
 export const startedAt = new Date().toISOString();
 export const allowedCommands = new Set(["git status", "npm install", "npm run dev", "npm run build", "npm test", "pytest"]);
 export const PHONE_SESSION_TIMEOUT_MS = 30000;
-export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-11.16";
+export const TERMINAL_ACTION_PROTOCOL_VERSION = "2026-06-11.20";
 
 export const appState = {
   server: null,

@@ -52,7 +52,7 @@ test("Preview element resolution requires a choice for duplicate visible text", 
   try {
     await mkdir(join(project.path, "src"), { recursive: true });
     await writeFile(join(project.path, "src", "Header.tsx"), "export const Header = () => <h1>Hello there</h1>;");
-    await writeFile(join(project.path, "src", "Footer.tsx"), "export const Footer = () => <strong>Hello there</strong>;");
+    await writeFile(join(project.path, "src", "Footer.tsx"), "export const Footer = () => <h1>Hello there</h1>;");
     appState.cachedProjects = [project];
 
     const result = await resolvePreviewElement({
@@ -117,6 +117,246 @@ test("Preview element resolution accepts an exact app-relative source before fal
 
     assert.equal(result.resolution.confidence, "exact");
     assert.equal(result.resolution.match.path, "apps/web/src/Title.tsx");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution ignores AppWebView wrapper metadata for inner elements", async () => {
+  const { project, cleanup } = await makeProject("preview-element-webview-wrapper-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src", "components"), { recursive: true });
+    await writeFile(join(project.path, "src", "components", "AppWebView.tsx"), [
+      "export function AppWebView() {",
+      "  return <iframe title=\"App preview\" />;",
+      "}"
+    ].join("\n"));
+    await writeFile(join(project.path, "src", "components", "BuildAction.tsx"), [
+      "export function BuildAction() {",
+      "  return <button data-testid=\"build-action\">Build a feature</button>;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "button",
+        text: "Build a feature",
+        testId: "build-action",
+        source: {
+          framework: "react",
+          component: "AppWebView",
+          file: `${project.path}/src/components/AppWebView.tsx`,
+          line: 2,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "high");
+    assert.equal(result.resolution.match.path, "src/components/BuildAction.tsx");
+    assert.notEqual(result.resolution.match.path, "src/components/AppWebView.tsx");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution retains AppWebView for the iframe element itself", async () => {
+  const { project, cleanup } = await makeProject("preview-element-webview-frame-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src", "components"), { recursive: true });
+    await writeFile(join(project.path, "src", "components", "AppWebView.tsx"), [
+      "export function AppWebView() {",
+      "  return <iframe title=\"App preview\" />;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "iframe",
+        ariaLabel: "App preview",
+        source: {
+          framework: "react",
+          component: "AppWebView",
+          file: `${project.path}/src/components/AppWebView.tsx`,
+          line: 2,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "exact");
+    assert.equal(result.resolution.match.path, "src/components/AppWebView.tsx");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution rejects broad App metadata when a child component owns the element", async () => {
+  const { project, cleanup } = await makeProject("preview-element-broad-app-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src", "components"), { recursive: true });
+    await writeFile(join(project.path, "src", "App.tsx"), [
+      "import { AccountAction } from './components/AccountAction';",
+      "export function App() {",
+      "  return <main><AccountAction /></main>;",
+      "}"
+    ].join("\n"));
+    await writeFile(join(project.path, "src", "components", "AccountAction.tsx"), [
+      "export function AccountAction() {",
+      "  return <button aria-label=\"Open account\">Account</button>;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "button",
+        text: "Account",
+        ariaLabel: "Open account",
+        source: {
+          framework: "react",
+          component: "App",
+          file: `${project.path}/src/App.tsx`,
+          line: 3,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "high");
+    assert.equal(result.resolution.match.path, "src/components/AccountAction.tsx");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution keeps App when its nearby JSX owns the element", async () => {
+  const { project, cleanup } = await makeProject("preview-element-inline-app-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src"), { recursive: true });
+    await writeFile(join(project.path, "src", "App.tsx"), [
+      "export function App() {",
+      "  return <button aria-label=\"Create project\">Create project</button>;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "button",
+        text: "Create project",
+        ariaLabel: "Create project",
+        source: {
+          framework: "react",
+          component: "App",
+          file: `${project.path}/src/App.tsx`,
+          line: 2,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "exact");
+    assert.equal(result.resolution.match.path, "src/App.tsx");
+    assert.equal(result.resolution.match.line, 2);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution uses form attributes to find a nested input component", async () => {
+  const { project, cleanup } = await makeProject("preview-element-form-field-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src", "components"), { recursive: true });
+    await writeFile(join(project.path, "src", "App.tsx"), [
+      "import { ProjectSearch } from './components/ProjectSearch';",
+      "export function App() {",
+      "  return <main><ProjectSearch /></main>;",
+      "}"
+    ].join("\n"));
+    await writeFile(join(project.path, "src", "components", "ProjectSearch.tsx"), [
+      "export function ProjectSearch() {",
+      "  return <input name=\"projectSearch\" placeholder=\"Search projects\" />;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "input",
+        name: "projectSearch",
+        placeholder: "Search projects",
+        source: {
+          framework: "react",
+          component: "App",
+          file: `${project.path}/src/App.tsx`,
+          line: 3,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "high");
+    assert.equal(result.resolution.match.path, "src/components/ProjectSearch.tsx");
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await cleanup();
+  }
+});
+
+test("Preview element resolution rejects a named parent source line that only renders a child", async () => {
+  const { project, cleanup } = await makeProject("preview-element-named-parent-");
+  const previousProjects = appState.cachedProjects;
+  try {
+    await mkdir(join(project.path, "src", "components"), { recursive: true });
+    await writeFile(join(project.path, "src", "Dashboard.tsx"), [
+      "import { SaveButton } from './components/SaveButton';",
+      "export function Dashboard() {",
+      "  return <section><SaveButton label=\"Save changes\" /></section>;",
+      "}"
+    ].join("\n"));
+    await writeFile(join(project.path, "src", "components", "SaveButton.tsx"), [
+      "export function SaveButton({ label }) {",
+      "  return <button title=\"Save project\">{label}</button>;",
+      "}"
+    ].join("\n"));
+    appState.cachedProjects = [project];
+
+    const result = await resolvePreviewElement({
+      projectId: project.id,
+      element: {
+        tag: "button",
+        text: "Save changes",
+        title: "Save project",
+        source: {
+          framework: "react",
+          component: "Dashboard",
+          file: `${project.path}/src/Dashboard.tsx`,
+          line: 3,
+          column: 10
+        }
+      }
+    });
+
+    assert.equal(result.resolution.confidence, "high");
+    assert.equal(result.resolution.match.path, "src/components/SaveButton.tsx");
   } finally {
     appState.cachedProjects = previousProjects;
     await cleanup();

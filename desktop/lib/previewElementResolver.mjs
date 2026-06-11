@@ -19,15 +19,17 @@ export async function resolvePreviewElement(body = {}) {
   if (exactFile) {
     const content = await readFile(exactFile.absolute, "utf8").catch(() => "");
     const match = scoreSourceFile(exactFile.path, content, element);
-    return {
-      ok: true,
-      resolution: {
-        confidence: "exact",
-        match,
-        candidates: [match],
-        summary: resolutionSummary(element, "exact", match)
-      }
-    };
+    if (sourceHintIsReliable(exactFile.path, content, element)) {
+      return {
+        ok: true,
+        resolution: {
+          confidence: "exact",
+          match,
+          candidates: [match],
+          summary: resolutionSummary(element, "exact", match)
+        }
+      };
+    }
   }
   const files = [];
   const scanRoot = appDirectory ? resolve(project.path, appDirectory) : project.path;
@@ -130,16 +132,18 @@ function scoreSourceFile(path, content, element) {
   const reasons = [];
   let needle = "";
   const sourcePath = cleanSourcePath(element.source.file);
-  if (sourcePath && sourcePathMatches(path, sourcePath)) {
+  const embeddedContainer = sourceIsEmbeddedContainer(path, content, element);
+  const reliableSource = !embeddedContainer && sourceHintIsReliable(path, content, element);
+  if (reliableSource && sourcePath && sourcePathMatches(path, sourcePath)) {
     score += 180;
     reasons.push("framework source");
   }
-  if (element.source.component && componentAppears(content, element.source.component)) {
+  if (reliableSource && element.source.component && componentAppears(content, element.source.component)) {
     score += 75;
     reasons.push(`component ${element.source.component}`);
     needle ||= element.source.component;
   }
-  if (element.text.length >= 3 && content.includes(element.text)) {
+  if (element.text.length >= 3 && visibleTextAppears(content, element.text)) {
     score += Math.min(90, 55 + Math.floor(element.text.length / 16));
     reasons.push("selected text");
     needle ||= element.text;
@@ -149,10 +153,42 @@ function scoreSourceFile(path, content, element) {
     reasons.push(`id ${element.id}`);
     needle ||= element.id;
   }
+  if (element.testId && (attributeAppears(content, "data-testid", element.testId) || attributeAppears(content, "data-test-id", element.testId))) {
+    score += 85;
+    reasons.push(`test id ${element.testId}`);
+    needle ||= element.testId;
+  }
   if (element.ariaLabel && attributeAppears(content, "aria-label", element.ariaLabel)) {
     score += 55;
     reasons.push("aria label");
     needle ||= element.ariaLabel;
+  }
+  if (element.role && attributeAppears(content, "role", element.role)) {
+    score += 25;
+    reasons.push(`role ${element.role}`);
+    needle ||= element.role;
+  }
+  for (const [attribute, value, weight] of [
+    ["name", element.name, 45],
+    ["placeholder", element.placeholder, 65],
+    ["title", element.title, 45],
+    ["alt", element.alt, 65],
+    ["href", element.href, 45]
+  ]) {
+    if (value && attributeAppears(content, attribute, value)) {
+      score += weight;
+      reasons.push(`${attribute} ${value}`);
+      needle ||= value;
+    }
+  }
+  if (tagAppears(content, element.tag)) {
+    score += 12;
+    reasons.push(`tag ${element.tag}`);
+  }
+  const nearbySignals = elementEvidenceNearLine(content, element, lineFor(content, needle));
+  if (nearbySignals >= 2) {
+    score += Math.min(45, nearbySignals * 12);
+    reasons.push("co-located element evidence");
   }
   const classHits = element.classes.filter((name) => name.length >= 3 && content.includes(name)).slice(0, 4);
   if (classHits.length) {
@@ -160,7 +196,7 @@ function scoreSourceFile(path, content, element) {
     reasons.push(`classes ${classHits.join(", ")}`);
     needle ||= classHits[0];
   }
-  if (element.source.component && path.toLowerCase().includes(element.source.component.toLowerCase())) score += 28;
+  if (reliableSource && element.source.component && path.toLowerCase().includes(element.source.component.toLowerCase())) score += 28;
   const line = reasons.includes("framework source") && element.source.line
     ? element.source.line
     : lineFor(content, needle);
@@ -176,7 +212,14 @@ function normalizeElement(value = {}) {
     tag: bounded(value.tag, 40),
     id: bounded(value.id, 120),
     text: bounded(value.text, 500).replace(/\s+/g, " ").trim(),
+    role: bounded(value.role, 80),
+    testId: bounded(value.testId, 120),
     ariaLabel: bounded(value.ariaLabel, 240),
+    name: bounded(value.name, 120),
+    placeholder: bounded(value.placeholder, 240),
+    title: bounded(value.title, 240),
+    alt: bounded(value.alt, 240),
+    href: bounded(value.href, 500),
     classes: Array.isArray(value.classes) ? value.classes.map((item) => bounded(item, 100)).filter(Boolean).slice(0, 8) : [],
     source: {
       framework: bounded(source.framework, 30),
@@ -203,6 +246,62 @@ function componentAppears(content, name) {
 }
 function attributeAppears(content, name, value) {
   return new RegExp(`${escapeRegExp(name)}\\s*=\\s*["'{][^"'\\n}]*${escapeRegExp(value)}`, "i").test(content);
+}
+function visibleTextAppears(content, text) {
+  const escaped = escapeRegExp(text.trim()).replace(/\s+/g, "\\s+");
+  return new RegExp(`>\\s*${escaped}\\s*<|["'\`]${escaped}["'\`]`, "i").test(content);
+}
+function sourceIsEmbeddedContainer(path, content, element) {
+  if (element.tag === "iframe") return false;
+  const identity = `${path} ${element.source.component}`.toLowerCase();
+  const namedContainer = /(webview|web-view|iframe|preview[-_ ]?frame|browser[-_ ]?(?:frame|view))/.test(identity);
+  const rendersEmbeddedSurface = /<iframe\b|<WebView\b|react-native-webview|ReactNativeWebView/.test(content);
+  return namedContainer && rendersEmbeddedSurface;
+}
+function sourceHintIsReliable(path, content, element) {
+  if (sourceIsEmbeddedContainer(path, content, element)) return false;
+  if (!element.source.line) return !isGenericSource(element.source.component, path);
+  const nearby = sourceWindow(content, element.source.line);
+  if (!tagAppears(nearby, element.tag)) return false;
+  return !isGenericSource(element.source.component, path)
+    || elementEvidenceNearLine(content, element, element.source.line) >= 2;
+}
+function isGenericSource(component, path) {
+  const name = String(component || "").toLowerCase();
+  const base = String(path || "").split("/").pop()?.replace(/\.[^.]+$/, "").toLowerCase() || "";
+  return /(?:^|[-_.])(app|root|layout|page|screen|index|main|shell)$/.test(name)
+    || /(?:app|root|layout|page|screen|index|main|shell)$/.test(base);
+}
+function elementEvidenceNearLine(content, element, line) {
+  if (!line) return 0;
+  const nearby = sourceWindow(content, line);
+  let signals = 0;
+  if (tagAppears(nearby, element.tag)) signals += 1;
+  if (element.text.length >= 3 && visibleTextAppears(nearby, element.text)) signals += 2;
+  for (const [attribute, value] of [
+    ["id", element.id],
+    ["data-testid", element.testId],
+    ["data-test-id", element.testId],
+    ["aria-label", element.ariaLabel],
+    ["role", element.role],
+    ["name", element.name],
+    ["placeholder", element.placeholder],
+    ["title", element.title],
+    ["alt", element.alt],
+    ["href", element.href]
+  ]) {
+    if (value && attributeAppears(nearby, attribute, value)) signals += 2;
+  }
+  if (element.classes.some((name) => name.length >= 3 && nearby.includes(name))) signals += 1;
+  return signals;
+}
+function sourceWindow(content, line) {
+  const lines = content.split(/\r\n|\r|\n/);
+  const start = Math.max(0, line - 8);
+  return lines.slice(start, Math.min(lines.length, line + 7)).join("\n");
+}
+function tagAppears(content, tag) {
+  return Boolean(tag && new RegExp(`<${escapeRegExp(tag)}(?:\\s|>)`, "i").test(content));
 }
 function lineFor(content, needle) {
   if (!needle) return 1;

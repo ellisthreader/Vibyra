@@ -33,6 +33,13 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
 - Prefer UX shapes that make the job visually obvious over defaulting every AI surface to a generic chatbot.
 - Make Vibyra feel distinct through real workflow interaction, project/build state, and mobile identity, not decorative glow, fake metrics, or feature clutter.
 - Prefer fewer boxes, fewer labels, fewer pills, and fewer explanatory captions.
+- Home should greet the account once as its main headline. Do not stack a
+  separate machine header, readiness label, brand eyebrow, marketing slogan,
+  and supporting paragraph above the primary command action.
+- Keep Home's primary Vibyra command dark in both themes: use a graphite
+  surface close to the page canvas, a neutral hairline, modest radius, and crisp
+  light content. Keep purple localized to the Vibyra mark and hover feedback;
+  do not make the whole command a floating promotional card.
 - Keep controls familiar and quiet: icon buttons, simple avatars, concise nav rows.
 - Use the restrained mobile palette: `#07070A`, `#12121A`, `#160D2A`, `#6D3BFF`, `#8B5CFF`.
 - Keep card radius modest, usually `8px` or less unless the existing shell pattern says otherwise.
@@ -43,7 +50,12 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
   out side by side or add status copy, filenames, or container chrome. A
   saved card exists only for the current renderer session; renderer reloads and
   app restarts begin with an empty tray without deleting saved PNGs. Make the
-  thumbnail itself a native draggable path source; keep click-to-reveal and use
+  Copy control visibly confirm success by changing to a checkmark with one
+  subtle icon-scale/draw animation, then restore the copy icon without changing
+  the button color. Keep the successful state visible long enough to register
+  and disable its motion under
+  `prefers-reduced-motion`. Make the thumbnail itself a native draggable path
+  source; keep click-to-reveal and use
   a grab cursor instead of adding another visible button. The browser drag
   payload contains the shell-safe quoted absolute path. Vibyra Chat appends it
   to the composer, while terminals insert it through xterm paste without
@@ -200,16 +212,29 @@ shutdown. Keep this section focused on presentation and interaction design.
 - For local Preview element editing, right-click should create one focused
   selection state: a thin accent outline inside the frame, a small component
   and source label, and one compact AI composer clamped near the selection.
+  Keep the floating editor to a slim identity row plus one integrated composer:
+  source metadata is an unboxed secondary line, Send is an icon button inside
+  the input surface, and status copy appears only for real progress, success,
+  or failure. Do not add a selected-text quote card, persistent helper footer,
+  large accent border, separate boxed source control, or source-choice list.
+  Automatically use the resolver's strongest source match and show only its
+  short project-relative path.
   Do not add a permanent inspector sidebar, property grid, DOM tree, or second
   chat panel. Escape clears the selection, Shift+right-click preserves the
-  app/browser context menu, and ambiguous source matches must ask the user to
-  choose a file instead of presenting a guess as certain.
+  app/browser context menu. Ambiguous source matches remain marked as best-match
+  context in the agent prompt without expanding the floating UI.
 - Keep the workspace resizable on normal desktop widths while preserving at
   least 480px for the terminal. At narrow widths, overlay it from the right
   instead of compressing the terminal into an unusable column.
 
 ## Terminal Surfaces
 
+- In Team setup, keep live planning feedback inside the bottom primary action:
+  transform that button into the animated people/rings/dots state while the
+  real planner request is active, then resolve it before launch. Do not add a
+  duplicate status card between the goal and generated roles. Unassigned Teams
+  need a concise goal/Builder-derived rail name and the people icon; reserve
+  the General/folder identity for ordinary unassigned Solo terminals.
 - Treat light mode as a complete terminal product, not a shell recolor. Setup,
   PTY controls, menus, Editor/Monaco, Preview startup output, AI/Voice, Memory,
   and fullscreen Memory must resolve through semantic `--terminal-*` tokens.
@@ -250,13 +275,21 @@ shutdown. Keep this section focused on presentation and interaction design.
   Present it as a quiet horizontal stepper with evenly centered nodes, labels
   beneath each node, one continuous connector, and a restrained active ring.
   Hide the entire progress rail after launch so the terminal dock keeps its
-  compact navigation. Solo setup configures one terminal. Team setup asks for
-  one outcome-focused goal and defaults roles to `Automatic`, with optional
-  `2`, `3`, or `4` under Advanced; it never exposes the old arbitrary `1–12`
-  terminal count or a decorative grid preview. Keep project, model, workspace
-  safety, reasoning, and token source concise. Keep reasoning effort visible
-  in the main form, while token/account settings live in a collapsed
-  `Advanced options` disclosure. Explain its two payment choices without
+  compact navigation. Solo setup configures one terminal. Team setup leads with
+  `Describe the outcome`, one generous goal textarea, and the helper
+  `Vibyra will plan the smallest useful team.` Default Team size to
+  `Automatic`, with optional `2`, `3`, or `4` under Advanced; never expose the
+  old arbitrary `1–12` terminal count or a decorative grid preview. Do not
+  render generic role cards before planning. After the authoritative plan
+  returns, reveal only compact flat role rows with the generated title and
+  objective. Keep Project, Model, Workspace safety, and Reasoning effort
+  visible in Team setup; put only Team size, Access, and token/account settings
+  in the collapsed `Advanced options` disclosure. While the authoritative
+  planner request is active, replace the otherwise empty role area with one
+  compact semantic planning strip: subtle moving surface, expanding role icon
+  rings, and three pulsing dots. Use stable truthful copy, no percentages,
+  invented stages, or rotating claims, and disable all motion under
+  `prefers-reduced-motion`. Explain its two payment choices without
   provider implementation details: Vibyra tokens use Vibyra credits; My AI
   accounts use the user's connected account and its billing. Use an accessible
   button disclosure that animates its panel height and opacity in place,

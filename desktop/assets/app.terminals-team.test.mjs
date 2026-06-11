@@ -5,6 +5,7 @@ import vm from "node:vm";
 
 const planningSource = await readFile(new URL("./app.terminals-team-planning.js", import.meta.url), "utf8");
 const source = await readFile(new URL("./app.terminals-team.js", import.meta.url), "utf8");
+const styles = await readFile(new URL("./app.terminals-team-setup.css", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
 
 function createContext() {
@@ -258,10 +259,64 @@ test("Team planning posts the setup intent and validates the bridge response", a
     teamSize: 2,
     projectId: "project-1",
     model: "gpt-5.5",
+    tokenMode: "vibyra",
     executionMode: "parallel"
   });
   assert.equal(plan.assignments[1].objective, "Review the checkout fix.");
   assert.equal(plan.teamId, "plan-request");
+});
+
+test("automatic Team sizing lets the planner choose the smallest valid topology", async () => {
+  const context = createContext();
+  let requestBody = null;
+  context.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      json: async () => ({
+        ok: true,
+        plan: {
+          planId: "plan-automatic",
+          teamSize: 2,
+          goal: "Audit theme consistency",
+          plannerMode: "cloud",
+          assignments: [
+            { roleKey: "builder", title: "Theme Builder", objective: "Fix the confirmed theme inconsistencies." },
+            { roleKey: "reviewer", title: "Theme Reviewer", objective: "Review both themes for regressions." }
+          ]
+        }
+      })
+    };
+  };
+  const plan = await vm.runInContext(`requestTerminalTeamPlan({
+    goal: "Audit theme consistency",
+    teamSize: 0,
+    projectId: "project-1",
+    model: "gpt-5.5"
+  })`, context);
+  assert.equal(requestBody.teamSize, 0);
+  assert.equal(plan.teamSize, 2);
+});
+
+test("Team setup is outcome-first and moves live planning feedback into the launch action", () => {
+  assert.match(source, /Describe the outcome/);
+  assert.match(source, /Vibyra will plan the smallest useful team\./);
+  assert.doesNotMatch(source, /data-terminal-team-planning-activity/);
+  assert.match(source, /class="terminal-team-role-preview"[^>]*hidden/);
+  assert.match(source, /label: "Automatic"/);
+  assert.doesNotMatch(source, /terminal-team-role-card/);
+  assert.match(planningSource, /function terminalTeamPlanningButtonHtml/);
+  assert.match(planningSource, /Planning your team/);
+  assert.match(planningSource, /Matching focused roles to your outcome/);
+  assert.match(planningSource, /button\?\.classList\.toggle\("is-team-planning"/);
+  assert.match(planningSource, /aria-busy/);
+  assert.match(planningSource, /\[data-terminal-team-size\]/);
+  assert.doesNotMatch(planningSource, /data-terminal-team-planning-activity/);
+  assert.match(styles, /\.terminal-start-button\.is-team-planning/);
+  assert.match(styles, /terminal-team-planning-sweep/);
+  assert.match(styles, /terminal-team-planning-ring/);
+  assert.match(styles, /terminal-team-planning-dot/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
 test("Team setup exposes only runtimes with a trusted role channel", () => {

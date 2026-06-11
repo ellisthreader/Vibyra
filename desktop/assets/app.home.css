@@ -5,8 +5,12 @@ body.desktop-home-active {
   --home-line: rgba(255, 255, 255, 0.075);
   --home-text: #ecebea;
   --home-muted: #8d8990;
-  --home-primary: #deddd8;
-  --home-primary-text: #1a191d;
+  --home-command-bg: #19191d;
+  --home-command-hover: #1d1d22;
+  --home-command-border: rgba(255, 255, 255, 0.085);
+  --home-command-text: #f5f2fb;
+  --home-command-muted: #a8a2b2;
+  --home-command-control: rgba(109, 59, 255, 0.11);
   --home-hover: rgba(255, 255, 255, 0.04);
 }
 
@@ -52,14 +56,6 @@ body.desktop-home-active .rail .nav-button.active svg {
   font: inherit;
 }
 
-.desktop-home-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.desktop-home-header p,
 .desktop-home-recent-head span {
   margin: 0 0 7px;
   color: var(--home-muted);
@@ -69,32 +65,6 @@ body.desktop-home-active .rail .nav-button.active svg {
   text-transform: uppercase;
 }
 
-.desktop-home-header h1 {
-  margin: 0;
-  font-size: clamp(25px, 2.4vw, 34px);
-  font-weight: 670;
-  letter-spacing: -0.045em;
-  line-height: 1.08;
-}
-
-.desktop-home-ready {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 4px;
-  color: var(--home-muted);
-  font-size: 11px;
-  font-weight: 650;
-}
-
-.desktop-home-ready i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #59c792;
-  box-shadow: 0 0 0 4px rgba(89, 199, 146, 0.1);
-}
-
 body.desktop-home-active[data-desktop-theme="light"] {
   --home-bg: #ecebe8;
   --home-rail: #f4f3f0;
@@ -102,8 +72,12 @@ body.desktop-home-active[data-desktop-theme="light"] {
   --home-line: rgba(30, 28, 31, 0.1);
   --home-text: #1b1a1d;
   --home-muted: #706d73;
-  --home-primary: #242326;
-  --home-primary-text: #f2f0eb;
+  --home-command-bg: #202024;
+  --home-command-hover: #25252b;
+  --home-command-border: rgba(255, 255, 255, 0.1);
+  --home-command-text: #f5f2fb;
+  --home-command-muted: #aaa4b5;
+  --home-command-control: rgba(109, 59, 255, 0.13);
   --home-hover: rgba(30, 28, 31, 0.045);
 }
 
@@ -125,8 +99,12 @@ body.desktop-home-active[data-desktop-theme="light"] .rail .nav-button.active:no
     --home-line: rgba(30, 28, 31, 0.1);
     --home-text: #1b1a1d;
     --home-muted: #706d73;
-    --home-primary: #242326;
-    --home-primary-text: #f2f0eb;
+    --home-command-bg: #202024;
+    --home-command-hover: #25252b;
+    --home-command-border: rgba(255, 255, 255, 0.1);
+    --home-command-text: #f5f2fb;
+    --home-command-muted: #aaa4b5;
+    --home-command-control: rgba(109, 59, 255, 0.13);
     --home-hover: rgba(30, 28, 31, 0.045);
   }
 

@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld("vibyraDesktopMemory", {
   importDiscoveredVault: (id) => ipcRenderer.invoke("memory:import-discovered-vault", id)
 });
 
+contextBridge.exposeInMainWorld("vibyraDesktopProjects", {
+  pick: (kind) => ipcRenderer.invoke("projects:pick", kind)
+});
+
 contextBridge.exposeInMainWorld("vibyraDesktopScreenshot", {
   isElectron: true,
   chooseDirectory: () => ipcRenderer.invoke("screenshot:choose-directory"),

@@ -46,7 +46,7 @@ function projectContext() {
     terminalProject: (id) => context.currentState.projects.find((project) => project.id === id) || null,
     escapeAttribute: (value) => String(value),
     escapeHtml: (value) => String(value),
-    icon: () => "<svg></svg>",
+    icon: (name) => `<svg data-icon="${name}"></svg>`,
     render() {},
     renderNav() {}
   };
@@ -80,6 +80,21 @@ test("a recovered project remains until its final terminal is removed", () => {
 
   context.terminals = context.terminals.filter((terminal) => terminal.id !== "empty-restored");
   assert.doesNotMatch(context.terminalRailProjectsHtml(), />Fresh API</);
+});
+
+test("an unassigned Team gets a relevant workspace name and distinct rail icon", () => {
+  const context = projectContext();
+  context.terminals.push(
+    { id: "theme-builder", projectId: "", teamId: "team-theme", teamRoleKey: "builder", teamRole: "Theme Builder", teamGoal: "Audit light and dark mode.", ptyStatus: "running" },
+    { id: "theme-reviewer", projectId: "", teamId: "team-theme", teamRoleKey: "reviewer", teamRole: "Theme Reviewer", teamGoal: "Audit light and dark mode.", ptyStatus: "running" }
+  );
+  const team = context.terminalProjectGroups().find((group) => group.key === "__team__:team-theme");
+  assert.equal(team.label, "Theme Team");
+  assert.equal(team.isTeam, true);
+  const html = context.terminalRailProjectsHtml();
+  assert.match(html, />Theme Team</);
+  assert.match(html, /data-icon="people"/);
+  assert.match(html, />Team · Ready</);
 });
 
 test("project selection restores that project's last active terminal", () => {

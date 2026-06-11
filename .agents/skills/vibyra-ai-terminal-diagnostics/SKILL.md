@@ -37,9 +37,22 @@ For Vibyra tokens:
   models.
 - For a provider-qualified, tool-capable catalog model that has no registered
   official CLI, launch the bundled foreground `Vibyra Agent` runtime. Keep one
-  truthful shared command profile; customize only the provider mark, name,
-  accent, model label, and status copy. Never claim that this surface is the
-  provider's official or native CLI.
+  truthful shared command profile. Provider presentation is owned by
+  `aiTerminalVibyraAgentBranding.mjs` and
+  `aiTerminalVibyraAgentPresentation.mjs`: each registered API-only company may
+  have an original dimensional terminal mark, palette, prompt token, activity
+  language, and status copy, but never a copied native TUI or a claim that the
+  surface is the provider's official CLI. Unknown qualified providers use a
+  deterministic fallback theme.
+- Keep Vibyra Agent slash commands real and provider-neutral. The structured
+  catalog in `aiTerminalCommandProfiles.mjs` distinguishes local commands from
+  executable agent workflows. Local workspace actions live in
+  `aiTerminalVibyraAgentWorkspace.mjs`; use structured filesystem or subprocess
+  APIs, strip the terminal gateway credential, and keep Standard-mode
+  `/cd`, `/context`, `/files`, and file mentions inside the launch workspace.
+  `/unstage` removes Vibyra staged context only and must never run `git reset`.
+  Keep `/stop` immediately cancellable while an agent task owns the foreground
+  process instead of waiting behind the serialized prompt queue.
 - Select official CLIs by model family, not company alone. For example,
   `google/gemini-*` uses Gemini CLI while `google/gemma-*` uses Vibyra Agent.
   Apply the same rule when a native-CLI company publishes another API-only
@@ -62,6 +75,14 @@ For Vibyra tokens:
   Exercise both a fresh and resumed turn when instruction persistence changes.
   Screenshots and factual answers such as release dates are not routing evidence
   because model output can hallucinate.
+- Treat `billing_credits_exhausted` as proof that native CLI authentication
+  reached Vibyra's backend billing guard, not as a provider CLI API-key
+  failure. Inspect the authenticated account's balance plus burst/weekly
+  windows before changing adapters. A zero balance must remain fail-closed;
+  prove routing separately with a disposable funded account, the real native
+  PTY, an exact-model settled reservation, and confirmation that the child
+  receives only its terminal gateway token rather than the backend OpenRouter
+  key.
 - Changes to model-visible instructions or immutable launch metadata must
   increment `AI_TERMINAL_LAUNCH_CONTRACT_VERSION` so recovered workers cannot
   keep stale identity behavior.
@@ -88,6 +109,15 @@ For Vibyra tokens:
   transitions to the selected provider CLI and delivers that prompt exactly
   once. Routing failures return to the `❯ auto` prompt instead of closing or
   hanging the terminal.
+- Treat terminal project selection as three fallback layers: bounded startup
+  discovery, debounced deep name/path search, then Electron-native `Choose
+  folder` or `Choose file`. A selected file resolves to its containing folder,
+  and explicit selections persist in
+  `~/.vibyra-agent/recent-projects.json`, including plain folders without
+  framework markers. The visible `Browse full PC` row must open the native
+  folder picker; it must not silently choose the synthetic home-directory
+  scope. Keep arbitrary path choice behind the native picker and register the
+  result through the desktop-authorized project route.
 - Give each CLI an authenticated local gateway in its native supported wire
   protocol. Never route a non-OpenAI model through Codex merely because Codex
   already supports Vibyra's Responses gateway.
@@ -171,6 +201,21 @@ For Vibyra tokens:
   out, has no credits, the planner timed out, or its output failed validation.
   Preserve fallback reliability, but label the preview and active Team bar as
   `AI-planned` or `Built-in fallback` with the bounded reason.
+- When Team terminals use `My AI accounts` with a Codex/OpenAI model, generate
+  assignments through the connected Codex account in an isolated ephemeral
+  planner home. Pass the selected token mode and model from the renderer, keep
+  roles and permissions deterministic, validate the strict proposal locally,
+  and fail the setup closed if personal-account planning times out or returns
+  invalid references. Do not silently replace a failed personal-account plan
+  with generic assignment templates. Keep Vibyra-credit cloud planning and its
+  explicitly labeled deterministic fallback as a separate path.
+- Constrain the personal-account output schema to the selected topology's exact
+  assignment count and role enum. Schema-valid output can still violate local
+  semantic policy through duplicate roles, support-role write scope,
+  overlapping paths, or invalid criterion references. Validate inside the
+  provider planner and allow one complete corrective retry containing only the
+  bounded validator reason. Validate the retry again and fail closed if it is
+  still invalid; never sanitize unsafe scope or launch the first rejected plan.
 - Resolve dynamic PTY assignments through
   `terminalTeamAssignmentForPlan(planId, roleKey, teamId)` or
   `teamPlanById(planId)` from `desktop/lib/terminalTeamPlanner.mjs`. Never
@@ -710,6 +755,15 @@ git diff --check
   and OSC-8 links, announce elapsed work after 30 seconds and at minute
   boundaries, and finish with the measured duration. Every command listed by
   `/help` must map to a local handler or a real agent workflow prompt.
+- Keep API-provider logo geometry out of hand-authored ASCII arrays. Provider
+  themes reference canonical `logoId` values, versioned source assets live
+  under `desktop/assets/provider-logos`, and
+  `aiTerminalProviderPixelLogo.mjs` renders their RGBA data with true-color
+  half blocks. Rebuild with `node scripts/provider-logo-assets/build.mjs`,
+  validate all registered IDs, then run
+  `node scripts/provider-terminal-review/run.mjs`. The review capture must use
+  enough xterm rows for the complete intro; 38 rows fits the current 35-line
+  provider intro without scrolling and produces one 29-page Desktop PDF.
 - Recheck official CLI ownership against primary provider documentation before
   adding a provider to the generalized runtime. As of June 10, 2026, xAI Grok
   Build joins Qwen Code, Kimi Code, and Mistral Vibe as an official coding CLI

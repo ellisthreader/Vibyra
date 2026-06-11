@@ -55,12 +55,16 @@ class ChatCostQuotaGuard
         $monthlyCap = $this->monthlyCap($user);
         if ((int) $user->credits_balance < $balanceCredits) {
             throw new BillingReservationException(
-                'You do not have enough credits for this request. Top up or upgrade your plan to continue.',
+                'Your Vibyra token balance does not have enough credits for this request. This is not a company CLI API-key error. Top up or upgrade your Vibyra plan to continue.',
                 402,
                 'billing_credits_exhausted',
                 [
                     'creditsBalance' => (int) $user->credits_balance,
                     'estimatedCredits' => $balanceCredits,
+                    'creditsResetAt' => $user->plan_renews_at?->toIso8601String(),
+                    'weeklyCreditsUsed' => (int) $user->weekly_credits_used,
+                    'weeklyCreditsCap' => $weeklyCap,
+                    'weeklyCreditsResetAt' => $user->weekly_credits_reset_at?->toIso8601String(),
                 ],
             );
         }

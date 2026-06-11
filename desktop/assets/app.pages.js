@@ -17,21 +17,8 @@ function renderDashboard() {
 
   nodes.content.innerHTML = `
     <section class="desktop-home">
-      <header class="desktop-home-header">
-        <div>
-          <p>${escapeHtml(currentState.machineName || "Vibyra Desktop")}</p>
-          <h1>${escapeHtml(welcome)}</h1>
-        </div>
-        <span class="desktop-home-ready"><i></i>Desktop ready</span>
-      </header>
-
       <section class="desktop-home-hero" aria-label="Start with Vibyra">
-        <div class="desktop-home-hero-brand">
-          <img src="/app-assets/vibyra.png" alt="" />
-          <span>Vibyra AI</span>
-        </div>
-        <h2>Build what's next.</h2>
-        <p>Describe the outcome. Vibyra brings your desktop, projects, and AI workspaces with it.</p>
+        <h1>${escapeHtml(welcome)}</h1>
         <button class="desktop-home-command" type="button" data-jump="chat">
           <span class="desktop-home-command-mark"><img src="/app-assets/vibyra.png" alt="" /></span>
           <span class="desktop-home-command-copy">

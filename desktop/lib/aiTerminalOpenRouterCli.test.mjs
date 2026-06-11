@@ -110,14 +110,14 @@ test("gateway credentials stay out of direct shell commands and shutdown reaches
   assert.match(source, /child\.kill\("SIGKILL"\)/);
 });
 
-test("all known API provider families receive distinct Vibyra Agent branding", () => {
+test("known API provider families receive explicit Vibyra Agent themes", () => {
   const cases = [
     ["deepseek/deepseek-chat-v3.1", "DeepSeek", "DS"],
     ["qwen/qwen3-coder", "Qwen", "QW"],
     ["x-ai/grok-code-fast-1", "xAI", "xAI"],
     ["meta-llama/llama-4-maverick", "Meta", "ME"],
-    ["mistralai/mistral-large", "Mistral", "MI"],
-    ["moonshotai/kimi-k2", "Moonshot", "KM"],
+    ["mistralai/mistral-large", "Mistral AI", "MI"],
+    ["moonshotai/kimi-k2", "Moonshot AI", "KM"],
     ["cohere/command-a", "Cohere", "CO"],
     ["perplexity/sonar-pro", "Perplexity", "PX"],
     ["nvidia/llama-3.3-nemotron", "NVIDIA", "NV"],
@@ -131,6 +131,11 @@ test("all known API provider families receive distinct Vibyra Agent branding", (
     assert.equal(info.runtime, "vibyra-agent");
     assert.equal(info.officialCli, false);
     assert.equal(info.nativeUi, "");
+    assert.equal(info.fallback, false);
+    assert.equal(info.theme.id.length > 0, true);
+    assert.equal(typeof info.theme.logoId, "string");
+    assert.equal(info.theme.logoId.length > 0, true);
+    assert.equal(typeof info.theme.status.working, "string");
   }
 });
 
@@ -144,8 +149,9 @@ test("API-only intro is modern, customized, and explicit about runtime ownership
     permissionMode: "standard"
   });
 
-  assert.match(intro, /◒  DEEPSEEK/);
-  assert.match(intro, /[▓▀]/);
+  assert.doesNotMatch(intro, /╭D╮ ╭S╮/);
+  assert.match(intro, /[▄▀█]/);
+  assert.ok((intro.match(/[▄▀█]/g) || []).length > 100);
   assert.match(intro, /DeepSeek via Vibyra Agent/);
   assert.match(intro, /model\s+deepseek\/deepseek-chat-v3\.1/);
   assert.match(intro, /workspace\s+~\/Desktop\/SaaS/);
@@ -167,22 +173,22 @@ test("the generalized runtime never copies native provider TUIs", () => {
   assert.doesNotMatch(source, /Claude Code|OpenAI Codex|Gemini CLI/);
 });
 
-test("prompt, response, working, and activity output use one shared language", () => {
-  assert.equal(promptLabelForModel("deepseek/deepseek-chat-v3.1", false), "❯ ");
-  assert.equal(interactivePromptForModel("qwen/qwen3-coder", 80, false), "❯ ");
+test("prompt, response, working, and activity output use provider themes", () => {
+  assert.equal(promptLabelForModel("deepseek/deepseek-chat-v3.1", false), "deepseek ❯ ");
+  assert.equal(interactivePromptForModel("qwen/qwen3-coder", 80, false), "qwen ❯ ");
   assert.equal(promptFrameCloseForModel("qwen/qwen3-coder", 80, false), "");
   assert.equal(
     formatAssistantReply("Ready", "qwen/qwen3-coder", false, { showModel: true }),
-    "◆ Qwen via Vibyra Agent · qwen/qwen3-coder\r\n  Ready"
+    "◉ Qwen via Vibyra Agent · qwen/qwen3-coder\r\n  Ready"
   );
-  assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false), "› Qwen via Vibyra Agent · working");
-  assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false, 64_000), "› Qwen via Vibyra Agent · working · 1m 04s");
+  assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false), "↳ Qwen via Vibyra Agent · orbit in progress");
+  assert.equal(formatProviderWorkingStatus("qwen/qwen3-coder", false, 64_000), "↳ Qwen via Vibyra Agent · orbit in progress · 1m 04s");
   assert.equal(
     renderAgentEvent({
       type: "item.started",
       item: { type: "command_execution", command: "npm test" }
     }, false, "qwen/qwen3-coder"),
-    "› shell  npm test"
+    "↳ shell  npm test"
   );
   assert.equal(
     renderAgentEvent({

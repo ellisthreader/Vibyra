@@ -61,3 +61,31 @@
 .screenshot-tray-copy:hover { background: rgba(7,7,10,.96); }
 .screenshot-tray-close svg,
 .screenshot-tray-copy svg { height: 12px; width: 12px; }
+.screenshot-tray-copy {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+.screenshot-tray .screenshot-tray-copy.is-copied {
+  animation: screenshot-copy-pop 280ms ease-out;
+}
+.screenshot-tray .screenshot-tray-copy.is-copied svg path {
+  animation: screenshot-copy-check 260ms 40ms ease-out both;
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+}
+@keyframes screenshot-copy-pop {
+  0% { transform: scale(.9); }
+  55% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes screenshot-copy-check {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screenshot-tray-copy { transition: none; }
+  .screenshot-tray .screenshot-tray-copy.is-copied,
+  .screenshot-tray .screenshot-tray-copy.is-copied svg path { animation: none; }
+}

@@ -36,7 +36,10 @@ test("Home uses real terminal, phone, and project state", () => {
 
 test("Home is a borderless editorial surface instead of a card dashboard", () => {
   assert.match(pages, /desktop-home-hero/);
-  assert.match(pages, /Build what's next\./);
+  assert.doesNotMatch(pages, /Build what's next\./);
+  assert.doesNotMatch(pages, /desktop-home-hero-brand/);
+  assert.doesNotMatch(pages, /desktop-home-header/);
+  assert.doesNotMatch(pages, /Desktop ready/);
   assert.match(pages, /Ask Vibyra anything/);
   assert.match(pages, /desktop-home-context/);
   assert.match(pages, /homeProjectRow/);
@@ -49,7 +52,11 @@ test("Home is a borderless editorial surface instead of a card dashboard", () =>
   assert.doesNotMatch(pages, /homePhonePanel/);
   assert.doesNotMatch(styles, /\.desktop-home-card/);
   assert.match(launchStyles, /grid-template-columns: repeat\(3/);
-  assert.match(launchStyles, /background: var\(--home-primary\)/);
+  assert.match(styles, /--home-command-bg: #19191d/);
+  assert.match(launchStyles, /var\(--home-command-bg\)/);
+  assert.match(launchStyles, /border-radius: 9px/);
+  assert.doesNotMatch(launchStyles, /radial-gradient/);
+  assert.doesNotMatch(launchStyles, /translateY/);
 });
 
 test("Home welcomes newly created accounts once and returning accounts back", () => {

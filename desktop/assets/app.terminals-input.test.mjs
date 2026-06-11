@@ -213,7 +213,7 @@ test("PTY output reaches xterm unchanged for live writes and transcript replay",
 
 test("terminal workspace mode is persisted and sent to the authoritative PTY service", () => {
   assert.match(legacySource, /workspaceMode:\s*normalizeTerminalWorkspaceMode\(options\.workspaceMode\)/);
-  assert.match(legacySource, /terminalWorkspaceSetupPicker\(\)/);
+  assert.match(legacySource, /terminalWorkspaceSetupPicker\(team \? 2 : launchCount\)/);
   assert.match(runtimeSource, /workspaceMode:\s*terminal\.workspaceMode/);
   assert.match(runtimeSource, /allowSharedFallback:\s*terminal\.workspaceMode === "worktree"/);
   assert.match(runtimeSource, /workspaceMode:\s*normalizeTerminalWorkspaceMode\(session\.workspaceMode\)/);

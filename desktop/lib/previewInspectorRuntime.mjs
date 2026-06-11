@@ -18,21 +18,41 @@ export const PREVIEW_INSPECTOR_RUNTIME_SCRIPT = String.raw`
         return key.indexOf("__reactFiber$") === 0 || key.indexOf("__reactInternalInstance$") === 0;
       });
       var fiber = fiberKey ? target[fiberKey] : null;
+      var nearestComponent = "";
+      var ownerSource = null;
       for (var depth = 0; fiber && depth < 24; depth += 1, fiber = fiber.return) {
         var owner = fiber._debugOwner;
-        var source = fiber._debugSource || owner && owner._debugSource;
         var name = fiber.elementType && (fiber.elementType.displayName || fiber.elementType.name)
           || fiber.type && (fiber.type.displayName || fiber.type.name)
-          || owner && owner.type && (owner.type.displayName || owner.type.name);
-        if (source || name) {
-          return {
-            framework: "react",
-            component: String(name || ""),
-            file: String(source && source.fileName || ""),
-            line: Number(source && source.lineNumber) || 0,
-            column: Number(source && source.columnNumber) || 0
+          || "";
+        if (!nearestComponent && name) nearestComponent = String(name);
+        if (!ownerSource && owner && owner._debugSource) {
+          ownerSource = {
+            component: String(owner.type && (owner.type.displayName || owner.type.name) || name || ""),
+            source: owner._debugSource
           };
         }
+        if (fiber._debugSource) {
+          return {
+            framework: "react",
+            component: String(name || owner && owner.type && (owner.type.displayName || owner.type.name) || ""),
+            file: String(fiber._debugSource.fileName || ""),
+            line: Number(fiber._debugSource.lineNumber) || 0,
+            column: Number(fiber._debugSource.columnNumber) || 0
+          };
+        }
+      }
+      if (ownerSource) {
+        return {
+          framework: "react",
+          component: ownerSource.component,
+          file: String(ownerSource.source.fileName || ""),
+          line: Number(ownerSource.source.lineNumber) || 0,
+          column: Number(ownerSource.source.columnNumber) || 0
+        };
+      }
+      if (nearestComponent) {
+        return { framework: "react", component: nearestComponent, file: "", line: 0, column: 0 };
       }
       var vue = target.__vueParentComponent;
       if (vue) {
@@ -54,8 +74,13 @@ export const PREVIEW_INSPECTOR_RUNTIME_SCRIPT = String.raw`
       var path = [];
       for (var node = target; node && node.nodeType === 1 && path.length < 6; node = node.parentElement) {
         var part = String(node.tagName || "").toLowerCase();
+        var testId = node.getAttribute && (node.getAttribute("data-testid") || node.getAttribute("data-test-id"));
+        var role = node.getAttribute && node.getAttribute("role");
+        var ariaLabel = node.getAttribute && node.getAttribute("aria-label");
         if (node.id) part += "#" + String(node.id).slice(0, 80);
-        else if (node.classList && node.classList.length) part += "." + Array.from(node.classList).slice(0, 2).join(".");
+        else if (testId) part += '[data-testid="' + String(testId).slice(0, 80) + '"]';
+        else if (role) part += '[role="' + String(role).slice(0, 40) + '"]';
+        else if (ariaLabel) part += '[aria-label="' + String(ariaLabel).slice(0, 80) + '"]';
         path.unshift(part);
       }
       return path;
@@ -68,7 +93,13 @@ export const PREVIEW_INSPECTOR_RUNTIME_SCRIPT = String.raw`
         id: String(target.id || "").slice(0, 120),
         classes: target.classList ? Array.from(target.classList).slice(0, 8).map(String) : [],
         role: String(target.getAttribute && target.getAttribute("role") || "").slice(0, 80),
+        testId: String(target.getAttribute && (target.getAttribute("data-testid") || target.getAttribute("data-test-id")) || "").slice(0, 120),
         ariaLabel: String(target.getAttribute && target.getAttribute("aria-label") || "").slice(0, 240),
+        name: String(target.getAttribute && target.getAttribute("name") || "").slice(0, 120),
+        placeholder: String(target.getAttribute && target.getAttribute("placeholder") || "").slice(0, 240),
+        title: String(target.getAttribute && target.getAttribute("title") || "").slice(0, 240),
+        alt: String(target.getAttribute && target.getAttribute("alt") || "").slice(0, 240),
+        href: String(target.getAttribute && target.getAttribute("href") || "").slice(0, 500),
         text: inspectorText(target),
         path: inspectorPath(target),
         source: source,

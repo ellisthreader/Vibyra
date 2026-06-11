@@ -72,3 +72,7 @@ Desktop UI/static/session routes live in desktop/lib/desktopRoutes.mjs, with des
 Desktop agent orchestration is split by concern: agent.mjs coordinates runs and safe commands; agentApply.mjs owns pending/apply result shaping and file writes; agentPrompting.mjs builds the OpenRouter request; agentGeneratedFiles.mjs validates generated file paths/content; agentConfig.mjs owns OpenRouter env lookup.
 
 The static desktop shell keeps classic browser scripts but splits them by load-order ownership from desktop/app.html: state/shell/pages/boot, chat store/actions/send/render helpers/icons, profile state/render/actions, auth state/UI/session/billing/helpers/boot, and terminal state/store/render/controls/send/models/boot. Preserve script order when editing these files.
+
+## Theme Ownership
+
+Desktop light/dark mode is owned by the late-loaded `desktop/assets/app.theme*.css` layers, with `app.theme.css` defining the shared semantic tokens and the shell/chat/surfaces/terminals/auth theme files providing scoped overrides. Keep `desktop/app.html` loading those files after the page-specific polish sheets so they remain the final theme authority. The desktop theme audit is verified by `desktop/assets/app.desktop-theme-audit.test.mjs` and `desktop/assets/app.terminals-theme-audit.test.mjs`; keep them passing whenever theme tokens, auto-appearance handling, or semantic surface aliases change.

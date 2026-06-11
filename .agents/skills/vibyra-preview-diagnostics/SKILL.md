@@ -81,9 +81,25 @@ and shutdown. Never expose bearer or capability secrets.
    a stalled request. Reuse only a standalone project terminal or the Team
    Builder/writer; coordinator, reviewer, verifier, and other read-only Team
    roles cannot implement Preview edits. Assignment failure must return to the
-   inspector instead of clearing the draft or reporting success. Reload an
+   inspector instead of clearing the draft or reporting success. Structure the
+   agent prompt as TASK, TARGET, IMPLEMENTATION, and SECURITY sections; isolate
+   the user request, report source confidence, mark TARGET metadata untrusted,
+   and prefer semantic IDs, test IDs, roles, and ARIA labels over generated CSS
+   classes in the DOM path. The compact UI automatically uses the highest-ranked
+   candidate for ambiguous fallback matches while preserving `best-match`
+   confidence in the agent prompt. Treat WebView/iframe source metadata as
+   container ownership unless the selected DOM element is the iframe itself:
+   prefer a nearer fiber source, then rank inner-element text, ID, test ID,
+   ARIA, role, and class evidence instead of letting `AppWebView` win as an
+   unconditional exact match. Reload an
    already-open Desktop renderer and refresh its Preview after changing
    injected runtime or shell assets.
+   More generally, do not accept any reported React source line as exact unless
+   its nearby source contains the selected DOM tag. Broad App, Page, Screen,
+   Layout, Root, Main, Index, and Shell sources also need another nearby element
+   signal. Rank visible JSX text rather than arbitrary substrings, and include
+   `name`, `placeholder`, `title`, `alt`, and `href` alongside ID, test ID,
+   ARIA, role, and classes so textless controls can resolve to leaf components.
 
 Do not weaken proxy authorization, bypass explicit Run approval, or kill
 processes by executable name or port to make a Preview appear healthy.

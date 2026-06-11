@@ -5,7 +5,7 @@ import {
   rejectUnknownKeys
 } from "./terminalTeamPlannerShared.mjs";
 
-const PLANNER_MODES = new Set(["mini", "ollama"]);
+const PLANNER_MODES = new Set(["mini", "ollama", "provider"]);
 const FALLBACK_REASONS = new Set([
   "planner_auth_required", "planner_timeout", "planner_unavailable",
   "planner_failed", "planner_insufficient_credits", "team_plan_provider_error",

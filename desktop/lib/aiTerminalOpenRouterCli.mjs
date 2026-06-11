@@ -4,7 +4,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { renderVibyraVLogo } from "./aiTerminalVibyraLogo.mjs";
 import { homedir } from "node:os";
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   commandIsKnown,
@@ -23,9 +23,15 @@ import {
   formatElapsedDuration,
   renderProviderBrandLogo,
   renderTerminalMarkdown,
-  taskCompletionText,
-  taskProgressText
+  taskCompletionText
 } from "./aiTerminalVibyraAgentPresentation.mjs";
+import {
+  formatTranscriptHistory,
+  listWorkspaceEntries,
+  readWorkspaceGitStatus,
+  removeStagedContext,
+  resolveWorkspacePath
+} from "./aiTerminalVibyraAgentWorkspace.mjs";
 
 export { providerInfoForModel };
 
@@ -43,7 +49,8 @@ const VIBYRA_LOGO_PINK = "38;2;255;53;200";
 
 export function promptLabelForModel(modelKey, color = true) {
   const info = providerInfoForModel(modelKey);
-  const label = isAutoModel(modelKey) ? "❯ auto" : "❯";
+  const glyph = isAutoModel(modelKey) ? "❯" : info.theme?.prompt?.glyph || "❯";
+  const label = isAutoModel(modelKey) ? `${glyph} auto` : `${info.prompt} ${glyph}`;
   return `${ansi(label, info.color, color)} `;
 }
 
@@ -65,7 +72,7 @@ export function renderIntroForModel({
   const family = info.modelFamily ? `${info.modelFamily} · ` : "";
   const lines = [
     "",
-    ...renderProviderBrandLogo(info, color).map((line) => center(line, inner)),
+    ...renderProviderBrandLogo(info, color, { maxWidth: inner }).map((line) => center(line, inner)),
     center(`${ansi(info.name, info.color, color)} via Vibyra Agent`, inner),
     "",
     `model      ${family}${displayModel(modelKey)}`,
@@ -114,7 +121,7 @@ function renderAutoIntro({ cwd, columns, color, permissionMode, tokenMode }) {
 
 export function formatAssistantReply(reply, modelKey = "auto", color = true, options = {}) {
   const info = providerInfoForModel(modelKey);
-  const token = providerTokens().assistant;
+  const token = providerTokens(info).assistant;
   const lines = renderTerminalMarkdown(reply, color).split(/\r?\n/);
   if (options.showModel) {
     return [
@@ -173,9 +180,10 @@ export function autoRoutingUsesAgent(result = {}) {
 
 export function formatProviderWorkingStatus(modelKey, color = true, elapsedMs = 0) {
   const info = providerInfoForModel(modelKey);
-  const token = providerTokens().activity;
+  const token = providerTokens(info).activity;
   const elapsed = elapsedMs > 0 ? ` · ${formatElapsedDuration(elapsedMs)}` : "";
-  return `${ansi(token, info.color, color)} ${info.name} via Vibyra Agent · working${elapsed}`;
+  const status = info.theme?.status?.working || "working";
+  return `${ansi(token, info.color, color)} ${info.name} via Vibyra Agent · ${status}${elapsed}`;
 }
 
 export function interactivePromptForModel(modelKey, _columns = 100, color = true) {
@@ -208,7 +216,8 @@ function runTerminal() {
     stagedContexts: [],
     activeProcess: null,
     cancellationRequested: false,
-    lastInterruptAt: 0
+    lastInterruptAt: 0,
+    workspaceRoot: process.cwd()
   };
   const desktopUrl = normalizeDesktopUrl(process.env.VIBYRA_DESKTOP_URL, process.env.VIBYRA_DESKTOP_PORT);
   const color = terminalColorEnabled();
@@ -232,7 +241,12 @@ function runTerminal() {
 
   let commandQueue = Promise.resolve();
   rl.on("line", (line) => {
-    rl.pause();
+    const immediate = parseProviderInput(line);
+    if (state.activeProcess && immediate.kind === "slash" && immediate.command === "/stop") {
+      const stopped = cancelActiveProcess(state);
+      writeSystemLine(state, state.model, stopped ? "Cancellation requested." : "No task is currently running.", color);
+      return;
+    }
     commandQueue = commandQueue.then(() => processTerminalLine(line)).catch((error) => {
       writeSystemLine(state, state.model, error instanceof Error ? error.message : "Terminal command failed.", color, true);
     });
@@ -271,7 +285,6 @@ function runTerminal() {
     } finally {
       if (!rl.closed) {
         rl.setPrompt(interactivePromptForModel(state.model, output.columns || 100, color));
-        rl.resume();
         rl.prompt();
       }
     }
@@ -622,7 +635,7 @@ export function parseAgentEvent(line) {
 export function renderAgentEvent(event, color = true, modelKey = "auto") {
   const item = event?.item || {};
   const info = providerInfoForModel(modelKey);
-  const tokens = providerTokens();
+  const tokens = providerTokens(info);
   const command = compactCommand(item.command);
   if (event?.type === "item.started" && item.type === "command_execution") {
     return `${ansi(tokens.activity, info.color, color)} ${ansi("shell", "1;37", color)}  ${ansi(command, "2", color)}`;
@@ -644,9 +657,9 @@ function startTaskProgress(model, color, startedAt) {
   output.write(`\x1b]0;⠋ ${info.name} via Vibyra Agent\x07`);
   let interval = null;
   const first = setTimeout(() => {
-    output.write(`\r\n${ansi("›", info.color, color)} ${taskProgressText(info.name, Date.now() - startedAt)}\r\n`);
+    output.write(`\r\n${ansi(providerTokens(info).activity, info.color, color)} ${providerProgressText(info, Date.now() - startedAt)}\r\n`);
     interval = setInterval(() => {
-      output.write(`${ansi("›", info.color, color)} ${taskProgressText(info.name, Date.now() - startedAt)}\r\n`);
+      output.write(`${ansi(providerTokens(info).activity, info.color, color)} ${providerProgressText(info, Date.now() - startedAt)}\r\n`);
     }, 60_000);
     interval.unref?.();
   }, 30_000);
@@ -716,7 +729,7 @@ async function handleTerminalInput({ parsed, raw, rl, state, desktopUrl, color }
   return true;
 }
 
-function handleLocalProviderCommand({ command, args, profile, rl, state, color }) {
+async function handleLocalProviderCommand({ command, args, profile, rl, state, color }) {
   if (command === "/" || command === "/help") {
     writeSystemLine(state, state.model, `${profile.label} commands\n${providerCommandHelp(profile)}`, color);
     return true;
@@ -771,6 +784,49 @@ function handleLocalProviderCommand({ command, args, profile, rl, state, color }
     writeSystemLine(state, state.model, terminalStatus(state, profile), color);
     return true;
   }
+  if (command === "/identity") {
+    const info = providerInfoForModel(state.model);
+    writeSystemLine(
+      state,
+      state.model,
+      `${info.name} model terminal\nmodel: ${state.model}\nruntime: Vibyra Agent\nroute: OpenRouter\nownership: Vibyra-owned tools and terminal UI`,
+      color
+    );
+    return true;
+  }
+  if (command === "/pwd") {
+    writeSystemLine(state, state.model, displayDirectory(process.cwd()), color);
+    return true;
+  }
+  if (command === "/files") {
+    try {
+      const path = args ? resolveTerminalPath(args, state) : process.cwd();
+      writeSystemLine(state, state.model, `${displayDirectory(path)}\n${listWorkspaceEntries(path)}`, color);
+    } catch (error) {
+      writeSystemLine(state, state.model, error instanceof Error ? error.message : "Could not list workspace files.", color, true);
+    }
+    return true;
+  }
+  if (command === "/git") {
+    try {
+      writeSystemLine(state, state.model, await readWorkspaceGitStatus(process.cwd()), color);
+    } catch (error) {
+      writeSystemLine(state, state.model, error instanceof Error ? error.message : "Could not read Git status.", color, true);
+    }
+    return true;
+  }
+  if (command === "/history") {
+    writeSystemLine(state, state.model, formatTranscriptHistory(state.transcript, args || 12), color);
+    return true;
+  }
+  if (command === "/unstage") {
+    const result = removeStagedContext(state.stagedContexts, args);
+    const message = result.removed
+      ? `${result.path ? `Removed staged context: ${displayDirectory(result.path)}` : "Cleared staged context."}\nremaining: ${result.remaining}`
+      : `Staged context not found: ${args || "all"}`;
+    writeSystemLine(state, state.model, message, color, !result.removed);
+    return true;
+  }
   if (["/copy", "/export"].includes(command)) {
     const latestAssistant = [...state.transcript].reverse().find((item) => item.role === "assistant")?.text || "";
     const transcript = state.transcript.map((item) => `${item.role}: ${item.text}`).join("\n\n");
@@ -819,7 +875,7 @@ async function runProviderShellCommand(command, state, color) {
     return;
   }
   const info = providerInfoForModel(state.model);
-  const tokens = providerTokens();
+  const tokens = providerTokens(info);
   output.write(`\r\n${ansi(tokens.activity, info.color, color)} shell  ${value}\r\n`);
   appendTranscript(state, "shell", value);
   const result = await executeShell(value, state);
@@ -870,7 +926,13 @@ function handleContextCommand(command, args, state, color) {
     writeSystemLine(state, state.model, `directory: ${displayDirectory(process.cwd())}\nstaged context:\n${staged}`, color);
     return true;
   }
-  const path = resolveTerminalPath(args);
+  let path;
+  try {
+    path = resolveTerminalPath(args, state);
+  } catch (error) {
+    writeSystemLine(state, state.model, error instanceof Error ? error.message : "Path is outside this workspace.", color, true);
+    return true;
+  }
   if (!existsSync(path)) {
     writeSystemLine(state, state.model, `Path not found: ${args}`, color, true);
     return true;
@@ -894,16 +956,25 @@ function handleContextCommand(command, args, state, color) {
 function promptWithStagedContext(prompt, mentions = [], state) {
   const paths = [...state.stagedContexts];
   for (const mention of mentions || []) {
-    const path = resolveTerminalPath(mention);
-    if (existsSync(path) && !paths.includes(path)) paths.push(path);
+    try {
+      const path = resolveTerminalPath(mention, state);
+      if (existsSync(path) && !paths.includes(path)) paths.push(path);
+    } catch {}
   }
   if (!paths.length) return prompt;
   return `${prompt}\n\nVibyra Agent file context:\n${paths.slice(-12).map((path) => `- ${path}`).join("\n")}`;
 }
 
-function resolveTerminalPath(value) {
-  const path = String(value || "").trim().replace(/^~(?=\/|$)/, homedir());
-  return resolve(isAbsolute(path) ? path : join(process.cwd(), path));
+function resolveTerminalPath(value, state) {
+  try {
+    return resolveWorkspacePath(value, {
+      cwd: process.cwd(),
+      workspaceRoot: state?.workspaceRoot,
+      permissionMode: state?.permissionMode
+    });
+  } catch {
+    throw new Error(`Standard access is limited to ${displayDirectory(state?.workspaceRoot)}.`);
+  }
 }
 
 function terminalStatus(state, profile) {
@@ -985,7 +1056,7 @@ function resetTerminalSession(state, clearTranscript) {
 
 function writeSystemLine(state, model, message, color, warning = false) {
   const info = providerInfoForModel(model);
-  const marker = warning ? "⚠" : providerTokens().assistant;
+  const marker = warning ? "⚠" : providerTokens(info).assistant;
   const code = warning ? 31 : info.color;
   const lines = renderTerminalMarkdown(message, color).split(/\r?\n/);
   output.write(`\r\n${ansi(marker, code, color)} ${lines.join("\r\n  ")}\r\n\r\n`);
@@ -1035,6 +1106,11 @@ function trimHistory(history) {
 
 function displayModel(modelKey) {
   return modelKey || "auto";
+}
+
+function providerProgressText(info, elapsedMs) {
+  const verb = info.theme?.activity?.verb || "working";
+  return `${info.name} is ${verb} · ${formatElapsedDuration(elapsedMs)}`;
 }
 
 function boxLine(value, inner, colorCode, color) {

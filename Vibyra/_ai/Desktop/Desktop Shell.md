@@ -54,6 +54,14 @@ Social-auth progress and errors render in `#desktop-social-auth-status` beside t
 After provider applications are created, run `npm run desktop:configure-social-auth` to prompt for their identifiers/key and save them directly to the linked Railway service without committing secrets.
 Auth creation responses include `isNewUser`. `completeDesktopAuth()` stores the matching user ID in `sessionStorage["vibyra.desktop.firstWelcomeUserId"]` only for the current renderer launch; Home then says `Welcome to Vibyra, <first name>.`. A later app launch or normal login has no flag and says `Welcome back, <first name>.`.
 
+Home uses that personalized welcome as its single hero headline. Keep the
+primary Vibyra command directly beneath it; do not restore the separate machine
+header, `Desktop ready` status, `Vibyra AI` eyebrow, or `Build what's next.`
+marketing copy above the command. The command stays a dark graphite surface in
+both themes, close to the page canvas with a neutral hairline and modest radius.
+Keep purple localized to the Vibyra mark and hover feedback; do not turn it into
+a large white call-to-action or a floating promotional card.
+
 ## Account Dropdown And Modals (Pair Phone, Account)
 
 The topbar avatar opens an account dropdown (`accountMenu()` in `desktop/assets/app.2.js`), NOT the account modal directly. The dropdown is the primary profile UX; the modal hosts sub-views the dropdown navigates to.
