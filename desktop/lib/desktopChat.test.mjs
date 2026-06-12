@@ -362,7 +362,7 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
     }],
     mode: "chat",
     model: "gpt-5.4-mini",
-    profileContext: { callName: "Ellis", work: "Founder", responseStyle: "Code-first: prioritize implementation details.", customInstructions: "Ask clarifying questions before detailed answers." },
+    profileContext: { callName: "Ellis", language: "Français", work: "Founder", responseStyle: "Code-first: prioritize implementation details.", customInstructions: "Ask clarifying questions before detailed answers." },
     prompt: "Explain this project",
     reasoningEffort: "xhigh",
     skill: "review",
@@ -407,6 +407,7 @@ test("desktop chat sends a desktop-surface cloud chat payload", async () => {
   assert.doesNotMatch(requestBody.prompt, /Selected desktop chat tool/);
   assert.match(requestBody.prompt, /Desktop profile preferences:/);
   assert.match(requestBody.prompt, /Call the user: Ellis/);
+  assert.match(requestBody.prompt, /Preferred response language: Français\. Reply in this language unless the user explicitly asks for another language\./);
   assert.match(requestBody.prompt, /Preferred response style: Code-first: prioritize implementation details\./);
   assert.match(requestBody.prompt, /User work: Founder/);
   assert.match(requestBody.prompt, /User instructions: Ask clarifying questions before detailed answers\./);
@@ -532,8 +533,8 @@ test("desktop chat does not treat an inherited OpenAI key as a personal account"
       }, async () => {
         assert.fail("An inherited company key must not reach OpenAI.");
       }),
-      (error) => error?.status === 401
-        && error?.message === "Connect an OpenAI account before using provider tokens."
+      (error) => error?.status === 409
+        && error?.message === "Personal AI accounts are available in native AI terminals. Vibyra Chat does not request provider API keys."
     );
   } finally {
     if (previousKey === undefined) delete process.env.OPENAI_API_KEY;

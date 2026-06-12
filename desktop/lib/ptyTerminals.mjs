@@ -1014,14 +1014,16 @@ export function terminalAgentForTokenSource(model, tokenMode, accounts = {}, req
   if (official === "codex" && accounts?.codex?.available && accounts?.codex?.connected) {
     return "codex";
   }
-  if (["claude", "gemini"].includes(official) && aiTerminalAgentStatus(official).available) {
+  if (["claude", "gemini"].includes(official)
+    && accounts?.[official]?.available
+    && accounts?.[official]?.connected) {
     return official;
   }
   if (official === "codex") {
     httpError(409, "Install Codex CLI and sign in with ChatGPT before using My AI accounts.");
   }
   if (official) {
-    httpError(409, `Install ${official === "claude" ? "Claude Code" : "Gemini CLI"} before using this model with My AI accounts.`);
+    httpError(409, `Install and sign in to ${official === "claude" ? "Claude Code" : "Gemini CLI"} before using this model with My AI accounts.`);
   }
   httpError(409, "This model is only available with Vibyra tokens.");
 }

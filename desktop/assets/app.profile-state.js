@@ -4,7 +4,7 @@ let profileSectionSearch = "";
 const profileSectionKey = "vibyra.desktop.profileSection";
 const profilePrefsKey = "vibyra.desktop.profilePreferences";
 const profileSectionAliases = {
-  account: "devices",
+  account: "ai-accounts",
   general: "profile",
   preferences: "app",
   privacy: "devices",
@@ -40,6 +40,7 @@ const desktopPreferenceDefaults = {
   callName: "",
   chatFont: "vibyra-sans",
   customInstructions: "",
+  language: "English",
   responseStyle: "balanced",
   voice: "marin",
   voiceSpeed: 1,
@@ -65,6 +66,15 @@ const profileChatFontOptions = [
   { key: "system", label: "System" },
   { key: "mono", label: "Mono" }
 ];
+const profileLanguageOptions = [
+  { key: "English", label: "English", locale: "en" },
+  { key: "Español", label: "Español", locale: "es" },
+  { key: "Français", label: "Français", locale: "fr" },
+  { key: "Deutsch", label: "Deutsch", locale: "de" },
+  { key: "日本語", label: "日本語", locale: "ja" },
+  { key: "中文", label: "中文", locale: "zh" },
+  { key: "Português", label: "Português", locale: "pt" }
+];
 function setProfileFocus(focus) {
   profileFocus = focus || "";
   if (profileFocus === "preferences" || profileFocus === "app") profileActiveSection = "app";
@@ -75,6 +85,7 @@ function profileSections() {
   return [
     { key: "profile", icon: "user", label: "Profile" },
     { key: "personalization", icon: "sparkles", label: "Personalization" },
+    { key: "ai-accounts", icon: "link", label: "AI accounts" },
     { key: "app", icon: "palette", label: "App" },
     { key: "devices", icon: "desktop", label: "Devices & privacy" },
     { key: "billing", icon: "bolt", label: "Billing" },
@@ -85,7 +96,11 @@ function profileSections() {
 function desktopPreferences() {
   try {
     const parsed = JSON.parse(localStorage.getItem(profilePrefsKey) || "{}");
-    return { ...desktopPreferenceDefaults, ...parsed };
+    const preferences = { ...desktopPreferenceDefaults, ...parsed };
+    if (!profileLanguageOptions.some((item) => item.key === preferences.language)) {
+      preferences.language = desktopPreferenceDefaults.language;
+    }
+    return preferences;
   } catch {
     return { ...desktopPreferenceDefaults };
   }
@@ -100,8 +115,11 @@ function applyDesktopPreferences(next = desktopPreferences()) {
   if (!document.body) return;
   const appearance = next.appearance || "dark";
   const chatFont = next.chatFont || "vibyra-sans";
+  const language = profileLanguageOptions.find((item) => item.key === next.language) || profileLanguageOptions[0];
   if (document.body.dataset.desktopTheme !== appearance) document.body.dataset.desktopTheme = appearance;
   if (document.body.dataset.chatFont !== chatFont) document.body.dataset.chatFont = chatFont;
+  if (document.body.dataset.desktopLanguage !== language.key) document.body.dataset.desktopLanguage = language.key;
+  if (document.documentElement.lang !== language.locale) document.documentElement.lang = language.locale;
 }
 
 function desktopProfileContext() {
@@ -111,6 +129,7 @@ function desktopProfileContext() {
   return {
     callName: String(prefs.callName || "").trim(),
     customInstructions: String(prefs.customInstructions || "").trim(),
+    language: profileLanguageOptions.find((item) => item.key === prefs.language)?.key || "English",
     responseStyle,
     work
   };

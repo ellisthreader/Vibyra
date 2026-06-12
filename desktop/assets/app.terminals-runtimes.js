@@ -280,7 +280,8 @@ async function loadTerminalRuntimes() {
     const payload = await response.json().catch(() => ({}));
     if (response.ok && Array.isArray(payload.runtimes)) terminalRuntimeState = payload;
   } catch {}
-  if (currentPage === "terminals" && !refreshTerminalRuntimePickers()) render();
+  const page = typeof activePage === "string" ? activePage : (typeof currentPage === "string" ? currentPage : "");
+  if (page === "terminals" && !refreshTerminalRuntimePickers()) render();
 }
 
 window.addEventListener("load", () => setTimeout(loadTerminalRuntimes, 0));

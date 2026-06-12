@@ -165,24 +165,33 @@ test("membership model locks apply only when Vibyra pays for the terminal", () =
   assert.equal(context.terminalFirstModelForTokenMode("provider").key, "gpt-5.5");
 });
 
-test("personal-account filtering keeps API-only rows visible and searchable", () => {
+test("personal-account filtering hides API-only rows and keeps login-capable models searchable", () => {
   const context = {
     config: () => ({
-      chatModelGroups: [{
-        title: "DeepSeek",
-        options: [{ key: "deepseek/deepseek-v3", label: "DeepSeek V3", provider: "deepseek" }]
-      }]
+      chatModelGroups: [
+        {
+          title: "OpenAI models",
+          options: [{ key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }]
+        },
+        {
+          title: "DeepSeek",
+          options: [{ key: "deepseek/deepseek-v3", label: "DeepSeek V3", provider: "deepseek" }]
+        }
+      ]
     }),
     providerAccounts: {},
     setupTokenMode: "provider",
+    terminalProviderKeyForModel(model) { return model.provider || ""; },
     window: { addEventListener() {} }
   };
   vm.runInNewContext(source, context);
 
   const groups = context.filteredTerminalModelGroups("deepseek");
+  const openaiGroups = context.filteredTerminalModelGroups("gpt");
 
-  assert.equal(groups.length, 1);
-  assert.equal(groups[0].options[0].key, "deepseek/deepseek-v3");
+  assert.equal(groups.length, 0);
+  assert.equal(openaiGroups.length, 1);
+  assert.equal(openaiGroups[0].options[0].key, "gpt-5.5");
 });
 
 test("model rows keep provider logos and hide runtime implementation labels", () => {
@@ -255,7 +264,8 @@ test("token source choices explain billing without provider implementation detai
   assert.match(panel, /Vibyra tokens/);
   assert.match(panel, /Uses your Vibyra credits/);
   assert.match(panel, /My AI accounts/);
-  assert.match(panel, /Uses your account and its billing/);
+  assert.match(panel, /Uses your connected subscription/);
+  assert.match(panel, /Manage AI accounts/);
   assert.doesNotMatch(panel, /CLI|installed|sign-in|ChatGPT|Claude Code|Gemini/);
   assert.doesNotMatch(panel, /terminal-provider-row/);
 });
@@ -324,7 +334,7 @@ test("PTY terminals stay edge-to-edge and keep native bottom rows correctly size
   assert.match(ptyRuntimeSource, /dimensions\?\.css\?\.cell/);
   assert.match(ptyRuntimeSource, /Math\.round\(availableHeight \/ cellHeight\)/);
   assert.match(ptyRuntimeSource, /queueMicrotask\(launch\)/);
-  assert.match(ptyRuntimeSource, /mountVisibleXterms\(\);[\s\S]*startPtyTerminal\(terminal\)/);
+  assert.match(ptyRuntimeSource, /mountVisibleXterms\(new Set\(\[terminal\.id\]\)\);[\s\S]*startPtyTerminal\(terminal\)/);
   assert.match(ptyRuntimeSource, /schedulePtyXtermFit\(terminal\.id, \{ forceBackend: true \}\)/);
   assert.match(ptyRuntimeSource, /backendMatches = Number\(terminal\?\.cols\) === backendSize\.cols/);
   assert.match(ptyRuntimeSource, /terminalPtyBottomOverscanRows/);

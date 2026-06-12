@@ -49,6 +49,8 @@ body[data-desktop-theme="light"] {
 
 .terminal-focus-head,
 .terminal-tile-head,
+.terminal-project-tabs,
+.terminal-agent-sidebar,
 .terminal-team-bar,
 .terminal-companion-shell-head,
 .terminal-test-toolbar,

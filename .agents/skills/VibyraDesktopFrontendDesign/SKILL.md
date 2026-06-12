@@ -1,6 +1,6 @@
 ---
 name: vibyra-desktop-frontend-design
-description: Apply Vibyra desktop app frontend design rules. Use when changing, reviewing, or proposing UI for the Vibyra desktop shell, especially the welcome/auth screen, top bar, sidebar, dashboard, chat surface, light/dark theme switching, modals, terminal surfaces, responsive layout, Vibyra logo, profile/avatar, phone connection indicators, recent chats, or desktop visual polish.
+description: Apply Vibyra desktop app frontend design rules. Use when changing, reviewing, or proposing UI for the Vibyra desktop shell, especially the welcome/auth screen, top bar, sidebar, terminal-first IA, Projects, chat surface, light/dark theme switching, modals, terminal surfaces, responsive layout, Vibyra logo, profile/avatar, phone connection indicators, or desktop visual polish.
 metadata:
   short-description: Vibyra desktop frontend design rules
 ---
@@ -33,22 +33,26 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
 - Prefer UX shapes that make the job visually obvious over defaulting every AI surface to a generic chatbot.
 - Make Vibyra feel distinct through real workflow interaction, project/build state, and mobile identity, not decorative glow, fake metrics, or feature clutter.
 - Prefer fewer boxes, fewer labels, fewer pills, and fewer explanatory captions.
-- Use one professional graphite system across Home, Chat, Terminals, Projects,
+- Use one professional graphite system across Terminals, Projects, the shell AI sidebar,
   Settings, menus, and modals. Dark foundations are `#121214` canvas,
   `#19191D` surface, `#222226` elevated, and `#17171B` rail. Keep selected
   navigation and ordinary selected rows neutral; reserve purple for primary
   actions, focus, AI identity, provider identity, and meaningful state.
-- Home should greet the account once as its main headline. Do not stack a
-  separate machine header, readiness label, brand eyebrow, marketing slogan,
-  and supporting paragraph above the primary command action.
-- Keep Home's primary Vibyra command dark in both themes: use a graphite
-  surface close to the page canvas, a neutral hairline, modest radius, and crisp
-  light content. Keep purple localized to the Vibyra mark and hover feedback;
-  do not make the whole command a floating promotional card.
-- The Home command is a real compact composer: one auto-growing textarea and
-  one embedded Send action. Enter sends, Shift+Enter adds a line, and submission
-  continues through the full Chat surface and its existing send pipeline.
+- Make Terminals the first useful authenticated surface. Do not add a Home
+  landing page, command dashboard, or recent-work page before the terminal
+  workspace.
 - Keep controls familiar and quiet: icon buttons, simple avatars, concise nav rows.
+- Keep the Projects page as a focused workspace chooser, not a dashboard:
+  `desktop/assets/app.pages.js` renders one compact command bar and a flat
+  Finder-like project list. Row helpers live in
+  `desktop/assets/app.projects-render.js`; late scoped styles live in
+  `desktop/assets/app.projects.css`, `app.projects-phone.css`, and
+  `app.projects-empty.css`, and `app.projects-rows.css`.
+  Preserve real project data only, avoid fake metrics, and keep phone pairing
+  as a small contextual strip. Do not restore the selected-project side panel
+  or bulky project cards. Project row actions should read as terminal actions
+  such as `Open terminal`; when the Phone filter is empty and unpaired, show a
+  clean iPhone-to-desktop pairing state with a clear `Pair iPhone` primary CTA.
 - Keep light mode warm and software-like rather than cool blue-gray: use an
   off-white canvas, a slightly lighter rail, near-white surfaces, graphite
   text, neutral hairlines, and the same restrained purple interaction accent.
@@ -146,7 +150,8 @@ Judge every screen the way a TikTok viewer judges a clip: instantly, without exp
 - Keep the Vibyra logo visible and unclipped: use `object-fit: contain`, avoid negative offsets, and avoid hidden overflow around the logo.
 - Provider buttons must stay on one line: `Continue with Google`, `Continue with Apple`, `Continue with email`.
 - Use real provider marks/SVGs, not placeholder letters.
-- Do not add quizzes, onboarding flows, or connect pages. After login, go straight to Home through the compatibility `dashboard` route key.
+- Do not add quizzes, onboarding flows, or connect pages. After login, go
+  straight to Terminals through `vibyra.desktop.page = "terminals"`.
 - A newly created account's first authenticated desktop launch says `Welcome to Vibyra, <first name>.`; later launches and ordinary logins say `Welcome back, <first name>.`. Drive this from backend `isNewUser` and a current-renderer `sessionStorage` flag, not from permanent local account state or a timestamp guess.
 - The account modal owns session controls; `Log out` should clear the local desktop session and return to the auth screen.
 
@@ -166,7 +171,7 @@ Keep it extremely simple.
   width and keep its empty container area out of pointer hit testing. Restore
   pointer events only on `.desktop-chrome-actions` and
   `.desktop-window-controls`; otherwise the stretched grid item silently blocks
-  terminal tabs, Add, workspace tools, and Options beneath it.
+  the terminal project bar, Add, workspace tools, and Options beneath it.
 
 ## Dropdown Controls
 
@@ -237,6 +242,10 @@ shutdown. Keep this section focused on presentation and interaction design.
   or Preview launcher to the terminal dock or project quick actions. Switching
   to AI or Memory keeps the workspace open and replaces only its
   content. Closing the workspace returns focus to the active terminal.
+- When Preview has no terminal, setup selection, or selected project context,
+  keep the eye icon but pair it with the explicit title
+  `No projects are currently open` and a short instruction to open a project
+  in a terminal. Never leave this state as an unlabeled icon.
 - Treat the preset and rotate action as one control group. Put rotate directly
   beside the device selector and use a dedicated device-orientation icon, not a
   split-pane or generic layout icon.
@@ -513,10 +522,12 @@ shutdown. Keep this section focused on presentation and interaction design.
   Retry action. Never start or retry a request as a side effect of rendering.
 - Treat Settings as a real modal: move focus inside on open, trap focus, make
   the background inert, close on Escape, and restore opener focus on close.
-- Keep Settings organized as six sections: Profile, Personalization, App,
-  Devices & privacy, Billing, and Help. Do not restore the label-only search,
-  unfinished telemetry/lock/language/notification controls, or separate
-  Account/Devices/Privacy sections.
+- Keep language in the App section and use the same seven choices as mobile:
+  English, Español, Français, Deutsch, Português, 日本語, and 中文. Persist the
+  choice locally, update the document language, and include it in desktop chat
+  and voice profile context. Never ship a language picker that has no behavior.
+- Do not restore the label-only search, unfinished telemetry/lock/notification
+  controls, or separate Account/Devices/Privacy sections.
 - Patch appearance-card selection in place when switching themes. Keep preview
   image nodes mounted so light/dark changes do not flash or reload screenshots.
 - Use inline confirmation panels for destructive Settings actions instead of
@@ -605,73 +616,56 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
 - Keep the Vibyra logo at the top.
 - Keep the rail on the same semantic background as the main shell; use its subtle border and row states for separation instead of an elevated contrasting fill.
 - Do not show a profile card/block at the top of the sidebar.
-- Primary nav should stay simple: Home, Chat, Terminals, Projects.
-- Include recent chats in the sidebar when desktop chat history exists.
+- Primary nav should stay terminal-first: Terminals and Projects only. Do not
+  restore Home, Chat, Builds, or a recent-chat rail.
+- Projects is a launcher into terminal setup. Selecting/opening a project sets
+  `vibyra.desktop.terminalProject`, switches to Terminals, and shows the
+  terminal selection/setup flow for that project.
+- Projects exposes one compact Vibyra V in the top-right shell actions. It
+  toggles a chat-only right sidebar with no Editor, Preview, Talk, Memory, or
+  terminal workspace switcher.
 - Bottom phone/PC status should be an unboxed status row, not a card with a heavy border/background.
 - When the sidebar is collapsed, show only the phone-status icon and tooltip;
   do not float a separate connection dot above it.
-- Keep the rail expanded with recent chats until roughly tablet width; collapse to icons/tooltips around `900px`.
+- Keep the rail expanded until roughly tablet width; collapse to icons/tooltips
+  around `900px`. Do not reserve rail space for recent chats.
 
-## Chat And Dashboard
+## Shell AI And Terminal-First IA
 
-- Chat should be calm and AI-app-like: compact prompt chips, restrained bottom composer, clean message rows.
-- Keep the real desktop chat visually obvious: on wide screens show a compact
-  Vibyra AI ready/thinking indicator in the upper-right of the chat workspace,
-  and hide it at narrow widths where it would compete with the mobile chrome.
-- The upper-right Vibyra AI indicator is a native button, not decorative UI.
-  Clicking it must scroll to and focus the chat composer, and its event binding
-  must be restored whenever `renderChat()` replaces the chat DOM.
-- The polished desktop chat layout is owned by the late-loaded
-  `desktop/assets/app.chat-polish.css`. Keep its empty state in the upper part
-  of the workspace, use descriptive quick-action rows, and keep the working
-  composer/history/request behavior in the existing chat JS modules.
-- On an empty chat, group the headline, quick prompts, and composer as one start surface slightly above center; pin the composer to the bottom only after messages or a real run card exist.
+- The shell AI sidebar should be calm and AI-app-like: one identity header,
+  clean message rows, a restrained bottom composer, and at most two useful
+  starter prompts.
+- `desktop/assets/app.shell-ai.js` and `app.shell-ai.css` own this surface.
+  Keep it available only on Projects; entering Terminals closes it.
+- The shell AI sidebar is resizable from its left edge. Persist width in
+  `vibyra.desktop.shellAiWidth`, support pointer and keyboard resizing, and
+  clamp the width so the main Projects content remains usable.
+- Legacy `setPage("chat")` entry points open the shell AI sidebar from Projects.
+  They must not reintroduce a Home route.
+- Shell chat must not expose terminal-only `/phone`, `/voice`, `/memory`,
+  Editor, Preview, Talk, or Memory controls. Those belong only to Terminals.
 - Chat draft and recent chat history are local shell state: `vibyra.desktop.chatDraft`, `vibyra.desktop.recentChats`, and `vibyra.desktop.activeChat`.
-- Desktop chat model and reasoning controls should stay as one combined AI selector in the composer, not two separate model/effort pills. Keep backend effort values `low`, `medium`, `high`, and `xhigh`, but label them for users as `Fast`, `Balanced`, `Deep`, and `Max`.
-- The chat model menu should mirror the mobile model groups/logos from `src/screens/workspace/data/chatModels.ts`, and effort values should stay `low`, `medium`, `high`, `xhigh`.
+- Desktop shell chat should not expose a model or reasoning picker. Show only a
+  quiet local/Ollama indicator beside the attachment control and route sends
+  through `POST /desktop/chat` with `model: "local"` and `provider: "local"`,
+  matching the terminal AI companion's local Ollama path.
+- Keep terminal model selection separate on the Terminals page. Do not move the
+  terminal picker into Projects shell chat.
 - The desktop paperclip menu should be a simple vertical list, not a top action grid. Use the same row shape for every option: icon, short label, short description. Include Photos, Files, Create image, Deep research, Agent web search, and Analyze files. Do not include Camera on desktop. Keep local AI skills such as Plan/Debug/Review in `/` slash suggestions, not in the paperclip menu.
 - Do not make desktop chat start `/agents/start` directly unless there is an intentional desktop-authenticated agent contract; that route is phone-authenticated.
-- After desktop auth, default to Home via the compatibility route key `vibyra.desktop.page = "dashboard"` unless a stored page intentionally overrides it.
-- Home must use real desktop state only. Phone/project data comes from
-  `/desktop/state`; terminal rows come from the reconciled frontend `terminals`
-  store because PTY sessions are not part of `/desktop/state`.
-- Namespace the current Home DOM and late stylesheet with `desktop-home-*`.
-  Legacy chunks still contain `.home-page`, `.home-side`, and related rules;
-  reusing those selectors mixes two layout systems and misaligns Home sections.
-- Keep Home prompt-led and editorial, not dashboard-led. Use a borderless hero
-  with one identity row, one large headline, one supporting sentence, and one
-  full-width high-contrast command that opens Chat. Do not wrap the hero in a
-  card or add a detached secondary action.
-- Put Phone, AI workspaces, and Local projects in one inline equal-width context
-  row directly below the command. Separate items with hairlines instead of an
-  enclosing status card. Use real state and make every item actionable; do not
-  restore summary cards or a large standalone phone card.
-- Present AI workspaces and Recent projects as one `Recent work` section with
-  two equal columns and one shared divider. Do not wrap it in an outer
-  workbench card, nest row cards, or add Recent activity merely to fill space.
-- Scope Home to a warm neutral charcoal/stone palette through
-  `body.desktop-home-active`; avoid blue or navy casts and avoid stark white
-  focal surfaces. Keep the Vibyra mark as the only ordinary saturated brand
-  color and reserve green/amber/red for truthful state. The selected Home
-  navigation item is neutral rather than purple.
-- Keep the composition ordered with whitespace and hairlines. Do not add grid
-  textures, watermark logos, floating badges, gradients, decorative metrics,
-  or multiple competing bordered surfaces.
-- Home styling is split across `app.home.css`, `app.home-launch.css`,
-  `app.home-content.css`, `app.home-rows.css`, and
-  `app.home-responsive.css`, all loaded late from `desktop/app.html`. Toggle
-  the route owner class in the shell instead of using route-wide `body:has`.
-  Keep each stylesheet focused and under 200 lines. Do not transition the
-  command surface background across theme changes; animate only movement and
-  shadow so light/dark switching cannot retain the prior theme color.
-- Home terminal status must distinguish an open PTY from active AI work. Show
-  `Working` only for startup, pending state, or authoritative provider-busy
-  state; an otherwise open shell remains `Ready`. Never use an elapsed-output
-  timeout as completion state. The terminal worker must broadcast `busy` when
-  work is submitted and `ready` when the provider restores its idle prompt;
-  the renderer may mirror provider signals for already-detached legacy workers.
-  Reflect the working count in the Terminals summary card and respect
-  reduced-motion preferences.
+- After desktop auth, default to Terminals via
+  `vibyra.desktop.page = "terminals"` unless a stored valid Terminals/Projects
+  page intentionally overrides it. Treat saved `dashboard` as stale and migrate
+  to Terminals.
+- Terminals is the main product surface. Keep terminal setup, project tabs,
+  the left agent sidebar, and the terminal right workspace as the primary flow.
+- Keep terminal page structure companion-safe: `.terminal-page` should have one
+  `.terminal-primary-shell` direct child for project tabs, left agent sidebar,
+  and `.terminal-stage`; the right workspace/companion is inserted as the
+  second direct child. Do not make project tabs and stage separate top-level
+  `.terminal-page` grid children.
+- Do not bring back Home-only dashboard sections, `desktop-home-*` route
+  layouts, summary cards, or a recent-work landing page as primary navigation.
 - Do not invent fake counts, fake activity, fake progress bars, fake credits, or fake community/profile data.
 - Show live terminals and active desktop agent runs as compact actionable rows, not predicted progress, token counts, percentages, or fallback build rows.
 - Keep account/billing details in the account modal unless a real desktop account API requires more.
@@ -696,8 +690,8 @@ user explicitly requests Codex's visual design.
 - Keep one compact icon-only sidebar button in the terminal page's top-right
   shell actions, including the no-terminal setup state. Use a familiar sidebar
   glyph, accessible label, and tooltip. Do not place AI, Voice, Memory, Preview,
-  or project quick actions beside terminal tabs. The button toggles the unified
-  right workspace and opens it in AI by default.
+  or project quick actions beside the agent list. The button toggles the
+  unified right workspace and opens it in AI by default.
 - Inside the right workspace, start directly with one compact segmented
   Editor / Preview / AI / Memory bar and the close action. Do not add a separate
   `Workspace` title or repeat the active terminal/project name above the modes.
@@ -834,18 +828,24 @@ user explicitly requests Codex's visual design.
   Treat prompt logging failure as a failed turn so prompts are never sent
   without their required local record. F8 delivery must disable the second PTY
   prompt log and carry the original turn into PTY output tracking.
-- Default to a focus view: one active terminal fills the page, with other terminals represented as quiet tabs.
-- Put terminal open/close/reorder tabs in the existing desktop topbar. Do not add a second terminal nav bar inside the page body.
-- Keep the terminal creation button, tabs, and options button together as one
-  centered content-sized dock. The tab strip may expand and scroll for larger
-  sessions, but a single terminal must not push those controls far apart.
-- Label each topbar terminal tab with its real agent and visible position, such
-  as `Codex 1` or `Claude 2`, instead of showing a bare number. Keep individual
-  close buttons, and keep a three-dot terminal options menu with layout
-  switching and a confirmed `Close all terminals` action. Give tabs enough
-  width to read those labels comfortably and keep the tab group centered; let
-  the tab strip scroll horizontally when many terminals are open instead of
-  compressing labels.
+- Default to a focus view: one active terminal fills the page, with other
+  terminals represented as quiet agent rows in the terminal page's left
+  sidebar.
+- Keep project groups as top tabs inside the terminal page, not as nested items
+  in the global app rail. The global rail stays page navigation; the terminal
+  workspace owns project switching.
+- Keep PTY fast-refresh project-aware. It should patch only
+  `terminalsForProjectKey()` into the stage and refresh project tabs/sidebar in
+  place when group or menu state changes, so live xterm panes survive without
+  stale project chrome.
+- Keep agent open/close/reorder controls in the left terminal sidebar and keep
+  New agent, right-workspace launchers, layout switching, and confirmed
+  `Close all agents` in the terminal page's top project bar. Do not put
+  terminal agent tabs back in the Electron titlebar.
+- Label each agent row with its real agent and visible position, such as
+  `Codex 1` or `Claude 2`, instead of showing a bare number. Keep individual
+  close buttons, make the sidebar scroll for larger sessions, and keep selected
+  rows neutral with only restrained borders/status dots.
 - Keep terminal chrome, status motion, dropdown selection, and settings actions
   on Vibyra purple. Provider colors may identify content, but OpenAI/Codex teal
   must not turn the surrounding terminal UI into a green theme; ANSI green
@@ -946,9 +946,12 @@ user explicitly requests Codex's visual design.
   TUI or replace provider words inside another product's interface. Show
   `OpenAI Codex` only for terminals launched through `My AI accounts`. Keep
   Vibyra's isolated `CODEX_HOME` free of `auth.json` and inherited OpenAI API
-  credentials. `My AI accounts` must filter the model picker to models
-  supported by connected official CLI accounts and fail closed when the
-  runtime is missing. ChatGPT-authenticated Codex launches Codex, while
+  credentials. `My AI accounts` must filter the model picker to login-capable
+  native families only: Codex/OpenAI, Claude/Anthropic, and Gemini/Google.
+  The row may be visible before connection, but launch must fail closed until
+  the matching official CLI account is connected and the runtime is available.
+  Settings > `AI accounts` should show the same compatible model families as
+  chips under each provider. ChatGPT-authenticated Codex launches Codex, while
   installed Claude Code and Gemini CLI launch their own native sign-in and
   billing flows. Do not present an OpenAI API key as a ChatGPT subscription,
   treat provider-qualified API wrappers as native accounts, or let inherited
@@ -1190,21 +1193,23 @@ user explicitly requests Codex's visual design.
 - Desktop appearance is local profile preference state: `localStorage["vibyra.desktop.profilePreferences"].appearance` drives `body[data-desktop-theme]`. Do not add another theme store.
 - Keep `desktop/app.html` applying saved `data-desktop-theme` and `data-chat-font` before visible shell content renders, so launch does not flash the wrong theme.
 - Theme CSS must be late-loaded and token-based. Use `app.theme.css` for semantic tokens, `app.theme-shell.css` for shell/topbar/sidebar, `app.theme-chat.css` for chat/composer/menu states, `app.theme-surfaces*.css` for modals/profile/forms, `app.theme-terminals*.css` for terminal surfaces, and `app.theme-auth.css` for the always-dark logged-out welcome screen.
-- Keep `app.desktop-theme-audit.css` after Home, chat polish, screenshot,
+- Keep `app.desktop-theme-audit.css` after terminal, Projects, chat polish, screenshot,
   billing, and Profile feature sheets. It owns compatibility surface aliases
   and final screenshot/Profile overrides so late dark fallbacks cannot win.
-- A whole-desktop theme audit must render Home, Projects, Chat menus, account,
-  pairing, billing artwork, every Profile section, screenshot editor/tray, and
-  responsive chrome in explicit light and dark. Also emulate light OS
+- A whole-desktop theme audit must render Terminals, Projects, shell AI/chat menus,
+  account, pairing, billing artwork, every Profile section, screenshot
+  editor/tray, and responsive chrome in explicit light and dark. Also emulate light OS
   appearance while the preference is `auto`.
 - Full-screen screenshot editing must lock shell scrolling through
   `body.screenshot-editing`. Its toolbar, stage, hint, footer, saved tray, and
   notices must resolve through semantic screenshot or shared surface tokens.
-- Home CSS loads late as `app.home.css`, but it must stay scoped to `.home-*` selectors and must not own global shell chrome. Do not use route-wide `body:has(...)` overrides for `.app`, `.rail`, `.topbar`, navigation, or account/phone controls.
+- Legacy Home CSS may still load late, but it must stay unused and scoped to
+  `.home-*` selectors. Do not use route-wide `body:has(...)` overrides for
+  `.app`, `.rail`, `.topbar`, navigation, or account/phone controls.
 - Profile, account, token, pair, and shared form controls must resolve through late `--surface-*` tokens. Do not leave white-alpha dark literals on modal inputs, selects, textareas, session menus, toggles, appearance cards, delete panels, or profile dividers.
 - The billing plan picker keeps its image-led layout, but `app.billing-plans.css` must route colors through `--billing-*` variables defined in `app.billing-plans.theme.css`; verify `#token-modal .modal--billing-revamp`, plan rows, segmented controls, hero copy, chips, and secondary buttons in light and dark.
 - In late theme files, audit interactive states as well as base panels. Topbar/account/chat action dropdown danger and disabled states should use theme error/dim tokens, and light-mode chat send controls should not stay white on a white composer.
-- Before finishing any desktop UI/theme edit, run a computed-style probe for explicit `light` and `dark` across: Home, Profile modal fields, Token billing modal, Pair modal, chat model/attach/slash menus, active send button, terminal setup/model/settings controls, and terminal companion/PTY surfaces.
+- Before finishing any desktop UI/theme edit, run a computed-style probe for explicit `light` and `dark` across: Terminals, Projects, Profile modal fields, Token billing modal, Pair modal, chat attach/slash menus, active send button, terminal setup/model/settings controls, and terminal companion/PTY surfaces.
 
 ## Terminal Theme Checks
 

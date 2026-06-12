@@ -60,7 +60,8 @@ test("Auto deciding state brackets routing and is cleared before provider launch
 
 test("provider transitions refresh visible model identity without remounting xterm", () => {
   assert.match(runtimeSource, /const modelChip = article\.querySelector\("\.terminal-model-chip"\)/);
-  assert.match(runtimeSource, /modelChip\.innerHTML = `\$\{modelLogo\(model\)\}\$\{escapeHtml\(model\.label\)\}`/);
+  assert.match(runtimeSource, /const nextModelChip = `\$\{modelLogo\(model\)\}\$\{escapeHtml\(model\.label\)\}`/);
+  assert.match(runtimeSource, /if \(modelChip\.innerHTML !== nextModelChip\) modelChip\.innerHTML = nextModelChip/);
 
   const refreshStart = runtimeSource.indexOf("function refreshPtyTerminalDom");
   const refreshEnd = runtimeSource.indexOf("\nfunction refreshPtyTerminalSettingsMenus", refreshStart);

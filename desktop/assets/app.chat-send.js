@@ -16,9 +16,11 @@ async function sendChat() {
   const text = skill ? skillText : rawText;
   if (!text && !skill) return;
   const project = currentProject();
+  const requestModel = "local";
+  const requestEffort = "medium";
   ensureActiveChat(rawText);
   const transcriptOptions = {
-    model: selectedChatModel,
+    model: requestModel,
     projectId: project?.id || String(selectedProjectId || ""),
     projectName: project?.name || "",
     sessionId: `desktop-chat:${activeChatId}`
@@ -41,21 +43,6 @@ async function sendChat() {
       status: "completed"
     }, "desktop-chat", transcriptOptions);
     startNewChat();
-    return;
-  }
-  if (!skill && text === "/phone") {
-    const localResult = "Opened Phone Preview in AI terminals.";
-    chatMessages.push({ role: "user", text }, { role: "assistant", text: "Opened Phone Preview in AI terminals." });
-    chatDraft = "";
-    localStorage.removeItem("vibyra.desktop.chatDraft");
-    input.value = "";
-    saveActiveChat(text);
-    if (typeof openTerminalPhonePanel === "function") openTerminalPhonePanel("chat");
-    else setPage("terminals");
-    await persistDesktopPromptOutcome(transcriptTurn, {
-      result: localResult,
-      status: "completed"
-    }, "desktop-chat", transcriptOptions);
     return;
   }
   if (!skill && text === "/help") {
@@ -85,10 +72,6 @@ async function sendChat() {
       status: "completed"
     }, "desktop-chat", transcriptOptions);
     return;
-  }
-  if (modelLocked(chatModels.find((model) => model.key === selectedChatModel))) {
-    selectedChatModel = firstUnlockedModel();
-    localStorage.setItem("vibyra.desktop.chatModel", selectedChatModel);
   }
   const attachments = [...chatAttachments];
   const imageAttachments = [...chatImageAttachments];
@@ -120,12 +103,13 @@ async function sendChat() {
       desktopActionContext: desktopActionContextForScope(actionContextScope),
       history,
       imageAttachments,
-      model: selectedChatModel,
+      model: requestModel,
       mode,
       projectId: project?.id || String(selectedProjectId || ""),
       profileContext: typeof desktopProfileContext === "function" ? desktopProfileContext() : null,
       prompt,
-      reasoningEffort,
+      provider: "local",
+      reasoningEffort: requestEffort,
       skill: skillId,
       tool
     });
@@ -199,7 +183,7 @@ function humanChatLimitMessage(message) {
 }
 function chatHelpText() {
   return [
-    "Commands: /help, /clear, /new, /open, /phone, /voice, /memory.",
+    "Commands: /help, /clear, /new, /open.",
     "Skills: /plan, /debug, /review, /explain, /fix, /refactor.",
     "Ask Vibyra to launch AI terminals with a count, model, effort, and explicit permissions."
   ].join("\n");

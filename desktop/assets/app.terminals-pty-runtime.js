@@ -149,6 +149,10 @@ const terminalXtermObservedNodes = new WeakSet();
 const terminalXtermPendingResizeNodes = new Set();
 const terminalXtermSettledFits = new Map();
 const terminalXtermLayoutSettleDelay = 120;
+const terminalXtermScheduledFits = new Map();
+const terminalXtermThemeKeys = {};
+let terminalPtyRenderBatchTimer = 0;
+const terminalPtyRenderDirtyIds = new Set();
 
 function queueStartPtyTerminal(terminal) {
   if (!terminal || terminal.ptyStartQueued) return;
@@ -156,7 +160,7 @@ function queueStartPtyTerminal(terminal) {
   const launch = () => {
     if (!findTerminal(terminal.id)) return;
     try {
-      mountVisibleXterms();
+      mountVisibleXterms(new Set([terminal.id]));
     } catch (error) {
       console.error("Could not mount xterm before terminal launch.", error);
     }
@@ -168,7 +172,7 @@ function queueStartPtyTerminal(terminal) {
   schedule(() => schedule(() => {
     if (!findTerminal(terminal.id)) return;
     try {
-      mountVisibleXterms();
+      mountVisibleXterms(new Set([terminal.id]));
     } catch (error) {
       console.error("Could not mount xterm before terminal launch.", error);
     }
@@ -185,7 +189,7 @@ function connectPtyTerminal(terminal) {
     clearTimeout(terminalPtyReconnectTimers[terminal.id]);
     delete terminalPtyReconnectTimers[terminal.id];
     terminalPtyReconnectAttempts[terminal.id] = 0;
-    mountVisibleXterms();
+    mountVisibleXterms(new Set([terminal.id]));
     schedulePtyXtermFit(terminal.id, { forceBackend: true });
     schedulePtyCollectionSync(250);
   };
@@ -230,7 +234,7 @@ function handlePtySocketMessage(id, raw) {
     const patch = ptySessionPatch(payload.session);
     patch.output = mergePtySnapshotOutput(localOutput, patch.output);
     Object.assign(terminal, patch);
-    mountVisibleXterms();
+    mountVisibleXterms(new Set([terminal.id]));
     syncPtyXtermOutput(terminal);
     shouldRender = true;
   } else if (payload.type === "output") {
@@ -362,7 +366,7 @@ function bindPtyTopbarControls() {
     newTerminalMenuOpen = false;
     terminalProjectMenuTarget = "";
     settingsTerminalId = "";
-    renderTopbar();
+    render();
   });
   bindPtyClick(document.getElementById("toggle-terminal-layout"), () => {
     terminalToolbarMenuOpen = false;
@@ -386,6 +390,7 @@ function bindPtyTopbarControls() {
   }));
   if (typeof bindTerminalFullscreenControls === "function") bindTerminalFullscreenControls(document);
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(document);
+  if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(nodes.content);
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   if (typeof bindTerminalRuntimeControls === "function") bindTerminalRuntimeControls(document);
   if (typeof bindTerminalProjectWorkspaceControls === "function") bindTerminalProjectWorkspaceControls(document);
@@ -514,7 +519,7 @@ function markTerminalProviderBusy(terminal) {
   terminal.providerBusy = true;
   terminal.providerBusyObserved = false;
   terminal.updatedAt = Date.now();
-  if (changed && activePage === "dashboard") renderDashboard();
+  if (changed && activePage === "terminals") refreshPtyTerminalsDom();
 }
 
 function applyTerminalProviderActivity(terminal, data) {
@@ -581,14 +586,17 @@ function terminalPlainActivityOutput(value) {
     .replace(/\u00a0/g, " ");
 }
 
-function mountVisibleXterms() {
+function mountVisibleXterms(ids = null) {
   if (preservingPtyXtermElements) return;
   ensureTerminalXtermResizeObserver();
-  document.querySelectorAll("[data-terminal-xterm]").forEach((node) => {
+  const nodesToMount = ids
+    ? Array.from(ids, (id) => document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`)).filter(Boolean)
+    : Array.from(document.querySelectorAll("[data-terminal-xterm]"));
+  nodesToMount.forEach((node) => {
     const id = node.dataset.terminalXterm || "";
     const terminal = findTerminal(id);
     if (!terminal || terminal.ptyStatus === "unavailable") return;
-    if (node.closest(".terminal-focus-hidden")) return;
+    if (!terminalXtermNodeIsVisible(node)) return;
     if (!window.Terminal) {
       node.textContent = plainTerminalOutput(terminal.output || "Terminal renderer failed to load.");
       return;
@@ -612,6 +620,7 @@ function mountVisibleXterms() {
         theme: terminalXtermTheme(node)
       });
       terminalXterms[id] = xterm;
+      terminalXtermThemeKeys[id] = terminalXtermThemeKey(node);
       if (typeof attachTerminalEditorLinkProvider === "function") {
         attachTerminalEditorLinkProvider(id, xterm);
       }
@@ -623,7 +632,7 @@ function mountVisibleXterms() {
         }
       });
     } else {
-      xterm.options.theme = terminalXtermTheme(node);
+      applyPtyXtermThemeIfChanged(id, xterm, node);
       xterm.options.screenReaderMode = true;
     }
     if (typeof attachTerminalEditorLinkProvider === "function") {
@@ -640,6 +649,14 @@ function mountVisibleXterms() {
     fitPtyXterm(id, node, terminal);
     schedulePtyXtermFit(id);
   });
+}
+
+function terminalXtermNodeIsVisible(node) {
+  if (!node?.isConnected) return false;
+  if (node.closest(".terminal-focus-hidden, .terminal-project-hidden, .terminal-fullscreen-hidden, .terminal-minimized, .terminal-maximized-hidden")) return false;
+  const article = node.closest("[data-terminal]");
+  if (article?.getAttribute("aria-hidden") === "true") return false;
+  return true;
 }
 
 function mergePtySnapshotOutput(localOutput, remoteOutput) {
@@ -708,7 +725,7 @@ function focusPtyTerminal(id) {
 function fitPtyXterm(id, node, terminal = findTerminal(id), options = {}) {
   const xterm = terminalXterms[id];
   if (!xterm || !node?.isConnected) return;
-  if (node.closest(".terminal-focus-hidden, .terminal-minimized, .terminal-maximized-hidden")) return;
+  if (!terminalXtermNodeIsVisible(node)) return;
   if (document.visibilityState === "hidden") return;
   const rect = node.getBoundingClientRect();
   if (rect.width < 80 || rect.height < 48) return;
@@ -739,13 +756,30 @@ function fitPtyXterm(id, node, terminal = findTerminal(id), options = {}) {
 }
 
 function schedulePtyXtermFit(id, options = {}) {
-  const run = () => {
-    const node = document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`);
-    if (node?.isConnected) fitPtyXterm(id, node, findTerminal(id), options);
-  };
+  if (!id) return;
+  const pending = terminalXtermScheduledFits.get(id) || { timer: 0, forceBackend: false, frame: 0 };
+  pending.forceBackend = pending.forceBackend || Boolean(options.forceBackend);
+  clearTimeout(pending.timer);
+  pending.timer = setTimeout(() => runScheduledPtyXtermFit(id), 180);
+  if (pending.frame) {
+    terminalXtermScheduledFits.set(id, pending);
+    return;
+  }
   const schedule = window.requestAnimationFrame || ((callback) => setTimeout(callback, 16));
-  schedule(() => schedule(run));
-  setTimeout(run, 180);
+  pending.frame = schedule(() => {
+    const current = terminalXtermScheduledFits.get(id);
+    if (current) current.frame = schedule(() => runScheduledPtyXtermFit(id));
+  });
+  terminalXtermScheduledFits.set(id, pending);
+}
+
+function runScheduledPtyXtermFit(id) {
+  const pending = terminalXtermScheduledFits.get(id);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  terminalXtermScheduledFits.delete(id);
+  const node = document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`);
+  if (node?.isConnected) fitPtyXterm(id, node, findTerminal(id), { forceBackend: pending.forceBackend });
 }
 
 function scheduleSettledPtyXtermFit(id, options = {}) {
@@ -763,10 +797,18 @@ function scheduleSettledPtyXtermFit(id, options = {}) {
 }
 
 function cancelSettledPtyXtermFit(id) {
+  cancelScheduledPtyXtermFit(id);
   const pending = terminalXtermSettledFits.get(id);
   if (!pending) return;
   clearTimeout(pending.timer);
   terminalXtermSettledFits.delete(id);
+}
+
+function cancelScheduledPtyXtermFit(id) {
+  const pending = terminalXtermScheduledFits.get(id);
+  if (!pending) return;
+  clearTimeout(pending.timer);
+  terminalXtermScheduledFits.delete(id);
 }
 
 function ensureTerminalXtermResizeObserver() {
@@ -924,8 +966,9 @@ function sendPtyResize(id, cols, rows) {
 
 function ptyTerminalDomSignature() {
   if (!terminals.length) return "setup";
-  const visibleIds = terminals.map((terminal) => terminal.id);
-  const structural = terminals.map((terminal) => [
+  const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  const visibleIds = visible.map((terminal) => terminal.id);
+  const structural = visible.map((terminal) => [
     terminal.id,
     terminal.ptyStatus === "unavailable" ? "unavailable" : "xterm",
     terminal.notice ? "notice" : ""
@@ -934,10 +977,27 @@ function ptyTerminalDomSignature() {
     layout: terminalLayout,
     fullscreen: typeof fullscreenTerminalId === "string" ? fullscreenTerminalId : "",
     activeProject: typeof activeTerminalProjectKey === "function" ? activeTerminalProjectKey() : "",
+    projectShell: ptyProjectShellSignature(),
     visibleIds,
     structural
   });
 }
+
+function ptyProjectShellSignature() {
+  if (typeof terminalProjectGroups !== "function") return "";
+  return JSON.stringify({
+    groups: terminalProjectGroups().map((group) => ({
+      key: group.key,
+      label: group.label,
+      status: typeof terminalWorkspaceGroupStatus === "function" ? terminalWorkspaceGroupStatus(group).key : "",
+      ids: group.terminals.map((terminal) => terminal.id)
+    })),
+    toolbar: Boolean(terminalToolbarMenuOpen),
+    newMenu: Boolean(newTerminalMenuOpen),
+    projectMenu: terminalProjectMenuTarget || ""
+  });
+}
+
 function patchPtyTerminalStructure() {
   if (!terminals.length) return false;
   const page = nodes.content.querySelector(".terminal-page");
@@ -946,12 +1006,14 @@ function patchPtyTerminalStructure() {
   if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
   const grid = terminalLayout === "grid";
   if (page.classList.contains("grid-mode") !== grid) return false;
+  const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  if (!patchPtyProjectShell(page, visible)) return false;
   syncPtyTerminalGrid(page, grid);
-  const expectedIds = new Set(terminals.map((terminal) => terminal.id));
+  const expectedIds = new Set(visible.map((terminal) => terminal.id));
   stage.querySelectorAll("[data-terminal]").forEach((article) => {
     if (!expectedIds.has(article.dataset.terminal || "")) article.remove();
   });
-  for (const terminal of terminals) {
+  for (const terminal of visible) {
     let article = stage.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
     if (!article) {
       stage.insertAdjacentHTML("beforeend", grid ? terminalTile(terminal) : activeTerminalView(terminal));
@@ -963,6 +1025,19 @@ function patchPtyTerminalStructure() {
   if (!refreshPtyTerminalsDom()) return false;
   return true;
 }
+
+function patchPtyProjectShell(page, visible) {
+  if (typeof terminalProjectTabsHtml !== "function" || typeof terminalAgentSidebarHtml !== "function") return true;
+  const tabs = page.querySelector(".terminal-project-tabs");
+  const sidebar = page.querySelector(".terminal-agent-sidebar");
+  if (!tabs || !sidebar) return false;
+  const nextTabs = terminalProjectTabsHtml();
+  const nextSidebar = terminalAgentSidebarHtml(visible);
+  if (tabs.outerHTML !== nextTabs) tabs.outerHTML = nextTabs;
+  if (sidebar.outerHTML !== nextSidebar) sidebar.outerHTML = nextSidebar;
+  return true;
+}
+
 
 function syncPtyTerminalGrid(page, grid) {
   if (typeof syncTerminalFullscreenState === "function") syncTerminalFullscreenState();
@@ -985,11 +1060,33 @@ function refreshPtyTerminalsDom() {
   const page = nodes.content.querySelector(".terminal-page");
   if (!page) return false;
   if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
-  const visible = terminals;
+  const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
   let stable = true;
   for (const terminal of visible) stable = refreshPtyTerminalDom(terminal) && stable;
   if (stable) stable = refreshPtyTerminalSettingsMenus() && stable;
   if (stable) mountVisibleXterms();
+  return stable;
+}
+
+function refreshDirtyPtyTerminalsDom(ids) {
+  if (!ids?.size || !terminals.length) return refreshPtyTerminalsDom();
+  const page = nodes.content.querySelector(".terminal-page");
+  if (!page) return false;
+  if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
+  const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  const visibleIds = new Set(visible.map((terminal) => terminal.id));
+  if (!patchPtyProjectShell(page, visible)) return false;
+  let stable = true;
+  for (const id of ids) {
+    const terminal = findTerminal(id);
+    if (!terminal) continue;
+    if (visibleIds.has(id)) stable = refreshPtyTerminalDom(terminal) && stable;
+    refreshPtyTopbarTerminalDom(terminal);
+  }
+  if (stable && settingsTerminalId && ids.has(settingsTerminalId)) {
+    stable = refreshPtyTerminalSettingsMenus() && stable;
+  }
+  if (stable) mountVisibleXterms(ids);
   return stable;
 }
 
@@ -1018,12 +1115,7 @@ function refreshPtyTerminalDom(terminal) {
   if (typeof terminalTaskActivityRefresh === "function") terminalTaskActivityRefresh(terminal);
   const unavailable = terminal.ptyStatus === "unavailable";
   if (unavailable !== Boolean(article.querySelector(".terminal-pty-unavailable"))) return false;
-  article.querySelectorAll(".terminal-status").forEach((status) => {
-    const next = terminalStatusState(terminal);
-    status.className = `terminal-status ${next.key}`;
-    status.setAttribute("aria-label", next.label);
-    status.setAttribute("title", next.label);
-  });
+  refreshPtyStatusElements(article, terminal);
   const active = terminal.id === activeTerminalId;
   const projectVisible = typeof terminalProjectGroupKey !== "function"
     || terminalProjectGroupKey(terminal) === activeTerminalProjectKey();
@@ -1051,7 +1143,8 @@ function refreshPtyTerminalDom(terminal) {
   const modelChip = article.querySelector(".terminal-model-chip");
   if (modelChip) {
     const model = terminalModelForDisplay(terminal.model);
-    modelChip.innerHTML = `${modelLogo(model)}${escapeHtml(model.label)}`;
+    const nextModelChip = `${modelLogo(model)}${escapeHtml(model.label)}`;
+    if (modelChip.innerHTML !== nextModelChip) modelChip.innerHTML = nextModelChip;
   }
   const fullscreenButton = article.querySelector(`[data-terminal-fullscreen="${CSS.escape(terminal.id)}"]`);
   if (fullscreenButton) {
@@ -1070,6 +1163,7 @@ function refreshPtyTerminalDom(terminal) {
 
 function refreshPtyTerminalSettingsMenus() {
   if (!nodes.content.querySelector(".terminal-page")) return false;
+  if (!settingsTerminalId && !document.querySelector(".terminal-settings-menu")) return true;
   let stable = true;
   document.querySelectorAll(".terminal-settings-menu").forEach((menu) => menu.remove());
   for (const terminal of terminals) {
@@ -1095,6 +1189,55 @@ function refreshPtyTerminalSettingsMenus() {
   if (typeof bindTerminalTokenControls === "function") bindTerminalTokenControls(document);
   if (typeof bindTerminalRenameControls === "function") bindTerminalRenameControls(document);
   return stable;
+}
+
+function refreshPtyStatusElements(root, terminal) {
+  if (!root || !terminal) return;
+  const next = terminalStatusState(terminal);
+  root.querySelectorAll(".terminal-status").forEach((status) => {
+    status.className = `terminal-status ${next.key}`;
+    status.setAttribute("aria-label", next.label);
+    status.setAttribute("title", next.label);
+  });
+}
+
+function refreshPtyTopbarTerminalDom(terminal) {
+  if (!terminal?.id) return;
+  const tab = document.querySelector(`.terminal-tab[data-terminal-drag="${CSS.escape(terminal.id)}"]`);
+  const active = terminal.id === activeTerminalId;
+  const label = terminalTabAgentLabel(terminal, terminals.indexOf(terminal));
+  const title = `${label}, ${terminalAgentDisplayName(terminal)}`;
+  if (tab) {
+    tab.classList.toggle("active", active);
+    if (tab.getAttribute("title") !== title) tab.setAttribute("title", title);
+    const open = tab.querySelector(`[data-terminal-focus="${CSS.escape(terminal.id)}"]`);
+    if (open) {
+      open.setAttribute("aria-selected", String(active));
+      open.setAttribute("aria-label", `Open ${label}. Alt plus left or right arrow reorders this tab.`);
+      const text = open.querySelector("span:not(.terminal-status)");
+      if (text && text.textContent !== label) text.textContent = label;
+    }
+    const close = tab.querySelector(`[data-terminal-close="${CSS.escape(terminal.id)}"]`);
+    if (close) close.setAttribute("aria-label", `Close ${label}`);
+    refreshPtyStatusElements(tab, terminal);
+  }
+  const row = document.querySelector(`.terminal-agent-nav-item[data-terminal-drag="${CSS.escape(terminal.id)}"]`);
+  if (!row) return;
+  row.classList.toggle("active", active);
+  if (row.getAttribute("title") !== title) row.setAttribute("title", title);
+  const open = row.querySelector(`[data-terminal-focus="${CSS.escape(terminal.id)}"]`);
+  if (open) {
+    open.setAttribute("aria-selected", String(active));
+    open.setAttribute("aria-label", `Open ${label}`);
+    const strong = open.querySelector("strong");
+    const small = open.querySelector("small");
+    const agent = terminalAgentDisplayName(terminal);
+    if (strong && strong.textContent !== label) strong.textContent = label;
+    if (small && small.textContent !== agent) small.textContent = agent;
+  }
+  const close = row.querySelector(`[data-terminal-close="${CSS.escape(terminal.id)}"]`);
+  if (close) close.setAttribute("aria-label", `Close ${label}`);
+  refreshPtyStatusElements(row, terminal);
 }
 
 function terminalXtermTheme(node) {
@@ -1126,12 +1269,32 @@ function terminalXtermTheme(node) {
   };
 }
 
+function terminalXtermThemeKey(node) {
+  const scope = node.closest(".terminal-focus, .terminal-tile, .terminal-page") || document.body;
+  return [
+    document.body?.dataset?.desktopTheme || "",
+    scope.className || "",
+    scope.getAttribute?.("style") || ""
+  ].join("|");
+}
+
+function applyPtyXtermThemeIfChanged(id, xterm, node) {
+  const key = terminalXtermThemeKey(node);
+  if (terminalXtermThemeKeys[id] === key) return;
+  xterm.options.theme = terminalXtermTheme(node);
+  terminalXtermThemeKeys[id] = key;
+}
+
 function applyTerminalXtermThemes() {
-  Object.values(terminalXterms).forEach((xterm) => {
+  Object.entries(terminalXterms).forEach(([id, xterm]) => {
     const node = xterm?.element?.parentElement;
-    if (!node?.isConnected) return;
+    if (!terminalXtermNodeIsVisible(node)) {
+      delete terminalXtermThemeKeys[id];
+      return;
+    }
     try {
       xterm.options.theme = terminalXtermTheme(node);
+      terminalXtermThemeKeys[id] = terminalXtermThemeKey(node);
       xterm.refresh?.(0, Math.max(0, (xterm.rows || 1) - 1));
     } catch {}
   });
@@ -1158,12 +1321,21 @@ function ensureTerminalThemeObserver() {
 ensureTerminalThemeObserver();
 
 function schedulePtyRender(id) {
-  clearTimeout(terminalPtyRenderTimers[id]);
-  terminalPtyRenderTimers[id] = setTimeout(() => {
+  if (id) {
+    terminalPtyRenderDirtyIds.add(id);
+    clearTimeout(terminalPtyRenderTimers[id]);
+    delete terminalPtyRenderTimers[id];
+  }
+  clearTimeout(terminalPtyRenderBatchTimer);
+  terminalPtyRenderBatchTimer = setTimeout(() => {
+    const dirtyIds = new Set(terminalPtyRenderDirtyIds);
+    terminalPtyRenderDirtyIds.clear();
     saveTerminals();
     if (activePage === "terminals") {
-      renderTopbar();
-      if (!refreshPtyTerminalsDom()) render();
+      if (!refreshDirtyPtyTerminalsDom(dirtyIds)) {
+        renderTopbar();
+        render();
+      }
     }
   }, 120);
 }
@@ -1409,6 +1581,7 @@ function removeLocalPtyTerminal(terminal) {
   delete terminalXtermSizes[id];
   delete terminalXtermSnapshots[id];
   delete terminalXtermReplayWrites[id];
+  delete terminalXtermThemeKeys[id];
 }
 
 function markPtySyncError(error) {
@@ -1423,10 +1596,6 @@ function markPtySyncError(error) {
 }
 
 function finishPtySyncRender() {
-  if (activePage === "dashboard") {
-    renderDashboard();
-    return;
-  }
   if (activePage !== "terminals") return;
   renderNav();
   renderTopbar();

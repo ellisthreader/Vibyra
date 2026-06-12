@@ -23,8 +23,8 @@ function scheduleTerminalLayoutSync() {
 }
 
 function ensureActiveTerminalTabVisible() {
-  const list = document.querySelector(".terminal-tab-list");
-  const active = list?.querySelector(".terminal-tab.active");
+  const list = document.querySelector(".terminal-agent-list, .terminal-tab-list");
+  const active = list?.querySelector(".terminal-agent-nav-item.active, .terminal-tab.active");
   if (!list || !active) return;
   const left = active.offsetLeft;
   const right = left + active.offsetWidth;

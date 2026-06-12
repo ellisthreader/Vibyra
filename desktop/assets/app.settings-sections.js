@@ -57,6 +57,10 @@ function settingsAppSection() {
   const prefs = desktopPreferences();
   return `${settingsHeader("App", "Adjust this desktop without changing your account on other devices.")}
     ${renderAppearancePanel(prefs.appearance)}
+    <section class="profile-choice-list profile-settings-list"><h2>Language</h2>
+      <p class="profile-section-copy">Used for Vibyra responses and accessibility language on this desktop.</p>
+      ${profileSelectRow("App language", "language", profileLanguageOptions, prefs.language)}
+    </section>
     ${profileScreenshotSettingsPanel()}
     <section class="profile-choice-list profile-settings-list"><h2>Chat</h2>
       ${profileSelectRow("Chat font", "chatFont", profileChatFontOptions, prefs.chatFont)}

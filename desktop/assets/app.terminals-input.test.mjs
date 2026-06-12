@@ -260,7 +260,7 @@ test("terminal launch mounts xterm after synchronous render without waiting for 
   frames.shift()();
   assert.equal(starts, 1);
   assert.equal(mounts, 2);
-  assert.match(queueStart, /try\s*\{\s*mountVisibleXterms\(\)/);
+  assert.match(queueStart, /try\s*\{\s*mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
   assert.match(queueStart, /void startPtyTerminal\(terminal\)/);
   assert.match(source, /signal:\s*controller\.signal/);
   assert.match(source, /Terminal startup timed out/);

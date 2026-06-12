@@ -170,6 +170,12 @@ test("preview keeps one frame, one compact toolbar, and no extra dashboard chrom
   assert.match(styles, /\.terminal-test-footer/);
 });
 
+test("preview clearly states when no project is open", () => {
+  assert.match(targetsSource, /No projects are currently open/);
+  assert.match(targetsSource, /Open a project in a terminal to preview it here\./);
+  assert.match(targetsSource, /const noProjectOpen = !terminalTestProjectId/);
+});
+
 test("right-click element editing resolves source and reuses the project terminal", () => {
   assert.match(viewSource, /data-terminal-test-inspector/);
   assert.match(inspectorSource, /vibyra-preview-inspector/);
@@ -243,11 +249,11 @@ test("owned preview assets retain load order and concurrent cache busts", () => 
     "app.terminals-test-state.js",
     "app.terminals-test-context.js",
     "app.terminals-test-viewports.js",
-    "app.terminals-test-targets.js",
     "app.terminals-test.js"
   ]) {
     assert.match(appSource, new RegExp(`${asset.replaceAll(".", "\\.")}\\?v=terminal-preview-target-viewports-20260610`));
   }
+  assert.match(appSource, /app\.terminals-test-targets\.js\?v=preview-empty-state-20260612/);
   assert.match(appSource, /app\.terminals-test-launch\.js\?v=terminal-preview-stale-guard-20260610/);
   assert.match(appSource, /app\.terminals-test-inspector\.js\?v=preview-element-pinpoint-20260611/);
   assert.match(appSource, /app\.terminals-test-inspector-data\.js\?v=preview-element-pinpoint-20260611/);

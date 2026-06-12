@@ -1,7 +1,6 @@
 import { desktopAppApiUrl } from "./appApiConfig.mjs";
 import { appState } from "./state.mjs";
 import { clearDesktopAccount, syncDesktopAccountFromUser } from "./desktopAccount.mjs";
-import { sendOpenAiProviderChat } from "./openAiProviderChat.mjs";
 import { discoverProjects, projectById, terminalProjectById } from "./projects.mjs";
 import { promptProjectContext, promptProjectFilePaths } from "./projectContext.mjs";
 import { desktopMemoryContext } from "./desktopProjectMemory.mjs";
@@ -15,6 +14,7 @@ const MAX_PROMPT_CHARS = 8000;
 const MAX_HISTORY_ITEMS = 4;
 const MAX_HISTORY_CHARS = 1200;
 const DESKTOP_SKILLS = new Set(["plan", "debug", "review", "explain", "fix", "refactor"]);
+const DESKTOP_LANGUAGES = new Set(["English", "Español", "Français", "Deutsch", "Português", "日本語", "中文"]);
 
 export async function sendDesktopChat(body, fetchImpl = fetch) {
   const prompt = String(body?.prompt || "").trim();
@@ -75,7 +75,9 @@ export async function sendDesktopChat(body, fetchImpl = fetch) {
   }
 
   if (normalizeTokenMode(body?.tokenMode) === "provider" && openAiProviderModel(model)) {
-    return correctModelCapabilityReply(await sendOpenAiProviderChat(payload, fetchImpl), prompt);
+    const error = new Error("Personal AI accounts are available in native AI terminals. Vibyra Chat does not request provider API keys.");
+    error.status = 409;
+    throw error;
   }
 
   if (!appState.desktopAccountToken) {
@@ -333,8 +335,11 @@ function normalizeProfileContext(profileContext) {
   const responseStyle = String(profileContext.responseStyle || "").trim().slice(0, 220);
   const work = String(profileContext.work || "").trim().slice(0, 120);
   const customInstructions = String(profileContext.customInstructions || "").trim().slice(0, 1200);
+  const requestedLanguage = String(profileContext.language || "").trim();
+  const language = DESKTOP_LANGUAGES.has(requestedLanguage) ? requestedLanguage : "";
   return [
     callName ? `Call the user: ${callName}` : "",
+    language ? `Preferred response language: ${language}. Reply in this language unless the user explicitly asks for another language.` : "",
     responseStyle ? `Preferred response style: ${responseStyle}` : "",
     work ? `User work: ${work}` : "",
     customInstructions ? `User instructions: ${customInstructions}` : ""

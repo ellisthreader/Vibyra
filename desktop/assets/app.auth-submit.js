@@ -38,12 +38,12 @@ async function completeDesktopAuth(token, user, isNewUser = false) {
   if (!token || !user?.id) throw new Error("Vibyra did not return a valid account session.");
   const syncedUser = await syncDesktopSession(token);
   const account = syncedUser || user;
-  localStorage.setItem("vibyra.desktop.page", "dashboard");
+  localStorage.setItem("vibyra.desktop.page", "terminals");
   storeDesktopAuthSession(token, account);
   if (isNewUser) sessionStorage.setItem("vibyra.desktop.firstWelcomeUserId", String(account.id));
   else sessionStorage.removeItem("vibyra.desktop.firstWelcomeUserId");
   if (typeof resetProfileSessions === "function") resetProfileSessions();
-  if (typeof activePage !== "undefined") activePage = "dashboard";
+  if (typeof activePage !== "undefined") activePage = "terminals";
   document.body.classList.add("desktop-authenticated");
   clearAuthError();
   if (typeof render === "function") render();

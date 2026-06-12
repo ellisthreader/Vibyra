@@ -13,7 +13,8 @@ test("terminal worker keeps synchronous filesystem writes off echoed keystrokes"
   assert.match(handleOutput, /queueOutputWrite\(value\)/);
   assert.match(handleOutput, /scheduleStateWrite\(\)/);
   assert.doesNotMatch(handleOutput, /appendFileSync|writeFileSync|statSync/);
-  assert.match(source, /setTimeout\(flushOutputWrites,\s*24\)/);
+  assert.match(source, /OUTPUT_FLUSH_DELAY_MS = 96/);
+  assert.match(source, /setTimeout\(flushOutputWrites,\s*OUTPUT_FLUSH_DELAY_MS\)/);
 });
 
 test("detached workers renew scoped gateway tokens while the terminal is alive", () => {

@@ -1,14 +1,12 @@
 const emptyState = { appApiUrl: "", machineName: "Vibyra Desktop", pairCode: "------", pairedDevice: null, pendingPair: null, latestPreview: null, events: [], projects: [], connectionUrls: [] };
 const pages = [
-  { key: "dashboard", label: "Home", icon: "home" },
-  { key: "chat", label: "Chat", icon: "chat" },
   { key: "terminals", label: "Terminals", icon: "terminal" },
   { key: "projects", label: "Projects", icon: "folder" }
 ];
 const suggestions = [
   { title: "Launch terminals", description: "Open live AI workspaces", icon: "terminal", prompt: "Open 4 terminals with Codex 5.5 fast." },
-  { title: "Vibyra Voice", description: "Open voice control", icon: "pulse", prompt: "/voice" },
-  { title: "Project Memory", description: "View saved context", icon: "archive", prompt: "/memory" },
+  { title: "Review a project", description: "Find the most useful next step", icon: "search", prompt: "Review this project and recommend the most useful next step." },
+  { title: "Explain the code", description: "Understand an unfamiliar area", icon: "document", prompt: "Explain the main architecture and where I should start." },
   { title: "Fix a bug", description: "Find and resolve issues", icon: "tool", prompt: "Find and fix the main bug in this project." }
 ];
 const projectFilterModes = ["All", "Desktop", "Phone"];
@@ -35,9 +33,6 @@ const chatAttachmentPrimaryActions = [
 const chatAttachmentTools = [];
 const chatSlashCommands = [
   { id: "open", slash: "/open", icon: "folder", label: "Open folder", description: "Choose desktop project context" },
-  { id: "phone", slash: "/phone", icon: "phone", label: "Phone Preview", description: "Show phone panel" },
-  { id: "voice", slash: "/voice", icon: "pulse", label: "Vibyra Voice", description: "Open voice control" },
-  { id: "memory", slash: "/memory", icon: "archive", label: "Project Memory", description: "Open saved project context" },
   { id: "new", slash: "/new", icon: "edit", label: "New chat", description: "Start fresh" },
   { id: "clear", slash: "/clear", icon: "trash", label: "Clear chat", description: "Remove messages" },
   { id: "help", slash: "/help", icon: "help", label: "Help", description: "List commands" }
@@ -149,7 +144,7 @@ const desktopChatsKey = "vibyra.desktop.recentChats";
 const activeChatKey = "vibyra.desktop.activeChat";
 const railCollapsedKey = "vibyra.desktop.railCollapsed";
 let currentState = emptyState;
-let activePage = pages.some((page) => page.key === storedPage) ? storedPage : "dashboard";
+let activePage = pages.some((page) => page.key === storedPage) ? storedPage : "terminals";
 let projectQuery = "";
 let projectFilter = "All";
 let posting = false;
@@ -185,6 +180,7 @@ let openChatMenu = "";
 let modelMenuGroup = "";
 let topbarChatMenuOpen = false;
 let topbarAccountMenuOpen = false;
+let shellAiOpen = false;
 let selectedProjectId = localStorage.getItem("vibyra.desktop.project") || "";
 let openedPairRequestId = "";
 let tokenModalView = "profile";

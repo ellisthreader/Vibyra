@@ -7,83 +7,55 @@ const state = readFileSync(new URL("./app.state.js", import.meta.url), "utf8");
 const pages = readFileSync(new URL("./app.pages.js", import.meta.url), "utf8");
 const helpers = readFileSync(new URL("./app.render-helpers.js", import.meta.url), "utf8");
 const shell = readFileSync(new URL("./app.shell.js", import.meta.url), "utf8");
-const styles = readFileSync(new URL("./app.home.css", import.meta.url), "utf8");
-const launchStyles = readFileSync(new URL("./app.home-launch.css", import.meta.url), "utf8");
-const contentStyles = readFileSync(new URL("./app.home-content.css", import.meta.url), "utf8");
-const rowStyles = readFileSync(new URL("./app.home-rows.css", import.meta.url), "utf8");
-const ptyRuntime = readFileSync(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
+const icons = readFileSync(new URL("./app.icons.js", import.meta.url), "utf8");
+const authSubmit = readFileSync(new URL("./app.auth-submit.js", import.meta.url), "utf8");
+const authUi = readFileSync(new URL("./app.auth-ui.js", import.meta.url), "utf8");
+const projectRender = readFileSync(new URL("./app.projects-render.js", import.meta.url), "utf8");
 
-test("desktop navigation exposes Home without a Builds destination", () => {
-  assert.match(state, /key: "dashboard", label: "Home", icon: "home"/);
-  assert.doesNotMatch(state, /label: "Builds"/);
+test("desktop shell is terminal-first without a Home destination", () => {
+  assert.doesNotMatch(state, /key: "dashboard"/);
+  assert.doesNotMatch(state, /label: "Home"/);
+  assert.match(state, /key: "terminals", label: "Terminals"/);
+  assert.match(state, /key: "projects", label: "Projects"/);
+  assert.match(state, /let activePage = pages\.some\(\(page\) => page\.key === storedPage\) \? storedPage : "terminals"/);
+  assert.match(shell, /activePage = "terminals"/);
+  assert.doesNotMatch(shell, /renderDashboard\(\)/);
+  assert.doesNotMatch(shell, /content home-content/);
 });
 
-test("Home uses real terminal, phone, and project state", () => {
-  assert.match(pages, /homeTerminalRows\(\)/);
-  assert.match(helpers, /currentState\.pairedDevice/);
-  assert.match(helpers, /typeof terminals === "undefined"/);
-  assert.match(helpers, /currentState\.projects/);
-  assert.match(pages, /workingTerminals.*homeTerminalIsWorking/);
-  assert.match(pages, /working now/);
-  assert.match(helpers, /terminal\.providerState === "busy"/);
-  assert.doesNotMatch(helpers, /terminal\.lastWorkAt/);
-  assert.doesNotMatch(ptyRuntime, /terminal\.lastWorkAt = Date\.now\(\)/);
-  assert.match(ptyRuntime, /terminalProviderActivitySignal/);
-  assert.match(ptyRuntime, /providerBusyObserved/);
-  assert.doesNotMatch(pages, /Builds on this desktop/);
-  assert.doesNotMatch(pages, /Usage this month/);
+test("auth and stale saved routes land on Terminals", () => {
+  assert.match(authSubmit, /localStorage\.setItem\("vibyra\.desktop\.page", "terminals"\)/);
+  assert.match(authSubmit, /activePage = "terminals"/);
+  assert.match(authUi, /\? activePage : "terminals"/);
+  assert.match(helpers, /pageTitle\(page\) \{ return page === "projects" \? "Projects" : page === "terminals" \? "Terminals"/);
 });
 
-test("Home is a borderless editorial surface instead of a card dashboard", () => {
-  assert.match(pages, /desktop-home-hero/);
-  assert.doesNotMatch(pages, /Build what's next\./);
-  assert.doesNotMatch(pages, /desktop-home-hero-brand/);
-  assert.doesNotMatch(pages, /desktop-home-header/);
-  assert.doesNotMatch(pages, /Desktop ready/);
-  assert.match(pages, /id="home-ai-input"/);
-  assert.match(pages, /placeholder="Ask Vibyra anything\.\.\."/);
-  assert.match(pages, /id="home-ai-send"/);
-  assert.match(pages, /setPage\("chat"\);\s+sendChat\(\);/);
-  assert.match(pages, /event\.key !== "Enter" \|\| event\.shiftKey/);
-  assert.match(pages, /desktop-home-context/);
-  assert.match(pages, /homeProjectRow/);
-  assert.match(pages, /desktop-home-recent/);
-  assert.doesNotMatch(pages, /desktop-home-launch/);
-  assert.doesNotMatch(pages, /desktop-home-status/);
-  assert.doesNotMatch(pages, /desktop-home-workbench/);
-  assert.doesNotMatch(pages, /Recent activity/);
-  assert.doesNotMatch(pages, /desktop-home-card/);
-  assert.doesNotMatch(pages, /homePhonePanel/);
-  assert.doesNotMatch(styles, /\.desktop-home-card/);
-  assert.match(launchStyles, /grid-template-columns: repeat\(3/);
-  assert.match(styles, /--home-command-bg: var\(--color-surface\)/);
-  assert.match(launchStyles, /var\(--home-command-bg\)/);
-  assert.match(launchStyles, /border-radius: 9px/);
-  assert.doesNotMatch(launchStyles, /radial-gradient/);
-  assert.doesNotMatch(launchStyles, /translateY/);
-  assert.match(launchStyles, /\.desktop-home-command textarea/);
-  assert.match(launchStyles, /\.desktop-home-command-send/);
+test("rail recent chats are removed from the desktop IA", () => {
+  assert.match(shell, /function renderRecentChats\(\)/);
+  assert.match(shell, /nodes\.railRecents\.hidden = true/);
+  assert.doesNotMatch(shell, /Recent chats/);
+  assert.doesNotMatch(shell, /rail-new-chat/);
+  assert.doesNotMatch(shell, /openRecentChat\(button\.dataset\.chatId\)/);
 });
 
-test("Home welcomes newly created accounts once and returning accounts back", () => {
-  assert.match(pages, /vibyra\.desktop\.firstWelcomeUserId/);
-  assert.match(pages, /Welcome to Vibyra, \$\{firstName\}\./);
-  assert.match(pages, /Welcome back, \$\{firstName\}\./);
+test("Projects open through terminal setup instead of chat", () => {
+  assert.match(projectRender, /data-project-terminal/);
+  assert.doesNotMatch(projectRender, /data-project-chat/);
+  assert.match(pages, /openProjectInTerminalSetup\(button\.dataset\.projectSelect/);
+  assert.match(pages, /openProjectInTerminalSetup\(button\.dataset\.projectTerminal/);
+  assert.match(icons, /function openProjectInTerminalSetup/);
+  assert.match(icons, /setupProjectId = selectedProjectId/);
+  assert.match(icons, /localStorage\.setItem\(setupProjectKey, selectedProjectId\)/);
+  assert.match(icons, /openTerminalBatchSetup\(selectedProjectId, 1\)/);
+  assert.match(icons, /setPage\("terminals"\)/);
 });
 
-test("Home owns scoped late-loaded styles instead of Builds route overrides", () => {
-  assert.match(html, /app\.home\.css/);
-  assert.match(html, /app\.home-launch\.css/);
-  assert.match(html, /app\.home-content\.css/);
-  assert.match(html, /app\.home-rows\.css/);
-  assert.match(html, /app\.home-responsive\.css/);
-  assert.doesNotMatch(html, /app\.builds-screenshot/);
-  assert.match(shell, /desktop-home-active/);
-  assert.match(shell, /content home-content/);
-  assert.match(styles, /\.desktop-home/);
-  assert.match(contentStyles, /\.desktop-home-recent-grid/);
-  assert.match(rowStyles, /\.desktop-home-terminal-row/);
-  assert.match(rowStyles, /desktop-home-working-pulse/);
-  assert.doesNotMatch(styles, /(^|[\s,{])\.home-page([\s,{]|$)/m);
-  assert.doesNotMatch(styles, /body:has/);
+test("Projects phone pairing empty state stays compact", () => {
+  assert.match(projectRender, /Connect iPhone/);
+  assert.match(projectRender, /Pair Vibyra on your iPhone to show mobile projects here\./);
+  assert.doesNotMatch(projectRender, /Connect your iPhone/);
+  assert.doesNotMatch(projectRender, /Open Vibyra on your iPhone/);
+  assert.doesNotMatch(projectRender, /projects-phone-prompt/);
+  assert.doesNotMatch(pages, /projectsPhonePromptHtml/);
+  assert.doesNotMatch(html, /app\.projects-phone\.css/);
 });

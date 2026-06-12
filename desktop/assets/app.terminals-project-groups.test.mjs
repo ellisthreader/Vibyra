@@ -120,13 +120,17 @@ test("rail plus opens a four-terminal batch setup and cancel restores prior stat
   assert.equal(context.setupProjectId, "saas");
 });
 
-test("shell and terminal renderers scope navigation and panes to the active project", () => {
-  assert.match(shellSource, /rail-nav-group--terminals/);
-  assert.match(shellSource, /terminal-rail-heading/);
-  assert.match(shellSource, /terminalRailCreateButtonHtml/);
-  assert.match(shellSource, /terminalRailProjectsHtml/);
+test("terminal renderer scopes project tabs and agent sidebar to the active project", () => {
+  assert.doesNotMatch(shellSource, /rail-nav-group--terminals/);
+  assert.doesNotMatch(shellSource, /terminalRailProjectsHtml/);
   assert.match(renderSource, /terminalBatchSetupOpen \|\| !terminals\.length/);
   assert.match(renderSource, /terminalGridMeta\(projectTerminals\.length\)/);
+  assert.match(renderSource, /terminalProjectTabsHtml/);
+  assert.match(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
+  assert.match(source, /function terminalProjectTabsHtml/);
+  assert.match(source, /function terminalAgentSidebarHtml/);
+  assert.match(source, /terminal-agent-sidebar/);
+  assert.match(source, /terminal-agent-nav-item/);
   assert.match(ptySource, /projectTerminals\.map\(\(terminal, index\)/);
   assert.match(ptySource, /How should your AI agents work\?/);
   assert.match(ptySource, /terminalSetupProgress\("mode"\)/);

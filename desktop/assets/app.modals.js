@@ -53,7 +53,12 @@ function closeTokenModal() {
 function openProfileModal(focus = "profile", opener = document.activeElement) {
   profileSectionSearch = "";
   if (typeof setProfileFocus === "function") setProfileFocus(focus);
-  if (typeof profileActiveSection !== "undefined") profileActiveSection = focus === "app" ? "app" : "profile";
+  if (typeof profileActiveSection !== "undefined") {
+    const sections = typeof profileSections === "function" ? profileSections() : [];
+    profileActiveSection = sections.some((section) => section.key === focus)
+      ? focus
+      : focus === "app" ? "app" : "profile";
+  }
   profileModalOpen = true;
   topbarAccountMenuOpen = false;
   topbarChatMenuOpen = false;

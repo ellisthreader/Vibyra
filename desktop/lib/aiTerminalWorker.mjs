@@ -25,6 +25,7 @@ const clients = new Set();
 const assignmentRecords = new Map();
 const queuedAssignments = [];
 const pendingOutputAssignmentIds = [];
+const OUTPUT_FLUSH_DELAY_MS = 96;
 let outputTail = readOutputFile();
 let pendingOutput = "";
 let outputFlushTimer = null;
@@ -381,7 +382,7 @@ function queueOutputWrite(value) {
     return;
   }
   if (!outputFlushTimer) {
-    outputFlushTimer = setTimeout(flushOutputWrites, 24);
+    outputFlushTimer = setTimeout(flushOutputWrites, OUTPUT_FLUSH_DELAY_MS);
     outputFlushTimer.unref?.();
   }
 }

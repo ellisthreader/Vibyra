@@ -65,6 +65,17 @@ body[data-desktop-theme="dark"] .provider-openai img {
   white-space: nowrap;
 }
 .ai-selector-copy small { font-size: 11px; font-weight: 620; white-space: nowrap; }
+.chat-local-model {
+  align-items: center;
+  color: #9f98ad;
+  display: inline-flex;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  min-height: 30px;
+}
+.chat-local-model .provider-logo { height: 18px; width: 18px; }
+.chat-local-model .provider-logo svg { height: 14px; width: 14px; }
 .ai-picker { gap: 8px; max-height: min(420px, calc(100vh - 180px)); width: 408px; }
 .ai-picker-head {
   align-items: center;

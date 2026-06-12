@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="/desktop/assets/app.settings-layout.css?v=settings-modernization-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.settings-content.css?v=settings-modernization-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.settings-fields.css?v=settings-modernization-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.profile-ai-accounts.css?v=native-ai-accounts-browser-login-20260612" />
     <link rel="stylesheet" href="/desktop/assets/app.profile-voice.css?v=voice-preferences-20260608" />
     <link rel="stylesheet" href="/desktop/assets/app.profile-billing.css?v=period-end-cancellation-20260609" />
     <link rel="stylesheet" href="/desktop/assets/app.profile-billing-plans.css?v=current-plan-surface-20260611" />
@@ -122,7 +123,11 @@
     <link rel="stylesheet" href="/desktop/assets/app.home-rows.css?v=home-editorial-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.home-responsive.css?v=home-ai-composer-20260611" />
     <link rel="stylesheet" href="/desktop/assets/app.chat-polish.css" />
+    <link rel="stylesheet" href="/desktop/assets/app.shell-ai.css?v=shell-ai-sidebar-20260612" />
     <link rel="stylesheet" href="/desktop/assets/app.desktop-theme-audit.css?v=graphite-system-20260611" />
+    <link rel="stylesheet" href="/desktop/assets/app.projects.css?v=projects-empty-gradient-20260612" />
+    <link rel="stylesheet" href="/desktop/assets/app.projects-empty.css?v=projects-empty-gradient-20260612" />
+    <link rel="stylesheet" href="/desktop/assets/app.projects-rows.css?v=projects-empty-gradient-20260612" />
   </head>
   <body>
     <script>
@@ -210,6 +215,7 @@
         <header class="topbar" id="topbar"></header>
         <section id="content" class="content"></section>
       </main>
+      <aside id="shell-ai-panel" class="shell-ai-panel" aria-label="Vibyra AI chat"></aside>
     </div>
     <nav id="mobile-dock" class="mobile-dock" aria-label="Mobile navigation"></nav>
     <div id="pair-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pair-title" aria-hidden="true">
@@ -259,21 +265,24 @@
     <script src="/desktop/assets/app.screenshot-view.js?v=screenshot-editor-20260610"></script>
     <script src="/desktop/assets/app.screenshot-tray.js?v=screenshot-copy-feedback-20260611"></script>
     <script src="/desktop/assets/app.screenshot.js?v=screenshot-editor-20260610"></script>
-    <script src="/desktop/assets/app.profile-state.js?v=period-end-cancellation-20260609"></script>
+    <script src="/desktop/assets/app.profile-state.js?v=desktop-language-20260612"></script>
+    <script src="/desktop/assets/app.profile-ai-accounts.js?v=native-ai-accounts-browser-login-20260612"></script>
     <script src="/desktop/assets/app.settings-actions.js?v=settings-modernization-20260611"></script>
     <script src="/desktop/assets/app.profile-screenshots.js?v=screenshot-directory-20260610"></script>
     <script src="/desktop/assets/app.profile-voice.js?v=voice-preferences-20260608"></script>
     <script src="/desktop/assets/app.profile-billing-cancel.js?v=period-end-cancellation-20260609"></script>
     <script src="/desktop/assets/app.profile-billing.js?v=period-end-cancellation-20260609"></script>
-    <script src="/desktop/assets/app.settings-sections.js?v=settings-modernization-20260611"></script>
+    <script src="/desktop/assets/app.settings-sections.js?v=desktop-language-20260612"></script>
     <script src="/desktop/assets/app.profile-render.js?v=settings-stability-20260611"></script>
-    <script src="/desktop/assets/app.profile-actions.js?v=screenshot-directory-20260610"></script>
+    <script src="/desktop/assets/app.profile-actions.js?v=native-ai-accounts-browser-login-20260612"></script>
     <script src="/desktop/assets/app.profile-performance.js?v=appearance-stability-20260611"></script>
     <script src="/desktop/assets/app.profile-location.js?v=account-location-format-20260609"></script>
     <script src="/desktop/assets/app.profile-sessions.js?v=account-location-format-20260609"></script>
     <script src="/desktop/assets/app.state.js?v=shared-account-api-20260609"></script>
     <script src="/desktop/assets/app.shell.js?v=graphite-shell-controls-phone-20260611"></script>
+    <script src="/desktop/assets/app.projects-render.js?v=projects-pair-iphone-20260612"></script>
     <script src="/desktop/assets/app.pages.js?v=home-ai-composer-20260611"></script>
+    <script src="/desktop/assets/app.shell-ai.js?v=shell-ai-sidebar-20260612"></script>
     <script src="/desktop/assets/app.terminals.js"></script>
     <script src="/desktop/assets/app.terminals-state.js?v=vibyra-billing-boundary-20260611"></script>
     <script src="/desktop/assets/app.terminals-window.js?v=terminal-window-controls-20260609"></script>
@@ -336,7 +345,7 @@
     <script src="/desktop/assets/app.terminals-test-device-runtime.js?v=terminal-test-devices-20260609"></script>
     <script src="/desktop/assets/app.terminals-test-detection.js?v=terminal-test-auto-20260609"></script>
     <script src="/desktop/assets/app.terminals-test-viewports.js?v=terminal-preview-target-viewports-20260610"></script>
-    <script src="/desktop/assets/app.terminals-test-targets.js?v=terminal-preview-target-viewports-20260610"></script>
+    <script src="/desktop/assets/app.terminals-test-targets.js?v=preview-empty-state-20260612"></script>
     <script src="/desktop/assets/app.terminals-test-loading.js?v=terminal-preview-services-20260610"></script>
     <script src="/desktop/assets/app.terminals-test-console.js?v=terminal-preview-sidebar-cleanup-20260610"></script>
     <script src="/desktop/assets/app.terminals-test-inspector-data.js?v=preview-element-pinpoint-20260611"></script>

@@ -8,6 +8,7 @@ const nodes = {
   railNav: document.getElementById("rail-nav"),
   railRecents: document.getElementById("rail-recents"),
   railStatus: document.getElementById("rail-status"),
+  shellAiPanel: document.getElementById("shell-ai-panel"),
   tokenBody: document.getElementById("token-modal-body"),
   tokenModal: document.getElementById("token-modal"),
   topbar: document.getElementById("topbar"),
@@ -125,27 +126,23 @@ async function post(path) {
 function render() {
   if (typeof captureTerminalModelScrolls === "function") captureTerminalModelScrolls(document);
   const terminalModelSearch = typeof focusedTerminalModelSearch === "function" ? focusedTerminalModelSearch() : null;
-  if (!pages.some((page) => page.key === activePage)) activePage = "chat";
-  document.body.classList.toggle("desktop-home-active", activePage === "dashboard");
+  if (!pages.some((page) => page.key === activePage)) activePage = "terminals";
+  if (activePage !== "projects") shellAiOpen = false;
+  document.body.classList.remove("desktop-home-active");
   applyRailState();
   renderNav();
   renderRecentChats();
   const terminalNewPickerOpen = activePage === "terminals" && newTerminalMenuOpen && document.querySelector('[data-terminal-model-picker="new"]');
   if (!(activePage === "terminals" && (terminalModelSearch?.target === "new" || terminalNewPickerOpen))) renderTopbar();
-  nodes.content.className = activePage === "chat"
-    ? "content chat-content"
-    : activePage === "terminals"
+  nodes.content.className = activePage === "terminals"
       ? "content terminal-content"
-      : activePage === "dashboard"
-        ? "content home-content"
-        : "content";
-  if (activePage === "chat") renderChat();
+      : "content";
   if (activePage === "terminals") {
     if (typeof renderTerminalsPage === "function") renderTerminalsPage();
     else nodes.content.innerHTML = `<section class="terminal-page"><div class="terminal-empty">Loading terminals...</div></section>`;
   }
   if (activePage === "projects") renderProjects();
-  if (activePage === "dashboard") renderDashboard();
+  if (typeof renderShellAiSidebar === "function") renderShellAiSidebar();
   renderRailStatus();
   if (nodes.pairModal.classList.contains("open")) renderPairModal();
   if (nodes.tokenModal.classList.contains("open") && !(tokenModalView === "plans" && nodes.tokenBody?.querySelector(".token-plan-picker"))) renderTokenModal();
@@ -185,10 +182,7 @@ function renderNav() {
   const visiblePages = pages.filter((page) => !page.hidden);
   const pageButton = (page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`;
   nodes.railNav.innerHTML = visiblePages.map((page) => {
-    if (page.key !== "terminals") return pageButton(page);
-    const projects = typeof terminalRailProjectsHtml === "function" ? terminalRailProjectsHtml() : "";
-    const create = typeof terminalRailCreateButtonHtml === "function" ? terminalRailCreateButtonHtml() : "";
-    return `<div class="rail-nav-group rail-nav-group--terminals"><div class="terminal-rail-heading">${pageButton(page)}${create}</div>${projects}</div>`;
+    return pageButton(page);
   }).join("");
   nodes.mobileDock.innerHTML = visiblePages.map(pageButton).join("");
   document.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
@@ -204,15 +198,11 @@ function renderTopbar() {
   }
   const selected = currentProject();
   const projectCount = filteredProjects().length;
-  if (activePage !== "chat") topbarChatMenuOpen = false;
   const terminalPage = activePage === "terminals";
-  const title = activePage === "chat" ? activeChatTitle() : terminalPage ? "" : pageTitle(activePage);
-  const subtitle = activePage === "chat"
-    ? selected ? chatDirectoryLabel(selected) : ""
-    : activePage === "projects"
+  const title = terminalPage ? "" : pageTitle(activePage);
+  const subtitle = activePage === "projects"
       ? `${projectCount} project${projectCount === 1 ? "" : "s"}`
       : terminalPage ? "" : activePage === "dashboard" ? desktopChromeStatusText() : statusLabel();
-  const showNewChat = activePage === "chat" && !isBlankNewChat();
   const account = currentAccount();
   const avatarUrl = accountImageUrl(account, account);
   const avatarName = account.name || "Vibyra User";
@@ -220,8 +210,9 @@ function renderTopbar() {
   const terminalTopbar = terminalPage && typeof terminalTopbarHtml === "function" ? terminalTopbarHtml() : "";
   const center = `<div class="top-title ${terminalPage ? "terminal-top-title" : ""}">${terminalPage ? terminalTopbar : `<h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p>`}</div>`;
   const terminalAiAction = terminalPage && typeof terminalAiTopbarButtonHtml === "function" ? terminalAiTopbarButtonHtml() : "";
+  const shellAiAction = !terminalPage && typeof shellAiTopbarButtonHtml === "function" ? shellAiTopbarButtonHtml() : "";
   const accountAction = `<div class="topbar-menu-wrap topbar-menu-wrap--account"><button class="token-pill account-avatar-button" id="open-account-menu" type="button" aria-haspopup="menu" aria-expanded="${topbarAccountMenuOpen ? "true" : "false"}" aria-label="Account menu" title="Account menu"><span class="topbar-avatar">${avatar}</span></button>${topbarAccountMenuOpen ? accountMenu() : ""}</div>`;
-  const actions = `${terminalAiAction}${showNewChat ? `<button class="icon-button new-chat-button" id="clear-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>` : ""}${activePage === "chat" ? `<div class="topbar-menu-wrap"><button class="icon-button chat-actions-button" id="open-chat-actions" type="button" aria-label="Chat actions" title="Chat actions">${icon("menu")}</button>${topbarChatMenuOpen ? chatActionMenu() : ""}</div>` : ""}${accountAction}`;
+  const actions = `${terminalAiAction}${shellAiAction}${accountAction}`;
   nodes.topbar.classList.remove("terminal-preview-topbar");
   if (isElectronShell()) {
     nodes.topbar.innerHTML = "";
@@ -233,19 +224,15 @@ function renderTopbar() {
     if (nodes.chromeActions) nodes.chromeActions.innerHTML = "";
     nodes.topbar.innerHTML = `<div></div>${center}<div class="top-actions">${actions}</div>`;
   }
-  document.getElementById("clear-chat")?.addEventListener("click", startNewChat);
+  document.getElementById("open-shell-ai")?.addEventListener("click", toggleShellAiSidebar);
   document.getElementById("open-account-menu")?.addEventListener("click", (event) => { event.stopPropagation(); topbarAccountMenuOpen = !topbarAccountMenuOpen; topbarChatMenuOpen = false; renderTopbar(); });
   document.querySelectorAll("[data-account-action]").forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); handleAccountAction(button.dataset.accountAction); }));
-  document.getElementById("open-chat-actions")?.addEventListener("click", (event) => { event.stopPropagation(); topbarChatMenuOpen = !topbarChatMenuOpen; topbarAccountMenuOpen = false; renderTopbar(); });
-  document.querySelectorAll("[data-chat-action]").forEach((button) => button.addEventListener("click", () => handleChatAction(button.dataset.chatAction)));
   if (terminalPage && typeof bindPtyTopbarControls === "function") bindPtyTopbarControls();
 }
 function renderRecentChats() {
   if (!nodes.railRecents) return;
-  const rows = recentChats.filter((chat) => !chat.archived).slice(0, 5);
-  nodes.railRecents.innerHTML = `<div class="rail-section-head"><span>Recent chats</span>${isBlankNewChat() ? "" : `<button id="rail-new-chat" type="button" aria-label="New chat" title="New chat">${icon("plus")}</button>`}</div><div class="rail-chat-list">${rows.length ? rows.map((chat) => `<button class="rail-chat ${activeChatId === chat.id ? "active" : ""}" type="button" data-chat-id="${escapeAttribute(chat.id)}" title="${escapeAttribute(chat.title)}">${icon(chat.pinned ? "pin" : "chat")}<span>${escapeHtml(chat.title)}</span></button>`).join("") : `<p class="rail-empty">No recent chats yet</p>`}</div>`;
-  document.getElementById("rail-new-chat")?.addEventListener("click", startNewChat);
-  document.querySelectorAll("[data-chat-id]").forEach((button) => button.addEventListener("click", () => openRecentChat(button.dataset.chatId)));
+  nodes.railRecents.hidden = true;
+  nodes.railRecents.innerHTML = "";
 }
 function renderRailStatus() {
   const paired = Boolean(currentState.pairedDevice);

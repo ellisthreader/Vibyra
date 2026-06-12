@@ -246,9 +246,12 @@ function filteredTerminalModelGroups(query) {
   const normalized = String(query || "").trim().toLowerCase();
   return terminalModelGroups().map((group) => {
     const groupLabel = terminalProviderGroupLabel(group);
-    const options = normalized
-      ? group.options.filter((model) => [model.label, model.key, model.provider, groupLabel].some((value) => String(value || "").toLowerCase().includes(normalized)))
-      : group.options;
+    const providerModeOnly = setupTokenMode === "provider";
+    const options = group.options.filter((model) => {
+      if (providerModeOnly && !terminalModelSupportsProviderLogin(model)) return false;
+      return !normalized
+        || [model.label, model.key, model.provider, groupLabel].some((value) => String(value || "").toLowerCase().includes(normalized));
+    });
     return { ...group, options };
   }).filter((group) => group.options.length);
 }
@@ -330,7 +333,7 @@ function terminalOwnAccountRoute(model) {
   if (nativeRuntime === "codex") {
     return { available: false, agent: "", label: "", reason: "Your OpenAI account is not ready for this model." };
   }
-  if (nativeAccount && nativeRuntime && nativeAccount.available) {
+  if (nativeAccount && nativeRuntime && nativeAccount.available && nativeAccount.connected) {
     return {
       available: true,
       agent: provider,
@@ -346,6 +349,21 @@ function terminalOwnAccountRoute(model) {
     };
   }
   return { available: false, agent: "", label: "", reason: "This model is only available with Vibyra tokens." };
+}
+function terminalModelSupportsProviderLogin(model) {
+  const runtime = typeof terminalNativeRuntimeForModel === "function"
+    ? terminalNativeRuntimeForModel(model)
+    : terminalProviderLoginRuntimeForModel(model);
+  return ["codex", "claude", "gemini"].includes(runtime);
+}
+function terminalProviderLoginRuntimeForModel(model) {
+  const key = String(model?.modelKey || model?.key || "").trim().toLowerCase();
+  const provider = terminalProviderKeyForModel(model);
+  const modelName = key.includes("/") ? key.split("/", 2)[1] : key;
+  if ((provider === "openai" || !key.includes("/")) && /^(gpt-|codex|o1|o3|o4|chatgpt-)/.test(modelName)) return "codex";
+  if ((provider === "claude" || provider === "anthropic" || !key.includes("/")) && modelName.startsWith("claude-")) return "claude";
+  if ((provider === "gemini" || provider === "google" || !key.includes("/")) && modelName.startsWith("gemini-")) return "gemini";
+  return "";
 }
 function terminalModelAvailableForTokenMode(model, mode) {
   return mode !== "provider" || terminalOwnAccountRoute(model).available;
@@ -365,11 +383,7 @@ function terminalTokenSourcePanel(model, selectedMode, target) {
   const route = terminalOwnAccountRoute(model);
   const issue = terminalTokenSourceIssue(model, mode);
   const notice = providerConnectNotice || issue;
-  return `<div class="terminal-token-source"><p>Pay with</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode === "vibyra" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span><strong>Vibyra tokens</strong><small>Uses your Vibyra credits</small></span></button><button class="${mode === "provider" ? "active" : ""} ${route.available ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider">${icon("lock")}<span><strong>My AI accounts</strong><small>Uses your account and its billing</small></span></button></div>${notice ? `<em class="terminal-provider-notice">${escapeHtml(notice)}</em>` : ""}</div>`;
-}
-
-function openAiConnectForm() {
-  return `<form class="terminal-provider-form" data-provider-connect-form><label><span>API key</span><input name="apiKey" type="password" autocomplete="off" placeholder="sk-..." required /></label><label><span>Organization</span><input name="organization" autocomplete="off" placeholder="optional" /></label><label><span>Project</span><input name="project" autocomplete="off" placeholder="optional" /></label><button type="submit" ${providerConnectPosting ? "disabled" : ""}>${providerConnectPosting ? "Connecting" : "Connect API key"}</button></form>`;
+  return `<div class="terminal-token-source"><p>Pay with</p><div class="terminal-token-row" role="group" aria-label="Token source"><button class="${mode === "vibyra" ? "active" : ""}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="vibyra">${icon("sparkles")}<span><strong>Vibyra tokens</strong><small>Uses your Vibyra credits</small></span></button><button class="${mode === "provider" ? "active" : ""} ${route.available ? "" : "needs-connect"}" type="button" data-terminal-token-target="${escapeAttribute(target)}" data-terminal-token-mode="provider">${icon("lock")}<span><strong>My AI accounts</strong><small>Uses your connected subscription</small></span></button></div>${notice ? `<em class="terminal-provider-notice">${escapeHtml(notice)}</em>` : ""}<button class="terminal-manage-ai-accounts" type="button" data-open-ai-accounts>Manage AI accounts</button></div>`;
 }
 function modelMetaChip(terminal) {
   const model = terminalModelForDisplay(terminal.model);

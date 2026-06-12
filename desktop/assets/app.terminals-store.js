@@ -171,10 +171,5 @@ function terminalTopbarSubtitle() {
 }
 
 function terminalTopbarHtml() {
-  if (!terminals.length) {
-    return typeof terminalCompanionStandaloneToolbarHtml === "function"
-      ? terminalCompanionStandaloneToolbarHtml()
-      : "";
-  }
-  return terminalTabs();
+  return "";
 }

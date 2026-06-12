@@ -479,6 +479,10 @@ terminalTabs = function ptyTerminalTabs() {
   return `<header class="terminal-tabs">${terminalWorkspaceDockIdentityHtml()}<div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New terminal" title="New terminal" ${terminals.length >= maxTerminals ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div><div class="terminal-tab-list" role="tablist" aria-label="AI terminals">${tabs}</div>${terminalWorkspaceQuickActionsHtml()}${companionTools}<div class="terminal-toolbar-wrap"><button class="terminal-layout-button" id="open-terminal-toolbar" type="button" aria-haspopup="menu" aria-expanded="${terminalToolbarMenuOpen ? "true" : "false"}" aria-label="Terminal options" title="Terminal options">${icon("menu")}</button>${menu}</div></header>`;
 };
 
+terminalTopbarHtml = function ptyTerminalTopbarHtml() {
+  return "";
+};
+
 function terminalStatusState(terminal) {
   if (terminal.autoAwaitingTask) return { key: "idle", label: "Auto ready for a task" };
   if (terminal.providerState === "fallback-shell") {
@@ -593,6 +597,7 @@ closeTerminal = async function closePtyTerminal(id) {
   delete terminalXtermSizes[id];
   delete terminalXtermSnapshots[id];
   delete terminalXtermReplayWrites[id];
+  if (typeof terminalXtermThemeKeys === "object") delete terminalXtermThemeKeys[id];
   delete terminalPtySockets[id];
   delete terminalPtyReconnectTimers[id];
   delete terminalPtyReconnectAttempts[id];

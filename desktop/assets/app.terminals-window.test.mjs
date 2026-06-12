@@ -44,10 +44,14 @@ test("terminal window helpers load before terminal creation", () => {
   assert.ok(windowIndex < storeIndex);
 });
 
-test("terminal workspace keeps one dock while project groups live in the left rail", () => {
+test("terminal workspace keeps project tabs above an agent sidebar", () => {
   assert.match(html, /app\.terminals-project-groups/);
-  assert.doesNotMatch(renderSource, /terminalProjectTabs/);
-  assert.match(renderSource, /grid \? terminals\.map\(terminalTile\)/);
+  assert.match(renderSource, /terminalProjectTabsHtml/);
+  assert.match(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
+  assert.match(renderSource, /terminal-primary-shell/);
+  assert.match(renderSource, /terminal-body-shell/);
+  assert.match(renderSource, /terminal-main-shell/);
+  assert.match(renderSource, /grid \? projectTerminals\.map\(terminalTile\)/);
   assert.match(ptySource, /const tabs = projectTerminals\.map/);
 });
 

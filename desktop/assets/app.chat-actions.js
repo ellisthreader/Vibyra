@@ -74,18 +74,7 @@ function attachMenu() {
   return `<div class="composer-menu attach-menu">${primaryRows}${toolRows}${chatAttachments.length || activeChatTool ? `<button class="attach-menu-row attach-clear" type="button" data-attach-kind="clear">${icon("close")}<span><strong>Clear</strong><small>Remove staged context</small></span></button>` : ""}</div>`;
 }
 function aiMenu() {
-  const autoModel = chatModels.find((model) => model.provider === "auto");
-  const groups = chatModelGroups.filter((group) => modelGroupKey(group) !== "auto");
-  const activeGroup = activeModelGroup();
-  const activeKey = modelGroupKey(activeGroup);
-  const modelButton = (model, extraClass = "") => {
-    const locked = modelLocked(model);
-    const selected = currentChatModel().key === model.key;
-    const detail = locked ? `${model.hint || providerGroupLabel({ options: [model] })} · Upgrade` : model.hint || providerGroupLabel({ options: [model] });
-    return `<button class="${extraClass} ${selected ? "active" : ""} ${locked ? "locked" : ""}" type="button" data-model="${escapeAttribute(model.key)}">${providerLogo(model.provider)}<span><strong>${escapeHtml(model.label)}</strong><small>${escapeHtml(detail)}</small></span>${selected ? `<span class="model-selected">${icon("check")}</span>` : locked ? `<em class="lock-tag">${icon("lock")}Upgrade</em>` : model.badge ? `<em>${escapeHtml(model.badge)}</em>` : ""}</button>`;
-  };
-  const effortButtons = chatEfforts.map((effort) => `<button class="${reasoningEffort === effort.value ? "active" : ""}" type="button" data-effort="${escapeAttribute(effort.value)}" title="${escapeAttribute(effort.hint)}"><span>${escapeHtml(effort.label)}</span></button>`).join("");
-  return `<div class="composer-menu model-menu model-picker ai-picker"><header class="ai-picker-head"><div><strong>Choose AI</strong><small>Model and response style</small></div></header>${autoModel ? `<div class="model-picker-current">${modelButton(autoModel, "model-auto-row")}</div>` : ""}<div class="model-provider-tabs" role="tablist" aria-label="Model providers">${groups.map((group) => `<button class="${activeKey === modelGroupKey(group) ? "active" : ""}" type="button" data-model-group="${escapeAttribute(modelGroupKey(group))}" aria-pressed="${activeKey === modelGroupKey(group) ? "true" : "false"}">${providerLogo(modelGroupKey(group))}<span>${escapeHtml(providerGroupLabel(group))}</span></button>`).join("")}</div><section class="model-picker-options" aria-label="${escapeAttribute(providerGroupLabel(activeGroup))} models">${activeGroup.options.map((model) => modelButton(model)).join("")}</section><footer class="ai-effort"><div class="ai-effort-copy"><strong>Response mode</strong><small>${escapeHtml(currentEffort().hint)}</small></div><div class="ai-effort-options" role="group" aria-label="Response mode">${effortButtons}</div></footer></div>`;
+  return "";
 }
 function providerLogo(provider, company = "") {
   const logo = providerLogoSource(provider, company);

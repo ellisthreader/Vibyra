@@ -35,6 +35,14 @@ function bindTerminalControls() {
     teamLaunchButton.innerHTML = `${teamLaunchButton.querySelector("svg")?.outerHTML || icon("arrow")}Plan and start team`;
   }
   bindTerminalClick(root.querySelector("#open-terminal-new"), () => { newTerminalMenuOpen = !newTerminalMenuOpen; if (newTerminalMenuOpen) modelScrollTops.new = 0; else terminalProjectMenuTarget = ""; settingsTerminalId = ""; render(); });
+  bindTerminalClick(root.querySelector("#open-terminal-toolbar"), (event) => {
+    event.stopPropagation();
+    terminalToolbarMenuOpen = !terminalToolbarMenuOpen;
+    newTerminalMenuOpen = false;
+    terminalProjectMenuTarget = "";
+    settingsTerminalId = "";
+    render();
+  });
   bindTerminalClick(root.querySelector("#toggle-terminal-layout"), () => { terminalLayout = terminalLayout === "grid" ? "focus" : "grid"; saveTerminals(); render(); });
   root.querySelector("#start-terminals")?.addEventListener("click", async (event) => {
     if (typeof terminalProjectReadyForSetup === "function" && !terminalProjectReadyForSetup()) return;
@@ -236,6 +244,7 @@ function bindTerminalControls() {
   root.querySelectorAll("[data-terminal-setup-model]").forEach((button) => button.addEventListener("click", () => selectSetupModel(button.dataset.terminalSetupModel || "auto")));
   root.querySelectorAll("[data-terminal-new-model]").forEach((button) => bindTerminalClick(button, () => createTerminalFromModel(button.dataset.terminalNewModel || "auto")));
   root.querySelectorAll("[data-terminal-focus]").forEach((button) => bindTerminalClick(button, () => setActiveTerminal(button.dataset.terminalFocus)));
+  if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(root);
   root.querySelectorAll("[data-terminal-drag]").forEach((tab) => bindTerminalDrag(tab));
   root.querySelectorAll("[data-terminal-settings]").forEach((button) => bindTerminalClick(button, () => toggleTerminalSettings(button.dataset.terminalSettings)));
   if (typeof bindTerminalFullscreenControls === "function") bindTerminalFullscreenControls(root);
@@ -243,6 +252,9 @@ function bindTerminalControls() {
     event.preventDefault();
     event.stopPropagation();
     (typeof requestCloseTerminal === "function" ? requestCloseTerminal : closeTerminal)(button.dataset.terminalClose);
+  }));
+  root.querySelectorAll("[data-terminal-close-all]").forEach((button) => bindTerminalClick(button, () => {
+    if (typeof requestCloseAllPtyTerminals === "function") void requestCloseAllPtyTerminals();
   }));
   bindTerminalNoticeControls(root);
   if (typeof bindTerminalWorkspaceCheckpointLinks === "function") bindTerminalWorkspaceCheckpointLinks(root);
@@ -471,7 +483,7 @@ function bindTerminalDrag(tab) {
     tab.classList.add("drag-over");
   });
   tab.addEventListener("dragleave", () => tab.classList.remove("drag-over"));
-  tab.addEventListener("dragend", () => document.querySelectorAll(".terminal-tab").forEach((item) => item.classList.remove("dragging", "drag-over")));
+  tab.addEventListener("dragend", () => document.querySelectorAll("[data-terminal-drag]").forEach((item) => item.classList.remove("dragging", "drag-over")));
   tab.addEventListener("drop", (event) => {
     event.preventDefault();
     const fromId = event.dataTransfer?.getData("text/plain") || "";
@@ -568,26 +580,11 @@ function bindTerminalTokenControls(root) {
     button.dataset.tokenModeBound = "1";
     button.addEventListener("click", () => setTerminalTokenMode(button.dataset.terminalTokenTarget || "setup", button.dataset.terminalTokenMode));
   });
-  root.querySelectorAll?.("[data-open-provider-connect]").forEach((button) => {
-    if (button.dataset.providerConnectBound) return;
-    button.dataset.providerConnectBound = "1";
+  root.querySelectorAll?.("[data-open-ai-accounts]").forEach((button) => {
+    if (button.dataset.aiAccountsBound) return;
+    button.dataset.aiAccountsBound = "1";
     button.addEventListener("click", () => {
-      providerConnectOpen = !providerConnectOpen;
-      providerConnectNotice = "";
-      render();
-    });
-  });
-  root.querySelectorAll?.("[data-provider-disconnect]").forEach((button) => {
-    if (button.dataset.providerDisconnectBound) return;
-    button.dataset.providerDisconnectBound = "1";
-    button.addEventListener("click", () => disconnectOpenAiProvider());
-  });
-  root.querySelectorAll?.("[data-provider-connect-form]").forEach((form) => {
-    if (form.dataset.providerFormBound) return;
-    form.dataset.providerFormBound = "1";
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      connectOpenAiProvider(form);
+      if (typeof openAiAccountsSettings === "function") openAiAccountsSettings(button);
     });
   });
 }
@@ -600,15 +597,7 @@ function setTerminalTokenMode(target, mode) {
   if (target === "setup") {
     setupTokenMode = typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next;
     if (setupTokenMode !== "vibyra" && typeof terminalModelAvailableForTokenMode === "function" && !terminalModelAvailableForTokenMode(model, setupTokenMode)) {
-      const fallback = typeof terminalFirstModelForTokenMode === "function" ? terminalFirstModelForTokenMode(setupTokenMode) : null;
-      if (fallback) {
-        setupModel = fallback.key;
-        localStorage.setItem(setupModelKey, setupModel);
-        providerConnectNotice = "";
-      } else {
-        providerConnectOpen = setupTokenMode === "provider";
-        providerConnectNotice = "Connect an AI account before using My AI accounts.";
-      }
+      providerConnectNotice = "Connect this provider in Settings before using My AI accounts.";
     } else {
       providerConnectNotice = "";
     }
@@ -619,54 +608,4 @@ function setTerminalTokenMode(target, mode) {
   const terminal = findTerminal(target);
   if (!terminal) return;
   updateTerminal(target, { tokenMode: typeof terminalTokenModeForModel === "function" ? terminalTokenModeForModel(model, next) : next });
-}
-
-async function connectOpenAiProvider(form) {
-  const data = new FormData(form);
-  providerConnectPosting = true;
-  providerConnectNotice = "";
-  render();
-  try {
-    const response = await fetch("/desktop/provider-accounts/openai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        apiKey: data.get("apiKey"),
-        organization: data.get("organization"),
-        project: data.get("project")
-      })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok === false) throw new Error(result.error || "OpenAI API key connection failed.");
-    providerAccounts = result.providers || { ...providerAccounts, openai: result.account };
-    providerConnectOpen = false;
-    providerConnectNotice = "OpenAI API key connected.";
-  } catch (error) {
-    providerConnectNotice = error instanceof Error ? error.message : "OpenAI API key connection failed.";
-  } finally {
-    providerConnectPosting = false;
-    render();
-  }
-}
-
-async function disconnectOpenAiProvider() {
-  providerConnectPosting = true;
-  providerConnectNotice = "";
-  render();
-  try {
-    const response = await fetch("/desktop/provider-accounts/openai/disconnect", { method: "POST" });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result.ok === false) throw new Error(result.error || "OpenAI disconnect failed.");
-    providerAccounts = result.providers || { ...providerAccounts, openai: result.account };
-    setupTokenMode = "vibyra";
-    terminals.forEach((terminal) => {
-      if (terminal.tokenMode === "provider") terminal.tokenMode = "vibyra";
-    });
-    saveTerminals();
-  } catch (error) {
-    providerConnectNotice = error instanceof Error ? error.message : "OpenAI disconnect failed.";
-  } finally {
-    providerConnectPosting = false;
-    render();
-  }
 }

@@ -41,7 +41,12 @@ import { handleDesktopAccountProxy } from "./desktopAccountProxy.mjs";
 import { authorizeDesktopUi } from "./desktopUiAuth.mjs";
 import { headers, readBody, send, sendFile } from "./http.mjs";
 import { openRouterModelPayload } from "./openRouterModels.mjs";
-import { connectOpenAiAccount, disconnectOpenAiAccount, providerAccountsState } from "./providerAccounts.mjs";
+import {
+  cancelProviderAccountConnection,
+  connectProviderAccount,
+  disconnectConnectedProviderAccount,
+  providerAccountsState
+} from "./providerAccounts.mjs";
 import { localAiStatus } from "./localAi.mjs";
 import { pairingQrSvg } from "./pairingQr.mjs";
 import { analyzeDesktopProject, browseDesktopPath, discoverProjects, listDesktopFolders, searchDesktopProjects, selectDesktopProject } from "./projects.mjs";
@@ -317,14 +322,17 @@ export async function handleDesktopRoutes(req, res, url) {
     if (!authorizeDesktopUi(req, res)) return true;
     if (await handleAiTerminalRuntimeRoutes(req, res, url)) return true;
   }
-  if (req.method === "POST" && url.pathname === "/desktop/provider-accounts/openai") {
+  const providerAccountMatch = url.pathname.match(/^\/desktop\/provider-accounts\/([^/]+)\/(login|cancel|disconnect)$/);
+  if (req.method === "POST" && providerAccountMatch) {
     if (!authorizeDesktopUi(req, res)) return true;
-    send(res, 200, { ok: true, account: await connectOpenAiAccount(await readBody(req)), providers: providerAccountsState() });
-    return true;
-  }
-  if (req.method === "POST" && url.pathname === "/desktop/provider-accounts/openai/disconnect") {
-    if (!authorizeDesktopUi(req, res)) return true;
-    send(res, 200, { ok: true, account: disconnectOpenAiAccount(), providers: providerAccountsState() });
+    const provider = decodeURIComponent(providerAccountMatch[1]);
+    const action = providerAccountMatch[2];
+    const account = action === "login"
+      ? connectProviderAccount(provider)
+      : action === "cancel"
+        ? cancelProviderAccountConnection(provider)
+        : disconnectConnectedProviderAccount(provider);
+    send(res, 200, { ok: true, account, providers: providerAccountsState() });
     return true;
   }
   if (url.pathname === "/desktop/pty-terminals" || url.pathname.startsWith("/desktop/pty-terminals/")) {

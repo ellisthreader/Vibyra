@@ -132,6 +132,49 @@ file/shell tools, shared truthful commands, permission modes, cancellation,
 serialized input, and persistent resume. `aiTerminalOpenRouterCli.mjs` must not
 copy a provider's native banners, tips, slash commands, or composer identity.
 
+Provider account readiness has three independent states: CLI installed,
+provider authenticated, and billing usable. Do not mark Claude Code or Gemini
+CLI connected from executable presence alone. The stored OpenAI API key belongs
+to deployment-owned Vibyra features such as voice; it does not authenticate a
+personal Codex terminal, which requires ChatGPT auth in Codex CLI. Settings >
+`AI accounts` owns installation, native provider sign-in, status, cancellation,
+and disconnect for Codex, Claude Code, and Gemini CLI. The bridge exposes
+`GET /desktop/provider-accounts` plus provider-scoped
+`POST .../{login|cancel|disconnect}` routes. Login children strip inherited API
+credentials; Codex uses `codex login`, Claude uses
+`claude auth login --claudeai`, and Gemini uses its official Google OAuth mode.
+Terminal setup keeps the Vibyra-credits versus personal-account choice and
+links to Settings without silently changing the selected model or rewriting
+unrelated terminal billing modes. Start with `providerAccountAuth.mjs`,
+`providerAccountState.mjs`, `providerAccounts.mjs`,
+`app.profile-ai-accounts.js`, and `app.terminals-models.js`.
+Settings > `AI accounts` should show model chips only for models whose
+terminal-native runtime can use that signed-in provider: Codex/OpenAI,
+Claude/Anthropic, and Gemini/Google. When the terminal picker is in `My AI
+accounts` mode, filter the model list to those login-capable families; API-only
+or Vibyra-token-only providers such as DeepSeek, Qwen, Kimi, Mistral, and Grok
+remain hidden there until personal-account support is actually implemented.
+The Settings renderer must normalize legacy provider-account payloads that have
+`connected` but no `status`; otherwise stale bridge state can show `Sign in
+required` beside a `Disconnect` action. Provider-account login/cancel/disconnect
+routes are local desktop routes and must not fall through to the phone bearer
+token path that returns `Missing or invalid desktop token`.
+Provider sign-in must produce a visible user path: the bridge opens the first
+OAuth URL emitted by the official CLI in the system browser, and Settings keeps
+an `Open sign-in page` fallback while the provider is connecting. Do not rely on
+silent background CLI output alone. For Gemini/Google login, Vibyra must write
+both `security.auth.selectedType = "oauth-personal"` and
+`security.auth.useExternal = true` into Gemini `settings.json`; setting only
+`selectedType` can leave the official CLI in an interactive auth prompt without
+surfacing a browser page from the Settings modal.
+Gemini provider-account login must launch the direct Gemini executable with a
+writable stdin, not the Linux `/usr/bin/script` pseudo-terminal wrapper used for
+full PTY terminals. The login flow emits `Opening authentication page in your
+browser. Do you want to continue? [Y/n]:`; the bridge auto-confirms that prompt
+once, which lets the official CLI call `xdg-open`/system browser with the
+Google OAuth URL. Keeping stdin ignored or using the full-TUI wrapper can leave
+Settings stuck with no visible Google sign-in page.
+
 Codex is bundled as an exact app dependency and also supplies Vibyra Agent's
 isolated non-interactive tool engine. Native Claude, Gemini, Qwen, Kimi,
 Mistral, and Grok download actions live directly on their model-picker rows; there is no
@@ -263,6 +306,15 @@ PTY-backed terminals must preserve mounted xterm DOM nodes across
 `/desktop/state` refreshes. Patch status, helper text, active/hidden classes,
 settings menus, terminal add/remove/reorder, and companion panels in place
 instead of forcing a full content `innerHTML` render that disconnects xterm.
+For performance with many open terminals, live PTY output/status updates should
+use dirty-terminal patching in `app.terminals-pty-runtime.js` instead of full
+topbar/page rebuilds; hidden project, focus, and fullscreen panes must not
+mount or fit xterms. Detached worker output persistence is live-streamed to the
+renderer but disk-flushed through a short debounce in `aiTerminalWorker.mjs` to
+avoid per-terminal write churn. Launch, socket-open, and session patch paths
+should mount only the affected terminal, repeated xterm fits should coalesce per
+terminal, and xterm themes should be cache-keyed by the visible theme scope
+instead of recomputed on every mount.
 Only projects that own at least one authoritative terminal appear beneath the
 left-rail `Terminals` item. Recovered terminals keep their project rows across
 app restarts, while removing a project's final terminal removes its row. The

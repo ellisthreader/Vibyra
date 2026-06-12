@@ -183,6 +183,308 @@
   display: none !important;
 }
 
+.terminal-project-tabs {
+  -webkit-app-region: no-drag;
+  align-items: center;
+  background: var(--terminal-rail, #17171b);
+  border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 46px;
+  min-width: 0;
+  padding: 7px 10px;
+}
+
+.terminal-project-tab-list {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.terminal-project-tab-list::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-project-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--terminal-muted, #a9a3b8);
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+  grid-template-columns: 20px minmax(78px, 1fr);
+  height: 32px;
+  max-width: 188px;
+  min-width: 124px;
+  padding: 0 9px;
+  text-align: left;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.terminal-project-tab:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, .045));
+  color: var(--terminal-text, #eeeaf8);
+}
+
+.terminal-project-tab.active {
+  background: color-mix(in srgb, var(--terminal-text, #f1eef8) 7%, transparent);
+  border-color: var(--terminal-border-strong, rgba(151, 161, 190, .22));
+  color: var(--terminal-text, #f1eef8);
+}
+
+.terminal-project-tab-icon {
+  align-items: center;
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  position: relative;
+  width: 20px;
+}
+
+.terminal-project-tab-icon svg {
+  height: 15px;
+  width: 15px;
+}
+
+.terminal-project-tab-icon.is-team {
+  color: color-mix(in srgb, var(--terminal-accent, #8b5cff) 72%, var(--terminal-text, #f1eef8));
+}
+
+.terminal-project-tab-state {
+  background: #6e687a;
+  border: 2px solid var(--terminal-rail, #17171b);
+  border-radius: 50%;
+  bottom: 0;
+  height: 7px;
+  position: absolute;
+  right: 0;
+  width: 7px;
+}
+
+.terminal-project-tab-state.working { background: #55d98b; }
+.terminal-project-tab-state.attention { background: #ffb85c; }
+.terminal-project-tab-state.stopped { background: #ff7088; }
+.terminal-project-tab-state.ready { background: #8b5cff; }
+.terminal-project-tab-state.closed { background: #5f596b; }
+
+.terminal-project-tab-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.terminal-project-tab-copy strong,
+.terminal-project-tab-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-project-tab-copy strong {
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.terminal-project-tab-copy small {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 9px;
+  line-height: 11px;
+}
+
+.terminal-project-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  min-width: 0;
+}
+
+.terminal-primary-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.terminal-body-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.terminal-main-shell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.terminal-page--team .terminal-main-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.terminal-agent-sidebar {
+  background: var(--terminal-rail, #17171b);
+  border-right: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+  padding: 9px 8px;
+}
+
+.terminal-agent-sidebar-head {
+  align-items: center;
+  color: var(--terminal-dim, #918ca1);
+  display: flex;
+  font-size: 10px;
+  font-weight: 760;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 2px 5px 8px;
+  text-transform: uppercase;
+}
+
+.terminal-agent-sidebar-head strong {
+  color: var(--terminal-muted, #a9a3b8);
+  font-size: 10px;
+}
+
+.terminal-agent-list {
+  display: grid;
+  gap: 4px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: color-mix(in srgb, var(--terminal-muted, #a9a3b8) 32%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.terminal-agent-nav-item {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--terminal-muted, #a9a3b8);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  min-height: 42px;
+  min-width: 0;
+  padding: 2px;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+
+.terminal-agent-nav-item:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, .045));
+  color: var(--terminal-text, #eeeaf8);
+}
+
+.terminal-agent-nav-item.active {
+  background: color-mix(in srgb, var(--terminal-text, #f1eef8) 7%, transparent);
+  border-color: var(--terminal-border-strong, rgba(151, 161, 190, .22));
+  color: var(--terminal-text, #f1eef8);
+}
+
+.terminal-agent-nav-item.dragging {
+  opacity: .5;
+}
+
+.terminal-agent-nav-item.drag-over {
+  box-shadow: inset 2px 0 0 var(--terminal-accent, #8b5cff);
+}
+
+.terminal-agent-nav-open,
+.terminal-agent-nav-close {
+  -webkit-app-region: no-drag;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+
+.terminal-agent-nav-open {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 9px minmax(0, 1fr);
+  min-width: 0;
+  padding: 6px 5px;
+  text-align: left;
+}
+
+.terminal-agent-nav-open > span:not(.terminal-status) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.terminal-agent-nav-open strong,
+.terminal-agent-nav-open small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-agent-nav-open strong {
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.terminal-agent-nav-open small {
+  color: var(--terminal-dim, #918ca1);
+  font-size: 10px;
+  line-height: 12px;
+}
+
+.terminal-agent-nav-close {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--terminal-dim, #918ca1);
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  opacity: 0;
+  width: 24px;
+}
+
+.terminal-agent-nav-item:hover .terminal-agent-nav-close,
+.terminal-agent-nav-item.active .terminal-agent-nav-close,
+.terminal-agent-nav-close:focus-visible {
+  opacity: 1;
+}
+
+.terminal-agent-nav-close:hover {
+  background: var(--terminal-hover, rgba(255, 255, 255, .05));
+  color: var(--terminal-danger, #ff9aad);
+}
+
+.terminal-agent-nav-close svg {
+  height: 13px;
+  width: 13px;
+}
+
+.terminal-agent-empty {
+  align-items: center;
+  color: var(--terminal-dim, #918ca1);
+  display: grid;
+  font-size: 11px;
+  gap: 8px;
+  justify-items: center;
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.terminal-agent-empty svg {
+  height: 18px;
+  width: 18px;
+}
+
 .app.rail-collapsed .terminal-rail-projects {
   display: none;
 }
@@ -220,11 +522,71 @@
   .terminal-rail-projects {
     display: none;
   }
+
+  .terminal-body-shell {
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+
+  .terminal-project-tab {
+    min-width: 112px;
+  }
+}
+
+@media (max-width: 760px) {
+  .terminal-project-tabs {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .terminal-project-actions {
+    justify-content: space-between;
+  }
+
+  .terminal-body-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .terminal-agent-sidebar {
+    border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
+    border-right: 0;
+    grid-template-rows: none;
+    padding: 6px 8px;
+  }
+
+  .terminal-agent-sidebar-head {
+    display: none;
+  }
+
+  .terminal-agent-list {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .terminal-agent-nav-item {
+    flex: 0 0 152px;
+  }
+}
+
+@media (max-width: 560px) {
+  .terminal-project-tab {
+    grid-template-columns: 18px minmax(70px, 1fr);
+    min-width: 104px;
+  }
+
+  .terminal-project-tab-copy small,
+  .terminal-companion-launcher span {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .terminal-rail-project,
-  .terminal-rail-create {
+  .terminal-rail-create,
+  .terminal-project-tab,
+  .terminal-agent-nav-item {
     transition: none;
   }
 }

@@ -1,7 +1,7 @@
 function initDesktopAuth() {
   const session = desktopAuthSession();
   if (session?.token && session.user) {
-    const restoredPage = typeof activePage !== "undefined" && pages.some((page) => page.key === activePage) ? activePage : "dashboard";
+    const restoredPage = typeof activePage !== "undefined" && pages.some((page) => page.key === activePage) ? activePage : "terminals";
     localStorage.setItem("vibyra.desktop.page", restoredPage);
     if (typeof activePage !== "undefined") activePage = restoredPage;
     syncDesktopSession(session.token)

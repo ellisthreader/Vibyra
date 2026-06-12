@@ -81,6 +81,10 @@ function handleProfileRow(action, key, button) {
   if (action === "hide-billing-cancel") { hideBillingCancellation(); return; }
   if (action === "submit-billing-cancel") { submitBillingCancellation(); return; }
   if (action === "open-pair") { openPairModal(); return; }
+  if (action === "ai-account-login") { void changeProfileAiAccount(button.dataset.aiProvider, "login"); return; }
+  if (action === "ai-account-cancel") { void changeProfileAiAccount(button.dataset.aiProvider, "cancel"); return; }
+  if (action === "ai-account-disconnect") { void changeProfileAiAccount(button.dataset.aiProvider, "disconnect"); return; }
+  if (action === "ai-account-open-url") { window.open(button.dataset.profileValue, "_blank", "noopener"); return; }
   if (action === "mailto") { window.open("mailto:support@vibyra.app?subject=Vibyra%20Desktop%20support", "_blank", "noopener"); return; }
   if (action === "open-url") { window.open(button.dataset.profileValue, "_blank", "noopener"); return; }
   if (action === "clear-cache") { requestSettingsConfirmation("clear-cache"); return; }
@@ -130,6 +134,7 @@ function setDesktopPreference(key, value) {
   const prefs = desktopPreferences();
   if (key === "appearance") prefs.appearance = value;
   if (key === "chatFont") prefs.chatFont = value;
+  if (key === "language" && profileLanguageOptions.some((item) => item.key === value)) prefs.language = value;
   setDesktopVoicePreference(prefs, key, value);
   saveDesktopPreferences(prefs);
   syncProfilePreferenceControls(key, prefs);

@@ -42,7 +42,7 @@ test("desktop auth legal links use the public canonical pages", () => {
   assert.match(authUi, /\/legal\/privacy/);
 });
 
-test("desktop auth carries new-account state into a one-launch Home welcome", () => {
+test("desktop auth keeps new-account state for one launch", () => {
   assert.match(authSubmit, /completeDesktopAuth\(result\.token, result\.user, result\.isNewUser\)/);
   assert.match(authSubmit, /sessionStorage\.setItem\("vibyra\.desktop\.firstWelcomeUserId"/);
   assert.match(authSubmit, /sessionStorage\.removeItem\("vibyra\.desktop\.firstWelcomeUserId"/);

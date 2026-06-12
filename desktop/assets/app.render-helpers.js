@@ -1,6 +1,20 @@
-function setPage(page) { activePage = page; topbarChatMenuOpen = false; localStorage.setItem("vibyra.desktop.page", page); render(); }
+function setPage(page) {
+  if (page === "chat") {
+    if (activePage !== "projects") activePage = "projects";
+    shellAiOpen = true;
+    topbarChatMenuOpen = false;
+    localStorage.setItem("vibyra.desktop.page", activePage);
+    render();
+    return;
+  }
+  activePage = page;
+  if (page !== "projects") shellAiOpen = false;
+  topbarChatMenuOpen = false;
+  localStorage.setItem("vibyra.desktop.page", page);
+  render();
+}
 function bindJumps() { document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.jump))); }
-function pageTitle(page) { return page === "dashboard" ? "Home" : page === "projects" ? "Projects" : page === "terminals" ? "Terminals" : page === "profile" ? "Profile" : "New chat"; }
+function pageTitle(page) { return page === "projects" ? "Projects" : page === "terminals" ? "Terminals" : page === "profile" ? "Profile" : "Vibyra"; }
 function statusTone() {
   if (currentState.pendingPair && currentState.pendingPair.status === "pending") return "warning";
   if (currentState.pendingPair && currentState.pendingPair.status === "denied") return "offline";
@@ -55,7 +69,7 @@ function formatDuration(ms) {
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 function emptyBuildState() {
-  return `<div class="empty-build"><span class="empty-icon">${icon("pulse")}</span><h2>No active builds</h2><p class="body-copy">Phone-started build work appears here when it is running on this desktop.</p><button class="primary-button" type="button" data-jump="chat">${icon("plus")}New chat</button></div>`;
+  return `<div class="empty-build"><span class="empty-icon">${icon("pulse")}</span><h2>No active builds</h2><p class="body-copy">Phone-started build work appears here when it is running on this desktop.</p><button class="primary-button" type="button" data-jump="chat">${icon("sparkles")}Ask Vibyra</button></div>`;
 }
 function dashboardSummaryTile(iconName, label, value, detail, hasArrow = false) {
   return `<article class="summary-tile dashboard-summary-tile"><span class="summary-icon">${icon(iconName)}</span><div class="dashboard-summary-copy"><p>${escapeHtml(label)}</p><strong>${escapeHtml(value)}</strong><span>${escapeHtml(detail)}</span></div>${hasArrow ? `<span class="summary-arrow">${icon("chevron")}</span>` : ""}</article>`;
@@ -101,7 +115,7 @@ function homeProjectRow(project) {
   return `<button type="button" data-home-project="${escapeAttribute(project.id)}"><span class="desktop-home-project-icon">${icon("folder")}</span><span><strong>${escapeHtml(project.name || "Project")}</strong><small>${escapeHtml(project.stack || project.path || "Local project")}</small></span>${icon("chevron")}</button>`;
 }
 function dashboardActiveBuildPanel(rows) {
-  return `<section class="live-builds dashboard-live-builds"><div class="builds-head"><h2>Current work</h2><button class="text-link" type="button" data-jump="chat">New chat ${icon("arrow")}</button></div><div class="build-list">${buildRows(rows)}</div></section>`;
+  return `<section class="live-builds dashboard-live-builds"><div class="builds-head"><h2>Current work</h2><button class="text-link" type="button" data-jump="chat">Ask Vibyra ${icon("arrow")}</button></div><div class="build-list">${buildRows(rows)}</div></section>`;
 }
 function dashboardPairingPanel() {
   const code = currentState.pairCode || "------";
@@ -139,7 +153,6 @@ function dashboardEventTime(event) {
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
 }
-function projectCard(project, index) { const active = selectedProjectId ? selectedProjectId === project.id : index === 0; return `<article class="project-card ${active ? "active" : ""}"><div class="project-top"><div style="display:flex;gap:12px;min-width:0;"><span class="project-icon">${icon("folder")}</span><div><p class="project-name">${escapeHtml(project.name || "Project")}</p><p class="project-path">${escapeHtml(project.path || "")}</p></div></div><span class="tag">${escapeHtml(displayProjectSource(project))}</span></div><div class="project-footer"><span class="body-copy">${escapeHtml(project.stack || "Project")}</span><button class="secondary-button compact-button" type="button" data-project-chat="${escapeAttribute(project.id)}">${icon("chat")}Chat</button></div></article>`; }
 function chatEmptyState() {
   const project = currentProject();
   const title = typeof vibyraChatEmptyTitle === "function" ? vibyraChatEmptyTitle() : "How can I help today?";

@@ -117,3 +117,45 @@ test("collection sync calls share one in-flight request", async () => {
   await first;
   assert.equal(context.ptyCollectionSyncPromise, null);
 });
+
+test("pty output rendering batches dirty terminals instead of rebuilding the topbar", () => {
+  const renderSource = sourceBetween("function schedulePtyRender", "function schedulePtySave");
+
+  assert.match(renderSource, /terminalPtyRenderDirtyIds\.add\(id\)/);
+  assert.match(renderSource, /refreshDirtyPtyTerminalsDom\(dirtyIds\)/);
+  assert.doesNotMatch(
+    renderSource.slice(0, renderSource.indexOf("if (!refreshDirtyPtyTerminalsDom")),
+    /renderTopbar\(\)/,
+  );
+});
+
+test("xterm mounting skips hidden project, focus, and fullscreen panes", () => {
+  const visibilitySource = sourceBetween(
+    "function terminalXtermNodeIsVisible",
+    "function mergePtySnapshotOutput",
+  );
+
+  assert.match(visibilitySource, /terminal-focus-hidden/);
+  assert.match(visibilitySource, /terminal-project-hidden/);
+  assert.match(visibilitySource, /terminal-fullscreen-hidden/);
+  assert.match(visibilitySource, /aria-hidden/);
+});
+
+test("pty session and socket paths mount only the affected xterm", () => {
+  const socketSource = sourceBetween("function connectPtyTerminal", "function schedulePtyCollectionSync");
+  const messageSource = sourceBetween("function handlePtySocketMessage", "const previousRenderTerminalsPage");
+  const startSource = sourceBetween("function queueStartPtyTerminal", "function connectPtyTerminal");
+
+  assert.match(socketSource, /mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
+  assert.match(messageSource, /mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
+  assert.match(startSource, /mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
+});
+
+test("xterm fit scheduling coalesces repeated requests per terminal", () => {
+  const fitSource = sourceBetween("function schedulePtyXtermFit", "function scheduleSettledPtyXtermFit");
+
+  assert.match(fitSource, /terminalXtermScheduledFits\.get\(id\)/);
+  assert.match(fitSource, /pending\.forceBackend = pending\.forceBackend \|\| Boolean\(options\.forceBackend\)/);
+  assert.match(fitSource, /if \(pending\.frame\)/);
+  assert.match(fitSource, /runScheduledPtyXtermFit\(id\)/);
+});

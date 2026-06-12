@@ -71,12 +71,17 @@ function setTerminalTestFrameUrl(root, value, force = false) {
   frame.hidden = !url;
   empty.hidden = Boolean(url) || runnerVisible;
   const unavailableReason = terminalTestLaunch && terminalTestLaunch.available === false ? terminalTestLaunch.reason : "";
-  empty.querySelector("[data-terminal-test-empty-title]").textContent = terminalTestTargets.length
-    ? `${terminalTestTargets.length} app${terminalTestTargets.length === 1 ? "" : "s"} found`
-    : unavailableReason ? "This project has no browser preview yet" : "";
-  empty.querySelector("[data-terminal-test-empty-message]").textContent = terminalTestTargets.length
-    ? "Choose an app. Running services stay available while you switch."
-    : unavailableReason;
+  const noProjectOpen = !terminalTestProjectId;
+  empty.querySelector("[data-terminal-test-empty-title]").textContent = noProjectOpen
+    ? "No projects are currently open"
+    : terminalTestTargets.length
+      ? `${terminalTestTargets.length} app${terminalTestTargets.length === 1 ? "" : "s"} found`
+      : unavailableReason ? "This project has no browser preview yet" : "";
+  empty.querySelector("[data-terminal-test-empty-message]").textContent = noProjectOpen
+    ? "Open a project in a terminal to preview it here."
+    : terminalTestTargets.length
+      ? "Choose an app. Running services stay available while you switch."
+      : unavailableReason;
   refreshTerminalTestTargets(empty);
   refreshTerminalTestFooter(root);
   if (!url || (!force && frame.dataset.url === url)) return;

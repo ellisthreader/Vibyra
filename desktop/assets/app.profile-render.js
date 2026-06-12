@@ -21,6 +21,9 @@ function renderProfile(options = {}) {
   if (profileActiveSection === "app" && typeof ensureProfileScreenshotSettings === "function") {
     void ensureProfileScreenshotSettings();
   }
+  if (profileActiveSection === "ai-accounts" && typeof loadProfileAiAccounts === "function") {
+    void loadProfileAiAccounts();
+  }
   profileFocus = "";
 }
 
@@ -54,6 +57,7 @@ function syncProfileSectionRail(root, sections) {
 
 function renderProfileDetail(section, meta) {
   const renderers = {
+    "ai-accounts": () => settingsAiAccountsSection(),
     app: () => settingsAppSection(),
     billing: () => profileBillingSection(meta),
     devices: () => settingsDevicesSection(meta),

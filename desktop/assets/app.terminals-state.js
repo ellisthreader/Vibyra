@@ -32,13 +32,10 @@ let setupTokenMode = ["vibyra", "provider"].includes(storedTerminalTokenMode)
 let setupModelMenuOpen = false;
 let setupModelSearch = "";
 let providerAccounts = {
-  openai: { provider: "openai", connected: false, source: "", label: "OpenAI" },
   codex: { provider: "codex", available: false, connected: false, source: "", label: "ChatGPT" },
   claude: { provider: "claude", available: false, connected: false, source: "", label: "Claude Code" },
   gemini: { provider: "gemini", available: false, connected: false, source: "", label: "Gemini CLI" }
 };
-let providerConnectOpen = false;
-let providerConnectPosting = false;
 let providerConnectNotice = "";
 const modelScrollTops = { new: 0, setup: 0 };
 const terminalCommandIndexes = {};

@@ -179,6 +179,57 @@ function terminalRailProjectsHtml() {
   return `<div class="terminal-rail-projects" role="list" aria-label="Open terminal projects">${rows}</div>`;
 }
 
+function terminalProjectTabsHtml() {
+  const groups = terminalProjectGroups();
+  const activeKey = activeTerminalProjectKey();
+  const projectRows = groups.map((group) => {
+    const active = group.key === activeKey;
+    const status = typeof terminalWorkspaceGroupStatus === "function"
+      ? terminalWorkspaceGroupStatus(group)
+      : { key: group.terminals.length ? "ready" : "closed", label: group.terminals.length ? "Ready" : "Not open" };
+    const count = group.terminals.length;
+    return `<button class="terminal-project-tab ${active ? "active" : ""}" type="button" role="tab" aria-selected="${active}" data-terminal-project-group="${escapeAttribute(group.key)}" title="${escapeAttribute(`${group.label}, ${status.label}`)}">
+      <span class="terminal-project-tab-icon${group.isTeam ? " is-team" : ""}">${icon(group.isTeam ? "people" : "folder")}<i class="terminal-project-tab-state ${escapeAttribute(status.key)}"></i></span>
+      <span class="terminal-project-tab-copy"><strong>${escapeHtml(group.label)}</strong><small>${escapeHtml(count === 1 ? "1 agent" : `${count} agents`)}</small></span>
+    </button>`;
+  }).join("");
+  const full = terminalBatchAvailableSlots() < 1;
+  const menu = terminalToolbarMenuOpen ? `<div class="terminal-menu terminal-toolbar-menu" role="menu">
+    <button type="button" id="toggle-terminal-layout">${icon(terminalLayout === "grid" ? "terminal" : "grid")}<span>${terminalLayout === "grid" ? "Focus view" : "Grid view"}</span></button>
+    <button class="danger" type="button" data-terminal-close-all>${icon("trash")}<span>Close all agents</span></button>
+  </div>` : "";
+  const companionTools = typeof terminalCompanionToolbarHtml === "function" ? terminalCompanionToolbarHtml() : "";
+  return `<header class="terminal-project-tabs" role="tablist" aria-label="Terminal projects">
+    <div class="terminal-project-tab-list">${projectRows}</div>
+    <div class="terminal-project-actions">
+      <div class="terminal-new-wrap"><button class="terminal-add" id="open-terminal-new" type="button" aria-label="New agent" title="New agent" ${full ? "disabled" : ""}>${icon("plus")}</button>${newTerminalMenuOpen ? newTerminalMenu() : ""}</div>
+      ${companionTools}
+      <div class="terminal-toolbar-wrap"><button class="terminal-layout-button" id="open-terminal-toolbar" type="button" aria-haspopup="menu" aria-expanded="${terminalToolbarMenuOpen ? "true" : "false"}" aria-label="Terminal options" title="Terminal options">${icon("menu")}</button>${menu}</div>
+    </div>
+  </header>`;
+}
+
+function terminalAgentSidebarHtml(projectTerminals = terminalsForProjectKey()) {
+  const rows = projectTerminals.map((terminal, index) => terminalAgentSidebarRowHtml(terminal, index)).join("");
+  const empty = rows || `<div class="terminal-agent-empty">${icon("terminal")}<span>No agents in this project</span></div>`;
+  return `<aside class="terminal-agent-sidebar" aria-label="Project agents">
+    <div class="terminal-agent-sidebar-head"><span>Agents</span><strong>${projectTerminals.length}/${maxTerminals}</strong></div>
+    <div class="terminal-agent-list" role="tablist" aria-label="Agents in selected project">${empty}</div>
+  </aside>`;
+}
+
+function terminalAgentSidebarRowHtml(terminal, index) {
+  const active = terminal.id === activeTerminalId;
+  const label = terminalTabAgentLabel(terminal, index);
+  const agent = typeof terminalAgentDisplayName === "function" ? terminalAgentDisplayName(terminal) : "";
+  const project = typeof projectForTerminal === "function" ? projectForTerminal(terminal) : null;
+  const detail = agent || project?.name || "AI agent";
+  return `<div class="terminal-agent-nav-item ${active ? "active" : ""}" draggable="true" data-terminal-drag="${escapeAttribute(terminal.id)}" title="${escapeAttribute(`${label}, ${detail}`)}">
+    <button class="terminal-agent-nav-open" type="button" role="tab" aria-selected="${active}" data-terminal-focus="${escapeAttribute(terminal.id)}" aria-label="Open ${escapeAttribute(label)}">${terminalStatusDot(terminal)}<span><strong>${escapeHtml(label)}</strong><small>${escapeHtml(detail)}</small></span></button>
+    <button class="terminal-agent-nav-close" type="button" data-terminal-close="${escapeAttribute(terminal.id)}" aria-label="Close ${escapeAttribute(label)}">${icon("close")}</button>
+  </div>`;
+}
+
 function bindTerminalProjectGroupControls(root) {
   if (!root || root.dataset.terminalProjectGroupsBound) return;
   root.dataset.terminalProjectGroupsBound = "1";

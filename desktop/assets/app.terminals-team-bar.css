@@ -1,15 +1,6 @@
-.terminal-page--team {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
 .terminal-page--team > .terminal-team-bar {
   grid-column: 1;
   grid-row: 1;
-}
-
-.terminal-page--team > .terminal-stage {
-  grid-column: 1;
-  grid-row: 2;
 }
 
 .terminal-page--team > .terminal-companion {

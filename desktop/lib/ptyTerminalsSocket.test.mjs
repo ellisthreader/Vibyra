@@ -109,15 +109,21 @@ test("personal accounts launch official provider models and reject API-only wrap
       "codex"
     );
     assert.equal(
-      terminalAgentForTokenSource("claude-sonnet-4", "provider", {}, "claude"),
+      terminalAgentForTokenSource("claude-sonnet-4", "provider", {
+        claude: { available: true, connected: true }
+      }, "claude"),
       "claude"
     );
     assert.equal(
-      terminalAgentForTokenSource("gemini-2.5-pro", "provider", {}, "gemini"),
+      terminalAgentForTokenSource("gemini-2.5-pro", "provider", {
+        gemini: { available: true, connected: true }
+      }, "gemini"),
       "gemini"
     );
     assert.equal(
-      terminalAgentForTokenSource("anthropic/claude-sonnet-4", "provider", {}, "claude"),
+      terminalAgentForTokenSource("anthropic/claude-sonnet-4", "provider", {
+        claude: { available: true, connected: true }
+      }, "claude"),
       "claude"
     );
     assert.throws(

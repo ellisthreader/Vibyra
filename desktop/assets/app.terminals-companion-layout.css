@@ -58,6 +58,7 @@
   grid-template-columns: minmax(0, 1fr) !important;
 }
 
+.terminal-page--memory-fullscreen .terminal-primary-shell,
 .terminal-page--memory-fullscreen .terminal-stage,
 .terminal-setup--memory-fullscreen .terminal-setup-panel {
   display: none;

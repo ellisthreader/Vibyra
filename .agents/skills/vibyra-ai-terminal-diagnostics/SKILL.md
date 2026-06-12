@@ -121,6 +121,16 @@ For Vibyra tokens:
   work. Preserve a backlog for bounded launch staggering, supported warm
   runtime reuse, reduced isolated-home initialization, and immediate truthful
   terminal presentation.
+  For renderer performance with many open terminals, keep live PTY
+  output/status updates on the dirty-terminal patch path in
+  `app.terminals-pty-runtime.js`; do not rebuild the whole terminal topbar/page
+  for ordinary output, and do not mount or fit xterms hidden by project, focus,
+  or fullscreen state. Detached workers should stream output immediately but
+  debounce disk persistence in `aiTerminalWorker.mjs` to avoid per-terminal
+  write churn. Launch, socket-open, and session patch paths should mount only
+  the affected terminal, repeated xterm fits should coalesce per terminal, and
+  xterm themes should be cache-keyed by visible theme scope instead of
+  recomputed on every mount.
   A bridge/worker launch-contract mismatch means source changed under a stale
   bridge; refresh the bridge and never surface it as a generic assignment
   timeout. Apply launch-contract compatibility checks to personal provider
@@ -157,6 +167,34 @@ For Vibyra tokens:
 - Never use Vibyra Agent for a provider that is registered to an official CLI.
   Do not copy that provider's native TUI, commands, or identity into the
   generalized surface.
+- Keep provider installation, authentication, and billing readiness as separate
+  states. An installed Claude Code or Gemini CLI executable is not proof that
+  its account is authenticated; verify provider-native auth state or report
+  `Sign in required` and let the official CLI own login. Likewise, a stored
+  OpenAI API key used by Vibyra chat or voice is not the Codex terminal account:
+  personal OpenAI terminals require the authenticated Codex CLI account. Do not
+  let connecting or disconnecting one credential silently change unrelated
+  personal-account terminal modes. Settings account actions use
+  `/desktop/provider-accounts/{codex|claude|gemini}/{login|cancel|disconnect}`;
+  inspect `providerAccountAuth.mjs` and `providerAccountState.mjs` first.
+  Renderer account rows must normalize legacy bridge payloads that report
+  `connected` without a `status`, and their visible status and action must be
+  derived from the same normalized state. If account actions return `Missing or
+  invalid desktop token`, the route is falling through to phone auth or the
+  live bridge is stale; refresh the desktop bridge and verify the
+  provider-account POST route locally. Starting provider login must visibly
+  open a user path: detect the official CLI's emitted OAuth URL, open it in the
+  system browser from the bridge, and expose an `Open sign-in page` fallback in
+  Settings while the account is connecting. Do not treat a silent background
+  login process as usable. Gemini/Google Settings login must write both
+  `security.auth.selectedType = "oauth-personal"` and
+  `security.auth.useExternal = true` to Gemini `settings.json`; setting only
+  `selectedType` can leave the CLI in its interactive auth prompt without
+  opening or printing the browser URL for Vibyra to surface. Gemini
+  provider-account login must run the direct Gemini executable with writable
+  stdin, not the Linux `/usr/bin/script` full-TUI wrapper; auto-confirm the
+  `Opening authentication page in your browser. Do you want to continue?
+  [Y/n]:` prompt once so the CLI opens the Google OAuth URL.
 - Grok Build uses OpenAI Chat Completions through
   `/desktop/grok/v1/chat/completions`. It sends a fixed `grok-build` request for
   session titles before the selected coding-model request; authorize that value

@@ -72,14 +72,29 @@ function escapeHtml(value) { return String(value ?? "").replace(/[&<>"']/g, (cha
 function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, "&#096;"); }
 function displayProjectSource(project) { return String(project.source || "desktop").toLowerCase() === "mobile" ? "Phone" : "Desktop"; }
 function currentProject() { return (currentState.projects || []).find((project) => project.id === selectedProjectId) || null; }
-function bindProjectActions() {
-  document.querySelectorAll("[data-project-chat]").forEach((button) => button.addEventListener("click", () => {
-    const project = (currentState.projects || []).find((item) => item.id === button.dataset.projectChat);
-    if (!project) return;
-    selectedProjectId = project.id;
+function openProjectInTerminalSetup(projectId = "") {
+  const project = (currentState.projects || []).find((item) => item.id === projectId);
+  selectedProjectId = project?.id || "";
+  if (selectedProjectId) {
     localStorage.setItem("vibyra.desktop.project", selectedProjectId);
-    chatMessages.push({ role: "assistant", text: `Project selected: ${project.name}. Ask me what to change or type /open for folder guidance.` });
-    setPage("chat");
+    if (typeof setupProjectId !== "undefined") setupProjectId = selectedProjectId;
+    if (typeof setupProjectKey !== "undefined") localStorage.setItem(setupProjectKey, selectedProjectId);
+  } else {
+    localStorage.removeItem("vibyra.desktop.project");
+    if (typeof setupProjectId !== "undefined") setupProjectId = "";
+    if (typeof setupProjectKey !== "undefined") localStorage.removeItem(setupProjectKey);
+  }
+  if (typeof resetTerminalSetupFlow === "function") resetTerminalSetupFlow();
+  if (typeof openTerminalBatchSetup === "function" && typeof terminals !== "undefined" && Array.isArray(terminals) && terminals.length) {
+    openTerminalBatchSetup(selectedProjectId, 1);
+    return;
+  }
+  if (typeof forceTerminalRender !== "undefined") forceTerminalRender = true;
+  setPage("terminals");
+}
+function bindProjectActions() {
+  document.querySelectorAll("[data-project-terminal]").forEach((button) => button.addEventListener("click", () => {
+    openProjectInTerminalSetup(button.dataset.projectTerminal || "");
   }));
 }
 function bindChatTools() {

@@ -52,3 +52,14 @@ test("Team planning routes are desktop-authorized and delegated", async () => {
     /url\.pathname === "\/desktop\/terminal-teams" \|\| url\.pathname\.startsWith\("\/desktop\/terminal-teams\/"\)/
   );
 });
+
+test("provider account routes are handled before phone-token fallback", async () => {
+  const source = await readFile(new URL("./desktopRoutes.mjs", import.meta.url), "utf8");
+  const getRoute = source.indexOf('url.pathname === "/desktop/provider-accounts"');
+  const actionRoute = source.indexOf('desktop\\/provider-accounts');
+  const phoneFallback = source.indexOf('Missing or invalid desktop token');
+
+  assert.ok(getRoute > 0);
+  assert.ok(actionRoute > getRoute);
+  assert.ok(phoneFallback > actionRoute);
+});

@@ -256,6 +256,7 @@
 }
 @media (max-width: 900px) {
   .terminal-page--with-companion[data-terminal-companion-mode="editor"] { grid-template-columns: minmax(0, 1fr) !important; }
+  .terminal-page--with-companion[data-terminal-companion-mode="editor"] .terminal-primary-shell,
   .terminal-page--with-companion[data-terminal-companion-mode="editor"] .terminal-stage { display: none; }
   .terminal-page--with-companion[data-terminal-companion-mode="editor"] .terminal-companion { border-left: 0; grid-column: 1; }
 }
