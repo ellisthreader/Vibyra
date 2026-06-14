@@ -33,8 +33,14 @@ test("runtime exposes the terminal action protocol and coalesces stale renderer 
 test("desktop launcher replaces a stale AI terminal bridge before opening", () => {
   assert.match(launcherSource, /AI_TERMINAL_LAUNCH_CONTRACT_VERSION/);
   assert.match(launcherSource, /aiTerminalLaunchContractVersion/);
+  assert.match(launcherSource, /electron_shell_pids\(\)/);
+  assert.match(launcherSource, /stop_electron_shells/);
   assert.match(launcherSource, /\/desktop\/quit/);
   assert.match(launcherSource, /Refreshing the Vibyra Desktop bridge/);
+  assert.match(
+    launcherSource,
+    /Refreshing the Vibyra Desktop bridge[\s\S]*stop_electron_shells[\s\S]*\/desktop\/quit/
+  );
 });
 
 test("renderer blocks actions until the bridge protocol matches", () => {

@@ -31,9 +31,7 @@ function renderTerminalsPage() {
   const terminalViews = projectTerminals.length ? (grid ? projectTerminals.map(terminalTile).join("") : terminalFocusViews(active)) : "";
   const teamBar = typeof terminalTeamBarHtml === "function" ? terminalTeamBarHtml(projectTerminals) : "";
   const teamClass = teamBar ? " terminal-page--team" : "";
-  const projectTabs = typeof terminalProjectTabsHtml === "function" ? terminalProjectTabsHtml() : "";
-  const agentSidebar = typeof terminalAgentSidebarHtml === "function" ? terminalAgentSidebarHtml(projectTerminals) : "";
-  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}${teamClass}"${gridStyle}><div class="terminal-primary-shell">${projectTabs}<div class="terminal-body-shell">${agentSidebar}<div class="terminal-main-shell">${teamBar}<div class="terminal-stage">${emptyProject}${terminalViews}</div></div></div></div></section>`;
+  nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}${teamClass}"${gridStyle}><div class="terminal-primary-shell"><div class="terminal-body-shell"><div class="terminal-main-shell">${teamBar}<div class="terminal-stage">${emptyProject}${terminalViews}</div></div></div></div></section>`;
   bindTerminalControls();
   requestAnimationFrame(() => document.querySelectorAll(".terminal-lines").forEach((node) => node.scrollTo(0, node.scrollHeight)));
 }

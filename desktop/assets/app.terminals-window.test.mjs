@@ -44,15 +44,16 @@ test("terminal window helpers load before terminal creation", () => {
   assert.ok(windowIndex < storeIndex);
 });
 
-test("terminal workspace keeps project tabs above an agent sidebar", () => {
+test("terminal workspace keeps project tabs in top chrome and agents in the rail", () => {
   assert.match(html, /app\.terminals-project-groups/);
-  assert.match(renderSource, /terminalProjectTabsHtml/);
-  assert.match(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
+  assert.doesNotMatch(renderSource, /terminalProjectTabsHtml/);
+  assert.doesNotMatch(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
   assert.match(renderSource, /terminal-primary-shell/);
   assert.match(renderSource, /terminal-body-shell/);
   assert.match(renderSource, /terminal-main-shell/);
   assert.match(renderSource, /grid \? projectTerminals\.map\(terminalTile\)/);
   assert.match(ptySource, /const tabs = projectTerminals\.map/);
+  assert.match(ptySource, /terminalProjectTabsHtml\(\)/);
 });
 
 test("safe mode remains recommended and routed Auto sessions preserve friendly names", () => {

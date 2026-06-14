@@ -65,21 +65,21 @@ test("renders only projects that own an open or recovered terminal", () => {
     JSON.parse(JSON.stringify(groups.map((group) => [group.label, group.terminals.length]))),
     [["SaaS", 2], ["Launchpad", 1], ["General", 1]]
   );
-  const html = context.terminalRailProjectsHtml();
-  assert.match(html, /terminal-rail-projects/);
+  const html = context.terminalProjectTabsHtml();
+  assert.match(html, /terminal-project-tabs/);
   assert.match(html, />SaaS</);
-  assert.match(html, /terminal-rail-project-count">2/);
-  assert.match(html, /terminal-rail-project-state/);
+  assert.match(html, /2 agents/);
+  assert.match(html, /terminal-project-tab-state/);
   assert.doesNotMatch(html, />Fresh API</);
 });
 
 test("a recovered project remains until its final terminal is removed", () => {
   const context = projectContext();
   context.terminals.push({ id: "empty-restored", projectId: "empty", ptyStatus: "exited" });
-  assert.match(context.terminalRailProjectsHtml(), />Fresh API</);
+  assert.match(context.terminalProjectTabsHtml(), />Fresh API</);
 
   context.terminals = context.terminals.filter((terminal) => terminal.id !== "empty-restored");
-  assert.doesNotMatch(context.terminalRailProjectsHtml(), />Fresh API</);
+  assert.doesNotMatch(context.terminalProjectTabsHtml(), />Fresh API</);
 });
 
 test("an unassigned Team gets a relevant workspace name and distinct rail icon", () => {
@@ -91,10 +91,10 @@ test("an unassigned Team gets a relevant workspace name and distinct rail icon",
   const team = context.terminalProjectGroups().find((group) => group.key === "__team__:team-theme");
   assert.equal(team.label, "Theme Team");
   assert.equal(team.isTeam, true);
-  const html = context.terminalRailProjectsHtml();
+  const html = context.terminalProjectTabsHtml();
   assert.match(html, />Theme Team</);
   assert.match(html, /data-icon="people"/);
-  assert.match(html, />Team · Ready</);
+  assert.match(html, /2 agents/);
 });
 
 test("project selection restores that project's last active terminal", () => {
@@ -120,18 +120,21 @@ test("rail plus opens a four-terminal batch setup and cancel restores prior stat
   assert.equal(context.setupProjectId, "saas");
 });
 
-test("terminal renderer scopes project tabs and agent sidebar to the active project", () => {
-  assert.doesNotMatch(shellSource, /rail-nav-group--terminals/);
+test("terminal renderer scopes top project tabs and rail agents to the active project", () => {
+  assert.match(shellSource, /rail-nav-group--terminals/);
+  assert.match(shellSource, /terminalRailAgentsHtml/);
   assert.doesNotMatch(shellSource, /terminalRailProjectsHtml/);
   assert.match(renderSource, /terminalBatchSetupOpen \|\| !terminals\.length/);
   assert.match(renderSource, /terminalGridMeta\(projectTerminals\.length\)/);
-  assert.match(renderSource, /terminalProjectTabsHtml/);
-  assert.match(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
+  assert.doesNotMatch(renderSource, /terminalProjectTabsHtml/);
+  assert.doesNotMatch(renderSource, /terminalAgentSidebarHtml\(projectTerminals\)/);
   assert.match(source, /function terminalProjectTabsHtml/);
-  assert.match(source, /function terminalAgentSidebarHtml/);
-  assert.match(source, /terminal-agent-sidebar/);
+  assert.match(source, /function terminalRailAgentsHtml/);
+  assert.doesNotMatch(source, /function terminalAgentSidebarHtml/);
+  assert.match(source, /terminal-rail-agents/);
   assert.match(source, /terminal-agent-nav-item/);
   assert.match(ptySource, /projectTerminals\.map\(\(terminal, index\)/);
+  assert.match(ptySource, /terminalProjectTabsHtml\(\)/);
   assert.match(ptySource, /How should your AI agents work\?/);
   assert.match(ptySource, /terminalSetupProgress\("mode"\)/);
   assert.match(ptySource, /terminalSetupProgress\("setup"\)/);
@@ -141,4 +144,5 @@ test("terminal renderer scopes project tabs and agent sidebar to the active proj
   assert.match(runtimeSource, /terminal-project-hidden/);
   assert.match(runtimeSource, /if \(terminalBatchSetupOpen\)/);
   assert.match(runtimeSource, /terminalGridMeta\(projectTerminals\.length\)/);
+  assert.match(runtimeSource, /terminalRailAgentsHtml\(visible\)/);
 });

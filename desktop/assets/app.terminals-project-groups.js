@@ -209,13 +209,14 @@ function terminalProjectTabsHtml() {
   </header>`;
 }
 
-function terminalAgentSidebarHtml(projectTerminals = terminalsForProjectKey()) {
+function terminalRailAgentsHtml(projectTerminals = terminalsForProjectKey()) {
+  if (activePage !== "terminals" || terminalBatchSetupOpen || !terminals.length) return "";
   const rows = projectTerminals.map((terminal, index) => terminalAgentSidebarRowHtml(terminal, index)).join("");
-  const empty = rows || `<div class="terminal-agent-empty">${icon("terminal")}<span>No agents in this project</span></div>`;
-  return `<aside class="terminal-agent-sidebar" aria-label="Project agents">
-    <div class="terminal-agent-sidebar-head"><span>Agents</span><strong>${projectTerminals.length}/${maxTerminals}</strong></div>
+  const empty = rows || `<div class="terminal-agent-empty">${icon("terminal")}<span>No agents</span></div>`;
+  return `<div class="terminal-rail-agents" aria-label="Project agents">
+    <div class="terminal-rail-agents-head"><span>Agents</span><strong>${projectTerminals.length}/${maxTerminals}</strong></div>
     <div class="terminal-agent-list" role="tablist" aria-label="Agents in selected project">${empty}</div>
-  </aside>`;
+  </div>`;
 }
 
 function terminalAgentSidebarRowHtml(terminal, index) {

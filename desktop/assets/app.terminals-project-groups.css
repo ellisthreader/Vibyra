@@ -46,7 +46,8 @@
   width: 15px;
 }
 
-.terminal-rail-projects {
+.terminal-rail-projects,
+.terminal-rail-agents {
   display: grid;
   gap: 2px;
   margin: 2px 0 6px 18px;
@@ -60,7 +61,8 @@
   scrollbar-width: thin;
 }
 
-.terminal-rail-projects:before {
+.terminal-rail-projects:before,
+.terminal-rail-agents:before {
   background: color-mix(in srgb, var(--shell-border) 72%, transparent);
   bottom: 6px;
   content: "";
@@ -150,6 +152,29 @@
 .terminal-rail-project-state.ready { background: #8b5cff; }
 .terminal-rail-project-state.closed { background: #5f596b; }
 
+.terminal-rail-agents {
+  margin-top: 3px;
+  max-height: min(360px, 44vh);
+  padding-left: 10px;
+}
+
+.terminal-rail-agents-head {
+  align-items: center;
+  color: var(--shell-dim);
+  display: flex;
+  font-size: 10px;
+  font-weight: 720;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 3px 8px 4px 5px;
+  text-transform: uppercase;
+}
+
+.terminal-rail-agents-head strong {
+  color: var(--shell-muted);
+  font-size: 10px;
+}
+
 .terminal-rail-project-copy {
   display: grid;
   min-width: 0;
@@ -185,21 +210,22 @@
 
 .terminal-project-tabs {
   -webkit-app-region: no-drag;
-  align-items: center;
-  background: var(--terminal-rail, #17171b);
-  border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
+  align-items: end;
+  background: transparent;
+  border-bottom: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 46px;
+  min-height: 44px;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 0 0 5px;
+  width: min(100%, 980px);
 }
 
 .terminal-project-tab-list {
-  align-items: center;
+  align-items: end;
   display: flex;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -211,31 +237,35 @@
 
 .terminal-project-tab {
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--terminal-rail, #17171b) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--terminal-border, rgba(151, 161, 190, .12)) 70%, transparent);
+  border-bottom-color: transparent;
+  border-radius: 8px 8px 0 0;
   color: var(--terminal-muted, #a9a3b8);
   display: grid;
   flex: 0 0 auto;
   gap: 8px;
   grid-template-columns: 20px minmax(78px, 1fr);
-  height: 32px;
-  max-width: 188px;
-  min-width: 124px;
+  height: 34px;
+  max-width: 210px;
+  min-width: 132px;
   padding: 0 9px;
   text-align: left;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .terminal-project-tab:hover {
-  background: var(--terminal-hover, rgba(255, 255, 255, .045));
+  background: color-mix(in srgb, var(--terminal-elevated, #222226) 84%, transparent);
   color: var(--terminal-text, #eeeaf8);
 }
 
 .terminal-project-tab.active {
-  background: color-mix(in srgb, var(--terminal-text, #f1eef8) 7%, transparent);
+  background: var(--terminal-bg, #121214);
   border-color: var(--terminal-border-strong, rgba(151, 161, 190, .22));
+  border-bottom-color: var(--terminal-bg, #121214);
   color: var(--terminal-text, #f1eef8);
+  position: relative;
+  z-index: 1;
 }
 
 .terminal-project-tab-icon {
@@ -307,7 +337,7 @@
 
 .terminal-primary-shell {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   min-width: 0;
@@ -315,7 +345,7 @@
 
 .terminal-body-shell {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
 }
@@ -331,36 +361,9 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-.terminal-agent-sidebar {
-  background: var(--terminal-rail, #17171b);
-  border-right: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-height: 0;
-  min-width: 0;
-  padding: 9px 8px;
-}
-
-.terminal-agent-sidebar-head {
-  align-items: center;
-  color: var(--terminal-dim, #918ca1);
-  display: flex;
-  font-size: 10px;
-  font-weight: 760;
-  justify-content: space-between;
-  min-width: 0;
-  padding: 2px 5px 8px;
-  text-transform: uppercase;
-}
-
-.terminal-agent-sidebar-head strong {
-  color: var(--terminal-muted, #a9a3b8);
-  font-size: 10px;
-}
-
 .terminal-agent-list {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -371,25 +374,25 @@
 .terminal-agent-nav-item {
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--terminal-muted, #a9a3b8);
+  border-radius: 7px;
+  color: var(--shell-muted, var(--terminal-muted, #a9a3b8));
   display: grid;
   grid-template-columns: minmax(0, 1fr) 24px;
-  min-height: 42px;
+  min-height: 38px;
   min-width: 0;
   padding: 2px;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
 .terminal-agent-nav-item:hover {
-  background: var(--terminal-hover, rgba(255, 255, 255, .045));
-  color: var(--terminal-text, #eeeaf8);
+  background: var(--shell-hover, var(--terminal-hover, rgba(255, 255, 255, .045)));
+  color: var(--shell-text, var(--terminal-text, #eeeaf8));
 }
 
 .terminal-agent-nav-item.active {
-  background: color-mix(in srgb, var(--terminal-text, #f1eef8) 7%, transparent);
-  border-color: var(--terminal-border-strong, rgba(151, 161, 190, .22));
-  color: var(--terminal-text, #f1eef8);
+  background: color-mix(in srgb, var(--shell-text, #f1eef8) 7%, transparent);
+  border-color: color-mix(in srgb, var(--shell-border, rgba(151, 161, 190, .12)) 82%, transparent);
+  color: var(--shell-text, var(--terminal-text, #f1eef8));
 }
 
 .terminal-agent-nav-item.dragging {
@@ -414,7 +417,7 @@
   gap: 8px;
   grid-template-columns: 9px minmax(0, 1fr);
   min-width: 0;
-  padding: 6px 5px;
+  padding: 5px 4px;
   text-align: left;
 }
 
@@ -433,11 +436,11 @@
 
 .terminal-agent-nav-open strong {
   font-size: 12px;
-  line-height: 15px;
+  line-height: 14px;
 }
 
 .terminal-agent-nav-open small {
-  color: var(--terminal-dim, #918ca1);
+  color: var(--shell-dim, var(--terminal-dim, #918ca1));
   font-size: 10px;
   line-height: 12px;
 }
@@ -445,7 +448,7 @@
 .terminal-agent-nav-close {
   align-items: center;
   border-radius: 6px;
-  color: var(--terminal-dim, #918ca1);
+  color: var(--shell-dim, var(--terminal-dim, #918ca1));
   display: inline-flex;
   height: 24px;
   justify-content: center;
@@ -460,7 +463,7 @@
 }
 
 .terminal-agent-nav-close:hover {
-  background: var(--terminal-hover, rgba(255, 255, 255, .05));
+  background: var(--shell-hover, var(--terminal-hover, rgba(255, 255, 255, .05)));
   color: var(--terminal-danger, #ff9aad);
 }
 
@@ -471,7 +474,7 @@
 
 .terminal-agent-empty {
   align-items: center;
-  color: var(--terminal-dim, #918ca1);
+  color: var(--shell-dim, var(--terminal-dim, #918ca1));
   display: grid;
   font-size: 11px;
   gap: 8px;
@@ -485,7 +488,8 @@
   width: 18px;
 }
 
-.app.rail-collapsed .terminal-rail-projects {
+.app.rail-collapsed .terminal-rail-projects,
+.app.rail-collapsed .terminal-rail-agents {
   display: none;
 }
 
@@ -523,8 +527,8 @@
     display: none;
   }
 
-  .terminal-body-shell {
-    grid-template-columns: 176px minmax(0, 1fr);
+  .terminal-rail-agents {
+    display: none;
   }
 
   .terminal-project-tab {
@@ -542,32 +546,6 @@
     justify-content: space-between;
   }
 
-  .terminal-body-shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
-  .terminal-agent-sidebar {
-    border-bottom: 1px solid var(--terminal-border, rgba(151, 161, 190, .12));
-    border-right: 0;
-    grid-template-rows: none;
-    padding: 6px 8px;
-  }
-
-  .terminal-agent-sidebar-head {
-    display: none;
-  }
-
-  .terminal-agent-list {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .terminal-agent-nav-item {
-    flex: 0 0 152px;
-  }
 }
 
 @media (max-width: 560px) {

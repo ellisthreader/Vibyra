@@ -203,6 +203,10 @@ shutdown. Keep this section focused on presentation and interaction design.
 - Keep Live Preview in the same resizable right workspace as Editor, AI, and
   Memory. Use one compact Editor / Preview / AI / Memory switcher
   and keep the terminal canvas mounted and visible on the left.
+- On the terminal page, project groups belong in the authenticated top chrome
+  as browser-style tabs, and active-project agents belong in the global left
+  rail under Terminals. Do not restore a page-local project navbar or a
+  terminal-page-only agent sidebar.
 - Project inspection must never start a dev server. Detect runnable apps first,
   show every supported target plus visible unsupported native targets, and
   require an explicit in-panel Run action that names the app and exact command.
@@ -657,13 +661,13 @@ The sidebar should feel like the mobile app’s AI/chat navigation.
   `vibyra.desktop.page = "terminals"` unless a stored valid Terminals/Projects
   page intentionally overrides it. Treat saved `dashboard` as stale and migrate
   to Terminals.
-- Terminals is the main product surface. Keep terminal setup, project tabs,
-  the left agent sidebar, and the terminal right workspace as the primary flow.
+- Terminals is the main product surface. Keep terminal setup, top project
+  tabs, left-rail agents, and the terminal right workspace as the primary flow.
 - Keep terminal page structure companion-safe: `.terminal-page` should have one
-  `.terminal-primary-shell` direct child for project tabs, left agent sidebar,
-  and `.terminal-stage`; the right workspace/companion is inserted as the
-  second direct child. Do not make project tabs and stage separate top-level
-  `.terminal-page` grid children.
+  `.terminal-primary-shell` direct child for the one-column terminal stage
+  shell; the right workspace/companion is inserted as the second direct child.
+  Do not restore project tabs or agent lists as top-level `.terminal-page`
+  grid children.
 - Do not bring back Home-only dashboard sections, `desktop-home-*` route
   layouts, summary cards, or a recent-work landing page as primary navigation.
 - Do not invent fake counts, fake activity, fake progress bars, fake credits, or fake community/profile data.
@@ -829,19 +833,17 @@ user explicitly requests Codex's visual design.
   without their required local record. F8 delivery must disable the second PTY
   prompt log and carry the original turn into PTY output tracking.
 - Default to a focus view: one active terminal fills the page, with other
-  terminals represented as quiet agent rows in the terminal page's left
-  sidebar.
-- Keep project groups as top tabs inside the terminal page, not as nested items
-  in the global app rail. The global rail stays page navigation; the terminal
-  workspace owns project switching.
+  terminals represented as quiet agent rows under Terminals in the global left
+  rail.
+- Keep project groups as browser-style tabs in the authenticated top chrome,
+  not as nested items in the global app rail and not as a page-local navbar.
 - Keep PTY fast-refresh project-aware. It should patch only
-  `terminalsForProjectKey()` into the stage and refresh project tabs/sidebar in
-  place when group or menu state changes, so live xterm panes survive without
-  stale project chrome.
-- Keep agent open/close/reorder controls in the left terminal sidebar and keep
+  `terminalsForProjectKey()` into the stage and refresh top project tabs plus
+  rail agents in place when group or menu state changes, so live xterm panes
+  survive without stale project chrome.
+- Keep agent open/close/reorder controls in the global left rail and keep
   New agent, right-workspace launchers, layout switching, and confirmed
-  `Close all agents` in the terminal page's top project bar. Do not put
-  terminal agent tabs back in the Electron titlebar.
+  `Close all agents` in the top project tab chrome.
 - Label each agent row with its real agent and visible position, such as
   `Codex 1` or `Claude 2`, instead of showing a bare number. Keep individual
   close buttons, make the sidebar scroll for larger sessions, and keep selected

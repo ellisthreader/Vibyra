@@ -18,6 +18,7 @@ CHROME_PROFILE="$HOME/.vibyra-desktop-window"
 ELECTRON_LOG_DIR="$HOME/.vibyra-desktop"
 ELECTRON_LOG="$ELECTRON_LOG_DIR/electron.log"
 ELECTRON_BIN=""
+ELECTRON_MAIN="$PWD/desktop/electron-main.cjs"
 DESKTOP_LAUNCHER="$PWD/scripts/install-desktop-launcher.sh"
 EXPECTED_TERMINAL_LAUNCH_CONTRACT="$(
   node --input-type=module -e \
@@ -47,6 +48,26 @@ open_window() {
   fi
 }
 
+electron_shell_pids() {
+  ps -eo pid=,cmd= \
+    | awk -v main="$ELECTRON_MAIN" '$0 ~ main && $0 ~ /node_modules\/electron/ { print $1 }'
+}
+
+stop_electron_shells() {
+  ELECTRON_PIDS="$(electron_shell_pids || true)"
+  if [ -z "$ELECTRON_PIDS" ]; then
+    return
+  fi
+
+  kill $ELECTRON_PIDS 2>/dev/null || true
+  for _ in {1..40}; do
+    if [ -z "$(electron_shell_pids || true)" ]; then
+      return
+    fi
+    sleep 0.1
+  done
+}
+
 PORT_PIDS="$(lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN 2>/dev/null || true)"
 
 if [ -n "$PORT_PIDS" ]; then
@@ -61,6 +82,7 @@ if [ -n "$PORT_PIDS" ]; then
     fi
 
     echo "Refreshing the Vibyra Desktop bridge..."
+    stop_electron_shells
     curl -fsS -X POST "http://127.0.0.1:${PORT}/desktop/quit" >/dev/null 2>&1 || kill $PORT_PIDS 2>/dev/null || true
     for _ in {1..40}; do
       if ! lsof -nP -tiTCP:"${PORT}" -sTCP:LISTEN >/dev/null 2>&1; then

@@ -480,7 +480,8 @@ terminalTabs = function ptyTerminalTabs() {
 };
 
 terminalTopbarHtml = function ptyTerminalTopbarHtml() {
-  return "";
+  if (!terminals.length || terminalBatchSetupOpen) return "";
+  return typeof terminalProjectTabsHtml === "function" ? terminalProjectTabsHtml() : "";
 };
 
 function terminalStatusState(terminal) {

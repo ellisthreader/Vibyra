@@ -182,11 +182,15 @@ function renderNav() {
   const visiblePages = pages.filter((page) => !page.hidden);
   const pageButton = (page) => `<button class="nav-button ${activePage === page.key ? "active" : ""}" type="button" data-page="${page.key}" data-tooltip="${escapeAttribute(page.label)}" aria-label="${escapeAttribute(page.label)}" title="${escapeAttribute(page.label)}">${icon(page.icon)}<span>${escapeHtml(page.label)}</span></button>`;
   nodes.railNav.innerHTML = visiblePages.map((page) => {
-    return pageButton(page);
+    const terminalAgents = page.key === "terminals" && typeof terminalRailAgentsHtml === "function"
+      ? terminalRailAgentsHtml()
+      : "";
+    return `<div class="rail-nav-group${page.key === "terminals" ? " rail-nav-group--terminals" : ""}">${pageButton(page)}${terminalAgents}</div>`;
   }).join("");
   nodes.mobileDock.innerHTML = visiblePages.map(pageButton).join("");
   document.querySelectorAll("[data-page]").forEach((button) => button.addEventListener("click", () => setPage(button.dataset.page)));
   if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(nodes.railNav);
+  if (activePage === "terminals" && typeof bindPtyTopbarControls === "function") bindPtyTopbarControls();
 }
 function renderTopbar() {
   if (!document.body.classList.contains("desktop-authenticated")) {

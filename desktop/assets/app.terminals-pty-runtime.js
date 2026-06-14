@@ -352,6 +352,7 @@ toggleTerminalSettings = function togglePtyTerminalSettings(id) {
 function bindPtyTopbarControls() {
   if (typeof bindTerminalCompanionLaunchers === "function") bindTerminalCompanionLaunchers(document);
   if (typeof bindTerminalWorkspaceIndicators === "function") bindTerminalWorkspaceIndicators(document);
+  if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(document.body);
   bindPtyClick(document.getElementById("open-terminal-new"), () => {
     newTerminalMenuOpen = !newTerminalMenuOpen;
     terminalToolbarMenuOpen = false;
@@ -388,6 +389,9 @@ function bindPtyTopbarControls() {
     event.stopPropagation();
     toggleTerminalSettings(button.dataset.terminalSettings);
   }));
+  if (typeof bindTerminalDrag === "function") {
+    document.querySelectorAll("[data-terminal-drag]").forEach((item) => bindTerminalDrag(item));
+  }
   if (typeof bindTerminalFullscreenControls === "function") bindTerminalFullscreenControls(document);
   if (typeof bindTerminalProjectControls === "function") bindTerminalProjectControls(document);
   if (typeof bindTerminalProjectGroupControls === "function") bindTerminalProjectGroupControls(nodes.content);
@@ -1027,14 +1031,15 @@ function patchPtyTerminalStructure() {
 }
 
 function patchPtyProjectShell(page, visible) {
-  if (typeof terminalProjectTabsHtml !== "function" || typeof terminalAgentSidebarHtml !== "function") return true;
-  const tabs = page.querySelector(".terminal-project-tabs");
-  const sidebar = page.querySelector(".terminal-agent-sidebar");
-  if (!tabs || !sidebar) return false;
+  if (typeof terminalProjectTabsHtml !== "function" || typeof terminalRailAgentsHtml !== "function") return true;
+  const tabs = document.querySelector(".terminal-project-tabs");
+  const railAgents = document.querySelector(".terminal-rail-agents");
+  if (!tabs || !railAgents) return false;
   const nextTabs = terminalProjectTabsHtml();
-  const nextSidebar = terminalAgentSidebarHtml(visible);
+  const nextRailAgents = terminalRailAgentsHtml(visible);
   if (tabs.outerHTML !== nextTabs) tabs.outerHTML = nextTabs;
-  if (sidebar.outerHTML !== nextSidebar) sidebar.outerHTML = nextSidebar;
+  if (railAgents.outerHTML !== nextRailAgents) railAgents.outerHTML = nextRailAgents;
+  bindPtyTopbarControls();
   return true;
 }
 
