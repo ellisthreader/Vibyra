@@ -5,7 +5,7 @@
 .terminal-page--with-companion:has(.terminal-memory-workspace),
 .terminal-page--with-companion:has(.terminal-memory-section--stacked),
 .terminal-setup--with-companion:has(.terminal-memory-section--stacked) {
-  grid-template-columns: minmax(480px, 1fr) var(--terminal-companion-width, 520px) !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, var(--terminal-companion-width, 520px)) !important;
 }
 
 .terminal-companion {

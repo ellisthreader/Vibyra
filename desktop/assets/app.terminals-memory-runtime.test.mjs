@@ -241,7 +241,7 @@ test("Memory does not expose item creation controls or shortcuts", () => {
 
 test("memory companion width is user-resizable without shrinking the terminal below its floor", () => {
   assert.match(memoryCss, /has\(\.terminal-memory-workspace\)\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\) 340px/);
-  assert.match(companionLayoutCss, /minmax\(480px, 1fr\) var\(--terminal-companion-width, 520px\)/);
+  assert.match(companionLayoutCss, /minmax\(0, 1fr\) minmax\(360px, var\(--terminal-companion-width, 520px\)\)/);
   assert.match(companionLayoutCss, /terminal-page--memory-fullscreen/);
 });
 

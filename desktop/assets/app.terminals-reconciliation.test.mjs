@@ -120,6 +120,7 @@ test("collection sync calls share one in-flight request", async () => {
 
 test("pty output rendering batches dirty terminals instead of rebuilding the topbar", () => {
   const renderSource = sourceBetween("function schedulePtyRender", "function schedulePtySave");
+  const dirtySource = sourceBetween("function refreshDirtyPtyTerminalsDom", "function refreshPtyTerminalDom");
 
   assert.match(renderSource, /terminalPtyRenderDirtyIds\.add\(id\)/);
   assert.match(renderSource, /refreshDirtyPtyTerminalsDom\(dirtyIds\)/);
@@ -127,6 +128,7 @@ test("pty output rendering batches dirty terminals instead of rebuilding the top
     renderSource.slice(0, renderSource.indexOf("if (!refreshDirtyPtyTerminalsDom")),
     /renderTopbar\(\)/,
   );
+  assert.doesNotMatch(dirtySource, /patchPtyProjectShell/);
 });
 
 test("xterm mounting skips hidden project, focus, and fullscreen panes", () => {

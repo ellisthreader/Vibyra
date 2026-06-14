@@ -35,14 +35,15 @@ test("companion width preserves a readable terminal area", () => {
   const context = layoutContext();
   const bounds = vm.runInContext("terminalCompanionWidthBounds(1200)", context);
   assert.equal(bounds.minimum, 360);
-  assert.equal(bounds.maximum, 720);
-  assert.equal(vm.runInContext("clampTerminalCompanionWidth(900, 1000)", context), 520);
+  assert.equal(bounds.maximum, 840);
+  assert.equal(vm.runInContext("clampTerminalCompanionWidth(900, 1000)", context), 640);
   assert.equal(vm.runInContext("clampTerminalCompanionWidth(100, 1000)", context), 360);
+  assert.match(styles, /grid-template-columns: minmax\(0, 1fr\) minmax\(360px, var\(--terminal-companion-width/);
 });
 
 test("stored width is clamped against the current page", () => {
   const context = layoutContext("690");
-  assert.equal(vm.runInContext("clampTerminalCompanionWidth(terminalCompanionWidth, 900)", context), 420);
+  assert.equal(vm.runInContext("clampTerminalCompanionWidth(terminalCompanionWidth, 900)", context), 540);
 });
 
 test("fullscreen is Memory-only and restores terminal fitting", () => {

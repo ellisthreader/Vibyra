@@ -338,12 +338,13 @@ test("Codex keeps its native bottom margin in a scrollable xterm overscan buffer
   const claudeXterm = { element: { style: {} } };
   context.applyBottomFit(claude, claudeXterm, { bottomInset: 7 });
   assert.equal(claudeXterm.element.style.height, "calc(100% + 7px)");
-  assert.equal(claudeXterm.element.style.transform, "translateY(-7px)");
+  assert.equal(claudeXterm.element.style.transform, "");
   assert.match(runtimeSource, /xterm\.rows === backendSize\.rows/);
   assert.match(runtimeSource, /xterm\.resize\(backendSize\.cols,\s*backendSize\.rows\)/);
   assert.match(runtimeSource, /element\.style\.height = totalHeight \? `calc\(100% \+ \$\{totalHeight\}px\)` : ""/);
   assert.match(runtimeSource, /terminalPtyBottomRowsContainContent\(xterm,\s*rows\)/);
   assert.match(runtimeSource, /terminalPtyBottomAnchorRows\(terminal,\s*xterm\) \* cellHeight/);
+  assert.match(runtimeSource, /const offset = overscanOffset - bottomAnchorOffset/);
   assert.match(runtimeSource, /element\.style\.transform = offset \? `translateY\(\$\{-offset\}px\)` : ""/);
   const xterm = {
     rows: 4,
@@ -366,6 +367,7 @@ test("Codex keeps its native bottom margin in a scrollable xterm overscan buffer
   });
   assert.equal(context.bottomAnchorRows(codex, xterm), 3);
   assert.equal(context.bottomAnchorRows(claude, xterm), 0);
-  assert.match(runtimeSource, /Math\.min\(viewport\?\.clientHeight \|\| visibleHeight,\s*visibleHeight\)/);
+  assert.match(runtimeSource, /const availableWidth = Math\.max\(0, rect\.width - paddingX\)/);
+  assert.match(runtimeSource, /const availableHeight = visibleHeight/);
   assert.match(runtimeSource, /fractionalOverflow = \(rows \* cellHeight\) - availableHeight/);
 });

@@ -846,12 +846,11 @@ function measuredPtySize(node, xterm = null) {
   const paddingX = (Number.parseFloat(styles.paddingLeft) || 0) + (Number.parseFloat(styles.paddingRight) || 0);
   const paddingY = (Number.parseFloat(styles.paddingTop) || 0) + (Number.parseFloat(styles.paddingBottom) || 0);
   const cell = xterm?._core?._renderService?.dimensions?.css?.cell;
-  const viewport = xterm?.element?.querySelector?.(".xterm-viewport");
   const cellWidth = Number(cell?.width) || fontSize * 0.62;
   const cellHeight = Number(cell?.height) || fontSize * 1.22;
-  const availableWidth = viewport?.clientWidth || Math.max(0, rect.width - paddingX - 8);
+  const availableWidth = Math.max(0, rect.width - paddingX);
   const visibleHeight = Math.max(0, rect.height - paddingY);
-  const availableHeight = Math.min(viewport?.clientHeight || visibleHeight, visibleHeight);
+  const availableHeight = visibleHeight;
   const cols = Math.max(18, Math.min(180, Math.floor(availableWidth / cellWidth)));
   const rows = Math.max(4, Math.min(80, Math.round(availableHeight / cellHeight)));
   const bottomInset = terminalPtyBottomInsetForGeometry(availableHeight, cellHeight, rows);
@@ -903,7 +902,7 @@ function applyPtyBottomOverscan(terminal, xterm, measuredSize = null) {
   const totalHeight = extraHeight + inset;
   const overscanOffset = terminalPtyBottomRowsContainContent(xterm, rows) ? extraHeight : 0;
   const bottomAnchorOffset = terminalPtyBottomAnchorRows(terminal, xterm) * cellHeight;
-  const offset = inset + overscanOffset - bottomAnchorOffset;
+  const offset = overscanOffset - bottomAnchorOffset;
   element.style.height = totalHeight ? `calc(100% + ${totalHeight}px)` : "";
   element.style.transform = offset ? `translateY(${-offset}px)` : "";
 }
@@ -1080,7 +1079,6 @@ function refreshDirtyPtyTerminalsDom(ids) {
   if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
   const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
   const visibleIds = new Set(visible.map((terminal) => terminal.id));
-  if (!patchPtyProjectShell(page, visible)) return false;
   let stable = true;
   for (const id of ids) {
     const terminal = findTerminal(id);
