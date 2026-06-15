@@ -388,6 +388,9 @@ export async function createPtyTerminal(body = {}) {
     }, persistentHandlers(session));
     await waitForPersistentAiTerminalStartup(session.id);
   } catch (error) {
+    if (keepStartingPersistentTerminalAfterTimeout(session, error)) {
+      return publicSession(session);
+    }
     session.process?.kill("SIGTERM");
     removePersistentAiTerminalSession(session.id);
     sessions.delete(session.id);
@@ -408,6 +411,20 @@ async function officialTerminalMemory(agent, projectId) {
   } catch {
     return "";
   }
+}
+
+function keepStartingPersistentTerminalAfterTimeout(session, error) {
+  if (error?.code !== "terminal_worker_startup_timeout") return false;
+  const record = listPersistentAiTerminalSessions()
+    .find((item) => item.config?.terminalId === session.id);
+  const state = record?.state || null;
+  if (!state || state.status === "exited") return false;
+  session.status = string(state.status) || "starting";
+  session.providerState = normalizeProviderState(state.providerState) || "starting";
+  session.exitCode = state.exitCode ?? session.exitCode;
+  session.updatedAt = state.updatedAt || new Date().toISOString();
+  if (record.output) session.output = String(record.output || "").slice(-MAX_OUTPUT_BUFFER);
+  return true;
 }
 
 function persistentHandlers(session, options = {}) {

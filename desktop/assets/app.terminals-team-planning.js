@@ -336,6 +336,7 @@ async function createTerminalTeam(plan, modelKey, options = {}) {
       delete terminal.initialPrompt;
       if (terminal.ptyStatus !== "unavailable" && terminal.ptyStatus !== "exited") connectPtyTerminal(terminal);
     }
+    if (typeof revealTerminalBatch === "function") revealTerminalBatch(created.length);
     saveTerminals();
     return created;
   } catch (error) {

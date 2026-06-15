@@ -35,7 +35,7 @@ function context() {
   return sandbox;
 }
 
-test("terminal project search matches compact names, paths, and fuzzy server results", () => {
+test("terminal project search matches compact names and paths", () => {
   const sandbox = context();
   vm.runInContext('terminalProjectQuery = "combinedlaunch"', sandbox);
   assert.equal(vm.runInContext("filteredTerminalProjects()[0].id", sandbox), "one");
@@ -43,13 +43,16 @@ test("terminal project search matches compact names, paths, and fuzzy server res
   assert.equal(vm.runInContext("filteredTerminalProjects()[0].id", sandbox), "two");
 });
 
-test("terminal project menu exposes native folder and file selection", () => {
+test("terminal project menu shows only search and project rows", () => {
   const sandbox = context();
   const html = vm.runInContext('terminalProjectMenu("setup", "")', sandbox);
 
-  assert.match(html, /Search projects anywhere on this PC/);
-  assert.match(html, /data-terminal-project-pick="folder"/);
-  assert.match(html, /data-terminal-project-pick="file"/);
+  assert.match(html, /Search projects/);
+  assert.match(html, />Combined Launch SaaS</);
+  assert.match(html, />Website</);
+  assert.doesNotMatch(html, /data-terminal-project-pick=/);
+  assert.doesNotMatch(html, /Browse full PC/);
+  assert.doesNotMatch(html, /No project/);
 });
 
 test("project discovery assets load before the picker that consumes them", () => {
@@ -57,35 +60,10 @@ test("project discovery assets load before the picker that consumes them", () =>
   assert.match(appHtml, /app\.terminals-project-discovery\.css/);
 });
 
-test("native file selection registers and selects its containing project", async () => {
+test("stale Full PC selection is cleared from the simplified picker", async () => {
   const sandbox = context();
-  sandbox.window.vibyraDesktopProjects = {
-    pick: async () => ({ canceled: false, path: "/work/new-project/src/App.tsx" })
-  };
-  sandbox.fetch = async (url) => {
-    assert.equal(url, "/desktop/projects/select");
-    return {
-      ok: true,
-      json: async () => ({ project: { id: "new", name: "new-project", path: "/work/new-project" } })
-    };
-  };
+  sandbox.setupProjectId = "full-pc";
 
-  await vm.runInContext('pickTerminalProject("file", "setup")', sandbox);
-
-  assert.equal(sandbox.setupProjectId, "new");
-  assert.equal(sandbox.currentState.projects[0].id, "new");
-});
-
-test("Full PC opens the native folder browser instead of selecting the home scope", async () => {
-  const sandbox = context();
-  let pickedKind = "";
-  sandbox.pickTerminalProject = async (kind) => {
-    pickedKind = kind;
-  };
-
-  vm.runInContext('activateTerminalProjectOption("full-pc", "setup")', sandbox);
-  await new Promise((resolve) => setImmediate(resolve));
-
-  assert.equal(pickedKind, "folder");
+  assert.equal(vm.runInContext("terminalProjectForSetup()", sandbox), "");
   assert.equal(sandbox.setupProjectId, "");
 });

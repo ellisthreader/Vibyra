@@ -6,6 +6,7 @@ const ptySource = await readFile(new URL("./app.terminals-pty.js", import.meta.u
 const controlsSource = await readFile(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
 const runtimeSource = await readFile(new URL("./app.terminals-pty-runtime.js", import.meta.url), "utf8");
 const groupSource = await readFile(new URL("./app.terminals-project-groups.js", import.meta.url), "utf8");
+const storeSource = await readFile(new URL("./app.terminals-store.js", import.meta.url), "utf8");
 const styles = await readFile(new URL("./app.terminals-setup-flow.css", import.meta.url), "utf8");
 const setupStyles = await readFile(new URL("./app.terminals.setup.2.css", import.meta.url), "utf8");
 const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
@@ -50,6 +51,16 @@ test("Solo owns batch count while Team uses automatic or explicit planned size",
   assert.match(ptySource, /\[1, 2, 3, 4, 6, 12\]/);
   assert.match(ptySource, /data-terminal-custom-count/);
   assert.match(controlsSource, /createTerminals\(count, setupModel, launchOptions\)/);
+  assert.match(storeSource, /function revealTerminalBatch\(count = 1\)/);
+  assert.match(storeSource, /createTerminals[\s\S]*revealTerminalBatch\(total\)/);
+  assert.match(ptySource, /const staggerStarts = total > 1/);
+  assert.match(ptySource, /deferStart: staggerStarts/);
+  assert.match(ptySource, /schedulePtyBatchStarts\(created\)/);
+  assert.match(ptySource, /setTimeout\(start, Math\.min\(index \* delayMs, 4500\)\)/);
+  assert.match(storeSource, /terminalLayout = "grid"/);
+  assert.match(storeSource, /fullscreenTerminalId = ""/);
+  assert.match(storeSource, /localStorage\.removeItem\(terminalFullscreenKey\)/);
+  assert.match(storeSource, /localStorage\.setItem\(layoutKey, terminalLayout\)/);
   assert.match(controlsSource, /teamSize: setupTeamSize/);
   assert.match(controlsSource, /count = teamPlan\.teamSize/);
   assert.match(controlsSource, /\[data-terminal-team-size\]/);

@@ -160,8 +160,19 @@ function createTerminal(modelKey = setupModel, shouldRender = true, options = {}
 function createTerminals(count = 1, modelKey = setupModel, options = {}) {
   const total = Math.min(maxTerminals - terminals.length, normalizeCount(count));
   for (let index = 0; index < total; index += 1) createTerminal(modelKey, false, options);
+  revealTerminalBatch(total);
   forceTerminalRender = true;
   render();
+}
+
+function revealTerminalBatch(count = 1) {
+  if (Number(count) < 2) return;
+  terminalLayout = "grid";
+  if (typeof fullscreenTerminalId === "string" && fullscreenTerminalId) {
+    fullscreenTerminalId = "";
+    if (typeof terminalFullscreenKey === "string") localStorage.removeItem(terminalFullscreenKey);
+  }
+  localStorage.setItem(layoutKey, terminalLayout);
 }
 
 function terminalTopbarSubtitle() {

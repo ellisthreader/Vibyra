@@ -11,6 +11,7 @@ const appSource = await readFile(new URL("../app.html", import.meta.url), "utf8"
 function createContext() {
   const created = [];
   const launched = [];
+  const revealed = [];
   const saved = [];
   const context = vm.createContext({
     activeTerminalId: "",
@@ -45,6 +46,7 @@ function createContext() {
     setInterval,
     setTimeout,
     saveTerminals: () => saved.push(created.length),
+    revealTerminalBatch: (count) => revealed.push(count),
     ptySessionPatch: (session) => session,
     connectPtyTerminal: () => {},
     createTerminal: (model, shouldRender, options) => {
@@ -61,6 +63,7 @@ function createContext() {
     terminalExecutionRuntimeForModel: (model) => model?.runtime || "",
     terminalStatusState: (terminal) => terminal.testState || { key: "idle", label: "Idle" }
   });
+  context.revealed = revealed;
   vm.runInContext(planningSource, context);
   vm.runInContext(source, context);
   return context;
@@ -116,6 +119,7 @@ test("creating a Team launches distinct assignments under one team id", async ()
   assert.equal(terminals.filter((terminal) => terminal.teamCapability === "writer").length, 1);
   assert.equal(terminals.filter((terminal) => terminal.teamCapability === "read-only").length, 3);
   assert.ok(terminals.every((terminal) => terminal.teamSize === 4));
+  assert.deepEqual(context.revealed, [4]);
   assert.ok(context.launched.every((terminal) => terminal.initialPrompt.includes("Fix checkout safely")));
   assert.ok(context.launched.every((terminal) => terminal.initialPrompt.includes("trusted role and capability policy separately")));
   assert.ok(context.launched.some((terminal) => terminal.initialPrompt.includes("Map the checkout flow")));

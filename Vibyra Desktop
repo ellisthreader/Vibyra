@@ -3,6 +3,33 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+LAUNCHER_LOG_DIR="$HOME/.vibyra-desktop"
+LAUNCHER_LOG="$LAUNCHER_LOG_DIR/launcher.log"
+ELECTRON_LOG_DIR="$LAUNCHER_LOG_DIR"
+mkdir -p "$LAUNCHER_LOG_DIR"
+if [ ! -t 1 ]; then
+  exec >>"$LAUNCHER_LOG" 2>&1
+fi
+
+log() {
+  printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+notify_startup_error() {
+  local message="$1"
+  log "$message"
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send "Vibyra" "$message" >/dev/null 2>&1 || true
+  fi
+}
+
+require_startup_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    notify_startup_error "Missing required command: $1"
+    exit 1
+  fi
+}
+
 if [ -f ".env" ]; then
   set -a
   . ./.env
@@ -15,19 +42,117 @@ PORT="${VIBYRA_AGENT_PORT:-4317}"
 APP_URL="http://127.0.0.1:${PORT}/desktop"
 RUNTIME_URL="http://127.0.0.1:${PORT}/desktop/runtime"
 CHROME_PROFILE="$HOME/.vibyra-desktop-window"
-ELECTRON_LOG_DIR="$HOME/.vibyra-desktop"
 ELECTRON_LOG="$ELECTRON_LOG_DIR/electron.log"
 ELECTRON_BIN=""
 ELECTRON_MAIN="$PWD/desktop/electron-main.cjs"
 DESKTOP_LAUNCHER="$PWD/scripts/install-desktop-launcher.sh"
-EXPECTED_TERMINAL_LAUNCH_CONTRACT="$(
-  node --input-type=module -e \
-    'import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION as version } from "./desktop/lib/aiTerminalProviderAdapters.mjs"; process.stdout.write(String(version));'
-)"
+BACKEND_PID_FILE="$LAUNCHER_LOG_DIR/backend.pid"
+BACKEND_LOG="$LAUNCHER_LOG_DIR/backend.log"
+EXPECTED_TERMINAL_LAUNCH_CONTRACT=""
+
+ensure_node_dependencies() {
+  require_startup_command node
+  require_startup_command npm
+
+  if [ -x "node_modules/.bin/electron" ]; then
+    return
+  fi
+
+  log "Installing Vibyra Desktop dependencies..."
+  npm install --no-audit --no-fund
+}
+
+api_origin() {
+  node -e 'try { process.stdout.write(new URL(process.argv[1]).origin); } catch { process.exit(1); }' "$VIBYRA_DESKTOP_API_URL"
+}
+
+api_is_loopback() {
+  node -e '
+    try {
+      const host = new URL(process.argv[1]).hostname;
+      process.exit(["127.0.0.1", "localhost", "::1"].includes(host) ? 0 : 1);
+    } catch {
+      process.exit(1);
+    }
+  ' "$VIBYRA_DESKTOP_API_URL"
+}
+
+backend_ready() {
+  local origin="$1"
+  curl -fsS "${origin}/api/skills" >/dev/null 2>&1
+}
+
+ensure_local_backend() {
+  if ! api_is_loopback; then
+    return
+  fi
+
+  require_startup_command php
+  require_startup_command composer
+  require_startup_command curl
+
+  local origin
+  origin="$(api_origin)"
+  if backend_ready "$origin"; then
+    return
+  fi
+
+  local backend_port
+  backend_port="$(node -e 'const url = new URL(process.argv[1]); process.stdout.write(url.port || (url.protocol === "https:" ? "443" : "80"));' "$origin")"
+  local port_pids
+  port_pids="$(lsof -nP -tiTCP:"${backend_port}" -sTCP:LISTEN 2>/dev/null || true)"
+  if [ -n "$port_pids" ]; then
+    notify_startup_error "Port ${backend_port} is already in use by a different local server."
+    exit 1
+  fi
+
+  log "Preparing the local Vibyra backend..."
+  if [ ! -f backend/vendor/autoload.php ]; then
+    composer install --working-dir=backend --no-interaction --prefer-dist
+  fi
+
+  if [ ! -f backend/.env ]; then
+    cp backend/.env.example backend/.env
+  fi
+
+  mkdir -p backend/database
+  touch backend/database/database.sqlite
+
+  if ! grep -Eq '^APP_KEY=base64:.+' backend/.env; then
+    (cd backend && php artisan key:generate --force)
+  fi
+
+  (cd backend && php artisan migrate --force)
+
+  log "Starting the local Vibyra backend on ${origin}..."
+  (
+    cd backend
+    nohup php artisan serve --host=127.0.0.1 --port="$backend_port" >>"$BACKEND_LOG" 2>&1 &
+    echo $! >"$BACKEND_PID_FILE"
+  )
+
+  for _ in {1..80}; do
+    if backend_ready "$origin"; then
+      return
+    fi
+    sleep 0.25
+  done
+
+  notify_startup_error "The local Vibyra backend did not become ready. See $BACKEND_LOG."
+  exit 1
+}
 
 if [ -x "$DESKTOP_LAUNCHER" ]; then
   "$DESKTOP_LAUNCHER"
 fi
+
+ensure_node_dependencies
+ensure_local_backend
+
+EXPECTED_TERMINAL_LAUNCH_CONTRACT="$(
+  node --input-type=module -e \
+    'import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION as version } from "./desktop/lib/aiTerminalProviderAdapters.mjs"; process.stdout.write(String(version));'
+)"
 
 if [ -x "node_modules/.bin/electron" ]; then
   ELECTRON_BIN="node_modules/.bin/electron"
@@ -37,7 +162,6 @@ fi
 
 open_window() {
   if [ -n "$ELECTRON_BIN" ] && [ -f "desktop/electron-main.cjs" ]; then
-    mkdir -p "$ELECTRON_LOG_DIR"
     ELECTRON_RUN_AS_NODE= VIBYRA_DESKTOP_URL="$APP_URL" "$ELECTRON_BIN" --class=vibyra --no-sandbox --disable-gpu --disable-gpu-compositing desktop/electron-main.cjs >>"$ELECTRON_LOG" 2>&1 &
   elif command -v google-chrome >/dev/null 2>&1; then
     google-chrome --app="$APP_URL" --class=VibyraDesktop --user-data-dir="$CHROME_PROFILE" --window-size=1040,760 >/dev/null 2>&1 &
@@ -103,7 +227,7 @@ if [ -n "$PORT_PIDS" ]; then
   else
     echo "Port ${PORT} is already in use by a different local server." >&2
     ps -o pid=,cmd= -p "$PORT_PIDS" >&2 || true
-    echo "Stop the old process first, then run npm run desktop again." >&2
+    echo "Stop the old process first, then open Vibyra again." >&2
     echo "Try: kill ${PORT_PIDS}" >&2
     exit 1
   fi

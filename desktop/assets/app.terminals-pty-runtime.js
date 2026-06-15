@@ -24,7 +24,7 @@ async function startPtyTerminal(terminal) {
     : "";
   if (assignmentId) terminal.initialAssignmentId = assignmentId;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
+  const timeout = setTimeout(() => controller.abort(), terminalPtyStartTimeoutMs);
   try {
     const response = await fetch("/desktop/pty-terminals", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: terminal.id, title: terminal.title, agent: terminal.agent, model: terminal.model, reasoningEffort: terminal.effort, permissionMode: terminal.permissionMode, tokenMode: terminal.tokenMode, projectId: terminal.projectId, workspaceMode: terminal.workspaceMode, allowSharedFallback: terminal.workspaceMode === "worktree" && terminal.allowSharedFallback !== false, ...teamFields, cols: size.cols, rows: size.rows, ...(initialPrompt ? { initialPrompt, assignmentId } : {}) }) });
     const result = await response.json().catch(() => ({}));
@@ -71,6 +71,8 @@ async function startPtyTerminal(terminal) {
   }
 }
 
+const terminalPtyStartTimeoutMs = 60_000;
+
 function acceptInitialPtyAssignment(terminal, assignment, assignmentId) {
   const provider = normalizedPtyProviderState({
     providerState: assignment.providerState,
@@ -97,7 +99,7 @@ async function submitInitialPtyPrompt(terminal) {
       : `assignment-${terminal.id}-${Date.now()}`);
   terminal.initialAssignmentId = assignmentId;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
+  const timeout = setTimeout(() => controller.abort(), terminalPtyStartTimeoutMs);
   try {
     const response = await fetch(`/desktop/pty-terminals/${encodeURIComponent(terminal.id)}/assign`, {
       method: "POST",
@@ -151,6 +153,8 @@ const terminalXtermSettledFits = new Map();
 const terminalXtermLayoutSettleDelay = 120;
 const terminalXtermScheduledFits = new Map();
 const terminalXtermThemeKeys = {};
+const terminalXtermClipboardBound = new WeakSet();
+let terminalXtermGlobalClipboardBound = false;
 let terminalPtyRenderBatchTimer = 0;
 const terminalPtyRenderDirtyIds = new Set();
 
@@ -507,8 +511,9 @@ function appendPtyOutput(terminal, data, meta = {}) {
   if (typeof terminalTaskActivityOutput === "function") terminalTaskActivityOutput(terminal, data, meta);
   const xterm = terminalXterms[terminal.id];
   if (xterm?.element?.isConnected) {
+    const followOutput = terminalPtyViewportIsNearBottom(xterm);
     xterm.write(terminalDisplayOutput(terminal, data), () => {
-      positionPtyViewport(terminal, xterm);
+      positionPtyViewport(terminal, xterm, { followOutput });
     });
     terminalXtermSnapshots[terminal.id] = terminal.output;
   }
@@ -593,6 +598,7 @@ function terminalPlainActivityOutput(value) {
 function mountVisibleXterms(ids = null) {
   if (preservingPtyXtermElements) return;
   ensureTerminalXtermResizeObserver();
+  ensureTerminalXtermClipboardShortcut();
   const nodesToMount = ids
     ? Array.from(ids, (id) => document.querySelector(`[data-terminal-xterm="${CSS.escape(id)}"]`)).filter(Boolean)
     : Array.from(document.querySelectorAll("[data-terminal-xterm]"));
@@ -628,6 +634,7 @@ function mountVisibleXterms(ids = null) {
       if (typeof attachTerminalEditorLinkProvider === "function") {
         attachTerminalEditorLinkProvider(id, xterm);
       }
+      attachTerminalXtermClipboard(id, xterm);
       xterm.onData((data) => {
         if (terminalXterms[id] !== xterm || !xterm.element?.isConnected) return;
         if (!terminalXtermReplayWrites[id]) {
@@ -642,6 +649,7 @@ function mountVisibleXterms(ids = null) {
     if (typeof attachTerminalEditorLinkProvider === "function") {
       attachTerminalEditorLinkProvider(id, xterm);
     }
+    attachTerminalXtermClipboard(id, xterm);
     if (!xterm.element || xterm.element.parentElement !== node) {
       node.replaceChildren();
       xterm.open(node);
@@ -649,10 +657,120 @@ function mountVisibleXterms(ids = null) {
       if (terminal.output) writePtySnapshot(id, xterm, terminal.output);
       terminalXtermSnapshots[id] = terminal.output || "";
     }
+    bindTerminalXtermCopyEvents(xterm);
     observeTerminalXtermNode(node);
     fitPtyXterm(id, node, terminal);
     schedulePtyXtermFit(id);
   });
+}
+
+function attachTerminalXtermClipboard(_id, xterm) {
+  if (!xterm || terminalXtermClipboardBound.has(xterm)) return;
+  terminalXtermClipboardBound.add(xterm);
+  xterm.attachCustomKeyEventHandler?.((event) => {
+    if (!terminalCopyShortcut(event)) return true;
+    if (!copyTerminalXtermSelection(xterm, event)) return true;
+    return false;
+  });
+}
+
+function ensureTerminalXtermClipboardShortcut() {
+  if (terminalXtermGlobalClipboardBound) return;
+  terminalXtermGlobalClipboardBound = true;
+  document.addEventListener("keydown", handleTerminalXtermClipboardShortcut, true);
+}
+
+function handleTerminalXtermClipboardShortcut(event) {
+  if (!terminalCopyShortcut(event)) return;
+  const xterm = terminalXtermForCopyEvent(event);
+  if (!xterm || !copyTerminalXtermSelection(xterm, event)) return;
+  event.stopPropagation?.();
+}
+
+function terminalXtermForCopyEvent(event) {
+  const fromTarget = terminalXtermFromNode(event?.target);
+  if (fromTarget) return fromTarget;
+  const selection = document.getSelection?.();
+  const selectionNode = selection?.anchorNode?.nodeType === Node.TEXT_NODE
+    ? selection.anchorNode.parentElement
+    : selection?.anchorNode;
+  const fromSelection = terminalXtermFromNode(selectionNode);
+  if (fromSelection) return fromSelection;
+  return activeTerminalId ? terminalXterms[activeTerminalId] : null;
+}
+
+function terminalXtermFromNode(node) {
+  const host = node?.closest?.("[data-terminal-xterm]");
+  const id = host?.dataset?.terminalXterm || "";
+  return id ? terminalXterms[id] : null;
+}
+
+function bindTerminalXtermCopyEvents(xterm) {
+  const element = xterm?.element;
+  if (!element || element.dataset.terminalClipboardBound) return;
+  element.dataset.terminalClipboardBound = "1";
+  const copyHandler = (event) => {
+    copyTerminalXtermSelection(xterm, event);
+  };
+  element.addEventListener("copy", copyHandler);
+  xterm.textarea?.addEventListener?.("copy", copyHandler);
+}
+
+function terminalCopyShortcut(event) {
+  if (!event || event.type !== "keydown") return false;
+  return (event.ctrlKey || event.metaKey) && !event.altKey && String(event.key || "").toLowerCase() === "c";
+}
+
+function copyTerminalXtermSelection(xterm, event = null) {
+  const selected = terminalXtermSelectedText(xterm);
+  if (!selected) return false;
+  event?.clipboardData?.setData?.("text/plain", selected);
+  event?.preventDefault?.();
+  void writeTerminalClipboardText(selected);
+  return true;
+}
+
+function terminalXtermSelectedText(xterm) {
+  try {
+    const xtermSelection = String(xterm?.getSelection?.() || "");
+    if (xtermSelection) return xtermSelection;
+    const selection = document.getSelection?.();
+    if (!selection || selection.isCollapsed) return "";
+    const anchor = selection.anchorNode?.nodeType === Node.TEXT_NODE
+      ? selection.anchorNode.parentElement
+      : selection.anchorNode;
+    const focus = selection.focusNode?.nodeType === Node.TEXT_NODE
+      ? selection.focusNode.parentElement
+      : selection.focusNode;
+    if (!xterm?.element?.contains?.(anchor) && !xterm?.element?.contains?.(focus)) return "";
+    return String(selection.toString() || "");
+  } catch {
+    return "";
+  }
+}
+
+async function writeTerminalClipboardText(text) {
+  const value = String(text || "");
+  if (!value) return false;
+  const desktopWrite = globalThis.window?.vibyraDesktopClipboard?.writeText;
+  const browserWrite = globalThis.navigator?.clipboard?.writeText?.bind(globalThis.navigator.clipboard);
+  try {
+    if (typeof desktopWrite === "function") {
+      await desktopWrite(value);
+      return true;
+    }
+    if (typeof browserWrite !== "function") return false;
+    await browserWrite(value);
+    return true;
+  } catch {
+    if (typeof browserWrite !== "function") return false;
+    try {
+      await browserWrite(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 function terminalXtermNodeIsVisible(node) {
@@ -676,18 +794,19 @@ function syncPtyXtermOutput(terminal) {
   const xterm = terminalXterms[terminal.id];
   if (!xterm || terminalXtermSnapshots[terminal.id] === terminal.output) return;
   try {
+    const followOutput = terminalPtyViewportIsNearBottom(xterm);
     xterm.reset();
-    if (terminal.output) writePtySnapshot(terminal.id, xterm, terminal.output);
+    if (terminal.output) writePtySnapshot(terminal.id, xterm, terminal.output, { followOutput });
     terminalXtermSnapshots[terminal.id] = terminal.output || "";
   } catch {}
 }
 
-function writePtySnapshot(id, xterm, output) {
+function writePtySnapshot(id, xterm, output, options = {}) {
   terminalXtermReplayWrites[id] = (terminalXtermReplayWrites[id] || 0) + 1;
   xterm.write(terminalDisplayOutput(findTerminal(id), output), () => {
     terminalXtermReplayWrites[id] = Math.max(0, (terminalXtermReplayWrites[id] || 1) - 1);
     if (!terminalXtermReplayWrites[id]) delete terminalXtermReplayWrites[id];
-    positionPtyViewport(findTerminal(id), xterm);
+    positionPtyViewport(findTerminal(id), xterm, { followOutput: options.followOutput !== false });
   });
 }
 
@@ -699,12 +818,21 @@ function terminalAutoDeciding(terminal) {
   return Boolean(terminal?.autoDeciding);
 }
 
-function positionPtyViewport(terminal, xterm) {
+function terminalPtyViewportIsNearBottom(xterm, threshold = 2) {
+  const buffer = xterm?.buffer?.active;
+  if (!buffer) return true;
+  const baseY = Number(buffer.baseY || 0);
+  const viewportY = Number(buffer.viewportY || 0);
+  return baseY - viewportY <= threshold;
+}
+
+function positionPtyViewport(terminal, xterm, options = {}) {
   applyPtyBottomOverscan(terminal, xterm);
   if (terminalAutoDeciding(terminal)) {
     xterm.scrollToTop?.();
     return;
   }
+  if (options.followOutput === false) return;
   xterm.scrollToBottom?.();
 }
 
@@ -719,7 +847,7 @@ function focusPtyTerminal(id) {
   }
   const xterm = terminalXterms[id];
   if (xterm) {
-    positionPtyViewport(terminal, xterm);
+    positionPtyViewport(terminal, xterm, { followOutput: terminalPtyViewportIsNearBottom(xterm) });
     xterm.focus?.();
     return;
   }
@@ -852,7 +980,7 @@ function measuredPtySize(node, xterm = null) {
   const visibleHeight = Math.max(0, rect.height - paddingY);
   const availableHeight = visibleHeight;
   const cols = Math.max(18, Math.min(180, Math.floor(availableWidth / cellWidth)));
-  const rows = Math.max(4, Math.min(80, Math.round(availableHeight / cellHeight)));
+  const rows = Math.max(4, Math.min(80, Math.floor(availableHeight / cellHeight)));
   const bottomInset = terminalPtyBottomInsetForGeometry(availableHeight, cellHeight, rows);
   return { cols, rows, bottomInset };
 }
@@ -971,7 +1099,7 @@ function ptyTerminalDomSignature() {
   if (!terminals.length) return "setup";
   const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
   const visibleIds = visible.map((terminal) => terminal.id);
-  const structural = visible.map((terminal) => [
+  const structural = terminals.map((terminal) => [
     terminal.id,
     terminal.ptyStatus === "unavailable" ? "unavailable" : "xterm",
     terminal.notice ? "notice" : ""
@@ -1012,11 +1140,11 @@ function patchPtyTerminalStructure() {
   const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
   if (!patchPtyProjectShell(page, visible)) return false;
   syncPtyTerminalGrid(page, grid);
-  const expectedIds = new Set(visible.map((terminal) => terminal.id));
+  const expectedIds = new Set(terminals.map((terminal) => terminal.id));
   stage.querySelectorAll("[data-terminal]").forEach((article) => {
     if (!expectedIds.has(article.dataset.terminal || "")) article.remove();
   });
-  for (const terminal of visible) {
+  for (const terminal of terminals) {
     let article = stage.querySelector(`[data-terminal="${CSS.escape(terminal.id)}"]`);
     if (!article) {
       stage.insertAdjacentHTML("beforeend", grid ? terminalTile(terminal) : activeTerminalView(terminal));
@@ -1064,9 +1192,9 @@ function refreshPtyTerminalsDom() {
   const page = nodes.content.querySelector(".terminal-page");
   if (!page) return false;
   if (typeof syncTerminalProjectWorkspaceHome === "function") syncTerminalProjectWorkspaceHome(page);
-  const visible = typeof terminalsForProjectKey === "function" ? terminalsForProjectKey() : terminals;
+  syncPtyTerminalGrid(page, terminalLayout === "grid");
   let stable = true;
-  for (const terminal of visible) stable = refreshPtyTerminalDom(terminal) && stable;
+  for (const terminal of terminals) stable = refreshPtyTerminalDom(terminal) && stable;
   if (stable) stable = refreshPtyTerminalSettingsMenus() && stable;
   if (stable) mountVisibleXterms();
   return stable;

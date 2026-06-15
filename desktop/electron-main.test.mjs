@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const source = readFileSync(new URL("./electron-main.cjs", import.meta.url), "utf8");
+const preloadSource = readFileSync(new URL("./electron-preload.cjs", import.meta.url), "utf8");
 const launcherSource = readFileSync(new URL("../Vibyra Desktop", import.meta.url), "utf8");
+const desktopEntrySource = readFileSync(new URL("../Vibyra Desktop.desktop", import.meta.url), "utf8");
+const installerSource = readFileSync(new URL("../scripts/install-desktop-launcher.sh", import.meta.url), "utf8");
 const windowSource = readFileSync(new URL("./lib/window.mjs", import.meta.url), "utf8");
 
 test("Electron uses the Vibyra runtime name and native app icon", () => {
@@ -48,6 +51,14 @@ test("Electron registers the F9 screenshot editor bridge and cleans it up", () =
   assert.match(source, /target\.startsWith\(`\$\{directory\}\$\{path\.sep\}`\)/);
 });
 
+test("Electron exposes a narrow text clipboard bridge for terminal selection copy", () => {
+  assert.match(preloadSource, /vibyraDesktopClipboard/);
+  assert.match(preloadSource, /clipboard:write-text/);
+  assert.match(source, /ipcMain\.handle\("clipboard:write-text"/);
+  assert.match(source, /event\.sender !== mainWindow\.webContents/);
+  assert.match(source, /clipboard\.writeText\(String\(text \|\| ""\)\)/);
+});
+
 test("Electron real quit stops the detached desktop bridge before exiting", () => {
   assert.match(source, /function stopDesktopBridge\(\)/);
   assert.match(source, /\/desktop\/quit/);
@@ -61,4 +72,21 @@ test("Electron real quit stops the detached desktop bridge before exiting", () =
 test("Electron accepts desktop shell URLs with or without a trailing slash", () => {
   assert.match(source, /const normalizedPath = \(value\) => value\.replace\(\/\\\/\+\$\/, ""\) \|\| "\/"/);
   assert.match(source, /normalizedPath\(loaded\.pathname\) === normalizedPath\(expected\.pathname\)/);
+});
+
+test("Linux launcher is app-style and self-prepares the desktop runtime", () => {
+  assert.match(launcherSource, /ensure_node_dependencies\(\)/);
+  assert.match(launcherSource, /ensure_local_backend\(\)/);
+  assert.match(launcherSource, /ELECTRON_LOG_DIR="\$LAUNCHER_LOG_DIR"/);
+  assert.match(launcherSource, /ELECTRON_LOG="\$ELECTRON_LOG_DIR\/electron\.log"/);
+  assert.match(launcherSource, /npm install --no-audit --no-fund/);
+  assert.match(launcherSource, /VIBYRA_DESKTOP_API_URL/);
+  assert.match(launcherSource, /Vibyra Desktop dependencies/);
+  assert.match(installerSource, /DESKTOP_FILE="\$APPLICATIONS_DIR\/vibyra\.desktop"/);
+  assert.match(installerSource, /DESKTOP_SHORTCUT="\$DESKTOP_SHORTCUT_DIR\/Vibyra\.desktop"/);
+  assert.match(installerSource, /StartupWMClass=vibyra/);
+  assert.match(installerSource, /Icon=\$ICON_NAME/);
+  assert.match(desktopEntrySource, /Name=Vibyra/);
+  assert.match(desktopEntrySource, /StartupWMClass=vibyra/);
+  assert.doesNotMatch(desktopEntrySource, /\/home\/taylor/);
 });

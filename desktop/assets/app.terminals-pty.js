@@ -279,13 +279,36 @@ createTerminals = function createPtyTerminals(count = 1, modelKey = setupModel, 
     ? options.tokenMode
     : setupTokenMode;
   const model = unlockedModel(modelKey, tokenMode);
+  const staggerStarts = total > 1;
+  const created = [];
   for (let index = 0; index < total; index += 1) {
-    createTerminal(model.key, false, { ...options, initialPrompt: index === 0 ? options.initialPrompt : "" });
+    const terminal = createTerminal(model.key, false, {
+      ...options,
+      deferStart: staggerStarts,
+      initialPrompt: index === 0 ? options.initialPrompt : ""
+    });
+    if (terminal) created.push(terminal);
   }
+  if (typeof revealTerminalBatch === "function") revealTerminalBatch(created.length);
   resetTerminalSetupFlow();
   forceTerminalRender = true;
   render();
+  if (staggerStarts) schedulePtyBatchStarts(created);
 };
+
+function schedulePtyBatchStarts(created) {
+  const delayMs = 900;
+  created.forEach((terminal, index) => {
+    const start = () => {
+      if (typeof queueStartPtyTerminal === "function") queueStartPtyTerminal(terminal);
+    };
+    if (index === 0) {
+      start();
+      return;
+    }
+    setTimeout(start, Math.min(index * delayMs, 4500));
+  });
+}
 
 setupView = function ptySetupView() {
   const model = selectedSetupModel();

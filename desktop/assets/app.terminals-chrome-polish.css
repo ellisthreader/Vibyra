@@ -6,6 +6,9 @@ body {
   --terminal-polish-active: color-mix(in srgb, var(--terminal-text, #f1eef8) 7%, transparent);
   --terminal-polish-header: var(--terminal-surface, #0b0b10);
   --terminal-polish-focus: color-mix(in srgb, var(--terminal-accent, #8b5cff) 58%, transparent);
+  --terminal-polish-selected-border: color-mix(in srgb, var(--terminal-accent, #8b5cff) 72%, var(--terminal-border-strong, rgba(151, 161, 190, .22)));
+  --terminal-polish-selected-ring: color-mix(in srgb, var(--terminal-accent, #8b5cff) 28%, transparent);
+  --terminal-polish-selected-header: color-mix(in srgb, var(--terminal-accent, #8b5cff) 10%, var(--terminal-polish-header));
 }
 
 .terminal-tabs {
@@ -79,13 +82,16 @@ body {
 
 .terminal-focus.active::after,
 .terminal-tile.active::after {
-  border-color: var(--terminal-polish-line-strong);
-  box-shadow: inset 0 0 0 1px var(--terminal-polish-line);
+  border-color: var(--terminal-polish-selected-border);
+  box-shadow:
+    inset 0 0 0 1px var(--terminal-polish-selected-ring),
+    0 0 0 1px color-mix(in srgb, var(--terminal-accent, #8b5cff) 12%, transparent);
 }
 
 .terminal-focus.active .terminal-focus-head,
 .terminal-tile.active .terminal-tile-head {
-  background: var(--terminal-polish-header);
+  background: var(--terminal-polish-selected-header);
+  border-bottom-color: var(--terminal-polish-selected-border);
 }
 
 .terminal-tile-head > button:first-child:focus-visible {

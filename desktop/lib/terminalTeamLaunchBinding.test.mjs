@@ -23,6 +23,15 @@ test("PTY creation returns after provider child spawn without waiting for initia
   assert.doesNotMatch(createRoute, /assignPtyTerminalTask|STARTUP_ASSIGNMENT_TIMEOUT_MS/);
 });
 
+test("PTY creation keeps an alive starting worker after a child-spawn timeout", async () => {
+  const source = await readFile(new URL("./ptyTerminals.mjs", import.meta.url), "utf8");
+
+  assert.match(source, /keepStartingPersistentTerminalAfterTimeout\(session, error\)/);
+  assert.match(source, /error\?\.code !== "terminal_worker_startup_timeout"/);
+  assert.match(source, /if \(!state \|\| state\.status === "exited"\) return false/);
+  assert.match(source, /session\.providerState = normalizeProviderState\(state\.providerState\) \|\| "starting"/);
+});
+
 test("renderer includes the bridge plan id in the authoritative PTY request", async () => {
   const teamSource = await readFile(
     new URL("../assets/app.terminals-team.js", import.meta.url),

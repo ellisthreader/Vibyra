@@ -570,6 +570,55 @@ test("script-backed terminal resize updates the real PTY dimensions", async (t) 
   }
 });
 
+test("provider exit falls through to an interactive project shell", async (t) => {
+  if (process.platform !== "linux" || !existsSync("/usr/bin/script")) {
+    t.skip("Linux script PTY is required");
+    return;
+  }
+  const root = mkdtempSync(join(tmpdir(), "vibyra-provider-shell-"));
+  const cli = join(root, "codex");
+  const previousCodexCli = process.env.VIBYRA_CODEX_CLI;
+  writeFileSync(cli, "#!/usr/bin/env bash\nprintf 'FAKE CODEX READY\\n'\nexit 0\n", { mode: 0o755 });
+  process.env.VIBYRA_CODEX_CLI = cli;
+  let output = "";
+  let child;
+  const exited = new Promise((resolve) => {
+    child = spawnAiTerminalProcess({
+      agent: "codex",
+      tokenMode: "provider",
+      model: "openai/gpt-5.5",
+      launchPlan: {
+        billingMode: "provider",
+        launchContractVersion: AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
+        providerId: "openai",
+        runtimeId: "codex"
+      },
+      cwd: root,
+      cols: 90,
+      rows: 24,
+      onData: (data) => { output += data; },
+      onExit: resolve
+    });
+  });
+
+  try {
+    await waitUntilOutput(() => output, /Project shell ready/);
+    child.stdin.write("printf 'AFTER_PROVIDER:%s\\n' \"$PWD\"; exit\r");
+    await Promise.race([
+      exited,
+      delay(3_000).then(() => { throw new Error("fallback shell did not exit"); })
+    ]);
+    assert.match(output, /FAKE CODEX READY/);
+    assert.match(output, /Project shell ready/);
+    assert.match(output, new RegExp(`AFTER_PROVIDER:${escapeRegExp(root)}`));
+  } finally {
+    if (child?.exitCode === null) child.kill("SIGTERM");
+    if (previousCodexCli === undefined) delete process.env.VIBYRA_CODEX_CLI;
+    else process.env.VIBYRA_CODEX_CLI = previousCodexCli;
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("closing a script-backed terminal stops nested provider processes", async (t) => {
   if (process.platform !== "linux" || !existsSync("/usr/bin/script")) {
     t.skip("Linux script PTY is required");
@@ -609,6 +658,19 @@ test("closing a script-backed terminal stops nested provider processes", async (
     }
   }
 });
+
+async function waitUntilOutput(readOutput, pattern) {
+  const deadline = Date.now() + 3_000;
+  while (Date.now() < deadline) {
+    if (pattern.test(String(readOutput()))) return;
+    await delay(25);
+  }
+  throw new Error(`output did not match ${pattern}`);
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
 
 async function waitForNestedPid(readOutput) {
   const deadline = Date.now() + 3_000;

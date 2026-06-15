@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld("vibyraDesktopProjects", {
   pick: (kind) => ipcRenderer.invoke("projects:pick", kind)
 });
 
+contextBridge.exposeInMainWorld("vibyraDesktopClipboard", {
+  writeText: (text) => ipcRenderer.invoke("clipboard:write-text", String(text || ""))
+});
+
 contextBridge.exposeInMainWorld("vibyraDesktopScreenshot", {
   isElectron: true,
   chooseDirectory: () => ipcRenderer.invoke("screenshot:choose-directory"),

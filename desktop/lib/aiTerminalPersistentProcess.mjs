@@ -14,7 +14,7 @@ const sessionRoot = process.env.VIBYRA_TERMINAL_SESSION_ROOT
   || join(homedir(), ".vibyra-agent", "terminal-sessions");
 export const AI_TERMINAL_RUNTIME_VERSION = 18;
 export const AI_TERMINAL_GEMINI_PROFILE_VERSION = 1;
-const TERMINAL_STARTUP_TIMEOUT_MS = 5_000;
+const TERMINAL_STARTUP_TIMEOUT_MS = 45_000;
 const TERMINAL_STARTUP_STABILITY_MS = 100;
 
 export function launchPersistentAiTerminalProcess(config, handlers = {}) {

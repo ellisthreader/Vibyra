@@ -81,7 +81,13 @@ npm run desktop:setup
 ```
 
 That command installs dependencies, prepares and migrates the local Laravel
-database, starts the backend, and opens Vibyra Desktop.
+database, installs the Vibyra app launcher, starts the backend when a local API
+URL is configured, and opens Vibyra.
+
+After the first launch, open **Vibyra** from the system application menu or the
+desktop shortcut. The launcher updates the OS entry, prepares missing
+Node/Electron dependencies, starts the local backend automatically when needed,
+and opens the Electron shell without a terminal command.
 
 Requirements: Node.js, npm, PHP, Composer, and Git.
 
@@ -117,7 +123,7 @@ After pairing, the phone can list local projects, start preview sessions, send p
 ```bash
 npm run backend                 # Laravel backend only
 npm run desktop                 # Desktop bridge and desktop shell
-npm run desktop:setup           # Install, configure, and run desktop
+npm run desktop:setup           # Install the desktop app launcher and open Vibyra
 npm run ios                     # Expo iOS target
 npm run web                     # Expo web target
 npm run typecheck               # TypeScript check

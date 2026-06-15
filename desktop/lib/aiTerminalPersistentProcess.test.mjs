@@ -10,6 +10,11 @@ import {
   verifyTerminalGatewayToken
 } from "./terminalGatewayAuth.mjs";
 
+test("provider child startup handshake allows loaded-host cold starts", () => {
+  const source = readFileSync(new URL("./aiTerminalPersistentProcess.mjs", import.meta.url), "utf8");
+  assert.match(source, /const TERMINAL_STARTUP_TIMEOUT_MS = 45_000;/);
+});
+
 test("detached terminal worker finishes after the bridge client disconnects", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-safe-rails-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;

@@ -96,7 +96,13 @@ For Vibyra tokens:
   handshake, attach the renderer WebSocket immediately, and deliver the
   initial assignment through the semantic assignment route while startup
   output is already visible. Keep synchronous `--version` probes off the
-  provider spawn path.
+  provider spawn path. If that bounded child-PID handshake times out but
+  persistent worker state shows a live non-exited worker, keep the terminal
+  visible in `starting` instead of rolling it back as
+  `terminal_worker_startup_timeout`; the provider can still finish starting
+  under host load. Batch launches should stagger provider starts after rendering
+  all terminal records so native CLI cold starts do not all contend in one
+  microtask.
   Native CLIs can also block before their composer on an interactive migration
   or upgrade notice. Inspect the authoritative PTY transcript before treating
   this as slow startup. For Codex, read the selected model's current
@@ -124,13 +130,20 @@ For Vibyra tokens:
   For renderer performance with many open terminals, keep live PTY
   output/status updates on the dirty-terminal patch path in
   `app.terminals-pty-runtime.js`; do not rebuild the whole terminal topbar/page
-  for ordinary output, and do not mount or fit xterms hidden by project, focus,
-  or fullscreen state. Detached workers should stream output immediately but
-  debounce disk persistence in `aiTerminalWorker.mjs` to avoid per-terminal
-  write churn. Launch, socket-open, and session patch paths should mount only
-  the affected terminal, repeated xterm fits should coalesce per terminal, and
-  xterm themes should be cache-keyed by visible theme scope instead of
-  recomputed on every mount.
+  or reconstruct project tabs/rail agents for ordinary output, and do not mount
+  or fit xterms hidden by project, focus, or fullscreen state. Measure PTY
+  columns/rows from the visible xterm host pane, not stale internal viewport
+  dimensions; fractional bottom paint guards must not translate the whole
+  terminal. Detached workers should stream output immediately but debounce disk
+  persistence in `aiTerminalWorker.mjs` to avoid per-terminal write churn.
+  Launch, socket-open, and session patch paths should mount only the affected
+  terminal, repeated xterm fits should coalesce per terminal, and xterm themes
+  should be cache-keyed by visible theme scope instead of recomputed on every
+  mount. Switching terminal project tabs must keep inactive project terminal
+  articles and xterm hosts connected, hidden with `.terminal-project-hidden`
+  instead of removed and replayed. The fast refresh path must still call
+  `syncPtyTerminalGrid()` before visible xterms mount or fit so a project tab
+  cannot inherit another project's grid dimensions.
   A bridge/worker launch-contract mismatch means source changed under a stale
   bridge; refresh the bridge and never surface it as a generic assignment
   timeout. Apply launch-contract compatibility checks to personal provider
@@ -152,15 +165,21 @@ For Vibyra tokens:
   transitions to the selected provider CLI and delivers that prompt exactly
   once. Routing failures return to the `❯ auto` prompt instead of closing or
   hanging the terminal.
-- Treat terminal project selection as three fallback layers: bounded startup
-  discovery, debounced deep name/path search, then Electron-native `Choose
-  folder` or `Choose file`. A selected file resolves to its containing folder,
-  and explicit selections persist in
-  `~/.vibyra-agent/recent-projects.json`, including plain folders without
-  framework markers. The visible `Browse full PC` row must open the native
-  folder picker; it must not silently choose the synthetic home-directory
-  scope. Keep arbitrary path choice behind the native picker and register the
-  result through the desktop-authorized project route.
+- A provider CLI exit is not a terminal exit. `terminalSessionCommand()` must
+  run the native provider first, then print the project-shell-ready marker,
+  reset TTY modes, and `exec $SHELL -i` in the same PTY. Do not `exec` the
+  provider as the final process, or `Ctrl+C` / provider quit leaves the user
+  with a dead `[Codex exited]` terminal instead of a real shell.
+- Keep terminal project selection simple in setup: one search field and known
+  project rows from `currentState.projects`. Do not restore the synthetic
+  `full-pc` row, native folder/file actions, or async whole-PC search inside
+  the terminal project dropdown.
+- Terminal copy is owned by xterm plus Electron clipboard bridging. Selected
+  xterm text should copy on native copy events and Ctrl/Cmd+C, including
+  Ctrl+Shift+C. Keep the capture-phase shortcut and DOM-selection fallback in
+  `app.terminals-pty-runtime.js` because highlighted text can live in xterm's
+  accessibility DOM while `getSelection()` is empty. Ctrl/Cmd+C with no
+  selection must still reach the PTY as an interrupt.
 - Give each CLI an authenticated local gateway in its native supported wire
   protocol. Never route a non-OpenAI model through Codex merely because Codex
   already supports Vibyra's Responses gateway.

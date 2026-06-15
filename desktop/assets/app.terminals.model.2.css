@@ -9,10 +9,10 @@
   box-shadow: none;
   color: var(--terminal-text, #eeeaf8);
   display: grid;
-  gap: 10px;
-  grid-template-columns: 34px minmax(0, 1fr) minmax(20px, auto);
-  min-height: 48px;
-  padding: 7px 8px;
+  gap: 8px;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(18px, auto);
+  min-height: 42px;
+  padding: 6px 7px;
   text-align: left;
   transition: background-color 110ms ease, box-shadow 110ms ease, color 110ms ease;
   width: 100%;
@@ -112,15 +112,15 @@
   white-space: nowrap;
 }
 .terminal-model-option strong {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 720;
-  line-height: 17px;
+  line-height: 16px;
 }
 .terminal-model-option small {
   color: var(--terminal-dim, #918ca1);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 620;
-  line-height: 15px;
+  line-height: 13px;
   margin-top: 1px;
   text-transform: capitalize;
 }
@@ -128,14 +128,14 @@
   color: var(--terminal-active-muted, #bdb3df);
 }
 .terminal-model-option .provider-logo {
-  border-radius: 8px;
-  height: 32px;
-  width: 32px;
+  border-radius: 7px;
+  height: 28px;
+  width: 28px;
 }
 .terminal-model-option .provider-logo img,
 .terminal-model-option .provider-logo svg {
-  height: 23px;
-  width: 23px;
+  height: 20px;
+  width: 20px;
 }
 .terminal-model-badge,
 .terminal-model-lock {
@@ -146,7 +146,7 @@
   justify-content: flex-end;
 }
 .terminal-model-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 720;
 }
 .terminal-model-lock svg {

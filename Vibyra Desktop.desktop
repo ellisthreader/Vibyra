@@ -1,9 +1,11 @@
 [Desktop Entry]
 Type=Application
-Name=Vibyra Desktop
-Comment=Pair your phone with your coding machine
-Exec=/home/taylor/Desktop/SaaS/Vibyra\ Desktop
-Path=/home/taylor/Desktop/SaaS
-Icon=/home/taylor/Desktop/SaaS/desktop/vibyra.png
+Version=1.0
+Name=Vibyra
+Comment=Vibyra AI desktop workspace
+Exec=/bin/bash -lc "desktop_file=\"\\$1\"; cd \"\\$(dirname \"\\$desktop_file\")\" && exec \"./Vibyra Desktop\"" vibyra %k
+Icon=vibyra-login-logo
 Terminal=false
 Categories=Development;
+StartupNotify=true
+StartupWMClass=vibyra

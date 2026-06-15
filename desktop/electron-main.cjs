@@ -418,6 +418,12 @@ ipcMain.handle("window:close", () => {
   mainWindow?.hide();
 });
 
+ipcMain.handle("clipboard:write-text", (event, text) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) return false;
+  clipboard.writeText(String(text || ""));
+  return true;
+});
+
 ipcMain.handle("memory:pick", async (_event, kind) => {
   if (!mainWindow || mainWindow.isDestroyed()) return { canceled: true, files: [] };
   return pickMemoryFiles(dialog, mainWindow, kind === "vault" ? "vault" : "markdown");

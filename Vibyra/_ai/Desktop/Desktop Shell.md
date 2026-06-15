@@ -19,6 +19,7 @@ research file is a deep reference only.
 - `desktop/lib/routes.mjs`
 - `desktop/lib/desktopChat.mjs`
 - repo-root `Vibyra Desktop` launcher
+- `scripts/install-desktop-launcher.sh`
 
 ## Desktop Recreation
 
@@ -99,6 +100,18 @@ Settings plan selection stays inside `#profile-modal`: `Upgrade plan` and `Chang
 The approved Billing-card visual pattern is reusable for image-led desktop product choices: equal modest-radius cards, existing dark negative-space artwork behind content, a semantic gradient into the card surface, a small foreground identity icon, concise benefits, one CTA, and only one accented recommendation. The Builder `Most popular` badge sits centered across the card's top border outside the clipped image. Keep the picker header to a quiet Back action, `Choose your plan`, and the billing-cycle control; do not repeat the current plan or supporting paragraph there. Check the actual crop in Chromium before generating new images.
 
 Billing and other external links in Electron are owned by `desktop/electron-main.cjs`: `webContents.setWindowOpenHandler()` denies `about:blank` child windows and sends HTTPS/mail links to `shell.openExternal()`. `desktop/assets/app.auth-billing.js` may use a synchronous placeholder popup in an ordinary browser, but must skip it when `isElectronShell()` is true. This prevents the blank white Electron child window that otherwise appears while the portal API request is pending.
+
+Linux app startup is owned by the repo-root `Vibyra Desktop` launcher and
+`scripts/install-desktop-launcher.sh`. The launcher is self-preparing: it
+installs/updates the OS `vibyra.desktop` entry, bootstraps missing Node/Electron
+dependencies, starts the local Laravel backend automatically only when
+`VIBYRA_DESKTOP_API_URL` is loopback, then opens the Electron shell. The
+installer writes `~/.local/share/applications/vibyra.desktop` and a
+`~/Desktop/Vibyra.desktop` shortcut when a Desktop folder exists, both with
+`Name=Vibyra`, `Icon=vibyra-login-logo`, and `StartupWMClass=vibyra`.
+Keep launcher log paths initialized before any `set -u` reads; the Electron log
+path should derive from `LAUNCHER_LOG_DIR` so app shortcut launches cannot abort
+before the stale-bridge/latest-source refresh runs.
 
 Membership cancellation stays inside the expanded `Manage membership` panel and is owned by `desktop/assets/app.profile-billing-cancel.js` plus its scoped stylesheets. It must not appear on the default Billing view. `End membership` reveals the reason list, optional detail, explicit confirmation checkbox, and final destructive action. It posts to `/api/billing/cancel`; manual memberships remain paid and show the exact `membershipEndsAt` date when the backend returns `status: scheduled`, while Stripe/Apple/Google open provider URLs externally. Never describe a period-end cancellation as an immediate Free downgrade. Backend persistence in `membership_cancellation_feedback` is mandatory before provider handoff.
 
@@ -210,6 +223,10 @@ project bar, Add, workspace tools, and Options even when their handlers are
 correctly bound.
 
 The desktop sidebar does not show chat history. `desktop/app.html` may still include `#rail-recents` for compatibility, but `renderRecentChats()` hides and empties it. Desktop chat history may remain in local state for shell AI continuity, but it is not a rail information architecture element. The rail stays focused on page navigation, active terminal agents, and phone status; terminal project groups belong in the authenticated top chrome as browser-style tabs, while active-project agents render under the Terminals rail item. The rail collapses to nav tooltips at `max-width: 900px` and can be manually collapsed with the top-right rail icon via `localStorage["vibyra.desktop.railCollapsed"]`. Manual collapse must remain a visible icon rail, not a fully hidden sidebar or floating reopen button. Do not add a top sidebar profile block; the account affordance belongs in the minimal topbar avatar.
+
+Terminal project tab chrome is owned by `desktop/assets/app.terminals-project-groups.css` and `app.terminals-project-groups.js`. Keep it as a full-width balanced grid: an empty left track, centered browser-style project tabs, and a right action track for New agent, workspace launchers, and Options. Avoid `width: fit-content` on `.terminal-project-tabs`; it lets the right action cluster pull the project tabs off center and makes Add/project controls look misaligned, especially at narrower widths. Project close actions are group-scoped: each project tab can close that one group, and the top three-dot menu must close only the active project group rather than calling the global close-all-terminals route.
+
+Selected terminal visibility is finalized in late-loaded `desktop/assets/app.terminals-chrome-polish.css`. Keep `.terminal-focus.active` and `.terminal-tile.active` with a clean accent border/ring plus a subtle selected header tint there; earlier selected styles in `app.terminals-window.css` are overridden by the polish sheet.
 
 When the manual rail is collapsed in Electron, keep the rail visible as a narrow icon column with nav/status controls still clickable; hide text labels, recents, and the duplicate Vibyra logo, show tooltips from `data-tooltip`, center the phone/link status dot over the status icon, and do not use a floating `#rail-expand` affordance. The same rail chevron should toggle back to the full sidebar. Expanded Electron rail header owns the Vibyra text label with the chevron immediately to its left; do not show the duplicate `Vibyra Desktop`/connection copy in the custom titlebar.
 

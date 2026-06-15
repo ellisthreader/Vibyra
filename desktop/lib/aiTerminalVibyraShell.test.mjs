@@ -114,7 +114,7 @@ test("every PTY runtime receives a truecolor environment even when desktop disab
   }
 });
 
-test("AI terminal sessions exit with the AI process instead of opening a shell", () => {
+test("AI terminal sessions fall through to an interactive shell after the provider exits", () => {
   const command = terminalSessionCommand({
     status: { key: "vibyra", label: "Vibyra", commandPath: "/usr/bin/vibyra-ai" },
     launch: "'/usr/bin/vibyra-ai' '--interactive'",
@@ -123,9 +123,12 @@ test("AI terminal sessions exit with the AI process instead of opening a shell",
     rows: 40
   });
 
-  assert.match(command, /exec .*\/usr\/bin\/vibyra-ai.*--interactive/);
-  assert.doesNotMatch(command, /Project shell ready/);
-  assert.doesNotMatch(command, /code=\$\?/);
+  assert.match(command, /\/usr\/bin\/vibyra-ai.*--interactive/);
+  assert.doesNotMatch(command, /exec .*\/usr\/bin\/vibyra-ai.*--interactive/);
+  assert.match(command, /code=\$\?/);
+  assert.match(command, /Project shell ready/);
+  assert.match(command, /stty sane echo icanon isig opost onlcr/);
+  assert.match(command, /exec .*\/bin\/bash.* -i/);
 });
 
 test("managed Claude and Gemini receive only terminal-scoped gateway credentials", () => {

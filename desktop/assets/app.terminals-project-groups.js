@@ -99,7 +99,6 @@ function setActiveTerminalProject(key) {
   if (!terminal) return;
   setActiveTerminal(terminal.id);
   if (activePage !== "terminals") setPage("terminals");
-  else renderNav();
 }
 
 function terminalBatchAvailableSlots() {
@@ -182,21 +181,27 @@ function terminalRailProjectsHtml() {
 function terminalProjectTabsHtml() {
   const groups = terminalProjectGroups();
   const activeKey = activeTerminalProjectKey();
+  const activeGroup = groups.find((group) => group.key === activeKey) || groups[0];
   const projectRows = groups.map((group) => {
     const active = group.key === activeKey;
     const status = typeof terminalWorkspaceGroupStatus === "function"
       ? terminalWorkspaceGroupStatus(group)
       : { key: group.terminals.length ? "ready" : "closed", label: group.terminals.length ? "Ready" : "Not open" };
     const count = group.terminals.length;
-    return `<button class="terminal-project-tab ${active ? "active" : ""}" type="button" role="tab" aria-selected="${active}" data-terminal-project-group="${escapeAttribute(group.key)}" title="${escapeAttribute(`${group.label}, ${status.label}`)}">
-      <span class="terminal-project-tab-icon${group.isTeam ? " is-team" : ""}">${icon(group.isTeam ? "people" : "folder")}<i class="terminal-project-tab-state ${escapeAttribute(status.key)}"></i></span>
-      <span class="terminal-project-tab-copy"><strong>${escapeHtml(group.label)}</strong><small>${escapeHtml(count === 1 ? "1 agent" : `${count} agents`)}</small></span>
-    </button>`;
+    const closeLabel = `Close ${group.label}`;
+    return `<div class="terminal-project-tab ${active ? "active" : ""}" role="presentation" title="${escapeAttribute(`${group.label}, ${status.label}`)}">
+      <button class="terminal-project-tab-open" type="button" role="tab" aria-selected="${active}" data-terminal-project-group="${escapeAttribute(group.key)}">
+        <span class="terminal-project-tab-icon${group.isTeam ? " is-team" : ""}">${icon(group.isTeam ? "people" : "folder")}<i class="terminal-project-tab-state ${escapeAttribute(status.key)}"></i></span>
+        <span class="terminal-project-tab-copy"><strong>${escapeHtml(group.label)}</strong><small>${escapeHtml(count === 1 ? "1 agent" : `${count} agents`)}</small></span>
+      </button>
+      <button class="terminal-project-tab-close" type="button" data-terminal-project-close="${escapeAttribute(group.key)}" aria-label="${escapeAttribute(closeLabel)}" title="${escapeAttribute(closeLabel)}">${icon("close")}</button>
+    </div>`;
   }).join("");
   const full = terminalBatchAvailableSlots() < 1;
+  const closeProjectLabel = activeGroup?.label || "this project";
   const menu = terminalToolbarMenuOpen ? `<div class="terminal-menu terminal-toolbar-menu" role="menu">
     <button type="button" id="toggle-terminal-layout">${icon(terminalLayout === "grid" ? "terminal" : "grid")}<span>${terminalLayout === "grid" ? "Focus view" : "Grid view"}</span></button>
-    <button class="danger" type="button" data-terminal-close-all>${icon("trash")}<span>Close all agents</span></button>
+    <button class="danger" type="button" data-terminal-project-close="${escapeAttribute(activeKey)}">${icon("trash")}<span>Close ${escapeHtml(closeProjectLabel)}</span></button>
   </div>` : "";
   const companionTools = typeof terminalCompanionToolbarHtml === "function" ? terminalCompanionToolbarHtml() : "";
   return `<header class="terminal-project-tabs" role="tablist" aria-label="Terminal projects">
@@ -242,6 +247,13 @@ function bindTerminalProjectGroupControls(root) {
       openTerminalBatchSetup();
       return;
     }
+    const closeButton = event.target.closest("[data-terminal-project-close]");
+    if (closeButton && root.contains(closeButton)) {
+      event.preventDefault();
+      event.stopPropagation();
+      void requestCloseTerminalProjectGroup(closeButton.dataset.terminalProjectClose || activeTerminalProjectKey());
+      return;
+    }
     const button = event.target.closest("[data-terminal-project-group]");
     if (button && root.contains(button)) setActiveTerminalProject(button.dataset.terminalProjectGroup || "");
   });
@@ -259,4 +271,22 @@ function bindTerminalProjectGroupControls(root) {
     event.preventDefault();
     rows[next]?.focus();
   });
+}
+
+async function requestCloseTerminalProjectGroup(key = activeTerminalProjectKey()) {
+  const group = terminalProjectGroups().find((candidate) => candidate.key === key);
+  if (!group?.terminals?.length) return;
+  const count = group.terminals.length;
+  const running = group.terminals.some((terminal) => terminal.pending || terminal.ptyStatus === "starting" || terminal.ptyStatus === "running");
+  const preservesWorktrees = group.terminals.some((terminal) => terminal.workspaceMode === "worktree")
+    ? " Local Git branches and worktrees will be preserved."
+    : "";
+  const noun = count === 1 ? "agent" : "agents";
+  const action = running ? "ends running agents and removes their saved terminal context" : "removes their saved terminal context";
+  if (!window.confirm(`Close ${group.label}? This ${action} for ${count} ${noun}.${preservesWorktrees}`)) return;
+  terminalToolbarMenuOpen = false;
+  newTerminalMenuOpen = false;
+  settingsTerminalId = "";
+  const ids = group.terminals.map((terminal) => terminal.id);
+  for (const id of ids) await closeTerminal(id);
 }

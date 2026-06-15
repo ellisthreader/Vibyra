@@ -462,7 +462,13 @@ function normalizePermissionMode(value) {
 export function terminalSessionCommand({ status, launch, shell, cols, rows }) {
   const prelude = `stty rows ${integer(rows, 30)} cols ${integer(cols, 100)} 2>/dev/null || true`;
   const shellOnly = `${prelude}\nstty sane echo icanon isig opost onlcr 2>/dev/null || true\nexec ${shellQuote(shell)} -i`;
-  const inner = status.commandPath ? `${prelude}\nexec ${launch}` : shellOnly;
+  const providerThenShell = `${prelude}
+${launch}
+code=$?
+printf '\\r\\n[AI provider exited. Project shell ready.]\\r\\n'
+stty sane echo icanon isig opost onlcr 2>/dev/null || true
+exec ${shellQuote(shell)} -i`;
+  const inner = status.commandPath ? providerThenShell : shellOnly;
   return `exec ${shellQuote(shell)} -i -c ${shellQuote(inner)}`;
 }
 

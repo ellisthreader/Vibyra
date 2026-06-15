@@ -28,7 +28,7 @@ function renderTerminalsPage() {
   const gridStyle = grid ? ` style="--terminal-grid-cols:${gridMeta.cols};--terminal-grid-rows:${gridMeta.rows};--terminal-grid-cols-narrow:${gridMeta.narrowCols};--terminal-grid-rows-narrow:${gridMeta.narrowRows};"` : "";
   const fullscreenClass = typeof fullscreenTerminalId === "string" && fullscreenTerminalId ? " terminal-page--terminal-fullscreen" : "";
   const emptyProject = projectTerminals.length ? "" : terminalWorkspaceEmptyHtml();
-  const terminalViews = projectTerminals.length ? (grid ? projectTerminals.map(terminalTile).join("") : terminalFocusViews(active)) : "";
+  const terminalViews = projectTerminals.length ? (grid ? terminals.map(terminalTile).join("") : terminalFocusViews(active)) : "";
   const teamBar = typeof terminalTeamBarHtml === "function" ? terminalTeamBarHtml(projectTerminals) : "";
   const teamClass = teamBar ? " terminal-page--team" : "";
   nodes.content.innerHTML = `<section class="terminal-page ${gridClass}${fullscreenClass}${teamClass}"${gridStyle}><div class="terminal-primary-shell"><div class="terminal-body-shell"><div class="terminal-main-shell">${teamBar}<div class="terminal-stage">${emptyProject}${terminalViews}</div></div></div></div></section>`;

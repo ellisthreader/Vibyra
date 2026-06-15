@@ -8,7 +8,6 @@ function terminalProjectChoices() {
 
 function terminalProjectForSetup() {
   const projects = terminalProjectChoices();
-  if (setupProjectId === terminalFullPcProjectId) return setupProjectId;
   if (setupProjectId && projects.some((project) => project.id === setupProjectId)) return setupProjectId;
   if (setupProjectId && !projects.length) return setupProjectId;
   setupProjectId = "";
@@ -17,14 +16,11 @@ function terminalProjectForSetup() {
 }
 
 function terminalProjectReadyForSetup() {
-  if (!setupProjectId || setupProjectId === terminalFullPcProjectId) return true;
+  if (!setupProjectId) return true;
   return terminalProjectChoices().some((project) => project.id === setupProjectId);
 }
 
 function terminalProject(projectId) {
-  if (projectId === terminalFullPcProjectId) {
-    return { id: terminalFullPcProjectId, name: "Full PC", path: "Browse and choose any project folder" };
-  }
   return terminalProjectChoices().find((project) => project.id === projectId) || null;
 }
 
@@ -44,13 +40,8 @@ function terminalProjectSelect(target, selectedId = terminalProjectForSetup()) {
 
 function terminalProjectMenu(target, selectedId) {
   return `<div class="terminal-project-menu" data-terminal-project-menu="${escapeAttribute(target)}" role="dialog" aria-label="Choose terminal project">
-    <label class="terminal-project-search">${icon("search")}<input data-terminal-project-search="${escapeAttribute(target)}" value="${escapeAttribute(terminalProjectQuery)}" placeholder="Search projects anywhere on this PC" autocomplete="off" /></label>
+    <label class="terminal-project-search">${icon("search")}<input data-terminal-project-search="${escapeAttribute(target)}" value="${escapeAttribute(terminalProjectQuery)}" placeholder="Search projects" autocomplete="off" /></label>
     <div class="terminal-project-results" data-terminal-project-results="${escapeAttribute(target)}">${terminalProjectResults(target, selectedId)}</div>
-    <div class="terminal-project-actions">
-      <button type="button" data-terminal-project-pick="folder" data-terminal-project-pick-target="${escapeAttribute(target)}">${icon("folder")}<span><strong>${terminalProjectPickerPending === "folder" ? "Opening..." : "Choose folder"}</strong><small>Select any folder on this PC</small></span></button>
-      <button type="button" data-terminal-project-pick="file" data-terminal-project-pick-target="${escapeAttribute(target)}">${icon("document")}<span><strong>${terminalProjectPickerPending === "file" ? "Opening..." : "Choose file"}</strong><small>Use the file's containing folder</small></span></button>
-    </div>
-    ${terminalProjectPickerError ? `<p class="terminal-project-error" role="alert">${escapeHtml(terminalProjectPickerError)}</p>` : ""}
   </div>`;
 }
 
@@ -70,7 +61,6 @@ function selectTerminalProject(projectId, target = terminalProjectMenuTarget || 
 
 function toggleTerminalProjectMenu(target, open = terminalProjectMenuTarget !== target, focusOption = false) {
   terminalProjectMenuTarget = open ? target : "";
-  terminalProjectPickerError = "";
   if (open && target === "setup") {
     setupModelMenuOpen = false;
     document.querySelector('[data-terminal-model-picker="setup"]')?.remove();
@@ -123,22 +113,10 @@ function bindTerminalProjectControls(root = document) {
     input.addEventListener("input", () => updateTerminalProjectSearch(input));
     input.addEventListener("keydown", handleTerminalProjectSearchKeydown);
   });
-  root.querySelectorAll?.("[data-terminal-project-pick]").forEach((button) => {
-    if (button.dataset.terminalProjectBound) return;
-    button.dataset.terminalProjectBound = "1";
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      void pickTerminalProject(button.dataset.terminalProjectPick || "folder", button.dataset.terminalProjectPickTarget || "setup");
-    });
-  });
   bindTerminalProjectDismiss();
 }
 
 function activateTerminalProjectOption(projectId, target) {
-  if (projectId === terminalFullPcProjectId) {
-    void pickTerminalProject("folder", target);
-    return;
-  }
   selectTerminalProject(projectId, target);
 }
 

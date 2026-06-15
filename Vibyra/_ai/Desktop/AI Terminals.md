@@ -43,6 +43,11 @@ generic terminal/person pair. The renderer lives in
 `desktop/assets/app.terminals-pty.js` with presentation in
 `app.terminals-setup-flow.css`.
 
+The terminal project picker is deliberately simple: `desktop/assets/app.terminals-project-picker.js`
+and `app.terminals-project-discovery.js` render one search input and the
+known project rows only. Do not restore `No project`, `Browse full PC`, native
+folder/file browse actions, or async whole-PC search inside this dropdown.
+
 The empty terminal setup persists its reasoning default in
 `localStorage["vibyra.desktop.terminalSetupEffort"]`. The OpenRouter catalog
 normalizer copies each model's `supported_parameters` into
@@ -184,6 +189,14 @@ a CLI must be downloaded and a rotating icon while that download is active,
 with accessible labels and tooltips. Do not bundle Claude Code by default
 without explicit Anthropic redistribution permission.
 
+The terminal AI model picker is intentionally organized as a compact custom
+menu, not a raw provider dump. `desktop/assets/app.terminals-models.js` renders
+one header with the active token source and model count, a short quick-pick
+strip, searchable provider sections with counts, and compact model rows.
+`app.terminals.model.1.css` owns the picker shell/quick picks; `.2.css` owns
+row density. Preserve this structure for both setup and `+` new-terminal
+model picking.
+
 Vibyra Agent must replace the bundled Codex engine's model-visible base prompt
 with a Vibyra-owned `model_instructions_file`. Every new and resumed turn also
 passes `developer_instructions` containing the exact selected OpenRouter slug.
@@ -241,6 +254,13 @@ The renderer connects the PTY WebSocket before submitting the initial semantic
 assignment, so native startup output remains visible while the assignment
 queues safely in the worker. `spawnAiTerminalProcess()` must not execute a
 synchronous provider `--version` probe on this path.
+Loaded hosts can delay detached worker scheduling enough to miss a short child
+PID handshake even when the worker is alive. The bridge uses a longer bounded
+startup window and, if that still times out while the persistent worker state is
+not exited, keeps the terminal session visible in `starting` instead of rolling
+it back with `terminal_worker_startup_timeout`. Multi-terminal renderer
+launches create visible terminal records immediately but stagger provider
+starts, so native CLI cold starts do not all contend in the same microtask.
 
 Codex startup can be blocked by its own interactive model-migration notice
 before the composer exists. The launch path reads the selected model's current
@@ -283,24 +303,11 @@ spawn, first PTY output, native composer readiness, CPU/load, existing Codex
 process count, and MCP startup status. Never attribute the result solely to
 Vibyra or solely to user hardware without those measurements.
 
-The terminal project picker includes a synthetic `full-pc` scope labeled
-`Full PC`. `desktop/lib/projects.mjs` resolves that fixed ID to the current
-user's home directory, so the browser never sends an arbitrary filesystem
-path. This changes the terminal working directory only; permission mode remains
-independent and defaults to standard.
-
-Project selection now has three layers: bounded discovery scans common roots
-through two nested levels, the open picker performs local filtering plus
-debounced deep name/path search, and Electron exposes native `Choose folder`
-and `Choose file` actions. File selection uses its containing folder.
-The visible `Browse full PC` project row invokes the native folder picker
-directly rather than selecting the synthetic `full-pc` home scope.
-Explicitly selected locations are registered through
-`POST /desktop/projects/select` and persisted in
-`~/.vibyra-agent/recent-projects.json`, so plain folders without project
-markers remain available after restart. Start with
-`app.terminals-project-discovery.js`, `app.terminals-project-picker.js`,
-`projectDiscovery.mjs`, `projectSearch.mjs`, and `projectRecents.mjs`.
+Terminal project selection in setup is a simple saved-project dropdown:
+`app.terminals-project-discovery.js` locally filters known `currentState.projects`,
+and `app.terminals-project-picker.js` renders one search input plus project
+rows. Do not restore the synthetic `full-pc` row, native folder/file actions,
+or async whole-PC search to this dropdown.
 
 PTY-backed terminals must preserve mounted xterm DOM nodes across
 `/desktop/state` refreshes. Patch status, helper text, active/hidden classes,
@@ -308,21 +315,30 @@ settings menus, terminal add/remove/reorder, and companion panels in place
 instead of forcing a full content `innerHTML` render that disconnects xterm.
 For performance with many open terminals, live PTY output/status updates should
 use dirty-terminal patching in `app.terminals-pty-runtime.js` instead of full
-topbar/page rebuilds; hidden project, focus, and fullscreen panes must not
-mount or fit xterms. Detached worker output persistence is live-streamed to the
-renderer but disk-flushed through a short debounce in `aiTerminalWorker.mjs` to
-avoid per-terminal write churn. Launch, socket-open, and session patch paths
-should mount only the affected terminal, repeated xterm fits should coalesce per
-terminal, and xterm themes should be cache-keyed by the visible theme scope
-instead of recomputed on every mount.
+topbar/page rebuilds or project-shell tab/rail reconstruction; hidden project,
+focus, and fullscreen panes must not mount or fit xterms. Detached worker output
+persistence is live-streamed to the renderer but disk-flushed through a short
+debounce in `aiTerminalWorker.mjs` to avoid per-terminal write churn. Launch,
+socket-open, and session patch paths should mount only the affected terminal,
+repeated xterm fits should coalesce per terminal, and xterm themes should be
+cache-keyed by the visible theme scope instead of recomputed on every mount.
 Only projects that own at least one authoritative terminal appear beneath the
 left-rail `Terminals` item. Recovered terminals keep their project rows across
 app restarts, while removing a project's final terminal removes its row. The
 selected project scopes the top terminal dock and visible focus/grid panes;
-other project PTYs remain mounted with `.terminal-project-hidden`. The rail
-shows framework, terminal count, and derived working/ready/attention/stopped
-state, remembers the last active terminal per project, and hides nested rows
-when the rail collapses.
+other project PTYs remain mounted with `.terminal-project-hidden`. The terminal
+renderer maps all open terminal articles into the stage and only uses the active
+project count for grid sizing and rail/tab copy; switching project tabs must not
+prune inactive project articles or disconnect their xterm hosts. Fast project
+tab activation must re-run `syncPtyTerminalGrid()` before visible xterms mount
+or fit, otherwise the next project can inherit the previous project's grid
+dimensions. The rail shows framework, terminal count, and derived
+working/ready/attention/stopped state, remembers the last active terminal per
+project, and hides nested rows when the rail collapses.
+Terminal selection copy in `app.terminals-pty-runtime.js` uses xterm's
+selection first, then highlighted DOM text inside the xterm element, and has a
+capture-phase `Ctrl`/`Cmd`+`C` shortcut so `Ctrl+Shift+C` copies selected text
+without breaking no-selection `Ctrl+C` interrupts.
 The left-rail `Terminals` heading also owns a `New terminal group` plus action.
 It opens a two-step project-workspace setup while current PTYs remain alive and
 returns to the prior project on Cancel. Every setup starts with a dedicated
@@ -504,8 +520,11 @@ forwards typed bytes. Attaching a bubbling `keydown` listener to the outer
 `[data-terminal-input]` host as well causes every physical keypress to be sent
 twice. The outer keydown/paste fallback is only for environments without
 xterm and must become inert if xterm later becomes available. Keep xterm
-`screenReaderMode` disabled in Electron, and ignore `onData` from detached or
-replaced xterm instances. Keep `desktop/assets/app.terminals-input.test.mjs`
+`screenReaderMode` enabled, and ignore `onData` from detached or replaced
+xterm instances. Selected xterm text copies through `attachCustomKeyEventHandler`,
+the native `copy` event, and the Electron `vibyraDesktopClipboard` bridge;
+Ctrl/Cmd+C must still send an interrupt when no xterm selection exists. Keep
+`desktop/assets/app.terminals-input.test.mjs`
 passing whenever terminal input binding changes.
 Saved screenshot Copy deliberately writes both native PNG data and a quoted
 absolute path as clipboard text. Let xterm consume that text through its normal
@@ -538,6 +557,13 @@ bridge restarts, and the browser reconnects/replays the persisted transcript
 after refresh or window reopen. Only explicit terminal close may stop and
 remove a worker. If a saved worker cannot be found, never auto-replay its
 prompt because that can duplicate code changes or commands.
+Provider CLI exit is not terminal death. `terminalSessionCommand()` in
+`aiTerminalVibyraShell.mjs` must run the selected provider command without a
+final `exec`, then print the `Project shell ready` marker, reset TTY modes, and
+`exec $SHELL -i` so the same PTY remains a real project shell after `Ctrl+C`,
+provider `/quit`, or a native CLI crash. The worker detects that marker and
+sets `providerState: "fallback-shell"` while keeping `status: "running"`;
+only closing/exiting the fallback shell should publish the terminal `exit`.
 Treat the backend session collection as authoritative. On initial load and
 after PTY WebSocket open/close recovery, reconcile local terminal records to
 `GET /desktop/pty-terminals`: import backend-owned sessions, discard stale
@@ -620,6 +646,12 @@ surface down by exactly its trailing visible blank rows. Keep that bottom
 anchor offset additive with the fractional paint inset and subtractive from
 the existing two-row overscan lift. Do not apply this visual re-anchor to
 Claude, Gemini, or shell terminals.
+PTY output auto-follow is user-scroll aware. Capture
+`terminalPtyViewportIsNearBottom(xterm)` before live writes, snapshot resets,
+and focus repositioning, then pass that decision into `positionPtyViewport`.
+Only scroll to bottom when the user was already near the bottom; otherwise
+preserve their scrolled-up viewport while the terminal continues working. Keep
+Auto-deciding terminals top anchored.
 
 Project-backed AI terminals use the canonical imported Vibyra Memory vault.
 `desktopTerminalMemory.mjs` builds a bounded snapshot with a file index and
@@ -735,8 +767,10 @@ native composer and status rows stay anchored to the terminal bottom. Grid
 mode also keeps stage gap, tile radius, and tile outer border at zero. Six
 terminals use a balanced `3 x 2` grid. `app.terminals-pty-runtime.js` fits a
 mounted xterm from its real rendered CSS cell dimensions and viewport client
-size, while grid tiles and PTY hosts use paint containment plus hidden overflow
-so an over-tall native screen cannot draw across the next pane header.
+size, counting only fully visible rows instead of rounding pane height up;
+rounding up can clip the bottom row in tall one- and two-terminal panes. Grid
+tiles and PTY hosts use paint containment plus hidden overflow so an over-tall
+native screen cannot draw across the next pane header.
 Pointer or keyboard focus inside a PTY must also update `activeTerminalId` and
 patch the active pane classes in place. The selected provider-colored edge must
 follow the terminal receiving input without remounting xterm; header-only
@@ -1506,7 +1540,9 @@ Codex, Claude, Gemini, and managed-provider composers remain visible. Terminal
 focus styling uses `:focus-within` because xterm's hidden textarea owns focus.
 Rounded xterm rows can exceed a pane by part of one CSS cell at some fullscreen
 or grid aspect ratios. The renderer measures that fractional pixel overflow
-per pane and extends/lifts xterm by exactly that amount for every provider.
+from the visible host pane, extends xterm by the guard amount, and does not use
+stale internal viewport dimensions or lift the entire terminal for fractional
+inset.
 It also reserves a three-pixel paint guard so pane containment, focus edges,
 and the fullscreen window boundary cannot cover the final glyph pixels when
 row geometry fits exactly. This correction does not alter PTY rows and remains
@@ -1928,3 +1964,14 @@ container or test terminal session running.
 
 Full audit record:
 `Vibyra/_ai/Runs/2026-06-11 AI Terminal Security And Reliability Audit.md`.
+
+## June 14, 2026 - Top Chrome Tabs And Multi-Launch Reveal
+
+- Terminal project groups are browser-style tabs centered in the authenticated
+  top chrome. Active agents remain compact rows under Terminals in the global
+  left rail; do not restore a terminal-page project navbar or page-local agent
+  sidebar.
+- Independent-agent and Coordinated Team launches that create two or more
+  terminals call `revealTerminalBatch()`, switch to grid layout, clear stale
+  fullscreen state, and persist the layout. This prevents non-fullscreen users
+  from seeing only the active terminal after a batch launch.

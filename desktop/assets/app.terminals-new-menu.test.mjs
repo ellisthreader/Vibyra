@@ -45,7 +45,8 @@ test("terminal starter model picker overlays without moving the setup card", () 
     /buttonRect\.top - menuRect\.height/
   );
   assert.match(modelStyles, /\.terminal-model-select-wrap \.terminal-model-picker \{[\s\S]*position: fixed/);
-  assert.match(modelStyles, /grid-template-rows: auto minmax\(0, 1fr\)/);
+  assert.match(modelStyles, /\.terminal-model-picker \{[\s\S]*display: flex/);
+  assert.match(modelStyles, /\.terminal-model-picker \{[\s\S]*flex-direction: column/);
   assert.match(modelStyles, /--terminal-setup-menu-max-height/);
   assert.match(setupResponsiveStyles, /--terminal-setup-menu-max-height/);
   assert.match(setupResponsiveStyles, /\.terminal-model-select-wrap \.terminal-model-scroll \{[\s\S]*max-height: none/);

@@ -168,7 +168,8 @@ function terminalModelMenu(target, selectedKey) {
   const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
   const projectSelect = target === "new" ? terminalProjectSelect("new") : "";
   const notice = terminalRuntimeNotice ? `<em class="terminal-model-cli-notice">${escapeHtml(terminalRuntimeNotice)}</em>` : "";
-  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}">${projectSelect}<label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label>${notice}<div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
+  const quickList = query ? "" : terminalModelQuickList(groups, selectedKey, optionAttribute);
+  return `<div class="terminal-menu terminal-model-picker" data-terminal-model-picker="${escapeAttribute(target)}">${projectSelect}${terminalModelPickerHeader(groups)}<label class="terminal-model-search">${icon("search")}<input data-terminal-model-search="${escapeAttribute(target)}" value="${escapeAttribute(query)}" placeholder="Search models" autocomplete="off" /></label>${notice}<div class="terminal-model-quick-list" data-terminal-model-quick ${quickList ? "" : "hidden"}>${quickList}</div><div class="terminal-model-scroll" role="listbox" aria-label="Models">${groups.length ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("") : `<p class="terminal-model-empty">No models found</p>`}</div></div>`;
 }
 function renderTerminalModelSearchResults(input) {
   const target = input?.dataset?.terminalModelSearch || "";
@@ -180,6 +181,13 @@ function renderTerminalModelSearchResults(input) {
   const optionAttribute = target === "setup" ? "data-terminal-setup-model" : "data-terminal-new-model";
   const query = target === "setup" ? setupModelSearch : newTerminalModelSearch;
   const groups = filteredTerminalModelGroups(query);
+  const quick = picker.querySelector("[data-terminal-model-quick]");
+  const count = picker.querySelector("[data-terminal-model-count]");
+  if (quick) {
+    quick.innerHTML = query ? "" : terminalModelQuickList(groups, selectedKey, optionAttribute);
+    quick.hidden = Boolean(query || !quick.innerHTML);
+  }
+  if (count) count.textContent = terminalModelCountLabel(groups);
   scroller.innerHTML = groups.length
     ? groups.map((group) => terminalModelSection(group, selectedKey, optionAttribute)).join("")
     : `<p class="terminal-model-empty">No models found</p>`;
@@ -193,11 +201,46 @@ function renderTerminalModelSearchResults(input) {
   if (typeof bindTerminalRuntimeControls === "function") bindTerminalRuntimeControls(picker);
   return true;
 }
+function terminalModelPickerHeader(groups) {
+  const source = setupTokenMode === "provider" ? "My AI accounts" : "Vibyra tokens";
+  return `<div class="terminal-model-picker-head"><span><strong>AI model</strong><small>${escapeHtml(source)}</small></span><em data-terminal-model-count>${terminalModelCountLabel(groups)}</em></div>`;
+}
+function terminalModelCountLabel(groups) {
+  const count = groups.reduce((total, group) => total + group.options.length, 0);
+  return `${count} model${count === 1 ? "" : "s"}`;
+}
+function terminalModelQuickList(groups, selectedKey, optionAttribute) {
+  const quick = terminalModelQuickOptions(groups, selectedKey);
+  return quick.map((model) => terminalModelQuickButton(model, selectedKey, optionAttribute)).join("");
+}
+function terminalModelQuickOptions(groups, selectedKey) {
+  const selected = groups.flatMap((group) => group.options).find((model) => model.key === selectedKey);
+  const candidates = [
+    selected,
+    ...groups.map((group) => group.options[0])
+  ].filter(Boolean);
+  const seen = new Set();
+  return candidates.filter((model) => {
+    if (seen.has(model.key)) return false;
+    seen.add(model.key);
+    return true;
+  }).slice(0, 3);
+}
+function terminalModelQuickButton(model, selectedKey, optionAttribute) {
+  const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
+  const locked = terminalModelLocked(model, tokenMode);
+  const launch = typeof terminalRuntimePickerState === "function"
+    ? terminalRuntimePickerState(model, tokenMode)
+    : typeof terminalRuntimeLaunchState === "function"
+      ? terminalRuntimeLaunchState(model, tokenMode)
+    : { available: true, issue: "" };
+  const selected = selectedKey === model.key;
+  return `<button class="terminal-model-quick ${selected ? "active" : ""} ${locked ? "locked" : ""}" type="button" title="${launch.available ? "" : escapeAttribute(launch.issue)}" ${launch.available ? "" : "disabled"} ${optionAttribute}="${escapeAttribute(model.key)}">${modelLogo(model)}<span><strong>${escapeHtml(model.label)}</strong><small>${selected ? "Current" : escapeHtml(modelHint(model, locked))}</small></span></button>`;
+}
 function terminalModelSection(group, selectedKey, optionAttribute) {
   const label = terminalProviderGroupLabel(group);
   const title = label === "Auto" ? "Default" : label;
-  const headerLogo = group.options[0] ? modelLogo(group.options[0]) : "";
-  return `<section class="terminal-model-section" aria-label="${escapeAttribute(title)}"><p class="terminal-model-section-title">${headerLogo}<span>${escapeHtml(title)}</span></p><div class="terminal-model-list">${group.options.map((model) => terminalModelButton(model, selectedKey, optionAttribute)).join("")}</div></section>`;
+  return `<section class="terminal-model-section" aria-label="${escapeAttribute(title)}"><p class="terminal-model-section-title"><span>${escapeHtml(title)}</span><em>${group.options.length}</em></p><div class="terminal-model-list">${group.options.map((model) => terminalModelButton(model, selectedKey, optionAttribute)).join("")}</div></section>`;
 }
 function terminalModelButton(model, selectedKey, optionAttribute, extraClass = "") {
   const tokenMode = terminalTokenModeForModel(model, setupTokenMode);
@@ -281,7 +324,20 @@ function modelLogo(model) {
 function modelHint(model, locked) {
   if (locked && typeof modelTier === "function") return `${modelTier(model)} · upgrade`;
   if (model?.provider === "auto") return "Vibyra chooses";
-  return model?.company || model?.provider || "OpenRouter";
+  return terminalModelProviderLabel(model) || "OpenRouter";
+}
+function terminalModelProviderLabel(model) {
+  if (model?.company) return model.company;
+  const provider = terminalProviderKeyForModel(model);
+  if (provider === "openai") return "OpenAI";
+  if (provider === "claude" || provider === "anthropic") return "Anthropic";
+  if (provider === "gemini" || provider === "google") return "Google";
+  if (provider === "x-ai" || provider === "xai") return "xAI";
+  if (provider === "qwen") return "Qwen";
+  if (provider === "kimi" || provider === "moonshot") return "Moonshot";
+  if (provider === "mistral") return "Mistral";
+  if (provider === "deepseek") return "DeepSeek";
+  return model?.provider || "";
 }
 function terminalModelSupportsReasoning(modelOrKey) {
   const model = typeof modelOrKey === "string" ? modelByKey(modelOrKey) : modelOrKey;

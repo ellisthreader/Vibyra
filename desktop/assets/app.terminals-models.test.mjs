@@ -194,6 +194,50 @@ test("personal-account filtering hides API-only rows and keeps login-capable mod
   assert.equal(openaiGroups[0].options[0].key, "gpt-5.5");
 });
 
+test("model picker groups choices with a header, quick picks, and provider counts", () => {
+  const context = {
+    config: () => ({
+      chatModelGroups: [
+        {
+          title: "OpenAI models",
+          options: [
+            { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+            { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai" }
+          ]
+        },
+        {
+          title: "DeepSeek",
+          options: [{ key: "deepseek/deepseek-v3", label: "DeepSeek V3", provider: "deepseek" }]
+        }
+      ]
+    }),
+    document: {},
+    escapeAttribute: (value) => String(value),
+    escapeHtml: (value) => String(value),
+    icon: (name) => `<svg data-icon="${name}"></svg>`,
+    modelScrollTops: {},
+    providerAccounts: {},
+    providerLogo: (provider) => `<span class="provider-logo ${provider}"></span>`,
+    restoreTerminalModelScroll() {},
+    setupModelSearch: "",
+    setupTokenMode: "vibyra",
+    terminalRuntimeNotice: "",
+    terminalRuntimePickerState: () => ({ available: true, issue: "" }),
+    window: { addEventListener() {} }
+  };
+  vm.runInNewContext(source, context);
+
+  const menu = context.terminalModelMenu("setup", "gpt-5.5");
+  const searchedGroups = context.filteredTerminalModelGroups("deepseek");
+
+  assert.match(menu, /terminal-model-picker-head/);
+  assert.match(menu, /data-terminal-model-count>3 models/);
+  assert.match(menu, /terminal-model-quick-list/);
+  assert.match(menu, /terminal-model-quick active/);
+  assert.match(menu, /<em>2<\/em>/);
+  assert.equal(context.terminalModelCountLabel(searchedGroups), "1 model");
+});
+
 test("model rows keep provider logos and hide runtime implementation labels", () => {
   const context = {
     config: () => ({ chatModelGroups: [] }),
@@ -332,7 +376,8 @@ test("PTY terminals stay edge-to-edge and keep native bottom rows correctly size
   assert.match(runtimeStyles, /\.grid-mode \.terminal-tile\s*\{[\s\S]*border:\s*0;[\s\S]*border-radius:\s*0;[\s\S]*contain:\s*layout paint;[\s\S]*overflow:\s*hidden;/);
   assert.match(responsiveStyles, /\.grid-mode \.terminal-stage\s*\{[\s\S]*gap:\s*0;[\s\S]*grid-template-rows:[\s\S]*minmax\(0,\s*1fr\)[\s\S]*overflow-y:\s*hidden;/);
   assert.match(ptyRuntimeSource, /dimensions\?\.css\?\.cell/);
-  assert.match(ptyRuntimeSource, /Math\.round\(availableHeight \/ cellHeight\)/);
+  assert.match(ptyRuntimeSource, /Math\.floor\(availableHeight \/ cellHeight\)/);
+  assert.doesNotMatch(ptyRuntimeSource, /Math\.round\(availableHeight \/ cellHeight\)/);
   assert.match(ptyRuntimeSource, /queueMicrotask\(launch\)/);
   assert.match(ptyRuntimeSource, /mountVisibleXterms\(new Set\(\[terminal\.id\]\)\);[\s\S]*startPtyTerminal\(terminal\)/);
   assert.match(ptyRuntimeSource, /schedulePtyXtermFit\(terminal\.id, \{ forceBackend: true \}\)/);

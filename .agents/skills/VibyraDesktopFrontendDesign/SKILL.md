@@ -41,6 +41,10 @@ Vibyra desktop should feel like a simple, dark, mobile-inspired AI desktop app, 
 - Make Terminals the first useful authenticated surface. Do not add a Home
   landing page, command dashboard, or recent-work page before the terminal
   workspace.
+- Treat PTY output panes like real terminals: live writes and focus changes may
+  auto-follow only when the xterm viewport is already near the bottom. Preserve
+  a user's scrolled-up position during long-running work; do not force
+  `scrollToBottom()` from generic output, snapshot, or focus paths.
 - Keep controls familiar and quiet: icon buttons, simple avatars, concise nav rows.
 - Keep the Projects page as a focused workspace chooser, not a dashboard:
   `desktop/assets/app.pages.js` renders one compact command bar and a flat
@@ -142,6 +146,11 @@ Judge every screen the way a TikTok viewer judges a clip: instantly, without exp
   wordmark, tiled, or opaque-background icon. On Linux keep
   `app.setDesktopName("vibyra.desktop")`, `WM_CLASS=vibyra`, and the
   `vibyra-login-logo` hicolor icon key aligned.
+- Linux app startup is part of the product surface. Keep the repo-root
+  `Vibyra Desktop` launcher self-preparing, with
+  `scripts/install-desktop-launcher.sh` writing the `Vibyra` app-menu entry and
+  Desktop shortcut. Starting Vibyra from the OS launcher should not require the
+  user to run backend, Electron, or setup commands manually.
 - Desktop auth is a real backend account session mirrored in `localStorage["vibyra.desktop.auth"]`. Email uses the local `/desktop/auth/login|signup` proxy; Google and Apple use `/desktop/auth/{provider}/start`, the system browser, and one-time `/status/{flowId}` polling before `/desktop/session` verifies the returned Vibyra bearer token.
 - Never replace social auth with a fake success or email-only warning. Provider secrets and authorization-code exchange stay in the backend; the renderer receives only the provider authorization URL and the final one-time Vibyra session result.
 - Keep social-auth progress and errors in the always-visible provider-button area. Do not route Google/Apple failures through the email form's error element because that form is collapsed by default and makes clicks appear inert.
@@ -187,6 +196,13 @@ Keep it extremely simple.
   keyboard support, outside-click dismissal, and reduced-motion behavior.
 - Run `node --test desktop/assets/app.custom-select.test.mjs`; its production
   source gate must remain clean before claiming every dropdown is custom.
+- Keep the Terminal AI model picker as a compact custom menu with a header,
+  quick-pick strip, searchable provider sections with counts, and dense rows.
+  Preserve that structure for both setup and the `+` new-terminal model picker.
+- Keep the terminal project picker simpler than the model picker: one search
+  input at the top and known project rows only. Do not add `No project`,
+  whole-PC browse/search, native folder/file actions, helper footers, or extra
+  source modes to that dropdown.
 
 ## Terminal Live Preview
 
@@ -203,10 +219,10 @@ shutdown. Keep this section focused on presentation and interaction design.
 - Keep Live Preview in the same resizable right workspace as Editor, AI, and
   Memory. Use one compact Editor / Preview / AI / Memory switcher
   and keep the terminal canvas mounted and visible on the left.
-- On the terminal page, project groups belong in the authenticated top chrome
-  as browser-style tabs, and active-project agents belong in the global left
-  rail under Terminals. Do not restore a page-local project navbar or a
-  terminal-page-only agent sidebar.
+- On the terminal page, project groups belong centered in the authenticated
+  top chrome as browser-style tabs, and active-project agents belong in the
+  global left rail under Terminals. Do not restore a page-local project navbar
+  or a terminal-page-only agent sidebar.
 - Project inspection must never start a dev server. Detect runnable apps first,
   show every supported target plus visible unsupported native targets, and
   require an explicit in-panel Run action that names the app and exact command.
@@ -369,7 +385,9 @@ shutdown. Keep this section focused on presentation and interaction design.
   and hover treatment as the model selector.
 - Keep PTY/xterm terminals edge-to-edge in both focus and grid layouts. Do not
   add wrapper padding around `.terminal-xterm`; native provider TUIs own their
-  internal spacing.
+  internal spacing. When fitting xterm, count only fully visible rows; do not
+  round pane height up to an extra row because tall one- and two-terminal panes
+  can clip their bottom composer/status row.
 - Treat Auto model selection as a temporary full-terminal presentation state.
   Center the complete V logo, title, status, and signal as one balanced block,
   use the full 3D mark when normal pane height allows it, and keep motion inside
@@ -835,8 +853,21 @@ user explicitly requests Codex's visual design.
 - Default to a focus view: one active terminal fills the page, with other
   terminals represented as quiet agent rows under Terminals in the global left
   rail.
-- Keep project groups as browser-style tabs in the authenticated top chrome,
-  not as nested items in the global app rail and not as a page-local navbar.
+- Keep project groups centered as browser-style tabs in the authenticated top
+  chrome, not as nested items in the global app rail and not as a page-local
+  navbar.
+- Balance that tab chrome with a full-width grid: project tabs stay in the
+  center column while New agent, right-workspace launchers, and Options sit in
+  the right action column. Do not use `width: fit-content` for this row,
+  because the action cluster pulls the tabs off center and makes Add/project
+  controls feel misaligned.
+- The top project-tab action cluster is scoped to the active project group.
+  Project tabs may expose a compact close icon for that group, and the
+  three-dot menu should close only the visible project group. Do not wire this
+  menu to the global close-all-terminals command.
+- When launching two or more terminals from Independent agents or Coordinated
+  team setup, reveal the batch in grid layout and clear stale fullscreen state
+  so every new terminal is visible outside fullscreen mode.
 - Keep PTY fast-refresh project-aware. It should patch only
   `terminalsForProjectKey()` into the stage and refresh top project tabs plus
   rail agents in place when group or menu state changes, so live xterm panes
@@ -852,6 +883,11 @@ user explicitly requests Codex's visual design.
   on Vibyra purple. Provider colors may identify content, but OpenAI/Codex teal
   must not turn the surrounding terminal UI into a green theme; ANSI green
   remains valid only for real terminal output and semantic success.
+- Keep the selected terminal visually obvious in the final loaded chrome layer:
+  `app.terminals-chrome-polish.css` must preserve a clean accent border/ring
+  and subtle selected header tint for `.terminal-focus.active` and
+  `.terminal-tile.active`, because earlier selected styles are otherwise
+  flattened by the polish sheet.
 - Terminal options must include a persistent rename control backed by the PTY
   service. Grid positions are numbered in reading order, creation appends new
   terminals, and an eight-terminal wide grid uses four columns so `1` starts

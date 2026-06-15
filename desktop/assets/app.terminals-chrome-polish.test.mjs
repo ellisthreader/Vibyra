@@ -50,9 +50,11 @@ test("motion is restrained and disabled for reduced-motion users", () => {
   assert.doesNotMatch(styles, /backdrop-filter|filter:\s*blur|text-shadow/i);
 });
 
-test("active terminal chrome stays neutral and avoids decorative gradients", () => {
+test("active terminal chrome keeps a clean selected accent without decorative gradients", () => {
   assert.doesNotMatch(styles, /linear-gradient|radial-gradient/);
   assert.doesNotMatch(rule(".terminal-tab.active"), /var\(--terminal-accent/);
+  assert.match(rule(".terminal-focus.active::after,\n.terminal-tile.active::after"), /var\(--terminal-polish-selected-border/);
+  assert.match(rule(".terminal-focus.active .terminal-focus-head,\n.terminal-tile.active .terminal-tile-head"), /var\(--terminal-polish-selected-header/);
   assert.match(rule(".terminal-status.running"), /box-shadow:\s*none/);
 });
 

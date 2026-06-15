@@ -28,8 +28,10 @@ test("PTY keyboard input has one browser event owner", () => {
 
   assert.equal(
     [...runtimeSource.matchAll(/addEventListener\("keydown"/g)].length,
-    1,
+    2,
   );
+  assert.match(runtimeSource, /node\.addEventListener\("keydown", \(event\) => \{/);
+  assert.match(runtimeSource, /document\.addEventListener\("keydown", handleTerminalXtermClipboardShortcut, true\)/);
   assert.equal(
     [...runtimeSource.matchAll(/addEventListener\("paste"/g)].length,
     1,
@@ -42,11 +44,184 @@ test("PTY keyboard input has one browser event owner", () => {
   assert.match(runtimeSource, /terminalPtyCompletedPrompts\(id, input\)/);
   assert.match(runtimeSource, /queueTerminalPtyInput\(id, prompts/);
   assert.match(runtimeSource, /sendPtyInputNow[\s\S]*markTerminalProviderBusy\(terminal\)/);
+  assert.match(runtimeSource, /attachCustomKeyEventHandler/);
+  assert.match(runtimeSource, /copyTerminalXtermSelection\(xterm,\s*event\)/);
   assert.match(promptLogSource, /persistDesktopPromptTranscript\(prompt, "terminal-pty"/);
   assert.ok(
     appSource.indexOf("app.terminals-pty-prompt-log.js")
       < appSource.indexOf("app.terminals-pty-runtime.js")
   );
+});
+
+test("PTY xterm copy writes selected text without stealing Ctrl+C interrupts", async () => {
+  const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
+  const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
+  let keyHandler = null;
+  const copied = [];
+  const context = {
+    window: {
+      vibyraDesktopClipboard: {
+        writeText: async (text) => {
+          copied.push(text);
+          return true;
+        }
+      }
+    },
+    navigator: { clipboard: { writeText: async (text) => copied.push(`navigator:${text}`) } },
+    WeakSet,
+    terminalXtermClipboardBound: new WeakSet(),
+    terminalXtermGlobalClipboardBound: false,
+    setTimeout
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.attach = attachTerminalXtermClipboard;
+this.copy = copyTerminalXtermSelection;`,
+    context
+  );
+
+  const xterm = {
+    attachCustomKeyEventHandler: (handler) => { keyHandler = handler; },
+    getSelection: () => "copied text"
+  };
+  context.attach("terminal-1", xterm);
+  const event = {
+    type: "keydown",
+    key: "c",
+    ctrlKey: true,
+    metaKey: false,
+    shiftKey: true,
+    altKey: false,
+    prevented: false,
+    preventDefault() { this.prevented = true; }
+  };
+
+  assert.equal(keyHandler(event), false);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(event.prevented, true);
+  assert.deepEqual(copied, ["copied text"]);
+
+  xterm.getSelection = () => "";
+  assert.equal(keyHandler({ ...event, prevented: false }), true);
+});
+
+test("PTY xterm copy event fills clipboardData for native copy commands", async () => {
+  const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
+  const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
+  const copied = [];
+  const context = {
+    window: {
+      vibyraDesktopClipboard: {
+        writeText: async (text) => {
+          copied.push(text);
+          return true;
+        }
+      }
+    },
+    navigator: { clipboard: { writeText: async () => {} } },
+    WeakSet,
+    terminalXtermClipboardBound: new WeakSet(),
+    terminalXtermGlobalClipboardBound: false,
+    document: {
+      getSelection: () => ({
+        isCollapsed: true,
+        toString: () => ""
+      })
+    },
+    Node: { TEXT_NODE: 3 }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.copy = copyTerminalXtermSelection;`,
+    context
+  );
+  const clipboardData = {
+    values: {},
+    setData(type, value) { this.values[type] = value; }
+  };
+  const event = {
+    clipboardData,
+    prevented: false,
+    preventDefault() { this.prevented = true; }
+  };
+
+  assert.equal(context.copy({ getSelection: () => "menu copy" }, event), true);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(event.prevented, true);
+  assert.equal(clipboardData.values["text/plain"], "menu copy");
+  assert.deepEqual(copied, ["menu copy"]);
+});
+
+test("PTY xterm copy falls back to highlighted DOM text for Ctrl+Shift+C", async () => {
+  const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
+  const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
+  const copied = [];
+  const listeners = {};
+  const xtermElement = {
+    contains: (node) => node?.inside === true,
+    dataset: {},
+    addEventListener() {}
+  };
+  const context = {
+    window: {
+      vibyraDesktopClipboard: {
+        writeText: async (text) => {
+          copied.push(text);
+          return true;
+        }
+      }
+    },
+    navigator: { clipboard: { writeText: async () => {} } },
+    WeakSet,
+    terminalXtermClipboardBound: new WeakSet(),
+    terminalXtermGlobalClipboardBound: false,
+    activeTerminalId: "terminal-1",
+    terminalXterms: {
+      "terminal-1": {
+        element: xtermElement,
+        getSelection: () => ""
+      }
+    },
+    document: {
+      addEventListener: (type, handler, capture) => {
+        listeners[type] = { handler, capture };
+      },
+      getSelection: () => ({
+        isCollapsed: false,
+        anchorNode: { nodeType: 1, inside: true },
+        focusNode: { nodeType: 1, inside: true },
+        toString: () => "highlighted dom text"
+      })
+    },
+    Node: { TEXT_NODE: 3 }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.ensure = ensureTerminalXtermClipboardShortcut;`,
+    context
+  );
+
+  context.ensure();
+  const event = {
+    type: "keydown",
+    key: "C",
+    ctrlKey: true,
+    metaKey: false,
+    shiftKey: true,
+    altKey: false,
+    target: null,
+    prevented: false,
+    stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopPropagation() { this.stopped = true; }
+  };
+  listeners.keydown.handler(event);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(listeners.keydown.capture, true);
+  assert.equal(event.prevented, true);
+  assert.equal(event.stopped, true);
+  assert.deepEqual(copied, ["highlighted dom text"]);
 });
 
 test("screenshot path drop inserts once through xterm paste", () => {
@@ -134,7 +309,18 @@ this.position = positionPtyViewport;`,
     }
   );
   assert.deepEqual(normalScrolls, ["bottom"]);
-  assert.equal(positionContext.overscanCalls, 2);
+
+  const scrolledUp = [];
+  positionContext.position(
+    { autoDeciding: false },
+    {
+      scrollToTop: () => scrolledUp.push("top"),
+      scrollToBottom: () => scrolledUp.push("bottom")
+    },
+    { followOutput: false }
+  );
+  assert.deepEqual(scrolledUp, []);
+  assert.equal(positionContext.overscanCalls, 3);
 
   const overscanStart = runtimeSource.indexOf("function applyPtyBottomOverscan");
   const overscanEnd = runtimeSource.indexOf("\nfunction terminalPtyBottomRowsContainContent", overscanStart);
@@ -156,9 +342,51 @@ this.apply = applyPtyBottomOverscan;`,
   assert.equal(element.style.height, "");
   assert.equal(element.style.transform, "");
 
-  assert.match(runtimeSource, /appendPtyOutput[\s\S]*positionPtyViewport\(terminal,\s*xterm\)/);
-  assert.match(runtimeSource, /writePtySnapshot[\s\S]*positionPtyViewport\(findTerminal\(id\),\s*xterm\)/);
-  assert.match(runtimeSource, /focusPtyTerminal[\s\S]*positionPtyViewport\(terminal,\s*xterm\)/);
+  assert.match(runtimeSource, /appendPtyOutput[\s\S]*positionPtyViewport\(terminal,\s*xterm,\s*\{ followOutput \}\)/);
+  assert.match(runtimeSource, /writePtySnapshot[\s\S]*positionPtyViewport\(findTerminal\(id\),\s*xterm,\s*\{ followOutput: options\.followOutput !== false \}\)/);
+  assert.match(runtimeSource, /focusPtyTerminal[\s\S]*positionPtyViewport\(terminal,\s*xterm,\s*\{ followOutput: terminalPtyViewportIsNearBottom\(xterm\) \}\)/);
+});
+
+test("PTY live output follows only when the user is already near the bottom", () => {
+  const positionStart = runtimeSource.indexOf("function terminalPtyViewportIsNearBottom");
+  const positionEnd = runtimeSource.indexOf("\nfunction focusPtyTerminal", positionStart);
+  const context = {
+    overscanCalls: 0,
+    applyPtyBottomOverscan: () => { context.overscanCalls += 1; },
+    terminalAutoDeciding: () => false
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(positionStart, positionEnd)}
+this.nearBottom = terminalPtyViewportIsNearBottom;
+this.position = positionPtyViewport;`,
+    context
+  );
+
+  assert.equal(context.nearBottom({ buffer: { active: { baseY: 120, viewportY: 119 } } }), true);
+  assert.equal(context.nearBottom({ buffer: { active: { baseY: 120, viewportY: 80 } } }), false);
+
+  const followed = [];
+  context.position(
+    {},
+    {
+      buffer: { active: { baseY: 120, viewportY: 119 } },
+      scrollToBottom: () => followed.push("bottom")
+    },
+    { followOutput: context.nearBottom({ buffer: { active: { baseY: 120, viewportY: 119 } } }) }
+  );
+  assert.deepEqual(followed, ["bottom"]);
+
+  const preserved = [];
+  context.position(
+    {},
+    {
+      buffer: { active: { baseY: 120, viewportY: 80 } },
+      scrollToBottom: () => preserved.push("bottom")
+    },
+    { followOutput: context.nearBottom({ buffer: { active: { baseY: 120, viewportY: 80 } } }) }
+  );
+  assert.deepEqual(preserved, []);
+  assert.match(runtimeSource, /const followOutput = terminalPtyViewportIsNearBottom\(xterm\);[\s\S]*xterm\.write\(terminalDisplayOutput\(terminal,\s*data\)/);
 });
 
 test("assigned terminal tasks are transient and submitted after PTY creation", () => {
@@ -263,6 +491,8 @@ test("terminal launch mounts xterm after synchronous render without waiting for 
   assert.match(queueStart, /try\s*\{\s*mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
   assert.match(queueStart, /void startPtyTerminal\(terminal\)/);
   assert.match(source, /signal:\s*controller\.signal/);
+  assert.match(source, /const terminalPtyStartTimeoutMs = 60_000/);
+  assert.match(source, /setTimeout\(\(\) => controller\.abort\(\), terminalPtyStartTimeoutMs\)/);
   assert.match(source, /Terminal startup timed out/);
 });
 

@@ -214,8 +214,10 @@
   background: transparent;
   border-bottom: 0;
   display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  grid-template-columns: minmax(34px, 1fr) minmax(0, auto) minmax(34px, 1fr);
+  justify-content: stretch;
+  justify-self: center;
   min-height: 44px;
   min-width: 0;
   padding: 0 0 5px;
@@ -226,7 +228,10 @@
   align-items: end;
   display: flex;
   gap: 2px;
+  grid-column: 2;
+  justify-content: center;
   min-width: 0;
+  max-width: min(64vw, 760px);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -242,16 +247,30 @@
   border-bottom-color: transparent;
   border-radius: 8px 8px 0 0;
   color: var(--terminal-muted, #a9a3b8);
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
   gap: 8px;
-  grid-template-columns: 20px minmax(78px, 1fr);
   height: 34px;
   max-width: 210px;
   min-width: 132px;
-  padding: 0 9px;
+  padding: 0 5px 0 9px;
   text-align: left;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.terminal-project-tab-open {
+  -webkit-app-region: no-drag;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  display: grid;
+  flex: 1 1 auto;
+  gap: 8px;
+  grid-template-columns: 20px minmax(78px, 1fr);
+  min-width: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .terminal-project-tab:hover {
@@ -332,7 +351,50 @@
   display: flex;
   flex: 0 0 auto;
   gap: 5px;
+  grid-column: 3;
+  justify-self: start;
   min-width: 0;
+}
+
+.terminal-project-actions .terminal-add,
+.terminal-project-actions .terminal-layout-button,
+.terminal-project-tab-close {
+  -webkit-app-region: no-drag;
+  background: color-mix(in srgb, var(--terminal-rail, #17171b) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--terminal-border, rgba(151, 161, 190, .12)) 72%, transparent);
+  color: var(--terminal-muted, #a9a3b8);
+}
+
+.terminal-project-actions .terminal-add:hover:not(:disabled),
+.terminal-project-actions .terminal-layout-button:hover,
+.terminal-project-tab-close:hover,
+.terminal-project-tab-close:focus-visible {
+  background: color-mix(in srgb, var(--terminal-elevated, #222226) 86%, transparent);
+  border-color: var(--terminal-border-strong, rgba(151, 161, 190, .22));
+  color: var(--terminal-text, #eeeaf8);
+}
+
+.terminal-project-tab-close {
+  align-items: center;
+  border-radius: 6px;
+  display: inline-flex;
+  flex: 0 0 24px;
+  height: 24px;
+  justify-content: center;
+  opacity: .72;
+  padding: 0;
+  width: 24px;
+}
+
+.terminal-project-tab-close:hover,
+.terminal-project-tab-close:focus-visible {
+  color: var(--terminal-danger, #ff9aad);
+  opacity: 1;
+}
+
+.terminal-project-tab-close svg {
+  height: 13px;
+  width: 13px;
 }
 
 .terminal-primary-shell {
@@ -538,19 +600,30 @@
 
 @media (max-width: 760px) {
   .terminal-project-tabs {
-    align-items: stretch;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .terminal-project-tab-list {
+    grid-column: 1;
+    justify-content: flex-start;
+    max-width: none;
   }
 
   .terminal-project-actions {
-    justify-content: space-between;
+    grid-column: 2;
+    justify-content: flex-end;
+    justify-self: end;
   }
 
 }
 
 @media (max-width: 560px) {
-  .terminal-project-tab {
+  .terminal-project-tab-open {
     grid-template-columns: 18px minmax(70px, 1fr);
+  }
+
+  .terminal-project-tab {
     min-width: 104px;
   }
 

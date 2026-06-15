@@ -51,7 +51,8 @@ test("terminal workspace keeps project tabs in top chrome and agents in the rail
   assert.match(renderSource, /terminal-primary-shell/);
   assert.match(renderSource, /terminal-body-shell/);
   assert.match(renderSource, /terminal-main-shell/);
-  assert.match(renderSource, /grid \? projectTerminals\.map\(terminalTile\)/);
+  assert.match(renderSource, /grid \? terminals\.map\(terminalTile\)/);
+  assert.match(ptySource, /terminal-project-hidden/);
   assert.match(ptySource, /const tabs = projectTerminals\.map/);
   assert.match(ptySource, /terminalProjectTabsHtml\(\)/);
 });
