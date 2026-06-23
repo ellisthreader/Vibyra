@@ -20,6 +20,7 @@ One place to navigate every project, responsibility, reference, and daily note.
 - [[03 Resources/Resources|Resources]] - reusable knowledge and references
 - [[05 Daily/Daily Notes|Daily Notes]] - dated work logs and planning
 - [[_ai/Context Map|Vibyra Context Map]] - detailed Vibyra engineering memory
+- [[_ai/RelayClarity/RelayClarity Memory|RelayClarity Memory]] - scoped memory for the RelayClarity project
 - [[04 Archive/Archive|Archive]] - inactive material and backups
 
 ## Active Projects

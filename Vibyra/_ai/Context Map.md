@@ -2,6 +2,12 @@
 
 Use this map to choose the smallest useful context. Read one domain index and one focused note unless the task clearly crosses domains.
 
+## Multi-Project Note
+
+This vault holds memory for more than one project. The domain notes below default to **Vibyra**.
+
+- **RelayClarity** (separate repo `/home/ellis/Desktop/Zoom project`): read `RelayClarity/RelayClarity Memory.md` first. Do NOT apply Vibyra notes to RelayClarity, or vice versa.
+
 ## Memory, Skills, And Planning
 
 For memory/skill optimization, broad planning, or agent workflow changes, read
