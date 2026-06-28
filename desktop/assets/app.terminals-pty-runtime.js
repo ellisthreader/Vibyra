@@ -618,6 +618,9 @@ function mountVisibleXterms(ids = null) {
         allowProposedApi: false,
         convertEol: false,
         cursorBlink: false,
+        cursorInactiveStyle: "none",
+        cursorStyle: "bar",
+        cursorWidth: 1,
         disableStdin: false,
         screenReaderMode: true,
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
@@ -821,7 +824,9 @@ function writePtySnapshot(id, xterm, output, options = {}) {
 }
 
 function terminalDisplayOutput(_terminal, value) {
-  return value;
+  return String(value || "")
+    .replace(/\x1b\[[0-9;]* q/g, "")
+    .replace(/\x1b\[\?25[hl]/g, "");
 }
 
 function terminalAutoDeciding(terminal) {
@@ -1388,7 +1393,8 @@ function terminalXtermTheme(node) {
   return {
     background: css("--terminal-bg", "#08080c"),
     foreground: css("--terminal-copy", "#f7f4ff"),
-    cursor: css("--terminal-text", "#f7f4ff"),
+    cursor: css("--terminal-cursor", "rgba(247, 244, 255, 0.42)"),
+    cursorAccent: css("--terminal-bg", "#08080c"),
     selectionBackground: css("--terminal-selection", "rgba(109, 59, 255, 0.22)"),
     selectionInactiveBackground: css("--terminal-selection-inactive", "rgba(109, 59, 255, 0.14)"),
     black: css("--terminal-ansi-black", "#24242d"),

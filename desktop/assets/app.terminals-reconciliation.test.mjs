@@ -146,8 +146,17 @@ test("xterm mounting skips hidden project, focus, and fullscreen panes", () => {
 test("xterm rendering avoids visible cursor blink and full replay during normal sync", () => {
   const mountSource = sourceBetween("function mountVisibleXterms", "function attachTerminalXtermClipboard");
   const syncSource = sourceBetween("function syncPtyXtermOutput", "function writePtySnapshot");
+  const displaySource = sourceBetween("function terminalDisplayOutput", "function terminalAutoDeciding");
+  const themeSource = sourceBetween("function terminalXtermTheme", "function terminalXtermThemeKey");
 
   assert.match(mountSource, /cursorBlink:\s*false/);
+  assert.match(mountSource, /cursorStyle:\s*"bar"/);
+  assert.match(mountSource, /cursorWidth:\s*1/);
+  assert.match(mountSource, /cursorInactiveStyle:\s*"none"/);
+  assert.ok(displaySource.includes(".replace(/\\x1b\\[[0-9;]* q/g"));
+  assert.ok(displaySource.includes(".replace(/\\x1b\\[\\?25[hl]/g"));
+  assert.match(themeSource, /cursor:\s*css\("--terminal-cursor"/);
+  assert.match(themeSource, /cursorAccent:/);
   assert.match(syncSource, /next\.startsWith\(previous\)/);
   assert.match(syncSource, /const suffix = next\.slice\(previous\.length\)/);
   assert.match(syncSource, /xterm\.write\(terminalDisplayOutput\(terminal, suffix\)/);
