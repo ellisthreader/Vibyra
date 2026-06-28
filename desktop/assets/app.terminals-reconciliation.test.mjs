@@ -143,6 +143,17 @@ test("xterm mounting skips hidden project, focus, and fullscreen panes", () => {
   assert.match(visibilitySource, /aria-hidden/);
 });
 
+test("xterm rendering avoids visible cursor blink and full replay during normal sync", () => {
+  const mountSource = sourceBetween("function mountVisibleXterms", "function attachTerminalXtermClipboard");
+  const syncSource = sourceBetween("function syncPtyXtermOutput", "function writePtySnapshot");
+
+  assert.match(mountSource, /cursorBlink:\s*false/);
+  assert.match(syncSource, /next\.startsWith\(previous\)/);
+  assert.match(syncSource, /const suffix = next\.slice\(previous\.length\)/);
+  assert.match(syncSource, /xterm\.write\(terminalDisplayOutput\(terminal, suffix\)/);
+  assert.ok(syncSource.indexOf("next.startsWith(previous)") < syncSource.indexOf("xterm.reset()"));
+});
+
 test("pty session and socket paths mount only the affected xterm", () => {
   const socketSource = sourceBetween("function connectPtyTerminal", "function schedulePtyCollectionSync");
   const messageSource = sourceBetween("function handlePtySocketMessage", "const previousRenderTerminalsPage");

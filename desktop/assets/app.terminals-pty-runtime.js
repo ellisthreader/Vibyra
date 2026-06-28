@@ -617,7 +617,7 @@ function mountVisibleXterms(ids = null) {
       xterm = new window.Terminal({
         allowProposedApi: false,
         convertEol: false,
-        cursorBlink: true,
+        cursorBlink: false,
         disableStdin: false,
         screenReaderMode: true,
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
@@ -792,12 +792,22 @@ function mergePtySnapshotOutput(localOutput, remoteOutput) {
 
 function syncPtyXtermOutput(terminal) {
   const xterm = terminalXterms[terminal.id];
-  if (!xterm || terminalXtermSnapshots[terminal.id] === terminal.output) return;
+  const previous = String(terminalXtermSnapshots[terminal.id] || "");
+  const next = String(terminal.output || "");
+  if (!xterm || previous === next) return;
   try {
     const followOutput = terminalPtyViewportIsNearBottom(xterm);
+    if (next.startsWith(previous)) {
+      const suffix = next.slice(previous.length);
+      xterm.write(terminalDisplayOutput(terminal, suffix), () => {
+        terminalXtermSnapshots[terminal.id] = next;
+        positionPtyViewport(terminal, xterm, { followOutput });
+      });
+      return;
+    }
     xterm.reset();
-    if (terminal.output) writePtySnapshot(terminal.id, xterm, terminal.output, { followOutput });
-    terminalXtermSnapshots[terminal.id] = terminal.output || "";
+    if (next) writePtySnapshot(terminal.id, xterm, next, { followOutput });
+    terminalXtermSnapshots[terminal.id] = next;
   } catch {}
 }
 
