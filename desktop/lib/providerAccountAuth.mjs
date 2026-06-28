@@ -57,7 +57,8 @@ export function startProviderAccountLogin(provider) {
   const child = spawn(command.command, command.args, {
     cwd: homedir(),
     env: personalAccountEnvironment(),
-    stdio: [geminiLogin ? "pipe" : "ignore", "pipe", "pipe"]
+    stdio: [geminiLogin ? "pipe" : "ignore", "pipe", "pipe"],
+    windowsHide: true
   });
   const state = {
     child,
@@ -239,7 +240,8 @@ function openSystemBrowser(url) {
   try {
     const child = spawn(command.cmd, command.args, {
       detached: true,
-      stdio: "ignore"
+      stdio: "ignore",
+      windowsHide: true
     });
     child.on("error", () => {});
     child.unref();

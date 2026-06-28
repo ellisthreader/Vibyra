@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, codexModelMigration, listAiTerminalAgentStatuses, spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
+import { join, resolve } from "node:path";
+import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, codexModelMigration, listAiTerminalAgentStatuses, spawnAiTerminalProcess, terminalLaunchCommandParts, windowsProcessLaunchParts, windowsShellCommandParts } from "./aiTerminalProcess.mjs";
 import { VIBYRA_AGENT_ENTRY_PATH } from "./aiTerminalRuntimeCatalog.mjs";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 import { PORT } from "./state.mjs";
@@ -124,6 +124,49 @@ test("unknown qualified providers launch the bundled Vibyra Agent entry in Node"
   assert.equal(status.runtimeId, "vibyra-agent");
   assert.equal(status.launchMode, "vibyra-agent");
   assert.deepEqual(args, [VIBYRA_AGENT_ENTRY_PATH]);
+});
+
+test("Vibyra Agent launch parts avoid shell-dependent script resolution", () => {
+  const status = aiTerminalAgentStatus(
+    "vibyra",
+    "deepseek/deepseek-v3",
+    "vibyra-agent"
+  );
+  const parts = terminalLaunchCommandParts(status, {
+    model: "deepseek/deepseek-v3"
+  });
+
+  assert.equal(parts.command, process.execPath);
+  assert.deepEqual(parts.args, [VIBYRA_AGENT_ENTRY_PATH]);
+});
+
+test("Windows shell launch uses a native shell instead of bash", () => {
+  const root = "C:\\Windows";
+  const powershell = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+  const parts = windowsShellCommandParts(
+    { SystemRoot: root, ComSpec: "C:\\Windows\\System32\\cmd.exe" },
+    (path) => path === powershell
+  );
+
+  assert.equal(parts.command, powershell);
+  assert.deepEqual(parts.args, ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]);
+
+  const fallback = windowsShellCommandParts(
+    { SystemRoot: root, ComSpec: "C:\\Windows\\System32\\cmd.exe" },
+    () => false
+  );
+
+  assert.equal(fallback.command, "C:\\Windows\\System32\\cmd.exe");
+  assert.deepEqual(fallback.args, ["/d", "/q"]);
+});
+
+test("Windows command shims launch through an explicit hidden cmd wrapper", () => {
+  const parts = windowsProcessLaunchParts("C:\\Tools\\codex.cmd", ["--model", "openai/gpt-5.5"]);
+
+  assert.equal(parts.command, "C:\\Tools\\codex.cmd");
+  assert.deepEqual(parts.args, ["--model", "openai/gpt-5.5"]);
+  assert.equal(parts.shell, true);
+  assert.equal(parts.windowsHide, true);
 });
 
 test("Vibyra Agent rejects forged provider ownership and stale launch contracts", () => {
@@ -459,7 +502,7 @@ test("Vibyra token Codex homes contain only Vibyra-owned workspace trust", () =>
     assert.equal(existsSync(join(env.CODEX_HOME, "auth.json")), false);
     assert.equal(
       readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8"),
-      '[projects."/tmp/Vibyra Project"]\ntrust_level = "trusted"\n'
+      `[projects.${JSON.stringify(resolve("/tmp/Vibyra Project"))}]\ntrust_level = "trusted"\n`
     );
   } finally {
     if (previousCodexHome === undefined) delete process.env.CODEX_HOME;

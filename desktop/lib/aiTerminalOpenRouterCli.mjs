@@ -500,7 +500,8 @@ async function sendAgentPrompt({ prompt, model, reasoningEffort, color, agentSes
       const child = spawn(engine, args, {
         cwd: process.cwd(),
         env: process.env,
-        stdio: ["pipe", "pipe", "pipe"]
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true
       });
       if (terminalState) {
         terminalState.activeProcess = child;
@@ -890,10 +891,12 @@ async function runProviderShellCommand(command, state, color) {
 
 function executeShell(command, state) {
   return new Promise((resolveResult) => {
-    const child = spawn(process.env.SHELL || "/bin/bash", ["-lc", command], {
+    const shell = shellCommandParts(command);
+    const child = spawn(shell.command, shell.args, {
       cwd: process.cwd(),
       env: shellCommandEnvironment(),
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
     });
     state.activeProcess = child;
     state.cancellationRequested = false;
@@ -1043,6 +1046,19 @@ function terminateTerminal(state, rl) {
     if (child.exitCode === null) child.kill("SIGKILL");
   }, 1500);
   forceTimer.unref?.();
+}
+
+function shellCommandParts(command) {
+  if (process.platform === "win32") {
+    return {
+      command: process.env.ComSpec || "cmd.exe",
+      args: ["/d", "/s", "/c", command]
+    };
+  }
+  return {
+    command: process.env.SHELL || "/bin/bash",
+    args: ["-lc", command]
+  };
 }
 
 function shellCommandEnvironment() {

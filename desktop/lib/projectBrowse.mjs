@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { existsSync, statSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { appState } from "./state.mjs";
 import { formatUpdated, isDirectory, projectFromInfo, projectFromPath, projectIdFromPath } from "./projectInfo.mjs";
@@ -120,10 +121,19 @@ function cacheProjects(projects) {
   const seen = new Set();
   for (const project of [...projects, ...appState.cachedProjects]) {
     if (!project?.id || seen.has(project.id)) continue;
+    if (!projectPathIsUsable(project.path)) continue;
     seen.add(project.id);
     const { kind, ...cleanProject } = project;
     next.push(cleanProject);
     if (next.length >= 80) break;
   }
   appState.cachedProjects = next;
+}
+
+function projectPathIsUsable(path) {
+  try {
+    return Boolean(path) && existsSync(path) && statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
 }

@@ -188,7 +188,7 @@ function canExecute(path) {
 
 function run(command, args, env = process.env) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args, { env, stdio: ["ignore", "ignore", "pipe"] });
+    const child = spawn(command, args, { env, stdio: ["ignore", "ignore", "pipe"], windowsHide: true });
     let stderr = "";
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk) => {
@@ -204,7 +204,7 @@ function run(command, args, env = process.env) {
 
 function runWithInput(command, args, input, env = process.env) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args, { env, stdio: ["pipe", "ignore", "pipe"] });
+    const child = spawn(command, args, { env, stdio: ["pipe", "ignore", "pipe"], windowsHide: true });
     let stderr = "";
     child.stderr.setEncoding("utf8");
     child.stderr.on("data", (chunk) => {

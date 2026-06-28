@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { appendFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { spawnAiTerminalProcess } from "./aiTerminalProcess.mjs";
 import { providerActivitySignal } from "./aiTerminalActivity.mjs";
@@ -19,7 +20,7 @@ const config = JSON.parse(readFileSync(configPath, "utf8"));
 const paths = {
   state: join(dir, "state.json"),
   output: join(dir, "output.log"),
-  socket: join(dir, "worker.sock")
+  socket: terminalWorkerSocketPath(dir, config.terminalId)
 };
 const clients = new Set();
 const assignmentRecords = new Map();
@@ -350,6 +351,12 @@ function startGatewayTokenRenewal(token) {
   const timer = setInterval(() => renewTerminalGatewayToken(value), 6 * 60 * 60 * 1000);
   timer.unref?.();
   return timer;
+}
+
+function terminalWorkerSocketPath(dir, terminalId) {
+  if (process.platform !== "win32") return join(dir, "worker.sock");
+  const key = createHash("sha256").update(String(terminalId || "")).digest("hex").slice(0, 24);
+  return `\\\\.\\pipe\\vibyra-terminal-${key}`;
 }
 
 function broadcast(payload) {

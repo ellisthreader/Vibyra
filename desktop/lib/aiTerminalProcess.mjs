@@ -1,7 +1,7 @@
 import { execFileSync, spawn } from "node:child_process";
 import { accessSync, constants, existsSync, readFileSync, readdirSync, readlinkSync } from "node:fs";
 import { homedir } from "node:os";
-import { delimiter, dirname, join, resolve } from "node:path";
+import { delimiter, dirname, join, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertAiTerminalLaunchOwnership } from "./aiTerminalLaunchOwnership.mjs";
 import {
@@ -37,7 +37,7 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPla
   const runtimeModel = launchPlan?.runtimeId && launchPlan.runtimeId !== "codex"
     ? launchPlan.nativeModel
     : model;
-  const launch = launchCommand(status, shell, {
+  const launchOptions = {
     model: runtimeModel,
     modelMigration: codexModelMigration(runtimeModel),
     deferMcpTools: agent === "codex" && bundledCodexExecutable(status.commandPath),
@@ -47,10 +47,34 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPla
     memoryInstructions,
     roleInstructions,
     cwd
-  });
+  };
+  const launch = launchCommand(status, shell, launchOptions);
   const env = terminalEnv({ agent: status.key, runtimeId: status.runtimeId, label: status.label, model: runtimeModel, reasoningEffort, permissionMode, sandboxMode: sandboxMode || launchPlan?.sandboxMode, tokenMode, projectId, terminalId, terminalGatewayToken, memoryInstructions, roleInstructions, geminiSettingsPath, agentEnginePath: status.agentEnginePath, cwd, cols, rows });
   if (["qwen", "kimi"].includes(status.runtimeId) && status.commandPath) {
     env.PATH = `${dirname(status.commandPath)}${delimiter}${env.PATH || ""}`;
+  }
+  if (process.platform === "win32" && status.key === "shell") {
+    const parts = windowsShellCommandParts();
+    const child = spawn(parts.command, parts.args, {
+      cwd,
+      env,
+      stdio: "pipe",
+      windowsHide: true
+    });
+    attachProcess(child, onData, onExit);
+    return child;
+  }
+  if (process.platform === "win32" && status.commandPath) {
+    const parts = terminalLaunchCommandParts(status, launchOptions);
+    const child = spawn(parts.command, parts.args, {
+      cwd,
+      env,
+      stdio: "pipe",
+      shell: windowsCommandScript(parts.command),
+      windowsHide: true
+    });
+    attachProcess(child, onData, onExit);
+    return child;
   }
   const command = terminalSessionCommand({ status, launch, shell, cols, rows });
 
@@ -58,7 +82,7 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPla
     return spawnWithScript({ command, cwd, env, cols, rows, onData, onExit });
   }
 
-  const child = spawn(shell, ["-lc", command], { cwd, env, stdio: "pipe" });
+  const child = spawn(shell, ["-lc", command], { cwd, env, stdio: "pipe", windowsHide: true });
   attachProcess(child, onData, onExit);
   return child;
 }
@@ -339,13 +363,42 @@ function integer(value, fallback) {
 }
 
 function launchCommand(status, shell, options = {}) {
-  if (!status.commandPath) return `${shellQuote(shell)} -l`;
+  const parts = terminalLaunchCommandParts(status, options);
+  if (!parts.command) return `${shellQuote(shell)} -l`;
+  return [parts.command, ...parts.args].map(shellQuote).join(" ");
+}
+
+export function terminalLaunchCommandParts(status, options = {}) {
+  if (!status.commandPath) return { command: "", args: [] };
   const argumentAgent = status.key === "vibyra" && status.runtimeId !== "codex"
     ? status.runtimeId
     : status.key;
   const args = aiTerminalAgentArgs(argumentAgent, options);
   assertAiTerminalLaunchOwnership(status, args);
-  return [status.commandPath, ...args].map(shellQuote).join(" ");
+  return { command: status.commandPath, args };
+}
+
+export function windowsProcessLaunchParts(command, args = []) {
+  return { command, args, shell: windowsCommandScript(command), windowsHide: true };
+}
+
+function windowsCommandScript(command) {
+  return /\.(?:cmd|bat)$/i.test(String(command || ""));
+}
+
+export function windowsShellCommandParts(environment = process.env, exists = existsSync) {
+  const root = environment.SystemRoot || environment.windir || "C:\\Windows";
+  const powershell = win32.join(root, "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+  if (exists(powershell)) {
+    return {
+      command: powershell,
+      args: ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]
+    };
+  }
+  return {
+    command: environment.ComSpec || win32.join(root, "System32", "cmd.exe"),
+    args: ["/d", "/q"]
+  };
 }
 
 export function aiTerminalAgentArgs(agent, options = {}) {

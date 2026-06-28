@@ -10,8 +10,6 @@ import { TERMINAL_TEAM_ROLE_CONTRACT_VERSION } from "./terminalTeamPromptRoles.m
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const workerPath = join(moduleDir, "aiTerminalWorker.mjs");
-const sessionRoot = process.env.VIBYRA_TERMINAL_SESSION_ROOT
-  || join(homedir(), ".vibyra-agent", "terminal-sessions");
 export const AI_TERMINAL_RUNTIME_VERSION = 18;
 export const AI_TERMINAL_GEMINI_PROFILE_VERSION = 1;
 const TERMINAL_STARTUP_TIMEOUT_MS = 45_000;
@@ -26,7 +24,8 @@ export function launchPersistentAiTerminalProcess(config, handlers = {}) {
   const child = spawn(launch.command, launch.args, {
     detached: true,
     env: process.env,
-    stdio: ["ignore", logFd, logFd]
+    stdio: ["ignore", logFd, logFd],
+    windowsHide: true
   });
   closeSync(logFd);
   child.unref();
@@ -208,6 +207,7 @@ export function connectPersistentAiTerminalProcess(terminalId, handlers = {}, op
 }
 
 export function listPersistentAiTerminalSessions() {
+  const sessionRoot = persistentTerminalSessionRoot();
   mkdirSync(sessionRoot, { recursive: true, mode: 0o700 });
   const records = [];
   for (const name of readdirSync(sessionRoot)) {
@@ -249,15 +249,25 @@ export function updatePersistentAiTerminalSession(terminalId, patch = {}) {
 
 export function persistentTerminalPaths(terminalId) {
   const key = createHash("sha256").update(String(terminalId || "")).digest("hex").slice(0, 24);
-  const dir = join(sessionRoot, key);
+  const dir = join(persistentTerminalSessionRoot(), key);
   return {
     dir,
     config: join(dir, "config.json"),
     state: join(dir, "state.json"),
     output: join(dir, "output.log"),
     workerLog: join(dir, "worker.log"),
-    socket: join(dir, "worker.sock")
+    socket: terminalWorkerSocketPath(dir, key)
   };
+}
+
+function persistentTerminalSessionRoot() {
+  return process.env.VIBYRA_TERMINAL_SESSION_ROOT
+    || join(homedir(), ".vibyra-agent", "terminal-sessions");
+}
+
+function terminalWorkerSocketPath(dir, key) {
+  if (process.platform === "win32") return `\\\\.\\pipe\\vibyra-terminal-${key}`;
+  return join(dir, "worker.sock");
 }
 
 function handleWorkerMessage(line, handlers) {

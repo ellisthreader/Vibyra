@@ -83,7 +83,8 @@ function runReadOnlyCommand(command, args, cwd, environment) {
     const child = spawn(command, args, {
       cwd,
       env: sanitizedEnvironment(environment),
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
     });
     let output = "";
     const append = (chunk) => {

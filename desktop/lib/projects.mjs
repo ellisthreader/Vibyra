@@ -27,13 +27,13 @@ export async function discoverProjects() {
 export function findProjectById(id, projectPath = null) {
   const value = String(id ?? "").trim();
   const cached = appState.cachedProjects.find((project) => project.id === value);
-  if (cached) return cached;
+  if (cached && projectPathIsUsable(cached.path)) return cached;
 
   const fallbackPath = projectPath ? resolve(String(projectPath)) : null;
   const cachedByPath = fallbackPath
     ? appState.cachedProjects.find((project) => resolve(project.path) === fallbackPath)
     : null;
-  if (cachedByPath) return cachedByPath;
+  if (cachedByPath && projectPathIsUsable(cachedByPath.path)) return cachedByPath;
 
   const candidatePath = fallbackPath ?? projectPathFromId(value);
   if (!candidatePath || !isTrustedProjectDirectory(candidatePath)) return null;
@@ -97,11 +97,20 @@ function cacheProjects(projects) {
   const next = [];
   for (const project of [...projects, ...appState.cachedProjects]) {
     if (!project?.id || seen.has(project.id)) continue;
+    if (!projectPathIsUsable(project.path)) continue;
     seen.add(project.id);
     next.push(project);
     if (next.length >= 80) break;
   }
   appState.cachedProjects = next;
+}
+
+function projectPathIsUsable(path) {
+  try {
+    return Boolean(path) && existsSync(path) && statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 function isTrustedProjectDirectory(path) {

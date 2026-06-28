@@ -230,7 +230,8 @@ function ensureDesktopBridge() {
   const bridge = spawn(launch.command, launch.args, {
     detached: true,
     env: { ...process.env, VIBYRA_SKIP_DESKTOP_WINDOW: "1" },
-    stdio: "ignore"
+    stdio: "ignore",
+    windowsHide: true
   });
   bridge.once("error", (error) => {
     console.error(`Vibyra Desktop could not restart its local bridge: ${error.message}`);

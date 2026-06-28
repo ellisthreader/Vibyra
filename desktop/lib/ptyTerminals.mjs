@@ -560,6 +560,10 @@ async function restorePersistentSessions() {
   for (const record of listPersistentAiTerminalSessions().slice(0, MAX_PTY_TERMINAL_SESSIONS)) {
     const config = record.config;
     const workerState = record.state;
+    if (workerState?.status === "exited") {
+      terminateUntrustedPersistentSession(config.terminalId);
+      continue;
+    }
     if (!persistentAiTerminalConfigIsCurrent(config)) {
       terminateUntrustedPersistentSession(config.terminalId);
       continue;
@@ -651,7 +655,8 @@ function terminateUntrustedPersistentSession(terminalId) {
   const id = string(terminalId);
   if (!id) return;
   revokeTerminalGatewayTokensForTerminal(id);
-  connectPersistentAiTerminalProcess(id, {}, { waitForWorker: true }).kill("SIGTERM");
+  try { connectPersistentAiTerminalProcess(id, {}, { waitForWorker: true }).kill("SIGTERM"); } catch {}
+  removePersistentAiTerminalSession(id);
 }
 
 export function listPtyTerminals() {

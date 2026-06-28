@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -275,10 +275,9 @@ test("parallel project-bound Vibyra terminal launches cannot race past the cap",
 
 test("PTY Team launch canonicalizes legacy identifiers before starting the provider", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-team-id-"));
-  const cli = join(root, "codex");
+  const cli = fakeProviderCli(root, "codex");
   const { appState } = await import("./state.mjs");
   const previousToken = appState.desktopAccountToken;
-  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
   process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
   process.env.VIBYRA_CODEX_CLI = cli;
@@ -318,10 +317,9 @@ test("PTY Team launch canonicalizes legacy identifiers before starting the provi
 
 test("aggregate Team launch removes every session when a later member fails", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-team-rollback-"));
-  const cli = join(root, "codex");
+  const cli = fakeProviderCli(root, "codex");
   const { appState } = await import("./state.mjs");
   const previousToken = appState.desktopAccountToken;
-  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
   process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
   process.env.VIBYRA_CODEX_CLI = cli;
@@ -371,10 +369,9 @@ test("aggregate Team launch removes every session when a later member fails", as
 
 test("API-only models launch Vibyra Agent with an exact terminal gateway grant", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-api-agent-"));
-  const engine = join(root, "codex");
+  const engine = fakeProviderCli(root, "codex");
   const { appState } = await import("./state.mjs");
   const previousToken = appState.desktopAccountToken;
-  writeFileSync(engine, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
   process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
   process.env.VIBYRA_CODEX_CLI = engine;
@@ -440,9 +437,9 @@ test("blank Auto input echoes locally and yields the first task on Enter", () =>
 
 test("blank Auto opens first, then routes in the same session and submits once", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-auto-native-"));
-  const cli = join(root, "codex");
   const argsPath = join(root, "args.txt");
   const promptPath = join(root, "prompt.txt");
+  const cli = fakeAutoProviderCli(root, "codex", argsPath, promptPath);
   const previousFetch = global.fetch;
   const { appState } = await import("./state.mjs");
   const previousToken = appState.desktopAccountToken;
@@ -451,16 +448,6 @@ test("blank Auto opens first, then routes in the same session and submits once",
   process.env.VIBYRA_AUTO_ARGS_PATH = argsPath;
   process.env.VIBYRA_AUTO_PROMPT_PATH = promptPath;
   appState.desktopAccountToken = "account-token";
-  writeFileSync(cli, [
-    "#!/bin/bash",
-    "printf '%s\\n' \"$*\" >> \"$VIBYRA_AUTO_ARGS_PATH\"",
-    "if [ \"$1\" = \"--version\" ]; then printf 'codex-cli 0.138.0\\n'; exit 0; fi",
-    "sleep 0.2",
-    "printf 'Write tests for @filename\\n'",
-    "IFS= read -r prompt",
-    "printf '%s' \"$prompt\" > \"$VIBYRA_AUTO_PROMPT_PATH\"",
-    "sleep 30"
-  ].join("\n"), { mode: 0o755 });
   global.fetch = async (_url, options) => {
     const body = JSON.parse(options.body);
     assert.ok(body.allowedProviders.includes("openai"));
@@ -588,8 +575,7 @@ test("official terminal Memory stays out of public PTY session payloads", async 
   const { appState } = await import("./state.mjs");
   const previousProjects = appState.cachedProjects;
   const previousToken = appState.desktopAccountToken;
-  const cli = join(root, "codex");
-  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
+  const cli = fakeProviderCli(root, "codex");
   process.env.VIBYRA_CODEX_CLI = cli;
   appState.cachedProjects = [{ id: "project-memory", name: "Memory", path: root }];
   appState.desktopAccountToken = "account-token";
@@ -630,10 +616,9 @@ test("official terminal Memory stays out of public PTY session payloads", async 
 
 test("Vibyra gateway credentials stay private and are revoked on close", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-gateway-private-"));
-  const cli = join(root, "codex");
+  const cli = fakeProviderCli(root, "codex");
   const { appState } = await import("./state.mjs");
   const previousToken = appState.desktopAccountToken;
-  writeFileSync(cli, "#!/bin/bash\nsleep 30\n", { mode: 0o755 });
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = join(root, "sessions");
   process.env.VIBYRA_AGENT_HOME = join(root, "agent-home");
   process.env.VIBYRA_CODEX_CLI = cli;
@@ -702,6 +687,45 @@ test("close all removes every PTY session regardless of status", async () => {
   }
 });
 
+test("exited persisted PTY sessions are removed instead of restored", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-pty-exited-restore-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  try {
+    const terminalId = "exited-restore";
+    const persistentModuleUrl = new URL(`./aiTerminalPersistentProcess.mjs?exitedRestoreState=${Date.now()}`, import.meta.url);
+    const { persistentTerminalPaths } = await import(persistentModuleUrl);
+    const paths = persistentTerminalPaths(terminalId);
+    mkdirSync(paths.dir, { recursive: true });
+    writeFileSync(paths.config, JSON.stringify({
+      runtimeVersion: 18,
+      terminalId,
+      title: "Exited restore",
+      agent: "shell",
+      model: "",
+      requestedModel: "",
+      cwd: process.cwd(),
+      cols: 100,
+      rows: 30,
+      tokenMode: "vibyra",
+      projectId: ""
+    }));
+    writeFileSync(paths.state, JSON.stringify({
+      status: "exited",
+      providerState: "exited",
+      exitCode: 0
+    }));
+    writeFileSync(paths.output, "old exited terminal");
+
+    const moduleUrl = new URL(`./ptyTerminals.mjs?exitedRestore=${Date.now()}`, import.meta.url);
+    const { listPtyTerminals } = await import(moduleUrl);
+
+    assert.deepEqual(listPtyTerminals(), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("PTY terminal names can be changed without relaunching", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-pty-rename-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
@@ -756,11 +780,13 @@ test("reusing a running terminal ID cannot switch its project", async () => {
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
   const { appState } = await import("./state.mjs");
   const previousProjects = appState.cachedProjects;
-  mkdirSync("/tmp/project-a", { recursive: true });
-  mkdirSync("/tmp/project-b", { recursive: true });
+  const projectA = join(root, "project-a");
+  const projectB = join(root, "project-b");
+  mkdirSync(projectA, { recursive: true });
+  mkdirSync(projectB, { recursive: true });
   appState.cachedProjects = [
-    { id: "project-a", name: "A", path: "/tmp/project-a" },
-    { id: "project-b", name: "B", path: "/tmp/project-b" }
+    { id: "project-a", name: "A", path: projectA },
+    { id: "project-b", name: "B", path: projectB }
   ];
   try {
     const moduleUrl = new URL(`./ptyTerminals.mjs?projectConflict=${Date.now()}`, import.meta.url);
@@ -774,9 +800,7 @@ test("reusing a running terminal ID cannot switch its project", async () => {
     closeAllPtyTerminals();
   } finally {
     appState.cachedProjects = previousProjects;
-    rmSync("/tmp/project-a", { recursive: true, force: true });
-    rmSync("/tmp/project-b", { recursive: true, force: true });
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -819,17 +843,22 @@ test("restored terminal cwd must match the server-resolved project", async () =>
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
   const { appState } = await import("./state.mjs");
   const previousProjects = appState.cachedProjects;
+  const projectPath = join(root, "SaaS");
+  const blockedPath = join(root, "blocked");
+  mkdirSync(projectPath, { recursive: true });
+  mkdirSync(blockedPath, { recursive: true });
+  const projectId = Buffer.from(projectPath).toString("base64url");
   appState.cachedProjects = [{
-    id: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    id: projectId,
     name: "SaaS",
-    path: "/home/ellis/Desktop/SaaS"
+    path: projectPath
   }];
   try {
     const moduleUrl = new URL(`./ptyTerminals.mjs?restoreLocation=${Date.now()}`, import.meta.url);
     const { restoredTerminalLocation } = await import(moduleUrl);
     const config = {
-      projectId: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
-      cwd: "/home/ellis/Desktop/SaaS"
+      projectId,
+      cwd: projectPath
     };
 
     assert.deepEqual(await restoredTerminalLocation(config), {
@@ -840,11 +869,11 @@ test("restored terminal cwd must match the server-resolved project", async () =>
       repositoryRoot: "",
       workspaceNotice: ""
     });
-    assert.equal(await restoredTerminalLocation({ ...config, cwd: "/home/ellis/.ssh" }), null);
-    assert.equal(await restoredTerminalLocation({ projectId: "manufactured-id", cwd: "/home/ellis/.ssh" }), null);
+    assert.equal(await restoredTerminalLocation({ ...config, cwd: blockedPath }), null);
+    assert.equal(await restoredTerminalLocation({ projectId: "manufactured-id", cwd: blockedPath }), null);
   } finally {
     appState.cachedProjects = previousProjects;
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
@@ -925,7 +954,61 @@ test("dirty isolated PTY requests can safely fall back to the shared project", a
     closePtyTerminal(session.id);
   } finally {
     appState.cachedProjects = previousProjects;
-    rmSync(root, { recursive: true, force: true });
+    await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });
+
+function fakeProviderCli(root, name) {
+  return fakeNodeCli(root, name, `
+if (process.argv.includes("--version")) {
+  process.stdout.write("codex-cli 0.138.0\\n");
+  process.exit(0);
+}
+process.stdout.write("Write tests for @filename\\n");
+process.stdin.resume();
+setInterval(() => {}, 1000);
+`);
+}
+
+function fakeAutoProviderCli(root, name, argsPath, promptPath) {
+  return fakeNodeCli(root, name, `
+import { appendFileSync, writeFileSync } from "node:fs";
+appendFileSync(${JSON.stringify(argsPath)}, process.argv.slice(2).join(" ") + "\\n");
+if (process.argv.includes("--version")) {
+  process.stdout.write("codex-cli 0.138.0\\n");
+  process.exit(0);
+}
+setTimeout(() => process.stdout.write("Write tests for @filename\\n"), 200);
+let prompt = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  prompt += chunk;
+  writeFileSync(${JSON.stringify(promptPath)}, prompt);
+});
+setInterval(() => {}, 1000);
+`);
+}
+
+function fakeNodeCli(root, name, source) {
+  const script = join(root, `${name}.mjs`);
+  writeFileSync(script, `${source.trim()}\n`);
+  if (process.platform === "win32") {
+    const command = join(root, `${name}.cmd`);
+    writeFileSync(command, `@echo off\r\nnode "%~dp0${name}.mjs" %*\r\n`);
+    return command;
+  }
+  const command = join(root, name);
+  writeFileSync(command, `#!/usr/bin/env bash\nexec "${process.execPath}" "${script}" "$@"\n`);
+  chmodSync(command, 0o755);
+  return command;
+}
+
+async function removeTreeEventually(path) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    try { rmSync(path, { recursive: true, force: true }); } catch {}
+    if (!existsSync(path)) return;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  rmSync(path, { recursive: true, force: true });
+}

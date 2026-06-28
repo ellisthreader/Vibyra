@@ -69,6 +69,12 @@ test("Electron real quit stops the detached desktop bridge before exiting", () =
   assert.match(source, /bridgeShutdownComplete = true;\s+app\.quit\(\)/s);
 });
 
+test("Windows helper processes are hidden behind the desktop window", () => {
+  assert.match(source, /windowsHide: true/);
+  assert.match(windowSource, /electron\.exe/);
+  assert.match(windowSource, /windowsHide: true/);
+});
+
 test("Electron accepts desktop shell URLs with or without a trailing slash", () => {
   assert.match(source, /const normalizedPath = \(value\) => value\.replace\(\/\\\/\+\$\/, ""\) \|\| "\/"/);
   assert.match(source, /normalizedPath\(loaded\.pathname\) === normalizedPath\(expected\.pathname\)/);

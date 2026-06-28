@@ -416,7 +416,7 @@ function seedSharedCodexMarketplace(sourceDir, targetDir) {
   if (!existsSync(source) || existsSync(target)) return;
   try {
     mkdirSync(tempDir, { recursive: true, mode: 0o700 });
-    symlinkSync(source, target, "dir");
+    symlinkSync(source, target, process.platform === "win32" ? "junction" : "dir");
   } catch {}
 }
 

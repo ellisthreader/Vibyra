@@ -79,6 +79,23 @@ test("explicit project paths recover a real folder from a stale opaque ID", asyn
   }
 });
 
+test("cached projects with missing folders are not trusted", async () => {
+  const path = await mkdtemp(join(tmpdir(), "vibyra-missing-project-"));
+  const previousProjects = appState.cachedProjects;
+  try {
+    await writeFile(join(path, "package.json"), "{}");
+    const id = projectIdFromPath(path);
+    appState.cachedProjects = [{ id, name: "Missing", path }];
+    await rm(path, { recursive: true, force: true });
+
+    assert.equal(projectById(id), null);
+    assert.equal(terminalProjectById(id), null);
+  } finally {
+    appState.cachedProjects = previousProjects;
+    await rm(path, { recursive: true, force: true });
+  }
+});
+
 test("folders selected through Browse PC remain trusted after cache replacement", async () => {
   const path = await mkdtemp(join(tmpdir(), "vibyra-browsed-folder-"));
   const previousProjects = appState.cachedProjects;

@@ -15,6 +15,25 @@ test("provider child startup handshake allows loaded-host cold starts", () => {
   assert.match(source, /const TERMINAL_STARTUP_TIMEOUT_MS = 45_000;/);
 });
 
+test("persistent terminal sockets use a platform-native endpoint", async () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-socket-path-"));
+  process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
+  const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?socketPath=${Date.now()}`, import.meta.url);
+  const { persistentTerminalPaths } = await import(moduleUrl);
+
+  try {
+    const paths = persistentTerminalPaths("socket-path-test");
+    if (process.platform === "win32") {
+      assert.match(paths.socket, /^\\\\\.\\pipe\\vibyra-terminal-[a-f0-9]{24}$/);
+    } else {
+      assert.equal(paths.socket.endsWith("worker.sock"), true);
+    }
+  } finally {
+    await removeTreeEventually(root);
+    delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
+  }
+});
+
 test("detached terminal worker finishes after the bridge client disconnects", async () => {
   const root = mkdtempSync(join(tmpdir(), "vibyra-terminal-safe-rails-"));
   process.env.VIBYRA_TERMINAL_SESSION_ROOT = root;
@@ -643,10 +662,53 @@ function terminalConfig(terminalId) {
 }
 
 function fakeCli(root, name, lines) {
-  const path = join(root, name);
+  const path = join(root, process.platform === "win32" ? `${name}.cmd` : name);
+  if (process.platform === "win32") {
+    const scriptPath = join(root, `${name}.mjs`);
+    writeFileSync(scriptPath, windowsFakeCliScript(name, lines));
+    writeFileSync(path, `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`);
+    return path;
+  }
   writeFileSync(path, `${lines.join("\n")}\n`);
   chmodSync(path, 0o755);
   return path;
+}
+
+function windowsFakeCliScript(name, lines) {
+  const source = lines.join("\n");
+  if (/exit 7/.test(source)) return "process.exit(7);\n";
+  if (/worker-revoke-cli|sleep 0\.1/.test(name) || /sleep 0\.1/.test(source)) {
+    return "setTimeout(() => process.exit(0), 100);\n";
+  }
+  if (/startup-stale-cli/.test(name)) {
+    return "setTimeout(() => process.exit(0), 2000);\n";
+  }
+  if (/capture-cli/.test(name)) {
+    const capture = source.match(/>> '([^']+)'/)?.[1] || source.match(/>> "([^"]+)"/)?.[1] || "";
+    return `
+import { appendFileSync } from "node:fs";
+const capture = ${JSON.stringify(capture)};
+setTimeout(() => process.stdout.write("Write tests for @filename\\n"), 200);
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  if (capture) appendFileSync(capture, chunk.replace(/\\r/g, "\\n"));
+});
+`;
+  }
+  if (/live-state-cli/.test(name)) {
+    return `
+process.stdout.write("Write tests for @filename\\n");
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", () => {
+  process.stdout.write("\\x1b]0;⠋ Test\\x07");
+  setTimeout(() => process.stdout.write("\\x1b]0;Test\\x07"), 50);
+});
+`;
+  }
+  if (/Write tests for @filename/.test(source)) {
+    return "process.stdout.write('Write tests for @filename\\n'); setTimeout(() => {}, 2000);\n";
+  }
+  return "setTimeout(() => {}, 2000);\n";
 }
 
 function occurrences(value, pattern) {

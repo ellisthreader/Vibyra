@@ -8,10 +8,17 @@ import { PORT } from "./state.mjs";
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(moduleDir, "../..");
 const electronEntrypoint = join(repoRoot, "desktop/electron-main.cjs");
-const electronCandidates = [
-  join(repoRoot, "node_modules/.bin/electron"),
-  join(repoRoot, "../codingterminal/node_modules/.bin/electron")
-];
+const electronCandidates = platform() === "win32"
+  ? [
+      join(repoRoot, "node_modules/electron/dist/electron.exe"),
+      join(repoRoot, "../codingterminal/node_modules/electron/dist/electron.exe"),
+      join(repoRoot, "node_modules/.bin/electron.cmd"),
+      join(repoRoot, "../codingterminal/node_modules/.bin/electron.cmd")
+    ]
+  : [
+      join(repoRoot, "node_modules/.bin/electron"),
+      join(repoRoot, "../codingterminal/node_modules/.bin/electron")
+    ];
 
 export function openDesktopWindow() {
   const url = `http://127.0.0.1:${PORT}/desktop`;
@@ -28,7 +35,8 @@ export function openDesktopWindow() {
     const child = spawn(electron, electronArgs, {
       detached: true,
       env: electronEnv,
-      stdio: ["ignore", "ignore", "inherit"]
+      stdio: ["ignore", "ignore", "inherit"],
+      windowsHide: true
     });
     child.on("error", (error) => {
       console.error(`Could not open Vibyra Desktop window: ${error.message}`);
