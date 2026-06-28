@@ -1,5 +1,6 @@
 import { execFileSync, spawn } from "node:child_process";
 import { accessSync, constants, existsSync, readFileSync, readdirSync, readlinkSync } from "node:fs";
+import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { delimiter, dirname, join, resolve, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +17,7 @@ import { PORT } from "./state.mjs";
 const scriptResizeStates = new WeakMap();
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const bundledNodeModules = resolve(moduleDir, "..", "..", "node_modules");
+const require = createRequire(import.meta.url);
 
 const AGENT_CONFIG = {
   shell: { label: "Shell", command: "", args: [], env: [], install: "" },
@@ -64,14 +66,19 @@ export function spawnAiTerminalProcess({ agent = "vibyra", model = "", launchPla
     attachProcess(child, onData, onExit);
     return child;
   }
-  if (process.platform === "win32" && status.commandPath) {
+  if (process.platform === "win32" && windowsNativeProviderRequiresPty(status)) {
     const parts = terminalLaunchCommandParts(status, launchOptions);
+    return spawnWindowsPtyProcess({ parts, cwd, env, cols, rows, onData, onExit });
+  }
+  if (process.platform === "win32" && status.commandPath) {
+    const launchParts = terminalLaunchCommandParts(status, launchOptions);
+    const parts = windowsProcessLaunchParts(launchParts.command, launchParts.args);
     const child = spawn(parts.command, parts.args, {
       cwd,
       env,
       stdio: "pipe",
-      shell: windowsCommandScript(parts.command),
-      windowsHide: true
+      shell: parts.shell,
+      windowsHide: parts.windowsHide
     });
     attachProcess(child, onData, onExit);
     return child;
@@ -368,6 +375,89 @@ function launchCommand(status, shell, options = {}) {
   return [parts.command, ...parts.args].map(shellQuote).join(" ");
 }
 
+function spawnWindowsPtyProcess({ parts, cwd, env, cols, rows, onData, onExit }) {
+  let nodePty;
+  try {
+    nodePty = require("node-pty");
+  } catch (error) {
+    onData?.(`\r\nThe Windows PTY backend could not start: ${error.message}\r\n`);
+    onExit?.({ code: 1, signal: "" });
+    return exitedChildLikeProcess();
+  }
+  const launch = windowsPtyLaunchParts(parts.command, parts.args);
+  let terminal;
+  try {
+    terminal = nodePty.spawn(launch.command, launch.args, {
+      name: "xterm-256color",
+      cols: integer(cols, 100),
+      rows: integer(rows, 30),
+      cwd,
+      env,
+      windowsHide: true
+    });
+  } catch (error) {
+    onData?.(`\r\nThe Windows PTY backend could not launch ${parts.command}: ${error.message}\r\n`);
+    onExit?.({ code: 1, signal: "" });
+    return exitedChildLikeProcess();
+  }
+  return wrapWindowsPtyProcess(terminal, onData, onExit);
+}
+
+function wrapWindowsPtyProcess(terminal, onData, onExit) {
+  let exited = false;
+  terminal.onData((data) => onData?.(String(data || "")));
+  terminal.onExit(({ exitCode, signal }) => {
+    exited = true;
+    onExit?.({ code: exitCode, signal: signal || "" });
+  });
+  return {
+    pid: terminal.pid,
+    stdin: {
+      get writable() {
+        return !exited;
+      },
+      write(data, callback) {
+        if (exited) {
+          callback?.(new Error("The terminal process has exited."));
+          return false;
+        }
+        try {
+          terminal.write(String(data ?? ""));
+          callback?.();
+          return true;
+        } catch (error) {
+          callback?.(error);
+          return false;
+        }
+      }
+    },
+    resize(cols, rows) {
+      if (exited) return;
+      terminal.resize(integer(cols, 100), integer(rows, 30));
+    },
+    kill(signal = "SIGTERM") {
+      if (exited) return false;
+      terminal.kill(signal);
+      return true;
+    }
+  };
+}
+
+function exitedChildLikeProcess() {
+  return {
+    pid: null,
+    stdin: {
+      writable: false,
+      write(_data, callback) {
+        callback?.(new Error("The terminal process has exited."));
+        return false;
+      }
+    },
+    resize() {},
+    kill() { return false; }
+  };
+}
+
 export function terminalLaunchCommandParts(status, options = {}) {
   if (!status.commandPath) return { command: "", args: [] };
   const argumentAgent = status.key === "vibyra" && status.runtimeId !== "codex"
@@ -382,8 +472,23 @@ export function windowsProcessLaunchParts(command, args = []) {
   return { command, args, shell: windowsCommandScript(command), windowsHide: true };
 }
 
+export function windowsNativeProviderRequiresPty(status = {}) {
+  return Boolean(status.commandPath)
+    && status.key !== "shell"
+    && status.runtimeId !== "vibyra-agent"
+    && windowsNativeCommandTarget(status.commandPath);
+}
+
+export function windowsPtyLaunchParts(command, args = [], environment = process.env) {
+  return { command, args };
+}
+
 function windowsCommandScript(command) {
   return /\.(?:cmd|bat)$/i.test(String(command || ""));
+}
+
+function windowsNativeCommandTarget(command) {
+  return /\.(?:cmd|bat|com|exe)$/i.test(String(command || ""));
 }
 
 export function windowsShellCommandParts(environment = process.env, exists = existsSync) {

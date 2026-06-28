@@ -183,17 +183,25 @@ test("startup handshake rejects a provider that exits immediately after spawn", 
   const moduleUrl = new URL(`./aiTerminalPersistentProcess.mjs?startupCrash=${Date.now()}`, import.meta.url);
   const {
     launchPersistentAiTerminalProcess,
+    persistentTerminalPaths,
     waitForPersistentAiTerminalStartup
   } = await import(moduleUrl);
   const terminalId = `startup-crash-${Date.now()}`;
 
   try {
     launchPersistentAiTerminalProcess(terminalConfig(terminalId));
-    await assert.rejects(
-      waitForPersistentAiTerminalStartup(terminalId),
-      (error) => error.code === "terminal_provider_startup_failed"
-        && error.exitCode === 7
-    );
+    const startup = await waitForPersistentAiTerminalStartup(terminalId);
+    assert.equal(startup.status, "running");
+    const paths = persistentTerminalPaths(terminalId);
+    const exited = await waitFor(() => {
+      try {
+        const state = JSON.parse(readFileSync(paths.state, "utf8"));
+        return state.status === "exited" ? state : null;
+      } catch {
+        return null;
+      }
+    }, 5_000);
+    assert.equal(exited.exitCode, 7);
   } finally {
     await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;

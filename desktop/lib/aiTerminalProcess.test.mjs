@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, codexModelMigration, listAiTerminalAgentStatuses, spawnAiTerminalProcess, terminalLaunchCommandParts, windowsProcessLaunchParts, windowsShellCommandParts } from "./aiTerminalProcess.mjs";
+import { aiTerminalAgentArgs, aiTerminalAgentStatus, aiTerminalProviderVersion, codexModelMigration, listAiTerminalAgentStatuses, spawnAiTerminalProcess, terminalLaunchCommandParts, windowsNativeProviderRequiresPty, windowsProcessLaunchParts, windowsPtyLaunchParts, windowsShellCommandParts } from "./aiTerminalProcess.mjs";
 import { VIBYRA_AGENT_ENTRY_PATH } from "./aiTerminalRuntimeCatalog.mjs";
 import { AI_TERMINAL_LAUNCH_CONTRACT_VERSION } from "./aiTerminalProviderAdapters.mjs";
 import { PORT } from "./state.mjs";
@@ -167,6 +167,47 @@ test("Windows command shims launch through an explicit hidden cmd wrapper", () =
   assert.deepEqual(parts.args, ["--model", "openai/gpt-5.5"]);
   assert.equal(parts.shell, true);
   assert.equal(parts.windowsHide, true);
+});
+
+test("Windows native AI provider CLIs require a PTY", () => {
+  assert.equal(windowsNativeProviderRequiresPty({
+    key: "vibyra",
+    runtimeId: "codex",
+    commandPath: "C:\\Tools\\codex.cmd"
+  }), true);
+  assert.equal(windowsNativeProviderRequiresPty({
+    key: "codex",
+    commandPath: "C:\\Tools\\codex.cmd"
+  }), true);
+  assert.equal(windowsNativeProviderRequiresPty({
+    key: "vibyra",
+    runtimeId: "vibyra-agent",
+    commandPath: process.execPath
+  }), false);
+  assert.equal(windowsNativeProviderRequiresPty({
+    key: "shell",
+    commandPath: "C:\\Windows\\System32\\cmd.exe"
+  }), false);
+  assert.equal(windowsNativeProviderRequiresPty({
+    key: "codex",
+    commandPath: "/tmp/fake-codex"
+  }), false);
+});
+
+test("Windows PTY launches preserve command shim argv", () => {
+  const parts = windowsPtyLaunchParts(
+    "C:\\Program Files\\Vibyra\\codex.cmd",
+    ["--model", "openai/gpt-5.5", "--ask-for-approval", "on-request"],
+    { ComSpec: "C:\\Windows\\System32\\cmd.exe" }
+  );
+
+  assert.equal(parts.command, "C:\\Program Files\\Vibyra\\codex.cmd");
+  assert.deepEqual(parts.args, [
+    "--model",
+    "openai/gpt-5.5",
+    "--ask-for-approval",
+    "on-request"
+  ]);
 });
 
 test("Vibyra Agent rejects forged provider ownership and stale launch contracts", () => {
