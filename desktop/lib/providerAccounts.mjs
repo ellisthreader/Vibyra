@@ -31,7 +31,7 @@ export function openAiVoiceCredential({
   env = process.env,
   configPaths = openRouterConfigPaths()
 } = {}) {
-  const processApiKey = String(env.OPENAI_API_KEY || "").trim();
+  const processApiKey = normalizeOpenAiApiKey(env.OPENAI_API_KEY);
   if (processApiKey) {
     return {
       apiKey: processApiKey,
@@ -47,7 +47,7 @@ export function openAiVoiceCredential({
     } catch {
       continue;
     }
-    const apiKey = parseEnvConfigValue(body, "OPENAI_API_KEY");
+    const apiKey = normalizeOpenAiApiKey(parseEnvConfigValue(body, "OPENAI_API_KEY"));
     if (!apiKey) continue;
     return {
       apiKey,
@@ -67,4 +67,13 @@ export function openAiHeaders(credential) {
     ...(credential.organization ? { "OpenAI-Organization": credential.organization } : {}),
     ...(credential.project ? { "OpenAI-Project": credential.project } : {})
   };
+}
+
+function normalizeOpenAiApiKey(value) {
+  const key = String(value || "").trim();
+  if (!key) return "";
+  // OpenRouter keys are valid for Vibyra's backend transport, but OpenAI's
+  // audio endpoints reject them with a misleading "incorrect API key" error.
+  if (/^(?:sk-)?or-/i.test(key) || /^sk-or-/i.test(key)) return "";
+  return key;
 }

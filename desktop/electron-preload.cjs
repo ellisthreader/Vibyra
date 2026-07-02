@@ -21,6 +21,18 @@ contextBridge.exposeInMainWorld("vibyraDesktopClipboard", {
   writeText: (text) => ipcRenderer.invoke("clipboard:write-text", String(text || ""))
 });
 
+contextBridge.exposeInMainWorld("vibyraDesktopLinks", {
+  openExternal: (url) => ipcRenderer.invoke("links:open-external", String(url || ""))
+});
+
+contextBridge.exposeInMainWorld("vibyraDesktopVoiceInput", {
+  onToggle: (listener) => {
+    const handler = () => listener();
+    ipcRenderer.on("terminal-voice-input:toggle", handler);
+    return () => ipcRenderer.removeListener("terminal-voice-input:toggle", handler);
+  }
+});
+
 contextBridge.exposeInMainWorld("vibyraDesktopScreenshot", {
   isElectron: true,
   chooseDirectory: () => ipcRenderer.invoke("screenshot:choose-directory"),

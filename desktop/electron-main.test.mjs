@@ -26,9 +26,22 @@ test("Electron uses the Vibyra runtime name and native app icon", () => {
 test("Electron denies blank child windows and opens web links externally", () => {
   assert.match(source, /setWindowOpenHandler/);
   assert.match(source, /url === "about:blank".*action: "deny"/s);
-  assert.match(source, /shell\.openExternal\(url\)/);
+  assert.match(source, /function openTrustedExternalUrl\(url\)/);
+  assert.match(source, /shell\.openExternal\(value\)/);
   assert.match(source, /\/\^\(https\?:\|mailto:\)\/i/);
+  assert.match(source, /ipcMain\.handle\("links:open-external"/);
+  assert.match(preloadSource, /vibyraDesktopLinks/);
+  assert.match(preloadSource, /links:open-external/);
   assert.match(source, /url\.startsWith\("blob:"\).*action: "allow"/s);
+});
+
+test("Electron forwards focused-window F8 terminal voice toggles to the renderer", () => {
+  assert.match(source, /before-input-event/);
+  assert.match(source, /input\?\.key !== "F8"/);
+  assert.match(source, /terminal-voice-input:toggle/);
+  assert.doesNotMatch(source, /globalShortcut\.register\("F8"/);
+  assert.match(preloadSource, /vibyraDesktopVoiceInput/);
+  assert.match(preloadSource, /onToggle/);
 });
 
 test("Electron registers the F9 screenshot editor bridge and cleans it up", () => {

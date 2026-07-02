@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import test from "node:test";
 import {
   createTerminalWorkspaceCheckpoint,
@@ -76,7 +76,7 @@ test("creates and restores a clean Git worktree", async () => {
     assert.equal(workspace.workspaceMode, "worktree");
     assert.match(workspace.branchName, /^vibyra\/desktop-app-[a-f0-9]{10}$/);
     assert.equal(workspace.repositoryRoot, repo);
-    assert.ok(workspace.workspacePath.startsWith(`${managed}/`));
+    assert.ok(workspace.workspacePath.startsWith(`${managed}${sep}`));
     assert.equal(git(workspace.workspacePath, "branch", "--show-current"), workspace.branchName);
     assert.deepEqual(await restoredTerminalWorkspace(workspace, project(repo)), workspace);
     await rollbackPreparedTerminalWorkspace(workspace);

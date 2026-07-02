@@ -5,7 +5,7 @@ import test from "node:test";
 const styles = readFileSync(
   new URL("./app.terminals-chrome-polish.css", import.meta.url),
   "utf8"
-);
+).replace(/\r\n/g, "\n");
 
 function rule(selector) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

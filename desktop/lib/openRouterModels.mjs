@@ -2,6 +2,7 @@ const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models?supported_par
 const CACHE_MS = 15 * 60 * 1000;
 const MAX_LABEL = 96;
 const DEFAULT_MODEL_LIMIT = 10;
+const NEWEST_MODEL_RESERVE = 4;
 const BLOCKED_MODEL_TERMS = [
   "audio", "beta", "browser", "clip", "deepresearch", "embedding", "experimental", "exp",
   "guard", "image", "moderation", "multi-agent", "ocr", "omni", "preview", "rerank",
@@ -23,9 +24,9 @@ const COMPANY_MODEL_LIMITS = new Map([
 ]);
 let cache = null;
 
-export async function openRouterModelPayload(fetchImpl = fetch) {
+export async function openRouterModelPayload(fetchImpl = fetch, options = {}) {
   const now = Date.now();
-  if (cache && now - cache.loadedAt < CACHE_MS) return cache.payload;
+  if (!options.refresh && cache && now - cache.loadedAt < CACHE_MS) return cache.payload;
   const response = await fetchImpl(OPENROUTER_MODELS_URL, { headers: { Accept: "application/json" } });
   if (!response.ok) throw httpError(502, "Could not load OpenRouter models.");
   const json = await response.json();
@@ -43,7 +44,7 @@ export function buildOpenRouterModelPayload(models) {
     companies.set(model.company, list);
   }
   const groups = Array.from(companies.entries()).map(([company, modelsForCompany]) => {
-    const sorted = modelsForCompany.sort(compareModels).slice(0, modelLimitForCompany(company));
+    const sorted = selectModelsForCompany(modelsForCompany, modelLimitForCompany(company));
     return {
       company,
       title: company,
@@ -221,6 +222,20 @@ function qualityScore(id, label, free) {
 
 function compareModels(left, right) {
   return right.score - left.score || right.contextLength - left.contextLength || left.label.localeCompare(right.label);
+}
+
+function selectModelsForCompany(models, limit) {
+  const byNewest = [...models].sort(compareNewestModels).slice(0, Math.min(NEWEST_MODEL_RESERVE, limit));
+  const selected = new Map(byNewest.map((model) => [model.key, model]));
+  for (const model of [...models].sort(compareModels)) {
+    if (selected.size >= limit) break;
+    selected.set(model.key, model);
+  }
+  return Array.from(selected.values()).sort(compareModels);
+}
+
+function compareNewestModels(left, right) {
+  return right.created - left.created || compareModels(left, right);
 }
 
 function compareGroups(left, right) {

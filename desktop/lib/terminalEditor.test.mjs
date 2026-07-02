@@ -53,7 +53,16 @@ test("terminal editor rejects stale saves and symlink path escapes", async () =>
   try {
     await writeFile(join(root, "app.js"), "first\n");
     await writeFile(join(outside, "secret.js"), "secret\n");
-    await symlink(join(outside, "secret.js"), join(root, "linked.js"));
+    let symlinked = true;
+    try {
+      await symlink(join(outside, "secret.js"), join(root, "linked.js"));
+    } catch (error) {
+      // Windows only allows file symlinks with elevation or Developer Mode.
+      // The escape contract is still asserted below via an absolute path;
+      // only the symlink-specific probe has to be skipped.
+      if (process.platform !== "win32" || error.code !== "EPERM") throw error;
+      symlinked = false;
+    }
     const opened = await readTerminalEditorFileAtRoot(root, "app.js");
     await writeFile(join(root, "app.js"), "changed elsewhere\n");
 
@@ -62,9 +71,15 @@ test("terminal editor rejects stale saves and symlink path escapes", async () =>
       /changed on disk/
     );
     await assert.rejects(
-      readTerminalEditorFileAtRoot(root, "linked.js"),
+      readTerminalEditorFileAtRoot(root, join(outside, "secret.js")),
       /stay inside this terminal workspace/
     );
+    if (symlinked) {
+      await assert.rejects(
+        readTerminalEditorFileAtRoot(root, "linked.js"),
+        /stay inside this terminal workspace/
+      );
+    }
   } finally {
     await rm(root, { recursive: true, force: true });
     await rm(outside, { recursive: true, force: true });

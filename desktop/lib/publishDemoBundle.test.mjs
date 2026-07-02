@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { appState } from "./state.mjs";
 import { buildProjectPublishDemoBundle } from "./publishDemoBundle.mjs";
-import { makeProject } from "./previewTestHelpers.mjs";
+import { makeFakeCommand, makeProject } from "./previewTestHelpers.mjs";
 
 test("publish demo bundle includes static entry dependencies and binary assets", async () => {
   const { project, cleanup } = await makeProject("vibyra-publish-demo-");
@@ -190,7 +190,7 @@ test("publish demo bundle installs missing dependencies before building", async 
   const previousProjects = appState.cachedProjects;
   const previousPath = process.env.PATH;
   appState.cachedProjects = [project];
-  process.env.PATH = `${fakeNpm.bin}:${previousPath ?? ""}`;
+  process.env.PATH = `${fakeNpm.bin}${delimiter}${previousPath ?? ""}`;
   try {
     await writeFile(join(project.path, "package.json"), JSON.stringify({
       scripts: { build: "node build.mjs" },
@@ -227,7 +227,7 @@ test("publish demo bundle reports install failure before build", async () => {
   const previousProjects = appState.cachedProjects;
   const previousPath = process.env.PATH;
   appState.cachedProjects = [project];
-  process.env.PATH = `${fakeNpm.bin}:${previousPath ?? ""}`;
+  process.env.PATH = `${fakeNpm.bin}${delimiter}${previousPath ?? ""}`;
   try {
     await writeFile(join(project.path, "package.json"), JSON.stringify({
       scripts: { build: "node build.mjs" },
@@ -523,11 +523,8 @@ test("publish demo bundle fails and reports optional file cap truncation", async
   }
 });
 
-async function makeFakePublishNpm({ installExitCode = 0 } = {}) {
-  const bin = await mkdtemp(join(tmpdir(), "vibyra-fake-publish-npm-"));
-  const npmPath = join(bin, "npm");
-  await writeFile(npmPath, [
-    "#!/usr/bin/env node",
+function makeFakePublishNpm({ installExitCode = 0 } = {}) {
+  return makeFakeCommand("npm", [
     "import { spawn } from 'node:child_process';",
     "import { mkdir } from 'node:fs/promises';",
     "const args = process.argv.slice(2);",
@@ -544,6 +541,4 @@ async function makeFakePublishNpm({ installExitCode = 0 } = {}) {
     "  process.exit(1);",
     "}"
   ].join("\n"));
-  await chmod(npmPath, 0o755);
-  return { bin, cleanup: () => rm(bin, { recursive: true, force: true }) };
 }

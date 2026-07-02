@@ -1,11 +1,31 @@
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
-import { appState } from "./state.mjs";
-import { routeDesktopAutoModel, sendDesktopChat } from "./desktopChat.mjs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const fixtureRoot = mkdtempSync(join(tmpdir(), "vibyra-desktop-chat-"));
+process.env.VIBYRA_AGENT_HOME = join(fixtureRoot, "agent-home");
+
+const projectOnePath = makeProjectDir("project-1");
+const combinedLaunchPath = makeProjectDir("CombinedLaunchSaaS");
+const saasProjectPath = makeProjectDir("Desktop", "SaaS");
+const saasDuplicateOnePath = makeProjectDir("saas-1");
+const saasDuplicateTwoPath = makeProjectDir("saas-2");
+writeRecentProjects([saasProjectPath]);
+
+const { appState } = await import("./state.mjs");
+const { projectIdFromPath } = await import("./projectInfo.mjs");
+const { routeDesktopAutoModel, sendDesktopChat } = await import("./desktopChat.mjs");
+const saasProjectId = projectIdFromPath(saasProjectPath);
+
+after(() => {
+  rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+});
 
 test("desktop chat returns local desktop actions without a cloud account", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "project-1", name: "Project One", path: "/tmp/project-1" }];
+  appState.cachedProjects = [{ id: "project-1", name: "Project One", path: projectOnePath }];
 
   const result = await sendDesktopChat({
     projectId: "project-1",
@@ -25,7 +45,7 @@ test("desktop chat returns local desktop actions without a cloud account", async
 
 test("desktop chat resolves a combined full-access launch to the named SaaS project", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas-project", name: "CombinedLaunchSaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas-project", name: "CombinedLaunchSaaS", path: combinedLaunchPath }];
 
   const result = await sendDesktopChat({
     prompt: "I want you to open six terminals using 5.5 GPT. Give them full permission. Open it on my project called CombinedLaunchSaaS."
@@ -60,7 +80,7 @@ test("desktop chat keeps explicit permission follow-ups local", async () => {
 
 test("desktop chat uses recent task context for a vague subagent retry", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -79,7 +99,7 @@ test("desktop chat uses recent task context for a vague subagent retry", async (
 
 test("desktop chat passes recent launch context into terminal task routing", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     prompt: "Assign three terminals to audit the terminal page.",
@@ -100,7 +120,7 @@ test("desktop chat passes recent launch context into terminal task routing", asy
 
 test("desktop chat sanitizes recent launch context before parser use", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     prompt: "Give two of them tasks to review terminal recovery.",
@@ -119,7 +139,7 @@ test("desktop chat sanitizes recent launch context before parser use", async () 
 
 test("desktop chat returns an executable three-of-seven terminal assignment", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -133,13 +153,13 @@ test("desktop chat returns an executable three-of-seven terminal assignment", as
   assert.match(result.actions[0].tasks[0].prompt, /Frontend reproduction and evidence reviewer/);
   assert.match(result.actions[0].tasks[1].prompt, /Frontend interaction and accessibility reviewer/);
   assert.match(result.actions[0].tasks[2].prompt, /Frontend state and architecture reviewer/);
-  assert.match(result.actions[0].tasks[0].prompt, /Source project location: \/tmp\/saas/);
+  assert.ok(result.actions[0].tasks[0].prompt.includes(`Source project location: ${saasProjectPath}`));
   assert.match(result.actions[0].tasks[2].prompt, /now with the 7 terminals you just opened/i);
 });
 
 test("desktop chat assigns counted work to open terminals without launching more", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -154,7 +174,7 @@ test("desktop chat assigns counted work to open terminals without launching more
 
 test("desktop chat keeps numbered open-terminal subset assignments on existing sessions", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -169,7 +189,7 @@ test("desktop chat keeps numbered open-terminal subset assignments on existing s
 
 test("desktop chat assigns read-only frontend audits to terminals just opened", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -187,7 +207,7 @@ test("desktop chat assigns read-only frontend audits to terminals just opened", 
 
 test("desktop chat executes the exact recently-opened read-only diagnosis request", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -206,7 +226,7 @@ test("desktop chat executes the exact recently-opened read-only diagnosis reques
 
 test("desktop chat executes the reported use-launched frontend audit request", async () => {
   resetDesktopChatState();
-  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: "/tmp/saas" }];
+  appState.cachedProjects = [{ id: "saas", name: "SaaS", path: saasProjectPath }];
 
   const result = await sendDesktopChat({
     projectId: "saas",
@@ -248,9 +268,9 @@ test("desktop chat replaces a false local-model terminal capability denial", asy
 test("desktop chat resolves an explicitly named terminal project", async () => {
   resetDesktopChatState();
   appState.cachedProjects = [{
-    id: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    id: saasProjectId,
     name: "SaaS",
-    path: "/home/ellis/Desktop/SaaS"
+    path: saasProjectPath
   }];
 
   const result = await sendDesktopChat({
@@ -258,7 +278,7 @@ test("desktop chat resolves an explicitly named terminal project", async () => {
     prompt: "open 7 5.5 gpt pro terminals on the project saas on my desktop"
   });
 
-  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+  assert.equal(result.actions[0].projectId, saasProjectId);
   assert.equal("projectName" in result.actions[0], false);
   assert.match(result.reply, /project SaaS/i);
 });
@@ -266,9 +286,9 @@ test("desktop chat resolves an explicitly named terminal project", async () => {
 test("desktop chat resolves the project for a terminal task batch", async () => {
   resetDesktopChatState();
   appState.cachedProjects = [{
-    id: "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT",
+    id: saasProjectId,
     name: "SaaS",
-    path: "/home/ellis/Desktop/SaaS"
+    path: saasProjectPath
   }];
 
   const result = await sendDesktopChat({
@@ -280,7 +300,7 @@ test("desktop chat resolves the project for a terminal task batch", async () => 
   });
 
   assert.equal(result.actions[0].type, "run_terminal_tasks");
-  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+  assert.equal(result.actions[0].projectId, saasProjectId);
   assert.equal("projectName" in result.actions[0], false);
   assert.equal(result.actions[0].tasks.length, 2);
 });
@@ -293,14 +313,14 @@ test("desktop chat resolves a discovered project path suffix", async () => {
   });
 
   assert.equal(result.actions[0].model, "gpt-5.5");
-  assert.equal(result.actions[0].projectId, "L2hvbWUvZWxsaXMvRGVza3RvcC9TYWFT");
+  assert.equal(result.actions[0].projectId, saasProjectId);
 });
 
 test("desktop chat refuses ambiguous explicitly named terminal projects", async () => {
   resetDesktopChatState();
   appState.cachedProjects = [
-    { id: "saas-1", name: "SaaS", path: "/tmp/saas-1" },
-    { id: "saas-2", name: "saas", path: "/tmp/saas-2" }
+    { id: "saas-1", name: "SaaS", path: saasDuplicateOnePath },
+    { id: "saas-2", name: "saas", path: saasDuplicateTwoPath }
   ];
 
   await assert.rejects(
@@ -490,7 +510,7 @@ test("desktop Auto routing clears an expired bridge account session", async () =
 test("desktop chat loads canonical memory for the selected project", async () => {
   resetDesktopChatState();
   appState.desktopAccountToken = "account-token";
-  appState.cachedProjects = [{ id: "project-1", name: "Desktop Project", path: "/tmp/project-1" }];
+  appState.cachedProjects = [{ id: "project-1", name: "Desktop Project", path: projectOnePath }];
   let chatPayload = null;
 
   await sendDesktopChat({ projectId: "project-1", prompt: "Continue the implementation" }, async (url, options = {}) => {
@@ -612,4 +632,17 @@ function resetDesktopChatState() {
   appState.desktopAccount = null;
   appState.desktopAccountToken = null;
   appState.cachedProjects = [];
+}
+
+function makeProjectDir(...segments) {
+  const path = join(fixtureRoot, ...segments);
+  mkdirSync(path, { recursive: true });
+  writeFileSync(join(path, "package.json"), "{}\n");
+  return path;
+}
+
+function writeRecentProjects(paths) {
+  const agentDir = join(fixtureRoot, "agent-home", ".vibyra-agent");
+  mkdirSync(agentDir, { recursive: true });
+  writeFileSync(join(agentDir, "recent-projects.json"), `${JSON.stringify(paths, null, 2)}\n`);
 }

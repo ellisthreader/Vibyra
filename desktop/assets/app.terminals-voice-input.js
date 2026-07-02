@@ -2,6 +2,7 @@ const terminalVoiceInputState = {
   chunks: [],
   generation: 0,
   hideTimer: null,
+  lastToggleAt: 0,
   phase: "idle",
   recorder: null,
   stream: null,
@@ -13,6 +14,7 @@ function bindTerminalVoiceInput() {
   if (document.body.dataset.terminalVoiceInputBound) return;
   document.body.dataset.terminalVoiceInputBound = "1";
   document.addEventListener("keydown", handleTerminalVoiceInputHotkey, true);
+  window.vibyraDesktopVoiceInput?.onToggle?.(() => triggerTerminalVoiceInputToggle());
   window.addEventListener("pagehide", () => cancelTerminalVoiceInput());
 }
 
@@ -20,6 +22,13 @@ function handleTerminalVoiceInputHotkey(event) {
   if (event.code !== "F8" || event.repeat) return;
   event.preventDefault();
   event.stopPropagation();
+  triggerTerminalVoiceInputToggle();
+}
+
+function triggerTerminalVoiceInputToggle() {
+  const now = Date.now();
+  if (now - terminalVoiceInputState.lastToggleAt < 120) return;
+  terminalVoiceInputState.lastToggleAt = now;
   toggleTerminalVoiceInput();
 }
 
@@ -90,6 +99,8 @@ function stopTerminalVoiceInput() {
     } catch {
       failTerminalVoiceInput("Recording failed");
     }
+  } else if (terminalVoiceInputState.stream) {
+    cancelTerminalVoiceInput();
   }
 }
 

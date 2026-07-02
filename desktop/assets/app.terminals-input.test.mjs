@@ -28,9 +28,10 @@ test("PTY keyboard input has one browser event owner", () => {
 
   assert.equal(
     [...runtimeSource.matchAll(/addEventListener\("keydown"/g)].length,
-    2,
+    3,
   );
   assert.match(runtimeSource, /node\.addEventListener\("keydown", \(event\) => \{/);
+  assert.match(runtimeSource, /if \(event\.target\?\.closest\?\.\("\.xterm"\)\) return/);
   assert.match(runtimeSource, /document\.addEventListener\("keydown", handleTerminalXtermClipboardShortcut, true\)/);
   assert.equal(
     [...runtimeSource.matchAll(/addEventListener\("paste"/g)].length,
@@ -38,8 +39,8 @@ test("PTY keyboard input has one browser event owner", () => {
   );
   assert.equal([...runtimeSource.matchAll(/xterm\.onData\(/g)].length, 1);
   assert.match(runtimeSource, /if \(window\.Terminal\) return;/);
-  assert.match(runtimeSource, /screenReaderMode: true/);
-  assert.doesNotMatch(runtimeSource, /screenReaderMode: false/);
+  assert.match(runtimeSource, /screenReaderMode: false/);
+  assert.doesNotMatch(runtimeSource, /screenReaderMode: true/);
   assert.match(runtimeSource, /terminalXterms\[id\] !== xterm \|\| !xterm\.element\?\.isConnected/);
   assert.match(runtimeSource, /terminalPtyCompletedPrompts\(id, input\)/);
   assert.match(runtimeSource, /queueTerminalPtyInput\(id, prompts/);
@@ -51,6 +52,45 @@ test("PTY keyboard input has one browser event owner", () => {
     appSource.indexOf("app.terminals-pty-prompt-log.js")
       < appSource.indexOf("app.terminals-pty-runtime.js")
   );
+});
+
+test("PTY wrapper focus forwards Space once through the xterm fallback", () => {
+  const start = runtimeSource.indexOf("function bindPtyInput");
+  const end = runtimeSource.indexOf("\nfunction bindPtyClick", start);
+  const listeners = {};
+  const calls = [];
+  const context = {
+    window: { Terminal: function Terminal() {} },
+    terminalXterms: {
+      "terminal-1": {
+        element: { isConnected: true },
+        focus: () => calls.push(["focus"])
+      }
+    },
+    terminalCopyShortcut: () => false,
+    terminalXtermForCopyEvent: () => null,
+    bindTerminalPathDrop() {},
+    handlePtyKeydown(event, id) { calls.push(["keydown", id, event.key]); }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.bind = bindPtyInput;`,
+    context
+  );
+  const node = {
+    dataset: { terminalInput: "terminal-1" },
+    addEventListener(type, handler, capture) { listeners[type] = { handler, capture }; }
+  };
+
+  context.bind(node);
+  listeners.keydown.handler({
+    key: " ",
+    defaultPrevented: false,
+    target: { closest: () => null }
+  });
+
+  assert.equal(listeners.keydown.capture, true);
+  assert.deepEqual(calls, [["focus"], ["keydown", "terminal-1", " "]]);
 });
 
 test("PTY xterm copy writes selected text without stealing Ctrl+C interrupts", async () => {
@@ -222,6 +262,133 @@ this.ensure = ensureTerminalXtermClipboardShortcut;`,
   assert.equal(event.prevented, true);
   assert.equal(event.stopped, true);
   assert.deepEqual(copied, ["highlighted dom text"]);
+});
+
+test("PTY document copy event writes terminal selection from wrapper focus", async () => {
+  const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
+  const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
+  const copied = [];
+  const listeners = {};
+  const context = {
+    window: {
+      vibyraDesktopClipboard: {
+        writeText: async (text) => {
+          copied.push(text);
+          return true;
+        }
+      }
+    },
+    navigator: { clipboard: { writeText: async () => {} } },
+    WeakSet,
+    terminalXtermClipboardBound: new WeakSet(),
+    terminalXtermGlobalClipboardBound: false,
+    activeTerminalId: "terminal-1",
+    terminalXterms: {
+      "terminal-1": {
+        element: { contains: () => false },
+        getSelection: () => "wrapper copy"
+      }
+    },
+    document: {
+      addEventListener: (type, handler, capture) => {
+        listeners[type] = { handler, capture };
+      },
+      activeElement: {
+        closest: (selector) => (
+          String(selector).includes("[data-terminal-input]")
+            ? { dataset: { terminalInput: "terminal-1" } }
+            : null
+        )
+      },
+      getSelection: () => ({ isCollapsed: true })
+    },
+    Node: { TEXT_NODE: 3 }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.ensure = ensureTerminalXtermClipboardShortcut;`,
+    context
+  );
+
+  context.ensure();
+  const clipboardData = { setData() {} };
+  const event = {
+    target: { closest: () => null },
+    clipboardData,
+    prevented: false,
+    stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopPropagation() { this.stopped = true; }
+  };
+  listeners.copy.handler(event);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(listeners.copy.capture, true);
+  assert.equal(event.prevented, true);
+  assert.equal(event.stopped, true);
+  assert.deepEqual(copied, ["wrapper copy"]);
+});
+
+test("PTY document copy ignores stale terminal selection when focus is outside the terminal", async () => {
+  const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
+  const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
+  const copied = [];
+  const listeners = {};
+  const context = {
+    window: {
+      vibyraDesktopClipboard: {
+        writeText: async (text) => {
+          copied.push(text);
+          return true;
+        }
+      }
+    },
+    navigator: { clipboard: { writeText: async () => {} } },
+    WeakSet,
+    terminalXtermClipboardBound: new WeakSet(),
+    terminalXtermGlobalClipboardBound: false,
+    activeTerminalId: "terminal-1",
+    terminalXterms: {
+      "terminal-1": {
+        element: { contains: () => false },
+        getSelection: () => "stale terminal selection"
+      }
+    },
+    document: {
+      addEventListener: (type, handler, capture) => {
+        listeners[type] = { handler, capture };
+      },
+      activeElement: { closest: () => null },
+      getSelection: () => ({
+        isCollapsed: false,
+        anchorNode: { nodeType: 1 },
+        focusNode: { nodeType: 1 },
+        toString: () => "settings page text"
+      })
+    },
+    Node: { TEXT_NODE: 3 }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.ensure = ensureTerminalXtermClipboardShortcut;`,
+    context
+  );
+
+  context.ensure();
+  const event = {
+    target: { closest: () => null },
+    clipboardData: { setData() {} },
+    prevented: false,
+    stopped: false,
+    preventDefault() { this.prevented = true; },
+    stopPropagation() { this.stopped = true; }
+  };
+  listeners.copy.handler(event);
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(event.prevented, false);
+  assert.equal(event.stopped, false);
+  assert.deepEqual(copied, []);
 });
 
 test("screenshot path drop inserts once through xterm paste", () => {
@@ -441,6 +608,45 @@ test("PTY output reaches xterm unchanged for live writes and transcript replay",
   assert.equal(context.render({ agent: "codex", model: "auto" }, codexTui), codexTui);
   assert.equal(context.render({ agent: "claude", model: "claude" }, otherAgentOutput), otherAgentOutput);
   assert.equal(context.render({ agent: "gemini", model: "gemini" }, otherAgentOutput), otherAgentOutput);
+  assert.equal(context.render({}, "\x1b[?25lworking\x1b[?25h"), "\x1b[?25lworking\x1b[?25h");
+});
+
+test("PTY fallback HTTP input is serialized per terminal", async () => {
+  const start = runtimeSource.indexOf("function sendPtyInput");
+  const end = runtimeSource.indexOf("\nfunction setPtyInputNotice", start);
+  const delivered = [];
+  let releaseFirst = null;
+  const context = {
+    terminalPtyHttpInputChains: {},
+    terminalPtySockets: {},
+    WebSocket: { OPEN: 1 },
+    findTerminal: () => ({ id: "terminal-1" }),
+    terminalPtyCompletedPrompts: () => [],
+    queueTerminalPtyInput: (_id, _prompts, fn) => fn(),
+    markTerminalProviderBusy() {},
+    setPtyInputNotice() {},
+    fetch: async (_url, options) => {
+      const input = JSON.parse(options.body).input;
+      delivered.push(input);
+      if (input === "a") await new Promise((resolve) => { releaseFirst = resolve; });
+      return { ok: true };
+    }
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.send = sendPtyInput;`,
+    context
+  );
+
+  context.send("terminal-1", "a");
+  context.send("terminal-1", " ");
+  context.send("terminal-1", "b");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(delivered, ["a"]);
+  releaseFirst();
+  await context.terminalPtyHttpInputChains["terminal-1"];
+
+  assert.deepEqual(delivered, ["a", " ", "b"]);
 });
 
 test("terminal workspace mode is persisted and sent to the authoritative PTY service", () => {

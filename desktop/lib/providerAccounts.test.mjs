@@ -142,3 +142,25 @@ test("Vibyra Voice may use deployment configuration without creating a linked AI
     source: "env"
   });
 });
+
+test("Vibyra Voice ignores OpenRouter keys when resolving OpenAI audio credentials", () => {
+  const root = mkdtempSync(join(tmpdir(), "vibyra-voice-openai-key-"));
+  try {
+    const envPath = join(root, ".env");
+    writeFileSync(envPath, "OPENAI_API_KEY=sk-proj-real-openai-key\nOPENAI_ORG_ID=org-file\n");
+
+    const credential = openAiVoiceCredential({
+      env: { OPENAI_API_KEY: "sk-or-v1-openrouter-key" },
+      configPaths: [envPath]
+    });
+
+    assert.deepEqual(credential, {
+      apiKey: "sk-proj-real-openai-key",
+      organization: "org-file",
+      project: "",
+      source: "env"
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

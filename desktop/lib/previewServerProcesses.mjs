@@ -1,3 +1,4 @@
+import { killCommandTree } from "./commandSpawn.mjs";
 import { appState } from "./state.mjs";
 import {
   activatePreviewService,
@@ -66,7 +67,7 @@ export function stopTrackedPreviewServer(projectId, targetId = "", expected = nu
   for (const child of trackedPreviewProcesses(tracked)) {
     try {
       if (process.platform !== "win32" && child.pid) process.kill(-child.pid);
-      else child.kill();
+      else killCommandTree(child);
     } catch {
       try { child.kill(); } catch {}
     }

@@ -1,6 +1,6 @@
-import { spawn } from "node:child_process";
 import { access, readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { spawnCommand } from "./commandSpawn.mjs";
 import { portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
 import { reservePreviewPort } from "./previewPortAllocator.mjs";
 import { npmRunArgs, npmRunEnv, previewCommand } from "./previewFrameworkProfiles.mjs";
@@ -38,15 +38,15 @@ export async function startLaravelViteDevServer(project, requestHost, context, o
     ? await reservePreviewPort("", { defaultPorts: LARAVEL_PORTS }, { exclude: [vitePort] })
     : null;
   const laravelPort = options.laravelPort ?? laravelReservation.port;
-  const npmExecutable = process.platform === "win32" ? "npm.cmd" : "npm";
+  const npmExecutable = "npm";
   const phpEnv = { ...process.env, ...await laravelPreviewEnv(project.path), ...(options.env ?? {}) };
-  const php = spawn("php", ["artisan", "serve", "--host", "0.0.0.0", "--port", String(laravelPort)], {
+  const php = spawnCommand("php", ["artisan", "serve", "--host", "0.0.0.0", "--port", String(laravelPort)], {
     cwd: project.path,
     detached: process.platform !== "win32",
     env: phpEnv,
     stdio: ["ignore", "pipe", "pipe"]
   });
-  const npm = spawn(npmExecutable, npmRunArgs(context.profile, vitePort), {
+  const npm = spawnCommand(npmExecutable, npmRunArgs(context.profile, vitePort), {
     cwd: project.path,
     detached: process.platform !== "win32",
     env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, vitePort), ...(options.env ?? {}) },

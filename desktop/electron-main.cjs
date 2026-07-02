@@ -88,6 +88,13 @@ function revealWindow() {
   mainWindow.focus();
 }
 
+function openTrustedExternalUrl(url) {
+  const value = String(url || "").trim();
+  if (!/^(https?:|mailto:)/i.test(value)) return false;
+  void shell.openExternal(value);
+  return true;
+}
+
 function sendScreenshotError(error) {
   const message = error instanceof Error ? error.message : "Screenshot capture failed.";
   console.error(`Vibyra screenshot failed: ${message}`);
@@ -180,10 +187,14 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     setTimeout(() => mainWindow?.reload(), 500);
   });
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (input?.type !== "keyDown" || input?.key !== "F8" || input?.isAutoRepeat) return;
+    event.preventDefault();
+    mainWindow?.webContents?.send("terminal-voice-input:toggle");
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url === "about:blank") return { action: "deny" };
-    if (/^(https?:|mailto:)/i.test(url)) {
-      void shell.openExternal(url);
+    if (openTrustedExternalUrl(url)) {
       return { action: "deny" };
     }
     if (url.startsWith("blob:")) return { action: "allow" };
@@ -423,6 +434,11 @@ ipcMain.handle("clipboard:write-text", (event, text) => {
   if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) return false;
   clipboard.writeText(String(text || ""));
   return true;
+});
+
+ipcMain.handle("links:open-external", (event, url) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) return false;
+  return openTrustedExternalUrl(url);
 });
 
 ipcMain.handle("memory:pick", async (_event, kind) => {

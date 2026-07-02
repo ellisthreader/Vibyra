@@ -58,7 +58,10 @@ export function startProviderAccountLogin(provider) {
     cwd: homedir(),
     env: personalAccountEnvironment(),
     stdio: [geminiLogin ? "pipe" : "ignore", "pipe", "pipe"],
-    windowsHide: true
+    windowsHide: true,
+    // On Windows the provider CLIs resolve to .cmd/.bat shims, which Node
+    // refuses to spawn directly (EINVAL) unless routed through a shell.
+    shell: windowsCommandScript(command.command)
   });
   const state = {
     child,
@@ -121,7 +124,8 @@ export function disconnectProviderAccount(provider) {
       cwd: homedir(),
       env: personalAccountEnvironment(),
       encoding: "utf8",
-      timeout: 15_000
+      timeout: 15_000,
+      shell: windowsCommandScript(executable)
     });
     if (result.error || result.status !== 0) {
       throw httpError(409, cleanOutput(result.stderr) || `Could not disconnect ${definition.label}.`);
@@ -250,6 +254,10 @@ function openSystemBrowser(url) {
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function windowsCommandScript(command) {
+  return process.platform === "win32" && /\.(?:cmd|bat)$/i.test(String(command || ""));
 }
 
 function geminiHome() {

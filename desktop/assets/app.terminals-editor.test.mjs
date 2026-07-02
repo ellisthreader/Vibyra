@@ -13,8 +13,13 @@ const ptySource = readFileSync(new URL("./app.terminals-pty-runtime.js", import.
 
 function editorContext() {
   const opened = [];
+  const external = [];
   const context = vm.createContext({
-    window: { setInterval() {} },
+    window: {
+      setInterval() {},
+      vibyraDesktopLinks: { openExternal: async (url) => external.push(url) },
+      open: (url) => external.push(`fallback:${url}`)
+    },
     terminalCompanionMode: "editor",
     activeTerminalId: "terminal-1",
     findTerminal: () => ({ id: "terminal-1" }),
@@ -39,7 +44,7 @@ function editorContext() {
     Event
   });
   vm.runInContext(source, context);
-  return { context, opened };
+  return { context, opened, external };
 }
 
 test("terminal editor recognizes relative and absolute source links with positions", () => {
@@ -67,6 +72,31 @@ test("terminal editor link activation keeps the captured line and column", async
     ["terminal-1", "src/App.tsx", 42, 7],
     ["terminal-1", "other.js", 5, 2]
   ]);
+});
+
+test("terminal output URL links open through the Electron external bridge", async () => {
+  const { context, opened, external } = editorContext();
+  const links = vm.runInContext(
+    "terminalEditorLinksForLine('Docs: https://example.com/docs). Email mailto:support@vibyra.app and file src/App.tsx:4', 2, 'terminal-1')",
+    context
+  );
+
+  assert.equal(links.length, 3);
+  assert.equal(links[0].text, "https://example.com/docs");
+  assert.equal(links[1].text, "mailto:support@vibyra.app");
+  links[0].activate();
+  links[1].activate();
+  links[2].activate();
+  await Promise.resolve();
+
+  assert.deepEqual(external, ["https://example.com/docs", "mailto:support@vibyra.app"]);
+  assert.deepEqual(opened, [["terminal-1", "src/App.tsx", 4, 1]]);
+});
+
+test("terminal external links reject unsupported protocols", () => {
+  const { context, external } = editorContext();
+  vm.runInContext("openTerminalExternalLink('javascript:alert(1)')", context);
+  assert.deepEqual(external, []);
 });
 
 test("terminal editor loads before the companion and attaches through xterm links", () => {

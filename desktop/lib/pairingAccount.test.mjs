@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
@@ -13,6 +13,7 @@ import {
   verifyAndSetDesktopAccount
 } from "./desktopAccount.mjs";
 import { pairDevice, pairStatus } from "./pairingHandlers.mjs";
+import { assertOwnerOnlySecretFile } from "./secretFileTestHelpers.mjs";
 
 test("pairing rejects LAN requests before desktop account verification", async () => {
   resetPairingState();
@@ -120,7 +121,7 @@ test("desktop account session persists privately and restores after a bridge res
   const account = { id: 7, email: "desktop@example.test", name: "Desktop User", plan: "free" };
   try {
     persistDesktopAccountSession("session-token", account, { sessionPath });
-    assert.equal((await stat(sessionPath)).mode & 0o777, 0o600);
+    await assertOwnerOnlySecretFile(sessionPath);
     assert.equal(JSON.parse(await readFile(sessionPath, "utf8")).token, "session-token");
 
     appState.desktopAccount = null;

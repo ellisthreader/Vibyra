@@ -25,3 +25,16 @@ test("OpenRouter config parser handles common dotenv syntax", () => {
   assert.equal(parseEnvConfigValue(body, "OPENROUTER_API_KEY"), "sk-test-value");
   assert.equal(parseEnvConfigValue(body, "OPENROUTER_API_URL"), "https://openrouter.ai/api/v1/chat/completions");
 });
+
+test("OpenRouter config parser keeps empty values empty", () => {
+  const body = [
+    "OPENAI_API_KEY=",
+    "OPENAI_MODERATION_ENABLED=true",
+    "OPENROUTER_API_KEY = ",
+    "OPENROUTER_API_URL=https://openrouter.ai/api/v1/chat/completions"
+  ].join("\n");
+
+  assert.equal(parseEnvConfigValue(body, "OPENAI_API_KEY"), "");
+  assert.equal(parseEnvConfigValue(body, "OPENROUTER_API_KEY"), "");
+  assert.equal(parseEnvConfigValue(body, "OPENAI_MODERATION_ENABLED"), "true");
+});

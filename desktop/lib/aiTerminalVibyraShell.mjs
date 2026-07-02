@@ -378,10 +378,18 @@ thinking = "high"
 function seedCodexHome(targetDir, options = {}) {
   const sourceDir = String(process.env.CODEX_HOME || "").trim() || join(homedir(), ".codex");
   if (!existsSync(sourceDir) || sourceDir === targetDir) return;
+  const safeStartupNames = [
+    "models_cache.json",
+    "version.json",
+    "installation_id",
+    ".personality_migration"
+  ];
   if (!options.includeUserConfig) {
     for (const name of ["auth.json", "config.toml", "requirements.toml", "skills", "plugins"]) {
       rmSync(join(targetDir, name), { recursive: true, force: true });
     }
+    copyCodexHomeEntries(sourceDir, targetDir, safeStartupNames);
+    seedSharedCodexMarketplace(sourceDir, targetDir);
     return;
   }
   if (!options.includeAuth) rmSync(join(targetDir, "auth.json"), { force: true });
@@ -391,22 +399,23 @@ function seedCodexHome(targetDir, options = {}) {
     "AGENTS.md",
     "skills",
     "plugins",
-    "models_cache.json",
-    "version.json",
-    "installation_id",
-    ".personality_migration"
+    ...safeStartupNames
   ];
   if (options.includeAuth) names.unshift("auth.json");
+  copyCodexHomeEntries(sourceDir, targetDir, names, { includeAuth: options.includeAuth });
+  seedSharedCodexMarketplace(sourceDir, targetDir);
+}
+
+function copyCodexHomeEntries(sourceDir, targetDir, names, options = {}) {
   for (const name of names) {
     const source = join(sourceDir, name);
     const target = join(targetDir, name);
     if (!existsSync(source) || existsSync(target)) continue;
     try {
       cpSync(source, target, { recursive: true, errorOnExist: false });
-      if (name === "auth.json") chmodSync(target, 0o600);
+      if (name === "auth.json" && options.includeAuth) chmodSync(target, 0o600);
     } catch {}
   }
-  seedSharedCodexMarketplace(sourceDir, targetDir);
 }
 
 function seedSharedCodexMarketplace(sourceDir, targetDir) {

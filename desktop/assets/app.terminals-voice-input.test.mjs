@@ -11,6 +11,8 @@ test("terminal voice input uses a distinct global shortcut and captures the sele
   assert.match(source, /event\.code !== "F8"/);
   assert.doesNotMatch(source, /event\.altKey/);
   assert.doesNotMatch(source, /event\.shiftKey/);
+  assert.match(source, /vibyraDesktopVoiceInput\?\.onToggle\?\.\(\(\) => triggerTerminalVoiceInputToggle\(\)\)/);
+  assert.match(source, /lastToggleAt/);
   assert.match(source, /terminalVoiceInputState\.targetId = terminal\.id/);
   assert.match(source, /desktopPromptTranscriptMetadata\("terminal-dictation"/);
   assert.match(source, /desktopPromptTranscriptTarget\(terminalVoiceInputState\.targetId\)/);
@@ -19,6 +21,75 @@ test("terminal voice input uses a distinct global shortcut and captures the sele
   assert.match(source, /transcriptTurn/);
   assert.match(source, /terminalVoiceInputState\.phase === "starting"[\s\S]*cancelTerminalVoiceInput\(\)/);
   assert.match(source, /60_000/);
+});
+
+test("terminal voice input second toggle stops the active recorder", () => {
+  let keyHandler = null;
+  let ipcHandler = null;
+  const stoppedTracks = [];
+  const recorder = {
+    state: "recording",
+    stopCalls: 0,
+    stop() {
+      this.stopCalls += 1;
+      this.state = "inactive";
+    }
+  };
+  const context = vm.createContext({
+    activePage: "terminals",
+    activeTerminalId: "terminal-1",
+    Date: { now: () => 1000 },
+    document: {
+      body: { dataset: {}, append() {} },
+      addEventListener(type, handler) {
+        if (type === "keydown") keyHandler = handler;
+      },
+      querySelector() { return null; },
+      createElement() {
+        return {
+          dataset: {},
+          hidden: true,
+          setAttribute() {},
+          addEventListener() {}
+        };
+      }
+    },
+    escapeHtml: (value) => String(value),
+    findTerminal: () => ({ id: "terminal-1", title: "Taylor" }),
+    navigator: {},
+    setTimeout,
+    clearTimeout,
+    terminalCompanionInsertIntoTerminal: () => true,
+    window: {
+      addEventListener() {},
+      vibyraDesktopVoiceInput: {
+        onToggle(handler) {
+          ipcHandler = handler;
+          return () => {};
+        }
+      }
+    }
+  });
+  vm.runInContext(`${source}
+this.voiceState = terminalVoiceInputState;`, context);
+  context.voiceState.phase = "listening";
+  context.voiceState.recorder = recorder;
+  context.voiceState.stream = {
+    getTracks: () => [{ stop: () => stoppedTracks.push("track") }]
+  };
+
+  keyHandler({
+    code: "F8",
+    repeat: false,
+    preventDefault() {},
+    stopPropagation() {}
+  });
+  assert.equal(recorder.stopCalls, 1);
+  assert.equal(context.voiceState.phase, "transcribing");
+
+  context.Date.now = () => 1050;
+  ipcHandler();
+  assert.equal(recorder.stopCalls, 1);
 });
 
 test("terminal voice input delivers to its captured target even if selection changes", () => {

@@ -51,7 +51,7 @@ export async function transcribeDesktopVoice(body = {}, fetchImpl = fetch, crede
     clearTimeout(timeout);
   }
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw httpError(response.status || 500, payload?.error?.message || "Voice transcription failed.");
+  if (!response.ok) throw openAiVoiceError(response.status || 500, payload, "Voice transcription failed.");
   return { ok: true, text: String(payload?.text || "").trim() };
 }
 
@@ -141,4 +141,14 @@ function httpError(status, message) {
   error.status = status;
   error.vibyraSafe = true;
   return error;
+}
+
+function openAiVoiceError(status, payload, fallback) {
+  if (status === 401) {
+    return httpError(
+      401,
+      "The configured OpenAI API key for Vibyra Voice was rejected. Update OPENAI_API_KEY, then restart Vibyra Desktop."
+    );
+  }
+  return httpError(status, payload?.error?.message || fallback);
 }

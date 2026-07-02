@@ -18,7 +18,7 @@ test("terminal setup never inherits the separate Chat model preference", () => {
   assert.doesNotMatch(stateSource, /setupModel\s*=.*vibyra\.desktop\.chatModel/);
 });
 
-test("terminal picker keeps official CLI providers separate from OpenRouter wrappers", () => {
+test("terminal picker keeps exact OpenRouter slugs visible in Vibyra-token mode", () => {
   const context = {
     config: () => ({
       chatModelGroups: [{
@@ -52,10 +52,45 @@ test("terminal picker keeps official CLI providers separate from OpenRouter wrap
     company: "Google"
   };
 
-  assert.equal(context.terminalOpenRouterModelAllowed(officialWrapper), false);
+  assert.equal(context.terminalOpenRouterModelAllowed(officialWrapper), true);
   assert.equal(context.terminalOpenRouterModelAllowed(otherWrapper), true);
   assert.equal(context.terminalOpenRouterModelAllowed(gemmaWrapper), true);
   assert.equal(context.terminalOfficialFallbackModelKey("openai/gpt-5.5-pro"), "gpt-5.5");
+});
+
+test("terminal picker keeps dynamic Anthropic OpenRouter rows", () => {
+  const context = {
+    config: () => ({ chatModelGroups: [] }),
+    activePage: "terminals",
+    localStorage: { setItem() {} },
+    modelTiers: {},
+    modelChoices: () => [
+      { key: "auto", label: "Auto", provider: "auto" },
+      ...(context.terminalDynamicModelGroups || []).flatMap((group) => group.options)
+    ],
+    openChatMenu: "",
+    render() {},
+    setupModel: "auto",
+    setupModelKey: "test-terminal-model",
+    terminalNativeRuntimeForModel(model) {
+      return String(model?.key || "").startsWith("anthropic/") ? "claude" : "";
+    },
+    window: { addEventListener() {} }
+  };
+  vm.runInNewContext(`${source}
+this.dynamicGroups = () => terminalDynamicModelGroups;`, context);
+
+  context.applyTerminalOpenRouterModels([{
+    title: "Anthropic",
+    company: "Anthropic",
+    options: [
+      { key: "anthropic/claude-sonnet-5", label: "Claude Sonnet 5", provider: "claude", tier: "balanced" },
+      { key: "anthropic/claude-fable-5", label: "Claude Fable 5", provider: "claude", tier: "premium" }
+    ]
+  }]);
+
+  const keys = context.dynamicGroups().flatMap((group) => group.options.map((model) => model.key));
+  assert.deepEqual(keys, ["anthropic/claude-sonnet-5", "anthropic/claude-fable-5"]);
 });
 
 test("third-party qualified model names do not inherit OpenAI from a codex substring", () => {

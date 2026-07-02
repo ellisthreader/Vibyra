@@ -59,7 +59,9 @@ test("Standard paths stay inside the launch workspace while Full access may leav
   const root = mkdtempSync(join(tmpdir(), "vibyra-agent-root-"));
   const outside = mkdtempSync(join(tmpdir(), "vibyra-agent-outside-"));
   mkdirSync(join(root, "src"));
-  symlinkSync(outside, join(root, "escape"));
+  // "junction" keeps this runnable on Windows, where plain symlinks need
+  // elevation; Node ignores the type argument on POSIX platforms.
+  symlinkSync(outside, join(root, "escape"), "junction");
 
   assert.equal(resolveWorkspacePath("src", { cwd: root, workspaceRoot: root }), resolve(root, "src"));
   assert.throws(

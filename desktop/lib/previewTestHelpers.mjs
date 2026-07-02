@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
+import { killCommandTree } from "./commandSpawn.mjs";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl, servePreviewRefererAsset, servePreviewServerProxy, servePreviewUrlProxy, serveProjectPreview } from "./preview.mjs";
 
@@ -18,7 +19,7 @@ export async function makeProject(prefix) {
     source: "desktop",
     analysis: { summary: "Test project" }
   };
-  return { project, cleanup: () => rm(path, { recursive: true, force: true }) };
+  return { project, cleanup: () => rm(path, { force: true, maxRetries: 20, recursive: true, retryDelay: 100 }) };
 }
 
 export async function makeViteLikeServer(rootHtml) {
@@ -83,11 +84,21 @@ export function viteErrorHtml(error) {
       `;
 }
 
-export async function makeFakeNpm() {
-  const bin = await mkdtemp(join(tmpdir(), "vibyra-fake-npm-"));
-  const npmPath = join(bin, "npm");
-  await writeFile(npmPath, [
-    "#!/usr/bin/env node",
+export async function makeFakeCommand(name, script) {
+  const bin = await mkdtemp(join(tmpdir(), `vibyra-fake-${name}-`));
+  if (process.platform === "win32") {
+    await writeFile(join(bin, `${name}-impl.mjs`), script);
+    await writeFile(join(bin, `${name}.cmd`), `@echo off\r\nnode "%~dp0${name}-impl.mjs" %*\r\n`);
+  } else {
+    const path = join(bin, name);
+    await writeFile(path, `#!/usr/bin/env node\n${script}`);
+    await chmod(path, 0o755);
+  }
+  return { bin, cleanup: () => rm(bin, { force: true, maxRetries: 20, recursive: true, retryDelay: 100 }) };
+}
+
+export function makeFakeNpm() {
+  return makeFakeCommand("npm", [
     "import { createServer } from 'node:http';",
     "const portArgIndex = process.argv.lastIndexOf('--port');",
     "const argPort = portArgIndex >= 0 ? Number(process.argv[portArgIndex + 1]) : 0;",
@@ -124,15 +135,10 @@ export async function makeFakeNpm() {
     "}), delay);",
     "setInterval(() => {}, 1000);"
   ].join("\n"));
-  await chmod(npmPath, 0o755);
-  return { bin, cleanup: () => rm(bin, { recursive: true, force: true }) };
 }
 
-export async function makeFakePhp() {
-  const bin = await mkdtemp(join(tmpdir(), "vibyra-fake-php-"));
-  const phpPath = join(bin, "php");
-  await writeFile(phpPath, [
-    "#!/usr/bin/env node",
+export function makeFakePhp() {
+  return makeFakeCommand("php", [
     "import { createServer } from 'node:http';",
     "const portArgIndex = process.argv.lastIndexOf('--port');",
     "const port = Number(process.env.VIBYRA_FAKE_LARAVEL_PORT || process.argv[portArgIndex + 1]);",
@@ -149,14 +155,12 @@ export async function makeFakePhp() {
     "}), delay);",
     "setInterval(() => {}, 1000);"
   ].join("\n"));
-  await chmod(phpPath, 0o755);
-  return { bin, cleanup: () => rm(bin, { recursive: true, force: true }) };
 }
 
 export function killTrackedPreview(projectId) {
   const tracked = appState.previewServers[projectId];
   for (const child of [tracked?.process, ...(tracked?.processes ?? [])]) {
-    try { child?.kill(); } catch {}
+    if (child) killCommandTree(child);
   }
   delete appState.previewServers[projectId];
 }

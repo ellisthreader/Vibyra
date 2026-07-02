@@ -3,6 +3,11 @@
 Read this for the AI-terminal companion panel, `/voice`, `/memory`, microphone
 permissions, transcription, and editable project memory.
 
+Current Windows bug report: `Desktop/Windows Desktop Current Bug Report.md`
+tracks an unresolved F8 Talk toggle issue from 2026-07-01 where F8 starts voice
+capture but pressing F8 again does not stop it, forcing the user to click the
+Talk control manually.
+
 ## Main Files
 
 - `desktop/assets/app.terminals-companion.js`
@@ -48,7 +53,13 @@ ignored root/backend `.env` paths used by desktop agent configuration. This
 lets Voice use local env configuration without treating a repository key as a
 connected personal AI account or copying it into source. A bridge restart is
 required after changing bridge code, but env-file values are read at request
-time.
+time. OpenRouter-style keys such as `sk-or-...` must not be used for OpenAI
+audio endpoints; `openAiVoiceCredential()` ignores them and continues looking
+for a real OpenAI key so the mic path does not surface OpenAI's misleading
+incorrect-key response. `parseEnvConfigValue()` in `desktop/lib/agentConfig.mjs`
+must treat empty env values as empty; do not use `\s*` around `=` because it
+can consume the next line and turn flags such as `OPENAI_MODERATION_ENABLED`
+into a bogus API key.
 
 Voice is a Vibyra AI conversation, not terminal dictation. Its upper-half UI is
 one talk/stop button with `Alt+V`; after transcription it sends the spoken turn

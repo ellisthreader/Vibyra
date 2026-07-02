@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 const HIDDEN_DIRECTORIES = new Set([
   ".git",
@@ -70,7 +70,7 @@ export function resolveWorkspacePath(value, {
   workspaceRoot = cwd,
   permissionMode = "standard"
 } = {}) {
-  const path = String(value || "").trim().replace(/^~(?=\/|$)/, homedir());
+  const path = String(value || "").trim().replace(/^~(?=[\\/]|$)/, homedir());
   const resolved = resolve(isAbsolute(path) ? path : join(cwd, path));
   if (permissionMode !== "full" && !pathWithinRoot(canonicalPath(resolved), canonicalPath(workspaceRoot))) {
     throw new Error(`Standard access is limited to ${workspaceRoot}.`);
@@ -127,7 +127,10 @@ function hiddenEntry(directory, name) {
 function pathWithinRoot(path, root) {
   const base = resolve(String(root || process.cwd()));
   const target = resolve(String(path || base));
-  return target === base || target.startsWith(`${base}/`);
+  // path.relative is separator- and case-correct per platform, unlike a
+  // literal `${base}/` prefix check which never matches Windows backslashes.
+  const fromBase = relative(base, target);
+  return fromBase === "" || (!fromBase.startsWith("..") && !isAbsolute(fromBase));
 }
 
 function canonicalPath(path) {

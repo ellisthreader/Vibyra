@@ -1123,7 +1123,10 @@ function displayDirectory(cwd) {
   const directory = String(cwd || process.cwd());
   const home = homedir();
   if (directory === home) return "~";
-  return directory.startsWith(`${home}/`) ? `~/${directory.slice(home.length + 1)}` : directory;
+  if (directory.startsWith(`${home}/`) || directory.startsWith(`${home}\\`)) {
+    return `~/${directory.slice(home.length + 1).replace(/\\/g, "/")}`;
+  }
+  return directory;
 }
 
 function trimHistory(history) {

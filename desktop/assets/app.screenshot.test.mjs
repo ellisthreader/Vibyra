@@ -15,6 +15,7 @@ const preload = readFileSync(new URL("../electron-preload.cjs", import.meta.url)
 const profileScreenshots = readFileSync(new URL("./app.profile-screenshots.js", import.meta.url), "utf8");
 const profileRender = readFileSync(new URL("./app.profile-render.js", import.meta.url), "utf8");
 const profileActions = readFileSync(new URL("./app.profile-actions.js", import.meta.url), "utf8");
+const settingsSections = readFileSync(new URL("./app.settings-sections.js", import.meta.url), "utf8");
 
 test("screenshot editor exposes the focused crop and annotation workflow", () => {
   assert.match(view, /Crop/);
@@ -175,7 +176,7 @@ test("saved screenshot cards are current-session only", () => {
 
 test("Preferences exposes a persisted native screenshot folder picker", () => {
   assert.match(app, /app\.profile-screenshots\.js\?v=screenshot-directory-20260610/);
-  assert.match(profileRender, /profileScreenshotSettingsPanel\(\)/);
+  assert.match(settingsSections, /profileScreenshotSettingsPanel\(\)/);
   assert.match(profileRender, /ensureProfileScreenshotSettings/);
   assert.match(profileScreenshots, /Screenshot folder/);
   assert.match(profileScreenshots, /chooseDirectory/);

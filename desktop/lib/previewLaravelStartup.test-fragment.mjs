@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { access, chmod, mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
@@ -26,7 +26,7 @@ test("approved Laravel preview startup tolerates delayed PHP and Vite readiness"
     const startedAt = Date.now();
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_LARAVEL_DELAY_MS: "1200",
         VIBYRA_FAKE_VITE_DELAY_MS: "1200",
         VIBYRA_FAKE_LARAVEL_HTML: "<!doctype html><html><body>Delayed Laravel</body></html>",
@@ -66,7 +66,7 @@ test("approved Laravel preview startup rejects application error pages", async (
     await assert.rejects(
       () => startProjectDevServer(project, "127.0.0.1:4317", {
         env: {
-          PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+          PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
           VIBYRA_FAKE_LARAVEL_STATUS: "500",
           VIBYRA_FAKE_LARAVEL_HTML: "<!doctype html><html><body>Laravel exploded</body></html>",
           VIBYRA_FAKE_VITE_HTML: "<!doctype html><html><body>Vite assets only</body></html>"
@@ -104,7 +104,7 @@ test("approved Laravel preview startup removes a stale generated hot file", asyn
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_LARAVEL_HTML: "<!doctype html><html><body>Laravel</body></html>",
         VIBYRA_FAKE_VITE_HTML: "<!doctype html><html><body>Vite</body></html>"
       },
@@ -141,7 +141,7 @@ test("approved Laravel preview startup reports public hot ownership failures imm
     await assert.rejects(
       () => startProjectDevServer(project, "127.0.0.1:4317", {
         env: {
-          PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+          PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
           VIBYRA_FAKE_VITE_FAILURE: "WebSocket server error: Port 5173 is already in use\nError: EACCES: permission denied, open 'public/hot'"
         },
         laravelPort,
@@ -177,7 +177,7 @@ test("approved Laravel preview tracks the actual Vite fallback port", async () =
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_LARAVEL_HTML: "<!doctype html><html><body>Laravel</body></html>",
         VIBYRA_FAKE_VITE_HTML: "<!doctype html><html><body>Vite</body></html>",
         VIBYRA_FAKE_VITE_PORT: String(actualVitePort)

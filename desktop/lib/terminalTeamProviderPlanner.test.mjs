@@ -29,7 +29,7 @@ test("connected Codex planning returns strict provider-authored assignments", as
     return child;
   }, async () => {});
 
-  assert.match(captured.executable, /codex$/);
+  assert.match(captured.executable, /codex(\.exe|\.cmd)?$/i);
   assert.ok(captured.args.includes("--output-schema"));
   assert.ok(captured.args.includes("gpt-5.4-mini"));
   assert.match(captured.prompt, /Audit light and dark mode consistency/);

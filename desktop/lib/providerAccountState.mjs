@@ -30,7 +30,11 @@ export function readClaudeAuthState(executable) {
     cwd: homedir(),
     env: accountStatusEnvironment(),
     encoding: "utf8",
-    timeout: 5_000
+    timeout: 5_000,
+    // The claude CLI resolves to a .cmd shim on Windows, which Node cannot
+    // spawn directly (EINVAL) unless routed through a shell. Without this the
+    // status probe always fails and a connected account looks disconnected.
+    shell: windowsCommandScript(executable)
   });
   if (result.error || result.status !== 0) return disconnectedState();
   return parseClaudeAuthStatus(result.stdout);
@@ -86,6 +90,10 @@ function accountStatusEnvironment() {
 
 function disconnectedState() {
   return { connected: false, accountLabel: "", detail: "", authMode: "", updatedAt: "" };
+}
+
+function windowsCommandScript(command) {
+  return process.platform === "win32" && /\.(?:cmd|bat)$/i.test(String(command || ""));
 }
 
 function titleCase(value) {

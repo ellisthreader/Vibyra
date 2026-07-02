@@ -157,6 +157,7 @@ const terminalXtermClipboardBound = new WeakSet();
 let terminalXtermGlobalClipboardBound = false;
 let terminalPtyRenderBatchTimer = 0;
 const terminalPtyRenderDirtyIds = new Set();
+const terminalPtyHttpInputChains = {};
 
 function queueStartPtyTerminal(terminal) {
   if (!terminal || terminal.ptyStartQueued) return;
@@ -193,6 +194,7 @@ function connectPtyTerminal(terminal) {
     clearTimeout(terminalPtyReconnectTimers[terminal.id]);
     delete terminalPtyReconnectTimers[terminal.id];
     terminalPtyReconnectAttempts[terminal.id] = 0;
+    delete terminalPtyHttpInputChains[terminal.id];
     mountVisibleXterms(new Set([terminal.id]));
     schedulePtyXtermFit(terminal.id, { forceBackend: true });
     schedulePtyCollectionSync(250);
@@ -436,6 +438,16 @@ function bindPtyInput(node) {
   if (!node || node.dataset.ptyInputBound) return;
   node.dataset.ptyInputBound = "1";
   if (typeof bindTerminalPathDrop === "function") bindTerminalPathDrop(node);
+  node.addEventListener("keydown", (event) => {
+    if (!window.Terminal || event.defaultPrevented) return;
+    if (event.target?.closest?.(".xterm")) return;
+    if (terminalCopyShortcut(event) && terminalXtermForCopyEvent(event)) return;
+    const id = node.dataset.terminalInput;
+    const xterm = terminalXterms[id];
+    if (!xterm?.element?.isConnected) return;
+    xterm.focus?.();
+    handlePtyKeydown(event, id);
+  }, true);
   if (!window.Terminal) {
     node.addEventListener("keydown", (event) => {
       if (window.Terminal) return;
@@ -480,9 +492,14 @@ function sendPtyInputNow(id, input) {
   if (terminal && /[\r\n]/.test(input)) markTerminalProviderBusy(terminal);
   const socket = terminalPtySockets[id];
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "input", data: input }));
-  else fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/input`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) })
-    .then((response) => { if (!response.ok) setPtyInputNotice(id, "Terminal is not connected. Reconnect or open a new terminal to continue."); })
-    .catch(() => setPtyInputNotice(id, "Terminal input could not be delivered."));
+  else {
+    const previous = terminalPtyHttpInputChains[id] || Promise.resolve();
+    terminalPtyHttpInputChains[id] = previous
+      .catch(() => {})
+      .then(() => fetch(`/desktop/pty-terminals/${encodeURIComponent(id)}/input`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ input }) }))
+      .then((response) => { if (!response.ok) setPtyInputNotice(id, "Terminal is not connected. Reconnect or open a new terminal to continue."); })
+      .catch(() => setPtyInputNotice(id, "Terminal input could not be delivered."));
+  }
 }
 
 function setPtyInputNotice(id, message) {
@@ -622,10 +639,14 @@ function mountVisibleXterms(ids = null) {
         cursorStyle: "bar",
         cursorWidth: 1,
         disableStdin: false,
-        screenReaderMode: true,
+        screenReaderMode: false,
         fontFamily: 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace',
         fontSize: 13,
         lineHeight: 1.18,
+        linkHandler: {
+          activate: (_event, uri) => openTerminalPtyExternalLink(uri),
+          allowNonHttpProtocols: false
+        },
         rows: normalizedPtyDimension(terminal.rows, 30, 4, 240),
         cols: normalizedPtyDimension(terminal.cols, 100, 18, 180),
         scrollOnUserInput: true,
@@ -647,7 +668,7 @@ function mountVisibleXterms(ids = null) {
       });
     } else {
       applyPtyXtermThemeIfChanged(id, xterm, node);
-      xterm.options.screenReaderMode = true;
+      xterm.options.screenReaderMode = false;
     }
     if (typeof attachTerminalEditorLinkProvider === "function") {
       attachTerminalEditorLinkProvider(id, xterm);
@@ -681,10 +702,17 @@ function ensureTerminalXtermClipboardShortcut() {
   if (terminalXtermGlobalClipboardBound) return;
   terminalXtermGlobalClipboardBound = true;
   document.addEventListener("keydown", handleTerminalXtermClipboardShortcut, true);
+  document.addEventListener("copy", handleTerminalXtermCopyEvent, true);
 }
 
 function handleTerminalXtermClipboardShortcut(event) {
   if (!terminalCopyShortcut(event)) return;
+  const xterm = terminalXtermForCopyEvent(event);
+  if (!xterm || !copyTerminalXtermSelection(xterm, event)) return;
+  event.stopPropagation?.();
+}
+
+function handleTerminalXtermCopyEvent(event) {
   const xterm = terminalXtermForCopyEvent(event);
   if (!xterm || !copyTerminalXtermSelection(xterm, event)) return;
   event.stopPropagation?.();
@@ -699,13 +727,36 @@ function terminalXtermForCopyEvent(event) {
     : selection?.anchorNode;
   const fromSelection = terminalXtermFromNode(selectionNode);
   if (fromSelection) return fromSelection;
-  return activeTerminalId ? terminalXterms[activeTerminalId] : null;
+  const active = activeTerminalId ? terminalXterms[activeTerminalId] : null;
+  if (!active || !terminalXtermOwnsCopyContext(activeTerminalId, active)) return null;
+  return active;
 }
 
 function terminalXtermFromNode(node) {
   const host = node?.closest?.("[data-terminal-xterm]");
   const id = host?.dataset?.terminalXterm || "";
   return id ? terminalXterms[id] : null;
+}
+
+function terminalXtermOwnsCopyContext(id, xterm) {
+  const element = xterm?.element;
+  if (!element) return false;
+  const focused = document.activeElement;
+  if (focused) {
+    if (element.contains?.(focused)) return true;
+    const host = focused.closest?.("[data-terminal-input], [data-terminal-xterm]");
+    const hostId = host?.dataset?.terminalInput || host?.dataset?.terminalXterm || "";
+    if (hostId && hostId === String(id)) return true;
+  }
+  const selection = document.getSelection?.();
+  if (!selection || selection.isCollapsed) return false;
+  const anchor = selection.anchorNode?.nodeType === Node.TEXT_NODE
+    ? selection.anchorNode.parentElement
+    : selection.anchorNode;
+  const focus = selection.focusNode?.nodeType === Node.TEXT_NODE
+    ? selection.focusNode.parentElement
+    : selection.focusNode;
+  return Boolean(element.contains?.(anchor) || element.contains?.(focus));
 }
 
 function bindTerminalXtermCopyEvents(xterm) {
@@ -776,6 +827,17 @@ async function writeTerminalClipboardText(text) {
   }
 }
 
+function openTerminalPtyExternalLink(url) {
+  const value = String(url || "").trim();
+  if (!/^(https?:|mailto:)/i.test(value)) return;
+  const opener = window.vibyraDesktopLinks?.openExternal;
+  if (typeof opener === "function") {
+    void opener(value);
+    return;
+  }
+  window.open(value, "_blank", "noopener");
+}
+
 function terminalXtermNodeIsVisible(node) {
   if (!node?.isConnected) return false;
   if (node.closest(".terminal-focus-hidden, .terminal-project-hidden, .terminal-fullscreen-hidden, .terminal-minimized, .terminal-maximized-hidden")) return false;
@@ -825,8 +887,7 @@ function writePtySnapshot(id, xterm, output, options = {}) {
 
 function terminalDisplayOutput(_terminal, value) {
   return String(value || "")
-    .replace(/\x1b\[[0-9;]* q/g, "")
-    .replace(/\x1b\[\?25[hl]/g, "");
+    .replace(/\x1b\[[0-9;]* q/g, "");
 }
 
 function terminalAutoDeciding(terminal) {

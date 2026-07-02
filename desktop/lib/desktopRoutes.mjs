@@ -132,7 +132,7 @@ export async function handleDesktopRoutes(req, res, url) {
   }
   if (req.method === "GET" && url.pathname === "/desktop/openrouter-models") {
     if (!authorizeDesktopUi(req, res)) return true;
-    send(res, 200, await openRouterModelPayload());
+    send(res, 200, await openRouterModelPayload(fetch, { refresh: url.searchParams.get("refresh") === "1" }));
     return true;
   }
   if (req.method === "POST" && url.pathname === "/desktop/chat") {

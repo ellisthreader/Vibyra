@@ -15,6 +15,12 @@ export async function reservePreviewPort(packageText, profile, options = {}) {
 }
 
 export async function portLooksFree(port) {
+  // Check the loopback address as well: on Windows a wildcard bind succeeds even when
+  // another server already listens on 127.0.0.1, which would hand out an occupied port.
+  return await bindLooksFree(port, "0.0.0.0") && await bindLooksFree(port, "127.0.0.1");
+}
+
+function bindLooksFree(port, host) {
   return new Promise((resolve) => {
     const server = createServer();
     const done = (available) => {
@@ -22,7 +28,7 @@ export async function portLooksFree(port) {
       resolve(available);
     };
     server.once("error", () => done(false));
-    server.listen(port, "0.0.0.0", () => {
+    server.listen(port, host, () => {
       server.close(() => done(true));
     });
   });

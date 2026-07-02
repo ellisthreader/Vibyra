@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import {
   autoRoutingModel,
   autoRoutingUsesAgent,
@@ -154,7 +156,7 @@ test("API-only intro is modern, customized, and explicit about runtime ownership
   const intro = renderIntroForModel({
     modelKey: "deepseek/deepseek-chat-v3.1",
     reasoningEffort: "high",
-    cwd: "/home/ellis/Desktop/SaaS",
+    cwd: join(homedir(), "Desktop", "SaaS"),
     columns: 80,
     color: false,
     permissionMode: "standard"
@@ -213,7 +215,7 @@ test("prompt, response, working, and activity output use provider themes", () =>
 test("Auto remains a truthful Vibyra Agent routing surface", () => {
   const intro = renderIntroForModel({
     modelKey: "auto",
-    cwd: "/home/ellis/Desktop/SaaS",
+    cwd: join(homedir(), "Desktop", "SaaS"),
     columns: 80,
     color: false,
     permissionMode: "full"

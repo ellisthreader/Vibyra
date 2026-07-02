@@ -1,7 +1,7 @@
 import { basename, extname, isAbsolute, relative, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
-import { spawn } from "node:child_process";
+import { killCommandTree, spawnCommand } from "./commandSpawn.mjs";
 import { contentTypeFor, previewEntryPath, previewMountDirectory } from "./previewStatic.mjs";
 import { discoverProjects, projectById } from "./projects.mjs";
 import { referencesFromFile } from "./publishDemoBundleRefs.mjs";
@@ -259,15 +259,14 @@ function installCommand(projectPath) {
 }
 
 function buildCommand(projectPath) {
-  if (process.platform === "win32") return ["cmd.exe", "/d", "/s", "/c", `${packageRunner(projectPath)} run build`];
   return [packageRunner(projectPath), "run", "build"];
 }
 
 function packageRunner(projectPath) {
-  if (hasProjectFile(projectPath, "pnpm-lock.yaml")) return process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  if (hasProjectFile(projectPath, "yarn.lock")) return process.platform === "win32" ? "yarn.cmd" : "yarn";
-  if (hasProjectFile(projectPath, "bun.lockb") || hasProjectFile(projectPath, "bun.lock")) return process.platform === "win32" ? "bun.cmd" : "bun";
-  return process.platform === "win32" ? "npm.cmd" : "npm";
+  if (hasProjectFile(projectPath, "pnpm-lock.yaml")) return "pnpm";
+  if (hasProjectFile(projectPath, "yarn.lock")) return "yarn";
+  if (hasProjectFile(projectPath, "bun.lockb") || hasProjectFile(projectPath, "bun.lock")) return "bun";
+  return "npm";
 }
 
 function lockfileFor(projectPath) {
@@ -280,7 +279,7 @@ function hasProjectFile(projectPath, relativePath) {
 
 function runProjectCommand(cwd, command, timeoutMs) {
   return new Promise((resolveResult) => {
-    const child = spawn(command[0], command.slice(1), {
+    const child = spawnCommand(command[0], command.slice(1), {
       cwd,
       env: {
         ...process.env,
@@ -307,7 +306,7 @@ function runProjectCommand(cwd, command, timeoutMs) {
       output = `${output}${String(chunk)}`.slice(-5000);
     };
     const timeout = setTimeout(() => {
-      child.kill("SIGTERM");
+      killCommandTree(child, "SIGTERM");
       settle({ ok: false, code: "build_timeout" });
     }, timeoutMs);
     child.stdout?.on("data", capture);

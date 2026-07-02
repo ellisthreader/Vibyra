@@ -76,6 +76,43 @@ test("OpenRouter companies are canonicalized from provider slugs", () => {
   );
 });
 
+test("OpenRouter catalog keeps newest Anthropic tool models despite group caps", () => {
+  const olderOpusRows = Array.from({ length: 16 }, (_, index) => ({
+    id: `anthropic/claude-opus-${index + 1}`,
+    name: `Anthropic: Claude Opus ${index + 1}`,
+    created: 100 + index,
+    architecture: { output_modalities: ["text"] },
+    pricing: { prompt: "0.00003", completion: "0.00015" },
+    supported_parameters: ["tools"]
+  }));
+  const payload = buildOpenRouterModelPayload([
+    ...olderOpusRows,
+    {
+      id: "anthropic/claude-sonnet-5",
+      name: "Anthropic: Claude Sonnet 5",
+      created: 300,
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.000003", completion: "0.000015" },
+      supported_parameters: ["tools", "reasoning"]
+    },
+    {
+      id: "anthropic/claude-fable-5",
+      name: "Anthropic: Claude Fable 5",
+      created: 301,
+      architecture: { output_modalities: ["text"] },
+      pricing: { prompt: "0.000006", completion: "0.000024" },
+      supported_parameters: ["tools"]
+    }
+  ]);
+  const anthropic = payload.groups.find((group) => group.company === "Anthropic");
+  const keys = anthropic.options.map((model) => model.key);
+
+  assert.equal(anthropic.options.length, 12);
+  assert(keys.includes("anthropic/claude-sonnet-5"));
+  assert(keys.includes("anthropic/claude-fable-5"));
+  assert.equal(anthropic.options.find((model) => model.key === "anthropic/claude-fable-5").provider, "claude");
+});
+
 test("OpenRouter reasoning capability follows each model's supported parameters", () => {
   const payload = buildOpenRouterModelPayload([
     { id: "openai/gpt-5.4", name: "OpenAI: GPT-5.4", architecture: { output_modalities: ["text"] }, supported_parameters: ["reasoning", "tools"] },

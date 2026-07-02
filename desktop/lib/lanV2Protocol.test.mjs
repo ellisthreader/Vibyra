@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 import { loadOrCreateDesktopIdentity } from "./lanV2Identity.mjs";
+import { assertOwnerOnlySecretFile } from "./secretFileTestHelpers.mjs";
 import {
   canonicalJson,
   createEphemeralKeyPair,
@@ -37,7 +38,7 @@ test("desktop identities persist with restricted permissions and stable fingerpr
     assert.equal(first.desktopId, second.desktopId);
     assert.match(first.desktopId, /^[A-Za-z0-9_-]{43}$/);
     assert.match(persisted.privateKeyPem, /PRIVATE KEY/);
-    assert.equal((await stat(filePath)).mode & 0o777, 0o600);
+    await assertOwnerOnlySecretFile(filePath);
   } finally {
     await rm(home, { recursive: true, force: true });
   }

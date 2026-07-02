@@ -451,12 +451,21 @@ function isUsageLimit(error) {
 }
 
 async function loadTerminalOpenRouterModels() {
+  const cached = await fetchTerminalOpenRouterModels("/desktop/openrouter-models");
+  if (cached) applyTerminalOpenRouterModels(cached);
+  const fresh = await fetchTerminalOpenRouterModels("/desktop/openrouter-models?refresh=1");
+  if (fresh) applyTerminalOpenRouterModels(fresh);
+}
+
+async function fetchTerminalOpenRouterModels(url) {
   try {
-    const response = await fetch("/desktop/openrouter-models");
+    const response = await fetch(url, { cache: "no-store" });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok || !Array.isArray(payload.groups)) return;
-    applyTerminalOpenRouterModels(payload.groups);
-  } catch {}
+    if (!response.ok || !Array.isArray(payload.groups)) return null;
+    return payload.groups;
+  } catch {
+    return null;
+  }
 }
 
 function applyTerminalOpenRouterModels(groups) {
@@ -478,6 +487,7 @@ function applyTerminalOpenRouterModels(groups) {
 }
 
 function terminalOpenRouterModelAllowed(model) {
+  if (String(model?.key || "").includes("/")) return true;
   const runtime = typeof terminalNativeRuntimeForModel === "function"
     ? terminalNativeRuntimeForModel(model)
     : "";

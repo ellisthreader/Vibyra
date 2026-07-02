@@ -1,0 +1,190 @@
+/* Terminal visual refresh: cohesive radii, depth, and typography on top of the
+   graphite token system. Paint-only — never touches xterm-owned geometry. */
+
+body {
+  --terminal-refresh-radius-control: 8px;
+  --terminal-refresh-radius-menu: 10px;
+  --terminal-refresh-radius-panel: 12px;
+  --terminal-refresh-line: color-mix(in srgb, var(--terminal-border, rgba(151, 161, 190, 0.12)) 88%, transparent);
+  --terminal-refresh-line-strong: var(--terminal-border-strong, rgba(151, 161, 190, 0.18));
+  --terminal-refresh-shadow-menu:
+    0 1px 2px rgba(0, 0, 0, 0.24),
+    0 12px 32px rgba(0, 0, 0, 0.36);
+  --terminal-refresh-shadow-panel:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 20px 48px rgba(0, 0, 0, 0.3);
+  --terminal-refresh-inset-highlight: inset 0 1px 0 color-mix(in srgb, var(--terminal-text, #ecebea) 4%, transparent);
+}
+
+/* --- Top chrome: tabs and toolbar controls --- */
+
+.terminal-tab {
+  border-radius: var(--terminal-refresh-radius-control);
+  letter-spacing: 0.01em;
+}
+
+.terminal-tab-open span:last-child {
+  font-weight: 600;
+}
+
+.terminal-add,
+.terminal-layout-button,
+.terminal-settings-button,
+.terminal-companion-launcher {
+  border-radius: var(--terminal-refresh-radius-control);
+}
+
+.terminal-companion-label {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+/* --- Menus and popovers: one consistent elevated surface --- */
+
+.terminal-menu,
+.terminal-toolbar-menu,
+.terminal-agent-menu,
+.terminal-details-menu,
+.terminal-settings-menu,
+.terminal-command-menu,
+.terminal-model-picker {
+  border-radius: var(--terminal-refresh-radius-menu);
+  box-shadow: var(--terminal-refresh-shadow-menu), var(--terminal-refresh-inset-highlight);
+}
+
+.terminal-toolbar-menu button,
+.terminal-command-option {
+  border-radius: 7px;
+  font-weight: 500;
+}
+
+/* --- Panes: focus view and grid tiles --- */
+
+.terminal-focus,
+.terminal-tile {
+  border-radius: var(--terminal-refresh-radius-panel);
+  overflow: hidden;
+}
+
+.grid-mode .terminal-tile {
+  border-radius: 0; /* zero-gap grid stays edge-to-edge */
+}
+
+.terminal-focus-head,
+.terminal-tile-head {
+  letter-spacing: 0.01em;
+}
+
+.terminal-name {
+  font-weight: 600;
+}
+
+.terminal-meta-chip {
+  border: 1px solid var(--terminal-refresh-line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* --- Setup flow and agent pickers: token-driven cards --- */
+
+.terminal-setup-panel {
+  border-radius: var(--terminal-refresh-radius-panel);
+  box-shadow: var(--terminal-refresh-shadow-panel), var(--terminal-refresh-inset-highlight);
+}
+
+.terminal-agent-row button,
+.terminal-agent-option {
+  background: var(--terminal-elevated, #222226);
+  border-color: var(--terminal-refresh-line);
+  border-radius: var(--terminal-refresh-radius-control);
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.terminal-agent-row button:hover:not(:disabled):not(.active),
+.terminal-agent-option:hover:not(.active) {
+  background: var(--terminal-hover, rgba(255, 255, 255, 0.045));
+  border-color: var(--terminal-refresh-line-strong);
+}
+
+.terminal-agent-row button.active,
+.terminal-agent-option.active {
+  background: var(--terminal-accent-soft, rgba(139, 92, 255, 0.13));
+  border-color: var(--terminal-accent-border, rgba(139, 92, 255, 0.36));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--terminal-accent, #8b5cff) 20%, transparent);
+}
+
+.terminal-model-select,
+.terminal-project-select {
+  border-radius: var(--terminal-refresh-radius-control);
+}
+
+/* --- Notices --- */
+
+.terminal-notice {
+  font-weight: 500;
+}
+
+/* --- Slim themed scrollbars for terminal chrome (menus, pickers, panels).
+       xterm viewports are untouched: geometry is owned by the runtime. --- */
+
+.terminal-menu,
+.terminal-model-picker,
+.terminal-toolbar-menu,
+.terminal-agent-menu,
+.terminal-setup-panel {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--terminal-text, #ecebea) 18%, transparent) transparent;
+}
+
+.terminal-menu::-webkit-scrollbar,
+.terminal-model-picker::-webkit-scrollbar,
+.terminal-toolbar-menu::-webkit-scrollbar,
+.terminal-agent-menu::-webkit-scrollbar,
+.terminal-setup-panel::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.terminal-menu::-webkit-scrollbar-thumb,
+.terminal-model-picker::-webkit-scrollbar-thumb,
+.terminal-toolbar-menu::-webkit-scrollbar-thumb,
+.terminal-agent-menu::-webkit-scrollbar-thumb,
+.terminal-setup-panel::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--terminal-text, #ecebea) 16%, transparent);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+.terminal-menu::-webkit-scrollbar-track,
+.terminal-model-picker::-webkit-scrollbar-track,
+.terminal-toolbar-menu::-webkit-scrollbar-track,
+.terminal-agent-menu::-webkit-scrollbar-track,
+.terminal-setup-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --- Status dots: calmer palette, still legible at 7px --- */
+
+.terminal-status {
+  transition: background-color 180ms ease;
+}
+
+.terminal-status.success {
+  background: #4fc38a;
+}
+
+.terminal-status.error,
+.terminal-status.unavailable {
+  background: #e0637a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-agent-row button,
+  .terminal-agent-option,
+  .terminal-status {
+    transition: none;
+  }
+}

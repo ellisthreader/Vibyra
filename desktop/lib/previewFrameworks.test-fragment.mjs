@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
@@ -22,7 +22,7 @@ test("approved preview server start supports Next dev scripts", async () => {
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_OUTPUT_MODE: "next",
         VIBYRA_FAKE_PREVIEW_HTML: html,
         VIBYRA_FAKE_PREVIEW_PORT: String(port)
@@ -112,7 +112,7 @@ test("Expo web profile outranks generic project wrapper scripts", async () => {
     await writeFile(join(project.path, "app.json"), JSON.stringify({ expo: { name: "Vibyra", slug: "vibyra" } }));
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_PREVIEW_HTML: html,
         VIBYRA_FAKE_PREVIEW_PORT: String(port)
       },
@@ -140,7 +140,7 @@ for (const scenario of FRAMEWORK_DEV_SERVER_CASES) {
 
       const result = await startProjectDevServer(project, "127.0.0.1:4317", {
         env: {
-          PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+          PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
           VIBYRA_FAKE_PREVIEW_HTML: scenario.html,
           VIBYRA_FAKE_PREVIEW_PORT: String(port)
         },
@@ -178,7 +178,7 @@ test("approved preview server start runs Laravel PHP and Vite asset servers", as
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakePhp.bin}:${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakePhp.bin}${delimiter}${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_LARAVEL_HTML: laravelHtml,
         VIBYRA_FAKE_LARAVEL_REQUIRE_SQLITE_FALLBACK: "1",
         VIBYRA_FAKE_VITE_HTML: "<!doctype html><html><body>Vite assets only</body></html>"

@@ -36,12 +36,64 @@ test("Vibyra terminal env exposes only the supplied gateway token", () => {
       readFileSync(join(vibyraEnv.CODEX_HOME, "config.toml"), "utf8"),
       `[projects.${JSON.stringify(process.cwd())}]\ntrust_level = "trusted"\n`
     );
-    assert.equal(statSync(join(vibyraEnv.CODEX_HOME, "config.toml")).mode & 0o777, 0o600);
+    if (process.platform !== "win32") {
+      assert.equal(statSync(join(vibyraEnv.CODEX_HOME, "config.toml")).mode & 0o777, 0o600);
+    }
   } finally {
     if (previousToken === undefined) delete process.env.VIBYRA_TERMINAL_GATEWAY_TOKEN;
     else process.env.VIBYRA_TERMINAL_GATEWAY_TOKEN = previousToken;
     if (previousRoot === undefined) delete process.env.VIBYRA_CODEX_HOME_ROOT;
     else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
+    rmSync(isolatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("managed Vibyra Codex homes keep safe startup cache but exclude user config", () => {
+  const previousCodexHome = process.env.CODEX_HOME;
+  const previousRoot = process.env.VIBYRA_CODEX_HOME_ROOT;
+  const sourceHome = mkdtempSync(join(tmpdir(), "vibyra-source-codex-"));
+  const isolatedRoot = mkdtempSync(join(tmpdir(), "vibyra-managed-codex-"));
+  mkdirSync(join(sourceHome, "skills"));
+  mkdirSync(join(sourceHome, "plugins"));
+  mkdirSync(join(sourceHome, ".tmp", "plugins"), { recursive: true });
+  writeFileSync(join(sourceHome, "auth.json"), "{}");
+  writeFileSync(join(sourceHome, "config.toml"), "user-config");
+  writeFileSync(join(sourceHome, "requirements.toml"), "user-requirements");
+  writeFileSync(join(sourceHome, "models_cache.json"), "{\"models\":[]}");
+  writeFileSync(join(sourceHome, "version.json"), "{\"version\":\"1\"}");
+  writeFileSync(join(sourceHome, "installation_id"), "install-1");
+  writeFileSync(join(sourceHome, ".personality_migration"), "done");
+  writeFileSync(join(sourceHome, "skills", "local.md"), "skill");
+  writeFileSync(join(sourceHome, "plugins", "local.json"), "{}");
+
+  process.env.CODEX_HOME = sourceHome;
+  process.env.VIBYRA_CODEX_HOME_ROOT = isolatedRoot;
+  try {
+    const env = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "codex",
+      label: "Vibyra",
+      terminalId: "managed-cache",
+      terminalGatewayToken: "session-token",
+      cols: 100,
+      rows: 30
+    });
+
+    assert.equal(existsSync(join(env.CODEX_HOME, "auth.json")), false);
+    assert.equal(existsSync(join(env.CODEX_HOME, "requirements.toml")), false);
+    assert.equal(existsSync(join(env.CODEX_HOME, "skills")), false);
+    assert.equal(existsSync(join(env.CODEX_HOME, "plugins")), false);
+    assert.equal(readFileSync(join(env.CODEX_HOME, "models_cache.json"), "utf8"), "{\"models\":[]}");
+    assert.equal(readFileSync(join(env.CODEX_HOME, "version.json"), "utf8"), "{\"version\":\"1\"}");
+    assert.equal(readFileSync(join(env.CODEX_HOME, "installation_id"), "utf8"), "install-1");
+    assert.equal(readFileSync(join(env.CODEX_HOME, ".personality_migration"), "utf8"), "done");
+    assert.match(readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8"), /trust_level = "trusted"/);
+  } finally {
+    if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previousCodexHome;
+    if (previousRoot === undefined) delete process.env.VIBYRA_CODEX_HOME_ROOT;
+    else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
+    rmSync(sourceHome, { recursive: true, force: true });
     rmSync(isolatedRoot, { recursive: true, force: true });
   }
 });
@@ -188,12 +240,14 @@ test("managed Grok receives an isolated exact-model Chat Completions profile", (
 
     assert.equal(grok.VIBYRA_TERMINAL_GATEWAY_TOKEN, "grok-token");
     assert.equal(grok.XAI_API_KEY, undefined);
-    assert.match(grok.GROK_HOME, /grok-terminals\/managed-grok$/);
+    assert.match(grok.GROK_HOME.replace(/\\/g, "/"), /grok-terminals\/managed-grok$/);
     assert.match(config, /\[model\."grok-build-0\.1"\]/);
     assert.match(config, /base_url = "http:\/\/127\.0\.0\.1:\d+\/desktop\/grok\/v1"/);
     assert.match(config, /env_key = "VIBYRA_TERMINAL_GATEWAY_TOKEN"/);
     assert.match(config, /api_backend = "chat_completions"/);
-    assert.equal(statSync(join(grok.GROK_HOME, "config.toml")).mode & 0o777, 0o600);
+    if (process.platform !== "win32") {
+      assert.equal(statSync(join(grok.GROK_HOME, "config.toml")).mode & 0o777, 0o600);
+    }
   } finally {
     if (previousHome === undefined) delete process.env.HOME;
     else process.env.HOME = previousHome;
@@ -216,36 +270,40 @@ test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () 
       rows: 30
     });
     const qwenSettings = JSON.parse(readFileSync(qwen.QWEN_CODE_SYSTEM_SETTINGS_PATH, "utf8"));
-    assert.match(qwen.QWEN_HOME, /qwen-terminals\/managed-qwen$/);
+    assert.match(qwen.QWEN_HOME.replace(/\\/g, "/"), /qwen-terminals\/managed-qwen$/);
     assert.equal(qwen.VIBYRA_TERMINAL_GATEWAY_TOKEN, "qwen-token");
     assert.equal(qwen.OPENAI_API_KEY, "qwen-token");
     assert.match(qwen.NODE_OPTIONS, /^--require=/);
     const qwenGuard = qwen.NODE_OPTIONS.slice("--require=".length);
-    assert.equal(statSync(qwenGuard).mode & 0o777, 0o600);
+    if (process.platform !== "win32") {
+      assert.equal(statSync(qwenGuard).mode & 0o777, 0o600);
+    }
     assert.doesNotMatch(readFileSync(qwenGuard, "utf8"), /qwen-token/);
     assert.match(readFileSync(qwenGuard, "utf8"), /OPENAI_API_KEY/);
-    const fakeBin = join(home, "bin");
-    const dockerArgs = join(home, "docker-args.txt");
-    mkdirSync(fakeBin, { recursive: true });
-    writeFileSync(
-      join(fakeBin, "docker"),
-      `#!/bin/sh\nprintf '%s\\n' "$@" > ${JSON.stringify(dockerArgs)}\n`,
-      { mode: 0o755 }
-    );
-    execFileSync(process.execPath, [
-      "-e",
-      "require('node:child_process').spawnSync('docker', ['run', '--env', 'OPENAI_API_KEY=' + process.env.OPENAI_API_KEY])"
-    ], {
-      env: {
-        ...process.env,
-        NODE_OPTIONS: qwen.NODE_OPTIONS,
-        OPENAI_API_KEY: "qwen-token",
-        PATH: `${fakeBin}:${process.env.PATH || ""}`
-      }
-    });
-    const guardedArgs = readFileSync(dockerArgs, "utf8");
-    assert.match(guardedArgs, /OPENAI_API_KEY(?:\n|$)/);
-    assert.doesNotMatch(guardedArgs, /qwen-token/);
+    if (process.platform !== "win32") {
+      const fakeBin = join(home, "bin");
+      const dockerArgs = join(home, "docker-args.txt");
+      mkdirSync(fakeBin, { recursive: true });
+      writeFileSync(
+        join(fakeBin, "docker"),
+        `#!/bin/sh\nprintf '%s\\n' "$@" > ${JSON.stringify(dockerArgs)}\n`,
+        { mode: 0o755 }
+      );
+      execFileSync(process.execPath, [
+        "-e",
+        "require('node:child_process').spawnSync('docker', ['run', '--env', 'OPENAI_API_KEY=' + process.env.OPENAI_API_KEY])"
+      ], {
+        env: {
+          ...process.env,
+          NODE_OPTIONS: qwen.NODE_OPTIONS,
+          OPENAI_API_KEY: "qwen-token",
+          PATH: `${fakeBin}:${process.env.PATH || ""}`
+        }
+      });
+      const guardedArgs = readFileSync(dockerArgs, "utf8");
+      assert.match(guardedArgs, /OPENAI_API_KEY(?:\n|$)/);
+      assert.doesNotMatch(guardedArgs, /qwen-token/);
+    }
     assert.equal(qwenSettings.model.name, "qwen3-coder");
     assert.equal(qwenSettings.modelProviders.openai[0].id, "qwen3-coder");
     assert.match(qwenSettings.modelProviders.openai[0].baseUrl, /^http:\/\/host\.docker\.internal:\d+\/desktop\/qwen\/v1$/);
@@ -277,7 +335,7 @@ test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () 
       rows: 30
     });
     const kimiConfig = readFileSync(join(kimi.KIMI_CODE_HOME, "config.toml"), "utf8");
-    assert.match(kimi.KIMI_CODE_HOME, /kimi-terminals\/managed-kimi$/);
+    assert.match(kimi.KIMI_CODE_HOME.replace(/\\/g, "/"), /kimi-terminals\/managed-kimi$/);
     assert.match(kimiConfig, /type = "openai_responses"/);
     assert.match(kimiConfig, /base_url = "http:\/\/127\.0\.0\.1:\d+\/desktop\/kimi\/v1"/);
     assert.match(kimiConfig, /api_key = "kimi-token"/);
@@ -294,7 +352,7 @@ test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () 
       rows: 30
     });
     const mistralConfig = readFileSync(join(mistral.VIBE_HOME, "config.toml"), "utf8");
-    assert.match(mistral.VIBE_HOME, /mistral-terminals\/managed-mistral$/);
+    assert.match(mistral.VIBE_HOME.replace(/\\/g, "/"), /mistral-terminals\/managed-mistral$/);
     assert.match(mistralConfig, /api_style = "openai-responses"/);
     assert.match(mistralConfig, /api_key_env_var = "VIBYRA_TERMINAL_GATEWAY_TOKEN"/);
     assert.match(mistralConfig, /name = "devstral-2"/);
@@ -303,7 +361,7 @@ test("Qwen, Kimi, and Mistral receive isolated exact-model native profiles", () 
     assert.equal(mistral.VIBYRA_TERMINAL_GATEWAY_TOKEN, "mistral-token");
     assert.match(
       readFileSync(join(mistral.VIBE_HOME, "trusted_folders.toml"), "utf8"),
-      /untrusted = \["\/tmp\/Vibyra Project"\]/
+      /untrusted = \[".*Vibyra Project"\]/
     );
   } finally {
     if (previousHome === undefined) delete process.env.HOME;

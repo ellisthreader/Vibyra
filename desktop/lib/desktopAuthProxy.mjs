@@ -5,8 +5,12 @@ const AUTH_ENDPOINTS = {
   login: "/api/auth/login",
   signup: "/api/auth/signup"
 };
-const AUTH_REQUEST_TIMEOUT_MS = 10_000;
-const AUTH_RETRY_DELAY_MS = 200;
+// The account backend can cold-start (e.g. Railway waking an idle service),
+// so allow a generous per-attempt timeout and a longer pause between the two
+// attempts. This keeps a single slow wake-up from surfacing as a misleading
+// "could not contact the account service" error.
+const AUTH_REQUEST_TIMEOUT_MS = 30_000;
+const AUTH_RETRY_DELAY_MS = 1_000;
 
 export async function requestDesktopAuth(kind, body, fetchImpl = fetch) {
   const endpoint = AUTH_ENDPOINTS[String(kind || "").toLowerCase()];

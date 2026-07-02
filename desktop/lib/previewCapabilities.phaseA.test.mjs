@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { Readable } from "node:stream";
 import test from "node:test";
 
@@ -95,7 +95,7 @@ test("phone preview server URLs use scoped credentials", async () => {
       scripts: { dev: `vite --host 0.0.0.0 --port ${port}` },
       devDependencies: { vite: "latest" }
     }));
-    process.env.PATH = `${fakeNpm.bin}:${previousPath}`;
+    process.env.PATH = `${fakeNpm.bin}${delimiter}${previousPath}`;
     process.env.VIBYRA_FAKE_PREVIEW_PORT = String(port);
     process.env.VIBYRA_FAKE_PREVIEW_HTML = '<!doctype html><script type="module" src="/src/main.js"></script>';
     appState.cachedProjects = [project];

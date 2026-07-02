@@ -154,7 +154,7 @@ test("xterm rendering avoids visible cursor blink and full replay during normal 
   assert.match(mountSource, /cursorWidth:\s*1/);
   assert.match(mountSource, /cursorInactiveStyle:\s*"none"/);
   assert.ok(displaySource.includes(".replace(/\\x1b\\[[0-9;]* q/g"));
-  assert.ok(displaySource.includes(".replace(/\\x1b\\[\\?25[hl]/g"));
+  assert.ok(!displaySource.includes(".replace(/\\x1b\\[\\?25[hl]/g"));
   assert.match(themeSource, /cursor:\s*css\("--terminal-cursor"/);
   assert.match(themeSource, /cursorAccent:/);
   assert.match(syncSource, /next\.startsWith\(previous\)/);

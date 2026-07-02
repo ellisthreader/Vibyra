@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -15,6 +15,7 @@ import {
   terminalProviderAdapterForModel,
   terminalProviderIdForModel
 } from "./aiTerminalProviderAdapters.mjs";
+import { assertOwnerOnlySecretFile } from "./secretFileTestHelpers.mjs";
 
 test("issues persisted terminal-scoped tokens with mode-0600 storage", async () => {
   const registryPath = await temporaryRegistryPath();
@@ -33,7 +34,7 @@ test("issues persisted terminal-scoped tokens with mode-0600 storage", async () 
   });
 
   assert.match(issued.token, /^vibyra-terminal-/);
-  assert.equal((await stat(registryPath)).mode & 0o777, 0o600);
+  await assertOwnerOnlySecretFile(registryPath);
   assert.doesNotMatch(await readFile(registryPath, "utf8"), new RegExp(issued.token));
   const verified = verifyTerminalGatewayToken(issued.token, {
     registryPath,

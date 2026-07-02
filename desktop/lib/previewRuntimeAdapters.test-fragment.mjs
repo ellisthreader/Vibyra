@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import test from "node:test";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { previewFrameworkProfile } from "./previewFrameworkProfiles.mjs";
 import { previewUnavailableReason } from "./previewDetection.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
 import { runtimePreviewContext, runtimePreviewLaunch } from "./previewRuntimeAdapters.mjs";
-import { findFreePort, killTrackedPreview, makeFakeNpm, makeProject } from "./previewTestHelpers.mjs";
+import { findFreePort, killTrackedPreview, makeFakeCommand, makeFakeNpm, makeProject } from "./previewTestHelpers.mjs";
 
 test("preview profiles cover additional frameworks and guarded project scripts", () => {
   const parcel = previewFrameworkProfile(JSON.stringify({
@@ -81,27 +81,24 @@ test("preview detection explains package-only and non-web Python projects", asyn
 
 test("approved Django preview starts the selected project runtime", async () => {
   const { project, cleanup } = await makeProject("vibyra-preview-django-");
-  const bin = await mkdtemp(join(tmpdir(), "vibyra-fake-python-"));
-  const executable = join(bin, process.platform === "win32" ? "python.cmd" : "python3");
+  const fakePython = await makeFakeCommand(process.platform === "win32" ? "python" : "python3", [
+    "const { createServer } = await import('node:http');",
+    "const target = process.argv.at(-1);",
+    "const port = Number(target.split(':').at(-1));",
+    "createServer((_req, res) => {",
+    "  res.writeHead(200, { 'Content-Type': 'text/html' });",
+    "  res.end('<!doctype html><html><body>Django preview</body></html>');",
+    "}).listen(port, '0.0.0.0');",
+    "setInterval(() => {}, 1000);"
+  ].join("\n"));
+  const bin = fakePython.bin;
   const port = await findFreePort();
   try {
     await writeFile(join(project.path, "manage.py"), "");
     await writeFile(join(project.path, "requirements.txt"), "Django==5.0\n");
-    await writeFile(executable, [
-      "#!/usr/bin/env node",
-      "const { createServer } = await import('node:http');",
-      "const target = process.argv.at(-1);",
-      "const port = Number(target.split(':').at(-1));",
-      "createServer((_req, res) => {",
-      "  res.writeHead(200, { 'Content-Type': 'text/html' });",
-      "  res.end('<!doctype html><html><body>Django preview</body></html>');",
-      "}).listen(port, '0.0.0.0');",
-      "setInterval(() => {}, 1000);"
-    ].join("\n"));
-    await chmod(executable, 0o755);
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
-      env: { PATH: `${bin}:${process.env.PATH ?? ""}` },
+      env: { PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` },
       port,
       timeoutMs: 6000
     });
@@ -125,7 +122,7 @@ test("approved custom Node web script starts without framework-specific metadata
     }));
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_PREVIEW_HTML: "<!doctype html><html><body>Custom Node preview</body></html>",
         VIBYRA_FAKE_PREVIEW_PORT: String(port)
       },

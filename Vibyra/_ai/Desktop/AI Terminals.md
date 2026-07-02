@@ -5,6 +5,15 @@ routing, terminal slash commands, and terminal companion panels. Treat
 `Desktop/AI Terminal Provider CLI Research.txt` as the deep provider-style
 reference.
 
+Current Windows bug report: `Desktop/Windows Desktop Current Bug Report.md`
+tracks user-reported unresolved issues from 2026-07-01: GPT/Codex Full access
+still asking for approvals, every terminal repeating update prompts, terminal
+copy failure, terminal links not opening, and keyboard input spamming/glitching
+while typing, including intermittent missing spaces. It also tracks the related
+desktop Talk bug where F8 starts voice capture but does not stop it on the
+second press, plus stale OpenRouter catalog/model-picker behavior where newly
+available models such as reported Anthropic entries are missing.
+
 ## Main Files
 
 - `desktop/assets/app.terminals-state.js`
@@ -519,12 +528,16 @@ Keyboard and paste input must have exactly one browser event owner.
 forwards typed bytes. Attaching a bubbling `keydown` listener to the outer
 `[data-terminal-input]` host as well causes every physical keypress to be sent
 twice. The outer keydown/paste fallback is only for environments without
-xterm and must become inert if xterm later becomes available. Keep xterm
-`screenReaderMode` enabled, and ignore `onData` from detached or replaced
-xterm instances. Selected xterm text copies through `attachCustomKeyEventHandler`,
-the native `copy` event, and the Electron `vibyraDesktopClipboard` bridge;
-Ctrl/Cmd+C must still send an interrupt when no xterm selection exists. Keep
-`desktop/assets/app.terminals-input.test.mjs`
+xterm and must become inert if xterm later becomes available. In Electron keep
+xterm `screenReaderMode` disabled because its accessibility DOM can duplicate
+keyboard input on Windows. If wrapper focus lands on `[data-terminal-input]`
+while xterm exists, a capture fallback may refocus xterm and forward the current
+printable key exactly once; events from inside `.xterm` still belong only to
+`xterm.onData`. Ignore `onData` from detached or replaced xterm instances.
+Selected xterm text copies through `attachCustomKeyEventHandler`, document-level
+capture `copy`, xterm native `copy`, and the Electron
+`vibyraDesktopClipboard` bridge; Ctrl/Cmd+C must still send an interrupt when
+no xterm selection exists. Keep `desktop/assets/app.terminals-input.test.mjs`
 passing whenever terminal input binding changes.
 Saved screenshot Copy deliberately writes both native PNG data and a quoted
 absolute path as clipboard text. Let xterm consume that text through its normal
@@ -1948,7 +1961,8 @@ runtime version `18` retain old code until closed or retired during recovery.
   validation confirmed the value is absent.
 - Full terminal rerenders detach and restore connected xterm elements instead
   of disposing and replaying them. Tab reordering supports
-  `Alt+ArrowLeft/Right`, and xterm screen-reader mode is enabled.
+  `Alt+ArrowLeft/Right`. Later Windows input hardening disabled Electron xterm
+  screen-reader mode to prevent duplicate keyboard events.
 - Live native readiness checks confirmed Kimi Code reaches `ready` quickly and
   Mistral Vibe reaches `ready` after a roughly 20-second cold initialization.
   Do not classify a silent Mistral startup as failed before that bounded cold

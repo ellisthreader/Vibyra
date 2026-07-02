@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 import { createDeviceCredentialStore } from "./deviceCredentials.mjs";
+import { assertOwnerOnlySecretFile } from "./secretFileTestHelpers.mjs";
 import { loadOrCreateDesktopToken } from "./state.mjs";
 
 test("device credentials are distinct and persist only hashed secrets", async () => {
@@ -40,7 +41,7 @@ test("device credentials are distinct and persist only hashed secrets", async ()
       "secretHash"
     ]);
     assert.match(payload.credentials[0].secretHash, /^[a-f0-9]{64}$/);
-    assert.equal((await stat(filePath)).mode & 0o777, 0o600);
+    await assertOwnerOnlySecretFile(filePath);
   } finally {
     await rm(home, { recursive: true, force: true });
   }
@@ -111,7 +112,7 @@ test("fresh desktop tokens use 32 crypto-random bytes without rotating existing 
     const token = loadOrCreateDesktopToken({ tokenPath });
     const encoded = token.replace(/^vibyra-/, "");
     assert.equal(Buffer.from(encoded, "base64url").length, 32);
-    assert.equal((await stat(tokenPath)).mode & 0o777, 0o600);
+    await assertOwnerOnlySecretFile(tokenPath);
 
     await writeFile(tokenPath, "existing-phone-token\n", { mode: 0o600 });
     assert.equal(loadOrCreateDesktopToken({ tokenPath }), "existing-phone-token");

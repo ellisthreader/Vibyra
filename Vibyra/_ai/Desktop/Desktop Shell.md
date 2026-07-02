@@ -304,6 +304,16 @@ Root `.env` is intentionally untracked, so a fresh checkout has no
 localhost is local-development opt-in through `VIBYRA_DESKTOP_API_URL`,
 `VIBYRA_API_URL`, or `EXPO_PUBLIC_API_URL`.
 
+On this Windows workstation, the Linux-oriented npm scripts can fail when
+Windows `npm` sends `./scripts/*.sh` to `cmd.exe`. Use Git Bash directly when
+needed, with portable Node and winget PHP prepended to `PATH`. If `php artisan
+serve --host=127.0.0.1 --port=8000` reports a listen failure despite no port
+owner, PHP's built-in server works as a local backend fallback from
+`backend/`: `php -S localhost:8002 -t public public/index.php`. Point the
+desktop bridge at it with `VIBYRA_DESKTOP_API_URL=http://localhost:8002`, then
+run `node desktop/local-app.mjs` and open Electron against
+`http://127.0.0.1:4317/desktop`.
+
 OpenAI provider status is split intentionally. `desktop/lib/providerAccounts.mjs` reports `providers.openai` for optional OpenAI API-key billing through `~/.vibyra-agent/provider-accounts.json` or `OPENAI_API_KEY`, and separately reports `providers.codex` for ChatGPT/Codex CLI auth by detecting `codex` plus `~/.codex/auth.json` (or `CODEX_HOME/auth.json`). The terminal token UI should say `OpenAI API key` for direct API billing and show `ChatGPT via Codex CLI` as a separate Codex status; do not require an API key just to use a ChatGPT-signed-in Codex CLI terminal.
 
 When no OpenAI API key is connected, the `OpenAI API key` token-source button must remain clickable and open the API-key form; do not render it as a disabled button. The form only switches terminals to provider billing after the key verifies successfully.

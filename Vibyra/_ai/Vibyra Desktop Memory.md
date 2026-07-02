@@ -18,6 +18,11 @@ The desktop app is a local HTTP bridge. It shows/approves phone pairing, discove
 
 - Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
 - AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
+- Current Windows desktop terminal bug report, including Full-access approval
+  prompts, repeated update prompts, terminal copy, terminal link opening, and
+  buggy/spamming terminal keyboard input including missing spaces, plus F8
+  voice toggle not stopping, and stale OpenRouter model catalog/model picker:
+  `Desktop/Windows Desktop Current Bug Report.md`
 - Dynamic Team decomposition, planner models, authoritative plan storage,
   transactional launch, rollout, and evaluation:
   `Desktop/AI Team Dynamic Planner Implementation Plan.md`

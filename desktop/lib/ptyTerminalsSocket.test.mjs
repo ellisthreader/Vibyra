@@ -268,7 +268,14 @@ test("parallel project-bound Vibyra terminal launches cannot race past the cap",
     appState.cachedProjects = previousProjects;
     process.env.PATH = previousPath;
     global.fetch = previousFetch;
-    rmSync(root, { recursive: true, force: true });
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      try {
+        rmSync(root, { recursive: true, force: true });
+        break;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;
   }
 });

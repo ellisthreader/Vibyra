@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import test from "node:test";
 
 import {
@@ -25,7 +25,7 @@ test("desktop preview runs targets concurrently and keeps visual URLs target-pin
     await makeViteTarget(project.path, "apps/one", "one");
     await makeViteTarget(project.path, "apps/two", "two");
     appState.cachedProjects = [project];
-    process.env.PATH = `${fakeNpm.bin}:${previousPath || ""}`;
+    process.env.PATH = `${fakeNpm.bin}${delimiter}${previousPath || ""}`;
     const targets = await detectPreviewTargets(project);
     const one = targets.find((target) => target.appDirectory === "apps/one");
     const two = targets.find((target) => target.appDirectory === "apps/two");
@@ -81,7 +81,7 @@ test("concurrent preview targets launch on distinct reserved ports", async () =>
     await makeViteTarget(project.path, "apps/one", "one");
     await makeViteTarget(project.path, "apps/two", "two");
     appState.cachedProjects = [project];
-    process.env.PATH = `${fakeNpm.bin}:${previousPath || ""}`;
+    process.env.PATH = `${fakeNpm.bin}${delimiter}${previousPath || ""}`;
     process.env.VIBYRA_FAKE_VITE_HTML = viteHtml("concurrent");
     process.env.VIBYRA_FAKE_VITE_DELAY_MS = "400";
     const targets = await detectPreviewTargets(project);

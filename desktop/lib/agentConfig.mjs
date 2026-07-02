@@ -26,7 +26,9 @@ export function openRouterConfigPaths(cwd = process.cwd(), repoRoot = REPO_ROOT)
 
 export function parseEnvConfigValue(body, key) {
   const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = String(body ?? "").match(new RegExp(`^\\s*(?:export\\s+)?${escapedKey}\\s*=\\s*([^\\r\\n]*)`, "m"));
+  const match = String(body ?? "").match(
+    new RegExp(`^[^\\S\\r\\n]*(?:export[^\\S\\r\\n]+)?${escapedKey}[^\\S\\r\\n]*=[^\\S\\r\\n]*([^\\r\\n]*)`, "m")
+  );
   if (!match) return "";
   const raw = match[1].trim();
   const quoted = raw.match(/^(['"])([\s\S]*)\1$/);

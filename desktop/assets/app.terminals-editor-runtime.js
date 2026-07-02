@@ -28,6 +28,19 @@ function attachTerminalEditorLinkProvider(id, xterm) {
 }
 function terminalEditorLinksForLine(line, y, terminalId) {
   const links = [];
+  const urlPattern = /\bhttps?:\/\/[^\s<>"'`]+|mailto:[^\s<>"'`]+/gi;
+  let urlMatch = null;
+  while ((urlMatch = urlPattern.exec(line))) {
+    const text = trimTerminalUrl(String(urlMatch[0] || ""));
+    if (!text) continue;
+    const startIndex = urlMatch.index;
+    links.push({
+      range: { start: { x: startIndex + 1, y }, end: { x: startIndex + text.length, y } },
+      text,
+      decorations: { pointerCursor: true, underline: true },
+      activate: () => openTerminalExternalLink(text)
+    });
+  }
   const pattern = /(^|[\s("'`])(@?(?:file:\/\/)?(?:\/|\.{1,2}\/)?(?:[\w@+.,-]+\/)*[\w@+.,-]+\.(?:cpp|cjs|css|env|go|hpp|html|java|json|jsx|kts|mjs|php|svelte|swift|toml|tsx|txt|vue|xml|yaml|yml|cc|js|kt|md|py|rb|rs|sh|sql|ts|c|h))(?::(\d+))?(?::(\d+))?/gi;
   let match = null;
   while ((match = pattern.exec(line))) {
@@ -44,6 +57,19 @@ function terminalEditorLinksForLine(line, y, terminalId) {
     });
   }
   return links;
+}
+function trimTerminalUrl(value) {
+  return String(value || "").replace(/[)\].,;:!?]+$/g, "");
+}
+function openTerminalExternalLink(url) {
+  const value = String(url || "").trim();
+  if (!/^(https?:|mailto:)/i.test(value)) return;
+  const opener = window.vibyraDesktopLinks?.openExternal;
+  if (typeof opener === "function") {
+    void opener(value);
+    return;
+  }
+  window.open(value, "_blank", "noopener");
 }
 function refreshTerminalEditor() {
   if (terminalCompanionMode !== "editor") return;

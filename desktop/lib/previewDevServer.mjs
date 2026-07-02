@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { spawn } from "node:child_process";
 import { join } from "node:path";
+import { spawnCommand } from "./commandSpawn.mjs";
 import { isViteOutputUrl, portsFromOutput, publicDevServerBases } from "./previewDevServerOutput.mjs";
 import { reservePreviewPort } from "./previewPortAllocator.mjs";
 import { isLaravelViteProject, startLaravelViteDevServer } from "./previewLaravelDevServer.mjs";
@@ -98,9 +98,9 @@ async function startProjectDevServerUnlocked(project, requestHost, options = {})
   context.preexistingPorts = await occupiedScanPorts(context);
   const runtimeLaunch = context.runtime ? runtimePreviewLaunch(context, context.launchPort) : null;
   context.command = runtimeLaunch?.command || previewCommand(context.profile, context.launchPort);
-  const executable = runtimeLaunch?.executable || (process.platform === "win32" ? "npm.cmd" : "npm");
+  const executable = runtimeLaunch?.executable || "npm";
   const args = runtimeLaunch?.args || npmRunArgs(context.profile, context.launchPort);
-  const child = spawn(executable, args, {
+  const child = spawnCommand(executable, args, {
     cwd: context.appPath,
     detached: process.platform !== "win32",
     env: { ...process.env, BROWSER: "none", FORCE_COLOR: "0", ...npmRunEnv(context.profile, context.launchPort), ...(runtimeLaunch?.env || {}), ...(options.env ?? {}) },

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
 import { issuePreviewCapability, revokePreviewCapability } from "./previewCapabilities.mjs";
@@ -244,7 +244,7 @@ test("approved preview server start avoids an occupied declared port", async () 
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_PREVIEW_HTML: html
       },
       timeoutMs: 6000

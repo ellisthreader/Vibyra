@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chmod, mkdir, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { delimiter, dirname, join } from "node:path";
 import { appState, TOKEN } from "./state.mjs";
 import { previewServerProxyUrl } from "./preview.mjs";
 import { startProjectDevServer } from "./previewDevServer.mjs";
@@ -22,7 +22,7 @@ test("approved preview server start runs the fixed dev command and verifies the 
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
       },
@@ -52,7 +52,7 @@ test("approved preview server start follows the fallback port Vite prints", asyn
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
       },
@@ -80,7 +80,7 @@ test("approved preview server start parses decorated Vite fallback output", asyn
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_DECORATED_OUTPUT: "1",
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
@@ -106,7 +106,7 @@ test("approved preview server start does not require a root source-only index be
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
       },
@@ -139,7 +139,7 @@ test("approved preview server start discovers a nested frontend app", async () =
 
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
       },
@@ -169,7 +169,7 @@ test("approved preview server start discovers a nested website app", async () =>
     }));
     const result = await startProjectDevServer(project, "127.0.0.1:4317", {
       env: {
-        PATH: `${fakeNpm.bin}:${process.env.PATH ?? ""}`,
+        PATH: `${fakeNpm.bin}${delimiter}${process.env.PATH ?? ""}`,
         VIBYRA_FAKE_VITE_HTML: html,
         VIBYRA_FAKE_VITE_PORT: String(port)
       },

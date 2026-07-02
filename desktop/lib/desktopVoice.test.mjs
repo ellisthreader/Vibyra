@@ -38,6 +38,24 @@ test("desktop voice rejects malformed recordings and unsupported formats", async
   );
 });
 
+test("desktop voice transcription maps rejected OpenAI credentials to a local setup error", async () => {
+  await assert.rejects(
+    () => transcribeDesktopVoice(
+      { audioBase64: "YXVkaW8=", mimeType: "audio/webm" },
+      async () => response({
+        error: { message: "Incorrect API key provided: sk-secret-leak" }
+      }, 401),
+      credential
+    ),
+    (error) => {
+      assert.equal(error.status, 401);
+      assert.match(error.message, /configured OpenAI API key/);
+      assert.doesNotMatch(error.message, /sk-secret-leak|Incorrect API key/);
+      return true;
+    }
+  );
+});
+
 test("desktop voice speech requires a connected OpenAI credential", async () => {
   await assert.rejects(
     () => speakDesktopVoice({ text: "Hello." }, fetch, null),
