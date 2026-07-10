@@ -1064,7 +1064,7 @@ function officialAgentForModel(model) {
 
 function normalizeReasoningEffort(value) {
   const effort = string(value) || "medium";
-  return ["default", "low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "max", "pro", "none"].includes(effort) ? effort : "medium";
 }
 
 function normalizeTokenMode(value) {

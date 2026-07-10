@@ -11,7 +11,7 @@ const COMMAND_DEFINITIONS = [
   local("/status", "terminal", "Show runtime, model, thread, and access.", "/status", ["/about", "/version", "/session"]),
   local("/identity", "terminal", "Show Vibyra Agent and selected-model identity.", "/identity", ["/whoami"]),
   local("/model", "terminal", "Show the selected model.", "/model"),
-  local("/effort", "terminal", "Set reasoning effort for the next task.", "/effort <default|low|medium|high|xhigh>", [], argument("level", true)),
+  local("/effort", "terminal", "Set reasoning effort for the next task.", "/effort <default|low|medium|high|xhigh|max|pro>", [], argument("level", true)),
   local("/permissions", "terminal", "Show Standard or Full access.", "/permissions", ["/sandbox"]),
   local("/clear", "terminal", "Clear and redraw this terminal.", "/clear"),
   local("/new", "terminal", "Start a new agent thread.", "/new", ["/reset"]),

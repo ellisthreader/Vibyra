@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { TERMINAL_RUNTIMES } from "./aiTerminalRuntimeCatalog.mjs";
-import { terminalRuntimeForModel, terminalRuntimeState } from "./aiTerminalRuntimes.mjs";
+import { terminalRuntimeExecutable, terminalRuntimeForModel, terminalRuntimeState } from "./aiTerminalRuntimes.mjs";
 
 test("maps official CLI models natively and API-only models to Vibyra Agent", () => {
   assert.equal(terminalRuntimeForModel("gpt-5.5"), "codex");
@@ -46,6 +46,19 @@ test("runtime state separates executable availability from adapter readiness", (
   assert.equal(gemini?.protocol, "gemini-generate-content");
   assert.equal(gemini?.ready, gemini?.available);
   assert.equal(Object.hasOwn(state, "providerFallback"), false);
+});
+
+test("bundled Codex runtime prefers the repo package over environment overrides", () => {
+  const previous = process.env.VIBYRA_CODEX_CLI;
+  process.env.VIBYRA_CODEX_CLI = process.execPath;
+  try {
+    const executable = terminalRuntimeExecutable("codex");
+
+    assert.match(executable.replace(/\\/g, "/"), /node_modules\/\.bin\/codex(?:\.cmd)?$/);
+  } finally {
+    if (previous === undefined) delete process.env.VIBYRA_CODEX_CLI;
+    else process.env.VIBYRA_CODEX_CLI = previous;
+  }
 });
 
 test("runtime catalog exposes pinned installers and host requirements", () => {

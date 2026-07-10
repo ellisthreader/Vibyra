@@ -1,4 +1,4 @@
-import { createServer } from "node:net";
+import { connect, createServer } from "node:net";
 import { devServerPortsFromPackage } from "./previewFrameworkProfiles.mjs";
 
 const reservedPorts = new Set();
@@ -15,9 +15,27 @@ export async function reservePreviewPort(packageText, profile, options = {}) {
 }
 
 export async function portLooksFree(port) {
+  // A successful bind is not proof of a free port on Windows: SO_REUSEADDR lets the
+  // probe bind while another process is still listening. Anything that accepts a
+  // connection owns the port, regardless of what bind reports.
+  if (await acceptsConnection(port)) return false;
   // Check the loopback address as well: on Windows a wildcard bind succeeds even when
   // another server already listens on 127.0.0.1, which would hand out an occupied port.
   return await bindLooksFree(port, "0.0.0.0") && await bindLooksFree(port, "127.0.0.1");
+}
+
+function acceptsConnection(port) {
+  return new Promise((resolve) => {
+    const socket = connect({ host: "127.0.0.1", port });
+    const done = (occupied) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(occupied);
+    };
+    socket.setTimeout(250, () => done(false));
+    socket.once("connect", () => done(true));
+    socket.once("error", () => done(false));
+  });
 }
 
 function bindLooksFree(port, host) {

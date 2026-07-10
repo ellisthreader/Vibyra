@@ -15,7 +15,7 @@ const setupModelKey = "vibyra.desktop.terminalSetupModel";
 let setupModel = localStorage.getItem(setupModelKey) || "auto";
 const setupEffortKey = "vibyra.desktop.terminalSetupEffort";
 const storedSetupEffort = localStorage.getItem(setupEffortKey) || localStorage.getItem("vibyra.desktop.reasoningEffort") || "medium";
-let setupEffort = ["default", "low", "medium", "high", "xhigh"].includes(storedSetupEffort) ? storedSetupEffort : "medium";
+let setupEffort = ["default", "low", "medium", "high", "xhigh", "max", "pro"].includes(storedSetupEffort) ? storedSetupEffort : "medium";
 const setupProjectKey = "vibyra.desktop.terminalProject";
 let setupProjectId = localStorage.getItem(setupProjectKey) || (typeof selectedProjectId === "string" ? selectedProjectId : "");
 const setupWorkspaceModeKey = "vibyra.desktop.terminalWorkspaceMode";

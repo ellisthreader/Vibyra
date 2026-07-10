@@ -348,12 +348,17 @@ function terminalModelSupportsReasoning(modelOrKey) {
 }
 function terminalReasoningEfforts(modelOrKey) {
   if (!terminalModelSupportsReasoning(modelOrKey)) return [];
-  return [
+  const efforts = [
     { value: "low", label: "Low", hint: "Less reasoning" },
     { value: "medium", label: "Medium", hint: "Standard reasoning" },
     { value: "high", label: "High", hint: "More reasoning" },
-    { value: "xhigh", label: "Extra high", hint: "Maximum reasoning" }
+    { value: "xhigh", label: "Extra high", hint: "Very thorough reasoning" }
   ];
+  if (String(modelOrKey?.key || modelOrKey || "").toLowerCase().includes("gpt-5.6")) {
+    efforts.push({ value: "max", label: "Max", hint: "Maximum GPT-5.6 reasoning effort" });
+    efforts.push({ value: "pro", label: "Pro", hint: "GPT-5.6 pro reasoning mode" });
+  }
+  return efforts;
 }
 function terminalEffortForModel(modelOrKey, value) {
   const efforts = terminalReasoningEfforts(modelOrKey);

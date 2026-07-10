@@ -112,11 +112,23 @@ For Vibyra tokens:
   keep auth, config, memory, and runtime state in their isolated `CODEX_HOME`,
   but reuse safe account-level startup caches and the existing `.tmp/plugins`
   marketplace checkout so every terminal does not repeat model discovery,
-  update checks, migrations, or marketplace cloning. Bundled Codex versions
+  update checks, migrations, or marketplace cloning. When Vibyra pins a newer
+  bundled Codex package, launch the bundled repo executable before
+  `VIBYRA_CODEX_CLI`, `CODEX_CLI_PATH`, or PATH, and skip copying
+  `models_cache.json` from the user home when its `client_version` differs
+  from the bundled package version; stale metadata can make new models such as
+  `gpt-5.6-sol` look unsupported even after the CLI was upgraded. Bundled Codex versions
   that support `tool_search_always_defer_mcp_tools` should defer MCP tool
   schemas from the critical startup path while keeping those tools available
   through discovery. Do not disable configured MCP servers merely to improve
   startup time.
+  GPT-5.6 reasoning has two distinct controls: `max` is
+  `model_reasoning_effort="max"`, while `pro` is
+  `model_reasoning_mode="pro"` only for GPT-5.6. If `/effort pro` reaches a
+  non-GPT-5.6 model, fall back to a normal high effort instead of sending Pro
+  mode. Keep this split in native Codex args, Vibyra Agent Codex-engine args,
+  backend OpenRouter payloads, renderer effort pickers, and desktop action
+  parsing.
   Test batch startup under both idle and loaded host conditions. Capture the
   bridge session-creation span, first authoritative PTY output, composer-ready
   span, system load/CPU, existing Codex process count, and MCP startup state.
@@ -147,7 +159,12 @@ For Vibyra tokens:
   A bridge/worker launch-contract mismatch means source changed under a stale
   bridge; refresh the bridge and never surface it as a generic assignment
   timeout. Apply launch-contract compatibility checks to personal provider
-  sessions as well as Vibyra-credit sessions.
+  sessions as well as Vibyra-credit sessions. On Windows,
+  `scripts/vibyra-desktop.ps1` must compare the live
+  `/desktop/runtime.aiTerminalLaunchContractVersion` with the source contract
+  before every `start` or `window` action. Stop the Vibyra Electron shell
+  before posting `/desktop/quit`; otherwise its health monitor can immediately
+  respawn the stale bridge while the launcher is trying to replace it.
 - Its custom Codex provider must declare
   `env_key="VIBYRA_TERMINAL_GATEWAY_TOKEN"`. Exclude that variable through
   `shell_environment_policy.exclude` so model-generated commands cannot read
@@ -180,6 +197,24 @@ For Vibyra tokens:
   `app.terminals-pty-runtime.js` because highlighted text can live in xterm's
   accessibility DOM while `getSelection()` is empty. Ctrl/Cmd+C with no
   selection must still reach the PTY as an interrupt.
+- New terminal input must autofocus the active xterm after launch/mount when
+  focus is still on safe terminal chrome or the page body; otherwise Space can
+  activate the launcher/new-terminal UI instead of reaching a fresh GPT/Codex
+  terminal. The wrapper fallback must normalize Windows Space key variants
+  (`" "`, `Space`, `Spacebar`, and `code === "Space"`) while staying inert for
+  events already owned by xterm.
+- If a GPT/Codex terminal browser check prints
+  `google_apis/gcm/... Registration response error ...` from headless Chrome,
+  classify it as Chromium stderr noise before debugging Vibyra phone pairing.
+  Terminal child environments should redirect Chrome logs with
+  `CHROME_LOG_FILE=NUL` on Windows and `/dev/null` elsewhere.
+- Terminal screenshot/image drops are owned by `app.terminals-path-drop.js`
+  plus the Electron preload `vibyraDesktopFiles.pathForFile` bridge. Keep
+  Vibyra tray drags using `application/x-vibyra-screenshot-path`, and also
+  accept OS image file drops (`Files`) by resolving the real local path with
+  `webUtils.getPathForFile`, shell-quoting it, and pasting it into the active
+  xterm. Do not rely on `File.path` alone; it is not stable across Electron
+  versions/platforms.
 - Give each CLI an authenticated local gateway in its native supported wire
   protocol. Never route a non-OpenAI model through Codex merely because Codex
   already supports Vibyra's Responses gateway.
@@ -238,6 +273,12 @@ For Vibyra tokens:
   `config.toml` containing only the active terminal workspace trust entry;
   otherwise native Codex blocks every fresh Vibyra terminal on its trust
   prompt because the user's trusted-project config is intentionally excluded.
+  Personal Codex terminals also use isolated homes; after copying the user's
+  auth/config, merge the launch workspace's trusted-project entry into that
+  isolated `config.toml`. On Windows, write Codex-style literal, lower-case
+  backslash project keys such as `[projects.'c:\users\ellis\desktop\repo']`;
+  otherwise accepting trust inside one isolated terminal is lost on the next
+  terminal and Codex reopens its trust/sandbox setup flow.
 - Treat full access as an explicit launch-time capability, not a cosmetic
   terminal label. The setup choice applies to the whole new batch and persists
   for later launches. Use each foreground runtime's real bypass command:

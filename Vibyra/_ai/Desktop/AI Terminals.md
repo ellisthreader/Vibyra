@@ -61,11 +61,13 @@ The empty terminal setup persists its reasoning default in
 `localStorage["vibyra.desktop.terminalSetupEffort"]`. The OpenRouter catalog
 normalizer copies each model's `supported_parameters` into
 `supportsReasoning`. Reasoning-capable models show Low/Medium/High/Extra high
-and pass low/medium/high/xhigh through `createTerminals(..., { effort })`.
-Models without `reasoning` omit the control and use the internal `default`
-value, which causes the backend to omit OpenRouter's `reasoning` object.
-OpenRouter performs nearest-level mapping when the provider supports fewer
-levels than its normalized interface.
+and pass low/medium/high/xhigh through `createTerminals(..., { effort })`;
+GPT-5.6 also shows Max and Pro. Max is sent as `model_reasoning_effort="max"`.
+Pro is sent as `model_reasoning_mode="pro"` only for GPT-5.6; non-GPT-5.6 Pro
+requests fall back to high effort. Models without `reasoning` omit the control
+and use the internal `default` value, which causes the backend to omit
+OpenRouter's `reasoning` object. OpenRouter performs nearest-level mapping when
+the provider supports fewer levels than its normalized interface.
 
 Vibyra-token terminals use a hybrid execution contract. Registered official
 providers keep their genuine foreground CLI: Codex for OpenAI, Claude Code for
@@ -87,7 +89,7 @@ terminal's launch workspace. Start with
 `aiTerminalVibyraAgentPresentation.mjs`,
 `aiTerminalCommandProfiles.mjs`, and
 `aiTerminalVibyraAgentWorkspace.mjs` for this surface. Launch contract version
-`25` invalidates stale workers. Runtime selection is model-family-aware rather
+`27` invalidates stale workers. Runtime selection is model-family-aware rather
 than company-wide: `google/gemini-*` remains native Gemini CLI, while
 `google/gemma-*` and equivalent API-only families from native-CLI companies use
 Vibyra Agent with the exact selected model.
@@ -97,6 +99,11 @@ Vibyra Agent with the exact selected model.
 gracefully stops a mismatched bridge, terminates any lingering stale bridge
 process, and starts current source before opening the window. This prevents new
 model-picker assets from talking to an old in-memory provider registry.
+The Windows launcher in `scripts/vibyra-desktop.ps1` applies the same check for
+both `start` and `window`. It stops only Vibyra's Electron shell before posting
+`/desktop/quit`, because the Electron health monitor would otherwise respawn
+the stale bridge during replacement. A live terminal-start smoke must show the
+source contract in the authoritative session launch plan.
 
 The shared `/desktop/v1/responses` route authorizes custom terminals with the
 registry-derived runtime and provider identity in addition to exact model,
@@ -206,6 +213,14 @@ strip, searchable provider sections with counts, and compact model rows.
 row density. Preserve this structure for both setup and `+` new-terminal
 model picking.
 
+Per-terminal three-dot/settings menus must escape terminal card and grid
+overflow. `desktop/assets/app.terminals-layout.js` promotes
+`.terminal-settings-menu` to `document.body`, anchors it to the visible
+`data-terminal-settings` button, and sets viewport-bounded positioning vars
+consumed by `app.terminals-responsive.css`. Do not render or position these
+menus only inside `.terminal-tile`/`.terminal-focus`; grid and xterm containers
+clip overflow.
+
 Vibyra Agent must replace the bundled Codex engine's model-visible base prompt
 with a Vibyra-owned `model_instructions_file`. Every new and resumed turn also
 passes `developer_instructions` containing the exact selected OpenRouter slug.
@@ -286,6 +301,17 @@ June 11, 2026 benchmark showed first visible output for every terminal by about
 1.0 second, compared with 11-13 seconds before this batch fix. Full composer
 readiness measured about 12.3-13.8 seconds instead of roughly 20 seconds; the
 remaining interval is Codex's own MCP connection phase.
+
+Personal Codex isolated homes must merge the launch workspace trust into the
+copied user config before startup. On Windows, Codex persists project trust as
+literal lower-case backslash paths such as
+`[projects.'c:\users\ellis\desktop\repo']`; writing only one exact-case
+JSON-style key or relying on trust accepted inside a previous isolated home can
+make every new terminal show the native trust prompt and then the Windows
+sandbox setup flow again. The merge lives in
+`desktop/lib/aiTerminalVibyraShell.mjs`, with regression coverage in
+`desktop/lib/aiTerminalProcess.test.mjs` and
+`desktop/lib/aiTerminalVibyraShell.test.mjs`.
 
 Do not treat that isolated benchmark as a guaranteed user-facing result. A
 later live four-terminal launch on the same date created all Vibyra sessions
@@ -543,12 +569,18 @@ Saved screenshot Copy deliberately writes both native PNG data and a quoted
 absolute path as clipboard text. Let xterm consume that text through its normal
 paste path; do not add an image-specific keydown or paste listener to the
 terminal host, because that would violate the single input-owner contract.
-Screenshot drag uses the private
-`application/x-vibyra-screenshot-path` browser drag type. The terminal host is
-a drop target only for that type and calls `xterm.paste(path)` exactly once,
-without Enter. Do not replace this with Electron `webContents.startDrag()`:
-native file drag cannot supply the browser text payload required for terminal
-path insertion.
+Terminal screenshot/image drops are owned by
+`desktop/assets/app.terminals-path-drop.js`. The terminal host accepts Vibyra
+screenshot-tray drags through the private
+`application/x-vibyra-screenshot-path` browser drag type and ordinary OS image
+file drops through `Files`; both paths call `xterm.paste(path)` exactly once,
+without Enter. Resolve OS-dropped image paths through
+`window.vibyraDesktopFiles.pathForFile`, backed by Electron
+`webUtils.getPathForFile`, because `File.path` is not portable across current
+Electron/platforms. Drops paste a shell-quoted local path, not an upload or
+attachment protocol. Keep regression coverage in
+`desktop/assets/app.terminals-input.test.mjs` and
+`desktop/electron-main.test.mjs`.
 Keep echoed keystrokes off synchronous persistence paths. The detached worker
 broadcasts output immediately, batches transcript appends asynchronously, and
 debounces ordinary `state.json` updates. Browser localStorage stores PTY
@@ -1181,7 +1213,7 @@ Manual Solo/Team setup also exposes one persisted Access choice for the whole
 new batch. Full access is selectable for concrete Codex, Claude, Gemini, and
 Vibyra Agent runtimes; unresolved Auto and shell sessions remain Standard.
 Provider adapter permission/sandbox capability lists are the backend authority
-for this boundary. Launch contract version `25` invalidates workers created
+for this boundary. Launch contract version `26` invalidates workers created
 before current native provider ownership and permission metadata were part of
 the immutable plan.
 Explicit follow-ups such as `give all terminals full permissions` resolve to
@@ -1989,3 +2021,51 @@ Full audit record:
   terminals call `revealTerminalBatch()`, switch to grid layout, clear stale
   fullscreen state, and persist the layout. This prevents non-fullscreen users
   from seeing only the active terminal after a batch launch.
+
+## July 9, 2026 - Windows GPT Terminal Input And Chrome Noise
+
+- New terminal mount must autofocus the active xterm when focus is still on
+  safe terminal chrome or the page body. This prevents Space from activating
+  the launch/new-terminal UI instead of reaching the GPT/Codex PTY. Do not
+  steal focus from inputs, menus, companion/editor panels, xterm selection, or
+  an already focused xterm. Start in
+  `desktop/assets/app.terminals-pty-runtime.js` and verify with
+  `desktop/assets/app.terminals-input.test.mjs`.
+- The PTY keydown fallback must normalize Windows Space variants:
+  literal space, `key === "Space"`, legacy `Spacebar`, and
+  `code === "Space"`.
+- Headless Chrome messages such as
+  `google_apis/gcm/... Registration response error ... DEPRECATED_ENDPOINT`
+  are Chromium stderr noise, not Vibyra phone pairing failures. Terminal
+  environments set `CHROME_LOG_FILE` to `NUL` on Windows and `/dev/null`
+  elsewhere so GPT/Codex browser checks do not pollute terminal output.
+  Start in `desktop/lib/aiTerminalVibyraShell.mjs` and verify with
+  `desktop/lib/aiTerminalVibyraShell.test.mjs`.
+
+## July 9, 2026 - Codex CLI 0.144 And GPT-5.6 Models
+
+- Bundled Codex CLI is pinned to `@openai/codex` `0.144.0` in `package.json`,
+  `package-lock.json`, and `desktop/lib/aiTerminalRuntimeCatalog.mjs`.
+- Vibyra terminal launch must prefer the bundled repo Codex executable over
+  `VIBYRA_CODEX_CLI`, `CODEX_CLI_PATH`, or PATH when the bundled package is
+  available. On Windows the global Codex install can remain older, such as
+  `0.142.5`, while Vibyra launches `node_modules/.bin/codex.cmd` `0.144.0`.
+- Isolated Codex homes must not copy a user `models_cache.json` whose
+  `client_version` differs from the bundled Codex version. Stale user metadata
+  can make `gpt-5.6-sol` report that a newer Codex CLI is required even after
+  Vibyra has the newer package. Let Codex refresh model metadata instead.
+- OpenAI terminal/chat model lists include GPT-5.6 Sol, Terra, and Luna. Plain
+  `gpt-5.6` maps to Sol; Sol is premium, Terra/Luna remain explicit variants.
+  Keep frontend tiers, backend billing aliases, fallback pricing, chat model
+  maps, desktop natural-language parsing, and Settings AI account filtering in
+  sync when changing this family. Start in `desktop/assets/app.state.js`,
+  `backend/config/billing.php`, `backend/app/Services/AutoModelRouter.php`,
+  `backend/app/Http/Controllers/Concerns/ChatModelMap.php`,
+  `desktop/lib/aiTerminalRuntimes.mjs`,
+  `desktop/lib/aiTerminalProcess.mjs`,
+  `desktop/lib/aiTerminalVibyraShell.mjs`, and `desktop/lib/desktopActions.mjs`.
+- GPT-5.6 reasoning supports both Max effort and Pro mode. Max must flow as
+  `model_reasoning_effort="max"` / `reasoning: { effort: "max" }`; Pro must
+  flow as `model_reasoning_mode="pro"` / `reasoning: { effort: "medium",
+  mode: "pro" }` only for GPT-5.6. Natural language maps "maximum reasoning"
+  to Max for GPT-5.6 and keeps "extra high" as XHigh.

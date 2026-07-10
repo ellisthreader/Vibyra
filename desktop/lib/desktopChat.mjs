@@ -411,7 +411,7 @@ function openAiProviderModel(model) {
 
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").trim();
-  return ["default", "low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "max", "pro", "none"].includes(effort) ? effort : "medium";
 }
 
 function normalizeMode(value) {

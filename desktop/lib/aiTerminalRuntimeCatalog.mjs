@@ -35,7 +35,7 @@ export const TERMINAL_RUNTIMES = {
       reason: ""
     },
     requirements: {},
-    installer: { type: "npm", package: "@openai/codex", version: "0.138.0" }
+    installer: { type: "npm", package: "@openai/codex", version: "0.144.0" }
   },
   claude: {
     id: "claude",

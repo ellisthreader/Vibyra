@@ -12,7 +12,7 @@ function renderPlanPicker(currentKey, accountCycle) {
     cycle: accountCycle,
     tier: { key: currentKey }
   };
-  return `<section class="profile-plan-picker token-plan-picker">
+  return `<section class="profile-plan-picker billing-plan-picker token-plan-picker">
     <header class="profile-plan-heading"><h2>Choose your plan</h2>${cycleToggle()}</header>
     <div class="profile-plan-grid">${plans.map((plan) => profilePlanCard(plan, meta)).join("")}</div>
   </section>`;
@@ -27,7 +27,7 @@ function renderProfilePlanPicker(meta) {
     ? `<p class="profile-plan-status${profileBillingMessageDanger ? " is-danger" : ""}" role="${profileBillingMessageDanger ? "alert" : "status"}">${escapeHtml(profileBillingMessage)}</p>`
     : "";
   return `${profileHeader("", "Billing")}
-    <section class="profile-plan-picker">
+    <section class="profile-plan-picker billing-plan-picker">
       <button class="profile-plan-back" type="button" data-profile-action="close-plans">${icon("chevron")}<span>Back</span></button>
       <header class="profile-plan-heading">
         <h2>Choose your plan</h2>
@@ -47,9 +47,10 @@ function profilePlanCard(plan, meta) {
   const action = current
     ? `<span class="profile-plan-current">${icon("check")}Current plan</span>`
     : `<button class="${popular ? "primary-button" : "secondary-button"} profile-plan-action" data-billing-plan="${escapeAttribute(plan.key)}" type="button" ${busy ? "disabled" : ""}>${busy ? "Opening..." : escapeHtml(profilePlanButtonLabel(plan, meta))}</button>`;
-  return `<div class="profile-plan-card-wrap">
+  const toneClass = `plan-tone-${escapeAttribute(plan.key)}`;
+  return `<div class="profile-plan-card-wrap billing-plan-card-wrap ${toneClass}">
     ${popular ? `<span class="profile-plan-badge">Most popular</span>` : ""}
-    <article class="profile-plan-card plan-tone-${escapeAttribute(plan.key)}${popular ? " is-recommended" : ""}${current ? " is-current" : ""}" style="--plan-card-image:url('${planImage(plan.key)}')">
+    <article class="profile-plan-card ${toneClass}${popular ? " is-recommended" : ""}${current ? " is-current" : ""} billing-shared-plan-card" style="--plan-card-image:url('${planImage(plan.key)}')">
     <div class="profile-plan-card-top">
       <img src="${planIcon(plan.key)}" alt="" />
     </div>

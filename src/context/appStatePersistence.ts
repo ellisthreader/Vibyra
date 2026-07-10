@@ -1,6 +1,6 @@
 import { Project } from "../types/domain";
 import { PersistedSession } from "../utils/persistence";
-import { normalizeChatThreads, normalizeChatTitles } from "../utils/chatThreads";
+import { limitDetachedChatRecords, normalizeChatThreads, normalizeChatTitles } from "../utils/chatThreads";
 import { normalizeProjectMemories } from "../utils/projectMemory";
 import { AppState } from "./appContextTypes";
 
@@ -13,24 +13,55 @@ export const emptyPromptMoney: AppState["promptMoney"] = {
 
 export function getPersistedAppState(session: PersistedSession) {
   const appState = session.user?.appState ?? {};
+  return normalizeAppStateSnapshot(appState);
+}
+
+export function normalizeAppStateSnapshot(appState: Record<string, unknown>) {
+  const detachedChatThreads = normalizeChatThreads(appState.detachedChatThreads);
+  const detachedChatTitles = normalizeChatTitles(appState.detachedChatTitles);
+  const detachedChatUpdatedAt = normalizeDetachedChatUpdatedAt(appState.detachedChatUpdatedAt);
+  const detachedChats = limitDetachedChatRecords(detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt);
+
   return {
     chatThreads: normalizeChatThreads(appState.chatThreads),
     chatTitles: normalizeChatTitles(appState.chatTitles),
-    detachedChatThreads: normalizeChatThreads(appState.detachedChatThreads),
-    detachedChatTitles: normalizeChatTitles(appState.detachedChatTitles),
-    detachedChatUpdatedAt: normalizeDetachedChatUpdatedAt(appState.detachedChatUpdatedAt),
+    detachedChatThreads: detachedChats.threads,
+    detachedChatTitles: detachedChats.titles,
+    detachedChatUpdatedAt: detachedChats.updatedAt,
     chatProjects: normalizeChatProjects(appState.chatProjects),
     projectMemories: normalizeProjectMemories(appState.projectMemories),
     editApprovals: normalizeEditApprovals(appState.editApprovals),
     desktopPermissionMode: normalizeDesktopPermissionMode(appState.desktopPermissionMode),
     selectedModel: normalizeSelectedModel(appState.selectedModel),
     profileImageUri: normalizeProfileImageUri(appState.profileImageUri),
+    selectedChatModel: normalizeString(appState.selectedChatModel),
     promptMoney: normalizePromptMoney(appState.promptMoney)
   };
 }
 
+export function createPersistableAppState(appState: {
+  chatThreads: Record<string, unknown>;
+  chatTitles: Record<string, unknown>;
+  detachedChatThreads: Record<string, unknown>;
+  detachedChatTitles: Record<string, unknown>;
+  detachedChatUpdatedAt: Record<string, unknown>;
+  chatProjects: Record<string, Project>;
+  projectMemories: unknown;
+  editApprovals: unknown;
+  profileImageUri?: unknown;
+  selectedModel?: unknown;
+  selectedChatModel?: unknown;
+  desktopPermissionMode?: unknown;
+  promptMoney?: unknown;
+}) {
+  return normalizeAppStateSnapshot(appState);
+}
+
 function normalizeSelectedModel(value: unknown): AppState["selectedModel"] {
   if (
+    value === "gpt-5.6-sol" ||
+    value === "gpt-5.6-terra" ||
+    value === "gpt-5.6-luna" ||
     value === "gpt-5.5" ||
     value === "gpt-5.4" ||
     value === "gpt-5.4-mini" ||
@@ -39,7 +70,7 @@ function normalizeSelectedModel(value: unknown): AppState["selectedModel"] {
   ) {
     return value;
   }
-  return "gpt-5.5";
+  return "gpt-5.6-sol";
 }
 
 function normalizePromptMoney(value: unknown): AppState["promptMoney"] {
@@ -77,6 +108,10 @@ function normalizeDesktopPermissionMode(_value: unknown): AppState["desktopPermi
 }
 
 function normalizeProfileImageUri(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function normalizeString(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 

@@ -169,17 +169,17 @@
 }
 .terminal-voice-disclosure svg { height: 11px; width: 11px; }
 [data-voice-phase="listening"] .terminal-voice-talk {
-  background: rgba(255, 75, 94, 0.025);
+  background: color-mix(in srgb, var(--terminal-status-error) 3%, transparent);
 }
-[data-voice-phase="listening"] :is(.terminal-voice-phase-label, .terminal-voice-orb, .terminal-voice-status > i) { color: #ff6677; }
+[data-voice-phase="listening"] :is(.terminal-voice-phase-label, .terminal-voice-orb, .terminal-voice-status > i) { color: var(--terminal-status-error); }
 [data-voice-phase="listening"] .terminal-voice-orbit,
 [data-voice-phase="listening"] .terminal-voice-visual::before,
 [data-voice-phase="listening"] .terminal-voice-visual::after {
-  border-color: rgba(255, 102, 119, .22);
+  border-color: color-mix(in srgb, var(--terminal-status-error) 22%, transparent);
 }
 [data-voice-phase="listening"] .terminal-voice-orb {
-  background: rgba(255, 75, 94, 0.12);
-  border-color: rgba(255, 91, 107, 0.62);
+  background: color-mix(in srgb, var(--terminal-status-error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--terminal-status-error) 62%, transparent);
 }
 [data-voice-phase="listening"] .terminal-voice-rings {
   animation: terminal-voice-ring 1.35s ease-out infinite;
@@ -199,15 +199,15 @@
   border-color: transparent var(--terminal-accent, #8b5cff);
 }
 [data-voice-phase="speaking"] .terminal-voice-talk {
-  background: rgba(109, 59, 255, 0.05);
+  background: color-mix(in srgb, var(--terminal-accent) 5%, transparent);
 }
-[data-voice-phase="speaking"] :is(.terminal-voice-phase-label, .terminal-voice-orb, .terminal-voice-status > i) { color: #a98bff; }
+[data-voice-phase="speaking"] :is(.terminal-voice-phase-label, .terminal-voice-orb, .terminal-voice-status > i) { color: var(--terminal-accent); }
 [data-voice-phase="speaking"] .terminal-voice-rings {
   animation: terminal-voice-ring 1.6s ease-out infinite;
   opacity: .3;
 }
 [data-voice-phase="error"] :is(.terminal-voice-phase-label, .terminal-voice-orb, .terminal-voice-status > i) {
-  color: var(--danger, #ff7b87);
+  color: var(--terminal-status-error);
 }
 @keyframes terminal-voice-level {
   from { height: 7px; }

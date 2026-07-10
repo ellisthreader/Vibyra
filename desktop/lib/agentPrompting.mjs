@@ -46,14 +46,15 @@ export async function generateAgentResponse({ project, prompt, model, reasoningE
     }
   ];
 
+  const openRouterModel = resolveOpenRouterModel(model);
   const payload = {
-    model: resolveOpenRouterModel(model),
+    model: openRouterModel,
     messages,
     temperature: 0.2,
     max_completion_tokens: 5000,
     usage: { include: true }
   };
-  const reasoning = reasoningPayload(reasoningEffort);
+  const reasoning = reasoningPayload(reasoningEffort, openRouterModel);
   if (reasoning) payload.reasoning = reasoning;
 
   updateAgentRun(appState, runId, { progress: 54, file: "Generating file edits" });
@@ -122,9 +123,13 @@ function formatSelectedFile(file) {
   return `Active editor hint ${file.path} (verify it is relevant before editing):\n${String(file.body).slice(0, 12000)}`;
 }
 
-function reasoningPayload(effort) {
+function reasoningPayload(effort, openRouterModel = "") {
   if (effort === "default") return null;
   if (effort === "none") return { exclude: true };
+  if (effort === "pro" && String(openRouterModel).startsWith("openai/gpt-5.6")) {
+    return { effort: "medium", mode: "pro" };
+  }
+  if (effort === "pro") return { effort: "high" };
   return { effort };
 }
 
@@ -132,6 +137,10 @@ function resolveOpenRouterModel(model) {
   if (String(model).includes("/")) return model;
   return {
     auto: "openai/gpt-4o-mini",
+    "gpt-5.6": "openai/gpt-5.6-sol",
+    "gpt-5.6-sol": "openai/gpt-5.6-sol",
+    "gpt-5.6-terra": "openai/gpt-5.6-terra",
+    "gpt-5.6-luna": "openai/gpt-5.6-luna",
     "gpt-5.5": "openai/gpt-5.5",
     "gpt-5.4": "openai/gpt-5.4",
     "gpt-5.4-mini": "openai/gpt-5.4-mini",

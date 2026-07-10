@@ -3,7 +3,7 @@
 }
 .profile-voice-speed-row {
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.055));
   display: grid;
   gap: 10px 16px;
   grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
@@ -15,12 +15,12 @@
   gap: 3px;
 }
 .profile-voice-speed-copy strong {
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font-size: 15px;
   font-weight: 650;
 }
 .profile-voice-speed-copy small {
-  color: var(--muted);
+  color: var(--surface-muted, var(--muted));
   font-size: 12px;
   line-height: 17px;
 }
@@ -32,27 +32,28 @@
   justify-content: end;
 }
 .profile-voice-speed-controls button {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--surface-bg, rgba(255, 255, 255, 0.045));
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.09));
   border-radius: 7px;
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font: inherit;
   font-size: 17px;
   height: 34px;
 }
 .profile-voice-speed-controls button:hover,
 .profile-voice-speed-controls button:focus-visible {
-  border-color: var(--line-strong);
+  background: var(--surface-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--surface-border-strong, var(--line-strong));
 }
 .profile-voice-speed-controls output {
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   font-weight: 680;
   text-align: center;
 }
 .profile-voice-speed-row input[type="range"] {
-  accent-color: var(--accent);
+  accent-color: var(--surface-accent, var(--accent));
   grid-column: 2;
   width: 100%;
 }

@@ -173,12 +173,15 @@ body {
 }
 
 .terminal-status.success {
-  background: #4fc38a;
+  background: var(--terminal-status-success);
 }
 
-.terminal-status.error,
+.terminal-status.error {
+  background: var(--terminal-status-error);
+}
+
 .terminal-status.unavailable {
-  background: #e0637a;
+  background: var(--terminal-status-unavailable);
 }
 
 @media (prefers-reduced-motion: reduce) {

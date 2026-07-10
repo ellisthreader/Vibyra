@@ -578,5 +578,5 @@ function normalizeDesktopActionModel(value) {
 }
 function desktopActionEffort(value) {
   const effort = String(value || "medium").toLowerCase();
-  return ["low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+  return ["low", "medium", "high", "xhigh", "max", "pro"].includes(effort) ? effort : "medium";
 }

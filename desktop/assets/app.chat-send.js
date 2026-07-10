@@ -48,6 +48,7 @@ async function sendChat() {
   if (!skill && text === "/help") {
     const localResult = chatHelpText();
     chatMessages.push({ role: "user", text }, { role: "assistant", text: localResult });
+    limitActiveChatMessages();
     chatDraft = "";
     localStorage.removeItem("vibyra.desktop.chatDraft");
     input.value = "";
@@ -62,6 +63,7 @@ async function sendChat() {
   if (!skill && text === "/open") {
     const localResult = "Open Projects to choose a desktop project, then come back here and ask Vibyra about it.";
     chatMessages.push({ role: "user", text }, { role: "assistant", text: localResult });
+    limitActiveChatMessages();
     chatDraft = "";
     localStorage.removeItem("vibyra.desktop.chatDraft");
     input.value = "";
@@ -87,6 +89,7 @@ async function sendChat() {
     .map((message) => ({ role: message.role, text: message.text }));
   const pendingMessage = { role: "assistant", text: "Thinking...", pending: true };
   chatMessages.push({ role: "user", text: displayChatText(rawText, skill, tool) }, pendingMessage);
+  limitActiveChatMessages();
   chatAttachments = [];
   chatImageAttachments = [];
   activeChatTool = "";

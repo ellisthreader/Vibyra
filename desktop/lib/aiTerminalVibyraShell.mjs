@@ -1,8 +1,9 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { PORT } from "./state.mjs";
 import { applyCodexTerminalMemory } from "./aiTerminalMemoryFiles.mjs";
+import { TERMINAL_RUNTIMES } from "./aiTerminalRuntimeCatalog.mjs";
 
 const VIBYRA_AGENT_MODEL_INSTRUCTIONS = `You are Vibyra Agent, Vibyra's provider-neutral coding agent.
 
@@ -24,6 +25,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
     FORCE_COLOR: "3",
     COLUMNS: String(cols),
     LINES: String(rows),
+    CHROME_LOG_FILE: process.platform === "win32" ? "NUL" : "/dev/null",
     PATH: `${commandDir}${delimiter}${process.env.PATH || ""}`,
     VIBYRA_DESKTOP_URL: `http://127.0.0.1:${PORT}`,
     VIBYRA_DESKTOP_PORT: String(PORT),
@@ -57,6 +59,7 @@ export function terminalEnv({ agent, runtimeId = "", label, model, reasoningEffo
       includeUserConfig: agent === "codex"
     });
     if (agent === "vibyra") writeVibyraCodexConfig(env.CODEX_HOME, cwd);
+    else ensureCodexWorkspaceTrust(env.CODEX_HOME, cwd);
     applyCodexTerminalMemory(env.CODEX_HOME, memoryInstructions);
   }
   if (agent === "vibyra" && selectedRuntime === "vibyra-agent") {
@@ -376,6 +379,7 @@ thinking = "high"
 }
 
 function seedCodexHome(targetDir, options = {}) {
+  removeStaleCodexModelsCache(targetDir);
   const sourceDir = String(process.env.CODEX_HOME || "").trim() || join(homedir(), ".codex");
   if (!existsSync(sourceDir) || sourceDir === targetDir) return;
   const safeStartupNames = [
@@ -406,15 +410,34 @@ function seedCodexHome(targetDir, options = {}) {
   seedSharedCodexMarketplace(sourceDir, targetDir);
 }
 
+function removeStaleCodexModelsCache(targetDir) {
+  const target = join(targetDir, "models_cache.json");
+  if (existsSync(target) && !codexModelsCacheReusable(target)) {
+    rmSync(target, { force: true });
+  }
+}
+
 function copyCodexHomeEntries(sourceDir, targetDir, names, options = {}) {
   for (const name of names) {
     const source = join(sourceDir, name);
     const target = join(targetDir, name);
     if (!existsSync(source) || existsSync(target)) continue;
+    if (name === "models_cache.json" && !codexModelsCacheReusable(source)) continue;
     try {
       cpSync(source, target, { recursive: true, errorOnExist: false });
       if (name === "auth.json" && options.includeAuth) chmodSync(target, 0o600);
     } catch {}
+  }
+}
+
+function codexModelsCacheReusable(source) {
+  try {
+    const cache = JSON.parse(readFileSync(source, "utf8"));
+    const actual = String(cache?.client_version || cache?.clientVersion || "").trim();
+    const expected = String(TERMINAL_RUNTIMES.codex?.installer?.version || "").trim();
+    return !actual || !expected || actual === expected;
+  } catch {
+    return true;
   }
 }
 
@@ -430,11 +453,105 @@ function seedSharedCodexMarketplace(sourceDir, targetDir) {
 }
 
 function writeVibyraCodexConfig(targetDir, cwd) {
-  const workspace = resolve(String(cwd || process.cwd()));
-  const config = `[projects.${tomlString(workspace)}]\ntrust_level = "trusted"\n`;
+  const config = codexWorkspaceTrustConfig(cwd);
   const target = join(targetDir, "config.toml");
   writeFileSync(target, config, { mode: 0o600 });
   try { chmodSync(target, 0o600); } catch {}
+}
+
+function ensureCodexWorkspaceTrust(targetDir, cwd) {
+  const target = join(targetDir, "config.toml");
+  const trustedPaths = codexWorkspaceTrustPaths(cwd);
+  let config = "";
+  try {
+    config = readFileSync(target, "utf8");
+  } catch {}
+  let next = config.trimEnd();
+  let changed = false;
+  for (const workspace of trustedPaths) {
+    const section = findCodexProjectSection(next, workspace);
+    if (section) {
+      const updated = ensureSectionTrustLevel(section.text);
+      if (updated !== section.text) {
+        next = `${next.slice(0, section.start)}${updated}${next.slice(section.end)}`;
+        changed = true;
+      }
+      continue;
+    }
+    next = `${next}${next ? "\n\n" : ""}[projects.${tomlLiteralKey(workspace)}]\ntrust_level = "trusted"`;
+    changed = true;
+  }
+  if (!changed) return;
+  writeFileSync(target, `${next}\n`, { mode: 0o600 });
+  try { chmodSync(target, 0o600); } catch {}
+}
+
+function codexWorkspaceTrustConfig(cwd) {
+  return codexWorkspaceTrustPaths(cwd)
+    .map((workspace) => `[projects.${tomlLiteralKey(workspace)}]\ntrust_level = "trusted"\n`)
+    .join("\n");
+}
+
+function codexWorkspaceTrustPaths(cwd) {
+  const workspace = resolve(String(cwd || process.cwd()));
+  const values = [workspace];
+  try {
+    values.push(realpathSync.native(workspace));
+  } catch {
+    try { values.push(realpathSync(workspace)); } catch {}
+  }
+  if (process.platform === "win32") {
+    for (const value of [...values]) {
+      values.push(String(value).replace(/\//g, "\\"));
+      values.push(String(value).replace(/\//g, "\\").toLowerCase());
+    }
+  }
+  return [...new Map(values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .map((value) => [normalizeCodexProjectPath(value), value])).values()];
+}
+
+function findCodexProjectSection(config, workspace) {
+  const normalizedWorkspace = normalizeCodexProjectPath(workspace);
+  const pattern = /^\[projects\.((?:'[^'\r\n]*')|(?:"(?:\\.|[^"\\\r\n])*"))\]\s*$/gm;
+  let match;
+  while ((match = pattern.exec(config))) {
+    const decoded = decodeTomlStringKey(match[1]);
+    if (normalizeCodexProjectPath(decoded) !== normalizedWorkspace) continue;
+    const start = match.index;
+    pattern.lastIndex = match.index + match[0].length;
+    const nextHeader = config.slice(pattern.lastIndex).search(/^\[/m);
+    const end = nextHeader < 0 ? config.length : pattern.lastIndex + nextHeader;
+    return { start, end, text: config.slice(start, end).trimEnd() };
+  }
+  return null;
+}
+
+function ensureSectionTrustLevel(section) {
+  if (/^trust_level\s*=/m.test(section)) {
+    return section.replace(/^trust_level\s*=.*$/m, 'trust_level = "trusted"');
+  }
+  return `${section}\ntrust_level = "trusted"`;
+}
+
+function normalizeCodexProjectPath(value) {
+  const path = String(value || "").trim();
+  return process.platform === "win32" ? path.replace(/\//g, "\\").toLowerCase() : path;
+}
+
+function tomlLiteralKey(value) {
+  const text = String(value);
+  return text.includes("'") ? tomlString(text) : `'${text}'`;
+}
+
+function decodeTomlStringKey(value) {
+  const text = String(value || "");
+  if (text.startsWith("'") && text.endsWith("'")) return text.slice(1, -1);
+  if (text.startsWith('"') && text.endsWith('"')) {
+    try { return JSON.parse(text); } catch {}
+  }
+  return text;
 }
 
 function writeVibyraAgentInstructions(targetDir) {

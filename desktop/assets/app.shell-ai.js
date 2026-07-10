@@ -34,8 +34,9 @@ function renderShellAiSidebar() {
   }
   applyShellAiWidth(app, panel);
 
-  const rows = chatMessages.length
-    ? chatMessages.map(shellAiMessageHtml).join("")
+  const visibleMessages = limitedDesktopChatMessages(chatMessages);
+  const rows = visibleMessages.length
+    ? visibleMessages.map(shellAiMessageHtml).join("")
     : shellAiEmptyHtml();
   panel.innerHTML = `
     <button class="shell-ai-resizer" type="button" role="separator" aria-label="Resize Vibyra AI sidebar" aria-orientation="vertical" data-shell-ai-resizer></button>
@@ -170,6 +171,7 @@ function bindShellAiSidebar() {
     event.preventDefault();
     sendChat();
   });
+  bindDesktopChatPasteGuard(input);
   input?.addEventListener("input", (event) => {
     const hadSlash = Boolean(chatDraft.match(/^\/(\w*)$/));
     chatDraft = event.target.value;
@@ -178,7 +180,7 @@ function bindShellAiSidebar() {
     hasSlash || hadSlash ? renderShellAiSidebar() : renderSendState();
   });
   input?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (shouldSendDesktopChatEnter(event)) {
       event.preventDefault();
       sendChat();
     }

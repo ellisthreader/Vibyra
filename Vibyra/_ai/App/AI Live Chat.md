@@ -34,6 +34,8 @@ Read this first for mobile AI chat work. Use it as a router; open only one subto
 
 `useAgentActions.startAgent` is the main send path. It creates optimistic chat rows, chooses cloud chat vs desktop agent behavior, streams the assistant reply, records generated previews/files/changes, and updates credits/logs.
 
+Chat history must stay bounded before persistence and sync. `src/utils/chatThreads.ts` owns the shared limits: each thread keeps the newest 80 messages, detached recents keep the newest 40 chats, and pathological message text is trimmed with a visible marker. `useAppState.ts` wraps project and detached chat setters with the runtime limiter, `createPersistableAppState()` sanitizes local/cloud payloads before save, and `useAuthContextActions.ts` must normalize any remote `appState` before applying it. Do not write raw `chatThreads` or `detachedChatThreads` into storage, cloud sync, or remote restore paths; otherwise closed/reopened chats can become laggy from parsing and rendering stale oversized session JSON.
+
 Cloud `/api/chat` is the real AI generation path for normal chat and build prompts. The Node desktop `/agents/start` route is not a general AI generator; do not route arbitrary app/site/game creation to local desktop templates.
 
 Project chat context should be explicit. Detached chat is a separate thread; project-scoped code/chat behavior starts only after a folder/project is selected or created.

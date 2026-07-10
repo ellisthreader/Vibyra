@@ -7,6 +7,7 @@ let terminalEditorMonacoDisposables = [];
 let terminalEditorMonacoDecorations = null;
 let terminalEditorThemeObserver = null;
 let terminalEditorThemeMedia = null;
+let terminalEditorThemeProbe = null;
 
 function loadTerminalEditorMonaco() {
   if (window.monaco?.editor) return Promise.resolve(window.monaco);
@@ -26,53 +27,95 @@ function loadTerminalEditorMonaco() {
 }
 
 function defineTerminalEditorTheme(monaco) {
+  refreshTerminalEditorThemeDefinitions(monaco);
+  ensureTerminalEditorThemeObserver(monaco);
+}
+
+function refreshTerminalEditorThemeDefinitions(monaco) {
+  const colors = terminalEditorThemeColors();
   monaco.editor.defineTheme("vibyra-dark-plus", {
     base: "vs-dark",
     inherit: true,
     rules: [],
-    colors: {
-      "editor.background": "#1e1e1e",
-      "editor.foreground": "#d4d4d4",
-      "editorCursor.foreground": "#aeafad",
-      "editor.lineHighlightBackground": "#2a2d2e",
-      "editorLineNumber.foreground": "#858585",
-      "editorLineNumber.activeForeground": "#c6c6c6",
-      "editor.selectionBackground": "#264f78",
-      "editor.inactiveSelectionBackground": "#3a3d41",
-      "editorIndentGuide.background1": "#404040",
-      "editorIndentGuide.activeBackground1": "#707070",
-      "editorWhitespace.foreground": "#3b3a32",
-      "editorOverviewRuler.border": "#00000000",
-      "minimap.background": "#1e1e1e",
-      "scrollbarSlider.background": "#79797966",
-      "scrollbarSlider.hoverBackground": "#646464b3",
-      "scrollbarSlider.activeBackground": "#bfbfbf66"
-    }
+    colors
   });
   monaco.editor.defineTheme("vibyra-light-plus", {
     base: "vs",
     inherit: true,
     rules: [],
-    colors: {
-      "editor.background": "#ffffff",
-      "editor.foreground": "#303646",
-      "editorCursor.foreground": "#171923",
-      "editor.lineHighlightBackground": "#f3f5f9",
-      "editorLineNumber.foreground": "#8a90a0",
-      "editorLineNumber.activeForeground": "#303646",
-      "editor.selectionBackground": "#d8ccff",
-      "editor.inactiveSelectionBackground": "#ebe6fb",
-      "editorIndentGuide.background1": "#e3e6ee",
-      "editorIndentGuide.activeBackground1": "#b9bfcc",
-      "editorWhitespace.foreground": "#d1d5df",
-      "editorOverviewRuler.border": "#00000000",
-      "minimap.background": "#ffffff",
-      "scrollbarSlider.background": "#68718333",
-      "scrollbarSlider.hoverBackground": "#68718355",
-      "scrollbarSlider.activeBackground": "#68718377"
-    }
+    colors
   });
-  ensureTerminalEditorThemeObserver(monaco);
+}
+
+function terminalEditorThemeColors() {
+  const background = terminalEditorCssColor("--terminal-bg", "#1e1e1e");
+  const surface = terminalEditorCssColor("--terminal-surface", background);
+  const elevated = terminalEditorCssColor("--terminal-elevated", surface);
+  const text = terminalEditorCssColor("--terminal-text", "#d4d4d4");
+  const copy = terminalEditorCssColor("--terminal-copy", text);
+  const muted = terminalEditorCssColor("--terminal-muted", "#858585");
+  const dim = terminalEditorCssColor("--terminal-dim", muted);
+  const border = terminalEditorCssColor("--terminal-border", "#404040");
+  const borderStrong = terminalEditorCssColor("--terminal-border-strong", border);
+  const accent = terminalEditorCssColor("--terminal-accent", "#8b5cff");
+  const hover = terminalEditorCssColor("--terminal-hover", terminalEditorAlpha(text, 0.08));
+  return {
+    "editor.background": background,
+    "editor.foreground": copy,
+    "editorCursor.foreground": accent,
+    "editor.lineHighlightBackground": hover,
+    "editorLineNumber.foreground": dim,
+    "editorLineNumber.activeForeground": text,
+    "editor.selectionBackground": terminalEditorCssColor("--terminal-selection", terminalEditorAlpha(accent, 0.22)),
+    "editor.inactiveSelectionBackground": terminalEditorCssColor("--terminal-selection-inactive", terminalEditorAlpha(accent, 0.14)),
+    "editorIndentGuide.background1": border,
+    "editorIndentGuide.activeBackground1": borderStrong,
+    "editorWhitespace.foreground": terminalEditorAlpha(muted, 0.38),
+    "editorOverviewRuler.border": "#00000000",
+    "editorWidget.background": elevated,
+    "editorWidget.border": borderStrong,
+    "editorSuggestWidget.background": elevated,
+    "editorSuggestWidget.border": borderStrong,
+    "editorSuggestWidget.foreground": copy,
+    "editorSuggestWidget.selectedBackground": hover,
+    "minimap.background": background,
+    "scrollbarSlider.background": terminalEditorAlpha(muted, 0.32),
+    "scrollbarSlider.hoverBackground": terminalEditorAlpha(muted, 0.48),
+    "scrollbarSlider.activeBackground": terminalEditorAlpha(muted, 0.62)
+  };
+}
+
+function terminalEditorCssColor(name, fallback) {
+  if (
+    typeof window === "undefined" ||
+    typeof document === "undefined" ||
+    typeof window.getComputedStyle !== "function"
+  ) {
+    return fallback;
+  }
+  const root = document.body || document.documentElement;
+  if (!root) return fallback;
+  if (!terminalEditorThemeProbe) {
+    terminalEditorThemeProbe = document.createElement("span");
+    terminalEditorThemeProbe.setAttribute("aria-hidden", "true");
+    terminalEditorThemeProbe.style.cssText = [
+      "position:absolute",
+      "left:-9999px",
+      "top:-9999px",
+      "visibility:hidden",
+      "pointer-events:none"
+    ].join(";");
+  }
+  if (!terminalEditorThemeProbe.isConnected) root.appendChild(terminalEditorThemeProbe);
+  terminalEditorThemeProbe.style.color = `var(${name})`;
+  const value = window.getComputedStyle(terminalEditorThemeProbe).color;
+  return value && value !== "rgba(0, 0, 0, 0)" ? value : fallback;
+}
+
+function terminalEditorAlpha(color, alpha) {
+  const parts = String(color).match(/[\d.]+/g);
+  if (!parts || parts.length < 3) return color;
+  return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
 }
 
 function terminalEditorEffectiveTheme() {
@@ -85,6 +128,7 @@ function terminalEditorEffectiveTheme() {
 
 function applyTerminalEditorTheme(monaco = window.monaco) {
   if (!monaco?.editor) return;
+  refreshTerminalEditorThemeDefinitions(monaco);
   monaco.editor.setTheme(terminalEditorEffectiveTheme());
 }
 
@@ -210,7 +254,10 @@ function updateTerminalEditorMonacoDecorations(monaco, tab) {
     options: {
       isWholeLine: true,
       linesDecorationsClassName: "terminal-editor-line-changed",
-      overviewRuler: { color: "#8b5cff", position: monaco.editor.OverviewRulerLane.Left }
+      overviewRuler: {
+        color: terminalEditorCssColor("--terminal-accent", "#8b5cff"),
+        position: monaco.editor.OverviewRulerLane.Left
+      }
     }
   })));
 }

@@ -23,7 +23,7 @@ test("terminal picker keeps exact OpenRouter slugs visible in Vibyra-token mode"
     config: () => ({
       chatModelGroups: [{
         title: "OpenAI models",
-        options: [{ key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }]
+        options: [{ key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" }]
       }]
     }),
     terminalNativeRuntimeForModel(model) {
@@ -55,7 +55,7 @@ test("terminal picker keeps exact OpenRouter slugs visible in Vibyra-token mode"
   assert.equal(context.terminalOpenRouterModelAllowed(officialWrapper), true);
   assert.equal(context.terminalOpenRouterModelAllowed(otherWrapper), true);
   assert.equal(context.terminalOpenRouterModelAllowed(gemmaWrapper), true);
-  assert.equal(context.terminalOfficialFallbackModelKey("openai/gpt-5.5-pro"), "gpt-5.5");
+  assert.equal(context.terminalOfficialFallbackModelKey("openai/gpt-5.6-terra"), "gpt-5.6-terra");
 });
 
 test("terminal picker keeps dynamic Anthropic OpenRouter rows", () => {
@@ -156,7 +156,7 @@ test("My AI accounts exposes native mappings and rejects API-only models", () =>
   };
   vm.runInNewContext(source, context);
 
-  const codex = context.terminalOwnAccountRoute({ key: "gpt-5.5" });
+  const codex = context.terminalOwnAccountRoute({ key: "gpt-5.6-terra" });
   const claude = context.terminalOwnAccountRoute({ key: "claude-sonnet-4" });
   const gemini = context.terminalOwnAccountRoute({ key: "google/gemini-3.1-pro", provider: "gemini" });
   const apiOnly = context.terminalOwnAccountRoute({ key: "deepseek/deepseek-v3", provider: "deepseek" });
@@ -177,13 +177,13 @@ test("membership model locks apply only when Vibyra pays for the terminal", () =
       chatModelGroups: [{
         title: "OpenAI models",
         options: [
-          { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+          { key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" },
           { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai" }
         ]
       }]
     }),
     firstUnlockedModel: () => "gpt-5.4-mini",
-    modelLocked: (model) => model?.key === "gpt-5.5",
+    modelLocked: (model) => model?.key === "gpt-5.6-terra",
     providerAccounts: {
       codex: { available: true, connected: true, label: "ChatGPT via Codex CLI" }
     },
@@ -193,11 +193,11 @@ test("membership model locks apply only when Vibyra pays for the terminal", () =
   };
   vm.runInNewContext(source, context);
 
-  const premium = { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" };
+  const premium = { key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" };
   assert.equal(context.terminalModelLocked(premium, "vibyra"), true);
   assert.equal(context.terminalModelLocked(premium, "provider"), false);
-  assert.equal(context.unlockedModel("gpt-5.5", "provider").key, "gpt-5.5");
-  assert.equal(context.terminalFirstModelForTokenMode("provider").key, "gpt-5.5");
+  assert.equal(context.unlockedModel("gpt-5.6-terra", "provider").key, "gpt-5.6-terra");
+  assert.equal(context.terminalFirstModelForTokenMode("provider").key, "gpt-5.6-terra");
 });
 
 test("personal-account filtering hides API-only rows and keeps login-capable models searchable", () => {
@@ -206,7 +206,7 @@ test("personal-account filtering hides API-only rows and keeps login-capable mod
       chatModelGroups: [
         {
           title: "OpenAI models",
-          options: [{ key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }]
+          options: [{ key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" }]
         },
         {
           title: "DeepSeek",
@@ -226,7 +226,7 @@ test("personal-account filtering hides API-only rows and keeps login-capable mod
 
   assert.equal(groups.length, 0);
   assert.equal(openaiGroups.length, 1);
-  assert.equal(openaiGroups[0].options[0].key, "gpt-5.5");
+  assert.equal(openaiGroups[0].options[0].key, "gpt-5.6-terra");
 });
 
 test("model picker groups choices with a header, quick picks, and provider counts", () => {
@@ -236,7 +236,7 @@ test("model picker groups choices with a header, quick picks, and provider count
         {
           title: "OpenAI models",
           options: [
-            { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+            { key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" },
             { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai" }
           ]
         },
@@ -262,7 +262,7 @@ test("model picker groups choices with a header, quick picks, and provider count
   };
   vm.runInNewContext(source, context);
 
-  const menu = context.terminalModelMenu("setup", "gpt-5.5");
+  const menu = context.terminalModelMenu("setup", "gpt-5.6-terra");
   const searchedGroups = context.filteredTerminalModelGroups("deepseek");
 
   assert.match(menu, /terminal-model-picker-head/);
@@ -271,6 +271,23 @@ test("model picker groups choices with a header, quick picks, and provider count
   assert.match(menu, /terminal-model-quick active/);
   assert.match(menu, /<em>2<\/em>/);
   assert.equal(context.terminalModelCountLabel(searchedGroups), "1 model");
+});
+
+test("GPT-5.6 models expose Max effort and Pro reasoning mode", () => {
+  const context = {
+    config: () => ({ chatModelGroups: [] }),
+    window: { addEventListener() {} }
+  };
+  vm.runInNewContext(source, context);
+
+  assert.deepEqual(
+    Array.from(context.terminalReasoningEfforts({ key: "gpt-5.6-sol" }).map((effort) => effort.value)),
+    ["low", "medium", "high", "xhigh", "max", "pro"]
+  );
+  assert.deepEqual(
+    Array.from(context.terminalReasoningEfforts({ key: "gpt-5.5" }).map((effort) => effort.value)),
+    ["low", "medium", "high", "xhigh"]
+  );
 });
 
 test("model rows keep provider logos and hide runtime implementation labels", () => {
@@ -301,7 +318,7 @@ test("model rows keep provider logos and hide runtime implementation labels", ()
   `, context);
 
   const nativeRow = vm.runInContext(
-    'terminalModelButton({ key: "gpt-5.5", label: "GPT-5.5", provider: "openai" }, "", "data-model")',
+    'terminalModelButton({ key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" }, "", "data-model")',
     context
   );
   const agentRow = vm.runInContext(
@@ -338,7 +355,7 @@ test("token source choices explain billing without provider implementation detai
   };
   vm.runInNewContext(source, context);
 
-  const panel = context.terminalTokenSourcePanel({ key: "gpt-5.5" }, "vibyra", "setup");
+  const panel = context.terminalTokenSourcePanel({ key: "gpt-5.6-terra" }, "vibyra", "setup");
 
   assert.match(panel, /Vibyra tokens/);
   assert.match(panel, /Uses your Vibyra credits/);

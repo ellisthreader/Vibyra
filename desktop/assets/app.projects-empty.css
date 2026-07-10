@@ -75,7 +75,7 @@
 .projects-empty-action.is-primary {
   background: var(--surface-accent);
   border-color: var(--surface-accent);
-  color: #fff;
+  color: var(--surface-on-accent);
   min-height: 38px;
   padding: 0 15px;
 }
@@ -85,5 +85,7 @@
 }
 
 .projects-empty-action.is-primary:hover {
-  background: color-mix(in srgb, var(--surface-accent) 88%, #ffffff);
+  background: var(--surface-accent-hover);
+  border-color: var(--surface-accent-hover);
+  color: var(--surface-on-accent);
 }

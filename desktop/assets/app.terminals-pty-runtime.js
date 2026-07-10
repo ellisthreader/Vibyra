@@ -166,6 +166,7 @@ function queueStartPtyTerminal(terminal) {
     if (!findTerminal(terminal.id)) return;
     try {
       mountVisibleXterms(new Set([terminal.id]));
+      focusPtyXtermAfterLaunch(terminal.id);
     } catch (error) {
       console.error("Could not mount xterm before terminal launch.", error);
     }
@@ -178,6 +179,7 @@ function queueStartPtyTerminal(terminal) {
     if (!findTerminal(terminal.id)) return;
     try {
       mountVisibleXterms(new Set([terminal.id]));
+      focusPtyXtermAfterLaunch(terminal.id);
     } catch (error) {
       console.error("Could not mount xterm before terminal launch.", error);
     }
@@ -196,6 +198,7 @@ function connectPtyTerminal(terminal) {
     terminalPtyReconnectAttempts[terminal.id] = 0;
     delete terminalPtyHttpInputChains[terminal.id];
     mountVisibleXterms(new Set([terminal.id]));
+    focusPtyXtermAfterLaunch(terminal.id);
     schedulePtyXtermFit(terminal.id, { forceBackend: true });
     schedulePtyCollectionSync(250);
   };
@@ -469,17 +472,45 @@ function bindPtyClick(node, handler) {
   node.addEventListener("click", handler);
 }
 
+function focusPtyXtermAfterLaunch(id) {
+  if (!id || activeTerminalId !== id) return;
+  const xterm = terminalXterms[id];
+  if (!xterm?.element?.isConnected || !terminalLaunchCanFocusXterm(id)) return;
+  xterm.focus?.();
+}
+
+function terminalLaunchCanFocusXterm(id) {
+  const active = document.activeElement;
+  const selectedText = String(document.getSelection?.()?.toString?.() || "");
+  if (selectedText) return false;
+  if (!active || active === document.body || active === document.documentElement) return true;
+  if (active.closest?.(".xterm")) return false;
+  if (active.closest?.("input, textarea, select, [contenteditable='true'], .terminal-menu, .terminal-settings-menu, .terminal-companion, .monaco-editor")) return false;
+  const inputHost = active.closest?.("[data-terminal-input]");
+  if (inputHost?.dataset?.terminalInput === id) return true;
+  const terminalHost = active.closest?.("[data-terminal]");
+  if (terminalHost?.dataset?.terminal === id) return true;
+  return Boolean(active.closest?.(".terminal-tabs, .terminal-new-wrap, .terminal-toolbar-wrap, .terminal-page"));
+}
+
 function handlePtyKeydown(event, id) {
   if (!id) return;
-  const map = { Enter: "\r", Backspace: "\x7f", Tab: "\t", Escape: "\x1b", ArrowUp: "\x1b[A", ArrowDown: "\x1b[B", ArrowRight: "\x1b[C", ArrowLeft: "\x1b[D" };
-  let input = "";
-  if (event.ctrlKey && event.key.toLowerCase() === "c") input = "\x03";
-  else if (event.ctrlKey && event.key.toLowerCase() === "d") input = "\x04";
-  else if (map[event.key]) input = map[event.key];
-  else if (!event.ctrlKey && !event.metaKey && event.key.length === 1) input = event.key;
+  const input = ptyKeydownInput(event);
   if (!input) return;
   event.preventDefault();
   sendPtyInput(id, input);
+}
+
+function ptyKeydownInput(event) {
+  const key = String(event?.key || "");
+  const code = String(event?.code || "");
+  const map = { Enter: "\r", Backspace: "\x7f", Tab: "\t", Escape: "\x1b", ArrowUp: "\x1b[A", ArrowDown: "\x1b[B", ArrowRight: "\x1b[C", ArrowLeft: "\x1b[D" };
+  if (event.ctrlKey && key.toLowerCase() === "c") return "\x03";
+  if (event.ctrlKey && key.toLowerCase() === "d") return "\x04";
+  if (map[key]) return map[key];
+  if (!event.ctrlKey && !event.metaKey && (key === " " || key === "Space" || key === "Spacebar" || code === "Space")) return " ";
+  if (!event.ctrlKey && !event.metaKey && key.length === 1) return key;
+  return "";
 }
 
 function sendPtyInput(id, input, options = {}) {

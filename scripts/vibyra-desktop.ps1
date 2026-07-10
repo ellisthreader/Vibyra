@@ -33,6 +33,29 @@ $Health = "http://127.0.0.1:$Port/health"
 $Electron = Join-Path $Repo "node_modules\electron\dist\electron.exe"
 $Entry = Join-Path $Repo "desktop\electron-main.cjs"
 $DesktopUrl = "http://127.0.0.1:$Port/desktop"
+$RuntimeUrl = "http://127.0.0.1:$Port/desktop/runtime"
+$TerminalProviderAdapters = Join-Path $Repo "desktop\lib\aiTerminalProviderAdapters.mjs"
+
+function Get-ExpectedTerminalLaunchContract {
+  $source = Get-Content -Raw -LiteralPath $TerminalProviderAdapters
+  $match = [regex]::Match(
+    $source,
+    'AI_TERMINAL_LAUNCH_CONTRACT_VERSION\s*=\s*(\d+)'
+  )
+  if (-not $match.Success) {
+    throw "Could not read the AI terminal launch contract from $TerminalProviderAdapters."
+  }
+  return [int]$match.Groups[1].Value
+}
+
+function Get-RunningTerminalLaunchContract {
+  try {
+    $runtime = Invoke-RestMethod -Uri $RuntimeUrl -TimeoutSec 3
+    return [int]$runtime.aiTerminalLaunchContractVersion
+  } catch {
+    return -1
+  }
+}
 
 function Test-Bridge {
   try { (Invoke-RestMethod -Uri $Health -TimeoutSec 3).ok -eq $true } catch { $false }
@@ -43,8 +66,29 @@ function Wait-Bridge([int]$Seconds = 25) {
   return $false
 }
 
+function Stop-DesktopWindow {
+  Get-CimInstance Win32_Process -Filter "name = 'electron.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.ExecutablePath -eq $Electron } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  Start-Sleep -Milliseconds 400
+}
+
 function Start-Bridge {
-  if (Test-Bridge) { Write-Host "Bridge already healthy on $Port."; return }
+  if (Test-Bridge) {
+    $expectedContract = Get-ExpectedTerminalLaunchContract
+    $runningContract = Get-RunningTerminalLaunchContract
+    if ($runningContract -eq $expectedContract) {
+      Write-Host "Bridge already healthy on $Port."
+      return
+    }
+
+    Write-Host "Refreshing the Vibyra Desktop bridge (terminal contract $runningContract -> $expectedContract)..."
+    Stop-DesktopWindow
+    Stop-BridgeGraceful
+    if (Test-Bridge) {
+      throw "The stale Vibyra Desktop bridge is still running on port $Port."
+    }
+  }
   Write-Host "Starting Vibyra bridge (independent process)..."
   # Start-Process makes node a top-level process; when this script exits node is
   # orphaned to the OS (NOT in any agent/task tree), so it cannot be tree-killed.
@@ -57,12 +101,12 @@ function Start-Bridge {
 }
 
 function Open-Window {
-  Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Milliseconds 400
+  Stop-DesktopWindow
   $env:VIBYRA_DESKTOP_URL = $DesktopUrl
   Remove-Item Env:\ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
   Start-Process -FilePath $Electron `
-    -ArgumentList @("--disable-gpu", "--disable-gpu-compositing", $Entry)
+    -ArgumentList @("--disable-gpu", "--disable-gpu-compositing", $Entry) `
+    -WorkingDirectory $Repo
   Write-Host "Window opening: $DesktopUrl"
 }
 
@@ -81,7 +125,7 @@ function Stop-BridgeGraceful {
 switch ($Action) {
   "start"   { Start-Bridge; Open-Window }
   "restart" { Stop-BridgeGraceful; Start-Bridge; Open-Window; Write-Host "Restarted. Surviving terminals re-attached." }
-  "window"  { if (-not (Test-Bridge)) { Start-Bridge }; Open-Window }
+  "window"  { Start-Bridge; Open-Window }
   "stop"    { Stop-BridgeGraceful }
   "status"  {
     if (Test-Bridge) {

@@ -2,7 +2,11 @@
   #token-modal .modal--billing-revamp { width: calc(100vw - 20px); }
   .billing-revamp-head { align-items: start; flex-direction: column; }
   .billing-hero {
-    background: linear-gradient(180deg, rgba(5, 5, 9, 0.18), rgba(5, 5, 9, 0.88) 58%), var(--plan-image), #080810;
+    background:
+      var(--billing-hero-overlay),
+      radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--plan-accent) 18%, transparent), transparent 48%),
+      var(--plan-image),
+      var(--billing-hero-base);
     background-position: center;
     background-size: cover;
     min-height: 420px;

@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../../context/AppContext";
 import { ChatMessage, GeneratedApp, Project } from "../../../types/domain";
 import { previousChats } from "../data/pages";
 import { CommunityPost, DashboardPage, DesktopCandidate, SettingsTab } from "../types";
+import { limitChatMessagesForRuntime } from "../../../utils/chatThreads";
 import { isDetachedChatId } from "./workspaceDetachedChats";
 import { projectMatchesSearch } from "./workspaceProjectSearch";
 
 export type WorkspaceState = ReturnType<typeof useWorkspaceState>;
 type PendingDesktopFolderIntent = { action: "analyze-project" | "search"; query: string; detached: boolean; messageId: string; projectId?: string };
+const EMPTY_CHAT_MESSAGES: ChatMessage[] = [];
 
 export function useWorkspaceState() {
   const app = useAppContext();
@@ -25,7 +27,13 @@ export function useWorkspaceState() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
   const [settingsTabRequestId, setSettingsTabRequestId] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [newChatMessages, setNewChatMessages] = useState<ChatMessage[]>([]);
+  const [newChatMessages, setNewChatMessagesState] = useState<ChatMessage[]>([]);
+  const setNewChatMessages = useCallback((update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) => {
+    setNewChatMessagesState((current) => {
+      const next = typeof update === "function" ? update(current) : update;
+      return limitChatMessagesForRuntime(next);
+    });
+  }, []);
   const [chatTitleOverrides, setChatTitleOverrides] = useState<Record<string, string>>({});
   const [starredChatKeys, setStarredChatKeys] = useState<Record<string, boolean>>({});
   const [renameChatVisible, setRenameChatVisible] = useState(false);
@@ -88,9 +96,10 @@ export function useWorkspaceState() {
   const chatTitleKey = selectedChatId ?? "new-chat";
   const detachedChatTitle = selectedDetachedChatId ? app.detachedChatTitles[selectedDetachedChatId] : undefined;
   const chatTitle = chatTitleOverrides[chatTitleKey] ?? activeChat?.title ?? projectChatTitle ?? detachedChatTitle ?? "New chat";
-  const visibleChatMessages = selectedChatId
-    ? (selectedChatProjectId ? (app.chatThreads[selectedChatProjectId] ?? []) : selectedDetachedChatId ? (app.detachedChatThreads[selectedDetachedChatId] ?? []) : app.chatMessages)
+  const visibleChatMessagesRaw = selectedChatId
+    ? (selectedChatProjectId ? (app.chatThreads[selectedChatProjectId] ?? EMPTY_CHAT_MESSAGES) : selectedDetachedChatId ? (app.detachedChatThreads[selectedDetachedChatId] ?? EMPTY_CHAT_MESSAGES) : app.chatMessages)
     : newChatMessages;
+  const visibleChatMessages = useMemo(() => limitChatMessagesForRuntime(visibleChatMessagesRaw), [visibleChatMessagesRaw]);
 
   useEffect(() => { if (app.rememberedDesktops.length > 0) setDesktopCandidates(app.rememberedDesktops); }, [app.rememberedDesktops]);
 

@@ -35,6 +35,8 @@ export function terminalRuntimeExecutable(id) {
       ? process.execPath
       : "";
   }
+  const bundled = bundledNpmExecutable(runtime);
+  if (bundled && runtimeExecutableUsable(runtime, bundled)) return bundled;
   for (const key of runtime.env) {
     const candidate = String(process.env[key] || "").trim();
     if (canExecute(candidate)) return candidate;
@@ -136,6 +138,12 @@ function publicRuntime(runtime) {
     installable: runtime.installer.type !== "bundled",
     source: executable ? runtimeSource(runtime, executable) : ""
   };
+}
+
+function bundledNpmExecutable(runtime) {
+  if (!runtime.bundled || runtime.installer?.type !== "npm") return "";
+  const suffix = process.platform === "win32" ? ".cmd" : "";
+  return join(repoRoot, "node_modules", ".bin", `${runtime.executable}${suffix}`);
 }
 
 function executableCandidates(runtime) {

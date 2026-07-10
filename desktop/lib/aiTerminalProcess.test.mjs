@@ -37,6 +37,19 @@ test("provider presentation versions come from installed CLIs when available", (
   assert.equal(aiTerminalProviderVersion("deepseek/deepseek-chat"), "");
 });
 
+test("Codex agent status prefers bundled Codex over environment overrides", () => {
+  const previous = process.env.VIBYRA_CODEX_CLI;
+  process.env.VIBYRA_CODEX_CLI = process.execPath;
+  try {
+    const status = aiTerminalAgentStatus("codex");
+
+    assert.match(status.commandPath.replace(/\\/g, "/"), /node_modules\/\.bin\/codex(?:\.cmd)?$/);
+  } finally {
+    if (previous === undefined) delete process.env.VIBYRA_CODEX_CLI;
+    else process.env.VIBYRA_CODEX_CLI = previous;
+  }
+});
+
 test("Codex launch acknowledges the selected model's current migration notice", () => {
   const home = mkdtempSync(join(tmpdir(), "vibyra-codex-migration-"));
   writeFileSync(join(home, "models_cache.json"), JSON.stringify({
@@ -287,6 +300,28 @@ test("Codex launch args carry model, fast effort, and explicit full access", () 
     "model_reasoning_effort=\"low\"",
     "--dangerously-bypass-approvals-and-sandbox"
   ]);
+});
+
+test("Codex launch maps GPT-5.6 pro reasoning to reasoning mode", () => {
+  const args = aiTerminalAgentArgs("codex", {
+    model: "gpt-5.6-sol",
+    reasoningEffort: "pro",
+    permissionMode: "standard"
+  });
+
+  assert.equal(args.includes('model_reasoning_mode="pro"'), true);
+  assert.equal(args.some((value) => String(value).includes("model_reasoning_effort")), false);
+});
+
+test("Codex launch forwards GPT-5.6 max reasoning as reasoning effort", () => {
+  const args = aiTerminalAgentArgs("codex", {
+    model: "gpt-5.6-sol",
+    reasoningEffort: "max",
+    permissionMode: "standard"
+  });
+
+  assert.equal(args.includes('model_reasoning_effort="max"'), true);
+  assert.equal(args.some((value) => String(value).includes("model_reasoning_mode")), false);
 });
 
 test("Codex standard mode does not bypass approvals or sandboxing", () => {
@@ -541,10 +576,14 @@ test("Vibyra token Codex homes contain only Vibyra-owned workspace trust", () =>
     });
 
     assert.equal(existsSync(join(env.CODEX_HOME, "auth.json")), false);
-    assert.equal(
-      readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8"),
-      `[projects.${JSON.stringify(resolve("/tmp/Vibyra Project"))}]\ntrust_level = "trusted"\n`
-    );
+    const config = readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8");
+    assert.match(config, /\[projects\./);
+    assert.match(config, /trust_level = "trusted"/);
+    if (process.platform === "win32") {
+      assert.match(config.toLowerCase(), /c:\\tmp\\vibyra project/);
+    } else {
+      assert.match(config, new RegExp(escapeRegExp(resolve("/tmp/Vibyra Project"))));
+    }
   } finally {
     if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
     else process.env.CODEX_HOME = previousCodexHome;
@@ -605,6 +644,47 @@ test("Codex terminal env uses an isolated CODEX_HOME per terminal", () => {
     else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
     rmSync(sourceHome, { recursive: true, force: true });
     rmSync(isolatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("personal Codex terminal homes merge active workspace trust into copied config", () => {
+  const previousCodexHome = process.env.CODEX_HOME;
+  const previousRoot = process.env.VIBYRA_CODEX_HOME_ROOT;
+  const sourceHome = mkdtempSync(join(tmpdir(), "vibyra-codex-user-source-"));
+  const isolatedRoot = mkdtempSync(join(tmpdir(), "vibyra-codex-user-isolated-"));
+  const workspace = mkdtempSync(join(tmpdir(), "Vibyra Project Trust "));
+  process.env.CODEX_HOME = sourceHome;
+  process.env.VIBYRA_CODEX_HOME_ROOT = isolatedRoot;
+  writeFileSync(join(sourceHome, "auth.json"), "{\"auth_mode\":\"chatgpt\"}\n");
+  writeFileSync(join(sourceHome, "config.toml"), "model = \"gpt-5.5\"\n");
+
+  try {
+    const env = terminalEnv({
+      agent: "codex",
+      label: "Codex",
+      terminalId: "personal-trust",
+      tokenMode: "provider",
+      cwd: workspace,
+      cols: 100,
+      rows: 30
+    });
+    const config = readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8");
+
+    assert.equal(existsSync(join(env.CODEX_HOME, "auth.json")), true);
+    assert.match(config, /model = "gpt-5\.5"/);
+    assert.match(config, /\[projects\./);
+    assert.match(config, /trust_level = "trusted"/);
+    if (process.platform === "win32") {
+      assert.match(config.toLowerCase(), new RegExp(escapeRegExp(resolve(workspace).toLowerCase())));
+    }
+  } finally {
+    if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previousCodexHome;
+    if (previousRoot === undefined) delete process.env.VIBYRA_CODEX_HOME_ROOT;
+    else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
+    rmSync(sourceHome, { recursive: true, force: true });
+    rmSync(isolatedRoot, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true });
   }
 });
 

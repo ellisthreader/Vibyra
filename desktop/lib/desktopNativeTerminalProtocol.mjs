@@ -148,10 +148,20 @@ function openAiChatCompletionsToResponses(body, model) {
       parameters: tool?.function?.parameters || {}
     })),
     max_output_tokens: Number(body.max_completion_tokens || body.max_tokens) || 2000,
-    ...(body.reasoning_effort ? { reasoning: { effort: String(body.reasoning_effort) } } : {}),
+    ...openAiReasoning(body.reasoning_effort, model),
     stream: true,
     store: false
   };
+}
+
+function openAiReasoning(value, model) {
+  const effort = String(value || "").trim().toLowerCase();
+  if (!effort) return {};
+  if (effort === "pro" && String(model || "").trim().toLowerCase().replace(/^openai\//, "").startsWith("gpt-5.6")) {
+    return { reasoning: { effort: "medium", mode: "pro" } };
+  }
+  if (effort === "pro") return { reasoning: { effort: "high" } };
+  return { reasoning: { effort } };
 }
 
 function anthropicStreamTranslator(write) {

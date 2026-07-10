@@ -78,7 +78,7 @@ function terminalId() {
 
 function normalizeTerminalEffort(value) {
   const effort = String(value || "medium").toLowerCase();
-  return ["default", "low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "max", "pro"].includes(effort) ? effort : "medium";
 }
 
 function normalizeTerminalPermissionMode(value) {

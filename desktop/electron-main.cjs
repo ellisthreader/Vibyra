@@ -30,7 +30,8 @@ const { createDesktopScreenshot } = require("./lib/desktopScreenshot.cjs");
 const { createDesktopScreenshotSettings } = require("./lib/desktopScreenshotSettings.cjs");
 
 const APP_NAME = "Vibyra";
-const APP_ICON_PATH = path.join(__dirname, "vibyra-login-logo.png");
+const APP_ICON_FILE = process.platform === "win32" ? "vibyra.ico" : "vibyra-login-logo.png";
+const APP_ICON_PATH = path.join(__dirname, APP_ICON_FILE);
 const LINUX_DESKTOP_NAME = "vibyra.desktop";
 
 app.setName(APP_NAME);

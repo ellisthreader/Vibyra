@@ -6,7 +6,8 @@ import { createEmptyPersistedSession, loadPersistedSession, savePersistedSession
 import { AppDerivedState, AppState } from "./appContextTypes";
 import { ChatMessage, DesktopPermissionMode, ReasoningEffort } from "../types/domain";
 import { emptyChatMessages, emptyFile, emptyProject } from "./appStateDefaults";
-import { getPersistedAppState } from "./appStatePersistence";
+import { createPersistableAppState, getPersistedAppState } from "./appStatePersistence";
+import { limitChatThreadsForRuntime } from "../utils/chatThreads";
 
 export function useAppState() {
   const persistedSession = useMemo(createEmptyPersistedSession, []);
@@ -68,9 +69,9 @@ export function useAppState() {
   const [lastPrompt, setLastPrompt] = useState("");
   const [agentRequesting, setAgentRequesting] = useState(false);
   const [taskText, setTaskText] = useState("");
-  const [chatThreads, setChatThreads] = useState<Record<string, ChatMessage[]>>(initialAppState.chatThreads);
+  const [chatThreads, setChatThreadsState] = useState<Record<string, ChatMessage[]>>(initialAppState.chatThreads);
   const [chatTitles, setChatTitles] = useState<Record<string, string>>(initialAppState.chatTitles);
-  const [detachedChatThreads, setDetachedChatThreads] = useState<Record<string, ChatMessage[]>>(initialAppState.detachedChatThreads);
+  const [detachedChatThreads, setDetachedChatThreadsState] = useState<Record<string, ChatMessage[]>>(initialAppState.detachedChatThreads);
   const [detachedChatTitles, setDetachedChatTitles] = useState<Record<string, string>>(initialAppState.detachedChatTitles);
   const [detachedChatUpdatedAt, setDetachedChatUpdatedAt] = useState<Record<string, number>>(initialAppState.detachedChatUpdatedAt);
   const [newFilePath, setNewFilePath] = useState("note.txt");
@@ -116,9 +117,9 @@ export function useAppState() {
         setSelectedChatModel(session.selectedChatModel);
         setDesktopPermissionMode(persisted.desktopPermissionMode);
         setSelectedModel(persisted.selectedModel);
-        setChatThreads(persisted.chatThreads);
+        setChatThreadsState(persisted.chatThreads);
         setChatTitles(persisted.chatTitles);
-        setDetachedChatThreads(persisted.detachedChatThreads);
+        setDetachedChatThreadsState(persisted.detachedChatThreads);
         setDetachedChatTitles(persisted.detachedChatTitles);
         setDetachedChatUpdatedAt(persisted.detachedChatUpdatedAt);
         setChatProjects(persisted.chatProjects);
@@ -141,6 +142,18 @@ export function useAppState() {
   }, [chatProjects]);
 
   const chatMessages = chatThreads[selectedProjectId] ?? emptyChatMessages;
+  const setChatThreads = useCallback<Dispatch<SetStateAction<Record<string, ChatMessage[]>>>>((update) => {
+    setChatThreadsState((current) => {
+      const next = typeof update === "function" ? update(current) : update;
+      return limitChatThreadsForRuntime(next);
+    });
+  }, []);
+  const setDetachedChatThreads = useCallback<Dispatch<SetStateAction<Record<string, ChatMessage[]>>>>((update) => {
+    setDetachedChatThreadsState((current) => {
+      const next = typeof update === "function" ? update(current) : update;
+      return limitChatThreadsForRuntime(next);
+    });
+  }, []);
   const setChatMessages = useCallback<Dispatch<SetStateAction<ChatMessage[]>>>((update) => {
     setChatThreads((current) => {
       const previous = current[selectedProjectId] ?? emptyChatMessages;
@@ -154,6 +167,21 @@ export function useAppState() {
 
   useEffect(() => {
     if (!persistenceReady) return;
+    const appState = createPersistableAppState({
+      chatThreads,
+      chatTitles,
+      detachedChatThreads,
+      detachedChatTitles,
+      detachedChatUpdatedAt,
+      chatProjects,
+      projectMemories,
+      editApprovals,
+      profileImageUri,
+      selectedModel,
+      selectedChatModel,
+      desktopPermissionMode,
+      promptMoney
+    });
     void savePersistedSession({
       authToken,
       installId,
@@ -186,7 +214,7 @@ export function useAppState() {
         level: levelProgress,
         onboardingComplete,
         rememberedDesktops,
-        appState: { chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt, chatProjects, projectMemories, editApprovals, profileImageUri, selectedModel, selectedChatModel, desktopPermissionMode, promptMoney }
+        appState
       } : null
     });
   }, [

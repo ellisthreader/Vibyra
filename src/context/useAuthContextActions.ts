@@ -8,6 +8,7 @@ import {
 } from "../utils/persistence";
 import { authenticateNativeProvider } from "../utils/nativeAuth";
 import { AppContextValue } from "./appContextTypes";
+import { normalizeAppStateSnapshot } from "./appStatePersistence";
 import { useAppState } from "./useAppState";
 
 type Store = ReturnType<typeof useAppState>;
@@ -46,35 +47,36 @@ export function useAuthContextActions(store: Store, logs: Logs) {
     setters.setWeeklyCreditsResetAt(normalized.weeklyCreditsResetAt);
     setters.setOnboardingComplete(normalized.onboardingComplete);
     setters.setRememberedDesktops(normalized.rememberedDesktops);
-    const selectedChatModel = normalized.appState?.selectedChatModel;
+    const rawAppState = normalized.appState ?? {};
+    const appState = normalizeAppStateSnapshot(rawAppState);
+    const selectedChatModel = rawAppState.selectedChatModel ? appState.selectedChatModel : "";
     if (typeof selectedChatModel === "string" && selectedChatModel) {
       setters.setSelectedChatModel(selectedChatModel);
     }
     setters.setDesktopPermissionMode("ask");
-    if (normalized.appState?.editApprovals && typeof normalized.appState.editApprovals === "object") {
-      const entries = Object.entries(normalized.appState.editApprovals as Record<string, unknown>).filter(([, value]) => value === "always");
-      setters.setEditApprovals(Object.fromEntries(entries) as AppContextValue["editApprovals"]);
+    if (rawAppState.editApprovals && typeof rawAppState.editApprovals === "object") {
+      setters.setEditApprovals(appState.editApprovals as AppContextValue["editApprovals"]);
     }
-    if (normalized.appState?.chatThreads && typeof normalized.appState.chatThreads === "object") {
-      setters.setChatThreads(normalized.appState.chatThreads as AppContextValue["chatThreads"]);
+    if (rawAppState.chatThreads && typeof rawAppState.chatThreads === "object") {
+      setters.setChatThreads(appState.chatThreads as AppContextValue["chatThreads"]);
     }
-    if (normalized.appState?.chatTitles && typeof normalized.appState.chatTitles === "object") {
-      setters.setChatTitles(normalized.appState.chatTitles as AppContextValue["chatTitles"]);
+    if (rawAppState.chatTitles && typeof rawAppState.chatTitles === "object") {
+      setters.setChatTitles(appState.chatTitles as AppContextValue["chatTitles"]);
     }
-    if (normalized.appState?.detachedChatThreads && typeof normalized.appState.detachedChatThreads === "object") {
-      setters.setDetachedChatThreads(normalized.appState.detachedChatThreads as AppContextValue["detachedChatThreads"]);
+    if (rawAppState.detachedChatThreads && typeof rawAppState.detachedChatThreads === "object") {
+      setters.setDetachedChatThreads(appState.detachedChatThreads as AppContextValue["detachedChatThreads"]);
     }
-    if (normalized.appState?.detachedChatTitles && typeof normalized.appState.detachedChatTitles === "object") {
-      setters.setDetachedChatTitles(normalized.appState.detachedChatTitles as AppContextValue["detachedChatTitles"]);
+    if (rawAppState.detachedChatTitles && typeof rawAppState.detachedChatTitles === "object") {
+      setters.setDetachedChatTitles(appState.detachedChatTitles as AppContextValue["detachedChatTitles"]);
     }
-    if (normalized.appState?.detachedChatUpdatedAt && typeof normalized.appState.detachedChatUpdatedAt === "object") {
-      setters.setDetachedChatUpdatedAt(normalized.appState.detachedChatUpdatedAt as AppContextValue["detachedChatUpdatedAt"]);
+    if (rawAppState.detachedChatUpdatedAt && typeof rawAppState.detachedChatUpdatedAt === "object") {
+      setters.setDetachedChatUpdatedAt(appState.detachedChatUpdatedAt as AppContextValue["detachedChatUpdatedAt"]);
     }
-    if (normalized.appState?.projectMemories && typeof normalized.appState.projectMemories === "object") {
-      setters.setProjectMemories(normalized.appState.projectMemories as AppContextValue["projectMemories"]);
+    if (rawAppState.projectMemories && typeof rawAppState.projectMemories === "object") {
+      setters.setProjectMemories(appState.projectMemories as AppContextValue["projectMemories"]);
     }
-    if (normalized.appState?.chatProjects && typeof normalized.appState.chatProjects === "object") {
-      const restored = normalized.appState.chatProjects as AppContextValue["chatProjects"];
+    if (rawAppState.chatProjects && typeof rawAppState.chatProjects === "object" && Object.keys(appState.chatProjects).length > 0) {
+      const restored = appState.chatProjects as AppContextValue["chatProjects"];
       setters.setChatProjects(restored);
       const restoredList = Object.values(restored);
       if (restoredList.length > 0) {

@@ -22,6 +22,37 @@ function loadDesktopChats() {
     return [];
   }
 }
+function limitedDesktopChatMessages(messages) {
+  return (Array.isArray(messages) ? messages : []).slice(-40);
+}
+function limitActiveChatMessages() {
+  chatMessages = limitedDesktopChatMessages(chatMessages);
+}
+const desktopChatPasteGuardMs = 800;
+let desktopChatLastPasteAt = 0;
+function markDesktopChatPaste() {
+  desktopChatLastPasteAt = Date.now();
+}
+function desktopChatPasteRecently() {
+  return Date.now() - desktopChatLastPasteAt < desktopChatPasteGuardMs;
+}
+function bindDesktopChatPasteGuard(input) {
+  if (!input || input.dataset.desktopChatPasteGuardBound) return;
+  input.dataset.desktopChatPasteGuardBound = "1";
+  input.addEventListener("paste", markDesktopChatPaste);
+  input.addEventListener("beforeinput", (event) => {
+    if (event.inputType === "insertFromPaste" || event.inputType === "insertFromDrop") markDesktopChatPaste();
+  });
+}
+function shouldSendDesktopChatEnter(event) {
+  return event?.key === "Enter"
+    && !event.shiftKey
+    && !event.altKey
+    && !event.ctrlKey
+    && !event.metaKey
+    && !event.isComposing
+    && !desktopChatPasteRecently();
+}
 function saveDesktopChats() {
   recentChats = recentChats
     .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.updatedAt - a.updatedAt)
@@ -42,6 +73,7 @@ function ensureActiveChat(seedText = "") {
 }
 function saveActiveChat(seedText = "") {
   if (!chatMessages.length) return;
+  limitActiveChatMessages();
   ensureActiveChat(seedText);
   const chat = recentChats.find((item) => item.id === activeChatId);
   if (!chat) return;

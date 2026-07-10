@@ -24,7 +24,7 @@ test("generated desktop action dataset is large, unique, and covers terminal tas
     const action = item.expected.action;
     assert.equal(action.type, "run_terminal_tasks");
     assert.equal(typeof action.model, "string");
-    assert.ok(["low", "medium", "high", "xhigh"].includes(action.effort));
+    assert.ok(["low", "medium", "high", "xhigh", "max", "pro"].includes(action.effort));
     assert.ok(["standard", "full"].includes(action.permissionMode));
     assert.equal(typeof action.projectId, "string");
     assert.ok(action.tasks.length >= 2);

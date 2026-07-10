@@ -27,6 +27,22 @@ const ptyRuntime = readFileSync(
   new URL("./app.terminals-pty-runtime.js", import.meta.url),
   "utf8"
 );
+const visualRefreshStyles = readFileSync(
+  new URL("./app.terminals-visual-refresh.css", import.meta.url),
+  "utf8"
+);
+const settingsStyles = readFileSync(
+  new URL("./app.terminals.settings.css", import.meta.url),
+  "utf8"
+);
+const voiceInputStyles = readFileSync(
+  new URL("./app.terminals-voice-input.css", import.meta.url),
+  "utf8"
+);
+const companionVoiceStyles = readFileSync(
+  new URL("./app.terminals-companion-voice.css", import.meta.url),
+  "utf8"
+);
 
 test("terminal audit theme layer loads after all terminal feature styles", () => {
   const auditIndex = appHtml.indexOf("app.terminals-theme-audit.css");
@@ -85,6 +101,38 @@ test("terminal semantic foundations inherit the shared graphite system", () => {
 test("xterm selection and auto appearance use live semantic theme values", () => {
   assert.match(ptyRuntime, /css\("--terminal-selection"/);
   assert.match(ptyRuntime, /css\("--terminal-selection-inactive"/);
+  assert.match(ptyRuntime, /css\("--terminal-cursor"/);
+  assert.match(stateStyles, /--terminal-cursor:/);
+  assert.match(stateStyles, /--terminal-locked-text:/);
+  assert.match(stateStyles, /body\[data-desktop-theme="light"\][\s\S]*--terminal-cursor:/);
+  assert.match(stateStyles, /body\[data-desktop-theme="light"\][\s\S]*--terminal-locked-text:/);
+  assert.match(stateStyles, /body:not\(\[data-desktop-theme="dark"\]\)[\s\S]*--terminal-cursor:/);
+  assert.match(stateStyles, /body:not\(\[data-desktop-theme="dark"\]\)[\s\S]*--terminal-locked-text:/);
   assert.match(ptyRuntime, /matchMedia\("\(prefers-color-scheme: light\)"\)/);
   assert.match(ptyRuntime, /addEventListener\?\.\("change", scheduleTheme\)/);
+});
+
+test("terminal locked model and status states use semantic terminal tokens", () => {
+  assert.match(controlStyles, /\.terminal-model-option\.locked[\s\S]*color:\s*var\(--terminal-locked-text\)/);
+  assert.doesNotMatch(controlStyles, /\.terminal-model-option\.locked[\s\S]*!important/);
+
+  assert.match(visualRefreshStyles, /\.terminal-status\.success\s*\{[\s\S]*background:\s*var\(--terminal-status-success\)/);
+  assert.match(visualRefreshStyles, /\.terminal-status\.error\s*\{[\s\S]*background:\s*var\(--terminal-status-error\)/);
+  assert.match(visualRefreshStyles, /\.terminal-status\.unavailable\s*\{[\s\S]*background:\s*var\(--terminal-status-unavailable\)/);
+});
+
+test("terminal settings and voice controls avoid generic theme tokens", () => {
+  assert.match(settingsStyles, /\.terminal-manage-ai-accounts\s*\{[\s\S]*color:\s*var\(--terminal-muted\)/);
+  assert.match(settingsStyles, /\.terminal-manage-ai-accounts:hover\s*\{\s*color:\s*var\(--terminal-text\)/);
+  assert.doesNotMatch(settingsStyles, /\.terminal-manage-ai-accounts[\s\S]*var\(--(?:muted|text)\)/);
+
+  assert.doesNotMatch(voiceInputStyles, /var\(--(?:panel|text|muted|danger)\b/);
+  assert.match(voiceInputStyles, /var\(--terminal-elevated\)/);
+  assert.match(voiceInputStyles, /var\(--terminal-text\)/);
+  assert.match(voiceInputStyles, /var\(--terminal-status-success\)/);
+  assert.match(voiceInputStyles, /var\(--terminal-status-error\)/);
+
+  assert.doesNotMatch(companionVoiceStyles, /var\(--danger\b/);
+  assert.match(companionVoiceStyles, /var\(--terminal-status-error\)/);
+  assert.match(companionVoiceStyles, /var\(--terminal-accent\)/);
 });

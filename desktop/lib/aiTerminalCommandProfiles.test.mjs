@@ -52,7 +52,7 @@ test("profile exposes immutable structured categories and command metadata", () 
   assert.deepEqual(inspect.argument, { name: "target", required: false });
   assert.equal(effort.kind, "local");
   assert.equal(effort.dispatch, "effort");
-  assert.equal(effort.usage, "/effort <default|low|medium|high|xhigh>");
+  assert.equal(effort.usage, "/effort <default|low|medium|high|xhigh|max|pro>");
   assert.deepEqual(effort.argument, { name: "level", required: true });
   assert.equal(Object.isFrozen(profile), true);
   assert.equal(Object.isFrozen(profile.commands), true);

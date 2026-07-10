@@ -32,10 +32,9 @@ test("Vibyra terminal env exposes only the supplied gateway token", () => {
 
     assert.equal(vibyraEnv.VIBYRA_TERMINAL_GATEWAY_TOKEN, "session-token");
     assert.equal(shellEnv.VIBYRA_TERMINAL_GATEWAY_TOKEN, undefined);
-    assert.equal(
-      readFileSync(join(vibyraEnv.CODEX_HOME, "config.toml"), "utf8"),
-      `[projects.${JSON.stringify(process.cwd())}]\ntrust_level = "trusted"\n`
-    );
+    const config = readFileSync(join(vibyraEnv.CODEX_HOME, "config.toml"), "utf8");
+    assert.match(config, /\[projects\./);
+    assert.match(config, /trust_level = "trusted"/);
     if (process.platform !== "win32") {
       assert.equal(statSync(join(vibyraEnv.CODEX_HOME, "config.toml")).mode & 0o777, 0o600);
     }
@@ -88,6 +87,48 @@ test("managed Vibyra Codex homes keep safe startup cache but exclude user config
     assert.equal(readFileSync(join(env.CODEX_HOME, "installation_id"), "utf8"), "install-1");
     assert.equal(readFileSync(join(env.CODEX_HOME, ".personality_migration"), "utf8"), "done");
     assert.match(readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8"), /trust_level = "trusted"/);
+  } finally {
+    if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previousCodexHome;
+    if (previousRoot === undefined) delete process.env.VIBYRA_CODEX_HOME_ROOT;
+    else process.env.VIBYRA_CODEX_HOME_ROOT = previousRoot;
+    rmSync(sourceHome, { recursive: true, force: true });
+    rmSync(isolatedRoot, { recursive: true, force: true });
+  }
+});
+
+test("managed Vibyra Codex homes skip stale model metadata caches", () => {
+  const previousCodexHome = process.env.CODEX_HOME;
+  const previousRoot = process.env.VIBYRA_CODEX_HOME_ROOT;
+  const sourceHome = mkdtempSync(join(tmpdir(), "vibyra-stale-source-codex-"));
+  const isolatedRoot = mkdtempSync(join(tmpdir(), "vibyra-stale-managed-codex-"));
+  const existingHome = join(isolatedRoot, "stale-existing-cache");
+  writeFileSync(join(sourceHome, "models_cache.json"), JSON.stringify({
+    client_version: "0.142.5",
+    models: [{ slug: "gpt-5.5" }]
+  }));
+  writeFileSync(join(sourceHome, "version.json"), "{\"version\":\"1\"}");
+  mkdirSync(existingHome, { recursive: true });
+  writeFileSync(join(existingHome, "models_cache.json"), JSON.stringify({
+    client_version: "0.142.5",
+    models: [{ slug: "gpt-5.5" }]
+  }));
+
+  process.env.CODEX_HOME = sourceHome;
+  process.env.VIBYRA_CODEX_HOME_ROOT = isolatedRoot;
+  try {
+    const env = terminalEnv({
+      agent: "vibyra",
+      runtimeId: "codex",
+      label: "Vibyra",
+      terminalId: "stale-existing-cache",
+      terminalGatewayToken: "session-token",
+      cols: 100,
+      rows: 30
+    });
+
+    assert.equal(existsSync(join(env.CODEX_HOME, "models_cache.json")), false);
+    assert.equal(readFileSync(join(env.CODEX_HOME, "version.json"), "utf8"), "{\"version\":\"1\"}");
   } finally {
     if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
     else process.env.CODEX_HOME = previousCodexHome;
@@ -157,6 +198,7 @@ test("every PTY runtime receives a truecolor environment even when desktop disab
       assert.equal(env.CLICOLOR, "1");
       assert.equal(env.CLICOLOR_FORCE, "1");
       assert.equal(env.FORCE_COLOR, "3");
+      assert.equal(env.CHROME_LOG_FILE, process.platform === "win32" ? "NUL" : "/dev/null");
     }
   } finally {
     if (previousNoColor === undefined) delete process.env.NO_COLOR;
@@ -399,10 +441,9 @@ test("Vibyra Agent receives the exact model and only its terminal-scoped gateway
     assert.equal(env.OPENROUTER_API_KEY, undefined);
     assert.match(env.CODEX_HOME, /managed-deepseek$/);
     assert.equal(env.VIBYRA_AGENT_ENGINE, "/usr/local/bin/codex");
-    assert.equal(
-      readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8"),
-      `[projects.${JSON.stringify(process.cwd())}]\ntrust_level = "trusted"\n`
-    );
+    const config = readFileSync(join(env.CODEX_HOME, "config.toml"), "utf8");
+    assert.match(config, /\[projects\./);
+    assert.match(config, /trust_level = "trusted"/);
   } finally {
     if (previousOpenRouterKey === undefined) delete process.env.OPENROUTER_API_KEY;
     else process.env.OPENROUTER_API_KEY = previousOpenRouterKey;

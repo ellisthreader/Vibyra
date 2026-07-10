@@ -6,6 +6,9 @@ export type ModelTier = "free" | "budget" | "balanced" | "premium";
 // Mirrors backend/config/billing.php "models" tier assignment.
 export const modelTiers: Record<string, ModelTier> = {
   auto: "budget",
+  "gpt-5.6-sol": "premium",
+  "gpt-5.6-terra": "balanced",
+  "gpt-5.6-luna": "balanced",
   "gpt-5.5": "premium",
   "gpt-5.4": "balanced",
   "gpt-5.4-mini": "budget",
@@ -38,7 +41,10 @@ export const chatModelGroups: Array<{ title: string; options: ChatModelOption[] 
   {
     title: "OpenAI models",
     options: [
-      { badge: "New", key: "gpt-5.5", label: "GPT-5.5", provider: "openai", modelKey: "gpt-5.5" },
+      { badge: "New", key: "gpt-5.6-sol", label: "GPT-5.6 Sol", provider: "openai", modelKey: "gpt-5.6-sol" },
+      { badge: "New", key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai", modelKey: "gpt-5.6-terra" },
+      { badge: "New", key: "gpt-5.6-luna", label: "GPT-5.6 Luna", provider: "openai", modelKey: "gpt-5.6-luna" },
+      { key: "gpt-5.5", label: "GPT-5.5", provider: "openai", modelKey: "gpt-5.5" },
       { key: "gpt-5.4", label: "GPT-5.4", provider: "openai", modelKey: "gpt-5.4" },
       { key: "gpt-5.4-mini", label: "GPT-5.4 Mini", provider: "openai", modelKey: "gpt-5.4-mini" },
       { key: "gpt-5-codex", label: "GPT-5 Codex", provider: "openai", modelKey: "gpt-5-codex" }

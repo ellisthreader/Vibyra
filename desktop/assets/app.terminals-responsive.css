@@ -15,12 +15,13 @@
 .terminal-settings-menu.terminal-settings-menu--positioned {
   bottom: auto;
   left: var(--terminal-menu-left);
-  max-height: min(520px, calc(100vh - 16px));
+  max-height: min(520px, var(--terminal-menu-max-height, calc(100vh - 16px)));
   overflow-x: hidden;
   overflow-y: auto;
   position: fixed;
   right: auto;
   top: var(--terminal-menu-top);
+  z-index: 170;
 }
 
 @media (max-width: 1000px) {

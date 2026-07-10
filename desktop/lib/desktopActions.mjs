@@ -288,9 +288,10 @@ function previousTerminalTaskGoal(history) {
 function terminalSettings(text, context) {
   const fullPc = terminalFullPcScope(text);
   const projectName = terminalProjectName(text);
+  const model = terminalModel(text);
   return {
-    model: terminalModel(text),
-    effort: terminalEffort(text),
+    model,
+    effort: terminalEffort(text, model),
     permissionMode: FULL_ACCESS.test(text) ? "full" : "standard",
     projectId: fullPc ? "full-pc" : projectName ? "" : String(context.projectId || ""),
     ...(projectName && !fullPc ? { projectName } : {})
@@ -367,8 +368,11 @@ function explicitTerminalTaskCount(text) {
 
 function terminalModel(text) {
   const normalized = text.toLowerCase().replace(/_/g, "-");
-  const qualified = normalized.match(/\bopenai\/(gpt-5(?:\.\d+)?(?:-pro)?)\b/);
+  const qualified = normalized.match(/\bopenai\/(gpt-5(?:\.\d+)?(?:-(?:sol|terra|luna|pro))?)\b/);
   if (qualified) return `openai/${qualified[1]}`;
+  const gpt56Named = normalized.match(/\b(?:gpt|codex|open\s*ai|openai|ai)?\s*[- ]*5\.6\s+(sol|terra|luna)\b/)
+    || normalized.match(/\b(?:gpt|codex|open\s*ai|openai|ai)\s*[- ]*5\.6\s*[- ]*(sol|terra|luna)\b/);
+  if (gpt56Named) return `gpt-5.6-${gpt56Named[1]}`;
   const version = normalized.match(/\b(?:gpt|codex|open\s*ai|openai|ai)\s*[- ]*\s*(5(?:\.\d+)?)\b/)
     || normalized.match(/\b(5(?:\.\d+)?)\s*(?:gpt|codex)\b/);
   if (version) {
@@ -382,9 +386,11 @@ function terminalModel(text) {
   return "auto";
 }
 
-function terminalEffort(text) {
+function terminalEffort(text, model = "") {
   if (/\b(fast|quick|low effort|low reasoning)\b/i.test(text)) return "low";
-  if (/\b(extra high|xhigh|maximum reasoning)\b/i.test(text)) return "xhigh";
+  if (/\b(pro reasoning|reasoning pro|pro mode|professional reasoning)\b/i.test(text)) return "pro";
+  if (/\b(maximum reasoning|max reasoning)\b/i.test(text)) return String(model || "").toLowerCase().includes("gpt-5.6") ? "max" : "xhigh";
+  if (/\b(extra high|xhigh)\b/i.test(text)) return "xhigh";
   if (/\b(high effort|deep reasoning)\b/i.test(text)) return "high";
   return "medium";
 }

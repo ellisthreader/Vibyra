@@ -1,5 +1,5 @@
 .profile-session-list {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
   display: grid;
   gap: 12px;
   padding: 0 0 22px;
@@ -11,20 +11,20 @@
   margin: 0;
 }
 .profile-session-head h2 {
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
   margin: 0;
 }
-.profile-session-head span { color: var(--subtle); font-size: 12px; font-weight: 650; }
+.profile-session-head span { color: var(--surface-dim, var(--subtle)); font-size: 12px; font-weight: 650; }
 .profile-session-empty {
-  color: var(--muted);
+  color: var(--surface-muted, var(--muted));
   font-size: 14px;
   line-height: 20px;
   margin: 0 0 12px;
 }
-.profile-session-empty--danger { color: var(--danger); }
+.profile-session-empty--danger { color: var(--surface-danger, var(--danger)); }
 .profile-visually-hidden {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
@@ -35,7 +35,7 @@
   width: 1px;
 }
 .profile-device-table-wrap {
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
   border-radius: 8px;
 }
 .profile-device-table {
@@ -44,7 +44,7 @@
   width: 100%;
 }
 .profile-device-table th {
-  color: var(--subtle);
+  color: var(--surface-dim, var(--subtle));
   font-size: 11px;
   font-weight: 720;
   letter-spacing: 0.05em;
@@ -63,21 +63,21 @@
   position: relative;
 }
 .profile-device-row td {
-  border-top: 1px solid rgba(255, 255, 255, 0.055);
-  color: var(--muted);
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.055));
+  color: var(--surface-muted, var(--muted));
   font-size: 13px;
   line-height: 18px;
   padding: 13px 12px;
   vertical-align: middle;
 }
-.profile-device-dot { background: rgba(255, 255, 255, 0.22); border-radius: 999px; height: 7px; width: 7px; }
+.profile-device-dot { background: var(--surface-line, rgba(255, 255, 255, 0.22)); border-radius: 999px; height: 7px; width: 7px; }
 .profile-device-row.is-current .profile-device-dot {
-  background: var(--success);
-  box-shadow: 0 0 0 3px rgba(93, 255, 183, 0.1);
+  background: var(--surface-success, var(--success));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface-success, var(--success)) 18%, transparent);
 }
 .profile-device-name { align-items: center; display: flex; gap: 9px; min-width: 0; }
 .profile-device-name strong {
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font-size: 13px;
   font-weight: 680;
   min-width: 0;
@@ -86,9 +86,9 @@
   white-space: nowrap;
 }
 .profile-device-name em {
-  background: rgba(109, 59, 255, 0.1);
+  background: var(--surface-accent-soft);
   border-radius: 999px;
-  color: var(--accent-2);
+  color: var(--surface-accent, var(--accent-2));
   flex: 0 0 auto;
   font-size: 10px;
   font-style: normal;
@@ -99,7 +99,7 @@
 .profile-device-kind,
 .profile-device-activity { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-device-location { display: grid; gap: 1px; }
-.profile-device-location small { color: var(--subtle); font-size: 11px; line-height: 15px; }
+.profile-device-location small { color: var(--surface-dim, var(--subtle)); font-size: 11px; line-height: 15px; }
 .profile-device-activity time { font-weight: 620; }
 .profile-session-actions { padding-left: 0 !important; position: relative; text-align: right; }
 .profile-session-menu-button {
@@ -107,17 +107,17 @@
   background: transparent;
   border: 0;
   border-radius: 999px;
-  color: var(--muted);
+  color: var(--surface-muted, var(--muted));
   display: inline-flex;
   height: 30px;
   justify-content: center;
   width: 30px;
 }
-.profile-session-menu-button:hover { background: rgba(255, 255, 255, 0.045); color: var(--text); }
+.profile-session-menu-button:hover { background: var(--surface-hover, rgba(255, 255, 255, 0.045)); color: var(--surface-text, var(--text)); }
 .profile-session-menu-button svg { height: 19px; width: 19px; }
 .profile-session-menu {
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-elevated, var(--surface));
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.08));
   border-radius: 8px;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
   padding: 5px;
@@ -131,7 +131,7 @@
   background: transparent;
   border: 0;
   border-radius: 6px;
-  color: var(--danger);
+  color: var(--surface-danger, var(--danger));
   font: inherit;
   font-size: 13px;
   font-weight: 680;
@@ -140,15 +140,15 @@
   text-align: left;
   width: 100%;
 }
-.profile-session-menu button:hover { background: rgba(255, 93, 122, 0.1); } .profile-session-menu button:disabled { opacity: 0.6; }
+.profile-session-menu button:hover { background: var(--surface-danger-soft); } .profile-session-menu button:disabled { opacity: 0.6; }
 .profile-account-actions {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.07));
   display: grid;
   gap: 0;
   padding: 2px 0 20px;
 }
 .profile-account-actions h2 {
-  color: var(--text);
+  color: var(--surface-text, var(--text));
   font-size: 16px;
   font-weight: 700;
   line-height: 22px;
@@ -158,8 +158,8 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.055);
-  color: var(--text);
+  border-top: 1px solid var(--surface-line-soft, rgba(255, 255, 255, 0.055));
+  color: var(--surface-text, var(--text));
   display: grid;
   font: inherit;
   font-size: 14px;
@@ -170,41 +170,41 @@
   text-align: left;
 }
 .profile-account-action svg {
-  color: var(--subtle);
+  color: var(--surface-dim, var(--subtle));
   height: 16px;
   width: 16px;
 }
-.profile-account-action:hover span { color: var(--text); }
-.profile-account-action--danger { color: var(--danger); }
-.profile-account-action--danger svg { color: rgba(255, 93, 122, 0.65); }
-.profile-account-action--danger.is-open { background: rgba(255, 93, 122, 0.06); border-radius: 8px 8px 0 0; padding: 0 10px; }
+.profile-account-action:hover span { color: var(--surface-text, var(--text)); }
+.profile-account-action--danger { color: var(--surface-danger, var(--danger)); }
+.profile-account-action--danger svg { color: var(--surface-danger, var(--danger)); }
+.profile-account-action--danger.is-open { background: var(--surface-danger-soft); border-radius: 8px 8px 0 0; padding: 0 10px; }
 .profile-account-action--danger.is-open svg { transform: rotate(90deg); }
 .profile-delete-confirm {
   animation: profileDeleteDrop 180ms ease-out;
-  background: rgba(255, 93, 122, 0.035);
-  border: 1px solid rgba(255, 93, 122, 0.16);
+  background: var(--surface-danger-soft);
+  border: 1px solid color-mix(in srgb, var(--surface-danger, var(--danger)) 30%, transparent);
   border-radius: 0 0 8px 8px;
   display: grid;
   gap: 12px;
   padding: 12px;
   transform-origin: top;
 }
-.profile-delete-warning { background: rgba(255, 93, 122, 0.09); border: 1px solid rgba(255, 93, 122, 0.22); border-radius: 8px; color: var(--danger); display: grid; gap: 10px; grid-template-columns: 22px minmax(0, 1fr); padding: 12px; }
+.profile-delete-warning { background: var(--surface-danger-soft); border: 1px solid var(--surface-danger, var(--danger)); border-radius: 8px; color: var(--surface-danger, var(--danger)); display: grid; gap: 10px; grid-template-columns: 22px minmax(0, 1fr); padding: 12px; }
 .profile-delete-warning svg { height: 20px; width: 20px; }
-.profile-delete-warning strong { color: var(--danger); font-size: 14px; font-weight: 720; line-height: 19px; }
-.profile-delete-confirm p { color: var(--muted); font-size: 13px; line-height: 19px; margin: 0; }
+.profile-delete-warning strong { color: var(--surface-danger, var(--danger)); font-size: 14px; font-weight: 720; line-height: 19px; }
+.profile-delete-confirm p { color: var(--surface-muted, var(--muted)); font-size: 13px; line-height: 19px; margin: 0; }
 .profile-delete-submit { min-width: 132px; }
 .profile-inline-confirm {
-  background: rgba(255, 93, 122, 0.035);
-  border: 1px solid rgba(255, 93, 122, 0.18);
+  background: var(--surface-danger-soft);
+  border: 1px solid color-mix(in srgb, var(--surface-danger, var(--danger)) 32%, transparent);
   border-radius: 8px;
   display: grid;
   gap: 12px;
   padding: 14px;
 }
 .profile-inline-confirm > div:first-child { display: grid; gap: 4px; }
-.profile-inline-confirm strong { color: var(--text); font-size: 14px; line-height: 19px; }
-.profile-inline-confirm p { color: var(--muted); font-size: 13px; line-height: 19px; margin: 0; }
+.profile-inline-confirm strong { color: var(--surface-text, var(--text)); font-size: 14px; line-height: 19px; }
+.profile-inline-confirm p { color: var(--surface-muted, var(--muted)); font-size: 13px; line-height: 19px; margin: 0; }
 @keyframes profileDeleteDrop {
   from { opacity: 0; transform: translateY(-6px) scaleY(0.97); } to { opacity: 1; transform: translateY(0) scaleY(1); }
 }

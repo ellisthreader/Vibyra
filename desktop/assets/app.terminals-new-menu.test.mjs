@@ -5,6 +5,7 @@ import test from "node:test";
 const layoutSource = readFileSync(new URL("./app.terminals-layout.js", import.meta.url), "utf8");
 const modelStyles = readFileSync(new URL("./app.terminals.model.1.css", import.meta.url), "utf8");
 const setupResponsiveStyles = readFileSync(new URL("./app.terminals.setup.2.css", import.meta.url), "utf8");
+const terminalResponsiveStyles = readFileSync(new URL("./app.terminals-responsive.css", import.meta.url), "utf8");
 const stateSource = readFileSync(new URL("./app.terminals-state.js", import.meta.url), "utf8");
 const renderSource = readFileSync(new URL("./app.terminals-render.js", import.meta.url), "utf8");
 const controlsSource = readFileSync(new URL("./app.terminals-controls.js", import.meta.url), "utf8");
@@ -28,6 +29,17 @@ test("new terminal menu is anchored to the plus button", () => {
   assert.match(modelStyles, /visibility: hidden/);
   assert.match(modelStyles, /\.terminal-model-picker--positioned/);
   assert.doesNotMatch(modelStyles, /left: 50vw/);
+});
+
+test("terminal settings menu escapes terminal tile clipping", () => {
+  assert.match(layoutSource, /function positionTerminalSettingsMenus\(\)/);
+  assert.match(layoutSource, /document\.body\.appendChild\(menu\)/);
+  assert.match(layoutSource, /terminalSettingsMenuId\(menu\)/);
+  assert.match(layoutSource, /visibleTerminalSettingsButton\(id\)/);
+  assert.match(layoutSource, /--terminal-menu-max-height/);
+  assert.match(terminalResponsiveStyles, /\.terminal-settings-menu\.terminal-settings-menu--positioned \{[\s\S]*position: fixed/);
+  assert.match(terminalResponsiveStyles, /\.terminal-settings-menu\.terminal-settings-menu--positioned \{[\s\S]*z-index: 170/);
+  assert.match(terminalResponsiveStyles, /--terminal-menu-max-height/);
 });
 
 test("terminal starter model picker overlays without moving the setup card", () => {

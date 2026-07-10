@@ -36,7 +36,7 @@ trait ChatOpenRouterHelpers
     private function normalizeReasoningEffort(string $value): string
     {
         $value = strtolower(trim($value));
-        return in_array($value, ['default', 'none', 'low', 'medium', 'high', 'xhigh'], true) ? $value : 'medium';
+        return in_array($value, ['default', 'none', 'low', 'medium', 'high', 'xhigh', 'max', 'pro'], true) ? $value : 'medium';
     }
 
     private function buildReasoningPayload(string $effort, int $maxOutputTokens, string $openRouterModel): ?array
@@ -52,6 +52,12 @@ trait ChatOpenRouterHelpers
         }
         if ($effort === 'none') {
             return ['exclude' => true];
+        }
+        if ($effort === 'pro' && str_starts_with($openRouterModel, 'openai/gpt-5.6')) {
+            return ['effort' => 'medium', 'mode' => 'pro'];
+        }
+        if ($effort === 'pro') {
+            return ['effort' => 'high'];
         }
         if ($effort === 'xhigh') {
             return ['effort' => 'xhigh'];

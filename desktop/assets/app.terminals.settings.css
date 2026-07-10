@@ -152,7 +152,7 @@
 .terminal-manage-ai-accounts {
   background: transparent;
   border: 0;
-  color: var(--muted);
+  color: var(--terminal-muted);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -160,7 +160,7 @@
   padding: 2px 0;
   text-align: left;
 }
-.terminal-manage-ai-accounts:hover { color: var(--text); }
+.terminal-manage-ai-accounts:hover { color: var(--terminal-text); }
 .terminal-notice {
   align-items: center;
   background: rgba(255, 183, 77, 0.08);

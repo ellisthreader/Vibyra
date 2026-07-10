@@ -1,8 +1,8 @@
 import { Agent, CodeChange, FileEntry, LogEvent, ModelKey, Project, ReasoningEffort } from "../types/domain";
 
 export const DESKTOP_RELAY_URL = process.env.EXPO_PUBLIC_DESKTOP_RELAY_URL ?? "";
-export const models: ModelKey[] = ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5-codex"];
-export const reasoningEfforts: ReasoningEffort[] = ["none", "low", "medium", "high", "xhigh"];
+export const models: ModelKey[] = ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5-codex"];
+export const reasoningEfforts: ReasoningEffort[] = ["none", "low", "medium", "high", "xhigh", "max", "pro"];
 
 export const starterProjects: Project[] = [];
 

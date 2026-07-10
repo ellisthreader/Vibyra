@@ -36,13 +36,20 @@ function ensureActiveTerminalTabVisible() {
 
 function positionTerminalSettingsMenus() {
   document.querySelectorAll(".terminal-settings-menu").forEach((menu) => {
-    const button = menu.parentElement?.querySelector("[data-terminal-settings]");
+    const id = terminalSettingsMenuId(menu);
+    const button = id
+      ? visibleTerminalSettingsButton(id)
+      : menu.parentElement?.querySelector("[data-terminal-settings]");
     if (!button) return;
+    if (id) menu.dataset.terminalSettingsMenuFor = id;
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
     menu.classList.add("terminal-settings-menu--positioned");
     const buttonRect = button.getBoundingClientRect();
     const menuRect = menu.getBoundingClientRect();
     const gap = 8;
     const edge = 8;
+    const maxHeight = Math.max(160, window.innerHeight - edge * 2);
+    menu.style.setProperty("--terminal-menu-max-height", `${Math.floor(maxHeight)}px`);
     const topbarBottom = document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0;
     if (buttonRect.bottom <= topbarBottom || buttonRect.top >= window.innerHeight) {
       settingsTerminalId = "";
@@ -54,13 +61,32 @@ function positionTerminalSettingsMenus() {
       Math.max(edge, buttonRect.right - menuRect.width)
     );
     const below = buttonRect.bottom + gap;
-    const preferredTop = below + menuRect.height <= window.innerHeight - edge
+    const menuHeight = Math.min(menuRect.height, maxHeight);
+    const preferredTop = below + menuHeight <= window.innerHeight - edge
       ? below
-      : Math.max(edge, buttonRect.top - menuRect.height - gap);
-    const top = Math.min(window.innerHeight - menuRect.height - edge, preferredTop);
+      : Math.max(edge, buttonRect.top - menuHeight - gap);
+    const top = Math.max(edge, Math.min(window.innerHeight - menuHeight - edge, preferredTop));
     menu.style.setProperty("--terminal-menu-left", `${Math.round(left)}px`);
     menu.style.setProperty("--terminal-menu-top", `${Math.round(top)}px`);
   });
+}
+
+function visibleTerminalSettingsButton(id) {
+  const buttons = Array.from(document.querySelectorAll(`[data-terminal-settings="${CSS.escape(id)}"]`));
+  return buttons.find((button) => {
+    const rect = button.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+  }) || buttons[0] || null;
+}
+
+function terminalSettingsMenuId(menu) {
+  const current = menu.dataset.terminalSettingsMenuFor;
+  if (current) return current;
+  const closeButton = menu.querySelector("[data-terminal-close]");
+  if (closeButton?.dataset?.terminalClose) return closeButton.dataset.terminalClose;
+  const renameForm = menu.querySelector("[data-terminal-rename-form]");
+  if (renameForm?.dataset?.terminalRenameForm) return renameForm.dataset.terminalRenameForm;
+  return menu.parentElement?.querySelector("[data-terminal-settings]")?.dataset?.terminalSettings || "";
 }
 
 function positionTerminalSetupMenu() {

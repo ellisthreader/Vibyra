@@ -16,7 +16,7 @@ import {
   stopTrackedPreviewServer,
   trackPreviewServer
 } from "./previewServerProcesses.mjs";
-import { activatePreviewService, previewService } from "./previewServices.mjs";
+import { activatePreviewService, allPreviewServices, previewService } from "./previewServices.mjs";
 import { appState, publicHostFromRequestHost } from "./state.mjs";
 
 export const PREVIEW_DEV_COMMAND = "npm run dev -- --host 0.0.0.0";
@@ -31,7 +31,9 @@ export async function runningProjectDevServerUrl(project, requestHost, appDirect
     return null;
   }
 
+  const claimed = portsClaimedByOtherPreviews(targetId);
   for (const port of devServerPortsFromPackage(context.packageText, context.profile)) {
+    if (claimed.has(port)) continue;
     const probe = await probeLoopbackPort(port);
     if (!probe) continue;
     const { localBase, localRoot } = probe;
@@ -118,6 +120,7 @@ async function startProjectDevServerUnlocked(project, requestHost, options = {})
   const tracked = trackPreviewServer(project.id, targetId, {
     appDirectory: context.appDirectory,
     command: context.command,
+    launchPort: context.launchPort,
     process: child,
     startedAt: new Date().toISOString()
   }, { activate: options.activate });
@@ -182,8 +185,10 @@ async function launchedDevServerUrl(context, requestHost, output) {
   const scanPorts = context.profile.scanDefaultPorts
     ? devServerPortsFromPackage(context.packageText, context.profile)
     : [];
+  const claimed = portsClaimedByOtherPreviews(context.targetId);
   const ports = uniquePorts([context.launchPort, ...portsFromOutput(output), ...scanPorts])
-    .filter((port) => !context.preexistingPorts?.has(port));
+    .filter((port) => !context.preexistingPorts?.has(port))
+    .filter((port) => port === context.launchPort || !claimed.has(port));
   if (ports.length === 0) return null;
   for (const port of ports) {
     const probe = await probeLoopbackPort(port);
@@ -206,6 +211,24 @@ async function launchedDevServerUrl(context, requestHost, output) {
 
 function uniquePorts(ports) {
   return Array.from(new Set(ports.filter((port) => Number.isInteger(port) && port > 0 && port < 65536)));
+}
+
+// Two preview targets can serve byte-identical roots (monorepo apps), so scan-port
+// verification must never adopt a port another tracked preview already claimed.
+function portsClaimedByOtherPreviews(targetId) {
+  const claimed = new Set();
+  for (const { service } of allPreviewServices()) {
+    if (!service || (targetId && service.targetId === targetId)) continue;
+    if (Number.isInteger(service.launchPort)) claimed.add(service.launchPort);
+    for (const value of [service.url, service.proxyTargetUrl]) {
+      if (!value) continue;
+      try {
+        const port = Number(new URL(value).port);
+        if (Number.isInteger(port) && port > 0) claimed.add(port);
+      } catch {}
+    }
+  }
+  return claimed;
 }
 
 async function sourcePreviewContext(project, appDirectory = "") {

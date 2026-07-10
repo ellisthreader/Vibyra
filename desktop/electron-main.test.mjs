@@ -11,7 +11,8 @@ const windowSource = readFileSync(new URL("./lib/window.mjs", import.meta.url), 
 
 test("Electron uses the Vibyra runtime name and native app icon", () => {
   assert.match(source, /const APP_NAME = "Vibyra"/);
-  assert.match(source, /const APP_ICON_PATH = path\.join\(__dirname, "vibyra-login-logo\.png"\)/);
+  assert.match(source, /const APP_ICON_FILE = process\.platform === "win32" \? "vibyra\.ico" : "vibyra-login-logo\.png"/);
+  assert.match(source, /const APP_ICON_PATH = path\.join\(__dirname, APP_ICON_FILE\)/);
   assert.match(source, /const LINUX_DESKTOP_NAME = "vibyra\.desktop"/);
   assert.match(source, /app\.setName\(APP_NAME\)/);
   assert.match(source, /app\.setDesktopName\(LINUX_DESKTOP_NAME\)/);
@@ -70,6 +71,13 @@ test("Electron exposes a narrow text clipboard bridge for terminal selection cop
   assert.match(source, /ipcMain\.handle\("clipboard:write-text"/);
   assert.match(source, /event\.sender !== mainWindow\.webContents/);
   assert.match(source, /clipboard\.writeText\(String\(text \|\| ""\)\)/);
+});
+
+test("Electron exposes a narrow dropped-file path bridge for terminal image drops", () => {
+  assert.match(preloadSource, /webUtils/);
+  assert.match(preloadSource, /vibyraDesktopFiles/);
+  assert.match(preloadSource, /pathForFile/);
+  assert.match(preloadSource, /webUtils\?\.getPathForFile\?\.\(file\)/);
 });
 
 test("Electron real quit stops the detached desktop bridge before exiting", () => {

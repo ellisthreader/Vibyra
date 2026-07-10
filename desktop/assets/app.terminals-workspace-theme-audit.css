@@ -118,11 +118,101 @@
   border-color: var(--terminal-border-strong);
 }
 
+.terminal-memory-vault-search input,
+.terminal-memory-document-bar input,
+.terminal-memory-editor textarea,
+.terminal-memory-preview {
+  color: var(--terminal-text);
+}
+
+.terminal-memory-vault-search input::placeholder,
+.terminal-memory-document-bar input::placeholder {
+  color: var(--terminal-dim);
+}
+
+.terminal-memory-vault-tree,
+.terminal-memory-tree,
+.terminal-memory-document,
+.terminal-memory-graph,
+.terminal-memory-graph-canvas,
+.terminal-memory-document-bar,
+.terminal-memory-editor,
+.terminal-memory-preview {
+  background: var(--terminal-surface);
+}
+
+.terminal-memory-tree-row,
+.terminal-memory-disclosure,
+.terminal-memory-row-delete,
+.terminal-memory-node-name,
+.terminal-memory-empty,
+.terminal-memory-document-empty,
+.terminal-memory-graph-meta small,
+.terminal-memory-graph-meta strong,
+.terminal-memory-graph-controls span,
+.terminal-memory-graph-legend {
+  color: var(--terminal-dim);
+}
+
+.terminal-memory-tree-row:hover,
+.terminal-memory-tree-row.selected,
+.terminal-memory-graph-controls button:hover {
+  background: var(--terminal-hover);
+  color: var(--terminal-text);
+}
+
+.terminal-memory-tree-row.selected,
+.terminal-memory-preview a,
+.memory-wikilink {
+  color: var(--terminal-accent);
+}
+
+.terminal-memory-document-bar,
+.terminal-memory-graph-controls,
 .terminal-memory-vault-pane footer,
 .terminal-memory-pane-head,
 .terminal-memory-links-pane header,
 .terminal-memory-links-pane section {
   border-color: var(--terminal-border);
+}
+
+.terminal-memory-preview pre,
+.terminal-memory-preview code {
+  background: var(--terminal-bg);
+  color: var(--terminal-copy);
+}
+
+.terminal-memory-graph-grid,
+.terminal-memory-graph-edges path {
+  color: var(--terminal-muted);
+}
+
+.terminal-memory-graph-node {
+  color: var(--terminal-muted);
+}
+
+.terminal-memory-graph-node.folder,
+.terminal-memory-graph-node.selected,
+.terminal-memory-graph-node.related,
+.terminal-memory-graph-node:hover,
+.terminal-memory-graph-node:focus {
+  color: var(--terminal-text);
+}
+
+.terminal-memory-graph-node .node-core {
+  stroke: color-mix(in srgb, var(--terminal-text) 14%, transparent);
+}
+
+.terminal-memory-graph-node:hover .node-core,
+.terminal-memory-graph-node:focus .node-core,
+.terminal-memory-graph-node.selected .node-core {
+  fill: var(--terminal-text);
+  stroke: var(--terminal-accent);
+}
+
+.terminal-memory-graph-node .node-center,
+.terminal-memory-graph-node text {
+  stroke: var(--terminal-surface);
 }
 
 .terminal-test-runner {
@@ -156,6 +246,129 @@
   background: var(--terminal-border);
 }
 
+.terminal-test-run,
+.terminal-test-address form button,
+.terminal-test-runner button,
+.terminal-test-inspector-composer > button {
+  background: var(--terminal-accent);
+  border-color: var(--terminal-accent-border);
+  color: var(--surface-on-accent, #fff);
+}
+
+.terminal-test-run:hover,
+.terminal-test-address form button:hover,
+.terminal-test-runner button:hover,
+.terminal-test-inspector-composer > button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--terminal-accent) 88%, var(--terminal-text));
+}
+
+.terminal-test-run.is-stop {
+  background: var(--terminal-danger-soft);
+  border-color: var(--terminal-danger-border);
+  color: var(--terminal-danger);
+}
+
+.terminal-test-footer small,
+.terminal-test-target-state,
+.terminal-test-target-state small {
+  color: var(--terminal-dim);
+}
+
+.terminal-test-target-state i {
+  background: var(--terminal-status-idle);
+}
+
+.terminal-test-target-state.is-running i {
+  background: var(--terminal-status-success);
+}
+
+.terminal-test-target-state.is-running small {
+  color: var(--terminal-status-success);
+}
+
+.terminal-test-target-state.is-starting i {
+  background: var(--terminal-status-running);
+  box-shadow: 0 0 0 4px var(--terminal-status-running-ring);
+}
+
+.terminal-test-target-state.is-starting small {
+  color: var(--terminal-status-running);
+}
+
+.terminal-test-target-state:not(.is-running):not(.is-starting) small:not(:empty) {
+  color: var(--terminal-warning-text);
+}
+
+.terminal-test-target-state:not(.is-running):not(.is-starting) small:not(:empty) + i,
+.terminal-test-target-state:not(.is-running):not(.is-starting):has(small:not(:empty)) i {
+  background: var(--terminal-status-unavailable);
+}
+
+.terminal-test-runner-mark {
+  background: var(--terminal-accent-soft);
+  border-color: var(--terminal-accent-border);
+}
+
+.terminal-test-runner-mark::after {
+  border-top-color: var(--terminal-status-running);
+}
+
+.terminal-test-runner-feed > div span {
+  background: var(--terminal-status-idle);
+}
+
+.terminal-test-runner-feed > div span:first-child {
+  background: var(--terminal-status-running);
+}
+
+.terminal-test-runner-feed > div small {
+  color: var(--terminal-dim);
+}
+
+.terminal-test-runner-progress i {
+  background: linear-gradient(90deg, var(--terminal-accent), var(--terminal-status-running));
+}
+
+.terminal-test-runner.is-error .terminal-test-runner-mark {
+  background: var(--terminal-danger-soft);
+  border-color: var(--terminal-danger-border);
+}
+
+.terminal-test-runner.is-error .terminal-test-runner-mark::after {
+  border-color: var(--terminal-danger-border);
+}
+
 .terminal-test-runner.is-error .terminal-test-runner-copy p {
   color: var(--terminal-danger);
+}
+
+.terminal-test-inspector-source:not(:disabled):hover {
+  color: var(--terminal-accent);
+}
+
+.terminal-test-inspector-composer {
+  background: var(--terminal-surface);
+  border-color: var(--terminal-border);
+}
+
+.terminal-test-inspector-composer:focus-within {
+  border-color: var(--terminal-accent-border);
+  box-shadow: 0 0 0 2px var(--terminal-accent-soft);
+}
+
+.terminal-test-inspector-composer textarea {
+  color: var(--terminal-text);
+}
+
+.terminal-test-inspector-composer textarea::placeholder {
+  color: var(--terminal-dim);
+}
+
+.terminal-test-inspector-composer > button:disabled {
+  background: var(--terminal-status-stopped);
+  color: var(--terminal-bg);
+}
+
+.terminal-test-inspector-status {
+  color: var(--terminal-dim);
 }

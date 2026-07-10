@@ -135,5 +135,5 @@ function normalizeModel(model) {
 }
 
 function normalizeReasoningEffort(value) {
-  return ["none", "low", "medium", "high", "xhigh"].includes(value) ? value : "medium";
+  return ["none", "low", "medium", "high", "xhigh", "max", "pro"].includes(value) ? value : "medium";
 }

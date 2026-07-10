@@ -5,8 +5,8 @@ import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis
 
 export type AgentState = "running" | "waiting" | "complete" | "failed";
 export type BuildState = "idle" | "building" | "passed" | "failed";
-export type ModelKey = "gpt-5.5" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5-codex";
-export type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh";
+export type ModelKey = "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-5.6-luna" | "gpt-5.5" | "gpt-5.4" | "gpt-5.4-mini" | "gpt-5.4-nano" | "gpt-5-codex";
+export type ReasoningEffort = "none" | "low" | "medium" | "high" | "xhigh" | "max" | "pro";
 export type DesktopPermissionMode = "read" | "ask" | "auto";
 export type PreviewState = "offline" | "live" | "refreshing" | "delivered";
 

@@ -593,7 +593,9 @@ export function vibyraAgentArgs({ desktopUrl, model = "auto", permissionMode = "
     String(roleInstructions || "").trim()
   ].filter(Boolean).join("\n\n"))}`);
   const effort = normalizeReasoningEffort(reasoningEffort);
-  if (effort !== "default" && effort !== "none") provider.push("-c", `model_reasoning_effort="${effort}"`);
+  if (effort === "pro" && isGpt56Model(model)) provider.push("-c", 'model_reasoning_mode="pro"');
+  else if (effort === "pro") provider.push("-c", 'model_reasoning_effort="high"');
+  else if (effort !== "default" && effort !== "none") provider.push("-c", `model_reasoning_effort="${effort}"`);
   const readOnly = String(sandboxMode || "").trim().toLowerCase() === "read-only";
   const access = readOnly
     ? threadId
@@ -773,11 +775,11 @@ async function handleLocalProviderCommand({ command, args, profile, rl, state, c
     return true;
   }
   if (command === "/effort") {
-    if (!args) return writeUsage(state, state.model, "/effort default|low|medium|high|xhigh", color);
+    if (!args) return writeUsage(state, state.model, "/effort default|low|medium|high|xhigh|max|pro", color);
     const requested = args.trim().toLowerCase();
     const next = normalizeReasoningEffort(requested);
     if (next !== requested || next === "none") {
-      return writeUsage(state, state.model, "/effort default|low|medium|high|xhigh", color);
+      return writeUsage(state, state.model, "/effort default|low|medium|high|xhigh|max|pro", color);
     }
     state.reasoningEffort = next;
     state.agentSession.threadId = "";
@@ -1189,7 +1191,11 @@ function ansiForeground(value, colorCode, enabled) {
 
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").trim().toLowerCase();
-  return ["default", "low", "medium", "high", "xhigh", "none"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "max", "pro", "none"].includes(effort) ? effort : "medium";
+}
+
+function isGpt56Model(value) {
+  return String(value || "").trim().toLowerCase().replace(/^openai\//, "").startsWith("gpt-5.6");
 }
 
 function normalizeTokenMode(value) {

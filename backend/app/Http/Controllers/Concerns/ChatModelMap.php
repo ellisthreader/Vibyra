@@ -6,6 +6,10 @@ trait ChatModelMap
 {
     private const MODEL_MAP = [
         'auto' => 'openai/gpt-4o-mini',
+        'gpt-5.6' => 'openai/gpt-5.6-sol',
+        'gpt-5.6-sol' => 'openai/gpt-5.6-sol',
+        'gpt-5.6-terra' => 'openai/gpt-5.6-terra',
+        'gpt-5.6-luna' => 'openai/gpt-5.6-luna',
         'gpt-5.5' => 'openai/gpt-5.5',
         'gpt-5.4' => 'openai/gpt-5.4',
         'gpt-5.4-mini' => 'openai/gpt-5.4-mini',
@@ -38,11 +42,11 @@ trait ChatModelMap
             return 1;
         }
 
-        if (str_contains($model, 'opus') || str_contains($model, 'pro') || str_contains($model, 'codex') || str_contains($model, '5.5')) {
+        if (str_contains($model, 'opus') || str_contains($model, 'pro') || str_contains($model, 'codex') || str_contains($model, '5.6-sol') || str_contains($model, '5.5')) {
             return 6;
         }
 
-        if (str_contains($model, 'sonnet') || str_contains($model, '5.4')) {
+        if (str_contains($model, 'sonnet') || str_contains($model, '5.6') || str_contains($model, '5.4')) {
             return 4;
         }
 

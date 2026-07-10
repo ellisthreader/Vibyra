@@ -1,6 +1,8 @@
 body {
   --surface-bg-elevated: var(--surface-elevated);
   --surface-input: var(--surface-bg);
+  --surface-accent-hover: var(--color-accent-hover, var(--surface-accent));
+  --surface-on-accent: var(--color-on-accent, #fff);
   --screenshot-bg: var(--color-background);
   --screenshot-surface: color-mix(in srgb, var(--color-elevated) 97%, transparent);
   --screenshot-stage: var(--color-rail);
@@ -75,6 +77,124 @@ body {
 .membership-plan.active {
   background: var(--color-surface);
   border-color: var(--color-line-accent);
+}
+
+.projects-page {
+  background: var(--shell-bg);
+  color: var(--surface-text);
+}
+
+.projects-search,
+.projects-filter,
+.projects-pair-button {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-muted);
+}
+
+.projects-search input {
+  color: var(--surface-text);
+}
+
+.projects-search input::placeholder {
+  color: var(--surface-dim);
+}
+
+.projects-search:focus-within {
+  border-color: var(--surface-border-strong);
+  box-shadow: 0 0 0 3px var(--surface-accent-soft);
+}
+
+.projects-filter button,
+.projects-pair-button {
+  color: var(--surface-muted);
+}
+
+.projects-filter button.active {
+  background: var(--surface-hover);
+  color: var(--surface-text);
+}
+
+.projects-filter button:hover,
+.projects-pair-button:hover,
+.project-row:hover {
+  background: var(--surface-hover);
+}
+
+.projects-list-head,
+.project-row {
+  border-color: var(--surface-line);
+}
+
+.project-row.active {
+  background: color-mix(in srgb, var(--surface-hover) 74%, transparent);
+}
+
+.project-icon {
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+  border-color: var(--surface-border);
+  color: var(--surface-muted);
+}
+
+.project-row.active .project-icon,
+.projects-empty.is-phone > span {
+  color: var(--surface-accent);
+}
+
+.project-name,
+.projects-empty strong {
+  color: var(--surface-text);
+}
+
+.project-path,
+.project-stack,
+.project-source,
+.projects-empty,
+.projects-empty p {
+  color: var(--surface-muted);
+}
+
+.project-source i {
+  background: var(--surface-accent);
+}
+
+.project-source.is-phone i {
+  background: var(--surface-success);
+}
+
+.project-chat-button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--surface-muted);
+}
+
+.project-chat-button:hover {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.projects-empty > span,
+.projects-empty-action {
+  background: var(--surface-bg);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+
+.projects-empty-action:hover {
+  background: var(--surface-hover);
+}
+
+.projects-empty-action.is-primary {
+  background: var(--surface-accent);
+  border-color: var(--surface-accent);
+  color: var(--surface-on-accent);
+}
+
+.projects-empty-action.is-primary:hover {
+  background: var(--surface-accent-hover);
+  border-color: var(--surface-accent-hover);
+  color: var(--surface-on-accent);
 }
 
 body.screenshot-editing {

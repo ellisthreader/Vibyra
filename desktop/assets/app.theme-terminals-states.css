@@ -11,6 +11,8 @@ body[data-desktop-theme="dark"] {
   --terminal-copy: var(--color-muted);
   --terminal-muted: var(--color-muted);
   --terminal-dim: var(--color-dim);
+  --terminal-cursor: color-mix(in srgb, var(--terminal-copy) 42%, transparent);
+  --terminal-locked-text: #b8b8c8;
   --terminal-accent: var(--color-accent);
   --terminal-accent-soft: var(--color-accent-soft);
   --terminal-accent-border: var(--color-line-accent);
@@ -63,6 +65,8 @@ body[data-desktop-theme="light"] {
   --terminal-copy: #303646;
   --terminal-muted: #555e70;
   --terminal-dim: #6e7686;
+  --terminal-cursor: rgba(48, 54, 70, 0.5);
+  --terminal-locked-text: #555e70;
   --terminal-accent: #6842d8;
   --terminal-accent-soft: rgba(109, 59, 255, 0.09);
   --terminal-accent-border: rgba(109, 59, 255, 0.24);
@@ -116,6 +120,8 @@ body[data-desktop-theme="light"] .terminal-banner-box { color: #16764e; }
     --terminal-copy: #303646;
     --terminal-muted: #555e70;
     --terminal-dim: #6e7686;
+    --terminal-cursor: rgba(48, 54, 70, 0.5);
+    --terminal-locked-text: #555e70;
     --terminal-accent: #6842d8;
     --terminal-accent-soft: rgba(109, 59, 255, 0.09);
     --terminal-accent-border: rgba(109, 59, 255, 0.24);

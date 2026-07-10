@@ -13,14 +13,14 @@ class OpenRouterRequestPolicyTest extends TestCase
     {
         $catalog = Mockery::mock(OpenRouterPricingCatalog::class);
         $catalog->shouldReceive('freshPricingFor')
-            ->with('openai/gpt-5.5')
+            ->with('openai/gpt-5.6-sol')
             ->andReturn(['prompt' => '0.000005', 'completion' => '0.00003']);
 
         $policy = new OpenRouterRequestPolicy($catalog);
 
         $this->assertSame([
-            'max_price' => ['prompt' => 5.5, 'completion' => 33.0],
-        ], $policy->provider('gpt-5.5'));
+            'max_price' => ['prompt' => 5.0, 'completion' => 30.0],
+        ], $policy->provider('gpt-5.6-sol'));
     }
 
     public function test_premium_request_multiplier_expands_provider_ceiling(): void

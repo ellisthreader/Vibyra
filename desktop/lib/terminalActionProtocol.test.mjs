@@ -13,6 +13,10 @@ const mainSource = await readFile(new URL("../electron-main.cjs", import.meta.ur
 const bootSource = await readFile(new URL("../assets/app.boot.js", import.meta.url), "utf8");
 const htmlSource = await readFile(new URL("../app.html", import.meta.url), "utf8");
 const launcherSource = await readFile(new URL("../../Vibyra Desktop", import.meta.url), "utf8");
+const windowsLauncherSource = await readFile(
+  new URL("../../scripts/vibyra-desktop.ps1", import.meta.url),
+  "utf8"
+);
 
 test("runtime exposes the terminal action protocol and coalesces stale renderer reloads", () => {
   appState.rendererReloadRequest = null;
@@ -41,6 +45,18 @@ test("desktop launcher replaces a stale AI terminal bridge before opening", () =
     launcherSource,
     /Refreshing the Vibyra Desktop bridge[\s\S]*stop_electron_shells[\s\S]*\/desktop\/quit/
   );
+});
+
+test("Windows desktop launcher replaces a stale AI terminal bridge before opening", () => {
+  assert.match(windowsLauncherSource, /AI_TERMINAL_LAUNCH_CONTRACT_VERSION/);
+  assert.match(windowsLauncherSource, /aiTerminalLaunchContractVersion/);
+  assert.match(windowsLauncherSource, /\/desktop\/runtime/);
+  assert.match(windowsLauncherSource, /Refreshing the Vibyra Desktop bridge/);
+  assert.match(
+    windowsLauncherSource,
+    /Refreshing the Vibyra Desktop bridge[\s\S]*Stop-DesktopWindow[\s\S]*Stop-BridgeGraceful/
+  );
+  assert.match(windowsLauncherSource, /"window"\s*\{ Start-Bridge; Open-Window \}/);
 });
 
 test("renderer blocks actions until the bridge protocol matches", () => {

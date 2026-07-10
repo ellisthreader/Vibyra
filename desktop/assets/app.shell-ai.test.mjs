@@ -10,6 +10,7 @@ const pages = readFileSync(new URL("./app.pages.js", import.meta.url), "utf8");
 const sidebar = readFileSync(new URL("./app.shell-ai.js", import.meta.url), "utf8");
 const styles = readFileSync(new URL("./app.shell-ai.css", import.meta.url), "utf8");
 const chatSend = readFileSync(new URL("./app.chat-send.js", import.meta.url), "utf8");
+const chatStore = readFileSync(new URL("./app.chat-store.js", import.meta.url), "utf8");
 const terminalCompanion = readFileSync(new URL("./app.terminals-companion.js", import.meta.url), "utf8");
 
 test("desktop primary navigation excludes the standalone Chat tab", () => {
@@ -79,4 +80,17 @@ test("shell chat commands do not expose terminal-only tools", () => {
   assert.doesNotMatch(state, /id: "memory", slash: "\/memory"/);
   assert.doesNotMatch(chatSend, /text === "\/phone"/);
   assert.doesNotMatch(chatSend, /\/phone, \/voice, \/memory/);
+});
+
+test("desktop chat paste does not trigger Enter-to-send handlers", () => {
+  assert.match(chatStore, /function bindDesktopChatPasteGuard/);
+  assert.match(chatStore, /insertFromPaste/);
+  assert.match(chatStore, /function shouldSendDesktopChatEnter/);
+  assert.match(pages, /bindDesktopChatPasteGuard\(homeInput\)/);
+  assert.match(pages, /bindDesktopChatPasteGuard\(chatInput\)/);
+  assert.match(sidebar, /bindDesktopChatPasteGuard\(input\)/);
+  assert.match(pages, /if \(!shouldSendDesktopChatEnter\(event\)\) return/);
+  assert.match(sidebar, /if \(shouldSendDesktopChatEnter\(event\)\)/);
+  assert.doesNotMatch(pages, /event\.key === "Enter" && !event\.shiftKey\) \{ event\.preventDefault\(\); sendChat\(\); \}/);
+  assert.doesNotMatch(sidebar, /event\.key === "Enter" && !event\.shiftKey/);
 });

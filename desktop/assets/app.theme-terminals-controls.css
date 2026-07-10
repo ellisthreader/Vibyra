@@ -114,10 +114,12 @@ body[data-desktop-theme="light"] {
   border-color: var(--terminal-border);
   color: var(--terminal-text);
 }
-.terminal-notice button,
+.terminal-notice button {
+  color: var(--terminal-muted);
+}
 .terminal-model-option.locked,
 .terminal-model-option.locked:hover {
-  color: var(--terminal-muted);
+  color: var(--terminal-locked-text);
 }
 .terminal-close-row {
   color: var(--terminal-danger);
@@ -199,20 +201,6 @@ body[data-desktop-theme="light"] {
   color: var(--terminal-disabled);
 }
 
-body[data-desktop-theme="dark"] .terminal-model-option.locked,
-body[data-desktop-theme="dark"] .terminal-model-option.locked:hover {
-  color: #b8b8c8 !important;
-}
-body[data-desktop-theme="light"] .terminal-model-option.locked,
-body[data-desktop-theme="light"] .terminal-model-option.locked:hover {
-  color: #555e70 !important;
-}
-@media (prefers-color-scheme: light) {
-  body:not([data-desktop-theme="dark"]) .terminal-model-option.locked,
-  body:not([data-desktop-theme="dark"]) .terminal-model-option.locked:hover {
-    color: #555e70 !important;
-  }
-}
 @media (max-width: 860px) {
   .terminal-companion:has(.terminal-memory-workspace) {
     max-height: none;

@@ -36,4 +36,34 @@ class ChatOpenRouterReasoningTest extends TestCase
 
         $this->assertSame(['effort' => 'xhigh'], $helper->reasoning('xhigh'));
     }
+
+    public function test_gpt_56_pro_reasoning_uses_reasoning_mode(): void
+    {
+        $helper = new class
+        {
+            use ChatOpenRouterHelpers;
+
+            public function reasoning(string $effort): ?array
+            {
+                return $this->buildReasoningPayload($effort, 800, 'openai/gpt-5.6-sol');
+            }
+        };
+
+        $this->assertSame(['effort' => 'medium', 'mode' => 'pro'], $helper->reasoning('pro'));
+    }
+
+    public function test_gpt_56_max_reasoning_uses_max_effort(): void
+    {
+        $helper = new class
+        {
+            use ChatOpenRouterHelpers;
+
+            public function reasoning(string $effort): ?array
+            {
+                return $this->buildReasoningPayload($effort, 800, 'openai/gpt-5.6-sol');
+            }
+        };
+
+        $this->assertSame(['effort' => 'max'], $helper->reasoning('max'));
+    }
 }

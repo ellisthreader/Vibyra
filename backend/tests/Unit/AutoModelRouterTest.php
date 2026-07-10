@@ -26,7 +26,7 @@ class AutoModelRouterTest extends TestCase
             $router->route('Perform a security review and find the root cause of this production incident.', 'starter', $calculator)['modelKey']
         );
         $this->assertSame(
-            'openai/gpt-5.5',
+            'openai/gpt-5.6-terra',
             $router->route('Implement the API, database migration, and tests.', 'starter', $calculator)['modelKey']
         );
         $this->assertSame(
@@ -79,7 +79,7 @@ class AutoModelRouterTest extends TestCase
             ['openai'],
         );
 
-        $this->assertSame('openai/gpt-5.5', $route['modelKey']);
+        $this->assertSame('openai/gpt-5.6-terra', $route['modelKey']);
         $this->assertSame('google/gemini-3.1-pro-preview', $route['preferredModelKey']);
         $this->assertSame(['openai'], $route['allowedProviders']);
     }

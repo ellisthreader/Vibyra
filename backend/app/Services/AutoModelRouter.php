@@ -22,7 +22,7 @@ class AutoModelRouter
             'reason' => 'Strong fit for difficult reviews, debugging, architecture, and high-stakes reasoning.',
         ],
         'agentic_coding' => [
-            'modelKey' => 'openai/gpt-5.5',
+            'modelKey' => 'openai/gpt-5.6-terra',
             'reason' => 'Strong fit for agentic coding, tool use, implementation, and verification.',
         ],
         'research_reasoning' => [
@@ -122,7 +122,7 @@ class AutoModelRouter
             return self::FREE_PLAN_MODEL;
         }
 
-        foreach ([$preferred, 'openai/gpt-5.5', self::FREE_PLAN_MODEL, 'google/gemini-3.5-flash'] as $candidate) {
+        foreach ([$preferred, 'openai/gpt-5.6-terra', 'openai/gpt-5.5', self::FREE_PLAN_MODEL, 'google/gemini-3.5-flash'] as $candidate) {
             if ($this->providerAllowed($candidate, $allowedProviders)
                 && $calculator->modelConfig($candidate)
                 && $calculator->planAllowsModel($plan, $candidate)) {

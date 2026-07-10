@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 contextBridge.exposeInMainWorld("vibyraDesktopWindow", {
   isElectron: true,
@@ -15,6 +15,16 @@ contextBridge.exposeInMainWorld("vibyraDesktopMemory", {
 
 contextBridge.exposeInMainWorld("vibyraDesktopProjects", {
   pick: (kind) => ipcRenderer.invoke("projects:pick", kind)
+});
+
+contextBridge.exposeInMainWorld("vibyraDesktopFiles", {
+  pathForFile: (file) => {
+    try {
+      return webUtils?.getPathForFile?.(file) || "";
+    } catch {
+      return "";
+    }
+  }
 });
 
 contextBridge.exposeInMainWorld("vibyraDesktopClipboard", {

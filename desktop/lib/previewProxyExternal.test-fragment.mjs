@@ -252,8 +252,7 @@ test("approved preview server start avoids an occupied declared port", async () 
     assert.notEqual(new URL(result.url).port, String(occupied.port));
     assert.match(result.command, /--port \d+/);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await occupied.close();
     await fakeNpm.cleanup();
     await cleanup();

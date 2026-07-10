@@ -1,11 +1,11 @@
 .terminal-voice-input {
   align-items: center;
-  background: color-mix(in srgb, var(--panel, #111118) 94%, transparent);
-  border: 1px solid var(--border, rgba(151, 161, 190, 0.16));
+  background: color-mix(in srgb, var(--terminal-elevated) 94%, transparent);
+  border: 1px solid var(--terminal-border);
   border-radius: 999px;
   bottom: 22px;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
-  color: var(--text, #f1eef8);
+  color: var(--terminal-text);
   display: flex;
   gap: 10px;
   left: 50%;
@@ -20,10 +20,10 @@
 .terminal-voice-input[hidden] { display: none; }
 .terminal-voice-input-mark {
   align-items: center;
-  background: rgba(139, 92, 255, 0.13);
-  border: 1px solid rgba(139, 92, 255, 0.3);
+  background: var(--terminal-accent-soft);
+  border: 1px solid var(--terminal-accent-border);
   border-radius: 50%;
-  color: #a98bff;
+  color: var(--terminal-accent);
   display: inline-flex;
   flex: 0 0 32px;
   gap: 2px;
@@ -47,7 +47,7 @@
   line-height: 15px;
 }
 .terminal-voice-input-copy small {
-  color: var(--muted, #918ca1);
+  color: var(--terminal-dim);
   font-size: 9px;
   line-height: 13px;
   overflow: hidden;
@@ -55,18 +55,18 @@
   white-space: nowrap;
 }
 .terminal-voice-input-stop {
-  color: var(--muted, #aaa3b8);
+  color: var(--terminal-muted);
   font-size: 9px;
   font-weight: 700;
   padding: 0 7px;
 }
 .terminal-voice-input[data-phase="listening"] {
-  border-color: rgba(255, 102, 119, 0.42);
+  border-color: color-mix(in srgb, var(--terminal-status-error) 42%, transparent);
 }
 .terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark {
-  background: rgba(255, 75, 94, 0.12);
-  border-color: rgba(255, 102, 119, 0.46);
-  color: #ff6677;
+  background: color-mix(in srgb, var(--terminal-status-error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--terminal-status-error) 46%, transparent);
+  color: var(--terminal-status-error, #ff6677);
 }
 .terminal-voice-input[data-phase="listening"] .terminal-voice-input-mark i {
   animation: terminal-voice-input-level 680ms ease-in-out infinite alternate;
@@ -77,14 +77,14 @@
   animation: terminal-voice-input-pulse 900ms ease-in-out infinite alternate;
 }
 .terminal-voice-input[data-phase="sent"] .terminal-voice-input-mark {
-  background: rgba(74, 222, 128, 0.1);
-  border-color: rgba(74, 222, 128, 0.34);
-  color: #65d98b;
+  background: color-mix(in srgb, var(--terminal-status-success) 10%, transparent);
+  border-color: color-mix(in srgb, var(--terminal-status-success) 34%, transparent);
+  color: var(--terminal-status-success);
 }
 .terminal-voice-input[data-phase="error"] .terminal-voice-input-mark {
-  background: rgba(255, 102, 119, 0.1);
-  border-color: rgba(255, 102, 119, 0.34);
-  color: #ff7b87;
+  background: color-mix(in srgb, var(--terminal-status-error) 10%, transparent);
+  border-color: color-mix(in srgb, var(--terminal-status-error) 34%, transparent);
+  color: var(--terminal-status-error);
 }
 @keyframes terminal-voice-input-level {
   from { height: 6px; }

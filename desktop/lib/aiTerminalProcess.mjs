@@ -9,7 +9,7 @@ import {
   AI_TERMINAL_LAUNCH_CONTRACT_VERSION,
   terminalProviderIdForModel
 } from "./aiTerminalProviderAdapters.mjs";
-import { VIBYRA_AGENT_ENTRY_PATH } from "./aiTerminalRuntimeCatalog.mjs";
+import { TERMINAL_RUNTIMES, VIBYRA_AGENT_ENTRY_PATH } from "./aiTerminalRuntimeCatalog.mjs";
 import { terminalEnv, terminalSessionCommand } from "./aiTerminalVibyraShell.mjs";
 import { terminalRuntimeExecutable, terminalRuntimeForModel } from "./aiTerminalRuntimes.mjs";
 import { PORT } from "./state.mjs";
@@ -176,7 +176,8 @@ export function aiTerminalProviderVersion(model = "") {
   const executable = resolveAgentExecutable(AGENT_CONFIG[key]);
   if (!executable) return "";
   try {
-    const result = execFileSync(executable, ["--version"], {
+    const versionCommand = providerVersionCommand(executable);
+    const result = execFileSync(versionCommand.command, versionCommand.args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
       timeout: 1500
@@ -185,6 +186,24 @@ export function aiTerminalProviderVersion(model = "") {
   } catch {
     return "";
   }
+}
+
+function providerVersionCommand(executable) {
+  const codexNodeEntry = join(dirname(executable), "..", "@openai", "codex", "bin", "codex.js");
+  if (/codex\.cmd$/i.test(String(executable)) && existsSync(codexNodeEntry)) {
+    return { command: process.execPath, args: [codexNodeEntry, "--version"] };
+  }
+  if (process.platform === "win32" && windowsCommandScript(executable)) {
+    return {
+      command: process.env.ComSpec || "cmd.exe",
+      args: ["/d", "/s", "/c", `${windowsCmdQuote(executable)} --version`]
+    };
+  }
+  return { command: executable, args: ["--version"] };
+}
+
+function windowsCmdQuote(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
 }
 
 export function listAiTerminalAgentStatuses() {
@@ -333,12 +352,14 @@ function attachProcess(child, onData, onExit) {
 
 function resolveAgentExecutable(config) {
   if (!config.command) return "";
+  const runtimeId = config.runtimeId || config.command;
+  const managed = terminalRuntimeExecutable(runtimeId);
+  if (managed && TERMINAL_RUNTIMES[runtimeId]?.bundled) return managed;
   for (const key of config.env) {
     const value = process.env[key]?.trim();
     if (value && canExecute(value)) return value;
   }
   if (config.command.includes("/") && canExecute(config.command)) return config.command;
-  const managed = terminalRuntimeExecutable(config.runtimeId || config.command);
   if (managed) return managed;
   for (const dir of String(process.env.PATH || "").split(delimiter)) {
     const path = `${dir}/${config.command}`;
@@ -583,7 +604,13 @@ export function aiTerminalAgentArgs(agent, options = {}) {
     );
   }
   const effort = normalizeReasoningEffort(options.reasoningEffort);
-  if (effort !== "default") args.push("-c", `model_reasoning_effort="${effort}"`);
+  if (effort === "pro" && isGpt56Model(options.model)) {
+    args.push("-c", 'model_reasoning_mode="pro"');
+  } else if (effort === "pro") {
+    args.push("-c", 'model_reasoning_effort="high"');
+  } else if (effort !== "default") {
+    args.push("-c", `model_reasoning_effort="${effort}"`);
+  }
   if (roleInstructions) args.push("-c", `developer_instructions=${JSON.stringify(roleInstructions)}`);
   const sandboxMode = normalizeSandboxMode(options.sandboxMode, options.permissionMode);
   if (sandboxMode === "read-only") {
@@ -606,7 +633,11 @@ function normalizeSandboxMode(value, permissionMode) {
 
 function normalizeReasoningEffort(value) {
   const effort = String(value || "medium").toLowerCase();
-  return ["default", "low", "medium", "high", "xhigh"].includes(effort) ? effort : "medium";
+  return ["default", "low", "medium", "high", "xhigh", "max", "pro"].includes(effort) ? effort : "medium";
+}
+
+function isGpt56Model(value) {
+  return String(value || "").trim().toLowerCase().replace(/^openai\//, "").startsWith("gpt-5.6");
 }
 
 function normalizePermissionMode(value) {

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, networkInterfaces } from "node:os";
 import { dirname, join } from "node:path";
 import { send } from "./http.mjs";
@@ -229,8 +229,28 @@ function writeRegistry(registry, pathOverride) {
   const temporaryPath = `${path}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`;
   writeFileSync(temporaryPath, `${JSON.stringify(registry)}\n`, { mode: 0o600 });
   chmodSync(temporaryPath, 0o600);
-  renameSync(temporaryPath, path);
+  renameRegistryWithRetry(temporaryPath, path);
   chmodSync(path, 0o600);
+}
+
+// Windows refuses rename-over-open-file (EPERM/EACCES/EBUSY) while another
+// process (detached worker, AV scan) briefly holds the registry; retry the
+// atomic swap instead of failing the token operation.
+function renameRegistryWithRetry(temporaryPath, path, attempts = 20) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      renameSync(temporaryPath, path);
+      return;
+    } catch (error) {
+      const retryable = ["EPERM", "EACCES", "EBUSY"].includes(error?.code);
+      if (!retryable || attempt >= attempts || process.platform !== "win32") {
+        try { rmSync(temporaryPath, { force: true }); } catch {}
+        throw error;
+      }
+      const waitUntil = Date.now() + 25;
+      while (Date.now() < waitUntil) { /* bounded sync backoff: callers are sync */ }
+    }
+  }
 }
 
 function defaultRegistryPath() {

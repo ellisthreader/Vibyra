@@ -1,0 +1,1070 @@
+﻿[32m✔ desktop renderer and bridge use the same configured account API [90m(4.1008ms)[39m[39m
+[32m✔ desktop email auth uses the same-origin bridge instead of a browser cross-origin request [90m(0.3887ms)[39m[39m
+[32m✔ desktop social auth opens a real provider flow and completes the desktop session [90m(0.3949ms)[39m[39m
+[32m✔ desktop auth legal links use the public canonical pages [90m(0.282ms)[39m[39m
+[32m✔ desktop auth keeps new-account state for one launch [90m(0.3157ms)[39m[39m
+[32m✔ browser billing opens a placeholder before awaiting the portal request [90m(1.875ms)[39m[39m
+[32m✔ billing errors stay in the Billing surface [90m(0.4894ms)[39m[39m
+[32m✔ paid membership changes use the explicit change endpoint [90m(0.3279ms)[39m[39m
+[32m✔ all billing operations use the local bridge without renderer auth headers [90m(0.4797ms)[39m[39m
+[32m✔ external billing refreshes account state when the user returns [90m(0.3008ms)[39m[39m
+[32m✔ social auth click shows backend configuration errors in the visible auth area [90m(4.007ms)[39m[39m
+[32m✔ desktop chat accepts dropped image files and stages real image data [90m(4.4734ms)[39m[39m
+[32m✔ dropped PNG data is staged for the next desktop chat request [90m(5.0828ms)[39m[39m
+[32m✔ dropped screenshot paths append to the chat composer [90m(2.0361ms)[39m[39m
+[32m✔ desktop production source contains no native dropdown controls [90m(305.8421ms)[39m[39m
+[32m✔ custom dropdown renders an accessible button and listbox [90m(3.4116ms)[39m[39m
+[32m✔ custom dropdown supports keyboard navigation and stable option patching [90m(0.4367ms)[39m[39m
+[32m✔ profile, terminal settings, and preview use the shared custom dropdown [90m(13.7806ms)[39m[39m
+[32m✔ desktop action context persists a bounded recent launch batch per main chat [90m(11.3106ms)[39m[39m
+[32m✔ desktop action context expires stale batches and clears them on read [90m(2.3336ms)[39m[39m
+[32m✔ main, companion, and voice requests send structured action context [90m(0.7327ms)[39m[39m
+[32m✔ companion action context stays attached to its terminal chat thread [90m(2.5977ms)[39m[39m
+[32m✔ desktop actions open requested terminals with captured project scope [90m(8.3744ms)[39m[39m
+[32m✔ desktop actions capture opened terminal IDs in the execution hook [90m(2.6076ms)[39m[39m
+[32m✔ desktop actions inherit terminal setup scope only when project metadata is absent [90m(2.4896ms)[39m[39m
+[32m✔ desktop actions match provider-qualified Pro model aliases [90m(3.925ms)[39m[39m
+[32m✔ desktop actions launch supported provider models with full access [90m(2.408ms)[39m[39m
+[32m✔ desktop batch tasks assign transient prompts without dispatching input early [90m(3.3263ms)[39m[39m
+[32m✔ desktop batch tasks preserve per-task launch settings [90m(6.4717ms)[39m[39m
+[32m✔ desktop task actions require an explicit target [90m(2.1196ms)[39m[39m
+[32m✔ desktop task actions assign jobs to existing project terminals without relaunching [90m(7.6265ms)[39m[39m
+[32m✔ desktop task actions target exact latest-batch IDs in supplied order [90m(2.9336ms)[39m[39m
+[32m✔ desktop latest-batch targeting fails closed when no IDs are available [90m(1.7276ms)[39m[39m
+[32m✔ desktop task assignments preserve internal delivery callbacks [90m(2.2728ms)[39m[39m
+[32m✔ desktop task assignments report semantic endpoint failures without raw-input retries [90m(2.4029ms)[39m[39m
+[32m✔ desktop task assignments exclude shell and incompatible existing terminals [90m(2.2785ms)[39m[39m
+[32m✔ desktop task actions send semantic multiline prompts without renderer formatting [90m(2.1531ms)[39m[39m
+[32m✔ desktop task actions assign only three jobs when seven terminals are open [90m(2.5441ms)[39m[39m
+[32m✔ desktop subagent additions require explicit user-approved open-more intent [90m(3.398ms)[39m[39m
+[32m✔ desktop task delivery failures never open replacement terminals without approval [90m(2.4614ms)[39m[39m
+[32m✔ desktop new task actions record queued IDs without claiming delivery [90m(2.2504ms)[39m[39m
+[32m✔ desktop actions close every authoritative terminal in one request [90m(2.6133ms)[39m[39m
+[32m✔ desktop actions relaunch all Codex terminals with full permissions [90m(3.2394ms)[39m[39m
+[32m✔ desktop permissions preserve OpenAI wrapper models and token sources [90m(2.733ms)[39m[39m
+[32m✔ desktop permissions relaunch Claude with its original model and token source [90m(2.2563ms)[39m[39m
+[32m✔ desktop permissions do not depend on Codex availability for provider models [90m(2.3422ms)[39m[39m
+[32m✔ desktop permission relaunch leaves terminals open when their model is locked [90m(1.8549ms)[39m[39m
+[32m✔ desktop close-all respects cancellation [90m(1.6633ms)[39m[39m
+[32m✔ desktop active-terminal close requires confirmation [90m(1.689ms)[39m[39m
+[32m✔ desktop close does not report success for an already missing terminal [90m(1.9925ms)[39m[39m
+[32m✔ desktop audit theme loads after all page polish styles [90m(2.0797ms)[39m[39m
+[32m✔ desktop audit defines missing semantic surface aliases [90m(0.7053ms)[39m[39m
+[32m✔ desktop tabs share the professional graphite palette [90m(0.9154ms)[39m[39m
+[32m✔ top chrome and sidebar form one continuous application frame [90m(1.1273ms)[39m[39m
+[32m✔ sidebar chrome uses semantic neutral hierarchy [90m(0.5492ms)[39m[39m
+[32m✔ phone pairing lives only in the bottom rail [90m(0.3576ms)[39m[39m
+[32m✔ common tab surfaces stay flat and reserve purple for interaction [90m(0.5201ms)[39m[39m
+[32m✔ screenshot editor, tray, and notices use semantic theme values [90m(0.642ms)[39m[39m
+[32m✔ remaining profile controls use shared surface tokens [90m(0.4368ms)[39m[39m
+[32m✔ desktop shell is terminal-first without a Home destination [90m(2.211ms)[39m[39m
+[32m✔ auth and stale saved routes land on Terminals [90m(0.4585ms)[39m[39m
+[32m✔ rail recent chats are removed from the desktop IA [90m(0.3938ms)[39m[39m
+[32m✔ Projects open through terminal setup instead of chat [90m(0.4207ms)[39m[39m
+[32m✔ Projects phone pairing empty state stays compact [90m(0.3603ms)[39m[39m
+[32m✔ paid accounts do not render Manage billing in the account dropdown [90m(2.3669ms)[39m[39m
+[32m✔ free accounts retain the Upgrade plan shortcut [90m(0.4006ms)[39m[39m
+[32m✔ closing settings collapses membership management [90m(0.314ms)[39m[39m
+[32m✔ pairing modal renders separate waiting, approval, phone confirmation, and connected states [90m(0.5466ms)[39m[39m
+[32m✔ pairing UI stays compact, responsive, and reduced-motion aware [90m(0.3862ms)[39m[39m
+[32m✔ production pairing does not expose the temporary test connection path [90m(0.4246ms)[39m[39m
+[32m✔ connected pairing celebrates once and respects reduced motion [90m(0.382ms)[39m[39m
+[32m✔ modal lifecycle focuses inside, traps focus, closes on Escape, and restores background [90m(4.9153ms)[39m[39m
+[32m✔ account actions route Profile and Settings deterministically [90m(4.1146ms)[39m[39m
+[32m✔ modal markup preserves dialog labels and starts hidden from assistive technology [90m(2.6886ms)[39m[39m
+[32m✔ profile and account operations use the local account bridge [90m(2.6134ms)[39m[39m
+[32m✔ renderer account requests do not expose cloud URLs or bearer headers [90m(0.6509ms)[39m[39m
+[32m✔ cancellation submits structured feedback through the local account bridge [90m(3.0357ms)[39m[39m
+[32m✔ manual scheduling preserves the desktop account while provider flows open externally [90m(0.5642ms)[39m[39m
+[32m✔ profile actions expose show, hide, and submit cancellation controls [90m(0.3583ms)[39m[39m
+[32m✔ the current billing plan keeps the same card surface as every other plan [90m(2.1993ms)[39m[39m
+[32m✔ current plan status stays aligned without turning the whole card gray [90m(0.589ms)[39m[39m
+[32m✔ paid billing hides management details behind one simple action [90m(57.2371ms)[39m[39m
+[32m✔ expanded Stripe management exposes provider and cancellation actions [90m(4.2355ms)[39m[39m
+[32m✔ free billing offers upgrade without renewal or payment claims [90m(2.2084ms)[39m[39m
+[32m✔ Settings upgrade stays inside Billing and renders a simple plan comparison [90m(6.1834ms)[39m[39m
+[32m✔ profile dropdown upgrade uses the same three-card plan design [90m(2.8864ms)[39m[39m
+[32m✔ Apple and Google paid plans link to their subscription providers [90m(4.9976ms)[39m[39m
+[32m✔ manual memberships expose concise billing data and membership actions [90m(3.018ms)[39m[39m
+[32m✔ expanded cancellation asks for reason, feedback, and explicit confirmation [90m(4.1258ms)[39m[39m
+[32m✔ scheduled cancellation shows paid-through date without another end action [90m(3.028ms)[39m[39m
+[32m✔ unknown paid providers expose billing support in Billing [90m(2.8948ms)[39m[39m
+[32m✔ billing values are clamped and account copy is escaped [90m(2.7145ms)[39m[39m
+[32m✔ billing styles stay scoped and responsive [90m(0.7372ms)[39m[39m
+[32m✔ desktop refresh does not rebuild an open settings modal [90m(3.7771ms)[39m[39m
+[32m✔ settings bindings stay scoped to the modal [90m(0.4698ms)[39m[39m
+[32m✔ settings section changes preserve the navigation rail [90m(0.4366ms)[39m[39m
+[32m✔ non-visual preference saves avoid global theme mutation [90m(0.3284ms)[39m[39m
+[32m✔ appearance changes preserve mounted preview screenshots [90m(0.3719ms)[39m[39m
+[32m✔ settings backdrop avoids live blur compositing [90m(0.2721ms)[39m[39m
+[32m✔ settings modal keeps a stable desktop height while changing sections [90m(0.3559ms)[39m[39m
+[32m✔ one failed session load settles with a stable explicit Retry [90m(7.4261ms)[39m[39m
+[32m✔ session operations use the local account bridge without renderer auth headers [90m(0.641ms)[39m[39m
+[32m✔ signed-in devices render as a semantic account table [90m(43.8795ms)[39m[39m
+[32m✔ raw IP fallback is not repeated beneath the location [90m(2.4497ms)[39m[39m
+[32m✔ real phone names from account session metadata are preserved [90m(2.56ms)[39m[39m
+[32m✔ device table keeps a compact labeled mobile layout [90m(0.4078ms)[39m[39m
+[32m✔ prompt transcript client links prompt and outcome events [90m(6.1894ms)[39m[39m
+[32m✔ screenshot editor exposes the focused crop and annotation workflow [90m(2.2199ms)[39m[39m
+[32m✔ screenshot editor is keyboard accessible and renderer isolated [90m(0.9451ms)[39m[39m
+[32m✔ screenshot editor is wired through a narrow Electron preload API [90m(1.0804ms)[39m[39m
+[32m✔ closing during an in-flight screenshot load stays closed [90m(4.7192ms)[39m[39m
+[32m✔ saved screenshot cards are current-session only [90m(1.9203ms)[39m[39m
+[32m✔ Preferences exposes a persisted native screenshot folder picker [90m(0.4508ms)[39m[39m
+[32m✔ settings uses seven clear sections without a label-only search [90m(4.0592ms)[39m[39m
+[32m✔ AI accounts use native provider login and never render API credential fields [90m(0.7503ms)[39m[39m
+[32m✔ AI account rows do not show Disconnect unless normalized status is connected [90m(2.9753ms)[39m[39m
+[32m✔ AI account rows show only login-capable model families [90m(4.3579ms)[39m[39m
+[32m✔ cloud profile and local personalization save independently [90m(0.375ms)[39m[39m
+[32m✔ App settings persist the shared Vibyra language catalog [90m(0.4127ms)[39m[39m
+[32m✔ destructive settings actions use inline confirmation instead of native confirm [90m(0.2996ms)[39m[39m
+[32m✔ narrow settings uses a horizontal sticky section strip [90m(0.4297ms)[39m[39m
+[32m✔ settings modules load in dependency order with semantic stylesheet names [90m(0.8192ms)[39m[39m
+[32m✔ desktop primary navigation excludes the standalone Chat tab [90m(2.3906ms)[39m[39m
+[32m✔ legacy chat routes open the shell AI sidebar from Projects only [90m(0.4291ms)[39m[39m
+[32m✔ Projects expose a Vibyra-only topbar chat panel [90m(0.7748ms)[39m[39m
+[32m✔ shell AI sidebar supports persisted pointer and keyboard resizing [90m(0.4388ms)[39m[39m
+[32m✔ desktop chat uses local Ollama without a model picker [90m(0.5199ms)[39m[39m
+[32m✔ terminal workspace keeps its separate multi-tool companion [90m(0.6086ms)[39m[39m
+[32m✔ shell chat commands do not expose terminal-only tools [90m(0.5196ms)[39m[39m
+[32m✔ terminal assignments remain visually silent while preserving assignment IDs [90m(5.5989ms)[39m[39m
+[32m✔ terminal activity helpers never create frontend status content [90m(3.3074ms)[39m[39m
+[32m✔ terminal activity cleanup removes stale persisted visual state [90m(1.8227ms)[39m[39m
+[32m✔ Auto polish stays scoped to the waiting provider [90m(2.7941ms)[39m[39m
+[32m✔ the terminal-rendered text V remains the only logo [90m(0.6983ms)[39m[39m
+[32m✔ motion has a complete reduced-motion fallback [90m(0.5186ms)[39m[39m
+[32m✔ polish does not alter PTY or xterm geometry [90m(6.8022ms)[39m[39m
+[32m✔ Auto waiting state is authoritative and removed during provider transition [90m(2.6027ms)[39m[39m
+[32m✔ Auto deciding state brackets routing and is cleared before provider launch [90m(1.1938ms)[39m[39m
+[32m✔ provider transitions refresh visible model identity without remounting xterm [90m(0.6418ms)[39m[39m
+[32m✔ waiting Auto status is presented as ready rather than active work [90m(0.3143ms)[39m[39m
+[32m✔ terminal polish assets load after the structural terminal styles [90m(0.4501ms)[39m[39m
+[32m✔ separate branches preflight explains and approves a local-only checkpoint [90m(3.456ms)[39m[39m
+[32m✔ cancelled preflight does not launch and approved setup forbids shared fallback [90m(0.5521ms)[39m[39m
+[32m✔ safe mode is recommended and defaults on for new users [90m(0.4974ms)[39m[39m
+[32m✔ terminal setup stays compact with optional advanced token settings [90m(0.3834ms)[39m[39m
+[32m✔ polish covers terminal chrome and setup interaction surfaces [90m(2.8702ms)[39m[39m
+[32m✔ grid and PTY hosts preserve zero-gap edge-to-edge rendering [90m(2.6984ms)[39m[39m
+[32m✔ motion is restrained and disabled for reduced-motion users [90m(0.9239ms)[39m[39m
+[32m✔ active terminal chrome keeps a clean selected accent without decorative gradients [90m(0.8805ms)[39m[39m
+[32m✔ polish never transforms or sizes xterm-owned elements [90m(0.5533ms)[39m[39m
+[32m✔ companion keeps the empty chat and composer concise [90m(2.6275ms)[39m[39m
+[32m✔ companion action results use the executor summary [90m(4.2771ms)[39m[39m
+[32m✔ companion ordinary chat does not invoke the action executor [90m(1.82ms)[39m[39m
+[32m✔ companion rejects unsupported desktop actions [90m(2.5747ms)[39m[39m
+[32m✔ companion moves action messages when the active terminal changes [90m(2.0147ms)[39m[39m
+[32m✔ companion uses terminal setup scope before a terminal exists [90m(1.6747ms)[39m[39m
+[32m✔ companion preserves an intentional no-project terminal setup scope [90m(1.9371ms)[39m[39m
+[32m✔ companion width preserves a readable terminal area [90m(4.3138ms)[39m[39m
+[32m✔ stored width is clamped against the current page [90m(1.905ms)[39m[39m
+[32m✔ fullscreen is Memory-only and restores terminal fitting [90m(2.0437ms)[39m[39m
+[32m✔ splitter supports pointer and keyboard resizing [90m(0.6566ms)[39m[39m
+[32m✔ narrow windows overlay the companion from the right [90m(0.5071ms)[39m[39m
+[32m✔ terminal companion temporarily owns the collapsed rail [90m(2.489ms)[39m[39m
+[32m✔ terminal setup companion uses the selected pre-launch project context [90m(2.0609ms)[39m[39m
+[32m✔ terminal chat companion keeps its compact draft composer [90m(0.6408ms)[39m[39m
+[32m✔ terminal workspace modes replace one full-height companion body [90m(1.8194ms)[39m[39m
+[32m✔ terminal navigation exposes one sidebar launcher and one right workspace switcher [90m(0.6882ms)[39m[39m
+[32m✔ terminal voice is a one-control AI conversation [90m(1.2167ms)[39m[39m
+[32m✔ terminal voice makes listening, processing, and speaking visually explicit [90m(0.7755ms)[39m[39m
+[32m✔ terminal chat companion executes actions and keeps their result visible [90m(0.4007ms)[39m[39m
+[32m✔ terminal project identity survives startup and backend reconciliation [90m(0.5844ms)[39m[39m
+[32m✔ terminal setup waits for a persisted project to be verified [90m(0.5639ms)[39m[39m
+[32m✔ voice replies stay with their user turn when its thread transfers terminals [90m(6.6103ms)[39m[39m
+[32m✔ terminal editor recognizes relative and absolute source links with positions [90m(7.2682ms)[39m[39m
+[32m✔ terminal editor link activation keeps the captured line and column [90m(2.6001ms)[39m[39m
+[32m✔ terminal output URL links open through the Electron external bridge [90m(5.5717ms)[39m[39m
+[32m✔ terminal external links reject unsupported protocols [90m(2.2627ms)[39m[39m
+[32m✔ terminal editor loads before the companion and attaches through xterm links [90m(0.9107ms)[39m[39m
+[32m✔ terminal editor uses Monaco with VS Code editing features [90m(0.6964ms)[39m[39m
+[32m✔ terminal editor starts with collapsed folders and uses the normal companion width [90m(3.304ms)[39m[39m
+[32m✔ terminal editor sidebar shows only the project directory context [90m(0.4123ms)[39m[39m
+[32m✔ PTY keyboard input has one browser event owner [90m(4.2806ms)[39m[39m
+[32m✔ PTY wrapper focus forwards Space once through the xterm fallback [90m(3.8717ms)[39m[39m
+[32m✔ PTY xterm copy writes selected text without stealing Ctrl+C interrupts [90m(12.9254ms)[39m[39m
+[32m✔ PTY xterm copy event fills clipboardData for native copy commands [90m(3.7144ms)[39m[39m
+[32m✔ PTY xterm copy falls back to highlighted DOM text for Ctrl+Shift+C [90m(4.6178ms)[39m[39m
+[32m✔ PTY document copy event writes terminal selection from wrapper focus [90m(3.4404ms)[39m[39m
+[32m✔ PTY document copy ignores stale terminal selection when focus is outside the terminal [90m(2.9589ms)[39m[39m
+[32m✔ screenshot path drop inserts once through xterm paste [90m(2.5844ms)[39m[39m
+[32m✔ focusing a PTY updates the selected terminal styling [90m(0.4829ms)[39m[39m
+[32m✔ Auto deciding keeps the viewport at the top and disables bottom anchoring [90m(4.4181ms)[39m[39m
+[32m✔ PTY live output follows only when the user is already near the bottom [90m(2.4376ms)[39m[39m
+[32m✔ assigned terminal tasks are transient and submitted after PTY creation [90m(1.0869ms)[39m[39m
+[32m✔ authoritative PTY transcripts are not duplicated into localStorage [90m(0.4031ms)[39m[39m
+[32m✔ PTY collection sync is serialized and reconciliation preserves local task state [90m(1.3944ms)[39m[39m
+[32m✔ PTY output reaches xterm unchanged for live writes and transcript replay [90m(3.3785ms)[39m[39m
+[32m✔ PTY fallback HTTP input is serialized per terminal [90m(10.1585ms)[39m[39m
+[32m✔ terminal workspace mode is persisted and sent to the authoritative PTY service [90m(1.2478ms)[39m[39m
+[32m✔ terminal launch mounts xterm after synchronous render without waiting for animation frames [90m(5.9447ms)[39m[39m
+[32m✔ initial PTY sizing uses the mounted xterm cell metrics [90m(0.484ms)[39m[39m
+[32m✔ layout-driven PTY resizing waits for stable pane geometry [90m(2.6461ms)[39m[39m
+[32m✔ Codex keeps its native bottom margin in a scrollable xterm overscan buffer [90m(4.7019ms)[39m[39m
+[32m✔ expanded Memory renders a full Obsidian-style application shell [90m(2.3149ms)[39m[39m
+[32m✔ fullscreen explorer and links use canonical vault data [90m(0.449ms)[39m[39m
+[32m✔ fullscreen Notes stays inside the content row without top clipping [90m(0.6389ms)[39m[39m
+[32m✔ compact Memory delegates to the expanded renderer only while fullscreen [90m(0.3805ms)[39m[39m
+[32m✔ forced vault reloads queue while an earlier load is active [90m(16.3277ms)[39m[39m
+[32m✔ memory retries a pre-auth startup failure when the desktop session becomes ready [90m(9.6451ms)[39m[39m
+[32m✔ memory graph uses folders and wikilinks as real connections [90m(8.9407ms)[39m[39m
+[32m✔ large memory graphs spread across the canvas and support bounded zoom [90m(48.2862ms)[39m[39m
+[32m✔ memory graph reuses topology and positions until vault data or size changes [90m(8.0482ms)[39m[39m
+[32m✔ compact Memory keeps stable graph proportions as the side panel narrows [90m(2.3972ms)[39m[39m
+[32m✔ compact graph fills the workspace without clipping or stretching the brain [90m(2.884ms)[39m[39m
+[32m✔ memory documents omit terminal insertion and footer deletion actions [90m(0.4328ms)[39m[39m
+[32m✔ compact Memory constrains Notes to the remaining grid track without clipping its top [90m(1.1394ms)[39m[39m
+[32m✔ fullscreen Memory keeps the current primary renderer visible [90m(0.6673ms)[39m[39m
+[32m✔ Memory does not expose item creation controls or shortcuts [90m(0.4612ms)[39m[39m
+[32m✔ memory companion width is user-resizable without shrinking the terminal below its floor [90m(0.2755ms)[39m[39m
+[32m✔ native Memory import accepts and reads Markdown files [90m(5.4667ms)[39m[39m
+[32m✔ Electron picker removes the fallback input from mouse hit testing [90m(2.4649ms)[39m[39m
+[32m✔ Memory onboarding exposes Markdown, vault, and automatic Obsidian discovery [90m(0.4443ms)[39m[39m
+[32m✔ Memory automatically suggests discovered Obsidian vaults [90m(2.5364ms)[39m[39m
+[32m✔ native picker manifests post directly to the canonical import route [90m(2.4683ms)[39m[39m
+[32m✔ terminal setup never inherits the separate Chat model preference [90m(3.0355ms)[39m[39m
+[32m✔ terminal picker keeps exact OpenRouter slugs visible in Vibyra-token mode [90m(3.6869ms)[39m[39m
+[32m✔ terminal picker keeps dynamic Anthropic OpenRouter rows [90m(6.0494ms)[39m[39m
+[32m✔ third-party qualified model names do not inherit OpenAI from a codex substring [90m(2.1605ms)[39m[39m
+[32m✔ terminal launch agent follows token source instead of model branding alone [90m(0.3922ms)[39m[39m
+[32m✔ terminal setup keeps OpenRouter behind Vibyra tokens [90m(2.2424ms)[39m[39m
+[32m✔ CLI downloads live in model rows instead of Advanced settings [90m(0.5276ms)[39m[39m
+[32m✔ My AI accounts exposes native mappings and rejects API-only models [90m(2.464ms)[39m[39m
+[32m✔ membership model locks apply only when Vibyra pays for the terminal [90m(2.4922ms)[39m[39m
+[32m✔ personal-account filtering hides API-only rows and keeps login-capable models searchable [90m(3.195ms)[39m[39m
+[32m✔ model picker groups choices with a header, quick picks, and provider counts [90m(3.5764ms)[39m[39m
+[32m✔ model rows keep provider logos and hide runtime implementation labels [90m(4.6655ms)[39m[39m
+[32m✔ token source choices explain billing without provider implementation details [90m(2.4796ms)[39m[39m
+[32m✔ Vibyra token selection never silently changes to a personal CLI account [90m(1.8175ms)[39m[39m
+[32m✔ terminal topbar uses friendly names and keeps bulk actions in the options menu [90m(0.8549ms)[39m[39m
+[32m✔ PTY terminals stay edge-to-edge and keep native bottom rows correctly sized [90m(1.4507ms)[39m[39m
+[32m✔ new terminal menu is anchored to the plus button [90m(2.6678ms)[39m[39m
+[32m✔ terminal starter model picker overlays without moving the setup card [90m(1.0501ms)[39m[39m
+[32m✔ PTY controls do not double-bind terminal menu buttons [90m(0.4415ms)[39m[39m
+[32m✔ terminal options group user-facing context and separate close [90m(0.5121ms)[39m[39m
+[32m✔ terminal chrome uses Vibyra purple instead of provider green [90m(0.5335ms)[39m[39m
+[32m✔ terminal setup persists and forwards model-aware reasoning effort [90m(0.5213ms)[39m[39m
+[32m✔ terminal notices remain dismissible after incremental PTY updates [90m(1.8922ms)[39m[39m
+[32m✔ wide grid orders eight terminals from top-left to bottom-right [90m(5.7624ms)[39m[39m
+[32m✔ six terminals use a balanced three by two grid [90m(1.7974ms)[39m[39m
+[32m✔ new PTY terminals append so terminal one stays first [90m(0.6885ms)[39m[39m
+[32m✔ terminal reordering preserves xterm DOM and is keyboard accessible [90m(0.483ms)[39m[39m
+[32m✔ launches provider-qualified GPT-5.5 Pro wrappers with full access [90m(20.2042ms)[39m[39m
+[32m✔ renders only projects that own an open or recovered terminal [90m(7.7339ms)[39m[39m
+[32m✔ a recovered project remains until its final terminal is removed [90m(2.57ms)[39m[39m
+[32m✔ an unassigned Team gets a relevant workspace name and distinct rail icon [90m(3.2135ms)[39m[39m
+[32m✔ project selection restores that project's last active terminal [90m(2.5534ms)[39m[39m
+[32m✔ rail plus opens a four-terminal batch setup and cancel restores prior state [90m(4.1117ms)[39m[39m
+[32m✔ project toolbar actions close only the active project group [90m(4.0032ms)[39m[39m
+[32m✔ terminal renderer scopes top project tabs and rail agents to the active project [90m(1.3721ms)[39m[39m
+[32m✔ terminal project tabs sit centered in the top navigation [90m(1.7815ms)[39m[39m
+[32m✔ terminal project search matches compact names and paths [90m(4.6624ms)[39m[39m
+[32m✔ terminal project menu shows only search and project rows [90m(3.2809ms)[39m[39m
+[32m✔ project discovery assets load before the picker that consumes them [90m(0.5498ms)[39m[39m
+[32m✔ stale Full PC selection is cleared from the simplified picker [90m(2.1754ms)[39m[39m
+[32m✔ project workspaces expose framework-aware tools [90m(6.4032ms)[39m[39m
+[32m✔ project status separates active work from an idle PTY [90m(3.2637ms)[39m[39m
+[32m✔ PTY prompt logger reconstructs completed typed and pasted prompts [90m(5.2839ms)[39m[39m
+[32m✔ PTY prompt logger ignores navigation escapes and cancelled input [90m(4.8875ms)[39m[39m
+[32m✔ PTY prompt logger links cleaned output to the submitted turn [90m(7.2365ms)[39m[39m
+[32m✔ provider readiness is normalized from authoritative session state [90m(6.0524ms)[39m[39m
+[32m✔ reconciliation preserves transient assignment activity and delivery errors [90m(3.5005ms)[39m[39m
+[32m✔ collection sync calls share one in-flight request [90m(2.8805ms)[39m[39m
+[32m✔ pty output rendering batches dirty terminals instead of rebuilding the topbar [90m(0.8472ms)[39m[39m
+[32m✔ xterm mounting skips hidden project, focus, and fullscreen panes [90m(0.4214ms)[39m[39m
+[32m✔ xterm rendering avoids visible cursor blink and full replay during normal sync [90m(1.0617ms)[39m[39m
+[32m✔ pty session and socket paths mount only the affected xterm [90m(0.4171ms)[39m[39m
+[32m✔ xterm fit scheduling coalesces repeated requests per terminal [90m(0.4356ms)[39m[39m
+[32m✔ native runtime mapping covers supported provider CLIs [90m(13.7016ms)[39m[39m
+[32m✔ Vibyra credits use native CLIs when mapped and Vibyra Agent otherwise [90m(4.8685ms)[39m[39m
+[32m✔ missing official CLIs expose a quiet icon-only download control [90m(7.248ms)[39m[39m
+[32m✔ official CLI downloads expose an installing spinner [90m(6.7428ms)[39m[39m
+[32m✔ Grok exposes the official CLI download instead of Vibyra Agent [90m(4.4285ms)[39m[39m
+[32m✔ installable runtimes use icon-only download and downloading controls [90m(3.8764ms)[39m[39m
+[32m✔ Auto opens blank with Vibyra tokens and rejects personal-account routing [90m(3.723ms)[39m[39m
+[32m✔ Vibyra credits expose Qwen Code instead of a synthetic agent [90m(5.7203ms)[39m[39m
+[32m✔ adapter failures use one quiet unavailable state instead of an install action [90m(3.8706ms)[39m[39m
+[32m✔ missing adapter readiness metadata fails closed [90m(3.5036ms)[39m[39m
+[32m✔ API-only providers use bundled Vibyra Agent while Auto stays a routing surface [90m(2.7709ms)[39m[39m
+[32m✔ personal accounts never route API-only providers through a different CLI [90m(3.0576ms)[39m[39m
+[32m✔ runtime downloads refresh an open model picker without closing it [90m(1.5254ms)[39m[39m
+[32m✔ terminal setup keeps CLI downloads in model-row icon controls [90m(1.5686ms)[39m[39m
+[32m✔ terminal setup opens with clear independent or coordinated choices [90m(2.49ms)[39m[39m
+[32m✔ setup progress sits above the centered setup card and never enters the nav [90m(0.6109ms)[39m[39m
+[32m✔ Solo owns batch count while Team uses automatic or explicit planned size [90m(0.6567ms)[39m[39m
+[32m✔ combined Team setup keeps workspace safety and reasoning visible [90m(0.8231ms)[39m[39m
+[32m✔ advanced setup options animate open and closed while preserving setup state [90m(0.6653ms)[39m[39m
+[32m✔ combined setup applies one truthful access mode to the whole terminal batch [90m(0.4141ms)[39m[39m
+[32m✔ every new batch resets to the mode choice and loads its focused styles [90m(1.2473ms)[39m[39m
+[32m✔ terminal setup preferences preserve the outer setup and companion DOM [90m(2.0091ms)[39m[39m
+[32m✔ setup option changes do not replay panel or preview entrance animations [90m(0.3654ms)[39m[39m
+[32m✔ terminal setup stays safely centered while conditional settings change [90m(0.5367ms)[39m[39m
+[32m✔ setup and opened terminals use the same attached companion tracks [90m(0.5242ms)[39m[39m
+[32m✔ Team planning loads before Team policy while both remain focused [90m(2.625ms)[39m[39m
+[32m✔ Team sizes map to scoped roles with exactly one production-code owner [90m(6.4438ms)[39m[39m
+[32m✔ creating a Team launches distinct assignments under one team id [90m(6.1607ms)[39m[39m
+[32m✔ the Team bar reports observed terminal state without fake progress claims [90m(4.8083ms)[39m[39m
+[32m✔ empty or control-only goals cannot launch a Team [90m(2.4606ms)[39m[39m
+[32m✔ restored Team members with missing identifiers receive one shared valid id [90m(2.6185ms)[39m[39m
+[32m✔ solo requests omit Team fields and incomplete Team records fail locally [90m(3.2613ms)[39m[39m
+[32m✔ bridge plans must match the requested goal and topology while normalizing role order [90m(3.0659ms)[39m[39m
+[32m✔ Team planning labels AI plans and built-in fallbacks [90m(2.0596ms)[39m[39m
+[32m✔ Team planning posts the setup intent and validates the bridge response [90m(3.008ms)[39m[39m
+[32m✔ automatic Team sizing lets the planner choose the smallest valid topology [90m(2.4167ms)[39m[39m
+[32m✔ Team planning reports only real request phases [90m(2.3571ms)[39m[39m
+[32m✔ Team planning spreads waiting phases once without looping [90m(2.3697ms)[39m[39m
+[32m✔ Team setup keeps Cancel visible and moves live planning feedback into the launch action [90m(0.7478ms)[39m[39m
+[32m✔ Team setup exposes only runtimes with a trusted role channel [90m(1.991ms)[39m[39m
+[32m✔ preview service state is keyed by target and derives the active service [90m(5.2595ms)[39m[39m
+[32m✔ the single footer action follows stopped, running, and active state [90m(3.4846ms)[39m[39m
+[32m✔ each preview target restores its own device, orientation, zoom, and custom size [90m(4.6422ms)[39m[39m
+[32m✔ selecting a stopped target never starts it while running selection only activates [90m(0.8086ms)[39m[39m
+[32m✔ startup remains explicit and its live feed is target scoped [90m(1.143ms)[39m[39m
+[32m✔ stale preview actions cannot overwrite a newly selected project or target [90m(3.7666ms)[39m[39m
+[32m✔ inspection consumes targets and concurrent service status without launching [90m(2.2716ms)[39m[39m
+[32m✔ target rows stay neutral and reserve green for Running status [90m(0.5395ms)[39m[39m
+[32m✔ preview keeps one frame, one compact toolbar, and no extra dashboard chrome [90m(0.7027ms)[39m[39m
+[32m✔ preview clearly states when no project is open [90m(0.5372ms)[39m[39m
+[32m✔ right-click element editing resolves source and reuses the project terminal [90m(1.071ms)[39m[39m
+[32m✔ project preview URLs use the isolated local origin [90m(2.293ms)[39m[39m
+[32m✔ owned preview assets retain load order and concurrent cache busts [90m(1.121ms)[39m[39m
+[32m✔ terminal audit theme layer loads after all terminal feature styles [90m(3.6538ms)[39m[39m
+[32m✔ terminal audit theme owns formerly dark-only surfaces [90m(0.9447ms)[39m[39m
+[32m✔ terminal semantic foundations inherit the shared graphite system [90m(0.7443ms)[39m[39m
+[32m✔ xterm selection and auto appearance use live semantic theme values [90m(0.4515ms)[39m[39m
+[32m✔ terminal voice input uses a distinct global shortcut and captures the selected terminal [90m(2.5815ms)[39m[39m
+[32m✔ terminal voice input second toggle stops the active recorder [90m(3.76ms)[39m[39m
+[32m✔ terminal voice input delivers to its captured target even if selection changes [90m(4.6029ms)[39m[39m
+[32m✔ terminal voice input has a transient accessible listening overlay [90m(0.7693ms)[39m[39m
+[32m✔ new terminals receive unused common names [90m(4.1988ms)[39m[39m
+[32m✔ each terminal header exposes full screen, details, and close [90m(2.1061ms)[39m[39m
+[32m✔ the selected terminal has a clear provider-colored edge [90m(0.5456ms)[39m[39m
+[32m✔ terminal window helpers load before terminal creation [90m(0.5371ms)[39m[39m
+[32m✔ terminal workspace keeps project tabs in top chrome and agents in the rail [90m(0.5442ms)[39m[39m
+[32m✔ safe mode remains recommended and routed Auto sessions preserve friendly names [90m(0.3856ms)[39m[39m
+[32m✔ workspace display distinguishes isolated, shared, and fallback terminals [90m(7.0693ms)[39m[39m
+[32m✔ workspace indicator exposes branch and fallback state accessibly [90m(3.8358ms)[39m[39m
+[32m✔ Electron uses the Vibyra runtime name and native app icon [90m(4.0765ms)[39m[39m
+[32m✔ Electron denies blank child windows and opens web links externally [90m(0.653ms)[39m[39m
+[32m✔ Electron forwards focused-window F8 terminal voice toggles to the renderer [90m(0.3984ms)[39m[39m
+[32m✔ Electron registers the F9 screenshot editor bridge and cleans it up [90m(0.5378ms)[39m[39m
+[32m✔ Electron exposes a narrow text clipboard bridge for terminal selection copy [90m(0.3861ms)[39m[39m
+[32m✔ Electron real quit stops the detached desktop bridge before exiting [90m(0.4703ms)[39m[39m
+[32m✔ Windows helper processes are hidden behind the desktop window [90m(0.2821ms)[39m[39m
+[32m✔ Electron accepts desktop shell URLs with or without a trailing slash [90m(0.2917ms)[39m[39m
+[32m✔ Linux launcher is app-style and self-prepares the desktop runtime [90m(0.5674ms)[39m[39m
+[32m✔ OpenRouter config paths include repo env files when desktop is the cwd [90m(3.7635ms)[39m[39m
+[32m✔ OpenRouter config parser handles common dotenv syntax [90m(1.1396ms)[39m[39m
+[32m✔ OpenRouter config parser keeps empty values empty [90m(0.7741ms)[39m[39m
+[32m✔ agent run cap defaults to 12 and honors account cap when present [90m(2.1132ms)[39m[39m
+[32m✔ only running and applying runs count against the concurrent cap [90m(3.7602ms)[39m[39m
+[32m✔ run list and current run expose run-scoped state [90m(2.2033ms)[39m[39m
+[32m✔ Codex completion ignores spinner titles and accepts its restored idle title [90m(2.6416ms)[39m[39m
+[32m✔ Codex completion recognizes its idle composer placeholders [90m(0.4466ms)[39m[39m
+[32m✔ Vibyra completion recognizes the restored readline prompt [90m(1.2789ms)[39m[39m
+[32m✔ Vibyra completion recognizes every provider-native composer prompt [90m(1.0956ms)[39m[39m
+[32m✔ Vibyra activity remains compatible with recovered legacy Codex-backed sessions [90m(0.4323ms)[39m[39m
+[32m✔ native Claude composer clears terminal startup state [90m(0.62ms)[39m[39m
+[32m✔ native Gemini trust and composer screens clear terminal startup state [90m(0.4633ms)[39m[39m
+[32m✔ every API model gets the same truthful Vibyra Agent command profile [90m(3.9488ms)[39m[39m
+[32m✔ profile exposes immutable structured categories and command metadata [90m(2.1191ms)[39m[39m
+[32m✔ every advertised command is classified and every workflow is executable [90m(1.1639ms)[39m[39m
+[32m✔ shared input parser handles canonical commands, aliases, shell, and file mentions [90m(1.0996ms)[39m[39m
+[32m✔ aliases resolve to canonical metadata and accurate execution kinds [90m(0.4811ms)[39m[39m
+[32m✔ local command metadata is explicit and dispatchable [90m(0.5705ms)[39m[39m
+[32m✔ help groups only implemented local commands and mapped agent workflows [90m(0.9533ms)[39m[39m
+[32m✔ practical workflows produce disciplined provider-neutral prompts [90m(0.5057ms)[39m[39m
+[32m✔ accepts managed interactive Codex as the visible Vibyra process [90m(2.3936ms)[39m[39m
+[32m✔ blocks a Node Auto dispatcher from owning the terminal [90m(2.4606ms)[39m[39m
+[32m✔ accepts the exact bundled Vibyra Agent Node entry as foreground owner [90m(0.4556ms)[39m[39m
+[32m✔ rejects provider imitation and altered Vibyra Agent entry arguments [90m(0.5059ms)[39m[39m
+[32m✔ blocks one-shot Codex exec from owning the Vibyra terminal [90m(0.4405ms)[39m[39m
+[32m✔ accepts every managed official CLI as the foreground Vibyra provider [90m(0.3861ms)[39m[39m
+[32m✔ resolves an immutable OpenAI Vibyra-credit launch plan [90m(6.8854ms)[39m[39m
+[32m✔ maps installed official CLIs to personal-account launch plans [90m(2.2364ms)[39m[39m
+[32m✔ rejects direct OpenRouter billing as a terminal source [90m(0.4997ms)[39m[39m
+[32m✔ uses each official provider's native CLI with exact Vibyra billing models [90m(1.0369ms)[39m[39m
+[32m✔ legacy Kimi and Mistral aliases resolve to canonical OpenRouter billing slugs [90m(0.71ms)[39m[39m
+[32m✔ xAI models receive native Grok Build billing contracts [90m(0.7278ms)[39m[39m
+[32m✔ every provider-qualified API-only model family uses Vibyra Agent [90m(1.6942ms)[39m[39m
+[32m✔ unqualified unknown providers and taskless Auto fail closed [90m(0.5996ms)[39m[39m
+[32m✔ Auto resolves only after a task and concrete pre-launch route [90m(0.5339ms)[39m[39m
+[32m✔ rejects unsafe permission, sandbox, and cross-provider model combinations [90m(0.9984ms)[39m[39m
+[32m✔ Codex memory augments private AGENTS instructions without duplication [90m(17.2258ms)[39m[39m
+[32m✔ Gemini memory uses a private included context directory [90m(12.3366ms)[39m[39m
+[32m✔ Vibyra Agent keeps the real billed tool engine and serialized input [90m(2.575ms)[39m[39m
+[32m✔ agent arguments preserve standard, full, and persistent resume behavior [90m(3.6266ms)[39m[39m
+[32m✔ Vibyra Agent Team roles compose with runtime identity and enforce read-only access [90m(0.6684ms)[39m[39m
+[32m✔ Vibyra Agent gives every OpenRouter model a truthful runtime identity [90m(0.4452ms)[39m[39m
+[32m✔ gateway credentials stay out of direct shell commands and shutdown reaches active work [90m(0.4441ms)[39m[39m
+[32m✔ known API provider families receive explicit Vibyra Agent themes [90m(1.2232ms)[39m[39m
+[32m✔ API-only intro is modern, customized, and explicit about runtime ownership [90m(13.2387ms)[39m[39m
+[32m✔ the generalized runtime never copies native provider TUIs [90m(17.103ms)[39m[39m
+[32m✔ prompt, response, working, and activity output use provider themes [90m(2.5432ms)[39m[39m
+[32m✔ Auto remains a truthful Vibyra Agent routing surface [90m(2.2621ms)[39m[39m
+[32m✔ Auto routing announces the selected provider without claiming a native CLI [90m(0.82ms)[39m[39m
+[32m✔ Responses streams and agent JSON events are parsed safely [90m(0.7507ms)[39m[39m
+[32m✔ Auto routing preserves the prompt and persists the selected model [90m(1.2265ms)[39m[39m
+[32m✔ desktop URL and color compatibility exports remain stable [90m(0.4669ms)[39m[39m
+[32m✔ provider child startup handshake allows loaded-host cold starts [90m(3.1719ms)[39m[39m
+[32m✔ persistent terminal sockets use a platform-native endpoint [90m(8.0744ms)[39m[39m
+[32m✔ detached terminal worker finishes after the bridge client disconnects [90m(1539.4332ms)[39m[39m
+[32m✔ explicit close stops the worker and removes its saved session [90m(358.976ms)[39m[39m
+[32m✔ startup handshake accepts a spawned provider child [90m(830.4552ms)[39m[39m
+[32m✔ startup handshake rejects a provider that exits immediately after spawn [90m(1878.0133ms)[39m[39m
+[32m✔ detached worker revokes its gateway token when the provider exits [90m(1802.9647ms)[39m[39m
+[32m✔ startup handshake reports stale launch contracts immediately [90m(137.9111ms)[39m[39m
+[32m✔ immediate close is delivered while the worker socket is still connecting [90m(21.9796ms)[39m[39m
+[32m✔ terminal title updates persist in the detached session config [90m(22.3189ms)[39m[39m
+[32m✔ legacy Vibyra launch sessions are not compatible with the current runtime [90m(4.3973ms)[39m[39m
+[32m✔ stale Team role contracts are not compatible with the current runtime [90m(3.1653ms)[39m[39m
+[32m✔ semantic assignments queue before worker attach and deliver each assignment ID exactly once [90m(788.2804ms)[39m[39m
+[32m✔ Codex assignments broadcast busy until the CLI restores its idle title [90m(754.5202ms)[39m[39m
+[32m✔ semantic assignments reject invalid payloads and fallback shells [90m(3801.4845ms)[39m[39m
+[32m✔ semantic assignment acknowledgement uses a bounded timeout [90m(182.2176ms)[39m[39m
+[32m✔ Codex startup cursor probes keep the inline viewport anchored to the bottom row [90m(4.6115ms)[39m[39m
+[32m✔ mounted Codex terminals pass cursor probes to xterm for an accurate response [90m(0.5836ms)[39m[39m
+[32m✔ split cursor probes are buffered without swallowing unrelated output [90m(2.5186ms)[39m[39m
+[32m✔ Codex cursor probe responses follow live PTY resize rows [90m(0.562ms)[39m[39m
+[32m✔ detached Codex probes use tracked cursor coordinates after startup [90m(1.1916ms)[39m[39m
+[32m✔ non-Codex terminals pass cursor probes through unchanged [90m(0.4006ms)[39m[39m
+[32m✔ taskless Vibyra Auto has no launchable foreground process [90m(4.0386ms)[39m[39m
+[32m✔ terminal agent statuses include Vibyra before optional local CLIs [90m(49.6038ms)[39m[39m
+[32m✔ provider presentation versions come from installed CLIs when available [90m(157.4715ms)[39m[39m
+[32m✔ Codex launch acknowledges the selected model's current migration notice [90m(10.4916ms)[39m[39m
+[32m✔ concrete Vibyra OpenAI terminals launch managed Codex with the Vibyra Responses provider [90m(1.8209ms)[39m[39m
+[32m✔ unknown qualified providers launch the bundled Vibyra Agent entry in Node [90m(1.3944ms)[39m[39m
+[32m✔ Vibyra Agent launch parts avoid shell-dependent script resolution [90m(1.5339ms)[39m[39m
+[32m✔ Windows shell launch uses a native shell instead of bash [90m(0.635ms)[39m[39m
+[32m✔ Windows command shims launch through an explicit hidden cmd wrapper [90m(0.7189ms)[39m[39m
+[32m✔ Windows native AI provider CLIs require a PTY [90m(0.817ms)[39m[39m
+[32m✔ Windows PTY launches preserve command shim argv [90m(0.5526ms)[39m[39m
+[32m✔ Vibyra Agent rejects forged provider ownership and stale launch contracts [90m(1.9606ms)[39m[39m
+[32m✔ Auto must route before native process arguments are created [90m(0.5083ms)[39m[39m
+[32m✔ concrete Vibyra full access uses native Codex bypass mode [90m(0.2477ms)[39m[39m
+[32m✔ Codex launch args carry model, fast effort, and explicit full access [90m(0.2298ms)[39m[39m
+[32m✔ Codex standard mode does not bypass approvals or sandboxing [90m(0.26ms)[39m[39m
+[32m✔ Codex Team roles use developer instructions and an enforced read-only sandbox [90m(0.2472ms)[39m[39m
+[32m✔ Claude launch appends Vibyra Memory as system context [90m(0.3338ms)[39m[39m
+[32m✔ Claude Team roles replace memory context and restrict tools in plan mode [90m(0.279ms)[39m[39m
+[32m✔ personal Claude and Gemini launches pass the selected native model [90m(0.2924ms)[39m[39m
+[32m✔ Claude and Gemini full access use their native bypass launch modes [90m(0.2732ms)[39m[39m
+[32m✔ Grok Build uses its native model, permissions, and sandbox flags [90m(0.2656ms)[39m[39m
+[32m✔ Qwen Code uses its official model, approval, and sandbox flags [90m(0.4371ms)[39m[39m
+[32m✔ Kimi Code and Mistral Vibe use their official permission modes [90m(0.4799ms)[39m[39m
+[32m✔ PTY terminal env carries selected OpenRouter model metadata [90m(28.3295ms)[39m[39m
+[32m✔ terminal env never injects an OpenAI API key into official CLI sessions [90m(334.0167ms)[39m[39m
+[32m✔ Vibyra token Codex homes contain only Vibyra-owned workspace trust [90m(13.4743ms)[39m[39m
+[32m✔ Codex terminal env uses an isolated CODEX_HOME per terminal [90m(104.3467ms)[39m[39m
+[32m✔ Gemini terminal env loads its private Memory settings [90m(1.3172ms)[39m[39m
+[90m﹣ script-backed terminal resize updates the real PTY dimensions [90m(0.4912ms)[39m # Linux script PTY is required[39m
+[90m﹣ provider exit falls through to an interactive project shell [90m(0.4157ms)[39m # Linux script PTY is required[39m
+[90m﹣ closing a script-backed terminal stops nested provider processes [90m(0.3368ms)[39m # Linux script PTY is required[39m
+[32m✔ maps official CLI families natively and API-only families to Vibyra Agent [90m(6.0801ms)[39m[39m
+[32m✔ keeps managed-credit readiness separate from native personal accounts [90m(0.4054ms)[39m[39m
+[32m✔ advertises full access for every runtime with a native bypass launch mode [90m(1.8015ms)[39m[39m
+[32m✔ unknown qualified providers use an exact dynamic Vibyra Agent adapter [90m(0.6492ms)[39m[39m
+[32m✔ API-only model families from native CLI companies still use Vibyra Agent [90m(0.3361ms)[39m[39m
+[32m✔ official CLI providers never fall through to Vibyra Agent [90m(0.4232ms)[39m[39m
+[32m✔ unregistered API-only providers use Vibyra Agent [90m(0.2416ms)[39m[39m
+[32m✔ unqualified unknown models and Auto have no adapter [90m(0.2545ms)[39m[39m
+[32m✔ registry and nested definitions are immutable [90m(0.3358ms)[39m[39m
+[32m✔ renders RGBA pairs with true-color foreground and background [90m(4.3608ms)[39m[39m
+[32m✔ no-color rendering preserves transparent pixel geometry [90m(1.9815ms)[39m[39m
+[32m✔ maxWidth scales proportionally and output is hard bounded [90m(119.9405ms)[39m[39m
+[32m✔ provider lookup consumes the generated-data shape [90m(1.0289ms)[39m[39m
+[32m✔ unknown and malformed providers use deterministic bounded fallbacks [90m(1.5634ms)[39m[39m
+[32m✔ public renderer defaults to color and a large bounded presentation [90m(4.8532ms)[39m[39m
+[32m✔ checked-in compressed provider assets decode into a substantial logo [90m(13.885ms)[39m[39m
+[32m✔ terminal runtime status route exposes managed runtime state [90m(32.5362ms)[39m[39m
+[32m✔ maps official CLI models natively and API-only models to Vibyra Agent [90m(6.324ms)[39m[39m
+[32m✔ unknown qualified providers use Vibyra Agent while unqualified models fail closed [90m(0.7598ms)[39m[39m
+[32m✔ runtime state separates executable availability from adapter readiness [90m(23.8773ms)[39m[39m
+[32m✔ runtime catalog exposes pinned installers and host requirements [90m(1.9679ms)[39m[39m
+[32m✔ remaining official managed adapters are enabled [90m(22.2108ms)[39m[39m
+[32m✔ every registered provider family has a structured non-fallback theme [90m(3.7861ms)[39m[39m
+[32m✔ registered provider logos are materially distinct asset-backed treatments [90m(141.7206ms)[39m[39m
+[32m✔ provider logos support no-color output and bounded narrow widths [90m(13.8641ms)[39m[39m
+[32m✔ unknown providers receive an attractive deterministic fallback theme [90m(7.8941ms)[39m[39m
+[32m✔ assistant Markdown gains terminal styling and clickable hyperlinks [90m(2.5105ms)[39m[39m
+[32m✔ elapsed work copy switches cleanly from seconds to minutes [90m(0.5101ms)[39m[39m
+[32m✔ workspace listing is bounded, sorted, and skips generated directories [90m(33.1337ms)[39m[39m
+[32m✔ transcript history is compact and count bounded [90m(1.0656ms)[39m[39m
+[32m✔ staged context removal supports a path, basename, and all [90m(2.0893ms)[39m[39m
+[32m✔ Git status is read-only and strips the terminal gateway credential [90m(182.7603ms)[39m[39m
+[32m✔ Standard paths stay inside the launch workspace while Full access may leave it [90m(7.8484ms)[39m[39m
+[32m✔ Vibyra terminal env exposes only the supplied gateway token [90m(56.2319ms)[39m[39m
+[32m✔ managed Vibyra Codex homes keep safe startup cache but exclude user config [90m(67.3029ms)[39m[39m
+[32m✔ Vibyra Agent strips unregistered provider and generic credentials [90m(7.9792ms)[39m[39m
+[32m✔ every PTY runtime receives a truecolor environment even when desktop disables color [90m(12.7997ms)[39m[39m
+[32m✔ AI terminal sessions fall through to an interactive shell after the provider exits [90m(0.9569ms)[39m[39m
+[32m✔ managed Claude and Gemini receive only terminal-scoped gateway credentials [90m(32.8578ms)[39m[39m
+[32m✔ managed Grok receives an isolated exact-model Chat Completions profile [90m(11.3784ms)[39m[39m
+[32m✔ Qwen, Kimi, and Mistral receive isolated exact-model native profiles [90m(41.8148ms)[39m[39m
+[32m✔ Vibyra Agent receives the exact model and only its terminal-scoped gateway [90m(27.306ms)[39m[39m
+[32m✔ shell terminal sessions remain interactive shells [90m(0.7418ms)[39m[39m
+[32m✔ terminal worker keeps synchronous filesystem writes off echoed keystrokes [90m(2.8578ms)[39m[39m
+[32m✔ detached workers renew scoped gateway tokens while the terminal is alive [90m(0.4505ms)[39m[39m
+[32m✔ provider spawn does not synchronously execute a version probe [90m(1.8845ms)[39m[39m
+[32m✔ AI terminals enforce the desktop session cap [90m(4.0274ms)[39m[39m
+[32m✔ AI terminal prompts proxy through the desktop chat contract [90m(3.3311ms)[39m[39m
+[32m✔ AI terminal preserves chat rate-limit metadata on proxy errors [90m(1.0659ms)[39m[39m
+[32m✔ account proxy exposes only the allowlisted route mappings [90m(2.7008ms)[39m[39m
+[32m✔ provider deletion start injects purpose and forwards the server-held token [90m(4.1598ms)[39m[39m
+[32m✔ provider deletion status forwards the server-held token without a body [90m(1.4037ms)[39m[39m
+[32m✔ account proxy forwards the stored token, JSON body, status, and payload [90m(1.432ms)[39m[39m
+[32m✔ account proxy preserves encoded device IDs as one upstream segment [90m(0.9636ms)[39m[39m
+[32m✔ account proxy returns structured timeout and connectivity errors [90m(13.345ms)[39m[39m
+[32m✔ unsupported account routes are handled without reaching upstream [90m(0.6762ms)[39m[39m
+[32m✔ generated desktop action dataset is large, unique, and covers terminal tasks [90m(186.4446ms)[39m[39m
+[32m✔ checked-in desktop action dataset matches the current generator [90m(369.37ms)[39m[39m
+[32m✔ generated desktop action dataset fully passes the deterministic parser [90m(351.0188ms)[39m[39m
+[32m✔ plans a multi-terminal Codex launch from natural language [90m(22.6062ms)[39m[39m
+[32m✔ keeps launch permissions attached to a requested new terminal batch [90m(16.8783ms)[39m[39m
+[32m✔ keeps existing-terminal permission follow-ups as relaunch actions [90m(1.5879ms)[39m[39m
+[32m✔ expands a broad each-terminal error-finding request into deterministic tasks [90m(16.0724ms)[39m[39m
+[32m✔ delegates the exact four-terminal subagent bug hunt as four tasks [90m(8.2591ms)[39m[39m
+[32m✔ assigns the reported five jobs to existing terminals [90m(1.0476ms)[39m[39m
+[32m✔ assigns jobs to each existing terminal using the last task clause [90m(1.2937ms)[39m[39m
+[32m✔ gives three of seven existing terminals diagnostic jobs [90m(0.7866ms)[39m[39m
+[32m✔ assigns counted work to terminals already open instead of opening more [90m(0.7734ms)[39m[39m
+[32m✔ assigns a subset of numbered open terminals without launching replacements [90m(0.961ms)[39m[39m
+[32m✔ assigns read-only audits to newly opened existing terminals [90m(2.5414ms)[39m[39m
+[32m✔ assigns the exact requested read-only diagnosis to terminals already opened [90m(2.0914ms)[39m[39m
+[32m✔ read-only wording does not neutralize an unrelated negated desktop action [90m(0.5668ms)[39m[39m
+[32m✔ diagnosis-only wording preserves the complete terminal task objective [90m(0.8592ms)[39m[39m
+[32m✔ supports out-of subsets and pronoun-based existing terminal tasks [90m(1.4693ms)[39m[39m
+[32m✔ curly-apostrophe negation prevents terminal assignment [90m(2.3635ms)[39m[39m
+[32m✔ normalizes the reported use-launched frontend audit request [90m(0.6307ms)[39m[39m
+[32m✔ corrects false model denials for missed terminal action wording [90m(1.6994ms)[39m[39m
+[32m✔ does not rewrite ordinary terminal explanations [90m(0.5086ms)[39m[39m
+[32m✔ uses the previous specific goal for a vague eight-subagent retry [90m(1.034ms)[39m[39m
+[32m✔ uses exact recent batch terminal ids for an ambiguous follow-up task [90m(0.49ms)[39m[39m
+[32m✔ uses only the requested subset from a recent terminal batch [90m(0.4071ms)[39m[39m
+[32m✔ opens task replacements only when the user explicitly permits it [90m(0.3721ms)[39m[39m
+[32m✔ task wording around terminals cannot fall through to a launch action [90m(0.3438ms)[39m[39m
+[32m✔ does not execute explanatory or hypothetical subagent text [90m(0.4264ms)[39m[39m
+[32m✔ parses explicit numbered tasks with common top-level terminal settings [90m(0.4423ms)[39m[39m
+[32m✔ parses bullet tasks with a common explicit project reference [90m(0.3946ms)[39m[39m
+[32m✔ keeps ordinary terminal launches and vague task chat out of task dispatch [90m(0.4549ms)[39m[39m
+[32m✔ keeps normal terminal requests on standard permissions [90m(0.2516ms)[39m[39m
+[32m✔ opens Voice and Memory as local companion actions [90m(0.2072ms)[39m[39m
+[32m✔ does not treat a GPT model version as a terminal count [90m(0.1859ms)[39m[39m
+[32m✔ keeps an explicit count before a dotted model name [90m(0.2531ms)[39m[39m
+[32m✔ captures an explicit project name instead of inheriting unrelated context [90m(0.4342ms)[39m[39m
+[32m✔ separates terminal counts from GPT model versions and accepts compact aliases [90m(0.2706ms)[39m[39m
+[32m✔ accepts a concise model-only terminal request [90m(0.6032ms)[39m[39m
+[32m✔ captures quoted and case-preserving project names [90m(0.3043ms)[39m[39m
+[32m✔ maps explicit whole-computer wording to the terminal-only Full PC scope [90m(0.3359ms)[39m[39m
+[32m✔ plans active and close-all terminal actions [90m(0.726ms)[39m[39m
+[32m✔ recognizes a full-permission follow-up for all existing terminals [90m(1.7366ms)[39m[39m
+[32m✔ can elevate only the active terminal [90m(1.4852ms)[39m[39m
+[32m✔ does not execute negated or explanatory terminal requests [90m(0.354ms)[39m[39m
+[32m✔ does not turn ordinary chat into a desktop action [90m(0.1595ms)[39m[39m
+[32m✔ desktop auth proxy forwards only supported account fields [90m(6.463ms)[39m[39m
+[32m✔ desktop auth proxy preserves backend validation errors [90m(1.5432ms)[39m[39m
+[32m✔ desktop auth proxy reports upstream connectivity failures clearly [90m(1006.2931ms)[39m[39m
+[32m✔ desktop auth proxy recovers from a transient fetch failure [90m(1012.6392ms)[39m[39m
+[32m✔ desktop provider auth starts and polls through the configured backend [90m(3.3104ms)[39m[39m
+[32m✔ desktop chat returns local desktop actions without a cloud account [90m(18.0594ms)[39m[39m
+[32m✔ desktop chat resolves a combined full-access launch to the named SaaS project [90m(3163.6773ms)[39m[39m
+[32m✔ desktop chat keeps explicit permission follow-ups local [90m(6.4202ms)[39m[39m
+[32m✔ desktop chat uses recent task context for a vague subagent retry [90m(28.2192ms)[39m[39m
+[32m✔ desktop chat passes recent launch context into terminal task routing [90m(19.0297ms)[39m[39m
+[32m✔ desktop chat sanitizes recent launch context before parser use [90m(4.3555ms)[39m[39m
+[32m✔ desktop chat returns an executable three-of-seven terminal assignment [90m(4.2203ms)[39m[39m
+[32m✔ desktop chat assigns counted work to open terminals without launching more [90m(2.8619ms)[39m[39m
+[32m✔ desktop chat keeps numbered open-terminal subset assignments on existing sessions [90m(3.0158ms)[39m[39m
+[32m✔ desktop chat assigns read-only frontend audits to terminals just opened [90m(4.1114ms)[39m[39m
+[32m✔ desktop chat executes the exact recently-opened read-only diagnosis request [90m(3.3444ms)[39m[39m
+[32m✔ desktop chat executes the reported use-launched frontend audit request [90m(3.8814ms)[39m[39m
+[32m✔ desktop chat replaces a false local-model terminal capability denial [90m(4.6479ms)[39m[39m
+[32m✔ desktop chat resolves an explicitly named terminal project [90m(1495.6092ms)[39m[39m
+[32m✔ desktop chat resolves the project for a terminal task batch [90m(1505.5628ms)[39m[39m
+[32m✔ desktop chat resolves a discovered project path suffix [90m(1241.4262ms)[39m[39m
+[32m✔ desktop chat refuses ambiguous explicitly named terminal projects [90m(1541.9957ms)[39m[39m
+[32m✔ desktop chat refuses a stale inherited terminal project [90m(999.9852ms)[39m[39m
+[32m✔ desktop chat requires a verified desktop account session [90m(1.0131ms)[39m[39m
+[32m✔ desktop chat uses local Vibyra AI without a cloud account [90m(1.307ms)[39m[39m
+[32m✔ desktop chat sends a desktop-surface cloud chat payload [90m(1.7401ms)[39m[39m
+[32m✔ desktop Auto routing sends only the original prompt and returns the selected model [90m(0.9195ms)[39m[39m
+[32m✔ desktop Auto routing can constrain selection to native-ready terminal providers [90m(0.6211ms)[39m[39m
+[32m✔ desktop Auto routing clears an expired bridge account session [90m(0.8911ms)[39m[39m
+[32m✔ desktop chat loads canonical memory for the selected project [90m(9.3513ms)[39m[39m
+[32m✔ desktop chat does not treat an inherited OpenAI key as a personal account [90m(1.019ms)[39m[39m
+[32m✔ desktop chat refreshes account membership from backend user payload [90m(1.4247ms)[39m[39m
+[32m✔ desktop chat ignores mobile-only tools and unsupported skills [90m(0.6741ms)[39m[39m
+[32m✔ propagates client disconnect to the upstream request [90m(6.1989ms)[39m[39m
+[32m✔ streams the upstream response and contains stream failures [90m(88.7373ms)[39m[39m
+[32m✔ forwards account authorization and the abort signal [90m(5.9705ms)[39m[39m
+[32m✔ makes backend billing limits non-retryable for native Codex [90m(7.4081ms)[39m[39m
+[32m✔ preserves genuine provider rate limits for Codex retries [90m(2.6774ms)[39m[39m
+[32m✔ memory AI proposals accept fenced JSON and normalize paths [90m(5.8495ms)[39m[39m
+[32m✔ memory AI proposals reject invalid model output [90m(1.5232ms)[39m[39m
+[32m✔ desktop vault routes proxy canonical node paths [90m(10.6097ms)[39m[39m
+[32m✔ desktop import routes send normalized manifests without local paths [90m(3.7129ms)[39m[39m
+[32m✔ desktop delete route preserves recursive folder intent from the query [90m(1.8393ms)[39m[39m
+[32m✔ desktop memory vault proxies authenticated reads [90m(3.3038ms)[39m[39m
+[32m✔ desktop memory vault creates and updates bounded nodes [90m(3.7837ms)[39m[39m
+[32m✔ desktop memory vault deletes with optimistic version and recursive intent [90m(0.9786ms)[39m[39m
+[32m✔ memory imports normalize relative Markdown manifests [90m(2.5387ms)[39m[39m
+[32m✔ memory imports reject filesystem paths, traversal, hidden metadata, and non-Markdown files [90m(2.8253ms)[39m[39m
+[32m✔ memory imports enforce duplicate and content limits before fetching [90m(4.1192ms)[39m[39m
+[32m✔ memory node mutations require valid versions and changes [90m(0.9311ms)[39m[39m
+[32m✔ Claude billing limits use a non-retryable Anthropic error envelope [90m(59.6752ms)[39m[39m
+[32m✔ Gemini billing limits use a non-retryable Gemini error envelope [90m(3.7353ms)[39m[39m
+[32m✔ direct burst-limit codes retain exact account capacity and reset details [90m(4.6888ms)[39m[39m
+[32m✔ Grok credit exhaustion identifies Vibyra billing instead of the CLI key [90m(2.9337ms)[39m[39m
+[32m✔ genuine provider rate limits remain retryable in native protocols [90m(2.1649ms)[39m[39m
+[32m✔ Gemini generateContent aggregates the billed stream into JSON [90m(8.5046ms)[39m[39m
+[32m✔ native terminal requests use the same backend as desktop authentication [90m(3.3882ms)[39m[39m
+[32m✔ translates Anthropic Messages requests into billed Responses requests [90m(2.5113ms)[39m[39m
+[32m✔ translates Gemini GenerateContent requests into billed Responses requests [90m(0.9871ms)[39m[39m
+[32m✔ translates Grok Chat Completions requests into billed Responses requests [90m(1.121ms)[39m[39m
+[32m✔ translates native multi-turn assistant history as Responses input text [90m(0.528ms)[39m[39m
+[32m✔ translates Responses streaming text and tools back to Anthropic events [90m(1.5207ms)[39m[39m
+[32m✔ translates Responses streaming text back to Gemini SSE [90m(0.8776ms)[39m[39m
+[32m✔ translates Responses streaming text and tools back to Grok Chat Completions [90m(1.3494ms)[39m[39m
+[32m✔ desktop preview uses a project-scoped capability instead of the phone bearer [90m(1053.8653ms)[39m[39m
+[32m✔ desktop preview requires an explicit or selected project [90m(1.4931ms)[39m[39m
+[32m✔ desktop preview only proxies an already tracked server during inspection [90m(0.7064ms)[39m[39m
+[32m✔ desktop preview returns the verified Expo run plan when Metro is not running [90m(372.4835ms)[39m[39m
+[32m✔ desktop preview refuses startup without a freshly detected target [90m(284.3671ms)[39m[39m
+[32m✔ desktop preview runs targets concurrently and keeps visual URLs target-pinned [90m(3135.7482ms)[39m[39m
+[31m✖ concurrent preview targets launch on distinct reserved ports [90m(1574.7393ms)[39m[39m
+[32m✔ desktop project memory proxies canonical project entries [90m(4.4229ms)[39m[39m
+[32m✔ desktop memory context excludes project brief entries [90m(0.8867ms)[39m[39m
+[32m✔ desktop project memory requires a desktop account [90m(1.3172ms)[39m[39m
+[32m✔ prompt transcript log appends exact spoken and typed prompts with context [90m(251.587ms)[39m[39m
+[32m✔ Responses route uses terminal gateway auth instead of desktop UI trust [90m(20.749ms)[39m[39m
+[32m✔ official Qwen, Kimi, and Mistral routes enforce native runtime ownership [90m(3.8397ms)[39m[39m
+[32m✔ desktop shell accepts a trailing slash without falling through to phone auth [90m(2.9453ms)[39m[39m
+[32m✔ Team planning routes are desktop-authorized and delegated [90m(23.6874ms)[39m[39m
+[32m✔ provider account routes are handled before phone-token fallback [90m(15.7478ms)[39m[39m
+[32m✔ terminal memory uses canonical vault paths and prioritizes core notes [90m(9.6428ms)[39m[39m
+[32m✔ terminal memory is bounded and disabled for Full PC [90m(29.0173ms)[39m[39m
+[32m✔ desktop UI auth allows the local desktop origin [90m(1.9191ms)[39m[39m
+[32m✔ desktop UI auth rejects foreign browser origins on loopback [90m(0.4936ms)[39m[39m
+[32m✔ desktop UI auth rejects the isolated preview origin [90m(0.3248ms)[39m[39m
+[32m✔ desktop voice requires a connected OpenAI credential [90m(3.5978ms)[39m[39m
+[32m✔ desktop voice sends recorded audio to OpenAI transcription [90m(85.8028ms)[39m[39m
+[32m✔ desktop voice rejects malformed recordings and unsupported formats [90m(0.7701ms)[39m[39m
+[32m✔ desktop voice transcription maps rejected OpenAI credentials to a local setup error [90m(1.2849ms)[39m[39m
+[32m✔ desktop voice speech requires a connected OpenAI credential [90m(0.767ms)[39m[39m
+[32m✔ desktop voice speech requests the selected voice and speed as WAV audio [90m(2.5092ms)[39m[39m
+[32m✔ desktop voice speech defaults to marin at normal speed [90m(0.7092ms)[39m[39m
+[32m✔ desktop voice speech accepts every built-in OpenAI speech voice [90m(4.3698ms)[39m[39m
+[32m✔ desktop voice speech rejects empty and oversized text before requesting audio [90m(3.7865ms)[39m[39m
+[32m✔ desktop voice speech rejects unsupported voices and speeds before requesting audio [90m(1.6759ms)[39m[39m
+[32m✔ desktop voice speech maps upstream failures without exposing credentials [90m(0.9369ms)[39m[39m
+[32m✔ desktop voice speech maps request timeouts [90m(18.5752ms)[39m[39m
+[32m✔ device credentials are distinct and persist only hashed secrets [90m(172.8788ms)[39m[39m
+[32m✔ device credentials enforce account binding and revocation [90m(28.8046ms)[39m[39m
+[32m✔ device credentials rotate, expire, scope principals, and pin protocol floors [90m(36.1279ms)[39m[39m
+[32m✔ fresh desktop tokens use 32 crypto-random bytes without rotating existing files [90m(161.0449ms)[39m[39m
+[32m✔ a second desktop launch reloads the existing renderer without cache [90m(2.8882ms)[39m[39m
+[32m✔ frameless desktop reload shortcuts bypass the renderer cache [90m(0.4251ms)[39m[39m
+[32m✔ desktop main source changes relaunch Electron instead of only reloading the renderer [90m(166.8887ms)[39m[39m
+[32m✔ file routes resolve an uncached project from its stable path ID [90m(88.1767ms)[39m[39m
+[32m✔ publish review excludes environment and credential files [90m(105.9577ms)[39m[39m
+[32m✔ canonical JSON is deterministic and rejects ambiguous values [90m(2.4384ms)[39m[39m
+[32m✔ desktop identities persist with restricted permissions and stable fingerprints [90m(212.7817ms)[39m[39m
+[32m✔ pairing transcripts are signed and bind both ephemeral keys [90m(3.6464ms)[39m[39m
+[32m✔ X25519 agreement derives matching directional keys and AES-GCM binds metadata [90m(10.7488ms)[39m[39m
+[32m✔ replay windows accept bounded reordering and reject duplicates or stale sequences [90m(0.7788ms)[39m[39m
+[32m✔ LAN V2 sessions enforce principal binding, replay protection, and directional responses [90m(11.2438ms)[39m[39m
+[32m✔ LAN V2 sessions expire on idle and revoke all sessions for a credential [90m(1.5661ms)[39m[39m
+[32m✔ local AI status reports the configured model [90m(2.6077ms)[39m[39m
+[32m✔ local Vibyra chat sends a specialized bounded Ollama request [90m(3.5814ms)[39m[39m
+[32m✔ local Vibyra chat explains how to install a missing model [90m(1.492ms)[39m[39m
+[32m✔ membership limits derive from the verified plan and fail closed for malformed accounts [90m(2.0738ms)[39m[39m
+[32m✔ OpenRouter models are grouped by company and sorted by capability [90m(14.6989ms)[39m[39m
+[32m✔ OpenRouter model catalog hides non-chat and preview variants [90m(3.3191ms)[39m[39m
+[32m✔ OpenRouter model catalog keeps usable providers and caps noisy groups [90m(27.1255ms)[39m[39m
+[32m✔ OpenRouter companies are canonicalized from provider slugs [90m(1.5942ms)[39m[39m
+[32m✔ OpenRouter catalog keeps newest Anthropic tool models despite group caps [90m(3.5927ms)[39m[39m
+[32m✔ OpenRouter reasoning capability follows each model's supported parameters [90m(1.1498ms)[39m[39m
+[32m✔ OpenRouter terminal catalog fails closed without explicit tool support [90m(0.7622ms)[39m[39m
+[32m✔ OpenRouter picker tiers match backend dynamic pricing thresholds [90m(1.1538ms)[39m[39m
+[32m✔ OpenRouter picker treats incomplete or invalid pricing as premium [90m(1.0624ms)[39m[39m
+[32m✔ pairing rejects LAN requests before desktop account verification [90m(8.0559ms)[39m[39m
+[32m✔ desktop account verification keeps billing and model tier fields [90m(3.2606ms)[39m[39m
+[32m✔ desktop account verification preserves plan fallback when limits are omitted [90m(0.7586ms)[39m[39m
+[32m✔ desktop state exposes the backend used for account verification [90m(0.4007ms)[39m[39m
+[32m✔ direct desktop startup uses the app backend from the root environment [90m(0.8002ms)[39m[39m
+[32m✔ explicit desktop backend configuration overrides the app environment [90m(0.291ms)[39m[39m
+[32m✔ failed desktop account verification clears an older bridge session [90m(1.5001ms)[39m[39m
+[32m✔ desktop account session persists privately and restores after a bridge restart [90m(154.0345ms)[39m[39m
+[32m✔ pairing rejects phones signed into a different account [90m(1.3755ms)[39m[39m
+[32m✔ pairing stores the verified desktop account id with the pending request [90m(1.4384ms)[39m[39m
+[32m✔ approved pairing status is denied if the desktop account changes [90m(1.8831ms)[39m[39m
+[32m✔ approved pairing status returns a per-device token for the same account [90m(10.2097ms)[39m[39m
+[32m✔ approved pair status is idempotent and distinct devices get distinct credentials [90m(45.2924ms)[39m[39m
+[32m✔ per-device auth is account-bound, revocable, and survives session-only disconnect [90m(30.6666ms)[39m[39m
+[32m✔ credential issuance rollback returns the global token without writing a device record [90m(10.9023ms)[39m[39m
+[32m✔ legacy global token compatibility can be disabled independently [90m(7.1195ms)[39m[39m
+[32m✔ pairing QR carries only the code and reachable desktop URL [90m(2.5814ms)[39m[39m
+[32m✔ pairing QR is unavailable without a phone-reachable URL [90m(0.5258ms)[39m[39m
+[32m✔ pair codes use the expected unambiguous alphabet [90m(4.4187ms)[39m[39m
+[32m✔ pairing body accepts bounded fields and rejects oversized input [90m(12.726ms)[39m[39m
+[32m✔ pair status IDs are bounded before entering rate-limit storage [90m(0.6212ms)[39m[39m
+[32m✔ pending and approved pairing requests expire independently [90m(0.7637ms)[39m[39m
+[32m✔ expired pairing status cannot issue a credential [90m(1.8559ms)[39m[39m
+[32m✔ normal idempotent status polling stays below generous limits [90m(2.0821ms)[39m[39m
+[32m✔ pairing rate limits return Retry-After and support emergency rollback [90m(1.0344ms)[39m[39m
+[32m✔ desktop preview serves nested build assets from the entry root [90m(156.6515ms)[39m[39m
+[32m✔ desktop preview mounts dist/index.html as its static root [90m(38.3453ms)[39m[39m
+[32m✔ desktop preview mounts build/index.html as its static root [90m(24.897ms)[39m[39m
+[32m✔ desktop preview mounts out/index.html as its static root [90m(21.6569ms)[39m[39m
+[32m✔ desktop preview mounts .output/public/index.html as its static root [90m(58.9207ms)[39m[39m
+[32m✔ desktop preview mounts public/index.html as its static root [90m(20.3348ms)[39m[39m
+[32m✔ desktop preview mounts web/index.html as its static root [90m(46.1826ms)[39m[39m
+[32m✔ desktop preview mounts www/index.html as its static root [90m(61.0818ms)[39m[39m
+[32m✔ desktop preview mounts client/dist/index.html as its static root [90m(70.3548ms)[39m[39m
+[32m✔ desktop preview mounts frontend/dist/index.html as its static root [90m(56.6357ms)[39m[39m
+[32m✔ desktop preview mounts website/dist/index.html as its static root [90m(173.5267ms)[39m[39m
+[32m✔ desktop preview mounts site/dist/index.html as its static root [90m(76.7442ms)[39m[39m
+[32m✔ desktop preview mounts ui/dist/index.html as its static root [90m(79.1975ms)[39m[39m
+[32m✔ desktop preview mounts dashboard/dist/index.html as its static root [90m(72.6753ms)[39m[39m
+[32m✔ desktop preview mounts apps/web/dist/index.html as its static root [90m(44.681ms)[39m[39m
+[32m✔ desktop preview mounts apps/client/dist/index.html as its static root [90m(30.8202ms)[39m[39m
+[32m✔ desktop preview mounts packages/app/dist/index.html as its static root [90m(101.7991ms)[39m[39m
+[32m✔ desktop preview mounts packages/web/dist/index.html as its static root [90m(69.6239ms)[39m[39m
+[32m✔ desktop preview mounts storybook-static/index.html as its static root [90m(92.4002ms)[39m[39m
+[32m✔ desktop preview mounts docs/index.html as its static root [90m(61.0491ms)[39m[39m
+[32m✔ desktop preview mounts game/index.html as its static root [90m(72.951ms)[39m[39m
+[32m✔ desktop preview mounts demo/index.html as its static root [90m(45.6543ms)[39m[39m
+[32m✔ desktop preview mounts app/index.html as its static root [90m(53.4347ms)[39m[39m
+[32m✔ desktop preview keeps root entry absolute assets at the project root [90m(30.0808ms)[39m[39m
+[32m✔ desktop preview skips source-only Vite root entries [90m(157.3525ms)[39m[39m
+[32m✔ desktop preview does not serve stray root index files for Laravel Vite projects [90m(115.3929ms)[39m[39m
+[32m✔ desktop preview redirects source-only Vite projects to a verified running dev server [90m(145.2511ms)[39m[39m
+[32m✔ desktop preview ignores unrelated servers on a dev-server port [90m(118.1665ms)[39m[39m
+[32m✔ approved preview server start runs the fixed dev command and verifies the URL [90m(985.2583ms)[39m[39m
+[32m✔ approved preview server start follows the fallback port Vite prints [90m(1040.7698ms)[39m[39m
+[32m✔ approved preview server start parses decorated Vite fallback output [90m(1054.6424ms)[39m[39m
+[32m✔ approved preview server start does not require a root source-only index before launch [90m(909.6319ms)[39m[39m
+[32m✔ approved preview server start discovers a nested frontend app [90m(1264.3409ms)[39m[39m
+[32m✔ approved preview server start discovers a nested website app [90m(972.2119ms)[39m[39m
+[32m✔ approved preview server start supports Next dev scripts [90m(902.7394ms)[39m[39m
+[32m✔ Expo web profile outranks generic project wrapper scripts [90m(879.091ms)[39m[39m
+[32m✔ approved preview server start supports Expo web dev scripts [90m(886.243ms)[39m[39m
+[32m✔ approved preview server start supports SvelteKit dev scripts [90m(883.255ms)[39m[39m
+[32m✔ approved preview server start supports Astro dev scripts [90m(863.0754ms)[39m[39m
+[32m✔ approved preview server start supports Nuxt dev scripts [90m(898.3791ms)[39m[39m
+[32m✔ approved preview server start supports Angular dev scripts [90m(872.443ms)[39m[39m
+[32m✔ approved preview server start supports Vue CLI dev scripts [90m(869.1536ms)[39m[39m
+[32m✔ approved preview server start supports Create React App dev scripts [90m(882.3282ms)[39m[39m
+[32m✔ approved preview server start supports Remix Vite dev scripts [90m(877.3543ms)[39m[39m
+[32m✔ approved preview server start runs Laravel PHP and Vite asset servers [90m(937.1601ms)[39m[39m
+[32m✔ preview profiles cover additional frameworks and guarded project scripts [90m(1.7617ms)[39m[39m
+[32m✔ runtime preview detection covers Python, Flutter, Rails, Hugo, and PHP roots [90m(489.786ms)[39m[39m
+[32m✔ preview detection explains package-only and non-web Python projects [90m(27.2712ms)[39m[39m
+[32m✔ approved Django preview starts the selected project runtime [90m(914.3893ms)[39m[39m
+[32m✔ approved custom Node web script starts without framework-specific metadata [90m(1755.8832ms)[39m[39m
+[32m✔ approved Laravel preview startup tolerates delayed PHP and Vite readiness [90m(1932.0863ms)[39m[39m
+[32m✔ approved Laravel preview startup rejects application error pages [90m(913.6462ms)[39m[39m
+[32m✔ approved Laravel preview startup removes a stale generated hot file [90m(908.1799ms)[39m[39m
+[32m✔ approved Laravel preview startup reports public hot ownership failures immediately [90m(580.2276ms)[39m[39m
+[32m✔ approved Laravel preview tracks the actual Vite fallback port [90m(940.2457ms)[39m[39m
+[32m✔ started preview servers are proxied through the desktop bridge [90m(31.1935ms)[39m[39m
+[32m✔ preview server proxy injects runtime error overlay once before app scripts [90m(10.6029ms)[39m[39m
+[32m✔ preview server proxy renders HTTP error pages as visible diagnostics [90m(11.0017ms)[39m[39m
+[32m✔ static preview links fall forward to a tracked preview server [90m(10.1681ms)[39m[39m
+[32m✔ Laravel Vite proxy keeps app routes and public media on the preview server [90m(37.6474ms)[39m[39m
+[32m✔ external preview proxy turns Vite module 500 HTML into executable diagnostics [90m(5.3053ms)[39m[39m
+[32m✔ preview server proxy preserves range requests and media response headers [90m(9.455ms)[39m[39m
+[32m✔ preview server proxy rewrites runtime root asset strings in JavaScript [90m(9.4852ms)[39m[39m
+[32m✔ preview server proxy unwraps duplicated preview prefixes for runtime assets [90m(6.9068ms)[39m[39m
+[32m✔ preview referer fallback proxies root app paths before phone auth [90m(22.665ms)[39m[39m
+[32m✔ root preview assets require an authenticated preview referer [90m(3.3915ms)[39m[39m
+[32m✔ preview server proxy forwards Inertia login requests with body, cookies, and rewritten redirects [90m(24.2669ms)[39m[39m
+[32m✔ preview server proxy derives decoded Laravel XSRF header from preview cookies [90m(10.4698ms)[39m[39m
+[32m✔ preview server proxy rewrites browser form actions into the tokenized preview route [90m(8.0458ms)[39m[39m
+[32m✔ trusted preview referer can proxy root form posts before phone auth [90m(9.7509ms)[39m[39m
+[32m✔ external preview proxy rewrites nested Vite imports and assets against the upstream server [90m(49.4662ms)[39m[39m
+[32m✔ external preview proxy rejects unsupported and untracked targets by default [90m(1.1427ms)[39m[39m
+[32m✔ external preview proxy accepts only the tracked origin for a scoped capability [90m(7.6127ms)[39m[39m
+[32m✔ target-pinned credentials may proxy another tracked service in the same project [90m(9.7523ms)[39m[39m
+[32m✔ legacy arbitrary preview proxy requires the explicit emergency rollback flag [90m(11.693ms)[39m[39m
+[32m✔ external preview proxy returns redirects without following them [90m(6.6303ms)[39m[39m
+[32m✔ approved preview server start rejects unsafe matching scripts [90m(82.5755ms)[39m[39m
+[32m✔ approved preview server start avoids an occupied declared port [90m(885.3122ms)[39m[39m
+[32m✔ preview proxy rejects oversized request bodies before contacting upstream [90m(5.1805ms)[39m[39m
+[32m✔ preview proxy rejects upstream responses above the configured size [90m(9.2156ms)[39m[39m
+[32m✔ preview proxy terminates chunked responses that cross the size limit [90m(13.7022ms)[39m[39m
+[32m✔ preview proxy times out stalled upstream requests [90m(43.0269ms)[39m[39m
+[32m✔ preview proxy enforces the configured concurrency limit [90m(96.8971ms)[39m[39m
+[32m✔ preview proxy streams binary bodies while preserving range headers [90m(14.9463ms)[39m[39m
+[32m✔ desktop preview skips source-only Vite entries in non-build roots [90m(104.4712ms)[39m[39m
+[32m✔ desktop preview rewrites nested page absolute assets to the build root [90m(24.6422ms)[39m[39m
+[32m✔ desktop preview resolves existing folder ids without cached project state [90m(969.5443ms)[39m[39m
+[32m✔ desktop preview blocks project traversal and returns placeholder images for missing image assets [90m(26.7462ms)[39m[39m
+[32m✔ desktop preview serves static game exports with 3D, media, and WASM assets [90m(105.5711ms)[39m[39m
+[32m✔ desktop preview returns no runnable preview for Lua-only app folders [90m(69.892ms)[39m[39m
+[32m✔ desktop preview serves important asset MIME types [90m(69.1007ms)[39m[39m
+[32m✔ phone preview handlers issue scoped credentials instead of the global token [90m(877.3095ms)[39m[39m
+[32m✔ concurrent phone preview requests only commit the newest capability [90m(286.1477ms)[39m[39m
+[32m✔ phone preview server URLs use scoped credentials [90m(1680.9473ms)[39m[39m
+[32m✔ agent apply preview URLs use a scoped project capability [90m(278.2777ms)[39m[39m
+[32m✔ capabilities isolate projects, expire, replace, revoke, and retain legacy compatibility [90m(1.1436ms)[39m[39m
+[32m✔ preview capabilities may pin a target while project-only callers remain compatible [90m(0.4797ms)[39m[39m
+[32m✔ legacy global preview tokens can be retired independently [90m(0.5083ms)[39m[39m
+[32m✔ disconnect, session expiry, and approved replacement pairing revoke scoped previews [90m(1816.6145ms)[39m[39m
+[32m✔ legacy global-token preview routes follow the retirement flag [90m(29.9385ms)[39m[39m
+[32m✔ revoked scoped preview links are rejected by the preview route [90m(8.653ms)[39m[39m
+[32m✔ portsFromOutput strips ANSI color codes from Vite 6 output [90m(3.6192ms)[39m[39m
+[32m✔ portsFromOutput finds the bumped port when Vite shifts off 5173 [90m(0.5124ms)[39m[39m
+[32m✔ portsFromOutput parses literal bracket sequences (email-rendered ANSI) [90m(0.4399ms)[39m[39m
+[32m✔ Preview element resolution trusts project-contained React source metadata [90m(59.0822ms)[39m[39m
+[32m✔ Preview element resolution requires a choice for duplicate visible text [90m(92.7593ms)[39m[39m
+[32m✔ Preview element resolution stays inside the selected monorepo app [90m(26.5055ms)[39m[39m
+[32m✔ Preview element resolution accepts an exact app-relative source before fallback scanning [90m(53.926ms)[39m[39m
+[32m✔ Preview element resolution ignores AppWebView wrapper metadata for inner elements [90m(61.0425ms)[39m[39m
+[32m✔ Preview element resolution retains AppWebView for the iframe element itself [90m(36.5093ms)[39m[39m
+[32m✔ Preview element resolution rejects broad App metadata when a child component owns the element [90m(26.8888ms)[39m[39m
+[32m✔ Preview element resolution keeps App when its nearby JSX owns the element [90m(14.8042ms)[39m[39m
+[32m✔ Preview element resolution uses form attributes to find a nested input component [90m(16.0365ms)[39m[39m
+[32m✔ Preview element resolution rejects a named parent source line that only renders a child [90m(15.443ms)[39m[39m
+[32m✔ extractMissingImports returns package names from Vite import-analysis errors [90m(3.7781ms)[39m[39m
+[32m✔ diagnosePreviewRepairPrompt explains stale Inertia imports as one dependency class [90m(227.2899ms)[39m[39m
+[32m✔ Expo preview reuse requires the selected project title and a JavaScript bundle [90m(293.856ms)[39m[39m
+[32m✔ Preview inspector prefers the nearest fiber source over a WebView owner [90m(5.5596ms)[39m[39m
+[32m✔ concurrent preview port reservations never return the same port [90m(69.4839ms)[39m[39m
+[32m✔ preview port reservations honor exclusions [90m(13.6518ms)[39m[39m
+[32m✔ preview recommendations choose a portrait phone for mobile projects [90m(61.5364ms)[39m[39m
+[32m✔ preview recommendations respect explicit mobile landscape orientation [90m(25.4701ms)[39m[39m
+[32m✔ preview recommendations prefer desktop and game signals over generic web metadata [90m(1.8568ms)[39m[39m
+[32m✔ root projects containing both Expo and Electron still preview as the mobile app [90m(56.5958ms)[39m[39m
+[32m✔ browser games default to a 16:9 Full HD viewport [90m(0.6371ms)[39m[39m
+[32m✔ one preview child exit cleans up only its target service [90m(2.7024ms)[39m[39m
+[32m✔ same-target starts share one generation while Stop permits an immediate replacement [90m(0.8918ms)[39m[39m
+[32m✔ preview shutdown handlers stop children and exit after server close [90m(4.9227ms)[39m[39m
+[32m✔ desktop shutdown requests use the installed shutdown path [90m(0.6346ms)[39m[39m
+[32m✔ preview shutdown forces upgraded sockets closed after its deadline [90m(23.8226ms)[39m[39m
+[32m✔ preview shutdown handlers clean up before fatal exits [90m(1.1547ms)[39m[39m
+[32m✔ preview shutdown handlers clean up when the bridge server closes independently [90m(0.6887ms)[39m[39m
+[32m✔ preview shutdown continues when child cleanup throws [90m(0.78ms)[39m[39m
+[32m✔ independent server close tolerates preview cleanup errors [90m(1.1624ms)[39m[39m
+[32m✔ preview startup feed exposes the approved command and real process output [90m(3.9417ms)[39m[39m
+[32m✔ preview startup feeds remain isolated by target [90m(0.6903ms)[39m[39m
+[32m✔ preview target detection finds nested web, mobile, and desktop apps [90m(993.0758ms)[39m[39m
+[32m✔ Laravel Inertia portfolio is not inferred as a restaurant from generic menu/order words [90m(124.7548ms)[39m[39m
+[32m✔ restaurant purpose requires food or venue terms beyond generic operations words [90m(1.3719ms)[39m[39m
+[32m✔ root Expo markers take precedence over a nested Laravel backend [90m(43.8541ms)[39m[39m
+[32m✔ Laravel 419 preview prompts rank route and session context before unrelated UI files [90m(147.9471ms)[39m[39m
+[32m✔ terminal task file hints exclude sensitive paths and do not include snippets [90m(20.1803ms)[39m[39m
+[32m✔ managed project creation enforces the membership cap without touching existing projects [90m(69.8049ms)[39m[39m
+[32m✔ parallel managed project creates cannot race past the cap [90m(84.3003ms)[39m[39m
+[32m✔ separate desktop processes cannot race past the managed project cap [90m(277.3703ms)[39m[39m
+[32m✔ project discovery finds nested marked projects [90m(60.6436ms)[39m[39m
+[32m✔ explicitly selected plain folders remain discoverable without markers [90m(35.066ms)[39m[39m
+[32m✔ top-level folders in project container roots are discoverable without markers [90m(38.4659ms)[39m[39m
+[32m✔ nested plain folders still need project markers [90m(37.0317ms)[39m[39m
+[32m✔ recent projects persist newest-first without duplicates [90m(47.114ms)[39m[39m
+[32m✔ Full PC project scope resolves only for terminals [90m(2.3606ms)[39m[39m
+[32m✔ manufactured encoded project IDs are not trusted [90m(0.6244ms)[39m[39m
+[32m✔ project IDs recover real apps after the in-memory cache is lost [90m(24.7853ms)[39m[39m
+[32m✔ legacy padded base64 project IDs resolve to their canonical project [90m(10.5938ms)[39m[39m
+[32m✔ explicit project paths recover a real folder from a stale opaque ID [90m(7.2446ms)[39m[39m
+[32m✔ cached projects with missing folders are not trusted [90m(6.0921ms)[39m[39m
+[32m✔ folders selected through Browse PC remain trusted after cache replacement [90m(30.7148ms)[39m[39m
+(node:14788) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[32m✔ Codex personal accounts require ChatGPT tokens and reject API-key-only auth [90m(9.3392ms)[39m[39m
+[32m✔ Claude personal accounts require claude.ai subscription auth [90m(1.3461ms)[39m[39m
+[32m✔ Gemini personal accounts require Google OAuth selection and OAuth credentials [90m(10.6094ms)[39m[39m
+[32m✔ Gemini login settings force the external Google OAuth browser flow [90m(8.5548ms)[39m[39m
+[32m✔ Gemini login confirms the CLI browser launch prompt [90m(0.7296ms)[39m[39m
+[32m✔ Gemini provider login uses the direct CLI OAuth path [90m(1.89ms)[39m[39m
+[32m✔ provider login output exposes a browser sign-in URL [90m(0.7185ms)[39m[39m
+[32m✔ provider account state exposes only native CLI account connections [90m(1180.8928ms)[39m[39m
+[32m✔ Vibyra Voice may use deployment configuration without creating a linked AI account [90m(0.9729ms)[39m[39m
+[32m✔ Vibyra Voice ignores OpenRouter keys when resolving OpenAI audio credentials [90m(7.694ms)[39m[39m
+[32m✔ Auto deciding animation keeps one stable full-screen 3D V [90m(7.1915ms)[39m[39m
+[32m✔ PTY socket input errors are contained inside the socket handler [90m(2037.5651ms)[39m[39m
+[32m✔ personal accounts launch official provider models and reject API-only wrappers [90m(1023.5016ms)[39m[39m
+[32m✔ semantic assignment formatting preserves multiline input for real PTY runtimes [90m(1636.377ms)[39m[39m
+(node:6800) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[32m✔ concrete Vibyra-credit terminals require a desktop account session [90m(2045.5889ms)[39m[39m
+[32m✔ Vibyra-funded terminal creation enforces the account concurrency limit [90m(2230.738ms)[39m[39m
+[32m✔ parallel project-bound Vibyra terminal launches cannot race past the cap [90m(1467.3877ms)[39m[39m
+[32m✔ PTY Team launch canonicalizes legacy identifiers before starting the provider [90m(1927.6331ms)[39m[39m
+[32m✔ aggregate Team launch removes every session when a later member fails [90m(2032.3264ms)[39m[39m
+[32m✔ API-only models launch Vibyra Agent with an exact terminal gateway grant [90m(2004.8204ms)[39m[39m
+[32m✔ blank Auto input echoes locally and yields the first task on Enter [90m(0.8637ms)[39m[39m
+[32m✔ blank Auto opens first, then routes in the same session and submits once [90m(2810.0921ms)[39m[39m
+[32m✔ shell PTY sessions reject semantic AI assignments [90m(1583.4348ms)[39m[39m
+[32m✔ official terminal Memory stays out of public PTY session payloads [90m(1156.2532ms)[39m[39m
+[32m✔ Vibyra gateway credentials stay private and are revoked on close [90m(1807.9199ms)[39m[39m
+[32m✔ close all removes every PTY session regardless of status [90m(2244.7604ms)[39m[39m
+[32m✔ exited persisted PTY sessions are removed instead of restored [90m(940.4628ms)[39m[39m
+[32m✔ PTY terminal names can be changed without relaunching [90m(1530.0443ms)[39m[39m
+[32m✔ running native terminals cannot switch providers or models in place [90m(1488.8777ms)[39m[39m
+[32m✔ reusing a running terminal ID cannot switch its project [90m(2179.0781ms)[39m[39m
+[32m✔ reusing a running terminal ID cannot switch its model or launch settings [90m(1739.5145ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+[32m✔ restored terminal cwd must match the server-resolved project [90m(884.2496ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+[32m✔ isolated PTY sessions use and preserve an authoritative Git worktree [90m(2010.8359ms)[39m[39m
+[32m✔ dirty isolated PTY requests can safely fall back to the shared project [90m(1776.2356ms)[39m[39m
+[32m✔ nested React/Vite and Laravel publishes frontend and backend from their actual roots [90m(364.1789ms)[39m[39m
+[32m✔ frontend-only React publishes static output and is not misclassified as a server [90m(137.2002ms)[39m[39m
+[32m✔ Laravel Inertia provides both a static shell and a live Laravel runtime [90m(234.3543ms)[39m[39m
+[32m✔ Node full-stack publishes a static frontend and a server runtime [90m(143.5409ms)[39m[39m
+[32m✔ Python full-stack produces one runtime containing its built frontend [90m(132.1925ms)[39m[39m
+[32m✔ path-derived project IDs recover after the desktop cache is stale [90m(37.1587ms)[39m[39m
+[32m✔ oversized runtime payloads preserve the user-facing hosting refusal [90m(89.8974ms)[39m[39m
+[32m✔ failed frontend builds preserve the actionable command output [90m(1061.4318ms)[39m[39m
+[32m✔ environment and credential files never enter a runtime payload [90m(25.6291ms)[39m[39m
+[32m✔ desktop rejects secret directories before backend acceptance [90m(28.0805ms)[39m[39m
+[32m✔ publish bundle builders use projectPath for stale opaque IDs [90m(39.9753ms)[39m[39m
+[32m✔ publish demo bundle includes static entry dependencies and binary assets [90m(153.0453ms)[39m[39m
+[32m✔ publish demo bundle skips env, credential, and unsafe directory references [90m(97.1907ms)[39m[39m
+[32m✔ publish demo bundle rejects source-only Vite entries [90m(75.7014ms)[39m[39m
+[32m✔ publish demo bundle runs build script when no built entry exists [90m(1249.345ms)[39m[39m
+[32m✔ publish demo bundle builds a recognized nested frontend package [90m(861.0099ms)[39m[39m
+[32m✔ publish demo bundle prefers a nested React frontend over a Laravel root package [90m(879.502ms)[39m[39m
+[32m✔ publish demo bundle installs missing dependencies before building [90m(440.7282ms)[39m[39m
+[32m✔ publish demo bundle reports install failure before build [90m(185.2176ms)[39m[39m
+[32m✔ publish demo bundle skips dependency install when node_modules exists [90m(624.5167ms)[39m[39m
+[32m✔ publish demo bundle returns the frontend build error instead of hiding it [90m(741.1727ms)[39m[39m
+[32m✔ publish demo bundle reports when a successful build creates no browser output [90m(743.434ms)[39m[39m
+[32m✔ publish demo bundle explains when automatic building is disabled [90m(31.948ms)[39m[39m
+[32m✔ publish demo bundle creates a Laravel Vite Inertia static shell from manifest assets [90m(85.9024ms)[39m[39m
+[32m✔ publish demo bundle keeps Laravel private and backend files out of static shell bundles [90m(55.3477ms)[39m[39m
+[32m✔ publish demo bundle fails clearly when required dependencies exceed caps [90m(23.5346ms)[39m[39m
+[32m✔ publish demo bundle reports the asset and per-file size limit [90m(37.8249ms)[39m[39m
+[32m✔ publish demo bundle rejects missing required local references [90m(24.5755ms)[39m[39m
+[32m✔ publish demo bundle returns a structured failure when no project is selected [90m(0.8095ms)[39m[39m
+[32m✔ publish demo bundle fails and reports optional file cap truncation [90m(27.9123ms)[39m[39m
+[32m✔ local bridge bundles a browsed full-stack app and Laravel accepts the publish payload [90m(7739.5069ms)[39m[39m
+[32m✔ publish runtime bundle includes safe Node server source [90m(117.4408ms)[39m[39m
+[32m✔ publish runtime bundle rejects frontend-only packages [90m(86.5888ms)[39m[39m
+[32m✔ publish runtime bundle reports unsupported backend runtimes precisely [90m(88.879ms)[39m[39m
+[32m✔ publish runtime bundle rejects detected servers without a start command [90m(105.5127ms)[39m[39m
+[32m✔ publish runtime bundle does not invent a missing Next.js start script [90m(62.0661ms)[39m[39m
+[32m✔ publish runtime bundle fails and reports file cap truncation [90m(101.1813ms)[39m[39m
+[32m✔ publish runtime bundle discovers a nested backend without bundling the frontend [90m(95.3297ms)[39m[39m
+[32m✔ publish runtime bundle prefers and rebases nested Laravel under a React parent [90m(142.3334ms)[39m[39m
+[32m✔ publish runtime bundle supports a nested FastAPI backend [90m(70.0505ms)[39m[39m
+[32m✔ publish runtime bundle serves a root-manifest FastAPI and built Vite frontend together [90m(84.5137ms)[39m[39m
+[32m✔ publish runtime bundle includes safe Laravel source and built assets [90m(109.3138ms)[39m[39m
+[32m✔ publish runtime bundle tells Laravel users when the frontend build is missing [90m(45.2105ms)[39m[39m
+[32m✔ publish runtime bundle fails clearly when a required Laravel build asset exceeds its cap [90m(54.8373ms)[39m[39m
+[32m✔ folder search scores misspelled names [90m(3.6942ms)[39m[39m
+[32m✔ project search ranks exact and prefix matches above fuzzy guesses [90m(2.919ms)[39m[39m
+[32m✔ folder search ranks the closest candidate first [90m(26.8132ms)[39m[39m
+[32m✔ search normalizes case, accents, punctuation, spaces, and hyphens [90m(0.6622ms)[39m[39m
+[32m✔ multi-word fuzzy queries must match every query token [90m(0.6946ms)[39m[39m
+[32m✔ project search can match path and stack without beating name matches [90m(0.4297ms)[39m[39m
+[32m✔ project search ignores very short fuzzy misses [90m(0.4331ms)[39m[39m
+[32m✔ folder search rejects unrelated guesses [90m(0.3964ms)[39m[39m
+[32m✔ runtime exposes the terminal action protocol and coalesces stale renderer reloads [90m(2.3377ms)[39m[39m
+[32m✔ desktop launcher replaces a stale AI terminal bridge before opening [90m(0.7977ms)[39m[39m
+[32m✔ renderer blocks actions until the bridge protocol matches [90m(0.3878ms)[39m[39m
+[32m✔ Electron consumes each bridge reload request once and bypasses cache [90m(0.3563ms)[39m[39m
+[32m✔ terminal editor lists, reads, and saves files inside its workspace [90m(21.4368ms)[39m[39m
+[32m✔ terminal editor rejects stale saves and symlink path escapes [90m(14.9043ms)[39m[39m
+[32m✔ nested desktop API paths cannot fall through to static files [90m(2.2517ms)[39m[39m
+[32m✔ terminal editor routes run before the single-file desktop fallback [90m(0.5057ms)[39m[39m
+[32m✔ Monaco is served from its dedicated local vendor directory [90m(0.4587ms)[39m[39m
+[32m✔ issues persisted terminal-scoped tokens with mode-0600 storage [90m(132.8799ms)[39m[39m
+[32m✔ enforces expiry, rate limits, and token or terminal revocation [90m(34.6315ms)[39m[39m
+[32m✔ detached workers can renew a terminal token without changing its capabilities [90m(20.2049ms)[39m[39m
+[32m✔ expired terminal tokens cannot be renewed [90m(9.08ms)[39m[39m
+[32m✔ terminal gateway grants fail closed without exact capabilities [90m(1.4253ms)[39m[39m
+[32m✔ gateway request authorization requires an approved local transport and bearer token [90m(15.9928ms)[39m[39m
+[32m✔ gateway authorization can accept Gemini API-key headers when explicitly enabled [90m(7.8605ms)[39m[39m
+[32m✔ native routes recover the stored billing model without client duplication [90m(7.9779ms)[39m[39m
+[32m✔ valid tokens report model switches as capability errors instead of login failures [90m(9.5516ms)[39m[39m
+[32m✔ custom provider Responses grants authorize with registry-derived identities [90m(33.6504ms)[39m[39m
+[32m✔ Grok Chat Completions grants bind the native and billing models [90m(8.6994ms)[39m[39m
+[32m✔ Grok session-title requests may use the fixed native alias without widening billing [90m(9.4411ms)[39m[39m
+[32m✔ native model aliases cannot cross runtime or provider capabilities [90m(6.1354ms)[39m[39m
+[32m✔ same-model capability mismatches do not claim the model changed [90m(5.5272ms)[39m[39m
+[32m✔ builds distinct project-aware coding briefs for parallel terminal agents [90m(10.2002ms)[39m[39m
+[32m✔ adds concrete frontend quality criteria for UI assignments [90m(1.4734ms)[39m[39m
+[32m✔ preserves per-task settings while enriching the task text [90m(0.5513ms)[39m[39m
+[32m✔ uses read-only reviewer roles when the user forbids code changes [90m(0.744ms)[39m[39m
+[32m✔ treats without-changing wording as a read-only terminal assignment [90m(0.572ms)[39m[39m
+[32m✔ recognizes common diagnosis-only wording from user or task text [90m(0.8297ms)[39m[39m
+[32m✔ defaults audits to read-only unless the user explicitly requests fixes [90m(0.9079ms)[39m[39m
+[32m✔ PTY Team launch resolves stored plan assignments instead of renderer task text [90m(13.0794ms)[39m[39m
+[32m✔ PTY creation returns after provider child spawn without waiting for initial assignment readiness [90m(2.7075ms)[39m[39m
+[32m✔ PTY creation keeps an alive starting worker after a child-spawn timeout [90m(4.5154ms)[39m[39m
+[32m✔ renderer includes the bridge plan id in the authoritative PTY request [90m(9.0286ms)[39m[39m
+[32m✔ automatic Team sizing expands complex cross-layer terminal audits [90m(5.9029ms)[39m[39m
+[32m✔ accepts a strict AI proposal and stores bridge-issued identifiers [90m(10.1925ms)[39m[39m
+[32m✔ null and invalid proposals fall back without retaining AI metadata [90m(2.913ms)[39m[39m
+[32m✔ cloud planner failures retain a bounded fallback reason [90m(1.1772ms)[39m[39m
+[32m✔ deterministic topology selects discovery and verification roles [90m(1.185ms)[39m[39m
+[32m✔ rejects role, permission, scope, and criterion manipulation [90m(3.0257ms)[39m[39m
+[32m✔ invalid proposal is discarded wholesale rather than partially repaired [90m(1.7225ms)[39m[39m
+[32m✔ stored assignment lookup binds plan, team, goal, and role [90m(3.0439ms)[39m[39m
+[32m✔ hashes describe plan content while identifiers distinguish planning operations [90m(5.1085ms)[39m[39m
+[32m✔ cloud Team planner sends bounded goal, topology, and filtered paths [90m(4.4054ms)[39m[39m
+[32m✔ cloud Team planner requires a desktop account [90m(1.2133ms)[39m[39m
+[32m✔ cloud Team planner does not dispatch after cancellation [90m(0.6159ms)[39m[39m
+[32m✔ cloud Team planner remains cancellable while decoding the response [90m(0.8023ms)[39m[39m
+[32m✔ cloud Team planner reports credit failures as a bounded fallback reason [90m(0.925ms)[39m[39m
+[32m✔ cloud Team planner identifies a backend without the planning endpoint [90m(0.5926ms)[39m[39m
+[32m✔ Team role topology has exactly one writer [90m(6.1699ms)[39m[39m
+[32m✔ untrusted goals stay out of trusted role policy [90m(1.0679ms)[39m[39m
+[32m✔ validated plan assignment data is compiled without entering trusted policy [90m(1.2857ms)[39m[39m
+[32m✔ assignment compilation rejects a role mismatch [90m(3.8133ms)[39m[39m
+[32m✔ each Team worker receives a distinct operating contract [90m(1.0924ms)[39m[39m
+[32m✔ Team launch fails closed without a trusted provider channel [90m(0.5588ms)[39m[39m
+[32m✔ partial or invalid Team metadata is rejected [90m(0.4911ms)[39m[39m
+[32m✔ Team identifiers remain stable across current and legacy renderer formats [90m(0.7027ms)[39m[39m
+[32m✔ connected Codex planning returns strict provider-authored assignments [90m(27.9166ms)[39m[39m
+[32m✔ connected Codex planning rejects duplicate JSON object keys [90m(15.2455ms)[39m[39m
+[32m✔ connected Codex planning corrects one schema-valid semantic failure [90m(24.0478ms)[39m[39m
+[32m✔ connected Codex planning fails closed after the corrective retry [90m(27.1955ms)[39m[39m
+[32m✔ connected Codex planning kills the provider process when cancelled [90m(8.4126ms)[39m[39m
+[32m✔ provider Team schema is constrained to the selected topology [90m(3.7189ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+[32m✔ normalizes isolated modes and prepares shared project metadata [90m(586.492ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+[32m✔ creates and restores a clean Git worktree [90m(1360.8488ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+[32m✔ rejects tracked and untracked repository changes [90m(615.1926ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+[32m✔ inspects and creates a local checkpoint without remote Git [90m(898.1473ms)[39m[39m
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/desktop/package.json', LF will be replaced by CRLF the next time Git touches it
+[32m✔ preserves a project cwd nested below the repository root [90m(896.5523ms)[39m[39m
+[32m✔ rejects tampered persisted worktree metadata [90m(1098.4439ms)[39m[39m
+[34mℹ tests 1025[39m
+[34mℹ suites 0[39m
+[34mℹ pass 1021[39m
+[34mℹ fail 1[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 3[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 41273.4175[39m
+
+[31m✖ failing tests:[39m
+
+test at desktop\lib\desktopPreviewLifecycle.test.mjs:73:1
+[31m✖ concurrent preview targets launch on distinct reserved ports [90m(1574.7393ms)[39m[39m
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at TestContext.<anonymous> [90m(file:///C:/Users/Ellis/Desktop/vibyra/[39mdesktop/lib/desktopPreviewLifecycle.test.mjs:98:12[90m)[39m
+  [90m    at async Test.run (node:internal/test_runner/test:1332:7)[39m
+  [90m    at async Test.processPendingSubtests (node:internal/test_runner/test:911:7)[39m {
+    generatedMessage: [33mtrue[39m,
+    code: [32m'ERR_ASSERTION'[39m,
+    actual: [33m1[39m,
+    expected: [33m2[39m,
+    operator: [32m'strictEqual'[39m,
+    diff: [32m'simple'[39m
+  }

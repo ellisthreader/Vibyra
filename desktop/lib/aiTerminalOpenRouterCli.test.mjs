@@ -87,6 +87,30 @@ test("agent arguments preserve standard, full, and persistent resume behavior", 
   else process.env.VIBYRA_AGENT_INSTRUCTIONS_FILE = previousInstructionsFile;
 });
 
+test("Vibyra Agent maps pro reasoning to Codex reasoning mode", () => {
+  const args = vibyraAgentArgs({
+    desktopUrl: "http://127.0.0.1:4317",
+    model: "openai/gpt-5.6-sol",
+    prompt: "Use the newest reasoning mode",
+    reasoningEffort: "pro"
+  });
+
+  assert.equal(args.includes('model_reasoning_mode="pro"'), true);
+  assert.equal(args.some((value) => String(value).includes("model_reasoning_effort")), false);
+});
+
+test("Vibyra Agent forwards GPT-5.6 max reasoning as reasoning effort", () => {
+  const args = vibyraAgentArgs({
+    desktopUrl: "http://127.0.0.1:4317",
+    model: "openai/gpt-5.6-sol",
+    prompt: "Use maximum reasoning",
+    reasoningEffort: "max"
+  });
+
+  assert.equal(args.includes('model_reasoning_effort="max"'), true);
+  assert.equal(args.some((value) => String(value).includes("model_reasoning_mode")), false);
+});
+
 test("Vibyra Agent Team roles compose with runtime identity and enforce read-only access", () => {
   const args = vibyraAgentArgs({
     desktopUrl: "http://127.0.0.1:4317",

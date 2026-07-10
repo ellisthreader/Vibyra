@@ -6,9 +6,9 @@
 
 .profile-plan-badge {
   background: var(--surface-bg-elevated, #12121a);
-  border: 1px solid color-mix(in srgb, #38bdf8 55%, var(--surface-border));
+  border: 1px solid color-mix(in srgb, var(--plan-accent) 55%, var(--surface-border));
   border-radius: 999px;
-  color: #38bdf8;
+  color: var(--plan-accent);
   font-size: 9px;
   font-weight: 800;
   left: 50%;
@@ -63,6 +63,19 @@
 
 body[data-desktop-theme="light"] .profile-plan-card::before {
   opacity: 0.3;
+}
+
+#token-modal .modal--billing-revamp .profile-plan-badge {
+  background: var(--billing-row-bg);
+  border-color: color-mix(in srgb, var(--plan-accent) 55%, var(--billing-line-strong));
+  color: var(--plan-accent);
+}
+
+#token-modal .modal--billing-revamp .profile-plan-card::after,
+#token-modal .modal--billing-revamp .profile-plan-card.is-current::after {
+  background:
+    linear-gradient(180deg, transparent 0, transparent 12%, var(--billing-row-bg) 46%, var(--billing-row-bg) 100%),
+    linear-gradient(90deg, var(--billing-row-bg) 0, transparent 58%);
 }
 
 @media (max-width: 720px) {

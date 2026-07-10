@@ -10,12 +10,18 @@ const styles = readFileSync(
 const theme = readFileSync(new URL("./app.theme.css", import.meta.url), "utf8");
 const shellTheme = readFileSync(new URL("./app.theme-shell.css", import.meta.url), "utf8");
 const shellSource = readFileSync(new URL("./app.shell.js", import.meta.url), "utf8");
+const chatTheme = readFileSync(new URL("./app.theme-chat.css", import.meta.url), "utf8");
+const chatPolish = readFileSync(new URL("./app.chat-polish.css", import.meta.url), "utf8");
+const projectsEmpty = readFileSync(new URL("./app.projects-empty.css", import.meta.url), "utf8");
 
 test("desktop audit theme loads after all page polish styles", () => {
   const auditIndex = appHtml.indexOf("app.desktop-theme-audit.css");
   assert.ok(auditIndex > appHtml.indexOf("app.chat-polish.css"));
   assert.ok(auditIndex > appHtml.indexOf("app.screenshot-tray.css"));
   assert.ok(auditIndex > appHtml.indexOf("app.profile-voice.css"));
+  assert.ok(auditIndex > appHtml.indexOf("app.projects.css"));
+  assert.ok(auditIndex > appHtml.indexOf("app.projects-empty.css"));
+  assert.ok(auditIndex > appHtml.indexOf("app.projects-rows.css"));
 });
 
 test("desktop audit defines missing semantic surface aliases", () => {
@@ -75,6 +81,31 @@ test("common tab surfaces stay flat and reserve purple for interaction", () => {
   assert.match(styles, /transform:\s*none/);
   assert.match(styles, /\.project-card\.active/);
   assert.match(styles, /border-color:\s*var\(--color-line-accent\)/);
+});
+
+test("projects audit owns current semantic project controls", () => {
+  for (const selector of [
+    ".projects-search",
+    ".projects-filter button.active",
+    ".project-row.active",
+    ".project-chat-button:hover",
+    ".projects-empty-action.is-primary:hover"
+  ]) {
+    assert.match(styles, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(styles, /--surface-on-accent:\s*var\(--color-on-accent/);
+  assert.match(styles, /color:\s*var\(--surface-on-accent\)/);
+  assert.match(styles, /background:\s*var\(--surface-accent-hover\)/);
+});
+
+test("chat and projects status colors use semantic tokens", () => {
+  assert.match(chatTheme, /--chat-success:\s*var\(--color-success/);
+  assert.match(chatTheme, /\.run-card\.is-running\s*{\s*border-color:\s*color-mix\(in srgb, var\(--chat-success\)/);
+  assert.match(chatPolish, /\.chat-ai-corner i\s*{[\s\S]*background:\s*var\(--chat-success\)/);
+  assert.match(projectsEmpty, /\.projects-empty-action\.is-primary\s*{[\s\S]*color:\s*var\(--surface-on-accent\)/);
+  assert.match(projectsEmpty, /\.projects-empty-action\.is-primary:hover\s*{[\s\S]*background:\s*var\(--surface-accent-hover\)/);
+  assert.doesNotMatch(chatTheme, /rgba\(22,\s*212,\s*146/);
+  assert.doesNotMatch(chatPolish, /#36ce8c/i);
 });
 
 test("screenshot editor, tray, and notices use semantic theme values", () => {

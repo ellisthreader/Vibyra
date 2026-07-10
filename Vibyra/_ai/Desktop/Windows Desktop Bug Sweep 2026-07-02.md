@@ -120,11 +120,60 @@ behavior.
     on Windows runs `icacls /findsid` to prove no Everyone / BUILTIN\Users /
     Authenticated Users ACE exists — a real owner-only check, not a skip.
 
-### Preview-server and desktop-chat clusters
+### Desktop-chat cluster (16 + 1 socket test, all pass)
 
-See the fix record appended below once verification completes (agents were
-still finalizing when this note was first written; the Final Verification
-section is authoritative).
+- All test bugs; no product changes. `desktop/lib/desktopChat.test.mjs`
+  hard-coded the original developer's Linux filesystem (`/tmp/saas`,
+  `/home/ellis/Desktop/SaaS`, base64 project ids of those paths), so on
+  Windows every fake project failed the real on-disk validation in
+  `desktop/lib/projects.mjs` and fell into slow real project discovery.
+  The tests now create real temp project dirs (`mkdtempSync`), isolate
+  `VIBYRA_AGENT_HOME` before module import, and compute expected ids with the
+  product's `projectIdFromPath`. Suite went from 12/28 in ~24s to 28/28 in
+  ~4.5s.
+- `ptyTerminalsSocket.test.mjs` "parallel launches cannot race past the cap":
+  Windows-only cleanup race — `rmSync` ran while the detached worker was still
+  releasing its session dir over the named pipe (~100-200 ms). Cleanup now
+  retries. Product close path verified correct on Windows.
+
+### Preview-server cluster (~30 tests, all pass) — the big one
+
+Root cause chain, all Windows-specific:
+
+1. PRODUCT/test bug (leak): preview tests cleaned up dev servers with
+   `child.kill()`. On Windows the tracked child is a cmd.exe shell host
+   (see `desktop/lib/commandSpawn.mjs`), so `.kill()` killed the shell and
+   ORPHANED the actual fake dev-server node process. 18 orphaned fake servers
+   had accumulated on this machine, squatting the default Vite ports
+   5173-5175 and serving fake Vite HTML that passes product verification.
+   Every later test run "verified" against those ghosts instead of its own
+   server. Fixed: all preview test fragments now clean up through
+   `killTrackedPreview` → `killCommandTree` (taskkill /T tree kill); leaked
+   processes were hunted down and killed.
+2. PRODUCT bug (`desktop/lib/previewPortAllocator.mjs`): a successful bind is
+   not proof of a free port on Windows — SO_REUSEADDR lets the probe bind
+   while another process is still listening, so the allocator could hand out
+   an occupied port. `portLooksFree` now first attempts a real TCP connect to
+   127.0.0.1:port; anything that accepts a connection owns the port.
+3. PRODUCT bug (`desktop/lib/previewDevServer.mjs`): two preview targets of
+   the same project can serve byte-identical roots (monorepo apps), and both
+   the launch verification (`launchedDevServerUrl`) and the running-server
+   fallback (`runningProjectDevServerUrl`) could adopt a port that ANOTHER
+   tracked preview target already claimed — two targets ended up pinned to
+   one server. Both paths now exclude ports claimed by other tracked preview
+   services (`portsClaimedByOtherPreviews`; launch ports are recorded on the
+   tracked service at spawn time).
+
+### Terminal gateway registry (1 test, passes)
+
+- PRODUCT bug (`desktop/lib/terminalGatewayAuth.mjs`): the atomic
+  `renameSync(tmp, registry)` swap fails with EPERM on Windows whenever
+  another process (detached terminal worker, AV scan) briefly holds the
+  registry file open. Token issue/revoke operations could crash. The rename
+  now retries briefly on EPERM/EACCES/EBUSY (Windows only) before failing.
+- Also bumped a 5 s revocation wait to 15 s in
+  `aiTerminalPersistentProcess.test.mjs` — the assertion is unchanged; the
+  deadline was too tight under full-suite parallel load.
 
 ## Frontend visual refresh
 
@@ -141,10 +190,26 @@ section is authoritative).
   xterm-owned geometry, zero-gap grid tiles preserved. Theme-audit,
   chrome-polish, auto-polish, and page-regression suites pass (14/14).
 
-## Verification
+## Final Verification
 
-- Terminals input suite: 21/21 after clipboard fix.
-- Models suite: 16/16 after two-phase load.
-- Theme/chrome/polish/regression suites: 14/14 after visual refresh.
-- Path/permission cluster: 67/67 across 9 files.
-- Full-suite rerun recorded in Final Verification below.
+- Full run: `node --test desktop/assets/*.test.mjs desktop/lib/*.test.mjs
+  desktop/electron-main.test.mjs`
+- Start of sweep: 1024 tests, 960 pass, 61 fail, 3 skipped.
+- End of sweep: **1025 tests, 1022 pass, 0 fail, 3 skipped (Linux-only)**.
+- Interim checks along the way: terminals input 21/21 after the clipboard
+  fix; models 16/16 after two-phase load; theme/chrome/polish/regression
+  14/14 after the visual refresh; path/permission cluster 67/67;
+  desktopChat 28/28; preview + publish 127/127.
+- No orphaned `vibyra-fake-*` processes remain after a full run (previously
+  18 were leaked and squatting the Vite default ports).
+
+## Maintenance guidance
+
+- Never clean up spawned preview/dev-server children with `child.kill()` in
+  tests on Windows — always `killTrackedPreview`/`killCommandTree`, or the
+  real server outlives the shell host and poisons later runs.
+- Port-availability checks must connect-probe, not just bind-probe, on
+  Windows.
+- Secret-file privacy on Windows is asserted through
+  `desktop/lib/secretFileTestHelpers.mjs` (icacls owner-only check), not
+  POSIX mode bits.

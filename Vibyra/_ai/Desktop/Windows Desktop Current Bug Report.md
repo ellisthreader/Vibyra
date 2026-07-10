@@ -3,6 +3,9 @@
 Date captured: 2026-07-01.
 Scope: Vibyra Windows desktop app, AI terminal launch and PTY interaction.
 Status: fixed and regression-covered on 2026-07-02.
+Follow-up: [[Windows Desktop Bug Sweep 2026-07-02]] records the second sweep
+(full test-suite triage to 0 failures, clipboard-hijack fix, preview port
+allocator and gateway registry Windows fixes, terminals visual refresh).
 
 ## Summary
 

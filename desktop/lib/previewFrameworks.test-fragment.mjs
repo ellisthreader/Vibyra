@@ -33,8 +33,7 @@ test("approved preview server start supports Next dev scripts", async () => {
     assert.equal(result.started, true);
     assert.equal(result.url, `http://127.0.0.1:${port}`);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await fakeNpm.cleanup();
     await cleanup();
   }

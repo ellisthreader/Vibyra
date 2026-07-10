@@ -2,6 +2,9 @@
   animation: profile-plan-enter 180ms ease-out both;
   display: grid;
   gap: 18px;
+  --plan-accent-starter: var(--billing-plan-accent-starter, #c259ff);
+  --plan-accent-builder: var(--billing-plan-accent-builder, #38bdf8);
+  --plan-accent-pro: var(--billing-plan-accent-pro, #e3ad35);
 }
 .profile-plan-back {
   align-items: center;
@@ -175,9 +178,12 @@
 }
 
 .profile-plan-footnote svg { height: 14px; width: 14px; }
-.profile-plan-card.plan-tone-starter { --plan-accent: #c259ff; }
-.profile-plan-card.plan-tone-builder { --plan-accent: #38bdf8; }
-.profile-plan-card.plan-tone-pro { --plan-accent: #e3ad35; }
+.profile-plan-card-wrap.plan-tone-starter,
+.profile-plan-card.plan-tone-starter { --plan-accent: var(--plan-accent-starter); }
+.profile-plan-card-wrap.plan-tone-builder,
+.profile-plan-card.plan-tone-builder { --plan-accent: var(--plan-accent-builder); }
+.profile-plan-card-wrap.plan-tone-pro,
+.profile-plan-card.plan-tone-pro { --plan-accent: var(--plan-accent-pro); }
 
 @keyframes profile-plan-enter {
   from { opacity: 0; transform: translateX(8px); }

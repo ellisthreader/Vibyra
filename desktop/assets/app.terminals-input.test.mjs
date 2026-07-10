@@ -93,6 +93,38 @@ this.bind = bindPtyInput;`,
   assert.deepEqual(calls, [["focus"], ["keydown", "terminal-1", " "]]);
 });
 
+test("PTY keydown fallback normalizes Windows Space key variants", () => {
+  const start = runtimeSource.indexOf("function handlePtyKeydown");
+  const end = runtimeSource.indexOf("\nfunction sendPtyInput", start);
+  const sent = [];
+  const context = {
+    sendPtyInput: (id, input) => sent.push([id, input])
+  };
+  vm.runInNewContext(
+    `${runtimeSource.slice(start, end)}
+this.handle = handlePtyKeydown;`,
+    context
+  );
+  const variants = [
+    { key: " ", code: "Space" },
+    { key: "Space", code: "Space" },
+    { key: "Spacebar", code: "" },
+    { key: "Unidentified", code: "Space" }
+  ];
+
+  variants.forEach((event) => {
+    context.handle({
+      ...event,
+      ctrlKey: false,
+      metaKey: false,
+      prevented: false,
+      preventDefault() { this.prevented = true; }
+    }, "terminal-1");
+  });
+
+  assert.deepEqual(sent, variants.map(() => ["terminal-1", " "]));
+});
+
 test("PTY xterm copy writes selected text without stealing Ctrl+C interrupts", async () => {
   const start = runtimeSource.indexOf("function attachTerminalXtermClipboard");
   const end = runtimeSource.indexOf("\nfunction terminalXtermNodeIsVisible", start);
@@ -391,7 +423,7 @@ this.ensure = ensureTerminalXtermClipboardShortcut;`,
   assert.deepEqual(copied, []);
 });
 
-test("screenshot path drop inserts once through xterm paste", () => {
+test("screenshot path drop inserts once through xterm paste", async () => {
   const listeners = {};
   const node = {
     classList: { add() {}, remove() {} },
@@ -421,7 +453,7 @@ this.bind = bindTerminalPathDrop;`, context);
   let prevented = 0;
 
   listeners.dragover({ dataTransfer, preventDefault: () => { prevented += 1; } });
-  listeners.drop({ dataTransfer, preventDefault: () => { prevented += 1; } });
+  await listeners.drop({ dataTransfer, preventDefault: () => { prevented += 1; } });
 
   assert.equal(dataTransfer.dropEffect, "copy");
   assert.equal(prevented, 2);
@@ -430,6 +462,55 @@ this.bind = bindTerminalPathDrop;`, context);
     ["paste", '"/tmp/screen.png"']
   ]);
   assert.match(runtimeSource, /bindTerminalPathDrop\(node\)/);
+});
+
+test("terminal image file drop resolves an OS file path and pastes it", async () => {
+  const listeners = {};
+  const node = {
+    classList: { add() {}, remove() {} },
+    contains: () => false,
+    dataset: { terminalInput: "terminal-1" },
+    addEventListener: (type, listener) => { listeners[type] = listener; }
+  };
+  const calls = [];
+  const file = { name: "Screenshot 2026-07-03.png", type: "image/png" };
+  const context = {
+    window: {
+      vibyraDesktopFiles: {
+        pathForFile: async (dropped) => dropped === file ? "C:\\Users\\Ellis\\Pictures\\Screenshot 2026-07-03.png" : ""
+      }
+    },
+    focusPtyTerminal: (id) => calls.push(["focus", id]),
+    terminalCompanionInsertIntoTerminal: (...args) => calls.push(["fallback", ...args]),
+    terminalXterms: {
+      "terminal-1": {
+        element: { isConnected: true },
+        paste: (value) => calls.push(["paste", value])
+      }
+    }
+  };
+  vm.runInNewContext(`${pathDropSource}
+this.bind = bindTerminalPathDrop;`, context);
+  context.bind(node);
+  const dataTransfer = {
+    dropEffect: "none",
+    getData: () => "",
+    types: ["Files"],
+    items: [{ kind: "file", type: "image/png" }],
+    files: [file]
+  };
+  let prevented = 0;
+
+  listeners.dragover({ dataTransfer, preventDefault: () => { prevented += 1; } });
+  await listeners.drop({ dataTransfer, preventDefault: () => { prevented += 1; } });
+
+  assert.equal(dataTransfer.dropEffect, "copy");
+  assert.equal(prevented, 2);
+  assert.deepEqual(calls, [
+    ["focus", "terminal-1"],
+    ["paste", "'C:\\Users\\Ellis\\Pictures\\Screenshot 2026-07-03.png'"]
+  ]);
+  assert.match(pathDropSource, /vibyraDesktopFiles\?\.pathForFile/);
 });
 
 test("focusing a PTY updates the selected terminal styling", () => {
@@ -669,11 +750,13 @@ test("terminal launch mounts xterm after synchronous render without waiting for 
   );
   let starts = 0;
   let mounts = 0;
+  let focuses = 0;
   const frames = [];
   const microtasks = [];
   const context = {
     findTerminal: () => true,
     mountVisibleXterms: () => { mounts += 1; },
+    focusPtyXtermAfterLaunch: () => { focuses += 1; },
     startPtyTerminal: () => { starts += 1; },
     queueMicrotask: (callback) => microtasks.push(callback),
     Promise,
@@ -690,11 +773,14 @@ test("terminal launch mounts xterm after synchronous render without waiting for 
   microtasks.shift()();
   assert.equal(starts, 1);
   assert.equal(mounts, 1);
+  assert.equal(focuses, 1);
   frames.shift()();
   frames.shift()();
   assert.equal(starts, 1);
   assert.equal(mounts, 2);
+  assert.equal(focuses, 2);
   assert.match(queueStart, /try\s*\{\s*mountVisibleXterms\(new Set\(\[terminal\.id\]\)\)/);
+  assert.match(queueStart, /focusPtyXtermAfterLaunch\(terminal\.id\)/);
   assert.match(queueStart, /void startPtyTerminal\(terminal\)/);
   assert.match(source, /signal:\s*controller\.signal/);
   assert.match(source, /const terminalPtyStartTimeoutMs = 60_000/);

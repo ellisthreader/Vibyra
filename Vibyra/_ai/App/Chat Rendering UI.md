@@ -49,6 +49,8 @@ If `streamChatText`'s cursor changes, update `TYPING_CURSOR_CHARS` in `chunk24.t
 
 Assistant rows render through `MessageBubble` in `src/screens/workspace/inline/chunk23.tsx`, with the list wiring in `src/screens/workspace/inline/chunk9.tsx`. App-side `ChatMessage` has local `id`, `runStatus`, `editApproval`, and `pendingApplyId`; backend `ChatResponse` now exposes `chatReference`, but the UI should persist it onto the assistant `ChatMessage` before adding visible worked/did-not-work controls.
 
+`useWorkspaceState.ts` bounds `visibleChatMessages` with `limitChatMessagesForRuntime()` before `AIChatPage` maps messages in its scroll view. Keep that visible-list guard in place unless the chat surface is moved to a virtualized list; rendering raw full thread arrays is a known lag source after long conversations.
+
 `src/utils/chatFeedback.ts` provides the app-side future POST helper for `POST /api/chat/learning/feedback`; it requires `chatReference` so UI cannot accidentally submit local-only message ids as durable learning signals.
 
 ## Visual System

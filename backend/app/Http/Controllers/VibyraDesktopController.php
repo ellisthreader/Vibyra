@@ -156,7 +156,7 @@ class VibyraDesktopController extends Controller
             (string) $request->input('projectId'),
             (string) $request->input('projectPath', ''),
             (string) $request->input('prompt'),
-            (string) $request->input('model', 'gpt-5.5'),
+            (string) $request->input('model', 'gpt-5.6-terra'),
             (string) $request->input('reasoningEffort', 'medium'),
             $request->boolean('apply')
         ));

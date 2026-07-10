@@ -32,8 +32,7 @@ test("approved preview server start runs the fixed dev command and verifies the 
     assert.equal(result.started, true);
     assert.equal(result.url, `http://127.0.0.1:${port}`);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await fakeNpm.cleanup();
     await cleanup();
   }
@@ -60,8 +59,7 @@ test("approved preview server start follows the fallback port Vite prints", asyn
     });
     assert.equal(result.url, `http://127.0.0.1:${port}`);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await fakeNpm.cleanup();
     await cleanup();
   }
@@ -89,8 +87,7 @@ test("approved preview server start parses decorated Vite fallback output", asyn
     });
     assert.equal(result.url, `http://127.0.0.1:${port}`);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await fakeNpm.cleanup();
     await cleanup();
   }
@@ -116,8 +113,7 @@ test("approved preview server start does not require a root source-only index be
     assert.equal(result.started, true);
     assert.equal(result.url, `http://127.0.0.1:${port}`);
   } finally {
-    appState.previewServers[project.id]?.process?.kill();
-    delete appState.previewServers[project.id];
+    killTrackedPreview(project.id);
     await fakeNpm.cleanup();
     await cleanup();
   }

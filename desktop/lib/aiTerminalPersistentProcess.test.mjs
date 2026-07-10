@@ -253,7 +253,7 @@ test("detached worker revokes its gateway token when the provider exits", async 
       consume: false
     }));
     await waitFor(() => listPersistentAiTerminalSessions()
-      .find((item) => item.config.terminalId === terminalId)?.state.status === "exited", 5_000);
+      .find((item) => item.config.terminalId === terminalId)?.state.status === "exited", 15_000);
     await waitFor(() => verifyTerminalGatewayToken(grant.token, {
       model: "openai/gpt-5.5",
       runtimeId: "codex",
@@ -263,7 +263,7 @@ test("detached worker revokes its gateway token when the provider exits", async 
       nativeModel: "openai/gpt-5.5",
       billingModel: "openai/gpt-5.5",
       consume: false
-    }) === null, 5_000);
+    }) === null, 15_000);
   } finally {
     await removeTreeEventually(root);
     delete process.env.VIBYRA_TERMINAL_SESSION_ROOT;

@@ -1,6 +1,6 @@
 #token-modal .modal--billing-revamp {
   background: var(--billing-modal-bg);
-  border-color: rgba(139, 92, 255, 0.18);
+  border-color: var(--billing-line-strong);
   color: var(--billing-modal-text);
   max-width: 900px;
   overflow: hidden;
@@ -74,7 +74,7 @@
   color: #fff;
 }
 .billing-hero {
-  --plan-accent: #38bdf8;
+  --plan-accent: var(--billing-plan-accent-builder, #38bdf8);
   background:
     var(--billing-hero-overlay),
     radial-gradient(circle at 20% 10%, color-mix(in srgb, var(--plan-accent) 22%, transparent), transparent 44%),
@@ -192,6 +192,46 @@
 .billing-plan-row span { color: var(--billing-copy); font-size: 13px; font-weight: 760; }
 .billing-plan-row small { color: var(--billing-dim); font-size: 13px; }
 .billing-current-chip { color: var(--plan-accent); font-size: 12px; font-weight: 800; }
-.plan-tone-starter { --plan-accent: #c259ff; }
-.plan-tone-builder { --plan-accent: #38bdf8; }
-.plan-tone-pro { --plan-accent: #ffd166; }
+.modal--billing-revamp,
+.profile-plan-picker {
+  --plan-accent-starter: var(--billing-plan-accent-starter, #c259ff);
+  --plan-accent-builder: var(--billing-plan-accent-builder, #38bdf8);
+  --plan-accent-pro: var(--billing-plan-accent-pro, #ffd166);
+}
+.plan-tone-starter { --plan-accent: var(--plan-accent-starter); }
+.plan-tone-builder { --plan-accent: var(--plan-accent-builder); }
+.plan-tone-pro { --plan-accent: var(--plan-accent-pro); }
+
+#token-modal .modal--billing-revamp .profile-plan-picker {
+  color: var(--billing-modal-text);
+}
+#token-modal .modal--billing-revamp .profile-plan-heading h2,
+#token-modal .modal--billing-revamp .profile-plan-name h3,
+#token-modal .modal--billing-revamp .profile-plan-price strong {
+  color: var(--billing-modal-text);
+}
+#token-modal .modal--billing-revamp .profile-plan-name p,
+#token-modal .modal--billing-revamp .profile-plan-price span,
+#token-modal .modal--billing-revamp .profile-plan-card li,
+#token-modal .modal--billing-revamp .profile-plan-status,
+#token-modal .modal--billing-revamp .profile-plan-footnote {
+  color: var(--billing-muted);
+}
+#token-modal .modal--billing-revamp .profile-plan-card {
+  background: var(--billing-row-bg);
+  border-color: var(--billing-line);
+}
+#token-modal .modal--billing-revamp .profile-plan-card.is-recommended {
+  border-color: color-mix(in srgb, var(--plan-accent) 55%, var(--billing-line-strong));
+}
+#token-modal .modal--billing-revamp .profile-plan-card.is-current {
+  background: var(--billing-row-bg);
+}
+#token-modal .modal--billing-revamp .profile-plan-current {
+  border-color: var(--billing-line);
+  color: var(--billing-modal-text);
+}
+#token-modal .modal--billing-revamp .profile-plan-current svg,
+#token-modal .modal--billing-revamp .profile-plan-card li svg {
+  color: var(--plan-accent);
+}

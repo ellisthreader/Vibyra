@@ -100,6 +100,10 @@ trait OpenAiStreaming
 
         return [
             'auto' => 'openai/gpt-4o-mini',
+            'gpt-5.6' => 'openai/gpt-5.6-sol',
+            'gpt-5.6-sol' => 'openai/gpt-5.6-sol',
+            'gpt-5.6-terra' => 'openai/gpt-5.6-terra',
+            'gpt-5.6-luna' => 'openai/gpt-5.6-luna',
             'gpt-5.5' => 'openai/gpt-5.5',
             'gpt-5.4' => 'openai/gpt-5.4',
             'gpt-5.4-mini' => 'openai/gpt-5.4-mini',

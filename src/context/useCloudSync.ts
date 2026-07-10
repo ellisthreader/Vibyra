@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { LogEvent, Project, RememberedDesktop } from "../types/domain";
 import { appApiRequest, BackendOfflineError, isAppSessionExpiredError } from "../utils/appApi";
+import { createPersistableAppState } from "./appStatePersistence";
 
 const FAILURE_COOLDOWN_MS = 30000;
 
@@ -24,6 +25,7 @@ type Snapshot = {
   chatProjects: Record<string, Project>;
   projectMemories: unknown;
   editApprovals: unknown;
+  profileImageUri: string;
   promptMoney: unknown;
   desktopPermissionMode: string;
   selectedChatModel: string;
@@ -44,6 +46,7 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
     chatProjects,
     projectMemories,
     editApprovals,
+    profileImageUri,
     promptMoney,
     desktopPermissionMode,
     selectedChatModel,
@@ -63,13 +66,28 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
 
     const timeout = setTimeout(() => {
       if (Date.now() < nextAttemptAtRef.current) return;
+      const appState = createPersistableAppState({
+        chatThreads: chatThreads as Record<string, unknown>,
+        chatTitles: chatTitles as Record<string, unknown>,
+        detachedChatThreads: detachedChatThreads as Record<string, unknown>,
+        detachedChatTitles: detachedChatTitles as Record<string, unknown>,
+        detachedChatUpdatedAt: detachedChatUpdatedAt as Record<string, unknown>,
+        chatProjects,
+        projectMemories,
+        editApprovals,
+        profileImageUri,
+        promptMoney,
+        desktopPermissionMode,
+        selectedChatModel,
+        selectedModel
+      });
 
       appApiRequest("/api/session/state", {
         method: "POST",
         body: JSON.stringify({
           onboardingComplete,
           rememberedDesktops: rememberedDesktops.map(({ token, ...desktop }) => desktop),
-          appState: { chatThreads, chatTitles, detachedChatThreads, detachedChatTitles, detachedChatUpdatedAt, chatProjects, projectMemories, editApprovals, promptMoney, desktopPermissionMode, selectedChatModel, selectedModel }
+          appState
         })
       }, authToken, { background: true }).then(() => {
         nextAttemptAtRef.current = 0;
@@ -102,6 +120,7 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
     chatProjects,
     projectMemories,
     editApprovals,
+    profileImageUri,
     onboardingComplete,
     promptMoney,
     desktopPermissionMode,

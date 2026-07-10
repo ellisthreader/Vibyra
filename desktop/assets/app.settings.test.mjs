@@ -80,7 +80,7 @@ test("AI account rows show only login-capable model families", () => {
     config: () => ({
       chatModelGroups: [{
         options: [
-          { key: "gpt-5.5", label: "GPT-5.5", provider: "openai" },
+          { key: "gpt-5.6-terra", label: "GPT-5.6 Terra", provider: "openai" },
           { key: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", provider: "claude" },
           { key: "deepseek/deepseek-v3", label: "DeepSeek V3", provider: "deepseek" }
         ]
@@ -104,9 +104,9 @@ test("AI account rows show only login-capable model families", () => {
   const claudeModels = context.profileAiAccountModels({ key: "claude" });
   const row = context.settingsAiAccountsSection();
 
-  assert.deepEqual(codexModels.map((model) => model.key), ["gpt-5.5"]);
+  assert.deepEqual(codexModels.map((model) => model.key), ["gpt-5.6-terra"]);
   assert.deepEqual(claudeModels.map((model) => model.key), ["claude-sonnet-4-6"]);
-  assert.match(row, /GPT-5\.5/);
+  assert.match(row, /GPT-5\.6 Terra/);
   assert.match(row, /Claude Sonnet 4\.6/);
   assert.doesNotMatch(row, /DeepSeek V3/);
 });

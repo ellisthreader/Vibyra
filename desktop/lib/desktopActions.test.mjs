@@ -37,6 +37,24 @@ test("keeps launch permissions attached to a requested new terminal batch", () =
   assert.match(result.reply, /Opening 6 GPT-5\.5 terminals with full access in project SAAS/);
 });
 
+test("parses named GPT 5.6 terminal variants", () => {
+  const terra = desktopActionsForPrompt("Open 2 GPT 5.6 Terra terminals fast", { projectId: "project-1" });
+  const sol = desktopActionsForPrompt("Launch one GPT 5.6 terminal", { projectId: "project-1" });
+
+  assert.equal(terra.actions[0].model, "gpt-5.6-terra");
+  assert.equal(sol.actions[0].model, "gpt-5.6");
+});
+
+test("parses GPT 5.6 max and pro reasoning without changing extra high", () => {
+  const max = desktopActionsForPrompt("Open GPT 5.6 Sol terminal with maximum reasoning", { projectId: "project-1" });
+  const pro = desktopActionsForPrompt("Open GPT 5.6 Sol terminal in pro mode", { projectId: "project-1" });
+  const xhigh = desktopActionsForPrompt("Open GPT 5.6 Sol terminal with extra high reasoning", { projectId: "project-1" });
+
+  assert.equal(max.actions[0].effort, "max");
+  assert.equal(pro.actions[0].effort, "pro");
+  assert.equal(xhigh.actions[0].effort, "xhigh");
+});
+
 test("keeps existing-terminal permission follow-ups as relaunch actions", () => {
   const result = desktopActionsForPrompt(
     "Give all open Codex terminals full permissions",

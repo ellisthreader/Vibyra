@@ -10,7 +10,9 @@ const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hi
   { value: "low", label: "Low", short: "Low", hint: "Fast" },
   { value: "medium", label: "Medium", short: "Med", hint: "Balanced" },
   { value: "high", label: "High", short: "High", hint: "Deeper" },
-  { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Maximum" },
+  { value: "xhigh", label: "Extra high", short: "X-Hi", hint: "Very thorough" },
+  { value: "max", label: "Max", short: "Max", hint: "GPT-5.6 max effort" },
+  { value: "pro", label: "Pro", short: "Pro", hint: "GPT-5.6 pro mode" },
 ];
 
 export function ModelMenu(props: {

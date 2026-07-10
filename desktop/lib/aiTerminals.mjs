@@ -4,7 +4,7 @@ import { readBody, send } from "./http.mjs";
 export const MAX_AI_TERMINAL_SESSIONS = 12;
 
 const MAX_SESSION_MESSAGES = 40;
-const REASONING_EFFORTS = new Set(["low", "medium", "high", "xhigh", "none"]);
+const REASONING_EFFORTS = new Set(["low", "medium", "high", "xhigh", "max", "pro", "none"]);
 const sessions = new Map();
 
 export async function handleAiTerminalRoutes(req, res, url) {
