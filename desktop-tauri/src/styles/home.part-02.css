@@ -1,0 +1,176 @@
+.launch__mono {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--hc, var(--accent)) 15%, transparent);
+  color: var(--hc, var(--accent));
+  flex-shrink: 0;
+}
+
+/* --- project cards --- */
+
+.hcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.hcard {
+  --hc: var(--accent);
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  padding: 14px 15px;
+  cursor: pointer;
+  text-align: left;
+  animation: fade-up 480ms var(--e-hero) backwards;
+  transition: transform var(--t-ui) var(--e-standard), border-color var(--t-ui) var(--e-standard);
+}
+
+.hcards > *:nth-child(1) { animation-delay: 90ms; }
+.hcards > *:nth-child(2) { animation-delay: 130ms; }
+.hcards > *:nth-child(3) { animation-delay: 170ms; }
+.hcards > *:nth-child(4) { animation-delay: 210ms; }
+.hcards > *:nth-child(5) { animation-delay: 250ms; }
+.hcards > *:nth-child(6) { animation-delay: 290ms; }
+
+.hcard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--hc) 42%, transparent);
+}
+
+.hcard--attn {
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+}
+
+.hcard__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hcard__mono {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--hc) 16%, transparent);
+  color: var(--hc);
+  flex-shrink: 0;
+}
+
+.hcard__names {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.hcard__names strong {
+  font-size: 13.5px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hcard__names small {
+  font-size: 10.5px;
+  font-weight: 540;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hcard__tools {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--t-base) ease;
+}
+
+.hcard:hover .hcard__tools {
+  opacity: 1;
+}
+
+.hcard__tools .icon-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.hcard__confirm {
+  font-size: 9px;
+  font-weight: 760;
+  color: var(--danger);
+}
+
+.hcard__agents {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 14px;
+}
+
+.hcard__status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.hcard--attn .hcard__status {
+  color: var(--amber);
+}
+
+.hcard__last {
+  font-size: 10.5px;
+  font-weight: 540;
+  color: var(--dim);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hcard--new {
+  border-style: dashed;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  color: var(--dim);
+  min-height: 128px;
+}
+
+.hcard--new:hover {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.hcard__plus {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+}
+
+.hcard--new strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}

@@ -1,0 +1,25 @@
+@keyframes auth-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.auth__legal .auth-link {
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-email__modes::before,
+  .auth-submit {
+    transition-duration: 1ms;
+  }
+
+  .auth__legal,
+  .auth-email__error,
+  .auth-email__notice {
+    animation: none;
+  }
+}

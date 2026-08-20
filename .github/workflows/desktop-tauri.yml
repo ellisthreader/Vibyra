@@ -1,0 +1,99 @@
+name: Tauri desktop CI
+
+on:
+  pull_request:
+    paths:
+      - "desktop-tauri/**"
+      - "scripts/check-desktop-lines.mjs"
+      - ".github/workflows/desktop-tauri.yml"
+  push:
+    branches: [main]
+    paths:
+      - "desktop-tauri/**"
+      - "scripts/check-desktop-lines.mjs"
+      - ".github/workflows/desktop-tauri.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tauri-desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Frontend, native, and policy gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Install Linux desktop build dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          build-essential curl file libayatana-appindicator3-dev libdbus-1-dev
+          librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget
+      - name: Install pinned Rust toolchain
+        working-directory: desktop-tauri
+        run: rustup show active-toolchain
+      - name: Install locked frontend dependencies
+        run: npm ci --prefix desktop-tauri
+      - name: Enforce desktop source limits
+        run: node scripts/check-desktop-lines.mjs
+      - name: Check dead code and dependency declarations
+        run: npm --prefix desktop-tauri run check:dead-code
+      - name: Run frontend tests
+        run: npm --prefix desktop-tauri test
+      - name: Typecheck and build frontend
+        run: npm --prefix desktop-tauri run build
+      - name: Check Rust formatting
+        run: npm --prefix desktop-tauri run rust:fmt
+      - name: Lint all Rust targets
+        run: npm --prefix desktop-tauri run rust:clippy
+      - name: Run all Rust tests
+        run: npm --prefix desktop-tauri run rust:test
+      - name: Install pinned RustSec scanner
+        run: cargo install cargo-audit --locked --version 0.22.2
+      - name: Audit Rust dependencies
+        run: npm --prefix desktop-tauri run rust:audit
+
+  windows:
+    name: Windows native gates
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Install pinned Rust toolchain
+        working-directory: desktop-tauri
+        run: rustup show active-toolchain
+      - name: Install locked frontend dependencies
+        run: npm ci --prefix desktop-tauri
+      # The Linux job cannot compile the `cfg(target_os = "windows")` branches
+      # at all, so a Windows-only regression there stays invisible until a user
+      # hits it. Lint and test the native crate on a real Windows runner.
+      - name: Lint all Rust targets
+        run: npm --prefix desktop-tauri run rust:clippy
+      - name: Run all Rust tests
+        run: npm --prefix desktop-tauri run rust:test

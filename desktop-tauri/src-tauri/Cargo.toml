@@ -1,0 +1,59 @@
+[workspace]
+members = ["crates/vibyra-core"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+parking_lot = "0.12"
+thiserror = "2"
+
+[package]
+name = "vibyra-desktop"
+version = "0.1.0"
+description = "Vibyra Desktop — AI terminal workspace"
+authors = ["Vibyra"]
+edition = "2021"
+rust-version = "1.88"
+
+[lib]
+name = "vibyra_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+parking_lot = { workspace = true }
+vibyra-core = { path = "crates/vibyra-core" }
+dirs = "6"
+image = { version = "0.25", default-features = false, features = ["png"] }
+base64 = "0.22"
+time = "0.3"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "multipart", "json"] }
+getrandom = "0.3"
+tokio = { version = "1", default-features = false, features = ["time"] }
+arboard = { version = "3.6", features = ["wayland-data-control"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-global-shortcut = "2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = ["sync-secret-service"] }
+raw-window-handle = "0.6"
+x11rb = { version = "0.13", features = ["randr"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = ["windows-native"] }

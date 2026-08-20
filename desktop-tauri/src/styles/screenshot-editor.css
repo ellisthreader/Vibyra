@@ -1,0 +1,126 @@
+.screenshot-editor {
+  -webkit-app-region: no-drag;
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: grid;
+  grid-template-rows: 64px minmax(0, 1fr) 72px;
+  background: var(--workspace);
+  animation: screenshot-enter 80ms var(--e-standard);
+}
+
+.screenshot-editor__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: clamp(14px, 2.2vw, 30px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 46%),
+    color-mix(in srgb, var(--workspace) 92%, #000);
+}
+
+.screenshot-canvas-frame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 90ms linear;
+}
+
+.screenshot-canvas-frame--ready {
+  opacity: 1;
+}
+
+/* Two stacked layers in one grid cell: the image layer is painted once per
+   document change, the transparent overlay carries the crop chrome and the
+   in-progress stroke and is the only one repainted while dragging. */
+.screenshot-canvas-layers {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.screenshot-canvas {
+  -webkit-app-region: no-drag;
+  grid-area: 1 / 1;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 3px;
+  /* Outline rather than border: it is excluded from the element rect, so the
+     two layers and the pointer mapping stay pixel-aligned. */
+  outline: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  background: #08090c;
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.34), 0 2px 8px rgba(0, 0, 0, 0.28);
+  touch-action: none;
+}
+
+.screenshot-canvas--overlay {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  cursor: crosshair;
+}
+
+/* The workspace stays laid out behind the editor so nothing reflows on the way
+   in or out, but it must stop painting: on the software-composited WebKit path
+   live terminals repainting under an opaque overlay is pure wasted frame time. */
+body.screenshot-editing .app > *:not(.screenshot-editor) {
+  visibility: hidden;
+}
+
+.screenshot-editor__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  max-width: calc(100% - 32px);
+  min-height: 28px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--elevated) 94%, transparent);
+  box-shadow: var(--e-menu);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 580;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+@keyframes screenshot-enter {
+  from { opacity: 0; }
+}
+
+@media (max-width: 720px) {
+  .screenshot-editor {
+    grid-template-rows: 58px minmax(0, 1fr) auto;
+  }
+
+  .screenshot-editor__stage {
+    padding: 10px;
+  }
+
+  .screenshot-editor__hint {
+    bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screenshot-editor,
+  .screenshot-canvas-frame {
+    animation: none;
+    transition: none;
+  }
+}

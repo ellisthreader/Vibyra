@@ -1,0 +1,161 @@
+/* Late Tauri companion chrome: one connected header and a calm workspace body. */
+
+.shell {
+  position: relative;
+}
+
+.companion {
+  position: relative;
+  flex: 0 0 var(--companion-width);
+  width: var(--companion-width);
+  min-width: var(--companion-width);
+  background: var(--workspace);
+  border-left-color: var(--line-soft);
+  animation: companion-enter 150ms var(--e-hero);
+}
+
+.companion__resize {
+  position: absolute;
+  inset: 0 auto 0 -4px;
+  z-index: 4;
+  width: 8px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.companion__resize::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background var(--t-ui) var(--e-standard);
+}
+
+.companion__resize:hover::after,
+.companion__resize:focus-visible::after,
+body.companion-resizing .companion__resize::after {
+  background: var(--accent);
+}
+
+body.companion-resizing,
+body.companion-resizing * {
+  cursor: ew-resize !important;
+}
+
+.companion__head {
+  min-height: 44px;
+  padding: 0 8px 0 6px;
+  gap: 4px;
+  background: var(--rail);
+  border-bottom-color: var(--line-soft);
+}
+
+.companion__tabs {
+  align-self: stretch;
+  gap: 0;
+  min-width: 0;
+}
+
+.companion__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 0;
+  color: var(--dim);
+  font-size: 11.5px;
+  font-weight: 660;
+  transition: color var(--t-base) var(--e-standard);
+}
+
+.companion__tab::after {
+  content: "";
+  position: absolute;
+  right: 9px;
+  bottom: 0;
+  left: 9px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+}
+
+.companion__tab:hover {
+  color: var(--text);
+  background: transparent;
+}
+
+.companion__tab--active {
+  color: var(--text);
+  background: transparent;
+}
+
+.companion__tab--active svg {
+  color: var(--accent-2);
+}
+
+.companion__tab--active::after {
+  background: var(--accent);
+}
+
+.companion__close {
+  flex-shrink: 0;
+}
+
+.companion__body {
+  background: var(--workspace);
+}
+
+.companion-panel {
+  padding: 12px;
+  gap: 10px;
+}
+
+@keyframes companion-enter {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .companion {
+    position: absolute;
+    z-index: 24;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-basis: auto;
+    width: min(var(--companion-width), calc(100vw - 72px));
+    min-width: 0;
+    box-shadow: -18px 0 44px rgba(0, 0, 0, 0.28);
+  }
+}
+
+@media (max-width: 600px) {
+  .companion {
+    width: min(var(--companion-width), calc(100vw - 54px));
+  }
+
+  .companion__tab {
+    flex: 1;
+    padding-inline: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .companion {
+    animation: none;
+  }
+
+  .companion__resize::after,
+  .companion__tab {
+    transition: none;
+  }
+}

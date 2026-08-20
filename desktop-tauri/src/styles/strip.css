@@ -1,0 +1,119 @@
+/* Far-left project strip — contexts as tiles, Discord-style. */
+
+.pstrip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 54px;
+  min-width: 54px;
+  padding: 10px 0;
+  background: color-mix(in srgb, var(--bg) 55%, #000000 8%);
+  border-right: 1px solid var(--line);
+  overflow: visible;
+  z-index: 30;
+}
+
+:root[data-theme="light"] .pstrip {
+  background: color-mix(in srgb, var(--rail) 85%, var(--bg));
+}
+
+.pstrip__list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  overflow-y: auto;
+  overflow-x: visible;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: none;
+}
+
+.pstrip__list::-webkit-scrollbar {
+  display: none;
+}
+
+.pstrip__sep {
+  width: 22px;
+  height: 1px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+.pstrip__tile {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 780;
+  color: var(--dim);
+  background: var(--surface);
+  flex-shrink: 0;
+  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard),
+    border-radius var(--t-ui) var(--e-standard), transform var(--t-ui) var(--e-standard);
+}
+
+.pstrip__tile:hover {
+  color: var(--text);
+  border-radius: 12px;
+  transform: translateY(-1px);
+}
+
+.pstrip__tile--home.pstrip__tile--active {
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+
+.pstrip__tile--project {
+  background: color-mix(in srgb, var(--tile-c, var(--accent)) 15%, transparent);
+  color: var(--tile-c, var(--accent));
+}
+
+.pstrip__tile--project:hover {
+  background: color-mix(in srgb, var(--tile-c, var(--accent)) 26%, transparent);
+  color: var(--tile-c, var(--accent));
+}
+
+.pstrip__tile--project.pstrip__tile--active {
+  background: var(--tile-c, var(--accent));
+  color: #0b0c10;
+}
+
+.pstrip__tile--active::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  width: 3px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--text);
+}
+
+.pstrip__badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--amber);
+  border: 2.5px solid var(--bg);
+  animation: pulse-ring 1.8s var(--e-standard) infinite;
+}
+
+.pstrip__tile--add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.pstrip__tile--add:hover {
+  border-color: var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-soft);
+}

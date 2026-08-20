@@ -1,0 +1,138 @@
+.preview-workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--workspace);
+}
+
+.preview-toolbar {
+  position: relative;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 50px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--rail);
+}
+
+.preview-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.preview-toolbar__label {
+  color: var(--dim);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.preview-toolbar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--line);
+}
+
+.preview-toolbar__spacer {
+  flex: 1;
+}
+
+.preview-toolbar__icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+}
+
+.preview-custom-size,
+.preview-zoom {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-shell);
+  background: var(--surface);
+}
+
+.preview-custom-size input {
+  width: 62px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-align: center;
+}
+
+.preview-custom-size input:focus {
+  outline: none;
+}
+
+.preview-custom-size span {
+  color: var(--dim);
+}
+
+.preview-zoom button {
+  min-width: 30px;
+  height: 28px;
+  color: var(--muted);
+  font-weight: 680;
+}
+
+.preview-zoom button:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.preview-zoom__fit {
+  min-width: 48px !important;
+  border-right: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  font-size: 10.5px;
+}
+
+.preview-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 680;
+}
+
+.preview-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.preview-status--running { color: var(--success); }
+.preview-status--starting { color: var(--accent); }
+.preview-status--failed { color: var(--danger); }
+
+.preview-run,
+.preview-stop {
+  min-height: 30px;
+  padding: 0 11px;
+  font-size: 11.5px;
+}
+
+@media (max-width: 1100px) {
+  .preview-toolbar__label,
+  .preview-toolbar__divider {
+    display: none;
+  }
+
+  .preview-picker {
+    min-width: 168px;
+  }
+}

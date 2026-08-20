@@ -1,0 +1,11 @@
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+*.log
+
+# Packaged output and its checksums are release artifacts, not source.
+release
+
+# Local toolchain download used by scripts/setup-linux.sh.
+node-v*-linux-x64.tar.xz

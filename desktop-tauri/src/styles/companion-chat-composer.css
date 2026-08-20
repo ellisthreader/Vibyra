@@ -1,0 +1,75 @@
+.chat-setup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 10px 8px;
+  padding: 8px 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-shell);
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 56%, transparent);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.chat-setup button {
+  flex-shrink: 0;
+  color: var(--accent-2);
+  font-size: 10.5px;
+  font-weight: 680;
+}
+
+.companion-panel--chat .chat-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: end;
+  gap: 7px;
+  margin: 0 10px 10px;
+  padding: 8px 8px 8px 10px;
+  border-color: var(--border);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  box-shadow: var(--e-inset-hi);
+}
+
+.companion-panel--chat .chat-input:focus-within {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2px var(--accent-soft), var(--e-inset-hi);
+}
+
+.companion-panel--chat .chat-input__area {
+  min-height: 30px;
+  max-height: 120px;
+  padding: 5px 0 3px;
+  overflow-y: auto;
+  font-size: 12.25px;
+}
+
+.chat-input__send {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-control);
+  color: var(--on-action);
+  background: var(--action);
+  transition: background var(--t-ui) var(--e-standard), transform var(--t-ui) var(--e-standard);
+}
+
+.chat-input__send:hover:not(:disabled) {
+  background: var(--action-hover);
+  transform: translateY(-1px);
+}
+
+.chat-input__send:disabled {
+  color: var(--dim);
+  background: var(--elevated);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-input__send {
+    transition: none;
+  }
+}

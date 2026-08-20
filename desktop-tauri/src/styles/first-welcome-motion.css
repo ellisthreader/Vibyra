@@ -1,0 +1,73 @@
+.first-welcome__atmosphere { animation: firstWelcomeBloom 1.25s var(--e-hero) both; }
+.first-welcome__atmosphere span { animation: firstWelcomeDrift 6.4s cubic-bezier(0.33, 0, 0.2, 1) both; }
+.first-welcome__mark { animation: firstWelcomeMark 760ms var(--e-hero) 180ms backwards; }
+.first-welcome__eyebrow { animation: firstWelcomeRise 420ms ease both; }
+.first-welcome__word {
+  animation: firstWelcomeWord 620ms var(--e-hero) both;
+  animation-delay: calc(var(--welcome-word, 0) * 62ms);
+  opacity: 0;
+  transform: translateY(112%);
+}
+.first-welcome__body { animation: firstWelcomeRise 520ms ease 280ms both; }
+.first-welcome__progress span { animation: firstWelcomeProgress 6.4s linear both; }
+.first-welcome__primary { animation: firstWelcomeAction 560ms var(--e-hero) both; }
+.first-welcome__action small { animation: firstWelcomeFade 420ms ease 160ms both; }
+.first-welcome--leaving { pointer-events: none; }
+.first-welcome--skip { opacity: 0; transition: opacity 180ms ease; }
+.first-welcome--handoff { animation: firstWelcomeHandoff 440ms var(--e-hero) both; }
+.app--welcome-handoff > .chrome,
+.app--welcome-handoff > .shell { animation: firstWelcomeWorkspaceReveal 620ms var(--e-hero) both; }
+.first-welcome-focus { animation: firstWelcomeFocus 1.2s var(--e-hero) both; }
+
+@keyframes firstWelcomeBloom {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeDrift {
+  from { transform: translate3d(-3%, 1.5%, 0) scale(0.98); }
+  to { transform: translate3d(2%, -1.5%, 0) scale(1.06); }
+}
+@keyframes firstWelcomeMark {
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeWord {
+  from { opacity: 0; transform: translateY(112%); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeAction {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes firstWelcomeProgress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes firstWelcomeHandoff {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(1.045); }
+}
+@keyframes firstWelcomeWorkspaceReveal {
+  from { opacity: 0.55; transform: scale(0.988); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes firstWelcomeFocus {
+  from { box-shadow: 0 0 0 0 rgba(91, 124, 250, 0.52); }
+  to { box-shadow: 0 0 0 14px rgba(91, 124, 250, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .first-welcome *,
+  .first-welcome *::before,
+  .first-welcome *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+  .first-welcome__progress span { transform: scaleX(1); }
+  .app--welcome-handoff > .chrome,
+  .app--welcome-handoff > .shell,
+  .first-welcome-focus { animation: none !important; }
+}

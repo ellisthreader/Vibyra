@@ -1,0 +1,5 @@
+{
+  "ignoreIssues": {
+    "src/assets/providerLogos.js": ["exports"]
+  }
+}

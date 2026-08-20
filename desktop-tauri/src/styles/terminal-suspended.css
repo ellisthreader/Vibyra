@@ -1,0 +1,83 @@
+/* Restored panes: saved output shown behind a dimming veil, with the resume
+   affordance pinned to the bottom. Tokens only, so both themes follow.
+   Inherits position/inset from .term-view. */
+
+.term-view--suspended {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pane__suspended {
+  align-items: center;
+  background: linear-gradient(to top, var(--term-screen) 64%, transparent);
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  left: 0;
+  padding: 22px 14px 14px;
+  position: absolute;
+  right: 0;
+}
+
+.pane__suspended span {
+  color: var(--term-muted);
+  font-size: 11.5px;
+  font-weight: 560;
+}
+
+.pane__suspended .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ── close confirmation ─────────────────────────────────────────────────── */
+
+.close-confirm {
+  max-width: 440px;
+  width: 100%;
+}
+
+.close-confirm__body {
+  display: grid;
+  gap: 11px;
+  padding: 4px 18px 16px;
+}
+
+.close-confirm__body p {
+  color: var(--dim);
+  font-size: 11.5px;
+  font-weight: 520;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.close-confirm__list {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  max-height: 168px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.close-confirm__list li {
+  background: var(--surface-tint);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 580;
+  overflow: hidden;
+  padding: 7px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.close-confirm__actions {
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 13px 18px;
+}

@@ -1,0 +1,95 @@
+.launch-model { position: relative; }
+
+.launch-model__current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-shell);
+  background: var(--workspace);
+  text-align: left;
+  transition: border-color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard);
+}
+
+.launch-model__current:hover:not(:disabled) { background: var(--hover); border-color: var(--line); }
+.launch-model__current:disabled { opacity: .55; }
+.launch-model__current > svg { flex: 0 0 auto; margin-left: auto; color: var(--dim); }
+
+.launch-model__current--connect {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.launch-model__current--connect:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.launch-model__current--connect .launch-model__meta strong,
+.launch-model__current--connect > svg { color: var(--accent); }
+
+.launch-model__meta { display: grid; min-width: 0; gap: 1px; }
+.launch-model__meta strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-model__meta small {
+  overflow: hidden;
+  color: var(--dim);
+  font-size: 9px;
+  font-weight: 540;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-model__backdrop { position: fixed; inset: 0; z-index: 60; }
+
+.launch-model__menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 61;
+  display: grid;
+  gap: 1px;
+  max-height: 320px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu), var(--e-inset-hi);
+  overflow-y: auto;
+  animation: fade-up 160ms var(--e-hero);
+}
+
+.launch-model__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 7px;
+  border-radius: var(--r-shell);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 640;
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.launch-model__option:hover { background: var(--hover-strong); }
+.launch-model__option--active { background: var(--accent-soft); }
+.launch-model__option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.launch-model__option--more {
+  justify-content: center;
+  color: var(--dim);
+  font-weight: 600;
+}

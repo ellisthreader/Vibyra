@@ -1,0 +1,18 @@
+/* The matching poster remains beneath the local video so startup, decoder
+   recovery, and reduced-motion mode never expose a blank or unrelated frame. */
+
+.auth__backdrop--video {
+  opacity: 0;
+  transition: opacity 480ms ease;
+}
+
+.auth__backdrop--video.is-ready {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth__backdrop--video {
+    display: none;
+    transition: none;
+  }
+}

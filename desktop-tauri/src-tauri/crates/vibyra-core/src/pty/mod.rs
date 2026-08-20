@@ -1,0 +1,113 @@
+mod buffer;
+mod flusher;
+mod manager;
+mod session;
+
+#[cfg(test)]
+mod manager_tests;
+
+pub use manager::{FlushConfig, OutputSink, PtyManager};
+
+use serde::{Deserialize, Serialize};
+
+pub type SessionId = u64;
+
+/// How the frontend is currently presenting a terminal, which drives how
+/// aggressively Rust flushes output for it.
+///
+/// - `Visible`: flushed immediately when idle, one tick (~16 ms) apart under
+///   sustained output.
+/// - `Hidden`: rendered but off-screen (other tab); flushed at a slow
+///   interval so xterm.js stays warm without burning CPU.
+/// - `Hibernated`: not rendered at all; nothing is sent, output is retained
+///   in the scrollback ring and replayed on wake.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Visibility {
+    Visible,
+    Hidden,
+    Hibernated,
+}
+
+/// Everything needed to launch a process inside a PTY.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LaunchSpec {
+    pub program: String,
+    #[serde(default)]
+    pub args: Vec<String>,
+    #[serde(default)]
+    pub env: Vec<(String, String)>,
+    #[serde(default)]
+    pub env_remove: Vec<String>,
+    pub cwd: Option<String>,
+    #[serde(default = "default_rows")]
+    pub rows: u16,
+    #[serde(default = "default_cols")]
+    pub cols: u16,
+}
+
+fn default_rows() -> u16 {
+    30
+}
+
+fn default_cols() -> u16 {
+    100
+}
+
+impl LaunchSpec {
+    pub fn shell(shell: Option<String>, cwd: Option<String>) -> Self {
+        let program = shell.unwrap_or_else(default_shell);
+        Self {
+            program,
+            args: Vec::new(),
+            env: Vec::new(),
+            env_remove: Vec::new(),
+            cwd,
+            rows: default_rows(),
+            cols: default_cols(),
+        }
+    }
+
+    /// Remote shell via the system `ssh` binary inside a PTY — the robust
+    /// route for interactive SSH (keys, agent forwarding, ProxyJump and
+    /// ~/.ssh/config all behave exactly like the user's terminal).
+    pub fn ssh(target: &str, extra_args: &[String]) -> Self {
+        let mut args = vec!["-tt".to_string()];
+        args.extend(extra_args.iter().cloned());
+        args.push(target.to_string());
+        Self {
+            program: "ssh".to_string(),
+            args,
+            env: Vec::new(),
+            env_remove: Vec::new(),
+            cwd: None,
+            rows: default_rows(),
+            cols: default_cols(),
+        }
+    }
+}
+
+pub fn default_shell() -> String {
+    #[cfg(windows)]
+    {
+        "powershell.exe".to_string()
+    }
+    #[cfg(not(windows))]
+    {
+        std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
+    }
+}
+
+/// Descriptive snapshot of a session for the frontend.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionInfo {
+    pub id: SessionId,
+    pub agent_id: String,
+    pub title: String,
+    pub program: String,
+    pub cwd: Option<String>,
+    pub visibility: Visibility,
+    pub alive: bool,
+    pub exit_code: Option<i32>,
+}

@@ -1,0 +1,54 @@
+.shot-tray {
+  max-width: 250px;
+}
+
+.shot-card:not(.shot-card--busy) {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: transparent;
+  box-shadow: var(--e-menu);
+}
+
+.shot-card__thumb {
+  display: block;
+  width: 220px;
+  max-height: 130px;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+  cursor: grab;
+}
+
+.shot-card__actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--elevated) 94%, transparent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
+}
+
+.shot-card__actions .icon-btn {
+  width: 26px;
+  height: 26px;
+}
+
+.shot-card__copy svg {
+  transition: transform var(--t-ui) var(--e-standard);
+}
+
+.shot-card__copy--done svg {
+  color: var(--success);
+  transform: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shot-card__copy svg { transition: none; }
+}

@@ -1,0 +1,6 @@
+[advisories]
+# Temporary upstream constraint: Tauri 2.11's Linux GTK3 stack requires glib
+# 0.18. Vibyra does not call VariantStrIter, the affected API. Remove this
+# exception when Tauri's Linux stack supports glib >=0.20. Review by 2026-11-14.
+ignore = ["RUSTSEC-2024-0429"]
+informational_warnings = ["unmaintained"]

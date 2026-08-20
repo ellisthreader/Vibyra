@@ -1,0 +1,98 @@
+name: Rust desktop beta packages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.label }} Rust package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            command: npm run app:build:windows
+            source: src-tauri/target/release/bundle/nsis/*-setup.exe
+            output: Vibyra-Desktop-0.1.0-beta.1-x64-setup.exe
+          - os: ubuntu-22.04
+            label: Linux
+            command: npm run app:build:linux
+            source: src-tauri/target/release/bundle/appimage/*.AppImage
+            output: Vibyra-Desktop-0.1.0-beta.1-x86_64.AppImage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Install Linux build and smoke-test dependencies
+        if: runner.os == 'Linux'
+        run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends
+          build-essential curl file libayatana-appindicator3-dev libdbus-1-dev
+          librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget xvfb
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Confirm pinned Rust toolchain
+        run: rustup show active-toolchain
+      - name: Run release gates
+        run: npm run verify
+      - name: Build native package
+        run: ${{ matrix.command }}
+      - name: Stage versioned beta artifact
+        shell: bash
+        run: |
+          mkdir -p release
+          matches=( ${{ matrix.source }} )
+          test "${#matches[@]}" = 1
+          cp "${matches[0]}" "release/${{ matrix.output }}"
+          sha256sum "release/${{ matrix.output }}" > "release/${{ matrix.output }}.sha256"
+      - name: Smoke-test Linux AppImage launch
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          artifact="release/${{ matrix.output }}"
+          chmod +x "$artifact"
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "$artifact" &
+          pid=$!
+          sleep 12
+          kill -0 "$pid"
+          kill "$pid"
+          wait "$pid" || true
+      - name: Smoke-test Windows installer and app launch
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $PWD "release/${{ matrix.output }}"
+          $install = Start-Process $installer -ArgumentList '/S' -PassThru -Wait
+          if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
+          $app = Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter 'vibyra-desktop.exe' |
+            Select-Object -First 1
+          if (-not $app) { throw 'The Vibyra executable was not installed.' }
+          $process = Start-Process $app.FullName -PassThru
+          Start-Sleep -Seconds 12
+          if ($process.HasExited) { throw "Vibyra exited with $($process.ExitCode)" }
+          Stop-Process -Id $process.Id -Force
+      - name: Upload package and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibyra-rust-beta-${{ matrix.label }}-${{ github.sha }}
+          path: |
+            desktop-tauri/release/${{ matrix.output }}
+            desktop-tauri/release/${{ matrix.output }}.sha256
+          if-no-files-found: error
+          retention-days: 30

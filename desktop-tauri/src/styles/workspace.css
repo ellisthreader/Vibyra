@@ -1,0 +1,178 @@
+/* Center workspace. The terminal grid is the old app's signature layout:
+   zero gap, zero radius, hairline inset seams — a multiplexer, not cards. */
+
+.shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--workspace);
+}
+
+.workspace__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.workspace__title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.workspace__title h2 {
+  font-size: 13.5px;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+}
+
+.workspace__title p {
+  font-size: 11px;
+  font-weight: 520;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace__spacer {
+  flex: 1;
+}
+
+.workspace__body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* --- the grid: edge-to-edge panes with hairline seams --- */
+
+.grid {
+  display: grid;
+  gap: 0;
+  height: 100%;
+  grid-auto-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+/* --- pane --- */
+
+.pane {
+  --pane-accent: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--workspace);
+  box-shadow: inset -1px -1px 0 var(--line-soft);
+  overflow: hidden;
+  contain: layout paint;
+  isolation: isolate;
+  animation: fade-in 180ms var(--e-hero);
+}
+
+.pane--hidden {
+  display: none;
+}
+
+.pane--focused {
+  z-index: 1;
+}
+
+/* inset accent ring — zero layout shift */
+.pane--focused::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pane-accent) 36%, transparent);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.pane__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 6px 0 10px;
+  background: var(--rail);
+  border-bottom: 1px solid var(--line-soft);
+  transition: background var(--t-soft) var(--e-standard);
+}
+
+.pane--focused .pane__header {
+  background: color-mix(in srgb, var(--pane-accent) 4%, var(--rail));
+}
+
+.pane__badge {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--pane-accent) 15%, transparent);
+  color: var(--pane-accent);
+  font-size: 10px;
+  font-weight: 760;
+  flex-shrink: 0;
+}
+
+.pane__title {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.pane__title strong {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--term-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--t-base) var(--e-standard);
+}
+
+.pane--focused .pane__title strong {
+  color: var(--term-text);
+}
+
+.pane__title small {
+  font-size: 10.5px;
+  font-weight: 540;
+  color: var(--term-dim);
+}
+
+.pane__actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-base) ease;
+}
+
+.pane:hover .pane__actions,
+.pane:focus-within .pane__actions,
+.pane--focused .pane__actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.pane__status {
+  flex-shrink: 0;
+}
