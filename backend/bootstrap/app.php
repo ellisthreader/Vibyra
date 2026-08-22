@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway terminates TLS at its edge and forwards plain HTTP, so
+        // without this every generated URL comes out `http://` — including the
+        // download URL handed to the desktop updater, which then takes an
+        // extra redirect to fetch a 98 MB package it was told to trust.
+        $middleware->trustProxies(at: '*');
         $middleware->remove(HandleCors::class);
         $middleware->append(VibyraCors::class);
         $middleware->validateCsrfTokens(except: [
