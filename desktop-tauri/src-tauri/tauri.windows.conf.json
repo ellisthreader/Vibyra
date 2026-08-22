@@ -1,7 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "bundle": {
-    "targets": ["nsis"],
-    "icon": ["icons/icon.png", "../../desktop/vibyra-cobalt.ico"]
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
   }
 }
