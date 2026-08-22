@@ -3,7 +3,10 @@ mod flusher;
 mod manager;
 mod session;
 
-#[cfg(test)]
+// Every test in here drives a real PTY through `/bin/sh`, so the whole module
+// is Unix-only. Gating the tests individually left the helpers behind them
+// unused on Windows, where `-D warnings` turned that into a failed release.
+#[cfg(all(test, unix))]
 mod manager_tests;
 
 pub use manager::{FlushConfig, OutputSink, PtyManager};
