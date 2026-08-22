@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Expo",
+  "_comment": "Verbatim copy of expo/tsconfig.base.json (expo ~54.0.0). Vendored because tooling run from desktop-tauri/ reads this config while only the desktop workspace is installed, and an unresolvable extends crashed the release gate. Refresh on expo upgrades.",
+
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react-native",
+    "lib": ["DOM", "ESNext"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "customConditions": ["react-native"],
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "target": "ESNext"
+  },
+
+  "exclude": ["${configDir}/node_modules", "${configDir}/babel.config.js", "${configDir}/metro.config.js", "${configDir}/jest.config.js", "${configDir}/android", "${configDir}/ios"]
+}

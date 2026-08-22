@@ -1,12 +1,17 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./tsconfig.expo-base.json",
   "compilerOptions": {
     "strict": true,
     "noEmit": true
   },
   "exclude": [
+    ".expo",
+    ".git",
     "backend/public/build",
+    "backend/storage",
     "backend/vendor",
-    "backend/node_modules"
+    "backend/node_modules",
+    "node_modules",
+    "tmp"
   ]
 }
