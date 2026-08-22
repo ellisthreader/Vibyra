@@ -1,0 +1,163 @@
+/* Several accounts under one provider card.
+ *
+ * The card keeps the company header it always had; these rules are only for
+ * the list of logins beneath it, which is new. Split into its own file because
+ * settings-integrations.css is already at the 200-line ceiling. */
+
+.integration-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--vb-border, rgba(127, 127, 127, 0.22));
+}
+
+.integration-account-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--vb-border, rgba(127, 127, 127, 0.18));
+  border-radius: 10px;
+  background: var(--vb-surface-2, rgba(127, 127, 127, 0.05));
+}
+
+.integration-account-row__identity {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.integration-account-row__name {
+  font-weight: 600;
+  font-size: 13px;
+  /* An email is the label here, and a long one must not push the buttons off
+   * the card. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30ch;
+}
+
+.integration-account-row__identity p {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.integration-account-row .integration-account__foot {
+  grid-column: 1 / -1;
+}
+
+.integration-account-row .integration-account__foot:empty {
+  display: none;
+}
+
+/* Which account the next terminal runs as. Sits with the model and effort
+ * pickers, and appears only when there is more than one to choose from. */
+.launch-account {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.launch-account__label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.66;
+}
+
+.launch-account__select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--vb-border, rgba(127, 127, 127, 0.24));
+  background: var(--vb-surface-2, rgba(127, 127, 127, 0.06));
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+@media (max-width: 720px) {
+  .integration-account-row {
+    grid-template-columns: 1fr;
+  }
+
+  .integration-account-row .integration-account__actions {
+    justify-self: start;
+  }
+}
+
+/* A quieter third action. Remove sits next to Disconnect and must read as the
+ * rarer, heavier of the two without shouting for attention first. */
+.integration-account__actions .btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  opacity: 0.6;
+}
+
+.integration-account__actions .btn--ghost:hover:not(:disabled) {
+  opacity: 1;
+  border-color: var(--vb-border, rgba(127, 127, 127, 0.24));
+}
+
+/* Which account a pane is running as, in its header. Only rendered when the
+ * company has more than one signed-in account, so it never costs space on a
+ * single-account setup. */
+.pane__account {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+}
+
+.pane__account-current {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pane-accent, currentColor) 18%, transparent);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane__account-switch {
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px dashed var(--vb-border, rgba(127, 127, 127, 0.35));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  opacity: 0.65;
+  cursor: pointer;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane__account-switch:hover:not(:disabled) {
+  opacity: 1;
+  border-style: solid;
+}
+
+.pane__account-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pane__account-confirm em {
+  font-style: normal;
+  opacity: 0.8;
+  max-width: 46ch;
+}

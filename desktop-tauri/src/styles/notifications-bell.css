@@ -1,0 +1,60 @@
+/* Title-bar notification bell. Sits immediately right of `.chrome__attn` so
+   the amber "N need you" chip and the bell read as one cluster, and left of
+   the account avatar. Import after `chrome-account.css`. */
+
+.nbell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nbell__btn {
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  color: var(--muted);
+  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard),
+    border-color var(--t-ui) var(--e-standard);
+}
+
+.nbell__btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.nbell__btn[aria-expanded="true"] {
+  background: var(--hover-strong);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.nbell__btn--unread {
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  color: var(--text);
+}
+
+/* `--action` + `--on-action` is the only filled pair in the system that
+   clears AA. White on `--accent` does not, and is banned. */
+.nbell__badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--action);
+  color: var(--on-action);
+  font-size: 10px;
+  font-weight: 760;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  /* Opacity only. A permanently animating title-bar element is already
+     called out in chrome.css as a standing repaint cost. */
+  animation: fade-in var(--t-soft) var(--e-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nbell__badge {
+    animation: none;
+  }
+}

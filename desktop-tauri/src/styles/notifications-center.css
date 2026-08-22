@@ -1,0 +1,126 @@
+/* Notification centre: a dropdown anchored under the bell, not a side sheet.
+   It is a glance surface, and the right edge already belongs to the Companion
+   panel. Same recipe as `.pal` in palette.css — `--elevated`, `--r-panel`,
+   `--e-panel`, `fade-up 200ms var(--e-hero)`.
+
+   No `backdrop-filter`: `--chrome-bg` stays the only blur in the product. */
+
+.ncenter {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: 96;
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  max-height: 60vh;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  box-shadow: var(--e-panel), var(--e-inset-hi);
+  overflow: hidden;
+  animation: fade-up 200ms var(--e-hero);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ncenter {
+    animation: none;
+  }
+}
+
+.ncenter__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 10px 10px 9px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ncenter__head h2 {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+
+.ncenter__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ncenter__link {
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 620;
+  white-space: nowrap;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.ncenter__link:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.ncenter__link:disabled {
+  color: var(--dim);
+}
+
+/* `contain` stops a flick at the end of the list chaining into the terminal
+   underneath — the panel is small and the list is often shorter than it. */
+.ncenter__list {
+  flex: 1;
+  min-height: 0;
+  padding: 2px 6px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ncenter__group {
+  display: flex;
+  flex-direction: column;
+}
+
+.ncenter__group-label {
+  padding: 9px 8px 4px;
+}
+
+.ncenter__foot {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- empty state ---------- */
+
+.ncenter__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 28px 40px;
+  text-align: center;
+}
+
+.ncenter__empty h3 {
+  font-size: 13px;
+  font-weight: 660;
+  letter-spacing: -0.005em;
+  color: var(--text);
+}
+
+.ncenter__empty p {
+  max-width: 268px;
+  font-size: 11.5px;
+  font-weight: 520;
+  line-height: 1.55;
+  color: var(--muted);
+}

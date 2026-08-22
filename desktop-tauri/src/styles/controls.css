@@ -1,0 +1,164 @@
+/* Shared control primitives introduced by the notification system: the
+   screen-reader utility, the severity mark shared by toasts / centre rows /
+   settings rows, and the switch, volume and cue-select inputs the settings
+   pane builds on.
+
+   Import order matters: this sheet must follow `base.part-03.css` so
+   `select.input--sound` wins its specificity tie against base.css's
+   `select.input`, and it must precede every consumer sheet. */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- severity mark ---------- */
+
+/* The `-soft` alpha tokens sit at 0.09–0.12 in the light theme, which all but
+   disappears against the pale light-theme `--elevated`. Mixing from
+   `currentColor` instead gives one rule that holds on both grounds, and the
+   inset hairline keeps the mark's silhouette when the fill is faint. */
+.nmark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 26%, transparent);
+}
+
+.nmark--sm {
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+}
+
+.nmark--lg {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-card);
+}
+
+.nmark--info {
+  color: var(--accent);
+}
+
+.nmark--success {
+  color: var(--success);
+}
+
+.nmark--warning {
+  color: var(--amber);
+}
+
+.nmark--danger {
+  color: var(--danger);
+}
+
+/* ---------- switch ---------- */
+
+.vswitch {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--hover-strong);
+  transition: background var(--t-ui) var(--e-standard),
+    border-color var(--t-ui) var(--e-standard);
+}
+
+.vswitch::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: var(--muted);
+  transition: transform var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
+}
+
+.vswitch:hover:not(:disabled) {
+  border-color: var(--border);
+}
+
+.vswitch[aria-checked="true"] {
+  background: var(--action);
+  border-color: transparent;
+}
+
+.vswitch[aria-checked="true"]::after {
+  transform: translateX(14px);
+  background: var(--on-action);
+}
+
+.vswitch:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ---------- volume steps ---------- */
+
+.vol-steps {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.vol-step {
+  width: 9px;
+  border-radius: 2px;
+  background: var(--hover-strong);
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.vol-step:nth-child(1) {
+  height: 8px;
+}
+
+.vol-step:nth-child(2) {
+  height: 11px;
+}
+
+.vol-step:nth-child(3) {
+  height: 14px;
+}
+
+.vol-step:nth-child(4) {
+  height: 17px;
+}
+
+.vol-step:nth-child(5) {
+  height: 20px;
+}
+
+.vol-step:hover {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.vol-step[aria-pressed="true"] {
+  background: var(--accent);
+}
+
+/* ---------- cue select ---------- */
+
+select.input--sound {
+  width: auto;
+  min-height: 28px;
+  padding: 3px 26px 3px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+}

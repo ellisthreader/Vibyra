@@ -1,0 +1,143 @@
+/* A row in the notification centre. Unread carries a 3px cobalt edge and
+   `--text`; read drops to `--muted`. Severity stays in the leading `.nmark`
+   so the cobalt edge always means "new", never "bad". */
+
+.nrow {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+  padding: 9px 6px 10px 11px;
+  border-radius: var(--r-shell);
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.nrow:hover {
+  background: var(--hover);
+}
+
+.nrow--unread::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.nrow__mark {
+  margin-top: 1px;
+}
+
+.nrow:not(.nrow--unread) .nrow__mark {
+  opacity: 0.72;
+}
+
+.nrow__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nrow__head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.nrow__head h4 {
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nrow--unread .nrow__head h4 {
+  color: var(--text);
+  font-weight: 650;
+}
+
+.nrow__count {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.nrow__body {
+  font-size: 11px;
+  font-weight: 520;
+  line-height: 1.5;
+  color: var(--muted);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.nrow__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 620;
+}
+
+.nrow__meta svg {
+  flex-shrink: 0;
+}
+
+.nrow__sep {
+  opacity: 0.6;
+}
+
+.nrow__action {
+  margin-left: auto;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 680;
+  white-space: nowrap;
+  transition: background var(--t-base) var(--e-standard),
+    border-color var(--t-base) var(--e-standard);
+}
+
+.nrow__action:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+/* Revealed on hover or focus so a keyboard user can always reach it — the
+   control stays in the tab order at all times, only its paint is deferred. */
+.nrow__close {
+  width: 22px;
+  height: 22px;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--e-standard);
+}
+
+.nrow:hover .nrow__close,
+.nrow__close:focus-visible {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nrow__close {
+    opacity: 1;
+  }
+}

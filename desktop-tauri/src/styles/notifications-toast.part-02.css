@@ -1,0 +1,59 @@
+/* Toast timer bar and exit. Both are transform/opacity only. */
+
+/* The lifetime is handed to CSS once as `--vtoast-ms`; nothing about this bar
+   touches React per frame, and hovering the stack pauses it in place. */
+@keyframes vtoast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.vtoast__timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  transform-origin: left center;
+  background: color-mix(in srgb, var(--vtone) 55%, transparent);
+  animation: vtoast-timer var(--vtoast-ms, 5000ms) linear forwards;
+}
+
+:root[data-theme="light"] .vtoast__timer {
+  background: color-mix(in srgb, var(--vtone) 78%, transparent);
+}
+
+/* Two pause paths on purpose: `:hover` covers the pointer with zero latency,
+   and the class mirrors the React state that also pauses the store's timer,
+   so the bar can never drain while the dismissal is held. */
+.vtoast-stack:hover .vtoast__timer,
+.vtoast-stack--paused .vtoast__timer {
+  animation-play-state: paused;
+}
+
+@keyframes vtoast-out {
+  to {
+    opacity: 0;
+    transform: translateX(12px) scale(0.985);
+  }
+}
+
+/* Never `animation: none` here, at any breakpoint or preference. The node is
+   unmounted on `animationend`; with no animation that event never fires and
+   every dismissed toast leaks into the DOM for the life of the session. The
+   global reduced-motion rule crushes this to 0.01ms, which is instant *and*
+   still fires the event. */
+.vtoast--leaving {
+  animation: vtoast-out var(--t-soft) var(--e-standard) forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A progress bar that snaps to zero is worse than no progress bar. */
+  .vtoast__timer {
+    display: none;
+  }
+}
