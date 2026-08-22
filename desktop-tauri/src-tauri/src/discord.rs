@@ -58,13 +58,17 @@ pub(crate) struct Attachment {
 /// Turns Discord's status codes into something actionable. A report that fails
 /// is shown to the user who wrote it, so "HTTP 404" alone would strand them.
 fn status_message(status: u16) -> String {
-    match status {
-        401 | 403 => "Discord rejected the webhook — it may have been revoked".into(),
-        404 => "That Discord webhook no longer exists — recreate it in Server Settings".into(),
-        413 => "Discord refused the attachment as too large".into(),
-        429 => "Discord is rate limiting this webhook — try again shortly".into(),
-        _ => format!("Discord rejected the message with HTTP {status}"),
-    }
+    let explanation = match status {
+        401 | 403 => "Discord rejected the webhook — it may have been revoked",
+        404 => "That Discord webhook no longer exists — recreate it in Server Settings",
+        413 => "Discord refused the attachment as too large",
+        429 => "Discord is rate limiting this webhook — try again shortly",
+        _ => "Discord rejected the message",
+    };
+    // The code always rides along with the explanation. The words are for the
+    // person who has to fix it; the number is for whoever reads the report of
+    // them trying, and dropping it cost a passing test its meaning.
+    format!("{explanation} (HTTP {status})")
 }
 
 /// Posts `body`, carrying `files` as multipart when there are any.
@@ -122,9 +126,25 @@ mod tests {
     }
 
     #[test]
-    fn a_revoked_webhook_is_explained_rather_than_numbered() {
-        assert!(status_message(404).contains("no longer exists"));
-        assert!(status_message(429).contains("rate limiting"));
+    fn a_failure_is_explained_and_still_carries_its_code() {
+        // Both halves are load-bearing. Replacing the code with prose broke
+        // `model_watch_tests::discord_delivery_requires_a_success_status`,
+        // which asserts the status survives — so both are asserted here.
+        for (status, words) in [
+            (401_u16, "revoked"),
+            (404, "no longer exists"),
+            (413, "too large"),
+            (429, "rate limiting"),
+        ] {
+            assert!(
+                status_message(status).contains(words),
+                "{status} lost its explanation"
+            );
+            assert!(
+                status_message(status).contains(&format!("HTTP {status}")),
+                "{status} lost its code"
+            );
+        }
         assert!(status_message(500).contains("HTTP 500"));
     }
 }
