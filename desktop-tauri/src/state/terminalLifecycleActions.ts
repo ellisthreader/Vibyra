@@ -1,25 +1,36 @@
 import type { StoreApi } from "zustand";
 
-import { listAgents } from "../ipc/agents";
 import {
   createSshTerminal,
   createTerminal,
   removeTerminal,
   setTerminalVisibility,
 } from "../ipc/terminal";
-import { inspectSafeWorkspace } from "../ipc/workspace";
 import { dropStats } from "../lib/activity";
+import { newAgentSessionId } from "../lib/agentSessions";
 import { accentFor } from "../lib/providerAccents";
+import { suppressExitNotice } from "../lib/sessionExitNotifications";
 import { isSuspendedId } from "../lib/sessionRestore";
 import { estimateSpawnDimensions } from "../lib/spawnSize";
 import { destroySession, disposeTerminal } from "../lib/terminalRegistry";
+import { queueReplay } from "../lib/terminalReplay";
 import { useSettingsStore } from "./settingsStore";
-import { useWorkspaceStore } from "./workspaceStore";
+import { insertPane } from "../lib/paneInsert";
+import { relaunch } from "./terminalRelaunch";
+import { switchPaneAccount } from "./terminalAccountSwitch";
 import type { PaneState, TerminalStore } from "./terminalStoreTypes";
+import { useWorkspaceStore } from "./workspaceStore";
 
 type Lifecycle = Pick<
   TerminalStore,
-  "spawnAgent" | "spawnSsh" | "restart" | "resume" | "close" | "hibernate" | "wake"
+  | "spawnAgent"
+  | "spawnSsh"
+  | "restart"
+  | "switchAccount"
+  | "resume"
+  | "close"
+  | "hibernate"
+  | "wake"
 >;
 type SetState = StoreApi<TerminalStore>["setState"];
 type GetState = StoreApi<TerminalStore>["getState"];
@@ -35,68 +46,15 @@ function spawnDimensions(get: GetState, projectId: string) {
   return estimateSpawnDimensions(panes.length + 1, fontSize);
 }
 
-/**
- * Places a freshly spawned pane. With `replaces` it takes that pane's slot and
- * inherits focus/zoom from it, so resuming never reorders the grid; otherwise
- * it is appended.
- */
-function insertPane(
-  state: TerminalStore,
-  pane: PaneState,
-  replaces?: number,
-): Partial<TerminalStore> {
-  if (replaces === undefined) {
-    return { panes: [...state.panes, pane], focusedId: pane.id };
-  }
-  const activity = { ...state.activity };
-  delete activity[replaces];
-  return {
-    panes: state.panes.map((candidate) => (candidate.id === replaces ? pane : candidate)),
-    focusedId: pane.id,
-    zoomedId: state.zoomedId === replaces ? pane.id : state.zoomedId,
-    activity,
-  };
-}
-
-/**
- * Relaunches a pane from its saved recipe. Shared by restart and resume so
- * both paths agree on how an agent is looked up and how a safe workspace is
- * re-checked — a fingerprint captured earlier may no longer describe the tree.
- */
-async function relaunch(get: GetState, pane: PaneState, replaces?: number): Promise<void> {
-  if (pane.agentId === "ssh") {
-    await get().spawnSsh(pane.title, pane.projectId);
-    return;
-  }
-  const agents = await listAgents().catch(() => []);
-  const agent = agents.find((candidate) => candidate.id === pane.agentId);
-  if (!agent) {
-    reportError(`agent "${pane.agentId}" is no longer available`);
-    return;
-  }
-  let fingerprint = pane.safeSnapshotFingerprint ?? undefined;
-  if (pane.workspaceMode === "safe" && pane.sourceCwd) {
-    fingerprint = await inspectSafeWorkspace(pane.sourceCwd)
-      .then((preflight) => preflight.fingerprint)
-      .catch(() => fingerprint);
-  }
-  await get().spawnAgent(agent, pane.projectId, {
-    model: pane.model,
-    permissionMode: pane.permissionMode,
-    reasoningEffort: pane.reasoningEffort,
-    title: pane.customTitle ?? pane.title,
-    cwd: pane.sourceCwd,
-    workspaceMode: pane.workspaceMode,
-    safeSnapshotFingerprint: fingerprint,
-    replaces,
-  });
-}
-
 export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycle {
   return {
     spawnAgent: async (agent, projectId, options) => {
       try {
         const dims = spawnDimensions(get, projectId);
+        // A resumed pane keeps the conversation it already owns; a fresh one
+        // is given its own so its Resume can name it rather than ask for
+        // whichever conversation in this folder happens to be newest.
+        const agentSessionId = options?.agentSessionId ?? newAgentSessionId(agent.id);
         const info = await createTerminal({
           agentId: agent.id,
           cwd: options?.cwd ?? null,
@@ -107,7 +65,13 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
           reasoningEffort: options?.reasoningEffort,
           workspaceMode: options?.workspaceMode,
           safeSnapshotFingerprint: options?.safeSnapshotFingerprint,
+          resume: options?.resume,
+          agentSessionId,
+          accountId: options?.accountId ?? null,
         });
+        // Queued before the pane reaches the store, so it is already waiting
+        // when the new pane mounts its terminal.
+        if (options?.replaySnapshot) queueReplay(info.id, options.replaySnapshot);
         const pane: PaneState = {
           id: info.id,
           projectId,
@@ -122,6 +86,8 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
           customTitle: null,
           osc: null,
           accent: accentFor(agent.id, agent.accent),
+          agentSessionId,
+          accountId: options?.accountId ?? null,
           status: "running",
           exitCode: null,
           visibility: "visible",
@@ -133,9 +99,10 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
       }
     },
 
-    spawnSsh: async (target, projectId) => {
+    spawnSsh: async (target, projectId, options) => {
       try {
         const info = await createSshTerminal(target, spawnDimensions(get, projectId));
+        if (options?.replaySnapshot) queueReplay(info.id, options.replaySnapshot);
         const pane: PaneState = {
           id: info.id,
           projectId,
@@ -150,16 +117,20 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
           customTitle: null,
           osc: null,
           accent: accentFor("ssh"),
+          agentSessionId: null,
+          accountId: null,
           status: "running",
           exitCode: null,
           visibility: "visible",
           lastFocusedAt: Date.now(),
         };
-        set((state) => ({ panes: [...state.panes, pane], focusedId: info.id }));
+        set((state) => insertPane(state, pane, options?.replaces));
       } catch (error) {
         reportError(error);
       }
     },
+
+    switchAccount: (id, accountId) => switchPaneAccount(get, id, accountId),
 
     restart: async (id) => {
       const pane = get().panes.find((candidate) => candidate.id === id);
@@ -178,6 +149,10 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
     },
 
     close: async (id) => {
+      // Killing a PTY still delivers an exit event. Without this, closing a pane
+      // — and every restart, which closes before it respawns — would report a
+      // finished or failed run the user never started.
+      suppressExitNotice(id);
       destroySession(id);
       dropStats(id);
       // A suspended pane's negative id names no Rust session — sending it
@@ -196,6 +171,7 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
     },
 
     hibernate: async (id) => {
+      suppressExitNotice(id);
       disposeTerminal(id);
       set((state) => ({
         panes: state.panes.map((pane) =>

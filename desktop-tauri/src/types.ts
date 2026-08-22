@@ -1,6 +1,8 @@
 // Mirrors the serde shapes exported by the Rust core (camelCase renames).
 
-export type { CapturedScreenshot, Screenshot, VoiceStatus } from "./toolTypes";
+import type { NotificationPrefs } from "./notificationTypes";
+
+export type { CapturedScreenshot, ClipboardPaste, Screenshot, VoiceStatus } from "./toolTypes";
 
 export type Visibility = "visible" | "hidden" | "hibernated";
 
@@ -52,25 +54,6 @@ export interface AccountSnapshot {
   error: string | null;
   pendingProvider: string | null;
   secureStorage: boolean;
-}
-
-export type ProviderAccountStatus =
-  | "connected"
-  | "connecting"
-  | "sign-in-required"
-  | "not-installed"
-  | "error";
-
-export interface ProviderAccount {
-  id: "codex" | "claude" | "gemini";
-  company: string;
-  product: string;
-  runtimeId: string;
-  installed: boolean;
-  status: ProviderAccountStatus;
-  accountLabel: string;
-  detail: string;
-  signInPageAvailable: boolean;
 }
 
 export interface DirEntryInfo {
@@ -133,6 +116,8 @@ export interface Settings {
   aiDailySpendCapUsd: number;
   aiMonthlySpendCapUsd: number;
   persistTerminalScrollback: boolean;
+  /** Toasts, sounds and system notifications. See notificationTypes.ts. */
+  notifications: NotificationPrefs;
   customAgents: AgentSpec[];
   projects: ProjectSpec[];
   activeProjectId: string | null;
@@ -184,26 +169,4 @@ export interface AiServiceStatus {
   limits: AiLimits;
   usage: AiUsage;
   pricing: AiPricing;
-}
-
-/** One pane as written to session.json. `id` is 0 for an already-suspended pane. */
-export interface PersistedPane {
-  id: number;
-  projectId: string;
-  agentId: string;
-  title: string;
-  customTitle: string | null;
-  model: string | null;
-  permissionMode: "standard" | "full";
-  reasoningEffort: string | null;
-  sourceCwd: string | null;
-  workspaceMode: "safe" | "shared";
-  accent: string;
-  snapshot: string | null;
-}
-
-export interface TerminalSession {
-  version: number;
-  savedAtMs: number;
-  panes: PersistedPane[];
 }
