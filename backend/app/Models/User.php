@@ -16,6 +16,9 @@ use Illuminate\Notifications\Notifiable;
     'name',
     'email',
     'email_verified_at',
+    'phone_number',
+    'phone_verified_at',
+    'pending_phone_number',
     'provider',
     'provider_id',
     'password',
@@ -61,6 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
             'password' => 'hashed',
             'credits_balance' => 'integer',
             'credits_used' => 'integer',

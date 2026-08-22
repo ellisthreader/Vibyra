@@ -4,7 +4,6 @@ namespace App\Services\Concerns;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
-use Symfony\Component\Process\Process;
 
 trait ProjectFileState
 {
@@ -30,7 +29,7 @@ trait ProjectFileState
     public function createProject(string $name): array
     {
         $state = $this->read();
-        $home = rtrim((string) getenv('HOME'), '/');
+        $home = $this->desktopHomeDirectory();
         $baseDirectory = $home.'/Desktop/Vibyra Projects';
         $projectName = trim($name) ?: 'Untitled Workspace';
         $slug = Str::slug($projectName) ?: 'untitled-workspace';
@@ -99,7 +98,7 @@ trait ProjectFileState
             abort(response()->json(['ok' => false, 'error' => 'Choose a safe file path inside the project'], 422));
         }
 
-        $content = $content !== '' ? $content : "# ".$relativePath."\n\n";
+        $content = $content !== '' ? $content : '# '.$relativePath."\n\n";
 
         if (strlen($content) > 200000) {
             abort(response()->json(['ok' => false, 'error' => 'File content is too large'], 422));
@@ -182,6 +181,7 @@ trait ProjectFileState
     {
         $name = e($projectName);
         $css = ':root{color-scheme:dark;--text:#fbf8ff;--muted:#beb8ce;--violet:#7c3cff;--green:#6df4a6;--line:#2d2541}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(145deg,#080910,#151122 58%,#0c1620);color:var(--text);font-family:Inter,system-ui,sans-serif}main{width:min(680px,100%);border:1px solid var(--line);border-radius:22px;background:rgba(18,19,29,.88);padding:clamp(22px,7vw,42px)}.kicker{color:var(--green);font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}h1{margin:14px 0 12px;font-size:clamp(38px,11vw,76px);line-height:.94}p{margin:0;color:var(--muted);font-size:clamp(16px,4vw,20px);font-weight:750;line-height:1.55}.button{display:inline-flex;align-items:center;min-height:48px;margin-top:26px;border-radius:14px;background:linear-gradient(135deg,var(--violet),#63a6ff);padding:0 18px;color:#fff;font-weight:900}';
+
         return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'.$name.'</title><style>'.$css.'</style></head><body><main><div class="kicker">Live Vibyra workspace</div><h1>'.$name.'</h1><p>This workspace is ready for a phone-viewable build.</p><div class="button">Open preview</div></main></body></html>';
     }
 }

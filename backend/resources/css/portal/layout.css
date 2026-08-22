@@ -1,0 +1,47 @@
+.portal-page { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
+.portal-header, .portal-footer { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+.portal-header { min-height: 72px; display: flex; align-items: center; gap: 28px; border-bottom: 1px solid var(--portal-border); }
+.portal-brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-size: 18px; font-weight: 750; }
+.portal-brand img { width: 28px; height: 22px; object-fit: contain; }
+.portal-header nav { display: flex; align-items: center; gap: 24px; margin-left: auto; }
+.portal-header nav a, .portal-footer a { color: var(--portal-muted); text-decoration: none; font-size: 14px; }
+.portal-header nav a:hover, .portal-footer a:hover { color: var(--portal-text); }
+.portal-main { width: min(1160px, calc(100% - 40px)); margin: 0 auto; flex: 1; padding: 72px 0 96px; }
+.portal-heading { max-width: 760px; margin-bottom: 38px; }
+.portal-eyebrow, .panel-label { margin: 0 0 12px; color: var(--portal-accent); font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.portal-heading h1 { margin: 0; font-size: clamp(38px, 6vw, 64px); line-height: 1.03; letter-spacing: -.045em; }
+.portal-heading > p:last-child { max-width: 680px; margin: 20px 0 0; color: var(--portal-muted); font-size: 18px; line-height: 1.6; }
+.portal-footer { display: flex; justify-content: space-between; gap: 20px; padding: 28px 0 36px; border-top: 1px solid var(--portal-border); color: var(--portal-muted); font-size: 13px; }
+.portal-button { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border: 1px solid transparent; border-radius: 8px; text-decoration: none; font-weight: 700; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, transform 150ms ease; }
+.portal-button:hover:not(:disabled) { transform: translateY(-1px); }
+.portal-button:disabled { opacity: .5; cursor: not-allowed; }
+.portal-button--primary { background: var(--portal-action); color: #FFF; }
+.portal-button--primary:hover:not(:disabled) { background: var(--portal-action-hover); }
+.portal-button--secondary { background: transparent; border-color: var(--portal-border); color: var(--portal-text); }
+.portal-button--secondary:hover:not(:disabled) { background: var(--portal-elevated); border-color: #3B414D; }
+.portal-notice { margin-bottom: 22px; padding: 14px 16px; border: 1px solid var(--portal-border); border-radius: 8px; background: var(--portal-surface); color: var(--portal-muted); line-height: 1.5; }
+.portal-notice--error { border-color: rgba(240, 100, 114, .5); color: #FFD7DC; }
+.portal-notice--success { border-color: rgba(55, 199, 138, .45); color: #BDF6DD; }
+.portal-loading { padding: 28px; border: 1px solid var(--portal-border); border-radius: 8px; background: var(--portal-surface); color: var(--portal-muted); }
+.status-panel { max-width: 640px; }
+.status-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.portal-page--minimal .portal-main { width: min(820px, calc(100% - 40px)); padding-top: 96px; }
+.portal-page--minimal .portal-heading { max-width: none; margin-bottom: 44px; text-align: center; }
+.portal-page--minimal .portal-heading h1 { font-size: clamp(42px, 7vw, 60px); }
+.portal-page--minimal .portal-heading > p:last-child { margin-inline: auto; font-size: 17px; }
+.portal-page--minimal .portal-footer { justify-content: center; }
+@media (max-width: 640px) {
+    .portal-header, .portal-footer, .portal-main { width: min(calc(100% - 28px), 1160px); }
+    .portal-header { min-height: 64px; }
+    .portal-header nav { gap: 14px; }
+    .portal-header nav a:first-child { display: none; }
+    .portal-main { padding: 52px 0 72px; }
+    .portal-page--minimal .portal-main { width: min(calc(100% - 28px), 820px); padding-top: 64px; }
+    .portal-page--minimal .portal-heading { margin-bottom: 34px; }
+    .portal-footer { flex-direction: column; }
+}
+@media (max-width: 560px) {
+    .portal-header nav a:nth-child(2) { display: none; }
+    .portal-heading > p:last-child { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }

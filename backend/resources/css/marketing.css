@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+@import './marketing/base.css';
+@import './marketing/hero-story.css';
+@import './marketing/hero-animation.css';
+@import './marketing/interactions.css';
+@import './marketing/product-media.css';
+@import './marketing/product-film.css';
+
+@source '../js/marketing.jsx';
+@source '../js/marketing/**/*.jsx';
+@source '../js/marketing/**/*.js';
+
+@theme {
+    /* Vibyra "Connected Momentum" tokens — derived from the product */
+    --color-canvas: #0e0f12;
+    --color-canvas-raised: #101115;
+    --color-surface: #181a20;
+    --color-surface-elevated: #20232a;
+    --color-rail: #13151a;
+    --color-line: rgba(255, 255, 255, 0.09);
+    --color-line-strong: rgba(255, 255, 255, 0.16);
+    --color-ink: #f5f7fa;
+    --color-ink-muted: #a6adba;
+    --color-violet: #5b7cfa;
+    --color-violet-bright: #7490ff;
+    --color-violet-soft: rgba(91, 124, 250, 0.14);
+    --color-pink: #91a7ff;
+    --color-amber: #e8a94b;
+    --color-ok: #37c78a;
+
+    --font-sans: 'Inter', 'Segoe UI Variable', 'Segoe UI', -apple-system, system-ui, sans-serif;
+    --font-mono: 'Cascadia Code', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+    --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+}

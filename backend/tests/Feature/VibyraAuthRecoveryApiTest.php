@@ -9,7 +9,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class VibyraAuthRecoveryApiTest extends TestCase
@@ -35,6 +37,30 @@ class VibyraAuthRecoveryApiTest extends TestCase
 
         $this->get($url)->assertRedirect('vibyra://email-verified?email=verify%40example.com');
         $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_verification_resend_sends_once_per_email_each_minute(): void
+    {
+        Notification::fake();
+        $email = 'resend-'.strtolower(Str::random(10)).'@example.com';
+        $user = User::factory()->create([
+            'email' => $email,
+            'provider' => 'email',
+            'email_verified_at' => null,
+        ]);
+        $rateLimitKey = 'email-verification-resend:'.hash('sha256', $email);
+        RateLimiter::clear($rateLimitKey);
+
+        $this->postJson('/api/auth/email/resend', ['email' => $email])
+            ->assertOk()
+            ->assertJsonPath('retryAfter', 60);
+        Notification::assertSentTo($user, VibyraVerifyEmail::class);
+
+        $this->postJson('/api/auth/email/resend', ['email' => $email])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonStructure(['retryAfter']);
+        $this->assertCount(1, Notification::sent($user, VibyraVerifyEmail::class));
     }
 
     public function test_password_reset_is_generic_changes_password_and_revokes_sessions(): void

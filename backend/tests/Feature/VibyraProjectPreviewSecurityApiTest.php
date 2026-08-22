@@ -2,23 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Services\VibyraDesktopState;
-use App\Services\Referrals\ReferralService;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use GuzzleHttp\Client as GuzzleClient;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Tests\TestCase;
 
 class VibyraProjectPreviewSecurityApiTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_project_preview_skips_source_only_vite_entry_in_web_root(): void
     {
         $statePath = storage_path('app/vibyra/state.json');

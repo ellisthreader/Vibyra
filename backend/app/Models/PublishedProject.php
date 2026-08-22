@@ -87,4 +87,9 @@ class PublishedProject extends Model
     {
         return $this->hasMany(PublishedProjectReaction::class);
     }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(PublishedProjectReport::class);
+    }
 }

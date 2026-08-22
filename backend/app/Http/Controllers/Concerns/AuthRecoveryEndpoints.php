@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -155,6 +156,18 @@ trait AuthRecoveryEndpoints
     public function resendEmailVerification(Request $request): JsonResponse
     {
         $email = $this->normalizeEmail($request->input('email'));
+        $rateLimitKey = 'email-verification-resend:'.hash('sha256', $email ?: 'missing:'.$request->ip());
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            $retryAfter = max(1, RateLimiter::availableIn($rateLimitKey));
+
+            return $this->json([
+                'ok' => true,
+                'message' => "Please wait {$retryAfter} seconds before requesting another verification email.",
+                'retryAfter' => $retryAfter,
+            ]);
+        }
+        RateLimiter::hit($rateLimitKey, 60);
+
         $user = $email ? User::where('email', $email)->where('provider', 'email')->first() : null;
         if ($user && ! $user->hasVerifiedEmail()) {
             try {
@@ -167,6 +180,7 @@ trait AuthRecoveryEndpoints
         return $this->json([
             'ok' => true,
             'message' => 'If that email still needs verification, a new link has been sent.',
+            'retryAfter' => 60,
         ]);
     }
 

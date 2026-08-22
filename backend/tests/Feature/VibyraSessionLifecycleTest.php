@@ -52,6 +52,20 @@ class VibyraSessionLifecycleTest extends TestCase
         $this->assertSame('idle_expired', $session->revocation_reason);
     }
 
+    public function test_frequent_authenticated_requests_do_not_write_the_session_every_time(): void
+    {
+        Carbon::setTestNow('2026-06-09 12:00:00');
+        config(['session_security.touch_interval_seconds' => 300]);
+        $token = $this->signup();
+        $session = VibyraSession::firstOrFail();
+        $originalUpdatedAt = $session->updated_at->copy();
+
+        Carbon::setTestNow('2026-06-09 12:01:00');
+        $this->getJson('/api/session', $this->headers($token))->assertOk();
+
+        $this->assertTrue($session->fresh()->updated_at->equalTo($originalUpdatedAt));
+    }
+
     public function test_absolute_expiry_cannot_be_extended_by_activity(): void
     {
         config(['session_security.lifecycle_mode' => 'enforce']);

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Services\Auth\ProviderIdentityVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -156,7 +155,7 @@ class VibyraProviderAuthApiTest extends TestCase
 
     private function signedToken(array $claims): array
     {
-        $privateKey = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $privateKey = openssl_pkey_new(self::openSslOptions(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]));
         $details = openssl_pkey_get_details($privateKey);
         $jwk = [
             'kty' => 'RSA',

@@ -6,4 +6,5 @@ return [
     'absolute_minutes' => (int) env('VIBYRA_SESSION_ABSOLUTE_MINUTES', 129600),
     'rotation_mode' => env('VIBYRA_SESSION_ROTATION_MODE', 'manual'),
     'previous_token_grace_seconds' => (int) env('VIBYRA_SESSION_PREVIOUS_TOKEN_GRACE_SECONDS', 120),
+    'touch_interval_seconds' => (int) env('VIBYRA_SESSION_TOUCH_INTERVAL_SECONDS', 300),
 ];

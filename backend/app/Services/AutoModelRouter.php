@@ -18,7 +18,7 @@ class AutoModelRouter
             'reason' => 'Strong fit for long-context codebase analysis and multi-file implementation.',
         ],
         'complex_review' => [
-            'modelKey' => 'anthropic/claude-opus-4.8',
+            'modelKey' => 'anthropic/claude-opus-5',
             'reason' => 'Strong fit for difficult reviews, debugging, architecture, and high-stakes reasoning.',
         ],
         'agentic_coding' => [

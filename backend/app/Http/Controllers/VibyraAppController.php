@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AccountEndpoints;
+use App\Http\Controllers\Concerns\AccountVerificationEndpoints;
 use App\Http\Controllers\Concerns\AutoModelRouteEndpoint;
 use App\Http\Controllers\Concerns\AuthEndpoints;
 use App\Http\Controllers\Concerns\AuthRecoveryEndpoints;
@@ -31,6 +32,7 @@ use Illuminate\Http\Request;
 class VibyraAppController extends Controller
 {
     use AccountEndpoints;
+    use AccountVerificationEndpoints;
     use AutoModelRouteEndpoint;
     use AuthEndpoints;
     use AuthRecoveryEndpoints;

@@ -150,7 +150,9 @@ trait AuthEndpoints
             $user->app_state = $merged;
         }
 
-        $user->save();
+        if ($user->isDirty()) {
+            $user->save();
+        }
 
         return $this->json([
             'ok' => true,

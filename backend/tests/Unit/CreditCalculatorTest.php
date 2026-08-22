@@ -9,6 +9,28 @@ use Tests\TestCase;
 
 class CreditCalculatorTest extends TestCase
 {
+    public function test_current_claude_models_use_pinned_slugs_and_conservative_fallback_rates(): void
+    {
+        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog->method('freshPricingFor')->willReturn(null);
+        $calc = new CreditCalculator($catalog);
+
+        $this->assertSame('anthropic/claude-opus-5', $calc->resolveSlug('claude-opus-5'));
+        $this->assertSame('anthropic/claude-opus-5-fast', $calc->resolveSlug('claude-opus-5-fast'));
+        $this->assertSame('premium', $calc->tier('claude-opus-5'));
+        $this->assertSame('premium', $calc->tier('claude-opus-5-fast'));
+        $this->assertEqualsWithDelta(
+            30.0,
+            $calc->estimateUsd('anthropic/claude-opus-5', 1_000_000, 1_000_000),
+            0.000001
+        );
+        $this->assertEqualsWithDelta(
+            60.0,
+            $calc->estimateUsd('anthropic/claude-opus-5-fast', 1_000_000, 1_000_000),
+            0.000001
+        );
+    }
+
     public function test_dynamic_openrouter_slugs_resolve_as_billable_models(): void
     {
         $catalog = $this->createMock(OpenRouterPricingCatalog::class);

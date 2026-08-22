@@ -22,7 +22,7 @@ class AutoModelRouterTest extends TestCase
             $router->route('Refactor this entire codebase across many files.', 'starter', $calculator)['modelKey']
         );
         $this->assertSame(
-            'anthropic/claude-opus-4.8',
+            'anthropic/claude-opus-5',
             $router->route('Perform a security review and find the root cause of this production incident.', 'starter', $calculator)['modelKey']
         );
         $this->assertSame(
@@ -45,7 +45,7 @@ class AutoModelRouterTest extends TestCase
         );
 
         $this->assertSame('gpt-5.4-mini', $route['modelKey']);
-        $this->assertSame('anthropic/claude-opus-4.8', $route['preferredModelKey']);
+        $this->assertSame('anthropic/claude-opus-5', $route['preferredModelKey']);
         $this->assertLessThanOrEqual(
             config('billing.plans.free.burst_credit_cap'),
             $calculator->estimateCredits(

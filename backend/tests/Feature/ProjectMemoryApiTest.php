@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ProjectMemoryApiTest extends TestCase
@@ -66,5 +67,28 @@ class ProjectMemoryApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('memory.entries.0.text', 'Newest memory')
             ->assertJsonPath('memory.updatedAt', $saved['updatedAt']);
+    }
+
+    public function test_identical_session_state_does_not_touch_the_user_row(): void
+    {
+        $token = $this->postJson('/api/auth/signup', [
+            'name' => 'Stable State User',
+            'email' => 'stable-state@example.com',
+            'password' => 'secret123',
+        ])->assertCreated()->json('token');
+        $headers = ['Authorization' => "Bearer {$token}"];
+        $state = ['selectedChatModel' => 'gpt-5.4-mini'];
+
+        $this->postJson('/api/session/state', ['appState' => $state], $headers)->assertOk();
+
+        $userId = User::query()->firstOrFail()->id;
+        DB::table('users')->where('id', $userId)->update(['updated_at' => '2000-01-01 00:00:00']);
+
+        $this->postJson('/api/session/state', ['appState' => $state], $headers)->assertOk();
+
+        $this->assertSame(
+            '2000-01-01 00:00:00',
+            (string) DB::table('users')->where('id', $userId)->value('updated_at'),
+        );
     }
 }

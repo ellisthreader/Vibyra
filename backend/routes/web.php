@@ -1,12 +1,59 @@
 <?php
 
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\ReleaseDownloadController;
+use App\Http\Controllers\ReleaseUpdateController;
 use App\Http\Controllers\VibyraAppController;
 use App\Http\Controllers\VibyraDesktopController;
+use App\Http\Controllers\WebsiteAuthController;
+use App\Http\Controllers\WebsiteBillingController;
+use App\Http\Controllers\WebsiteProviderAuthController;
+use App\Http\Middleware\PublicCommunityCache;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', fn () => view('marketing'));
+Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
+Route::view('/legal/terms', 'legal.terms')->name('legal.terms');
+Route::view('/login', 'portal')->name('login');
+Route::view('/signup', 'portal');
+Route::view('/billing', 'portal');
+Route::view('/billing/success', 'portal');
+Route::view('/billing/cancel', 'portal');
+Route::view('/downloads', 'portal');
+Route::view('/account/downloads', 'portal');
+Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
+Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
+    ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
+
+// The installed desktop app polls this every 20 minutes; 204 is the usual answer.
+Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUpdateController::class, 'check'])
+    ->whereIn('target', ['linux', 'windows', 'darwin'])
+    ->whereIn('arch', ['x86_64', 'aarch64', 'i686', 'armv7'])
+    ->whereIn('bundleType', ['appimage', 'deb', 'rpm', 'nsis', 'msi', 'app', 'unknown'])
+    ->where('current', '[0-9A-Za-z.+-]+')
+    ->middleware('throttle:60,1');
+
+Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:5,1');
+Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:10,1');
+Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
+Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
+Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:12,1');
+Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:120,1');
+
+Route::middleware('auth')->group(function (): void {
+    Route::view('/account', 'portal');
+    Route::post('/web-api/billing/checkout', [WebsiteBillingController::class, 'checkout']);
+    Route::post('/web-api/billing/portal', [WebsiteBillingController::class, 'portal']);
+});
+
 if (config('desktop.legacy_routes_enabled')) {
-    Route::get('/', [VibyraDesktopController::class, 'app']);
     Route::get('/desktop', [VibyraDesktopController::class, 'app']);
     Route::get('/desktop/state', [VibyraDesktopController::class, 'state']);
     Route::post('/desktop/approve', [VibyraDesktopController::class, 'approve']);
@@ -57,6 +104,8 @@ Route::get('/api/auth/email/verify/{id}/{hash}', [VibyraAppController::class, 'v
     ->middleware('throttle:12,1')
     ->name('verification.verify');
 Route::post('/api/account/profile', [VibyraAppController::class, 'updateAccountProfile']);
+Route::post('/api/account/phone/start', [VibyraAppController::class, 'startPhoneVerification'])->middleware('throttle:3,10');
+Route::post('/api/account/phone/check', [VibyraAppController::class, 'checkPhoneVerification'])->middleware('throttle:10,10');
 Route::post('/api/account/session/device', [VibyraAppController::class, 'updateAccountSessionDevice']);
 Route::get('/api/account/sessions', [VibyraAppController::class, 'accountSessions']);
 Route::delete('/api/account/devices/{deviceId}', [VibyraAppController::class, 'revokeAccountDevice']);
@@ -88,10 +137,20 @@ Route::post('/api/chat/learning/feedback', [VibyraAppController::class, 'chatLea
 Route::post('/api/level/activity', [VibyraAppController::class, 'levelActivity']);
 Route::get('/api/referrals/me', [VibyraAppController::class, 'referralSummary']);
 Route::get('/api/skills', [VibyraAppController::class, 'skills']);
-Route::get('/api/community/projects', [VibyraAppController::class, 'communityProjects']);
+Route::get('/api/community/projects', [VibyraAppController::class, 'communityProjects'])
+    ->withoutMiddleware([
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        PreventRequestForgery::class,
+    ])
+    ->middleware(PublicCommunityCache::class);
 Route::get('/api/community/projects/{slug}/demo/{path?}', [VibyraAppController::class, 'communityProjectHostedDemo'])->where('path', '.*');
 Route::get('/api/community/projects/{slug}/preview', [VibyraAppController::class, 'communityProjectPreview']);
 Route::post('/api/community/projects/{slug}/comments', [VibyraAppController::class, 'commentOnCommunityProject']);
+Route::post('/api/community/projects/{slug}/reports', [VibyraAppController::class, 'reportCommunityProject'])
+    ->middleware('throttle:10,1');
 Route::post('/api/community/projects/{slug}/reaction', [VibyraAppController::class, 'reactToCommunityProject']);
 Route::delete('/api/community/projects/{slug}/reaction', [VibyraAppController::class, 'removeCommunityProjectReaction']);
 Route::post('/api/community/assets/generate', [VibyraAppController::class, 'generateCommunityAsset']);

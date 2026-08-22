@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Services\Concerns\AgentExecution;
 use App\Services\Concerns\AgentLocking;
 use App\Services\Concerns\CommandRunner;
+use App\Services\Concerns\DesktopHomeDirectory;
 use App\Services\Concerns\FileDiscovery;
 use App\Services\Concerns\GeneratedFileHandling;
 use App\Services\Concerns\OpenAiStreaming;
@@ -20,6 +21,7 @@ class VibyraDesktopState
     use AgentExecution;
     use AgentLocking;
     use CommandRunner;
+    use DesktopHomeDirectory;
     use FileDiscovery;
     use GeneratedFileHandling;
     use OpenAiStreaming;

@@ -1,0 +1,26 @@
+:root {
+    color-scheme: dark;
+    --portal-canvas: #0E0F12;
+    --portal-rail: #13151A;
+    --portal-surface: #181A20;
+    --portal-elevated: #20232A;
+    --portal-border: #2B2F38;
+    --portal-text: #F5F7FA;
+    --portal-muted: #A6ADBA;
+    --portal-accent: #5B7CFA;
+    --portal-action: #4667E8;
+    --portal-action-hover: #3D5ACF;
+    --portal-success: #37C78A;
+    --portal-warn: #E3A951;
+    --portal-error: #F06472;
+    --portal-font: Inter, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--portal-canvas); }
+body { margin: 0; background: var(--portal-canvas); color: var(--portal-text); font-family: var(--portal-font); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; }
+a { color: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--portal-accent); outline-offset: 3px; }
+::selection { background: rgba(91, 124, 250, .28); }

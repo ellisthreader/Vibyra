@@ -49,12 +49,14 @@ class SessionAuthenticator
             ]);
         }
 
-        $session->forceFill([
-            'ip_address' => $metadata['ip_address'] ?? $session->ip_address,
-            'user_agent' => $metadata['user_agent'] ?? $session->user_agent,
-            'last_used_at' => $now,
-            'idle_expires_at' => $this->idleDeadline($now),
-        ])->save();
+        if ($this->shouldRecordActivity($session, $metadata, $now)) {
+            $session->forceFill([
+                'ip_address' => $metadata['ip_address'] ?? $session->ip_address,
+                'user_agent' => $metadata['user_agent'] ?? $session->user_agent,
+                'last_used_at' => $now,
+                'idle_expires_at' => $this->idleDeadline($now),
+            ])->save();
+        }
 
         return [
             'session' => $session,
@@ -97,6 +99,20 @@ class SessionAuthenticator
         $mode = (string) config('session_security.lifecycle_mode', 'enforce');
 
         return in_array($mode, ['off', 'observe', 'enforce'], true) ? $mode : 'enforce';
+    }
+
+    private function shouldRecordActivity(VibyraSession $session, array $metadata, CarbonInterface $now): bool
+    {
+        if (($metadata['ip_address'] ?? $session->ip_address) !== $session->ip_address
+            || ($metadata['user_agent'] ?? $session->user_agent) !== $session->user_agent) {
+            return true;
+        }
+
+        $interval = max(0, (int) config('session_security.touch_interval_seconds', 300));
+
+        return ! $session->last_used_at
+            || $interval === 0
+            || $session->last_used_at->lessThanOrEqualTo($now->copy()->subSeconds($interval));
     }
 
     private function idleDeadline(CarbonInterface $from): CarbonInterface

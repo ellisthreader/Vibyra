@@ -165,7 +165,7 @@ class VibyraDesktopProviderDeletionTest extends TestCase
 
     private function signedToken(array $claims): array
     {
-        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $key = openssl_pkey_new(self::openSslOptions(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]));
         $details = openssl_pkey_get_details($key);
         $jwk = [
             'kty' => 'RSA',

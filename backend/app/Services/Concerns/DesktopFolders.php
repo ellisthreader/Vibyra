@@ -8,7 +8,7 @@ trait DesktopFolders
 {
     private function discoverDesktopFolders(): array
     {
-        $home = rtrim((string) getenv('HOME'), '/');
+        $home = $this->desktopHomeDirectory();
         if (! $home) {
             return [];
         }
@@ -57,6 +57,7 @@ trait DesktopFolders
     {
         $entries = collect(File::files($path))->map(fn ($file) => $file->getFilename())->all();
         $directories = collect(File::directories($path))->map(fn ($dir) => basename($dir))->all();
+
         return $this->detectStack([...$entries, ...$directories]);
     }
 
@@ -93,6 +94,7 @@ trait DesktopFolders
         }
 
         usort($scored, fn ($a, $b) => $b['score'] <=> $a['score']);
+
         return array_slice(array_map(fn ($entry) => $entry['folder'], $scored), 0, $limit);
     }
 
@@ -106,7 +108,7 @@ trait DesktopFolders
         if ($decoded === false) {
             return null;
         }
-        $home = rtrim((string) getenv('HOME'), '/');
+        $home = $this->desktopHomeDirectory();
         if (! $home) {
             return null;
         }
@@ -115,9 +117,12 @@ trait DesktopFolders
             return null;
         }
         $homeReal = realpath($home) ?: $home;
-        if (! str_starts_with($real.'/', $homeReal.'/')) {
+        if (! $this->isWithinDesktopHome($real, $homeReal)) {
             return null;
         }
-        return $this->projectFromPath($real, null, 'desktop');
+        $project = $this->projectFromPath($real, null, 'desktop');
+        $project['id'] = $projectId;
+
+        return $project;
     }
 }

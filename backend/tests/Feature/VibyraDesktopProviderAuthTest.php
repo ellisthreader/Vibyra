@@ -146,11 +146,11 @@ class VibyraDesktopProviderAuthTest extends TestCase
 
     public function test_apple_exchange_generates_an_es256_client_secret_from_key_settings(): void
     {
-        $privateKey = openssl_pkey_new([
+        $privateKey = openssl_pkey_new(self::openSslOptions([
             'curve_name' => 'prime256v1',
             'private_key_type' => OPENSSL_KEYTYPE_EC,
-        ]);
-        openssl_pkey_export($privateKey, $privateKeyPem);
+        ]));
+        openssl_pkey_export($privateKey, $privateKeyPem, null, self::openSslOptions());
         config([
             'services.apple_desktop_oauth.client_id' => 'apple.desktop.service',
             'services.apple_desktop_oauth.client_secret' => '',
@@ -209,7 +209,7 @@ class VibyraDesktopProviderAuthTest extends TestCase
 
     private function signedToken(array $claims): array
     {
-        $privateKey = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $privateKey = openssl_pkey_new(self::openSslOptions(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]));
         $details = openssl_pkey_get_details($privateKey);
         $jwk = [
             'kty' => 'RSA',

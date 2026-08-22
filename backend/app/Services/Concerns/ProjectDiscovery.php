@@ -16,7 +16,7 @@ trait ProjectDiscovery
     private function discoverProjectsWithoutState(): array
     {
         $root = dirname(base_path());
-        $home = rtrim((string) getenv('HOME'), '/');
+        $home = $this->desktopHomeDirectory();
         $roots = array_filter([
             $root,
             $home.'/Desktop',
@@ -133,11 +133,12 @@ trait ProjectDiscovery
         if (! $real || ! is_dir($real)) {
             return null;
         }
-        $home = rtrim((string) getenv('HOME'), '/');
+        $home = $this->desktopHomeDirectory();
         $homeReal = $home ? (realpath($home) ?: $home) : '';
-        if (! $homeReal || ! str_starts_with($real.'/', $homeReal.'/')) {
+        if (! $homeReal || ! $this->isWithinDesktopHome($real, $homeReal)) {
             return null;
         }
+
         return $this->projectFromPath($real, null, 'desktop');
     }
 }

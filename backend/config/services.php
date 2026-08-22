@@ -58,6 +58,12 @@ return [
         'portal_return_url' => env('STRIPE_PORTAL_RETURN_URL', 'https://vibyra.app/account'),
     ],
 
+    'twilio_verify' => [
+        'service_sid' => env('TWILIO_VERIFY_SERVICE_SID'),
+        'api_key' => env('TWILIO_API_KEY'),
+        'api_secret' => env('TWILIO_API_SECRET'),
+    ],
+
     'apple_iap' => [
         'shared_secret' => env('APPLE_IAP_SHARED_SECRET'),
         'verify_url' => env('APPLE_IAP_VERIFY_URL', 'https://buy.itunes.apple.com/verifyReceipt'),

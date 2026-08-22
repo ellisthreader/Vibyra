@@ -143,8 +143,8 @@ class IapReceiptVerifierTest extends TestCase
     private function configureGoogleIap(): void
     {
         Cache::flush();
-        $key = openssl_pkey_new(['private_key_bits' => 1024]);
-        openssl_pkey_export($key, $privateKey);
+        $key = openssl_pkey_new(TestCase::openSslOptions(['private_key_bits' => 1024]));
+        openssl_pkey_export($key, $privateKey, null, TestCase::openSslOptions());
         config([
             'services.google_iap.package_name' => 'app.vibyra',
             'services.google_iap.api_url' => 'https://play.test',

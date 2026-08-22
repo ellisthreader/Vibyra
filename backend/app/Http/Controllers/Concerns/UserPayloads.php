@@ -135,6 +135,9 @@ trait UserPayloads
             'email' => $user->email,
             'provider' => $user->provider ?: 'email',
             'emailVerified' => $user->hasVerifiedEmail(),
+            'phoneNumber' => $user->phone_number,
+            'phoneVerified' => $user->phone_verified_at !== null,
+            'pendingPhoneNumber' => $user->pending_phone_number,
             'plan' => $plan,
             'planBillingCycle' => $cycle,
             'planRenewsAt' => optional($user->plan_renews_at)->toIso8601String(),
@@ -178,9 +181,23 @@ trait UserPayloads
             return [];
         }
 
-        return array_values(array_slice(array_filter($value, function (mixed $item): bool {
+        $allowed = array_flip([
+            'url',
+            'pairCode',
+            'machineName',
+            'connectionUrls',
+            'status',
+            'lastSeenAt',
+            'lastConnectedAt',
+        ]);
+        $desktops = array_filter($value, function (mixed $item): bool {
             return is_array($item) && ! empty($item['url']) && ! empty($item['pairCode']);
-        }), 0, 8));
+        });
+
+        return array_values(array_map(
+            fn (array $desktop): array => array_intersect_key($desktop, $allowed),
+            array_slice($desktops, 0, 8)
+        ));
     }
 
     private function normalizeEmail(mixed $value): ?string

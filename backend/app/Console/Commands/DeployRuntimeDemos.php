@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Contracts\RuntimeDeploymentProvider;
+use App\Jobs\DeployRuntimeDemoJob;
 use App\Models\PublishedProject;
 use App\Models\PublishedProjectDeployment;
-use App\Services\Deployments\RailwayRuntimeDeploymentService;
 use Illuminate\Console\Command;
 
 class DeployRuntimeDemos extends Command
@@ -13,7 +14,7 @@ class DeployRuntimeDemos extends Command
 
     protected $description = 'Deploy queued Vibyra runtime demo bundles to Railway.';
 
-    public function handle(RailwayRuntimeDeploymentService $railway): int
+    public function handle(RuntimeDeploymentProvider $provider): int
     {
         $limit = max(1, min(5, (int) $this->option('limit')));
         $deployments = PublishedProjectDeployment::query()
@@ -33,8 +34,14 @@ class DeployRuntimeDemos extends Command
         }
 
         foreach ($deployments as $deployment) {
+            if (config('runtime_deployments.queue_enabled')) {
+                DeployRuntimeDemoJob::dispatch($deployment->id);
+                $this->info("Queued runtime demo {$deployment->id} for a deployment worker.");
+
+                continue;
+            }
             $this->info("Deploying runtime demo {$deployment->id}...");
-            $result = $railway->deploy($deployment);
+            $result = $provider->deploy($deployment);
             $this->line("Runtime demo {$deployment->id}: {$result->status}".($result->public_url ? " {$result->public_url}" : ''));
         }
 
