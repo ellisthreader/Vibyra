@@ -17,12 +17,12 @@ jobs:
             label: Windows
             command: npm run app:build:windows
             source: src-tauri/target/release/bundle/nsis/*-setup.exe
-            output: Vibyra-Desktop-0.1.0-beta.1-x64-setup.exe
+            suffix: x64-setup.exe
           - os: ubuntu-22.04
             label: Linux
             command: npm run app:build:linux
             source: src-tauri/target/release/bundle/appimage/*.AppImage
-            output: Vibyra-Desktop-0.1.0-beta.1-x86_64.AppImage
+            suffix: x86_64.AppImage
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -47,25 +47,50 @@ jobs:
           librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev wget xvfb
       - name: Install locked frontend dependencies
         run: npm ci
+      - name: Install root dependencies for shared tooling config
+        # The dead-code gate loads the repository-root tsconfig, which extends
+        # `expo/tsconfig.base`. This job installs only `desktop-tauri`, so
+        # without the root packages the very first gate crashes on a config
+        # file the desktop app never actually uses.
+        working-directory: .
+        run: npm ci --ignore-scripts
       - name: Confirm pinned Rust toolchain
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
+      - name: Read the version being released
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
+
       - name: Build native package
         run: ${{ matrix.command }}
-      - name: Stage versioned beta artifact
+        env:
+          # Without these the bundler silently skips the .sig files and the
+          # release cannot be offered as an in-app update.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Stage versioned artifact, checksum and update signature
         shell: bash
         run: |
           mkdir -p release
+          output="${{ steps.version.outputs.output }}"
           matches=( ${{ matrix.source }} )
           test "${#matches[@]}" = 1
-          cp "${matches[0]}" "release/${{ matrix.output }}"
-          sha256sum "release/${{ matrix.output }}" > "release/${{ matrix.output }}.sha256"
+          cp "${matches[0]}" "release/$output"
+          sha256sum "release/$output" > "release/$output.sha256"
+          # The updater refuses an unsigned package, so a missing .sig here is
+          # a failed release, not a warning.
+          test -f "${matches[0]}.sig"
+          cp "${matches[0]}.sig" "release/$output.sig"
       - name: Smoke-test Linux AppImage launch
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          artifact="release/${{ matrix.output }}"
+          artifact="release/${{ steps.version.outputs.output }}"
           chmod +x "$artifact"
           APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "$artifact" &
           pid=$!
@@ -77,7 +102,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $installer = Join-Path $PWD "release/${{ matrix.output }}"
+          $installer = Join-Path $PWD "release/${{ steps.version.outputs.output }}"
           $install = Start-Process $installer -ArgumentList '/S' -PassThru -Wait
           if ($install.ExitCode -ne 0) { throw "Installer exited with $($install.ExitCode)" }
           $app = Get-ChildItem $env:LOCALAPPDATA -Recurse -Filter 'vibyra-desktop.exe' |
@@ -87,12 +112,31 @@ jobs:
           Start-Sleep -Seconds 12
           if ($process.HasExited) { throw "Vibyra exited with $($process.ExitCode)" }
           Stop-Process -Id $process.Id -Force
+      - name: Summarise the values needed to publish this release
+        shell: bash
+        run: |
+          output="${{ steps.version.outputs.output }}"
+          {
+            echo "### ${{ matrix.label }} — Vibyra ${{ steps.version.outputs.version }}"
+            echo
+            echo "Set these on the backend, then upload \`$output\` to the release volume:"
+            echo
+            echo '```'
+            echo "VERSION=${{ steps.version.outputs.version }}"
+            echo "FILENAME=$output"
+            echo "SIZE=$(wc -c < "release/$output")"
+            echo "SHA256=$(cut -d' ' -f1 < "release/$output.sha256")"
+            echo "SIGNATURE=$(cat "release/$output.sig")"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload package and checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: vibyra-rust-beta-${{ matrix.label }}-${{ github.sha }}
           path: |
-            desktop-tauri/release/${{ matrix.output }}
-            desktop-tauri/release/${{ matrix.output }}.sha256
+            desktop-tauri/release/${{ steps.version.outputs.output }}
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
+            desktop-tauri/release/${{ steps.version.outputs.output }}.sig
           if-no-files-found: error
           retention-days: 30
