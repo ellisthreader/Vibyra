@@ -1,0 +1,44 @@
+/* Reporting, continued: disclosures, attachments, footer and the sent state.
+   Split from report.css only to stay under the 200-line file limit. */
+
+.report__more {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 11px;
+}
+
+.report__more[open] {
+  padding-bottom: 12px;
+}
+
+.report__more > summary,
+.report__context > summary {
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.report__more > summary::-webkit-details-marker,
+.report__context > summary::-webkit-details-marker {
+  display: none;
+}
+
+.report__more > summary::before,
+.report__context > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 13px;
+  color: var(--dim);
+  transition: transform 140ms var(--e-standard);
+}
+
+.report__more[open] > summary::before,
+.report__context[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.report__more .report__field + .report__field {
+  margin-top: 11px;
+}

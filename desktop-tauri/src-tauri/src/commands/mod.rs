@@ -1,14 +1,21 @@
 pub mod account;
+pub mod agent_conversations;
+#[cfg(test)]
+mod agent_conversations_tests;
 pub mod agents;
 pub mod ai;
 pub mod ai_memory;
 pub mod ai_service;
+pub mod clipboard;
 pub mod fs;
 pub mod memory;
 pub mod memory_browser;
+pub mod perf;
 pub mod preview;
 pub mod provider_accounts;
+pub mod registry;
 pub mod render;
+pub mod report;
 pub mod screenshot;
 #[cfg(target_os = "linux")]
 mod screenshot_capture;
@@ -19,6 +26,7 @@ mod screenshot_capture;
 #[path = "screenshot_capture_unsupported.rs"]
 mod screenshot_capture;
 mod screenshot_png;
+pub mod screenshot_reveal;
 #[cfg(test)]
 mod screenshot_tests;
 #[cfg(target_os = "linux")]
@@ -26,6 +34,7 @@ mod screenshot_x11;
 pub mod session;
 pub mod settings;
 pub mod terminal;
+mod terminal_args;
 mod terminal_launch;
 #[cfg(test)]
 mod terminal_launch_tests;

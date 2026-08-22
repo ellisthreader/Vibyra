@@ -8,9 +8,11 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/base.part-02.css";
 import "./styles/base.part-03.css";
+import "./styles/controls.css";
 import "./styles/chrome.css";
 import "./styles/chrome.part-02.css";
 import "./styles/chrome-account.css";
+import "./styles/notifications-bell.css";
 import "./styles/auth.css";
 import "./styles/auth-backdrop.css";
 import "./styles/auth.part-02.css";
@@ -33,6 +35,11 @@ import "./styles/workspace.css";
 import "./styles/workspace.part-02.css";
 import "./styles/workspace.part-03.css";
 import "./styles/workspace.part-04.css";
+import "./styles/update-banner.css";
+import "./styles/notifications-toast.css";
+import "./styles/notifications-toast.part-02.css";
+import "./styles/notifications-center.css";
+import "./styles/notifications-center.part-02.css";
 import "./styles/project-modes.css";
 import "./styles/preview.css";
 import "./styles/preview-picker.css";
@@ -58,7 +65,14 @@ import "./styles/terminal-suspended.css";
 import "./styles/settings-ai.css";
 import "./styles/settings-ai.part-02.css";
 import "./styles/settings-integrations.css";
+import "./styles/settings-account-connect.css";
+import "./styles/settings-integration-accounts.css";
 import "./styles/settings-terminal-integrations.css";
+import "./styles/settings-notifications.css";
+import "./styles/report.css";
+import "./styles/report.part-02.css";
+import "./styles/report.part-03.css";
+import "./styles/report.part-04.css";
 import "./styles/screenshot-editor.css";
 import "./styles/screenshot-controls.css";
 import "./styles/screenshot-tray.css";
@@ -67,10 +81,12 @@ import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
 
 import App from "./App";
+import { installAppDropGuard } from "./lib/terminalDrop";
 import { initRendererPolicy } from "./lib/xtermRenderer";
 
 // Resolves long before the first terminal can mount (post sign-in).
 void initRendererPolicy();
+installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);
 

@@ -1,0 +1,102 @@
+//! The single list of commands the webview is allowed to call.
+//!
+//! Kept out of `lib.rs` because that file is the application wiring —
+//! plugins, managed state, window events — which is stable, while this list
+//! grows with every feature. Together they crossed the 200-line limit; apart,
+//! each file reads as one thing.
+
+use tauri::ipc::Invoke;
+use tauri::Wry;
+
+use super::{
+    account, agent_conversations, agents, ai, ai_memory, ai_service, clipboard, fs, memory,
+    memory_browser, perf, preview, provider_accounts, render, report, screenshot,
+    screenshot_reveal, session, settings, terminal, voice,
+};
+
+pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
+    tauri::generate_handler![
+        account::account_snapshot,
+        account::account_restore,
+        account::account_login_email,
+        account::account_signup_email,
+        account::account_oauth_start,
+        account::account_oauth_cancel,
+        account::account_profile_refresh,
+        account::account_profile_update,
+        account::account_password_forgot,
+        account::account_resend_verification,
+        account::account_logout,
+        account::account_open_legal,
+        terminal::create_terminal,
+        terminal::safe_workspace_preflight,
+        terminal::create_ssh_terminal,
+        terminal::write_terminal,
+        terminal::resize_terminal,
+        terminal::set_terminal_visibility,
+        terminal::terminal_snapshot,
+        terminal::kill_terminal,
+        terminal::remove_terminal,
+        terminal::list_terminals,
+        agents::list_agents,
+        agent_conversations::agent_conversation_resumable,
+        render::renderer_policy,
+        provider_accounts::provider_accounts,
+        provider_accounts::connect_provider_account,
+        provider_accounts::add_provider_account,
+        provider_accounts::remove_provider_account,
+        provider_accounts::install_provider_cli,
+        provider_accounts::submit_provider_account_input,
+        provider_accounts::cancel_provider_account,
+        provider_accounts::open_provider_sign_in_page,
+        provider_accounts::disconnect_provider_account,
+        fs::fs_list_dir,
+        fs::fs_read_preview,
+        fs::fs_home_dir,
+        fs::watch_workspace,
+        fs::unwatch_workspace,
+        preview::preview_inspect,
+        preview::preview_start,
+        preview::preview_status,
+        preview::preview_stop,
+        preview::preview_stop_project,
+        session::save_terminal_session,
+        session::load_terminal_session,
+        session::clear_terminal_session,
+        session::confirm_close,
+        session::arm_close_guard,
+        session::ack_close_request,
+        settings::get_settings,
+        settings::save_settings,
+        screenshot::capture_screen,
+        screenshot::finish_screenshot_edit,
+        screenshot::copy_screenshot,
+        screenshot::copy_saved_screenshot,
+        screenshot::save_screenshot,
+        screenshot_reveal::reveal_screenshot,
+        clipboard::read_clipboard_paste,
+        voice::voice_status,
+        voice::voice_start,
+        voice::voice_stop,
+        ai::ai_chat,
+        ai_memory::load_memory,
+        ai_memory::save_memory,
+        ai_service::ai_service_status,
+        ai_service::set_openai_key,
+        ai_service::clear_openai_key,
+        ai_service::open_openai_key_page,
+        memory::memory_sources,
+        memory::connect_obsidian_vault,
+        memory::disconnect_obsidian_vault,
+        memory::pick_memory_files,
+        memory::search_memory_sources,
+        memory_browser::memory_note_index,
+        memory_browser::read_memory_note,
+        // Spelled out rather than imported above: the crate root of the app has its
+        // own `perf` and `report` modules (the sampler and the delivery
+        // half), so the bare names would resolve to the wrong ones.
+        perf::perf_sample,
+        report::submit_report,
+        report::report_channel_ready,
+    ]
+}

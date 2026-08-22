@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { finishScreenshotEdit } from "../../ipc/tools";
 import type { ScreenshotTool } from "../../lib/screenshotDrawing";
+import { useReportStore } from "../../state/reportStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import {
@@ -32,13 +33,24 @@ function editorHint(tool: ScreenshotTool, state: ScreenshotCanvasState): string 
 
 export function ScreenshotEditor() {
   const draft = useScreenshotStore((state) => state.draft);
-  const close = useScreenshotStore((state) => state.closeEditor);
+  const closeEditor = useScreenshotStore((state) => state.closeEditor);
+  const close = useCallback(() => {
+    useReportStore.getState().cancelScreenshot();
+    closeEditor();
+  }, [closeEditor]);
   const addShot = useScreenshotStore((state) => state.addShot);
+  // Set while a report is waiting for this shot: the editor then offers to
+  // hand it back rather than only to save or copy it.
+  const forReport = useReportStore((state) => state.capturing);
   const canvas = useRef<ScreenshotCanvasHandle>(null);
   const [tool, setTool] = useState<ScreenshotTool>("crop");
   const [color, setColor] = useState(SCREENSHOT_COLORS[0]);
   const [canvasState, setCanvasState] = useState(EMPTY_STATE);
   const actions = useScreenshotActions(canvas, addShot, close);
+  const attachToReport = useCallback(async () => {
+    const dataUrl = await canvas.current?.dataUrl();
+    if (dataUrl) useReportStore.getState().applyScreenshot(dataUrl);
+  }, []);
   const onCanvasError = useCallback((error: unknown) => {
     close();
     useWorkspaceStore.getState().setError(`Screenshot could not be prepared: ${String(error)}`);
@@ -117,7 +129,11 @@ export function ScreenshotEditor() {
         </div>}
         <div className="screenshot-editor__actions">
           <button className="btn" disabled={!canvasState.ready || Boolean(actions.busy)} onClick={() => void actions.copy()}>{actions.busy === "copy" ? "Copying…" : selection ? "Copy selection" : "Copy"}</button>
-          <button className="btn btn--primary" disabled={!canvasState.ready || Boolean(actions.busy)} onClick={() => void actions.save()}>{actions.busy === "save" ? "Saving…" : selection ? "Save selection" : "Save"}</button>
+          {forReport ? (
+            <button className="btn btn--primary" disabled={!canvasState.ready} onClick={() => void attachToReport()}>Attach to report</button>
+          ) : (
+            <button className="btn btn--primary" disabled={!canvasState.ready || Boolean(actions.busy)} onClick={() => void actions.save()}>{actions.busy === "save" ? "Saving…" : selection ? "Save selection" : "Save"}</button>
+          )}
         </div>
       </footer>
     </section>

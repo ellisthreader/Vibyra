@@ -1,0 +1,171 @@
+/* Reporting, continued: attachments, the context list, footer and sent state. */
+
+/* --- attachments --- */
+
+.report__attach {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.report__attach-btn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 1px 10px;
+  padding: 12px 13px;
+  text-align: left;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+
+.report__attach-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.report__attach-btn svg {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--accent);
+}
+
+.report__attach-btn b {
+  font-size: 12.5px;
+}
+
+.report__attach-btn span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.report__shot {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--workspace);
+}
+
+.report__shot img {
+  display: block;
+  width: 100%;
+  max-height: 210px;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.report__shot figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.report__shot-tag {
+  flex: 1;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.report__mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.report__mini:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.report__mini--danger:hover {
+  color: var(--danger);
+  border-color: rgba(240, 100, 114, 0.4);
+}
+
+.report__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.report__toggle input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.report__toggle svg {
+  margin-top: 1px;
+  color: var(--dim);
+  flex: none;
+}
+
+.report__toggle b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.report__toggle em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.report__context {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 11px;
+}
+
+.report__context[open] {
+  padding-bottom: 6px;
+}
+
+.report__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 16px;
+  margin: 0 0 6px;
+}
+
+.report__facts div {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  font-size: 11.5px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 5px;
+}
+
+.report__facts dt {
+  width: 62px;
+  flex: none;
+  color: var(--dim);
+}
+
+.report__facts dd {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

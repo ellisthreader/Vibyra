@@ -2,6 +2,8 @@ import { useProjectStore } from "../../state/projectStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
+import { useNotificationStore } from "../../state/notificationStore";
+import { useReportStore } from "../../state/reportStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 
 export interface CommandPaletteEntry {
@@ -34,6 +36,15 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       run: () => void projectStore.activate(pane.projectId).then(() => setFocus(pane.id)),
     });
   }
+
+  const unread = useNotificationStore.getState().unread;
+  entries.push({
+    id: "notifications",
+    group: "Vibyra",
+    label: unread > 0 ? `Notifications (${unread} unread)` : "Notifications",
+    attention: unread > 0,
+    run: () => useNotificationStore.getState().setCentreOpen(true),
+  });
 
   projects.forEach((project, index) => {
     entries.push({
@@ -101,6 +112,13 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
       group: "Actions",
       label: "Open settings",
       run: workspace.openSettings,
+    },
+    {
+      id: "act-report",
+      group: "Actions",
+      label: "Report a problem…",
+      hint: "bug, idea or question",
+      run: () => void useReportStore.getState().begin(),
     },
   );
 

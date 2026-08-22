@@ -4,7 +4,7 @@
 // "models:released" event the frontend uses to refresh its catalog.
 // Cost when nothing changed: one HTTP fetch + a set diff off the UI thread.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -12,9 +12,10 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 use vibyra_core::settings::Settings;
 
+use crate::model_watch_discord::{configured_webhook, notify_models};
+
 const MODELS_URL: &str = "https://openrouter.ai/api/v1/models?supported_parameters=tools";
 const POLL_INTERVAL: Duration = Duration::from_secs(5 * 60);
-const DISCORD_MAX_LISTED: usize = 10;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ReleasedModel {
@@ -35,8 +36,10 @@ pub(crate) struct RawModel {
 }
 
 #[derive(Default, Serialize, Deserialize)]
-struct WatchStore {
-    known: BTreeSet<String>,
+pub(crate) struct WatchStore {
+    pub(crate) known: BTreeSet<String>,
+    #[serde(default)]
+    pub(crate) pending: BTreeMap<String, String>,
 }
 
 /// ":batch"/":free" variants never count as separate releases.
@@ -70,57 +73,68 @@ fn store_path() -> PathBuf {
         .unwrap_or_else(|| std::env::temp_dir().join("vibyra-model-watch.json"))
 }
 
-fn load_known(path: &PathBuf) -> Option<BTreeSet<String>> {
-    let raw = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str::<WatchStore>(&raw)
-        .ok()
-        .map(|s| s.known)
-}
-
-fn save_known(path: &PathBuf, known: &BTreeSet<String>) {
-    if let Some(dir) = path.parent() {
-        let _ = std::fs::create_dir_all(dir);
-    }
-    if let Ok(json) = serde_json::to_string(&WatchStore {
-        known: known.clone(),
-    }) {
-        let _ = std::fs::write(path, json);
-    }
-}
-
-async fn notify_discord(webhook: &str, fresh: &[ReleasedModel]) {
-    let title = if fresh.len() == 1 {
-        "New AI model released".to_string()
-    } else {
-        format!("{} new AI models released", fresh.len())
+fn load_store(path: &PathBuf) -> Result<Option<WatchStore>, String> {
+    let raw = match std::fs::read_to_string(path) {
+        Ok(raw) => raw,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err("could not read the model watcher state".into()),
     };
-    let mut lines: Vec<String> = fresh
+    serde_json::from_str(&raw)
+        .map(Some)
+        .map_err(|_| "model watcher state is invalid; refusing to reseed it".into())
+}
+
+fn save_store(path: &PathBuf, store: &WatchStore) -> Result<(), String> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)
+            .map_err(|_| "could not create the model watcher state directory".to_string())?;
+    }
+    let json = serde_json::to_string(store)
+        .map_err(|_| "could not encode the model watcher state".to_string())?;
+    std::fs::write(path, json).map_err(|_| "could not save the model watcher state".to_string())
+}
+
+pub(crate) fn apply_fresh(store: &mut WatchStore, fresh: &[ReleasedModel]) {
+    for model in fresh {
+        store.known.insert(model.id.clone());
+        store.pending.insert(model.id.clone(), model.name.clone());
+    }
+}
+
+pub(crate) fn pending_models(store: &WatchStore) -> Vec<ReleasedModel> {
+    store
+        .pending
         .iter()
-        .take(DISCORD_MAX_LISTED)
-        .map(|m| format!("**{}** — `{}`", m.name, m.id))
-        .collect();
-    if fresh.len() > DISCORD_MAX_LISTED {
-        lines.push(format!("…and {} more", fresh.len() - DISCORD_MAX_LISTED));
+        .map(|(id, name)| ReleasedModel {
+            id: id.clone(),
+            name: name.clone(),
+        })
+        .collect()
+}
+
+async fn deliver_pending(store: &mut WatchStore, path: &PathBuf) -> Result<(), String> {
+    let pending = pending_models(store);
+    if pending.is_empty() {
+        return Ok(());
     }
-    let body = serde_json::json!({
-        "embeds": [{
-            "title": title,
-            "description": lines.join("\n"),
-            "color": 0x5b7cfa
-        }]
-    });
-    let result = reqwest::Client::new()
-        .post(webhook)
-        .json(&body)
-        .timeout(Duration::from_secs(15))
-        .send()
-        .await;
-    if let Err(err) = result {
-        eprintln!("model watch: discord notify failed: {err}");
-    }
+    let Some(webhook) = configured_webhook()? else {
+        return Ok(());
+    };
+    notify_models(&webhook, &pending).await?;
+    store.pending.clear();
+    save_store(path, store)
 }
 
 async fn tick(app: &AppHandle, store: &PathBuf) -> Result<(), String> {
+    let mut stored = load_store(store)?;
+    let mut delivery_failed = false;
+    if let Some(state) = stored.as_mut() {
+        if let Err(error) = deliver_pending(state, store).await {
+            delivery_failed = true;
+            eprintln!("model watch: pending Discord delivery retained: {error}");
+        }
+    }
+
     let payload: ModelsPayload = reqwest::Client::new()
         .get(MODELS_URL)
         .header("Accept", "application/json")
@@ -132,33 +146,35 @@ async fn tick(app: &AppHandle, store: &PathBuf) -> Result<(), String> {
         .await
         .map_err(|e| format!("bad payload: {e}"))?;
 
-    let Some(known) = load_known(store) else {
+    let Some(mut state) = stored else {
         // First run: seed the roster silently so 300 models aren't "news".
-        let seeded: BTreeSet<String> = payload
+        let known = payload
             .data
             .iter()
             .map(|m| base_id(&m.id).to_string())
             .collect();
-        save_known(store, &seeded);
-        return Ok(());
+        return save_store(
+            store,
+            &WatchStore {
+                known,
+                pending: BTreeMap::new(),
+            },
+        );
     };
 
-    let fresh = diff_new(&known, &payload.data);
+    let fresh = diff_new(&state.known, &payload.data);
     if fresh.is_empty() {
         return Ok(());
     }
 
-    let mut updated = known;
-    updated.extend(fresh.iter().map(|m| m.id.clone()));
-    save_known(store, &updated);
-
-    let webhook = std::env::var("VIBYRA_DISCORD_WEBHOOK_URL")
-        .ok()
-        .filter(|url| !url.trim().is_empty());
-    if let Some(url) = webhook {
-        notify_discord(url.trim(), &fresh).await;
-    }
+    apply_fresh(&mut state, &fresh);
+    save_store(store, &state)?;
     let _ = app.emit("models:released", &fresh);
+    if !delivery_failed {
+        if let Err(error) = deliver_pending(&mut state, store).await {
+            eprintln!("model watch: Discord delivery queued for retry: {error}");
+        }
+    }
     Ok(())
 }
 

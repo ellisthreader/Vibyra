@@ -2,6 +2,9 @@ import logoUrl from "../../assets/vibyra-cobalt.png";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
+import { NotificationBellHost } from "../notifications/NotificationBellHost";
+import { LifebuoyIcon } from "../report/ReportIcons";
+import { useReportStore } from "../../state/reportStore";
 import { AccountMenu } from "./AccountMenu";
 import { ResizeHandles, WindowControls } from "./WindowChrome";
 
@@ -13,6 +16,7 @@ export function TitleBar() {
   const activeId = useProjectStore((s) => s.activeId);
   const goHome = useProjectStore((s) => s.goHome);
   const projects = useProjects();
+  const beginReport = useReportStore((s) => s.begin);
 
   const live = panes.filter((p) => p.status === "running" && p.visibility !== "hibernated").length;
   const waiting = panes.filter((p) => activity[p.id] === "attention");
@@ -71,6 +75,15 @@ export function TitleBar() {
               {live} live
             </span>
           )}
+          <button
+            className="icon-btn chrome__report"
+            title="Report a problem"
+            aria-label="Report a problem"
+            onClick={() => void beginReport()}
+          >
+            <LifebuoyIcon size={15} />
+          </button>
+          <NotificationBellHost />
           <AccountMenu />
           <WindowControls />
         </div>

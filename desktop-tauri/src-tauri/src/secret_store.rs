@@ -3,6 +3,8 @@ use keyring::{Entry, Error};
 const SERVICE: &str = "com.vibyra.desktop";
 const OPENAI_ACCOUNT: &str = "openai-api-key";
 const VIBYRA_SESSION_ACCOUNT: &str = "vibyra-account-session";
+const DISCORD_MODEL_WEBHOOK_ACCOUNT: &str = "discord-model-release-webhook";
+const DISCORD_REPORT_WEBHOOK_ACCOUNT: &str = "discord-report-webhook";
 
 pub struct SecretStore;
 
@@ -21,6 +23,24 @@ impl SecretStore {
 
     pub fn write_account_session(&self, token: Option<&str>) -> Result<(), String> {
         write_secret(VIBYRA_SESSION_ACCOUNT, token)
+    }
+
+    pub fn read_discord_model_webhook(&self) -> Result<Option<String>, String> {
+        read_secret(DISCORD_MODEL_WEBHOOK_ACCOUNT)
+    }
+
+    pub fn write_discord_model_webhook(&self, webhook: Option<&str>) -> Result<(), String> {
+        write_secret(DISCORD_MODEL_WEBHOOK_ACCOUNT, webhook)
+    }
+
+    /// Kept apart from the model-alert webhook on purpose: they point at
+    /// different channels, and revoking one must never silence the other.
+    pub fn read_report_webhook(&self) -> Result<Option<String>, String> {
+        read_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT)
+    }
+
+    pub fn write_report_webhook(&self, webhook: Option<&str>) -> Result<(), String> {
+        write_secret(DISCORD_REPORT_WEBHOOK_ACCOUNT, webhook)
     }
 }
 
