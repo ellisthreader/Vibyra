@@ -81,17 +81,18 @@ export function useScreenshotLayers(options: Options) {
     const resized = !sameScreenshotView(view, viewRef.current);
     viewRef.current = view;
     if (!view.width) return;
-    for (const canvas of [image, overlay]) {
-      if (resized) {
+    if (resized) {
+      for (const canvas of [image, overlay]) {
         canvas.width = view.width;
         canvas.height = view.height;
         canvas.style.width = `${view.cssWidth}px`;
         canvas.style.height = `${view.cssHeight}px`;
       }
     }
-    const context = image.getContext("2d")!;
+    // Opaque: the capture covers the layer completely, and telling the
+    // compositor so lets it skip blending the largest surface on the page.
+    const context = image.getContext("2d", { alpha: false })!;
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, view.width, view.height);
     context.drawImage(source, 0, 0, view.width, view.height);
     boundsRef.current = overlay.getBoundingClientRect();
     paintOverlay();

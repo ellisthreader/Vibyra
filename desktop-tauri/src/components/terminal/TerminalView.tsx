@@ -4,7 +4,8 @@ import {
   applyTerminalBottomAnchor,
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
-import { fitTerminal, mountTerminal } from "../../lib/terminalRegistry";
+import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
+import { fitTerminal, getTerminal, mountTerminal } from "../../lib/terminalRegistry";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 
@@ -61,6 +62,23 @@ export function TerminalView({ id, bottomAnchored }: { id: number; bottomAnchore
       ref={hostRef}
       className="term-view"
       onMouseDown={() => useTerminalStore.getState().markFocused(id)}
+      onDragOver={(event) => {
+        // A drag only exposes its types, never its data — accepting here is
+        // what lets the drop through at all.
+        if (!dropCarriesText(event.dataTransfer.types)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+      }}
+      onDrop={(event) => {
+        const text = terminalDropText(event.dataTransfer);
+        if (!text) return;
+        event.preventDefault();
+        const entry = getTerminal(id);
+        if (!entry) return;
+        entry.term.paste(text);
+        entry.term.focus();
+        useTerminalStore.getState().markFocused(id);
+      }}
     />
   );
 }

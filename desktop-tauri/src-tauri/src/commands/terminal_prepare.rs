@@ -6,7 +6,8 @@ use vibyra_core::workspace::prepare_safe_workspace;
 use vibyra_core::{CoreError, CoreResult};
 
 use super::terminal_launch::{
-    canonical_directory, configure_launch, isolate_account_environment, CreateTerminalRequest,
+    canonical_directory, configure_launch, isolate_account_environment, select_launch_account,
+    CreateTerminalRequest,
 };
 use crate::provider_auth_process::credential_env_names;
 
@@ -49,6 +50,9 @@ pub fn prepare(
         agent.spec.custom,
         credential_env_names(),
     );
+    if !agent.spec.custom {
+        select_launch_account(&mut spec, &agent.spec.id, request.account_id.as_deref());
+    }
     configure_launch(&mut spec, &request)?;
     Ok(PreparedSession {
         agent_id: agent.spec.id.clone(),

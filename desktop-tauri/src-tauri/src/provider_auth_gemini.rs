@@ -3,11 +3,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
 
-use crate::provider_auth_files::gemini_home;
+use crate::provider_auth_gemini_account::email;
+use crate::provider_auth_home::AccountHome;
+use crate::provider_auth_identity::safe_label;
 use crate::provider_auth_state::AuthSnapshot;
 
-pub fn probe() -> AuthSnapshot {
-    probe_home(&gemini_home())
+pub fn probe(home: &AccountHome) -> AuthSnapshot {
+    probe_home(&home.credentials_dir())
 }
 
 fn probe_home(home: &Path) -> AuthSnapshot {
@@ -35,8 +37,13 @@ fn probe_home(home: &Path) -> AuthSnapshot {
     }
     AuthSnapshot {
         connected: true,
-        account_label: "Google account".into(),
-        detail: "Gemini".into(),
+        account_label: safe_label(&email(home), "Google account"),
+        // Not a plan, because Gemini has no plan to read: its Code Assist tier
+        // comes back from a `loadCodeAssist` call at runtime and is never
+        // written to disk. What *is* known locally is how this account signs
+        // in — a personal Google sign-in rather than an API key or Vertex —
+        // which is the distinction that actually changes what the CLI can do.
+        detail: "Gemini · personal Google sign-in".into(),
         ..AuthSnapshot::default()
     }
 }
@@ -129,6 +136,22 @@ mod tests {
         let snapshot = probe_home(home.path());
         assert!(!snapshot.connected);
         assert!(snapshot.probe_failed);
+    }
+
+    /// The reported bug on this row: a connected account that only ever said
+    /// "Google account". The CLI caches which one it is, so the row names it.
+    #[test]
+    fn names_the_signed_in_google_account() {
+        let home = home(
+            json!({ "security": { "auth": { "selectedType": "oauth-personal" } } }),
+            json!({ "refresh_token": "1//fixture-refresh-token-with-safe-length" }),
+        );
+        fs::write(
+            home.path().join("google_accounts.json"),
+            json!({ "active": "person@example.test", "old": [] }).to_string(),
+        )
+        .unwrap();
+        assert_eq!(probe_home(home.path()).account_label, "person@example.test");
     }
 
     #[test]

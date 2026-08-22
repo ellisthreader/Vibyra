@@ -12,6 +12,7 @@ import {
   accountRestore,
   accountSignupEmail,
 } from "../ipc/account";
+import { clearTerminalSession } from "../ipc/session";
 import type { AccountSnapshot } from "../types";
 
 const INITIAL: AccountSnapshot = {
@@ -127,6 +128,10 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     } catch (error) {
       console.error("Vibyra logout cleanup issue:", error);
     }
+    // The saved session holds the signed-out user's terminals — and, with
+    // scrollback saving on, their output. Discard it so it cannot be restored
+    // into the next account to sign in on this machine.
+    await clearTerminalSession().catch(() => {});
     // Reload so no account-scoped renderer state survives into the next
     // session; the credential is already cleared, so the app returns to
     // the authentication screen.

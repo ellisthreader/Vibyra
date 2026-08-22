@@ -38,6 +38,12 @@ export interface CreateTerminalOptions {
   reasoningEffort?: string | null;
   workspaceMode?: "safe" | "shared";
   safeSnapshotFingerprint?: string;
+  /** Continue the agent's previous conversation instead of starting one. */
+  resume?: boolean;
+  /** The conversation this pane owns: pinned at launch, named on resume. */
+  agentSessionId?: string | null;
+  /** Which provider account to run as; null means the first one. */
+  accountId?: string | null;
 }
 
 export async function createTerminal(options: CreateTerminalOptions): Promise<SessionInfo> {
@@ -54,10 +60,28 @@ export async function createTerminal(options: CreateTerminalOptions): Promise<Se
       reasoningEffort: options.reasoningEffort ?? null,
       workspaceMode: options.workspaceMode ?? "shared",
       safeSnapshotFingerprint: options.safeSnapshotFingerprint ?? null,
+      accountId: options.accountId ?? null,
+      resume: options.resume ?? false,
+      agentSessionId: options.agentSessionId ?? null,
     },
   });
   bind(info.id);
   return info;
+}
+
+/**
+ * Whether the agent can still find the conversation `sessionId` names.
+ *
+ * Asked before a resume, because `claude --resume <id>` exits 1 on an id it
+ * cannot find rather than opening a fresh chat — which is exactly what a pane
+ * that was opened, left empty and closed has. See `relaunchContinuity`.
+ */
+export function agentConversationResumable(
+  agentId: string,
+  sessionId: string,
+  accountId: string | null,
+): Promise<boolean> {
+  return invoke<boolean>("agent_conversation_resumable", { agentId, sessionId, accountId });
 }
 
 export async function createSshTerminal(

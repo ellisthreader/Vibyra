@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 import { aiServiceStatus, clearOpenAiKey, setOpenAiKey } from "../ipc/ai";
+import { spendNotification, spendTier, type SpendTier } from "../lib/aiSpendNotifications";
+import { useNotificationStore } from "./notificationStore";
 import type { AiServiceStatus } from "../types";
 import { useSettingsStore } from "./settingsStore";
 
@@ -19,6 +21,27 @@ async function syncSettings(): Promise<void> {
   await useSettingsStore.getState().load();
 }
 
+// Fires once per tier per period. `AiUsage` already carries the day and month
+// keys, so they double as the reset signal — no timer, nothing persisted.
+let lastTier: SpendTier = "none";
+let lastPeriod = "";
+
+function warnOnSpend(usage: AiServiceStatus["usage"], limits: AiServiceStatus["limits"]): void {
+  const period = `${usage.day}/${usage.month}`;
+  if (period !== lastPeriod) {
+    lastPeriod = period;
+    lastTier = "none";
+  }
+  const tier = spendTier(usage, limits);
+  if (tier === lastTier || tier === "none") {
+    lastTier = tier;
+    return;
+  }
+  lastTier = tier;
+  const notice = spendNotification(tier);
+  if (notice) useNotificationStore.getState().push(notice);
+}
+
 export const useAiServiceStore = create<AiServiceStore>((set) => ({
   status: null,
   busy: false,
@@ -27,7 +50,9 @@ export const useAiServiceStore = create<AiServiceStore>((set) => ({
 
   refresh: async () => {
     try {
-      set({ status: await aiServiceStatus() });
+      const status = await aiServiceStatus();
+      set({ status });
+      warnOnSpend(status.usage, status.limits);
     } catch (error) {
       set({ error: String(error) });
     }

@@ -1,70 +1,80 @@
-import { useState } from "react";
-
-import { accentFor } from "../../lib/providerAccents";
-import { providerIconKey, providerStatusLabel } from "../../lib/providerAccountPolicy";
-import type { ProviderAccount } from "../../types";
-import { ProviderMark } from "../common/AgentMark";
+import { accountWorking, providerStatusLabel } from "../../lib/providerAccountPolicy";
+import type { ProviderAccount, ProviderIntegration } from "../../providerTypes";
+import { ProviderAccountActions } from "./ProviderAccountActions";
+import { ProviderAccountReply } from "./ProviderAccountReply";
 
 interface Props {
+  provider: ProviderIntegration;
   account: ProviderAccount;
+  index: number;
   busy: boolean;
   onCancel: () => void;
   onConnect: () => void;
   onDisconnect: () => void;
+  onRemove: () => void;
   onOpenSignInPage: () => void;
+  onSubmit: (value: string) => void;
+}
+
+function tone(account: ProviderAccount): string {
+  if (account.status === "connected") return "success";
+  return accountWorking(account) ? "working" : "neutral";
+}
+
+/**
+ * The name for one account.
+ *
+ * A connected account is named by the provider — its own email is the only
+ * label that means anything. One that is signed out has no name to give, so it
+ * is numbered by where it sits, which is also how the user just added it.
+ */
+function title(account: ProviderAccount, index: number): string {
+  if (account.status === "connected" && account.accountLabel) return account.accountLabel;
+  return index === 0 ? "First account" : `Account ${index + 1}`;
 }
 
 export function ProviderAccountRow({
+  provider,
   account,
+  index,
   busy,
   onCancel,
   onConnect,
   onDisconnect,
+  onRemove,
   onOpenSignInPage,
+  onSubmit,
 }: Props) {
-  const [confirming, setConfirming] = useState(false);
-  const connected = account.status === "connected";
-  const connecting = account.status === "connecting";
-  const providerKey = providerIconKey(account);
-  const accent = accentFor(account.id);
-
   return (
-    <article className="integration-card integration-account">
-      <div className="integration-card__head">
-        <ProviderMark provider={providerKey} label={account.company} accent={accent} size={40} />
-        <div className="integration-card__identity">
-          <div className="integration-card__title">
-            <h3>{account.company}</h3>
-            <span className={`integration-status integration-status--${connected ? "success" : connecting ? "working" : "neutral"}`}>
-              <i aria-hidden="true" />{providerStatusLabel(account)}
-            </span>
-          </div>
-          <p>{connected ? account.accountLabel : account.detail}</p>
-          {connected && account.detail !== account.accountLabel ? <small>{account.detail}</small> : null}
-        </div>
-        <div className="integration-account__actions">
-          {confirming ? (
-            <span className="integration-account__confirm">
-              <button type="button" className="btn btn--secondary" onClick={() => setConfirming(false)}>Keep</button>
-              <button type="button" className="btn btn--danger" disabled={busy} onClick={onDisconnect}>Disconnect</button>
-            </span>
-          ) : connected ? (
-            <button type="button" className="btn btn--secondary" disabled={busy} onClick={() => setConfirming(true)}>Disconnect</button>
-          ) : connecting ? (
-            <button type="button" className="btn btn--secondary" disabled={busy} onClick={onCancel}>Cancel</button>
-          ) : (
-            <button type="button" className="btn btn--primary" disabled={busy || !account.installed} onClick={onConnect}>
-              {busy ? "Opening…" : "Connect account"}
-            </button>
-          )}
-        </div>
+    <div className="integration-account-row">
+      <div className="integration-account-row__identity">
+        <span className="integration-account-row__name">{title(account, index)}</span>
+        <span className={`integration-status integration-status--${tone(account)}`}>
+          <i aria-hidden="true" />{providerStatusLabel(account)}
+        </span>
+        <p>{account.detail}</p>
       </div>
-      {connecting ? (
-        <div className="integration-card__auth-note">
-          <p className="integration-card__note">Complete the secure sign-in in the browser window opened by {account.product}.</p>
-          {account.signInPageAvailable ? <button type="button" className="integration-auth-link" onClick={onOpenSignInPage}>Open sign-in page</button> : null}
-        </div>
-      ) : null}
-    </article>
+
+      <ProviderAccountActions
+        provider={provider}
+        account={account}
+        busy={busy}
+        onCancel={onCancel}
+        onConnect={onConnect}
+        onDisconnect={onDisconnect}
+        onRemove={onRemove}
+      />
+
+      <div className="integration-account__foot">
+        {account.prompt ? (
+          <ProviderAccountReply prompt={account.prompt} busy={busy} onSubmit={onSubmit} />
+        ) : null}
+        {account.status === "connecting" && account.signInPageAvailable ? (
+          <button type="button" className="integration-auth-link" onClick={onOpenSignInPage}>
+            Open sign-in page
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }

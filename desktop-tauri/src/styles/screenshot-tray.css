@@ -13,6 +13,21 @@
   box-shadow: var(--e-menu);
 }
 
+/* The whole thumbnail is the "show in folder" button; the drag lives on the
+   image inside it. */
+.shot-card__open {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.shot-card__open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .shot-card__thumb {
   display: block;
   width: 220px;

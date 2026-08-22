@@ -2,6 +2,7 @@ import type { Terminal } from "@xterm/xterm";
 import { WebglAddon } from "@xterm/addon-webgl";
 
 import { rendererPolicy } from "../ipc/render";
+import { useNotificationStore } from "../state/notificationStore";
 import { webglIsTrustworthy } from "./rendererPolicy";
 
 // Under WebKit's shared-memory compositing path (DMA-BUF renderer disabled),
@@ -26,6 +27,24 @@ export function initRendererPolicy(): Promise<void> {
   return policyReady;
 }
 
+let contextLossReported = false;
+
+/** Losing the GPU context silently drops every terminal to the DOM renderer,
+ * which is correct but noticeably slower. Say so once — a user watching their
+ * terminals get sluggish deserves to know why, and that a restart fixes it. */
+function reportContextLoss(): void {
+  if (contextLossReported) return;
+  contextLossReported = true;
+  useNotificationStore.getState().push({
+    category: "performance",
+    severity: "warning",
+    title: "Terminals switched to the slower renderer",
+    body: "The graphics context was lost, so Vibyra fell back to CPU drawing. Restarting Vibyra restores the accelerated path.",
+    dedupeKey: "perf:context-loss",
+    osEligible: false,
+  });
+}
+
 /** WebGL on the accelerated path (context loss disposes it → DOM fallback);
  * the always-correct DOM renderer everywhere else. */
 export function attachRenderer(term: Terminal): void {
@@ -33,7 +52,10 @@ export function attachRenderer(term: Terminal): void {
   try {
     const webgl = new WebglAddon();
     term.loadAddon(webgl);
-    webgl.onContextLoss(() => webgl.dispose());
+    webgl.onContextLoss(() => {
+      webgl.dispose();
+      reportContextLoss();
+    });
   } catch {
     // WebGL unavailable — xterm falls back to the DOM renderer.
   }

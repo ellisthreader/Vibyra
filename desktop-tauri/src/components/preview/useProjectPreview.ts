@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { notifyPreviewStatus } from "../../lib/notificationTriggers";
 
 import {
   getPreviewStatus,
@@ -45,6 +46,7 @@ export function useProjectPreview(projectId: string, root: string) {
   const detectedTargets = useRef(new Set<string>());
 
   const rememberStatus = useCallback((next: PreviewStatus) => {
+    notifyPreviewStatus(next);
     setStatuses((current) => ({ ...current, [next.targetId]: next }));
   }, []);
 

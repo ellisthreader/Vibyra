@@ -19,12 +19,21 @@ rust-version = "1.88"
 name = "vibyra_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[dev-dependencies]
+# The exact verifier `tauri-plugin-updater` uses, so this crate proves the
+# shipped public key against a real signature rather than a lookalike.
+minisign-verify = "0.2"
+base64 = "0.22"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 serde = { workspace = true }
 serde_json = { workspace = true }
 parking_lot = { workspace = true }
@@ -37,6 +46,10 @@ reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"
 getrandom = "0.3"
 tokio = { version = "1", default-features = false, features = ["time"] }
 arboard = { version = "3.6", features = ["wayland-data-control"] }
+# Only the `system` feature: disks, networks, components and users are all
+# extra probes we never read. Pinned to 0.38, which declares MSRV 1.88 to match
+# this crate; 0.39 requires 1.95 and would raise ours.
+sysinfo = { version = "0.38", default-features = false, features = ["system"] }
 
 [profile.release]
 codegen-units = 1

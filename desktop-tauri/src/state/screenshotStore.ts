@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
-import { captureScreen, copySavedScreenshot, finishScreenshotEdit } from "../ipc/tools";
+import {
+  captureScreen,
+  copySavedScreenshot,
+  finishScreenshotEdit,
+  revealScreenshot,
+} from "../ipc/tools";
 import type { CapturedScreenshot, Screenshot } from "../types";
 import { useWorkspaceStore } from "./workspaceStore";
 
@@ -12,6 +17,7 @@ interface ScreenshotStore {
   closeEditor: () => void;
   addShot: (shot: Screenshot) => void;
   copySaved: (shot: Screenshot) => Promise<void>;
+  reveal: (shot: Screenshot) => Promise<void>;
   dismiss: (path: string) => void;
 }
 
@@ -65,6 +71,14 @@ export const useScreenshotStore = create<ScreenshotStore>((set, get) => ({
       copiedTimer = setTimeout(() => set({ copiedPath: null }), 1800);
     } catch (error) {
       useWorkspaceStore.getState().setError(`Copy failed: ${String(error)}`);
+    }
+  },
+
+  reveal: async (shot) => {
+    try {
+      await revealScreenshot(shot.path);
+    } catch (error) {
+      useWorkspaceStore.getState().setError(`Could not open the folder: ${String(error)}`);
     }
   },
 

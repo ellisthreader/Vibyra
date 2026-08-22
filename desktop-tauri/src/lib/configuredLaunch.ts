@@ -33,6 +33,7 @@ interface PreparedLaunch {
   reasoningEffort: LaunchEffort | null;
   title?: string;
   safeMode: boolean;
+  accountId: string | null;
 }
 
 const FULL_ACCESS_AGENTS = new Set(["claude", "codex", "gemini"]);
@@ -57,6 +58,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
       permissionMode: launch.permissionMode,
       reasoningEffort: launch.reasoningEffort,
       title: launch.title,
+      accountId: launch.accountId,
       workspaceMode: launch.safeMode ? "safe" : "shared",
       safeSnapshotFingerprint: fingerprint,
     });
@@ -110,6 +112,9 @@ export async function launchConfigured(
       : options.reasoningEffort ?? preferences.effort,
     title: options.title,
     safeMode: preferences.safeMode,
+    // Which login this terminal runs as. Only account-backed CLIs have one;
+    // a shell or an OpenRouter runner has no provider folder to point at.
+    accountId: preferences.accountByProvider[agent.id] ?? null,
   };
   if (!launch.safeMode) {
     await runLaunch(launch);

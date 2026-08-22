@@ -1,26 +1,4 @@
-interface IconProps {
-  size?: number;
-}
-
-function icon(path: React.ReactNode) {
-  return function Icon({ size = 16 }: IconProps) {
-    return (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        {path}
-      </svg>
-    );
-  };
-}
+import { icon } from "./iconFactory";
 
 export const FolderIcon = icon(
   <path d="M4 5a2 2 0 0 1 2-2h3l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z" />,

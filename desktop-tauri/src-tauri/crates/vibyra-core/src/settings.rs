@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::agents::AgentSpec;
 use crate::error::{CoreError, CoreResult};
 use crate::fsx::{harden, write_private_atomic};
+use crate::notifications::NotificationPrefs;
 
 /// A folder the user works in; the unit terminals/memory/chat hang off.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -53,6 +54,9 @@ pub struct Settings {
     /// Whether a restored terminal keeps its previous on-screen output. Off
     /// means only the layout is saved — no terminal text ever reaches disk.
     pub persist_terminal_scrollback: bool,
+    /// Toasts, sounds and system notifications. One nested object rather than a
+    /// dozen flat fields; see `notifications.rs` for why it needs no migration.
+    pub notifications: NotificationPrefs,
     pub custom_agents: Vec<AgentSpec>,
     pub projects: Vec<ProjectSpec>,
     pub active_project_id: Option<String>,
@@ -79,6 +83,7 @@ impl Default for Settings {
             ai_daily_spend_cap_usd: 2.0,
             ai_monthly_spend_cap_usd: 20.0,
             persist_terminal_scrollback: true,
+            notifications: NotificationPrefs::default(),
             custom_agents: Vec::new(),
             projects: Vec::new(),
             active_project_id: None,
@@ -102,6 +107,9 @@ impl Settings {
             return Self::default();
         };
         let mut settings = serde_json::from_str::<Self>(&raw).unwrap_or_default();
+        // Repair rather than reject: a bad volume or an unknown cue in a
+        // hand-edited file must not cost the user every other setting.
+        settings.notifications.sanitize();
         settings.legacy_openai_api_key = serde_json::from_str::<serde_json::Value>(&raw)
             .ok()
             .and_then(|value| {

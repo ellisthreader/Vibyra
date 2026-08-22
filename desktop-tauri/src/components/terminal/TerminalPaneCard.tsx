@@ -2,6 +2,7 @@ import { useAgentStore } from "../../state/agentStore";
 import { paneLabel, useTerminalStore, type PaneState } from "../../state/terminalStore";
 import { AgentMark } from "../common/AgentMark";
 import { CloseIcon, ExpandIcon, MoonIcon, RestartIcon, SunIcon } from "../common/Icons";
+import { PaneAccountControl } from "./PaneAccountControl";
 import { SuspendedPaneView } from "./SuspendedPaneView";
 import { TerminalView } from "./TerminalView";
 
@@ -57,6 +58,7 @@ export function TerminalPaneCard({ pane, hidden }: { pane: PaneState; hidden: bo
             {exited ? "exited" : hibernated ? "sleeping" : suspended ? "saved" : "needs input"}
           </span>
         )}
+        {!exited && !suspended ? <PaneAccountControl pane={pane} /> : null}
         <div className="pane__actions">
           {suspended ? (
             <button

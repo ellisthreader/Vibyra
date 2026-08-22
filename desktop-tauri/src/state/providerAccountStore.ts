@@ -1,61 +1,93 @@
 import { create } from "zustand";
 
 import {
+  addProviderAccount,
   cancelProviderAccount,
   connectProviderAccount,
   disconnectProviderAccount,
+  installProviderCli,
   listProviderAccounts,
   openProviderSignInPage,
+  removeProviderAccount,
+  submitProviderAccountInput,
 } from "../ipc/providerAccounts";
-import type { ProviderAccount } from "../types";
+import type { ProviderIntegration } from "../providerTypes";
+
+/**
+ * Which row is busy, as `provider:account`.
+ *
+ * A single provider id is no longer enough: signing one ChatGPT account in
+ * must not grey out the other one's buttons.
+ */
+export function busyKey(provider: string, account: string): string {
+  return `${provider}:${account}`;
+}
 
 interface ProviderAccountStore {
-  accounts: ProviderAccount[];
-  busyId: string | null;
+  providers: ProviderIntegration[];
+  busyKey: string | null;
   error: string;
   loaded: boolean;
   refresh: () => Promise<void>;
-  connect: (provider: string) => Promise<void>;
-  cancel: (provider: string) => Promise<void>;
-  disconnect: (provider: string) => Promise<void>;
-  openSignInPage: (provider: string) => Promise<void>;
+  connect: (provider: string, account: string) => Promise<void>;
+  addAccount: (provider: string) => Promise<void>;
+  removeAccount: (provider: string, account: string) => Promise<void>;
+  install: (provider: string) => Promise<void>;
+  /** Answers whatever the provider CLI is currently asking for. */
+  submit: (provider: string, account: string, value: string) => Promise<void>;
+  cancel: (provider: string, account: string) => Promise<void>;
+  disconnect: (provider: string, account: string) => Promise<void>;
+  openSignInPage: (provider: string, account: string) => Promise<void>;
 }
 
 async function runAction(
   set: (partial: Partial<ProviderAccountStore>) => void,
-  provider: string,
-  action: (provider: string) => Promise<ProviderAccount[]>,
+  key: string,
+  action: () => Promise<ProviderIntegration[]>,
 ) {
-  set({ busyId: provider, error: "" });
+  set({ busyKey: key, error: "" });
   try {
-    set({ accounts: await action(provider), loaded: true });
+    set({ providers: await action(), loaded: true });
   } catch (error) {
     set({ error: String(error) });
   } finally {
-    set({ busyId: null });
+    set({ busyKey: null });
   }
 }
 
 export const useProviderAccountStore = create<ProviderAccountStore>((set) => ({
-  accounts: [],
-  busyId: null,
+  providers: [],
+  busyKey: null,
   error: "",
   loaded: false,
 
   refresh: async () => {
     try {
-      set({ accounts: await listProviderAccounts(), error: "", loaded: true });
+      set({ providers: await listProviderAccounts(), error: "", loaded: true });
     } catch (error) {
       set({ error: String(error), loaded: true });
     }
   },
 
-  connect: (provider) => runAction(set, provider, connectProviderAccount),
-  cancel: (provider) => runAction(set, provider, cancelProviderAccount),
-  disconnect: (provider) => runAction(set, provider, disconnectProviderAccount),
-  openSignInPage: async (provider) => {
+  connect: (provider, account) =>
+    runAction(set, busyKey(provider, account), () => connectProviderAccount(provider, account)),
+  addAccount: (provider) =>
+    runAction(set, busyKey(provider, "new"), () => addProviderAccount(provider)),
+  removeAccount: (provider, account) =>
+    runAction(set, busyKey(provider, account), () => removeProviderAccount(provider, account)),
+  install: (provider) =>
+    runAction(set, busyKey(provider, "install"), () => installProviderCli(provider)),
+  submit: (provider, account, value) =>
+    runAction(set, busyKey(provider, account), () =>
+      submitProviderAccountInput(provider, account, value),
+    ),
+  cancel: (provider, account) =>
+    runAction(set, busyKey(provider, account), () => cancelProviderAccount(provider, account)),
+  disconnect: (provider, account) =>
+    runAction(set, busyKey(provider, account), () => disconnectProviderAccount(provider, account)),
+  openSignInPage: async (provider, account) => {
     try {
-      await openProviderSignInPage(provider);
+      await openProviderSignInPage(provider, account);
     } catch (error) {
       set({ error: String(error) });
     }

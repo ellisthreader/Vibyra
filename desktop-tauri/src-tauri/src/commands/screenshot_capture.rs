@@ -8,6 +8,7 @@
 
 use image::RgbaImage;
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
+use std::sync::atomic::{AtomicBool, Ordering};
 use x11rb::connection::Connection;
 use x11rb::protocol::randr::ConnectionExt as _;
 use x11rb::protocol::xproto::{
@@ -17,6 +18,10 @@ use x11rb::protocol::xproto::{
 use x11rb::wrapper::ConnectionExt as _;
 
 use super::screenshot_x11::with_session;
+
+/// Set while a capture took the window to zero opacity, so closing the editor
+/// only touches the property when there is something to undo.
+static HID_WINDOW: AtomicBool = AtomicBool::new(false);
 
 /// Two compositor frames at 60 Hz — long enough for the opacity change to land
 /// on screen, and only paid for when the user opts into hiding the window.
@@ -128,9 +133,13 @@ pub fn capture_screen_image(
     let mut restored = Ok(());
     let captured = if hide_window {
         set_x11_opacity(window_id, 0)?;
+        HID_WINDOW.store(true, Ordering::SeqCst);
         std::thread::sleep(std::time::Duration::from_millis(COMPOSITOR_SETTLE_MS));
         let captured = grab_pointer_monitor();
         restored = set_x11_opacity(window_id, u32::MAX);
+        if restored.is_ok() {
+            HID_WINDOW.store(false, Ordering::SeqCst);
+        }
         captured
     } else {
         grab_pointer_monitor()
@@ -142,6 +151,9 @@ pub fn capture_screen_image(
 }
 
 pub fn finish_capture_session(window: &tauri::Window) {
+    if !HID_WINDOW.swap(false, Ordering::SeqCst) {
+        return;
+    }
     if let Ok(window_id) = x11_window_id(window) {
         let _ = set_x11_opacity(window_id, u32::MAX);
     }

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import posterUrl from "../../assets/auth-space-loop-poster.webp";
-import videoUrl from "../../assets/auth-space-loop.mp4";
+import videoUrl from "../../assets/auth-space-loop.mp4?inline";
 
 function reducedMotionEnabled() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -14,24 +14,35 @@ export function AuthBackdrop() {
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const syncPlayback = () => {
-      const reduce = preference.matches;
-      const video = videoRef.current;
-      setReducedMotion(reduce);
-      if (!video) return;
-      if (reduce) {
-        video.pause();
-        video.currentTime = 0;
-        setReady(false);
-        return;
-      }
-      void video.play().catch(() => setReady(false));
+    const syncPreference = () => {
+      if (preference.matches) setReady(false);
+      setReducedMotion(preference.matches);
     };
+    syncPreference();
+    preference.addEventListener("change", syncPreference);
+    return () => preference.removeEventListener("change", syncPreference);
+  }, []);
 
-    syncPlayback();
-    preference.addEventListener("change", syncPlayback);
-    return () => preference.removeEventListener("change", syncPlayback);
+  const startPlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || reducedMotion) return;
+    video.defaultMuted = true;
+    video.muted = true;
+    void video.play().catch(() => setReady(false));
   }, [reducedMotion]);
+
+  useEffect(() => {
+    const resume = () => {
+      if (!document.hidden) startPlayback();
+    };
+    resume();
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [startPlayback]);
 
   return (
     <>
@@ -51,6 +62,7 @@ export function AuthBackdrop() {
           tabIndex={-1}
           disablePictureInPicture
           disableRemotePlayback
+          onCanPlay={startPlayback}
           onPlaying={() => setReady(true)}
           onError={() => setReady(false)}
         />

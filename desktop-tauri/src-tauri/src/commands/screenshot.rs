@@ -1,7 +1,5 @@
-use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use arboard::{Clipboard, ImageData};
 use base64::Engine;
 use image::DynamicImage;
 use serde::Serialize;
@@ -9,10 +7,10 @@ use tauri::State;
 
 use crate::state::AppState;
 
+use super::clipboard::copy_image;
 use super::screenshot_capture::{capture_screen_image, finish_capture_session};
 use super::screenshot_png::{decode_png, decode_png_bytes, png_bytes, PNG_PREFIX};
 
-static SCREENSHOT_CLIPBOARD: parking_lot::Mutex<Option<Clipboard>> = parking_lot::const_mutex(None);
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Screenshot {
@@ -28,7 +26,7 @@ fn default_dir() -> PathBuf {
         .join("Vibyra")
 }
 
-fn screenshot_dir(state: &AppState) -> PathBuf {
+pub(super) fn screenshot_dir(state: &AppState) -> PathBuf {
     state
         .settings
         .lock()
@@ -38,10 +36,10 @@ fn screenshot_dir(state: &AppState) -> PathBuf {
         .unwrap_or_else(default_dir)
 }
 
-fn timestamp_name() -> String {
+pub(super) fn timestamp_name(prefix: &str) -> String {
     let now = time::OffsetDateTime::now_utc();
     format!(
-        "vibyra-{:04}{:02}{:02}-{:02}{:02}{:02}-{:03}.png",
+        "{prefix}-{:04}{:02}{:02}-{:02}{:02}{:02}-{:03}.png",
         now.year(),
         u8::from(now.month()),
         now.day(),
@@ -52,22 +50,14 @@ fn timestamp_name() -> String {
     )
 }
 
-fn copy_image(image: DynamicImage) -> Result<(), String> {
-    let rgba = image.into_rgba8();
-    let data = ImageData {
-        width: rgba.width() as usize,
-        height: rgba.height() as usize,
-        bytes: Cow::Owned(rgba.into_raw()),
-    };
-    let mut clipboard = SCREENSHOT_CLIPBOARD.lock();
-    if clipboard.is_none() {
-        *clipboard = Some(Clipboard::new().map_err(|e| format!("Could not open clipboard: {e}"))?);
+/// Resolves a path the UI handed back, but only inside the screenshot folder.
+pub(super) fn saved_screenshot_path(dir: &Path, path: &str) -> Result<PathBuf, String> {
+    let root = std::fs::canonicalize(dir).map_err(|e| e.to_string())?;
+    let target = std::fs::canonicalize(path).map_err(|e| e.to_string())?;
+    if !target.starts_with(root) {
+        return Err("The screenshot is outside Vibyra's screenshot folder.".to_string());
     }
-    clipboard
-        .as_mut()
-        .expect("clipboard initialized")
-        .set_image(data)
-        .map_err(|e| format!("Could not copy screenshot: {e}"))
+    Ok(target)
 }
 
 fn saved_screenshot(path: &Path, image: &DynamicImage) -> Result<Screenshot, String> {
@@ -126,7 +116,7 @@ pub async fn save_screenshot(
     tauri::async_runtime::spawn_blocking(move || {
         let (bytes, image) = decode_png(&data_url)?;
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        let path = dir.join(timestamp_name());
+        let path = dir.join(timestamp_name("vibyra"));
         std::fs::write(&path, bytes).map_err(|e| e.to_string())?;
         saved_screenshot(&path, &image)
     })
@@ -138,11 +128,7 @@ pub async fn save_screenshot(
 pub async fn copy_saved_screenshot(state: State<'_, AppState>, path: String) -> Result<(), String> {
     let dir = screenshot_dir(&state);
     tauri::async_runtime::spawn_blocking(move || {
-        let root = std::fs::canonicalize(&dir).map_err(|e| e.to_string())?;
-        let target = std::fs::canonicalize(path).map_err(|e| e.to_string())?;
-        if !target.starts_with(root) {
-            return Err("The screenshot is outside Vibyra's screenshot folder.".to_string());
-        }
+        let target = saved_screenshot_path(&dir, &path)?;
         let bytes = std::fs::read(target).map_err(|e| e.to_string())?;
         let image = decode_png_bytes(&bytes)
             .map_err(|_| "The saved screenshot could not be decoded.".to_string())?;

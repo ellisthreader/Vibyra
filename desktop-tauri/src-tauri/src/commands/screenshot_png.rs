@@ -13,6 +13,19 @@ const MAX_IMAGE_DIMENSION: u32 = 16_384;
 const MAX_IMAGE_PIXELS: u64 = 50_000_000;
 const MAX_DECODE_ALLOC_BYTES: u64 = 256 * 1024 * 1024;
 
+/// The same ceilings `decode_png_bytes` enforces, for pixels that arrive as a
+/// raw buffer instead of an encoded PNG.
+pub(super) fn check_image_size(width: u32, height: u32) -> Result<(), String> {
+    let pixels = u64::from(width) * u64::from(height);
+    if width == 0 || height == 0 {
+        return Err("The image is empty.".to_string());
+    }
+    if width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION || pixels > MAX_IMAGE_PIXELS {
+        return Err("The image dimensions are too large.".to_string());
+    }
+    Ok(())
+}
+
 pub(super) fn png_bytes(image: &DynamicImage) -> Result<Vec<u8>, String> {
     let mut output = Cursor::new(Vec::new());
     image

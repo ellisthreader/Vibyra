@@ -33,6 +33,14 @@ pub struct AppState {
     /// `CloseRequested` veto would fire again on our own `window.close()` and
     /// the window could never actually shut.
     pub closing: AtomicBool,
+    /// Whether a UI able to answer the close veto is mounted. The sign-in
+    /// screen is not: vetoing there emitted an event nothing listened for and
+    /// the window simply refused to close.
+    pub close_guard_armed: AtomicBool,
+    /// Set when the UI acknowledges a close request. Until it does, a webview
+    /// that has crashed or is still loading looks exactly like one that is
+    /// asking the user to confirm — the watchdog uses this to tell them apart.
+    pub close_requested_ack: AtomicBool,
 }
 
 impl AppState {
@@ -65,6 +73,8 @@ impl AppState {
             watcher: Mutex::new(None),
             voice: Mutex::new(None),
             closing: AtomicBool::new(false),
+            close_guard_armed: AtomicBool::new(false),
+            close_requested_ack: AtomicBool::new(false),
         }
     }
 

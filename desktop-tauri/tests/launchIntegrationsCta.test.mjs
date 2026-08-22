@@ -9,7 +9,9 @@ function source(path) {
 test("empty terminal launch offers one direct AI-account recovery path", () => {
   const picker = source("../src/components/rail/LaunchModelPicker.tsx");
   const launcher = source("../src/components/rail/LaunchSettings.tsx");
-  const app = source("../src/components/layout/WorkspaceApp.tsx");
+  // The startup effect moved out of WorkspaceApp into this hook; the rule it
+  // encodes — account refresh is fire-and-forget, never awaited — is unchanged.
+  const startup = source("../src/lib/useWorkspaceRuntime.ts");
 
   assert.match(picker, /Connect your AI accounts/);
   assert.match(picker, /Open Settings → Integrations/);
@@ -17,8 +19,8 @@ test("empty terminal launch offers one direct AI-account recovery path", () => {
   assert.match(launcher, /openSettingsSection\("integrations"\)/);
   assert.match(launcher, /\{selected && \(/);
   assert.match(launcher, /!agentsLoaded \|\| !accountsLoaded/);
-  assert.match(app, /void refreshConnectedAccounts\(\)/);
-  assert.doesNotMatch(app, /await refreshConnectedAccounts\(\)/);
+  assert.match(startup, /void refreshConnectedAccounts\(\)/);
+  assert.doesNotMatch(startup, /await refreshConnectedAccounts\(\)/);
 });
 
 test("direct Settings navigation makes Integrations the active section", () => {

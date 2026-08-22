@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { fsReadPreview, onFsChanged } from "../ipc/fs";
+import { useNotificationStore } from "./notificationStore";
 import {
   clampCompanionWidth,
   restoreCompanionTab,
@@ -13,7 +14,26 @@ import type { FilePreview } from "../types";
 
 export type { CompanionTab } from "../lib/companionPreferences";
 export type ProjectMode = "terminals" | "preview";
-export type SettingsSectionId = "profile" | "general" | "ai" | "integrations" | "agents" | "shortcuts";
+export type SettingsSectionId =
+  | "profile"
+  | "general"
+  | "notifications"
+  | "ai"
+  | "integrations"
+  | "agents"
+  | "shortcuts";
+
+/** Routes a failure into the notification system as a sticky app error. */
+function reportProblem(message: string | null): void {
+  if (!message) return;
+  useNotificationStore.getState().push({
+    category: "system",
+    severity: "danger",
+    title: message,
+    dedupeKey: `system:${message}`,
+    osEligible: false,
+  });
+}
 
 interface WorkspaceStore {
   /** Root of the active project — set by projectStore.activate. */
@@ -29,7 +49,6 @@ interface WorkspaceStore {
   /** Bumped on every debounced fs change batch; tree nodes refetch on it. */
   fsVersion: number;
   preview: FilePreview | null;
-  error: string | null;
   init: () => Promise<void>;
   openSettings: () => void;
   openSettingsSection: (section: SettingsSectionId) => void;
@@ -59,7 +78,6 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   companionWidth: restoreCompanionWidth(),
   fsVersion: 0,
   preview: null,
-  error: null,
 
   init: async () => {
     // Agents write files in bursts; coalesce change notifications so the file
@@ -107,11 +125,14 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
     try {
       set({ preview: await fsReadPreview(path) });
     } catch (error) {
-      set({ error: String(error) });
+      reportProblem(String(error));
     }
   },
 
   closePreview: () => set({ preview: null }),
 
-  setError: (error) => set({ error }),
+  // Kept as a forwarder rather than removed: a dozen call sites across launch,
+  // shortcuts, screenshots and startup already speak this shape, and none of
+  // them need to know a notification system exists.
+  setError: (error) => reportProblem(error),
 }));

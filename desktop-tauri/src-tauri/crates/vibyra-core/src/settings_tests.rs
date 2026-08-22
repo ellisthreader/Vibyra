@@ -49,6 +49,22 @@ fn spend_caps_default_in_when_absent_from_an_older_settings_file() {
     assert_eq!(loaded.ai_monthly_spend_cap_usd, 20.0);
 }
 
+/// The no-migration claim: a settings.json written before notifications
+/// existed must load with the whole preference block populated, not with an
+/// empty one that would silence the feature on every upgraded install.
+#[test]
+fn notifications_default_in_for_a_pre_feature_settings_file() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("settings.json");
+    std::fs::write(&path, r#"{"theme":"light","fontSize":14}"#).unwrap();
+    let loaded = Settings::load_from(&path);
+    assert!(loaded.notifications.enabled);
+    assert!(loaded.notifications.sound_enabled);
+    assert_eq!(loaded.notifications.categories.len(), 8);
+    assert_eq!(loaded.notifications.categories["agentFailed"].cue, "fail");
+    assert!((0.0..=1.0).contains(&loaded.notifications.volume));
+}
+
 #[test]
 fn corrupt_file_falls_back_to_defaults() {
     let tmp = tempfile::tempdir().unwrap();

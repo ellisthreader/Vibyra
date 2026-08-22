@@ -30,7 +30,7 @@ pub async fn save_terminal_session(
 ) -> CoreResult<()> {
     // The user's setting is authoritative — a caller asking for snapshots
     // cannot override it.
-    let keep_output = include_snapshots && state.settings.lock().persist_terminal_scrollback;
+    let persist_output = state.settings.lock().persist_terminal_scrollback;
     let manager = Arc::clone(&state.manager);
     let path = session_path(&state);
     let saved_at_ms = session_store::now_ms();
@@ -43,9 +43,22 @@ pub async fn save_terminal_session(
                 // already-suspended pane (id 0) has no session, so it keeps
                 // the snapshot the UI carried over — otherwise its output
                 // would be lost on a second restart without a resume.
-                pane.snapshot = keep_output
-                    .then(|| manager.snapshot(pane.id).ok().or_else(|| pane.snapshot.take()))
-                    .flatten();
+                //
+                // A layout-only save must not *erase* what it did not come to
+                // collect. It rewrites the whole file, so dropping the caller's
+                // snapshot here would blank every restored pane the moment the
+                // workspace changed shape — and an unclean exit before the next
+                // full save would bring them back with nothing in them.
+                pane.snapshot = if !persist_output {
+                    None
+                } else if include_snapshots {
+                    manager
+                        .snapshot(pane.id)
+                        .ok()
+                        .or_else(|| pane.snapshot.take())
+                } else {
+                    pane.snapshot.take()
+                };
                 pane
             })
             .collect();
@@ -84,5 +97,25 @@ pub async fn confirm_close(
     if let Some(window) = tauri::Manager::get_webview_window(&app, "main") {
         window.close().map_err(|error| error.to_string())?;
     }
+    Ok(())
+}
+
+/// Arms the close veto. Called by the workspace when it mounts the handler
+/// that answers `vibyra://close-requested`, and disarmed when it unmounts.
+///
+/// Without this the veto was unconditional, so on the sign-in screen — where
+/// no workspace is mounted and nothing listens — the window could not be
+/// closed at all.
+#[tauri::command]
+pub async fn arm_close_guard(state: State<'_, AppState>, armed: bool) -> Result<(), String> {
+    state.close_guard_armed.store(armed, Ordering::SeqCst);
+    Ok(())
+}
+
+/// The UI confirming it received the close request and is now asking the user.
+/// Stops the watchdog, which exists only for a webview that never answers.
+#[tauri::command]
+pub async fn ack_close_request(state: State<'_, AppState>) -> Result<(), String> {
+    state.close_requested_ack.store(true, Ordering::SeqCst);
     Ok(())
 }

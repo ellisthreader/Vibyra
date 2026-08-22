@@ -1,11 +1,12 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::{Map, Value};
 
-pub fn prepare_gemini_oauth() -> Result<(), String> {
-    let home = gemini_home();
-    fs::create_dir_all(&home).map_err(|error| error.to_string())?;
+/// Takes the folder rather than finding it: which `.gemini` this is depends on
+/// which account is signing in.
+pub fn prepare_gemini_oauth(home: &Path) -> Result<(), String> {
+    fs::create_dir_all(home).map_err(|error| error.to_string())?;
     let path = home.join("settings.json");
     let mut value = read_json_or_object(&path)?;
     configure_oauth(&mut value)?;
@@ -27,18 +28,11 @@ fn configure_oauth(value: &mut Value) -> Result<(), String> {
     Ok(())
 }
 
-pub fn disconnect_gemini() -> Result<(), String> {
-    let home = gemini_home();
+pub fn disconnect_gemini(home: &Path) -> Result<(), String> {
     let path = home.join("settings.json");
     let settings_result = clear_oauth_settings(&path);
     remove_if_present(&home.join("oauth_creds.json"))?;
     settings_result
-}
-
-pub fn gemini_home() -> PathBuf {
-    dirs::home_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join(".gemini")
 }
 
 fn read_json_or_object(path: &Path) -> Result<Value, String> {

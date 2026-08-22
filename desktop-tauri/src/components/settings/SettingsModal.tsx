@@ -4,10 +4,12 @@ import type { ComponentType } from "react";
 import { useModalFocus } from "../../lib/useModalFocus";
 import { useSettingsStore } from "../../state/settingsStore";
 import { type SettingsSectionId, useWorkspaceStore } from "../../state/workspaceStore";
+import { BellIcon } from "../common/StatusIcons";
 import { BotIcon, CloseIcon, CommandIcon, GearIcon, LinkIcon, SparklesIcon, UserIcon } from "../common/Icons";
 import { SettingsAgentsPane } from "./SettingsAgentsPane";
 import { SettingsAiPane } from "./SettingsAiPane";
 import { SettingsGeneralPane } from "./SettingsGeneralPane";
+import { SettingsNotificationsPane } from "./SettingsNotificationsPane";
 import { SettingsIntegrationsPane } from "./SettingsIntegrationsPane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
@@ -24,6 +26,7 @@ interface Section {
 const SECTIONS: Section[] = [
   { id: "profile", label: "Profile", blurb: "Your Vibyra account and session", icon: UserIcon },
   { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
+  { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
   { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
   { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
   { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
@@ -45,6 +48,7 @@ export function SettingsModal() {
   const pane = {
     profile: <SettingsProfilePane />,
     general: <SettingsGeneralPane settings={settings} update={update} />,
+    notifications: <SettingsNotificationsPane settings={settings} update={update} />,
     ai: <SettingsAiPane settings={settings} update={update} />,
     integrations: <SettingsIntegrationsPane settings={settings} update={update} />,
     agents: <SettingsAgentsPane settings={settings} update={update} />,

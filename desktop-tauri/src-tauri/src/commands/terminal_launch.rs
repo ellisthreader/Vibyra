@@ -4,6 +4,11 @@ use serde::Deserialize;
 use vibyra_core::pty::LaunchSpec;
 use vibyra_core::CoreError;
 
+use super::terminal_args::{
+    add_full_access, add_reasoning_effort, add_resume, pin_session, validate_model,
+    validate_session_id,
+};
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTerminalRequest {
@@ -16,6 +21,15 @@ pub struct CreateTerminalRequest {
     pub reasoning_effort: Option<String>,
     pub workspace_mode: Option<String>,
     pub safe_snapshot_fingerprint: Option<String>,
+    /// Set when a suspended pane is being resumed: the agent is asked to pick
+    /// up the conversation it was in rather than start an empty one.
+    pub resume: Option<bool>,
+    /// The conversation this pane owns, for agents that accept one. Pinned at
+    /// launch and named again on resume, so panes never share a conversation.
+    pub agent_session_id: Option<String>,
+    /// Which provider account to run as. `None` means the first one, which is
+    /// the CLI's own folder and the only account most installs have.
+    pub account_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -40,6 +54,19 @@ pub fn configure_launch(
     spec: &mut LaunchSpec,
     request: &CreateTerminalRequest,
 ) -> Result<(), CoreError> {
+    let session = request
+        .agent_session_id
+        .as_deref()
+        .map(validate_session_id)
+        .transpose()?;
+    // First, because `codex resume` is a *subcommand* and its options are
+    // parsed after it — `--model` and the sandbox flag below are accepted
+    // there, but only once the verb has been seen.
+    if request.resume.unwrap_or(false) {
+        add_resume(&request.agent_id, session, &mut spec.args);
+    } else if let Some(session) = session {
+        pin_session(&request.agent_id, session, &mut spec.args);
+    }
     if let Some(model) = request.model.as_deref() {
         validate_model(model)?;
         if request.agent_id == "shell" || request.agent_id == "ssh" {
@@ -67,6 +94,24 @@ pub fn isolate_account_environment(
     }
 }
 
+/// Points a terminal at one provider account.
+///
+/// `spec.env` is applied last of all — after the AppImage's own environment
+/// repairs — so what lands here is what the CLI actually reads. The first
+/// account names nothing, which is what makes it "wherever this CLI looks".
+pub fn select_launch_account(spec: &mut LaunchSpec, agent_id: &str, account_id: Option<&str>) {
+    let Some(account_id) = account_id else {
+        return;
+    };
+    let Ok(home) = crate::provider_auth_registry::Registry::load().home(agent_id, account_id)
+    else {
+        return;
+    };
+    if let Some((name, value)) = home.env() {
+        spec.env.push((name, value));
+    }
+}
+
 pub fn configure_dimensions(
     spec: &mut LaunchSpec,
     rows: Option<u16>,
@@ -91,72 +136,6 @@ pub fn validate_ssh_target(target: &str) -> Result<(), CoreError> {
     }
 }
 
-fn validate_model(model: &str) -> Result<(), CoreError> {
-    let valid = !model.is_empty()
-        && model.len() <= 200
-        && !model.starts_with('-')
-        && model
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || ".-_/ :".contains(character))
-        && !model.contains(char::is_whitespace);
-    if valid {
-        Ok(())
-    } else {
-        Err(invalid("invalid model identifier"))
-    }
-}
-
-fn add_full_access(agent: &str, args: &mut Vec<String>) -> Result<(), CoreError> {
-    match agent {
-        "claude" => args.push("--dangerously-skip-permissions".into()),
-        "codex" => args.push("--dangerously-bypass-approvals-and-sandbox".into()),
-        "gemini" => args.extend([
-            "--approval-mode".into(),
-            "yolo".into(),
-            "--no-sandbox".into(),
-        ]),
-        _ => return Err(invalid("this agent does not support full access")),
-    }
-    Ok(())
-}
-
-fn add_reasoning_effort(
-    agent: &str,
-    effort: &str,
-    args: &mut Vec<String>,
-) -> Result<(), CoreError> {
-    const EFFORTS: &[&str] = &[
-        "none",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max",
-        "ultra",
-        "ultracode",
-    ];
-    if !EFFORTS.contains(&effort) {
-        return Err(invalid("unsupported reasoning effort"));
-    }
-    match agent {
-        "codex" => {
-            let effort = if effort == "ultracode" {
-                "xhigh"
-            } else {
-                effort
-            };
-            args.extend(["-c".into(), format!("model_reasoning_effort=\"{effort}\"")]);
-        }
-        "claude" => {
-            let effort = if effort == "ultra" { "high" } else { effort };
-            args.extend(["--effort".into(), effort.into()]);
-        }
-        _ => return Err(invalid("this agent does not support reasoning effort")),
-    }
-    Ok(())
-}
-
 fn dimension(
     value: Option<u16>,
     min: u16,
@@ -171,6 +150,6 @@ fn dimension(
     }
 }
 
-fn invalid(message: &str) -> CoreError {
+pub(super) fn invalid(message: &str) -> CoreError {
     CoreError::Settings(message.into())
 }

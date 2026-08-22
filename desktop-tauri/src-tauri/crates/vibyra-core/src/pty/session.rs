@@ -56,6 +56,18 @@ impl Session {
 
         let mut cmd = CommandBuilder::new(&spec.program);
         cmd.args(&spec.args);
+        // A terminal must be the user's environment, not the bundle's. The
+        // AppImage runtime points PYTHONHOME, LD_LIBRARY_PATH and a dozen
+        // other search paths inside its own mount; inherited by a shell, that
+        // is enough to break `python3` outright. Applied before the spec's own
+        // entries so an explicit override still wins.
+        let fix = crate::launch_env::appimage::current();
+        for key in &fix.remove {
+            cmd.env_remove(key);
+        }
+        for (key, value) in &fix.set {
+            cmd.env(key, value);
+        }
         for key in &spec.env_remove {
             cmd.env_remove(key);
         }

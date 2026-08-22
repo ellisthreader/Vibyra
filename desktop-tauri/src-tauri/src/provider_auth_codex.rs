@@ -1,17 +1,25 @@
+use crate::provider_auth_codex_account::identity_in;
+use crate::provider_auth_home::AccountHome;
+use crate::provider_auth_identity::{product_detail, safe_label};
 use crate::provider_auth_process::command_streams;
 use crate::provider_auth_state::AuthSnapshot;
 
-pub fn probe(program: &str) -> AuthSnapshot {
-    let Some((success, stdout, stderr)) = command_streams(program, &["login", "status"]) else {
+pub fn probe(program: &str, home: &AccountHome) -> AuthSnapshot {
+    let Some((success, stdout, stderr)) =
+        command_streams(program, &["login", "status"], home.env())
+    else {
         return AuthSnapshot::failed();
     };
     if !success || !chatgpt_login(&format!("{stdout}\n{stderr}")) {
         return AuthSnapshot::default();
     }
+    // The CLI confirms the sign-in; only its stored credentials say whose it
+    // is, so the row names the account rather than repeating "ChatGPT" twice.
+    let account = identity_in(&home.credentials_dir());
     AuthSnapshot {
         connected: true,
-        account_label: "ChatGPT account".into(),
-        detail: "ChatGPT".into(),
+        account_label: safe_label(&account.email, "ChatGPT account"),
+        detail: product_detail("ChatGPT", &account.plan),
         ..AuthSnapshot::default()
     }
 }

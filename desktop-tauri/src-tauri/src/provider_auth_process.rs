@@ -3,21 +3,37 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-pub fn command_output(program: &str, args: &[&str]) -> Option<(bool, String)> {
-    command_streams(program, args).map(|(success, stdout, _)| (success, stdout))
+/// Provider CLIs are npm wrappers that exec a large native binary. Warm they
+/// answer in ~100 ms, but a first probe after boot has to fault that binary in
+/// and was measured at over 5 s — long enough that the old 5 s budget reported
+/// a signed-in account as unverifiable. Probes run off the IPC thread, so the
+/// wider budget costs a slow start rather than a frozen window.
+const PROBE_TIMEOUT: Duration = Duration::from_secs(20);
+
+pub fn command_output(
+    program: &str,
+    args: &[&str],
+    env: Option<(String, String)>,
+) -> Option<(bool, String)> {
+    command_streams(program, args, env).map(|(success, stdout, _)| (success, stdout))
 }
 
 /// Returns both streams because provider CLIs disagree about where status text
 /// belongs: `claude auth status --json` prints to stdout, `codex login status`
 /// prints to stderr. Probes that read human-readable output must check both.
-pub fn command_streams(program: &str, args: &[&str]) -> Option<(bool, String, String)> {
+pub fn command_streams(
+    program: &str,
+    args: &[&str],
+    env: Option<(String, String)>,
+) -> Option<(bool, String, String)> {
     let mut command = Command::new(program);
     command
         .args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    strip_credentials(&mut command);
+    prepare_child(&mut command);
+    select_account(&mut command, env);
     let mut child = command.spawn().ok()?;
     let stdout = drain(child.stdout.take()?);
     let stderr = drain(child.stderr.take()?);
@@ -26,7 +42,7 @@ pub fn command_streams(program: &str, args: &[&str]) -> Option<(bool, String, St
         if let Some(status) = child.try_wait().ok()? {
             break status.success();
         }
-        if started.elapsed() >= Duration::from_secs(5) {
+        if started.elapsed() >= PROBE_TIMEOUT {
             let _ = child.kill();
             let _ = child.wait();
             return None;
@@ -46,13 +62,18 @@ fn drain<R: Read + Send + 'static>(mut reader: R) -> thread::JoinHandle<String> 
     })
 }
 
-pub fn command_status(program: &str, args: &[&str]) -> Result<bool, String> {
+pub fn command_status(
+    program: &str,
+    args: &[&str],
+    env: Option<(String, String)>,
+) -> Result<bool, String> {
     let mut command = Command::new(program);
     command
         .args(args)
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    strip_credentials(&mut command);
+    prepare_child(&mut command);
+    select_account(&mut command, env);
     let mut child = command
         .spawn()
         .map_err(|error| format!("Could not start {program}: {error}"))?;
@@ -60,7 +81,7 @@ pub fn command_status(program: &str, args: &[&str]) -> Result<bool, String> {
     loop {
         match child.try_wait() {
             Ok(Some(status)) => return Ok(status.success()),
-            Ok(None) if started.elapsed() < Duration::from_secs(5) => {
+            Ok(None) if started.elapsed() < PROBE_TIMEOUT => {
                 thread::sleep(Duration::from_millis(25));
             }
             Ok(None) => {
@@ -71,6 +92,27 @@ pub fn command_status(program: &str, args: &[&str]) -> Result<bool, String> {
             Err(error) => return Err(format!("Could not read {program} status: {error}")),
         }
     }
+}
+
+/// Points one CLI invocation at one account's credentials.
+///
+/// Setting only, never clearing. The default account is defined as "wherever
+/// this CLI looks on its own" — so if the user exports `CODEX_HOME` in their
+/// shell, that *is* their default account, and stripping it would move their
+/// existing login out from under them. A managed account overrides the
+/// variable instead, which is enough to isolate it.
+pub fn select_account(command: &mut Command, env: Option<(String, String)>) {
+    if let Some((name, value)) = env {
+        command.env(name, value);
+    }
+}
+
+/// Everything a provider CLI needs before it is spawned: the user's own API
+/// credentials kept out of it, and the AppImage's environment capture undone so
+/// it runs in the environment the user's shell would have given it.
+pub fn prepare_child(command: &mut Command) {
+    strip_credentials(command);
+    vibyra_core::launch_env::sanitize_command(command);
 }
 
 pub fn credential_env_names() -> Vec<String> {

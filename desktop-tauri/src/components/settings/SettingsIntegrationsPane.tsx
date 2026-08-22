@@ -2,11 +2,14 @@ import { useEffect, useMemo } from "react";
 
 import { useModelCatalogStore } from "../../state/modelCatalogStore";
 import { useProviderAccountStore } from "../../state/providerAccountStore";
-import { providerAccountRuntimeUpdate } from "../../lib/providerAccountPolicy";
+import {
+  providerAccountRuntimeUpdate,
+  providerWorking,
+} from "../../lib/providerAccountPolicy";
 import type { Settings } from "../../types";
 import { ProviderMark } from "../common/AgentMark";
 import { RestartIcon } from "../common/Icons";
-import { ProviderAccountRow } from "./ProviderAccountRow";
+import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
 import { TerminalIntegrations } from "./TerminalIntegrations";
 
 interface Props {
@@ -19,12 +22,16 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
   const loading = useModelCatalogStore((state) => state.loading);
   const source = useModelCatalogStore((state) => state.source);
   const refreshCatalog = useModelCatalogStore((state) => state.refresh);
-  const accounts = useProviderAccountStore((state) => state.accounts);
-  const busyId = useProviderAccountStore((state) => state.busyId);
+  const providers = useProviderAccountStore((state) => state.providers);
+  const busyKey = useProviderAccountStore((state) => state.busyKey);
   const error = useProviderAccountStore((state) => state.error);
   const loaded = useProviderAccountStore((state) => state.loaded);
   const refreshAccounts = useProviderAccountStore((state) => state.refresh);
   const connect = useProviderAccountStore((state) => state.connect);
+  const addAccount = useProviderAccountStore((state) => state.addAccount);
+  const removeAccount = useProviderAccountStore((state) => state.removeAccount);
+  const install = useProviderAccountStore((state) => state.install);
+  const submit = useProviderAccountStore((state) => state.submit);
   const cancel = useProviderAccountStore((state) => state.cancel);
   const disconnect = useProviderAccountStore((state) => state.disconnect);
   const openSignInPage = useProviderAccountStore((state) => state.openSignInPage);
@@ -35,16 +42,19 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
     void refreshAccounts();
   }, [refreshAccounts, refreshCatalog]);
 
+  // A sign-in and an install both run as child processes whose progress only
+  // the native side sees — including the moment a CLI stops and asks a
+  // question, which is what the reply box is waiting for.
   useEffect(() => {
-    if (!accounts.some((account) => account.status === "connecting")) return;
+    if (!providers.some(providerWorking)) return;
     const timer = window.setInterval(() => void refreshAccounts(), 1_800);
     return () => window.clearInterval(timer);
-  }, [accounts, refreshAccounts]);
+  }, [providers, refreshAccounts]);
 
   useEffect(() => {
-    const enabledAgentIds = providerAccountRuntimeUpdate(settings.enabledAgentIds, accounts, loaded, error);
+    const enabledAgentIds = providerAccountRuntimeUpdate(settings.enabledAgentIds, providers, loaded, error);
     if (enabledAgentIds) void update({ enabledAgentIds });
-  }, [accounts, error, loaded, settings.enabledAgentIds, update]);
+  }, [providers, error, loaded, settings.enabledAgentIds, update]);
 
   const catalogLabel = loading ? "Refreshing" : source === "live" ? "Live" : source === "cache" ? "Cached" : "Offline fallback";
   const catalogTone = loading ? "working" : source === "live" ? "success" : "neutral";
@@ -52,18 +62,22 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
   return (
     <section className="settings-integrations" aria-labelledby="integration-list-label">
       <span className="section-label" id="integration-list-label">AI accounts</span>
-      <p className="integrations-intro">Connect the account you already use for personal AI terminals. Authorization stays with the official provider app.</p>
+      <p className="integrations-intro">Connect the accounts you already use for personal AI terminals — more than one per company if you have them. Authorization stays with the official provider app.</p>
       <div className="integration-list">
         {!loaded ? <p className="integration-loading">Checking connected accounts…</p> : null}
-        {accounts.map((account) => (
-          <ProviderAccountRow
-            key={account.id}
-            account={account}
-            busy={busyId === account.id}
-            onConnect={() => void connect(account.id)}
-            onCancel={() => void cancel(account.id)}
-            onDisconnect={() => void disconnect(account.id)}
-            onOpenSignInPage={() => void openSignInPage(account.id)}
+        {providers.map((provider) => (
+          <ProviderIntegrationCard
+            key={provider.id}
+            provider={provider}
+            busyKey={busyKey}
+            onAddAccount={() => void addAccount(provider.id)}
+            onInstall={() => void install(provider.id)}
+            onConnect={(account) => void connect(provider.id, account)}
+            onRemove={(account) => void removeAccount(provider.id, account)}
+            onSubmit={(account, value) => void submit(provider.id, account, value)}
+            onCancel={(account) => void cancel(provider.id, account)}
+            onDisconnect={(account) => void disconnect(provider.id, account)}
+            onOpenSignInPage={(account) => void openSignInPage(provider.id, account)}
           />
         ))}
       </div>

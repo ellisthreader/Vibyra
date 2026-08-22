@@ -46,12 +46,17 @@ pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
     state.usage.budget_available(state.ai_limits())?;
     let path = std::env::temp_dir().join(format!("vibyra-voice-{}.raw", std::process::id()));
     let _ = std::fs::remove_file(&path);
-    let child = Command::new("arecord")
+    let mut command = Command::new("arecord");
+    command
         .args(["-q", "-f", "S16_LE", "-r", "16000", "-c", "1", "-t", "raw"])
         .arg(&path)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+    // ALSA resolves its plugins through the loader, and the AppImage points
+    // that at its own bundle — record in the user's environment instead.
+    vibyra_core::launch_env::sanitize_command(&mut command);
+    let child = command
         .spawn()
         .map_err(|e| format!("could not start recording: {e}"))?;
     *state.voice.lock() = Some(VoiceRecording { child, path });

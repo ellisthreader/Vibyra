@@ -35,6 +35,13 @@ pub struct PersistedPane {
     pub workspace_mode: String,
     pub accent: String,
     pub snapshot: Option<String>,
+    /// The agent's own conversation id, so Resume names exactly the one this
+    /// pane left rather than whichever is newest in the folder.
+    pub agent_session_id: Option<String>,
+    /// The provider account this pane ran as, so it resumes on the same login.
+    /// Absent in files written before accounts existed, which `serde(default)`
+    /// reads as the first account — exactly what those panes used.
+    pub account_id: Option<String>,
 }
 
 /// `version` is deliberately required: a file without one is from an unknown

@@ -89,7 +89,9 @@ export function HomeProjectCard({ project }: { project: ProjectSpec }) {
       </div>
       <div className="hcard__last">
         {latest
-          ? `${paneLabel(latest)} · ${relativeTime(latest.lastFocusedAt)}`
+          ? // A session saved before Vibyra recorded when it was written has
+            // no timestamp, and dating it to the epoch reads as "20687d ago".
+            `${paneLabel(latest)}${latest.lastFocusedAt > 0 ? ` · ${relativeTime(latest.lastFocusedAt)}` : ""}`
           : "open it and launch an agent"}
       </div>
     </div>

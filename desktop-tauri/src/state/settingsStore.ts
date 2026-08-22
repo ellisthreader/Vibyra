@@ -1,8 +1,10 @@
 import { create } from "zustand";
 
 import { getSettings, saveSettings } from "../ipc/settings";
+import { DEFAULT_NOTIFICATIONS, normalizeNotifications } from "../lib/notificationPrefs";
 import { applySettingsToAll } from "../lib/terminalRegistry";
 import { resolveTheme } from "../lib/xtermTheme";
+import type { NotificationPrefs } from "../notificationTypes";
 import type { ProjectSpec, Settings } from "../types";
 
 interface SettingsStore {
@@ -19,6 +21,8 @@ function normalizeSettings(settings: Settings): Settings {
   return {
     ...settings,
     enabledAgentIds: Array.isArray(settings.enabledAgentIds) ? settings.enabledAgentIds : [],
+    // A hand-edited or older settings.json must not be able to break the pane.
+    notifications: normalizeNotifications(settings.notifications),
   };
 }
 
@@ -71,3 +75,10 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", ()
     applySettingsToAll(settings);
   }
 });
+
+/** Stable-reference selector, same reason as `useProjects` above: a missing
+ * block resolves to the one frozen default object, never a fresh one. */
+export function useNotificationPrefs(): NotificationPrefs {
+  const settings = useSettingsStore((s) => s.settings);
+  return settings?.notifications ?? DEFAULT_NOTIFICATIONS;
+}

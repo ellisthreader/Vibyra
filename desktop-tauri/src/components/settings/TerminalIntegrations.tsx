@@ -60,7 +60,13 @@ export function TerminalIntegrations({ settings, update }: Props) {
               <AgentMark agentId={agent.id} name={agent.name} accent={accent} size={34} />
               <span className="terminal-integration__copy">
                 <strong>{agent.name}</strong>
-                <small>{MODEL_SCOPE[agent.id] ?? agent.description}</small>
+                {/* Naming the command it looks for turns "Not installed" from
+                    a dead end into something the user can act on. */}
+                <small>
+                  {agent.installed
+                    ? MODEL_SCOPE[agent.id] ?? agent.description
+                    : `Needs the “${agent.program}” command on your PATH`}
+                </small>
               </span>
               <span className={`integration-status${active ? " integration-status--success" : ""}`}>
                 <i aria-hidden="true" />

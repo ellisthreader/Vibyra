@@ -6,18 +6,24 @@ const componentPath = new URL("../src/components/auth/AuthBackdrop.tsx", import.
 const authCssPath = new URL("../src/styles/auth.css", import.meta.url);
 const backdropCssPath = new URL("../src/styles/auth-backdrop.css", import.meta.url);
 const mainPath = new URL("../src/main.tsx", import.meta.url);
+const tauriConfigPath = new URL("../src-tauri/tauri.conf.json", import.meta.url);
 const videoPath = new URL("../src/assets/auth-space-loop.mp4", import.meta.url);
 const posterPath = new URL("../src/assets/auth-space-loop-poster.webp", import.meta.url);
 
 test("auth background uses a silent local loop with a matching poster", async () => {
   const source = await readFile(componentPath, "utf8");
-  assert.match(source, /auth-space-loop\.mp4/);
+  assert.match(source, /auth-space-loop\.mp4\?inline/);
   assert.match(source, /auth-space-loop-poster\.webp/);
   for (const attribute of ["autoPlay", "muted", "loop", "playsInline"]) {
     assert.match(source, new RegExp(`\\b${attribute}\\b`));
   }
   assert.match(source, /prefers-reduced-motion: reduce/);
-  assert.match(source, /video\.pause\(\)/);
+  assert.match(source, /onCanPlay=\{startPlayback\}/);
+});
+
+test("production CSP allows the inlined video source", async () => {
+  const config = JSON.parse(await readFile(tauriConfigPath, "utf8"));
+  assert.match(config.app.security.csp, /media-src 'self' data:/);
 });
 
 test("poster fallback owns startup while the video fades in", async () => {

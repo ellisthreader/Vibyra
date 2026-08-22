@@ -10,7 +10,9 @@
 pub mod agents;
 pub mod error;
 pub mod fsx;
+pub mod launch_env;
 pub mod memory;
+pub mod notifications;
 pub mod parallel;
 pub mod preview;
 pub mod pty;

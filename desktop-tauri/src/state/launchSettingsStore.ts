@@ -21,6 +21,14 @@ export interface LaunchSettings {
   safeMode: boolean;
   permission: LaunchPermission;
   tokenSource: LaunchTokenSource;
+  /**
+   * Which account each provider launches as, by provider id.
+   *
+   * Only ever consulted for the provider a launch actually uses, and a missing
+   * or since-removed entry falls back to the first account — so a project that
+   * has never chosen is not a project that cannot launch.
+   */
+  accountByProvider: Record<string, string>;
 }
 
 // v2: safeMode became opt-in — with it on by default, non-Git projects could
@@ -33,6 +41,7 @@ const DEFAULT_LAUNCH_SETTINGS: LaunchSettings = Object.freeze({
   safeMode: false,
   permission: "standard",
   tokenSource: "accounts",
+  accountByProvider: {},
 });
 
 type StoredSettings = Record<string, LaunchSettings>;
@@ -51,7 +60,19 @@ function normalise(value: Partial<LaunchSettings> | undefined): LaunchSettings {
     safeMode: value?.safeMode === true,
     permission: value?.permission === "full" ? "full" : "standard",
     tokenSource: value?.tokenSource === "vibyra" ? "vibyra" : "accounts",
+    accountByProvider: accountMap(value?.accountByProvider),
   };
+}
+
+/** Keeps only string-to-string entries: this is read back from localStorage,
+ * where anything could be sitting, and it ends up naming a credential folder. */
+function accountMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      ([provider, account]) => typeof provider === "string" && typeof account === "string",
+    ) as [string, string][],
+  );
 }
 
 function restore(): StoredSettings {

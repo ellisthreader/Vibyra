@@ -15,6 +15,12 @@ export interface CapturedScreenshot {
   pixels: Uint8ClampedArray<ArrayBuffer>;
 }
 
+/** What `read_clipboard_paste` found; an image is saved and named by path. */
+export type ClipboardPaste =
+  | { kind: "text"; text: string }
+  | { kind: "image"; path: string }
+  | { kind: "empty" };
+
 export interface VoiceStatus {
   recorder: boolean;
   keyConfigured: boolean;

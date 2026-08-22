@@ -3,9 +3,11 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 
 import { resizeTerminal, writeTerminal } from "../ipc/terminal";
-import type { Settings, TermEvent } from "../types";
-import { clearAttention, stampBell, stampOutput } from "./activity";
-import { attach, clear, detach } from "./terminalBus";
+import type { Settings } from "../types";
+import { clearAttention, stampBell } from "./activity";
+import { clear, detach } from "./terminalBus";
+import { attachSessionEvents, sessionTitleChanged } from "./terminalEvents";
+import { dropReplay, takeReplay } from "./terminalReplay";
 import {
   applyTerminalBottomAnchor,
   createBottomAnchorState,
@@ -13,6 +15,7 @@ import {
   terminalViewportIsNearBottom,
   type BottomAnchorState,
 } from "./terminalBottomAnchor";
+import { attachTerminalClipboard } from "./terminalClipboard";
 import { attachRenderer } from "./xtermRenderer";
 import { themeFor } from "./xtermTheme";
 
@@ -32,17 +35,6 @@ const entries = new Map<number, TerminalEntry>();
 /** Puts the bundled JetBrains Mono variable font ahead of the user's stack. */
 function monoStack(userStack: string): string {
   return `"JetBrains Mono Variable", ${userStack}`;
-}
-
-let onSessionExit: (id: number, code: number | null) => void = () => {};
-let onSessionTitle: (id: number, title: string) => void = () => {};
-
-export function setSessionExitHandler(handler: (id: number, code: number | null) => void): void {
-  onSessionExit = handler;
-}
-
-export function setSessionTitleHandler(handler: (id: number, title: string) => void): void {
-  onSessionTitle = handler;
 }
 
 /** Fits the grid to the host and refreshes the cached cell height. */
@@ -104,6 +96,7 @@ export function mountTerminal(
   term.loadAddon(new WebLinksAddon());
   term.open(container);
   attachRenderer(term);
+  attachTerminalClipboard(term);
 
   const entry: TerminalEntry = {
     term,
@@ -130,7 +123,7 @@ export function mountTerminal(
   term.onScroll(() => {
     if (!anchoring) anchorNow();
   });
-  term.onTitleChange((title) => onSessionTitle(id, title));
+  term.onTitleChange((title) => sessionTitleChanged(id, title));
   term.onBell(() => stampBell(id));
 
   // Fit after the handlers are live and before the bus attaches: this is the
@@ -145,21 +138,11 @@ export function mountTerminal(
   fitTerminal(entry);
   void resizeTerminal(id, term.rows, term.cols).catch(() => {});
 
-  attach(id, (event: TermEvent) => {
-    if (event.type === "output") {
-      stampOutput(id, event.data);
-      const followOutput = terminalViewportIsNearBottom(term);
-      term.write(event.data, () => anchorNow(followOutput));
-    } else if (event.type === "resync") {
-      stampOutput(id, event.data);
-      term.reset();
-      term.write(event.data, () => anchorNow(true));
-    } else {
-      const label = event.code === null ? "" : ` (code ${event.code})`;
-      term.write(`\r\n\x1b[2m[process exited${label}]\x1b[0m\r\n`, () => anchorNow(true));
-      onSessionExit(id, event.code);
-    }
-  });
+  // After the fit so it wraps at the real width, before the bus attaches so
+  // the new session's own output lands underneath it rather than above.
+  takeReplay(id, term);
+
+  attachSessionEvents(id, term, anchorNow);
 
   entries.set(id, entry);
   return entry;
@@ -181,6 +164,9 @@ export function disposeTerminal(id: number): void {
 
 /** Full teardown when a session is closed for good. */
 export function destroySession(id: number): void {
+  // A pane closed before its terminal ever mounted would otherwise leave its
+  // replay behind, to be shown by whichever session inherits the id.
+  dropReplay(id);
   disposeTerminal(id);
   clear(id);
 }

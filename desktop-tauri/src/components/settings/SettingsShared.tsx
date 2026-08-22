@@ -37,3 +37,30 @@ export function SettingsBlock({ label, children }: { label: string; children: Re
     </div>
   );
 }
+
+/** The house on/off control. A button rather than a checkbox: `role="switch"`
+ * announces state directly, and the pill is drawn from `aria-checked` so there
+ * is no hidden input to keep in step. */
+export function Switch({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      className="vswitch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+    />
+  );
+}

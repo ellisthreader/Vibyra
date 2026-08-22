@@ -1,3 +1,4 @@
+import { fileUri, shellQuotePath } from "../../lib/terminalDrop";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { CloseIcon } from "../common/Icons";
 
@@ -14,6 +15,7 @@ export function ScreenshotTray() {
   const copiedPath = useScreenshotStore((s) => s.copiedPath);
   const copySaved = useScreenshotStore((s) => s.copySaved);
   const dismiss = useScreenshotStore((s) => s.dismiss);
+  const reveal = useScreenshotStore((s) => s.reveal);
 
   if (shots.length === 0) return null;
 
@@ -21,16 +23,25 @@ export function ScreenshotTray() {
     <div className="shot-tray" aria-label="Screenshots">
       {shots.map((shot) => (
         <div key={shot.path} className="shot-card">
-          <img
-            className="shot-card__thumb"
-            src={shot.thumbDataUrl}
-            alt={`Saved screenshot ${shot.width} by ${shot.height}`}
-            draggable
-            onDragStart={(event) => {
-              event.dataTransfer.setData("text/plain", `'${shot.path.replaceAll("'", "'\\''")}'`);
-              event.dataTransfer.effectAllowed = "copy";
-            }}
-          />
+          <button
+            className="shot-card__open"
+            title={`Show in folder — ${shot.path}`}
+            onClick={() => void reveal(shot)}
+          >
+            <img
+              className="shot-card__thumb"
+              src={shot.thumbDataUrl}
+              alt={`Saved screenshot ${shot.width} by ${shot.height}`}
+              draggable
+              onDragStart={(event) => {
+                // uri-list is what a terminal drop reads; the quoted path
+                // behind it is what everything else pastes.
+                event.dataTransfer.setData("text/uri-list", fileUri(shot.path));
+                event.dataTransfer.setData("text/plain", shellQuotePath(shot.path));
+                event.dataTransfer.effectAllowed = "copy";
+              }}
+            />
+          </button>
           <div className="shot-card__actions">
             <button className={`icon-btn shot-card__copy ${copiedPath === shot.path ? "shot-card__copy--done" : ""}`} title="Copy screenshot" onClick={() => void copySaved(shot)}>
               <CopyIcon done={copiedPath === shot.path} />
