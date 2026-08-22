@@ -16,6 +16,18 @@ Read this for `/api/chat`, OpenRouter request shape, skills, mode resolution, re
 - `backend/app/Http/Controllers/Concerns/ChatLearningFeedback.php`
 - `backend/app/Http/Controllers/Concerns/CodexResponsesEndpoint.php`
 - `backend/app/Http/Controllers/Concerns/CodexResponsesStreaming.php`
+- `backend/app/Http/Controllers/Concerns/CodexResponsesRequest.php`
+- `backend/app/Http/Controllers/Concerns/CodexResponsesInputNormalization.php`
+- `backend/app/Http/Controllers/Concerns/CodexResponsesModelSelection.php`
+- `backend/app/Http/Controllers/Concerns/CodexResponsesErrors.php`
+- `backend/app/Http/Controllers/Concerns/CodexChatTransport.php`
+- `backend/app/Http/Controllers/Concerns/CodexChatPayloads.php`
+- `backend/app/Http/Controllers/Concerns/CodexChatResponse.php`
+- `backend/app/Http/Controllers/Concerns/NativeTerminalEndpoint.php`
+- `backend/app/Http/Controllers/Concerns/NativeTerminalRoutes.php`
+- `backend/app/Http/Controllers/Concerns/NativeTerminalDispatch.php`
+- `backend/app/Http/Controllers/Concerns/NativeTerminalResponses.php`
+- `backend/app/Http/Controllers/Concerns/NativeTerminalErrors.php`
 - `backend/app/Services/Billing/ChatCostReservationService.php`
 - `backend/app/Services/Billing/ChatCostSettlementService.php`
 - `backend/app/Services/Billing/ChatCostQuotaGuard.php`
@@ -26,6 +38,13 @@ Read this for `/api/chat`, OpenRouter request shape, skills, mode resolution, re
 ## `/api/chat`
 
 `ChatEndpoint::chat` validates user/credits, resolves chat/build mode, posts to OpenRouter with `max_completion_tokens`, deducts credits, extracts `<vibyra-app>` only in build mode, and returns reply plus optional app and refreshed credits.
+
+The Codex Responses and native-terminal entry traits are compatibility facades.
+Keep request normalization, model selection, transport/payload translation,
+response shaping, route dispatch, and error conversion in their focused sibling
+traits listed above. The concrete chat/auth/billing feature-test class names stay
+stable while their cases are grouped under
+`backend/tests/Feature/Concerns/NextTen/`.
 
 `ChatEndpointHelpers::resolveChatMode` treats server-side build skills as authoritative, otherwise honors request `mode: "chat" | "build"`, then falls back to `isBuildPrompt` only for old clients. Keep the helper traits split by responsibility: attachments in `ChatAttachmentHelpers`, OpenRouter payload/model/reasoning helpers in `ChatOpenRouterHelpers`, runnable app extraction/preview shaping in `ChatPreviewAppHelpers`, and streaming response parsing/finalization in `ChatStreamResponder`.
 

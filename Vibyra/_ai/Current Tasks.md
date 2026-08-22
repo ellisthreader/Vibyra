@@ -1,24 +1,30 @@
 # Current Tasks
 
-Last updated: 2026-05-07
+Last updated: 2026-08-22
+
+Scope: Vibyra only. Other projects track their own state in `01 Projects/<project>/`.
 
 ## Now
 
-- Keep `isBuildPrompt()` in sync between `backend/app/Http/Controllers/Concerns/ChatPrompting.php` and `src/context/useAgentActions.ts`.
-- Verify mobile chat token usage on phone with the new caps (expect ~200–500 input + ≤800 output for plain chat).
+- **Desktop integrations — multiple accounts per provider.** Add/disconnect/switch additional accounts for Codex, ChatGPT, Claude, and Google, applied live in a running terminal. See `Desktop/Desktop Shell.md`.
+- **Integration account details.** Logging in through Settings > Integrations succeeds but does not surface the account email or membership plan underneath. Diagnose and fix.
+- **In-app bug reporting.** Report flow posts to a Discord webhook with screenshot, location, and the reporting user attached. Verify attachments and reporter identity land in Discord.
 
 ## Next
 
-- Periodically verify OpenRouter output caps if OpenRouter changes chat-completion request naming again.
-- Periodically fold useful facts from `_ai/Runs/` into the durable notes.
-- Decide whether to expose a per-user "build mode" toggle instead of regex detection if false negatives appear.
+- **Make the in-app updater real.** It is currently built but inert: the shipped build lacks the updater plugin, signing variables are unset, and the release workflow was never pushed. Do not tell users updates arrive in-app until this is fixed. See `Desktop/Rust Tauri Desktop.md`.
+- **Auto-save/resume edge case.** Restoring a workspace with an empty chat raises an error; restore is otherwise working.
+- **Website downloads page.** Keep it aligned with the current beta build and the one-command Linux install.
 
-## Done
+## Watching
 
-- Created the Vibyra Obsidian vault and starter memory notes.
-- Wired desktop agent runs to save compact Obsidian run notes when the vault is available.
-- Capped OpenRouter `max_completion_tokens` (800 chat / 3000 build) and slimmed the system prompt by default.
-- Added backend coverage asserting the OpenRouter payload uses `max_completion_tokens` and omits deprecated `max_tokens`.
-- Trimmed mobile chat payload (history window, `fileBody` slice) to match backend caps.
-- Added 30s cooldown to `useCloudSync` after failures to stop console error spam.
-- Added `Vibyra Backend Memory.md` and wired it into Welcome / Context Map / Agent Prompt.
+- OpenRouter model announcements post to Discord automatically. Confirm new releases still arrive after OpenRouter API changes.
+- Periodically fold useful `_ai/Runs/` facts into durable notes, then let the run notes go.
+
+## Recently Done
+
+- Terminal auto-save and resume across app restarts.
+- Terminal performance overhaul (WebKit compositing; see `Desktop/Tauri Terminal Performance Overhaul.md`).
+- Screenshot capture (F9) rework: fullscreen toggle, X11 handshakes, full-resolution frames.
+- Account authentication and keyring session storage for the Tauri desktop app.
+- Old Electron desktop app removed from the repo and the machine.

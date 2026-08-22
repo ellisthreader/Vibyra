@@ -166,6 +166,13 @@ Railway production recovery, 2026-06-06:
 - Runtime demo worker production setup: `backend/nixpacks.toml` installs `nodejs_20` and `@railway/cli`; `backend/railway.json`/`Procfile` start Laravel scheduler in the web container before `php artisan serve`; `routes/console.php` schedules `vibyra:deploy-runtime-demos --limit=1` every minute. Root `.railwayignore` is required when deploying from repo root so Railway can keep service root `/backend` without uploading `node_modules`, `tmp`, `.git`, or backend generated dependency/cache folders.
 - Production variables required on Railway service `Vibyra`: `RAILWAY_API_TOKEN`, `RAILWAY_CLI_PATH`, `RAILWAY_RUNTIME_ENVIRONMENT=production`, and `RAILWAY_RUNTIME_PROJECT_PREFIX=vibyra-demo`. Verify inside the live container with `railway ssh --service Vibyra --environment production php artisan vibyra:deploy-runtime-demos --limit=1`; with no queued demos it should print `No queued runtime demos.`
 
+Marketing production deployment, 2026-07-13:
+
+- The Laravel marketing homepage is live on the existing Railway service/domain `https://vibyra-production.up.railway.app`; `/`, `/up`, and `/api/community/projects` are production smoke checks.
+- `backend/nixpacks.toml` must install with `npm ci` and run `npm run build` so Laravel's `@vite` marketing entries exist in `public/build`.
+- Vite 8 requires a supported Node runtime; pin Railway Nixpacks to `nodejs_22` rather than the older Node 20.18 package.
+- Railway production variables `APP_URL` and `ASSET_URL` must both be the HTTPS Railway domain so Laravel does not emit mixed-content `http://` asset URLs behind the proxy.
+
 ## Railway Integration
 
 Backend service should wrap Railway API calls behind a focused service:

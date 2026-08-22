@@ -1,455 +1,58 @@
 # Desktop - Shell
 
-Read this for `/desktop`, desktop visual work, static shell assets, auth gate, and launcher behavior.
-
-For AI terminal tabs, provider routing, PTY/xterm persistence, and terminal
-companion panels, read `Desktop/AI Terminals.md` first. The provider CLI
-research file is a deep reference only.
-
-## Files
-
-- `desktop/app.html`
-- `desktop/index.html`
-- `desktop/assets/app.auth.css`
-- `desktop/assets/app.auth.js`
-- `desktop/assets/app.chat.js`
-- `desktop/assets/app.1.js`
-- `desktop/assets/app.2.js`
-- `desktop/assets/app.1.css` through `desktop/assets/app.7.css`
-- `desktop/lib/routes.mjs`
-- `desktop/lib/desktopChat.mjs`
-- repo-root `Vibyra Desktop` launcher
-- `scripts/install-desktop-launcher.sh`
-
-## Desktop Recreation
-
-`Vibyra/_ai/Desktop App Implementation Spec.md` and `Vibyra/_ai/Mobile App Desktop Recreation Spec.md` are deep references only. Use them when recreating broad desktop screens, not for routine bridge/debug tasks.
-
-`/desktop` serves `desktop/app.html`, a static Vibyra shell with a compact left
-rail, top bar, Terminals, Projects, a Projects-only chat AI sidebar,
-pairing/account modals, and a responsive mobile dock. There is no standalone
-Home or Chat destination; Terminals is the primary/default surface.
-`desktop/index.html` remains the legacy bridge screen.
-Treat `/desktop` and `/desktop/` as the same local shell route. The trailing
-slash must never fall through to phone bearer authentication, and Electron's
-loaded-page check must normalize trailing slashes to avoid a retry loop that
-displays `Missing or invalid desktop token`.
-
-`desktop/lib/routes.mjs` serves mobile app imagery under `/app-assets/...` from `src/assets/` so the shell can reuse app assets.
-
-`src/assets/vibyra.png` is the canonical shared UI logo used by desktop chrome,
-auth, sidebar, and mobile surfaces. Release configuration must not overwrite it
-with an opaque square store icon; add a dedicated store-icon asset and point
-Expo/EAS metadata at that file instead.
-
-The static shell must not invent account balances, profile identity, community posts, or project counts. Account/billing panels stay unavailable or phone-managed until a real desktop account API exists.
-
-Wording is desktop-owned and phone-facing: connection status says `Connected to phone`, pairing chrome uses phone language, and project filters read `Desktop`/`Phone` instead of mobile-side `PC`.
+Read this for the Vibyra Desktop (`desktop-tauri/`) shell surfaces: the auth
+gate, chrome, and settings integrations.
 
 ## Auth Gate
 
-`/desktop` loads a mobile-auth-style front screen before the shell. Desktop auth uses the real backend account system and mirrors the verified bearer session in `localStorage` under `vibyra.desktop.auth`.
-
-The desktop auth gate mirrors the mobile `AuthScreen` first page: `desktop/app.html` uses the desktop-only 4K widescreen `/app-assets/front-auth-desktop-4k.webp`, `/app-assets/vibyra.png`, the same Beautiful/Fast/Code feature labels, real Google/Apple/email SVG marks, and hides the feature strip while the email form is expanded. Keep the portrait `src/assets/front-auth.jpg` for the mobile screen rather than stretching it across desktop fullscreen. In Electron logged-out state, keep the custom titlebar transparent over the auth image while preserving clickable window controls; the auth background should extend under the titlebar and the content stack should remain below it. Keep its layout rules in `desktop/assets/app.auth.css`: tall windows center the logo/title/actions as one stack with a slight downward nudge, short windows compact the logo/features/buttons and allow auth-screen scrolling, and auth provider labels should stay on one line.
-
-The top-bar account pill opens the account modal. Its session section includes `Log out`, which calls `desktopSignOut()` in `desktop/assets/app.auth.js`, clears `/desktop/session/clear`, removes `vibyra.desktop.auth`, closes the account modal, and returns to the auth screen so the user can switch accounts.
-
-Google and Apple buttons use a real external-browser authorization-code flow. `desktop/assets/app.auth-social.js` starts and polls same-origin bridge routes, `desktop/lib/desktopAuthProxy.mjs` forwards them to backend `/api/auth/desktop/{provider}/*`, and the backend callback exchanges/verifies provider tokens before returning a one-time Vibyra session through polling. Keep provider secrets and token exchange out of Electron. Live deployment requires the exact HTTPS callback URLs and `GOOGLE_DESKTOP_*` / `APPLE_DESKTOP_*` backend environment values documented in `backend/.env.example`.
-Social-auth progress and errors render in `#desktop-social-auth-status` beside the provider buttons; do not reuse the collapsed email form's `#desktop-auth-error` for these messages.
-After provider applications are created, run `npm run desktop:configure-social-auth` to prompt for their identifiers/key and save them directly to the linked Railway service without committing secrets.
-Auth creation responses include `isNewUser`. `completeDesktopAuth()` still stores the matching user ID in `sessionStorage["vibyra.desktop.firstWelcomeUserId"]` for the current renderer launch, but the terminal-first shell no longer renders a Home welcome surface.
-
-New authenticated launches and stale saved `dashboard` sessions land on
-Terminals via `vibyra.desktop.page = "terminals"`. Keep the shell
-terminal-first; do not restore a Home landing page, recent-work dashboard, or
-recent chat rail.
-
-## Account Dropdown And Modals (Pair Phone, Account)
-
-The topbar avatar opens an account dropdown (`accountMenu()` in `desktop/assets/app.2.js`), NOT the account modal directly. The dropdown is the primary profile UX; the modal hosts sub-views the dropdown navigates to.
-
-Dropdown layout (anchored bottom-right of avatar, ~264px wide, `.account-menu` extends the existing `.topbar-menu` pattern in `desktop/assets/app.7.css`): an identity header (small avatar + name + plan label), an `Upgrade plan` shortcut only for Free accounts, then `Profile`, `Settings`, `Help`, and `Log out`. Paid accounts must not show `Manage billing` in this dropdown; billing management belongs only in the Settings Billing section. Dropdown uses `data-account-action="logout"` and `handleAccountAction()` calls `desktopSignOut()` directly. The Profile modal's own Log out row carries `data-setting="Log out"` so the delegated handler in `desktop/assets/app.auth.js` keeps working there.
-
-State: `topbarAccountMenuOpen` (in `desktop/assets/app.1.js`) toggles via avatar click. A document-level `click` handler closes any open `topbar-menu-wrap` when the click target is outside one. Avatar button id is `open-account-menu` (the prior `open-token` id was removed). Per-item dispatch goes through `handleAccountAction(action)` which closes the menu, then either opens the Profile settings modal (Profile/Settings), opens the appropriate account modal sub-view (Upgrade/Help), or fires logout.
-
-## Profile Modal
-
-The Profile settings surface is a centered modal, not an `activePage` route. `desktop/app.html` owns `#profile-modal`, `desktop/assets/app.modals.js` owns `openProfileModal()` / `closeProfileModal()`, and `renderProfileModal()` in `desktop/assets/app.profile-render.js` renders the existing profile sections into `#profile-modal-body`. Do not add Profile back to the `pages` array or route account dropdown actions through `setPage("profile")`.
-
-Layout: a left-side section picker plus a main content pane on wide and medium desktop. The modal header owns the `Settings` title; do not repeat a second Settings heading in the section rail. The detail pane uses a stable 760px max column so switching sections does not resize the modal. Sections are `Profile`, `Personalization`, `AI accounts`, `App`, `Devices & privacy`, `Billing`, and `Help`. `AI accounts` links only official native CLI subscriptions and never asks for API keys; see `Desktop/AI Terminals.md`. Do not restore the label-only section search. At narrow width, keep the section picker as one sticky horizontally scrollable strip so it does not push every detail page below a large navigation grid.
-
-Settings section changes preserve the mounted rail and update only
-`.profile-detail`; the panel keeps one stable viewport height across short and
-long sections. This prevents vertical jumps, focus loss, and rapid-tab flicker.
-Appearance changes patch the existing preview cards in place; do not call
-`renderProfile()` or replace the preview image nodes when switching themes,
-because re-decoding those images creates a visible screenshot flash.
-Start in `app.profile-render.js` and `app.profile.css`, and validate at
-`1180x780`, `860x620`, and a narrow responsive width.
-
-Settings ownership is split by responsibility: `app.profile-render.js` owns the stable shell, `app.settings-sections.js` owns the standard section bodies, `app.profile-ai-accounts.js` owns native AI account rows and actions, `app.settings-actions.js` owns local personalization and inline confirmations, and `app.modal-lifecycle.js` owns modal focus/inert/Escape behavior. Profile saves only cloud name/email; Personalization saves preferred name, work, response style, and instructions locally; App owns appearance, language, screenshots, chat font, and working voice settings. Desktop language uses the same seven choices as mobile, persists in `vibyra.desktop.profilePreferences`, updates the document locale, and is passed through `desktopProfileContext()` so desktop chat and voice answer in the selected language. Devices & privacy combines signed-in sessions, this desktop, phone pairing, local cache, and privacy. Unfinished telemetry, app-lock, and notification controls stay removed until backed by real behavior.
-
-The Account section intentionally does not repeat account details. It renders real backend device data from `GET /api/account/sessions` through `desktop/assets/app.profile-sessions.js`, preferring the API's grouped `devices` array over raw sessions. Present one compact semantic `Signed-in devices` table with `Device`, `Type`, `Location`, and `Last active` columns plus a quiet three-dot `Terminate` menu that calls `DELETE /api/account/devices/{deviceId}` to revoke all sessions for that device. Pin the current device first and show its dot and `Current` marker. Format location compactly (`London, UK`) with the real IP as muted secondary text below it; if lookup fell back to the IP, show it only once. At narrow widths, collapse rows into labeled details instead of horizontal scrolling. Do not reintroduce a `Created` column, session-count stat, summary cards, or separate `This device` panel. Keep destructive controls collapsed and simple under `Account actions`: `Log out everywhere` calls `DELETE /api/account/sessions`, and Delete account reveals an animated dropdown confirmation only after selection. The revealed Delete account form must include a clear danger warning that deletion is permanent and removes synced Vibyra data, saved account details, and active sessions; ask only for password before calling `DELETE /api/account`, not a typed `DELETE` phrase. New desktop email auth sends `deviceName: "Vibyra Desktop"` and the local `installId`, so repeated desktop logins from the same install appear as one device rather than separate rows.
-
-Account device rows use the current device from `GET /api/account/sessions`, but every authenticated renderer operation goes through the allowlisted `/desktop/account-api/*` routes in `desktop/lib/desktopAccountProxy.mjs`. The proxy applies `appState.desktopAccountToken`, bounds requests with a timeout, and prevents arbitrary upstream paths. A failed sessions load settles once with Retry instead of recursively restarting from render. Apple/Google account deletion uses an authenticated provider-deletion OAuth purpose; the backend binds the flow to the exact account/provider subject, deletes only after callback verification, and never returns identity tokens to the renderer.
-
-Billing is the one-glance membership and usage surface: show the current plan, backend-owned price, next credit refresh, monthly credits, credit usage bar, and 5-hour/weekly limits inline. Render 5-hour and weekly limits as percentages used, not `used / cap` credit fractions. Free accounts get one `Upgrade plan` action. Paid accounts show one quiet `Manage membership` row by default; details remain hidden until it is clicked, then a short reduced-motion-safe reveal shows provider details followed by small unboxed `Change membership` and `End membership` footer actions. Manual test memberships must say they are internally managed and not charged; never fabricate card or invoice values. Unknown providers use billing support.
-
-Settings plan selection stays inside `#profile-modal`: `Upgrade plan` and `Change membership` replace only the Billing detail pane, retaining the Settings rail and avoiding a stacked `#token-modal`. `desktop/assets/app.billing-plans.js` owns the shared three-plan comparison used by both Settings and the profile-dropdown/locked-model `#token-modal`; do not maintain a separate hero-and-rows design. `app.profile-billing-plans.css` owns its compact responsive styling, `app.profile-billing-plan-art.css` fades each matching `billing-plans/<tier>-card.png` behind the card content, and `app.billing-catalog.js` merges live numeric data from `GET /api/billing/plans` with local marketing copy and plan artwork, rerendering either open plan surface after loading. Preserve the small tier icon above each background image and verify image cropping in Chromium. A plan is current only when both tier and cycle match, and its card keeps the same base surface as the other tiers; use the check/status row rather than a full-card gray fill. Builder alone carries `Most popular`; paid provider actions state the actual Stripe/Apple/Google handoff, while manual memberships can switch directly. The shell refresh must preserve an open `.token-plan-picker`. After external billing opens, `app.auth-billing.js` refreshes account state once the desktop window regains focus.
-
-The approved Billing-card visual pattern is reusable for image-led desktop product choices: equal modest-radius cards, existing dark negative-space artwork behind content, a semantic gradient into the card surface, a small foreground identity icon, concise benefits, one CTA, and only one accented recommendation. The Builder `Most popular` badge sits centered across the card's top border outside the clipped image. Keep the picker header to a quiet Back action, `Choose your plan`, and the billing-cycle control; do not repeat the current plan or supporting paragraph there. Check the actual crop in Chromium before generating new images.
-
-Billing and other external links in Electron are owned by `desktop/electron-main.cjs`: `webContents.setWindowOpenHandler()` denies `about:blank` child windows and sends HTTPS/mail links to `shell.openExternal()`. `desktop/assets/app.auth-billing.js` may use a synchronous placeholder popup in an ordinary browser, but must skip it when `isElectronShell()` is true. This prevents the blank white Electron child window that otherwise appears while the portal API request is pending.
-
-Linux app startup is owned by the repo-root `Vibyra Desktop` launcher and
-`scripts/install-desktop-launcher.sh`. The launcher is self-preparing: it
-installs/updates the OS `vibyra.desktop` entry, bootstraps missing Node/Electron
-dependencies, starts the local Laravel backend automatically only when
-`VIBYRA_DESKTOP_API_URL` is loopback, then opens the Electron shell. The
-installer writes `~/.local/share/applications/vibyra.desktop` and a
-`~/Desktop/Vibyra.desktop` shortcut when a Desktop folder exists, both with
-`Name=Vibyra`, `Icon=vibyra-login-logo`, and `StartupWMClass=vibyra`.
-Keep launcher log paths initialized before any `set -u` reads; the Electron log
-path should derive from `LAUNCHER_LOG_DIR` so app shortcut launches cannot abort
-before the stale-bridge/latest-source refresh runs.
-
-Membership cancellation stays inside the expanded `Manage membership` panel and is owned by `desktop/assets/app.profile-billing-cancel.js` plus its scoped stylesheets. It must not appear on the default Billing view. `End membership` reveals the reason list, optional detail, explicit confirmation checkbox, and final destructive action. It posts to `/api/billing/cancel`; manual memberships remain paid and show the exact `membershipEndsAt` date when the backend returns `status: scheduled`, while Stripe/Apple/Google open provider URLs externally. Never describe a period-end cancellation as an immediate Free downgrade. Backend persistence in `membership_cancellation_feedback` is mandatory before provider handoff.
-
-`confirmClearDesktopCache()` clears desktop chat/history/project/terminal/UI preference keys but preserves `vibyra.desktop.auth`, `vibyra.desktop.install`, and `vibyra.api.url`. Desktop account session storage must preserve `burstCredits*` and `weeklyCredits*` fields from backend `/api/session` so Billing can show burst and weekly limits.
-
-The Settings dropdown entry opens the `App` section, while Profile always opens
-the `Profile` section regardless of the previously persisted section.
-
-`#token-modal` is a multi-view sheet driven by `tokenModalView` (in `desktop/assets/app.1.js`), valid values `profile | plans | help`. (The earlier `personalization` view was removed when Settings moved to the Profile page.) Title text in `<h2 id="token-title">` is mutated per view via `tokenModalTitles`. `openTokenModal(view)` accepts the target view; `setTokenModalView(view)` re-renders.
-
-Desktop modals (`#pair-modal`, `#token-modal`, `#profile-modal`) are deliberately calm one-glance surfaces — not dashboards. Do not reintroduce parallel info cards, 4-up metrics grids, or inline plan-card stacks in the default view.
-
-`#pair-modal` (`desktop/app.html`, `renderPairModal()` in `desktop/assets/app.2.js`, styles `.pair-v2*` in `desktop/assets/app.2.css`) renders three discrete states, never overlapping:
-1. Waiting: centered ~56px tabular-numeric tap-to-copy code button (`#copy-pair-code`, toggles `.is-copied` for ~1.5s and reveals an inline `Copied` chip), then a pulsing-dot + `Waiting for your phone…` status line, then a single helper line. No code-card box, no waiting placeholder card.
-2. Pending: same code + status, plus one slim `.pair-v2-approval` row with phone icon, device name, `Approve only if this is your phone.`, and `Deny`/`Allow` (`danger-button`/`primary-button`, respect `posting`). Approve posts `/desktop/approve`, deny posts `/desktop/deny`.
-3. Paired: replaces the whole body with a green check (`currentColor` stroke driven by `color: var(--success)` on `.pair-v2-check`), `Connected to <device>`, and a quiet `Unpair` text-link that posts `/desktop/disconnect` (the actual backend route — there is no `/desktop/unpair`).
-
-The modal header for pairing is title-only (`Pair phone`); the kicker was removed.
-
-`#token-modal` is a multi-view sheet driven by `tokenModalView` (in `desktop/assets/app.1.js`), valid values `profile | plans | help`. Title text in `<h2 id="token-title">` is mutated per view via `tokenModalTitles`. `openTokenModal(view)` accepts the target view; `setTokenModalView(view)` re-renders.
-
-- `profile` (default, narrow 460px via `.modal--narrow`): identity row (avatar/initials + name + plan label) + one credits line `X of Y monthly credits` + 4px purple progress bar (`.credits-bar`). Daily-cap caption (`.credits-daily`) renders only when `dailyUsed / dailyCap > 0.8`. No action buttons inside the profile view — actions live in the dropdown.
-- `plans` / `Upgrade plan` (wider, `.modal--billing-revamp`): the same equal Starter, Builder, and Pro image-led cards used in Settings, with no Back action because the profile dropdown and locked-feature prompts open this view directly; users close it through the modal close control. `desktop/assets/app.billing-plans.js` owns the shared markup/cycle state; `app.profile-billing-plans.css` and `app.profile-billing-plan-art.css` own the cards. `planPickerCycle` is persisted in `localStorage["vibyra.desktop.billingCycle"]`; only initialize it from account annual billing when the user has not chosen a cycle yet. While `tokenModalView === "plans"`, the shell must preserve `.token-plan-picker` across `/desktop/state` refreshes. Upsell triggers such as locked models call `openTokenModal("plans")` and land on this same design.
-- `help` (narrow): `.account-help` with a `mailto:support@vibyra.app` link styled via `.account-help-link`. The mobile app uses the same support address (`src/screens/workspace/inline/profile/SupportSheet.tsx`).
-
-Both `openTokenModal` and `closeTokenModal` reset `tokenModalView` to `profile`. Preserved hooks: `data-setting="Log out"` (still matched in `desktop/assets/app.auth.js` for legacy paths), `data-billing-plan`, and the `refreshDesktopAccountSession()` re-render dance. `data-billing-manage` was removed when the in-modal action rows were dropped; manage-billing is now invoked from `handleAccountAction("upgrade")` for paid users.
-
-`.modal` default max-width is 720px (covers the plans sub-view); profile/personalization/help apply `.modal--narrow` for 460px. The pair modal uses the 720px default since `.pair-v2` centers via `justify-items`. Do not widen `.modal` back to 820px without also auditing both modals.
-
-## Palette tokens — `--token` is yellow
-
-`app.1.css :root` and `app.7.css :root` both define palette CSS vars, and `--token` (yellow, `#f7d65b`) is defined only in `app.1.css` and intentionally NOT overridden by `app.7.css` because it represents the credit-token icon color. Do NOT use `var(--token)` for general accent surfaces — it will paint them yellow. For purple accents use `var(--accent)` / `var(--accent-soft)` / `var(--line-strong)`; for muted text use `var(--muted)` / `var(--subtle)`; for elevated text use `var(--text)`. The pair code and pulsing dot use `var(--accent)` (purple), not `var(--token)`.
-
-## Terminals, Projects, And Shell AI
-
-The desktop shell defaults to Terminals after login. The primary rail
-destinations are Terminals and Projects only; saved `dashboard` state is stale
-and should fall back to `terminals`. Keep profile/billing/account details in
-the account modal. Do not restore Home, Chat, Builds, a recent-work dashboard,
-or a recent-chat rail.
-
-Terminals is the main product surface. `desktop/assets/app.shell.js` renders
-the terminal page for `activePage === "terminals"` and no longer calls
-`renderDashboard()`. PTY refreshes in `app.terminals-pty-runtime.js` should
-refresh terminal DOM/topbar/nav only; they must not try to update a Home view.
-The terminal setup flow remains the entry point for choosing project, mode,
-count, model, effort, token source, workspace mode, and permissions.
-
-The shell AI surface is owned by `desktop/assets/app.shell-ai.js` and
-`app.shell-ai.css`. Projects shows one compact Vibyra V in the
-top-right shell actions; it opens a chat-only right sidebar with the existing
-desktop chat history, attachments, skills, and `POST /desktop/chat` pipeline.
-Shell AI does not expose a model/effort picker; `sendChat()` in
-`desktop/assets/app.chat-send.js` sends `model: "local"` and
-`provider: "local"` so this surface uses the same local Ollama route as the
-terminal AI companion. Legacy `setPage("chat")` calls open this panel from
-Projects without restoring Home. Entering Terminals closes it.
-
-The shell AI sidebar must not expose Editor, Preview, Talk, Memory, `/phone`,
-`/voice`, or `/memory`. Those are terminal-only tools. The desktop chat state
-remains local in `vibyra.desktop.chatDraft`, `vibyra.desktop.recentChats`, and
-`vibyra.desktop.activeChat`; the left rail must not show recent chats.
-The shell AI width is user-resizable through the left edge separator and
-persists in `localStorage["vibyra.desktop.shellAiWidth"]`; keep pointer and
-keyboard resizing available and clamp it so Projects remains usable.
-
-Projects is a focused workspace chooser, not a dashboard. `renderProjects()` in
-`desktop/assets/app.pages.js` owns the page shell: one compact command bar,
-search and Desktop/Phone filters, and a flat Finder-like project list whose row
-actions call `openProjectInTerminalSetup()` from `desktop/assets/app.icons.js`.
-Opening a project sets `vibyra.desktop.project` and
-`vibyra.desktop.terminalProject`, switches to Terminals, and shows the terminal
-selection/setup flow for that project.
-`projectCard()` and related row labels live in
-`desktop/assets/app.projects-render.js`. Late scoped styling lives in
-`desktop/assets/app.projects.css`, `app.projects-empty.css`, and
-`app.projects-rows.css`, loaded after the graphite theme/audit layer from
-`desktop/app.html`. Preserve real project data only, avoid fake metrics or
-broad dashboard panels, and do not restore the selected-project side panel,
-duplicate phone pairing strips, or bulky project cards. Project row
-actions should read as terminal actions such as `Open terminal`; when the Phone
-filter is empty and unpaired, render a clean iPhone-to-desktop pairing state
-with a compact `Connect iPhone` title and one primary `Pair` CTA.
-
-Desktop shell chat should show only a quiet local/Ollama indicator beside the
-attachment control, not a selectable AI model menu. Keep terminal model
-selection separate on the Terminals page, where it belongs to the terminal
-workflow.
-
-Empty desktop chats use `chat-page--empty` from `desktop/assets/app.pages.js` and layout rules in `desktop/assets/app.chat-surface.3.css`. Keep the headline, compact suggestion pills, and composer grouped as one start surface slightly above center; active conversations must retain the normal grid with message history and the composer pinned to the bottom.
-
-Desktop visual overrides should use the shared professional graphite palette
-from `app.theme.css`: `#121214` canvas, `#17171B` rail, `#19191D` surface,
-and `#222226` elevated, with `#6D3BFF`/`#8B5CFF` reserved for interaction and
-AI/provider identity. Keep the palette restrained and clean; do not reintroduce
-the older mobile-dark foundations, glow-heavy dashboard styling, or fake
-marketing panels.
-
-Desktop chrome should feel like a modern AI desktop app: `desktop/assets/app.7.css` keeps the sidebar quiet with neutral selected rows, compact status/pairing card, and hover tooltips when the rail collapses. The topbar aligns with page gutters and keeps account/phone controls minimal: phone status is an unboxed phone icon with a green dot only when connected, and account is an unboxed Google-style avatar/initial button.
-
-The desktop launcher prefers a frameless Electron window and falls back to Chrome app mode. In Electron, `desktop/app.html` renders one Focus-style `desktop-chrome` titlebar with a draggable left/center region and real minimize/maximize/close controls on the right; the sidebar owns the Vibyra label, and `renderTopbar()` must not inject app/page/account controls while `body.desktop-authenticated` is absent so the auth welcome titlebar stays clean and clickable. Chrome fallback hides `desktop-chrome` and keeps the normal topbar/native frame to avoid duplicate controls. If a machine shows the default white OS/browser title bar, first check whether `node_modules/.bin/electron` exists and run `npm install` if it is missing; `electron` is a root dev dependency so the repo-root `Vibyra Desktop` launcher should choose Electron before Chrome. Relevant files: `package.json`, `desktop/electron-main.cjs`, `desktop/electron-preload.cjs`, `desktop/lib/window.mjs`, repo-root `Vibyra Desktop`, `Vibyra Desktop.desktop`, `desktop/app.html`, `desktop/assets/app.1.js`, `desktop/assets/app.7.css`.
-
-Electron titlebar hit ownership is explicit in `app.theme-shell.css`:
-`.desktop-chrome-right` is a right-aligned max-content grid item with
-`pointer-events: none`, while `.desktop-chrome-actions` and
-`.desktop-window-controls` restore pointer events. Do not let the right
-container stretch across `.desktop-chrome-page`; it intercepts the terminal
-project bar, Add, workspace tools, and Options even when their handlers are
-correctly bound.
-
-The desktop sidebar does not show chat history. `desktop/app.html` may still include `#rail-recents` for compatibility, but `renderRecentChats()` hides and empties it. Desktop chat history may remain in local state for shell AI continuity, but it is not a rail information architecture element. The rail stays focused on page navigation, active terminal agents, and phone status; terminal project groups belong in the authenticated top chrome as browser-style tabs, while active-project agents render under the Terminals rail item. The rail collapses to nav tooltips at `max-width: 900px` and can be manually collapsed with the top-right rail icon via `localStorage["vibyra.desktop.railCollapsed"]`. Manual collapse must remain a visible icon rail, not a fully hidden sidebar or floating reopen button. Do not add a top sidebar profile block; the account affordance belongs in the minimal topbar avatar.
-
-Terminal project tab chrome is owned by `desktop/assets/app.terminals-project-groups.css` and `app.terminals-project-groups.js`. Keep it as a full-width balanced grid: an empty left track, centered browser-style project tabs, and a right action track for New agent, workspace launchers, and Options. Avoid `width: fit-content` on `.terminal-project-tabs`; it lets the right action cluster pull the project tabs off center and makes Add/project controls look misaligned, especially at narrower widths. Project close actions are group-scoped: each project tab can close that one group, and the top three-dot menu must close only the active project group rather than calling the global close-all-terminals route.
-
-Selected terminal visibility is finalized in late-loaded `desktop/assets/app.terminals-chrome-polish.css`. Keep `.terminal-focus.active` and `.terminal-tile.active` with a clean accent border/ring plus a subtle selected header tint there; earlier selected styles in `app.terminals-window.css` are overridden by the polish sheet.
-
-When the manual rail is collapsed in Electron, keep the rail visible as a narrow icon column with nav/status controls still clickable; hide text labels, recents, and the duplicate Vibyra logo, show tooltips from `data-tooltip`, center the phone/link status dot over the status icon, and do not use a floating `#rail-expand` affordance. The same rail chevron should toggle back to the full sidebar. Expanded Electron rail header owns the Vibyra text label with the chevron immediately to its left; do not show the duplicate `Vibyra Desktop`/connection copy in the custom titlebar.
-
-The Projects topbar uses one Vibyra V button before the account avatar to toggle
-shell AI. Terminals owns its separate right workspace controls.
-
-Sidebar tab and recent-chat selection state should not use a distinct selected color, background, border, or accent bar; keep selected rows visually neutral and rely on hover feedback only.
-
-Desktop AI chat is desktop-owned and does not require phone pairing. `desktop/assets/app.chat.js` posts composer prompts to loopback-only `POST /desktop/chat`; `desktop/lib/desktopChat.mjs` requires the verified desktop account token from `/desktop/session`, gathers selected-project context with `promptProjectContext`, and proxies a `surface: "desktop"` payload to backend `/api/chat`. Keep `/agents/start` phone-authenticated until a separate desktop apply/discard approval UI exists. `GET /desktop/projects` is loopback-only and hydrates desktop project cards without a phone session.
-
-Desktop multi AI terminals are exposed as a primary rail page. Ordered terminal modules loaded from `desktop/app.html` own the 12-terminal workspace, per-terminal draft/history/model/effort/project state in `localStorage["vibyra.desktop.aiTerminals"]`, and concurrent sends through the desktop chat client; `desktop/assets/app.terminals.js` and `desktop/assets/app.terminals.css` are compatibility stubs, with real JS/CSS split across `app.terminals-*` and `app.terminals.*` chunks. The UI defaults to a focus-mode active terminal. Project groups render as browser-style tabs in the authenticated top chrome through `terminalProjectTabsHtml()` / `terminalTopbarHtml()`, while agents for the active project render directly under the Terminals item in the global left rail through `terminalRailAgentsHtml()` with individual focus, close, and drag-reorder controls. `renderTerminalsPage()` should keep `.terminal-page` focused on the terminal stage: one `.terminal-primary-shell` direct child, a one-column `.terminal-body-shell`, the optional team bar, and `.terminal-stage`; do not restore a page-local agent sidebar or a page-local project navbar. New agent, right-workspace launchers, layout switching, and confirmed close-all live in the top project tab chrome. If no terminals exist, the page shows a simple setup panel asking how many terminals to open, supports custom counts up to 12 with a small layout preview, and uses one compact model selector that opens a searchable vertical model list; do not display every model as cards in the setup panel or use provider filter boxes in the dropdown. Terminal model rows are grouped by provider in `terminalModelSection()`/`terminalModelButton()` and styled through `.terminal-model-picker`/`.terminal-model-option`; the setup selector expands inline under the model button, while the terminal page new-agent picker opens from the project bar. Keep model-option hover neutral and reserve purple for the active/selected row. `.terminal-model-scroll` should use native wheel scrolling with `overscroll-behavior: contain`; avoid manual `wheel` handlers because they can trap trackpad/wheel input. Preserve picker scroll across the once-per-second `/desktop/state` refresh by calling `captureTerminalModelScrolls(document)` at the start of shell `render()` and restoring through `bindTerminalModelScroll()` plus `requestAnimationFrame`; otherwise setup and new-agent model dropdowns jump back to the top while scrolling. Model search input must update the dropdown list in place via `renderTerminalModelSearchResults()` instead of calling full `render()` on every keystroke, and refresh should preserve an already-open picker without blocking the initial click render that opens it. The PTY fast-refresh path must be project-aware: signatures include active project/group shell state, patching uses `terminalsForProjectKey()` for visible stage tiles, and top project tabs plus rail agents are regenerated when their HTML changes so the DOM cannot show stale project chrome while xterm panes update. `renderTerminalsPage()` must also skip replacing terminal content while a `[data-terminal-draft]` textarea is focused; the 1-second refresh otherwise destroys the active textarea node and makes prompt boxes deselect while typing. Focus mode should treat `.terminal-stage` as a full-height grid and reserve the larger typography, output padding, and composer sizing for `.terminal-focus` only, while grid tiles remain compact. Terminals use provider profiles in the split terminal modules for Claude, OpenAI/Codex, Gemini, and Auto; profiles own prompt tokens, placeholders, banners, command registries, shell syntax, and typed transcript rendering. Local command parsing must run before `/desktop/chat` sends: `/clear`, `/help`, `/model`, `/plan`, `/review`, `!`, and `@path` are handled or transformed client-side, while unsupported-but-real provider commands render system rows instead of being sent as plain chat. Typed messages persist with `profileVersion: 1`; old `{role,text}` localStorage rows must keep rendering. Optional grid mode uses `localStorage["vibyra.desktop.terminalsLayout"]`; model/effort/project settings stay hidden in per-terminal settings. Backend plumbing lives in `desktop/lib/aiTerminals.mjs`, with `desktop/lib/routes.mjs` delegating loopback-only `/desktop/terminals` routes after `authorizeDesktopUi`. The in-memory API supports up to 12 sessions, sends prompts through `sendDesktopChat()` instead of duplicating backend chat logic, and lets backend 429/reset metadata propagate through the route error handler.
-
-Terminal model dropdowns load the live OpenRouter model catalog through loopback-only `GET /desktop/openrouter-models` (`desktop/lib/openRouterModels.mjs`) and keep the static chat model list as an offline fallback. The route filters the live catalog to general chat/coding models only: keep text-output models from recognizable terminal-useful providers, cap noisy provider groups, and hide media, preview, OCR, search/research, guard/moderation, embedding/rerank, VL/vision, beta, experimental, omni, and UI-agent variants so the selector does not fill with utility/deep-research models. Perplexity/Sonar is intentionally allowed as a relevant terminal provider. It also canonicalizes known provider slugs before grouping so Qwen/Mistral/etc. do not split into model-name pseudo-companies. The frontend stores this as terminal-only dynamic groups in `desktop/assets/app.terminals-models.js`, grouped by company and sorted by capability/newness; selected OpenRouter slugs are sent unchanged. Provider icons are rendered by `providerLogo()` in `desktop/assets/app.chat-actions.js`: prefer transparent Simple Icons SVGs for covered brands, use transparent Wikimedia symbols for OpenAI/Microsoft, show provider logos in terminal section headers and rows, and fall back to transparent initials only for niche providers without a reliable compact mark. Keep `.provider-logo` backgrounds transparent so logos fit cleanly in the selector icon box. Backend billing accepts safe OpenRouter slugs dynamically in `CreditCalculator`, treating unknown paid slugs as billable non-free tiers instead of falling back to `auto`.
-PTY model selection is provider-native and fail closed for Vibyra credits. Before creating a worker, `desktop/lib/ptyTerminals.mjs` resolves an immutable launch descriptor containing the concrete provider, native runtime, wire adapter, model constraints, permissions, sandbox mode, and launch contract version. A model is launchable only when both its genuine native CLI runtime and its managed-credit adapter are ready. Missing, unknown, API-only, and taskless Auto selections must remain unavailable; they never fall back to Codex or a simulated provider terminal. Auto may launch only after an initial task is routed to one concrete native-ready provider, and the resulting provider/runtime is immutable for that session.
-AI terminal token source is explicit per terminal. `desktop/assets/app.terminals-state.js`, `app.terminals-models.js`, `app.terminals-controls.js`, `app.terminals-pty.js`, and `app.terminals-pty-runtime.js` thread `tokenMode: "vibyra" | "provider"` from setup/settings into `/desktop/pty-terminals`; `desktop/lib/ptyTerminals.mjs`, `aiTerminalProcess.mjs`, and `aiTerminalVibyraShell.mjs` pass it into the launched process. Provider mode currently supports OpenAI models/accounts: `/desktop/provider-accounts*` in `desktop/lib/desktopRoutes.mjs` stores a local OpenAI API key through `desktop/lib/providerAccounts.mjs` under `~/.vibyra-agent/provider-accounts.json` with `0600` permissions, exposes only redacted status to the browser, injects `OPENAI_API_KEY` into official Codex launches, and lets `desktop/lib/openAiProviderChat.mjs` call OpenAI Responses directly from `/desktop/chat` without Vibyra credits. Vibyra mode still requires the desktop Vibyra account token and uses backend `/api/chat`.
-Managed-credit native CLI candidates are OpenAI Codex, Mistral Vibe, Kimi Code, Claude Code, Qwen Code, and Gemini CLI. Each provider stays disabled until its exact protocol adapter, isolated configuration, credential containment, cancellation, billing, sandbox, recovery, and native interaction release gates pass. Provider-themed wrappers may remain only as legacy code during removal; they are not a valid launch path or fallback for new Vibyra-credit terminals.
-
-PTY-backed AI terminals must preserve mounted xterm DOM nodes across `/desktop/state` refreshes and PTY session/output updates. `desktop/assets/app.terminals-pty-runtime.js` wraps `renderTerminalsPage()` with a structural signature and patches status/helper text in place; only layout, active terminal, menu, unavailable-mode, or notice changes should replace the terminal page. Because `renderTopbar()` still rebuilds the terminal tab/add controls every refresh, the no-remount fast path must rebind PTY topbar controls without rebinding the preserved content nodes. PTY focus/input must be bound on `.terminal-pty-lines`, with wrapper keydown as a fallback even when xterm exists, so clicking the terminal tile still sends input to the selected terminal. `connectPtyTerminal()` must reuse open/connecting sockets instead of subscribing repeatedly. Xterm instances must be resized from their rendered tile dimensions and send `/resize` metadata to `desktop/lib/ptyTerminals.mjs`; otherwise grid tiles keep a stale 120-column terminal and command editing/navigation becomes unreliable. When PTY terminal count exceeds four, `desktop/assets/app.terminals-pty.js` switches to grid mode automatically, and `desktop/assets/app.terminals-render.js` plus `app.runtime-fixes.css` use count-derived grid CSS variables so up to 12 terminals fit on one page. CLI process launch must wait until the xterm pane is rendered and measured, then send those rows/cols to the backend. `desktop/lib/aiTerminalProcess.mjs` uses `/usr/bin/script` as the pseudo-terminal wrapper; it must run `stty rows <n> cols <n>` inside that script pty before `exec` or full-screen CLIs can believe the terminal is one column wide and render one character per line. Codex's main chat is an inline viewport regardless of alternate-screen policy, so `desktop/lib/aiTerminalWorker.mjs` must answer the first startup cursor-position query with the configured bottom row before xterm attaches; this keeps the composer and status line anchored to the terminal bottom. `script` input echo should stay disabled with `-E never`.
-When styling `.terminal-xterm`, keep prompt padding in `app.runtime-fixes.css` and subtract that padding in `measuredPtySize()`; otherwise narrow desktop widths can clip the first terminal character or report too many columns to the PTY.
-PTY terminals intentionally do not render the old bottom helper/composer row; `.terminal-pty-lines` is the focus/input target and should fill the freed space. Project-tab and rail-agent state may participate in the PTY DOM signature only to patch the top chrome tabs and left rail agents in place; opening menus must not remount or flash the xterm pane.
-In PTY focus mode, keep every `.terminal-focus` article mounted and hide inactive terminals with `.terminal-focus-hidden` instead of rendering only the active pane. `setActiveTerminal()` should patch active/hidden classes through `refreshPtyTerminalsDom()` and focus the target xterm, not force a full terminal content render. `mountVisibleXterms()` must skip hidden focus panes so inactive terminals keep their xterm DOM connected without being resized to zero; switching tabs should preserve the same xterm object/element and only change which article is visible.
-Opening a PTY terminal's three-dot settings menu must also be an in-place patch, not a full `render()`: `toggleTerminalSettings()` is the generic hook, while `app.terminals-pty-runtime.js` overrides it to insert/remove `.terminal-settings-menu` and keep `settingsTerminalId` out of `ptyTerminalDomSignature()`. Otherwise clicking the menu remounts xterm and brings back terminal flashing.
-PTY terminal persistence is split between frontend saved shell state and backend live process state. `desktop/assets/app.terminals-pty.js` persists terminal metadata, active tab, layout, selected model/token mode, and recent output to localStorage; `desktop/assets/app.terminals-pty-runtime.js` flushes on pagehide/beforeunload, imports live backend sessions that are missing locally, reconnects known sessions, and restarts missing saved PTY terminals with the preserved transcript plus a restore marker. `desktop/lib/ptyTerminals.mjs` keeps POST `/desktop/pty-terminals` idempotent for an existing live id so refresh/restore retries do not spawn duplicate processes. True same-process resume after the Node desktop backend exits still requires a durable PTY host such as tmux/screen or provider CLI session resume support; current behavior preserves user-visible context and restarts the agent when the backend process is gone. Closing an individual terminal is the intentional destructive path and should remain confirmed for running or non-empty terminals.
-PTY terminal project selection is a setup/new-terminal preference stored in `localStorage["vibyra.desktop.terminalProject"]`. The setup screen and plus-menu show a project picker; `createTerminal()` copies that selected project id onto the terminal before POSTing to `/desktop/pty-terminals`, and the backend resolves it to the PTY cwd. Running terminals should show their bound project/cwd as read-only metadata rather than silently changing project mid-session.
-Embedded Codex PTY terminals must not share the user's main `~/.codex` runtime directory because parallel `codex` processes can lock `state_5.sqlite` and crash. `desktop/lib/aiTerminalVibyraShell.mjs` assigns each Codex terminal a per-terminal `CODEX_HOME` under `~/.vibyra-agent/codex-terminals/<terminal-id>` and seeds only auth/config-style files from the main Codex home.
-Terminal list changes in the same layout are also patched in place by `patchPtyTerminalStructure()` in `desktop/assets/app.terminals-pty-runtime.js`; do not switch add/remove/reorder back to a full content `innerHTML` render because it disconnects existing xterm panes and makes already-open models flicker. The project-bar new-model picker is fixed-center for both Electron and browser fallback through `.terminal-new-wrap .terminal-model-picker` in `desktop/assets/app.terminals.model.1.css`.
-`desktop/lib/aiTerminalVibyraShell.mjs` owns the PTY session wrapper: prepend a temp `vibyra` command to `PATH`, run AI CLIs inside an interactive shell, reset terminal modes with `stty sane echo` before shell fallback, and fall back to an interactive project shell when the agent exits or is interrupted by `Ctrl+C`. Keep `vibyra help/files/research/image/plan/clear` local and lightweight, and do not print a Vibyra welcome/banner or replace the real shell with a fake terminal UI.
-
-AI terminal right-side panels are desktop shell UI state, not persisted app
-state. They are separate from the Projects shell AI sidebar. The terminal
-top-right sidebar button opens the full Editor / Preview / AI / Memory
-workspace; `/phone` opens Phone Preview, while Talk remains inside terminal AI.
-Keep companion UI as a sibling of `.terminal-stage` so PTY/xterm panes are not
-remounted during the once-per-second `/desktop/state` refresh.
-
-The right-workspace Preview empty state must remain explicit when no project
-context exists: show the preview eye with `No projects are currently open` and
-tell the user to open a project in a terminal. The state is rendered by
-`desktop/assets/app.terminals-test-targets.js`; do not regress it to an
-unlabeled icon.
-
-Provider-specific Claude Code, OpenAI Codex, and Gemini CLI command/typography research lives in `Vibyra/_ai/Desktop/AI Terminal Provider CLI Research.txt`; the desktop terminal frontend now implements that research through provider profiles, typed transcript rows, split terminal JS/CSS chunks, local command parsing before `/desktop/chat`, and a provider-filtered slash command menu that appears below the composer for leading `/` drafts. Terminal composers intentionally have no send button; Enter submits and Shift+Enter inserts a newline. Permission commands render concise terminal-style status rows, not internal route/auth wording. Known provider commands must either perform a local UI action, show real local status/configuration, execute through the restricted `/commands/run` desktop route for allowed `!` shell commands, or transform into a provider-scoped desktop chat prompt; do not render known commands as unsupported placeholders.
-
-A spawned terminal opens with a Claude-Code-style boot banner rendered by `terminalBanner()` in `desktop/assets/app.terminals.js`: a "Vibyra Desktop v<version>" title, a small ASCII logo block (provider-tinted: green for OpenAI, orange for Claude, blue for Gemini, purple for Auto), and three meta lines showing the model + reasoning effort (`<Model> with <effort>`), the plan label (`Vibyra <tier>`, derived from `currentPlanTier()` in `app.2.js`), and a fake `~/<slug>` cwd built from the bound project name (or `~/workspace` when none). The banner persists at the top of `.terminal-lines` and scrolls off as messages accumulate, mimicking a real shell session. Messages use a `>` prompt prefix for the user line and a prefix-free monospace block for assistant output. Only the bottom composer should render an editable prompt; do not add an idle fake caret/prompt inside `.terminal-lines`. `terminal-focus` and `terminal-tile` use three grid rows normally and add `.has-notice` for the optional notice row, otherwise the composer stretches into the output area. Do not regress the banner to the old single-line "modelLabel / project" empty state; it must show the boot block even before the first message so the page feels like a real CLI.
-
-Quota and rate-limit errors from desktop chat should stay out of the assistant transcript. `desktop/lib/desktopChat.mjs` and `desktop/lib/routes.mjs` preserve backend 429/reset metadata, `desktop/assets/app.chat.js` exposes it on `DesktopChatError`, and `desktop/assets/app.2.js` renders a dismissible warning above the composer via `chatNoticeBanner()`.
-
-Desktop chat should feel closer to a basic Codex terminal than the phone app. The visible desktop slash command set is local-only `/open`, `/new`, `/clear`, and `/help`, plus coding-oriented prompt skills `/plan`, `/debug`, `/review`, `/explain`, `/fix`, and `/refactor`. Do not expose mobile-style `/preview`, `/test`, `/build`, `/publish`, image generation, deep research, web search, or analyze-file tools from the desktop chat composer. Server-side `desktopChat.mjs` also allowlists desktop skills and normalizes every request to `mode: "chat"` so stale clients cannot send mobile/build modes.
-
-Desktop chat paperclip is only for staging local context, currently Files and Folder rows. Do not include Camera, Photos, Create image, Deep research, Agent web search, Analyze files, or any separate top action grid on desktop. `desktop/assets/app.1.js` owns the action/skill lists and composer binding; `desktop/assets/app.2.js` owns selection/send helpers and local chat history; `desktop/lib/desktopChat.mjs` forwards only the allowlisted desktop skill, selected model, reasoning effort, history, attachments, project context, and `surface: "desktop"`.
-
-Desktop backend API configuration is desktop-specific: route-side account/chat modules read `VIBYRA_DESKTOP_API_URL || VIBYRA_API_URL || http://127.0.0.1:8000`. Do not depend on Expo/mobile `EXPO_PUBLIC_API_URL` from desktop route modules.
-
-Desktop membership mirrors backend/mobile billing contracts. `desktop/lib/desktopAccount.mjs` keeps plan, cycle, credits, caps, and `allowedModelTiers` from backend `/api/session`; `desktop/assets/app.auth.js` refreshes and stores those fields when `/desktop/session` returns `user`, including when the account modal opens, so model locks do not stay stale after checkout/portal changes. `desktop/assets/app.2.js` renders the account modal membership overview and uses the same model tier map as mobile so Free users can only select budget models while paid plans unlock all rows. Backend `/api/chat` remains the final enforcement layer.
-
-Desktop account authentication has two hops but one backend source. The renderer
-posts email auth to the same-origin `/desktop/auth/login` or
-`/desktop/auth/signup` proxy, then `/desktop/session` verifies that token. Both
-bridge requests use the same `VIBYRA_DESKTOP_API_URL`; the launcher derives it
-from root `EXPO_PUBLIC_API_URL` when no desktop override exists. Do not restore
-a renderer-to-cloud login fetch: Electron reports CORS, DNS, and TLS failures as
-an unhelpful `Failed to fetch`, while the local proxy returns a useful JSON
-error. Keep the bridge URL aligned so Railway phone accounts are not looked up
-in local SQLite. Validate with `desktop/lib/desktopAuthProxy.test.mjs` and
-`desktop/assets/app.auth-api.test.mjs`.
-The auth proxy retries one thrown upstream fetch failure after a short delay,
-uses a bounded request timeout, and only then reports that the account service
-could not be contacted. Do not label this condition as the desktop being
-offline. For live diagnosis, confirm `/desktop/state.appApiUrl`, then post
-invalid credentials to `/desktop/auth/login`; a reachable backend returns its
-real `401` credential error.
-Root `.env` is intentionally untracked, so a fresh checkout has no
-`EXPO_PUBLIC_API_URL`. The `Vibyra Desktop` launcher and
-`desktop/lib/appApiConfig.mjs` must both default to the Railway production API;
-localhost is local-development opt-in through `VIBYRA_DESKTOP_API_URL`,
-`VIBYRA_API_URL`, or `EXPO_PUBLIC_API_URL`.
-
-On this Windows workstation, the Linux-oriented npm scripts can fail when
-Windows `npm` sends `./scripts/*.sh` to `cmd.exe`. Use Git Bash directly when
-needed, with portable Node and winget PHP prepended to `PATH`. If `php artisan
-serve --host=127.0.0.1 --port=8000` reports a listen failure despite no port
-owner, PHP's built-in server works as a local backend fallback from
-`backend/`: `php -S localhost:8002 -t public public/index.php`. Point the
-desktop bridge at it with `VIBYRA_DESKTOP_API_URL=http://localhost:8002`, then
-run `node desktop/local-app.mjs` and open Electron against
-`http://127.0.0.1:4317/desktop`.
-
-OpenAI provider status is split intentionally. `desktop/lib/providerAccounts.mjs` reports `providers.openai` for optional OpenAI API-key billing through `~/.vibyra-agent/provider-accounts.json` or `OPENAI_API_KEY`, and separately reports `providers.codex` for ChatGPT/Codex CLI auth by detecting `codex` plus `~/.codex/auth.json` (or `CODEX_HOME/auth.json`). The terminal token UI should say `OpenAI API key` for direct API billing and show `ChatGPT via Codex CLI` as a separate Codex status; do not require an API key just to use a ChatGPT-signed-in Codex CLI terminal.
-
-When no OpenAI API key is connected, the `OpenAI API key` token-source button must remain clickable and open the API-key form; do not render it as a disabled button. The form only switches terminals to provider billing after the key verifies successfully.
-
-Desktop light/dark theme ownership lives in the late-loaded `desktop/assets/app.theme*.css` files. `app.theme.css` defines the shared professional graphite system and legacy aliases: dark uses `#121214` canvas, `#19191D` surface, `#222226` elevated, and `#17171B` rail; light uses a warm off-white canvas and near-white surfaces. Home aliases these tokens instead of owning a parallel palette. `app.theme-shell.css`, `app.theme-chat.css`, `app.theme-surfaces.css`, `app.theme-terminals.css`, and `app.theme-auth.css` own targeted overrides for shell, chat, shared surfaces, terminals, and auth. Keep navigation and ordinary selected surfaces neutral; reserve purple for primary actions, focus, AI/provider identity, and meaningful state. Keep `desktop/app.html` loading those theme files after the existing CSS chunks so they remain the final theme authority. The existing Profile appearance preference stores `vibyra.desktop.profilePreferences.appearance` and applies `body[data-desktop-theme]`; do not replace it with a separate theme state. Theme alias variables for shell, chat, shared surfaces, and terminals must be scoped on `body`, not `:root`, so light-mode body tokens can override the dark root defaults; otherwise cards, inputs, dropdowns, and rail status text inherit dark-mode colors in light mode. Terminal PTY output and helper text must be themed explicitly in `app.theme-terminals.css` via `.terminal-pty-lines pre`, `.terminal-pty-composer`, and provider prompt-token selectors because `app.terminals.pty.css` and provider focus chunks contain dark-mode hardcoded colors that otherwise leave white text on white light-mode panes. The xterm renderer in `desktop/assets/app.terminals-pty-runtime.js` must derive its `theme` from the terminal CSS variables, and `desktop/assets/app.runtime-fixes.css` must not hardcode the xterm background, because xterm does not inherit foreground/background colors from normal CSS text rules. Profile/account/token/pair modal forms and menus are covered by the late shared surface theme files: use `app.theme-surfaces.css` for base `--surface-*` aliases and `app.theme-surfaces-status.css` for follow-up selectors such as `.profile-field`, `.profile-select-row`, `.profile-session-menu`, `.profile-toggle`, and delete-account danger panels so light mode does not inherit white-alpha dark controls. The billing plan picker is theme-aware through `desktop/assets/app.billing-plans.theme.css`, which defines `--billing-*` variables consumed by `app.billing-plans.css`; keep the plan artwork but do not hardcode dark modal text, rows, segmented controls, or secondary buttons. The logged-out auth screen is always a dark image-led welcome surface; `app.theme-auth.css` must not inherit the saved light desktop theme for auth text, buttons, or email inputs.
-
-Terminal foundations must remain mapped to the shared `--color-*` values in
-both `app.theme-terminals.css` and the later
-`app.theme-terminals-states.css`; the state file must not restore the legacy
-`#07070A`/`#12121A` dark foundations. The final
-`app.terminals-theme-audit.css` and
-`app.terminals-workspace-theme-audit.css` files load after all terminal feature
-sheets and own setup, PTY/xterm, model/settings menus, companion, editor,
-memory, and preview surfaces.
-
-Desktop dropdowns are renderer-owned custom controls. Never add native
-`select`, `option`, `optgroup`, or `datalist` elements. Use
-`desktop/assets/app.custom-select.js` plus `app.custom-select.css`; preserve
-feature values through its hidden input and bubbling `change` event, and use
-`updateCustomSelectOptions()` for dynamic Preview choices so unchanged open
-menus survive refresh ticks. `desktop/assets/app.custom-select.test.mjs`
-scans all production desktop HTML/JS/MJS/CJS and fails if a native dropdown is
-reintroduced; it is part of `npm run test:desktop-ai`.
-
-The sidebar and Electron titlebar form one continuous L-shaped application
-frame. During `bootstrapDesktop()`, `desktop/assets/app.shell.js` moves the
-existing `.rail-logo` into `.desktop-chrome`; `app.theme-shell.css` keeps that
-brand/collapse segment synchronized with the expanded, collapsed, and narrow
-rail widths. Its background and right divider must exactly match the rail below,
-and the full authenticated `.desktop-chrome` uses the same solid rail color
-without transparency. `.desktop-chrome-page` starts at the rail edge so page
-titles center within the usable content area, but stops before the right control
-cluster. `.desktop-chrome-right`, `.desktop-window-controls`, and their buttons
-must remain explicit higher `no-drag` hit targets so minimize,
-maximize/restore, and close cannot be covered by the draggable title region.
-Phone pairing lives only in the compact bottom `.rail-status` row; the expanded
-rail shows one short label and the collapsed rail shows only the phone icon and
-state dot.
-
-Projects layout should match the full-width screenshot style: toolbar below top bar, three-card grid on wide screens, 176px cards, 16px padding, about 14px column gap and 16px row gap, active card with purple border.
-
-## Diagnostics
-
-If `/desktop` renders blank after shell edits, inspect Chrome console first. Known regression: `app.1.js` uses `icon()` from `app.2.js`; keep `app.2.js` loaded before `app.1.js`, then `app.auth.js`.
-
-An Electron black page can be Chromium's `chrome-error://chromewebdata/`
-document after the local bridge on port 4317 exits. `desktop/electron-main.cjs`
-must restart `desktop/local-app.mjs` with `VIBYRA_SKIP_DESKTOP_WINDOW=1` and
-keep retrying `/desktop`. Validate load success from renderer
-`location.href`, not `webContents.getURL()`, because Electron may report the
-requested HTTP URL while the renderer still shows the internal error page.
-Keep the retry timer referenced; an unref'ed timer may never replace the black
-error document.
-
-After changing Vibyra Desktop code or assets, fully restart the Vibyra Desktop application before final status: stop the Node bridge on port 4317 and the Vibyra Electron window, then run `npm run desktop` and verify `/desktop/state` or `/health`. Do not rely on the existing Electron window to hot-reload desktop asset changes.
-The Electron single-instance path now reloads the existing renderer without
-cache when `npm run desktop` is run again. `F5`, `Ctrl+R`, and `Cmd+R` use the
-same cache-bypassing reload through `desktop/lib/electronReload.cjs`. Keep this
-behavior when changing launcher/window lifecycle code so an already-open
-frameless window cannot remain on stale frontend assets.
-
-Settings performance requires the whole open modal to remain DOM-stable across
-shell refreshes, not only focused controls or Preferences. Background desktop
-state never owns `renderProfileModal()`; profile/account actions render
-explicitly when their own data changes. Bind profile controls inside
-`#profile-modal-body`, patch ordinary preferences through
-`app.profile-performance.js`, and reserve a full modal render for section
-changes or appearance/theme changes. Keep the Settings backdrop as a flat
-dark overlay without `backdrop-filter`: Electron runs with GPU compositing
-disabled on the supported Linux path, so live blur over terminals creates
-visible input and scrolling lag.
-Async Settings loads must not be initiated recursively from render. A failed
-load settles into a stable error state with an explicit Retry action. The modal
-must move focus inside, trap focus, make the app background inert, close on
-Escape, and restore focus to its opener.
-The once-per-second `/desktop/state` refresh is the default suspect when a desktop UI flashes, replays its entrance animation, drops an expanded row, loses scroll, or closes/reopens while idle. `desktop/assets/app.shell.js` runs `refresh(); setInterval(refresh, 1000)` and `render()` can rebuild nav, topbar, content, and open modal bodies. Any animated dropdown, open menu, modal sub-view, selected control, typed input, mounted canvas/xterm, or scrollable picker must either be patched in place or explicitly skipped by the refresh path while it is open. For Profile modal work, do not call `renderProfileModal()` every tick for Account, Billing, or an expanded delete panel unless the account/session data actually changed; otherwise the DOM replacement makes the panel look like it is flashing open and closed. After adding desktop UI that stays open, test by waiting at least two refresh ticks before calling it fixed.
-Desktop shell AI chat must stay bounded in memory as well as in `localStorage`. `app.chat-store.js` owns `limitedDesktopChatMessages()` / `limitActiveChatMessages()`: saved desktop chats keep 12 chats with 40 messages each, and live `chatMessages` is trimmed after sends while `app.pages.js` and `app.shell-ai.js` render only the bounded view. Do not map raw `chatMessages` in chat renderers or long open desktop sessions will lag until restart.
-Desktop chat Enter-to-send must go through the shared paste guard in `app.chat-store.js`. Bind `bindDesktopChatPasteGuard()` to home, full chat, and shell AI textareas, then use `shouldSendDesktopChatEnter(event)` instead of a raw `event.key === "Enter"` send. Long or multiline paste events can arrive with adjacent Enter-like key events from clipboard tools; those must insert text/newlines, not submit the chat.
-AI terminal project selection is owned by `desktop/assets/app.terminals-project-picker.js` and `app.terminals.project-picker.css`. Keep it as an accessible button/listbox with local DOM patching; transparent native-select overlays and full terminal renders cause inconsistent dropdown behavior, lost focus, and PTY flicker. Setup and new-terminal pickers share `vibyra.desktop.terminalProject`.
-Opening the account dropdown's Settings action must render the Profile modal on Preferences and reset `#profile-modal-body.scrollTop` to `0`; otherwise a previous scroll position can hide the Appearance screenshot cards even though they are present. `desktop/assets/app.modals.js` owns the open-path reset, and `desktop/assets/app.profile-actions.js` resets scroll after section switches. The `/desktop/state` refresh must not re-render the Preferences modal every second: `desktop/assets/app.shell.js` preserves the Preferences DOM while open, and the Appearance screenshots in `desktop/assets/app.profile-render.js` load eagerly so the image nodes are not replaced before decode completes.
-The Profile Preferences appearance picker must show the `dark`, `light`, and `auto/system` cards even if PNG thumbnails are slow or fail: `desktop/assets/app.profile.css` owns CSS fallback previews behind the images, while `desktop/assets/app.profile-actions.js` hides failed thumbnail images instead of leaving broken image chrome.
-
-If dark/light switching appears broken only on launch or Home, check the
-late-loaded `desktop/assets/app.home*.css` files for hardcoded colors or selectors
-escaping `.home-*`. Home replaced the old Builds screenshot CSS specifically
-to remove route-wide `body:has(...)` theme overrides. The compatibility route
-key is still `dashboard`, and `desktop/app.html` applies saved
-`data-desktop-theme`/`data-chat-font` before visible shell content to prevent
-launch flash. Keep the Home command background out of its transition list:
-Chromium can retain the prior resolved theme color while a custom-property
-background transition is active. Border color and transform may still animate.
-
-Desktop theme regression checklist: before closing desktop visual work, test explicit light and dark via `body[data-desktop-theme]` or the Profile Appearance picker. Sample computed styles for dashboard launch, Profile modal inputs/selects/textareas, Token billing plan modal rows and controls, Pair modal, chat menus/send button, and terminal setup/model/settings surfaces. If a surface stays dark in light mode, first check the late owner CSS chunk: `app.theme-shell.css`, `app.theme-chat.css`, `app.theme-surfaces*.css`, `app.billing-plans.theme.css`, or `app.theme-terminals*.css`. Avoid fixing by adding new theme state; route colors through the existing local token variables.
-
-When shell/chat light-dark bugs remain after base panels switch correctly, check late theme selectors for interactive state leaks: topbar/account/chat action menu `.danger` and `:disabled` rules, plus light-mode `.send-button:not(:disabled)`. These are owned by `desktop/assets/app.theme-shell.css` and `desktop/assets/app.theme-chat.css`; verify with computed styles for account menu, chat actions menu, attach menu, model menu, slash menu, composer textarea, send button, Projects search, rail, and topbar in explicit light and dark.
-
-The whole-shell light audit has a final owner in `desktop/assets/app.desktop-theme-audit.css`, loaded after Home, chat polish, and the late Projects sheets. It defines compatibility aliases such as `--surface-bg-elevated` for profile billing artwork and themes Projects row/search/empty-state controls, the full-screen screenshot editor, saved screenshot tray, notices, and remaining Profile voice controls. Keep screenshot opening tied to `body.screenshot-editing` so the underlying shell cannot scroll. Validate explicit light, explicit dark, and `auto` with an emulated light OS preference; include wide and narrow renders of Projects, billing plan cards, terminal setup/model/settings surfaces, Preview/Test, Memory, Monaco editor, and screenshot surfaces because image overlays, late feature sheets, and responsive chrome can hide dark fallbacks that panel-only checks miss. Terminal status dots, xterm cursor/selection, voice input, model locks, Preview controls, Memory, and Monaco editor colors should resolve through `--terminal-*` tokens in `app.theme-terminals*.css`, `app.terminals-theme-audit.css`, or `app.terminals-workspace-theme-audit.css`.
-
-Launcher port checks should use `lsof -nP -tiTCP:${PORT} -sTCP:LISTEN`. If a non-Vibyra listener owns the port, print `ps -o pid=,cmd= -p "$PORT_PIDS"` and suggest `kill <pid>`.
-
-Electron launcher visibility is owned by `desktop/electron-main.cjs` and `desktop/lib/window.mjs`. Keep a fallback `show()` path independent of Electron's `ready-to-show` event, and keep `requestSingleInstanceLock()` so repeated `npm run desktop` calls focus the existing Vibyra window instead of spawning extra hidden Electron processes. `desktop/lib/window.mjs` should launch Electron with `spawn(..., detached: true)` and inherit stderr so startup failures are visible in the desktop command terminal.
-
-Electron runtime branding is also owned by `desktop/electron-main.cjs`.
-Keep the visible application name as `Vibyra`, the Linux desktop identity as
-`vibyra.desktop`, the Windows AppUserModelID as `app.vibyra.desktop`, and the
-native window/macOS dock icon pointed at `desktop/vibyra-login-logo.png`.
-That PNG is a transparent square rendering cropped directly from the canonical
-`src/assets/vibyra.png` V artwork. Do not redraw the mark, add a background,
-or use the full wordmark as a small operating-system icon.
-On Linux, setting the name or `BrowserWindow.icon` is not enough for GNOME.
-Call Electron's supported `app.setDesktopName("vibyra.desktop")`
-before `ready`, keep both launch paths passing `--class=vibyra` as a
-fallback, and let `scripts/install-desktop-launcher.sh` keep
-`~/.local/share/applications/vibyra.desktop` aligned with that
-`StartupWMClass`. The installer copies `desktop/vibyra-login-logo.png` into
-the user hicolor icon theme under the unique `vibyra-login-logo` key and
-refreshes the icon cache. The app icon must be exported directly from
-`src/assets/vibyra.png`, with transparent pixels cleaned, restrained padding
-matching the login-page presentation, and no generated or redrawn substitute.
-Otherwise GNOME can retain an older icon or group the window under Electron.
-The installed Linux files are
-`~/.local/share/applications/vibyra.desktop` and
-`~/.local/share/icons/hicolor/512x512/apps/vibyra-login-logo.png`; the
-installer removes the obsolete `vibyra-desktop.desktop` entry. The desktop
-entry must expose `Name=Vibyra`, `Icon=vibyra-login-logo`, and
-`StartupWMClass=vibyra`. Validate the source PNG as 512x512 RGBA with fully
-transparent corners, run `desktop-file-validate`, compare the installed icon
-bytes with the source, and inspect the running X11 window with `xprop`.
-The final live properties should be `WM_CLASS = "vibyra", "vibyra"` and
-`_NET_WM_NAME = "Vibyra"`. Run `node --test desktop/electron-main.test.mjs`
-after changing desktop branding.
-On Linux, both the repo-root `Vibyra Desktop` launcher and `desktop/lib/window.mjs` must pass `--no-sandbox` to Electron. The npm-installed `chrome-sandbox` is user-owned rather than root/setuid, so omitting the flag aborts Electron before `desktop/electron-main.cjs` can run.
-Electron close controls should hide the window instead of quitting the app so desktop PTY agents keep running in the background; explicit app quit can still exit the backend and will rely on terminal restore/restart behavior on next launch.
-
-Desktop preview route ownership is split: `desktop/lib/preview.mjs` is the route coordinator, static detection/serving lives in `previewStatic.mjs`, URL/token helpers in `previewUrls.mjs`, proxy request/response/error/runtime/rewrite/reference helpers in `previewProxy*.mjs`, and injected overlay UI in `previewUi.mjs`. Tests stay as a `preview.test.mjs` import index over `preview*.test-fragment.mjs` files with shared helpers in `previewTestHelpers.mjs`.
-
-Desktop asset line-count splits: `app.theme-surfaces.css` owns shared surface/form/profile/modal tokens and base selectors, while `app.theme-surfaces-status.css` owns status/build/pair/credits/light-mode follow-up selectors and must load immediately after it. `app.terminals-pty.js` owns PTY terminal agent/setup/view/control overrides, while `app.terminals-pty-runtime.js` owns session start, websocket/input/output sync, and PTY session patching; load runtime immediately after `app.terminals-pty.js`.
-
-Split CSS chunks loaded from `desktop/app.html` must be syntactically valid as standalone files. Do not split a selector/rule across CSS files: browsers do not carry an open selector into the next `<link>`, so chat composer, terminal, auth, profile, and rail rules can be silently dropped and cause overlapping UI. `desktop/assets/app.runtime-fixes.css` is a late-loaded safety layer for deterministic chat and PTY terminal layout; keep it after the theme files. A quick diagnostic is to verify each CSS chunk starts at a selector/comment/media rule and has balanced braces.
+The auth surface uses
+`desktop-tauri/src/components/auth/AuthBackdrop.tsx` with the bundled silent
+H.264 `auth-space-loop.mp4` and its matching first-frame WebP poster. The poster
+stays mounted beneath the video; playback fades in only after `playing`, and
+reduced-motion or decoder failure remains static. Replacement videos must be
+circularly crossfaded before export, use broadly compatible `yuv420p`, contain
+no audio, and avoid an additional CSS drift animation. On Linux production
+builds, import the MP4 with Vite's `?inline` query and allow `data:` in the
+Tauri `media-src`; custom-protocol and Blob delivery can stall or corrupt media
+range reads in WebKit/GStreamer even when dev playback works. Confirm playback
+with two time-separated native captures, not markup alone. Regression coverage
+is in `desktop-tauri/tests/authBackground.test.mjs`. Email signup/login continue
+through native account commands to backend `/api/auth/signup|login`; the
+backend lifecycle test verifies user/session persistence, logout revocation,
+and a fresh login in isolated SQLite. Switching between provider, login,
+signup, and recovery paths clears stale backend errors; password recovery is
+shown only for login, never while creating an account.
+
+## Rust/Tauri Settings Integrations
+
+The new native app's service settings live in `desktop-tauri/src/components/settings/SettingsModal.tsx` and `SettingsIntegrationsPane.tsx`, with focused styling in `desktop-tauri/src/styles/settings-integrations.css`. The rail label is `Integrations`, not `AI & Models`. Keep this page flat and account-oriented: OpenAI/ChatGPT, Anthropic/Claude, and Google/Gemini connect through official CLI browser authorization, never API-key inputs. `provider_auth*.rs` owns status probes, secret-stripped login processes, cancel/disconnect, Gemini OAuth preparation, and a native-only captured sign-in URL fallback; the renderer receives only safe account status and whether `Open sign-in page` is available. Connected account runtimes synchronize with `Settings.enabledAgentIds`, while non-account CLIs remain independent under `Additional runtimes`. OpenRouter is a separate automatic public-catalog row, not a connected billing account. Model choice belongs to terminal launch flows. Existing deployment-owned Chat/Voice credentials remain native-only and are not terminal account authorization.
+
+Discord model-release promotion and its secret do not belong in Settings or
+persisted `Settings`. `model_watch_discord.rs` uses
+`VIBYRA_DISCORD_WEBHOOK_URL` as a runtime override, then falls back to the OS
+credential store. On Linux, `npm run discord:configure` accepts the URL through
+a hidden prompt, sends a real test notification, and saves it only after
+Discord confirms success. The first successful OpenRouter fetch still seeds
+the roster silently.
+
+## Settings Simplification Direction
+
+The 2026-08-21 audit keeps five primary destinations (General, AI accounts,
+Notifications, Shortcuts, Account) and moves expert controls behind a secondary
+Advanced destination. Preserve native provider/key ownership, spend guards,
+permission prompts, privacy consequences, confirmations, and existing persisted
+fields while removing repeated copy from the default path. The implementation
+sequence, item mapping, file ownership, and acceptance criteria are in
+[[Settings Simplification Plan]]. This is a planned navigation-label change;
+the shipped surface remains `Integrations` until that plan is approved and
+implemented.
+
+The watcher covers OpenRouter models that advertise tool support, not every
+model release globally. Later additions are written to the `model-watch.json`
+pending queue before delivery; only a successful Discord HTTP status clears
+them, so missing, rejected, or temporarily unreachable webhooks retry on later
+ticks without repeating the in-app release event. Tests cover legacy-store
+loading, base-model deduplication, pending persistence, Discord URL validation,
+and success/rejection responses through a local HTTP server. Validate with the
+frontend tests/build, the desktop line gate, and Cargo using the toolchain
+pinned in `desktop-tauri/rust-toolchain.toml` (currently 1.97.1).

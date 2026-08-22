@@ -23,15 +23,12 @@ The desktop process exposes local HTTP routes for:
 - agent task starts;
 - allowed command execution.
 
-Route entrypoint: `desktop/lib/routes.mjs`.
+Route entrypoint: `backend/routes/web.php`.
 
 ## Agent Flow
 
 `src/context/useAgentActions.ts` builds an optimistic mobile agent record and normally sends real AI prompts to backend `/api/chat`. Desktop `/agents/start` is not a general AI generator; it is used for desktop-owned agent/apply flows and local bridge behavior.
 
-Desktop local flow can write Markdown run artifacts from `desktop/lib/agent.mjs`, but it must not pretend template output is arbitrary AI generation.
-
-If an Obsidian vault is found, the desktop flow also writes a compact run note to `_ai/Runs/`.
 
 ## Backend Layer
 

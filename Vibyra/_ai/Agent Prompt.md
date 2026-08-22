@@ -15,7 +15,7 @@ does, read and follow that skill before broad source exploration.
 Then choose only the relevant domain index:
 
 - Vibyra/_ai/Vibyra App Memory.md for mobile app work
-- Vibyra/_ai/Vibyra Desktop Memory.md for desktop bridge work
+- Vibyra/_ai/Vibyra Desktop Memory.md for Tauri desktop app work
 - Vibyra/_ai/Vibyra Backend Memory.md for Laravel/OpenRouter/credits work
 
 If the domain index points to focused topic notes, read exactly one focused note

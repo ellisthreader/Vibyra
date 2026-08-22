@@ -335,12 +335,6 @@ Decision: Ignore `Vibyra/.obsidian/`, `Vibyra/.trash/`, and `Vibyra/_ai/Runs/` i
 
 Reason: Obsidian workspace files and generated run logs are local state. Core notes remain trackable.
 
-## 2026-05-07: Desktop Runs Write Compact Notes
-
-Decision: `desktop/lib/agent.mjs` writes a compact run note to `_ai/Runs/` when it can find an Obsidian vault.
-
-Reason: Run summaries become searchable in Obsidian without adding generated logs to git or bloating the durable context notes.
-
 ## 2026-06-06: Builds Top Bar Drops Connection Kicker; FullScreen Modals Own Their Top Inset
 
 Decision: The Builds (`dashboard`) `TopBar` no longer renders the "Connected/Not connected" kicker row — it's now a single-line "Builds" title, matching the other pages. Removed the `isConnected` prop from `TopBar` and the orphaned `topConnectionRow`/`statusDotOffline` styles. The `UsageSheet` ("Usage & history") header now applies `paddingTop: Math.max(insets.top + 10, 24)`, same as `BillingSheet` and `ProfileLevelProgressModal`.

@@ -33,9 +33,6 @@ Do not read these by default. Search them and read only the matching section:
 - `Decisions.md`
 - `Backend/AI Live Chat Backend Context.txt`
 - `Backend/Railway Cloud Runtime.md`
-- `Desktop/AI Terminal Provider CLI Research.txt`
-- `Desktop App Implementation Spec.md`
-- `Mobile App Desktop Recreation Spec.md`
 - `Marketing/Competitor Marketing Analysis.md`
 
 ## Verification

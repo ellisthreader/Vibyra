@@ -71,7 +71,7 @@ The preview-start terminal card should feel like a real terminal: command/respon
 
 Edit permission prompts should use the same shared chat action palette via `EditPermissionCard.tsx`; avoid green/purple gradient chrome, large glowing permission art, or separate pending code-change cards below it. Keep the card clean with file rows, inline Review/Hide code expansion before approval, and simple No / Allow / Always allow actions. The full `CodeChangesCard` should appear only after edits are approved/applied.
 
-The composer keeps attach, model selector, effort picker, and send button in one compact toolbar. It intentionally does not render a detached/project context strip.
+The composer keeps attach, model selector, effort picker, and send button in one compact toolbar. It intentionally does not render a detached/project context strip. `ChatComposer.tsx` is the stable public facade used by `chunk9.tsx`; `useChatComposerController.ts` owns commands, attachments, model/tool selection, and send preparation, `useChatToolPlan.ts` owns the request-id guarded plan/countdown lifecycle, and `ChatComposerView.tsx` owns the unchanged toolbar/sheet rendering. Keep composer-local state in this family rather than adding app-wide context.
 
 Composer attachments render as a horizontal strip above the text input through `ChatImageAttachmentPills.tsx`. Image picks show only a bare square preview with an overlaid remove button; document picks show a compact file icon, filename, and metadata. Document picks are composer-local `ChatFileAttachment`s and text/code-like files include a bounded text snippet for analyze/project context on send; image picks still travel through `ChatStartOptions.imageAttachments`.
 

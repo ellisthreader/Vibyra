@@ -31,7 +31,7 @@ Chat desktop-connection prompts can carry a pending folder-search intent through
 
 Onboarding Step 2 keeps account-gate errors local and simple. `src/screens/welcome/steps/StepSetup.tsx` maps desktop account mismatch / missing phone identity errors to the stable red copy "Log in to Vibyra Desktop with the same account as your phone." and backs auto-pair retries off briefly so `discoverPairableDesktops()` clearing `pairingError` does not make the message blink.
 
-For future deep diagnosis of "connected but cannot browse/open files" failures, use `.agents/skills/vibyra-desktop-connection-diagnostics/SKILL.md`.
+For future deep diagnosis of "connected but cannot browse/open files" failures, use the `diagnose` skill. (The dedicated `vibyra-desktop-connection-diagnostics` skill was deleted; recover from git commit `45ea9ae` if needed.)
 
 ## Main Files
 

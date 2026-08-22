@@ -11,7 +11,7 @@ Read this for edit permission approval, changed-files cards, run artifact filter
 - `src/utils/files.ts`
 - `src/screens/workspace/inline/EditPermissionCard.tsx`
 - `src/screens/workspace/inline/chunk23.tsx`
-- Desktop/backend producers: `desktop/lib/agent.mjs`, `backend/app/Services/Concerns/GeneratedFileHandling.php`
+- Backend producer: `backend/app/Services/Concerns/GeneratedFileHandling.php`
 
 ## Edit Permission Gate
 

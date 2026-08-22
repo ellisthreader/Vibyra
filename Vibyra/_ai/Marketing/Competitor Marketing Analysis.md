@@ -1,4 +1,21 @@
+---
+title: Vibyra Competitor Marketing Deep Analysis
+type: marketing-analysis
+project: Vibyra
+date: 2026-05-17
+status: reference
+tags:
+  - ai/marketing
+  - project/vibyra
+  - competitive-research
+aliases:
+  - Competitor Marketing Analysis
+---
+
 # Vibyra — Competitor Marketing Deep Analysis (v2 — expanded)
+
+> [!info] AI quick context
+> Long-form competitive and launch reference for Vibyra. Use section 8 for differentiation, section 9 for the 90-day launch plan, and section 10 for quick posting ideas.
 
 > Comprehensive teardown of every direct and adjacent competitor in the AI app builder / vibe coding / phone-coding / mobile-AI-companion space, plus their marketing strategies across X, TikTok, Instagram, YouTube, LinkedIn, Reddit, Discord, Product Hunt, Hacker News, GitHub, and the App Store.
 >

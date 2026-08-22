@@ -4,18 +4,29 @@ Read this for published projects, comments, reactions, preview safety, and gener
 
 ## Files
 
-- `backend/app/Http/Controllers/Concerns/CommunityPublishing.php`
-- `backend/app/Services/Community/ProjectSafetyReview.php`
+- `backend/app/Http/Controllers/Concerns/CommunityPublishing.php` is the route
+  compatibility facade. Its `CommunityPublishing*.php` sibling traits own
+  endpoint, deployment, bundle, payload, lifecycle, URL-safety, and engagement
+  responsibilities.
+- `backend/app/Http/Controllers/Concerns/CommunityPublishingPayload.php` is the
+  payload compatibility facade over the same focused concern family.
+- `backend/app/Services/Community/ProjectSafetyReview.php` keeps the public
+  review coordinator; its `ProjectSafety*.php` sibling traits own AI review,
+  preview sanitization, source normalization/scanning, content checks, and
+  scoring.
 - `backend/app/Services/Community/CommunityPublishMedia.php`
 - `backend/app/Services/Community/CommunityAssetGeneration.php`
 - `backend/app/Services/Community/CommunityAssetGenerator.php`
-- `backend/tests/Feature/CommunityPublishingTest.php`
+- `backend/tests/Feature/CommunityPublishingCoreTest.php` and
+  `CommunityPublishingHostedDemoTest.php` remain concrete PHPUnit facades;
+  focused cases live under
+  `backend/tests/Feature/Concerns/CommunityPublishing/`.
 
 ## Routes
 
-Laravel owns public published project data through `published_projects`, `published_project_comments`, and `published_project_reactions`.
+Laravel owns public published project data through `published_projects`, `published_project_comments`, and `published_project_reactions`. Private user reports are stored separately in `published_project_reports` and never join the public feed payload.
 
-Routes: `GET /api/community/projects`, `GET /api/community/projects/{slug}/preview`, authenticated `GET /api/projects/publish-status`, authenticated metadata-only `PATCH /api/projects/{slug}/listing`, authenticated visibility-only `PATCH /api/projects/{slug}/publish`, authenticated `DELETE /api/projects/{slug}/publish`, reviewer-only `GET /api/projects/review-queue`, reviewer-only `POST /api/projects/{slug}/review`, `POST /api/projects/publish`, `POST /api/community/projects/{slug}/comments`, and `POST /api/community/projects/{slug}/reaction`. Publishing is rate-limited only after required fields are valid, scoped by user/IP/project id, and allows normal listing retries/updates without the old 3-per-hour global lockout.
+Routes: `GET /api/community/projects`, `GET /api/community/projects/{slug}/preview`, authenticated `GET /api/projects/publish-status`, authenticated metadata-only `PATCH /api/projects/{slug}/listing`, authenticated visibility-only `PATCH /api/projects/{slug}/publish`, authenticated `DELETE /api/projects/{slug}/publish`, reviewer-only `GET /api/projects/review-queue`, reviewer-only `POST /api/projects/{slug}/review`, `POST /api/projects/publish`, `POST /api/community/projects/{slug}/comments`, `POST /api/community/projects/{slug}/reaction`, and authenticated `POST /api/community/projects/{slug}/reports`. Reports accept an allowlisted reason, an optional 1,000-character note, and an optional verified PNG/JPEG/WebP/GIF up to 2 MB and 16 megapixels. They are limited to three per user/IP/project each hour plus a route burst limit. Publishing is rate-limited only after required fields are valid, scoped by user/IP/project id, and allows normal listing retries/updates without the old 3-per-hour global lockout.
 
 Reviewer/admin authority is stored in `security_role_assignments` against immutable `user_id` values. `PrivilegedRoleService` owns grants, revocations, admin-to-reviewer inheritance, and one-time email bootstrap; `PublishedProjectPolicy` owns review authorization. `VIBYRA_PRIVILEGED_ROLE_MODE=legacy|bootstrap|database` controls migration: `legacy` uses verified allowlisted email without persistence, `bootstrap` consumes each allowlisted email once into a reserved assignment, and `database` ignores the email allowlist. Email changes or reuse must never transfer an existing assignment, and revoked assignments must not be reactivated by bootstrap. Start source review near `backend/app/Services/Auth/PrivilegedRoleService.php`, `backend/app/Policies/PublishedProjectPolicy.php`, and `backend/tests/Feature/ReviewerAuthorizationTest.php`.
 
@@ -25,7 +36,16 @@ Owner listing management, updated 2026-06-09: `GET /api/projects/publish-status`
 
 When building the Vibyra website/admin area, include an admin dashboard for under-review projects. It should consume the reviewer-only review queue, show safety score/rating/findings/summary, and let assigned reviewers/admins approve or deny projects from the web UI.
 
-The mobile community page loads `GET /api/community/projects` through `src/screens/workspace/hooks/useCommunityPage.ts` and `src/utils/communityApi.ts`. The feed should keep any current/local posts if Laravel is temporarily unreachable instead of clearing to an empty hard-error state; the public community feed has a longer app API timeout in `src/utils/appApi.ts` because cold local Laravel startup can take several seconds.
+The mobile community page loads `GET /api/community/projects` through
+`src/screens/workspace/hooks/useCommunityPage.ts`. `src/utils/communityApi.ts`
+is the stable public barrel: shared contracts live in `communityApiTypes.ts`,
+normalization in `communityApiNormalization.ts`, publishing/listing calls in
+`communityPublishingApi.ts`, and feed/comment/reaction/asset calls in
+`communityEngagementApi.ts`. Keep the barrel's existing exports and API return
+shapes compatible. The feed should keep any current/local posts if Laravel is
+temporarily unreachable instead of clearing to an empty hard-error state; the
+public community feed has a longer app API timeout in `src/utils/appApi.ts`
+because cold local Laravel startup can take several seconds.
 
 ## Safety
 

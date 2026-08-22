@@ -1,80 +1,68 @@
 # App - Store Production Readiness
 
-Read this for App Store and Google Play release audits. Recheck store policy
-before submission because requirements change.
+Read this for the current App Store and Google Play release state. Recheck
+policy before submission. The detailed evidence and acceptance criteria are in
+`Vibyra/_ai/Runs/Vibyra Phone Application Audit - 2026-07-19.md`.
 
 ## Current Status
 
-Audit date: 2026-06-09. The mobile app is not ready for public store review
-because the explicitly deferred findings below remain open.
+Audit date: 2026-07-19. The native phone app is not ready for public store
+submission.
 
-Implementation scope decision, 2026-06-09:
+Implemented foundations:
 
-- Current pass owns audit items 1, 4, and 5 only: production authentication
-  and account recovery, store purchase verification/restoration, and Expo/EAS
-  release configuration.
-- Explore moderation, hosted legal pages, secure token storage, notification
-  behavior, telemetry behavior, and the remaining audit findings are explicitly
-  deferred to a later pass.
+- native Apple/Google/email auth, recovery and provider-aware account deletion;
+- secure native storage for auth and desktop bearer tokens;
+- pairing approval, projects/files, chat/tools, edit approval and preview flows;
+- community publishing/comments and verified Apple/Google purchase restoration;
+- public Laravel Privacy Policy and Terms routes with working pre-auth/profile links;
+- authenticated, persisted, bounded, and rate-limited Explore report submission;
+- best-effort backend session revocation with verified local logout cleanup;
+- mobile line gate, TypeScript, and 141 mobile logic/contract tests pass.
 
-Completed in the current pass:
+Confirmed release blockers:
 
-- Apple and Google mobile sign-in now use native provider SDKs. The backend
-  verifies RS256 signatures through provider JWKS plus issuer, audience,
-  expiry, verified email, and Apple single-use nonce claims.
-- Email accounts have verification, resend, forgot-password, reset-password,
-  and auth rate-limit flows. Password reset revokes existing app sessions.
-- Account deletion requires the email password or fresh matching Apple/Google
-  reauthentication according to the account provider.
-- Google subscriptions and topups are verified through Android Publisher API
-  endpoints with service-account OAuth. Restore Purchases exists in onboarding
-  and profile billing, and trusted store transaction IDs prevent replay on both
-  Apple and Google.
-- Expo SDK dependencies are aligned, Expo Doctor passes 18/18, `eas.json`
-  contains development/preview/production profiles, native build versions are
-  set, microphone permission is removed, networking is scoped for local desktop
-  use, and the icon is an opaque square 1024x1024 PNG.
-- `app.config.js` conditionally adds the Google iOS URL-scheme plugin from
-  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`; production EAS builds must provide that
-  real client ID.
+- the new legal routes still require production deployment and live URL verification;
+- `links.vibyra.app` does not resolve, breaking reset links and association files;
+- user/content blocking remains absent from Explore;
+- onboarding/PC setup is not mounted and its quiz is explicitly bypassed;
+- privacy/cache copy conflicts with continuous cloud session-state sync;
+- subscription server notifications/revalidation, localized presentation,
+  disclosures, and top-up UI are incomplete;
+- `app.json` uses a transparent 1254px retired-brand icon and has no Android
+  adaptive icon configuration;
+- Android globally allows cleartext and the production desktop URL is HTTP;
+- the public demo allowlist trusts the shared `*.up.railway.app` namespace;
+- no signed-build, physical-device, screen-reader, or end-to-end release evidence
+  exists.
 
-Deferred blockers:
+## Current Validation Snapshot
 
-- `CommunityReportModal.tsx` only displays local success state; it does not
-  submit a report. Explore also has no abusive-user blocking flow, content age
-  labels, age gate, or universal-link index for hosted mini apps.
-- `https://vibyra.app/legal/privacy` and `/legal/terms` currently resolve to a
-  parked-domain page. The auth-screen legal controls also have no `onPress`.
+- Mobile line gate: 577 files, zero over 200 lines; TypeScript and 141/141
+  mobile tests pass after the legal/report/logout release-flow implementation.
+- Clean Expo JavaScript exports for iOS and Android: passed; these are not signed
+  native builds.
+- `npx expo-doctor`: 18/18 on Expo SDK 54.
+- Physical-iPhone App Store Expo Go can test the SDK 54 app through an explicit `--go` Metro
+  launch. IAP and native Google Sign-In are deliberately unavailable there and
+  still require a development/store build; EAS authentication and the first
+  signed development build remain manual release-environment gates.
+- `npm audit --omit=dev`: 15 advisories (13 moderate, 2 low, no high/critical).
+- Static production security audit: 40 passed, 2 failed, 9 manual gates. The two
+  failures are global Android cleartext and production HTTP desktop URL.
+- The 2026-07-19 live check found legal URLs redirecting to `/lander`; recheck
+  after deploying the Laravel legal routes. The recovery hostname was also unresolved.
 
-## Release Configuration
+## Submission Gate
 
-- EAS production still requires account authentication (`eas login` or
-  `EXPO_TOKEN`) and real Apple/Google/store credentials before signed builds.
-- Configure `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`,
-  `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, backend `GOOGLE_AUTH_CLIENT_IDS`,
-  `APPLE_AUTH_CLIENT_IDS`, HTTPS `APP_URL`, production mail, and Google Play
-  service-account variables before physical-device acceptance testing.
-- Session and remembered desktop bearer tokens are persisted through
-  AsyncStorage in `src/utils/persistence.ts`; move secrets to secure native
-  storage before release.
+Do not submit until the blockers above are closed and a production-signed iOS
+and Android acceptance matrix covers auth/recovery, onboarding, pairing, chat,
+edits, previews, UGC report/block/moderation, publishing, purchase lifecycle,
+logout/account deletion, app lock, offline behavior, accessibility, and cold
+launch.
 
-## Validation Snapshot
-
-- `npm run typecheck`: passed.
-- Focused auth and IAP mobile tests: 4 passed.
-- Focused auth and billing backend tests: 24 passed with 137 assertions, plus
-  the shared Apple replay regression test.
-- `npx expo-doctor`: 18/18 passed.
-- Expo public config resolves with and without Google credentials; with a
-  real-format iOS client ID it generates the required reversed URL scheme.
-- `npm audit --omit=dev`: 16 findings, including one critical and one high.
-- App source exceeds the repo 200-line standard in multiple files; start with
-  `ChatComposer.tsx`.
-
-## Submission Workflow
-
-Fix the critical blockers first, then create production EAS profiles, build
-signed iOS and Android artifacts, and run physical-device smoke tests for auth,
-pairing, chat, previews, publishing, purchases, restore, cancellation, account
-deletion, permissions, offline behavior, and cold launch. Provide reviewers a
-non-expiring demo account plus a usable desktop pairing/demo path.
+Also verify EAS signing/project ownership, provider/store credentials, production
+backend security environment, AASA/asset links, App Privacy/privacy manifests,
+Play Data Safety/account-deletion URL, content/age ratings, UGC and AI-content
+declarations, localized store assets, support contact, reviewer demo account,
+and an operable desktop pairing/demo path.

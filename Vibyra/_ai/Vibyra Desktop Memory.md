@@ -1,84 +1,115 @@
 # Vibyra Desktop Memory
 
-Scope: local desktop bridge in `desktop/`. Use this as the desktop index only.
+Scope: Vibyra Desktop, the Tauri 2 + Rust + React + xterm.js application in
+`desktop-tauri/`. Use this as the desktop index only.
+
+Development launch: `npm --prefix desktop-tauri run app:dev`. On Linux, install
+the GTK/WebKit build dependencies with `desktop-tauri/scripts/setup-linux.sh`
+first.
 
 ## Mental Model
 
-The desktop app is a local HTTP bridge. It shows/approves phone pairing, discovers local projects, serves previews, exposes a static desktop shell, runs safe commands, and applies/discards real pending edits.
+The desktop app is a native window that runs AI CLI agents in PTY-backed
+terminal panes, grouped by project. Rust owns the PTYs, output batching,
+project/file watching, previews, screenshots, settings, and account auth; the
+React renderer owns terminal presentation, panels, and stores. There is no
+local HTTP bridge and no phone pairing.
+
+See [[Product Surfaces]] for how the desktop app differs from the public
+website, Expo browser client, and native phone app.
 
 ## Start Files
 
-- `desktop/local-app.mjs`: process entry.
-- `desktop/index.html`: legacy bridge screen.
-- `desktop/app.html`: static desktop shell.
-- `desktop/lib/routes.mjs`: HTTP dispatcher.
-- `desktop/lib/state.mjs`: process state, pair code, token, LAN URLs.
+- `desktop-tauri/src/App.tsx`: auth gate then workspace mount.
+- `desktop-tauri/src-tauri/src/lib.rs`: Tauri setup, webview configuration, commands.
+- `desktop-tauri/src-tauri/crates/vibyra-core/`: PTY, batching, agent catalog, fs watch, settings.
+- `desktop-tauri/src/lib/terminalRegistry.ts`: xterm instances held outside React.
+- `desktop-tauri/src/stores/`: zustand stores for projects, panes, models, accounts.
 
 ## Focused Notes
 
-- Desktop shell UI, auth gate, launcher, static assets: `Desktop/Desktop Shell.md`
-- AI terminal tabs, provider routing, PTY/xterm sessions: `Desktop/AI Terminals.md`
-- Current Windows desktop terminal bug report, including Full-access approval
-  prompts, repeated update prompts, terminal copy, terminal link opening, and
-  buggy/spamming terminal keyboard input including missing spaces, plus F8
-  voice toggle not stopping, and stale OpenRouter model catalog/model picker:
-  `Desktop/Windows Desktop Current Bug Report.md`
-- Dynamic Team decomposition, planner models, authoritative plan storage,
-  transactional launch, rollout, and evaluation:
-  `Desktop/AI Team Dynamic Planner Implementation Plan.md`
-- Native provider CLI rollout, protocol matrix, and release gates: `Desktop/Native Provider Terminal Plan.md`
-- Local Vibyra AI, Ollama runtime/model, local chat routing: `Desktop/Local Vibyra AI.md`
-- AI-terminal Voice and canonical project Memory: `Desktop/Voice And Project Memory.md`
-- System-wide F9 screenshot capture and annotation editor: `Desktop/Screenshot Capture.md`
-- Pairing, bearer token, `/health`, phone session, LAN discovery: `Desktop/Pairing And Phone Session.md`
-- Project discovery, browse/search, previews, project ids: `Desktop/Projects And Preview.md`
-- Agent runs, apply/discard, safe commands, run artifacts: `Desktop/Agent Runs And Commands.md`
+- App launch, terminal rail, source ownership, and checks:
+  `Desktop/Rust Tauri Desktop.md`
+- One-time personalized post-auth welcome, account scoping, motion, source
+  ownership, and checks: `Desktop/Rust Tauri First Welcome.md`
+- Account auth, keyring session storage, OAuth polling, token rotation:
+  `Desktop/Tauri Account Authentication.md`
+- Terminal lag and blank-pane overhaul, WebKit compositing policy, measured
+  results, and distribution status:
+  `Desktop/Tauri Terminal Performance Overhaul.md`
+- Terminal panes, provider routing, launch settings, effort tables, and
+  provider-account boundaries: `Desktop/AI Terminals.md`
+- Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
+- Workspace Preview: `Desktop/Projects And Preview.md`
+- System-wide F9 screenshot capture and annotation editor:
+  `Desktop/Screenshot Capture.md`
 
 ## Local Skills
 
-- Use `.agents/skills/VibyraDesktopFrontendDesign/SKILL.md` for desktop frontend design work: mobile-inspired dark UI, minimal topbar/sidebar chrome, auth welcome polish, logo handling, recent chats, and responsive screenshot checks.
-- Use `.agents/skills/vibyra-ai-terminal-diagnostics/SKILL.md` for AI terminal
-  launch, UI ownership, hidden-engine, token-source/billing, PTY input,
-  transcript, and recovered-worker failures.
-- Use `.agents/skills/vibyra-preview-diagnostics/SKILL.md` for Desktop Test or
-  phone Preview project detection, runtime startup, target/capability routing,
-  proxy transport, WebView state, and shutdown failures.
+- Use `.agents/skills/VibyraOptimse/SKILL.md` for desktop permission and
+  optimization audits and `.agents/skills/VibyraRefactor/SKILL.md` for
+  structural cleanup; both require the canonical
+  `node scripts/check-desktop-lines.mjs` gate before completion.
+- Use `.agents/skills/vibyra-preview-diagnostics/SKILL.md` for Preview project
+  detection, runtime startup, target/capability routing, proxy transport, and
+  shutdown failures.
 
 ## Runtime Branding
 
-For Electron/GNOME app name, taskbar grouping, launcher metadata, or logo
-problems, read `Desktop/Desktop Shell.md`. The visible app name is `Vibyra`;
-the Linux identity is `vibyra.desktop` / `WM_CLASS=vibyra`; and the native
-icon is the transparent login-page V exported as
-`desktop/vibyra-login-logo.png`.
-
-## Route Groups
-
-`desktop/lib/routes.mjs` splits requests into:
-
-- desktop UI: `/desktop`, `/desktop/state`, `/desktop/approve`, `/desktop/deny`, `/desktop/quit`;
-- pairing: `/health`, `/pair`, `/pair/status`, `/preview/project/...`;
-- authenticated: `/projects`, `/events`, `/preview/start`, `/preview/start-server`, `/agents/start`, `/commands/run`.
-
-Authenticated routes require `Authorization: Bearer ${TOKEN}`.
+The visible app name is `Vibyra`; the bundle identifier is
+`app.vibyra.desktop`; and the native icon is the transparent cobalt V exported
+from `src/assets/vibyra-cobalt.png` into `desktop-tauri/src/assets/`.
 
 ## Organization Rule
 
-Desktop bridge source follows the 200-line app-source standard. Keep `desktop/lib/routes.mjs` as a dispatcher and delegate route behavior to focused modules. Static desktop assets are served through `desktop/lib/assetRoutes.mjs`; project metadata/create/browse behavior is split into `projectInfo.mjs`, `projectCreate.mjs`, and `projectBrowse.mjs`, with `projects.mjs` as a small public facade.
+Desktop source follows the hard 200-line first-party standard; verify it with
+`node scripts/check-desktop-lines.mjs`. Keep native logic in the
+`vibyra-core` crate, which must build without GTK so it stays testable on any
+machine (`npm --prefix desktop-tauri run core:test`).
 
 ## Token Hint
 
-For desktop tasks, read this index plus exactly one focused desktop note, then inspect only the route/helper files named there.
+For desktop tasks, read this index plus exactly one focused desktop note, then
+inspect only the files named there.
 
-## Refactor Ownership
+## Terminal Performance
 
-Desktop UI/static/session routes live in desktop/lib/desktopRoutes.mjs, with desktop/lib/routes.mjs kept as the HTTP dispatcher for desktop, pairing, and authenticated phone routes.
+Terminal performance depends on which WebKit compositing path the webview gets.
+`configure_webkit_renderer` in `src-tauri/src/lib.rs` disables the DMA-BUF
+renderer only when the NVIDIA proprietary driver is present
+(`/sys/module/nvidia`), overridable with `VIBYRA_WEBKIT_DMABUF=1/0`. Under that
+shared-memory path WebGL canvases load but never composite — xterm panes stay
+black with a full buffer — so the frontend asks Rust via the
+`software_compositing` command and only attaches `@xterm/addon-webgl` on the
+accelerated path (`src/lib/xtermRenderer.ts`). Renderer strings cannot detect
+this: WebKitGTK's ANGLE reports "Apple GPU" on Linux. Never probe GL context
+strings for this decision, and never create throwaway WebGL contexts in a loop —
+leaked contexts crash the web process.
 
-Desktop agent orchestration is split by concern: agent.mjs coordinates runs and safe commands; agentApply.mjs owns pending/apply result shaping and file writes; agentPrompting.mjs builds the OpenRouter request; agentGeneratedFiles.mjs validates generated file paths/content; agentConfig.mjs owns OpenRouter env lookup.
+Renderer detection lives in `src-tauri/src/renderer.rs` and
+`renderer_probe.rs`, gated to Linux — leave it ungated and `-D warnings`
+fails the Windows/macOS build on dead code. `Auto` disables DMA-BUF only when
+the `boot_vga` GPU is NVIDIA (`0x10de`) or the session asks for PRIME offload,
+so hybrid laptops on their iGPU keep the accelerated path; an unreadable
+topology stays conservative. Users override it in Settings > General >
+Graphics (`rendererMode`), and `src/lib/rendererPolicy.ts` mirrors the same
+policy for the UI and the xterm renderer choice. Do not reintroduce the old
+"`/sys/module/nvidia` exists" rule.
 
-The static desktop shell keeps classic browser scripts but splits them by load-order ownership from desktop/app.html: state/shell/pages/boot, chat store/actions/send/render helpers/icons, profile state/render/actions, auth state/UI/session/billing/helpers/boot, and terminal state/store/render/controls/send/models/boot. Preserve script order when editing these files.
+The terminal write path must stay free of forced layout: cell height is cached
+on the registry entry (`terminalBottomAnchor.ts` state), the bottom-anchor row
+scan is bounded to rows below the cursor, and transforms are only written when
+the offset changes. `mountTerminal` fits before attaching the event bus so
+replayed output never wraps at a stale width, and spawn passes estimated
+rows/cols (`src/lib/spawnSize.ts`) so PTYs do not start at the 100x30 default.
+The Rust flusher (`pty/flusher.rs`) flushes immediately on wake and then rests
+one 16 ms tick — do not reintroduce a sleep before the first flush; it puts a
+fixed floor under keystroke echo latency.
 
-## Theme Ownership
+## Launch Contract
 
-Desktop light/dark mode is owned by the late-loaded `desktop/assets/app.theme*.css` layers, with `app.theme.css` defining the shared semantic tokens and the shell/chat/surfaces/terminals/auth theme files providing scoped overrides. Keep `desktop/app.html` loading those files after the page-specific polish sheets so they remain the final theme authority. The desktop theme audit is verified by `desktop/assets/app.desktop-theme-audit.test.mjs` and `desktop/assets/app.terminals-theme-audit.test.mjs`; keep them passing whenever theme tokens, auto-appearance handling, or semantic surface aliases change.
-`app.desktop-theme-audit.css` must load after the late Projects sheets as well as Home/chat polish so Projects row/search/empty-state selectors cannot override final light/dark compatibility fixes. Terminal theme safety also depends on `app.terminals-theme-audit.css` and `app.terminals-workspace-theme-audit.css` staying after terminal visual refresh, Preview/Test, Memory, and Editor feature sheets; terminal status dots, xterm cursor/selection, voice input, model locks, Preview controls, Memory, and Monaco editor colors should resolve through `--terminal-*` tokens.
+Quick-chip launches route through `src/lib/configuredLaunch.ts`, which must
+mirror the backend launch matrices: reasoning effort only for claude/codex
+(EFFORT_AGENTS), Full access only for claude/codex/gemini, and shell/ssh are
+exempt from the Full-access veto — otherwise plain Terminal launches fail with
+a settings-error toast while the rail holds effort/full-access defaults.

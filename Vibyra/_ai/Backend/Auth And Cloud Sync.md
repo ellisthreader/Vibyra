@@ -21,6 +21,11 @@ Account session management is backed by real `vibyra_sessions` rows. Session cre
 
 App-session lifecycle is owned by `App\Services\Auth\SessionAuthenticator` and `SessionTokenRotator`. Migration `2026_06_09_000030_add_lifecycle_fields_to_vibyra_sessions_table.php` adds sliding idle expiry, fixed absolute expiry, token-rotation grace, and revocation metadata. `DELETE /api/auth/logout` revokes only the presented session; `POST /api/auth/session/rotate` returns a replacement bearer token while the prior token remains valid briefly. Rotation is explicit so streaming and older callers are not silently invalidated. Rollout controls are in `config/session_security.php`: lifecycle `off|observe|enforce`, rotation `off|manual`, timeout minutes, and previous-token grace seconds. Account session/device revocation now preserves rows with `revoked_at` and `revocation_reason`; active listings exclude them.
 
+Mobile sign-out starts `DELETE /api/auth/logout` with the captured bearer token,
+clears in-memory account/workspace/desktop state immediately, then verifies secure
+secret deletion with one retry. Backend revocation is best effort so an offline
+server cannot prevent local logout; account deletion awaits the same cleanup.
+
 Mobile derives one label in `src/utils/deviceIdentity.ts` from Expo native
 constants, with platform fallbacks when a custom name is unavailable. It sends
 that value during auth and pairing. On authenticated startup,
@@ -73,6 +78,19 @@ Email signup sends `VibyraVerifyEmail`; resend is
 sessions. Auth entry routes have per-minute throttles and generic recovery
 responses to avoid account enumeration. Production requires an HTTPS
 `APP_URL` and working mail transport.
+Verification resend invokes the real `VibyraVerifyEmail` notification and is
+limited server-side to one request per normalized email address every 60
+seconds. Responses include `retryAfter` so Desktop can display the same
+cooldown while it automatically polls `/desktop/session` for verified state.
+
+Verified account phone numbers use Twilio Verify rather than local OTP storage.
+Authenticated `POST /api/account/phone/start` accepts an E.164 `phoneNumber`,
+sends an SMS challenge, and stores only `pending_phone_number` after provider
+acceptance. `POST /api/account/phone/check` accepts the code, asks Twilio to
+approve it, then promotes the pending value to unique
+`phone_number`/`phone_verified_at`. Configure `TWILIO_VERIFY_SERVICE_SID`,
+`TWILIO_API_KEY`, and `TWILIO_API_SECRET`; missing credentials fail closed.
+Start with `AccountVerificationEndpoints.php` and `PhoneVerificationService.php`.
 
 ## Session State
 

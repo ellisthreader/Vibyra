@@ -58,6 +58,12 @@ missing, building, failed, or not publicly reachable.
 ## Railway Runtime
 
 `vibyra:deploy-runtime-demos --limit=1` processes queued Railway deployments.
+`RailwayRuntimeDeploymentService.php` remains the compatibility facade for
+`deploy()`, `deleteProject()`, its runner seam, and private reflection-based
+tests. Its implementation is organized by responsibility under
+`backend/app/Services/Deployments/Concerns/HandlesRailway*.php`; start with the
+workflow trait, then open only the bundle, transport, provisioning, readiness,
+CLI, GraphQL, Laravel-runtime, or deployment-state trait relevant to the task.
 The production Railway service is `Vibyra` at
 `https://vibyra-production.up.railway.app`, deployed from
 `ellisthreader/Vibeza` branch `codex/vibyra-mobile-auth` with backend root.

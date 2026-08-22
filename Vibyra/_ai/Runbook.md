@@ -24,6 +24,27 @@ npm run backend
 npx expo start --web --host lan --port 8081
 ```
 
+For a native phone QR launch from an automated agent/terminal, the Expo process
+must outlive the bounded command that started it. Run Metro as a detached
+background process with an explicit port, then verify `/status`, the native
+Expo manifest, and its `launchAsset.url` over the active Wi-Fi IPv4 address.
+Warm the Android/iOS bundle before showing the QR; the first Hermes transform
+can take longer than the phone request timeout after Metro discards a stale
+cache. See `.agents/skills/vibyra-expo-web-diagnostics/SKILL.md` for the exact
+three-check gate.
+
+Vibyra is pinned to Expo SDK 54 for physical-iPhone App Store Expo Go testing.
+As of July 2026, Expo's iOS App Store build does not support SDK 55/56; those
+SDKs require TestFlight/`eas go` or a development build. Because
+`expo-dev-client` is also installed, always start this path explicitly with
+`npx expo start --go --lan --port <port>`. The Expo Go adapters prevent native
+IAP and Google Sign-In from loading; those two features require a development or
+store build. Before presenting `exp://<lan-ip>:<port>`, confirm the manifest
+reports SDK 54 and warm its LAN iOS bundle successfully. Confirm the port's
+listener and manifest belong to Vibyra when other Expo projects are running;
+`/status` alone cannot detect a wrong-project collision. `metro.config.js`
+keeps desktop, backend, vault, and temporary trees out of Metro's mobile crawl.
+
 `npm run backend` delegates to `scripts/start-backend.sh`. It first checks `http://127.0.0.1:8000/health`; if this repo's Laravel backend is already running, it prints the URL and exits successfully instead of failing with `Address already in use`. If port 8000 is occupied by a non-Vibyra process, either stop that process or run `BACKEND_PORT=<free-port> npm run backend`.
 
 Manual fallback if scripts fail or you want a fully detached server:
@@ -39,11 +60,25 @@ curl -s http://127.0.0.1:8000/api/skills | head -c 80
 # expect {"ok":true,"skills":[...
 ```
 
+### Standalone website
+
+Run the Laravel marketing/account/download website with:
+
+```bash
+npm run website
+```
+
+Open `http://127.0.0.1:8128`. The launcher uses a Node proxy on `8128` and
+Laravel on `8129`; this avoids PHP's development server being blocked by idle
+speculative browser sockets. If the page returns `200` but renders blank, check
+for a stale `backend/public/hot` file and rebuild assets from `backend/` with
+`npm run build`.
+
 If signup/login shows "Could not reach Vibyra" or `failed to fetch`, check backend liveness before editing auth code. The app uses `EXPO_PUBLIC_API_URL` from root `.env`; both `http://127.0.0.1:8000/api/skills` and the configured LAN URL should answer while developing on web/device.
 
 If the browser reports `AppEntry.bundle` 500 plus strict MIME refusal because the script response is `application/json`, fetch the bundle URL directly and read Metro's JSON error body. This is usually a build/resolver error, not a MIME problem. For `UnableToResolveError`, verify imported files exist, especially `src/context/translations.ts` versus `src/context/i18n/*.ts`. After creating a missing module, restart Expo if Metro keeps serving the stale resolver miss, then verify the bundle returns `Content-Type: application/javascript`.
 
-If Expo/Metro crashes with `ENOSPC: System limit for number of file watchers reached, watch '/home/taylor/Desktop/SaaS'`, raise Linux inotify limits before restarting Expo:
+If Expo/Metro crashes with `ENOSPC: System limit for number of file watchers reached, watch '/home/ellis/Desktop/Vibyra'`, raise Linux inotify limits before restarting Expo:
 
 ```bash
 sudo sysctl -w fs.inotify.max_user_watches=1048576 fs.inotify.max_user_instances=1024
@@ -99,9 +134,8 @@ Update the smallest focused note with stable facts. Keep `Project Context.md` an
 Treat long specs, research files, and decision logs as deep references. Search
 them with `rg` and read the matching section instead of opening them end-to-end.
 Examples: `Decisions.md`, `Backend/AI Live Chat Backend Context.txt`,
-`Backend/Railway Cloud Runtime.md`, `Desktop/AI Terminal Provider CLI Research.txt`,
-`Mobile App Desktop Recreation Spec.md`, `Desktop App Implementation Spec.md`,
-and `Marketing/Competitor Marketing Analysis.md`.
+`Backend/Railway Cloud Runtime.md`, and
+`Marketing/Competitor Marketing Analysis.md`.
 
 Desktop agent runs automatically save compact summaries to `_ai/Runs/` when they find a vault at either:
 
@@ -109,10 +143,11 @@ Desktop agent runs automatically save compact summaries to `_ai/Runs/` when they
 - `project`
 - `VIBYRA_OBSIDIAN_VAULT`
 
-If the vault is moved, start the desktop bridge with:
+If the vault is moved, set the vault path in the environment that starts the
+desktop app:
 
 ```bash
-VIBYRA_OBSIDIAN_VAULT=/absolute/path/to/vault npm run desktop
+VIBYRA_OBSIDIAN_VAULT=/absolute/path/to/vault npm --prefix desktop-tauri run app:dev
 ```
 
 Generated run notes include `vibyra/run` and `generated` tags. Search those tags in Obsidian when reviewing recent agent activity.
@@ -138,8 +173,14 @@ Its standard workflow is:
 
 `vibyra-refactor` lives at `.agents/skills/VibyraRefactor/SKILL.md`. Use it when the task is primarily safe code cleanup: oversized files, messy organization, too many parameters, weak typing, missing contexts/hooks/modules, or a no-source-file-over-250-lines gate. It exists because broad refactors must not be declared complete until the final line gate is clean and validation commands have clean exit codes. It also records the lessons from the May 2026 refactor: check the full source scope, investigate non-zero test exits even when assertions pass, delete empty placeholder tests after splitting, and state generated/cache/temp/vendor exclusions explicitly.
 
+The canonical cross-surface examples and formulation rules are in
+`Vibyra/_ai/Code Organization And Refactoring Standard.md`. Read it before a
+broad cleanup batch; keep the original facade/API stable, split by named
+responsibility, validate runtime return shapes as well as types, and enforce the
+200-line limit across every extracted descendant in the frozen scope.
+
 `vibyra-obsidian` lives at `.agents/skills/VibyraObsiden/SKILL.md`. Use it whenever repo work should consume and maintain the Obsidian memory layer. It encodes the rule that durable architecture, workflow, route/API, permission, validation, debugging, and local-skill changes must be written to the smallest relevant note before final response.
 
-`vibyra-desktop-connection-diagnostics` lives at `.agents/skills/vibyra-desktop-connection-diagnostics/SKILL.md`. Use it for phone-to-desktop pairing hangs, "Finding Vibyra Desktop", "Desktop lost the pairing request", stale remembered desktop tokens, Browse PC or `/open` timeouts, and connected-but-authenticated-route failures. It encodes the proven checks for idempotent `/pair` request IDs, approval UI visibility, fallback URL promotion, explicit stale-token deletion, and live-sync tolerance.
+Phone-to-desktop pairing failures ("Finding Vibyra Desktop", "Desktop lost the pairing request", stale remembered desktop tokens, Browse PC or `/open` timeouts, connected-but-authenticated-route failures): read `App/Pairing And Connection.md`. The proven checks are idempotent `/pair` request IDs, approval UI visibility, fallback URL promotion, explicit stale-token deletion, and live-sync tolerance. (The former `vibyra-desktop-connection-diagnostics` skill was deleted; recover it from git commit `45ea9ae` if the full checklist is needed again.)
 
 `plan` lives at `.agents/skills/plan/SKILL.md`. Use it for broad or multi-step work where Codex should restate the goal, make and review a practical plan, simplify the plan before editing, implement in scoped steps, verify, and update durable memory or skills.

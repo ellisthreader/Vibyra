@@ -20,7 +20,10 @@ One place to navigate every project, responsibility, reference, and daily note.
 - [[03 Resources/Resources|Resources]] - reusable knowledge and references
 - [[05 Daily/Daily Notes|Daily Notes]] - dated work logs and planning
 - [[_ai/Context Map|Vibyra Context Map]] - detailed Vibyra engineering memory
-- [[_ai/RelayClarity/RelayClarity Memory|RelayClarity Memory]] - scoped memory for the RelayClarity project
+- [[01 Projects/Vibyra|Vibyra]] - main project hub (engineering memory in `_ai/`)
+- [[01 Projects/RelayClarity/RelayClarity Memory|RelayClarity Memory]] - scoped memory for the RelayClarity project
+- [[01 Projects/Hong Kong Express/HKE Memory|HKE Memory]] - scoped memory for Hong Kong Express
+- [[99 Meta/Meta|Meta]] - vault inventory, coding memory, prompting profile
 - [[04 Archive/Archive|Archive]] - inactive material and backups
 
 ## Active Projects
