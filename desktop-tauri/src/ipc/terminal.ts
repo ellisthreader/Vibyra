@@ -1,4 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { createTerminalInputQueue } from "../lib/terminalInputQueue";
 import { dispatch } from "../lib/terminalBus";
 import { nativeTerminalVisibility } from "../lib/terminalVisibility";
 import type { SessionInfo, TermEvent, Visibility } from "../types";
@@ -100,9 +101,9 @@ export async function createSshTerminal(
   return info;
 }
 
-export function writeTerminal(id: number, data: string): Promise<void> {
-  return invoke("write_terminal", { id, data });
-}
+export const writeTerminal = createTerminalInputQueue((id, data) =>
+  invoke("write_terminal", { id, data }),
+);
 
 export function resizeTerminal(id: number, rows: number, cols: number): Promise<void> {
   return invoke("resize_terminal", { id, rows, cols });

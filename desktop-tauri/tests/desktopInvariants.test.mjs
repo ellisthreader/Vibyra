@@ -73,6 +73,15 @@ test("off-screen xterms detach while keeping their registry scrollback", async (
   assert.match(view, /unmountTerminal\(id\)/);
 });
 
+test("terminal IPC serialises each PTY input stream", async () => {
+  const ipc = await read("src/ipc/terminal.ts");
+  assert.match(
+    ipc,
+    /export const writeTerminal = createTerminalInputQueue/,
+    "independent invoke calls can overtake each other and render typed text one key behind",
+  );
+});
+
 test("the native app rejects a second session owner before other plugins start", async () => {
   const source = await read("src-tauri/src/lib.rs");
   const single = source.indexOf(".plugin(tauri_plugin_single_instance::init");
