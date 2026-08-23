@@ -176,6 +176,23 @@ Validation: the 233 frontend tests, production web build, typecheck, 234 Rust
 workspace tests, strict clippy, Rust formatting, and the 200-line desktop gate
 all pass.
 
+### GPU setting visibility and relaunch ownership
+
+`SettingsGeneralPane.tsx` keeps **GPU usage** as the first General block; do not
+bury it below terminal controls. The persisted choices remain Automatic,
+Accelerated (`Allow GPU` in the UI), and Compatibility. Automatic starts with
+the topology-safe path and, when CPU rendering stays slow, offers **Allow GPU
+next launch** without interrupting live terminals. Unknown persisted values
+normalize to Automatic in `settingsStore.ts` and again when Rust saves them.
+
+`WEBKIT_DISABLE_DMABUF_RENDERER` is an output of Vibyra's startup policy, not a
+supported input override. Relaunches and updater restarts inherit it, so
+treating its presence as external pinned the previous CPU path, made Settings
+show a false environment-override warning, and disabled Auto's GPU action.
+`renderer_probe.rs` now clears it before recomputing the saved mode; only the
+app-specific `VIBYRA_WEBKIT_DMABUF=1|0` can override Settings. Keep the
+inherited-flag Rust regression test when changing startup or updater behavior.
+
 ## Making it work on other people's hardware
 
 The original fix was correct but tuned to one machine's answer. Three changes
