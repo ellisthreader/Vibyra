@@ -7,10 +7,10 @@
 // `--session-id <uuid>` at launch and `--resume <uuid>` afterwards, so a pane
 // can be given its own conversation up front and name exactly that one later.
 //
-// Codex and Gemini have no equivalent: Codex cannot be told an id at launch,
-// and Gemini resumes by recency or list index rather than by id. Panes running
-// those fall back to the recency form, which `relaunchContinuity` only allows
-// when the pane is the only one that form could mean.
+// Codex cannot be told an id at launch, but it accepts its generated UUID on
+// resume. Native persistence captures that UUID from the live process tree.
+// Gemini resumes only by recency or list index. Until Codex has written its
+// rollout, both therefore start with no renderer-assigned id.
 
 const PINNABLE_AGENTS = new Set(["claude"]);
 

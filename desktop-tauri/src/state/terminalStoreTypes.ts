@@ -3,6 +3,7 @@ import type { ResolvedAgent, Visibility } from "../types";
 
 export interface PaneState {
   id: number;
+  persistenceId: string;
   projectId: string;
   agentId: string;
   title: string;
@@ -13,13 +14,15 @@ export interface PaneState {
   workspaceMode: "safe" | "shared";
   safeSnapshotFingerprint: string | null;
   customTitle: string | null;
+  /** Chat-aware fallback for CLIs whose OSC title is only a cwd or spinner. */
+  chatTitle: string | null;
   osc: string | null;
   accent: string;
   status: "running" | "exited" | "suspended";
   exitCode: number | null;
   visibility: Visibility;
   lastFocusedAt: number;
-  /** Restored output for a suspended pane; absent once it is running. */
+  /** Persisted history carried by a resumed pane; native output is appended on save. */
   snapshot?: string | null;
   /** The agent's own conversation id, for agents that accept one at launch. */
   agentSessionId: string | null;
@@ -37,6 +40,9 @@ export interface SpawnAgentOptions {
   permissionMode?: "standard" | "full";
   reasoningEffort?: string | null;
   title?: string;
+  customTitle?: string | null;
+  chatTitle?: string | null;
+  persistenceId?: string;
   workspaceMode?: "safe" | "shared";
   safeSnapshotFingerprint?: string;
   /** Take this pane's slot instead of appending, so grid order survives. */
@@ -55,6 +61,7 @@ export interface SpawnAgentOptions {
 export interface SpawnSshOptions {
   replaces?: number;
   replaySnapshot?: string | null;
+  persistenceId?: string;
 }
 
 export interface TerminalStore {
@@ -62,8 +69,16 @@ export interface TerminalStore {
   focusedId: number | null;
   zoomedId: number | null;
   activity: Record<number, ActivityState>;
-  spawnAgent: (agent: ResolvedAgent, projectId: string, options?: SpawnAgentOptions) => Promise<void>;
-  spawnSsh: (target: string, projectId: string, options?: SpawnSshOptions) => Promise<void>;
+  spawnAgent: (
+    agent: ResolvedAgent,
+    projectId: string,
+    options?: SpawnAgentOptions,
+  ) => Promise<boolean>;
+  spawnSsh: (
+    target: string,
+    projectId: string,
+    options?: SpawnSshOptions,
+  ) => Promise<boolean>;
   restart: (id: number) => Promise<void>;
   /** Relaunch one pane on a different provider account, in place. */
   switchAccount: (id: number, accountId: string | null) => Promise<void>;
@@ -76,6 +91,7 @@ export interface TerminalStore {
   setFocus: (id: number) => void;
   markFocused: (id: number) => void;
   rename: (id: number, title: string) => void;
+  setChatTitle: (id: number, title: string) => void;
   setOsc: (id: number, title: string) => void;
   markExited: (id: number, code: number | null) => void;
   applyActivity: (next: Record<number, ActivityState>) => void;

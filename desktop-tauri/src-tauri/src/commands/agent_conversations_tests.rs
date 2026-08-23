@@ -70,9 +70,9 @@ fn an_id_that_is_not_a_uuid_is_never_looked_up() {
 }
 
 #[test]
-fn agents_that_resume_by_recency_have_no_id_that_can_go_missing() {
-    // Codex and Gemini resume the newest conversation and ignore any id, so
-    // refusing them here would break a resume that works perfectly well.
+fn agents_without_a_local_preflight_are_admitted() {
+    // A Codex id was captured from an existing rollout and is resolved by the
+    // CLI; Gemini resumes by recency. Neither uses Claude's transcript check.
     let root = projects("recency");
 
     for agent in ["codex", "gemini", "shell", "ssh", "my-custom-agent"] {

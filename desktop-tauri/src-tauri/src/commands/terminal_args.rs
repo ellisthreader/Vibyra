@@ -10,8 +10,8 @@ use super::terminal_launch::invalid;
 
 /// Gives a new pane its own conversation, so resuming it later can name that
 /// one rather than "whichever is newest in this folder". Only Claude Code
-/// accepts an id at launch *and* resumes by it; Gemini takes one but cannot
-/// resume by it, and Codex takes none, so neither is worth pinning.
+/// accepts an id at launch *and* resumes by it. Codex chooses its own id, which
+/// Vibyra observes after launch; Gemini takes one but cannot resume by it.
 pub fn pin_session(agent: &str, session: &str, args: &mut Vec<String>) {
     if agent == "claude" {
         args.extend(["--session-id".into(), session.into()]);
@@ -38,7 +38,8 @@ pub fn add_resume(agent: &str, session: Option<&str>, args: &mut Vec<String>) {
     match (agent, session) {
         ("claude", Some(session)) => args.extend(["--resume".into(), session.into()]),
         ("claude", None) => args.push("--continue".into()),
-        ("codex", _) => args.extend(["resume".into(), "--last".into()]),
+        ("codex", Some(session)) => args.extend(["resume".into(), session.into()]),
+        ("codex", None) => args.extend(["resume".into(), "--last".into()]),
         ("gemini", _) => args.extend(["--resume".into(), "latest".into()]),
         _ => {}
     }

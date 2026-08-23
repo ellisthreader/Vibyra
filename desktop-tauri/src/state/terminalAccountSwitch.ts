@@ -1,11 +1,16 @@
 import type { StoreApi } from "zustand";
 
 import { listAgents } from "../ipc/agents";
-import { agentConversationResumable, removeTerminal } from "../ipc/terminal";
+import {
+  agentConversationResumable,
+  removeTerminal,
+  terminalSnapshot,
+} from "../ipc/terminal";
 import { dropStats } from "../lib/activity";
 import { suppressExitNotice } from "../lib/sessionExitNotifications";
 import { isSuspendedId } from "../lib/sessionRestore";
 import { destroySession } from "../lib/terminalRegistry";
+import { mergeReplaySnapshots } from "../lib/terminalReplay";
 import type { PaneState, TerminalStore } from "./terminalStoreTypes";
 import { useWorkspaceStore } from "./workspaceStore";
 
@@ -39,32 +44,42 @@ export async function switchPaneAccount(
     return;
   }
 
-  // Torn down directly rather than through `close`, which would drop the pane
-  // out of the list and take its slot with it — the new pane replaces this one
-  // by id, so the old entry has to still be there when it arrives.
-  suppressExitNotice(id);
-  destroySession(id);
-  dropStats(id);
-  if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
-
-  await get().spawnAgent(agent, pane.projectId, {
+  const replaySnapshot = isSuspendedId(id)
+    ? pane.snapshot ?? null
+    : mergeReplaySnapshots(
+        pane.snapshot,
+        await terminalSnapshot(id).catch(() => null),
+      );
+  const launched = await get().spawnAgent(agent, pane.projectId, {
     model: pane.model,
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,
-    title: pane.customTitle ?? pane.title,
+    title: pane.title,
+    persistenceId: pane.persistenceId,
+    customTitle: pane.customTitle,
+    chatTitle: pane.chatTitle,
     cwd: pane.sourceCwd,
     workspaceMode: pane.workspaceMode,
     safeSnapshotFingerprint: pane.safeSnapshotFingerprint ?? undefined,
     replaces: id,
     // What was on screen stays on screen, above whatever the new account's
     // process prints. Losing it would make a switch look like a crash.
-    replaySnapshot: pane.snapshot ?? null,
+    replaySnapshot,
     // A fresh conversation, deliberately: the old one is in the old account's
     // folder, and asking the new account to resume it would only fail.
     resume: false,
     agentSessionId: null,
     accountId,
   });
+  if (!launched) return;
+
+  // Only tear down the old account after its replacement is live. If launch
+  // fails, the user keeps the terminal they already had instead of a blank,
+  // process-less pane.
+  suppressExitNotice(id);
+  destroySession(id);
+  dropStats(id);
+  if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
 }
 
 /**

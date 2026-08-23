@@ -16,6 +16,7 @@ export function insertPane(
   if (replaces === undefined) {
     return { panes: [...state.panes, pane], focusedId: pane.id };
   }
+  if (!state.panes.some((candidate) => candidate.id === replaces)) return {};
   const activity = { ...state.activity };
   delete activity[replaces];
   return {

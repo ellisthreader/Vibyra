@@ -42,7 +42,7 @@ impl Session {
         options: SessionOptions<'_>,
         spec: &LaunchSpec,
         flush_tx: SyncSender<()>,
-        on_exit: impl FnOnce(SessionId, Option<i32>) + Send + 'static,
+        on_exit: impl FnOnce(Arc<Session>, Option<i32>) + Send + 'static,
     ) -> CoreResult<Arc<Self>> {
         let pty_system = native_pty_system();
         let pair = pty_system
@@ -140,7 +140,7 @@ impl Session {
                 };
                 *reader_session.exit_code.lock() = code;
                 reader_session.alive.store(false, Ordering::SeqCst);
-                on_exit(reader_session.id, code);
+                on_exit(Arc::clone(&reader_session), code);
             })
             .map_err(CoreError::Io)?;
 
@@ -175,6 +175,14 @@ impl Session {
 
     pub fn is_alive(&self) -> bool {
         self.alive.load(Ordering::SeqCst)
+    }
+
+    pub fn agent_session_id(&self) -> Option<String> {
+        if self.agent_id != "codex" {
+            return None;
+        }
+        let process_id = self.child.lock().process_id()?;
+        super::conversation::codex_session_id(process_id)
     }
 
     pub fn set_visibility(&self, visibility: Visibility) {

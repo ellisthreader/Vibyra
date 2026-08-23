@@ -7,6 +7,7 @@ import { LifebuoyIcon } from "../report/ReportIcons";
 import { useReportStore } from "../../state/reportStore";
 import { AccountMenu } from "./AccountMenu";
 import { ResizeHandles, WindowControls } from "./WindowChrome";
+import { UpdateNavAction } from "./UpdateNavAction";
 
 export function TitleBar() {
   const panes = useTerminalStore((s) => s.panes);
@@ -59,6 +60,7 @@ export function TitleBar() {
           </span>
         </div>
         <div className="chrome__right">
+          <UpdateNavAction />
           {waiting.length > 0 && (
             <button
               className="chip chrome__attn"

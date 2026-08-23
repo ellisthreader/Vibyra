@@ -6,7 +6,15 @@ import { PaneAccountControl } from "./PaneAccountControl";
 import { SuspendedPaneView } from "./SuspendedPaneView";
 import { TerminalView } from "./TerminalView";
 
-export function TerminalPaneCard({ pane, hidden }: { pane: PaneState; hidden: boolean }) {
+export function TerminalPaneCard({
+  pane,
+  hidden,
+  active,
+}: {
+  pane: PaneState;
+  hidden: boolean;
+  active: boolean;
+}) {
   const close = useTerminalStore((state) => state.close);
   const hibernate = useTerminalStore((state) => state.hibernate);
   const wake = useTerminalStore((state) => state.wake);
@@ -37,7 +45,7 @@ export function TerminalPaneCard({ pane, hidden }: { pane: PaneState; hidden: bo
         attention ? "pane--attn" : ""
       }`}
       style={{ "--pane-accent": pane.accent || "var(--accent)" } as React.CSSProperties}
-      aria-label={`${pane.title} terminal`}
+      aria-label={`${paneLabel(pane)} terminal`}
     >
       <header className="pane__header">
         <AgentMark agentId={pane.agentId} name={pane.title} accent={pane.accent} size={20} />
@@ -130,6 +138,7 @@ export function TerminalPaneCard({ pane, hidden }: { pane: PaneState; hidden: bo
             <TerminalView
               id={pane.id}
               bottomAnchored={pane.agentId !== "shell" && pane.agentId !== "ssh"}
+              active={active && !hidden}
             />
             {exited && (
               <div className="pane__exited">

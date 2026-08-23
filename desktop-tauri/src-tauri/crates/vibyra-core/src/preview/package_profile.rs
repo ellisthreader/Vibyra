@@ -3,8 +3,6 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use super::types::PreviewDeviceHint;
-
 pub(crate) fn string_map(value: Option<&Value>) -> HashMap<String, String> {
     value
         .and_then(Value::as_object)
@@ -36,6 +34,8 @@ pub(crate) fn framework_name(
         .to_lowercase();
     if deps.contains("expo") || has_marker(&bodies, "expo start") {
         "Expo web"
+    } else if has_marker(&bodies, "ionic serve") {
+        "Ionic web"
     } else if deps.contains("next") || has_marker(&bodies, "next dev") {
         "Next.js"
     } else if deps.contains("nuxt") || has_marker(&bodies, "nuxt dev") {
@@ -50,6 +50,11 @@ pub(crate) fn framework_name(
         "React"
     } else if deps.contains("vite") || has_marker(&bodies, "vite") {
         "Vite"
+    } else if deps.contains("webpack-dev-server")
+        || has_marker(&bodies, "webpack serve")
+        || has_marker(&bodies, "webpack-dev-server")
+    {
+        "Webpack"
     } else {
         "Web app"
     }
@@ -63,7 +68,14 @@ pub(crate) fn select_script<'a>(
         return None;
     }
     let order: &[&str] = if framework == "Expo web" {
-        &["web", "dev", "start"]
+        &[
+            "web",
+            "dev",
+            "start",
+            "start:web",
+            "start:go",
+            "start:dev-client",
+        ]
     } else {
         &["dev", "web", "start", "serve", "preview"]
     };
@@ -79,22 +91,6 @@ pub(crate) fn safe_script(body: &str) -> bool {
     !unsafe_tokens.iter().any(|token| body.contains(token))
         && !body.trim().is_empty()
         && body.len() <= 300
-}
-
-pub(crate) fn matches_framework_script(framework: &str, body: &str) -> bool {
-    let body = body.to_ascii_lowercase();
-    let markers: &[&str] = match framework {
-        "Expo web" => &["expo"],
-        "Next.js" => &["next"],
-        "Nuxt" => &["nuxt"],
-        "Angular" => &["ng serve"],
-        "SvelteKit" => &["vite", "svelte-kit"],
-        "Astro" => &["astro"],
-        "React" => &["react-scripts"],
-        "Vite" => &["vite"],
-        _ => return false,
-    };
-    markers.iter().any(|marker| has_marker(&body, marker))
 }
 
 fn has_marker(body: &str, marker: &str) -> bool {
@@ -130,54 +126,5 @@ pub(crate) fn manager_args(manager: &str, script: &str) -> Vec<String> {
         vec![script.into()]
     } else {
         vec!["run".into(), script.into(), "--".into()]
-    }
-}
-
-pub(crate) fn append_runtime_args(
-    framework: &str,
-    body: &str,
-    args: &mut Vec<String>,
-    env: &mut Vec<(String, String)>,
-) {
-    if framework == "React" {
-        env.extend([
-            ("HOST".into(), "127.0.0.1".into()),
-            ("PORT".into(), "{port}".into()),
-        ]);
-    } else if framework == "Next.js" {
-        args.extend([
-            "--hostname".into(),
-            "127.0.0.1".into(),
-            "--port".into(),
-            "{port}".into(),
-        ]);
-    } else {
-        if framework == "Expo web" && !body.contains("--web") {
-            args.push("--web".into());
-        }
-        let host = if framework == "Expo web" {
-            "localhost"
-        } else {
-            "127.0.0.1"
-        };
-        args.extend([
-            "--host".into(),
-            host.into(),
-            "--port".into(),
-            "{port}".into(),
-        ]);
-    }
-}
-
-pub(crate) fn device_hint(deps: &HashSet<String>, framework: &str) -> PreviewDeviceHint {
-    if framework == "Expo web" || deps.contains("react-native") {
-        PreviewDeviceHint::Phone
-    } else if ["three", "phaser", "@babylonjs/core"]
-        .iter()
-        .any(|dep| deps.contains(*dep))
-    {
-        PreviewDeviceHint::Tv
-    } else {
-        PreviewDeviceHint::Laptop
     }
 }

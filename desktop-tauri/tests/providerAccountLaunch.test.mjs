@@ -13,7 +13,7 @@ function source(path) {
  */
 test("the chosen account reaches the terminal it launches", () => {
   const configured = source("../src/lib/configuredLaunch.ts");
-  const lifecycle = source("../src/state/terminalLifecycleActions.ts");
+  const lifecycle = source("../src/state/terminalSpawnActions.ts");
   const ipc = source("../src/ipc/terminal.ts");
   const launch = source("../src-tauri/src/commands/terminal_launch.rs");
   const prepare = source("../src-tauri/src/commands/terminal_prepare.rs");
@@ -88,13 +88,19 @@ test("switching a pane relaunches it in place without destroying anything", () =
   const swap = source("../src/state/terminalAccountSwitch.ts");
 
   assert.match(swap, /replaces: id/, "the pane keeps its slot in the grid");
-  assert.match(swap, /replaySnapshot: pane\.snapshot \?\? null/, "its output stays on screen");
+  assert.match(swap, /terminalSnapshot\(id\)/, "live output is captured before the switch");
+  assert.match(swap, /replaySnapshot,/, "its output stays on screen");
   assert.match(swap, /resume: false/);
   assert.match(swap, /agentSessionId: null/, "the new account starts its own conversation");
   assert.doesNotMatch(
     swap,
     /get\(\)\.close\(/,
     "closing through the store would drop the pane and take its slot with it",
+  );
+  assert.match(
+    swap,
+    /if \(!launched\) return;[\s\S]*destroySession\(id\)/,
+    "the working process survives until its replacement has opened",
   );
 });
 

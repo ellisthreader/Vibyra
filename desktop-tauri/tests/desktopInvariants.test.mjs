@@ -66,6 +66,20 @@ test("mounting a terminal always hands the PTY the grid it built", async () => {
   );
 });
 
+test("off-screen xterms detach while keeping their registry scrollback", async () => {
+  const registry = await read("src/lib/terminalRegistry.ts");
+  const view = await read("src/components/terminal/TerminalView.tsx");
+  assert.match(registry, /export function unmountTerminal[\s\S]*detach\(id\)/);
+  assert.match(view, /unmountTerminal\(id\)/);
+});
+
+test("the native app rejects a second session owner before other plugins start", async () => {
+  const source = await read("src-tauri/src/lib.rs");
+  const single = source.indexOf(".plugin(tauri_plugin_single_instance::init");
+  const dialog = source.indexOf(".plugin(tauri_plugin_dialog::init");
+  assert.ok(single >= 0 && single < dialog, "single-instance must be the first plugin");
+});
+
 test("only an explicit count opens more than one terminal", async () => {
   const launch = await read("src/lib/configuredLaunch.ts");
   assert.doesNotMatch(

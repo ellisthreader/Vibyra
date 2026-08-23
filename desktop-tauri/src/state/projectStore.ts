@@ -61,7 +61,7 @@ async function adoptRoot(root: string, homeDir: string): Promise<void> {
   }
 }
 
-/** Rust throttles hidden terminals; tell it which project is on stage. */
+/** Rust pauses hidden terminals; revealing one resyncs its bounded ring. */
 function orchestrateVisibility(activeId: string | null): void {
   const { panes } = useTerminalStore.getState();
   for (const pane of panes) {

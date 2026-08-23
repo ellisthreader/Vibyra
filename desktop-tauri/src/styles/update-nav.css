@@ -1,0 +1,47 @@
+/* A release stays reachable here after its announcement card is dismissed.
+   The chip is intentionally compact: detail and release notes belong to the
+   banner, while the titlebar owns only the next action. */
+
+.chrome__update {
+  gap: 7px;
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: var(--accent-soft);
+  white-space: nowrap;
+}
+
+.chrome__update:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  background: color-mix(in srgb, var(--accent) 18%, var(--elevated));
+}
+
+.chrome__update:disabled {
+  cursor: progress;
+  opacity: 1;
+}
+
+.chrome__update-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.chrome__update--ready .chrome__update-dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+.chrome__update--error .chrome__update-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+@media (max-width: 1080px) {
+  .chrome__update {
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

@@ -25,6 +25,7 @@ export function isSuspendedId(id: number): boolean {
 export function toPaneStates(session: TerminalSession): PaneState[] {
   return session.panes.map((pane, index) => ({
     id: placeholderId(index),
+    persistenceId: pane.persistenceId || `legacy-${session.savedAtMs}-${index}`,
     projectId: pane.projectId,
     agentId: pane.agentId,
     title: pane.title,
@@ -37,6 +38,7 @@ export function toPaneStates(session: TerminalSession): PaneState[] {
     // later. Resume re-inspects the workspace, exactly as restart does.
     safeSnapshotFingerprint: null,
     customTitle: pane.customTitle,
+    chatTitle: pane.chatTitle ?? null,
     osc: null,
     accent: pane.accent,
     agentSessionId: pane.agentSessionId ?? null,
@@ -163,10 +165,12 @@ export function ambiguousRecencyResume(pane: PaneState, siblings: PaneState[]): 
 export function toPersistedPanes(panes: PaneState[]): PersistedPane[] {
   return panes.map((pane) => ({
     id: isSuspendedId(pane.id) ? 0 : pane.id,
+    persistenceId: pane.persistenceId,
     projectId: pane.projectId,
     agentId: pane.agentId,
     title: pane.title,
     customTitle: pane.customTitle,
+    chatTitle: pane.chatTitle,
     model: pane.model,
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,

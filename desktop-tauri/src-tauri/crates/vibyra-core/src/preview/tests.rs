@@ -123,5 +123,5 @@ fn refuses_a_mislabeled_framework_script() {
         .targets
         .remove(0);
     assert!(!target.runnable);
-    assert!(target.reason.unwrap().contains("does not directly launch"));
+    assert!(target.reason.unwrap().contains("could not be verified"));
 }

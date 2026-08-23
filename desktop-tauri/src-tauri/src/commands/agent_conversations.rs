@@ -1,7 +1,9 @@
 //! Whether the conversation a pane wants to resume still exists.
 //!
 //! Vibyra pins a conversation id when a Claude pane launches (`--session-id`)
-//! and names that same id when the pane is resumed (`--resume`). The gap
+//! and names that same id when the pane is resumed (`--resume`). Codex chooses
+//! its own id, which native session persistence captures from its open rollout
+//! file and later supplies to `codex resume <id>`. The Claude-specific gap
 //! between the two is a pane that was opened and closed without a word being
 //! typed: Claude writes no transcript until the first message, so the id names
 //! nothing, and `--resume` answers `No conversation found with session ID: …`
@@ -9,7 +11,7 @@
 //! greets the user with an error where their pane should be.
 //!
 //! No CLI answers "does this conversation exist", so this reads where Claude
-//! keeps them and lets the frontend decide before it asks.
+//! keeps its pinned transcripts and lets the frontend decide before it asks.
 //!
 //! The two flags are exact complements, which is what makes one check enough
 //! — against claude 2.1.238, on the same id:
@@ -64,10 +66,10 @@ impl ConversationStore {
 
     /// Whether `agent` could still resume the conversation `session` names.
     ///
-    /// Only Claude both accepts an id at launch and resumes by it, so only
-    /// Claude's answer comes off disk. Every other agent resumes by recency
-    /// and ignores the id entirely — they have no id that can go missing, so
-    /// the honest answer for them is yes.
+    /// Only Claude receives its id before its first transcript exists, so only
+    /// Claude needs this preflight. A persisted Codex id was observed from an
+    /// already-open rollout; Codex performs its own lookup when resumed. Other
+    /// agents either resume by recency or do not implement this local check.
     pub fn resumable(&self, agent: &str, session: &str) -> bool {
         if agent != "claude" {
             return true;

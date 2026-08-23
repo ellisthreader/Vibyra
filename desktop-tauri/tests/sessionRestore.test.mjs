@@ -12,10 +12,12 @@ import {
 function persisted(overrides = {}) {
   return {
     id: 7,
+    persistenceId: "pane-stable",
     projectId: "p1",
     agentId: "shell",
     title: "Terminal",
     customTitle: null,
+    chatTitle: null,
     model: null,
     permissionMode: "standard",
     reasoningEffort: null,
@@ -86,6 +88,21 @@ test("a live pane persists its real id so Rust can read its scrollback", () => {
   assert.equal(saved.snapshot, null);
 });
 
+test("a generated chat title survives the saved-session round trip", () => {
+  const [restored] = toPaneStates(
+    session([persisted({ chatTitle: "Diagnose terminal titles" })]),
+  );
+
+  assert.equal(restored.chatTitle, "Diagnose terminal titles");
+  assert.equal(toPersistedPanes([restored])[0].chatTitle, "Diagnose terminal titles");
+});
+
+test("pane identity survives native PTY id replacement", () => {
+  const [restored] = toPaneStates(session([persisted({ persistenceId: "pane-42" })]));
+  assert.equal(restored.persistenceId, "pane-42");
+  assert.equal(toPersistedPanes([restored])[0].persistenceId, "pane-42");
+});
+
 test("a launch that restored panes opens the project, not Home", () => {
   // Home tallies the restored panes ("4 sessions idle") without showing one,
   // which is indistinguishable from nothing having been restored.
@@ -148,42 +165,4 @@ test("restored panes are dated to when the session was saved", () => {
 test("placeholder ids are stable for a given position", () => {
   assert.equal(placeholderId(0), -1);
   assert.equal(placeholderId(4), -5);
-});
-
-// --- pane placement -------------------------------------------------------
-
-import { insertPane } from "../src/lib/paneInsert.ts";
-
-function pane(id, extra = {}) {
-  return { ...persisted(), id, status: "running", osc: null, ...extra };
-}
-
-function state(panes, extra = {}) {
-  return { panes, focusedId: null, zoomedId: null, activity: {}, ...extra };
-}
-
-test("a resumed pane takes the suspended pane's slot instead of appending", () => {
-  // Without this, resuming leaves the suspended pane in place and the grid
-  // shows the same terminal twice.
-  const before = state([pane(-1), pane(5), pane(-2)]);
-  const next = insertPane(before, pane(9), -2);
-
-  assert.deepEqual(next.panes.map((p) => p.id), [-1, 5, 9]);
-  assert.equal(next.panes.length, 3, "resume must not add a pane");
-  assert.equal(next.focusedId, 9);
-});
-
-test("a freshly spawned pane is appended", () => {
-  const next = insertPane(state([pane(1)]), pane(2));
-
-  assert.deepEqual(next.panes.map((p) => p.id), [1, 2]);
-  assert.equal(next.focusedId, 2);
-});
-
-test("replacing a pane inherits its zoom and drops its stale activity", () => {
-  const before = state([pane(-1)], { zoomedId: -1, activity: { [-1]: "attention" } });
-  const next = insertPane(before, pane(4), -1);
-
-  assert.equal(next.zoomedId, 4, "zoom should follow the resumed pane");
-  assert.equal(next.activity[-1], undefined, "activity for the old id must be cleared");
 });

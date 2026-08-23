@@ -6,7 +6,8 @@ import { resizeTerminal, writeTerminal } from "../ipc/terminal";
 import type { Settings } from "../types";
 import { clearAttention, stampBell } from "./activity";
 import { clear, detach } from "./terminalBus";
-import { attachSessionEvents, sessionTitleChanged } from "./terminalEvents";
+import { clearTerminalPrompt } from "./terminalChatTitle";
+import { attachSessionEvents, sessionInputReceived, sessionTitleChanged } from "./terminalEvents";
 import { dropReplay, takeReplay } from "./terminalReplay";
 import {
   applyTerminalBottomAnchor,
@@ -28,6 +29,7 @@ export interface TerminalEntry {
   fit: FitAddon;
   container: HTMLDivElement;
   anchor: BottomAnchorState;
+  anchorNow: (followOutput?: boolean) => void;
 }
 
 const entries = new Map<number, TerminalEntry>();
@@ -75,6 +77,7 @@ export function mountTerminal(
     host.appendChild(existing.container);
     fitTerminal(existing);
     applyTerminalBottomAnchor(existing.term, existing.anchor);
+    attachSessionEvents(id, existing.term, existing.anchorNow);
     return existing;
   }
 
@@ -98,25 +101,21 @@ export function mountTerminal(
   attachRenderer(term);
   attachTerminalClipboard(term);
 
-  const entry: TerminalEntry = {
-    term,
-    fit,
-    container,
-    anchor: createBottomAnchorState(bottomAnchored),
-  };
-
   // Guards the onScroll handler against re-entry while the write callback is
   // already anchoring (scrollToBottom fires onScroll synchronously).
   let anchoring = false;
-  const anchorNow = (followOutput = false) => {
+  const anchor = createBottomAnchorState(bottomAnchored);
+  const anchorNow = (followOutput = false): void => {
     anchoring = true;
-    applyTerminalBottomAnchor(term, entry.anchor, followOutput);
+    applyTerminalBottomAnchor(term, anchor, followOutput);
     anchoring = false;
   };
+  const entry: TerminalEntry = { term, fit, container, anchor, anchorNow };
 
   term.onData((data) => {
     clearAttention(id);
     anchorNow();
+    sessionInputReceived(id, data);
     void writeTerminal(id, data).catch(() => {});
   });
   term.onResize(({ rows, cols }) => void resizeTerminal(id, rows, cols).catch(() => {}));
@@ -152,11 +151,20 @@ export function getTerminal(id: number): TerminalEntry | undefined {
   return entries.get(id);
 }
 
+/** Detaches rendering while preserving the xterm instance and its scrollback. */
+export function unmountTerminal(id: number): void {
+  const entry = entries.get(id);
+  if (!entry) return;
+  detach(id);
+  entry.container.remove();
+}
+
 /** Frees the xterm instance (hibernation) but keeps the session routable. */
 export function disposeTerminal(id: number): void {
   const entry = entries.get(id);
   if (!entry) return;
   entries.delete(id);
+  clearTerminalPrompt(id);
   detach(id);
   entry.term.dispose();
   entry.container.remove();

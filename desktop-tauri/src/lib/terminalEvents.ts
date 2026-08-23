@@ -12,6 +12,7 @@ import { attach } from "./terminalBus";
 
 let onSessionExit: (id: number, code: number | null) => void = () => {};
 let onSessionTitle: (id: number, title: string) => void = () => {};
+let onSessionInput: (id: number, data: string) => void = () => {};
 
 export function setSessionExitHandler(handler: (id: number, code: number | null) => void): void {
   onSessionExit = handler;
@@ -21,9 +22,18 @@ export function setSessionTitleHandler(handler: (id: number, title: string) => v
   onSessionTitle = handler;
 }
 
+export function setSessionInputHandler(handler: (id: number, data: string) => void): void {
+  onSessionInput = handler;
+}
+
 /** The escape sequence a program uses to name its own tab. */
 export function sessionTitleChanged(id: number, title: string): void {
   onSessionTitle(id, title);
+}
+
+/** User keystrokes, observed only so CLIs without useful OSC titles can name the chat. */
+export function sessionInputReceived(id: number, data: string): void {
+  onSessionInput(id, data);
 }
 
 /**

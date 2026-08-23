@@ -7,6 +7,7 @@ import {
   toPaneStates,
   toPersistedPanes,
 } from "../src/lib/sessionRestore.ts";
+import { dropReplay, queueReplay } from "../src/lib/terminalReplay.ts";
 
 // What "Resume" means for a pane: how much of the previous run it carries
 // over, and which conversation it may ask the agent to continue.
@@ -14,6 +15,7 @@ import {
 function persisted(overrides = {}) {
   return {
     id: 7,
+    persistenceId: "pane-stable",
     projectId: "p1",
     agentId: "shell",
     title: "Terminal",
@@ -64,6 +66,12 @@ test("a suspended pane saved without output still resumes", () => {
   const [pane] = toPaneStates(session([persisted({ snapshot: null })]));
 
   assert.deepEqual(relaunchContinuity(pane), { resume: true, replaySnapshot: null });
+});
+
+test("a replay retained for the next save includes its continuity marker", () => {
+  const replay = queueReplay(77, "earlier work");
+  assert.match(replay, /^earlier work[\s\S]*resumed/);
+  dropReplay(77);
 });
 
 // --- which conversation "resume" means -------------------------------------

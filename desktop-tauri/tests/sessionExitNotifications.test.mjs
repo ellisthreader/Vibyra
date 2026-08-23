@@ -10,6 +10,7 @@ function pane(overrides = {}) {
     agentId: "claude",
     title: "Claude Code",
     customTitle: null,
+    chatTitle: null,
     osc: null,
     status: "running",
     ...overrides,
@@ -57,6 +58,15 @@ test("the user's own shell exiting is not news", () => {
 test("a renamed pane is announced by the name the user gave it", () => {
   const notice = exitNotification(pane({ customTitle: "Deploy run" }), 0, false);
   assert.equal(notice.title, "Deploy run finished");
+});
+
+test("a prompt-derived chat name beats a generic OSC title", () => {
+  const notice = exitNotification(
+    pane({ chatTitle: "Fix terminal titles", osc: "Vibyra" }),
+    0,
+    false,
+  );
+  assert.equal(notice.title, "Fix terminal titles finished");
 });
 
 test("an unknown pane is skipped rather than guessed at", () => {

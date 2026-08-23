@@ -45,6 +45,16 @@ fn resume_names_the_panes_own_conversation_when_it_has_one() {
 }
 
 #[test]
+fn codex_resume_names_the_exact_rollout_when_it_has_one() {
+    let mut request = request("codex");
+    request.resume = Some(true);
+    request.agent_session_id = Some(SESSION.into());
+    let mut spec = LaunchSpec::shell(None, None);
+    configure_launch(&mut spec, &request).unwrap();
+    assert_eq!(spec.args, ["resume", SESSION]);
+}
+
+#[test]
 fn agents_that_cannot_be_told_an_id_are_never_pinned() {
     // Codex takes no id at launch, and Gemini takes one but cannot resume by
     // it — passing one would be a flag they reject or silently ignore.

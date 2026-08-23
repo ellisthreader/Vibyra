@@ -73,6 +73,34 @@ fn spawns_streams_and_reports_exit() {
     ));
 }
 
+#[test]
+fn fast_parallel_sessions_keep_their_own_output_and_exit() {
+    const COUNT: usize = 24;
+    let sink = Arc::new(TestSink::default());
+    let manager = PtyManager::new(sink.clone(), FlushConfig::default());
+    let sessions: Vec<_> = (0..COUNT)
+        .map(|index| {
+            let token = format!("terminal-{index:02}-complete");
+            let info = manager
+                .create_session("shell", &token, &shell(&format!("printf '{token}'")))
+                .unwrap();
+            (info.id, token)
+        })
+        .collect();
+
+    assert!(wait_for(
+        || sink.exits.lock().len() == COUNT,
+        Duration::from_secs(5),
+    ));
+    let output = sink.output.lock();
+    for (id, token) in sessions {
+        let text = output
+            .get(&id)
+            .unwrap_or_else(|| panic!("missing output for {id}"));
+        assert!(text.contains(&token), "wrong output for {id}: {text:?}");
+    }
+}
+
 #[cfg(unix)]
 #[test]
 fn hibernated_session_is_silent_then_replays_on_wake() {

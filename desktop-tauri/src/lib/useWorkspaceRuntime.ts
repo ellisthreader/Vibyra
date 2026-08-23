@@ -12,7 +12,15 @@ import { restoredProjectId } from "./sessionRestore";
 import { startAppRuntime } from "./appStartup";
 import { notifyModelsReleased, notifySessionExit } from "./notificationTriggers";
 import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
-import { setSessionExitHandler, setSessionTitleHandler } from "./terminalEvents";
+import {
+  needsPromptDerivedTitle,
+  observeTerminalPrompt,
+} from "./terminalChatTitle";
+import {
+  setSessionExitHandler,
+  setSessionInputHandler,
+  setSessionTitleHandler,
+} from "./terminalEvents";
 
 async function refreshConnectedAccounts(): Promise<void> {
   await useProviderAccountStore.getState().refresh();
@@ -32,6 +40,13 @@ function useAppStartup(): void {
     });
     setSessionTitleHandler((id, title) => {
       useTerminalStore.getState().setOsc(id, title);
+    });
+    setSessionInputHandler((id, data) => {
+      const store = useTerminalStore.getState();
+      const pane = store.panes.find((candidate) => candidate.id === id);
+      if (!pane || pane.chatTitle || !needsPromptDerivedTitle(pane.agentId)) return;
+      const title = observeTerminalPrompt(id, data);
+      if (title) store.setChatTitle(id, title);
     });
     startAppRuntime(
       {

@@ -98,7 +98,7 @@ fn detect_app_root(project: &Path, app: &Path) -> CoreResult<Option<DetectedTarg
     if let Some(target) = detect_laravel(app, &relative)? {
         return Ok(Some(target));
     }
-    if let Some(target) = detect_package(app, &relative)? {
+    if let Some(target) = detect_package(project, app, &relative)? {
         return Ok(Some(target));
     }
     Ok(detect_static_or_php(app, &relative))

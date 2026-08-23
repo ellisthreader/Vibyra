@@ -79,7 +79,6 @@ impl PtyManager {
     ) -> CoreResult<SessionInfo> {
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
         let sink = Arc::clone(&self.sink);
-        let sessions = Arc::clone(&self.sessions);
         let config = self.config.clone();
         let session = Session::spawn(
             SessionOptions {
@@ -91,13 +90,12 @@ impl PtyManager {
             },
             spec,
             self.flush_tx.clone(),
-            move |session_id, code| {
-                if let Some(session) = sessions.read().get(&session_id).cloned() {
-                    match session.output.lock().drain() {
-                        Drained::Chunk(text) => sink.on_output(session_id, text),
-                        Drained::Resync(snapshot) => sink.on_resync(session_id, snapshot),
-                        Drained::Nothing => {}
-                    }
+            move |session, code| {
+                let session_id = session.id;
+                match session.output.lock().drain() {
+                    Drained::Chunk(text) => sink.on_output(session_id, text),
+                    Drained::Resync(snapshot) => sink.on_resync(session_id, snapshot),
+                    Drained::Nothing => {}
                 }
                 sink.on_exit(session_id, code);
             },
@@ -138,6 +136,12 @@ impl PtyManager {
 
     pub fn snapshot(&self, id: SessionId) -> CoreResult<String> {
         Ok(self.session(id)?.output.lock().snapshot())
+    }
+
+    /// The provider conversation this live PTY owns, when it can be observed
+    /// without asking the provider to expose chat content.
+    pub fn agent_session_id(&self, id: SessionId) -> CoreResult<Option<String>> {
+        Ok(self.session(id)?.agent_session_id())
     }
 
     pub fn kill(&self, id: SessionId) -> CoreResult<()> {

@@ -6,18 +6,28 @@ import type { Terminal } from "@xterm/xterm";
 // nothing replays it the way hibernation does. The output the user was reading
 // comes from session.json instead, and has to be written into the terminal at
 // the one moment that terminal exists and has not yet been wired to the bus.
-// Holding it here rather than on the pane keeps it out of React state, and
-// makes "exactly once" a property of the queue instead of a rule every caller
-// has to remember.
+// The pane retains the same prepared replay for its next native save; this
+// queue makes writing it to xterm exactly once an implementation property.
 
 const pending = new Map<number, string>();
 
 /** Separates what the previous run left on screen from the new one's output. */
 const RESUMED_RULE = "\r\n\x1b[2m── resumed ──\x1b[0m\r\n";
 
+/** Joins carried history to output produced by the replacement PTY. */
+export function mergeReplaySnapshots(
+  carried: string | null | undefined,
+  current: string | null | undefined,
+): string | null {
+  if (carried && current) return carried + current;
+  return carried || current || null;
+}
+
 /** Keyed by the **new** session id, set before the pane reaches the store. */
-export function queueReplay(id: number, snapshot: string): void {
-  pending.set(id, snapshot);
+export function queueReplay(id: number, snapshot: string): string {
+  const replay = snapshot + RESUMED_RULE;
+  pending.set(id, replay);
+  return replay;
 }
 
 /**
@@ -34,7 +44,6 @@ export function takeReplay(id: number, term: Terminal): void {
   // everything the resumed process draws below it.
   term.reset();
   term.write(snapshot);
-  term.write(RESUMED_RULE);
 }
 
 /** Drops a replay whose pane was closed before its terminal ever mounted. */

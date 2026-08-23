@@ -5,6 +5,7 @@ import {
   advanceProgress,
   bannerCopy,
   formatBytes,
+  navUpdateCopy,
   NO_PROGRESS,
 } from "../src/lib/updatePolicy.ts";
 
@@ -73,6 +74,14 @@ test("banner copy names the version and matches the step the user is on", () => 
   assert.equal(ready.action, "Restart now");
   assert.equal(ready.busy, false, "the restart must stay clickable");
 
+  const installing = bannerCopy("installing", "0.2.0", NO_PROGRESS, null);
+  assert.equal(installing.busy, true, "install must be single-flight");
+  assert.match(installing.detail, /Saving every open terminal/);
+
+  const restartFailed = bannerCopy("restartError", "0.2.0", NO_PROGRESS, "save failed");
+  assert.equal(restartFailed.action, "Try restart again");
+  assert.match(restartFailed.detail, /save failed/);
+
   const failed = bannerCopy("error", "0.2.0", NO_PROGRESS, "network unreachable");
   assert.equal(failed.action, "Try again");
   assert.match(failed.detail, /network unreachable/);
@@ -82,6 +91,24 @@ test("an unknown download size never renders a fake percentage", () => {
   const copy = bannerCopy("downloading", "0.2.0", { received: 900, total: 0, percent: 0 }, null);
   assert.doesNotMatch(copy.detail, /0%/);
   assert.match(copy.detail, /Downloading/);
+});
+
+test("the titlebar keeps every actionable update phase reachable", () => {
+  assert.equal(navUpdateCopy("idle", "", NO_PROGRESS), null);
+  assert.equal(navUpdateCopy("available", "0.2.0", NO_PROGRESS).label, "Update 0.2.0");
+
+  const downloading = navUpdateCopy(
+    "downloading",
+    "0.2.0",
+    { received: 25, total: 100, percent: 25 },
+  );
+  assert.equal(downloading.label, "Updating 25%");
+  assert.equal(downloading.busy, true);
+
+  assert.equal(navUpdateCopy("ready", "0.2.0", NO_PROGRESS).label, "Restart to update");
+  assert.equal(navUpdateCopy("installing", "0.2.0", NO_PROGRESS).busy, true);
+  assert.equal(navUpdateCopy("restartError", "0.2.0", NO_PROGRESS).label, "Retry restart");
+  assert.equal(navUpdateCopy("error", "0.2.0", NO_PROGRESS).label, "Retry update");
 });
 
 test("byte formatting stays readable across the sizes a bundle actually hits", () => {

@@ -42,7 +42,7 @@ function EmptyState({ projectName }: { projectName: string }) {
   );
 }
 
-export function TerminalStage() {
+export function TerminalStage({ active = true }: { active?: boolean }) {
   const activeId = useProjectStore((state) => state.activeId);
   const projects = useProjects();
   const allPanes = useTerminalStore((state) => state.panes);
@@ -66,6 +66,7 @@ export function TerminalStage() {
               key={pane.id}
               pane={pane}
               hidden={zoomed !== undefined && pane.id !== zoomed.id}
+              active={active}
             />
           ))}
         </div>

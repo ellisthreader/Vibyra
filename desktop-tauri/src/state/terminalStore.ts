@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { loadTerminalSession } from "../ipc/session";
 import { setTerminalVisibility } from "../ipc/terminal";
 import { toPaneStates } from "../lib/sessionRestore";
+import { terminalDisplayTitle } from "../lib/terminalTitle";
 import { getTerminal } from "../lib/terminalRegistry";
 import type { Visibility } from "../types";
 import { terminalLifecycleActions } from "./terminalLifecycleActions";
@@ -11,7 +12,7 @@ import type { PaneState, TerminalStore } from "./terminalStoreTypes";
 export type { PaneState } from "./terminalStoreTypes";
 
 export function paneLabel(pane: PaneState): string {
-  return pane.customTitle || pane.osc || pane.title;
+  return terminalDisplayTitle(pane);
 }
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
@@ -73,6 +74,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
       panes: state.panes.map((pane) =>
         pane.id === id ? { ...pane, customTitle } : pane),
     }));
+  },
+
+  setChatTitle: (id, title) => {
+    const chatTitle = title.trim() || null;
+    set((state) => {
+      const pane = state.panes.find((candidate) => candidate.id === id);
+      if (!pane || pane.chatTitle || !chatTitle) return state;
+      return {
+        panes: state.panes.map((candidate) =>
+          candidate.id === id ? { ...candidate, chatTitle } : candidate),
+      };
+    });
   },
 
   setOsc: (id, title) => {

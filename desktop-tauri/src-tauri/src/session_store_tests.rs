@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::session_store::{
-    clear, load, normalize, save, trim_snapshot, PersistedPane, TerminalSession,
+    clear, load, merge_snapshots, normalize, save, trim_snapshot, PersistedPane, TerminalSession,
     TEST_MAX_PANES as MAX_PANES, TEST_MAX_SNAPSHOT_BYTES as MAX_SNAPSHOT_BYTES, VERSION,
 };
 
@@ -62,6 +62,45 @@ fn a_saved_session_round_trips_with_its_order_intact() {
 }
 
 #[test]
+fn a_prompt_derived_chat_title_round_trips() {
+    let file = SessionFile::new();
+    let mut titled = pane("Codex", None);
+    titled.chat_title = Some("Fix terminal titles".into());
+    save(
+        &file.0,
+        TerminalSession {
+            panes: vec![titled],
+            ..TerminalSession::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        load(&file.0).panes[0].chat_title.as_deref(),
+        Some("Fix terminal titles")
+    );
+}
+
+#[test]
+fn pane_identity_round_trips_across_native_session_ids() {
+    let file = SessionFile::new();
+    let mut identified = pane("Codex", None);
+    identified.id = 42;
+    identified.persistence_id = "pane-stable-id".into();
+    save(
+        &file.0,
+        TerminalSession {
+            panes: vec![identified],
+            ..TerminalSession::default()
+        },
+    )
+    .unwrap();
+
+    let restored = load(&file.0);
+    assert_eq!(restored.panes[0].persistence_id, "pane-stable-id");
+}
+
+#[test]
 fn an_oversized_snapshot_is_trimmed_to_its_most_recent_output() {
     let snapshot = format!("{}TAIL", "x".repeat(MAX_SNAPSHOT_BYTES * 2));
     let trimmed = trim_snapshot(snapshot);
@@ -79,6 +118,18 @@ fn trimming_never_splits_a_multibyte_character() {
     let trimmed = trim_snapshot(snapshot);
     assert!(trimmed.len() <= MAX_SNAPSHOT_BYTES);
     assert!(trimmed.chars().all(|c| c == 'é'));
+}
+
+#[test]
+fn replayed_history_and_new_native_output_survive_together() {
+    assert_eq!(
+        merge_snapshots(Some("restored\r\n".into()), Some("new output".into())).as_deref(),
+        Some("restored\r\nnew output")
+    );
+    assert_eq!(
+        merge_snapshots(Some("restored".into()), None).as_deref(),
+        Some("restored")
+    );
 }
 
 #[test]

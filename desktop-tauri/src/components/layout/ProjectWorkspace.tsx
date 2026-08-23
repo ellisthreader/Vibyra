@@ -143,7 +143,7 @@ export function ProjectWorkspace() {
           className={"project-mode-panel " + (mode === "terminals" ? "project-mode-panel--active" : "")}
           aria-hidden={mode !== "terminals"}
         >
-          <TerminalStage />
+          <TerminalStage active={mode === "terminals"} />
         </section>
         {mode === "preview" && (
           <section

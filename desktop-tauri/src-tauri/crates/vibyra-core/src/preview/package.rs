@@ -5,15 +5,22 @@ use serde_json::Value;
 use crate::{CoreError, CoreResult};
 
 use super::bounded_text::read_manifest;
+use super::package_command::matches_framework_script;
 use super::package_profile::{
-    append_runtime_args, dependency_names, device_hint, framework_name, manager_args,
-    matches_framework_script, native_only, package_manager, safe_script, select_script, string_map,
+    dependency_names, framework_name, manager_args, native_only, package_manager, safe_script,
+    select_script, string_map,
 };
+use super::package_runtime::{append_runtime_args, device_hint};
+use super::package_script::script_launches_framework;
 use super::process::preview_command;
 use super::target::{runnable_target, unsupported_target};
 use super::types::{DetectedTarget, LaunchRecipe, PreviewDeviceHint, ProcessSpec};
 
-pub(crate) fn detect_package(root: &Path, relative: &str) -> CoreResult<Option<DetectedTarget>> {
+pub(crate) fn detect_package(
+    project_root: &Path,
+    root: &Path,
+    relative: &str,
+) -> CoreResult<Option<DetectedTarget>> {
     let Some(text) = read_manifest(&root.join("package.json"), "package.json")? else {
         return Ok(None);
     };
@@ -39,11 +46,11 @@ pub(crate) fn detect_package(root: &Path, relative: &str) -> CoreResult<Option<D
             "The detected script chains shell commands, so Preview will not run it automatically.",
         )));
     }
-    if !matches_framework_script(framework, body) {
+    if !script_launches_framework(project_root, root, framework, body, &scripts) {
         return Ok(Some(unsupported_target(
             relative,
             framework,
-            "The detected script does not directly launch the recognized browser framework.",
+            "The detected script or local wrapper could not be verified as a browser framework launch.",
         )));
     }
 

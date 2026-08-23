@@ -54,7 +54,7 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
 
   check: async () => {
     // Never interrupt a download or a staged install to re-check.
-    if (get().status === "downloading" || get().status === "ready") return;
+    if (["downloading", "ready", "installing", "restartError"].includes(get().status)) return;
     try {
       const update = await checkForUpdate();
       if (!update) {
@@ -93,17 +93,18 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
 
   restart: async () => {
     const update = pending;
-    if (!update) return;
+    if (!update || !["ready", "restartError"].includes(get().status)) return;
+    set({ status: "installing", error: null });
     try {
       // `relaunch()` exits the process outright — it never raises the window
       // close event the guard listens for, so the scrollback flush that
       // normally happens on close has to happen here instead. Layout is
       // already saved continuously; snapshots are only written every two
       // minutes, and that is what would otherwise be lost.
-      await saveSessionNow(true).catch(() => {});
+      await saveSessionNow(true);
       await installUpdate(update);
     } catch (error) {
-      set({ status: "error", error: String(error) });
+      set({ status: "restartError", error: String(error) });
     }
   },
 

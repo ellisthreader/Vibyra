@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { confirmClose } from "../ipc/session";
 import { saveSessionNow } from "../lib/sessionPersistence";
+import { terminalDisplayTitle } from "../lib/terminalTitle";
 import { useTerminalStore } from "./terminalStore";
 
 interface CloseGuardStore {
@@ -18,7 +19,7 @@ function runningTitles(): string[] {
   return useTerminalStore
     .getState()
     .panes.filter((pane) => pane.status === "running")
-    .map((pane) => pane.customTitle || pane.osc || pane.title);
+    .map(terminalDisplayTitle);
 }
 
 /** Saves the full session, then releases Rust's veto so the window can shut. */

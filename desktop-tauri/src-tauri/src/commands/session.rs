@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -19,9 +20,9 @@ fn session_path(state: &AppState) -> PathBuf {
 
 /// Saves the workspace layout, and optionally each pane's on-screen output.
 ///
-/// Snapshots are read here rather than sent from the UI: the frontend never
-/// has to hold megabytes of terminal text, and a pane that died between the
-/// UI's last render and this call simply contributes no snapshot.
+/// Current-process output is read from Rust's bounded ring. A resumed pane
+/// also carries the history it replayed before this PTY existed, so the two
+/// halves are merged instead of losing older work on the next restart.
 #[tauri::command]
 pub async fn save_terminal_session(
     state: State<'_, AppState>,
@@ -36,9 +37,29 @@ pub async fn save_terminal_session(
     let saved_at_ms = session_store::now_ms();
 
     run_blocking_core(move || {
+        let mut previous_snapshots: HashMap<String, String> =
+            if persist_output && !include_snapshots {
+                session_store::load(&path)
+                    .panes
+                    .into_iter()
+                    .filter_map(|pane| {
+                        (!pane.persistence_id.is_empty())
+                            .then_some(pane.persistence_id)
+                            .zip(pane.snapshot)
+                    })
+                    .collect()
+            } else {
+                HashMap::new()
+            };
         let panes = panes
             .into_iter()
             .map(|mut pane| {
+                // Codex chooses its own UUID after launch. On Linux the PTY
+                // process tree exposes the open rollout path, so persist that
+                // exact id instead of falling back to ambiguous `--last`.
+                if pane.agent_session_id.is_none() && pane.agent_id == "codex" && pane.id != 0 {
+                    pane.agent_session_id = manager.agent_session_id(pane.id).ok().flatten();
+                }
                 // A live pane's output is read straight from the manager. An
                 // already-suspended pane (id 0) has no session, so it keeps
                 // the snapshot the UI carried over — otherwise its output
@@ -52,12 +73,14 @@ pub async fn save_terminal_session(
                 pane.snapshot = if !persist_output {
                     None
                 } else if include_snapshots {
-                    manager
-                        .snapshot(pane.id)
-                        .ok()
-                        .or_else(|| pane.snapshot.take())
+                    session_store::merge_snapshots(
+                        pane.snapshot.take(),
+                        manager.snapshot(pane.id).ok(),
+                    )
                 } else {
-                    pane.snapshot.take()
+                    previous_snapshots
+                        .remove(&pane.persistence_id)
+                        .or_else(|| pane.snapshot.take())
                 };
                 pane
             })

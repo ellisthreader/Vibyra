@@ -1,4 +1,5 @@
 mod buffer;
+mod conversation;
 mod flusher;
 mod manager;
 mod session;

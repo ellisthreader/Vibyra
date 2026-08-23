@@ -29,7 +29,7 @@ export function UpdateBanner() {
 
   const act = (): void => {
     const store = useUpdateStore.getState();
-    if (status === "ready") void store.restart();
+    if (status === "ready" || status === "restartError") void store.restart();
     else void store.download();
   };
 
@@ -53,7 +53,7 @@ export function UpdateBanner() {
         {copy.action}
       </button>
 
-      {status !== "downloading" && (
+      {status !== "downloading" && status !== "installing" && (
         <button
           type="button"
           className="icon-btn vupdate__close"

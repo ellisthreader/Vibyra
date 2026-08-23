@@ -31,7 +31,7 @@ function SessionRow({ pane, index }: { pane: PaneState; index: number }) {
       className={`session-row ${focusedId === pane.id ? "session-row--active" : ""}`}
       role="button"
       tabIndex={0}
-      title={pane.osc ?? pane.title}
+      title={paneLabel(pane)}
       onClick={() => {
         if (pane.visibility === "hibernated") void wake(pane.id);
         else setFocus(pane.id);
@@ -49,7 +49,7 @@ function SessionRow({ pane, index }: { pane: PaneState; index: number }) {
         <input
           className="session-row__edit"
           value={draft}
-          placeholder={pane.osc ?? pane.title}
+          placeholder={paneLabel(pane)}
           autoFocus
           spellCheck={false}
           onChange={(e) => setDraft(e.target.value)}

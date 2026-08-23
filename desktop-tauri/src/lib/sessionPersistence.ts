@@ -18,20 +18,26 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let heartbeat: ReturnType<typeof setInterval> | null = null;
 let unsubscribe: (() => void) | null = null;
 let lastSignature = "";
+let saveQueue: Promise<void> = Promise.resolve();
 
 /** Identity of the persisted layout — activity ticks and focus must not save. */
 function signature(): string {
   return useTerminalStore
     .getState()
     .panes.map((pane) =>
-      [pane.id, pane.projectId, pane.agentId, pane.customTitle ?? pane.title, pane.status].join(":"),
+      [pane.id, pane.projectId, pane.agentId, pane.customTitle, pane.chatTitle, pane.title, pane.status]
+        .join(":"),
     )
     .join("|");
 }
 
-export async function saveSessionNow(includeSnapshots: boolean): Promise<void> {
-  const panes = toPersistedPanes(useTerminalStore.getState().panes);
-  await saveTerminalSession(panes, includeSnapshots);
+export function saveSessionNow(includeSnapshots: boolean): Promise<void> {
+  const save = saveQueue.then(() => {
+    const panes = toPersistedPanes(useTerminalStore.getState().panes);
+    return saveTerminalSession(panes, includeSnapshots);
+  });
+  saveQueue = save.catch(() => {});
+  return save;
 }
 
 export function startSessionPersistence(): () => void {

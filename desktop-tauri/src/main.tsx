@@ -18,6 +18,7 @@ import "./styles/chrome.css";
 import "./styles/chrome-resize.css";
 import "./styles/chrome-breadcrumb.css";
 import "./styles/chrome-account.css";
+import "./styles/update-nav.css";
 import "./styles/notifications-bell.css";
 import "./styles/auth.css";
 import "./styles/auth-card.css";
@@ -121,4 +122,3 @@ void initRendererPolicy();
 installAppDropGuard();
 
 createRoot(document.getElementById("root")!).render(<App />);
-

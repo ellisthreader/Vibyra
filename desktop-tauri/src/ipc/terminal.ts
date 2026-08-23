@@ -1,5 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { dispatch } from "../lib/terminalBus";
+import { nativeTerminalVisibility } from "../lib/terminalVisibility";
 import type { SessionInfo, TermEvent, Visibility } from "../types";
 
 // Each terminal gets its own IPC channel; Rust batches output (~16 ms under
@@ -108,7 +109,14 @@ export function resizeTerminal(id: number, rows: number, cols: number): Promise<
 }
 
 export function setTerminalVisibility(id: number, visibility: Visibility): Promise<void> {
-  return invoke("set_terminal_visibility", { id, visibility });
+  return invoke("set_terminal_visibility", {
+    id,
+    visibility: nativeTerminalVisibility(visibility),
+  });
+}
+
+export function terminalSnapshot(id: number): Promise<string> {
+  return invoke<string>("terminal_snapshot", { id });
 }
 
 export function removeTerminal(id: number): Promise<void> {

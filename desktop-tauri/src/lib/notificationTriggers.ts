@@ -5,6 +5,7 @@ import { useTerminalStore } from "../state/terminalStore";
 import type { ActivityTransition } from "./activityTransitions";
 import { notePreviewTransition } from "./previewNotifications";
 import { exitNoticeSuppressed, exitNotification } from "./sessionExitNotifications";
+import { terminalDisplayTitle } from "./terminalTitle";
 
 // Impure glue: pulls the live pane out of the store, hands it to the pure
 // decision functions, and pushes whatever comes back. Kept apart from those
@@ -20,7 +21,7 @@ export function notifySessionExit(id: number, code: number | null): void {
 function paneTitle(id: number): string {
   const pane = useTerminalStore.getState().panes.find((candidate) => candidate.id === id);
   if (!pane) return "An agent";
-  return pane.customTitle || pane.osc || pane.title;
+  return terminalDisplayTitle(pane);
 }
 
 export function notifyActivityTransitions(transitions: ActivityTransition[]): void {

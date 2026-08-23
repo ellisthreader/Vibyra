@@ -4,7 +4,10 @@ mod detect;
 mod launcher;
 mod manager;
 mod package;
+mod package_command;
 mod package_profile;
+mod package_runtime;
+mod package_script;
 mod process;
 mod process_output;
 mod service;
@@ -20,5 +23,7 @@ pub use types::{PreviewDeviceHint, PreviewInspection, PreviewPhase, PreviewStatu
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_mobile;
 #[cfg(test)]
 mod tests_static;

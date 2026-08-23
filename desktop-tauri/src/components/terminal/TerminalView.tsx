@@ -5,7 +5,12 @@ import {
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
 import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
-import { fitTerminal, getTerminal, mountTerminal } from "../../lib/terminalRegistry";
+import {
+  fitTerminal,
+  getTerminal,
+  mountTerminal,
+  unmountTerminal,
+} from "../../lib/terminalRegistry";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 
@@ -19,10 +24,22 @@ import { useTerminalStore } from "../../state/terminalStore";
  */
 const FIT_THROTTLE_MS = 90;
 
-export function TerminalView({ id, bottomAnchored }: { id: number; bottomAnchored: boolean }) {
+export function TerminalView({
+  id,
+  bottomAnchored,
+  active,
+}: {
+  id: number;
+  bottomAnchored: boolean;
+  active: boolean;
+}) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!active) {
+      unmountTerminal(id);
+      return;
+    }
     const host = hostRef.current;
     const settings = useSettingsStore.getState().settings;
     if (!host || !settings) return;
@@ -53,9 +70,9 @@ export function TerminalView({ id, bottomAnchored }: { id: number; bottomAnchore
       observer.disconnect();
       window.clearTimeout(trailingTimer);
       cancelAnimationFrame(frame);
-      entry.container.remove();
+      unmountTerminal(id);
     };
-  }, [bottomAnchored, id]);
+  }, [active, bottomAnchored, id]);
 
   return (
     <div

@@ -52,7 +52,7 @@ function supportsFullAccess(agentId: string): boolean {
 
 async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<void> {
   for (let index = 0; index < launch.count; index += 1) {
-    await useTerminalStore.getState().spawnAgent(launch.agent, launch.projectId, {
+    const launched = await useTerminalStore.getState().spawnAgent(launch.agent, launch.projectId, {
       cwd: launch.projectRoot,
       model: launch.model,
       permissionMode: launch.permissionMode,
@@ -62,6 +62,7 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
       workspaceMode: launch.safeMode ? "safe" : "shared",
       safeSnapshotFingerprint: fingerprint,
     });
+    if (!launched) break;
   }
 }
 

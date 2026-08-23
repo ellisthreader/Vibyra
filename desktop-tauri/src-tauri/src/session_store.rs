@@ -24,10 +24,14 @@ pub struct PersistedPane {
     /// suspended. Used only to fetch the snapshot during the save itself — it
     /// is never restored, because ids reset to 1 on every launch.
     pub id: u64,
+    /// Stable across launches; native PTY ids restart at one every process.
+    pub persistence_id: String,
     pub project_id: String,
     pub agent_id: String,
     pub title: String,
     pub custom_title: Option<String>,
+    /// Vibyra's prompt-derived title for CLIs that only emit a cwd over OSC.
+    pub chat_title: Option<String>,
     pub model: Option<String>,
     pub permission_mode: String,
     pub reasoning_effort: Option<String>,
@@ -78,6 +82,19 @@ pub fn trim_snapshot(snapshot: String) -> String {
         cut += 1;
     }
     snapshot[cut..].to_owned()
+}
+
+/** Combines the replayed history kept by the renderer with this PTY's ring. */
+pub fn merge_snapshots(base: Option<String>, fresh: Option<String>) -> Option<String> {
+    match (base, fresh) {
+        (Some(mut base), Some(fresh)) => {
+            base.push_str(&fresh);
+            Some(base)
+        }
+        (Some(base), None) => Some(base),
+        (None, Some(fresh)) => Some(fresh),
+        (None, None) => None,
+    }
 }
 
 /// Applies every ceiling. Over-budget panes keep their metadata and lose only

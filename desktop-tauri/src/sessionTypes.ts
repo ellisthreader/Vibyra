@@ -3,10 +3,13 @@
 /** One pane as written to session.json. `id` is 0 for an already-suspended pane. */
 export interface PersistedPane {
   id: number;
+  /** Stable across app launches even though native PTY ids restart at one. */
+  persistenceId: string;
   projectId: string;
   agentId: string;
   title: string;
   customTitle: string | null;
+  chatTitle: string | null;
   model: string | null;
   permissionMode: "standard" | "full";
   reasoningEffort: string | null;

@@ -1,5 +1,6 @@
 import type { PaneState } from "../state/terminalStoreTypes";
 import type { NotificationInput } from "../notificationTypes";
+import { terminalDisplayTitle } from "./terminalTitle.ts";
 
 // A PTY exit is the one unambiguous "this run is over" signal the desktop has.
 // The decision of whether it is worth saying is pure and lives here; the wiring
@@ -46,9 +47,7 @@ export function exitNotification(
 ): NotificationInput | null {
   if (!pane || isSuppressed || code === null) return null;
   if (SILENT_AGENTS.has(pane.agentId)) return null;
-  // Same precedence as terminalStore.paneLabel, inlined so this module stays
-  // pure: importing the store would drag zustand into a plain-logic unit test.
-  const label = pane.customTitle || pane.osc || pane.title;
+  const label = terminalDisplayTitle(pane);
   const action = { id: "focusSession", label: "Open terminal", arg: pane.id } as const;
   if (code === 0) {
     return {

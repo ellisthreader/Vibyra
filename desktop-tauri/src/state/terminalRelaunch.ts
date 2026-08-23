@@ -23,7 +23,11 @@ function reportError(error: unknown): void {
  * re-checked — a fingerprint captured earlier may no longer describe the tree.
  * They differ only in what they carry over; see `relaunchContinuity`.
  */
-export async function relaunch(get: GetState, pane: PaneState, replaces?: number): Promise<void> {
+export async function relaunch(
+  get: GetState,
+  pane: PaneState,
+  replaces?: number,
+): Promise<boolean> {
   // Only a suspended pane asks to continue anything, and only one carrying an
   // id names a conversation that can have gone missing since. If the check
   // itself fails, assume it is there: a broken lookup must not quietly stop
@@ -38,14 +42,17 @@ export async function relaunch(get: GetState, pane: PaneState, replaces?: number
       : true;
   const { resume, replaySnapshot } = relaunchContinuity(pane, get().panes, conversationResumable);
   if (pane.agentId === "ssh") {
-    await get().spawnSsh(pane.title, pane.projectId, { replaces, replaySnapshot });
-    return;
+    return get().spawnSsh(pane.title, pane.projectId, {
+      replaces,
+      replaySnapshot,
+      persistenceId: pane.persistenceId,
+    });
   }
   const agents = await listAgents().catch(() => []);
   const agent = agents.find((candidate) => candidate.id === pane.agentId);
   if (!agent) {
     reportError(`agent "${pane.agentId}" is no longer available`);
-    return;
+    return false;
   }
   let fingerprint = pane.safeSnapshotFingerprint ?? undefined;
   if (pane.workspaceMode === "safe" && pane.sourceCwd) {
@@ -53,11 +60,14 @@ export async function relaunch(get: GetState, pane: PaneState, replaces?: number
       .then((preflight) => preflight.fingerprint)
       .catch(() => fingerprint);
   }
-  await get().spawnAgent(agent, pane.projectId, {
+  return get().spawnAgent(agent, pane.projectId, {
     model: pane.model,
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,
-    title: pane.customTitle ?? pane.title,
+    title: pane.title,
+    persistenceId: pane.persistenceId,
+    customTitle: pane.customTitle,
+    chatTitle: pane.chatTitle,
     cwd: pane.sourceCwd,
     workspaceMode: pane.workspaceMode,
     safeSnapshotFingerprint: fingerprint,
