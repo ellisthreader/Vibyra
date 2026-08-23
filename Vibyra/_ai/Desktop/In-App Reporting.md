@@ -32,6 +32,21 @@ the client contract of one screenshot plus four vetted images survives the web
 runtime. Invalid or absent webhook configuration fails closed with safe user
 copy; provider details and the secret never reach the app.
 
+## Release Regression Guard
+
+If an installed app asks the maintainer to run `npm run report:configure`, it
+is running the old machine-local 0.1.6 report path; users must never be asked to
+configure it. The server-owned path ships in 0.1.7. Source code is not release
+proof: `/web-api/releases` must expose the intended version as available, the
+updater endpoint for the previous version must return signed metadata, and the
+public download size and SHA-256 must match the persistent release artifact.
+
+Keep the Linux AppImage and Windows NSIS install/launch smoke tests green in
+`.github/workflows/desktop-release.yml`. The Windows check derives the `.exe`
+name from Tauri `mainBinaryName`; a hard-coded legacy executable name once
+blocked the fixed build from reaching users. The app checks for an update eight
+seconds after workspace launch and every 20 minutes while it remains open.
+
 ## Dialog Simplicity Contract
 
 The default report path is two required fields: a short title and what happened.
