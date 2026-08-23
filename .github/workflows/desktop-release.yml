@@ -104,12 +104,13 @@ jobs:
         shell: bash
         run: |
           artifact="$PWD/release/${{ steps.version.outputs.output }}"
-          mapfile -t binaries < <(
-            dpkg-deb -c "$artifact" |
-              awk '$1 ~ /^-/ && $6 ~ /^\.\/usr\/bin\// { sub(/^\./, "", $6); print $6 }'
-          )
+          extract_dir=$(mktemp -d)
+          trap 'rm -rf "$extract_dir"' EXIT
+          dpkg-deb -x "$artifact" "$extract_dir"
+          mapfile -t binaries < <(find "$extract_dir/usr/bin" -maxdepth 1 -type f -perm /111 -print)
           test "${#binaries[@]}" = 1
-          binary="${binaries[0]}"
+          binary="/${binaries[0]#"$extract_dir/"}"
+          printf 'Debian package executable: %s\n' "$binary"
           sudo apt-get install -y "$artifact"
           test -x "$binary"
           xvfb-run -a "$binary" &
