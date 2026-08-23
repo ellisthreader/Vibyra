@@ -1,2 +1,9 @@
 desktop-tauri/src-tauri/tests/fixtures/updater-fixture.bin binary
 desktop-tauri/src-tauri/tests/fixtures/updater-fixture.bin.sig binary
+*.icns binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.mp4 binary
+*.png binary
+*.webp binary

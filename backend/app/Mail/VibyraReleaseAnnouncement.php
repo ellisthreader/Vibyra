@@ -31,7 +31,7 @@ class VibyraReleaseAnnouncement extends Mailable
             with: [
                 'downloadUrl' => 'https://vibyra-production.up.railway.app/downloads',
                 'reportImageUrl' => 'https://vibyra-production.up.railway.app/media/releases/vibyra-0.1.7-report.png',
-                'workspaceImageUrl' => 'https://vibyra-production.up.railway.app/media/homepage/desktop-multi-terminal.png',
+                'workspaceImageUrl' => 'https://vibyra-production.up.railway.app/media/releases/vibyra-0.1.7-workspace.png',
             ],
         );
     }
