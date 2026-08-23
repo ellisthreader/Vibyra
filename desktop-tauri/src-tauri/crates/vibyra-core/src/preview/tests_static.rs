@@ -40,7 +40,16 @@ fn request(port: u16, parts: &[&[u8]]) -> String {
         }
     }
     let mut response = String::new();
-    stream.read_to_string(&mut response).unwrap();
+    match stream.read_to_string(&mut response) {
+        Ok(_) => {}
+        Err(error)
+            if !response.is_empty()
+                && matches!(
+                    error.kind(),
+                    std::io::ErrorKind::ConnectionAborted | std::io::ErrorKind::ConnectionReset
+                ) => {}
+        Err(error) => panic!("could not read static preview response: {error}"),
+    }
     response
 }
 

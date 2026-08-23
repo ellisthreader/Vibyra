@@ -93,9 +93,10 @@ mod tests {
 
         let summary = connect_vault(&store, "project-1", &vault).unwrap();
         assert_eq!(summary.name, "vault");
+        let canonical_vault = fs::canonicalize(&vault).unwrap();
         assert_eq!(
             load_connected_vault(&store, "project-1").unwrap(),
-            Some(vault)
+            Some(canonical_vault)
         );
         disconnect_vault(&store, "project-1").unwrap();
         assert_eq!(load_connected_vault(&store, "project-1").unwrap(), None);
