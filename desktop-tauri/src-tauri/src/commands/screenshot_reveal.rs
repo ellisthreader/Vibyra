@@ -19,6 +19,7 @@ pub async fn reveal_screenshot(state: State<'_, AppState>, path: String) -> Resu
 
 /// `file://` URI for a local path, percent-encoded per segment. `:` is left
 /// alone so a Windows drive letter still reads as `file:///C:/…`.
+#[cfg(any(target_os = "linux", test))]
 pub(super) fn file_uri(path: &Path) -> String {
     let normalized = path.to_string_lossy().replace('\\', "/");
     let rooted = if normalized.starts_with('/') {
