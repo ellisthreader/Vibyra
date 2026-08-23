@@ -1,3 +1,4 @@
+#[cfg(any(target_os = "linux", test))]
 use std::path::Path;
 
 /// Finds the Codex rollout held open by one PTY process tree.
@@ -42,6 +43,7 @@ pub fn codex_session_id(_root_pid: u32) -> Option<String> {
     None
 }
 
+#[cfg(any(target_os = "linux", test))]
 fn session_id_from_path(path: &Path) -> Option<String> {
     let name = path.file_name()?.to_str()?;
     let stem = name.strip_suffix(".jsonl")?;
@@ -56,6 +58,7 @@ fn session_id_from_path(path: &Path) -> Option<String> {
     valid_uuid(id).then(|| id.to_string())
 }
 
+#[cfg(any(target_os = "linux", test))]
 fn valid_uuid(value: &str) -> bool {
     value.len() == 36
         && value.chars().enumerate().all(|(index, character)| {
@@ -69,7 +72,9 @@ fn valid_uuid(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{codex_session_id, session_id_from_path};
+    #[cfg(target_os = "linux")]
+    use super::codex_session_id;
+    use super::session_id_from_path;
     use std::path::Path;
 
     #[test]
