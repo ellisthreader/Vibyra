@@ -15,14 +15,22 @@ jobs:
         include:
           - os: windows-latest
             label: Windows
+            bundle: windows
             command: npm run app:build:windows
             source: src-tauri/target/release/bundle/nsis/*-setup.exe
             suffix: x64-setup.exe
           - os: ubuntu-22.04
             label: Linux
+            bundle: appimage
             command: npm run app:build:linux
             source: src-tauri/target/release/bundle/appimage/*.AppImage
             suffix: x86_64.AppImage
+          - os: ubuntu-22.04
+            label: Linux Deb
+            bundle: deb
+            command: npm run app:build:deb
+            source: src-tauri/target/release/bundle/deb/*.deb
+            suffix: amd64.deb
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -80,7 +88,7 @@ jobs:
           test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
       - name: Smoke-test Linux AppImage launch
-        if: runner.os == 'Linux'
+        if: matrix.bundle == 'appimage'
         shell: bash
         run: |
           artifact="release/${{ steps.version.outputs.output }}"
@@ -91,8 +99,23 @@ jobs:
           kill -0 "$pid"
           kill "$pid"
           wait "$pid" || true
+      - name: Smoke-test Debian package install and app launch
+        if: matrix.bundle == 'deb'
+        shell: bash
+        run: |
+          artifact="$PWD/release/${{ steps.version.outputs.output }}"
+          binary=$(dpkg-deb -c "$artifact" | awk '$6 ~ /^\.\/usr\/bin\// { sub(/^\./, "", $6); print $6; exit }')
+          test -n "$binary"
+          sudo apt-get install -y "$artifact"
+          test -x "$binary"
+          xvfb-run -a "$binary" &
+          pid=$!
+          sleep 12
+          kill -0 "$pid"
+          kill "$pid"
+          wait "$pid" || true
       - name: Smoke-test Windows installer and app launch
-        if: runner.os == 'Windows'
+        if: matrix.bundle == 'windows'
         shell: pwsh
         run: |
           $installer = Join-Path $PWD "release/${{ steps.version.outputs.output }}"

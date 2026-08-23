@@ -19,6 +19,7 @@
     "app:dev": "node scripts/dev.mjs",
     "app:build": "npm run app:install",
     "app:build:linux": "tauri build --bundles appimage",
+    "app:build:deb": "tauri build --bundles deb",
     "app:install": "node scripts/install-linux.mjs",
     "app:install:only": "node scripts/install-linux.mjs --no-build",
     "discord:configure": "bash scripts/configure-discord-webhook.sh configure",
