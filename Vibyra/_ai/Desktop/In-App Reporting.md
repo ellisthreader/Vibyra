@@ -41,11 +41,14 @@ proof: `/web-api/releases` must expose the intended version as available, the
 updater endpoint for the previous version must return signed metadata, and the
 public download size and SHA-256 must match the persistent release artifact.
 
-Keep the Linux AppImage and Windows NSIS install/launch smoke tests green in
-`.github/workflows/desktop-release.yml`. The Windows check derives the `.exe`
-name from Tauri `mainBinaryName`; a hard-coded legacy executable name once
-blocked the fixed build from reaching users. The app checks for an update eight
-seconds after workspace launch and every 20 minutes while it remains open.
+Keep the Linux AppImage, Debian package, and Windows NSIS install/launch smoke
+tests green in `.github/workflows/desktop-release.yml`. The Debian check
+extracts the archive, requires exactly one executable under `/usr/bin`, then
+installs and launches it; do not parse the human-formatted `dpkg-deb -c` path
+listing. The Windows check derives the `.exe` name from Tauri `mainBinaryName`;
+a hard-coded legacy executable name once blocked the fixed build from reaching
+users. The app checks for an update eight seconds after workspace launch and
+every 20 minutes while it remains open.
 
 ## Dialog Simplicity Contract
 
