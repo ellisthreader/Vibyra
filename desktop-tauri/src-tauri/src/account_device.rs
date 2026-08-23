@@ -69,17 +69,21 @@ fn persist(path: &PathBuf, id: &str) {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    match std::fs::write(path, id) {
-        Err(error) => eprintln!("Vibyra could not persist the installation id: {error}"),
-        Ok(()) => {
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
-            }
-        }
+    if let Err(error) = std::fs::write(path, id) {
+        eprintln!("Vibyra could not persist the installation id: {error}");
+    } else {
+        protect_installation_id(path);
     }
 }
+
+#[cfg(unix)]
+fn protect_installation_id(path: &PathBuf) {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+}
+
+#[cfg(not(unix))]
+fn protect_installation_id(_path: &PathBuf) {}
 
 #[cfg(test)]
 mod tests {
