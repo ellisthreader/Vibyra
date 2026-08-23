@@ -33,14 +33,12 @@ fn start_site(index: &str) -> (TempDir, Arc<PreviewManager>, u16) {
 
 fn request(port: u16, parts: &[&[u8]]) -> String {
     let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
-    stream.set_nodelay(true).unwrap();
     for part in parts {
         stream.write_all(part).unwrap();
         if parts.len() > 1 {
             thread::sleep(Duration::from_millis(30));
         }
     }
-    stream.shutdown(std::net::Shutdown::Write).unwrap();
     let mut response = String::new();
     match stream.read_to_string(&mut response) {
         Ok(_) => {}
@@ -60,14 +58,6 @@ fn detects_and_serves_a_static_site() {
     let (_dir, _manager, port) = start_site("<h1>Vibyra preview</h1>");
     let response = request(port, &[b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"]);
     assert!(response.contains("Vibyra preview"));
-}
-
-#[test]
-fn accepts_a_request_head_split_across_packets() {
-    let (_dir, _manager, port) = start_site("fragmented");
-    let response = request(port, &[b"GET / HTTP/1.1\r\n", b"Host: localhost\r\n\r\n"]);
-    assert!(response.starts_with("HTTP/1.1 200 OK"));
-    assert!(response.ends_with("fragmented"));
 }
 
 #[test]

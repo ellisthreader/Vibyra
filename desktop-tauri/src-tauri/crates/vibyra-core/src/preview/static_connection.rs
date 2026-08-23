@@ -55,7 +55,7 @@ pub(crate) fn serve(mut stream: TcpStream, root: &Path, entry: &Path) -> io::Res
     Ok(())
 }
 
-fn read_request_head(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
+fn read_request_head(stream: &mut impl Read) -> io::Result<Vec<u8>> {
     let mut request = vec![0_u8; MAX_REQUEST_HEAD_BYTES];
     let mut count = 0;
     while count < request.len() {
@@ -159,4 +159,23 @@ fn response(
         stream.write_all(body)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{Cursor, Read};
+
+    use super::read_request_head;
+
+    #[test]
+    fn accepts_a_request_head_split_across_reads() {
+        let first = Cursor::new(&b"GET / HTTP/1.1\r\n"[..]);
+        let second = Cursor::new(&b"Host: localhost\r\n\r\n"[..]);
+        let mut fragmented = first.chain(second);
+
+        assert_eq!(
+            read_request_head(&mut fragmented).unwrap(),
+            b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"
+        );
+    }
 }
