@@ -25,7 +25,7 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "profile", label: "Profile", blurb: "Your Vibyra account and session", icon: UserIcon },
-  { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
+  { id: "general", label: "General", blurb: "GPU, theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
   { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
   { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
   { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },

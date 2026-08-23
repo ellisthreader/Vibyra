@@ -25,6 +25,7 @@ function ThemeCards({ settings, update }: SettingsPaneProps) {
 export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
   return (
     <>
+      <GraphicsCard settings={settings} update={update} />
       <SettingsBlock label="Theme"><ThemeCards settings={settings} update={update} /></SettingsBlock>
       <SettingsBlock label="Terminal">
         <div className="settings-group">
@@ -42,7 +43,6 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
           </SettingRow>
         </div>
       </SettingsBlock>
-      <GraphicsCard settings={settings} update={update} />
       <SettingsBlock label="Folders">
         <div className="settings-group">
           <SettingRow label="Workspace root" hint="New terminals start here when a project doesn't set its own folder" stack>

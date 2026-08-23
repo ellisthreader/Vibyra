@@ -3,6 +3,7 @@ use tauri::State;
 use vibyra_core::settings::Settings;
 use vibyra_core::CoreError;
 
+use crate::renderer::RendererMode;
 use crate::state::AppState;
 
 #[derive(Serialize)]
@@ -25,6 +26,9 @@ pub async fn save_settings(
     mut settings: Settings,
 ) -> Result<(), CoreError> {
     let mut current = state.settings.lock();
+    settings.renderer_mode = RendererMode::parse(&settings.renderer_mode)
+        .as_str()
+        .to_string();
     settings.legacy_openai_api_key = current.legacy_openai_api_key.clone();
     settings.save_to(&state.settings_path)?;
     *current = settings;

@@ -16,8 +16,8 @@ pub struct RendererPolicy {
     pub nvidia_session: bool,
     /// False off Linux, where there is no DMA-BUF renderer to choose.
     pub configurable: bool,
-    /// The environment forced the outcome, so the saved mode is ignored until
-    /// the user unsets `WEBKIT_DISABLE_DMABUF_RENDERER`/`VIBYRA_WEBKIT_DMABUF`.
+    /// The app-specific environment override forced the outcome, so the saved
+    /// mode is ignored until the user unsets `VIBYRA_WEBKIT_DMABUF`.
     pub environment_override: bool,
 }
 

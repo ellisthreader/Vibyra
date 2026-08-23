@@ -57,8 +57,8 @@ pub struct GpuFacts {
 #[cfg(target_os = "linux")]
 const NVIDIA_PCI_VENDOR: &str = "0x10de";
 
-/// Set when `WEBKIT_DISABLE_DMABUF_RENDERER` or `VIBYRA_WEBKIT_DMABUF` decided
-/// the path, so the Settings pane can say the saved mode is inert.
+/// Set when `VIBYRA_WEBKIT_DMABUF` decided the path, so the Settings pane can
+/// say the saved mode is inert.
 #[cfg(target_os = "linux")]
 static ENV_FORCED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 

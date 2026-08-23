@@ -46,10 +46,10 @@ function message(reason: PerfReason, window: PerfWindow): NotificationInput {
         : "Vibyra is running in compatibility graphics mode",
       body: canPromoteAuto
         ? "The WebKit renderer is saturating a CPU core. Use GPU acceleration the next time Vibyra starts."
-        : "Terminal output is composited on the CPU, which is why things feel slow. Switching to Accelerated may fix it.",
+        : "Terminal output is composited on the CPU, which is why things feel slow. Allowing GPU acceleration may fix it.",
       dedupeKey: "perf:compositing",
       action: canPromoteAuto
-        ? { id: "enableAcceleratedGraphics", label: "Use GPU next launch" }
+        ? { id: "enableAcceleratedGraphics", label: "Allow GPU next launch" }
         : { id: "openGraphicsSettings", label: "Open graphics settings" },
     };
   }

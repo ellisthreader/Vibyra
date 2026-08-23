@@ -6,19 +6,19 @@ import type { RendererMode, RendererPolicy } from "../../types";
 import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
 
 const MODES: { id: RendererMode; label: string; hint: string }[] = [
-  { id: "auto", label: "Auto", hint: "Picks the safe path for your GPU" },
-  { id: "accelerated", label: "Accelerated", hint: "Best performance; can freeze on some NVIDIA setups" },
-  { id: "compatibility", label: "Compatibility", hint: "Always correct; uses more CPU while output streams" },
+  { id: "auto", label: "Automatic (recommended)", hint: "Starts safely and offers GPU acceleration if CPU rendering stays slow" },
+  { id: "accelerated", label: "Allow GPU", hint: "Use GPU acceleration next launch; can freeze on some NVIDIA setups" },
+  { id: "compatibility", label: "Compatibility", hint: "Do not use GPU acceleration; uses more CPU while output streams" },
 ];
 
 function activeLabel(policy: RendererPolicy): string {
-  return policy.softwareCompositing ? "Compatibility (shared memory)" : "Accelerated (DMA-BUF)";
+  return policy.softwareCompositing ? "CPU compatibility mode" : "GPU acceleration";
 }
 
 function autoHint(policy: RendererPolicy): string {
   return policy.nvidiaSession
-    ? "This session renders through NVIDIA, where WebKit's accelerated renderer can freeze windows."
-    : "No NVIDIA rendering detected, so the accelerated path is in use.";
+    ? "This NVIDIA session started safely on the CPU. If rendering stays slow, Vibyra offers GPU acceleration for the next launch."
+    : "Automatic is allowing GPU acceleration on this system.";
 }
 
 /**
@@ -48,10 +48,10 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
   const needsRestart = rendererNeedsRestart(settings.rendererMode, policy);
 
   return (
-    <SettingsBlock label="Graphics">
+    <SettingsBlock label="GPU usage">
       <div className="settings-group">
         <SettingRow
-          label="Graphics mode"
+          label="Allow GPU usage for Vibyra"
           hint={
             <>
               Running now: <strong>{activeLabel(policy)}</strong>.{" "}
@@ -62,7 +62,7 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
           }
           stack
         >
-          <div className="graphics-modes" role="radiogroup" aria-label="Graphics mode">
+          <div className="graphics-modes" role="radiogroup" aria-label="GPU usage">
             {MODES.map((option) => (
               <button
                 key={option.id}
@@ -79,9 +79,8 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
         </SettingRow>
         {policy.environmentOverride ? (
           <p className="settings-note">
-            WEBKIT_DISABLE_DMABUF_RENDERER or VIBYRA_WEBKIT_DMABUF is set in your
-            environment and takes priority over this setting. Unset it for the choice
-            above to apply.
+            VIBYRA_WEBKIT_DMABUF is set in your launch environment and takes priority
+            over this setting. Unset it for the choice above to apply.
           </p>
         ) : needsRestart ? (
           <p className="settings-note">Restart Vibyra to apply the new graphics mode.</p>

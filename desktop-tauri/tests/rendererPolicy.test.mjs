@@ -2,10 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  normalizeRendererMode,
   rendererNeedsRestart,
   resolvesToSharedMemory,
   webglIsTrustworthy,
 } from "../src/lib/rendererPolicy.ts";
+
+test("invalid persisted graphics modes normalize to Automatic", () => {
+  assert.equal(normalizeRendererMode("accelerated"), "accelerated");
+  assert.equal(normalizeRendererMode("compatibility"), "compatibility");
+  assert.equal(normalizeRendererMode("auto"), "auto");
+  assert.equal(normalizeRendererMode("legacy-value"), "auto");
+  assert.equal(normalizeRendererMode(undefined), "auto");
+});
 
 function policy(overrides = {}) {
   return {

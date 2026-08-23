@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { getSettings, saveSettings } from "../ipc/settings";
 import { DEFAULT_NOTIFICATIONS, normalizeNotifications } from "../lib/notificationPrefs";
+import { normalizeRendererMode } from "../lib/rendererPolicy";
 import { applySettingsToAll } from "../lib/terminalRegistry";
 import { resolveTheme } from "../lib/xtermTheme";
 import type { NotificationPrefs } from "../notificationTypes";
@@ -21,6 +22,7 @@ function normalizeSettings(settings: Settings): Settings {
   return {
     ...settings,
     enabledAgentIds: Array.isArray(settings.enabledAgentIds) ? settings.enabledAgentIds : [],
+    rendererMode: normalizeRendererMode(settings.rendererMode),
     // A hand-edited or older settings.json must not be able to break the pane.
     notifications: normalizeNotifications(settings.notifications),
   };

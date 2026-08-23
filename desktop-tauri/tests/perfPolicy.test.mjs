@@ -146,7 +146,7 @@ test("a session gets at most a handful of performance hints", () => {
 test("Auto offers to stage GPU rendering without restarting live terminals", () => {
   const result = run(initialGuardState(), { level: "degraded", reason: "compositing" }, ENTER_SAMPLES, context());
   assert.equal(result.notify?.action?.id, "enableAcceleratedGraphics");
-  assert.equal(result.notify?.action?.label, "Use GPU next launch");
+  assert.equal(result.notify?.action?.label, "Allow GPU next launch");
 });
 
 test("an explicit or environment-forced compatibility choice only opens settings", () => {

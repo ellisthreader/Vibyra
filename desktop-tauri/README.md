@@ -60,9 +60,10 @@ desktop-tauri/
 Auto-detection disables WebKit's DMA-BUF renderer only for sessions that
 actually render through NVIDIA — the `boot_vga` GPU is NVIDIA, or the session
 asks for PRIME offload — so hybrid laptops on their iGPU keep the fast path.
-Users can override it in **Settings → General → Graphics**. A pre-set
-`WEBKIT_DISABLE_DMABUF_RENDERER`, then `VIBYRA_WEBKIT_DMABUF=1|0`, take
-priority over both.
+Users can override it in **Settings → General → GPU usage**. A pre-set
+`VIBYRA_WEBKIT_DMABUF=1|0` takes priority over both. The underlying
+`WEBKIT_DISABLE_DMABUF_RENDERER` variable is output-only because Vibyra
+relaunches inherit it from the previous process.
 
 ### Process environment
 
