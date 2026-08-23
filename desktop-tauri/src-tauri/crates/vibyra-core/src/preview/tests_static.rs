@@ -33,12 +33,14 @@ fn start_site(index: &str) -> (TempDir, Arc<PreviewManager>, u16) {
 
 fn request(port: u16, parts: &[&[u8]]) -> String {
     let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    stream.set_nodelay(true).unwrap();
     for part in parts {
         stream.write_all(part).unwrap();
         if parts.len() > 1 {
             thread::sleep(Duration::from_millis(30));
         }
     }
+    stream.shutdown(std::net::Shutdown::Write).unwrap();
     let mut response = String::new();
     match stream.read_to_string(&mut response) {
         Ok(_) => {}
