@@ -104,8 +104,12 @@ jobs:
         shell: bash
         run: |
           artifact="$PWD/release/${{ steps.version.outputs.output }}"
-          binary=$(dpkg-deb -c "$artifact" | awk '$6 ~ /^\.\/usr\/bin\// { sub(/^\./, "", $6); print $6; exit }')
-          test -n "$binary"
+          mapfile -t binaries < <(
+            dpkg-deb -c "$artifact" |
+              awk '$1 ~ /^-/ && $6 ~ /^\.\/usr\/bin\// { sub(/^\./, "", $6); print $6 }'
+          )
+          test "${#binaries[@]}" = 1
+          binary="${binaries[0]}"
           sudo apt-get install -y "$artifact"
           test -x "$binary"
           xvfb-run -a "$binary" &
