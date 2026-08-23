@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { usePreferences } from "../../../../context/PreferencesContext";
@@ -8,7 +8,7 @@ import { getDisplayPrice } from "./billingUtils";
 
 const OPTION_ACCENTS: Record<PlanKey, { main: string; muted: string; wash: string }> = {
   free: { main: "#4ADE80", muted: "#A7F3D0", wash: "rgba(74, 222, 128, 0.14)" },
-  starter: { main: "#C259FF", muted: "#D8B4FE", wash: "rgba(194, 89, 255, 0.15)" },
+  starter: { main: "#5B7CFA", muted: "#91A7FF", wash: "rgba(91, 124, 250, 0.15)" },
   builder: { main: "#38BDF8", muted: "#BAE6FD", wash: "rgba(56, 189, 248, 0.15)" },
   pro: { main: "#FFD166", muted: "#FDE68A", wash: "rgba(255, 209, 102, 0.15)" }
 };

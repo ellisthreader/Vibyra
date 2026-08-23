@@ -7,7 +7,7 @@
       "policy": "fingerprint"
     },
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "scheme": "vibyra",
     "icon": "./src/assets/BG-transparent-vibyra.png",
     "assetBundlePatterns": [
@@ -89,12 +89,15 @@
       [
         "expo-splash-screen",
         {
-          "image": "./src/assets/vibyra.png",
+          "image": "./src/assets/vibyra-cobalt.png",
           "resizeMode": "contain",
-          "backgroundColor": "#07070A"
+          "backgroundColor": "#F4F5F7",
+          "dark": {
+            "image": "./src/assets/vibyra-cobalt.png",
+            "backgroundColor": "#0E0F12"
+          }
         }
-      ],
-      "expo-status-bar"
+      ]
     ]
   }
 }

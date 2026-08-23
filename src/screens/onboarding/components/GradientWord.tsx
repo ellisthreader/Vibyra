@@ -11,7 +11,7 @@ export function GradientWord({ text }: { text: string }) {
       maskElement={<Text style={[styles.syncTitleInline, styles.syncTitleGradientMaskText]}>{text}</Text>}
     >
       <LinearGradient
-        colors={["#08D8FF", "#149CFF", "#5861F2", "#944AE2", "#D83EC9"]}
+        colors={["#A6ADBA", "#7490FF", "#5B7CFA", "#5B7CFA", "#7490FF"]}
         locations={[0, 0.27, 0.56, 0.78, 1]}
         start={{ x: 0, y: 0.52 }}
         end={{ x: 1, y: 0.52 }}

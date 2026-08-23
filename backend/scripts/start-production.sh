@@ -31,7 +31,8 @@ if [[ "$run_migrations" == "1" && ( "$role" == "all" || "$role" == "web" ) ]]; t
 fi
 
 start_web() {
-  php artisan serve --host=0.0.0.0 --port="$port"
+  php -d upload_max_filesize=8M -d post_max_size=48M \
+    artisan serve --host=0.0.0.0 --port="$port"
 }
 
 cleanup() {
@@ -49,7 +50,10 @@ cleanup() {
 }
 
 case "$role" in
-  web) exec php artisan serve --host=0.0.0.0 --port="$port" ;;
+  web)
+    exec php -d upload_max_filesize=8M -d post_max_size=48M \
+      artisan serve --host=0.0.0.0 --port="$port"
+    ;;
   worker)
     exec php artisan queue:work \
       --queue="${VIBYRA_QUEUE_NAMES:-deployments,default}" \

@@ -1,0 +1,12 @@
+{
+  "name": "chat-composer-refactor",
+  "description": "ChatComposer compatibility facade and its focused controller, renderer, types, and tool-plan lifecycle.",
+  "paths": [
+    "src/screens/workspace/inline/ChatComposer.tsx",
+    "src/screens/workspace/inline/ChatComposerTypes.ts",
+    "src/screens/workspace/inline/ChatComposerView.tsx",
+    "src/screens/workspace/inline/useChatComposerController.ts",
+    "src/screens/workspace/inline/useChatToolPlan.ts",
+    "src/screens/workspace/inline/ChatComposer.command.test.mjs"
+  ]
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { styles } from "../../styles";
 import type { LevelMapNode, LevelProgress } from "../../../../utils/appApi";
@@ -39,7 +39,7 @@ export function ProfileLevelProgressModal({ formatNumber, level, levelMap, level
           </Pressable>
           <Text style={styles.billingHeaderTitle}>Level map</Text>
           <Pressable accessibilityLabel="How leveling works" onPress={() => setHelpOpen((value) => !value)} style={styles.profileLevelHelpButton}>
-            <Ionicons name="help-circle-outline" color="#DDBBFF" size={20} />
+            <Ionicons name="help-circle-outline" color="#91A7FF" size={20} />
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={styles.profileLevelModalContent} showsVerticalScrollIndicator={false}>
@@ -66,20 +66,20 @@ export function ProfileLevelProgressModal({ formatNumber, level, levelMap, level
                 <Text style={styles.profileLevelMapFooterText}>{hiddenLevelCount} more levels hidden</Text>
                 <Pressable accessibilityLabel="Expand full level map" onPress={() => setFullMapOpen(true)} style={styles.profileLevelMapToggle}>
                   <Text style={styles.profileLevelMapToggleText}>Show full map</Text>
-                  <Ionicons name="chevron-down" color="#EDE9FF" size={15} />
+                  <Ionicons name="chevron-down" color="#F5F7FA" size={15} />
                 </Pressable>
               </View>
             ) : levelMap.length > mapWindow.nodes.length ? (
               <Pressable accessibilityLabel="Collapse level map" onPress={() => setFullMapOpen(false)} style={styles.profileLevelMapCollapse}>
                 <Text style={styles.profileLevelMapToggleText}>Show nearby levels</Text>
-                <Ionicons name="chevron-up" color="#EDE9FF" size={15} />
+                <Ionicons name="chevron-up" color="#F5F7FA" size={15} />
               </Pressable>
             ) : null}
           </View>
           <Pressable accessibilityLabel="How XP works" onPress={() => setHelpOpen((value) => !value)} style={styles.profileLevelHelpPanel}>
             <View style={styles.profileLevelHelpRow}>
               <Text style={styles.profileLevelHelpTitle}>How XP works</Text>
-              <Ionicons name={helpOpen ? "chevron-up" : "chevron-down"} color="#DDBBFF" size={17} />
+              <Ionicons name={helpOpen ? "chevron-up" : "chevron-down"} color="#91A7FF" size={17} />
             </View>
             {helpOpen ? <LevelHelpPanel /> : null}
           </Pressable>
@@ -139,7 +139,7 @@ function LevelMapRow({ formatNumber, node }: { formatNumber: (value: number) => 
       </View>
       {node.rewardCredits > 0 ? (
         <View style={styles.profileLevelMapReward}>
-          <Ionicons name="gift-outline" color="#C259FF" size={11} />
+          <Ionicons name="gift-outline" color="#5B7CFA" size={11} />
           <Text style={styles.profileLevelMapRewardText}>Reward</Text>
         </View>
       ) : null}

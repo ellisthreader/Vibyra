@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Text, View } from "react-native";
@@ -17,7 +17,7 @@ export function FeatureStrip({ scale }: { scale: number }) {
         <React.Fragment key={item.title}>
           <View style={styles.featureItem}>
             <LinearGradient
-              colors={["rgba(176, 65, 255, 0.38)", "rgba(83, 26, 154, 0.54)"]}
+              colors={["rgba(91, 124, 250, 0.38)", "rgba(91, 124, 250, 0.54)"]}
               start={{ x: 0.1, y: 0 }}
               end={{ x: 0.9, y: 1 }}
               style={[styles.featureIconTile, { borderRadius: 20 * scale, height: iconTileSize, marginBottom: 11 * scale, width: iconTileSize }]}
@@ -25,7 +25,7 @@ export function FeatureStrip({ scale }: { scale: number }) {
               {item.symbol === "braces" ? (
                 <Text style={[styles.bracesIcon, { fontSize: 30 * scale, lineHeight: 36 * scale }]}>{"{ }"}</Text>
               ) : (
-                <Ionicons name={item.icon} size={iconSize} color="#B15BFF" />
+                <Ionicons name={item.icon} size={iconSize} color="#5B7CFA" />
               )}
             </LinearGradient>
             <Text style={[styles.featureTitle, { fontSize: featureTitleSize, lineHeight: featureTitleSize * 1.35 }]}>{item.title}</Text>

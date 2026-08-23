@@ -6,17 +6,19 @@
   align-items: center;
 }
 
+/* 28px to match the titlebar's icon buttons — the cluster held three different
+   control sizes before. */
 .account-btn {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--elevated);
   color: var(--text);
-  font-size: 11.5px;
-  font-weight: 650;
+  font-size: var(--fs-control);
+  font-weight: var(--fw-bold);
   cursor: pointer;
   transition: border-color var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
 }

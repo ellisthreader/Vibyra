@@ -21,7 +21,7 @@ function draft(overrides = {}) {
 }
 
 test("a report is not sendable until it says what happened", () => {
-  assert.equal(draftBlocker(draft({ summary: "  " })), "Add a one-line summary");
+  assert.equal(draftBlocker(draft({ summary: "  " })), "Add a short title");
   assert.equal(draftBlocker(draft({ details: "" })), "Describe what happened");
   assert.equal(draftBlocker(draft()), null);
   assert.equal(canSubmit(draft()), true);
@@ -30,7 +30,7 @@ test("a report is not sendable until it says what happened", () => {
 test("the blocker names the next thing to do rather than the error", () => {
   // Summary is checked before details: asking for both at once reads as a
   // wall of failure on a form the user has barely started.
-  assert.equal(draftBlocker(emptyDraft("Home screen")), "Add a one-line summary");
+  assert.equal(draftBlocker(emptyDraft("Home screen")), "Add a short title");
 });
 
 test("a paste far larger than a report is refused before it is sent", () => {

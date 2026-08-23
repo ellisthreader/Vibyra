@@ -12,12 +12,16 @@
   z-index: 40;
 }
 
+/* Width is the project strip plus the rail, so the brand block ends exactly on
+   the rail's right edge and the breadcrumb starts on the workspace's left one.
+   The titlebar then shares the shell's column rhythm instead of floating over
+   it. Padding matches the strip's tile centring. */
 .chrome__brand {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  min-width: calc(var(--rail-w) - 14px);
+  min-width: calc(var(--strip-w) + var(--rail-w));
 }
 
 .chrome__logo {
@@ -55,27 +59,27 @@
   min-width: 0;
 }
 
-.chrome__context {
-  font-size: 11.5px;
-  font-weight: 560;
-  color: var(--dim);
-  max-width: 44vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
 .chrome__right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   padding-right: 8px;
 }
 
+/* The window buttons are the OS's, not the app's — a wider gap separates them
+   from Vibyra's own controls so the cluster reads as two groups, not seven
+   loose glyphs. */
+.chrome__right .window-controls {
+  margin-left: 6px;
+}
+
+/* A readout, not a control: it loses the chip's border so only the things you
+   can actually press look pressable. */
 .chrome__stats {
   pointer-events: none;
-  color: var(--text);
+  border-color: transparent;
+  background: var(--hover);
+  color: var(--muted);
 }
 
 /* Static on purpose — a permanently animating titlebar dot kept the
@@ -109,74 +113,4 @@
 .window-controls button.close:hover {
   background: var(--danger);
   color: #fff;
-}
-
-/* invisible edge handles for resizing the undecorated window */
-.resize-handle {
-  position: fixed;
-  z-index: 100;
-}
-
-.resize-handle.n {
-  top: 0;
-  left: 8px;
-  right: 8px;
-  height: 4px;
-  cursor: n-resize;
-}
-
-.resize-handle.s {
-  bottom: 0;
-  left: 8px;
-  right: 8px;
-  height: 4px;
-  cursor: s-resize;
-}
-
-.resize-handle.e {
-  top: 8px;
-  bottom: 8px;
-  right: 0;
-  width: 4px;
-  cursor: e-resize;
-}
-
-.resize-handle.w {
-  top: 8px;
-  bottom: 8px;
-  left: 0;
-  width: 4px;
-  cursor: w-resize;
-}
-
-.resize-handle.ne,
-.resize-handle.nw,
-.resize-handle.se,
-.resize-handle.sw {
-  width: 10px;
-  height: 10px;
-}
-
-.resize-handle.ne {
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-}
-
-.resize-handle.nw {
-  top: 0;
-  left: 0;
-  cursor: nw-resize;
-}
-
-.resize-handle.se {
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
-}
-
-.resize-handle.sw {
-  bottom: 0;
-  left: 0;
-  cursor: sw-resize;
 }

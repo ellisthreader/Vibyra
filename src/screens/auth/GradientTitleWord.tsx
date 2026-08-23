@@ -10,7 +10,7 @@ export function GradientTitleWord({ fontSize, text }: { fontSize: number; text: 
   return (
     <MaskedView maskElement={<Text style={titleStyle}>{text}</Text>} style={{ height: fontSize * 1.2, width: fontSize * 3.23 }}>
       <LinearGradient
-        colors={["#FFFFFF", "#C65BFF", "#FF38C5", "#FFB24A"]}
+        colors={["#FFFFFF", "#7490FF", "#5B7CFA", "#A6ADBA"]}
         locations={[0, 0.34, 0.68, 1]}
         start={{ x: 0, y: 0.48 }}
         end={{ x: 1, y: 0.5 }}

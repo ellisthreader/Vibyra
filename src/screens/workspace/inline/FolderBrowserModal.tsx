@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LoadingScreen } from "../../../components/LoadingScreen";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { createThemedStyleSheet } from "../styles/themeTransform";
@@ -20,11 +20,11 @@ export function FolderBrowserModal({ browseDesktopPath, initialPath, label, onCl
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const prefs = usePreferences();
-  const accentIcon = useThemedColor("#B084FF");
+  const accentIcon = useThemedColor("#7490FF");
   const closeIcon = useThemedColor("#FFFFFF");
-  const mutedIcon = useThemedColor("#A29CB8");
-  const dimIcon = useThemedColor("#8F8A9E");
-  const toolbarIcon = useThemedColor("#D5D0E6");
+  const mutedIcon = useThemedColor("#A6ADBA");
+  const dimIcon = useThemedColor("#747C8A");
+  const toolbarIcon = useThemedColor("#A6ADBA");
   const warningIcon = useThemedColor("#FFD166");
   const placeholderColor = useThemedColor("#7F788F");
 
@@ -162,35 +162,35 @@ const folderBrowserStyles = createThemedStyleSheet({
   header: { alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 },
   iconButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 18, height: 36, justifyContent: "center", width: 36 },
   titleStack: { flex: 1, minWidth: 0 },
-  label: { color: "#8F8A9E", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
+  label: { color: "#747C8A", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },
   title: { color: colors.text, fontSize: 19, fontWeight: "900", marginTop: 2 },
-  pathBar: { alignItems: "center", backgroundColor: "rgba(176, 132, 255, 0.1)", borderColor: "rgba(176, 132, 255, 0.2)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 38, paddingHorizontal: 11 },
-  pathText: { color: "#D5D0E6", flex: 1, fontSize: 12, fontWeight: "700" },
-  searchRow: { alignItems: "center", backgroundColor: "#151621", borderColor: "rgba(255,255,255,0.09)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 8, marginTop: 12, minHeight: 46, paddingHorizontal: 12 },
+  pathBar: { alignItems: "center", backgroundColor: "rgba(116, 144, 255, 0.1)", borderColor: "rgba(116, 144, 255, 0.2)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 38, paddingHorizontal: 11 },
+  pathText: { color: "#A6ADBA", flex: 1, fontSize: 12, fontWeight: "700" },
+  searchRow: { alignItems: "center", backgroundColor: "#181A20", borderColor: "rgba(255,255,255,0.09)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 8, marginTop: 12, minHeight: 46, paddingHorizontal: 12 },
   searchInput: { color: colors.text, flex: 1, fontSize: 14, fontWeight: "700", minWidth: 0 },
   toolbar: { alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between", marginTop: 12 },
   toolbarButton: { alignItems: "center", borderColor: "rgba(255,255,255,0.12)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 36, paddingHorizontal: 12 },
-  toolbarText: { color: "#D5D0E6", fontSize: 13, fontWeight: "800" },
-  selectCurrentButton: { alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 999, flexDirection: "row", gap: 6, minHeight: 36, paddingHorizontal: 14 },
+  toolbarText: { color: "#A6ADBA", fontSize: 13, fontWeight: "800" },
+  selectCurrentButton: { alignItems: "center", backgroundColor: "#4667E8", borderRadius: 999, flexDirection: "row", gap: 6, minHeight: 36, paddingHorizontal: 14 },
   selectCurrentText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   errorBox: { alignItems: "center", backgroundColor: "rgba(255, 209, 102, 0.09)", borderColor: "rgba(255, 209, 102, 0.22)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, marginTop: 12, padding: 10 },
   errorText: { color: "#FFE1A3", flex: 1, fontSize: 12, fontWeight: "700" },
   loading: { borderRadius: 18, flex: 1, marginTop: 12, minHeight: 320 },
   list: { flex: 1, marginTop: 12 },
   listContent: { gap: 8, paddingBottom: 24 },
-  row: { backgroundColor: "#151621", borderColor: "rgba(255,255,255,0.08)", borderRadius: 12, borderWidth: 1, overflow: "hidden" },
+  row: { backgroundColor: "#181A20", borderColor: "rgba(255,255,255,0.08)", borderRadius: 12, borderWidth: 1, overflow: "hidden" },
   rowMain: { alignItems: "center", flexDirection: "row", gap: 10, minHeight: 58, paddingHorizontal: 11, paddingVertical: 9 },
-  rowPressed: { backgroundColor: "rgba(142, 60, 255, 0.1)" },
-  folderIcon: { alignItems: "center", backgroundColor: "rgba(176, 132, 255, 0.14)", borderRadius: 10, height: 36, justifyContent: "center", width: 36 },
+  rowPressed: { backgroundColor: "rgba(91, 124, 250, 0.1)" },
+  folderIcon: { alignItems: "center", backgroundColor: "rgba(116, 144, 255, 0.14)", borderRadius: 10, height: 36, justifyContent: "center", width: 36 },
   fileIcon: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderRadius: 10, height: 36, justifyContent: "center", width: 36 },
   fileRow: { opacity: 0.78 },
-  fileChip: { color: "#8F8A9E", fontSize: 11, fontWeight: "900" },
+  fileChip: { color: "#747C8A", fontSize: 11, fontWeight: "900" },
   rowText: { flex: 1, minWidth: 0 },
   rowName: { color: colors.text, fontSize: 14, fontWeight: "900" },
-  rowPath: { color: "#8F8A9E", fontSize: 11, fontWeight: "700", marginTop: 2 },
+  rowPath: { color: "#747C8A", fontSize: 11, fontWeight: "700", marginTop: 2 },
   rowSelect: { alignItems: "center", borderTopColor: "rgba(255,255,255,0.08)", borderTopWidth: 1, minHeight: 38, justifyContent: "center" },
-  rowSelectText: { color: "#D7C4FF", fontSize: 13, fontWeight: "900" },
+  rowSelectText: { color: "#91A7FF", fontSize: 13, fontWeight: "900" },
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.82 },
-  emptyText: { color: "#8F8A9E", fontSize: 13, fontWeight: "700", padding: 18, textAlign: "center" }
+  emptyText: { color: "#747C8A", fontSize: 13, fontWeight: "700", padding: 18, textAlign: "center" }
 });

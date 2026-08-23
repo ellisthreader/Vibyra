@@ -2,7 +2,6 @@ import {
   EXACT_LIGHT_COLORS,
   LIGHT_BACKGROUND,
   LIGHT_BORDER,
-  LIGHT_BORDER_STRONG,
   LIGHT_DIM,
   LIGHT_ELEVATED,
   LIGHT_MUTED,
@@ -23,26 +22,8 @@ export function transformColorForLight(c: string, key = "color"): string {
   const max = Math.max(parsed.r, parsed.g, parsed.b);
   const min = Math.min(parsed.r, parsed.g, parsed.b);
   const chroma = max - min;
-  const hsl = rgbToHsl(parsed);
-  return chroma >= NEUTRAL_CHROMA_THRESHOLD
-    ? transformChromaColorForLight(c, key, parsed, hsl)
-    : transformNeutralColorForLight(parsed, key, hsl);
-}
-
-function transformChromaColorForLight(c: string, key: string, parsed: RGBA, hsl: ReturnType<typeof rgbToHsl>) {
-  const lum = relativeLuminance(parsed);
-  let newL = hsl.l;
-  let newAlpha = parsed.a;
-  if (isBorderKey(key) && parsed.a < 0.5) return LIGHT_BORDER_STRONG;
-  if (isSurfaceKey(key) && parsed.a > 0 && parsed.a < 0.4) {
-    const rgb = hslToRgb({ h: hsl.h, s: Math.min(0.74, hsl.s), l: 0.94 });
-    return toCss({ ...rgb, a: 1 });
-  }
-  if (lum > 0.5) newL = 0.42;
-  if (parsed.a > 0 && parsed.a < 0.4) newAlpha = Math.min(0.18, parsed.a * 1.5);
-  if (Math.abs(newL - hsl.l) < 0.001 && Math.abs(newAlpha - parsed.a) < 0.001) return c;
-  const rgb = hslToRgb({ h: hsl.h, s: hsl.s, l: newL });
-  return toCss({ ...rgb, a: newAlpha });
+  if (chroma >= NEUTRAL_CHROMA_THRESHOLD) return c;
+  return transformNeutralColorForLight(parsed, key, rgbToHsl(parsed));
 }
 
 function transformNeutralColorForLight(parsed: RGBA, key: string, hsl: ReturnType<typeof rgbToHsl>): string {
@@ -69,11 +50,12 @@ function transformNeutralColorForLight(parsed: RGBA, key: string, hsl: ReturnTyp
 }
 
 function exactLightColor(c: string, key: string) {
-  if (c === "#FFFFFF") {
+  const normalized = c.startsWith("#") ? c.toUpperCase() : c.replace(/\s+/g, "");
+  if (normalized === "#FFFFFF") {
     if (isSurfaceKey(key)) return LIGHT_SURFACE;
     if (isBorderKey(key)) return LIGHT_BORDER;
   }
-  return EXACT_LIGHT_COLORS[c];
+  return EXACT_LIGHT_COLORS[normalized];
 }
 
 function parseColor(c: string): RGBA | null {
@@ -139,26 +121,22 @@ function rgbToHsl({ r, g, b }: { r: number; g: number; b: number }) {
 
 function hslToRgb({ h, s, l }: { h: number; s: number; l: number }) {
   if (s === 0) return { r: l, g: l, b: l };
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+  const hueToRgb = (p: number, q: number, value: number) => {
+    let hue = value;
+    if (hue < 0) hue += 1;
+    if (hue > 1) hue -= 1;
+    if (hue < 1 / 6) return p + (q - p) * 6 * hue;
+    if (hue < 1 / 2) return q;
+    if (hue < 2 / 3) return p + (q - p) * (2 / 3 - hue) * 6;
     return p;
   };
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;
   return {
-    r: hue2rgb(p, q, h + 1 / 3),
-    g: hue2rgb(p, q, h),
-    b: hue2rgb(p, q, h - 1 / 3)
+    r: hueToRgb(p, q, h + 1 / 3),
+    g: hueToRgb(p, q, h),
+    b: hueToRgb(p, q, h - 1 / 3)
   };
-}
-
-function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
-  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
 function formatAlpha(alpha: number) {

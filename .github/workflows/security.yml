@@ -49,8 +49,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
 
-  mobile-desktop:
-    name: Mobile and desktop checks
+  mobile:
+    name: Mobile checks
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -61,7 +61,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22.23.2
           cache: npm
       - name: Install locked dependencies
         run: npm ci
@@ -73,16 +73,6 @@ jobs:
         run: npm run typecheck
       - name: Run mobile tests
         run: node --test $(find src -name '*.test.mjs' -print | sort)
-      - name: Run desktop security and preview tests
-        run: >-
-          node --test
-          desktop/lib/preview.test.mjs
-          desktop/lib/previewCapabilities.phaseA.test.mjs
-          desktop/lib/deviceCredentials.test.mjs
-          desktop/lib/pairingCredentials.test.mjs
-          desktop/lib/pairingSecurity.test.mjs
-          desktop/lib/pairingAccount.test.mjs
-          desktop/lib/pairingQr.test.mjs
 
   backend:
     name: Backend checks
@@ -105,7 +95,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22.23.2
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - name: Install locked PHP dependencies

@@ -6,7 +6,6 @@ import { useReportStore } from "../../state/reportStore";
 import { CheckIcon, CloseIcon } from "../common/Icons";
 import { ReportAttachments } from "./ReportAttachments";
 import { ReportFields } from "./ReportFields";
-import { LifebuoyIcon } from "./ReportIcons";
 
 /** The report dialog.
  *
@@ -21,7 +20,6 @@ export function ReportModal() {
   const status = useReportStore((state) => state.status);
   const error = useReportStore((state) => state.error);
   const sentId = useReportStore((state) => state.sentId);
-  const channelReady = useReportStore((state) => state.channelReady);
   const close = useReportStore((state) => state.close);
   const patch = useReportStore((state) => state.patch);
   const submit = useReportStore((state) => state.submit);
@@ -54,21 +52,18 @@ export function ReportModal() {
         className="modal report-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Report a problem"
+        aria-label="Report a bug"
         ref={modalRef}
         onClick={(event) => event.stopPropagation()}
         onPaste={onPaste}
       >
         <header className="report__header">
-          <span className="report__mark" aria-hidden="true">
-            <LifebuoyIcon size={18} />
-          </span>
           <div className="report__heading">
-            <h2>{status === "sent" ? "Thanks — that helps" : "Report a problem"}</h2>
+            <h2>{status === "sent" ? "Thanks — that helps" : "Report a bug"}</h2>
             <p>
               {status === "sent"
-                ? "It went straight through to the Vibyra team."
-                : "Goes straight to the Vibyra team, with everything needed to reproduce it."}
+                ? "Your report went straight to the Vibyra team."
+                : "Tell us what went wrong. It only takes a moment."}
             </p>
           </div>
           <button className="icon-btn" onClick={close} title="Close">
@@ -113,19 +108,12 @@ export function ReportModal() {
               <span className="report__status" role="status">
                 {error ? (
                   <span className="report__error">{error}</span>
-                ) : channelReady === false ? (
-                  <span className="report__warn">
-                    Reporting is not connected on this build — sending will fail.
-                  </span>
                 ) : blocker ? (
                   <span className="report__blocker">{blocker}</span>
                 ) : (
                   <span className="report__ready">Ready to send</span>
                 )}
               </span>
-              <button className="btn" onClick={close}>
-                Cancel
-              </button>
               <button
                 className="btn btn--primary"
                 disabled={Boolean(blocker) || sending}

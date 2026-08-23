@@ -1,4 +1,6 @@
 import { useProjectStore } from "../state/projectStore";
+import { useNotificationStore } from "../state/notificationStore";
+import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import type { NotificationAction } from "../notificationTypes";
@@ -35,6 +37,32 @@ function hibernateIdleTerminals(): void {
   for (const id of idleTerminalIds()) void hibernate(id);
 }
 
+async function enableAcceleratedGraphics(): Promise<void> {
+  const settings = useSettingsStore.getState();
+  if (!settings.settings) return;
+  try {
+    await settings.update({ rendererMode: "accelerated" });
+    useNotificationStore.getState().push({
+      category: "performance",
+      severity: "success",
+      title: "GPU rendering is ready for next launch",
+      body: "Restart Vibyra when convenient. Your running terminals were left untouched.",
+      dedupeKey: "perf:accelerated-staged",
+      osEligible: false,
+    });
+  } catch {
+    useNotificationStore.getState().push({
+      category: "performance",
+      severity: "warning",
+      title: "Graphics mode could not be changed",
+      body: "Open Graphics settings and choose Accelerated manually.",
+      dedupeKey: "perf:accelerated-stage-failed",
+      action: { id: "openGraphicsSettings", label: "Open graphics settings" },
+      osEligible: false,
+    });
+  }
+}
+
 export function runNotificationAction(action: NotificationAction): void {
   const workspace = useWorkspaceStore.getState();
   switch (action.id) {
@@ -43,6 +71,9 @@ export function runNotificationAction(action: NotificationAction): void {
       return;
     case "hibernateIdleTerminals":
       hibernateIdleTerminals();
+      return;
+    case "enableAcceleratedGraphics":
+      void enableAcceleratedGraphics();
       return;
     case "openGraphicsSettings":
       // The graphics card lives inside the General pane, not a section of its own.
@@ -67,4 +98,3 @@ export function runNotificationAction(action: NotificationAction): void {
       return;
   }
 }
-

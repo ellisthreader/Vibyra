@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import { diffCounts, SYNTAX_COLOR_SCHEMES, tokenize } from "../../../utils/syntaxHighlight";
 import { styles } from "../styles";
@@ -13,7 +13,7 @@ export function CollapsibleCodeBlock({ language, filename, code, streaming, init
   initialExpanded?: boolean;
 }) {
   const prefs = usePreferences();
-  const chevronColor = useThemedColor("#9E98AD");
+  const chevronColor = useThemedColor("#A6ADBA");
   const [expanded, setExpanded] = useState(initialExpanded);
   const headerLabel = filename || (language ? language.toLowerCase() : "code");
   const detectedLanguage = language || extensionFor(filename);

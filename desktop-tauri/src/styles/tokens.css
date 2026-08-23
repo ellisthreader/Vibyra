@@ -72,6 +72,28 @@
   --font-ui: "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
+  /* type scale — the whole product sizes from these eight steps. Half-pixel
+     steps are deliberate: Inter's optical sizes read a grade apart at this
+     range. Do not invent an intermediate value (11.75, 12.25) — pick a step. */
+  --fs-micro: 9px;      /* kbd caps, tile badges */
+  --fs-tiny: 10px;      /* dense metadata */
+  --fs-label: 10.5px;   /* uppercase section labels, pills */
+  --fs-hint: 11px;      /* row hints, captions */
+  --fs-control: 11.5px; /* chips, tabs, compact controls */
+  --fs-body: 12px;      /* secondary body copy */
+  --fs-ui: 12.5px;      /* default control and row text */
+  --fs-strong: 13px;    /* emphasised rows, menu identity */
+  --fs-title-sm: 13.5px;/* titlebar wordmark, nav headings */
+  --fs-title: 15px;     /* modal and pane titles */
+
+  /* weight ladder — Inter Variable. Six steps, no in-between grades. */
+  --fw-regular: 520;
+  --fw-medium: 560;
+  --fw-semi: 620;
+  --fw-bold: 650;
+  --fw-heavy: 700;
+  --fw-black: 760;
+
   /* motion — 120/140ms house speeds */
   --t-base: 120ms;
   --t-ui: 140ms;
@@ -82,6 +104,11 @@
   /* layout */
   --chrome-h: 52px;
   --rail-w: 236px;
+  --strip-w: 54px;
+  /* Every second-row header (workspace mode bar, companion head) is exactly
+     this tall including its bottom hairline, so their seams line up across
+     the shell. Change here, not in the consuming sheet. */
+  --subhead-h: 46px;
 
   /* terminal screen (deepest well) */
   --term-screen: #0b0c10;

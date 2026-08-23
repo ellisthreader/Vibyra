@@ -1,4 +1,7 @@
-/* Late Tauri companion chrome: one connected header and a calm workspace body. */
+/* The right companion dock — AI chat, memory notes, project files.
+   Sole owner of the dock shell: its frame, resize edge, header band and body.
+   Panel interiors live in `companion-chat.css`, `companion-memory.css` and
+   `companion-files.css`; the header's segmented switch in `nav-segmented.css`. */
 
 .shell {
   position: relative;
@@ -6,11 +9,14 @@
 
 .companion {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 var(--companion-width);
   width: var(--companion-width);
   min-width: var(--companion-width);
   background: var(--workspace);
-  border-left-color: var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+  overflow: hidden;
   animation: companion-enter 150ms var(--e-hero);
 }
 
@@ -45,74 +51,48 @@ body.companion-resizing * {
   cursor: ew-resize !important;
 }
 
+/* Matches the workspace mode bar exactly — same height, same background, same
+   bottom hairline — so the two headers read as one band across the shell. */
 .companion__head {
-  min-height: 44px;
-  padding: 0 8px 0 6px;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  min-height: var(--subhead-h);
+  padding: 0 8px;
+  gap: 8px;
   background: var(--rail);
-  border-bottom-color: var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
+/* Segmented shape comes from `nav-segmented.css`; only the fit is local. */
 .companion__tabs {
-  align-self: stretch;
-  gap: 0;
+  flex: 0 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .companion__tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   min-width: 0;
-  min-height: 44px;
-  padding: 0 10px;
-  border-radius: 0;
-  color: var(--dim);
-  font-size: 11.5px;
-  font-weight: 660;
-  transition: color var(--t-base) var(--e-standard);
-}
-
-.companion__tab::after {
-  content: "";
-  position: absolute;
-  right: 9px;
-  bottom: 0;
-  left: 9px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: transparent;
-}
-
-.companion__tab:hover {
-  color: var(--text);
-  background: transparent;
-}
-
-.companion__tab--active {
-  color: var(--text);
-  background: transparent;
-}
-
-.companion__tab--active svg {
-  color: var(--accent-2);
-}
-
-.companion__tab--active::after {
-  background: var(--accent);
+  padding: 0 9px;
 }
 
 .companion__close {
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .companion__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   background: var(--workspace);
 }
 
 .companion-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   padding: 12px;
   gap: 10px;
 }
@@ -154,8 +134,9 @@ body.companion-resizing * {
     animation: none;
   }
 
-  .companion__resize::after,
-  .companion__tab {
+  /* `.companion__tab` is covered by `nav-segmented.css`'s own reduced-motion
+     block, alongside the mode bar it shares its shape with. */
+  .companion__resize::after {
     transition: none;
   }
 }

@@ -1,0 +1,68 @@
+/* Report text fields and the disclosure sections. */
+
+.report__field {
+  display: block;
+}
+
+.report__textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
+.report__more {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 0 12px;
+}
+
+.report__more[open] {
+  padding-bottom: 13px;
+}
+
+.report__more > summary,
+.report__context > summary {
+  display: flex;
+  align-items: center;
+  padding: 11px 0;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semi);
+  cursor: pointer;
+  list-style: none;
+}
+
+.report__more > summary::-webkit-details-marker,
+.report__context > summary::-webkit-details-marker {
+  display: none;
+}
+
+.report__more > summary::before,
+.report__context > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 15px;
+  flex: none;
+  color: var(--dim);
+  transition: transform 140ms var(--e-standard);
+}
+
+.report__more[open] > summary::before,
+.report__context[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.report__more summary em,
+.report__context summary em {
+  margin-left: auto;
+  padding-left: 12px;
+  font-size: var(--fs-hint);
+  text-align: right;
+}
+
+.report__more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 2px;
+}

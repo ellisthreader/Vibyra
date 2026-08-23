@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
@@ -49,11 +49,11 @@ export function PrimaryMenuSheet({
 }) {
   const insets = useSafeAreaInsets();
   const prefs = usePreferences();
-  const chevronColor = useThemedColor("#8F94A3");
-  const pcIconColor = useThemedColor("#D5D9E4");
+  const chevronColor = useThemedColor("#A6ADBA");
+  const pcIconColor = useThemedColor("#A6ADBA");
   const atmosphereColors = prefs.effectiveScheme === "light"
-    ? ["rgba(109, 59, 255, 0.09)", "rgba(109, 59, 255, 0.025)", "rgba(109, 59, 255, 0)"] as const
-    : ["rgba(109, 59, 255, 0.16)", "rgba(109, 59, 255, 0.045)", "rgba(109, 59, 255, 0)"] as const;
+    ? ["rgba(61, 90, 207, 0.09)", "rgba(61, 90, 207, 0.025)", "rgba(61, 90, 207, 0)"] as const
+    : ["rgba(61, 90, 207, 0.16)", "rgba(61, 90, 207, 0.045)", "rgba(61, 90, 207, 0)"] as const;
   const activeRecent = recentChats.some((chat) => chat.id === selectedChatId);
   const rows: MenuRow[] = [
     { icon: "create-outline", label: "New chat", onPress: onNewChat, active: activePage === "chat" && !activeRecent },

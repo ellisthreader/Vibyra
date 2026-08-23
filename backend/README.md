@@ -35,7 +35,7 @@ npm run backend
 Or from this directory:
 
 ```bash
-php artisan serve --host=0.0.0.0 --port=8000
+php -d upload_max_filesize=8M -d post_max_size=48M artisan serve --host=0.0.0.0 --port=8000
 ```
 
 The mobile app expects an API URL through `EXPO_PUBLIC_API_URL`. The root `npm start` script starts this backend and writes a LAN URL for Expo development when needed.

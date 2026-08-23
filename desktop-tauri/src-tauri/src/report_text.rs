@@ -1,78 +1,9 @@
-//! `context.txt` — the unabridged report, attached to every message.
-//!
-//! Plain text on purpose. It is opened in a Discord preview pane, pasted into
-//! an issue, or grepped; none of those want markdown. The embed is the triage
-//! view, this is the debugging one, and nothing here is clipped.
-
-use crate::report::Report;
-use crate::report_format::{iso_now, kind_label, or_dash, severity_label};
-
-pub(crate) const CONTEXT_FILE: &str = "context.txt";
+//! Sanitises the optional terminal tail before it leaves the machine.
 
 /// Terminal output is the single most useful thing in a report and the single
 /// most likely to be enormous, so only the tail travels.
 const MAX_TAIL_LINES: usize = 120;
 const MAX_TAIL_BYTES: usize = 40_000;
-
-fn row(label: &str, value: &str) -> String {
-    format!("{label:<14}{value}\n")
-}
-
-fn section(title: &str, body: &str) -> String {
-    let body = body.trim();
-    if body.is_empty() {
-        return String::new();
-    }
-    format!("\n--- {title} ---\n{body}\n")
-}
-
-fn optional(value: Option<&String>) -> String {
-    or_dash(value.map(String::as_str))
-}
-
-fn environment(report: &Report) -> String {
-    let context = &report.context;
-    let mut out = String::new();
-    out.push_str(&row("App version", &or_dash(Some(&context.app_version))));
-    out.push_str(&row("Platform", &or_dash(Some(&context.platform))));
-    out.push_str(&row("Renderer", &optional(context.renderer.as_ref())));
-    out.push_str(&row("Screen", &optional(context.screen.as_ref())));
-    out.push_str(&row("Locale", &optional(context.locale.as_ref())));
-    out.push_str(&row("View", &optional(context.view.as_ref())));
-    out.push_str(&row("Project", &optional(context.project.as_ref())));
-    out.push_str(&row("Folder", &optional(context.project_root.as_ref())));
-    out.push_str(&row("Agent", &optional(context.agent.as_ref())));
-    out.push_str(&row("Model", &optional(context.model.as_ref())));
-    out.push_str(&row("Pane", &optional(context.pane.as_ref())));
-    out.push_str(&row("Reporter", &optional(context.reporter.as_ref())));
-    out.push_str(&row("Contact", &optional(report.contact.as_ref())));
-    out
-}
-
-pub(crate) fn context_text(report: &Report, id: &str, terminal_tail: Option<&str>) -> String {
-    let mut out = format!("Vibyra report {id}\n{}\n\n", iso_now());
-    out.push_str(&row("Kind", kind_label(&report.kind)));
-    out.push_str(&row("Severity", severity_label(&report.severity)));
-    out.push_str(&row("Where", &optional(report.area.as_ref())));
-    out.push_str(&row("Summary", report.summary.trim()));
-    out.push_str(&section("What happened", &report.details));
-    out.push_str(&section(
-        "Steps to reproduce",
-        report.steps.as_deref().unwrap_or_default(),
-    ));
-    out.push_str(&section(
-        "Expected",
-        report.expected.as_deref().unwrap_or_default(),
-    ));
-    out.push_str(&section("Environment", &environment(report)));
-    if let Some(tail) = terminal_tail {
-        out.push_str(&section(
-            &format!("Terminal output (last {MAX_TAIL_LINES} lines)"),
-            tail,
-        ));
-    }
-    out
-}
 
 /// Keeps the end of a terminal's scrollback, readable.
 ///

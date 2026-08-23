@@ -1,0 +1,200 @@
+import React, { useState } from "react";
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "../../../styles/theme";
+import { communityDetailAccent, communityDetailAccentDark } from "../data/community";
+import { styles } from "../styles";
+import type { CommunityComment, CommunityPost } from "../types";
+import { formatCommunityTitle, getCommunitySeedComments, hasCommunityRunnableDemo } from "./CommunityAppExperience";
+import { CommunityAppLogo, CommunityAuthorAvatar } from "./CommunityComments";
+import { confirmDeleteListing, confirmMakeListingPrivate } from "./ProjectListingConfirmations";
+import { ProjectMenuItem } from "./ProjectMenuComponents";
+
+export function CommunityPostDetail({
+  addedComments,
+  bookmarked,
+  canComment,
+  commentCount,
+  commentDraft,
+  commentError,
+  commentPosting,
+  liked,
+  onAddComment,
+  onCommentDraftChange,
+  onDelete,
+  onEdit,
+  onMakePrivate,
+  onOpen,
+  onReport,
+  onToggleBookmark,
+  onToggleLike,
+  opened,
+  post
+}: {
+  addedComments: CommunityComment[];
+  bookmarked: boolean;
+  canComment: boolean;
+  commentCount: number;
+  commentDraft: string;
+  commentError: string;
+  commentPosting: boolean;
+  liked: boolean;
+  onAddComment: () => void;
+  onCommentDraftChange: (text: string) => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
+  onMakePrivate?: () => void;
+  onToggleBookmark: () => void;
+  onOpen: () => void;
+  onReport: () => void;
+  onToggleLike: () => void;
+  opened: boolean;
+  post: CommunityPost;
+}) {
+  const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
+  const comments = [...getCommunitySeedComments(post), ...addedComments];
+  const visibleComments = comments.slice(0, 4);
+  const canPostComment = canComment && commentDraft.trim().length > 0 && !commentPosting;
+  const canOpenApp = hasCommunityRunnableDemo(post);
+  const screenshots = (post.screenshotUrls ?? []).flatMap((url, index) => {
+    const imageUrl = url?.trim();
+    return imageUrl ? [{ imageUrl, label: post.screenshots[index]?.trim() }] : [];
+  });
+  return (
+    <View style={styles.communityDetailScreen}>
+      <View style={styles.communityDetailIdentity}>
+        <View style={styles.communityDetailTitleBlock}>
+          <Text style={styles.communityDetailKicker}>{post.tag} app</Text>
+          <Text numberOfLines={2} style={styles.communityDetailTitle}>{formatCommunityTitle(post.title)}</Text>
+          <Text numberOfLines={2} style={styles.communityDetailDescription}>{post.description}</Text>
+        </View>
+        <CommunityAppLogo accent={communityDetailAccent} post={post} size={72} />
+      </View>
+
+      <View style={styles.communityDetailMakerLine}>
+        <CommunityAuthorAvatar accent={communityDetailAccent} name={post.user} size={38} />
+        <View style={styles.communityMakerCopy}>
+          <Text style={styles.communityMakerName}>{post.user}</Text>
+          <Text style={styles.communityMakerMiniTime}>{post.time}</Text>
+        </View>
+      </View>
+
+      <View style={styles.communityDetailActions}>
+        <Pressable
+          disabled={!canOpenApp}
+          onPress={() => { if (canOpenApp) onOpen(); }}
+          style={[styles.communityPrimaryOpenButton, !canOpenApp ? { opacity: 0.58 } : null]}
+        >
+          <LinearGradient
+            colors={[communityDetailAccentDark, communityDetailAccent]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.communityPrimaryOpenGradient}
+          >
+            <Ionicons name={!canOpenApp ? "cloud-offline-outline" : opened ? "checkmark-circle" : "open-outline"} color={colors.text} size={23} />
+            <Text style={styles.communityPrimaryOpenText}>{!canOpenApp ? "Unavailable" : opened ? "Opened" : "Open preview"}</Text>
+          </LinearGradient>
+        </Pressable>
+        <Pressable accessibilityLabel={bookmarked ? "Remove saved app" : "Save app"} accessibilityRole="button" style={styles.communitySmallAction} onPress={onToggleBookmark}>
+          <Ionicons name={bookmarked ? "bookmark" : "bookmark-outline"} color={bookmarked ? communityDetailAccent : colors.text} size={21} />
+        </Pressable>
+        <Pressable accessibilityLabel={liked ? "Unlike app" : "Like app"} accessibilityRole="button" style={styles.communityLikeButton} onPress={onToggleLike}>
+          <Ionicons name={liked ? "heart" : "heart-outline"} color={liked ? "#FF6B9A" : colors.text} size={21} />
+          <Text style={styles.communityDetailIconText}>{post.likes}</Text>
+        </Pressable>
+        <Pressable accessibilityLabel="Report app" accessibilityRole="button" style={styles.communitySmallAction} onPress={onReport}>
+          <Ionicons name="flag-outline" color={colors.text} size={20} />
+        </Pressable>
+        {post.viewerCanManage ? (
+          <View style={{ position: "relative" }}>
+            <Pressable accessibilityLabel="Manage listing" accessibilityRole="button" style={styles.communitySmallAction} onPress={() => setOwnerMenuOpen((open) => !open)}>
+              <Ionicons name="ellipsis-vertical" color={colors.text} size={20} />
+            </Pressable>
+            {ownerMenuOpen ? (
+              <View style={[styles.projectMenu, { position: "absolute", right: 0, top: 50, zIndex: 40 }]}>
+                {onEdit ? <ProjectMenuItem icon="create-outline" label="Edit listing" onPress={() => { setOwnerMenuOpen(false); onEdit(); }} /> : null}
+                {onMakePrivate ? <ProjectMenuItem icon="lock-closed-outline" label="Make private" onPress={() => confirmMakePrivate()} /> : null}
+                {onDelete ? <ProjectMenuItem danger icon="trash-outline" label="Delete listing" onPress={() => confirmDelete()} /> : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+
+      {screenshots.length ? (
+        <View style={styles.communityDetailScreenshots}>
+          <Text style={styles.communityDetailPanelTitle}>Preview</Text>
+          <ScrollView
+            contentContainerStyle={styles.communityScreenshotGrid}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.communityScreenshotRail}
+          >
+            {screenshots.map((screenshot, index) => (
+              <View key={screenshot.imageUrl + "-" + index} style={styles.communityScreenshotPreview}>
+                <Image resizeMode="cover" source={{ uri: screenshot.imageUrl }} style={styles.communityScreenshotImage} />
+                {screenshot.label ? <Text numberOfLines={1} style={styles.communityScreenshotLabel}>{screenshot.label}</Text> : null}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      <View style={styles.communityAboutBlock}>
+        <Text style={styles.communityDetailPanelTitle}>About</Text>
+        <Text style={styles.communityDetailPanelBody}>{post.about || post.description}</Text>
+      </View>
+
+      <View style={styles.communityCommentSection}>
+        <View style={styles.communityCommentHeader}>
+          <Text style={styles.communityDetailPanelTitle}>Comments</Text>
+          <Text style={styles.communityCommentCount}>{commentCount}</Text>
+        </View>
+        <View style={styles.communityCommentComposer}>
+          <TextInput
+            editable={canComment}
+            multiline
+            onChangeText={onCommentDraftChange}
+            placeholder={canComment ? "Add a comment..." : "Log in to comment"}
+            placeholderTextColor="#747C8A"
+            style={styles.communityCommentInput}
+            value={commentDraft}
+          />
+          <Pressable disabled={!canPostComment} onPress={onAddComment} style={[styles.communityCommentPostButton, !canPostComment ? styles.communityCommentPostButtonDisabled : null]}>
+            {commentPosting ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="send" color={colors.text} size={17} />}
+            <Text style={styles.communityCommentPostText}>{commentPosting ? "Posting" : "Post"}</Text>
+          </Pressable>
+        </View>
+        {commentError ? (
+          <View style={styles.communityCommentError}>
+            <Ionicons name="alert-circle-outline" color="#FFB4C1" size={18} />
+            <Text style={styles.communityCommentErrorText}>{commentError}</Text>
+          </View>
+        ) : null}
+        {visibleComments.length ? visibleComments.map((comment) => (
+          <View key={comment.id} style={styles.communityCommentRow}>
+            <CommunityAuthorAvatar accent={communityDetailAccent} name={comment.name} size={34} />
+            <View style={styles.communityCommentCopy}>
+              <View style={styles.communityCommentNameRow}>
+                <Text style={styles.communityCommentName}>{comment.name}</Text>
+                <Text style={styles.communityCommentTime}>{comment.time}</Text>
+              </View>
+              <Text style={styles.communityCommentText}>{comment.text}</Text>
+            </View>
+          </View>
+        )) : (
+          <Text style={styles.communityEmptyText}>No comments yet.</Text>
+        )}
+      </View>
+    </View>
+  );
+  function confirmMakePrivate() {
+    setOwnerMenuOpen(false);
+    if (onMakePrivate) confirmMakeListingPrivate(onMakePrivate);
+  }
+  function confirmDelete() {
+    setOwnerMenuOpen(false);
+    if (onDelete) confirmDeleteListing(onDelete);
+  }
+}

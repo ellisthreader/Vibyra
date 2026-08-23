@@ -39,7 +39,7 @@ export function AuthRecoveryForm({
         keyboardType="email-address"
         onChangeText={onEmailChange}
         placeholder="Email address"
-        placeholderTextColor="#8F84A8"
+        placeholderTextColor="#A6ADBA"
         style={emailStyles.emailInput}
         value={email}
       />
@@ -50,7 +50,7 @@ export function AuthRecoveryForm({
             autoCorrect={false}
             onChangeText={onTokenChange}
             placeholder="Reset token"
-            placeholderTextColor="#8F84A8"
+            placeholderTextColor="#A6ADBA"
             style={emailStyles.emailInput}
             value={token}
           />
@@ -59,7 +59,7 @@ export function AuthRecoveryForm({
             autoComplete="new-password"
             onChangeText={onPasswordChange}
             placeholder="New password"
-            placeholderTextColor="#8F84A8"
+            placeholderTextColor="#A6ADBA"
             secureTextEntry
             style={emailStyles.emailInput}
             value={password}

@@ -23,7 +23,8 @@ export function useModalFocus(
       document.querySelectorAll<HTMLElement>(".app > .chrome, .app > .shell"),
     );
     for (const element of background) element.setAttribute("inert", "");
-    node.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    (node.querySelector<HTMLElement>("[data-autofocus]") ??
+      node.querySelector<HTMLElement>(FOCUSABLE))?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

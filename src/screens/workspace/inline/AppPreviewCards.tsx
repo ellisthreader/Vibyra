@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Platform, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { GeneratedApp } from "../../../types/domain";
 import { styles } from "../styles";
@@ -39,7 +39,7 @@ export function TypingIndicator() {
 export function AppPreviewCard({ app, onOpen }: { app: GeneratedApp; onOpen: (app: GeneratedApp) => void }) {
   return (
     <Pressable accessibilityLabel={`Open ${app.title} preview`} accessibilityRole="button" onPress={() => onOpen(app)} style={styles.appPreviewCard}>
-      <LinearGradient colors={["#8E3CFF", "#5D24D8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.appPreviewIcon}>
+      <LinearGradient colors={["#4667E8", "#3D5ACF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.appPreviewIcon}>
         <Ionicons name="play" color="#FFFFFF" size={20} />
       </LinearGradient>
       <View style={styles.appPreviewBody}>
@@ -49,7 +49,7 @@ export function AppPreviewCard({ app, onOpen }: { app: GeneratedApp; onOpen: (ap
       </View>
       <View style={styles.appPreviewOpenButton}>
         <Text style={styles.appPreviewOpenText}>Open</Text>
-        <Ionicons name="chevron-forward" color="#C9C2D6" size={18} />
+        <Ionicons name="chevron-forward" color="#A6ADBA" size={18} />
       </View>
     </Pressable>
   );

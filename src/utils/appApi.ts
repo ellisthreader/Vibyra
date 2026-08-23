@@ -1,76 +1,14 @@
-import { Platform } from "react-native";
 import { assertBackendReachableBeforeChat } from "./appApiReachability";
 import { getBackendReachabilityMessage } from "./appApiMessages";
-import { appApiRetryCandidates, approvedAppApiUrl, createAppApiOriginPolicy, isAllowedAppApiUrl } from "./appApiOrigins";
-import { fetchWithTimeout, getExpoHost, TimeoutError } from "./network";
+import type { ApiErrorPayload } from "./appApiErrors";
+import { AppApiError, BackendOfflineError } from "./appApiErrors";
+import { buildAppApiHeaders, readAppApiJson, requestTimeoutFor } from "./appApiRequestHelpers";
+import { getAppApiCandidateUrls, getAppApiFetchRedirect, getAppApiRetryCandidateUrls, getAppApiUrl, rememberAppApiUrl } from "./appApiRuntimeOrigins";
+import { fetchWithTimeout, TimeoutError } from "./network";
 
 export type { AuthResponse, BillingPlan, BillingPlansResponse, BillingTopup, ChatResponse, ChatSkill, CheckoutResponse, IapReceiptResponse, LevelActivityResponse, LevelMapNode, LevelProgress, ReferralSummary, ReferralSummaryResponse, RemoteUser, SessionResponse, SkillsResponse } from "./appApiTypes";
-
-type ApiErrorPayload = {
-  burstCreditsResetAt?: string;
-  error?: string;
-  message?: string;
-  weeklyCreditsResetAt?: string;
-};
-
-export class AppApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly endpoint: string,
-    public readonly payload: ApiErrorPayload | Record<string, never>
-  ) {
-    super(message);
-    this.name = "AppApiError";
-  }
-}
-
-export function getAppApiUrl() {
-  const policy = currentAppApiOriginPolicy();
-  if (runtimeAppApiUrl && isAllowedAppApiUrl(policy, runtimeAppApiUrl)) return runtimeAppApiUrl;
-  return policy.candidates[0];
-}
-
-export function rememberAppApiUrl(url: string) {
-  const policy = currentAppApiOriginPolicy();
-  const approvedUrl = approvedAppApiUrl(policy, url);
-  if (!approvedUrl) return false;
-  runtimeAppApiUrl = approvedUrl;
-  return true;
-}
-
-export function getAppApiCandidateUrls() {
-  return currentAppApiOriginPolicy().candidates;
-}
-
-export function getAppApiRetryCandidateUrls(failedApiUrl: string) {
-  const policy = currentAppApiOriginPolicy();
-  return appApiRetryCandidates(policy, failedApiUrl);
-}
-
-export function getAppApiFetchRedirect() {
-  return currentAppApiOriginPolicy().redirect;
-}
-
-function currentAppApiOriginPolicy() {
-  const host = getExpoHost();
-  const developmentDefaultUrl = host && Platform.OS !== "web"
-    ? `http://${host}:8000`
-    : "http://127.0.0.1:8000";
-  const webHost = getWebLocationHost();
-  return createAppApiOriginPolicy({
-    configuredUrl: process.env.EXPO_PUBLIC_API_URL,
-    developmentDefaultUrl,
-    developmentFallbackUrls: [
-      host ? `http://${host}:8000` : "",
-      webHost ? `http://${webHost}:8000` : "",
-      Platform.OS === "web" ? "http://127.0.0.1:8000" : ""
-    ],
-    isDevelopment: __DEV__
-  });
-}
-
-let runtimeAppApiUrl = "";
+export { AppApiError, BackendOfflineError, isAppSessionExpiredError, isAppSessionExpiredMessage } from "./appApiErrors";
+export { getAppApiCandidateUrls, getAppApiFetchRedirect, getAppApiRetryCandidateUrls, getAppApiUrl, rememberAppApiUrl } from "./appApiRuntimeOrigins";
 const BACKEND_OFFLINE_COOLDOWN_MS = 60000;
 let backendOfflineUntil = 0;
 let backendKnownOnline = false;
@@ -110,27 +48,8 @@ function shouldSkipBackgroundRequest() {
   return !backendKnownOnline && process.env.EXPO_PUBLIC_ALLOW_BACKGROUND_API_PROBES !== "true";
 }
 
-export class BackendOfflineError extends Error {
-  constructor(url: string) {
-    super(`Backend marked offline; skipping request to ${url}`);
-    this.name = "BackendOfflineError";
-  }
-}
-
-export function isAppSessionExpiredMessage(message: string) {
-  const lower = message.toLowerCase();
-  return lower.includes("your session expired")
-    || lower.includes("missing app session token")
-    || (lower.includes("log in") && lower.includes("session"));
-}
-
 export type AppApiRequestMeta = {
-  /**
-   * When true, the request is silently skipped if the backend is currently
-   * marked offline or has not yet been proven reachable by a foreground
-   * request. Use for background syncs/polls so they don't spam the console
-   * with ERR_CONNECTION_REFUSED while the API is down.
-   */
+  /** Skip background sync/polls until a foreground request proves reachability. */
   background?: boolean;
 };
 
@@ -147,7 +66,7 @@ export async function appApiRequest<T>(
     throw new BackendOfflineError(url);
   }
 
-  const headers = buildHeaders(options.headers, token);
+  const headers = buildAppApiHeaders(options.headers, token);
 
   let response: Response;
   try {
@@ -178,7 +97,7 @@ export async function appApiRequest<T>(
     markBackendOnline();
   }
 
-  const data = await readJson<ApiErrorPayload | T>(response);
+  const data = await readAppApiJson<ApiErrorPayload | T>(response);
 
   if (!response.ok) {
     const errorPayload = data as ApiErrorPayload;
@@ -224,67 +143,4 @@ async function retryAppApiRequestOnFallbackUrl(
     }
   }
   return null;
-}
-
-function getWebLocationHost() {
-  if (Platform.OS !== "web") return "";
-  return (globalThis as { location?: { hostname?: string } }).location?.hostname ?? "";
-}
-
-function requestTimeoutFor(endpoint: string) {
-  if (endpoint === "/api/chat") return 240000;
-  if (endpoint === "/api/chat/research-plan") return 25000;
-  if (endpoint === "/api/community/assets/generate") return 100000;
-  if (endpoint === "/api/projects/publish") return 120000;
-  if (endpoint === "/api/community/projects") return 5000;
-  return 15000;
-}
-
-export function isAppSessionExpiredError(error: unknown) {
-  if (error instanceof AppApiError) {
-    if (error.status !== 401) return false;
-    return error.endpoint === "/api/session"
-      || error.endpoint === "/api/session/state"
-      || isAppSessionExpiredMessage(error.message);
-  }
-
-  return error instanceof Error && isAppSessionExpiredMessage(error.message);
-}
-
-function buildHeaders(input: RequestInit["headers"], token?: string) {
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json"
-  };
-
-  if (input instanceof Headers) {
-    input.forEach((value, key) => {
-      headers[key] = value;
-    });
-  } else if (Array.isArray(input)) {
-    input.forEach(([key, value]) => {
-      headers[key] = value;
-    });
-  } else if (input) {
-    Object.entries(input).forEach(([key, value]) => {
-      headers[key] = String(value);
-    });
-  }
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
-async function readJson<T>(response: Response): Promise<T | Record<string, never>> {
-  const text = await response.text();
-  if (!text) return {};
-
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return { message: text } as T;
-  }
 }

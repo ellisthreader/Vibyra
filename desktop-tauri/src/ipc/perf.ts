@@ -6,6 +6,8 @@ export interface PerfSample {
   cpuPercent: number;
   /** Vibyra's share, already divided by core count. */
   appCpuPercent: number;
+  /** WebKit renderer load where 100 means one fully occupied core. */
+  rendererCpuPercent: number | null;
   memUsedBytes: number;
   memTotalBytes: number;
   appMemBytes: number;

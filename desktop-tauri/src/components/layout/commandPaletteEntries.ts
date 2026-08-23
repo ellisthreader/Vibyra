@@ -116,8 +116,8 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
     {
       id: "act-report",
       group: "Actions",
-      label: "Report a problem…",
-      hint: "bug, idea or question",
+      label: "Report a bug…",
+      hint: "or share an idea or question",
       run: () => void useReportStore.getState().begin(),
     },
   );

@@ -1,0 +1,9 @@
+/* The title-bar entry point. Dimmed until hovered so a permanent button does
+   not compete with the notification bell beside it. */
+.chrome__report {
+  color: var(--dim);
+}
+
+.chrome__report:hover {
+  color: var(--accent);
+}

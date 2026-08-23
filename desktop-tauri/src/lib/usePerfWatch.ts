@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { perfSample, type PerfSample } from "../ipc/perf";
 import { rendererPolicy } from "../ipc/render";
 import { useNotificationStore } from "../state/notificationStore";
+import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { initialGuardState, nextGuardState } from "./perfGuard";
 import { judge, type PerfWindow } from "./perfPolicy";
@@ -37,6 +38,7 @@ export function usePerfWatch(): void {
     let guard = initialGuardState();
     let native: PerfSample | null = null;
     let compositing = false;
+    let graphicsSwitchAvailable = false;
     let lastNativeAt = 0;
     let stopped = false;
 
@@ -46,6 +48,7 @@ export function usePerfWatch(): void {
     void rendererPolicy()
       .then((policy) => {
         compositing = policy.softwareCompositing;
+        graphicsSwitchAvailable = policy.configurable && !policy.environmentOverride;
       })
       .catch(() => {});
 
@@ -69,8 +72,11 @@ export function usePerfWatch(): void {
         lagMs,
         cpuPercent: native?.cpuPercent ?? null,
         appCpuPercent: native?.appCpuPercent ?? null,
+        rendererCpuPercent: native?.rendererCpuPercent ?? null,
         memRatio: memoryRatio(native),
         softwareCompositing: compositing,
+        autoGraphics: useSettingsStore.getState().settings?.rendererMode === "auto",
+        graphicsSwitchAvailable,
         workingPanes,
       };
       const result = nextGuardState(guard, judge(window), now, {

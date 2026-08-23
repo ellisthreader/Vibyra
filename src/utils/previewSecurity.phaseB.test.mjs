@@ -6,7 +6,7 @@ const ownedPreviewSources = [
   new URL("../screens/workspace/hooks/workspaceChatRuntime.ts", import.meta.url),
   new URL("./previewUrls.ts", import.meta.url),
   new URL("../screens/workspace/helpers/chatPrompts.ts", import.meta.url),
-  new URL("../screens/workspace/inline/chunk3.tsx", import.meta.url),
+  new URL("../screens/workspace/inline/TopBarControls.tsx", import.meta.url),
   new URL("../screens/workspace/inline/index.ts", import.meta.url)
 ];
 

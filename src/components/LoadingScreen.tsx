@@ -1,14 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, StyleProp, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from "react-native";
-import { darkColors } from "../styles/theme";
+import { darkColors, ThemeColors } from "../styles/theme";
 import { supportsNativeAnimation } from "../utils/nativeAnimation";
 import { VibyraLogo } from "./VibyraLogo";
 
-type LoadingColors = typeof darkColors;
-
 type Props = {
-  colors?: LoadingColors;
+  colors?: ThemeColors;
   compact?: boolean;
   message?: string;
   scheme?: "dark" | "light";
@@ -69,8 +67,8 @@ export function LoadingScreen({
   const ringRotate = orbit.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
   const sweepTranslate = sweep.interpolate({ inputRange: [0, 1], outputRange: [-42, 172] });
   const background = isLight
-    ? ["#F8F7FE", "#FFFFFF", "#F1F3F9"] as const
-    : ["#07070A", "#0D0B14", "#08080D"] as const;
+    ? [colors.background, colors.surface, colors.workspace] as const
+    : [colors.background, colors.workspace, colors.background] as const;
   const titleColor = colors.text;
   const messageColor = colors.muted;
 
@@ -82,19 +80,19 @@ export function LoadingScreen({
       end={{ x: 0.9, y: 1 }}
       style={[styles.screen, compact ? styles.compactScreen : null, style]}
     >
-      <View style={[styles.topLine, { backgroundColor: isLight ? "rgba(109, 59, 255, 0.08)" : "rgba(255, 255, 255, 0.05)" }]} />
+      <View style={[styles.topLine, { backgroundColor: colors.line }]} />
       <View style={styles.content}>
         <Animated.View style={[styles.logoStage, { height: plateSize, width: plateSize, transform: [{ scale: logoScale }] }]}>
           {simple ? null : <Animated.View style={[styles.halo, { borderColor: colors.borderStrong, opacity: haloOpacity }]} />}
           {simple ? null : (
-            <Animated.View style={[styles.ring, { borderColor: isLight ? "rgba(109, 59, 255, 0.28)" : "rgba(255, 255, 255, 0.22)", transform: [{ rotate: ringRotate }] }]}>
-              <View style={[styles.ringTick, { backgroundColor: colors.magenta }]} />
-              <View style={[styles.ringTickAlt, { backgroundColor: colors.info }]} />
+            <Animated.View style={[styles.ring, { borderColor: colors.accentSoft, transform: [{ rotate: ringRotate }] }]}>
+              <View style={[styles.ringTick, { backgroundColor: colors.accent }]} />
+              <View style={[styles.ringTickAlt, { backgroundColor: colors.accentHover }]} />
             </Animated.View>
           )}
           <LinearGradient
-            colors={isLight ? ["rgba(255,255,255,0.96)", "rgba(247,243,255,0.9)"] : ["rgba(26, 21, 40, 0.96)", "rgba(12, 10, 18, 0.98)"]}
-            style={[styles.logoPlate, { borderColor: isLight ? "rgba(109, 59, 255, 0.18)" : "rgba(255, 255, 255, 0.1)", borderRadius: simple ? 999 : 30, height: logoPlateSize, width: logoPlateSize }]}
+            colors={[colors.surface, colors.elevated]}
+            style={[styles.logoPlate, { borderColor: colors.border, borderRadius: simple ? 999 : 30, height: logoPlateSize, width: logoPlateSize }]}
           >
             <VibyraLogo style={{ height: logoHeight, width: logoWidth }} />
           </LinearGradient>
@@ -105,7 +103,7 @@ export function LoadingScreen({
           <Text style={[styles.message, compact ? styles.compactMessage : null, { color: messageColor }]}>{message}</Text>
         </View>
 
-        <View style={[styles.track, { backgroundColor: isLight ? "rgba(109, 59, 255, 0.09)" : "rgba(255, 255, 255, 0.08)" }]}>
+        <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
           <Animated.View style={[styles.sweep, { backgroundColor: colors.accent, transform: [{ translateX: sweepTranslate }] }]} />
         </View>
       </View>

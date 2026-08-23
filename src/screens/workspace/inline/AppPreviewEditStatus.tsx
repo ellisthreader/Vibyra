@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
 import { createThemedStyleSheet } from "../styles/themeTransform";

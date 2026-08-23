@@ -49,6 +49,10 @@ return [
         'moderation_model' => env('OPENAI_MODERATION_MODEL', 'omni-moderation-latest'),
     ],
 
+    'vibyra_reports' => [
+        'webhook_url' => env('VIBYRA_REPORT_WEBHOOK_URL'),
+    ],
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET_KEY'),
         'publishable' => env('STRIPE_PUBLISHABLE_KEY'),

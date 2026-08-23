@@ -1,7 +1,7 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-const avatarColors = ["#4285F4", "#DB4437", "#F4B400", "#7E57C2", "#00ACC1", "#EF6C00"];
+const avatarColors = ["#4285F4", "#DB4437", "#F4B400", "#4667E8", "#00ACC1", "#EF6C00"];
 
 export function AccountAvatar({
   imageUri,

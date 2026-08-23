@@ -1,0 +1,23 @@
+{
+  "name": "vibyra-marketing-video",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts VibyraLaunch36 ../backend/public/media/vibyra-launch-film.mp4 --codec=h264 --crf=18 --pixel-format=yuv420p",
+    "poster": "remotion still src/index.ts VibyraLaunch36 ../backend/public/media/vibyra-launch-film-poster.png --frame=1710",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.490",
+    "@remotion/transitions": "4.0.490",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.490"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "typescript": "6.0.3"
+  }
+}

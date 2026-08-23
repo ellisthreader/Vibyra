@@ -20,10 +20,10 @@ Read `Memory Protocol.md`, `Context Map.md`, and `Project Context.md`, then:
   `Vibyra App Memory.md` and `App/Live Preview.md`.
 - Cross-device failures: read both focused Preview notes.
 
-Use `vibyra-desktop-connection-diagnostics` for invalid tokens, reconnects, or
-LAN timeouts. Use `vibyra-expo-web-diagnostics` for Metro bundle 500s, JSON MIME
-errors, and missing modules. Use `vibyra-desktop-frontend-design` only after
-functional Preview behavior is correct.
+For invalid tokens, reconnects, or LAN timeouts, read
+`Vibyra/_ai/App/Pairing And Connection.md`. Use `vibyra-expo-web-diagnostics`
+for Metro bundle 500s, JSON MIME errors, and missing modules. Only work on
+Preview visual design after functional Preview behavior is correct.
 
 ## Capture The Failure
 
@@ -65,15 +65,30 @@ and shutdown. Never expose bearer or capability secrets.
 6. Follow `/preview/project/...` or `/preview/server/...` to the upstream app.
    Check relative assets, matching-quote `<base href>`, Vite modules, fetch,
    XHR, forms, redirects, cookies, CSRF headers, and `Set-Cookie` rewriting.
+   Keep binary/range responses streamed. Mutable HTML/CSS/JavaScript rewriting
+   uses a shared aggregate buffer budget from `previewProxyLimits.mjs`; do not
+   replace it with a very low global request-concurrency limit that breaks
+   ordinary parallel asset loading.
 7. Verify mobile host fallback and WebView state. Content identity must include
    ID, URL, and an HTML hash. Failed AI edits retain the user's draft.
 8. Verify Stop and shutdown terminate only tracked Preview process groups.
+   Keep detection/adoption separate from execution: read/open flows may call
+   `adoptRunningProjectDevServer()` but must never reach a spawning fallback.
+   Only explicit approved start routes may call `startProjectDevServer()`.
+   During a fresh managed start, readiness may probe only the reserved port,
+   ports parsed from that child's output, and ports newly occupied after the
+   pre-spawn snapshot. Never accept an untracked common-port service while the
+   selected child is still starting. Externally adopted services have no owned
+   process and Stop must leave them alive.
    Cleanup errors must not prevent bridge close or process exit.
+   Removing a service from active Preview state must not make its child
+   untracked: retain termination ownership until exit, send the tracked process
+   group SIGTERM, and use a bounded SIGKILL escalation when it does not exit.
+   Never escalate by executable name or occupied port.
 9. For element editing, confirm proxied HTML contains
    `vibyra-preview-inspector`, Desktop loads inspector data before inspector UI,
-   the active iframe is the message source, and
-   `POST /desktop/preview/resolve-element` receives the current project and
-   target app directory. Exact framework source metadata should resolve before
+   the active iframe is the message source, and the element-resolution command
+   receives the current project and target app directory. Exact framework source metadata should resolve before
    fallback scanning, and fallback scans should start inside that target app.
    Do not gate Send on source resolution: the DOM/component context remains a
    valid agent prompt when matching is slow or inconclusive. Terminal assignment
@@ -104,44 +119,88 @@ and shutdown. Never expose bearer or capability secrets.
 Do not weaken proxy authorization, bypass explicit Run approval, or kill
 processes by executable name or port to make a Preview appear healthy.
 
+For Rust/Tauri workspace Preview, audit these invariants separately:
+
+- Bound manifest bytes before allocating the full file and consume child output
+  in fixed chunks with a cap that applies even when no newline arrives.
+- Reserve every port for a multi-process recipe before any spawn, retaining each
+  listener until its child starts. Services are concurrent by normalized project
+  root plus target; selecting another target must not stop a background service.
+- Keep renderer status, request generations, and errors target-scoped. Serialize
+  polls so one target cannot overlap itself, ignore stale lifecycle responses,
+  retry transient status errors, and clear the URL on failed or timed-out state.
+- Do not re-canonicalize a tracked service key during status or Stop; cleanup
+  must still find the service after its project directory has been deleted.
+- Cap static-server connections and header bytes, set read/write timeouts, and
+  accept fragmented request headers. Run blocking detection, spawn, Stop, and
+  readiness work outside Tauri's invoke/UI thread.
+
+If Expo Router shows `Unmatched Route` only inside Desktop Preview, inspect the
+browser pathname for the tokenized `/preview/server/...` prefix. Normalize it
+before the Router entry script runs, retain the prefix separately for request
+rewrites, and cover the real `expo-router/entry.bundle` marker in regression
+tests. Cold Expo readiness probes need a framework-sized timeout and must drain
+successful bundle responses rather than aborting Metro mid-render. Apply the
+same framework-sized allowance to the authenticated Expo proxy root; otherwise
+startup can verify while the first iframe request still times out. Keep the
+shorter default for other targets.
+
+For terminal-triggered Preview, inspect the intent chain separately from the
+preview runtime: `vibyra preview`, renderer `/preview`, or a bounded standalone
+natural-language match in `app.terminals-companion-input.js` -> terminal-scoped
+loopback action -> pending desktop state -> renderer controller -> existing
+target detection/start. A matched natural request clears the provider composer
+and suppresses Enter before model submission; ambiguous and compound prompts
+must pass through unchanged. The action route must accept an empty body only,
+derive the project from the live terminal, and never start a process. With
+multiple eligible targets, the renderer opens the existing picker; the model
+never chooses a path, project, command, port, or target.
+The invoking terminal must reuse its normal dismissible notice surface for this
+lifecycle: show `Opening Preview in the right sidebar...` before the workspace
+transition, and confirm `Preview opened in the right sidebar.` only after the
+Preview companion is mounted and any required target activation/start returns
+a real URL. A multi-target picker may confirm that Preview opened while asking
+the user to choose an app. Startup, activation, stale-transition, or mount
+failure must retain the actionable error notice and must never acknowledge the
+action as handled or claim that Preview opened.
+Treat a service marked Running with a dead upstream as stale state: activation
+must verify the exact tracked target, remove only that target when verification
+fails, and let the renderer retry through the existing approved start route.
+Do not skip activation merely because the same target URL is already visible.
+Persist explicit per-project target choice so a later terminal Preview request
+can deterministically reopen or restart the user's app without model selection.
+
 ## Source Ownership
 
-- Routes and phone starts: `desktop/lib/desktopRoutes.mjs`,
-  `desktop/lib/pairingHandlers.mjs`
-- Resolution and launch: `desktop/lib/preview.mjs`,
-  `desktop/lib/desktopPreview.mjs`, `desktop/lib/previewResolver.mjs`,
-  `desktop/lib/previewDevServer.mjs`
-- Runtime state: `previewServices.mjs`, `previewServerProcesses.mjs`,
-  `previewPortAllocator.mjs`
-- Credentials and proxy: `previewCapabilities.mjs`,
-  `previewCredentialResolution.mjs`, `previewProxyReferences.mjs`,
-  `previewProxyRequest.mjs`
-- Desktop renderer: `desktop/assets/app.terminals-test*.js`
-- Element inspection: `desktop/lib/previewInspectorRuntime.mjs`,
-  `desktop/lib/previewElementResolver.mjs`,
-  `desktop/assets/app.terminals-test-inspector*.js`
+- Rust/Tauri workspace Preview: `desktop-tauri/src/components/preview/`,
+  `desktop-tauri/src/components/layout/ProjectWorkspace.tsx`,
+  `desktop-tauri/src/ipc/preview.ts`,
+  `desktop-tauri/src-tauri/crates/vibyra-core/src/preview/`, and
+  `desktop-tauri/src-tauri/src/commands/preview.rs`
 - Phone reachability: `src/utils/previewUrls.ts`
 - WebView state: `AppPreviewModal.tsx`, `AppPreviewMiniChat.tsx`,
   `previewAppFingerprint.ts`
-- Shutdown: `desktop/lib/previewShutdown.mjs`
 
 ## Verification
 
 Run:
 
 ```bash
-npm run test:desktop-preview
 node --test src/utils/previewUrls.test.mjs src/utils/previewHtml.test.mjs src/utils/previewSecurity.phaseB.test.mjs src/screens/workspace/inline/previewFixPrompt.test.mjs src/screens/workspace/inline/previewAppUi.test.mjs src/components/webViewNavigationPolicy.test.mjs
 (cd backend && php artisan test --filter='Vibyra(ProjectPreview|PreviewPrompt)')
 npm run typecheck
+(cd desktop-tauri && npm run build && npm run core:test)
 git diff --check
 ```
 
-Also run `node --check` on edited desktop JavaScript/MJS files. Manually test a
+Manually test a
 static site, Vite/React SPA, Laravel/Inertia form flow, Expo web app, and any
 canvas/WebGL game capabilities involved. Include first start, reopen, reload,
 mid-start switching, concurrent targets, phone/Desktop use, Stop, and shutdown.
 Do not claim game or device-specific completeness from unit tests alone.
+For the Rust/Tauri shell, also compile the full `src-tauri/Cargo.toml` workspace;
+on Linux use the repository's existing dev-shim path or `npm run app:build` so
+GTK/WebKit pkg-config metadata resolves without changing system packages.
 
 Update the smallest Preview memory note and this skill when the workflow or
 validation contract changes.

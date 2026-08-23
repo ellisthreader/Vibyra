@@ -1,6 +1,6 @@
 import React from "react";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ChatFileAttachment, ChatImageAttachment } from "../../../types/chatTools";
 import { styles } from "../styles";
 
@@ -49,7 +49,7 @@ export function ChatImageAttachmentPills({
           </View>
           {onRemoveFile ? (
             <Pressable accessibilityLabel={`Remove ${attachment.name}`} onPress={() => onRemoveFile(attachment.id)} style={styles.chatImageAttachmentRemove}>
-              <Ionicons name="close" color="#BDB5CE" size={14} />
+              <Ionicons name="close" color="#A6ADBA" size={14} />
             </Pressable>
           ) : null}
         </View>

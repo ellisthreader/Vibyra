@@ -15,3 +15,9 @@ Vibyra/.trash/
 Vibyra/_attachments/
 Vibyra/_ai/Runs/
 Vibyra/Prompt Transcripts.md
+Vibyra/Productivity Stats.json
+
+# Updater signing keys — the private key lives in ~/.tauri and in CI secrets,
+# never in the repo. A leaked key lets anyone sign a "Vibyra update".
+*.key
+!desktop-tauri/src-tauri/tests/fixtures/*.sig

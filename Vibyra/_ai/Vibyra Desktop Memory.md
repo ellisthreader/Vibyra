@@ -40,6 +40,8 @@ website, Expo browser client, and native phone app.
 - Terminal panes, provider routing, launch settings, effort tables, and
   provider-account boundaries: `Desktop/AI Terminals.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
+- In-app reports, authenticated backend delivery, permission disclosure, and
+  server-owned webhook boundary: `Desktop/In-App Reporting.md`
 - Workspace Preview: `Desktop/Projects And Preview.md`
 - System-wide F9 screenshot capture and annotation editor:
   `Desktop/Screenshot Capture.md`

@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,7 +50,7 @@ export function ChatAttachmentSheet({
   const [busyAction, setBusyAction] = React.useState("");
   const availableHeight = height - Math.max(insets.top + 24, 48);
   const sheetHeight = Math.min(availableHeight, Math.min(460, Math.max(400, Math.round(height * 0.52))));
-  const primaryIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#F7F3FF";
+  const primaryIconColor = prefs.effectiveScheme === "light" ? prefs.colors.accent : "#F5F7FA";
 
   async function selectPrimaryAction(action: AttachmentAction) {
     if (action.kind === "camera") {

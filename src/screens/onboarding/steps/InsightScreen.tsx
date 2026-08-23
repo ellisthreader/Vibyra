@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useMemo } from "react";
@@ -45,7 +45,7 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
           maskElement={<Text style={styles.resultTitleGradientText}>{titleAccent}</Text>}
         >
           <LinearGradient
-            colors={["#7C45FF", "#C849FF", "#FF5EBA", "#FFB45F"]}
+            colors={["#A6ADBA", "#7490FF", "#5B7CFA", "#7490FF"]}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.resultTitleGradientFill}
@@ -66,7 +66,7 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
           return (
             <Animated.View key={bullet.text} style={[styles.insightRow, { opacity, transform: [{ translateY }, { scale }] }]}>
               <LinearGradient
-                colors={["rgba(255, 255, 255, 0.09)", "rgba(137, 76, 255, 0.1)", "rgba(255, 255, 255, 0.035)"]}
+                colors={["rgba(255, 255, 255, 0.09)", "rgba(91, 124, 250, 0.1)", "rgba(255, 255, 255, 0.035)"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.insightRowFill}
@@ -76,7 +76,7 @@ export function InsightScreen({ personaId, persona }: { personaId: Persona; pers
                   <Ionicons name={bullet.icon} color={accent.color} size={26} />
                 </View>
                 <Text style={styles.insightText}>{bullet.text}</Text>
-                <Ionicons name="chevron-forward" color="#C8AFFF" size={27} style={styles.insightChevron} />
+                <Ionicons name="chevron-forward" color="#A6ADBA" size={27} style={styles.insightChevron} />
               </LinearGradient>
             </Animated.View>
           );

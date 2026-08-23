@@ -28,17 +28,17 @@ export const welcome5 = {
     alignItems: "center" as const,
     height: 76,
     justifyContent: "center" as const,
-    shadowColor: "#D8BCFF",
+    shadowColor: "#A6ADBA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.32,
     shadowRadius: 16,
     width: 76
   },
   glyphBeam: {
-    backgroundColor: "rgba(216, 188, 255, 0.78)",
+    backgroundColor: "rgba(91, 124, 250, 0.78)",
     borderRadius: 999,
     height: 3,
-    shadowColor: "#D8BCFF",
+    shadowColor: "#A6ADBA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 10,
@@ -61,11 +61,11 @@ export const welcome5 = {
     width: "100%" as const
   },
   sparkle: {
-    backgroundColor: "#FFD8FF",
+    backgroundColor: "#A6ADBA",
     borderRadius: 999,
     height: 8,
     position: "absolute" as const,
-    shadowColor: "#FFB1FF",
+    shadowColor: "#A6ADBA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 6,
@@ -86,7 +86,7 @@ export const welcome5 = {
     width: 132
   },
   particle: {
-    backgroundColor: "rgba(228, 195, 255, 0.8)",
+    backgroundColor: "rgba(91, 124, 250, 0.8)",
     borderRadius: 999,
     height: 3,
     position: "absolute" as const,
@@ -101,8 +101,8 @@ export const welcome5 = {
   },
   sheet: {
     alignSelf: "stretch" as const,
-    backgroundColor: "rgba(14, 10, 36, 0.95)",
-    borderColor: "rgba(154, 77, 255, 0.32)",
+    backgroundColor: "rgba(24, 26, 32, 0.95)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderRadius: 26,
     borderWidth: 1,
     gap: 14,
@@ -114,7 +114,7 @@ export const welcome5 = {
     fontWeight: "900" as const
   },
   sheetBody: {
-    color: "rgba(226, 219, 255, 0.78)",
+    color: "rgba(166, 173, 186, 0.78)",
     fontSize: 14,
     fontWeight: "700" as const,
     lineHeight: 20
@@ -131,8 +131,8 @@ export const welcome5 = {
     justifyContent: "center" as const
   },
   sheetButtonGhost: {
-    backgroundColor: "rgba(20, 14, 50, 0.6)",
-    borderColor: "rgba(180, 140, 255, 0.32)",
+    backgroundColor: "rgba(24, 26, 32, 0.6)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderWidth: 1
   },
   sheetButtonDanger: {

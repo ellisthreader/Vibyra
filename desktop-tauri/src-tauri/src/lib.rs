@@ -45,11 +45,11 @@ mod provider_auth_url;
 mod provider_auth_view;
 mod renderer;
 mod report;
-mod report_format;
 mod report_image;
 #[cfg(test)]
 mod report_tests;
 mod report_text;
+mod report_upload;
 mod secret_store;
 mod session_store;
 #[cfg(test)]

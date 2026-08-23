@@ -25,6 +25,7 @@ export type NotificationChannel = "off" | "app" | "system";
 export type NotificationActionId =
   | "focusSession"
   | "hibernateIdleTerminals"
+  | "enableAcceleratedGraphics"
   | "openGraphicsSettings"
   | "openAiSettings"
   | "openShortcutSettings"

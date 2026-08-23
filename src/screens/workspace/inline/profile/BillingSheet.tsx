@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../../../../context/AppContext";
+import { useAccountSession, useAccountUsage } from "../../../../context/AccountContexts";
 import { usePreferences } from "../../../../context/PreferencesContext";
 import { openBillingPortal, startStripeCheckout } from "../../../../utils/billingApi";
 import { styles } from "../../styles";
@@ -20,10 +20,11 @@ const MANAGE_SUBSCRIPTION_URL = Platform.select({
 }) as string;
 
 export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const usage = useAccountUsage();
   const prefs = usePreferences();
   const insets = useSafeAreaInsets();
-  const currentKey = normalizePlanKey(app.accountPlan);
+  const currentKey = normalizePlanKey(usage.accountPlan);
   const recommendedKey = currentKey === "pro" ? "pro" : nextRecommendedTier(currentKey);
   const [cycle, setCycle] = useState<BillingCycle>("annual");
   const [selectedKey, setSelectedKey] = useState<PlanKey>(recommendedKey);
@@ -42,8 +43,8 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
 
   async function openSubscriptionManagement() {
     try {
-      if (app.authToken) {
-        const result = await openBillingPortal(app.authToken);
+      if (account.authToken) {
+        const result = await openBillingPortal(account.authToken);
         await Linking.openURL(result.url);
         return;
       }
@@ -69,14 +70,14 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
       return;
     }
 
-    if (!app.authToken) {
+    if (!account.authToken) {
       setBillingError("Log in again to upgrade your plan.");
       return;
     }
 
     try {
       setCheckoutBusy(true);
-      const result = await startStripeCheckout(app.authToken, {
+      const result = await startStripeCheckout(account.authToken, {
         kind: "subscription",
         plan: selectedKey as Exclude<PlanKey, "free">,
         cycle
@@ -102,12 +103,12 @@ export function BillingSheet({ visible, onClose }: { visible: boolean; onClose: 
       <View style={[styles.billingScreen, { backgroundColor: prefs.colors.background }]}>
         <View style={[styles.billingHeader, { paddingTop: Math.max(insets.top + 8, 60) }]}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
-            <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#0A0814" : "#FFFFFF"} size={24} />
+            <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#101115" : "#FFFFFF"} size={24} />
           </Pressable>
           <Text style={[styles.billingHeaderTitle, { color: prefs.colors.text }]}>{prefs.t("billing.title")}</Text>
           <View style={[styles.billingHeaderTokens, { backgroundColor: light ? prefs.colors.surface : "rgba(15, 15, 24, 0.92)" }]}>
             <Ionicons name="flash" color="#FFD166" size={13} />
-            <Text style={styles.billingHeaderTokensText}>{prefs.formatNumber(app.creditsBalance)} {prefs.t("billing.tokens")}</Text>
+            <Text style={styles.billingHeaderTokensText}>{prefs.formatNumber(usage.creditsBalance)} {prefs.t("billing.tokens")}</Text>
           </View>
         </View>
 

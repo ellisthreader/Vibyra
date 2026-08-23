@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, Text, View } from "react-native";
 import { editPermissionStyles as styles } from "./EditPermissionCard.styles";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { CodeChange, FileEntry } from "../../../types/domain";
 import { CollapsibleCodeBlock } from "./CollapsibleCodeBlock";
 import { useChatActionCardPalette } from "./chatActionCardTheme";

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemedColor } from "../../../context/PreferencesContext";
@@ -51,11 +51,11 @@ export function ProjectPublishModal(p: Props) {
   const hydratedProjectKey = useRef("");
   const insets = useSafeAreaInsets();
   const closeIcon = useThemedColor("#D8D2E8");
-  const placeholderColor = useThemedColor("#827C92");
+  const placeholderColor = useThemedColor("#747C8A");
   const chevronColor = useThemedColor("#B8B1C8");
-  const accentIcon = useThemedColor("#B970FF");
+  const accentIcon = useThemedColor("#5B7CFA");
   const chipCloseIcon = useThemedColor("#DDD6F0");
-  const addIcon = useThemedColor("#D2CBE2");
+  const addIcon = useThemedColor("#A6ADBA");
 
   useEffect(() => {
     const nextProjectKey = p.project?.id || "";
@@ -160,7 +160,7 @@ export function ProjectPublishModal(p: Props) {
 
 function PrimaryAction({ busy, busyLabel, disabled, label, onPress }: { busy: boolean; busyLabel: string; disabled: boolean; label: string; onPress: () => void }) {
   return <Pressable disabled={disabled} style={[modalStyles.primary, disabled ? modalStyles.primaryDisabled : null]} onPress={onPress}>
-    <LinearGradient colors={["#7028FF", "#8B35FF", "#6D35FF"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={modalStyles.primaryGradient} />
+    <LinearGradient colors={["#4667E8", "#4667E8", "#4667E8"]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={modalStyles.primaryGradient} />
     {busy ? <ActivityIndicator color={colors.text} size="small" /> : <Ionicons name="checkmark-circle-outline" color={colors.text} size={21} />}
     <Text style={modalStyles.primaryText}>{busy ? busyLabel : label}</Text>
   </Pressable>;

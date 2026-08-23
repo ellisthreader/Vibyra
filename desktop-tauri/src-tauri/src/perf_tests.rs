@@ -7,6 +7,7 @@ fn serialises_camel_case() {
     let sample = PerfSample {
         cpu_percent: 12.5,
         app_cpu_percent: 3.25,
+        renderer_cpu_percent: Some(88.0),
         mem_used_bytes: 1,
         mem_total_bytes: 2,
         app_mem_bytes: 3,
@@ -17,6 +18,7 @@ fn serialises_camel_case() {
     for key in [
         "cpuPercent",
         "appCpuPercent",
+        "rendererCpuPercent",
         "memUsedBytes",
         "memTotalBytes",
         "appMemBytes",
@@ -24,7 +26,7 @@ fn serialises_camel_case() {
     ] {
         assert!(object.contains_key(key), "missing {key}");
     }
-    assert_eq!(object.len(), 6);
+    assert_eq!(object.len(), 7);
 }
 
 /// Ranges only. A live machine's CPU and memory are whatever they are at the
@@ -38,6 +40,9 @@ fn a_live_sample_is_within_plausible_ranges() {
     assert!(sample.cores >= 1);
     assert!((0.0..=100.0).contains(&sample.cpu_percent));
     assert!((0.0..=100.0).contains(&sample.app_cpu_percent));
+    if let Some(renderer_cpu) = sample.renderer_cpu_percent {
+        assert!((0.0..=100.0).contains(&renderer_cpu));
+    }
     assert!(sample.mem_total_bytes > 0);
     assert!(sample.mem_used_bytes <= sample.mem_total_bytes);
     assert!(sample.app_mem_bytes > 0);

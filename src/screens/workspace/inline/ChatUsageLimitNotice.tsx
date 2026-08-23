@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { chatUsageLimitNotice, getActiveChatUsageLimit, isChatUsageLimitText } from "../../../context/chatUsageLimit";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import type { ChatMessage } from "../../../types/domain";
@@ -9,7 +9,7 @@ import { styles } from "../styles";
 export function ChatUsageLimitNotice({ messages }: { messages: ChatMessage[] }) {
   const [dismissedId, setDismissedId] = useState("");
   const warningIcon = useThemedColor("#FFD166");
-  const closeIcon = useThemedColor("#BDB5CE");
+  const closeIcon = useThemedColor("#A6ADBA");
   const message = messages[messages.length - 1];
   const activeLimit = getActiveChatUsageLimit();
   const messageLimit = message?.role === "assistant"

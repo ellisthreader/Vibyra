@@ -1,0 +1,151 @@
+/* Settings > Vibyra AI — API key entry, state, and removal. */
+
+.settings-ai {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-ai__intro {
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 520;
+  line-height: 1.55;
+  max-width: 560px;
+}
+
+/* ── key card ───────────────────────────────────────────────────────────── */
+
+.ai-key {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.ai-key__state {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.ai-key__badge {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10.5px;
+  font-weight: 650;
+  gap: 5px;
+  padding: 4px 9px;
+}
+
+.ai-key__badge--on {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.ai-key__badge--off {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.ai-key__hint {
+  background: var(--surface-tint);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 4px 8px;
+}
+
+.ai-key__remove {
+  background: none;
+  border: 0;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 620;
+  margin-left: auto;
+  padding: 4px 2px;
+}
+
+.ai-key__remove:hover:not(:disabled) {
+  color: var(--danger);
+}
+
+.ai-key__steps {
+  color: var(--muted);
+  display: grid;
+  font-size: 11.5px;
+  font-weight: 520;
+  gap: 6px;
+  line-height: 1.55;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ai-key__steps strong {
+  color: var(--text);
+  font-weight: 620;
+}
+
+.ai-key__link {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--accent-2);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 11.5px;
+  font-weight: 620;
+  gap: 6px;
+  justify-self: start;
+  padding: 2px;
+}
+
+.ai-key__link:hover {
+  text-decoration: underline;
+}
+
+.ai-key__entry {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ai-key__field {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+/* A password field renders the dots in the browser's own face otherwise. */
+.ai-key__field .input {
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  min-width: 0;
+}
+
+.ai-key__error,
+.ai-key__ok,
+.ai-key__warn,
+.ai-key__note {
+  font-size: 11px;
+  font-weight: 520;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 560px;
+}
+
+.ai-key__error { color: var(--danger); }
+.ai-key__ok { color: var(--success); }
+.ai-key__note { color: var(--dim); }
+
+.ai-key__warn {
+  background: var(--amber-soft);
+  border-radius: 8px;
+  color: var(--amber);
+  padding: 9px 11px;
+}

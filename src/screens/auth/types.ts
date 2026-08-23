@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export type AuthMethod = "apple" | "google" | "email";
 export type IconName = keyof typeof Ionicons.glyphMap;

@@ -1,6 +1,6 @@
 import React from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../../../styles/theme";
 import { useThemedColor } from "../../../../context/PreferencesContext";
@@ -15,7 +15,7 @@ export function ProfileSheet({ visible, onClose, icon, kicker, title, children }
   children: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
-  const accentColor = useThemedColor("#C259FF");
+  const accentColor = useThemedColor("#5B7CFA");
   const closeColor = useThemedColor(colors.text);
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>

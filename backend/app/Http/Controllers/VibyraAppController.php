@@ -18,6 +18,7 @@ use App\Http\Controllers\Concerns\CommunityPublishMedia;
 use App\Http\Controllers\Concerns\CommunityPublishing;
 use App\Http\Controllers\Concerns\CodexResponsesEndpoint;
 use App\Http\Controllers\Concerns\DesktopProviderAuthEndpoints;
+use App\Http\Controllers\Concerns\DesktopReportEndpoint;
 use App\Http\Controllers\Concerns\LevelEndpoints;
 use App\Http\Controllers\Concerns\NativeTerminalEndpoint;
 use App\Http\Controllers\Concerns\ProjectMemoryEndpoints;
@@ -47,6 +48,7 @@ class VibyraAppController extends Controller
     use CommunityPublishing;
     use CodexResponsesEndpoint;
     use DesktopProviderAuthEndpoints;
+    use DesktopReportEndpoint;
     use LevelEndpoints;
     use NativeTerminalEndpoint;
     use ProjectMemoryEndpoints;

@@ -1,0 +1,25 @@
+/* Settings > Vibyra AI — what the key powers. */
+
+.ai-uses {
+  display: grid;
+  gap: 1px;
+}
+
+.ai-use {
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 3px;
+  padding: 11px 0;
+}
+
+.ai-use strong {
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.ai-use span {
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 520;
+  line-height: 1.5;
+}

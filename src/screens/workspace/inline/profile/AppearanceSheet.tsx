@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
@@ -12,8 +12,8 @@ export function AppearanceSheet({ visible, onClose, sheets }: {
   onClose: () => void;
   sheets: ProfileSheets;
 }) {
-  const accentColor = useThemedColor("#C259FF");
-  const inactiveColor = useThemedColor("#5C5470");
+  const accentColor = useThemedColor("#5B7CFA");
+  const inactiveColor = useThemedColor("#747C8A");
   return (
     <ProfileSheet visible={visible} onClose={onClose} icon="color-palette-outline" kicker="Preferences" title="Appearance">
       {APPEARANCE_OPTIONS.map((opt) => {

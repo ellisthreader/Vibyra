@@ -15,24 +15,24 @@ export const welcome3 = {
     width: 8
   },
   indicatorDotActive: {
-    backgroundColor: "#C566FF",
-    shadowColor: "#A741FF",
+    backgroundColor: "#4667E8",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 10
   },
   indicatorDotComplete: {
-    backgroundColor: "rgba(197, 102, 255, 0.5)"
+    backgroundColor: "rgba(91, 124, 250, 0.5)"
   },
   card: {
     alignSelf: "stretch" as const,
-    backgroundColor: "rgba(6, 5, 22, 0.78)",
-    borderColor: "rgba(151, 54, 255, 0.5)",
+    backgroundColor: "rgba(24, 26, 32, 0.78)",
+    borderColor: "rgba(91, 124, 250, 0.5)",
     borderRadius: 24,
     borderWidth: 1.5,
     paddingHorizontal: 22,
     paddingVertical: 22,
-    shadowColor: "#9A35FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 22 },
     shadowOpacity: 0.34,
     shadowRadius: 28
@@ -45,13 +45,13 @@ export const welcome3 = {
     marginBottom: 6
   },
   cardBody: {
-    color: "rgba(226, 219, 255, 0.74)",
+    color: "rgba(166, 173, 186, 0.74)",
     fontSize: 14,
     fontWeight: "700" as const,
     lineHeight: 20
   },
   cardEyebrow: {
-    color: "#C8A8FF",
+    color: "#A6ADBA",
     fontSize: 11,
     fontWeight: "900" as const,
     letterSpacing: 2,
@@ -59,8 +59,8 @@ export const welcome3 = {
     textTransform: "uppercase" as const
   },
   modeTabs: {
-    backgroundColor: "rgba(11, 8, 32, 0.74)",
-    borderColor: "rgba(154, 77, 255, 0.22)",
+    backgroundColor: "rgba(24, 26, 32, 0.74)",
+    borderColor: "rgba(91, 124, 250, 0.22)",
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row" as const,
@@ -78,7 +78,7 @@ export const welcome3 = {
     minHeight: 36
   },
   modeTabActive: {
-    backgroundColor: "rgba(148, 65, 255, 0.28)"
+    backgroundColor: "rgba(91, 124, 250, 0.28)"
   },
   modeTabText: {
     color: colors.muted,

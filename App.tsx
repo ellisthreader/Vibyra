@@ -2,7 +2,7 @@ import "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as LocalAuthentication from "expo-local-authentication";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { AppProvider, useAppContext } from "./src/context/AppContext";
 import { PreferencesProvider, usePreferences, LIGHT_SHELL_BG, DARK_SHELL_BG } from "./src/context/PreferencesContext";
 import { LoadingScreen } from "./src/components/LoadingScreen";
 import { AuthScreen } from "./src/screens/AuthScreen";
+import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { WorkspaceScreen } from "./src/screens/WorkspaceScreen";
 import { setStylesScheme } from "./src/screens/workspace/styles";
 
@@ -62,6 +63,7 @@ function AppContent() {
 
   const isLight = prefs.effectiveScheme === "light";
   const shellBg = isLight ? LIGHT_SHELL_BG : DARK_SHELL_BG;
+  setStylesScheme(prefs.effectiveScheme);
 
   if (!app.persistenceReady || !prefs.preferencesReady) {
     return (
@@ -72,10 +74,12 @@ function AppContent() {
     );
   }
 
-  setStylesScheme(prefs.effectiveScheme);
-
   if (!app.authenticated) {
-    return <AuthScreen key={prefs.effectiveScheme} />;
+    return <AuthScreen />;
+  }
+
+  if (!app.onboardingComplete || (!app.pcSetupComplete && !app.pcSetupSkipped)) {
+    return <OnboardingScreen />;
   }
 
   if (prefs.appLockEnabled && !appUnlocked && authenticating) {
@@ -92,14 +96,14 @@ function AppContent() {
       <SafeAreaView edges={["top", "left", "right"]} style={[styles.shell, styles.lockShell, { backgroundColor: shellBg }]}>
         <StatusBar style={isLight ? "dark" : "light"} />
         <View style={styles.lockContent}>
-          <View style={[styles.lockIcon, isLight ? { backgroundColor: prefs.colors.accentSoft } : null]}>
-            <Ionicons name="lock-closed-outline" color={isLight ? prefs.colors.accent : "#C7B6FF"} size={26} />
+          <View style={[styles.lockIcon, { backgroundColor: prefs.colors.accentSoft }]}>
+            <Ionicons name="lock-closed-outline" color={prefs.colors.accent} size={26} />
           </View>
-          <Text style={[styles.lockTitle, isLight ? { color: prefs.colors.text } : null]}>Vibyra is locked</Text>
-          <Text style={[styles.lockText, isLight ? { color: prefs.colors.muted } : null]}>Authenticate with Face ID, Touch ID, or your device passcode to continue.</Text>
-          <Pressable onPress={() => { void unlockApp(); }} style={({ pressed }) => [styles.lockButton, pressed ? styles.lockButtonPressed : null]}>
-            <Ionicons name="finger-print-outline" color="#FFFFFF" size={18} />
-            <Text style={styles.lockButtonText}>{authenticating ? "Checking..." : "Unlock"}</Text>
+          <Text style={[styles.lockTitle, { color: prefs.colors.text }]}>Vibyra is locked</Text>
+          <Text style={[styles.lockText, { color: prefs.colors.muted }]}>Authenticate with Face ID, Touch ID, or your device passcode to continue.</Text>
+          <Pressable onPress={() => { void unlockApp(); }} style={({ pressed }) => [styles.lockButton, { backgroundColor: pressed ? prefs.colors.actionPressed : prefs.colors.action }]}>
+            <Ionicons name="finger-print-outline" color={prefs.colors.onAction} size={18} />
+            <Text style={[styles.lockButtonText, { color: prefs.colors.onAction }]}>{authenticating ? "Checking..." : "Unlock"}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -109,7 +113,7 @@ function AppContent() {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={[styles.shell, { backgroundColor: shellBg }]}>
       <StatusBar style={isLight ? "dark" : "light"} />
-      <WorkspaceScreen key={prefs.effectiveScheme} />
+      <WorkspaceScreen />
     </SafeAreaView>
   );
 }
@@ -153,19 +157,16 @@ const styles = StyleSheet.create({
   },
   lockIcon: {
     alignItems: "center",
-    backgroundColor: "rgba(139, 92, 255, 0.14)",
     borderRadius: 999,
     height: 58,
     justifyContent: "center",
     width: 58
   },
   lockTitle: {
-    color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "900"
   },
   lockText: {
-    color: "#B8B3CB",
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 20,
@@ -174,7 +175,6 @@ const styles = StyleSheet.create({
   },
   lockButton: {
     alignItems: "center",
-    backgroundColor: "#7E3CFF",
     borderRadius: 14,
     flexDirection: "row",
     gap: 8,
@@ -184,11 +184,7 @@ const styles = StyleSheet.create({
     minWidth: 148,
     paddingHorizontal: 18
   },
-  lockButtonPressed: {
-    opacity: 0.78
-  },
   lockButtonText: {
-    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "900"
   }

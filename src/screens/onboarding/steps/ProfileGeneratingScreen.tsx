@@ -80,7 +80,7 @@ export function ProfileGeneratingScreen() {
           </Animated.View>
           <View style={styles.generatingInnerRing} />
           <LinearGradient
-            colors={["rgba(214, 132, 255, 0.95)", "rgba(108, 37, 222, 0.96)", "rgba(35, 13, 86, 0.98)"]}
+            colors={["rgba(91, 124, 250, 0.95)", "rgba(91, 124, 250, 0.96)", "rgba(91, 124, 250, 0.98)"]}
             start={{ x: 0.18, y: 0.12 }}
             end={{ x: 0.88, y: 0.9 }}
             style={styles.generatingCore}
@@ -108,7 +108,7 @@ export function ProfileGeneratingScreen() {
         <View style={styles.generatingTrack}>
           <Animated.View style={[styles.generatingTrackFill, { width: progressWidth }]}>
             <LinearGradient
-              colors={["#5B22D6", "#9E36FF", "#D978FF"]}
+              colors={["#5B7CFA", "#5B7CFA", "#5B7CFA"]}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={styles.generatingTrackFillGradient}

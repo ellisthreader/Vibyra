@@ -1,7 +1,7 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { create } from "zustand";
 
-import { reportChannelReady, submitReport } from "../ipc/report";
+import { submitReport } from "../ipc/report";
 import { gatherSurroundings, type ReportSurroundings } from "../lib/reportContext";
 import { canSubmit, emptyDraft, MAX_IMAGES, type ReportDraft } from "../lib/reportDraft";
 import { readClipboardPaste } from "../ipc/tools";
@@ -16,8 +16,6 @@ interface ReportStore {
   status: ReportStatus;
   error: string | null;
   sentId: string | null;
-  /** Null until asked; false means nobody is listening on the other end. */
-  channelReady: boolean | null;
   /** True while the screenshot editor stands in for the dialog. */
   capturing: boolean;
   begin: (prefill?: Partial<ReportDraft>) => Promise<void>;
@@ -53,7 +51,6 @@ export const useReportStore = create<ReportStore>((set, get) => ({
   status: "idle",
   error: null,
   sentId: null,
-  channelReady: null,
   capturing: false,
 
   begin: async (prefill) => {
@@ -69,9 +66,6 @@ export const useReportStore = create<ReportStore>((set, get) => ({
       surroundings,
       draft: state.draft ?? { ...emptyDraft(surroundings.area, reporter), ...prefill },
     }));
-    if (get().channelReady === null) {
-      set({ channelReady: await reportChannelReady().catch(() => false) });
-    }
   },
 
   // Deliberately keeps the draft. Clicking the backdrop or pressing Escape

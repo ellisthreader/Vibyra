@@ -12,7 +12,7 @@ export const welcome2 = {
     justifyContent: "center" as const,
     minHeight: 60,
     overflow: "hidden" as const,
-    shadowColor: "#A741FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.45,
     shadowRadius: 22
@@ -32,7 +32,7 @@ export const welcome2 = {
     width: "100%" as const
   },
   primaryBtnText: {
-    color: colors.text,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "900" as const,
     letterSpacing: 0.2,
@@ -49,7 +49,7 @@ export const welcome2 = {
   skipGhost: {
     alignItems: "center" as const,
     backgroundColor: "transparent" as const,
-    borderColor: "rgba(232, 218, 255, 0.32)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderRadius: 999,
     borderWidth: 1,
     height: 36,
@@ -62,7 +62,7 @@ export const welcome2 = {
   },
   skipGhostPressed: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(232, 218, 255, 0.5)"
+    borderColor: "rgba(91, 124, 250, 0.5)"
   },
   skipGhostText: {
     color: colors.text,
@@ -74,7 +74,7 @@ export const welcome2 = {
     alignItems: "center" as const,
     alignSelf: "stretch" as const,
     backgroundColor: "transparent" as const,
-    borderColor: "rgba(232, 218, 255, 0.32)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderRadius: 18,
     borderWidth: 1,
     justifyContent: "center" as const,
@@ -83,7 +83,7 @@ export const welcome2 = {
   },
   ghostBtnPressed: {
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(232, 218, 255, 0.5)"
+    borderColor: "rgba(91, 124, 250, 0.5)"
   },
   ghostBtnText: {
     color: colors.text,

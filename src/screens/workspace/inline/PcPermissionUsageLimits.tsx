@@ -1,27 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountUsage } from "../../../context/AccountContexts";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 
 export function PcPermissionUsageLimits() {
-  const app = useAppContext();
+  const usage = useAccountUsage();
   const prefs = usePreferences();
   const [open, setOpen] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
-  const accent = useThemedColor("#C259FF");
+  const accent = useThemedColor("#5B7CFA");
   const palette = prefs.effectiveScheme === "light" ? lightPalette : darkPalette;
   const rows = useMemo(() => [
-    makeLimit(`${app.burstWindowHours || 5} hr`, app.burstCreditsUsed, app.burstCreditsCap, app.burstCreditsResetAt),
-    makeLimit("Weekly", app.weeklyCreditsUsed, app.weeklyCreditsCap, app.weeklyCreditsResetAt)
+    makeLimit(`${usage.burstWindowHours || 5} hr`, usage.burstCreditsUsed, usage.burstCreditsCap, usage.burstCreditsResetAt),
+    makeLimit("Weekly", usage.weeklyCreditsUsed, usage.weeklyCreditsCap, usage.weeklyCreditsResetAt)
   ], [
-    app.burstCreditsCap,
-    app.burstCreditsResetAt,
-    app.burstCreditsUsed,
-    app.burstWindowHours,
-    app.weeklyCreditsCap,
-    app.weeklyCreditsResetAt,
-    app.weeklyCreditsUsed
+    usage.burstCreditsCap,
+    usage.burstCreditsResetAt,
+    usage.burstCreditsUsed,
+    usage.burstWindowHours,
+    usage.weeklyCreditsCap,
+    usage.weeklyCreditsResetAt,
+    usage.weeklyCreditsUsed
   ]);
 
   useEffect(() => {
@@ -112,17 +112,17 @@ const localStyles = StyleSheet.create({
 });
 
 const darkPalette = {
-  border: "rgba(176, 132, 255, 0.16)",
-  iconBg: "rgba(194, 89, 255, 0.12)",
-  muted: "#9E98B1",
+  border: "rgba(116, 144, 255, 0.16)",
+  iconBg: "rgba(91, 124, 250, 0.12)",
+  muted: "#A6ADBA",
   text: "#F3F1FA",
   track: "rgba(255, 255, 255, 0.08)"
 };
 
 const lightPalette = {
-  border: "rgba(109, 59, 255, 0.12)",
-  iconBg: "rgba(109, 59, 255, 0.1)",
-  muted: "#6B647C",
-  text: "#312A46",
-  track: "rgba(109, 59, 255, 0.11)"
+  border: "rgba(61, 90, 207, 0.12)",
+  iconBg: "rgba(61, 90, 207, 0.1)",
+  muted: "#747C8A",
+  text: "#2B2F38",
+  track: "rgba(61, 90, 207, 0.11)"
 };

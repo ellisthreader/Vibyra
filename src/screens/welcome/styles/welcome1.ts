@@ -7,10 +7,10 @@ export const welcome1 = {
     overflow: "hidden" as const
   },
   backdropImage: {
-    ...StyleSheet.absoluteFill
+    ...StyleSheet.absoluteFillObject
   },
   backdropShade: {
-    ...StyleSheet.absoluteFill
+    ...StyleSheet.absoluteFillObject
   },
   body: {
     flex: 1,
@@ -21,7 +21,7 @@ export const welcome1 = {
     gap: 10
   },
   eyebrow: {
-    color: "#C8A8FF",
+    color: "#A6ADBA",
     fontSize: 12,
     fontWeight: "900" as const,
     letterSpacing: 2.4,
@@ -35,7 +35,7 @@ export const welcome1 = {
     textAlign: "center" as const
   },
   titleAccent: {
-    color: "#C66BFF"
+    color: "#7490FF"
   },
   welcomeLine: {
     color: colors.text,
@@ -46,7 +46,7 @@ export const welcome1 = {
     textAlign: "center" as const
   },
   tagline: {
-    color: "#C8A8FF",
+    color: "#A6ADBA",
     fontSize: 22,
     fontWeight: "600" as const,
     letterSpacing: -0.2,
@@ -54,7 +54,7 @@ export const welcome1 = {
     textAlign: "center" as const
   },
   body1: {
-    color: "rgba(226, 219, 255, 0.78)",
+    color: "rgba(166, 173, 186, 0.78)",
     fontSize: 15,
     fontWeight: "700" as const,
     lineHeight: 22,
@@ -74,7 +74,7 @@ export const welcome1 = {
   },
   logoFloat: {
     alignItems: "center" as const,
-    shadowColor: "#A741FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 18 },
     shadowOpacity: 0.4,
     shadowRadius: 32
@@ -98,16 +98,16 @@ export const welcome1 = {
     width: 200
   },
   downloadUrl: {
-    color: "#C8A8FF",
+    color: "#A6ADBA",
     fontSize: 26,
     fontWeight: "700" as const,
     letterSpacing: -0.3,
     textAlign: "center" as const,
     textDecorationLine: "underline" as const,
-    textDecorationColor: "rgba(200, 168, 255, 0.4)" as const
+    textDecorationColor: "rgba(91, 124, 250, 0.4)" as const
   },
   downloadHelper: {
-    color: "rgba(226, 219, 255, 0.6)",
+    color: "rgba(166, 173, 186, 0.6)",
     fontSize: 13,
     fontWeight: "500" as const,
     letterSpacing: 0.2,

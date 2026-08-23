@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import type { AgentBusyInfo } from "./agentStatus";
 import type { ChatFileAttachment, ChatImageAttachment, ChatToolMode, GeneratedImage } from "./chatTools";
 import type { ProjectAnalysis, ProjectBriefSetupPrompt } from "./projectAnalysis";
@@ -189,46 +188,11 @@ export type CodeChange = {
   status: "pending" | "applied";
 };
 
-export type AgentConnection = {
-  url: string;
-  token: string;
-  machineName: string;
-  connectionUrls?: string[];
-};
-
-export type DesktopStatus = "current" | "online" | "offline" | "checking";
-
-export type RememberedDesktop = {
-  url: string;
-  machineName: string;
-  pairCode: string;
-  connectionUrls?: string[];
-  token?: string;
-  status: DesktopStatus;
-  lastSeenAt?: string;
-  lastConnectedAt?: string;
-};
-
-export type PairApprovalPayload = {
-  url: string;
-  token: string;
-  machineName: string;
-  connectionUrls?: string[];
-  projects: Project[];
-  events: LogEvent[];
-};
-
-export type PairResponse = {
-  status: "pending" | "approved";
-  requestId?: string;
-  token?: string;
-  machineName: string;
-  projects?: Project[];
-  events?: LogEvent[];
-};
-
-export type TabDefinition = {
-  key: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-};
+export type {
+  AgentConnection,
+  DesktopStatus,
+  PairApprovalPayload,
+  PairResponse,
+  RememberedDesktop,
+  TabDefinition
+} from "./desktopDomain";

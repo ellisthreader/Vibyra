@@ -1,18 +1,18 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountActions } from "../../../../context/AccountContexts";
 import { useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
 export function ClearCacheSheet({ visible, onCancel }: { visible: boolean; onCancel: () => void }) {
-  const app = useAppContext();
+  const { clearCache } = useAccountActions();
   const warningIconColor = useThemedColor("#FFD166");
 
   function confirm() {
     onCancel();
-    app.clearCache();
+    clearCache();
   }
 
   return (

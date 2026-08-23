@@ -1,0 +1,98 @@
+/* Settings > Vibyra AI — usage meters and the spend breakdown. */
+
+.ai-usage {
+  display: grid;
+  gap: 14px;
+}
+
+.ai-usage__meters {
+  display: grid;
+  gap: 11px;
+}
+
+.ai-meter {
+  display: grid;
+  gap: 5px;
+}
+
+.ai-meter__head {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.ai-meter__label {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.ai-meter__value {
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-meter__value i {
+  color: var(--dim);
+  font-style: normal;
+  font-weight: 520;
+}
+
+.ai-meter__track {
+  background: var(--surface-tint);
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.ai-meter__fill {
+  background: var(--accent);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+  transition: width 240ms ease;
+}
+
+.ai-meter__fill--high {
+  background: var(--amber);
+}
+
+.ai-usage__breakdown {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+}
+
+.ai-usage__breakdown > div {
+  align-items: baseline;
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 140px minmax(0, 1fr);
+  padding: 8px 0;
+}
+
+.ai-usage__breakdown dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ai-usage__breakdown dd {
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 520;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.ai-usage__note {
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 520;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 560px;
+}

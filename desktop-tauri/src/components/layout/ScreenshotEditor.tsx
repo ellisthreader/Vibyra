@@ -62,7 +62,8 @@ export function ScreenshotEditor() {
     if (!draft) return;
     document.body.classList.add("screenshot-editing");
     const editor = document.querySelector<HTMLElement>(".screenshot-editor");
-    const siblings = [...document.querySelectorAll<HTMLElement>(".app > *")].filter((item) => item !== editor);
+    const siblings = Array.from(document.querySelectorAll<HTMLElement>(".app > *"))
+      .filter((item) => item !== editor);
     const prior = siblings.map((item) => item.inert);
     siblings.forEach((item) => { item.inert = true; });
     editor?.querySelector<HTMLElement>("[data-editor-close]")?.focus();

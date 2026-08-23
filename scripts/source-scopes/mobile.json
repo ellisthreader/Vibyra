@@ -1,0 +1,7 @@
+{
+  "name": "Vibyra mobile first-party source and tests",
+  "paths": [
+    "App.tsx",
+    "src"
+  ]
+}

@@ -42,7 +42,7 @@ export const ERROR_CAPTURE_SCRIPT = `
   function previewFallbackUrl(key) {
     try {
       var label = String(key || "image").slice(0, 24).replace(/[<>&]/g, "");
-      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"><rect width="192" height="192" rx="30" fill="#21163a"/><path d="M34 128 78 76l26 32 20-22 34 42z" fill="#8e3cff"/><circle cx="132" cy="54" r="18" fill="#d7c4ff"/><text x="96" y="166" fill="#efe8ff" font-family="Arial" font-size="18" font-weight="700" text-anchor="middle">' + label + '</text></svg>';
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"><rect width="192" height="192" rx="30" fill="#181A20"/><path d="M34 128 78 76l26 32 20-22 34 42z" fill="#5B7CFA"/><circle cx="132" cy="54" r="18" fill="#91A7FF"/><text x="96" y="166" fill="#F5F7FA" font-family="Arial" font-size="18" font-weight="700" text-anchor="middle">' + label + '</text></svg>';
       return URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     } catch (_) { return ""; }
   }

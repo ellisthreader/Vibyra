@@ -32,6 +32,8 @@ OpenRouter, community publishing, and remote app-state persistence. See
 - Website cookie auth, account billing, and public Windows/Linux downloads:
   `Backend/Website Accounts And Downloads.md`
 - App auth, `/api/session/state`, cloud sync: `Backend/Auth And Cloud Sync.md`
+- Authenticated Desktop `/api/reports` relay and server-owned Discord secret:
+  `Desktop/In-App Reporting.md`
 - Public publishing, moderation, community assets: `Backend/Community Publishing.md`
 - Public Explore hosted/static/Railway demos: `Backend/Hosted Demos.md`
 - Backend platform boundaries, scaling bottlenecks, and provider evaluation:

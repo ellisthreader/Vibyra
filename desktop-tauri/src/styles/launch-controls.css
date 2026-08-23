@@ -71,8 +71,8 @@
 }
 
 .launch-effort__value { display: flex; align-items: baseline; gap: 4px; text-align: right; }
-.launch-effort__value strong { color: var(--text); font-size: 9.5px; font-weight: 680; }
-.launch-effort__value small { color: var(--dim); font-size: 8px; font-weight: 520; }
+.launch-effort__value strong { color: var(--text); font-size: var(--fs-tiny); font-weight: 680; }
+.launch-effort__value small { color: var(--dim); font-size: var(--fs-micro); font-weight: 520; }
 
 .launch-effort__control {
   position: relative;
@@ -143,7 +143,7 @@
 
 .launch-effort__ticks i { width: 4px; height: 4px; border: 1px solid var(--workspace); border-radius: 50%; background: var(--dim); }
 .launch-effort__ticks i.is-active { background: var(--accent-2); }
-.launch-effort__ends { display: flex; justify-content: space-between; margin-top: -2px; color: var(--dim); font-size: 7.5px; font-weight: 560; }
+.launch-effort__ends { display: flex; justify-content: space-between; margin-top: -2px; color: var(--dim); font-size: var(--fs-micro); font-weight: 560; }
 
 @media (prefers-reduced-motion: reduce) {
   .launch-count__menu { animation: none; }

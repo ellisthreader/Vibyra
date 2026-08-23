@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "../../../styles/theme";
 import { modalStyles } from "./ProjectPublishModal.styles";
 import type { PublishFlowResult } from "./ProjectPublishResult";
@@ -11,7 +11,7 @@ export function ProjectPublishStatusPanel({ onClose, result }: { onClose: () => 
   const danger = result.tone === "danger";
   const success = result.tone === "success";
   const icon = danger ? "alert-circle-outline" : success ? "checkmark" : "time-outline";
-  const iconColor = danger ? "#FF9AAD" : success ? "#7CF1B3" : "#D9CBFF";
+  const iconColor = danger ? "#FF9AAD" : success ? "#7CF1B3" : "#91A7FF";
 
   return (
     <View style={modalStyles.completionWrap}>

@@ -12,73 +12,17 @@ interface Props {
   patch: (patch: Partial<ReportDraft>) => void;
 }
 
-/** The written half of the report. Every question is phrased the way a person
- * would ask it — "What happened?" rather than "Description" — because the form
- * is the only chance to get a usable report out of someone mid-frustration. */
+/** Keep the default path to two questions. Classification and reproduction
+ * detail still travel in the same draft, but stay out of the way until asked
+ * for so reporting a straightforward bug never feels like filing paperwork. */
 export function ReportFields({ draft, patch }: Props) {
   return (
     <>
-      <fieldset className="report__group">
-        <legend className="report__legend">What kind of thing is it?</legend>
-        <div className="report__kinds">
-          {REPORT_KINDS.map((kind) => (
-            <button
-              key={kind.id}
-              type="button"
-              className={`report__kind ${draft.kind === kind.id ? "report__kind--on" : ""}`}
-              aria-pressed={draft.kind === kind.id}
-              onClick={() => patch({ kind: kind.id })}
-            >
-              <b>{kind.label}</b>
-              <span>{kind.blurb}</span>
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
-      {gradable(draft.kind) && (
-        <fieldset className="report__group">
-          <legend className="report__legend">How much is it hurting?</legend>
-          <div className="report__grades">
-            {REPORT_SEVERITIES.map((grade) => (
-              <button
-                key={grade.id}
-                type="button"
-                title={grade.blurb}
-                className={`report__grade report__grade--${grade.id} ${
-                  draft.severity === grade.id ? "report__grade--on" : ""
-                }`}
-                aria-pressed={draft.severity === grade.id}
-                onClick={() => patch({ severity: grade.id })}
-              >
-                {grade.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
       <label className="report__field">
-        <span className="report__label">
-          Where in Vibyra? <em>filled in from where you were</em>
-        </span>
-        <select
-          className="input"
-          value={draft.area}
-          onChange={(event) => patch({ area: event.target.value })}
-        >
-          {REPORT_AREAS.map((area) => (
-            <option key={area} value={area}>
-              {area}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="report__field">
-        <span className="report__label">Sum it up in one line</span>
+        <span className="report__label">Give the problem a short title</span>
         <input
           className="input"
+          data-autofocus
           value={draft.summary}
           maxLength={300}
           placeholder="Terminal goes blank when I resize the window"
@@ -90,39 +34,104 @@ export function ReportFields({ draft, patch }: Props) {
         <span className="report__label">{detailsLabel(draft.kind)}</span>
         <textarea
           className="input report__textarea"
-          rows={4}
+          rows={5}
           value={draft.details}
-          placeholder="As much or as little as you like."
+          placeholder="What were you doing, and what went wrong?"
           onChange={(event) => patch({ details: event.target.value })}
         />
       </label>
 
-      {/* Collapsed by default: the two fields that most improve a report are
-          also the two most likely to make someone abandon it. */}
       <details className="report__more">
         <summary>
-          Steps to reproduce, and what you expected
-          <em>optional — but it usually turns a guess into a fix</em>
+          More details
+          <em>optional</em>
         </summary>
-        <label className="report__field">
-          <span className="report__label">How can we make it happen?</span>
-          <textarea
-            className="input report__textarea"
-            rows={3}
-            value={draft.steps}
-            placeholder={"1. Open two terminals\n2. Drag the divider quickly"}
-            onChange={(event) => patch({ steps: event.target.value })}
-          />
-        </label>
-        <label className="report__field">
-          <span className="report__label">What did you expect instead?</span>
-          <textarea
-            className="input report__textarea"
-            rows={2}
-            value={draft.expected}
-            onChange={(event) => patch({ expected: event.target.value })}
-          />
-        </label>
+        <div className="report__more-body">
+          <div className="report__option-grid">
+            <label className="report__field">
+              <span className="report__label">Type</span>
+              <select
+                className="input"
+                value={draft.kind}
+                onChange={(event) => patch({ kind: event.target.value as ReportDraft["kind"] })}
+              >
+                {REPORT_KINDS.map((kind) => (
+                  <option key={kind.id} value={kind.id}>
+                    {kind.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {gradable(draft.kind) && (
+              <label className="report__field">
+                <span className="report__label">Impact</span>
+                <select
+                  className="input"
+                  value={draft.severity}
+                  onChange={(event) =>
+                    patch({ severity: event.target.value as ReportDraft["severity"] })
+                  }
+                >
+                  {REPORT_SEVERITIES.map((grade) => (
+                    <option key={grade.id} value={grade.id}>
+                      {grade.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <label className="report__field report__field--wide">
+              <span className="report__label">
+                Where it happened <em>detected automatically</em>
+              </span>
+              <select
+                className="input"
+                value={draft.area}
+                onChange={(event) => patch({ area: event.target.value })}
+              >
+                {REPORT_AREAS.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="report__field">
+            <span className="report__label">Steps to reproduce</span>
+            <textarea
+              className="input report__textarea"
+              rows={3}
+              value={draft.steps}
+              placeholder={"1. Open two terminals\n2. Drag the divider quickly"}
+              onChange={(event) => patch({ steps: event.target.value })}
+            />
+          </label>
+          <label className="report__field">
+            <span className="report__label">What did you expect instead?</span>
+            <textarea
+              className="input report__textarea"
+              rows={2}
+              value={draft.expected}
+              onChange={(event) => patch({ expected: event.target.value })}
+            />
+          </label>
+          <label className="report__field">
+            <span className="report__label">
+              Contact details <em>optional</em>
+            </span>
+            <input
+              className="input"
+              value={draft.contact}
+              maxLength={200}
+              placeholder="Email or Discord handle, if you'd like a reply"
+              onChange={(event) => patch({ contact: event.target.value })}
+            />
+          </label>
+        </div>
       </details>
     </>
   );

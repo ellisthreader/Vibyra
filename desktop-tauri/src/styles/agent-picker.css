@@ -1,0 +1,109 @@
+/* Agent picker (the terminal adder): search, scroll, and company accordion. */
+
+.picker {
+  width: min(600px, 92vw);
+}
+
+.picker__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 16px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-shell);
+  background: var(--bg);
+  color: var(--dim);
+}
+
+.picker__search:focus-within {
+  border-color: var(--accent-border);
+}
+
+.picker__search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 560;
+  outline: none;
+}
+
+.picker__search input::placeholder {
+  color: var(--dim);
+}
+
+.picker__scroll {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+}
+
+.picker__section-head {
+  font-size: var(--fs-tiny);
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 10px 8px 4px;
+}
+/* --- company accordion --- */
+
+.company__row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: var(--r-shell);
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.company__row:hover {
+  background: var(--hover-strong);
+}
+
+.company__row strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company__count {
+  font-size: 10px;
+  font-weight: 680;
+  color: var(--dim);
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.company__chevron {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+
+.company__chevron svg {
+  transition: transform var(--t-base) var(--e-standard);
+}
+
+.company--open .company__chevron svg {
+  transform: rotate(180deg);
+}
+
+.company__models {
+  display: grid;
+  gap: 1px;
+  margin: 2px 0 6px 22px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}

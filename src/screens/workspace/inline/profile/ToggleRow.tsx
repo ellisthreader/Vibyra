@@ -1,6 +1,6 @@
 import React from "react";
 import { Switch, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { styles } from "../../styles";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 
@@ -12,8 +12,8 @@ export function ToggleRow({ icon, title, subtitle, value, onChange }: {
   onChange: (value: boolean) => void;
 }) {
   const prefs = usePreferences();
-  const iconColor = useThemedColor("#C259FF");
-  const inactiveTrack = prefs.effectiveScheme === "light" ? prefs.colors.border : "#2A2440";
+  const iconColor = useThemedColor("#5B7CFA");
+  const inactiveTrack = prefs.effectiveScheme === "light" ? prefs.colors.border : "#2B2F38";
   return (
     <View style={styles.profileToggleRow}>
       <View style={styles.profileToggleIcon}><Ionicons name={icon} color={iconColor} size={20} /></View>

@@ -42,7 +42,7 @@ makes expert setup look like routine configuration.
 | Medium | Notifications expose the full matrix immediately | Common on/off choices are buried in per-event sounds and channel icons | Eight event rows, cue selects, play buttons, monitor buttons, switches |
 | Medium | Technical values are presented as raw inputs | Users must understand paths, font stacks, scrollback, PATH, and renderer internals | General and Custom agents |
 | Medium | Operational status is presented as a setting | Healthy automatic systems create visual noise | OpenRouter model count, cache source, and Refresh |
-| Medium | Narrow navigation becomes a horizontal strip | Sections can be hidden off-screen and require sideways discovery | `modals.part-04.css` below 700 px |
+| Medium | Narrow navigation becomes a horizontal strip | Sections can be hidden off-screen and require sideways discovery | `settings-modal-narrow.css` below 700 px |
 | Low | Static reference content occupies Settings | Information is duplicated instead of being available on demand | Six “Inside Vibyra” shortcut rows |
 
 ## Design Rules

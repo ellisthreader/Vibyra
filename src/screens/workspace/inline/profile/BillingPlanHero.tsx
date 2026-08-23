@@ -14,7 +14,7 @@ const PLAN_ART: Record<PlanKey, number> = {
 
 const PLAN_ACCENTS: Record<PlanKey, { main: string; soft: string; dim: string; wash: string; border: string }> = {
   free: { main: "#4ADE80", soft: "#D5FFE3", dim: "#A7F3D0", wash: "rgba(74, 222, 128, 0.14)", border: "rgba(74, 222, 128, 0.32)" },
-  starter: { main: "#C259FF", soft: "#F1DEFF", dim: "#D8B4FE", wash: "rgba(194, 89, 255, 0.15)", border: "rgba(194, 89, 255, 0.34)" },
+  starter: { main: "#5B7CFA", soft: "#DCE4FF", dim: "#91A7FF", wash: "rgba(91, 124, 250, 0.15)", border: "rgba(91, 124, 250, 0.34)" },
   builder: { main: "#38BDF8", soft: "#DDF5FF", dim: "#BAE6FD", wash: "rgba(56, 189, 248, 0.15)", border: "rgba(56, 189, 248, 0.34)" },
   pro: { main: "#FFD166", soft: "#FFF2C7", dim: "#FDE68A", wash: "rgba(255, 209, 102, 0.15)", border: "rgba(255, 209, 102, 0.34)" }
 };

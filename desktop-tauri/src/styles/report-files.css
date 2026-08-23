@@ -1,0 +1,68 @@
+/* Report attached image files. */
+
+.report__images {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.report__images-hint {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.report__files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report__file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 5px 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.report__file svg {
+  color: var(--dim);
+  flex: none;
+}
+
+.report__file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22ch;
+}
+
+.report__file-x {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.report__file-x:hover {
+  color: var(--danger);
+  background: var(--hover);
+}
+
+.report__mini:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

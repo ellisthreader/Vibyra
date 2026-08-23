@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +26,7 @@ export function QuestionMomentScreen(props: {
     <View style={styles.syncScreen}>
       <ScrollView contentContainerStyle={[styles.syncContent, contentInsets]} showsVerticalScrollIndicator={false}>
         <View style={styles.syncPill}>
-          <Ionicons name="sync" color="#C77DFF" size={17} />
+          <Ionicons name="sync" color="#5B7CFA" size={17} />
           <Text style={styles.syncPillText}>Cross-device sync</Text>
         </View>
 

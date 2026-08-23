@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../../../context/AppContext";
@@ -18,8 +18,8 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
   // Modals render outside the app SafeAreaProvider, so insets.top can come back as 0.
   // Floor the header padding so it always clears the iPhone camera / Dynamic Island.
   const headerPaddingTop = Math.max(insets.top + 8, 60);
-  const primaryIconColor = useThemedColor("#C259FF");
-  const emptyIconColor = useThemedColor("#7D6A96");
+  const primaryIconColor = useThemedColor("#5B7CFA");
+  const emptyIconColor = useThemedColor("#747C8A");
   const [projectsExpanded, setProjectsExpanded] = useState(false);
   const [chatsExpanded, setChatsExpanded] = useState(false);
   const allowance = Math.max(app.creditsBalance + app.creditsUsed, 1);
@@ -70,7 +70,7 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
       <View style={styles.billingScreen}>
         <View style={[styles.billingHeader, { paddingTop: headerPaddingTop }]}>
           <Pressable accessibilityLabel="Back" onPress={onClose} style={styles.billingHeaderBack}>
-            <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#0A0814" : "#FFFFFF"} size={24} />
+            <Ionicons name="arrow-back" color={prefs.effectiveScheme === "light" ? "#101115" : "#FFFFFF"} size={24} />
           </Pressable>
           <Text style={styles.billingHeaderTitle}>{prefs.t("usage.title")}</Text>
         </View>
@@ -91,7 +91,7 @@ export function UsageSheet({ visible, onClose, onUpgrade }: { visible: boolean; 
             </View>
             <View style={styles.usageProgressTrack}>
               <LinearGradient
-                colors={["#6F4DFF", "#9D5CFF", "#C259FF"]}
+                colors={["#4667E8", "#5B7CFA", "#5B7CFA"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={[styles.usageProgressFill, { width: `${Math.max(usedPercent, 2)}%` }]}

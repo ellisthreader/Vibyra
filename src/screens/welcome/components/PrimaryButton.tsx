@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, GestureResponderEvent, LayoutChangeEvent, Pressable, Text, View } from "react-native";
@@ -51,18 +51,20 @@ export function PrimaryButton({ label, onPress, iconName = "arrow-forward", disa
         onPressOut={onPressOut}
         style={({ pressed }) => [styles.primaryBtn, pressed ? styles.primaryBtnPressed : null, disabled ? { opacity: 0.5 } : null]}
       >
-        <LinearGradient
-          colors={["#762CFF", "#9D35FF", "#B13CFF"]}
-          end={{ x: 1, y: 1 }}
-          start={{ x: 0, y: 0 }}
-          style={styles.primaryBtnGradient}
-        >
-          {iconName ? <Ionicons accessible={false} color={colors.text} name={iconName} size={22} /> : null}
-          <Text style={styles.primaryBtnText}>{label}</Text>
-          <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, overflow: "hidden" }}>
-            <Animated.View style={[styles.shimmer, { transform: [{ translateX }, { rotate: "12deg" }] }]} />
-          </View>
-        </LinearGradient>
+        {({ pressed }) => (
+          <LinearGradient
+            colors={pressed ? ["#3D5ACF", "#3D5ACF", "#3D5ACF"] : ["#4667E8", "#4667E8", "#4667E8"]}
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.primaryBtnGradient}
+          >
+            {iconName ? <Ionicons accessible={false} color="#FFFFFF" name={iconName} size={22} /> : null}
+            <Text style={styles.primaryBtnText}>{label}</Text>
+            <View pointerEvents="none" style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, overflow: "hidden" }}>
+              <Animated.View style={[styles.shimmer, { transform: [{ translateX }, { rotate: "12deg" }] }]} />
+            </View>
+          </LinearGradient>
+        )}
       </Pressable>
     </Animated.View>
   );

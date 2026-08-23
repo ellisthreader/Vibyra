@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useDesktopConnection, useDesktopPermission } from "../../../context/DesktopContexts";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 import type { DesktopPermissionMode } from "../../../types/domain";
 import { PcPermissionUsageLimits } from "./PcPermissionUsageLimits";
@@ -21,14 +21,15 @@ const OPTIONS: PermissionOption[] = [
 ];
 
 export function PcPermissionControl({ onOpenConnect, projectId }: { onOpenConnect: () => void; projectId?: string }) {
-  const app = useAppContext();
+  const desktop = useDesktopConnection();
+  const permissions = useDesktopPermission();
   const prefs = usePreferences();
   const [open, setOpen] = useState(false);
   const [confirmFullAccessOpen, setConfirmFullAccessOpen] = useState(false);
-  const connected = Boolean(app.connection);
+  const connected = Boolean(desktop.connection);
   const palette = prefs.effectiveScheme === "light" ? lightPalette : darkPalette;
-  const iconColor = useThemedColor(connected ? "#D7C4FF" : "#9E98B1");
-  const activeKey = projectId && app.editApprovals[projectId] === "always" ? "folder" : "ask";
+  const iconColor = useThemedColor(connected ? "#91A7FF" : "#A6ADBA");
+  const activeKey = projectId && permissions.editApprovals[projectId] === "always" ? "folder" : "ask";
   const activeMode = OPTIONS.find((item) => item.key === activeKey) ?? OPTIONS[0];
 
   useEffect(() => {
@@ -50,12 +51,12 @@ export function PcPermissionControl({ onOpenConnect, projectId }: { onOpenConnec
       return;
     }
     const nextMode: DesktopPermissionMode = key === "folder" ? "auto" : "ask";
-    app.setDesktopPermissionMode(nextMode, projectId);
+    permissions.setProjectEditPermission(projectId, nextMode === "auto" ? "always" : "ask");
     setOpen(false);
   }
 
   function confirmFullAccess() {
-    if (projectId) app.setDesktopPermissionMode("auto", projectId);
+    if (projectId) permissions.setProjectEditPermission(projectId, "always");
     setConfirmFullAccessOpen(false);
   }
 
@@ -136,7 +137,7 @@ const localStyles = StyleSheet.create({
   modalButton: { alignItems: "center", borderRadius: 10, borderWidth: 1, flex: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 10 },
   modalCancelText: { fontSize: 13, fontWeight: "900", lineHeight: 17 },
   modalCard: { alignItems: "center", borderRadius: 16, borderWidth: 1, maxWidth: 324, padding: 18, width: "86%" },
-  modalConfirmButton: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
+  modalConfirmButton: { backgroundColor: "#4667E8", borderColor: "#4667E8" },
   modalConfirmText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900", lineHeight: 17, textAlign: "center" },
   modalIcon: { alignItems: "center", borderRadius: 18, height: 36, justifyContent: "center", marginBottom: 10, width: 36 },
   modalOverlay: { alignItems: "center", backgroundColor: "rgba(0, 0, 0, 0.52)", flex: 1, justifyContent: "center", padding: 20 },
@@ -150,17 +151,17 @@ const localStyles = StyleSheet.create({
 });
 
 const darkPalette = {
-  active: "rgba(176, 132, 255, 0.16)",
-  border: "rgba(176, 132, 255, 0.24)",
-  menu: "#13131F",
+  active: "rgba(116, 144, 255, 0.16)",
+  border: "rgba(116, 144, 255, 0.24)",
+  menu: "#181A20",
   muted: "#A9A3BA",
   text: "#EAE6F8"
 };
 
 const lightPalette = {
-  active: "rgba(109, 59, 255, 0.12)",
-  border: "rgba(109, 59, 255, 0.16)",
+  active: "rgba(61, 90, 207, 0.12)",
+  border: "rgba(61, 90, 207, 0.16)",
   menu: "#FFFFFF",
-  muted: "#6B647C",
-  text: "#312A46"
+  muted: "#747C8A",
+  text: "#2B2F38"
 };

@@ -2,15 +2,9 @@ import React, { useEffect, useMemo } from "react";
 import { KeyboardAvoidingView, PanResponder, Platform, ScrollView, View, useWindowDimensions } from "react-native";
 import {
   AIChatPage,
-  AppPreviewModal,
   CommunityPage,
-  FolderConfirmModal,
-  PcSwitcherSheet,
-  PrimaryMenuSheet,
   ProfilePage,
   ProjectsPage,
-  RenameChatModal,
-  TokenMembershipSheet,
   TopBar
 } from "./workspace/inline";
 import { useWorkspace } from "./workspace/hooks/useWorkspace";
@@ -18,6 +12,7 @@ import { directoryForChat } from "./workspace/helpers/chatDirectory";
 import { hasRunnableLoadedFilePreview, isDisplayablePreview } from "./workspace/helpers/previewDisplay";
 import { sendWorkspaceChatHelp, workspaceRecentChats } from "./workspace/helpers/chatHeaderActions";
 import { styles } from "./workspace/styles";
+import { WorkspaceOverlays } from "./workspace/WorkspaceOverlays";
 
 export function WorkspaceScreen() {
   const w = useWorkspace();
@@ -182,68 +177,7 @@ export function WorkspaceScreen() {
             </ScrollView>
           )}
         </View>
-        <PrimaryMenuSheet
-          accountName={app.authName}
-          activePage={activePage}
-          connected={w.isConnected}
-          machineName={w.connectedMachineName}
-          onClose={() => w.setPrimaryMenuVisible(false)}
-          onConnectPc={() => { w.setPrimaryMenuVisible(false); w.openPcSwitcher(); }}
-          onNavigate={(page) => { w.setPrimaryMenuVisible(false); w.navigatePage(page); }}
-          onNewChat={() => { w.setPrimaryMenuVisible(false); w.navigatePage("chat"); }}
-          onOpenAccountMenu={() => { w.setPrimaryMenuVisible(false); openProfile(); }}
-          onOpenProfile={() => { w.setPrimaryMenuVisible(false); openProfile(); }}
-          onOpenRecentChat={(chatId) => { w.setPrimaryMenuVisible(false); w.setSelectedChatId(chatId); w.setActivePage("chat"); }}
-          profileImageUri={app.profileImageUri}
-          projectCount={app.projects.length}
-          recentChats={recentChats}
-          selectedChatId={w.selectedChatId}
-          visible={w.primaryMenuVisible}
-        />
-        <PcSwitcherSheet
-          candidates={w.desktopCandidates}
-          connectedUrl={app.connection?.url}
-          connectedMachineName={app.connection?.machineName}
-          currentMachineName={w.connectedMachineName}
-          isConnected={w.isConnected}
-          healthMessage={app.healthMessage}
-          manualCode={app.pairCode}
-          onClose={w.closePcSwitcher}
-          onCodeChange={app.setPairCode}
-          onConfirm={w.confirmPcSwitch}
-          onConnectCandidate={w.connectToDesktop}
-          onConnectManual={w.connectWithCode}
-          onDisconnect={w.disconnectPc}
-          onScan={w.scanDesktops}
-          pairing={app.pairing}
-          pairingError={app.pairingError}
-          pairingMessage={app.pairingMessage}
-          pendingMachineName={app.pendingPhoneApproval?.machineName}
-          scanning={w.switcherScanning || app.checkingHealth}
-          visible={w.pcSwitcherVisible}
-        />
-        <TokenMembershipSheet
-          onClose={() => w.setTokenSheetVisible(false)}
-          onManage={() => { w.setTokenSheetVisible(false); w.setActivePage("profile"); w.setSettingsTab("billing"); w.setSettingsTabRequestId((id) => id + 1); }}
-          plan={app.accountPlan}
-          tokenBalance={w.tokenBalance}
-          tokensUsed={app.creditsUsed}
-          visible={w.tokenSheetVisible}
-        />
-        <RenameChatModal
-          draft={w.renameChatDraft}
-          onCancel={() => w.setRenameChatVisible(false)}
-          onChangeDraft={w.setRenameChatDraft}
-          onSave={w.saveRenameChat}
-          visible={w.renameChatVisible}
-        />
-        <AppPreviewModal app={w.previewApp} onClose={() => w.setPreviewApp(null)} onSubmitAiPrompt={w.submitPreviewEdit} />
-        <FolderConfirmModal
-          confirm={w.folderConfirm}
-          onAccept={w.acceptFolderConfirm}
-          onCancel={w.cancelFolderConfirm}
-          onSkip={w.skipFolderConfirm}
-        />
+        <WorkspaceOverlays openProfile={openProfile} recentChats={recentChats} w={w} />
       </View>
     </KeyboardAvoidingView>
   );

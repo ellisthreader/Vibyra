@@ -1,7 +1,7 @@
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { Platform } from "react-native";
 import { appApiRequest } from "./appApi";
+import { isExpoGo } from "./expoRuntime";
 
 export type NativeAuthProvider = "apple" | "google";
 export type NativeAuthCredential = {
@@ -18,6 +18,10 @@ export async function authenticateNativeProvider(provider: NativeAuthProvider): 
 }
 
 async function authenticateWithGoogle(): Promise<NativeAuthCredential> {
+  if (isExpoGo) {
+    throw new Error("Google Sign-In needs a development or store build. Use email login in Expo Go.");
+  }
+  const { GoogleSignin } = require("@react-native-google-signin/google-signin") as typeof import("@react-native-google-signin/google-signin");
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim();
   if (!webClientId) {
     throw new Error("Google Sign-In is not configured for this build.");

@@ -1,39 +1,45 @@
 import React, { useState } from "react";
-import { Image, KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
+import { reportCommunityProject, type CommunityReportReason } from "../../../utils/communityApi";
 import { styles } from "../styles";
 import type { CommunityPost } from "../types";
 
 type ReportReason = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  value: CommunityReportReason;
 };
 
 const reasons: ReportReason[] = [
-  { icon: "alert-circle-outline", label: "Broken app" },
-  { icon: "shield-outline", label: "Unsafe content" },
-  { icon: "ban-outline", label: "Spam or scam" },
-  { icon: "ellipsis-horizontal", label: "Other" }
+  { icon: "alert-circle-outline", label: "Broken app", value: "broken_app" },
+  { icon: "shield-outline", label: "Unsafe content", value: "unsafe_content" },
+  { icon: "ban-outline", label: "Spam or scam", value: "spam_or_scam" },
+  { icon: "ellipsis-horizontal", label: "Other", value: "other" }
 ];
+const MAX_SCREENSHOT_DATA_URL_CHARACTERS = 2_800_000;
 
-export function CommunityReportModal({ post, visible, onClose }: {
+export function CommunityReportModal({ authToken, post, visible, onClose }: {
+  authToken: string;
   post: CommunityPost | null;
   visible: boolean;
   onClose: () => void;
 }) {
-  const [reason, setReason] = useState(reasons[0].label);
+  const [reason, setReason] = useState<CommunityReportReason>(reasons[0].value);
   const [comment, setComment] = useState("");
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   function close() {
-    setReason(reasons[0].label);
+    setReason(reasons[0].value);
     setComment("");
     setScreenshot(null);
     setError("");
     setSent(false);
+    setSubmitting(false);
     onClose();
   }
 
@@ -46,16 +52,38 @@ export function CommunityReportModal({ post, visible, onClose }: {
       if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset?.base64) { setError("That screenshot could not be attached."); return; }
-      setScreenshot(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+      const dataUrl = `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`;
+      if (dataUrl.length > MAX_SCREENSHOT_DATA_URL_CHARACTERS) {
+        setError("Choose a screenshot smaller than 2 MB.");
+        return;
+      }
+      setScreenshot(dataUrl);
     } catch {
       setError("That screenshot could not be attached.");
     }
   }
 
+  async function submit() {
+    if (!post) return;
+    if (!authToken) { setError("Log in before reporting an app."); return; }
+    setError("");
+    setSubmitting(true);
+    try {
+      await reportCommunityProject(authToken, post.id, {
+        details: comment.trim(), reason, screenshot,
+      });
+      setSent(true);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "The report could not be submitted.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={close}>
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={() => { if (!submitting) close(); }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.communityReportBackdrop}>
-        <Pressable style={styles.communityReportScrim} onPress={close} />
+        <Pressable disabled={submitting} style={styles.communityReportScrim} onPress={close} />
         <View style={styles.communityReportSheet}>
           <View style={styles.communityReportHeader}>
             <View style={styles.communityReportIconBubble}>
@@ -65,7 +93,7 @@ export function CommunityReportModal({ post, visible, onClose }: {
               <Text style={styles.communityReportTitle}>Report this app</Text>
               <Text numberOfLines={1} style={styles.communityReportSubtitle}>{post?.title || "Community app"}</Text>
             </View>
-            <Pressable accessibilityLabel="Close report" onPress={close} style={styles.communityReportClose}>
+            <Pressable accessibilityLabel="Close report" disabled={submitting} onPress={close} style={styles.communityReportClose}>
               <Ionicons name="close" color="#CFC8DA" size={18} />
             </Pressable>
           </View>
@@ -83,9 +111,9 @@ export function CommunityReportModal({ post, visible, onClose }: {
               <Text style={styles.communityReportSectionLabel}>What is wrong?</Text>
               <View style={styles.communityReportReasons}>
                 {reasons.map((item) => {
-                  const active = reason === item.label;
+                  const active = reason === item.value;
                   return (
-                    <Pressable key={item.label} onPress={() => setReason(item.label)} style={[styles.communityReportReason, active ? styles.communityReportReasonActive : null]}>
+                    <Pressable key={item.value} onPress={() => setReason(item.value)} style={[styles.communityReportReason, active ? styles.communityReportReasonActive : null]}>
                       <View style={styles.communityReportReasonLeft}>
                         <Ionicons name={item.icon} color={active ? "#FFFFFF" : "#AEA7BA"} size={18} />
                         <Text style={[styles.communityReportReasonText, active ? styles.communityReportReasonTextActive : null]}>{item.label}</Text>
@@ -95,7 +123,7 @@ export function CommunityReportModal({ post, visible, onClose }: {
                   );
                 })}
               </View>
-              <TextInput multiline placeholder="Add a short note, optional" placeholderTextColor="#8F8A9E" style={styles.communityReportInput} value={comment} onChangeText={setComment} />
+              <TextInput maxLength={1000} multiline placeholder="Add a short note, optional" placeholderTextColor="#747C8A" style={styles.communityReportInput} value={comment} onChangeText={setComment} />
               {screenshot ? (
                 <View style={styles.communityReportScreenshotRow}>
                   <Image source={{ uri: screenshot }} style={styles.communityReportScreenshot} />
@@ -106,14 +134,16 @@ export function CommunityReportModal({ post, visible, onClose }: {
                 </View>
               ) : (
                 <Pressable onPress={attachScreenshot} style={styles.communityReportAttach}>
-                  <Ionicons name="image-outline" color="#D8D3E4" size={18} />
+                  <Ionicons name="image-outline" color="#A6ADBA" size={18} />
                   <Text style={styles.communityReportAttachText}>Add screenshot</Text>
                 </Pressable>
               )}
               {error ? <Text style={styles.communityReportError}>{error}</Text> : null}
               <View style={styles.communityReportFooter}>
-                <Pressable onPress={close} style={styles.communityReportSecondary}><Text style={styles.communityReportSecondaryText}>Cancel</Text></Pressable>
-                <Pressable onPress={() => setSent(true)} style={styles.communityReportPrimary}><Text style={styles.communityReportPrimaryText}>Submit</Text></Pressable>
+                <Pressable disabled={submitting} onPress={close} style={styles.communityReportSecondary}><Text style={styles.communityReportSecondaryText}>Cancel</Text></Pressable>
+                <Pressable disabled={submitting} onPress={() => { void submit(); }} style={[styles.communityReportPrimary, submitting ? { opacity: 0.65 } : null]}>
+                  {submitting ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.communityReportPrimaryText}>Submit</Text>}
+                </Pressable>
               </View>
             </>
           )}

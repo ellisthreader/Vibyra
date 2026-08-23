@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { PreviewRuntimeError } from "../../../components/AppWebView";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
 
@@ -12,7 +12,7 @@ export function PreviewErrorPanel({ bottomOffset, connectedToChat, errors, onAsk
   onDismiss: () => void;
 }) {
   const prefs = usePreferences();
-  const accentColor = useThemedColor("#8E3CFF");
+  const accentColor = useThemedColor("#4667E8");
   const warningColor = useThemedColor("#FF5F76");
   const closeColor = useThemedColor("#C8C1D8");
   const light = prefs.effectiveScheme === "light";
@@ -87,7 +87,7 @@ function formatLocation(error: PreviewRuntimeError, separator: string) {
 
 const previewErrorStyles = StyleSheet.create({
   card: {
-    backgroundColor: "rgba(6, 8, 18, 0.96)", borderColor: "rgba(142,60,255,0.55)",
+    backgroundColor: "rgba(6, 8, 18, 0.96)", borderColor: "rgba(91,124,250,0.55)",
     borderRadius: 14, borderWidth: 1, left: 14, maxHeight: "42%", padding: 10,
     position: "absolute", right: 16, shadowColor: "#000000", shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.2, shadowRadius: 16, zIndex: 22
@@ -105,9 +105,9 @@ const previewErrorStyles = StyleSheet.create({
     borderRadius: 9, borderWidth: 1, marginTop: 9, maxHeight: 170
   },
   diagnostic: { gap: 6 },
-  diagnosticMeta: { color: "#A7A1B7", fontSize: 11, fontWeight: "700" },
+  diagnosticMeta: { color: "#A6ADBA", fontSize: 11, fontWeight: "700" },
   fixButton: {
-    alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 10, flex: 1.15, flexDirection: "row", gap: 6,
+    alignItems: "center", backgroundColor: "#4667E8", borderRadius: 10, flex: 1.15, flexDirection: "row", gap: 6,
     justifyContent: "center", minHeight: 38, minWidth: 106, paddingHorizontal: 12
   },
   fixText: { color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" },
@@ -124,7 +124,7 @@ const previewErrorStyles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16
   },
-  meta: { color: "#A7A1B7", fontSize: 10, fontWeight: "700", marginTop: 3 },
+  meta: { color: "#A6ADBA", fontSize: 10, fontWeight: "700", marginTop: 3 },
   pressed: { opacity: 0.78 },
   summary: { color: "#D7D0E8", fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 3 },
   title: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },

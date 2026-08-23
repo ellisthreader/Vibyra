@@ -16,6 +16,13 @@ test("native provider auth uses the official Apple and Google libraries", () => 
   assert.match(nativeAuth, /\/api\/auth\/provider\/challenge/);
 });
 
+test("Expo Go defers the unavailable native Google module", () => {
+  const guard = nativeAuth.indexOf("if (isExpoGo)");
+  const nativeRequire = nativeAuth.indexOf('require("@react-native-google-signin/google-signin")');
+  assert.equal(nativeAuth.includes('import { GoogleSignin }'), false);
+  assert.ok(guard >= 0 && nativeRequire > guard);
+});
+
 test("provider login sends verified credentials instead of installation identity", () => {
   assert.match(authActions, /authenticateNativeProvider\(method\)/);
   assert.match(authActions, /identityToken: providerCredential\?\.identityToken/);
@@ -27,6 +34,6 @@ test("recovery and provider-aware deletion are exposed in mobile UI", () => {
   assert.match(authRecovery, /\/api\/auth\/password\/forgot/);
   assert.match(authRecovery, /\/api\/auth\/password\/reset/);
   assert.match(authRecovery, /\/api\/auth\/email\/resend/);
-  assert.match(deleteSheet, /app\.deleteAccount/);
+  assert.match(deleteSheet, /actions\.deleteAccount/);
   assert.match(deleteSheet, /requiresPassword/);
 });

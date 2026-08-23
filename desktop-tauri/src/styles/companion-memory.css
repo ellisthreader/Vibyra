@@ -49,7 +49,7 @@
   overflow: hidden;
   max-width: 112px;
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   font-weight: 660;
   letter-spacing: 0.025em;
   text-overflow: ellipsis;
@@ -103,7 +103,7 @@
 
 .memory-source small {
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
 }
 
 .companion-panel--memory .memory-area {

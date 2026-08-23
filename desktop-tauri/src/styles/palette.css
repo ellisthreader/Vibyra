@@ -71,7 +71,7 @@
 }
 
 .pal__group {
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   font-weight: 780;
   letter-spacing: 0.08em;
   text-transform: uppercase;

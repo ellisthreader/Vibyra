@@ -1,7 +1,7 @@
 import type { AnimationEvent, CSSProperties } from "react";
 
 import type { NotificationItem } from "../../notificationTypes";
-import { CloseIcon } from "../common/Icons";
+import { CloseIcon, GearIcon } from "../common/Icons";
 import { isLoud, markFor } from "./notificationMarks";
 
 export interface ToastProps {
@@ -12,11 +12,13 @@ export interface ToastProps {
   leaving: boolean;
   onDismiss: (id: number) => void;
   onAction?: (item: NotificationItem) => void;
+  onOpenSettings?: (item: NotificationItem) => void;
   /** Fired when the exit animation finishes; the stack drops the node then. */
   onExited: (id: number) => void;
 }
 
-export function Toast({ item, durationMs, leaving, onDismiss, onAction, onExited }: ToastProps) {
+export function Toast(props: ToastProps) {
+  const { item, durationMs, leaving, onDismiss, onAction, onOpenSettings, onExited } = props;
   const mark = markFor(item.severity);
   const loud = isLoud(item.severity);
 
@@ -57,15 +59,28 @@ export function Toast({ item, durationMs, leaving, onDismiss, onAction, onExited
         )}
       </div>
 
-      <button
-        type="button"
-        className="icon-btn vtoast__close"
-        aria-label={`Dismiss: ${item.title}`}
-        title="Dismiss"
-        onClick={() => onDismiss(item.id)}
-      >
-        <CloseIcon size={13} />
-      </button>
+      <div className="vtoast__controls">
+        {onOpenSettings && (
+          <button
+            type="button"
+            className="icon-btn vtoast__settings"
+            aria-label="Open notification settings"
+            title="Notification settings"
+            onClick={() => onOpenSettings(item)}
+          >
+            <GearIcon size={13} />
+          </button>
+        )}
+        <button
+          type="button"
+          className="icon-btn vtoast__close"
+          aria-label={`Dismiss: ${item.title}`}
+          title="Dismiss"
+          onClick={() => onDismiss(item.id)}
+        >
+          <CloseIcon size={13} />
+        </button>
+      </div>
 
       {durationMs > 0 && !leaving && <span className="vtoast__timer" aria-hidden="true" />}
     </article>

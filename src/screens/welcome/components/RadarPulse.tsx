@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Animated, View } from "react-native";
 import { colors } from "../../../styles/theme";

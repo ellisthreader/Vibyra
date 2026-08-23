@@ -1,0 +1,31 @@
+/* narrow-window fallback: nav collapses to a top strip */
+@media (max-width: 700px) {
+  .settings-modal {
+    flex-direction: column;
+    height: min(640px, 90vh);
+    max-height: min(640px, 90vh);
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .settings-nav__title,
+  .settings-nav__foot {
+    display: none;
+  }
+
+  .settings-nav__list {
+    flex-direction: row;
+  }
+
+  .settings-nav__item {
+    white-space: nowrap;
+  }
+}

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "../../../styles/theme";
@@ -15,7 +15,7 @@ type Props = {
 
 export function SlashCommandMenu({ commands, skills, onSelectCommand, onSelectSkill }: Props) {
   const prefs = usePreferences();
-  const commandIconColor = useThemedColor("#B084FF");
+  const commandIconColor = useThemedColor("#7490FF");
   const skillIconColor = useThemedColor("#FDE68A");
   const menuStyle = prefs.effectiveScheme === "light"
     ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border, shadowColor: prefs.colors.shadow }
@@ -84,19 +84,19 @@ export function SlashCommandMenu({ commands, skills, onSelectCommand, onSelectSk
 
 const styles = StyleSheet.create({
   menu: {
-    backgroundColor: "#13131F",
-    borderColor: "rgba(176, 132, 255, 0.24)",
+    backgroundColor: "#181A20",
+    borderColor: "rgba(116, 144, 255, 0.24)",
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 8,
     padding: 6,
-    shadowColor: "#8E3CFF",
+    shadowColor: "#4667E8",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.22,
     shadowRadius: 18
   },
   heading: {
-    color: "#8F8A9E",
+    color: "#747C8A",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8
   },
-  rowPressed: { backgroundColor: "rgba(142, 60, 255, 0.14)" },
+  rowPressed: { backgroundColor: "rgba(91, 124, 250, 0.14)" },
   iconWrap: {
     alignItems: "center",
     borderRadius: 8,
@@ -121,17 +121,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 28
   },
-  iconWrapCommand: { backgroundColor: "rgba(176, 132, 255, 0.10)" },
+  iconWrapCommand: { backgroundColor: "rgba(116, 144, 255, 0.10)" },
   iconWrapSkill: { backgroundColor: "rgba(253, 230, 138, 0.10)" },
   rowBody: { flex: 1 },
   rowMain: { alignItems: "center", flexDirection: "row", gap: 10 },
   slash: {
-    color: "#B084FF",
+    color: "#7490FF",
     fontSize: 14,
     fontVariant: ["tabular-nums"],
     fontWeight: "800"
   },
   label: { color: colors.text, fontSize: 14, fontWeight: "700" },
-  description: { color: "#8F8A9E", fontSize: 12, marginTop: 2 },
+  description: { color: "#747C8A", fontSize: 12, marginTop: 2 },
   skillsBlock: { marginTop: 4 }
 });

@@ -1,0 +1,44 @@
+/* Title-bar breadcrumb and the attention button. */
+
+.chrome__crumb {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.chrome__crumb-btn {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  transition: color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard);
+}
+
+.chrome__crumb-btn:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.chrome__crumb-sep {
+  opacity: 0.55;
+}
+
+.chrome__crumb b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.chrome__attn {
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  color: var(--amber);
+  font-weight: 700;
+}
+
+.chrome__attn:hover {
+  background: var(--amber-soft);
+  color: var(--amber);
+}

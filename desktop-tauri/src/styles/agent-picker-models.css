@@ -1,0 +1,88 @@
+/* Model rows inside the agent picker. */
+
+.model-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: var(--r-shell);
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.model-row:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pick-accent, var(--accent)) 8%, transparent);
+}
+
+.model-row:disabled {
+  opacity: 0.42;
+}
+
+.model-row .agent-mark {
+  --mark-accent: var(--pick-accent, var(--accent));
+}
+
+.agent-mark--art {
+  border-radius: var(--r-shell);
+  overflow: hidden;
+}
+
+.agent-mark--art img {
+  object-fit: cover;
+}
+
+.model-row__meta {
+  display: grid;
+  min-width: 0;
+}
+
+.model-row__meta strong {
+  font-size: 12px;
+  font-weight: 680;
+  color: var(--text);
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-row__meta small {
+  font-size: 10.5px;
+  font-weight: 520;
+  color: var(--dim);
+  line-height: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-row__badge {
+  font-size: 9px;
+  font-weight: 760;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pick-accent, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--pick-accent, var(--accent)) 45%, transparent);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+/* The "custom" flag on a user-defined agent in the picker. Lives with
+   `.model-row`, its only consumer — it was previously stranded in `rail.css`
+   beside a component that no longer exists. */
+.agent-row__custom-tag {
+  font-size: var(--fs-micro);
+  font-style: normal;
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin-left: 5px;
+  vertical-align: 1px;
+}

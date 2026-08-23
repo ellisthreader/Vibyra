@@ -65,7 +65,7 @@ test("native WebView keeps the hardened platform settings", async () => {
   const source = await readFile(new URL("./AppWebView.native.tsx", import.meta.url), "utf8");
   const publicSource = await readFile(new URL("./PublicDemoWebView.tsx", import.meta.url), "utf8");
   const communitySource = await readFile(
-    new URL("../screens/workspace/inline/chunk15.tsx", import.meta.url),
+    new URL("../screens/workspace/inline/CommunityAppExperience.tsx", import.meta.url),
     "utf8"
   );
 

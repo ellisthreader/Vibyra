@@ -1,26 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Share, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountSession } from "../../../../context/AccountContexts";
 import { fetchReferralSummary } from "../../../../utils/referralsApi";
 import type { ReferralSummary } from "../../../../utils/appApi";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
 export function ReferSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const app = useAppContext();
+  const account = useAccountSession();
   const [referral, setReferral] = useState<ReferralSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!visible || !app.authToken) return;
+    if (!visible || !account.authToken) return;
     let cancelled = false;
     setLoading(true);
     setError("");
     setCopied(false);
-    fetchReferralSummary(app.authToken)
+    fetchReferralSummary(account.authToken)
       .then((result) => {
         if (!cancelled) setReferral(result.referral);
       })
@@ -31,7 +31,7 @@ export function ReferSheet({ visible, onClose }: { visible: boolean; onClose: ()
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [app.authToken, visible]);
+  }, [account.authToken, visible]);
 
   async function shareInvite() {
     if (referral) await Share.share({ message: "Try Vibyra with my invite link: " + referral.link });
@@ -53,7 +53,7 @@ export function ReferSheet({ visible, onClose }: { visible: boolean; onClose: ()
     <ProfileSheet visible={visible} onClose={onClose} icon="gift-outline" kicker="Refer & earn" title="Invite code">
       {loading ? (
         <View style={styles.referralLoading}>
-          <ActivityIndicator color="#A855FF" />
+          <ActivityIndicator color="#5B7CFA" />
         </View>
       ) : referral ? (
         <>
@@ -64,11 +64,11 @@ export function ReferSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
           <View style={styles.referralActions}>
             <Pressable disabled={!referral} onPress={shareInvite} style={({ pressed }) => [styles.referralActionButton, pressed ? styles.referralActionButtonPressed : null]}>
-              <Ionicons name="share-social-outline" color="#C7B6FF" size={18} />
+              <Ionicons name="share-social-outline" color="#91A7FF" size={18} />
               <Text style={styles.referralActionText}>Share</Text>
             </Pressable>
             <Pressable disabled={!referral} onPress={copyCode} style={({ pressed }) => [styles.referralActionButton, pressed ? styles.referralActionButtonPressed : null]}>
-              <Ionicons name={copied ? "checkmark-circle-outline" : "copy-outline"} color="#C7B6FF" size={18} />
+              <Ionicons name={copied ? "checkmark-circle-outline" : "copy-outline"} color="#91A7FF" size={18} />
               <Text style={styles.referralActionText}>{copied ? "Copied" : "Copy"}</Text>
             </Pressable>
           </View>

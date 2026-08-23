@@ -43,7 +43,7 @@
 
 .preview-picker__copy small {
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
 }
 
 .preview-picker__menu {
@@ -63,7 +63,7 @@
 .preview-picker__group {
   padding: 10px 9px 4px;
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   font-weight: 760;
   letter-spacing: 0.065em;
   text-transform: uppercase;
@@ -100,7 +100,7 @@
 
 .preview-picker__option small {
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
 }
 
 .preview-picker__check {

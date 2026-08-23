@@ -1,4 +1,4 @@
-import type { Ionicons } from "@expo/vector-icons";
+import type Ionicons from "@expo/vector-icons/Ionicons";
 
 export type ChatCommandKind = "help" | "open" | "clear" | "new" | "test";
 

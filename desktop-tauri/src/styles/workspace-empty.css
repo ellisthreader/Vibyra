@@ -1,0 +1,60 @@
+/* Workspace empty state and the quick-launch chips. */
+
+.grid-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 100%;
+  text-align: center;
+  animation: fade-up 420ms var(--e-hero);
+}
+
+.grid-empty h2 {
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.035em;
+}
+
+.grid-empty > p {
+  max-width: 410px;
+  font-size: 12.5px;
+  font-weight: 520;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.grid-empty__quick {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+  transition: border-color var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard),
+    transform var(--t-ui) var(--e-standard);
+}
+
+.quick-chip:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--chip-accent, var(--accent)) 40%, transparent);
+  background: color-mix(in srgb, var(--chip-accent, var(--accent)) 7%, var(--surface));
+  transform: translateY(-2px);
+}
+
+.quick-chip .dot {
+  background: var(--chip-accent, var(--accent));
+}

@@ -136,5 +136,5 @@
 }
 
 .companion-panel--chat .chat-turn__bubble {
-  font-size: 12.25px;
+  font-size: var(--fs-body);
 }

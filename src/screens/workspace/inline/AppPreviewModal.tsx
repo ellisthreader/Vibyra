@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Keyboard, Modal, Pressable, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { AppWebView } from "../../../components/AppWebView";
 import { useAppContext } from "../../../context/AppContext";
 import { useThemedColor } from "../../../context/PreferencesContext";

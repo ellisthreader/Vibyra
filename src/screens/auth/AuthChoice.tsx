@@ -34,7 +34,7 @@ export function AuthChoice({
       onPress={() => onSelect(method)}
     >
       {busy ? (
-        <ActivityIndicator color="#E8D8FF" size="small" style={{ width: 40 * scale }} />
+        <ActivityIndicator color="#A6ADBA" size="small" style={{ width: 40 * scale }} />
       ) : (
         <AuthProviderIcon icon={icon} method={method} scale={scale} />
       )}

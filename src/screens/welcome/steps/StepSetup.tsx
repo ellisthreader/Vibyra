@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Linking, Pressable, Text, View } from "react-native";
 import { VibyraLogo } from "../../../components/VibyraLogo";
-import { useAppContext } from "../../../context/AppContext";
+import { useDesktopActions, useDesktopConnection } from "../../../context/DesktopContexts";
 import { HandshakeGlyph } from "../components/HandshakeGlyph";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { welcomeCopy } from "../data/welcomeCopy";
@@ -20,7 +20,8 @@ const accountErrorMessage = "Log in to Vibyra Desktop with the same account as y
 const DOWNLOAD_URL = "https://vibyra.ai";
 
 export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
-  const app = useAppContext();
+  const desktop = useDesktopConnection();
+  const actions = useDesktopActions();
   const intro = useSetupIntro();
   const morph = useLogoMorph();
   const typed = useTypewriter(welcomeCopy.setup.title, { startDelay: 500, charDelay: 55, blinkAfter: 2 });
@@ -28,23 +29,23 @@ export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
   const [accountError, setAccountError] = useState("");
   const pairingRef = useRef(false);
   const accountRetryAtRef = useRef(0);
-  const appRef = useRef(app);
-  appRef.current = app;
-  const approvalReady = Boolean(app.pendingPhoneApproval);
-  const pendingMachineName = app.pendingPhoneApproval?.machineName?.trim();
+  const desktopRef = useRef(desktop);
+  desktopRef.current = desktop;
+  const approvalReady = Boolean(desktop.pendingPhoneApproval);
+  const pendingMachineName = desktop.pendingPhoneApproval?.machineName?.trim();
 
   useEffect(() => {
-    if (app.paired) {
+    if (desktop.paired) {
       setAccountError("");
       accountRetryAtRef.current = 0;
       return;
     }
 
-    if (isAccountPairingError(app.pairingError)) {
+    if (isAccountPairingError(desktop.pairingError)) {
       setAccountError(accountErrorMessage);
       accountRetryAtRef.current = Date.now() + ACCOUNT_RETRY_MS;
     }
-  }, [app.paired, app.pairingError]);
+  }, [desktop.paired, desktop.pairingError]);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,20 +55,20 @@ export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
     }, SLOW_SCAN_MS);
 
     const sweep = async () => {
-      if (cancelled || pairingRef.current || appRef.current.pendingPhoneApproval) return;
+      if (cancelled || pairingRef.current || desktopRef.current.pendingPhoneApproval) return;
       const accountRetryInMs = accountRetryAtRef.current - Date.now();
       if (accountRetryInMs > 0) {
         retry = setTimeout(sweep, accountRetryInMs);
         return;
       }
 
-      const results = await appRef.current.discoverPairableDesktops();
-      if (cancelled || pairingRef.current || appRef.current.pendingPhoneApproval) return;
+      const results = await actions.discoverPairableDesktops();
+      if (cancelled || pairingRef.current || desktopRef.current.pendingPhoneApproval) return;
       const reachable = results.filter((d) => d.status === "online" || d.status === "current");
       if (reachable.length > 0) setSlowScan(false);
       for (const target of reachable) {
         if (cancelled || pairingRef.current) return;
-        const paired = await appRef.current.pairMachineAt(target.url, target.pairCode);
+        const paired = await actions.pairMachineAt(target.url, target.pairCode);
         if (paired) {
           pairingRef.current = true;
           return;
@@ -83,8 +84,8 @@ export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
       clearTimeout(slowScanTimer);
     };
   }, []);
-  const displayError = accountError || simplePairingError(app.pairingError);
-  const onConfirm = () => app.confirmPhonePermission();
+  const displayError = accountError || simplePairingError(desktop.pairingError);
+  const onConfirm = () => actions.confirmPhonePermission();
 
   return (
     <View style={{ flex: 1 }}>
@@ -121,7 +122,7 @@ export function StepSetup({ flow: _flow }: { flow: WelcomeFlow }) {
                 <VibyraLogo compact />
               </Animated.View>
               <Animated.View style={[styles.morphIconLayer, { opacity: morph.desktopOpacity, transform: [{ scale: morph.desktopScale }] }]}>
-                <Ionicons accessible={false} color="#E8DBFF" name="desktop-outline" size={64} />
+                <Ionicons accessible={false} color="#A6ADBA" name="desktop-outline" size={64} />
               </Animated.View>
             </Animated.View>
             <Animated.View

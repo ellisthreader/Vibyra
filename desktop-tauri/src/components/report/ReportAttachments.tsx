@@ -21,6 +21,7 @@ function facts(surroundings: ReportSurroundings): [string, string | null][] {
     ["System", context.platform],
     ["Graphics", context.renderer],
     ["Project", context.project],
+    ["Project folder", context.projectRoot],
     ["Agent", context.agent],
     ["Model", context.model],
     ["Screen", context.screen],
@@ -63,29 +64,44 @@ export function ReportAttachments({
           </figcaption>
         </figure>
       ) : (
-        <button type="button" className="report__attach-btn" onClick={onScreenshot}>
-          <CameraIcon size={18} />
-          <b>Add a screenshot</b>
-          <span>Grabs the screen, then lets you crop it or draw on the problem</span>
-        </button>
+        <div className="report__attach-actions">
+          <button type="button" className="report__attach-btn" onClick={onScreenshot}>
+            <CameraIcon size={15} />
+            Add screenshot
+          </button>
+          <button
+            type="button"
+            className="report__attach-btn"
+            disabled={draft.images.length >= MAX_IMAGES}
+            onClick={onAddImages}
+          >
+            <PaperclipIcon size={15} />
+            {draft.images.length ? "Add another image" : "Attach image"}
+          </button>
+          <span className="report__images-hint">
+            {draft.images.length >= MAX_IMAGES
+              ? `${MAX_IMAGES} image limit reached`
+              : "You can also paste an image"}
+          </span>
+        </div>
       )}
 
-      <div className="report__images">
-        <button
-          type="button"
-          className="report__mini"
-          disabled={draft.images.length >= MAX_IMAGES}
-          onClick={onAddImages}
-        >
-          <PaperclipIcon size={13} />
-          {draft.images.length ? "Attach another image" : "Attach images"}
-        </button>
-        <span className="report__images-hint">
-          {draft.images.length >= MAX_IMAGES
-            ? `${MAX_IMAGES} is the limit`
-            : "or paste one with Ctrl + V"}
-        </span>
-      </div>
+      {draft.screenshot && (
+        <div className="report__images">
+          <button
+            type="button"
+            className="report__mini"
+            disabled={draft.images.length >= MAX_IMAGES}
+            onClick={onAddImages}
+          >
+            <PaperclipIcon size={13} />
+            {draft.images.length ? "Add another image" : "Attach image"}
+          </button>
+          <span className="report__images-hint">
+            {draft.images.length >= MAX_IMAGES ? `${MAX_IMAGES} image limit reached` : "or paste one"}
+          </span>
+        </div>
+      )}
 
       {draft.images.length > 0 && (
         <ul className="report__files">
@@ -106,26 +122,29 @@ export function ReportAttachments({
         </ul>
       )}
 
-      {surroundings.sessionId !== null && (
-        <label className="report__toggle">
-          <input
-            type="checkbox"
-            checked={draft.includeTerminal}
-            onChange={(event) => patch({ includeTerminal: event.target.checked })}
-          />
-          <TerminalIcon size={15} />
-          <span>
-            <b>Include recent output from {surroundings.paneName}</b>
-            <em>The last 120 lines, with the escape codes stripped out</em>
-          </span>
-        </label>
-      )}
-
       <details className="report__context">
         <summary>
-          What gets sent with this
-          <em>{listed.length} details about your setup</em>
+          Technical details
+          <em>
+            {surroundings.sessionId !== null && draft.includeTerminal
+              ? "Recent terminal output included"
+              : "App and system details included"}
+          </em>
         </summary>
+        {surroundings.sessionId !== null && (
+          <label className="report__toggle">
+            <input
+              type="checkbox"
+              checked={draft.includeTerminal}
+              onChange={(event) => patch({ includeTerminal: event.target.checked })}
+            />
+            <TerminalIcon size={15} />
+            <span>
+              <b>Include recent output from {surroundings.paneName}</b>
+              <em>The last 120 lines, with terminal formatting removed</em>
+            </span>
+          </label>
+        )}
         <dl className="report__facts">
           {listed.map(([label, value]) => (
             <div key={label}>
@@ -135,19 +154,6 @@ export function ReportAttachments({
           ))}
         </dl>
       </details>
-
-      <label className="report__field">
-        <span className="report__label">
-          How can we reach you? <em>optional</em>
-        </span>
-        <input
-          className="input"
-          value={draft.contact}
-          maxLength={200}
-          placeholder="Discord handle or email, if you'd like a reply"
-          onChange={(event) => patch({ contact: event.target.value })}
-        />
-      </label>
     </section>
   );
 }

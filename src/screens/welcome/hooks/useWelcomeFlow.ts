@@ -1,25 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, BackHandler } from "react-native";
-import { useAppContext } from "../../../context/AppContext";
+import { useAccountActions } from "../../../context/AccountContexts";
+import { useDesktopActions, useDesktopConnection } from "../../../context/DesktopContexts";
 import { WelcomeFlow, WelcomeStep } from "../types";
 
 export function useWelcomeFlow(): WelcomeFlow {
-  const app = useAppContext();
-  const [step, setStep] = useState<WelcomeStep>(() => app.paired ? "connected" : "hero");
+  const accountActions = useAccountActions();
+  const desktop = useDesktopConnection();
+  const desktopActions = useDesktopActions();
+  const [step, setStep] = useState<WelcomeStep>(() => desktop.paired ? "connected" : "hero");
   const [skipPromptOpen, setSkipPromptOpen] = useState(false);
   const announced = useRef<WelcomeStep | null>(null);
 
   useEffect(() => {
-    if (app.pendingPhoneApproval && step !== "approve" && step !== "connected") {
+    if (desktop.pendingPhoneApproval && step !== "approve" && step !== "connected") {
       setStep("approve");
     }
-  }, [app.pendingPhoneApproval, step]);
+  }, [desktop.pendingPhoneApproval, step]);
 
   useEffect(() => {
-    if (app.paired && step !== "connected") {
+    if (desktop.paired && step !== "connected") {
       setStep("connected");
     }
-  }, [app.paired, step]);
+  }, [desktop.paired, step]);
 
   useEffect(() => {
     if (announced.current === step) return;
@@ -55,16 +58,16 @@ export function useWelcomeFlow(): WelcomeFlow {
   }, [step]);
 
   const finish = useCallback(() => {
-    app.completePcSetup();
-  }, [app]);
+    accountActions.completePcSetup();
+  }, [accountActions]);
 
   const requestSkip = useCallback(() => setSkipPromptOpen(true), []);
   const cancelSkip = useCallback(() => setSkipPromptOpen(false), []);
   const confirmSkip = useCallback(() => {
     setSkipPromptOpen(false);
-    if (app.connection || app.pendingPhoneApproval || app.paired) app.disconnectDesktop();
-    app.skipPcSetup();
-  }, [app]);
+    if (desktop.connection || desktop.pendingPhoneApproval || desktop.paired) desktopActions.disconnectDesktop();
+    accountActions.skipPcSetup();
+  }, [accountActions, desktop.connection, desktop.pendingPhoneApproval, desktop.paired, desktopActions]);
 
   const advance = useCallback((next: WelcomeStep) => setStep(next), []);
   const goToHero = useCallback(() => setStep("hero"), []);

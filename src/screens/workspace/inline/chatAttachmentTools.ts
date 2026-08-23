@@ -1,19 +1,19 @@
-import type { Ionicons } from "@expo/vector-icons";
+import type Ionicons from "@expo/vector-icons/Ionicons";
 import type { ChatToolMode } from "../../../types/chatTools";
 
 export type ChatToolIconName = keyof typeof Ionicons.glyphMap;
 
-const PURPLE_TOOL_ACCENT = {
-  backgroundColor: "rgba(124, 58, 237, 0.18)",
+const COBALT_TOOL_ACCENT = {
+  backgroundColor: "rgba(91, 124, 250, 0.18)",
   borderColor: "rgba(196, 181, 253, 0.34)",
   iconColor: "#EDE2FF",
-  textColor: "#EFE7FF"
+  textColor: "#91A7FF"
 };
 
-const PURPLE_TOOL_STRONG = {
-  accent: "#A855F7",
-  border: "rgba(168, 85, 247, 0.3)",
-  iconBackground: "rgba(124, 58, 237, 0.16)",
+const COBALT_TOOL_STRONG = {
+  accent: "#5B7CFA",
+  border: "rgba(91, 124, 250, 0.3)",
+  iconBackground: "rgba(91, 124, 250, 0.16)",
   iconColor: "#EDE2FF"
 };
 
@@ -58,10 +58,10 @@ export const chatToolAccent: Record<ChatToolMode, {
   iconColor: string;
   textColor: string;
 }> = {
-  analyze: PURPLE_TOOL_ACCENT,
-  image: PURPLE_TOOL_ACCENT,
-  research: PURPLE_TOOL_ACCENT,
-  web: PURPLE_TOOL_ACCENT
+  analyze: COBALT_TOOL_ACCENT,
+  image: COBALT_TOOL_ACCENT,
+  research: COBALT_TOOL_ACCENT,
+  web: COBALT_TOOL_ACCENT
 };
 
 export const chatToolStrongColors: Record<ChatToolMode, {
@@ -70,8 +70,8 @@ export const chatToolStrongColors: Record<ChatToolMode, {
   iconBackground: string;
   iconColor: string;
 }> = {
-  analyze: PURPLE_TOOL_STRONG,
-  image: PURPLE_TOOL_STRONG,
-  research: PURPLE_TOOL_STRONG,
-  web: PURPLE_TOOL_STRONG
+  analyze: COBALT_TOOL_STRONG,
+  image: COBALT_TOOL_STRONG,
+  research: COBALT_TOOL_STRONG,
+  web: COBALT_TOOL_STRONG
 };

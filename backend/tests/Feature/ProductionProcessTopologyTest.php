@@ -16,6 +16,9 @@ class ProductionProcessTopologyTest extends TestCase
         $this->assertSame('bash scripts/start-production.sh', $railway['deploy']['startCommand']);
         $this->assertStringContainsString('cmd = "bash scripts/start-production.sh"', $nixpacks);
         $this->assertStringContainsString('VIBYRA_PROCESS_ROLE=all bash scripts/start-production.sh', $procfile);
+        $launcher = (string) file_get_contents($backend.'/scripts/start-production.sh');
+        $this->assertStringContainsString('upload_max_filesize=8M', $launcher);
+        $this->assertStringContainsString('post_max_size=48M', $launcher);
     }
 
     public function test_example_topology_has_isolated_web_worker_and_scheduler_roles(): void

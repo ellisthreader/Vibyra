@@ -53,6 +53,48 @@ the Expo app, Laravel backend, marketing website, and Tauri desktop app.
 8. Report unrelated failures separately; do not absorb them into organization-only work.
 9. Update the smallest Obsidian ownership notes before finishing.
 
+## Proving A Stylesheet Reorganization Is Safe
+
+Splitting or merging CSS cannot be validated by tests — nothing imports a rule.
+Two mechanical proofs replace eyeballing, and both were used for the 2026-08-22
+desktop re-cut:
+
+1. **Cascade snapshot.** Concatenate every sheet in `main.tsx` import order,
+   strip comments and whitespace, and hash the resulting rule stream. A pure
+   reorganization must leave the hash unchanged — same rules, same order, so the
+   same rendering. Comment and file-boundary edits are invisible to it by design.
+2. **Effective-cascade map.** Record the winning value for every
+   `(at-rule context, selector, property)`. Use this when the rule set *does*
+   change: deleting a declaration that loses to an identical selector later in
+   the cascade cannot move any winner, so an unchanged map proves unchanged
+   rendering.
+
+Drive the re-cut from a manifest that asserts the new files exactly tile the old
+ones in reading order. That makes losing or reordering a line structurally
+impossible, so the hash is a second, independent check rather than the only one.
+
+Two traps this caught: a class only ever built dynamically
+(`` `adot--${state}` ``, `"preview-device--" + kind`) is *not* dead, and a class
+that appears only inside `:not()` is a live rule's guard — deleting it deletes
+live styling.
+
+## Measuring Before Optimizing
+
+Line counts and file splits are organization, not optimization. The 2026-08-22
+desktop pass measured first and found the opposite of the guess:
+
+- The Rust PTY path (`SessionOutput::push`/`drain`, 64 MiB of ANSI-heavy agent
+  output) runs at ~1.4 GB/s, 0.71 ns/byte. Real agents emit single-digit MB/s,
+  so it is ~100x faster than it needs to be; optimizing it would be waste.
+- The real cost was the startup JS chunk at 4,703 kB, of which 3,688 kB was one
+  base64-inlined MP4 and 114 kB an xterm addon most machines never use.
+  Code-splitting both took it to 901 kB (-81%; gzip 3,060 -> 252 kB).
+
+Attribute bundle size from a real sourcemap (`vite build --sourcemap` into a
+throwaway outDir, then group the map's `sourcesContent` by module) rather than
+guessing from `node_modules` sizes. Benchmarks belong in a scratch harness, not
+the repo: a perf module added to `vibyra-core` breaks `cargo fmt --check`.
+
 ## Validation Standard
 
 - Cross-codebase scope: `node scripts/check-source-lines.mjs --scope <manifest>`

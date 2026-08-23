@@ -125,19 +125,13 @@ report, the environment and the terminal tail attached as `context.txt`. Each
 one carries a short reference (`VR-8F3K2Q`) the reporter is shown, so a
 follow-up can be tied back to the message.
 
-The report channel is separate from the model-alert one: different webhooks,
-stored under different keyring entries, revoked independently.
-
-```bash
-npm run report:configure  # hidden prompt, then sends a sample report
-npm run report:test       # re-test the stored webhook
-npm run report:clear      # disconnect it
-```
-
-`VIBYRA_REPORT_WEBHOOK_URL` overrides the stored value for development, the
-same way `VIBYRA_DISCORD_WEBHOOK_URL` does for model alerts. Nothing about a
-report is collected quietly: every attached value is listed in the dialog
-before it is sent, and the terminal output has its own switch.
+The signed-in app uploads reports to the authenticated Vibyra API. Laravel
+owns the Discord delivery secret through `VIBYRA_REPORT_WEBHOOK_URL`, so every
+installation works without a command, setting, or local keyring entry. The
+report channel remains separate from the machine-local model-alert webhook.
+Nothing about a report is collected quietly: every attached value, including
+the project folder, is listed in the dialog before it is sent, and terminal
+output has its own switch.
 
 ### Closing the window
 

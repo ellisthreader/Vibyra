@@ -7,7 +7,8 @@ const files = {
   onboarding: new URL("../screens/onboarding/steps/usePricingPurchase.ts", import.meta.url),
   onboardingScreen: new URL("../screens/onboarding/steps/PricingScreen.tsx", import.meta.url),
   profile: new URL("../screens/workspace/inline/profile/useProfileBillingPurchase.ts", import.meta.url),
-  profileScreen: new URL("../screens/workspace/inline/profile/BillingSheet.tsx", import.meta.url)
+  profileScreen: new URL("../screens/workspace/inline/profile/BillingSheet.tsx", import.meta.url),
+  safeAdapter: new URL("./expoGoSafeIap.ts", import.meta.url)
 };
 
 test("native billing surfaces share receipt reporting and expose restore purchases", async () => {
@@ -22,4 +23,7 @@ test("native billing surfaces share receipt reporting and expose restore purchas
   assert.match(sources.profile, /restoreNativeIapPurchases/);
   assert.match(sources.onboardingScreen, /Restore Purchases/);
   assert.match(sources.profileScreen, /Restore Purchases/);
+  assert.match(sources.safeAdapter, /if \(isExpoGo\) return EXPO_GO_IAP/);
+  assert.doesNotMatch(sources.onboarding, /import \{ useIAP/);
+  assert.doesNotMatch(sources.profile, /import \{ Purchase, useIAP/);
 });

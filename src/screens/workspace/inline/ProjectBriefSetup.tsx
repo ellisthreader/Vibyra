@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, Platform, Pressable, Text, TextInput, View } from "react-native";
 import type { ImageStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ProjectBrief } from "../../../types/domain";
 import {
   FrameworkOption,
@@ -110,7 +110,7 @@ export function ProjectBriefSetup({ onComplete, projectName }: Props) {
                   {[...projectKindOptions, customKindOption].map((option) => (
                     <Pressable key={option.id} onPress={() => option.id === "custom" ? setCustomMode("kind") : setKind(option)} style={({ pressed }) => [styles.projectBriefOption, pressed && styles.projectBriefOptionPressed]}>
                       <View style={styles.projectBriefOptionIcon}>
-                        <Ionicons name={option.icon as keyof typeof Ionicons.glyphMap} color="#D7C4FF" size={18} />
+                        <Ionicons name={option.icon as keyof typeof Ionicons.glyphMap} color="#91A7FF" size={18} />
                       </View>
                       <Text numberOfLines={1} style={styles.projectBriefOptionTitle}>{option.label}</Text>
                       <Text numberOfLines={2} style={styles.projectBriefOptionText}>{option.description}</Text>
@@ -122,7 +122,7 @@ export function ProjectBriefSetup({ onComplete, projectName }: Props) {
                 <View style={styles.projectBriefFrameworks}>
                   <View style={styles.projectBriefStepRow}>
                     <Pressable onPress={() => setKind(null)} style={styles.projectBriefBackButton}>
-                      <Ionicons name="chevron-back" color="#B9B5C8" size={17} />
+                      <Ionicons name="chevron-back" color="#A6ADBA" size={17} />
                     </Pressable>
                     <Text style={styles.projectBriefStepTitle}>Best frameworks for {kind.label.toLowerCase()}</Text>
                   </View>
@@ -156,7 +156,7 @@ function CustomInput({ label, onChange, onSubmit, placeholder, value }: {
 }) {
   return (
     <View style={styles.projectBriefCustomPanel}>
-      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="#8F8A9E" style={styles.projectBriefCustomInput} />
+      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="#747C8A" style={styles.projectBriefCustomInput} />
       <Pressable onPress={onSubmit} style={({ pressed }) => [styles.projectBriefCustomButton, pressed && styles.projectBriefOptionPressed]}>
         <Text style={styles.projectBriefCustomButtonText}>{label}</Text>
         <Ionicons name="arrow-forward" color="#FFFFFF" size={16} />

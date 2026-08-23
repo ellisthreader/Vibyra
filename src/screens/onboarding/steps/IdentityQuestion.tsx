@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { identityOptions } from "../data/options";
@@ -32,7 +32,7 @@ export function IdentityQuestion(props: {
                 {selected ? <View style={[styles.frequencySelectedGlow, { pointerEvents: "none" }]} /> : null}
                 {selected ? (
                   <View style={styles.frequencyOptionCheck}>
-                    <Ionicons name="checkmark" color="#071016" size={15} />
+                    <Ionicons name="checkmark" color="#FFFFFF" size={15} />
                   </View>
                 ) : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />

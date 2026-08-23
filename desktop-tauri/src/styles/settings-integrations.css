@@ -149,11 +149,6 @@
   max-width: 470px;
 }
 
-.integration-card__auth-note {
-  align-items: baseline;
-  display: flex;
-  gap: 10px;
-}
 .integration-auth-link {
   color: var(--accent);
   flex: none;

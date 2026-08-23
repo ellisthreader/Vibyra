@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export type SheetKind =
   | "edit" | "billing" | "usage" | "refer" | "notifications" | "appearance"
@@ -42,7 +42,7 @@ export const PLAN_TIERS: PlanTier[] = [
     annualSubtext: "£18.75/mo · save £15",
     tokens: "350 credits / month", annualTokens: "350 credits / month",
     perks: ["All AI models supported", "1 active project, 1 agent", "Daily soft cap protects your budget", "Same monthly credits on annual billing"],
-    pillIcon: "rocket", pillIconColor: "#C259FF", pillIconBg: "rgba(139, 53, 255, 0.22)" },
+    pillIcon: "rocket", pillIconColor: "#5B7CFA", pillIconBg: "rgba(91, 124, 250, 0.22)" },
   { key: "builder", name: "Builder", tagline: "Daily building, no ceilings",
     price: "£49", cadence: "per month",
     annualPrice: "£585", annualCadence: "per year",
@@ -51,7 +51,7 @@ export const PLAN_TIERS: PlanTier[] = [
     badge: "Most popular",
     highlight: "Best for regular building",
     perks: ["All models (premium burns faster)", "3 projects, 2 agents at once", "Priority queue when busy", "Same monthly credits on annual billing"],
-    pillIcon: "briefcase", pillIconColor: "#C259FF", pillIconBg: "rgba(139, 53, 255, 0.22)" },
+    pillIcon: "briefcase", pillIconColor: "#5B7CFA", pillIconBg: "rgba(91, 124, 250, 0.22)" },
   { key: "pro", name: "Pro", tagline: "Multi-agent power-user workflows",
     price: "£99", cadence: "per month",
     annualPrice: "£1,170", annualCadence: "per year",

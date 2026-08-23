@@ -59,13 +59,13 @@ function OnboardingBackdrop() {
   return (
     <View style={[styles.backdrop, { pointerEvents: "none" }]}>
       <LinearGradient
-        colors={["rgba(109, 59, 255, 0.22)", "rgba(242, 58, 205, 0.08)", "rgba(255, 179, 71, 0)"]}
+        colors={["rgba(91, 124, 250, 0.22)", "rgba(91, 124, 250, 0.08)", "rgba(91, 124, 250, 0)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.backdropBand, styles.backdropBandTop]}
       />
       <LinearGradient
-        colors={["rgba(255, 179, 71, 0.14)", "rgba(242, 58, 205, 0.08)", "rgba(109, 59, 255, 0)"]}
+        colors={["rgba(116, 144, 255, 0.14)", "rgba(91, 124, 250, 0.08)", "rgba(91, 124, 250, 0)"]}
         start={{ x: 1, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={[styles.backdropBand, styles.backdropBandBottom]}

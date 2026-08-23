@@ -1,7 +1,7 @@
 ---
 title: Tauri Terminal Performance Overhaul
 date: 2026-08-20
-updated: 2026-08-20
+updated: 2026-08-23
 status: rollout-ready
 tags:
   - vibyra/desktop
@@ -56,6 +56,16 @@ falling back to the always-correct DOM renderer otherwise.
 Never probe GL context strings for this decision, and never create throwaway
 WebGL contexts in a loop — leaked contexts crash the WebKit web process.
 
+### 1b. The addon shipped to machines that can never use it
+
+`@xterm/addon-webgl` was imported statically, so every shared-memory machine
+parsed ~114 kB of addon it can never load. It is now imported dynamically inside
+`initRendererPolicy`, only once the probe says the accelerated path won, and
+awaited there rather than in `attachRenderer` so that stays synchronous — the
+policy settles long before the first terminal mounts. `WebglAddon` being null
+*is* the "use the DOM renderer" signal; do not reintroduce a separate
+`webglTrusted` flag that can disagree with it.
+
 ### 2. Forced layout in the terminal write path
 
 The bottom-anchor code called `getBoundingClientRect` and scanned rows on every
@@ -87,7 +97,7 @@ The app software-composites on the NVIDIA path, and on top of that ran an 18px
 multi-MB decoded logo.
 
 Fix: `src/styles/chrome.css` is deliberately unblurred (the bar is nearly
-opaque anyway); `pulse-ring` in `src/styles/base.part-02.css` animates opacity
+opaque anyway); `pulse-ring` in `src/styles/base-motion.css` animates opacity
 only. Both carry comments explaining why — do not "restore the polish".
 
 ### 5. PTYs spawning at the wrong size
@@ -121,6 +131,50 @@ WebKit CPU 7–8% (was 46% while idle), 80+ chars/sec typing with zero dropped
 input, every prompt visible immediately. Local gates green: `npm test` (52
 passing), typecheck, `vite build`, `cargo fmt`, strict clippy, `cargo test`,
 and the 200-line source gate.
+
+## 2026-08-23 live recurrence: hidden panes overload the DOM renderer
+
+On this NVIDIA-primary machine, `rendererMode: auto` correctly selects the
+compatibility/DOM path. With seven Codex panes across two projects, WebKit held
+101–103% CPU continuously while the native process used 8–9%; a clean 10-second
+sample still had about 84% whole-machine CPU idle, healthy RAM/no swap, and an
+almost-idle system disk. This is renderer-thread congestion, not host pressure.
+
+The active Vibyra project had three panes and the hidden HKE project had four.
+Four PTYs were emitting about 10 KiB/s total, and the two hidden HKE panes
+contributed about 6 KiB/s. `projectStore.ts` marks other-project panes `hidden`
+and Rust coalesces them to 250 ms, but `TerminalView` only removes the container
+on unmount; the registry-owned xterm and its IPC handler remain attached, so
+off-screen chunks still enter `term.write`. Future remediation should keep the
+PTY/ring alive while pausing frontend xterm writes for hidden projects, then
+resync on reveal. A roughly 2 MiB scrollback heartbeat every 120 seconds can
+cause a brief HDD stall, but is not the continuous lag source.
+
+For recurrence diagnosis, measure actual PTY ingress from the named
+`vibyra-pty-*` threads under `/proc/<Vibyra PID>/task/*/io`; child-process
+`wchar` includes files and network traffic and overstates terminal output.
+
+### Auto now reacts to this failure mode
+
+The earlier performance guard survived, but its native sampler only walked
+WebKit children after whole-machine CPU reached 85% or Vibyra reached 70% of
+all cores. A single `WebKitWebProcess` at 100% is only about 12.5% on an
+eight-core machine, so this exact renderer bottleneck was invisible and the
+Auto notification never fired.
+
+`src-tauri/src/perf_renderer.rs` now cheaply identifies Vibyra's direct
+`WebKitWebProcess` child through `/proc` and reports raw renderer CPU, where
+100% means one saturated core. `perfPolicy.ts` treats 80% as degraded. After
+the existing 30-second startup warmup and four bad 1 Hz verdicts, Auto on the
+software-compositing path sends “Auto detected slow terminal rendering” with
+a **Use GPU next launch** action. The action persists `rendererMode:
+accelerated`; it never silently restarts Vibyra or interrupts live PTYs. An
+explicit Compatibility choice, or an environment-forced renderer policy,
+continues to open Graphics settings instead of being overwritten.
+
+Validation: the 233 frontend tests, production web build, typecheck, 234 Rust
+workspace tests, strict clippy, Rust formatting, and the 200-line desktop gate
+all pass.
 
 ## Making it work on other people's hardware
 

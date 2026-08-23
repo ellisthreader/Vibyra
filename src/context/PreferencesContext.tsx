@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
-import { darkColors, lightColors } from "../styles/theme";
+import { darkColors, lightColors, ThemeColors } from "../styles/theme";
 import { AppearanceMode } from "../screens/workspace/inline/profile/types";
 import { themedColor } from "../screens/workspace/styles/themeTransform";
 import { readStorageItem, readStorageItemSync, writeStorageItem } from "../utils/nativeStorage";
@@ -92,7 +92,7 @@ export type PreferencesValue = {
   formatNumber: (value: number) => string;
   formatDate: (value: Date | string | number) => string;
   t: (key: string) => string;
-  colors: typeof darkColors;
+  colors: ThemeColors;
 };
 
 const PreferencesContext = createContext<PreferencesValue | null>(null);

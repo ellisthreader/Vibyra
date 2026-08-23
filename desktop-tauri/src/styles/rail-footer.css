@@ -1,0 +1,28 @@
+/* Rail footer: settings button and the status card. */
+
+.rail__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.rail__settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: var(--r-shell);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 620;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.rail__settings:hover {
+  background: var(--hover);
+  color: var(--text);
+}

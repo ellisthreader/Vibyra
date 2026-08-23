@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountActions, useAccountSession } from "../../../../context/AccountContexts";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { appApiRequest, RemoteUser } from "../../../../utils/appApi";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
 export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; onCancel: () => void }) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const actions = useAccountActions();
   const prefs = usePreferences();
   const dangerIconColor = useThemedColor("#FF6478");
   const [confirmation, setConfirmation] = useState("");
@@ -20,7 +21,7 @@ export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; on
   const canDelete = confirmation.trim().toUpperCase() === "DELETE"
     && (!requiresPassword || password.length > 0)
     && !deleting;
-  const email = app.authEmail.trim() || "your Vibyra account";
+  const email = account.authEmail.trim() || "your Vibyra account";
 
   useEffect(() => {
     if (!visible) return;
@@ -28,17 +29,17 @@ export function DeleteAccountSheet({ visible, onCancel }: { visible: boolean; on
     setPassword("");
     setError("");
     setDeleting(false);
-    appApiRequest<{ user: RemoteUser }>("/api/session", {}, app.authToken)
+    appApiRequest<{ user: RemoteUser }>("/api/session", {}, account.authToken)
       .then((result) => setProvider(result.user.provider ?? "email"))
       .catch(() => setProvider("email"));
-  }, [app.authToken, visible]);
+  }, [account.authToken, visible]);
 
   async function confirm() {
-    if (!canDelete || !app.authToken) return;
+    if (!canDelete || !account.authToken) return;
     setDeleting(true);
     setError("");
     try {
-      await app.deleteAccount(requiresPassword ? password : undefined);
+      await actions.deleteAccount(requiresPassword ? password : undefined);
       onCancel();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Could not delete account.";
@@ -92,7 +93,7 @@ function Field({ label, value, onChange, placeholder, secure }: {
         autoCorrect={false}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#6E6982"
+        placeholderTextColor="#747C8A"
         secureTextEntry={secure}
         style={styles.profileSheetInput}
         value={value}

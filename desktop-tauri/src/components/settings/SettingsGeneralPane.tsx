@@ -1,7 +1,7 @@
 import { shortcutLabel } from "../../lib/hotkeys";
 import type { Settings } from "../../types";
 import { GraphicsCard } from "./GraphicsCard";
-import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
+import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 
 const THEMES: { id: Settings["theme"]; label: string }[] = [
   { id: "auto", label: "Auto" },
@@ -51,19 +51,15 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
           <SettingRow label="Screenshot folder" hint={<>Where <kbd className="kbd">{shortcutLabel(settings.screenshotShortcut)}</kbd> captures are saved — blank uses ~/Pictures/Vibyra</>} stack>
             <input className="input" value={settings.screenshotDir ?? ""} placeholder="~/Pictures/Vibyra" onChange={(event) => void update({ screenshotDir: event.target.value || null })} spellCheck={false} />
           </SettingRow>
-          <SettingRow label="Vibyra in captures" hint="Included captures the screen exactly as it is. Hidden asks the compositor to take Vibyra out of the shot, which costs a compositor frame per capture and needs a compositing window manager.">
-            <button type="button" role="switch" aria-checked={settings.screenshotHideWindow} className={`btn ${settings.screenshotHideWindow ? "btn--primary" : ""}`} onClick={() => void update({ screenshotHideWindow: !settings.screenshotHideWindow })}>
-              {settings.screenshotHideWindow ? "Hidden" : "Included"}
-            </button>
+          <SettingRow label="Hide Vibyra in captures" hint="Off captures the screen exactly as it is. On asks the compositor to take Vibyra out of the shot, which costs a compositor frame per capture and needs a compositing window manager.">
+            <Switch label="Hide Vibyra in captures" checked={settings.screenshotHideWindow} onChange={(next) => void update({ screenshotHideWindow: next })} />
           </SettingRow>
         </div>
       </SettingsBlock>
       <SettingsBlock label="Saved sessions">
         <div className="settings-group">
           <SettingRow label="Restore terminal output" hint="Your open terminals and layout always come back. This also saves the last of each terminal's output so you can read where you left off — turn it off if this machine is shared, and restored terminals will reopen blank.">
-            <button type="button" role="switch" aria-checked={settings.persistTerminalScrollback} className={`btn ${settings.persistTerminalScrollback ? "btn--primary" : ""}`} onClick={() => void update({ persistTerminalScrollback: !settings.persistTerminalScrollback })}>
-              {settings.persistTerminalScrollback ? "Saved" : "Off"}
-            </button>
+            <Switch label="Restore terminal output" checked={settings.persistTerminalScrollback} onChange={(next) => void update({ persistTerminalScrollback: next })} />
           </SettingRow>
         </div>
       </SettingsBlock>

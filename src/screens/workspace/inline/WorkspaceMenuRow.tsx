@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { styles } from "../styles";
 
@@ -16,7 +16,7 @@ export type MenuRow = {
 };
 
 export function WorkspaceMenuRow({ row }: { row: MenuRow }) {
-  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : row.active ? "#F4F0FF" : "#A6ABB8");
+  const iconColor = useThemedColor(row.danger ? "#FF9DAE" : row.active ? "#F5F7FA" : "#A6ABB8");
   return (
     <Pressable
       onPress={row.onPress}

@@ -23,7 +23,7 @@ Before broad repo exploration, read the Obsidian memory notes:
    - `Vibyra/_ai/Vibyra Backend Memory.md`
 5. If the domain index points to focused topic notes, read exactly one focused note for the task.
 
-Use those notes to choose the smallest source-file set for the task. Do not read generated folders such as `node_modules`, `.git`, `.expo`, `.vibyra-agent`, or `backend/vendor`.
+Use those notes to choose the smallest source-file set for the task. Do not read generated folders such as `node_modules`, `.git`, `.expo`, or `backend/vendor`.
 
 When you learn or confirm durable architecture, workflow, route/API contract,
 permission behavior, validation flow, product decision, or recurring bug
@@ -33,13 +33,16 @@ touched file; write compact context that helps the next agent start efficiently.
 When a skill is updated, also record the durable routing fact in the relevant
 Obsidian note if future agents need to know when to use it.
 
-## One-command desktop setup
+## Desktop setup
 
-For a fresh checkout, run only:
+Vibyra Desktop lives in `desktop-tauri/` (Tauri 2 + Rust + React). From a fresh
+checkout:
 
 ```bash
-npm run desktop:setup
+cd desktop-tauri
+npm ci
+npm run app:dev
 ```
 
-This installs dependencies, prepares the Laravel database, starts the backend,
-and launches Vibyra Desktop.
+On Linux, install the GTK/WebKit build dependencies first with
+`desktop-tauri/scripts/setup-linux.sh`.

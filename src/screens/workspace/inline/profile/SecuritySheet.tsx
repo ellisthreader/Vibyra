@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as LocalAuthentication from "expo-local-authentication";
 import { usePreferences } from "../../../../context/PreferencesContext";
+import { LEGAL_URLS } from "../../../../utils/legalLinks";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 import { ToggleRow } from "./ToggleRow";
@@ -20,7 +21,7 @@ export function SecuritySheet({ visible, onClose }: {
   }, [visible]);
 
   function openPrivacyPolicy() {
-    Linking.openURL("https://vibyra.app/legal/privacy").catch(() => undefined);
+    Linking.openURL(LEGAL_URLS.privacy).catch(() => undefined);
   }
 
   async function setAppLock(next: boolean) {
@@ -67,12 +68,12 @@ export function SecuritySheet({ visible, onClose }: {
       />
       {lockMessage ? <Text style={styles.profileSheetMuted}>{lockMessage}</Text> : null}
       <Pressable onPress={openPrivacyPolicy} style={({ pressed }) => [styles.profileToggleRow, pressed ? styles.securityRowPressed : null]}>
-        <View style={styles.profileToggleIcon}><Ionicons name="lock-closed-outline" color="#C259FF" size={20} /></View>
+        <View style={styles.profileToggleIcon}><Ionicons name="lock-closed-outline" color="#5B7CFA" size={20} /></View>
         <View style={styles.profileToggleCopy}>
           <Text style={styles.profileToggleTitle}>Privacy policy</Text>
           <Text style={styles.profileToggleSubtitle}>What Vibyra collects and how it is used.</Text>
         </View>
-        <Ionicons name="open-outline" color="#9C97AE" size={18} />
+        <Ionicons name="open-outline" color="#747C8A" size={18} />
       </Pressable>
     </ProfileSheet>
   );
@@ -93,7 +94,7 @@ function SecurityInfoRow({ icon, subtitle, title }: {
 }) {
   return (
     <View style={styles.profileToggleRow}>
-      <View style={styles.profileToggleIcon}><Ionicons name={icon} color="#C259FF" size={20} /></View>
+      <View style={styles.profileToggleIcon}><Ionicons name={icon} color="#5B7CFA" size={20} /></View>
       <View style={styles.profileToggleCopy}>
         <Text style={styles.profileToggleTitle}>{title}</Text>
         <Text style={styles.profileToggleSubtitle}>{subtitle}</Text>

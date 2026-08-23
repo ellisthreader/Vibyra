@@ -3,34 +3,34 @@ import { colors } from "../../styles/theme";
 
 export const featureStyles = StyleSheet.create({
   bracesIcon: {
-    color: "#C77AFF",
+    color: "#7490FF",
     fontSize: 30,
     fontWeight: "700",
     letterSpacing: 0,
     lineHeight: 36
   },
   featureBody: {
-    color: "rgba(223, 212, 255, 0.74)",
+    color: "rgba(166, 173, 186, 0.74)",
     fontSize: 15,
     fontWeight: "700",
     lineHeight: 21,
     textAlign: "center"
   },
   featureDivider: {
-    backgroundColor: "rgba(144, 75, 255, 0.24)",
+    backgroundColor: "rgba(91, 124, 250, 0.24)",
     height: 64,
     marginTop: 16,
     width: 1
   },
   featureIconTile: {
     alignItems: "center",
-    borderColor: "rgba(199, 98, 255, 0.36)",
+    borderColor: "rgba(91, 124, 250, 0.36)",
     borderRadius: 20,
     borderWidth: 1,
     height: 56,
     justifyContent: "center",
     marginBottom: 11,
-    shadowColor: "#B141FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 16,

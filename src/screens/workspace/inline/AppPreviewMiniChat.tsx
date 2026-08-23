@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import type { GeneratedApp } from "../../../types/domain";
 import { createThemedStyleSheet } from "../styles/themeTransform";
@@ -28,8 +28,8 @@ export function AppPreviewMiniChat({
   const [draft, setDraft] = useState("");
   const [commandBlocked, setCommandBlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const secondaryIcon = useThemedColor("#A7A1B7");
-  const inputPlaceholder = useThemedColor("#8D879D");
+  const secondaryIcon = useThemedColor("#A6ADBA");
+  const inputPlaceholder = useThemedColor("#747C8A");
   const busy = agentRequesting || submitting;
   const trimmed = draft.trim();
   const appFingerprint = useMemo(() => previewAppFingerprint(app), [app.html, app.id, app.url]);
@@ -147,7 +147,7 @@ const miniStyles = createThemedStyleSheet({
     alignItems: "center", alignSelf: "center", height: 40, justifyContent: "center", width: 38
   },
   composer: {
-    alignItems: "flex-end", backgroundColor: "rgba(7,9,17,0.97)", borderColor: "rgba(142,60,255,0.42)",
+    alignItems: "flex-end", backgroundColor: "rgba(7,9,17,0.97)", borderColor: "rgba(91,124,250,0.42)",
     borderRadius: 18, borderWidth: 1, flexDirection: "row", minHeight: 54,
     shadowColor: "#000000", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.28,
     shadowRadius: 24
@@ -163,15 +163,15 @@ const miniStyles = createThemedStyleSheet({
     color: "#FFFFFF", flex: 1, fontSize: 14, lineHeight: 19, maxHeight: 94, minHeight: 42,
     paddingHorizontal: 0, paddingRight: 8, paddingVertical: 10
   },
-  note: { color: "#A7A1B7", fontSize: 12, fontWeight: "700", marginLeft: 8, marginTop: 7 },
+  note: { color: "#A6ADBA", fontSize: 12, fontWeight: "700", marginLeft: 8, marginTop: 7 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.98 }] },
   send: {
-    alignItems: "center", backgroundColor: "#8E3CFF", borderRadius: 12,
+    alignItems: "center", backgroundColor: "#4667E8", borderRadius: 12,
     height: 42, justifyContent: "center", marginBottom: 5, marginRight: 5, width: 42
   },
   sendDisabled: { backgroundColor: "rgba(255,255,255,0.12)" },
   trigger: {
-    alignItems: "center", backgroundColor: "#8E3CFF", borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center", backgroundColor: "#4667E8", borderColor: "rgba(255,255,255,0.2)",
     borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 44,
     paddingHorizontal: 15, position: "absolute", right: 16, shadowColor: "#000000",
     shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 16, zIndex: 20

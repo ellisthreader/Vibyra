@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { usePreferences } from "../../../context/PreferencesContext";
 import type { ChatToolMode, ChatToolPlanDraft } from "../../../types/chatTools";
 import { chatToolIcons, chatToolLabels, chatToolLoadingText, chatToolPreviewKickers, chatToolStrongColors } from "./chatAttachmentTools";
@@ -35,7 +35,7 @@ export function ChatToolPlanCard({ countdown, loading, onCancel, onEdit, onStart
   const title = loading ? loadingTitle(tool) : plan?.title;
 
   return (
-    <View style={[styles.card, { backgroundColor: palette.elevated, borderColor: light ? toolColors.border : "rgba(176, 132, 255, 0.22)" }]}>
+    <View style={[styles.card, { backgroundColor: palette.elevated, borderColor: light ? toolColors.border : "rgba(116, 144, 255, 0.22)" }]}>
       <View style={styles.header}>
         <View style={[styles.icon, { backgroundColor: toolColors.iconBackground, borderColor: toolColors.border }]}>
           <Ionicons name={chatToolIcons[tool]} color={iconColor} size={16} />

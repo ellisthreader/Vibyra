@@ -16,5 +16,7 @@ backend/storage/framework/sessions
 backend/storage/framework/sessions/**
 backend/storage/framework/views
 backend/storage/framework/views/**
+backend/storage/app/private/releases
+backend/storage/app/private/releases/**
 backend/bootstrap/cache/*.php
 backend/.phpunit.result.cache

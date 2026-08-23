@@ -77,8 +77,8 @@ export function TitleBar() {
           )}
           <button
             className="icon-btn chrome__report"
-            title="Report a problem"
-            aria-label="Report a problem"
+            title="Report a bug"
+            aria-label="Report a bug"
             onClick={() => void beginReport()}
           >
             <LifebuoyIcon size={15} />

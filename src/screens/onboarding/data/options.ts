@@ -1,12 +1,14 @@
 import { ImageSourcePropType } from "react-native";
 import { Answers, BuilderIdentity, QuizStep, UsageDepth, UsageFrequency } from "../types";
 
-export const connectBackdrop = require("../../../assets/front-page-nebula.png");
-export const welcomeConnectBackdrop = require("../../../assets/welcome-connect-background.png");
-export const welcomeSetupBackdrop = require("../../../assets/welcome-setup-background.png");
-export const frequencyBackdrop = require("../../../assets/onboarding-quiz-background.png");
-export const momentBackdrop = require("../../../assets/onboarding-moment-background.png");
-export const resultBackdrop = require("../../../assets/onboarding-quiz-background.png");
+const cobaltBackdrop = require("../../../assets/front-auth-desktop-4k.webp");
+
+export const connectBackdrop = cobaltBackdrop;
+export const welcomeConnectBackdrop = cobaltBackdrop;
+export const welcomeSetupBackdrop = cobaltBackdrop;
+export const frequencyBackdrop = cobaltBackdrop;
+export const momentBackdrop = cobaltBackdrop;
+export const resultBackdrop = cobaltBackdrop;
 
 export const weeklyOutcomes: Record<UsageFrequency, string[]> = {
   rarely: [
@@ -36,10 +38,10 @@ export const weeklyOutcomes: Record<UsageFrequency, string[]> = {
 };
 
 export const resultBulletAccents = [
-  { color: "#7C4DFF", glow: "rgba(124, 77, 255, 0.28)", border: "rgba(124, 77, 255, 0.58)" },
-  { color: "#B642FF", glow: "rgba(182, 66, 255, 0.28)", border: "rgba(182, 66, 255, 0.58)" },
-  { color: "#FF55C8", glow: "rgba(255, 85, 200, 0.24)", border: "rgba(255, 85, 200, 0.52)" },
-  { color: "#FF6EA9", glow: "rgba(255, 110, 169, 0.24)", border: "rgba(255, 110, 169, 0.52)" }
+  { color: "#7490FF", glow: "rgba(91, 124, 250, 0.28)", border: "rgba(91, 124, 250, 0.58)" },
+  { color: "#7490FF", glow: "rgba(91, 124, 250, 0.28)", border: "rgba(91, 124, 250, 0.58)" },
+  { color: "#7490FF", glow: "rgba(91, 124, 250, 0.24)", border: "rgba(91, 124, 250, 0.52)" },
+  { color: "#7490FF", glow: "rgba(91, 124, 250, 0.24)", border: "rgba(91, 124, 250, 0.52)" }
 ];
 
 export const initialAnswers: Answers = {

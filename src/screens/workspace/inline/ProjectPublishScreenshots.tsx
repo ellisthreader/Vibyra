@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { colors } from "../../../styles/theme";
@@ -22,8 +22,8 @@ export function ProjectPublishScreenshots({ busy, description, generating, onGen
   const [aiPrompt, setAiPrompt] = useState("");
   const [attachError, setAttachError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const addIcon = useThemedColor("#D2CBE2");
-  const placeholderColor = useThemedColor("#827C92");
+  const addIcon = useThemedColor("#A6ADBA");
+  const placeholderColor = useThemedColor("#747C8A");
 
   function add(image: string) {
     setUrls((current) => appendScreenshot(current, image));

@@ -1,0 +1,35 @@
+/* Activity dots — the shared status language for agents and panes. */
+
+.adot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.adot--working {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+  animation: pulse-ring 2.4s var(--e-standard) infinite;
+}
+
+.adot--attention {
+  background: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-soft);
+  animation: pulse-ring 1.6s var(--e-standard) infinite;
+}
+
+.adot--idle {
+  background: var(--dim);
+}
+
+.adot--sleeping {
+  background: color-mix(in srgb, var(--amber) 55%, var(--dim));
+  opacity: 0.7;
+}
+
+.adot--exited {
+  background: var(--danger);
+  opacity: 0.8;
+}

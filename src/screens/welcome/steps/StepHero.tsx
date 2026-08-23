@@ -1,15 +1,15 @@
 import React from "react";
 import { Animated, Pressable, View } from "react-native";
-import { useAppContext } from "../../../context/AppContext";
+import { useAccountSession } from "../../../context/AccountContexts";
 import { welcomeCopy } from "../data/welcomeCopy";
 import { useHeroIntro } from "../hooks/useHeroIntro";
 import { WelcomeFlow } from "../types";
 import { styles } from "../styles";
 
 export function StepHero({ flow }: { flow: WelcomeFlow }) {
-  const app = useAppContext();
+  const account = useAccountSession();
   const intro = useHeroIntro();
-  const firstName = pickFirstName(app.authName);
+  const firstName = pickFirstName(account.authName);
   const welcomeLine = firstName ? `${welcomeCopy.hero.welcome} ${firstName}` : welcomeCopy.hero.welcomeFallback;
 
   return (

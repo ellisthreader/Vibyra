@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Image, KeyboardAvoidingView, Platform, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../context/AppContext";
+import { useAccountActions, useAccountSession } from "../context/AccountContexts";
 import { AppleAuthChoice } from "./auth/AppleAuthChoice";
 import { AuthChoice } from "./auth/AuthChoice";
 import { AuthHero } from "./auth/AuthHero";
@@ -18,17 +18,18 @@ import { useAuthEntrance } from "./auth/useAuthEntrance";
 import { useAuthRecovery } from "./auth/useAuthRecovery";
 import { formatAuthError } from "./auth/authErrors";
 
-const frontPageBackground = require("../assets/front-auth.jpg");
+const frontPageBackground = require("../assets/front-auth-desktop-4k.webp");
 
 export function AuthScreen() {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const actions = useAccountActions();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [backgroundSource, setBackgroundSource] = useState(() => frontPageBackground);
   const [authBusy, setAuthBusy] = useState<AuthMethod | null>(null);
   const [authError, setAuthError] = useState("");
   const [emailFormVisible, setEmailFormVisible] = useState(false);
-  const recovery = useAuthRecovery({ email: app.authEmail, setEmail: app.setAuthEmail });
+  const recovery = useAuthRecovery({ email: account.authEmail, setEmail: actions.setAuthEmail });
   const entrance = useAuthEntrance();
   const scrollRef = useRef<ScrollView>(null);
   const availableHeight = height - insets.top - insets.bottom;
@@ -83,7 +84,7 @@ export function AuthScreen() {
     setAuthBusy(method);
     setAuthError("");
     try {
-      await app.authenticateWith(method, accountStatus);
+      await actions.authenticateWith(method, accountStatus);
     } catch (error) {
       setAuthError(formatAuthError(error));
     } finally {
@@ -92,7 +93,7 @@ export function AuthScreen() {
   }
 
   async function submitEmailAuth() {
-    await runAuth("email", app.authMode === "login" ? "existing" : "new");
+    await runAuth("email", account.authMode === "login" ? "existing" : "new");
   }
 
   async function resendVerification() {
@@ -109,7 +110,7 @@ export function AuthScreen() {
       <StatusBar style="light" />
       <View style={styles.screen}>
         <Image source={backgroundSource} resizeMode="cover" style={styles.backgroundImage} />
-        <LinearGradient colors={["rgba(3, 2, 18, 0.12)", "rgba(7, 3, 26, 0.2)", "rgba(2, 1, 14, 0.48)"]} style={styles.backgroundOverlay} />
+        <LinearGradient colors={["rgba(24, 26, 32, 0.12)", "rgba(24, 26, 32, 0.2)", "rgba(24, 26, 32, 0.48)"]} style={styles.backgroundOverlay} />
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.foreground}>
           <ScrollView
             ref={scrollRef}
@@ -155,11 +156,11 @@ export function AuthScreen() {
             {emailFormVisible && recovery.mode ? (
               <AuthRecoveryForm
                 busy={recovery.busy}
-                email={app.authEmail}
+                email={account.authEmail}
                 message={recovery.message}
                 mode={recovery.mode}
                 onBack={recovery.close}
-                onEmailChange={app.setAuthEmail}
+                onEmailChange={actions.setAuthEmail}
                 onPasswordChange={recovery.setPassword}
                 onSubmit={recovery.submit}
                 onTokenChange={recovery.setToken}
@@ -169,20 +170,20 @@ export function AuthScreen() {
             ) : emailFormVisible ? (
               <EmailAuthForm
                 busy={authBusy === "email"}
-                email={app.authEmail}
+                email={account.authEmail}
                 error={authError}
-                mode={app.authMode}
-                name={app.authName}
-                onEmailChange={app.setAuthEmail}
+                mode={account.authMode}
+                name={account.authName}
+                onEmailChange={actions.setAuthEmail}
                 onForgotPassword={recovery.openForgot}
-                onModeChange={app.setAuthMode}
-                onNameChange={app.setAuthName}
-                onPasswordChange={app.setAuthPassword}
-                onReferralCodeChange={app.setAuthReferralCode}
+                onModeChange={actions.setAuthMode}
+                onNameChange={actions.setAuthName}
+                onPasswordChange={actions.setAuthPassword}
+                onReferralCodeChange={actions.setAuthReferralCode}
                 onResendVerification={resendVerification}
                 onSubmit={submitEmailAuth}
-                password={app.authPassword}
-                referralCode={app.authReferralCode}
+                password={account.authPassword}
+                referralCode={account.authReferralCode}
                 scale={fitScale}
               />
             ) : authError ? (

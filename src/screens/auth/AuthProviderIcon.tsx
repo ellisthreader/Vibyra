@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -25,7 +25,7 @@ export function AuthProviderIcon({ icon, method, scale }: { icon: IconName; meth
     <Ionicons
       name={icon}
       size={(method === "apple" ? 35 : 31) * scale}
-      color={method === "apple" ? "#FFFFFF" : "#A855FF"}
+      color={method === "apple" ? "#FFFFFF" : "#5B7CFA"}
       style={[styles.authIcon, { width: iconBoxWidth }]}
     />
   );

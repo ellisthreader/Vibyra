@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import { useIAP, Purchase } from "expo-iap";
-import { useAppContext } from "../../../context/AppContext";
+import type { Purchase } from "expo-iap";
+import { useAccountActions, useAccountSession } from "../../../context/AccountContexts";
 import { membershipProductIds, membershipSkus } from "../data/plans";
 import { BillingPeriod, Plan } from "../types";
 import { reportNativeIapPurchase, restoreNativeIapPurchases } from "../../../utils/nativeIap";
+import { useExpoGoSafeIap } from "../../../utils/expoGoSafeIap";
 
 export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPeriod, onClose: () => void) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const actions = useAccountActions();
   const [purchaseMessage, setPurchaseMessage] = useState("");
   const [purchaseError, setPurchaseError] = useState("");
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
@@ -15,16 +17,16 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
 
   const selectedProductId = membershipProductIds[selectedPlan][billingPeriod];
 
-  const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useIAP({
+  const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useExpoGoSafeIap({
     onPurchaseSuccess: async (purchase: Purchase) => {
       try {
-        const result = await reportNativeIapPurchase(app.authToken, purchase);
-        if (result.user) app.applyRemoteUserFromIap(result.user);
+        const result = await reportNativeIapPurchase(account.authToken, purchase);
+        if (result.user) actions.applyRemoteUserFromIap(result.user);
 
         await finishTransaction({ purchase, isConsumable: false });
         setPurchaseError("");
         setPurchaseMessage("Membership active. Taking you to connect your PC...");
-        app.completeOnboarding();
+        actions.completeOnboarding();
         setTimeout(onClose, 650);
       } catch {
         setPurchaseError("Payment completed, but we could not finish the store transaction. Please restore purchases or contact support.");
@@ -95,9 +97,9 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
     try {
       setIsRestoring(true);
       const result = await restoreNativeIapPurchases({
-        authToken: app.authToken,
+        authToken: account.authToken,
         finishTransaction,
-        applyRemoteUser: app.applyRemoteUserFromIap
+        applyRemoteUser: actions.applyRemoteUserFromIap
       });
       if (result.restored === 0) {
         setPurchaseMessage("No active purchases were found for this store account.");
@@ -105,7 +107,7 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
       }
       const partial = result.failed > 0 ? ` ${result.failed} store transaction${result.failed === 1 ? "" : "s"} still need retrying.` : "";
       setPurchaseMessage(`Restored ${result.restored} purchase${result.restored === 1 ? "" : "s"}.${partial}`);
-      app.completeOnboarding();
+      actions.completeOnboarding();
       setTimeout(onClose, 650);
     } catch (error) {
       setPurchaseError(error instanceof Error ? error.message : "Purchases could not be restored.");

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { useThemedColor } from "../../../context/PreferencesContext";
 import { colors } from "../../../styles/theme";
@@ -20,9 +20,9 @@ export function ProjectPublishIcon({ busy, description, generating, imageUrl, on
   const [aiPrompt, setAiPrompt] = useState("");
   const [attachError, setAttachError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const accentIcon = useThemedColor("#B970FF");
-  const actionIcon = useThemedColor("#D2CBE2");
-  const placeholderColor = useThemedColor("#827C92");
+  const accentIcon = useThemedColor("#5B7CFA");
+  const actionIcon = useThemedColor("#A6ADBA");
+  const placeholderColor = useThemedColor("#747C8A");
 
   async function attachImage() {
     setAttachError("");

@@ -1,20 +1,21 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountActions, useAccountSession } from "../../../../context/AccountContexts";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
 export function LogoutSheet({ visible, onCancel }: { visible: boolean; onCancel: () => void }) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const { signOut } = useAccountActions();
   const prefs = usePreferences();
   const dangerIconColor = useThemedColor("#FF6478");
-  const userName = app.authName.trim() || "Vibyra User";
+  const userName = account.authName.trim() || "Vibyra User";
 
   function confirm() {
     onCancel();
-    app.signOut();
+    void signOut();
   }
 
   return (

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ProjectPublishStatus } from "../../../utils/communityApi";
 import { publishProgressFromStatus, type PublishFlowResult } from "./ProjectPublishResult";
 import { modalStyles } from "./ProjectPublishModal.styles";
@@ -39,7 +39,7 @@ export function ProjectPublishCompletion({ onDone, result, status }: { onDone: (
   const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.78, 1.18] });
   const pulseOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 0] });
   const iconName = result.tone === "danger" ? "alert-circle-outline" : result.tone === "success" ? "checkmark" : "time-outline";
-  const iconColor = result.tone === "danger" ? "#FF9AAD" : result.tone === "success" ? "#7CF1B3" : "#D9CBFF";
+  const iconColor = result.tone === "danger" ? "#FF9AAD" : result.tone === "success" ? "#7CF1B3" : "#91A7FF";
 
   return (
     <View style={modalStyles.completionWrap}>

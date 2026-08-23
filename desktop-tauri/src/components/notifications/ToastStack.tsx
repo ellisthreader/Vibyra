@@ -8,6 +8,7 @@ export interface ToastStackProps {
   items: readonly NotificationItem[];
   onDismiss: (id: number) => void;
   onAction?: (item: NotificationItem) => void;
+  onOpenSettings?: (item: NotificationItem) => void;
   /** Hovering the stack pauses the CSS timer bars; wire this to pause the
    * store's dismissal timers so the two stay in step. */
   onHoverChange?: (hovering: boolean) => void;
@@ -20,7 +21,8 @@ function defaultTimeout(item: NotificationItem): number {
 }
 
 export function ToastStack(props: ToastStackProps) {
-  const { items, onDismiss, onAction, onHoverChange, timeoutFor = defaultTimeout } = props;
+  const { items, onDismiss, onAction, onOpenSettings, onHoverChange, timeoutFor = defaultTimeout } =
+    props;
   // Nodes outlive the store entry by one animation so the exit can play. An
   // item still rendered but absent from `items` is the leaving set — derived,
   // never a second piece of state to fall out of sync.
@@ -67,6 +69,7 @@ export function ToastStack(props: ToastStackProps) {
           leaving={!live.has(item.id)}
           onDismiss={onDismiss}
           onAction={onAction}
+          onOpenSettings={onOpenSettings}
           onExited={drop}
         />
       ))}

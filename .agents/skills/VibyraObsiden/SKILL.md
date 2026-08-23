@@ -26,12 +26,44 @@ Before broad repo exploration, follow the repo memory protocol:
    - backend/cloud: `Vibyra/_ai/Vibyra Backend Memory.md`
 5. If that index points to focused notes, read exactly one focused note for the task.
 
+If “website,” “browser,” “phone app,” or “desktop app” is ambiguous, read
+`Vibyra/_ai/Product Surfaces.md` before selecting a domain index. It separates
+the public Laravel marketing site, Expo web client, native phone app, and the
+native Tauri desktop app at `desktop-tauri/`. The old Electron desktop
+companion has been removed — do not route work to it.
+
 Use these notes to choose a narrow source-file set. Avoid generated folders such as `node_modules`, `.git`, `.expo`, `.vibyra-agent`, `backend/vendor`, and temporary browser profiles.
 
 Before topic-specific work, check `.agents/skills/` for a matching local skill
 and read it. Treat relevant skills as active instructions for the task.
 
 For memory/skill audits, also read `Vibyra/_ai/Memory And Skills Optimization.md`.
+
+### Prompt Transcript Audits
+
+When auditing `Vibyra/Prompt Transcripts.md`:
+
+- Use the user's local timezone to define the date window and state the frozen
+  end time, because new events may arrive during the audit.
+- Review every prompt event in scope, but do not copy raw transcripts, personal
+  details, credentials, or long terminal output into Obsidian.
+- Distinguish raw events from intentions. Cluster rapid same-session events and
+  identify multiline paste fragments, copied UI labels, slash commands,
+  accidental keys, and terminal output submitted as input.
+- Treat transcript `Outcome: completed` only as terminal-turn closure. Require
+  current source, tests, rendered state, or a reliable final answer before
+  recording implementation as completed.
+- Put dated cross-project synthesis in the global vault's `99 Meta/`, update
+  the durable prompting profile only with stable deltas, and update project
+  notes only when current status, priorities, risks, or reusable rules changed.
+- Use `99 Meta/Ellis AI Mind/Ellis AI Mind.md` in the global vault as the
+  authoritative personalisation hub. Route stable deltas to its smallest
+  focused note and keep one-off evidence in the dated audit.
+- Maintain `99 Meta/Ellis AI Mind/Source Coverage And Provenance.md` as the
+  source ledger. Claim full prompt coverage only when non-overlapping audit
+  windows reconcile exactly to the raw transcript event total.
+- Record prompt-count semantics in `Desktop/Productivity Progress.md`; never
+  present the raw counter as tasks completed or independent ideas.
 
 ## What Must Be Recorded
 

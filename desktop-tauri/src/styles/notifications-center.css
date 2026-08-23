@@ -98,29 +98,3 @@
   padding: 6px 8px;
   border-top: 1px solid var(--line);
 }
-
-/* ---------- empty state ---------- */
-
-.ncenter__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 36px 28px 40px;
-  text-align: center;
-}
-
-.ncenter__empty h3 {
-  font-size: 13px;
-  font-weight: 660;
-  letter-spacing: -0.005em;
-  color: var(--text);
-}
-
-.ncenter__empty p {
-  max-width: 268px;
-  font-size: 11.5px;
-  font-weight: 520;
-  line-height: 1.55;
-  color: var(--muted);
-}

@@ -11,7 +11,7 @@ export function ProgressIndicator({ step, style, total }: { step: number; style?
     <View style={[styles.progressWrap, style]}>
       <View style={styles.progressRail}>
         <LinearGradient
-          colors={[colors.accent, colors.magenta, colors.amber]}
+          colors={["#4667E8", colors.accent, "#7490FF"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.progressFill, { width: progress }]}

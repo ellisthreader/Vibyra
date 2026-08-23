@@ -10,13 +10,13 @@ export const styles = StyleSheet.create({
   },
   actionsExpanded: { marginTop: 22, width: "100%" },
   appleButtonBusy: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.62)",
     justifyContent: "center"
   },
   appleButtonWrap: {
-    borderColor: "rgba(176, 70, 255, 0.82)",
+    borderColor: "rgba(91, 124, 250, 0.82)",
     borderRadius: 999,
     borderWidth: 1.2,
     overflow: "hidden",
@@ -24,8 +24,8 @@ export const styles = StyleSheet.create({
   },
   authChoice: {
     alignItems: "center",
-    backgroundColor: "rgba(12, 5, 35, 0.34)",
-    borderColor: "rgba(176, 70, 255, 0.82)",
+    backgroundColor: "rgba(24, 26, 32, 0.34)",
+    borderColor: "rgba(91, 124, 250, 0.82)",
     borderRadius: 999,
     borderWidth: 1.2,
     flexDirection: "row",
@@ -34,15 +34,15 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
     paddingHorizontal: 24,
-    shadowColor: "#B141FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.22,
     shadowRadius: 12,
     width: "100%"
   },
   authChoicePressed: {
-    backgroundColor: "rgba(40, 17, 78, 0.62)",
-    borderColor: "rgba(205, 103, 255, 0.94)",
+    backgroundColor: "rgba(91, 124, 250, 0.62)",
+    borderColor: "rgba(91, 124, 250, 0.94)",
     transform: [{ scale: 0.99 }]
   },
   authChoiceBusy: { opacity: 0.78 },
@@ -63,12 +63,12 @@ export const styles = StyleSheet.create({
   },
   authIcon: { textAlign: "center", width: 40 },
   backgroundImage: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     height: undefined,
     opacity: 1,
     width: undefined
   },
-  backgroundOverlay: { ...StyleSheet.absoluteFill },
+  backgroundOverlay: { ...StyleSheet.absoluteFillObject },
   content: { flexGrow: 1, justifyContent: "space-between", paddingHorizontal: 22 },
   contentExpanded: { justifyContent: "flex-start" },
   foreground: { flex: 1 },
@@ -76,15 +76,15 @@ export const styles = StyleSheet.create({
   gradientTitleFill: { height: "100%", minWidth: 112 },
   heroStack: { alignItems: "center", gap: 0 },
   legalBlock: { alignItems: "center", gap: 14, paddingTop: 21 },
-  legalDivider: { backgroundColor: "rgba(212, 194, 255, 0.52)", height: 26, width: 1 },
+  legalDivider: { backgroundColor: "rgba(91, 124, 250, 0.52)", height: 26, width: 1 },
   legalIntro: {
-    color: "rgba(222, 213, 245, 0.62)",
+    color: "rgba(166, 173, 186, 0.62)",
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 20,
     textAlign: "center"
   },
-  legalLink: { color: "#A855FF", fontSize: 15, fontWeight: "900", lineHeight: 20 },
+  legalLink: { color: "#7490FF", fontSize: 15, fontWeight: "900", lineHeight: 20 },
   legalPressed: { opacity: 0.65 },
   legalRow: {
     alignItems: "center",
@@ -94,13 +94,13 @@ export const styles = StyleSheet.create({
     paddingTop: 0
   },
   recoveryLink: {
-    color: "#C182FF",
+    color: "#7490FF",
     fontSize: 13,
     fontWeight: "800",
     textAlign: "center"
   },
   recoveryMessage: {
-    color: "#D8CBEA",
+    color: "#A6ADBA",
     fontSize: 13,
     lineHeight: 18,
     textAlign: "center"

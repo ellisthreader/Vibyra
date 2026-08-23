@@ -19,7 +19,7 @@ export const welcome6 = {
     textAlign: "center" as const
   },
   typewriterCaret: {
-    backgroundColor: "#C8A8FF",
+    backgroundColor: "#A6ADBA",
     borderRadius: 1,
     height: 34,
     marginLeft: 4,
@@ -43,7 +43,7 @@ export const welcome6 = {
     width: 96
   },
   setupBody: {
-    color: "rgba(226, 219, 255, 0.78)",
+    color: "rgba(166, 173, 186, 0.78)",
     fontSize: 15,
     fontWeight: "500" as const,
     letterSpacing: 0.1,
@@ -54,13 +54,13 @@ export const welcome6 = {
     textAlign: "center" as const
   },
   setupDownloadLink: {
-    color: "#C8A8FF",
+    color: "#A6ADBA",
     fontSize: 13,
     fontWeight: "800" as const,
     lineHeight: 18,
     marginTop: 10,
     textAlign: "center" as const,
-    textDecorationColor: "rgba(200, 168, 255, 0.42)" as const,
+    textDecorationColor: "rgba(91, 124, 250, 0.42)" as const,
     textDecorationLine: "underline" as const
   },
   setupConfirmBlock: {
@@ -71,11 +71,11 @@ export const welcome6 = {
   },
   setupScanHelp: {
     alignSelf: "center" as const,
-    backgroundColor: "rgba(26, 17, 52, 0.72)",
-    borderColor: "rgba(216, 188, 255, 0.22)",
+    backgroundColor: "rgba(24, 26, 32, 0.72)",
+    borderColor: "rgba(91, 124, 250, 0.22)",
     borderRadius: 14,
     borderWidth: 1,
-    color: "#F7F2FF",
+    color: "#A6ADBA",
     fontSize: 13,
     fontWeight: "800" as const,
     lineHeight: 18,

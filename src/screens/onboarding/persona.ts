@@ -102,23 +102,23 @@ export function getPlanTheme(plan: Plan): {
   if (plan === "Starter") {
     return {
       accent: "#23B982",
-      background: ["#07070A", "#102019", "#1A1034"],
+      background: ["#181A20", "#102019", "#181A20"],
       button: ["#1FAE78", colors.accent]
     };
   }
 
   if (plan === "Pro") {
     return {
-      accent: colors.magenta,
-      background: ["#07070A", "#2B0D28", "#2A1708"],
-      button: [colors.magenta, colors.amber]
+      accent: colors.accent,
+      background: ["#181A20", "#181A20", "#2A1708"],
+      button: [colors.accent, "#4667E8"]
     };
   }
 
   return {
     accent: colors.accent,
-    background: ["#07070A", "#160D2A", "#2A1030"],
-    button: [colors.accent, "#9254FF"]
+    background: ["#181A20", "#181A20", "#181A20"],
+    button: [colors.accent, "#5B7CFA"]
   };
 }
 

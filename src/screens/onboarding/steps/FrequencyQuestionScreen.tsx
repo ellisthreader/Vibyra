@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Image, ImageSourcePropType, Pressable, Text, View } from "react-native";
 import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
@@ -67,7 +67,7 @@ export function FrequencyQuestionScreen(props: {
                 {selected ? <Animated.View style={[styles.frequencySelectedGlow, { opacity: selectedGlow, pointerEvents: "none" }]} /> : null}
                 {selected ? (
                   <View style={styles.frequencyOptionCheck}>
-                    <Ionicons name="checkmark" color="#071016" size={15} />
+                    <Ionicons name="checkmark" color="#FFFFFF" size={15} />
                   </View>
                 ) : null}
                 <Image resizeMode="contain" source={option.icon} style={styles.frequencyOptionIcon} />

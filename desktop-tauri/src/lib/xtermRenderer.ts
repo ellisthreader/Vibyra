@@ -1,5 +1,4 @@
 import type { Terminal } from "@xterm/xterm";
-import { WebglAddon } from "@xterm/addon-webgl";
 
 import { rendererPolicy } from "../ipc/render";
 import { useNotificationStore } from "../state/notificationStore";
@@ -12,17 +11,25 @@ import { webglIsTrustworthy } from "./rendererPolicy";
 // like "Apple GPU"), so Rust tells us which compositing mode the webview got
 // and we only trust WebGL on the accelerated path.
 
-let webglTrusted = false;
+/** Loaded only on the accelerated path; null means "use the DOM renderer". */
+let WebglAddon: (typeof import("@xterm/addon-webgl"))["WebglAddon"] | null = null;
 let policyReady: Promise<void> | null = null;
 
 /** Resolve the renderer policy once, before the first terminal mounts. */
 export function initRendererPolicy(): Promise<void> {
   policyReady ??= rendererPolicy()
-    .then((policy) => {
-      webglTrusted = webglIsTrustworthy(policy);
+    .then(async (policy) => {
+      if (!webglIsTrustworthy(policy)) return;
+      // Everyone on shared-memory compositing would otherwise parse ~124 kB of
+      // addon they can never use, so it is fetched only once the probe says the
+      // accelerated path won. Awaited here rather than in `attachRenderer` so
+      // that stays synchronous: this settles long before a terminal can mount.
+      ({ WebglAddon } = await import("@xterm/addon-webgl"));
     })
     .catch(() => {
-      webglTrusted = webglIsTrustworthy(null);
+      // A failed probe — or a failed addon load — means the DOM renderer,
+      // which is always correct.
+      WebglAddon = null;
     });
   return policyReady;
 }
@@ -48,7 +55,7 @@ function reportContextLoss(): void {
 /** WebGL on the accelerated path (context loss disposes it → DOM fallback);
  * the always-correct DOM renderer everywhere else. */
 export function attachRenderer(term: Terminal): void {
-  if (!webglTrusted) return;
+  if (!WebglAddon) return;
   try {
     const webgl = new WebglAddon();
     term.loadAddon(webgl);

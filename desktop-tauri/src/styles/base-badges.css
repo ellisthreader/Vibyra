@@ -1,0 +1,61 @@
+/* Chips, pills, status dots, and section labels. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+button.chip {
+  transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard);
+}
+
+button.chip:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 680;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.pill--amber {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.pill--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.section-label {
+  font-size: 10.5px;
+  font-weight: 760;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--dim);
+}

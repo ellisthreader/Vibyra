@@ -128,13 +128,13 @@ const localStyles = StyleSheet.create({
 });
 
 const darkPalette = {
-  accent: "#8B5CFF",
+  accent: "#4667E8",
   text: "#EAE6F8",
   track: "rgba(217, 204, 255, 0.18)"
 };
 
 const lightPalette = {
-  accent: "#6D3BFF",
-  text: "#312A46",
-  track: "rgba(109, 59, 255, 0.16)"
+  accent: "#3D5ACF",
+  text: "#2B2F38",
+  track: "rgba(61, 90, 207, 0.16)"
 };

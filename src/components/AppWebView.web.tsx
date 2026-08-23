@@ -71,6 +71,6 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   loader: {
-    ...StyleSheet.absoluteFill
+    ...StyleSheet.absoluteFillObject
   }
 });

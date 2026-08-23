@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
@@ -33,7 +33,7 @@ export function OnboardingNav({
       {showingMoment || step > 0 ? (
         <Pressable style={[styles.backButton, useArtButtons ? styles.backButtonArt : null]} onPress={back}>
           <View style={useArtButtons ? styles.backIconArt : null}>
-            <Ionicons name="chevron-back" color={useArtButtons ? "#D8CAFF" : colors.muted} size={useArtButtons ? 31 : 18} />
+            <Ionicons name="chevron-back" color={useArtButtons ? "#A6ADBA" : colors.muted} size={useArtButtons ? 31 : 18} />
           </View>
           <Text style={[styles.backText, useArtButtons ? styles.backTextArt : null]}>Back</Text>
         </Pressable>
@@ -45,15 +45,15 @@ export function OnboardingNav({
         style={[styles.nextButton, useArtButtons ? styles.nextButtonFrequency : null, !canContinue || profileGenerating ? styles.nextButtonDisabled : null]}
         onPress={next}
       >
-        {useArtButtons ? (
+        {({ pressed }) => useArtButtons ? (
           <LinearGradient
-            colors={["rgba(183, 86, 255, 0.98)", "rgba(118, 42, 216, 0.95)", "rgba(59, 18, 128, 0.96)"]}
+            colors={pressed ? ["#3D5ACF", "#3D5ACF", "#3D5ACF"] : ["#4667E8", "#4667E8", "#4667E8"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.nextButtonFrequencyGradient}
           >
             <Text style={[styles.nextText, styles.nextTextFrequency]}>{continueLabel}</Text>
-            <Ionicons name="arrow-forward" color={colors.text} size={28} />
+            <Ionicons name="arrow-forward" color="#FFFFFF" size={28} />
           </LinearGradient>
         ) : (
           <>

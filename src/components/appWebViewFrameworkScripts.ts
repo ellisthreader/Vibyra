@@ -19,7 +19,7 @@ export const FRAMEWORK_RUNTIME_SCRIPT = `
     host.id = id;
     host.setAttribute("role", "alert");
     host.style.cssText = "position:fixed;left:14px;right:14px;bottom:14px;z-index:2147483647;padding:14px 16px;border:1px solid rgba(255,214,102,.6);border-radius:14px;background:rgba(11,13,23,.94);color:#fff;font:14px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;box-shadow:0 16px 40px rgba(0,0,0,.35)";
-    host.innerHTML = '<strong style="display:block;margin-bottom:4px;color:#ffd666">Preview dependency did not load</strong><span>' + name + ' could not be loaded from its CDN fallback URLs. The app code is still open, but this preview cannot run that framework offline.</span>' + (detail ? '<code style="display:block;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d7c4ff">' + detail + '</code>' : "");
+    host.innerHTML = '<strong style="display:block;margin-bottom:4px;color:#ffd666">Preview dependency did not load</strong><span>' + name + ' could not be loaded from its CDN fallback URLs. The app code is still open, but this preview cannot run that framework offline.</span>' + (detail ? '<code style="display:block;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#91A7FF">' + detail + '</code>' : "");
     (document.body || document.documentElement).appendChild(host);
   }
   function vibyraMissingFrameworkProxy(name) {

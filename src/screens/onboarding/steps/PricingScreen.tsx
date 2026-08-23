@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import { Animated, Image, Pressable, ScrollView, Text, View } from "react-native";
@@ -11,7 +11,7 @@ import { styles } from "../styles";
 import { usePricingMotion } from "./usePricingMotion";
 import { usePricingPurchase } from "./usePricingPurchase";
 
-const pricingBackdrop = require("../../../assets/onboarding-pricing-background.png");
+const pricingBackdrop = require("../../../assets/front-auth-desktop-4k.webp");
 
 export function PricingScreen({ persona, onClose }: { persona: PersonaModel; onClose: () => void }) {
   const insets = useSafeAreaInsets();

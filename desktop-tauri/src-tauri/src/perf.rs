@@ -22,6 +22,9 @@ use sysinfo::{
     System, MINIMUM_CPU_UPDATE_INTERVAL,
 };
 
+#[path = "perf_renderer.rs"]
+mod renderer_process;
+
 /// Whole-system CPU at which the child-process confirm pass below earns its
 /// cost. Mirrors `CPU_DEGRADED` in `perfPolicy.ts`.
 const CONFIRM_SYSTEM_CPU: f32 = 85.0;
@@ -36,6 +39,9 @@ pub struct PerfSample {
     pub cpu_percent: f32,
     /// Vibyra's share, already divided by core count so 100 means "every core".
     pub app_cpu_percent: f32,
+    /// WebKit's renderer process where 100 means one fully occupied core.
+    /// `None` off Linux or before WebKit has created its renderer child.
+    pub renderer_cpu_percent: Option<f32>,
     pub mem_used_bytes: u64,
     pub mem_total_bytes: u64,
     /// Resident set of our process, plus WebKit children when the confirm pass
@@ -125,12 +131,14 @@ pub fn sample() -> PerfSample {
     let pid = sysinfo::get_current_pid().ok();
     let mut app_cpu = 0.0_f32;
     let mut app_mem = 0_u64;
+    let mut renderer_cpu_percent = None;
     if let Some(pid) = pid {
         system.refresh_processes_specifics(ProcessesToUpdate::Some(&[pid]), true, process_kind());
         if let Some(process) = system.process(pid) {
             app_cpu = process.cpu_usage();
             app_mem = process.memory();
         }
+        renderer_cpu_percent = renderer_process::cpu_percent(&mut system, pid);
     }
 
     let cores = system.cpus().len().max(1);
@@ -145,6 +153,7 @@ pub fn sample() -> PerfSample {
     PerfSample {
         cpu_percent,
         app_cpu_percent: (app_cpu / cores as f32).clamp(0.0, 100.0),
+        renderer_cpu_percent,
         mem_used_bytes: system.used_memory(),
         mem_total_bytes: system.total_memory(),
         app_mem_bytes: app_mem,

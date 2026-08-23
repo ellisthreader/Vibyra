@@ -1,28 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "../../../../styles/theme";
-import { useAppContext } from "../../../../context/AppContext";
+import { useAccountActions, useAccountSession } from "../../../../context/AccountContexts";
+import { useDesktopConnection } from "../../../../context/DesktopContexts";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
 
 export function EditProfileSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const app = useAppContext();
-  const [name, setName] = useState(app.authName);
-  const [email, setEmail] = useState(app.authEmail);
-  const [machine, setMachine] = useState(app.machineName);
+  const account = useAccountSession();
+  const { updateProfile } = useAccountActions();
+  const desktop = useDesktopConnection();
+  const [name, setName] = useState(account.authName);
+  const [email, setEmail] = useState(account.authEmail);
+  const [machine, setMachine] = useState(desktop.machineName);
 
   useEffect(() => {
     if (!visible) return;
-    setName(app.authName === "Vibyra User" ? "" : app.authName);
-    setEmail(app.authEmail);
-    setMachine(app.machineName);
-  }, [visible, app.authName, app.authEmail, app.machineName]);
+    setName(account.authName === "Vibyra User" ? "" : account.authName);
+    setEmail(account.authEmail);
+    setMachine(desktop.machineName);
+  }, [visible, account.authName, account.authEmail, desktop.machineName]);
 
   const canSave = name.trim().length > 0 && /.+@.+\..+/.test(email.trim());
 
   function save() {
-    app.updateProfile({ name: name.trim(), email: email.trim(), machineName: machine.trim() || "iPhone" });
+    updateProfile({ name: name.trim(), email: email.trim(), machineName: machine.trim() || "iPhone" });
     onClose();
   }
 
@@ -61,7 +64,7 @@ function Field({ label, value, onChange, placeholder, keyboardType, autoCapitali
         keyboardType={keyboardType ?? "default"}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#6E6982"
+        placeholderTextColor="#747C8A"
         style={styles.profileSheetInput}
         value={value}
       />

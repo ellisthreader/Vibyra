@@ -110,7 +110,7 @@ export function emptyDraft(area: string, contact = ""): ReportDraft {
  * thing to do rather than as an error. Null when it is ready.
  */
 export function draftBlocker(draft: ReportDraft): string | null {
-  if (!draft.summary.trim()) return "Add a one-line summary";
+  if (!draft.summary.trim()) return "Add a short title";
   if (!draft.details.trim()) return "Describe what happened";
   if (draft.summary.length > MAX_SUMMARY) return "The summary is too long for one line";
   if (draft.images.length > MAX_IMAGES) return `Attach at most ${MAX_IMAGES} images`;

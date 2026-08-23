@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { CodeChange, FileEntry } from "../../../types/domain";
 import { usePreferences, useThemedColor } from "../../../context/PreferencesContext";
@@ -18,9 +18,9 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
 }) {
   const prefs = usePreferences();
   const warningIconColor = useThemedColor("#FFD166");
-  const fileIconColor = useThemedColor("#BFAEFF");
-  const actionIconColor = useThemedColor("#F3EEFF");
-  const disabledIconColor = useThemedColor("#777186");
+  const fileIconColor = useThemedColor("#91A7FF");
+  const actionIconColor = useThemedColor("#F5F7FA");
+  const disabledIconColor = useThemedColor("#747C8A");
   const light = prefs.effectiveScheme === "light";
   const cardStyle = light ? { backgroundColor: prefs.colors.surface, borderColor: prefs.colors.border } : null;
   const actionStyle = light ? { backgroundColor: prefs.colors.elevated, borderColor: prefs.colors.border } : null;
@@ -32,7 +32,7 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
   const pendingStyle = light ? { color: prefs.colors.muted } : null;
   const undoneStyle = light ? { color: prefs.colors.warning } : null;
   const fileIconStyle = light ? { backgroundColor: prefs.colors.accentSoft } : null;
-  const headerGradient = light ? ["#7C3AED", "#6D3BFF"] as const : ["#8E3CFF", "#5D24D8"] as const;
+  const headerGradient = light ? ["#315BD8", "#2449B8"] as const : ["#4667E8", "#3D5ACF"] as const;
   const [expandedPath, setExpandedPath] = useState("");
   const visibleChanges = changes.filter((change) => !change.file.includes(".vibyra-agent/runs/"));
   if (visibleChanges.length === 0) return null;
@@ -101,7 +101,7 @@ export function CodeChangesCard({ changes, files, messageId, onPreviewRevert, on
 function ChangeCounts({ additions, deletions, compact = false }: { additions: number; deletions: number; compact?: boolean }) {
   const addColor = useThemedColor("#4EC07A");
   const deleteColor = useThemedColor("#F26A6A");
-  const slashColor = useThemedColor("#7F798F");
+  const slashColor = useThemedColor("#747C8A");
   return (
     <View style={[styles.counts, compact ? styles.countsCompact : null]}>
       <Text style={[styles.countAdd, { color: addColor }, compact ? styles.countCompactText : null]}>+{additions}</Text>
@@ -133,16 +133,16 @@ function extensionFor(path: string) {
 
 const styles = StyleSheet.create({
   actionButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)", borderRadius: 8, borderWidth: 1, justifyContent: "center", minHeight: 30, paddingHorizontal: 10 },
-  actionButtonActive: { backgroundColor: "rgba(142, 60, 255, 0.2)", borderColor: "rgba(176, 132, 255, 0.34)" },
+  actionButtonActive: { backgroundColor: "rgba(91, 124, 250, 0.2)", borderColor: "rgba(116, 144, 255, 0.34)" },
   actionDisabled: { opacity: 0.45 },
   actionPressed: { transform: [{ scale: 0.98 }] },
-  actionText: { color: "#F2EEFF", fontSize: 12, fontWeight: "800" },
-  card: { backgroundColor: "rgba(15, 17, 26, 0.92)", borderColor: "rgba(176, 132, 255, 0.24)", borderRadius: 14, borderWidth: 1, gap: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 12 },
+  actionText: { color: "#F5F7FA", fontSize: 12, fontWeight: "800" },
+  card: { backgroundColor: "rgba(15, 17, 26, 0.92)", borderColor: "rgba(116, 144, 255, 0.24)", borderRadius: 14, borderWidth: 1, gap: 12, marginTop: 8, paddingHorizontal: 12, paddingVertical: 12 },
   changeGroup: { gap: 8 },
   countAdd: { color: "#4EC07A", fontSize: 12, fontWeight: "900" },
   countCompactText: { fontSize: 11 },
   countDelete: { color: "#F26A6A", fontSize: 12, fontWeight: "900" },
-  countSlash: { color: "#7F798F", fontSize: 12, fontWeight: "800" },
+  countSlash: { color: "#747C8A", fontSize: 12, fontWeight: "800" },
   counts: { alignItems: "center", flexDirection: "row", gap: 4 },
   countsCompact: { gap: 3 },
   fileIcon: { alignItems: "center", backgroundColor: "rgba(191, 174, 255, 0.11)", borderRadius: 8, height: 30, justifyContent: "center", width: 30 },
@@ -153,13 +153,13 @@ const styles = StyleSheet.create({
   headerBody: { flex: 1, minWidth: 0 },
   headerIcon: { alignItems: "center", borderRadius: 12, height: 42, justifyContent: "center", width: 42 },
   inlineReview: { marginTop: 2 },
-  kicker: { color: "#B49CFF", fontSize: 11, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
+  kicker: { color: "#91A7FF", fontSize: 11, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
   row: { alignItems: "center", flexDirection: "row", gap: 8 },
-  pendingText: { color: "#A29CB8", fontSize: 11, fontWeight: "800" },
+  pendingText: { color: "#A6ADBA", fontSize: 11, fontWeight: "800" },
   previewRevertButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)", borderRadius: 8, borderWidth: 1, height: 30, justifyContent: "center", width: 32 },
   revertButton: { alignItems: "center", backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)", borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 4, height: 30, justifyContent: "center", paddingHorizontal: 8 },
-  revertText: { color: "#F3EEFF", fontSize: 11.5, fontWeight: "800" },
-  revertTextDisabled: { color: "#777186" },
+  revertText: { color: "#F5F7FA", fontSize: 11.5, fontWeight: "800" },
+  revertTextDisabled: { color: "#747C8A" },
   title: { color: "#FFFFFF", fontSize: 15, fontWeight: "900", marginTop: 2 },
   undoneText: { color: "#FFD166", fontSize: 11, fontWeight: "800" }
 });

@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 const componentPath = new URL("../src/components/auth/AuthBackdrop.tsx", import.meta.url);
+const videoComponentPath = new URL("../src/components/auth/AuthBackdropVideo.tsx", import.meta.url);
 const authCssPath = new URL("../src/styles/auth.css", import.meta.url);
 const backdropCssPath = new URL("../src/styles/auth-backdrop.css", import.meta.url);
 const mainPath = new URL("../src/main.tsx", import.meta.url);
@@ -11,14 +12,28 @@ const videoPath = new URL("../src/assets/auth-space-loop.mp4", import.meta.url);
 const posterPath = new URL("../src/assets/auth-space-loop-poster.webp", import.meta.url);
 
 test("auth background uses a silent local loop with a matching poster", async () => {
-  const source = await readFile(componentPath, "utf8");
-  assert.match(source, /auth-space-loop\.mp4\?inline/);
+  const [source, video] = await Promise.all([
+    readFile(componentPath, "utf8"),
+    readFile(videoComponentPath, "utf8"),
+  ]);
+  assert.match(video, /auth-space-loop\.mp4\?inline/);
   assert.match(source, /auth-space-loop-poster\.webp/);
   for (const attribute of ["autoPlay", "muted", "loop", "playsInline"]) {
-    assert.match(source, new RegExp(`\\b${attribute}\\b`));
+    assert.match(video, new RegExp(`\\b${attribute}\\b`));
   }
   assert.match(source, /prefers-reduced-motion: reduce/);
-  assert.match(source, /onCanPlay=\{startPlayback\}/);
+  assert.match(video, /prefers-reduced-motion: reduce/);
+  assert.match(video, /onCanPlay=\{startPlayback\}/);
+});
+
+// The inlined loop is ~3.5 MB of JavaScript. Importing it eagerly puts that
+// payload in the chunk the app must parse before first paint, which is how it
+// shipped until 2026-08-22 — pin the split so it cannot silently come back.
+test("the inlined loop stays out of the startup chunk", async () => {
+  const source = await readFile(componentPath, "utf8");
+  assert.match(source, /lazy\(\(\) => import\("\.\/AuthBackdropVideo"\)\)/);
+  assert.doesNotMatch(source, /auth-space-loop\.mp4/);
+  assert.match(source, /<Suspense fallback=\{null\}>/);
 });
 
 test("production CSP allows the inlined video source", async () => {

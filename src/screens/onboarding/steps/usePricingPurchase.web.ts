@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Linking } from "react-native";
-import { useAppContext } from "../../../context/AppContext";
+import { useAccountSession } from "../../../context/AccountContexts";
 import { startStripeCheckout } from "../../../utils/billingApi";
 import { membershipProductIds, planKeyMap } from "../data/plans";
 import { BillingPeriod, Plan } from "../types";
 
 export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPeriod, onClose: () => void) {
-  const app = useAppContext();
+  const account = useAccountSession();
   const [purchaseMessage, setPurchaseMessage] = useState("");
   const [purchaseError, setPurchaseError] = useState("");
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -16,14 +16,14 @@ export function usePricingPurchase(selectedPlan: Plan, billingPeriod: BillingPer
     setPurchaseError("");
     setPurchaseMessage("");
 
-    if (!app.authToken) {
+    if (!account.authToken) {
       setPurchaseError("Log in again to upgrade your plan.");
       return;
     }
 
     try {
       setIsPurchasing(true);
-      const result = await startStripeCheckout(app.authToken, {
+      const result = await startStripeCheckout(account.authToken, {
         kind: "subscription",
         plan: planKeyMap[selectedPlan],
         cycle: billingPeriod

@@ -1,31 +1,31 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAppContext } from "../../../../context/AppContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAccountUsage } from "../../../../context/AccountContexts";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 
 type Preferences = ReturnType<typeof usePreferences>;
 
 export function UsageLimitsSection() {
-  const app = useAppContext();
+  const usage = useAccountUsage();
   const prefs = usePreferences();
-  const tint = useThemedColor("#C259FF");
+  const tint = useThemedColor("#5B7CFA");
   const rows = [
     limitRow(
       prefs.t("usage.limit5Hour"),
-      app.burstCreditsUsed,
-      app.burstCreditsCap,
-      app.burstCreditsResetAt,
-      `${app.burstWindowHours || 5}h ${prefs.t("usage.window")}`,
+      usage.burstCreditsUsed,
+      usage.burstCreditsCap,
+      usage.burstCreditsResetAt,
+      `${usage.burstWindowHours || 5}h ${prefs.t("usage.window")}`,
       "flash-outline",
       prefs
     ),
     limitRow(
       prefs.t("usage.limitWeekly"),
-      app.weeklyCreditsUsed,
-      app.weeklyCreditsCap,
-      app.weeklyCreditsResetAt,
+      usage.weeklyCreditsUsed,
+      usage.weeklyCreditsCap,
+      usage.weeklyCreditsResetAt,
       prefs.t("usage.limit7dCap"),
       "calendar-outline",
       prefs

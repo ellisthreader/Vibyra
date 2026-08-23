@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { AgentConnection } from "../types/domain";
 import { fetchWithTimeout, normalizeAgentUrl } from "../utils/network";
 
@@ -38,7 +39,7 @@ const ROUTE_TIMEOUTS = [
 ];
 
 export function useRequests({ agentUrl, connection, onDesktopRequestUrlResolved, onInvalidDesktopSession }: RequestConfig) {
-  async function desktopRequest<T>(
+  const desktopRequest = useCallback(async function desktopRequest<T>(
     baseUrl: string,
     endpoint: string,
     options: RequestInit = {},
@@ -47,9 +48,9 @@ export function useRequests({ agentUrl, connection, onDesktopRequestUrlResolved,
     const headers = makeHeaders(options);
     const response = await fetchWithTimeout(`${baseUrl}${endpoint}`, { ...options, headers }, timeoutMs);
     return parseResponse<T>(response);
-  }
+  }, []);
 
-  async function agentRequest<T>(
+  const agentRequest = useCallback(async function agentRequest<T>(
     endpoint: string,
     options: RequestInit = {},
     useAuth = true
@@ -78,9 +79,9 @@ export function useRequests({ agentUrl, connection, onDesktopRequestUrlResolved,
       }
     }
     throw lastError instanceof Error ? lastError : new Error("Vibyra Desktop request failed");
-  }
+  }, [agentUrl, connection, onDesktopRequestUrlResolved, onInvalidDesktopSession]);
 
-  return { agentRequest, desktopRequest };
+  return useMemo(() => ({ agentRequest, desktopRequest }), [agentRequest, desktopRequest]);
 }
 
 function timeoutForEndpoint(endpoint: string) {

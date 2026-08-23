@@ -8,15 +8,42 @@ export const LIGHT_BORDER_STRONG = lightColors.borderStrong;
 export const LIGHT_SURFACE = lightColors.surface;
 export const LIGHT_ELEVATED = lightColors.elevated;
 export const LIGHT_BACKGROUND = lightColors.background;
+export const LIGHT_WORKSPACE = lightColors.workspace;
 export const LIGHT_ACCENT = lightColors.accent;
 export const LIGHT_ACCENT_HOVER = lightColors.accentHover;
-export const LIGHT_MAGENTA = lightColors.magenta;
+export const LIGHT_MAGENTA = lightColors.accent;
 export const LIGHT_SUCCESS = lightColors.success;
 export const LIGHT_WARNING = lightColors.warning;
 export const LIGHT_ERROR = lightColors.error;
 export const LIGHT_SHADOW = lightColors.shadow;
 
 export const EXACT_LIGHT_COLORS: Record<string, string> = {
+  "rgba(91,124,250,0.14)": lightColors.accentSoft,
+  "rgba(55,199,138,0.14)": lightColors.successSoft,
+  "rgba(232,169,75,0.16)": lightColors.warningSoft,
+  "rgba(240,100,114,0.15)": lightColors.errorSoft,
+  "rgba(109,59,255,0.18)": lightColors.accentSoft,
+  "rgba(242,58,205,0.16)": lightColors.accentSoft,
+  "rgba(55,214,122,0.14)": lightColors.successSoft,
+  "rgba(255,179,71,0.16)": lightColors.warningSoft,
+  "rgba(255,93,122,0.15)": lightColors.errorSoft,
+  "#0E0F12": LIGHT_BACKGROUND,
+  "#13151A": lightColors.rail,
+  "#181A20": LIGHT_SURFACE,
+  "#20232A": LIGHT_ELEVATED,
+  "#101115": LIGHT_WORKSPACE,
+  "#1B1E25": lightColors.surfaceTint,
+  "#2B2F38": LIGHT_BORDER,
+  "#F5F7FA": LIGHT_TEXT,
+  "#A6ADBA": LIGHT_MUTED,
+  "#747C8A": LIGHT_DIM,
+  "#5B7CFA": LIGHT_ACCENT,
+  "#7490FF": LIGHT_ACCENT_HOVER,
+  "#4667E8": lightColors.action,
+  "#3D5ACF": lightColors.actionPressed,
+  "#E8A94B": LIGHT_WARNING,
+  "#37C78A": LIGHT_SUCCESS,
+  "#F06472": LIGHT_ERROR,
   "#02030C": LIGHT_BACKGROUND,
   "#050505": LIGHT_BACKGROUND,
   "#07070A": LIGHT_BACKGROUND,
@@ -90,6 +117,10 @@ export const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#5C5470": LIGHT_DIM,
   "#827C92": LIGHT_DIM,
   "#7F788F": LIGHT_DIM,
+  "#6D3BFF": LIGHT_ACCENT,
+  "#7E3CFF": lightColors.action,
+  "#8B5CFF": LIGHT_ACCENT,
+  "#9254FF": LIGHT_ACCENT,
   "#A95BFF": LIGHT_ACCENT,
   "#A855FF": LIGHT_ACCENT,
   "#B64FFF": LIGHT_ACCENT,
@@ -97,6 +128,7 @@ export const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#B970FF": LIGHT_ACCENT,
   "#BE62FF": LIGHT_MAGENTA,
   "#C259FF": LIGHT_MAGENTA,
+  "#F23ACD": LIGHT_ACCENT,
   "#DDFCEB": LIGHT_SUCCESS,
   "#B7FBD0": LIGHT_SUCCESS,
   "#9AE9B4": LIGHT_SUCCESS,
@@ -107,6 +139,7 @@ export const EXACT_LIGHT_COLORS: Record<string, string> = {
   "#55D77D": LIGHT_SUCCESS,
   "#4ADE80": LIGHT_SUCCESS,
   "#3CD783": LIGHT_SUCCESS,
+  "#37D67A": LIGHT_SUCCESS,
   "#A7F3D0": LIGHT_SUCCESS,
   "#D5FFE2": LIGHT_SUCCESS,
   "#BAE7CB": LIGHT_SUCCESS,

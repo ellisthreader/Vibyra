@@ -11,6 +11,8 @@ export const LAG_SEVERE_MS = 800;
 export const CPU_DEGRADED = 85;
 /** Vibyra's own CPU, already divided by core count. */
 export const APP_CPU_DEGRADED = 70;
+/** WebKit page renderer, expressed as raw load on its single hot core. */
+export const RENDERER_CPU_DEGRADED = 80;
 /** Used / total system memory. */
 export const MEM_DEGRADED = 0.9;
 export const MEM_SEVERE = 0.96;
@@ -21,9 +23,14 @@ export interface PerfWindow {
   /** Native samples are absent until the first `perf_sample` resolves. */
   cpuPercent: number | null;
   appCpuPercent: number | null;
+  rendererCpuPercent: number | null;
   memRatio: number | null;
   /** WebKit is compositing in shared memory — a known-slow path. */
   softwareCompositing: boolean;
+  /** Auto may offer a one-click accelerated next launch without overriding an explicit choice. */
+  autoGraphics: boolean;
+  /** False when an environment variable makes the saved setting inert. */
+  graphicsSwitchAvailable: boolean;
   /** Panes currently streaming output, used to pick the actionable message. */
   workingPanes: number;
 }
@@ -45,7 +52,9 @@ function memoryVerdict(ratio: number | null): PerfVerdict | null {
 function cpuIsHot(window: PerfWindow): boolean {
   return (
     (window.cpuPercent !== null && window.cpuPercent >= CPU_DEGRADED) ||
-    (window.appCpuPercent !== null && window.appCpuPercent >= APP_CPU_DEGRADED)
+    (window.appCpuPercent !== null && window.appCpuPercent >= APP_CPU_DEGRADED) ||
+    (window.rendererCpuPercent !== null &&
+      window.rendererCpuPercent >= RENDERER_CPU_DEGRADED)
   );
 }
 

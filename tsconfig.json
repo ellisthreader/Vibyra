@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.expo-base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "strict": true,
     "noEmit": true
   },

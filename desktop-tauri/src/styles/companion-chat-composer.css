@@ -43,7 +43,7 @@
   max-height: 120px;
   padding: 5px 0 3px;
   overflow-y: auto;
-  font-size: 12.25px;
+  font-size: var(--fs-body);
 }
 
 .chat-input__send {

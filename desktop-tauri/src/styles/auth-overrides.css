@@ -1,0 +1,40 @@
+/* The auth surface is always dark, so pin the shared window controls to the
+   dark palette even when the app theme is light. */
+.auth .window-controls button {
+  color: #a6adba;
+}
+
+.auth .window-controls button:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f5f7fa;
+}
+
+.auth .window-controls button.close:hover {
+  background: #f06472;
+  color: #fff;
+}
+
+.auth :focus-visible {
+  outline: 2px solid rgba(91, 124, 250, 0.58);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth__backdrop,
+  .auth-card__halo,
+  .auth-card__logo,
+  .auth-card > * {
+    animation: none;
+  }
+
+  .auth-reveal,
+  .auth-reveal__inner > *,
+  .auth-choice,
+  .auth-choice__chevron {
+    transition-duration: 1ms;
+  }
+
+  .auth-spinner {
+    animation-duration: 1.6s;
+  }
+}

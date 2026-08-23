@@ -1,0 +1,22 @@
+/* Agent marks — the shared provider glyph, shown wherever an agent is named. */
+
+.agent-mark {
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--mark-accent, var(--accent)) 13%, transparent);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.agent-mark img {
+  display: block;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.agent-mark--letter {
+  color: var(--mark-accent, var(--accent));
+  font-size: 0.46em;
+  font-weight: 760;
+}

@@ -4,7 +4,7 @@ import { ReasoningEffort } from "../../../types/domain";
 import { chatToolForModelKey } from "../../../types/chatTools";
 import { chatModelGroups, chatModelOptionFor, chatModelOptions } from "../data/chatModels";
 import { styles } from "../styles";
-import { ModelMenuRow } from "./chunk10";
+import { ModelMenuRow } from "./ChatModelControls";
 
 const EFFORT_OPTIONS: { value: ReasoningEffort; label: string; short: string; hint: string }[] = [
   { value: "low", label: "Low", short: "Low", hint: "Fast" },

@@ -18,12 +18,11 @@ import {
 const read = (path) => readFile(fileURLToPath(new URL(`../${path}`, import.meta.url)), "utf8");
 
 test("spawn geometry still matches the pane stylesheet", async () => {
-  const workspace = await read("src/styles/workspace.css");
-  const panes = await read("src/styles/workspace.part-02.css");
+  const panes = await read("src/styles/workspace-pane.css");
 
   // `box-sizing: border-box` is global, so min-height already covers the
   // header's 1px bottom border — the header box is exactly this tall.
-  const header = /\.pane__header\s*\{[^}]*?min-height:\s*(\d+)px/.exec(workspace);
+  const header = /\.pane__header\s*\{[^}]*?min-height:\s*(\d+)px/.exec(panes);
   assert.ok(header, ".pane__header no longer declares a min-height");
   assert.equal(
     Number(header[1]),

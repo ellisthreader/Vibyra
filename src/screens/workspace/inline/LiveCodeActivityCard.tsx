@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import { createThemedStyleSheet } from "../styles/themeTransform";
 
@@ -33,7 +33,7 @@ export function LiveCodeActivityCard({ text }: { text: string }) {
   return (
     <View style={styles.card}>
       <LinearGradient
-        colors={["rgba(142, 60, 255, 0.16)", "rgba(57, 130, 255, 0.08)"]}
+        colors={["rgba(91, 124, 250, 0.16)", "rgba(57, 130, 255, 0.08)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -41,7 +41,7 @@ export function LiveCodeActivityCard({ text }: { text: string }) {
       <View style={styles.iconWrap}>
         <Animated.View style={[styles.iconRing, { opacity: ringOpacity }]} />
         <LinearGradient
-          colors={["#8E3CFF", "#5D24D8"]}
+          colors={["#4667E8", "#3D5ACF"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.iconCore}
@@ -127,7 +127,7 @@ const styles = createThemedStyleSheet({
   card: {
     alignItems: "center",
     backgroundColor: "rgba(15, 17, 26, 0.86)",
-    borderColor: "rgba(176, 132, 255, 0.28)",
+    borderColor: "rgba(116, 144, 255, 0.28)",
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -139,7 +139,7 @@ const styles = createThemedStyleSheet({
   },
   iconWrap: { alignItems: "center", height: 28, justifyContent: "center", width: 28 },
   iconRing: {
-    backgroundColor: "rgba(142, 60, 255, 0.45)",
+    backgroundColor: "rgba(91, 124, 250, 0.45)",
     borderRadius: 999,
     height: 28,
     position: "absolute",
@@ -153,7 +153,7 @@ const styles = createThemedStyleSheet({
     width: 24,
   },
   body: { flex: 1, minWidth: 0 },
-  kicker: { color: "#D7C4FF", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
+  kicker: { color: "#91A7FF", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6, textTransform: "uppercase" },
   filename: {
     color: "#FFFFFF",
     fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
@@ -168,5 +168,5 @@ const styles = createThemedStyleSheet({
     fontSize: 13,
     fontWeight: "900",
   },
-  counterUnit: { color: "#8F8A9E", fontSize: 9.5, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" },
+  counterUnit: { color: "#747C8A", fontSize: 9.5, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" },
 });

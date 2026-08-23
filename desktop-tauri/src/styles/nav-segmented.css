@@ -1,0 +1,63 @@
+/* The segmented switch — one idiom for "pick one of these panels".
+   Owned here so the workspace mode bar (Terminals / Preview) and the companion
+   dock (Chat / Memory / Files) cannot drift apart again: before this sheet the
+   mode bar was a filled segmented control while the companion used underline
+   tabs, and the two sat side by side on the same 46px row.
+
+   Consumers keep their own class names — this sheet is the single owner of the
+   shared shape. Per-surface adjustments belong in the consuming sheet, after
+   this one in `main.tsx` order. */
+
+.project-modes,
+.companion__tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--workspace) 72%, transparent);
+}
+
+.project-modes button,
+.companion__tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 11px;
+  border-radius: var(--r-sm);
+  color: var(--dim);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.project-modes button:hover,
+.companion__tab:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+/* The selected segment reads as a raised chip with a cobalt underscore. The
+   inset shadow rather than a border keeps the 28px height exact. */
+.project-modes .project-mode--active,
+.companion__tab--active {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.project-modes .project-mode--active svg,
+.companion__tab--active svg {
+  color: var(--accent-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-modes button,
+  .companion__tab {
+    transition: none;
+  }
+}

@@ -20,4 +20,5 @@ if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN >/de
 fi
 
 cd backend
-php artisan serve --host="${HOST}" --port="${PORT}"
+php -d upload_max_filesize=8M -d post_max_size=48M \
+  artisan serve --host="${HOST}" --port="${PORT}"

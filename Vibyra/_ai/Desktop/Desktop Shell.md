@@ -15,7 +15,12 @@ no audio, and avoid an additional CSS drift animation. On Linux production
 builds, import the MP4 with Vite's `?inline` query and allow `data:` in the
 Tauri `media-src`; custom-protocol and Blob delivery can stall or corrupt media
 range reads in WebKit/GStreamer even when dev playback works. Confirm playback
-with two time-separated native captures, not markup alone. Regression coverage
+with two time-separated native captures, not markup alone. The `<video>` and
+that import live in `AuthBackdropVideo.tsx`, which `AuthBackdrop` pulls in with
+`lazy()`: the inlined loop is ~3.5 MB of JavaScript, and imported eagerly it was
+78% of the startup chunk and had to be parsed before the app could paint. Keep
+the `?inline` query *and* the lazy boundary — they solve different problems. The
+poster is the designed cover while that chunk loads. Regression coverage
 is in `desktop-tauri/tests/authBackground.test.mjs`. Email signup/login continue
 through native account commands to backend `/api/auth/signup|login`; the
 backend lifecycle test verifies user/session persistence, logout revocation,
@@ -34,6 +39,46 @@ credential store. On Linux, `npm run discord:configure` accepts the URL through
 a hidden prompt, sends a real test notification, and saves it only after
 Discord confirms success. The first successful OpenRouter fetch still seeds
 the roster silently.
+
+## Shell Chrome Consistency (2026-08-22)
+
+`src/styles/tokens.css` now owns the type scale (`--fs-micro` 9px through
+`--fs-title` 15px), a six-step weight ladder (`--fw-regular`..`--fw-black`),
+`--strip-w`, and `--subhead-h`. Every `font-size` in desktop CSS sits on that
+scale; do not reintroduce intermediate values (11.75, 12.25) or sub-9px text.
+
+`--subhead-h` (46px) is the shared height of every second-row header. The
+workspace mode bar and the companion head must both resolve to it *including*
+their bottom hairline — they were 46px and 45px, so their seams missed by 1px.
+`.chrome__brand` is `--strip-w + --rail-w` wide so the titlebar's first column
+ends on the rail's right edge.
+
+`src/styles/nav-segmented.css` is the sole owner of the segmented switch shape
+shared by `.project-modes` (Terminals/Preview) and `.companion__tabs`
+(Chat/Memory/Files). The companion previously used underline tabs, so two
+idioms sat side by side on the same row. Per-surface fit stays in the consuming
+sheet, which must load after it.
+
+`companion.css` was folded into `companion-shell.css`: the dock now has one
+owner for frame, resize edge, header and body. `.agent-row` likewise has one
+owner (`settings-agents.css`); `rail.css` no longer defines it, and
+`.agent-row__custom-tag` moved to `agent-picker-models.css` with its consumer.
+
+`.btn--secondary` and `.btn--danger` are defined in `base-controls.css`. They
+were used in Settings > Integrations and the agent picker but had never been
+written, so a destructive "Disconnect" rendered identically to "Keep". Boolean
+settings rows use `Switch` from `SettingsShared.tsx`, never a `.btn` with
+`role="switch"`.
+
+Live notification toasts expose a compact settings gear beside Dismiss.
+`Toasts.tsx` dismisses only the clicked toast, closes the notification centre,
+and routes through `workspaceStore.openSettingsSection("notifications")`; the
+notification-centre header uses the same destination through
+`NotificationBellHost.tsx`. Keep this shortcut renderer-only.
+
+Verify shell/CSS work with the desktop gates (`npm run lines`, `typecheck`,
+`test`, `build`, `check:dead-code`) plus a rendered check of both themes — the
+`color-mix` used by the danger/secondary buttons must hold on the light ground.
 
 ## Settings Simplification Direction
 

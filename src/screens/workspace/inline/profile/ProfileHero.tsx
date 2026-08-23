@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
-import { useAppContext } from "../../../../context/AppContext";
+import { useAccountActions, useAccountSession, useAccountUsage } from "../../../../context/AccountContexts";
 import { usePreferences, useThemedColor } from "../../../../context/PreferencesContext";
 import { styles } from "../../styles";
 import { formatPlanLabel } from "../index";
@@ -13,13 +13,15 @@ import { ProfileLevelProgressModal } from "./ProfileLevelProgressModal";
 export function ProfileHero({ onOpenBilling }: {
   onOpenBilling: () => void;
 }) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const usage = useAccountUsage();
+  const { updateProfile } = useAccountActions();
   const prefs = usePreferences();
   const [levelModalVisible, setLevelModalVisible] = useState(false);
   const editIconColor = useThemedColor("#E8E2F7");
-  const profileName = app.authName.trim() || "Not signed in";
-  const planLabel = formatPlanLabel(app.accountPlan);
-  const level = app.levelProgress ?? {
+  const profileName = account.authName.trim() || "Not signed in";
+  const planLabel = formatPlanLabel(usage.accountPlan);
+  const level = usage.levelProgress ?? {
     currentLevelXp: 0,
     level: 1,
     map: fallbackLevelMap(1),
@@ -57,7 +59,7 @@ export function ProfileHero({ onOpenBilling }: {
         return;
       }
 
-      app.updateProfile({ profileImageUri: uri });
+      updateProfile({ profileImageUri: uri });
     } catch {
       Alert.alert("Image unavailable", "That image could not be used as a profile picture.");
     }
@@ -68,7 +70,7 @@ export function ProfileHero({ onOpenBilling }: {
       <View style={[styles.profileHeroTop, styles.profileHeroTopCompact]}>
         <View style={styles.profileAvatarWrap}>
           <View style={[styles.profileAvatarLarge, styles.profileAvatarLargeCompact]}>
-            <AccountAvatar imageUri={app.profileImageUri} name={profileName} size={46} textSize={20} />
+            <AccountAvatar imageUri={account.profileImageUri} name={profileName} size={46} textSize={20} />
           </View>
           <Pressable
             accessibilityLabel="Change profile picture"
@@ -91,7 +93,7 @@ export function ProfileHero({ onOpenBilling }: {
                   onPress={() => setLevelModalVisible(true)}
                   style={styles.profileLevelExpandRail}
                 >
-                  <Ionicons name="map-outline" color="#EDE9FF" size={17} />
+                  <Ionicons name="map-outline" color="#F5F7FA" size={17} />
                 </Pressable>
                 <Text style={styles.profileLevelMeta}>
                   {prefs.formatNumber(level.currentLevelXp)} / {prefs.formatNumber(level.nextLevelXp)} XP
@@ -101,7 +103,7 @@ export function ProfileHero({ onOpenBilling }: {
           </View>
         </View>
         <Pressable onPress={onOpenBilling} style={[styles.profilePlanBadge, styles.profilePlanBadgeTopRight]}>
-          <Ionicons name="diamond" color="#C259FF" size={16} />
+          <Ionicons name="diamond" color="#5B7CFA" size={16} />
           <Text style={styles.profilePlanBadgeText}>{planLabel}</Text>
         </Pressable>
       </View>

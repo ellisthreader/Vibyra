@@ -1,0 +1,69 @@
+/* invisible edge handles for resizing the undecorated window */
+.resize-handle {
+  position: fixed;
+  z-index: 100;
+}
+
+.resize-handle.n {
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 4px;
+  cursor: n-resize;
+}
+
+.resize-handle.s {
+  bottom: 0;
+  left: 8px;
+  right: 8px;
+  height: 4px;
+  cursor: s-resize;
+}
+
+.resize-handle.e {
+  top: 8px;
+  bottom: 8px;
+  right: 0;
+  width: 4px;
+  cursor: e-resize;
+}
+
+.resize-handle.w {
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 4px;
+  cursor: w-resize;
+}
+
+.resize-handle.ne,
+.resize-handle.nw,
+.resize-handle.se,
+.resize-handle.sw {
+  width: 10px;
+  height: 10px;
+}
+
+.resize-handle.ne {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+
+.resize-handle.nw {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+}
+
+.resize-handle.se {
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+
+.resize-handle.sw {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+}

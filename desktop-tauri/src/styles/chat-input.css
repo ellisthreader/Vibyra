@@ -1,0 +1,44 @@
+/* Chat message input and its error line. */
+
+.chat-error {
+  font-size: 11px;
+  font-weight: 560;
+  color: var(--danger);
+  padding: 4px 2px;
+}
+
+.chat-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--bg);
+  padding: 8px;
+  transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.chat-input:focus-within {
+  border-color: var(--accent-border);
+}
+
+.chat-input__area {
+  width: 100%;
+  min-height: 34px;
+  max-height: 120px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 540;
+  line-height: 1.5;
+  resize: none;
+}
+
+.chat-input__area:focus {
+  outline: none;
+}
+
+.chat-input__area::placeholder {
+  color: var(--dim);
+}

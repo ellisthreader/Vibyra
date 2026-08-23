@@ -1,7 +1,8 @@
-import { getAvailablePurchases, Purchase } from "expo-iap";
+import type { Purchase } from "expo-iap";
 import { Platform } from "react-native";
 import { IapReceiptResponse } from "./appApi";
 import { reportIapReceipt } from "./billingApi";
+import { isExpoGo } from "./expoRuntime";
 
 type FinishTransaction = (input: { purchase: Purchase; isConsumable: boolean }) => Promise<void>;
 type RemoteIapUser = NonNullable<IapReceiptResponse["user"]>;
@@ -32,6 +33,8 @@ export async function restoreNativeIapPurchases(options: {
   finishTransaction: FinishTransaction;
   applyRemoteUser: (user: RemoteIapUser) => void;
 }) {
+  if (isExpoGo) throw new Error("Restore Purchases needs a development or store build.");
+  const { getAvailablePurchases } = require("expo-iap") as typeof import("expo-iap");
   const purchases = await getAvailablePurchases({
     includeSuspendedAndroid: false,
     onlyIncludeActiveItemsIOS: true

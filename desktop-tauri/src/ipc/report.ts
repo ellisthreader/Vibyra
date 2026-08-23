@@ -25,9 +25,3 @@ export interface ReportSubmission {
 export function submitReport(report: ReportSubmission): Promise<string> {
   return invoke("submit_report", { report });
 }
-
-/** Whether a report channel is configured, so the dialog can say so up front
- * rather than after the user has written a paragraph. */
-export function reportChannelReady(): Promise<boolean> {
-  return invoke("report_channel_ready");
-}

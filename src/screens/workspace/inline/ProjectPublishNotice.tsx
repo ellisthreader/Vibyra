@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { PublishFlowResult } from "./ProjectPublishResult";
 import { modalStyles } from "./ProjectPublishModal.styles";
 
@@ -37,7 +37,7 @@ export function ProjectPublishNotice({ notice, onDone }: { notice: PublishFlowRe
   return (
     <Animated.View style={[modalStyles.publishNotice, { opacity, transform: [{ translateY }] }]}>
       <View style={[modalStyles.publishNoticeIcon, notice.tone === "success" ? modalStyles.publishNoticeIconSuccess : notice.tone === "danger" ? modalStyles.publishNoticeIconDanger : null]}>
-        <Ionicons name={notice.tone === "danger" ? "alert-circle-outline" : notice.tone === "success" ? "checkmark-circle" : "time-outline"} color={notice.tone === "danger" ? "#FF9AAD" : notice.tone === "success" ? "#7CF1B3" : "#D9CBFF"} size={19} />
+        <Ionicons name={notice.tone === "danger" ? "alert-circle-outline" : notice.tone === "success" ? "checkmark-circle" : "time-outline"} color={notice.tone === "danger" ? "#FF9AAD" : notice.tone === "success" ? "#7CF1B3" : "#91A7FF"} size={19} />
       </View>
       <View style={modalStyles.publishNoticeCopy}>
         <Text style={modalStyles.publishNoticeTitle}>{notice.title}</Text>

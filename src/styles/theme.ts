@@ -1,62 +1,75 @@
-export const darkColors = {
-  background: "#07070A",
-  surface: "#12121A",
-  elevated: "#0D0D12",
-  surfaceTint: "#160D2A",
-  border: "#232332",
-  borderStrong: "#8B5CFF",
-  text: "#FFFFFF",
-  muted: "#B8B8C8",
-  dim: "#7A7A8C",
-  accent: "#6D3BFF",
-  accentSoft: "rgba(109, 59, 255, 0.18)",
-  magenta: "#F23ACD",
-  magentaSoft: "rgba(242, 58, 205, 0.16)",
-  amber: "#FFB347",
-  amberSoft: "rgba(255, 179, 71, 0.16)",
-  success: "#37D67A",
-  successSoft: "rgba(55, 214, 122, 0.14)",
-  warning: "#FFB347",
-  warningSoft: "rgba(255, 179, 71, 0.16)",
-  error: "#FF5D7A",
-  errorSoft: "rgba(255, 93, 122, 0.15)",
-  info: "#4CA3FF",
-  infoSoft: "rgba(76, 163, 255, 0.16)",
-  scrim: "rgba(0, 0, 0, 0.62)",
-  shadow: "#000000"
+export type ThemeColors = {
+  background: string;
+  rail: string;
+  surface: string;
+  elevated: string;
+  workspace: string;
+  surfaceTint: string;
+  border: string;
+  borderStrong: string;
+  line: string;
+  text: string;
+  muted: string;
+  dim: string;
+  accent: string;
+  accentHover: string;
+  accentSoft: string;
+  action: string;
+  actionPressed: string;
+  onAction: string;
+  neutralPressed: string;
+  neutralSelected: string;
+  disabled: string;
+  disabledSurface: string;
+  magenta: string;
+  magentaSoft: string;
+  amber: string;
+  amberSoft: string;
+  success: string;
+  successSoft: string;
+  warning: string;
+  warningSoft: string;
+  error: string;
+  errorSoft: string;
+  info: string;
+  infoSoft: string;
+  scrim: string;
+  shadow: string;
 };
 
-export const lightColors = {
-  background: "#F6F7FB",
-  surface: "#FFFFFF",
-  elevated: "#F0F2F7",
-  surfaceTint: "#F7F3FF",
-  border: "#DADDE8",
-  borderStrong: "#B8A7F7",
-  text: "#12131A",
-  muted: "#5F6473",
-  dim: "#8A90A0",
-  accent: "#6D3BFF",
-  accentHover: "#5B2BE8",
-  accentSoft: "rgba(109, 59, 255, 0.1)",
-  magenta: "#C026D3",
-  magentaSoft: "rgba(192, 38, 211, 0.1)",
-  amber: "#B7791F",
-  amberSoft: "rgba(183, 121, 31, 0.12)",
-  success: "#12805C",
-  successSoft: "rgba(18, 128, 92, 0.1)",
-  warning: "#B7791F",
-  warningSoft: "rgba(183, 121, 31, 0.12)",
-  error: "#D92D50",
-  errorSoft: "rgba(217, 45, 80, 0.1)",
-  info: "#2563EB",
-  infoSoft: "rgba(37, 99, 235, 0.1)",
-  scrim: "rgba(18, 19, 26, 0.38)",
-  shadow: "rgba(28, 31, 42, 0.14)"
+export const darkColors: ThemeColors = {
+  background: "#0E0F12", rail: "#13151A", surface: "#181A20", elevated: "#20232A",
+  workspace: "#101115", surfaceTint: "#1B1E25", border: "#2B2F38", borderStrong: "#5B7CFA",
+  line: "rgba(166, 173, 186, 0.18)", text: "#F5F7FA", muted: "#A6ADBA", dim: "#747C8A",
+  accent: "#5B7CFA", accentHover: "#7490FF", accentSoft: "rgba(91, 124, 250, 0.14)",
+  action: "#4667E8", actionPressed: "#3D5ACF", onAction: "#FFFFFF",
+  neutralPressed: "rgba(245, 247, 250, 0.07)", neutralSelected: "rgba(245, 247, 250, 0.09)",
+  disabled: "#747C8A", disabledSurface: "rgba(116, 124, 138, 0.12)",
+  magenta: "#5B7CFA", magentaSoft: "rgba(91, 124, 250, 0.14)",
+  amber: "#E8A94B", amberSoft: "rgba(232, 169, 75, 0.16)",
+  success: "#37C78A", successSoft: "rgba(55, 199, 138, 0.14)",
+  warning: "#E8A94B", warningSoft: "rgba(232, 169, 75, 0.16)",
+  error: "#F06472", errorSoft: "rgba(240, 100, 114, 0.15)",
+  info: "#5B7CFA", infoSoft: "rgba(91, 124, 250, 0.14)",
+  scrim: "rgba(0, 0, 0, 0.62)", shadow: "#000000"
+};
+
+export const lightColors: ThemeColors = {
+  background: "#F4F5F7", rail: "#FAFAFB", surface: "#FFFFFF", elevated: "#F0F2F5",
+  workspace: "#FBFBFC", surfaceTint: "#F3F5FA", border: "#D9DDE4", borderStrong: "#315BD8",
+  line: "rgba(98, 106, 120, 0.18)", text: "#171A21", muted: "#626A78", dim: "#7A8290",
+  accent: "#315BD8", accentHover: "#2449B8", accentSoft: "rgba(49, 91, 216, 0.09)",
+  action: "#315BD8", actionPressed: "#2449B8", onAction: "#FFFFFF",
+  neutralPressed: "rgba(23, 26, 33, 0.05)", neutralSelected: "rgba(23, 26, 33, 0.07)",
+  disabled: "#7A8290", disabledSurface: "rgba(122, 130, 144, 0.1)",
+  magenta: "#315BD8", magentaSoft: "rgba(49, 91, 216, 0.09)",
+  amber: "#A96812", amberSoft: "rgba(169, 104, 18, 0.12)",
+  success: "#147A57", successSoft: "rgba(20, 122, 87, 0.1)",
+  warning: "#A96812", warningSoft: "rgba(169, 104, 18, 0.12)",
+  error: "#C9364B", errorSoft: "rgba(201, 54, 75, 0.1)",
+  info: "#315BD8", infoSoft: "rgba(49, 91, 216, 0.09)",
+  scrim: "rgba(23, 26, 33, 0.38)", shadow: "rgba(23, 26, 33, 0.14)"
 };
 
 export const colors = darkColors;
-
-export const monoFont = {
-  fontFamily: "Menlo"
-};
+export const monoFont = { fontFamily: "Menlo" };

@@ -55,17 +55,32 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
 
   const nextAttemptAtRef = useRef(0);
   const cooldownLoggedRef = useRef(false);
+  const inFlightPayloadsRef = useRef(new Set<string>());
+  const lastSyncedPayloadRef = useRef("");
+  const latestPayloadKeyRef = useRef("");
+  const syncChainRef = useRef<Promise<void>>(Promise.resolve());
+  const mountedRef = useRef(true);
+  const activeAuthTokenRef = useRef(authenticated ? authToken : "");
+  const logsRef = useRef(logs);
   const onSessionExpiredRef = useRef(onSessionExpired);
+  activeAuthTokenRef.current = authenticated ? authToken : "";
+  logsRef.current = logs;
 
   useEffect(() => {
     onSessionExpiredRef.current = onSessionExpired;
   }, [onSessionExpired]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!authenticated || !authToken) return undefined;
 
     const timeout = setTimeout(() => {
-      if (Date.now() < nextAttemptAtRef.current) return;
       const appState = createPersistableAppState({
         chatThreads: chatThreads as Record<string, unknown>,
         chatTitles: chatTitles as Record<string, unknown>,
@@ -82,34 +97,56 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
         selectedModel
       });
 
-      appApiRequest("/api/session/state", {
-        method: "POST",
-        body: JSON.stringify({
-          onboardingComplete,
-          rememberedDesktops: rememberedDesktops.map(({ token, ...desktop }) => desktop),
-          appState
-        })
-      }, authToken, { background: true }).then(() => {
-        nextAttemptAtRef.current = 0;
-        cooldownLoggedRef.current = false;
-      }).catch((error: unknown) => {
-        if (isAppSessionExpiredError(error)) {
-          onSessionExpiredRef.current?.();
-          return;
-        }
-        nextAttemptAtRef.current = Date.now() + FAILURE_COOLDOWN_MS;
-        if (errorIsBackendOffline(error)) return;
+      const body = JSON.stringify({
+        onboardingComplete,
+        rememberedDesktops: rememberedDesktops.map(({ token, ...desktop }) => desktop),
+        appState
+      });
+      const payloadKey = `${authToken}\u0000${body}`;
+      latestPayloadKeyRef.current = payloadKey;
+      if (payloadKey === lastSyncedPayloadRef.current || inFlightPayloadsRef.current.has(payloadKey)) return;
+      inFlightPayloadsRef.current.add(payloadKey);
 
-        if (!cooldownLoggedRef.current) {
-          cooldownLoggedRef.current = true;
-          logs.appendLog("Saved locally. Cloud sync will retry when the API is reachable.", "Account", "warning");
+      syncChainRef.current = syncChainRef.current.catch(() => undefined).then(async () => {
+        while (
+          mountedRef.current
+          && activeAuthTokenRef.current === authToken
+          && latestPayloadKeyRef.current === payloadKey
+          && lastSyncedPayloadRef.current !== payloadKey
+        ) {
+          const waitMs = Math.max(0, nextAttemptAtRef.current - Date.now());
+          if (waitMs) await delay(waitMs);
+          if (!mountedRef.current || activeAuthTokenRef.current !== authToken || latestPayloadKeyRef.current !== payloadKey) return;
+
+          try {
+            await appApiRequest("/api/session/state", {
+              method: "POST",
+              body
+            }, authToken, { background: true });
+            lastSyncedPayloadRef.current = payloadKey;
+            nextAttemptAtRef.current = 0;
+            cooldownLoggedRef.current = false;
+          } catch (error: unknown) {
+            if (isAppSessionExpiredError(error)) {
+              onSessionExpiredRef.current?.();
+              return;
+            }
+            nextAttemptAtRef.current = Date.now() + FAILURE_COOLDOWN_MS;
+            if (errorIsBackendOffline(error)) continue;
+
+            if (!cooldownLoggedRef.current) {
+              cooldownLoggedRef.current = true;
+              logsRef.current.appendLog("Saved locally. Cloud sync will retry when the API is reachable.", "Account", "warning");
+            }
+          }
         }
+      }).finally(() => {
+        inFlightPayloadsRef.current.delete(payloadKey);
       });
     }, 700);
 
     return () => clearTimeout(timeout);
   }, [
-    logs,
     authToken,
     authenticated,
     chatThreads,
@@ -133,4 +170,8 @@ export function useCloudSync(snapshot: Snapshot, logs: Logs, onSessionExpired?: 
 function errorIsBackendOffline(error: unknown) {
   return error instanceof BackendOfflineError
     || (error instanceof Error && error.name === "BackendOfflineError");
+}
+
+function delay(milliseconds: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }

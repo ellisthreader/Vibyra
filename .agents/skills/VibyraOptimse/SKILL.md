@@ -56,6 +56,35 @@ rg --files -g '!tmp' -g '!node_modules' -g '!backend/vendor' -g '!.git' -g '!.ex
 
 If the gate reports generated artifacts only, say so explicitly and keep the app-source gate clean.
 
+### Vibyra Desktop
+
+For the desktop app, use the canonical repo gate instead of the ad hoc command
+above:
+
+```bash
+node scripts/check-desktop-lines.mjs
+```
+
+It scans first-party JavaScript, TypeScript, React, CSS, HTML, and Rust under
+`desktop-tauri/`. It prunes dependency/build trees and reports the generated
+provider-logo exclusion separately. Do not treat the desktop app as compliant
+until this command reports zero first-party files over 200 lines.
+
+## Mobile Code-Length Report
+
+For a phone-only hierarchy or optimization summary, use the same manifest and
+physical-line counter as the hard gate:
+
+```bash
+node scripts/check-source-lines.mjs --summary --scope scripts/source-scopes/mobile.json --limit 200
+```
+
+Present the generated compact table with file count, total lines, average,
+largest file, and over-limit count. Also report application source separately
+from tests/test support. Exclude assets, desktop, backend, generated, vendor,
+cache, and temporary files, and name those exclusions. Do not use a shell line
+counter for the final figures when the canonical checker is available.
+
 ## Refactor Patterns
 
 - Provider files should coordinate hooks, not own every action.

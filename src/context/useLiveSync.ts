@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Agent, AgentConnection, LogEvent, PreviewState } from "../types/domain";
 
 type Connection = AgentConnection | null;
@@ -30,8 +30,16 @@ type ActiveAgentRun = {
 };
 
 export function useLiveSync(connection: Connection, requests: Requests, setters: Setters, onConnectionLost: () => void) {
+  const requestsRef = useRef(requests);
+  const settersRef = useRef(setters);
+  const onConnectionLostRef = useRef(onConnectionLost);
+  requestsRef.current = requests;
+  settersRef.current = setters;
+  onConnectionLostRef.current = onConnectionLost;
+  const connectionKey = connection ? `${connection.url}\u0000${connection.token}` : "";
+
   useEffect(() => {
-    if (!connection) return undefined;
+    if (!connectionKey) return undefined;
 
     let cancelled = false;
     let failedPolls = 0;
@@ -40,17 +48,18 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
       if (inFlight) return;
       inFlight = true;
       try {
-        const result = await requests.agentRequest<EventsResult>("/events");
+        const result = await requestsRef.current.agentRequest<EventsResult>("/events");
         if (cancelled) return;
         failedPolls = 0;
-        setters.setLogs(result.events);
-        if (result.preview?.state) setters.setPreviewState(result.preview.state);
+        const activeSetters = settersRef.current;
+        activeSetters.setLogs(result.events);
+        if (result.preview?.state) activeSetters.setPreviewState(result.preview.state);
         const activeAgentRun = result.activeAgentRun;
         if (activeAgentRun?.projectId && result.selectedProjectId === activeAgentRun.projectId) {
-          setters.setSelectedProjectId(activeAgentRun.projectId);
+          activeSetters.setSelectedProjectId(activeAgentRun.projectId);
         }
         if (activeAgentRun) {
-          setters.setAgents((current) => syncLiveAgentProgress(current, activeAgentRun));
+          activeSetters.setAgents((current) => syncLiveAgentProgress(current, activeAgentRun));
         }
       } catch (error) {
         if (cancelled) return;
@@ -60,7 +69,7 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
         }
         failedPolls += 1;
         if (failedPolls < 3) return;
-        onConnectionLost();
+        onConnectionLostRef.current();
       } finally {
         inFlight = false;
       }
@@ -70,7 +79,7 @@ export function useLiveSync(connection: Connection, requests: Requests, setters:
       cancelled = true;
       clearInterval(interval);
     };
-  }, [connection, requests, setters, onConnectionLost]);
+  }, [connectionKey]);
 }
 
 function isInvalidDesktopToken(message: string) {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ChatRunStatus } from "../../../types/domain";
 import { styles } from "../styles";
 
@@ -30,7 +30,7 @@ export function AgentRunProgressText({ status }: { status: ChatRunStatus }) {
       {editActivity ? (
         <View style={styles.agentRunEditCard}>
           <View style={styles.agentRunEditIcon}>
-            <Ionicons name="code-slash-outline" color="#D7C4FF" size={15} />
+            <Ionicons name="code-slash-outline" color="#91A7FF" size={15} />
           </View>
           <View style={styles.agentRunEditBody}>
             <Text style={styles.agentRunEditLabel}>Generating code</Text>

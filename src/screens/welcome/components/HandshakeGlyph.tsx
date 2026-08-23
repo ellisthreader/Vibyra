@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useRef } from "react";
 import { Animated, Easing, View } from "react-native";
 import { supportsNativeAnimation } from "../../../utils/nativeAnimation";
@@ -52,11 +52,11 @@ export function HandshakeGlyph({ awaiting }: { awaiting: boolean }) {
       </Animated.View>
       <View accessible={false} style={styles.handshakeWrap}>
         <Animated.View style={[styles.glyph, { transform: [{ scale: iconScale }] }]}>
-          <Ionicons color="#E8DBFF" name="phone-portrait-outline" size={58} />
+          <Ionicons color="#A6ADBA" name="phone-portrait-outline" size={58} />
         </Animated.View>
         <Animated.View style={[styles.glyphBeam, { opacity: beamOpacity, transform: [{ scaleX: beamScale }] }]} />
         <Animated.View style={[styles.glyph, { transform: [{ scale: iconScale }] }]}>
-          <Ionicons color="#E8DBFF" name="desktop-outline" size={58} />
+          <Ionicons color="#A6ADBA" name="desktop-outline" size={58} />
         </Animated.View>
       </View>
     </View>

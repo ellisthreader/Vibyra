@@ -139,8 +139,12 @@ The whole-desktop audit is implemented across the Rust/Tauri app and the legacy
 Electron bridge. `npm run desktop:lines` now scans `desktop/` and
 `desktop-tauri/`, includes Rust, and prunes generated dependency/build trees.
 Only exact generated provider-logo data and the vendored xterm stylesheet are
-excluded. `desktop-tauri/scripts/split-css.mjs` is the deterministic stylesheet
-sharder; preserve `main.tsx` import order. `.github/workflows/desktop-tauri.yml`
+excluded. Stylesheets are split by responsibility, never mechanically: the old
+`split-css.mjs` sharder and its `*.part-NN.css` output were retired on
+2026-08-22 because arbitrary 180-line cuts violate the organization standard.
+When a sheet outgrows the gate, cut it at a section boundary, name the new file
+for what it owns, and keep `main.tsx` import order byte-for-byte — that order is
+the cascade. `.github/workflows/desktop-tauri.yml`
 runs the line gate, Knip, frontend tests/build, rustfmt, Clippy with warnings
 denied, all Rust tests, and RustSec on the pinned Node/Rust toolchains.
 

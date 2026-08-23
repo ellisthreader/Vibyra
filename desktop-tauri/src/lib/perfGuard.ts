@@ -38,12 +38,19 @@ export function initialGuardState(): PerfGuardState {
 function message(reason: PerfReason, window: PerfWindow): NotificationInput {
   const base = { category: "performance", severity: "warning", osEligible: false } as const;
   if (reason === "compositing") {
+    const canPromoteAuto = window.autoGraphics && window.graphicsSwitchAvailable;
     return {
       ...base,
-      title: "Vibyra is running in compatibility graphics mode",
-      body: "Terminal output is composited on the CPU, which is why things feel slow. Switching to Accelerated may fix it.",
+      title: canPromoteAuto
+        ? "Auto detected slow terminal rendering"
+        : "Vibyra is running in compatibility graphics mode",
+      body: canPromoteAuto
+        ? "The WebKit renderer is saturating a CPU core. Use GPU acceleration the next time Vibyra starts."
+        : "Terminal output is composited on the CPU, which is why things feel slow. Switching to Accelerated may fix it.",
       dedupeKey: "perf:compositing",
-      action: { id: "openGraphicsSettings", label: "Open graphics settings" },
+      action: canPromoteAuto
+        ? { id: "enableAcceleratedGraphics", label: "Use GPU next launch" }
+        : { id: "openGraphicsSettings", label: "Open graphics settings" },
     };
   }
   if (reason === "memory") {

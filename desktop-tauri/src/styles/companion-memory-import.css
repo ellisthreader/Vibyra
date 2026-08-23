@@ -71,7 +71,7 @@
 
 .memory-import__menu small {
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
 }
 
 .memory-empty {
@@ -185,7 +185,7 @@
 .memory-empty__choices small {
   overflow: hidden;
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

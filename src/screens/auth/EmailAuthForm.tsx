@@ -63,7 +63,7 @@ export function EmailAuthForm({
           autoComplete="name"
           onChangeText={onNameChange}
           placeholder="Your name"
-          placeholderTextColor="#8F84A8"
+          placeholderTextColor="#A6ADBA"
           style={[emailStyles.emailInput, { height: inputHeight }]}
           value={name}
         />
@@ -74,7 +74,7 @@ export function EmailAuthForm({
         keyboardType="email-address"
         onChangeText={onEmailChange}
         placeholder="Email address"
-        placeholderTextColor="#8F84A8"
+        placeholderTextColor="#A6ADBA"
         style={[emailStyles.emailInput, { height: inputHeight }]}
         value={email}
       />
@@ -84,7 +84,7 @@ export function EmailAuthForm({
         onChangeText={onPasswordChange}
         onSubmitEditing={canSubmit ? onSubmit : undefined}
         placeholder="Password"
-        placeholderTextColor="#8F84A8"
+        placeholderTextColor="#A6ADBA"
         secureTextEntry
         style={[emailStyles.emailInput, { height: inputHeight }]}
         value={password}
@@ -105,7 +105,7 @@ export function EmailAuthForm({
           autoComplete="off"
           onChangeText={onReferralCodeChange}
           placeholder="Invite code (optional)"
-          placeholderTextColor="#8F84A8"
+          placeholderTextColor="#A6ADBA"
           style={[emailStyles.emailInput, { height: inputHeight }]}
           value={referralCode}
         />

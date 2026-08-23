@@ -1,0 +1,101 @@
+import { StyleSheet } from "react-native";
+import { colors } from "../../../styles/theme";
+
+export const styleSource = {
+  momentBody: {
+      color: "#A6ADBA",
+      fontSize: 16,
+      fontWeight: "700",
+      lineHeight: 23,
+      marginTop: 12,
+      textAlign: "center"
+    },
+  momentBullet: {
+      alignItems: "center",
+      backgroundColor: "rgba(255, 255, 255, 0.055)",
+      borderColor: "rgba(91, 124, 250, 0.12)",
+      borderRadius: 14,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 10,
+      paddingHorizontal: 13,
+      paddingVertical: 11,
+      width: "100%"
+    },
+  momentBulletDot: {
+      borderRadius: 999,
+      height: 10,
+      width: 10
+    },
+  momentBulletStack: {
+      gap: 9,
+      marginTop: 24,
+      width: "100%"
+    },
+  momentBulletText: {
+      color: colors.text,
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "800",
+      lineHeight: 19
+    },
+  momentGlow: {
+      backgroundColor: "rgba(91, 124, 250, 0.18)",
+      borderRadius: 999,
+      height: 220,
+      position: "absolute",
+      width: 220
+    },
+  momentImage: {
+      height: 214,
+      width: 214
+    },
+  momentKicker: {
+      color: "#A6ADBA",
+      fontSize: 12,
+      fontWeight: "900",
+      letterSpacing: 1.1,
+      marginBottom: 8,
+      marginTop: 8,
+      textAlign: "center",
+      textTransform: "uppercase"
+    },
+  momentOrbit: {
+      alignItems: "center",
+      borderColor: "rgba(91, 124, 250, 0.16)",
+      borderRadius: 999,
+      borderWidth: 1,
+      height: 236,
+      justifyContent: "flex-start",
+      paddingTop: 3,
+      position: "absolute",
+      width: 236
+    },
+  momentOrbitDot: {
+      backgroundColor: "#4667E8",
+      borderRadius: 999,
+      height: 7,
+      width: 7
+    },
+  momentScreen: {
+      alignItems: "center",
+      flex: 1,
+      justifyContent: "center",
+      overflow: "hidden",
+      paddingBottom: 10,
+      paddingHorizontal: 2
+    },
+  momentVisual: {
+      alignItems: "center",
+      height: 246,
+      justifyContent: "center",
+      marginBottom: 4,
+      width: "100%"
+    },
+  mutedText: { color: colors.muted, fontSize: 14, fontWeight: "600" },
+  momentProgressSafe: {
+      position: "relative",
+      width: "100%",
+      zIndex: 3
+    }
+} as const;

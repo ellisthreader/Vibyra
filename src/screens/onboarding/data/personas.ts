@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Persona, PersonaModel } from "../types";
 
 export const personaModels: Record<Persona, PersonaModel> = {

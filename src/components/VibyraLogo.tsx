@@ -11,7 +11,7 @@ export function VibyraLogo({ compact, style }: Props) {
     <View style={styles.logoWrap}>
       <Image
         resizeMode="contain"
-        source={require("../assets/vibyra.png")}
+        source={require("../assets/vibyra-cobalt.png")}
         style={[compact ? styles.compactLogo : styles.logo, style]}
       />
     </View>

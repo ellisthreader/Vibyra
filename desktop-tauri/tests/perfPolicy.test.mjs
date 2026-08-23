@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   APP_CPU_DEGRADED,
   CPU_DEGRADED,
+  RENDERER_CPU_DEGRADED,
   LAG_DEGRADED_MS,
   LAG_SEVERE_MS,
   MEM_DEGRADED,
@@ -25,8 +26,11 @@ function window(overrides = {}) {
     lagMs: 0,
     cpuPercent: 10,
     appCpuPercent: 5,
+    rendererCpuPercent: 0,
     memRatio: 0.4,
     softwareCompositing: false,
+    autoGraphics: true,
+    graphicsSwitchAvailable: true,
     workingPanes: 0,
     ...overrides,
   };
@@ -70,6 +74,16 @@ test("Vibyra's own CPU counts even when the system looks calm", () => {
   assert.equal(judge(window({ appCpuPercent: APP_CPU_DEGRADED })).reason, "cpu");
   assert.equal(judge(window({ cpuPercent: CPU_DEGRADED })).reason, "cpu");
   assert.equal(judge(window({ memRatio: MEM_DEGRADED })).reason, "memory");
+});
+
+test("a saturated WebKit renderer counts even when the multicore machine looks calm", () => {
+  const verdict = judge(window({ rendererCpuPercent: RENDERER_CPU_DEGRADED }));
+  assert.deepEqual(verdict, { level: "degraded", reason: "cpu" });
+  const compositing = judge(window({
+    rendererCpuPercent: RENDERER_CPU_DEGRADED,
+    softwareCompositing: true,
+  }));
+  assert.deepEqual(compositing, { level: "degraded", reason: "compositing" });
 });
 
 test("native samples are optional", () => {
@@ -129,7 +143,18 @@ test("a session gets at most a handful of performance hints", () => {
   assert.equal(fired, MAX_PER_SESSION);
 });
 
-test("the compositing hint sends the user to the setting that fixes it", () => {
+test("Auto offers to stage GPU rendering without restarting live terminals", () => {
   const result = run(initialGuardState(), { level: "degraded", reason: "compositing" }, ENTER_SAMPLES, context());
+  assert.equal(result.notify?.action?.id, "enableAcceleratedGraphics");
+  assert.equal(result.notify?.action?.label, "Use GPU next launch");
+});
+
+test("an explicit or environment-forced compatibility choice only opens settings", () => {
+  const result = run(
+    initialGuardState(),
+    { level: "degraded", reason: "compositing" },
+    ENTER_SAMPLES,
+    context({ window: window({ autoGraphics: false }) }),
+  );
   assert.equal(result.notify?.action?.id, "openGraphicsSettings");
 });

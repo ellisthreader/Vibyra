@@ -104,7 +104,7 @@
   padding-block: 3px;
   border-radius: 0;
   color: var(--dim);
-  font-size: 9.5px;
+  font-size: var(--fs-tiny);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -179,7 +179,7 @@
   grid-column: 2;
   overflow: hidden;
   color: var(--dim);
-  font-size: 8.5px;
+  font-size: var(--fs-micro);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

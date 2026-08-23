@@ -97,6 +97,5 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         // half), so the bare names would resolve to the wrong ones.
         perf::perf_sample,
         report::submit_report,
-        report::report_channel_ready,
     ]
 }

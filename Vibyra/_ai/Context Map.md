@@ -73,6 +73,8 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 - Terminal performance and WebKit compositing: `Desktop/Tauri Terminal Performance Overhaul.md`
 - Terminal panes, provider routing, launch settings: `Desktop/AI Terminals.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
+- In-app report dialog and authenticated backend delivery:
+  `Desktop/In-App Reporting.md`
 - Workspace Preview: `Desktop/Projects And Preview.md`
 - System-wide screenshot hotkey, crop/annotation, Copy/Save: `Desktop/Screenshot Capture.md`
 
@@ -84,6 +86,8 @@ Read `Vibyra Backend Memory.md`, then one focused note from `Vibyra/_ai/Backend/
 - `/api/chat/team-plan`, strict Team assignment proposals: `Backend/Team Planning.md`
 - Billing, credits, levels: `Backend/Billing Credits And Levels.md`
 - Auth and cloud sync: `Backend/Auth And Cloud Sync.md`
+- Authenticated Desktop reports and server-owned Discord delivery:
+  `Desktop/In-App Reporting.md`
 - Community publish/moderation/assets: `Backend/Community Publishing.md`
 - App Store-safe static/Railway interactive demos for Explore: `Backend/Hosted Demos.md`
 - Laravel desktop-agent route/locks: `Backend/Desktop Agent Backend.md`

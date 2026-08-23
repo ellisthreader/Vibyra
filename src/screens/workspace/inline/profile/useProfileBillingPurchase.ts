@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Platform } from "react-native";
-import { Purchase, useIAP } from "expo-iap";
-import { useAppContext } from "../../../../context/AppContext";
+import type { Purchase } from "expo-iap";
+import { useAccountActions, useAccountSession } from "../../../../context/AccountContexts";
 import { membershipProductIds, membershipSkus } from "../../../onboarding/data/plans";
 import { Plan } from "../../../onboarding/types";
 import { reportNativeIapPurchase, restoreNativeIapPurchases } from "../../../../utils/nativeIap";
+import { useExpoGoSafeIap } from "../../../../utils/expoGoSafeIap";
 import { BillingCycle, PlanKey } from "./types";
 
 const PROFILE_PLAN_TO_STORE_PLAN: Partial<Record<PlanKey, Plan>> = {
@@ -14,7 +15,8 @@ const PROFILE_PLAN_TO_STORE_PLAN: Partial<Record<PlanKey, Plan>> = {
 };
 
 export function useProfileBillingPurchase(selectedKey: PlanKey, cycle: BillingCycle) {
-  const app = useAppContext();
+  const account = useAccountSession();
+  const actions = useAccountActions();
   const [purchaseMessage, setPurchaseMessage] = useState("");
   const [purchaseError, setPurchaseError] = useState("");
   const [purchasingProductId, setPurchasingProductId] = useState<string | null>(null);
@@ -22,11 +24,11 @@ export function useProfileBillingPurchase(selectedKey: PlanKey, cycle: BillingCy
   const selectedStorePlan = PROFILE_PLAN_TO_STORE_PLAN[selectedKey];
   const selectedProductId = selectedStorePlan ? membershipProductIds[selectedStorePlan][cycle] : null;
 
-  const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useIAP({
+  const { connected: storeConnected, subscriptions, fetchProducts, finishTransaction, requestPurchase } = useExpoGoSafeIap({
     onPurchaseSuccess: async (purchase: Purchase) => {
       try {
-        const result = await reportNativeIapPurchase(app.authToken, purchase);
-        if (result.user) app.applyRemoteUserFromIap(result.user);
+        const result = await reportNativeIapPurchase(account.authToken, purchase);
+        if (result.user) actions.applyRemoteUserFromIap(result.user);
 
         await finishTransaction({ purchase, isConsumable: false });
         setPurchaseError("");
@@ -100,9 +102,9 @@ export function useProfileBillingPurchase(selectedKey: PlanKey, cycle: BillingCy
     try {
       setIsRestoring(true);
       const result = await restoreNativeIapPurchases({
-        authToken: app.authToken,
+        authToken: account.authToken,
         finishTransaction,
-        applyRemoteUser: app.applyRemoteUserFromIap
+        applyRemoteUser: actions.applyRemoteUserFromIap
       });
       const partial = result.failed > 0 ? ` ${result.failed} store transaction${result.failed === 1 ? "" : "s"} still need retrying.` : "";
       setPurchaseMessage(result.restored === 0

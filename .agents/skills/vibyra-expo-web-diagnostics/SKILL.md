@@ -79,30 +79,55 @@ npx expo start --web --port 8082
 
 Do not leave a needed dev server stopped. If you kill an Expo process to clear stale Metro state, restart it and verify the browser URL and bundle URL.
 
-## Desktop Test Preview
+### Phone QR Timeout Rule
 
-When the desktop Test tab selects an Expo project, inspect
-`desktop/lib/previewExpo.mjs`, `previewDevServer.mjs`, and `preview.mjs`.
-The resolver must prefer a verified Metro runtime over a generic root
-`index.html`; large monorepos can contain stale placeholder HTML and nested
-Laravel markers that are not the selected app.
+When an agent starts Expo for a phone QR code, do not keep Metro inside a
+bounded shell command. A successful initial launch can be killed when the tool
+timeout expires, leaving a valid-looking QR that fails on the phone with an
+unknown request-timeout error. Start Metro as a detached background process,
+redirect its logs to `tmp/`, and verify the process remains listening after the
+launch command returns.
 
-Reuse an existing Expo port only when the served `<title>` matches the selected
-project's `app.json` or package identity and its `AppEntry.bundle` returns
-JavaScript. If no matching Metro server exists, the Test flow should expose the
-allowlisted `npm run <script> -- --host lan --port <port>` plan and run it only
-after the visible confirmation.
+Before presenting the QR, verify all three over the machine's active default-
+route Wi-Fi IPv4 address:
 
-When an Expo package also has wrapper scripts such as `start: npm run dev` or a
-shell-based `dev` command that starts backend plus Expo, the dedicated Expo web
-profile must win before generic project-script detection. Launch the Expo
-`web`/`start`/`dev` script directly with an explicit free `--port`; do not run
-the wrapper, restart a live backend, or allow an interactive port prompt.
+1. `/status` returns `packager-status:running`;
+2. the Expo manifest returns `200 application/expo+json` with the same LAN host;
+3. the manifest's native `launchAsset.url` returns `200 application/javascript`.
 
-If no browser runtime is available, return a specific detected reason.
-Distinguish package-only folders, unrecognized package scripts, and non-web
-Python/CLI apps instead of returning one generic failure or showing a Start
-button that cannot succeed.
+Warm the native bundle before asking the user to scan. A full Metro cache crawl
+and first Hermes transform can exceed a phone's request timeout even when the
+bundle is valid. A cache-deserialization warning is recoverable only when Metro
+falls back to a full crawl and the bundle check subsequently passes.
+
+### Expo Go iPhone Launch Rule
+
+Vibyra is pinned to Expo SDK 54 so the physical-iPhone App Store version of
+Expo Go can open a phone-testing QR. Expo's May 2026 SDK 55 release did not
+reach the iOS App Store; a phone that is already on the latest store build can
+therefore report that an SDK 55/56 project requires a newer Expo Go version.
+SDK 55+ physical-iPhone testing requires TestFlight/`eas go` or a development
+build instead. Start the App Store path explicitly with
+`npx expo start --go --lan --port <port>`; `expo-dev-client` is also installed,
+so omitting `--go` selects the wrong runtime automatically.
+
+The Expo Go compatibility boundary is intentional. `expo-iap` and native Google
+Sign-In are not supplied by Expo Go. `src/utils/expoGoSafeIap.ts` returns an
+unavailable-store adapter in Expo Go, and `src/utils/nativeAuth.ts` loads Google
+Sign-In only after confirming the runtime is not Expo Go. Keep the native
+modules and config plugins for development/store builds; do not eagerly import
+them into the Expo Go execution path.
+
+Before showing `exp://<lan-ip>:<port>`, verify the manifest reports SDK 54 and
+the LAN iOS bundle returns `200 application/javascript`.
+
+Do not trust `/status` alone when several Expo projects are running. Resolve
+the listener command line and confirm the manifest's `extra.expoClient.name`,
+SDK, main module, and LAN bundle host belong to Vibyra. Use a free explicit
+port instead of stopping another project's Metro server. `metro.config.js`
+excludes Vibyra's desktop app, backend/vendor, vault, and large `tmp/` trees from
+the mobile file-map crawl; preserve those exclusions so a cleared cache does
+not spend minutes scanning tens of thousands of non-mobile files.
 
 ## Auth Fetch Failures
 
@@ -129,24 +154,11 @@ npm run dev
 
 Only inspect `src/utils/appApi.ts`, `src/context/AppContext.tsx`, and `backend/routes/web.php` after backend liveness is proven.
 
-For Vibyra Desktop email login, inspect the two-hop same-origin path instead:
-
-- renderer `POST /desktop/auth/login`
-- bridge `desktop/lib/desktopAuthProxy.mjs`
-- account API `/api/auth/login`
-
-Confirm `/desktop/state` reports the intended `appApiUrl`, then post invalid
-diagnostic credentials to `/desktop/auth/login`. A reachable account API should
-return its real `401` validation response, not a `502` network message.
-Transient bridge fetch failures should retry once with a bounded timeout, and
-persistent failures must describe the account service as unreachable without
-claiming the whole desktop has lost network connectivity.
-
-On a fresh checkout, the root `.env` is not tracked. The desktop launcher must
-therefore default to the Railway production API, matching
-`desktop/lib/appApiConfig.mjs`; it must not inject localhost unless the user
-explicitly sets `VIBYRA_DESKTOP_API_URL`, `VIBYRA_API_URL`, or
-`EXPO_PUBLIC_API_URL` for local development.
+For Vibyra Desktop email login, inspect the Tauri account client instead:
+`desktop-tauri/src-tauri/src/account_api.rs` calling `/api/auth/login` on the
+account API. On a fresh checkout the root `.env` is not tracked, so the desktop
+app must default to the Railway production API and must not inject localhost
+unless the user explicitly sets `VIBYRA_DESKTOP_API_URL`.
 
 ## Verification
 

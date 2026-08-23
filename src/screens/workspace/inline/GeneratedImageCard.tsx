@@ -35,12 +35,12 @@ const cardStyles = createThemedStyleSheet({
     width: "100%"
   },
   meta: {
-    color: "#8F8A9E",
+    color: "#747C8A",
     fontSize: 11,
     fontWeight: "800"
   },
   title: {
-    color: "#F7F3FF",
+    color: "#F5F7FA",
     fontSize: 14,
     fontWeight: "900"
   }

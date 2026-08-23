@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Platform, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ChatRunStatus } from "../../../types/domain";
 import { chatToolStageIndex } from "../../../utils/chatToolProgress";
@@ -75,9 +75,9 @@ function ToolStageRail({ activeIndex, color, stages }: { activeIndex: number; co
 }
 
 const DEFAULT_TOOL_COLORS = {
-  accent: "#A855F7",
-  border: "rgba(168, 85, 247, 0.3)",
-  iconBackground: "rgba(124, 58, 237, 0.16)",
+  accent: "#5B7CFA",
+  border: "rgba(91, 124, 250, 0.3)",
+  iconBackground: "rgba(91, 124, 250, 0.16)",
   iconColor: "#EDE2FF"
 };
 
@@ -87,7 +87,7 @@ function toolMeta(tool: ChatRunStatus["tool"]) {
     case "image":
       return {
         detail: "Preparing the visual result",
-        gradient: ["rgba(124, 58, 237, 0.1)", "rgba(176, 132, 255, 0.04)"] as const,
+        gradient: ["rgba(91, 124, 250, 0.1)", "rgba(116, 144, 255, 0.04)"] as const,
         icon: "image-outline" as const,
         iconBackground: colors.iconBackground,
         iconColor: colors.iconColor,
@@ -100,7 +100,7 @@ function toolMeta(tool: ChatRunStatus["tool"]) {
     case "research":
       return {
         detail: "Searching, comparing, and checking sources",
-        gradient: ["rgba(124, 58, 237, 0.1)", "rgba(176, 132, 255, 0.04)"] as const,
+        gradient: ["rgba(91, 124, 250, 0.1)", "rgba(116, 144, 255, 0.04)"] as const,
         icon: "search-outline" as const,
         iconBackground: colors.iconBackground,
         iconColor: colors.iconColor,
@@ -113,7 +113,7 @@ function toolMeta(tool: ChatRunStatus["tool"]) {
     case "web":
       return {
         detail: "Searching the web and reading results",
-        gradient: ["rgba(124, 58, 237, 0.1)", "rgba(176, 132, 255, 0.04)"] as const,
+        gradient: ["rgba(91, 124, 250, 0.1)", "rgba(116, 144, 255, 0.04)"] as const,
         icon: "globe-outline" as const,
         iconBackground: colors.iconBackground,
         iconColor: colors.iconColor,
@@ -126,7 +126,7 @@ function toolMeta(tool: ChatRunStatus["tool"]) {
     case "analyze":
       return {
         detail: "Reading project context and file snippets",
-        gradient: ["rgba(124, 58, 237, 0.1)", "rgba(176, 132, 255, 0.04)"] as const,
+        gradient: ["rgba(91, 124, 250, 0.1)", "rgba(116, 144, 255, 0.04)"] as const,
         icon: "document-text-outline" as const,
         iconBackground: colors.iconBackground,
         iconColor: colors.iconColor,
@@ -139,14 +139,14 @@ function toolMeta(tool: ChatRunStatus["tool"]) {
     default:
       return {
         detail: "Working through the request",
-        gradient: ["rgba(142, 60, 255, 0.16)", "rgba(57, 130, 255, 0.08)"] as const,
+        gradient: ["rgba(91, 124, 250, 0.16)", "rgba(57, 130, 255, 0.08)"] as const,
         icon: "sparkles-outline" as const,
-        iconBackground: "rgba(176, 132, 255, 0.12)",
-        iconColor: "#D7C4FF",
+        iconBackground: "rgba(116, 144, 255, 0.12)",
+        iconColor: "#91A7FF",
         borderColor: "rgba(196, 181, 253, 0.24)",
         kicker: "Working",
-        kickerColor: "#B49CFF",
-        stageColor: "#B49CFF",
+        kickerColor: "#91A7FF",
+        stageColor: "#91A7FF",
         title: "Vibyra AI"
       };
   }
@@ -176,7 +176,7 @@ const styles = createThemedStyleSheet({
   card: {
     alignItems: "center",
     backgroundColor: "rgba(15, 17, 26, 0.92)",
-    borderColor: "rgba(176, 132, 255, 0.24)",
+    borderColor: "rgba(116, 144, 255, 0.24)",
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -186,13 +186,13 @@ const styles = createThemedStyleSheet({
     paddingHorizontal: 10,
     paddingVertical: 9
   },
-  detail: { color: "#B9B5C8", fontSize: 12, fontWeight: "600", lineHeight: 17, marginTop: 1 },
-  iconCore: { alignItems: "center", backgroundColor: "rgba(176, 132, 255, 0.12)", borderColor: "rgba(196, 181, 253, 0.24)", borderRadius: 10, borderWidth: 1, height: 32, justifyContent: "center", width: 32 },
-  iconRing: { borderColor: "rgba(176, 132, 255, 0.34)", borderRadius: 15, borderRightColor: "transparent", borderWidth: 1.5, height: 39, position: "absolute", width: 39 },
+  detail: { color: "#A6ADBA", fontSize: 12, fontWeight: "600", lineHeight: 17, marginTop: 1 },
+  iconCore: { alignItems: "center", backgroundColor: "rgba(116, 144, 255, 0.12)", borderColor: "rgba(196, 181, 253, 0.24)", borderRadius: 10, borderWidth: 1, height: 32, justifyContent: "center", width: 32 },
+  iconRing: { borderColor: "rgba(116, 144, 255, 0.34)", borderRadius: 15, borderRightColor: "transparent", borderWidth: 1.5, height: 39, position: "absolute", width: 39 },
   iconWrap: { alignItems: "center", height: 40, justifyContent: "center", width: 40 },
-  kicker: { color: "#B49CFF", fontSize: 10, fontWeight: "900", letterSpacing: 0, textTransform: "uppercase" },
+  kicker: { color: "#91A7FF", fontSize: 10, fontWeight: "900", letterSpacing: 0, textTransform: "uppercase" },
   stageDot: { backgroundColor: "rgba(180, 156, 255, 0.2)", borderRadius: 999, height: 5, width: 16 },
   stageRow: { alignItems: "center", flexDirection: "row", gap: 5, marginTop: 7 },
-  timer: { color: "#C7C0D4", fontSize: 12, fontWeight: "900" },
-  title: { color: "#F4F0FF", fontSize: 14, fontWeight: "900", lineHeight: 19, marginTop: 1 }
+  timer: { color: "#A6ADBA", fontSize: 12, fontWeight: "900" },
+  title: { color: "#F5F7FA", fontSize: 14, fontWeight: "900", lineHeight: 19, marginTop: 1 }
 });

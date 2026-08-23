@@ -1,6 +1,6 @@
 import React from "react";
 import { Linking, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "../../../../styles/theme";
 import { styles } from "../../styles";
 import { ProfileSheet } from "./ProfileSheet";
@@ -15,7 +15,7 @@ export function SupportSheet({ visible, onClose }: { visible: boolean; onClose: 
         Our team replies within one business day. Include the project you were working on and a short description of what happened.
       </Text>
       <View style={styles.profileToggleRow}>
-        <View style={styles.profileToggleIcon}><Ionicons name="mail-outline" color="#C259FF" size={20} /></View>
+        <View style={styles.profileToggleIcon}><Ionicons name="mail-outline" color="#5B7CFA" size={20} /></View>
         <View style={styles.profileToggleCopy}>
           <Text style={styles.profileToggleTitle}>support@vibyra.app</Text>
           <Text style={styles.profileToggleSubtitle}>Email — fastest for billing or account issues</Text>

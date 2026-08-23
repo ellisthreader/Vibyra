@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ProjectBriefSetupPrompt } from "../../../types/projectAnalysis";
 import { useChatActionCardPalette } from "./chatActionCardTheme";
 

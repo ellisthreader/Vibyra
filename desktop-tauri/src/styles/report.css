@@ -1,28 +1,16 @@
-/* In-app reporting. Reads as a conversation rather than a form: choices are
-   tiles you point at, every optional field is behind a disclosure, and what
-   gets attached is listed rather than implied. */
+/* In-app reporting. The default view is deliberately just two questions;
+   classification, diagnostics and follow-up detail stay behind disclosures. */
 
 .report-modal {
-  width: min(720px, 94vw);
+  width: min(620px, 94vw);
 }
 
 .report__header {
   display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  padding: 15px 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--line);
-}
-
-.report__mark {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  flex: none;
 }
 
 .report__heading {
@@ -32,136 +20,38 @@
 
 .report__heading h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
   letter-spacing: -0.01em;
 }
 
 .report__heading p {
-  margin: 2px 0 0;
-  font-size: 12px;
+  margin: 3px 0 0;
+  font-size: var(--fs-body);
   color: var(--muted);
 }
 
 .report__body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   padding: 16px;
   overflow-y: auto;
 }
 
-.report__group {
-  border: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.report__legend,
 .report__label {
   display: block;
-  padding: 0 0 7px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 0 0 6px;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semi);
   color: var(--text);
 }
 
 .report__label em,
-.report__more summary em {
+.report__more summary em,
+.report__context summary em {
   margin-left: 6px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: var(--fw-regular);
   color: var(--dim);
-}
-
-/* --- kind tiles --- */
-
-.report__kinds {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-}
-
-.report__kind {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 9px 10px;
-  text-align: left;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color 120ms, background 120ms;
-}
-
-.report__kind:hover {
-  background: var(--hover);
-}
-
-.report__kind b {
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.report__kind span {
-  font-size: 11px;
-  line-height: 1.35;
-  color: var(--muted);
-}
-
-.report__kind--on {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-/* --- severity --- */
-
-.report__grades {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.report__grade {
-  padding: 6px 11px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.report__grade:hover {
-  background: var(--hover);
-}
-
-.report__grade--on {
-  color: var(--text);
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.report__grade--blocker.report__grade--on {
-  border-color: rgba(240, 100, 114, 0.42);
-  background: var(--danger-soft);
-}
-
-.report__grade--high.report__grade--on {
-  border-color: rgba(232, 169, 75, 0.42);
-  background: var(--amber-soft);
-}
-
-/* --- text fields --- */
-
-.report__field {
-  display: block;
-}
-
-.report__textarea {
-  width: 100%;
-  resize: vertical;
-  line-height: 1.45;
-  font-family: inherit;
 }

@@ -9,7 +9,7 @@ export const welcome4 = {
     width: "100%" as const
   },
   radarRing: {
-    borderColor: "rgba(176, 95, 255, 0.85)",
+    borderColor: "rgba(91, 124, 250, 0.85)",
     borderRadius: 999,
     borderWidth: 2,
     height: 160,
@@ -18,11 +18,11 @@ export const welcome4 = {
   },
   radarCore: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(143, 50, 255, 0.92)",
+    backgroundColor: "rgba(91, 124, 250, 0.92)",
     borderRadius: 999,
     height: 64,
     justifyContent: "center" as const,
-    shadowColor: "#A741FF",
+    shadowColor: "#5B7CFA",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 24,
@@ -34,8 +34,8 @@ export const welcome4 = {
   },
   desktopRow: {
     alignItems: "center" as const,
-    backgroundColor: "rgba(12, 9, 38, 0.78)",
-    borderColor: "rgba(154, 77, 255, 0.32)",
+    backgroundColor: "rgba(24, 26, 32, 0.78)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row" as const,
@@ -49,14 +49,14 @@ export const welcome4 = {
     fontWeight: "900" as const
   },
   desktopStatus: {
-    color: "rgba(226, 219, 255, 0.7)",
+    color: "rgba(166, 173, 186, 0.7)",
     fontSize: 12,
     fontWeight: "700" as const,
     marginTop: 2
   },
   codeInput: {
-    backgroundColor: "rgba(15, 10, 42, 0.82)",
-    borderColor: "rgba(154, 77, 255, 0.32)",
+    backgroundColor: "rgba(24, 26, 32, 0.82)",
+    borderColor: "rgba(91, 124, 250, 0.32)",
     borderRadius: 14,
     borderWidth: 1,
     color: colors.text,
@@ -76,12 +76,12 @@ export const welcome4 = {
     marginTop: 8
   },
   searchingText: {
-    color: "#D8BCFF",
+    color: "#A6ADBA",
     fontSize: 13,
     fontWeight: "800" as const
   },
   helpText: {
-    color: "rgba(226, 219, 255, 0.6)",
+    color: "rgba(166, 173, 186, 0.6)",
     fontSize: 12,
     fontWeight: "700" as const,
     marginTop: 10,

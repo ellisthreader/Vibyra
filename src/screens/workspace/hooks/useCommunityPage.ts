@@ -5,6 +5,7 @@ import { loadCommunityComments, loadCommunityCommentsAsync, saveCommunityComment
 import { CommunityComment, CommunityFilter, CommunityPost } from "../types";
 import { communityFeedError, createModeratedSampleComment, mergeCommunityComments, mergeIdLists } from "./communityPageHelpers";
 import { loadCommunityReactions, loadCommunityReactionsAsync, saveCommunityReactions } from "./communityReactionStorage";
+import { filterCommunityPosts } from "./communityFeedFilters";
 
 export function useCommunityPage(
   authToken: string,
@@ -83,21 +84,10 @@ export function useCommunityPage(
 
   useEffect(() => loadCommunityFeed(false), [loadCommunityFeed]);
 
-  const filteredPosts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const matchesSearch = posts.filter((post) => {
-      const searchable = [post.title, post.description, post.user, ...post.tags].join(" ").toLowerCase();
-      return !q || searchable.includes(q);
-    });
-    if (activeFilter === "Popular") {
-      return [...matchesSearch].sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments));
-    }
-    if (activeFilter === "Featured") {
-      const featured = matchesSearch.filter((post) => post.tag === "Featured" || post.tags.includes("Featured"));
-      return featured.length > 0 ? featured : matchesSearch;
-    }
-    return matchesSearch;
-  }, [activeFilter, posts, searchQuery]);
+  const filteredPosts = useMemo(
+    () => filterCommunityPosts(posts, searchQuery, activeFilter),
+    [activeFilter, posts, searchQuery]
+  );
 
   const hasFeaturedPosts = useMemo(
     () => posts.some((post) => post.tag === "Featured" || post.tags.includes("Featured")),

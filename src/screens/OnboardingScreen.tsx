@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useState } from "react";
 import { Image, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../context/AppContext";
+import { useAccountActions, useAccountSession } from "../context/AccountContexts";
 import { AnimatedStep } from "./onboarding/components/AnimatedStep";
 import { PersistentOnboardingBackground } from "./onboarding/components/Backdrop";
 import { OnboardingNav } from "./onboarding/components/OnboardingNav";
@@ -26,11 +26,10 @@ import { WelcomeConnectScreen } from "./welcome/WelcomeConnectScreen";
 import { UsageSlider } from "./onboarding/steps/UsageSlider";
 
 export function OnboardingScreen() {
-  const app = useAppContext();
+  const { completeOnboarding } = useAccountActions();
+  const { onboardingComplete } = useAccountSession();
   const insets = useSafeAreaInsets();
-  // QUIZ_TEMP_DISABLED: original initialiser was `() => (app.onboardingComplete && !app.pcSetupComplete) ? 7 : 0`.
-  // Quiz steps 0–6 are kept in-tree but unreachable; every user starts on WelcomeConnect (step 7).
-  const [step, setStep] = useState<OnboardingStep>(7);
+  const [step, setStep] = useState<OnboardingStep>(() => onboardingComplete ? 7 : 0);
   const [momentStep, setMomentStep] = useState<QuizStep | null>(null);
   const [answers, setAnswers] = useState<Answers>(initialAnswers);
   const [profileGenerating, setProfileGenerating] = useState(false);
@@ -82,7 +81,7 @@ export function OnboardingScreen() {
   };
 
   const finishOnboarding = () => {
-    app.completeOnboarding();
+    completeOnboarding();
     setStep(7);
   };
 
@@ -120,7 +119,7 @@ export function OnboardingScreen() {
   return (
     <SafeAreaView edges={isFullBleedStep || isArtQuizStep ? [] : ["top", "right", "bottom", "left"]} style={styles.shell}>
       <StatusBar style="light" />
-      <LinearGradient colors={["#08070D", "#100C18", "#07070A"]} style={styles.shell}>
+      <LinearGradient colors={["#181A20", "#181A20", "#181A20"]} style={styles.shell}>
         <PersistentOnboardingBackground variant={backdropVariant} />
         {step < 7 ? (
           <View style={[
