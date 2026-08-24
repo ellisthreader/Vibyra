@@ -8,7 +8,7 @@ a commitment to a particular replacement provider.
 
 - Mobile and desktop clients default to
   `https://vibyra-production.up.railway.app` in `src/utils/appApiOrigins.ts` and
-  `desktop/lib/appApiConfig.mjs`.
+  `desktop-tauri/src-tauri/src/account_api.rs`.
 - The Railway service builds and serves the Laravel backend and marketing
   assets. `backend/railway.json`, `backend/nixpacks.toml`, and `backend/Procfile`
   currently start `php artisan serve`, run migrations during web startup, and

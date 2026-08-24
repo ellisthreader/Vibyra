@@ -49,8 +49,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
 
-  mobile-desktop:
-    name: Mobile and desktop checks
+  mobile:
+    name: Mobile checks
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -73,17 +73,6 @@ jobs:
         run: npm run typecheck
       - name: Run mobile tests
         run: node --test $(find src -name '*.test.mjs' -print | sort)
-      - name: Run desktop security and preview tests
-        run: >-
-          node --test
-          desktop/lib/preview.test.mjs
-          desktop/lib/previewCapabilities.phaseA.test.mjs
-          desktop/lib/deviceCredentials.test.mjs
-          desktop/lib/pairingCredentials.test.mjs
-          desktop/lib/pairingSecurity.test.mjs
-          desktop/lib/pairingAccount.test.mjs
-          desktop/lib/pairingQr.test.mjs
-
   backend:
     name: Backend checks
     runs-on: ubuntu-latest

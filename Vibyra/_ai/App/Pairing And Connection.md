@@ -1,5 +1,9 @@
 # App - Pairing And Connection
 
+Status: legacy mobile compatibility/history. The Electron bridge that served
+these LAN routes has been removed, and native Tauri does not implement this
+pairing contract. Do not route current desktop work here.
+
 Read this for PC reachable/not reachable, Wi-Fi pairing, remembered desktops, token reconnect, desktop discovery, and the shared desktop folder picker.
 
 ## Folder Browser Modal

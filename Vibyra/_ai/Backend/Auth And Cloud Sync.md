@@ -15,7 +15,7 @@ Read this for backend auth, app session state, and mobile cloud sync behavior.
 
 Bearer tokens are issued at login/signup. `authenticatedUser($request)` resolves the current user for protected routes.
 
-App-session expiry should return the user to login without wiping local workspace/chat state. Keep this separate from desktop bearer-token expiry, which should only disconnect the paired PC. Account profile writes use `POST /api/account/profile`. Destructive `DELETE /api/account` is provider-aware: email accounts require the current password; Apple/Google accounts require a freshly verified identity token whose provider subject matches the stored `provider_id`. Apple deletion also consumes a new single-use nonce challenge.
+App-session expiry should return the user to login without wiping local workspace/chat state. The native desktop owns a separate bearer session in its OS credential store and returns to its own auth gate when that session expires. Account profile writes use `POST /api/account/profile`. Destructive `DELETE /api/account` is provider-aware: email accounts require the current password; Apple/Google accounts require a freshly verified identity token whose provider subject matches the stored `provider_id`. Apple deletion also consumes a new single-use nonce challenge.
 
 Account session management is backed by real `vibyra_sessions` rows. Session creation stores `deviceName`, optional `installId` as `device_identifier`, request IP, user agent, `created_at`, and `last_used_at`; authenticated requests refresh `last_used_at` plus request metadata. Required migrations include `2026_05_21_000002_add_device_metadata_to_vibyra_sessions_table.php` and `2026_05_21_000003_add_device_identifier_to_vibyra_sessions_table.php`; run `php artisan migrate --force` if login/signup reports a missing session metadata column. Routes: `GET /api/account/sessions` lists current-user `devices` grouped by `device_identifier` (legacy rows group by device name, user agent, and IP) and also returns raw `sessions` for compatibility. Device payloads include `current`, `location`, `createdAt`, `updatedAt`, and `sessionCount`, with the current device sorted first. `DELETE /api/account/devices/{deviceId}` revokes all sessions for one device; `DELETE /api/account/sessions/{sessionId}` revokes one raw session; `DELETE /api/account/sessions` revokes all sessions including the current token. Private, loopback, and reserved IPs are surfaced as `Local network`.
 
@@ -33,7 +33,7 @@ that value during auth and pairing. On authenticated startup,
 `device_name` and stable `device_identifier`, allowing older generic session
 rows to show the phone label in Settings without requiring a new login.
 
-Public-IP account session locations use MaxMind GeoLite2 City locally through `App\Services\SessionLocationResolver`; it returns `City, Country` or country-only when available and caches resolved labels for 7 days. When the database is missing or unreadable it returns the public IP but does not cache that fallback; cache keys include the database modification time so installing or refreshing the database takes effect immediately. Do not call a hosted geolocation API on login/session listing. `php artisan maxmind:update` downloads `GeoLite2-City.mmdb` to `storage/app/maxmind/` using the current MaxMind permalink with Basic Auth from `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY`, skips when the database is fresh (`MAXMIND_UPDATE_DAYS`, default 7), and uses a file lock to prevent repeated concurrent downloads. `routes/console.php` schedules it weekly, and `npm run desktop:setup` runs it when both credentials are configured.
+Public-IP account session locations use MaxMind GeoLite2 City locally through `App\Services\SessionLocationResolver`; it returns `City, Country` or country-only when available and caches resolved labels for 7 days. When the database is missing or unreadable it returns the public IP but does not cache that fallback; cache keys include the database modification time so installing or refreshing the database takes effect immediately. Do not call a hosted geolocation API on login/session listing. `php artisan maxmind:update` downloads `GeoLite2-City.mmdb` to `storage/app/maxmind/` using the current MaxMind permalink with Basic Auth from `MAXMIND_ACCOUNT_ID` and `MAXMIND_LICENSE_KEY`, skips when the database is fresh (`MAXMIND_UPDATE_DAYS`, default 7), and uses a file lock to prevent repeated concurrent downloads. `routes/console.php` schedules it weekly.
 
 Desktop local development and Railway-style proxy deployment can present `request()->ip()`/`REMOTE_ADDR` as `127.0.0.1` or a private LAN/proxy address. `UserPayloads::sessionRequestIp()` uses the real socket IP when it is public; only when the socket IP is private/local may it trust the first valid public candidate from `publicIp`, `X-Vibyra-Public-IP`, `CF-Connecting-IP`, `X-Real-IP`, or `X-Forwarded-For`. This prevents desktop `/api/session` and `/api/account/sessions` refreshes from overwriting a real public session IP back to localhost while still ignoring client-spoofed forwarded IPs on normal public requests. CORS must allow `X-Vibyra-Public-IP` for browser-origin desktop account calls.
 
@@ -43,7 +43,12 @@ If mobile web login fails with `POST http://<LAN-IP>:8000/api/auth/login net::ER
 
 If desktop/mobile login fails with `SQLSTATE[HY000]: General error: 11 database disk image is malformed` against `backend/database/database.sqlite`, treat the local SQLite file as corrupt. First preserve it with a timestamped `.bak`, then recreate `backend/database/database.sqlite` and run `php artisan migrate --force` from `backend/`. Do not start with `php artisan optimize:clear` after an empty DB reset because `CACHE_STORE=database` can make that command fail until the `cache` table exists. After migrations, verify with `PRAGMA integrity_check`, confirm `sessions`, `cache`, `users`, and `vibyra_sessions` exist, then run `php artisan optimize:clear`.
 
-Desktop email login has two backend hops: browser JS posts `/api/auth/login`, then the local desktop bridge posts `/desktop/session` and verifies the bearer token through backend `/api/session`. Both hops must use the same URL. The `Vibyra Desktop` launcher resolves `VIBYRA_DESKTOP_API_URL` from explicit desktop config, then `VIBYRA_API_URL`, then root `EXPO_PUBLIC_API_URL`; `desktop/lib/state.mjs::publicState()` exposes that URL as loopback-only `appApiUrl`, and `desktop/assets/app.auth-helpers.js` uses it for renderer auth. Do not let the renderer silently use localhost while the bridge verifies against Railway, or vice versa.
+Native desktop email login goes through enumerated Tauri IPC commands into
+`desktop-tauri/src-tauri/src/account_api.rs` and `account_auth.rs`; the renderer
+never receives the bearer token or an arbitrary backend URL. Production uses
+the Railway HTTPS API, while `VIBYRA_DESKTOP_API_URL` development overrides are
+restricted to loopback or HTTPS. Read `Desktop/Tauri Account Authentication.md`
+before changing this contract.
 
 Mobile provider login uses `expo-apple-authentication` and
 `@react-native-google-signin/google-signin`. The mobile client sends provider
@@ -63,7 +68,8 @@ verification. Callback results are picked up once by the polling desktop and
 become normal `vibyra_sessions` bearer sessions. Configure the exact HTTPS
 callbacks plus `GOOGLE_DESKTOP_CLIENT_ID/SECRET` and
 `APPLE_DESKTOP_CLIENT_ID` with either a client secret or Team/Key/private-key
-fields. Provider secrets and identity tokens never pass through Electron.
+fields. Provider secrets and identity tokens never pass through the Tauri
+renderer.
 Signup and provider-login responses include `isNewUser`: true only when that
 request created the account, false for an existing provider identity. Desktop
 uses it solely for the current-launch first welcome; it is not persisted as
@@ -81,7 +87,7 @@ responses to avoid account enumeration. Production requires an HTTPS
 Verification resend invokes the real `VibyraVerifyEmail` notification and is
 limited server-side to one request per normalized email address every 60
 seconds. Responses include `retryAfter` so Desktop can display the same
-cooldown while it automatically polls `/desktop/session` for verified state.
+cooldown while it refreshes native account state.
 
 Verified account phone numbers use Twilio Verify rather than local OTP storage.
 Authenticated `POST /api/account/phone/start` accepts an E.164 `phoneNumber`,

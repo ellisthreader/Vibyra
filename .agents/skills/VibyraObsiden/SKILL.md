@@ -26,6 +26,10 @@ Before broad repo exploration, follow the repo memory protocol:
    - backend/cloud: `Vibyra/_ai/Vibyra Backend Memory.md`
 5. If that index points to focused notes, read exactly one focused note for the task.
 
+The native desktop app lives at `desktop-tauri/`. The old Electron desktop
+companion and its repo-root launchers have been removed; do not route work to
+`desktop/` or `Vibyra Desktop`.
+
 Use these notes to choose a narrow source-file set. Avoid generated folders such as `node_modules`, `.git`, `.expo`, `.vibyra-agent`, `backend/vendor`, and temporary browser profiles.
 
 Before topic-specific work, check `.agents/skills/` for a matching local skill

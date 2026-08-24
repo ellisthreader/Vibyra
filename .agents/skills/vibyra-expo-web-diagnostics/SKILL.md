@@ -82,7 +82,8 @@ Do not leave a needed dev server stopped. If you kill an Expo process to clear s
 ## Desktop Test Preview
 
 When the desktop Test tab selects an Expo project, inspect
-`desktop/lib/previewExpo.mjs`, `previewDevServer.mjs`, and `preview.mjs`.
+`desktop-tauri/src-tauri/crates/vibyra-core/src/preview/package_profile.rs`,
+`detect.rs`, `manager.rs`, and `process.rs`.
 The resolver must prefer a verified Metro runtime over a generic root
 `index.html`; large monorepos can contain stale placeholder HTML and nested
 Laravel markers that are not the selected app.
@@ -129,24 +130,13 @@ npm run dev
 
 Only inspect `src/utils/appApi.ts`, `src/context/AppContext.tsx`, and `backend/routes/web.php` after backend liveness is proven.
 
-For Vibyra Desktop email login, inspect the two-hop same-origin path instead:
-
-- renderer `POST /desktop/auth/login`
-- bridge `desktop/lib/desktopAuthProxy.mjs`
-- account API `/api/auth/login`
-
-Confirm `/desktop/state` reports the intended `appApiUrl`, then post invalid
-diagnostic credentials to `/desktop/auth/login`. A reachable account API should
-return its real `401` validation response, not a `502` network message.
-Transient bridge fetch failures should retry once with a bounded timeout, and
-persistent failures must describe the account service as unreachable without
-claiming the whole desktop has lost network connectivity.
-
-On a fresh checkout, the root `.env` is not tracked. The desktop launcher must
-therefore default to the Railway production API, matching
-`desktop/lib/appApiConfig.mjs`; it must not inject localhost unless the user
-explicitly sets `VIBYRA_DESKTOP_API_URL`, `VIBYRA_API_URL`, or
-`EXPO_PUBLIC_API_URL` for local development.
+Native Vibyra Desktop auth is independent of Expo web. Inspect
+`desktop-tauri/src-tauri/src/account_api.rs` and `account_auth.rs`: production
+defaults to the Railway HTTPS API, `VIBYRA_DESKTOP_API_URL` is restricted to
+loopback or HTTPS, and the renderer receives only a safe account snapshot.
+Transient native API failures retry once with a bounded timeout; persistent
+failures must describe the account service as unreachable without claiming the
+whole desktop has lost network connectivity.
 
 ## Verification
 

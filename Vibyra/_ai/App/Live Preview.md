@@ -1,5 +1,9 @@
 # App - Live Preview
 
+The mobile inline/generated and hosted preview paths remain current. Sections
+about `desktop/`, port `4317`, or phone-proxied project previews document the
+removed Electron bridge and are not native Tauri contracts.
+
 Read this for in-app website/app previews, preview cards in chat, blank preview bugs, and "open/view on my phone" prompts.
 
 ## Main Files

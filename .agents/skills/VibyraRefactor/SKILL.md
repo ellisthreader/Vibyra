@@ -1,8 +1,8 @@
 ---
 name: vibyra-refactor
-description: Safely refactor and optimize Vibyra code when files are too long, messy, over-parameterized, weakly typed, not using appropriate context/hooks/modules, or generally unorganized. Use when asked to clean up code, enforce a no-source-file-over-250-lines limit, split oversized files, reduce parameter sprawl, add focused types/contexts/hooks/components, or verify that behavior still works after a refactor.
+description: Safely refactor and optimize Vibyra code when files are too long, messy, over-parameterized, weakly typed, not using appropriate context/hooks/modules, or generally unorganized. Use when asked to clean up code, enforce a source-file line limit, split oversized files, reduce parameter sprawl, add focused types/contexts/hooks/components, or verify that behavior still works after a refactor.
 metadata:
-  short-description: Safe refactors and 250-line gate
+  short-description: Safe refactors and source line gates
 ---
 
 # VibyraRefactor
@@ -17,6 +17,8 @@ Use this skill for structural cleanup and optimization, especially after the use
 - Do not revert unrelated user changes in the working tree.
 - Keep behavior stable unless the user explicitly asks for behavior changes.
 - Default source line limit is 250 lines unless the repo or user gives a stricter limit.
+- Vibyra Desktop uses a hard 200-line first-party gate. Run
+  `node scripts/check-desktop-lines.mjs`; do not replace it with an ad hoc count.
 
 ## First Pass
 
@@ -24,7 +26,7 @@ Use this skill for structural cleanup and optimization, especially after the use
 2. Check current offenders before editing:
 
 ```bash
-rg --files src backend/app backend/tests desktop/lib desktop/assets -g '*.{ts,tsx,js,jsx,mjs,cjs,php,css,html}' \
+rg --files src backend/app backend/tests desktop-tauri/src -g '*.{ts,tsx,js,jsx,mjs,cjs,php,css,html}' \
   | xargs wc -l \
   | awk '$2 != "total" && $1 > 250 {print}' \
   | sort -nr
@@ -65,11 +67,12 @@ rg --files -g '*.{ts,tsx,js,jsx,mjs,cjs,php,css,html}' \
 Run the checks that match the touched surfaces:
 
 - TypeScript: `npm run typecheck`
-- Desktop MJS tests: `node --test desktop/lib/preview.test.mjs` or the relevant test file
+- Desktop tests: `npm --prefix desktop-tauri test` or the relevant test file
 - JS/MJS syntax: `node --check <file>`
 - PHP syntax: `php -l <file>`
 - Backend focused tests: prefer `./vendor/bin/phpunit --filter '<pattern>'` when Artisan reports warnings unclearly
 - Final line gate across agreed source scope
+- Vibyra Desktop final gate: `node scripts/check-desktop-lines.mjs`
 
 If a runner prints passing assertions but exits non-zero, investigate. Common causes are empty test classes, warnings, deprecations, or hidden boot errors.
 

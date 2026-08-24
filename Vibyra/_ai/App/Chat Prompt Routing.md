@@ -1,5 +1,9 @@
 # App - Chat Prompt Routing
 
+Paired-desktop routing and `desktop/` source references below describe the
+retired Electron bridge. Native Tauri terminal routing is documented in
+`Desktop/AI Terminals.md`.
+
 Read this for prompt submission, cloud vs desktop routing, project briefs, model selection, and reasoning effort.
 
 ## Files
@@ -11,7 +15,6 @@ Read this for prompt submission, cloud vs desktop routing, project briefs, model
 - `src/context/useProjectBriefActions.ts`
 - `src/context/useWorkspaceFileActions.ts`
 - `src/utils/projectBriefs.ts`
-- Desktop context: `desktop/lib/projectContext.mjs`
 - Backend sync: `backend/app/Http/Controllers/Concerns/ChatEndpoint.php`, `ChatEndpointHelpers.php`, `ChatPrompting.php`
 
 ## Routing Rules

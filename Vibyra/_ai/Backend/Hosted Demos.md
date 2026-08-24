@@ -11,8 +11,6 @@ as the deep reference for the full product/spec history.
 - `backend/app/Models/PublishedProjectDeployment.php`
 - `backend/config/services.php`
 - `backend/routes/console.php`
-- `desktop/lib/publishDemoBundle.mjs`
-- `desktop/lib/publishRuntimeBundle.mjs`
 - `src/utils/hostedDemo.ts`
 - `src/utils/publicDemoUrls.ts`
 - `src/components/PublicDemoWebView.tsx`
@@ -23,7 +21,13 @@ Public Explore demos must not use creator desktop bridge URLs, localhost, LAN
 IPs, bearer preview URLs, or private `.local` hosts in production. Use public
 HTTPS hosted/static/demo URLs only.
 
-Publishing can include a desktop `hostedDemo` static bundle and, for Node,
+The native Tauri desktop does not currently produce hosted-demo or runtime
+bundles; the legacy Electron packagers were removed with `desktop/`. Backend
+support for already-stored bundles and older clients remains. Any future native
+producer must re-establish the same bounded packaging and secret-exclusion
+contract before it is enabled.
+
+Publishing payloads may include a `hostedDemo` static bundle and, for Node,
 Laravel, or conventional Python Django/FastAPI/Flask apps, a `runtimeBundle`.
 Python projects with a root requirements manifest, nested `backend/app/main.py`,
 and a built Vite `frontend/dist` are packaged with generated
@@ -90,11 +94,11 @@ CLI fallback must explicitly remove `RAILWAY_API_TOKEN` when using
 `RAILWAY_TOKEN`, because Railway rejects processes with both credentials set.
 
 Laravel runtime bundles are demo-mode source bundles, not full repo uploads.
-`desktop/lib/publishRuntimeBundle.mjs` must include Composer/server files,
-`resources/views`, `public/build`, `bootstrap/cache/.gitignore`, and generated
-build assets, but exclude `.env`, `vendor`, `node_modules`, `package.json`,
-frontend source under `resources/js`, user Railway/Nixpacks config, and
-generated Laravel cache PHP. The deployment service also ensures
+Any bundle producer must include Composer/server files, `resources/views`,
+`public/build`, `bootstrap/cache/.gitignore`, and generated build assets, but
+exclude `.env`, `vendor`, `node_modules`, `package.json`, frontend source under
+`resources/js`, user Railway/Nixpacks config, and generated Laravel cache PHP.
+The deployment service also ensures
 `bootstrap/cache/.gitignore` exists before upload. The generated Railway start
 command must create `bootstrap/cache`, `storage/framework/{cache/data,sessions,views}`,
 and `storage/logs` before Composer discovery or `php artisan serve`.
@@ -129,15 +133,15 @@ so the old desktop packager silently stopped at 320 files and submitted an
 `ok: true` bundle containing skills, desktop files, Laravel source, and tests.
 Backend normalization correctly rejected private `localhost`/LAN URL literals
 and an empty asset, returning the generic “runtime bundle was incomplete or
-unsafe” response. The current packager reports the file-cap failure instead,
-but runtime detection should prefer the actual nested backend or reject broad
-Expo/dev scripts rather than scanning the whole monorepo.
+unsafe” response. Any replacement packager must report the file-cap failure
+instead; runtime detection should prefer the actual nested backend or reject
+broad Expo/dev scripts rather than scanning the whole monorepo.
 
 Runtime bundle size failures use the stable code
 `runtime_bundle_limit_exceeded` and must tell the creator that the project is
-too large for Vibyra hosting. The desktop packager, mobile publish flow, and
-backend publish endpoint preserve that precise message instead of falling back
-to “incomplete or unsafe.”
+too large for Vibyra hosting. Mobile publish and the backend publish endpoint
+preserve that precise message instead of falling back to “incomplete or
+unsafe”; any future native packager must do the same.
 
 `PUBLISH_REVIEW_TEMPORARILY_DISABLED=true` is the explicit emergency launch
 bypass for deterministic, local, remote, and AI publish-review decisions. It
@@ -222,16 +226,15 @@ repo/branch.
 
 ## Publish Contract Tests
 
-`desktop/lib/publishContractMatrix.test.mjs` and
-`src/screens/workspace/inline/ProjectPublishContractMatrix.test.mjs` model
+`src/screens/workspace/inline/ProjectPublishContractMatrix.test.mjs` models
 nested React/Vite plus Laravel, frontend-only React, Laravel/Inertia, Node and
 Python full-stack apps, stale cache recovery, build failures, hosting limits,
-and credential exclusion. Keep the desktop payload, mobile selection, and
-backend acceptance contract aligned when changing publish behavior.
+and credential exclusion. Keep mobile selection and backend acceptance aligned
+when changing publish behavior.
 
 Two cross-layer boundaries require explicit coverage: bundle requests must
 carry the canonical `projectPath` as a fallback for stale non-path project IDs,
-and desktop runtime packaging must reject `secret`/`secrets` directories before
+and any runtime packaging must reject `secret`/`secrets` directories before
 the backend converts an otherwise successful bundle into the generic unsafe
 bundle error.
 

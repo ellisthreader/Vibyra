@@ -66,6 +66,9 @@ Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
 ## Desktop App
 
 Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/`.
+The active desktop source is only `desktop-tauri/`; pre-Tauri Electron notes
+under `Vibyra/04 Archive/Vibyra Pre-Tauri (2026-06 to 07)/` are historical and
+must not be used as current source ownership.
 
 - App launch and terminal launcher: `Desktop/Rust Tauri Desktop.md`
 - Post-auth welcome: `Desktop/Rust Tauri First Welcome.md`

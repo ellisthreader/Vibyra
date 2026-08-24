@@ -1,5 +1,9 @@
 # App - Workspace Projects
 
+Desktop-discovery, folder-browse, and paired-project sections describe the
+retired Electron bridge. The native Tauri app owns its project workspace
+independently under `desktop-tauri/`.
+
 Read this for project selection, folder search, detached chat behavior, project chat ownership, file browsing, and creating/opening projects.
 
 ## Main Files

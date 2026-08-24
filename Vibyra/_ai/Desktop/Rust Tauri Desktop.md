@@ -1,7 +1,7 @@
 # Desktop - Rust Tauri Desktop
 
-Read this for the new native desktop application in `desktop-tauri/`. The
-repo-root `Vibyra Desktop` launcher still opens the legacy Electron app.
+Read this for the native desktop application in `desktop-tauri/`. The legacy
+Electron `desktop/` tree and repo-root launchers have been removed.
 
 ## Launch And Validation
 
@@ -11,7 +11,7 @@ repo-root `Vibyra Desktop` launcher still opens the legacy Electron app.
 - Rust core: `npm --prefix desktop-tauri run core:test`
 - Complete local gate: `npm --prefix desktop-tauri run verify`
 - Rust dependency scan: `npm --prefix desktop-tauri run rust:audit`
-- Both desktop generations' 200-line gate: `npm run desktop:lines`
+- Desktop 200-line gate: `node scripts/check-desktop-lines.mjs`
 
 ## Empty Terminal Launcher
 
@@ -135,14 +135,13 @@ and exact window restoration. Return persisted defaults to F8/F9 before handoff.
 
 ## 2026-08-14 Audit Implementation
 
-The whole-desktop audit is implemented across the Rust/Tauri app and the legacy
-Electron bridge. `npm run desktop:lines` now scans `desktop/` and
-`desktop-tauri/`, includes Rust, and prunes generated dependency/build trees.
-Only exact generated provider-logo data and the vendored xterm stylesheet are
-excluded. `desktop-tauri/scripts/split-css.mjs` is the deterministic stylesheet
-sharder; preserve `main.tsx` import order. `.github/workflows/desktop-tauri.yml`
-runs the line gate, Knip, frontend tests/build, rustfmt, Clippy with warnings
-denied, all Rust tests, and RustSec on the pinned Node/Rust toolchains.
+The whole-desktop audit applies only to the Rust/Tauri app.
+`node scripts/check-desktop-lines.mjs` scans `desktop-tauri/`, includes Rust,
+and prunes generated dependency/build trees. Only exact generated provider-logo
+data is excluded. Preserve `main.tsx` stylesheet import order.
+`.github/workflows/desktop-tauri.yml` runs the line gate, Knip, frontend
+tests/build, rustfmt, Clippy with warnings denied, all Rust tests, and RustSec on
+the pinned Node/Rust toolchains.
 
 Native settings never return the OpenAI secret to the renderer. `secret_store.rs`
 owns platform credential storage, `AppState` owns the native-only cached value,

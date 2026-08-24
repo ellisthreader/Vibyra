@@ -11,8 +11,8 @@ approved: 2026-07-15
 
 # Graphite And Cobalt Colour System
 
-Graphite + Cobalt is the approved Vibyra colour system for the Electron desktop
-app, Expo phone/browser client, and public Laravel marketing site. It replaces
+Graphite + Cobalt is the approved Vibyra colour system for the native Tauri
+desktop app, Expo phone/browser client, and public Laravel marketing site. It replaces
 purple, violet, and magenta as general interface accents. Future UI work must
 use semantic tokens rather than introducing surface-specific brand colours.
 
@@ -73,9 +73,8 @@ provider-owned content but must not recolour surrounding Vibyra chrome.
   `src/context/PreferencesContext.tsx`; update the compatibility maps in
   `src/screens/workspace/styles/themeLightColors.ts` and then remove hardcoded
   accent gradients in `src/screens/` and `src/components/`.
-- Desktop: `desktop/assets/app.theme.css` is the semantic source of truth;
-  `app.theme-*.css`, terminal audit layers, and runtime xterm/Monaco theme
-  adapters consume it.
+- Desktop: `desktop-tauri/src/styles/tokens.css` is the semantic source of
+  truth; focused stylesheets and the xterm theme adapter consume it.
 - Marketing: `backend/resources/css/marketing.css` owns Tailwind theme tokens;
   `backend/resources/js/marketing/ui.jsx` owns shared primitives and the other
   React marketing components consume semantic utilities rather than hex values.
@@ -90,43 +89,17 @@ ownership merely to achieve the visual change.
 
 ## Desktop Implementation Status
 
-The Electron desktop migration was completed on 2026-07-16 across the auth
-welcome, application shell, Projects, shell chat, Terminals, companion
-workspace, Settings, profile, billing, pairing, modals, screenshot editor, and
-legacy fallback sheets. `desktop/assets/app.theme.css` remains the token source;
-late theme/audit sheets consume it, and filled actions use the separate darker
-action token rather than white text on the brighter focus accent.
+The native Tauri desktop implements the system through
+`desktop-tauri/src/styles/tokens.css`. Auth, workspace, terminals, Preview,
+Settings, modals, and the companion consume those variables; filled actions use
+the darker action token rather than white text on the brighter focus accent.
+The canonical desktop mark is `desktop-tauri/src/assets/vibyra-cobalt.png`,
+with platform exports owned under `desktop-tauri/src-tauri/icons/`. Do not
+reintroduce the retired purple-nebula Electron artwork or CSS hue rotation.
 
-Desktop auth uses the native Graphite/Cobalt artwork
-`src/assets/front-auth-desktop-4k.webp` and the dedicated transparent
-`src/assets/vibyra-cobalt.png` mark. That cobalt mark is canonical across every
-first-party Desktop V placement and its native PNG/ICO exports. The shared
-mobile/non-Desktop mark `src/assets/vibyra.png` remains untouched; Desktop
-should not use CSS hue rotation or reintroduce the older purple nebula.
-
-`desktop/assets/app.cobalt-source-audit.test.mjs` scans first-party desktop CSS
-and JavaScript for retired violet/pink literals. Internal legacy class/tone names
-such as `.purple` may remain only as compatibility aliases whose rendered colour
-is cobalt. ANSI magenta, provider logos, semantic status colours, user content,
-and previewed project content remain approved exceptions.
-
-Live validation used a fresh Electron restart and `/health` 200, plus fresh
-browser auth and authenticated terminal-shell screenshots. Theme-focused tests,
-JavaScript syntax checks, and CSS structure checks passed. The broader Desktop
-AI suite passed 531 of 536 tests with 3 skips; the remaining blank-Auto PTY test
-timed out waiting for external process output and is not theme-owned. Preview
-tests had six dev-port failures while an unrelated RealEstate Vite server owned
-`127.0.0.1:5173`. Full `tsc --noEmit` remained active beyond five minutes and
-was stopped without a compiler diagnostic; do not record either environment
-result as a Graphite/Cobalt regression.
-
-The 2026-07-16 Warm Pearl completion pass made the workspace canvas an explicit
-semantic role. PTY/xterm, Monaco, Preview, and Memory consume
-`--color-workspace` (`#FBFBFC` in light/Auto-light) while shell and modal/card
-surfaces retain their existing roles. Shared modals and billing use white light
-surfaces, and `app.light-theme-contract.test.mjs` plus
-`app.light-shell-projects-chat.test.mjs` protect exact tokens, Auto-light
-parity, contrast, and shell/Projects/chat ownership.
+ANSI magenta, provider logos, semantic status colours, user content, and
+previewed project content remain approved exceptions. Validate theme changes
+with the desktop frontend tests/build and live dark/light/Auto inspection.
 
 ## Mobile Implementation Status
 

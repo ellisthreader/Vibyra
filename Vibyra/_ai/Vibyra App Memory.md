@@ -7,7 +7,11 @@ Use this as the app index only. For app work, read this file plus exactly one fo
 
 ## Mental Model
 
-The app is the phone-side command center for onboarding, pairing with Vibyra Desktop, project/file selection, chat prompts, live preview, billing/profile, and cloud account sync.
+The app is the phone-side client for onboarding, project/file selection, chat
+prompts, mobile previews, billing/profile, and cloud account sync. Legacy
+phone-to-Electron pairing code remains in `src/`, but the native Tauri desktop
+does not expose that LAN bridge; never use those paths as current desktop
+architecture without a separately scoped mobile cleanup or replacement.
 
 See [[Product Surfaces]] before treating the Expo browser build as the public
 marketing website; they are separate surfaces.

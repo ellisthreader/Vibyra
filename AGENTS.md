@@ -33,13 +33,16 @@ touched file; write compact context that helps the next agent start efficiently.
 When a skill is updated, also record the durable routing fact in the relevant
 Obsidian note if future agents need to know when to use it.
 
-## One-command desktop setup
+## Desktop setup
 
-For a fresh checkout, run only:
+Vibyra Desktop lives in `desktop-tauri/` (Tauri 2 + Rust + React). From a fresh
+checkout:
 
 ```bash
-npm run desktop:setup
+cd desktop-tauri
+npm ci
+npm run app:dev
 ```
 
-This installs dependencies, prepares the Laravel database, starts the backend,
-and launches Vibyra Desktop.
+On Linux, install the GTK/WebKit build dependencies first with
+`desktop-tauri/scripts/setup-linux.sh`.

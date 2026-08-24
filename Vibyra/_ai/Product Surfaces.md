@@ -18,7 +18,7 @@ and preview story, but they are separate user experiences with different jobs.
 | --- | --- | --- | --- |
 | Public website | Public marketing, explanation, pricing, trust, and download entry points. It is not the signed-in product client. | `backend/routes/web.php`, `backend/resources/views/marketing.blade.php`, `backend/resources/js/marketing/`, `backend/resources/css/marketing.css` | From `backend/`: `php artisan serve --host=127.0.0.1 --port=8000`; choose another free port if occupied. Run `npm run dev` there only when live-editing Vite assets. |
 | Browser app | The Expo/React Native product client rendered by React Native Web in a desktop browser. It is the phone product adapted to a browser runtime, not the public website. | Root `App.tsx`, `src/`, `app.config.js` | From repo root: `npm run web`. |
-| Phone app | The native iOS/Android command centre for pairing, chat, approvals, projects, and Live Preview. | Root `App.tsx`, `src/`, `app.config.js`, `eas.json` | From repo root: `npm run ios` or `npm run android`; Expo development can also use `npx expo start`. |
+| Phone app | The native iOS/Android client for account, chat, projects, community, and mobile previews. | Root `App.tsx`, `src/`, `app.config.js`, `eas.json` | From repo root: `npm run ios` or `npm run android`; Expo development can also use `npx expo start`. |
 | Desktop app | The native Tauri 2 + Rust app for AI CLI terminals, local projects, previews, and account controls. It is not the public website or the browser app. | `desktop-tauri/`, especially `desktop-tauri/src/App.tsx` and `desktop-tauri/src-tauri/` | From `desktop-tauri/`: `npm run app:dev`. |
 
 ## Shared Content, Different Presentation
@@ -28,10 +28,9 @@ and preview story, but they are separate user experiences with different jobs.
 - Browser and phone apps share `App.tsx` and most of `src/`; platform-specific
   WebView, navigation, permissions, and device behavior keep their runtimes
   distinct.
-- Desktop uses the same account and visual language, while owning local-machine
-  access, terminals, pairing approval, and preview execution.
-- Live Preview is a linked capability, not another product surface: Desktop
-  starts/proxies a project and the phone/browser client displays it.
+- Desktop uses the same account and visual language, while independently owning
+  local-machine access, terminals, and preview execution. The removed Electron
+  bridge's phone pairing and LAN proxy are not part of the Tauri product.
 
 ## Link Map
 
@@ -41,7 +40,6 @@ flowchart LR
     Website -->|explains and links to| Browser[Browser app]
     Website -->|explains and links to| Desktop[Desktop app]
     Phone <-->|shared Expo source and account| Browser
-    Phone <-->|pairing, approvals, previews| Desktop
     Browser <-->|API account and cloud state| Backend[Laravel backend]
     Phone <-->|API account and cloud state| Backend
     Website -->|served by| Backend
@@ -53,7 +51,8 @@ flowchart LR
 - Phone/browser client: [[Vibyra App Memory]]
 - Desktop companion: [[Vibyra Desktop Memory]]
 - Website host and shared APIs: [[Vibyra Backend Memory]]
-- Phone/Desktop preview path: [[App/Live Preview]] and [[Desktop/Projects And Preview]]
+- Phone preview: [[App/Live Preview]]
+- Native desktop preview: [[Desktop/Projects And Preview]]
 - Public-site product/content direction: [[Marketing/Vibyra Marketing Website Master Plan]]
 
 ## Current Website Reality

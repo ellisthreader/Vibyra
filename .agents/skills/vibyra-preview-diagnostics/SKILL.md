@@ -20,9 +20,11 @@ Read `Memory Protocol.md`, `Context Map.md`, and `Project Context.md`, then:
   `Vibyra App Memory.md` and `App/Live Preview.md`.
 - Cross-device failures: read both focused Preview notes.
 
-Use `vibyra-desktop-connection-diagnostics` for invalid tokens, reconnects, or
-LAN timeouts. Use `vibyra-expo-web-diagnostics` for Metro bundle 500s, JSON MIME
-errors, and missing modules. Use `vibyra-desktop-frontend-design` only after
+LAN pairing, bridge-token, and reconnect failures belong to the retired
+Electron companion and are not native Tauri Preview failures. Read
+`Vibyra/_ai/App/Pairing And Connection.md` only when auditing the remaining
+mobile legacy flow. Use `vibyra-expo-web-diagnostics` for Metro bundle 500s,
+JSON MIME errors, and missing modules. Only work on Preview visual design after
 functional Preview behavior is correct.
 
 ## Capture The Failure
@@ -54,26 +56,26 @@ and shutdown. Never expose bearer or capability secrets.
    live at the selected folder root.
 2. Re-detect the target immediately before start. Do not let static placeholder
    HTML override Laravel/Vite, Expo, SPA, backend/frontend, or game runtimes.
-3. Trace the explicit approved start into `startProjectDevServer()`. Check the
-   command, cwd, readiness probe, timeout, generation, port reservation,
-   startup feed, and reuse of an existing verified runtime.
+3. Trace the explicit approved start through the Tauri Preview command into the
+   Rust core. Check the command, cwd, readiness probe, timeout, generation,
+   port reservation, startup feed, and reuse of an existing verified runtime.
 4. Reproduce slow-start races. Start, activate, and stop results must remain
    scoped to the initiating request, project, and target.
-5. Verify phone URLs come from Preview endpoint responses. Pin running-service
-   capabilities to their target, reject untracked local ports, and allow only
-   the newest concurrent phone request to commit its Preview.
-6. Follow `/preview/project/...` or `/preview/server/...` to the upstream app.
-   Check relative assets, matching-quote `<base href>`, Vite modules, fetch,
-   XHR, forms, redirects, cookies, CSRF headers, and `Set-Cookie` rewriting.
+5. Pin running services to their exact project and target, reject untracked
+   local ports, and allow only the newest concurrent request to commit Preview
+   state.
+6. Follow the returned Preview URL to the upstream app. Check relative assets,
+   Vite modules, fetch, XHR, forms, redirects, cookies, and framework-specific
+   routing.
 7. Verify mobile host fallback and WebView state. Content identity must include
    ID, URL, and an HTML hash. Failed AI edits retain the user's draft.
 8. Verify Stop and shutdown terminate only tracked Preview process groups.
    Cleanup errors must not prevent bridge close or process exit.
 9. For element editing, confirm proxied HTML contains
    `vibyra-preview-inspector`, Desktop loads inspector data before inspector UI,
-   the active iframe is the message source, and
-   `POST /desktop/preview/resolve-element` receives the current project and
-   target app directory. Exact framework source metadata should resolve before
+   the active iframe is the message source, and the Tauri element-resolution
+   command receives the current project and target app directory. Exact
+   framework source metadata should resolve before
    fallback scanning, and fallback scans should start inside that target app.
    Do not gate Send on source resolution: the DOM/component context remains a
    valid agent prompt when matching is slow or inconclusive. Terminal assignment
@@ -106,41 +108,31 @@ processes by executable name or port to make a Preview appear healthy.
 
 ## Source Ownership
 
-- Routes and phone starts: `desktop/lib/desktopRoutes.mjs`,
-  `desktop/lib/pairingHandlers.mjs`
-- Resolution and launch: `desktop/lib/preview.mjs`,
-  `desktop/lib/desktopPreview.mjs`, `desktop/lib/previewResolver.mjs`,
-  `desktop/lib/previewDevServer.mjs`
-- Runtime state: `previewServices.mjs`, `previewServerProcesses.mjs`,
-  `previewPortAllocator.mjs`
-- Credentials and proxy: `previewCapabilities.mjs`,
-  `previewCredentialResolution.mjs`, `previewProxyReferences.mjs`,
-  `previewProxyRequest.mjs`
-- Desktop renderer: `desktop/assets/app.terminals-test*.js`
-- Element inspection: `desktop/lib/previewInspectorRuntime.mjs`,
-  `desktop/lib/previewElementResolver.mjs`,
-  `desktop/assets/app.terminals-test-inspector*.js`
+- Rust/Tauri workspace Preview: `desktop-tauri/src/components/preview/`,
+  `desktop-tauri/src/components/layout/ProjectWorkspace.tsx`,
+  `desktop-tauri/src/ipc/preview.ts`,
+  `desktop-tauri/src-tauri/crates/vibyra-core/src/preview/`, and
+  `desktop-tauri/src-tauri/src/commands/preview.rs`
 - Phone reachability: `src/utils/previewUrls.ts`
 - WebView state: `AppPreviewModal.tsx`, `AppPreviewMiniChat.tsx`,
   `previewAppFingerprint.ts`
-- Shutdown: `desktop/lib/previewShutdown.mjs`
 
 ## Verification
 
 Run:
 
 ```bash
-npm run test:desktop-preview
 node --test src/utils/previewUrls.test.mjs src/utils/previewHtml.test.mjs src/utils/previewSecurity.phaseB.test.mjs src/screens/workspace/inline/previewFixPrompt.test.mjs src/screens/workspace/inline/previewAppUi.test.mjs src/components/webViewNavigationPolicy.test.mjs
 (cd backend && php artisan test --filter='Vibyra(ProjectPreview|PreviewPrompt)')
 npm run typecheck
+(cd desktop-tauri && npm run build && npm run core:test)
 git diff --check
 ```
 
-Also run `node --check` on edited desktop JavaScript/MJS files. Manually test a
-static site, Vite/React SPA, Laravel/Inertia form flow, Expo web app, and any
-canvas/WebGL game capabilities involved. Include first start, reopen, reload,
-mid-start switching, concurrent targets, phone/Desktop use, Stop, and shutdown.
+Manually test a static site, Vite/React SPA, Laravel/Inertia form flow, Expo web
+app, and any canvas/WebGL game capabilities involved. Include first start,
+reopen, reload, mid-start switching, concurrent targets, phone/Desktop use,
+Stop, and shutdown.
 Do not claim game or device-specific completeness from unit tests alone.
 
 Update the smallest Preview memory note and this skill when the workflow or
