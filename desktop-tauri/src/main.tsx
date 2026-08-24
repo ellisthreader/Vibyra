@@ -115,9 +115,12 @@ import "./styles/settings-profile.css";
 
 import App from "./App";
 import { installAppDropGuard } from "./lib/terminalDrop";
+import { initTerminalFont } from "./lib/terminalFont";
 import { initRendererPolicy } from "./lib/xtermRenderer";
 
-// Resolves long before the first terminal can mount (post sign-in).
+// Prewarm both asynchronous resources. TerminalView and attachRenderer also
+// await these cached promises, so a fast restored workspace cannot outrun them.
+void initTerminalFont();
 void initRendererPolicy();
 installAppDropGuard();
 

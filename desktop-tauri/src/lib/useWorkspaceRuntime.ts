@@ -16,6 +16,7 @@ import {
   needsPromptDerivedTitle,
   observeTerminalPrompt,
 } from "./terminalChatTitle";
+import { normalizeTerminalChatTitle } from "./terminalTitle";
 import {
   setSessionExitHandler,
   setSessionInputHandler,
@@ -44,7 +45,7 @@ function useAppStartup(): void {
     setSessionInputHandler((id, data) => {
       const store = useTerminalStore.getState();
       const pane = store.panes.find((candidate) => candidate.id === id);
-      if (!pane || pane.chatTitle || !needsPromptDerivedTitle(pane.agentId)) return;
+      if (!pane || normalizeTerminalChatTitle(pane.chatTitle) || !needsPromptDerivedTitle(pane.agentId)) return;
       const title = observeTerminalPrompt(id, data);
       if (title) store.setChatTitle(id, title);
     });

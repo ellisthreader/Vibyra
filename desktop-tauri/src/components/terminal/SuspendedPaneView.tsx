@@ -3,8 +3,9 @@ import { useEffect, useRef } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 
-import { useSettingsStore } from "../../state/settingsStore";
+import { initTerminalFont } from "../../lib/terminalFont";
 import { themeFor } from "../../lib/xtermTheme";
+import { useSettingsStore } from "../../state/settingsStore";
 
 /**
  * Replays a restored pane's saved output.
@@ -18,41 +19,53 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
 
   useEffect(() => {
     const host = hostRef.current;
-    const settings = useSettingsStore.getState().settings;
-    if (!host || !settings) return;
+    if (!host) return;
 
-    const term = new Terminal({
-      disableStdin: true,
-      cursorBlink: false,
-      cursorStyle: "bar",
-      fontSize: settings.fontSize,
-      fontFamily: `"JetBrains Mono Variable", ${settings.fontFamily}`,
-      scrollback: settings.scrollbackLines,
-      theme: themeFor(settings.theme),
-      allowProposedApi: true,
+    let cancelled = false;
+    let observer: ResizeObserver | null = null;
+    let term: Terminal | null = null;
+    void initTerminalFont().then(() => {
+      const settings = useSettingsStore.getState().settings;
+      if (cancelled || !settings) return;
+
+      const openedTerm = new Terminal({
+        disableStdin: true,
+        cursorBlink: false,
+        cursorStyle: "bar",
+        fontSize: settings.fontSize,
+        fontFamily: `"JetBrains Mono Variable", ${settings.fontFamily}`,
+        scrollback: settings.scrollbackLines,
+        theme: themeFor(settings.theme),
+        allowProposedApi: true,
+      });
+      term = openedTerm;
+      const fit = new FitAddon();
+      openedTerm.loadAddon(fit);
+      openedTerm.open(host);
+
+      const refit = () => {
+        if (cancelled) return;
+        const rect = host.getBoundingClientRect();
+        if (rect.width > 80 && rect.height > 60) fit.fit();
+      };
+      refit();
+      // The snapshot is a tail of a raw ANSI stream, so it can begin mid escape
+      // sequence. Resetting first stops a severed sequence corrupting the view —
+      // the same guard the live resync path uses.
+      if (snapshot) {
+        openedTerm.reset();
+        openedTerm.write(snapshot, () => {
+          if (!cancelled) openedTerm.scrollToBottom();
+        });
+      }
+
+      observer = new ResizeObserver(refit);
+      observer.observe(host);
     });
-    const fit = new FitAddon();
-    term.loadAddon(fit);
-    term.open(host);
-
-    const refit = () => {
-      const rect = host.getBoundingClientRect();
-      if (rect.width > 80 && rect.height > 60) fit.fit();
-    };
-    refit();
-    // The snapshot is a tail of a raw ANSI stream, so it can begin mid escape
-    // sequence. Resetting first stops a severed sequence corrupting the view —
-    // the same guard the live resync path uses.
-    if (snapshot) {
-      term.reset();
-      term.write(snapshot, () => term.scrollToBottom());
-    }
-
-    const observer = new ResizeObserver(refit);
-    observer.observe(host);
     return () => {
-      observer.disconnect();
-      term.dispose();
+      cancelled = true;
+      observer?.disconnect();
+      term?.dispose();
     };
   }, [snapshot]);
 

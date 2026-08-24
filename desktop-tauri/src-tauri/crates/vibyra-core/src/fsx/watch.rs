@@ -15,9 +15,11 @@ pub struct FsChange {
 
 /// Build/VCS churn is never user content; a `cargo build` alone can emit
 /// thousands of events under `target/` that would each cross IPC.
-const IGNORED_DIRS: [&str; 8] = [
+const IGNORED_DIRS: [&str; 10] = [
     "node_modules",
+    "vendor",
     ".git",
+    ".vibyra-agent",
     "target",
     "dist",
     "build",
@@ -105,6 +107,8 @@ mod tests {
     #[test]
     fn filters_build_directories() {
         assert!(ignored(Path::new("/repo/node_modules/pkg/index.js")));
+        assert!(ignored(Path::new("/repo/vendor/composer/autoload.php")));
+        assert!(ignored(Path::new("/repo/.vibyra-agent/runs/latest.txt")));
         assert!(ignored(Path::new("/repo/target/debug/app")));
         assert!(ignored(Path::new("/repo/.git/objects/ab")));
         assert!(!ignored(Path::new("/repo/src/main.rs")));

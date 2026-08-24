@@ -102,7 +102,6 @@
   border-radius: 999px;
   background: var(--amber);
   border: 2.5px solid var(--bg);
-  animation: pulse-ring 1.8s var(--e-standard) infinite;
 }
 
 .pstrip__tile--add {

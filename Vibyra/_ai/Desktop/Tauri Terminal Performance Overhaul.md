@@ -1,7 +1,7 @@
 ---
 title: Tauri Terminal Performance Overhaul
 date: 2026-08-20
-updated: 2026-08-23
+updated: 2026-08-24
 status: rollout-ready
 tags:
   - vibyra/desktop
@@ -149,6 +149,44 @@ off-screen chunks still enter `term.write`. Future remediation should keep the
 PTY/ring alive while pausing frontend xterm writes for hidden projects, then
 resync on reveal. A roughly 2 MiB scrollback heartbeat every 120 seconds can
 cause a brief HDD stall, but is not the continuous lag source.
+
+### 2026-08-24 spacing, typing, and sustained-lag fix
+
+The public 0.1.9 input queue fixed IPC byte ordering but left three independent
+regressions. The dynamic xterm WebGL import was only prewarmed, so a terminal
+that mounted before it resolved attempted one synchronous attach and stayed on
+the DOM renderer. JetBrains Mono uses `font-display: swap`; an early
+`document.fonts.load()` could resolve before WebKit registered the face, so
+xterm opened and fitted with fallback metrics and never remeasured after the
+font swap. Typing also still performed a bottom-anchor DOM scan on every input
+event.
+
+Every live and suspended xterm now waits for non-empty regular and bold font
+matches before construction, awaits the cached renderer decision, attaches at
+most one live WebGL addon, and uses xterm's `scrollOnUserInput` instead of the
+keypress scan. OSC/DCS/CSI terminal replies are excluded from prompt/title
+tracking. Project, Home, and Preview transitions share one queue, and AppImage
+PTY launch strips current and stale `/tmp/.mount_*` components from inherited
+loader/data paths. The performance guard also clears hidden-window samples so a
+refocus cannot emit a warning based on throttled background timers.
+
+A final four-pane native stress run found the remaining sustained-load cause:
+four infinite `pulse-ring` opacity animations on tiny status indicators kept
+WebKitGTK repainting and compositing the adjacent WebGL terminal grid. Those
+animations and their unused keyframes are removed while static rings, colours,
+and badges remain. An invariant now rejects infinite status animations near
+the terminal surface.
+
+The exact optimized source restored four panes with both JetBrains weights
+ready before xterm open, WebGL on all four, and zero DOM rows. It preserved a
+662-byte 1 ms typing burst and 4,498-byte paste byte-for-byte, delivered all
+10,000 sustained-output markers, and retained WebGL after a Home/project
+unmount-remount. The animation-on control averaged 94.67% renderer CPU and
+31,247.5 renderer minor faults/s; the fixed settled run averaged 1.88% and
+1.62 faults/s. Frontend tests (290), typecheck, production build, dead-code,
+line-limit, diff-whitespace, strict Rust format/clippy, 254 Rust tests, and the
+focused backend release tests all pass. Publish only the signed Ubuntu 22.04 CI
+artifacts; the local host build is verification evidence, not a release asset.
 
 For recurrence diagnosis, measure actual PTY ingress from the named
 `vibyra-pty-*` threads under `/proc/<Vibyra PID>/task/*/io`; child-process

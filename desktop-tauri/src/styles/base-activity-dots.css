@@ -11,13 +11,11 @@
 .adot--working {
   background: var(--success);
   box-shadow: 0 0 0 3px var(--success-soft);
-  animation: pulse-ring 2.4s var(--e-standard) infinite;
 }
 
 .adot--attention {
   background: var(--amber);
   box-shadow: 0 0 0 3px var(--amber-soft);
-  animation: pulse-ring 1.6s var(--e-standard) infinite;
 }
 
 .adot--idle {

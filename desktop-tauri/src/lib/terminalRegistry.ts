@@ -34,6 +34,10 @@ export interface TerminalEntry {
 
 const entries = new Map<number, TerminalEntry>();
 
+function attachTerminalRenderer(term: Terminal, container: HTMLDivElement): void {
+  void attachRenderer(term, (renderer) => { container.dataset.terminalRenderer = renderer; });
+}
+
 /** Puts the bundled JetBrains Mono variable font ahead of the user's stack. */
 function monoStack(userStack: string): string {
   return `"JetBrains Mono Variable", ${userStack}`;
@@ -90,7 +94,7 @@ export function mountTerminal(
     fontSize: settings.fontSize,
     fontFamily: monoStack(settings.fontFamily),
     scrollback: settings.scrollbackLines,
-    scrollOnUserInput: false,
+    scrollOnUserInput: true,
     theme: themeFor(settings.theme),
     allowProposedApi: true,
   });
@@ -98,7 +102,7 @@ export function mountTerminal(
   term.loadAddon(fit);
   term.loadAddon(new WebLinksAddon());
   term.open(container);
-  attachRenderer(term);
+  attachTerminalRenderer(term, container);
   attachTerminalClipboard(term);
 
   // Guards the onScroll handler against re-entry while the write callback is
@@ -114,7 +118,6 @@ export function mountTerminal(
 
   term.onData((data) => {
     clearAttention(id);
-    anchorNow();
     sessionInputReceived(id, data);
     void writeTerminal(id, data).catch(() => {});
   });

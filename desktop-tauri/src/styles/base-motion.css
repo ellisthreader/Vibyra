@@ -20,14 +20,6 @@
   }
 }
 
-/* Opacity-only: animating box-shadow forced a main-thread repaint every
-   frame for every working terminal's dot. */
-@keyframes pulse-ring {
-  50% {
-    opacity: 0.45;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

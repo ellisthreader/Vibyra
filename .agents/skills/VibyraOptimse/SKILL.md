@@ -94,6 +94,53 @@ counter for the final figures when the canonical checker is available.
 - Desktop/server route files should delegate asset serving, project browsing, project creation, and agent execution to modules.
 - Avoid creating a single “helpers” dump. Name modules after the behavior they own.
 
+## Desktop Terminal Reliability
+
+When optimization work touches Vibyra terminals, preserve these invariants:
+
+- An off-screen pane stays logically `hidden`, but native output delivery becomes
+  `hibernated`. Detach its frontend event handler without disposing its registry
+  xterm, then request an authoritative ring-buffer resync when it becomes active.
+- Resume, restart, and account-switch actions are single-flight per pane. Start
+  and verify the replacement before closing a working PTY, and tear down any
+  replacement whose UI slot disappeared during launch.
+- Give each pane a stable persistence ID. Serialize session saves, merge carried
+  replay history with the current native ring, and do not let metadata-only
+  saves replace a full snapshot.
+- Block updater installation until the final full save succeeds, expose the
+  installing state, and keep restart failures retryable.
+- Keep the frontend pane cap aligned with the native session limit. Test rapid
+  process exits because a child can finish before manager registration completes.
+- Route keyboard, paste, drag/drop, and dictation input through the shared
+  per-session serial writer. Never issue independent fire-and-forget
+  `write_terminal` invokes: concurrent IPC can overtake and make terminal text
+  appear one keystroke behind. Keep the queue behavior and IPC wiring tests.
+- Treat renderer and font readiness as consumer contracts, not startup hints.
+  Every xterm must await the cached renderer decision and an actual non-empty
+  regular/bold bundled-font load before `open()` or `fit()`. Prewarming alone
+  can lose to a fast restore. Attach one renderer per xterm and expose the
+  observed backend on the terminal host for live inspection.
+- Keep `onData` free of viewport scans, fitting, or scroll anchoring; typing is
+  an IPC hot path. Use xterm's `scrollOnUserInput` and let scroll/output events
+  own anchoring work.
+- Keep attention dots, strip badges, and Home status indicators static while a
+  terminal grid is mounted. Perpetual CSS pulse animations can invalidate the
+  WebKit/WebGL compositing surface and saturate a renderer even when PTY input
+  is quiet. Before restoring an infinite animation near terminals, A/B it in a
+  multi-pane native window and compare steady renderer CPU and process faults.
+- Serialize Home, project, and Preview visibility changes through one shared
+  transition queue. Home must hide native terminal delivery, stop previews,
+  unwatch the workspace, and clear project-owned workspace state.
+- Before spawning any AppImage PTY, strip the current and stale sibling
+  `/tmp/.mount_*` entries from inherited path variables and remove AppImage's
+  owned variables. Validate the new child environment, not only the planner.
+- Run focused bus, visibility, relaunch, persistence, and updater tests; stress
+  the native PTY limit; and verify single-instance ownership. For a terminal
+  regression, also type a fast exact string in a real native window, inspect
+  font and renderer state, sample steady renderer CPU, and check the PTY child
+  environment. Do not claim a signed-in live terminal journey when account
+  restoration prevented it.
+
 ## Validation Checklist
 
 Before final response:

@@ -20,7 +20,7 @@ class VibyraReleaseAnnouncement extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Vibyra {$this->version} is here — report bugs from your workspace",
+            subject: "We fixed Vibyra terminal lag — please update to {$this->version}",
         );
     }
 
@@ -30,8 +30,6 @@ class VibyraReleaseAnnouncement extends Mailable
             view: 'mail.vibyra-release-announcement',
             with: [
                 'downloadUrl' => 'https://vibyra-production.up.railway.app/downloads',
-                'reportImageUrl' => 'https://vibyra-production.up.railway.app/media/releases/vibyra-0.1.7-report.png',
-                'workspaceImageUrl' => 'https://vibyra-production.up.railway.app/media/releases/vibyra-0.1.7-workspace.png',
             ],
         );
     }

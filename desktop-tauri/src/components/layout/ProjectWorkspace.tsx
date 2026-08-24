@@ -1,6 +1,11 @@
 import { type KeyboardEvent, useEffect, useRef } from "react";
 
 import { setTerminalVisibility } from "../../ipc/terminal";
+import {
+  applyProjectVisibility,
+  projectRuntimeTransitions,
+  syncProjectVisibility,
+} from "../../lib/projectTransitions";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
@@ -26,27 +31,32 @@ export function ProjectWorkspace() {
 
   useEffect(() => {
     if (!activeId) return;
-    const visibility = mode === "terminals" ? "visible" : "hidden";
-    const store = useTerminalStore.getState();
-    const candidates = store.panes.filter(
-      (pane) =>
-        pane.projectId === activeId &&
-        pane.status === "running" &&
-        pane.visibility !== "hibernated" &&
-        pane.visibility !== visibility,
-    );
-    for (const pane of candidates) {
-      void setTerminalVisibility(pane.id, visibility).catch(() => {});
-    }
-    if (candidates.length) {
+    let current = true;
+    void projectRuntimeTransitions.run(async () => {
+      const project = useProjectStore.getState();
+      const workspace = useWorkspaceStore.getState();
+      if (
+        !current ||
+        project.view !== "project" ||
+        project.activeId !== activeId ||
+        workspace.projectMode !== mode
+      ) {
+        return new Map();
+      }
+      return syncProjectVisibility(
+        useTerminalStore.getState().panes,
+        mode === "terminals" ? activeId : null,
+        setTerminalVisibility,
+      );
+    }).then((applied) => {
+      if (!current || applied.size === 0) return;
       useTerminalStore.setState((state) => ({
-        panes: state.panes.map((pane) =>
-          candidates.some((candidate) => candidate.id === pane.id)
-            ? { ...pane, visibility }
-            : pane,
-        ),
+        panes: applyProjectVisibility(state.panes, applied),
       }));
-    }
+    });
+    return () => {
+      current = false;
+    };
   }, [activeId, mode]);
 
   if (!project || !activeId) return null;

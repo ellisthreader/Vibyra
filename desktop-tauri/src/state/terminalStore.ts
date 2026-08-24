@@ -3,7 +3,11 @@ import { create } from "zustand";
 import { loadTerminalSession } from "../ipc/session";
 import { setTerminalVisibility } from "../ipc/terminal";
 import { toPaneStates } from "../lib/sessionRestore";
-import { terminalDisplayTitle } from "../lib/terminalTitle";
+import {
+  normalizeTerminalChatTitle,
+  normalizeTerminalOscTitle,
+  terminalDisplayTitle,
+} from "../lib/terminalTitle";
 import { getTerminal } from "../lib/terminalRegistry";
 import type { Visibility } from "../types";
 import { terminalLifecycleActions } from "./terminalLifecycleActions";
@@ -77,10 +81,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
 
   setChatTitle: (id, title) => {
-    const chatTitle = title.trim() || null;
+    const chatTitle = normalizeTerminalChatTitle(title);
     set((state) => {
       const pane = state.panes.find((candidate) => candidate.id === id);
-      if (!pane || pane.chatTitle || !chatTitle) return state;
+      if (!pane || normalizeTerminalChatTitle(pane.chatTitle) || !chatTitle) return state;
       return {
         panes: state.panes.map((candidate) =>
           candidate.id === id ? { ...candidate, chatTitle } : candidate),
@@ -89,7 +93,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   },
 
   setOsc: (id, title) => {
-    const osc = title.trim() || null;
+    const osc = normalizeTerminalOscTitle(title);
     set((state) => {
       const pane = state.panes.find((candidate) => candidate.id === id);
       if (!pane || pane.osc === osc) return state;

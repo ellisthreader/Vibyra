@@ -73,13 +73,63 @@ test("off-screen xterms detach while keeping their registry scrollback", async (
   assert.match(view, /unmountTerminal\(id\)/);
 });
 
+test("status indicators never keep WebKit repainting terminal canvases", async () => {
+  const styles = await Promise.all([
+    read("src/styles/base-activity-dots.css"),
+    read("src/styles/strip.css"),
+    read("src/styles/home.css"),
+  ]);
+  assert.doesNotMatch(
+    styles.join("\n"),
+    /animation:\s*[^;]*infinite/,
+    "infinite status pulses make WebKitGTK continuously composite every WebGL terminal",
+  );
+});
+
 test("terminal IPC serialises each PTY input stream", async () => {
   const ipc = await read("src/ipc/terminal.ts");
+  const registry = await read("src/lib/terminalRegistry.ts");
   assert.match(
     ipc,
     /export const writeTerminal = createTerminalInputQueue/,
     "independent invoke calls can overtake each other and render typed text one key behind",
   );
+  const inputHandler = registry.match(/term\.onData\(\(data\) => \{([\s\S]*?)\n\s*\}\);/)?.[1] ?? "";
+  assert.match(inputHandler, /sessionInputReceived\(id, data\)/);
+  assert.match(inputHandler, /writeTerminal\(id, data\)/);
+  assert.doesNotMatch(
+    inputHandler,
+    /anchorNow/,
+    "typing must not synchronously scan and re-anchor rows before PTY output exists",
+  );
+});
+
+test("terminal mount waits for font and renderer readiness", async () => {
+  const view = await read("src/components/terminal/TerminalView.tsx");
+  const suspended = await read("src/components/terminal/SuspendedPaneView.tsx");
+  const registry = await read("src/lib/terminalRegistry.ts");
+  const renderer = await read("src/lib/xtermRenderer.ts");
+  assert.match(
+    view,
+    /initTerminalFont\(\)\.then\(\(\) => \{[\s\S]*mountTerminal\(/,
+    "xterm must not measure cells before the bundled font is ready",
+  );
+  assert.match(
+    suspended,
+    /initTerminalFont\(\)\.then\(\(\) => \{[\s\S]*new Terminal\(/,
+    "restored snapshot xterms must wait for the same bundled font",
+  );
+  assert.match(suspended, /cancelled = true;[\s\S]*term\?\.dispose\(\)/);
+  assert.match(registry, /scrollOnUserInput:\s*true/);
+  assert.match(
+    renderer,
+    /const webgl = await loadWebgl\(term\)/,
+    "an early terminal must wait for the asynchronous WebGL import",
+  );
+  assert.match(renderer, /contextLost\.has\(term\)/, "a lost WebGL context stays on DOM");
+  assert.match(renderer, /term\.element\?\.parentNode/);
+  const existingBranch = registry.match(/if \(existing\) \{([\s\S]*?)return existing;/)?.[1] ?? "";
+  assert.doesNotMatch(existingBranch, /attachTerminalRenderer/);
 });
 
 test("the native app rejects a second session owner before other plugins start", async () => {

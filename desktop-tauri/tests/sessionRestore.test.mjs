@@ -97,6 +97,14 @@ test("a generated chat title survives the saved-session round trip", () => {
   assert.equal(toPersistedPanes([restored])[0].chatTitle, "Diagnose terminal titles");
 });
 
+test("a protocol-corrupted chat title is cleared during restore and save", () => {
+  const corrupted = "]10;rgb:eeee/eaea/f8f8\\]11;rgb:0b0b/0b0b/0b0b\\";
+  const [restored] = toPaneStates(session([persisted({ chatTitle: corrupted })]));
+
+  assert.equal(restored.chatTitle, null);
+  assert.equal(toPersistedPanes([{ ...restored, chatTitle: corrupted }])[0].chatTitle, null);
+});
+
 test("pane identity survives native PTY id replacement", () => {
   const [restored] = toPaneStates(session([persisted({ persistenceId: "pane-42" })]));
   assert.equal(restored.persistenceId, "pane-42");

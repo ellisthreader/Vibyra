@@ -106,6 +106,19 @@ test("startup jank and background lag are both ignored", () => {
   assert.equal(run(initialGuardState(), verdict, ENTER_SAMPLES, context({ away: true })).notify, null);
 });
 
+test("background lag cannot pre-qualify a warning after focus returns", () => {
+  const verdict = { level: "degraded", reason: "cpu" };
+  const hidden = run(initialGuardState(), verdict, ENTER_SAMPLES + 3, context({ away: true }));
+  assert.equal(hidden.state.badRun, 0);
+
+  const firstVisible = nextGuardState(hidden.state, verdict, 20_000, context());
+  assert.equal(firstVisible.notify, null);
+  assert.equal(firstVisible.state.badRun, 1);
+
+  const sustained = run(firstVisible.state, verdict, ENTER_SAMPLES - 1, context(), 21_000);
+  assert.equal(sustained.notify?.category, "performance");
+});
+
 test("one good window does not clear the state but a long run does", () => {
   const bad = run(initialGuardState(), { level: "degraded", reason: "cpu" }, ENTER_SAMPLES, context());
   const ok = { level: "ok", reason: "eventLoop" };

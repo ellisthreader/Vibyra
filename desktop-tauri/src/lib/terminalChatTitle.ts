@@ -29,7 +29,13 @@ export function titleFromPrompt(raw: string): string | null {
   if (!prompt || UTILITY_COMMAND.test(prompt) || SHORT_REPLY.test(prompt)) return null;
   prompt = prompt.replace(/^\/\S+\s+/, "");
   prompt = stripConversationalLead(prompt);
-  if (!/[\p{L}\p{N}].*[\p{L}\p{N}]/u.test(prompt)) return null;
+  const sentence = prompt
+    .split(/(?<=[.!?])\s+/u)
+    .map((part) => stripConversationalLead(part).replace(/[.!?]+$/, "").trim())
+    .find((part) => !UTILITY_COMMAND.test(part) && !SHORT_REPLY.test(part)
+      && (part.match(/[\p{L}\p{N}]/gu)?.length ?? 0) >= 4);
+  if (sentence) prompt = sentence;
+  if ((prompt.match(/[\p{L}\p{N}]/gu)?.length ?? 0) < 4) return null;
 
   const words = prompt.split(" ").filter(Boolean);
   const kept: string[] = [];
@@ -47,10 +53,13 @@ export function titleFromPrompt(raw: string): string | null {
 }
 
 function stripConversationalLead(prompt: string): string {
-  const lead = /^(?:(?:please\s+)?(?:can|could|would|will)\s+you\s+|please\s+|i\s+(?:need|want)\s+you\s+to\s+|help\s+me\s+(?:to\s+)?)/i;
+  const lead = /^(?:(?:please\s+)?(?:can|could|would|will)\s+you\s+|please\s+|i\s+(?:need|want)\s+you\s+to\s+|help\s+me\s+(?:to\s+)?|(?:deeply|carefully|thoroughly)\s+)/i;
   let result = prompt;
   while (lead.test(result)) result = result.replace(lead, "").trimStart();
-  return result;
+  return result.replace(
+    /^((?:review|audit|check)(?:ing)?)\s+(?:everything\s+)?(?:what|all(?:\s+of)?\s+what)\s+you(?:'ve|\s+have)?\s+(?:done|changed|implemented)\s+(?:for|with|to)\s+(?:the\s+)?/i,
+    "$1 ",
+  );
 }
 
 function insertAt(value: string, cursor: number, text: string): [string, number] {
@@ -64,28 +73,13 @@ export class TerminalPromptTracker {
   private value = "";
   private cursor = 0;
   private pasted = false;
+  private protocol: "text" | "escape" | "csi" | "string" | "string-escape" | "ss3" = "text";
+  private csi = "";
+  private stringAllowsBell = false;
 
   push(data: string): string | null {
-    for (let index = 0; index < data.length; ) {
-      const rest = data.slice(index);
-      if (rest.startsWith("\x1b[200~")) {
-        this.pasted = true;
-        index += 6;
-        continue;
-      }
-      if (rest.startsWith("\x1b[201~")) {
-        this.pasted = false;
-        index += 6;
-        continue;
-      }
-      const sequence = rest.match(/^\x1b\[[0-9;?]*[ -/]*[@-~]/)?.[0];
-      if (sequence) {
-        this.applySequence(sequence);
-        index += sequence.length;
-        continue;
-      }
-
-      const char = data[index++];
+    for (const char of data) {
+      if (this.consumeProtocol(char)) continue;
       if (this.pasted && (char === "\r" || char === "\n")) {
         [this.value, this.cursor] = insertAt(this.value, this.cursor, " ");
       } else if (char === "\r" || char === "\n") {
@@ -101,7 +95,7 @@ export class TerminalPromptTracker {
         this.cursor = 0;
       } else if (char === "\x05") {
         this.cursor = this.value.length;
-      } else if (char === "\x15") {
+      } else if (char === "\x03" || char === "\x15") {
         this.reset();
       } else if (char >= " ") {
         [this.value, this.cursor] = insertAt(this.value, this.cursor, char);
@@ -110,7 +104,68 @@ export class TerminalPromptTracker {
     return null;
   }
 
+  /**
+   * xterm's data event also carries replies it generates for terminal queries.
+   * Consume those protocol frames while retaining CSI keys used to edit input.
+   */
+  private consumeProtocol(char: string): boolean {
+    const code = char.charCodeAt(0);
+    if (this.protocol === "text") {
+      if (char === "\x1b") this.protocol = "escape";
+      else if (char === "\x9b") this.startCsi();
+      else if (char === "\x9d") this.startString(true);
+      else if ([0x90, 0x98, 0x9e, 0x9f].includes(code)) this.startString(false);
+      else return code >= 0x80 && code <= 0x9f;
+      return true;
+    }
+    if (this.protocol === "escape") {
+      if (char === "[") this.startCsi();
+      else if (char === "]") this.startString(true);
+      else if (["P", "X", "^", "_"].includes(char)) this.startString(false);
+      else if (char === "O" || (code >= 0x20 && code <= 0x2f)) this.protocol = "ss3";
+      else this.protocol = "text";
+      return true;
+    }
+    if (this.protocol === "ss3") {
+      this.protocol = "text";
+      return true;
+    }
+    if (this.protocol === "csi") {
+      this.csi += char;
+      if (code >= 0x40 && code <= 0x7e) {
+        const sequence = this.csi;
+        this.protocol = "text";
+        this.csi = "";
+        this.applySequence(sequence);
+      }
+      return true;
+    }
+    if (this.protocol === "string-escape") {
+      if (char === "\\") this.protocol = "text";
+      else this.protocol = char === "\x1b" ? "string-escape" : "string";
+      return true;
+    }
+    if (char === "\x9c" || (this.stringAllowsBell && char === "\x07")) {
+      this.protocol = "text";
+    } else if (char === "\x1b") {
+      this.protocol = "string-escape";
+    }
+    return true;
+  }
+
+  private startCsi(): void {
+    this.protocol = "csi";
+    this.csi = "\x1b[";
+  }
+
+  private startString(allowsBell: boolean): void {
+    this.protocol = "string";
+    this.stringAllowsBell = allowsBell;
+  }
+
   private applySequence(sequence: string): void {
+    if (sequence === "\x1b[200~") this.pasted = true;
+    if (sequence === "\x1b[201~") this.pasted = false;
     const final = sequence.at(-1);
     if (final === "D") this.cursor = Math.max(0, this.cursor - 1);
     if (final === "C") this.cursor = Math.min(this.value.length, this.cursor + 1);

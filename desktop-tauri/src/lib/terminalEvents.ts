@@ -31,7 +31,7 @@ export function sessionTitleChanged(id: number, title: string): void {
   onSessionTitle(id, title);
 }
 
-/** User keystrokes, observed only so CLIs without useful OSC titles can name the chat. */
+/** xterm data, filtered by TerminalPromptTracker before it can name an AI chat. */
 export function sessionInputReceived(id: number, data: string): void {
   onSessionInput(id, data);
 }

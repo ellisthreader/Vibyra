@@ -11,9 +11,11 @@ use Throwable;
 
 class SendReleaseAnnouncement extends Command
 {
-    protected $signature = 'vibyra:announce-release {version=0.1.7} {--send : Deliver the announcement}';
+    protected $signature = 'vibyra:announce-release
+        {version : Release version in major.minor.patch form}
+        {--send : Deliver the announcement}';
 
-    protected $description = 'Preview or send the latest Vibyra release announcement once per account.';
+    protected $description = 'Preview or send a service update once per verified account.';
 
     public function handle(): int
     {
@@ -24,7 +26,10 @@ class SendReleaseAnnouncement extends Command
             return self::INVALID;
         }
 
-        $users = User::query()->whereNotNull('email')->orderBy('id')->get()
+        $users = User::query()
+            ->whereNotNull('email')
+            ->whereNotNull('email_verified_at')
+            ->orderBy('id')->get()
             ->filter(fn (User $user) => $this->eligible((string) $user->email));
         $pending = $users->reject(fn (User $user) => DB::table('release_announcement_deliveries')
             ->where('user_id', $user->id)->where('version', $version)->exists());

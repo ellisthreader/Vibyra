@@ -71,7 +71,6 @@
   height: 7px;
   border-radius: 999px;
   background: var(--amber);
-  animation: pulse-ring 1.6s var(--e-standard) infinite;
 }
 
 .homeview__attn:hover {

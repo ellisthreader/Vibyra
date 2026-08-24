@@ -65,6 +65,36 @@ fn mixed_search_paths_keep_their_entries_outside_the_mount() {
 }
 
 #[test]
+fn stacked_appimage_mounts_are_all_removed_after_relaunch() {
+    let old_mount = "/tmp/.mount_VibyraOLD123";
+    let fix = plan(
+        MOUNT,
+        vars(&[(
+            "LD_LIBRARY_PATH",
+            &format!("{MOUNT}/usr/lib:{old_mount}/usr/lib:/opt/vendor/lib:/usr/lib"),
+        )]),
+    );
+    assert!(fix.remove.is_empty());
+    assert_eq!(
+        fix.set,
+        [(
+            "LD_LIBRARY_PATH".to_owned(),
+            "/opt/vendor/lib:/usr/lib".to_owned()
+        )]
+    );
+}
+
+#[test]
+fn a_variable_owned_only_by_a_stale_mount_is_removed() {
+    let fix = plan(
+        MOUNT,
+        vars(&[("PYTHONHOME", "/tmp/.mount_VibyraOLD123/usr")]),
+    );
+    assert_eq!(fix.remove, ["PYTHONHOME"]);
+    assert!(fix.set.is_empty());
+}
+
+#[test]
 fn the_runtimes_own_markers_are_always_dropped() {
     let fix = plan(
         MOUNT,
@@ -80,13 +110,25 @@ fn the_runtimes_own_markers_are_always_dropped() {
 }
 
 #[test]
-fn a_sibling_mount_with_a_shared_prefix_is_left_alone() {
+fn a_non_mount_sibling_with_a_shared_prefix_is_left_alone() {
     let fix = plan(
         MOUNT,
-        vars(&[("LD_LIBRARY_PATH", &format!("{MOUNT}2/usr/lib:/usr/lib"))]),
+        vars(&[("LD_LIBRARY_PATH", "/tmp/.mountVibyraXY2/usr/lib:/usr/lib")]),
     );
     assert!(fix.remove.is_empty());
     assert!(fix.set.is_empty());
+}
+
+#[test]
+fn lookalike_and_elsewhere_mount_paths_are_left_alone() {
+    let fix = plan(
+        MOUNT,
+        vars(&[(
+            "LD_LIBRARY_PATH",
+            "/tmp/.mountains/lib:/opt/.mount_private/lib:/usr/lib",
+        )]),
+    );
+    assert!(fix.is_empty());
 }
 
 #[test]

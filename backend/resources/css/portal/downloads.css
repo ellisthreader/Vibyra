@@ -65,6 +65,7 @@
 .whats-new { max-width: 720px; margin: 46px auto 0; }
 .whats-new h2 { display: flex; align-items: center; justify-content: center; gap: 11px; margin: 0 0 18px; font-size: 21px; letter-spacing: -.025em; }
 .whats-new__version { padding: 4px 11px; border: 1px solid var(--portal-border); border-radius: 999px; background: rgba(255, 255, 255, .02); color: var(--portal-muted); font-size: 11.5px; font-weight: 650; letter-spacing: 0; }
+.whats-new__notice { margin: -4px auto 18px; max-width: 650px; color: var(--portal-muted); font-size: 13px; line-height: 1.6; text-align: center; }
 .feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .feature-grid li { display: grid; gap: 5px; align-content: start; padding: 17px; border: 1px solid var(--portal-border); border-radius: 14px; background: var(--portal-surface); }
 .feature-grid li.feature--fresh { border-color: rgba(91, 124, 250, .42); background: linear-gradient(180deg, rgba(91, 124, 250, .05), rgba(255, 255, 255, 0)), var(--portal-surface); }

@@ -135,3 +135,19 @@ break a production `composer install --no-dev` build. If the Railway SSH relay
 drops during a large upload, use the direct Railway SSH endpoint with
 keepalives, still staging to a hidden name and verifying the remote checksum
 before the atomic rename.
+
+## Release messaging
+
+The signed desktop updater is the release-notification path for installed
+desktop clients: publish verified artifact bytes before changing all release
+metadata, then verify the update feed from the preceding version. The mobile
+`productUpdates` preference is local-only and is not a backend email or push
+subscription.
+
+`vibyra:announce-release` is only a version-deduplicated verified-account email
+command; it does not identify affected installs or paid accounts, or provide
+consent, suppression, unsubscribe, preview, or canary controls. Do not use it
+as a general product-update broadcast until those controls and a valid
+production mail transport are deliberately established. A unique delivery row
+prevents ordinary reruns, but recording after the provider send is not
+crash-safe or concurrency-safe exactly-once delivery.

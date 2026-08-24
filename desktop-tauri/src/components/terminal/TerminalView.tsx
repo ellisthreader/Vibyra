@@ -5,6 +5,7 @@ import {
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
 import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
+import { initTerminalFont } from "../../lib/terminalFont";
 import {
   fitTerminal,
   getTerminal,
@@ -44,30 +45,37 @@ export function TerminalView({
     const settings = useSettingsStore.getState().settings;
     if (!host || !settings) return;
 
-    const entry = mountTerminal(id, settings, host, bottomAnchored);
+    let cancelled = false;
+    let observer: ResizeObserver | null = null;
     let trailingTimer = 0;
     let frame = 0;
-    let lastFitAt = 0;
-    const fitNow = () => {
-      lastFitAt = performance.now();
-      const followOutput = terminalViewportIsNearBottom(entry.term);
-      fitTerminal(entry);
-      applyTerminalBottomAnchor(entry.term, entry.anchor, followOutput);
-    };
-    const observer = new ResizeObserver(() => {
-      if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
-        frame = requestAnimationFrame(() => {
-          frame = 0;
-          fitNow();
-        });
-      }
-      window.clearTimeout(trailingTimer);
-      trailingTimer = window.setTimeout(fitNow, FIT_THROTTLE_MS);
+    void initTerminalFont().then(() => {
+      if (cancelled) return;
+      const entry = mountTerminal(id, settings, host, bottomAnchored);
+      let lastFitAt = 0;
+      const fitNow = () => {
+        if (cancelled) return;
+        lastFitAt = performance.now();
+        const followOutput = terminalViewportIsNearBottom(entry.term);
+        fitTerminal(entry);
+        applyTerminalBottomAnchor(entry.term, entry.anchor, followOutput);
+      };
+      observer = new ResizeObserver(() => {
+        if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
+          frame = requestAnimationFrame(() => {
+            frame = 0;
+            fitNow();
+          });
+        }
+        window.clearTimeout(trailingTimer);
+        trailingTimer = window.setTimeout(fitNow, FIT_THROTTLE_MS);
+      });
+      observer.observe(host);
     });
-    observer.observe(host);
 
     return () => {
-      observer.disconnect();
+      cancelled = true;
+      observer?.disconnect();
       window.clearTimeout(trailingTimer);
       cancelAnimationFrame(frame);
       unmountTerminal(id);

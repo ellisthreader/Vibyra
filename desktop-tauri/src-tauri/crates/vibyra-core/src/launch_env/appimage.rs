@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::path::{Component, Path};
 
 /// Variables that name the AppImage mount itself. They mean nothing to a child
 /// process and only mislead tools that look for them.
@@ -31,10 +32,13 @@ impl EnvFix {
 /// system's.
 ///
 /// Rather than enumerate the variables a given runtime version happens to set,
-/// this drops the *path entries under the mount* from whatever is present and
-/// keeps the rest. `XDG_DATA_DIRS` therefore keeps its system entries, while
-/// `PYTHONHOME` — which is nothing but the mount — disappears. A build that is
-/// not running from an AppImage produces an empty fix and costs nothing.
+/// this drops the *path entries under AppImage mounts* from whatever is present
+/// and keeps the rest. Removing every `.mount_*` sibling matters after an
+/// in-app relaunch: the new runtime prepends its mount to the old runtime's
+/// captured paths, so cleaning only the current `APPDIR` leaves stale bundled
+/// libraries in terminals. `XDG_DATA_DIRS` therefore keeps its system entries,
+/// while `PYTHONHOME` — which is nothing but a mount — disappears. A build that
+/// is not running from an AppImage produces an empty fix and costs nothing.
 pub fn plan<I>(appdir: &str, vars: I) -> EnvFix
 where
     I: IntoIterator<Item = (String, String)>,
@@ -52,20 +56,18 @@ where
             fix.remove.push(key);
             continue;
         }
-        if !value.contains(appdir) {
-            continue;
-        }
         let kept: Vec<&str> = value
             .split(':')
-            .filter(|entry| !entry.is_empty() && !under(entry, appdir))
+            .filter(|entry| !entry.is_empty() && !under_appimage_mount(entry, appdir))
             .collect();
+        if kept.len() == value.split(':').filter(|entry| !entry.is_empty()).count() {
+            continue;
+        }
         if kept.is_empty() {
             fix.remove.push(key);
             continue;
         }
-        // `contains` is only a cheap prefilter — a sibling mount whose name
-        // starts with ours matches it while owning none of the entries. Record
-        // a rewrite only when one was actually dropped.
+        // Record a rewrite only when filtering actually changed the value.
         let rewritten = kept.join(":");
         if rewritten != value {
             fix.set.push((key, rewritten));
@@ -74,11 +76,33 @@ where
     fix
 }
 
-/// True when `entry` is the mount or lives inside it. Compared against
-/// `appdir/` rather than `appdir` so a sibling mount whose name merely starts
-/// with the same characters is never swept up.
-fn under(entry: &str, appdir: &str) -> bool {
-    entry == appdir || entry.starts_with(&format!("{appdir}/"))
+/// True when `entry` is inside the current AppImage mount or another AppImage
+/// mount beside it. AppImage mount names are direct `.mount_*` children of one
+/// temporary directory. Checking path components avoids sweeping up lookalike
+/// strings such as `/tmp/.mountains` or legitimate `.mount_*` paths elsewhere.
+fn under_appimage_mount(entry: &str, appdir: &str) -> bool {
+    let appdir = Path::new(appdir);
+    let entry = Path::new(entry);
+    if entry == appdir || entry.starts_with(appdir) {
+        return true;
+    }
+
+    let Some(parent) = appdir.parent() else {
+        return false;
+    };
+    let Some(current_name) = appdir.file_name().and_then(|name| name.to_str()) else {
+        return false;
+    };
+    if !current_name.starts_with(".mount_") {
+        return false;
+    }
+    let Ok(relative) = entry.strip_prefix(parent) else {
+        return false;
+    };
+    matches!(
+        relative.components().next(),
+        Some(Component::Normal(name)) if name.to_string_lossy().starts_with(".mount_")
+    )
 }
 
 /// The fix for this process, or an empty fix when Vibyra was not launched from

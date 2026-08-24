@@ -2,25 +2,25 @@ import React from "react";
 
 const FEATURES = [
   {
-    title: "In-app updates",
-    body: "New releases appear inside Vibyra with a one-click update. This is the last build you download by hand.",
+    title: "Terminal performance fixed",
+    body: "Correct character spacing, responsive typing and accelerated rendering are restored.",
     fresh: true,
   },
   {
-    title: "Multi-agent terminal grid",
-    body: "Run Claude Code, Codex, Gemini and any other AI CLI side by side, each in its own live pane.",
+    title: "Lower CPU usage",
+    body: "Terminals stay on the WebGL renderer and avoid layout work on every keystroke.",
   },
   {
-    title: "Rebuilt in Rust",
-    body: "Eight or more terminals streaming at once without the window stuttering.",
+    title: "Reliable fast input",
+    body: "Keyboard, paste, drag and dictation input remain in exact order, even during rapid bursts.",
   },
   {
     title: "Sessions that survive",
     body: "Your panes, layout and scrollback come back exactly as you left them.",
   },
   {
-    title: "Workspace tools",
-    body: "File browser, SSH sessions, live preview and a built-in screenshot editor on F9.",
+    title: "In-app updates",
+    body: "New releases appear inside Vibyra and preserve terminal state before restarting.",
   },
   {
     title: "Obsidian memory",
@@ -36,6 +36,10 @@ export default function WhatsNew({ version }) {
       <h2 id="whats-new-title">
         What you get{version ? <span className="whats-new__version">Beta {version}</span> : null}
       </h2>
+      <p className="whats-new__notice">
+        We’re sorry: recent releases caused terminal lag, incorrect character spacing and
+        delayed-looking typing for some users. The latest update fixes the underlying issues.
+      </p>
       <ul className="feature-grid">
         {FEATURES.map((feature) => (
           <li key={feature.title} className={feature.fresh ? "feature--fresh" : undefined}>

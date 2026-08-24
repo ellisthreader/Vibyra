@@ -89,6 +89,14 @@ export function nextGuardState(
   now: number,
   context: PerfGuardContext,
 ): { state: PerfGuardState; notify: NotificationInput | null } {
+  // Browsers throttle timers while a window is hidden. Counting those delayed
+  // callbacks would let background drift pre-qualify an episode, then fire a
+  // stale warning on the first tick after focus returns. A visible problem must
+  // earn the full consecutive-sample threshold again.
+  if (context.away) {
+    return { state: { ...prev, badRun: 0, goodRun: 0 }, notify: null };
+  }
+
   if (verdict.level === "ok") {
     const goodRun = prev.goodRun + 1;
     const level: PerfLevel = goodRun >= EXIT_SAMPLES ? "ok" : prev.level;
@@ -98,7 +106,7 @@ export function nextGuardState(
   const badRun = prev.badRun + 1;
   const state: PerfGuardState = { ...prev, badRun, goodRun: 0 };
   if (badRun < ENTER_SAMPLES) return { state, notify: null };
-  if (context.uptimeMs < WARMUP_MS || context.away) {
+  if (context.uptimeMs < WARMUP_MS) {
     return { state: { ...state, level: verdict.level }, notify: null };
   }
   if (!allowed(state, verdict, now)) {

@@ -1,5 +1,6 @@
 import type { PaneState } from "../state/terminalStoreTypes";
 import type { PersistedPane, TerminalSession } from "../sessionTypes";
+import { normalizeTerminalChatTitle } from "./terminalTitle.ts";
 
 // Pure mapping between the saved session and live pane state. Kept free of
 // React and IPC so the id rules below can be unit-tested directly.
@@ -38,7 +39,7 @@ export function toPaneStates(session: TerminalSession): PaneState[] {
     // later. Resume re-inspects the workspace, exactly as restart does.
     safeSnapshotFingerprint: null,
     customTitle: pane.customTitle,
-    chatTitle: pane.chatTitle ?? null,
+    chatTitle: normalizeTerminalChatTitle(pane.chatTitle),
     osc: null,
     accent: pane.accent,
     agentSessionId: pane.agentSessionId ?? null,
@@ -170,7 +171,7 @@ export function toPersistedPanes(panes: PaneState[]): PersistedPane[] {
     agentId: pane.agentId,
     title: pane.title,
     customTitle: pane.customTitle,
-    chatTitle: pane.chatTitle,
+    chatTitle: normalizeTerminalChatTitle(pane.chatTitle),
     model: pane.model,
     permissionMode: pane.permissionMode,
     reasoningEffort: pane.reasoningEffort,
