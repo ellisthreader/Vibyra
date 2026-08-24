@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { writeTerminal } from "../ipc/terminal";
+import { notePromptInput } from "../lib/terminalChatTitleSource";
 import { voiceStart, voiceStatus, voiceStop } from "../ipc/tools";
 import { shortcutLabel } from "../lib/hotkeys";
 import { useSettingsStore } from "./settingsStore";
@@ -108,7 +109,11 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
         fail("The target terminal was closed");
         return;
       }
-      await writeTerminal(targetId, `${text}\r`);
+      const submitted = `${text}\r`;
+      // Dictation goes straight to the PTY, so the pane would never see this
+      // prompt in what was typed into it.
+      notePromptInput(targetId, submitted);
+      await writeTerminal(targetId, submitted);
       show("sent", "Sent to terminal", pane.title);
       hideSoon(1800);
     } catch (error) {

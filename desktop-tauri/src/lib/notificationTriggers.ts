@@ -2,6 +2,7 @@ import type { ReleasedModel } from "../ipc/models";
 import type { PreviewStatus } from "../previewTypes";
 import { useNotificationStore } from "../state/notificationStore";
 import { useTerminalStore } from "../state/terminalStore";
+import type { PaneState } from "../state/terminalStoreTypes";
 import type { ActivityTransition } from "./activityTransitions";
 import { notePreviewTransition } from "./previewNotifications";
 import { exitNoticeSuppressed, exitNotification } from "./sessionExitNotifications";
@@ -16,6 +17,33 @@ export function notifySessionExit(id: number, code: number | null): void {
   const pane = useTerminalStore.getState().panes.find((candidate) => candidate.id === id);
   const notice = exitNotification(pane, code, exitNoticeSuppressed(id));
   if (notice) useNotificationStore.getState().push(notice);
+}
+
+/**
+ * A restored pane that could not be given its old conversation back.
+ *
+ * One shared dedupe key on purpose: restoring a workspace can start several of
+ * these at once, and four identical notices say nothing the first one did not.
+ */
+export function notifyNewConversation(pane: PaneState): void {
+  useNotificationStore.getState().push({
+    category: "system",
+    severity: "info",
+    title: `${terminalDisplayTitle(pane)} started a new conversation`,
+    body: "Its previous one could not be identified, so this pane is fresh. The output you were reading is still above it.",
+    dedupeKey: "resume:new-conversation",
+  });
+}
+
+/** A resume the agent refused outright, restarted clean rather than left dead. */
+export function notifyResumeRestarted(pane: PaneState): void {
+  useNotificationStore.getState().push({
+    category: "system",
+    severity: "warning",
+    title: `${terminalDisplayTitle(pane)} could not continue where it left off`,
+    body: "The agent refused its previous conversation, so the pane was restarted on a new one rather than left closed.",
+    dedupeKey: "resume:restarted",
+  });
 }
 
 function paneTitle(id: number): string {

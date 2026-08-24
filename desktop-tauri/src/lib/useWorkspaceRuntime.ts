@@ -10,13 +10,14 @@ import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { restoredProjectId } from "./sessionRestore";
 import { startAppRuntime } from "./appStartup";
-import { notifyModelsReleased, notifySessionExit } from "./notificationTriggers";
-import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
 import {
-  needsPromptDerivedTitle,
-  observeTerminalPrompt,
-} from "./terminalChatTitle";
-import { normalizeTerminalChatTitle } from "./terminalTitle";
+  notifyModelsReleased,
+  notifyResumeRestarted,
+  notifySessionExit,
+} from "./notificationTriggers";
+import { providerAccountRuntimeUpdate } from "./providerAccountPolicy";
+import { claimFailedResume } from "./resumeRecovery";
+import { notePromptInput } from "./terminalChatTitleSource";
 import {
   setSessionExitHandler,
   setSessionInputHandler,
@@ -36,19 +37,23 @@ async function refreshConnectedAccounts(): Promise<void> {
 function useAppStartup(): void {
   useEffect(() => {
     setSessionExitHandler((id, code) => {
-      useTerminalStore.getState().markExited(id, code);
+      const terminals = useTerminalStore.getState();
+      terminals.markExited(id, code);
+      const pane = terminals.panes.find((candidate) => candidate.id === id);
+      // An agent that refused to continue a conversation gets one clean
+      // restart instead of leaving the user a dead pane. See `resumeRecovery`
+      // for why this is a recovery rather than another preflight.
+      if (pane && claimFailedResume(pane.persistenceId, code)) {
+        notifyResumeRestarted(pane);
+        void terminals.recoverResume(id);
+        return;
+      }
       notifySessionExit(id, code);
     });
     setSessionTitleHandler((id, title) => {
       useTerminalStore.getState().setOsc(id, title);
     });
-    setSessionInputHandler((id, data) => {
-      const store = useTerminalStore.getState();
-      const pane = store.panes.find((candidate) => candidate.id === id);
-      if (!pane || normalizeTerminalChatTitle(pane.chatTitle) || !needsPromptDerivedTitle(pane.agentId)) return;
-      const title = observeTerminalPrompt(id, data);
-      if (title) store.setChatTitle(id, title);
-    });
+    setSessionInputHandler(notePromptInput);
     startAppRuntime(
       {
         initializeWorkspace: async () => {

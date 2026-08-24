@@ -33,8 +33,9 @@ because another target is selected; failed or timed-out services must clear
 their URL. Multi-process recipes reserve every port before spawning and hold
 each listener until its corresponding child starts. Manifest reads are capped
 at 1 MiB, child output is consumed in fixed chunks with bounded logical lines,
-and package scripts must directly invoke the detected browser framework rather
-than merely declaring its dependency; shell backgrounding with `&` is rejected.
+and package scripts must directly invoke the detected browser framework or pass
+the bounded local-wrapper checks below rather than merely declaring a dependency;
+shell backgrounding with `&` is rejected.
 
 The localhost static service caps active connections, request headers, and
 read/write time, while still accepting fragmented headers and serving byte
@@ -43,3 +44,26 @@ work off the invoke thread. Common nested roots include `app`, `mobile`,
 `apps/mobile`, `packages/app`, and `packages/mobile`. The renderer catalog has
 47 calibrated presets, and live checks cover its laptop centering and the
 960x600 workspace layout without approving a project command.
+
+Browser-capable mobile targets are resolved in `package_command.rs`,
+`package_script.rs`, and `package_runtime.rs`. Expo Go or development-build
+scripts become an Expo web Preview by receiving `--web` and the reserved port;
+Ionic, Capacitor-backed Vite, and React Native Web/webpack targets receive phone
+viewport hints. A local Node wrapper is accepted only when it is bounded to 128
+KiB, canonicalizes inside the selected project, forwards runtime arguments, and
+contains a recognized child framework launch. Safe package aliases resolve to a
+maximum depth of four. Native-only React Native remains unavailable because the
+Tauri phone frame embeds a browser, not a native device runtime.
+Wrapper validation must exercise `PreviewManager` through HTTP readiness and
+Stop cleanup while preserving any separately running native Expo server; target
+detection alone does not prove the launch path.
+
+## Fidelity Boundary (2026-08-23)
+
+The current device frame is a scaled desktop-WebKit iframe at a chosen CSS
+width and height. `previewDevices.ts` stores DPR only as displayed reference
+metadata; Preview does not override DPR, user agent, touch/pointer behavior,
+mobile browser chrome, safe-area environment values, or the underlying runtime.
+The decorative camera/island overlays the iframe without supplying native safe
+area insets. Treat this surface as responsive layout Preview, including for
+Expo web, and do not claim simulator or physical-device fidelity from it.

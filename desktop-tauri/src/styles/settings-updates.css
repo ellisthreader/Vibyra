@@ -1,0 +1,99 @@
+/* Settings → Updates. One state card carries the whole answer — what is going
+   on, and the single thing you can press about it — so the tone dot is the
+   only thing that changes between "up to date" and "the feed is down". */
+
+.vupdate-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.vupdate-panel__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--dim);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dim) 16%, transparent);
+}
+
+.vupdate-panel--ok .vupdate-panel__dot {
+  background: var(--success);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 16%, transparent);
+}
+
+.vupdate-panel--info .vupdate-panel__dot,
+.vupdate-panel--busy .vupdate-panel__dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.vupdate-panel--error .vupdate-panel__dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
+/* Only the busy dot pulses: a steady dot means the number beside it is final. */
+.vupdate-panel--busy .vupdate-panel__dot {
+  animation: vupdate-panel-pulse 1.4s var(--e-standard) infinite;
+}
+
+@keyframes vupdate-panel-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vupdate-panel--busy .vupdate-panel__dot {
+    animation: none;
+  }
+}
+
+.vupdate-panel__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.vupdate-panel__headline {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 640;
+  color: var(--text);
+}
+
+.vupdate-panel__detail {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.vupdate-panel__action {
+  flex: none;
+}
+
+.vupdate-panel__version {
+  font-size: 12px;
+  font-weight: 640;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* `.settings-note` draws its own top rule; two stacked notes would double it. */
+.vupdate-panel__note + .vupdate-panel__note {
+  border-top: 0;
+  padding-top: 0;
+}
+
+@media (max-width: 720px) {
+  .vupdate-panel {
+    flex-wrap: wrap;
+  }
+
+  .vupdate-panel__action {
+    width: 100%;
+  }
+}

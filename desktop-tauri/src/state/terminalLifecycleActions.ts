@@ -2,7 +2,9 @@ import type { StoreApi } from "zustand";
 
 import { removeTerminal, setTerminalVisibility } from "../ipc/terminal";
 import { dropStats } from "../lib/activity";
+import { forgetResumeAttempt } from "../lib/resumeRecovery";
 import { suppressExitNotice } from "../lib/sessionExitNotifications";
+import type { RelaunchContinuity } from "../lib/sessionRestore";
 import { isSuspendedId } from "../lib/sessionRestore";
 import { destroySession, disposeTerminal } from "../lib/terminalRegistry";
 import { relaunch } from "./terminalRelaunch";
@@ -19,6 +21,7 @@ type Lifecycle = Pick<
   | "restart"
   | "switchAccount"
   | "resume"
+  | "recoverResume"
   | "close"
   | "hibernate"
   | "wake"
@@ -30,6 +33,27 @@ function reportError(error: unknown): void {
   useWorkspaceStore.getState().setError(String(error));
 }
 
+/**
+ * Swaps a pane for a fresh one in the same slot.
+ *
+ * The replacement is proved to have opened before the working PTY is torn
+ * down, so a relaunch that fails leaves the existing pane usable rather than
+ * closing it over an error.
+ */
+async function replacePane(
+  get: GetState,
+  id: number,
+  continuity?: RelaunchContinuity,
+): Promise<void> {
+  const pane = get().panes.find((candidate) => candidate.id === id);
+  if (!pane) return;
+  if (!(await relaunch(get, pane, id, continuity))) return;
+  suppressExitNotice(id);
+  destroySession(id);
+  dropStats(id);
+  if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
+}
+
 export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycle {
   return {
     ...terminalSpawnActions(set, get),
@@ -37,17 +61,17 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
     switchAccount: (id, accountId) =>
       runTerminalOperation(id, () => switchPaneAccount(get, id, accountId)),
 
-    restart: (id) =>
+    restart: (id) => runTerminalOperation(id, () => replacePane(get, id)),
+
+    // A resume the agent refused. The replacement is a restart in every
+    // respect but one: the conversation is deliberately left behind while the
+    // output the user was reading carries over. Losing the thread is the
+    // failure — losing the terminal with it is what made it an outage.
+    recoverResume: (id) =>
       runTerminalOperation(id, async () => {
         const pane = get().panes.find((candidate) => candidate.id === id);
         if (!pane) return;
-        // Prove the replacement opened before tearing down the working PTY.
-        // A failed restart therefore leaves the existing pane usable.
-        if (!(await relaunch(get, pane, id))) return;
-        suppressExitNotice(id);
-        destroySession(id);
-        dropStats(id);
-        if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
+        await replacePane(get, id, { resume: false, replaySnapshot: pane.snapshot ?? null });
       }),
 
     // Resume differs from restart in two ways: there is no live session to
@@ -65,6 +89,10 @@ export function terminalLifecycleActions(set: SetState, get: GetState): Lifecycl
       // — and every restart, which closes before it respawns — would report a
       // finished or failed run the user never started.
       suppressExitNotice(id);
+      // Nor is a pane the user closed a resume that failed, however soon after
+      // launch they closed it.
+      const closing = get().panes.find((candidate) => candidate.id === id);
+      if (closing) forgetResumeAttempt(closing.persistenceId);
       destroySession(id);
       dropStats(id);
       // A suspended pane's negative id names no Rust session — sending it

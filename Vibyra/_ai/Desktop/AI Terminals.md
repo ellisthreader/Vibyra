@@ -60,6 +60,19 @@ being passed unverified to the personal-account CLI. Durable regression
 coverage includes `provider_auth_integration_tests.rs`, PTY environment removal,
 Gemini fixture validation, provider-account policy, and model-runner tests.
 
+## August 23, 2026 - Exact Codex Session Recovery
+
+- A live Codex pane receives its UUID inside the CLI, not at launch. On Linux,
+  native session saves resolve the open rollout filename from the PTY descendant
+  tree and persist that UUID as `agentSessionId`; resume must then launch
+  `codex resume <uuid>`, never the ambiguous `--last` form when an ID exists.
+- Ownership is `vibyra-core/src/pty/conversation.rs`, `commands/session.rs`, and
+  `commands/terminal_args.rs`. Keep the same-agent/same-directory ambiguity
+  guard for legacy panes that genuinely have no ID.
+- For recovery, back up `~/.config/vibyra-desktop/session.json` before mapping
+  intact `~/.codex/sessions` rollouts. Do not quit or restart Vibyra from one of
+  its child terminals; stage the repaired file and apply it after the app exits.
+
 ## August 14, 2026 - Rust/Tauri Provider-Neutral Bottom Composer
 
 - The new `desktop-tauri` renderer bottom-anchors every non-shell/SSH AI CLI;

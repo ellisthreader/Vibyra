@@ -72,6 +72,8 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 - Account auth and session storage: `Desktop/Tauri Account Authentication.md`
 - Terminal performance and WebKit compositing: `Desktop/Tauri Terminal Performance Overhaul.md`
 - Terminal panes, provider routing, launch settings: `Desktop/AI Terminals.md`
+- Accurate AI chat names and generic OSC-title fallback:
+  `Desktop/Terminal Chat Titles.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
 - In-app report dialog and authenticated backend delivery:
   `Desktop/In-App Reporting.md`

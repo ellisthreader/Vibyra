@@ -2,9 +2,18 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Typing that keeps up",
+    body: "Your keystrokes reach the screen within a frame, even while agents stream output in other panes.",
+    fresh: true,
+  },
+  {
+    title: "Updates from Settings",
+    body: "See your version and check for the latest release any time in Settings → Updates.",
+    fresh: true,
+  },
+  {
     title: "Terminal performance fixed",
     body: "Correct character spacing, responsive typing and accelerated rendering are restored.",
-    fresh: true,
   },
   {
     title: "Lower CPU usage",
@@ -36,10 +45,6 @@ export default function WhatsNew({ version }) {
       <h2 id="whats-new-title">
         What you get{version ? <span className="whats-new__version">Beta {version}</span> : null}
       </h2>
-      <p className="whats-new__notice">
-        We’re sorry: recent releases caused terminal lag, incorrect character spacing and
-        delayed-looking typing for some users. The latest update fixes the underlying issues.
-      </p>
       <ul className="feature-grid">
         {FEATURES.map((feature) => (
           <li key={feature.title} className={feature.fresh ? "feature--fresh" : undefined}>

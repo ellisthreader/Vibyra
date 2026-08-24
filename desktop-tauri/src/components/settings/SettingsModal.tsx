@@ -5,7 +5,7 @@ import { useModalFocus } from "../../lib/useModalFocus";
 import { useSettingsStore } from "../../state/settingsStore";
 import { type SettingsSectionId, useWorkspaceStore } from "../../state/workspaceStore";
 import { BellIcon } from "../common/StatusIcons";
-import { BotIcon, CloseIcon, CommandIcon, GearIcon, LinkIcon, SparklesIcon, UserIcon } from "../common/Icons";
+import { BotIcon, CloseIcon, CommandIcon, GearIcon, LinkIcon, RestartIcon, SparklesIcon, UserIcon } from "../common/Icons";
 import { SettingsAgentsPane } from "./SettingsAgentsPane";
 import { SettingsAiPane } from "./SettingsAiPane";
 import { SettingsGeneralPane } from "./SettingsGeneralPane";
@@ -13,6 +13,7 @@ import { SettingsNotificationsPane } from "./SettingsNotificationsPane";
 import { SettingsIntegrationsPane } from "./SettingsIntegrationsPane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
+import { SettingsUpdatesPane } from "./SettingsUpdatesPane";
 
 interface Section {
   id: SettingsSectionId;
@@ -31,6 +32,7 @@ const SECTIONS: Section[] = [
   { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
   { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
   { id: "shortcuts", label: "Shortcuts", blurb: "Set global tools and review app controls", icon: CommandIcon },
+  { id: "updates", label: "Updates", blurb: "Your version, and any release waiting to install", icon: RestartIcon },
 ];
 
 export function SettingsModal() {
@@ -53,6 +55,7 @@ export function SettingsModal() {
     integrations: <SettingsIntegrationsPane settings={settings} update={update} />,
     agents: <SettingsAgentsPane settings={settings} update={update} />,
     shortcuts: <SettingsShortcutsPane settings={settings} update={update} />,
+    updates: <SettingsUpdatesPane />,
   }[section.id];
 
   return (

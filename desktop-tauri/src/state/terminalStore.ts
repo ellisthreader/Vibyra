@@ -4,10 +4,11 @@ import { loadTerminalSession } from "../ipc/session";
 import { setTerminalVisibility } from "../ipc/terminal";
 import { toPaneStates } from "../lib/sessionRestore";
 import {
-  normalizeTerminalChatTitle,
+  acceptedChatTitle,
   normalizeTerminalOscTitle,
   terminalDisplayTitle,
 } from "../lib/terminalTitle";
+import { zoomVisibilityTarget } from "../lib/projectTransitions";
 import { getTerminal } from "../lib/terminalRegistry";
 import type { Visibility } from "../types";
 import { terminalLifecycleActions } from "./terminalLifecycleActions";
@@ -39,22 +40,21 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
   toggleZoom: (id) => {
     const zoomed = get().zoomedId === id ? null : id;
     set({ zoomedId: zoomed, focusedId: id });
-    const projectId = get().panes.find((pane) => pane.id === id)?.projectId;
+    const projectId = get().panes.find((pane) => pane.id === id)?.projectId ?? null;
+    const target = (pane: PaneState): Visibility | null =>
+      zoomVisibilityTarget(pane, projectId, zoomed, id);
     for (const pane of get().panes) {
-      if (pane.projectId !== projectId) continue;
-      if (pane.status !== "running" || pane.visibility === "hibernated") continue;
-      const target: Visibility = zoomed === null || pane.id === zoomed ? "visible" : "hidden";
-      if (pane.visibility !== target) {
-        void setTerminalVisibility(pane.id, target).catch(() => {});
+      const visibility = target(pane);
+      if (visibility !== null && pane.visibility !== visibility) {
+        void setTerminalVisibility(pane.id, visibility).catch(() => {});
       }
     }
     set((state) => ({
       panes: state.panes.map((pane) => {
-        if (pane.projectId !== projectId) return pane;
-        if (pane.status !== "running" || pane.visibility === "hibernated") return pane;
-        const visibility: Visibility =
-          zoomed === null || pane.id === zoomed ? "visible" : "hidden";
-        return { ...pane, visibility };
+        const visibility = target(pane);
+        return visibility === null || pane.visibility === visibility
+          ? pane
+          : { ...pane, visibility };
       }),
     }));
   },
@@ -80,11 +80,11 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     }));
   },
 
-  setChatTitle: (id, title) => {
-    const chatTitle = normalizeTerminalChatTitle(title);
+  setChatTitle: (id, title, fromTranscript = false) => {
     set((state) => {
       const pane = state.panes.find((candidate) => candidate.id === id);
-      if (!pane || normalizeTerminalChatTitle(pane.chatTitle) || !chatTitle) return state;
+      const chatTitle = pane && acceptedChatTitle(pane, title, fromTranscript);
+      if (!chatTitle) return state;
       return {
         panes: state.panes.map((candidate) =>
           candidate.id === id ? { ...candidate, chatTitle } : candidate),

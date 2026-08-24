@@ -54,6 +54,12 @@ and shutdown. Never expose bearer or capability secrets.
    live at the selected folder root.
 2. Re-detect the target immediately before start. Do not let static placeholder
    HTML override Laravel/Vite, Expo, SPA, backend/frontend, or game runtimes.
+   A package-script alias may resolve through at most four safe local aliases.
+   A local Node wrapper is runnable only when its canonical file stays inside
+   the selected project, is at most 128 KiB, forwards runtime arguments, and
+   contains a recognized child framework launch; reinspection closes the normal
+   edit-between-inspect-and-Run window. Keep arbitrary, out-of-project, oversized,
+   non-forwarding, and shell-chained wrappers unavailable.
 3. Trace the explicit approved start into `startProjectDevServer()`. Check the
    command, cwd, readiness probe, timeout, generation, port reservation,
    startup feed, and reuse of an existing verified runtime.
@@ -134,6 +140,12 @@ For Rust/Tauri workspace Preview, audit these invariants separately:
 - Cap static-server connections and header bytes, set read/write timeouts, and
   accept fragmented request headers. Run blocking detection, spawn, Stop, and
   readiness work outside Tauri's invoke/UI thread.
+- Treat Expo Go and Expo development-build package scripts as sources for an
+  embedded Expo **web** target by appending `--web` plus Vibyra's reserved host
+  and port. The phone frame cannot embed a native runtime. Ionic serve,
+  Capacitor-backed web bundlers, and React Native Web bundlers use phone viewport
+  hints; native-only React Native remains unavailable instead of showing a false
+  browser Preview.
 
 If Expo Router shows `Unmatched Route` only inside Desktop Preview, inspect the
 browser pathname for the tokenized `/preview/server/...` prefix. Normalize it
@@ -197,6 +209,10 @@ Manually test a
 static site, Vite/React SPA, Laravel/Inertia form flow, Expo web app, and any
 canvas/WebGL game capabilities involved. Include first start, reopen, reload,
 mid-start switching, concurrent targets, phone/Desktop use, Stop, and shutdown.
+For a delegated mobile package wrapper, do not stop at a detection assertion:
+start it through `PreviewManager`, wait for `Running`, require an HTTP 200 from
+the returned reserved-port URL, Stop it, and confirm the managed port closes
+without terminating an already-running Expo Go or development-build server.
 Do not claim game or device-specific completeness from unit tests alone.
 For the Rust/Tauri shell, also compile the full `src-tauri/Cargo.toml` workspace;
 on Linux use the repository's existing dev-shim path or `npm run app:build` so

@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { checkForUpdate, downloadUpdate, installUpdate, type Update } from "../ipc/updates";
 import { saveSessionNow } from "../lib/sessionPersistence";
+import type { CheckState } from "../lib/updateCheckPolicy";
 import {
   advanceProgress,
   NO_PROGRESS,
@@ -15,6 +16,13 @@ interface UpdateStore {
   notes: string;
   progress: UpdateProgress;
   error: string | null;
+  /** State of the check request itself, tracked apart from `status` so a feed
+   * that has been unreachable for days is visible in Settings → Updates
+   * without the banner claiming a release exists. */
+  checkState: CheckState;
+  checkError: string | null;
+  /** Epoch ms of the last check that reached the feed and got an answer. */
+  lastCheckedAt: number | null;
   /** Version the user waved away. In-memory only, so a newer release —
    * or the next launch — brings the banner back. */
   dismissed: string;
@@ -50,16 +58,21 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
   notes: "",
   progress: NO_PROGRESS,
   error: null,
+  checkState: "idle",
+  checkError: null,
+  lastCheckedAt: null,
   dismissed: "",
 
   check: async () => {
     // Never interrupt a download or a staged install to re-check.
     if (["downloading", "ready", "installing", "restartError"].includes(get().status)) return;
+    set({ checkState: "checking" });
     try {
       const update = await checkForUpdate();
+      const checked = { checkState: "done" as const, checkError: null, lastCheckedAt: Date.now() };
       if (!update) {
         await replacePending(null);
-        set({ status: "idle", version: "", notes: "", error: null });
+        set({ status: "idle", version: "", notes: "", error: null, ...checked });
         return;
       }
       await replacePending(update);
@@ -69,11 +82,15 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
         notes: update.body ?? "",
         progress: NO_PROGRESS,
         error: null,
+        ...checked,
       });
     } catch (error) {
-      // A failed check is background noise — the network is down, or the feed
-      // is briefly unavailable. Never surface it; the next tick retries.
+      // Still background noise for the banner and the titlebar chip — a single
+      // missed tick is not worth interrupting anyone, and the next one retries.
+      // It is recorded rather than swallowed so Settings → Updates can say the
+      // check is failing, which is otherwise indistinguishable from being current.
       console.warn("update check failed", error);
+      set({ checkState: "failed", checkError: String(error) });
     }
   },
 

@@ -10,7 +10,7 @@ use tauri::Wry;
 
 use super::{
     account, agent_conversations, agents, ai, ai_memory, ai_service, clipboard, fs, memory,
-    memory_browser, perf, preview, provider_accounts, render, report, screenshot,
+    memory_browser, perf, preview, probe, provider_accounts, render, report, screenshot,
     screenshot_reveal, session, settings, terminal, voice,
 };
 
@@ -40,6 +40,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         terminal::list_terminals,
         agents::list_agents,
         agent_conversations::agent_conversation_resumable,
+        agent_conversations::agent_chat_prompt,
         render::renderer_policy,
         provider_accounts::provider_accounts,
         provider_accounts::connect_provider_account,
@@ -96,6 +97,8 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         // own `perf` and `report` modules (the sampler and the delivery
         // half), so the bare names would resolve to the wrong ones.
         perf::perf_sample,
+        probe::probe_report,
+        probe::probe_config,
         report::submit_report,
     ]
 }

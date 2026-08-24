@@ -22,6 +22,7 @@ pub trait OutputSink: Send + Sync + 'static {
 #[derive(Debug, Clone)]
 pub struct FlushConfig {
     pub tick: Duration,
+    pub background_interval: Duration,
     pub hidden_interval: Duration,
     pub pending_cap: usize,
     pub scrollback_cap: usize,
@@ -30,10 +31,10 @@ pub struct FlushConfig {
 impl Default for FlushConfig {
     fn default() -> Self {
         Self {
-            // The flusher delivers immediately on wake and then rests one
-            // tick, so this only paces *sustained* output. 16 ms matches the
-            // display rate — more IPC than that can't be rendered anyway.
+            // Both pace *sustained* output only — the flusher delivers on
+            // wake, so an isolated keystroke never waits. See `Visibility`.
             tick: Duration::from_millis(16),
+            background_interval: Duration::from_millis(75),
             hidden_interval: Duration::from_millis(250),
             pending_cap: 1024 * 1024,
             scrollback_cap: 4 * 1024 * 1024,
@@ -142,6 +143,11 @@ impl PtyManager {
     /// without asking the provider to expose chat content.
     pub fn agent_session_id(&self, id: SessionId) -> CoreResult<Option<String>> {
         Ok(self.session(id)?.agent_session_id())
+    }
+
+    /// What this pane's conversation is about, for naming it after the chat.
+    pub fn agent_chat_prompt(&self, id: SessionId) -> CoreResult<Option<String>> {
+        Ok(self.session(id)?.agent_chat_prompt())
     }
 
     pub fn kill(&self, id: SessionId) -> CoreResult<()> {

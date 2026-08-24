@@ -4,7 +4,7 @@ import type { NotificationPrefs } from "./notificationTypes";
 
 export type { CapturedScreenshot, ClipboardPaste, Screenshot, VoiceStatus } from "./toolTypes";
 
-export type Visibility = "visible" | "hidden" | "hibernated";
+export type Visibility = "visible" | "background" | "hidden" | "hibernated";
 
 export interface SessionInfo {
   id: number;

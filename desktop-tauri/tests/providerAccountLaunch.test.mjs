@@ -53,8 +53,12 @@ test("the resumable check reads the account's own transcripts", () => {
   const ipc = source("../src/ipc/terminal.ts");
   const relaunch = source("../src/state/terminalRelaunch.ts");
 
-  assert.match(conversations, /pub fn detect\(account_id: Option<&str>\)/);
-  assert.match(conversations, /Registry::load\(\)\s*\.home\("claude", account\)/);
+  // Scoped to the agent as well as the account: Claude and Codex keep their
+  // conversations under different roots, so resolving Claude's home to answer
+  // about a Codex pane would search where no rollout has ever been written.
+  assert.match(conversations, /pub fn detect\(agent: &str, account_id: Option<&str>\)/);
+  assert.match(conversations, /Registry::load\(\)\s*\.home\(agent, account\)/);
+  assert.match(conversations, /ConversationStore::detect\(&agent_id, account_id\.as_deref\(\)\)/);
   assert.doesNotMatch(
     conversations,
     /var_os\("CLAUDE_CONFIG_DIR"\)/,

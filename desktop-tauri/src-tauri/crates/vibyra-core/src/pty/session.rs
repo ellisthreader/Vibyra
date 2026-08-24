@@ -178,15 +178,10 @@ impl Session {
         self.alive.load(Ordering::SeqCst)
     }
 
-    pub fn agent_session_id(&self) -> Option<String> {
-        if self.agent_id != "codex" {
-            return None;
-        }
-        let process_id = self.child.lock().process_id()?;
-        super::conversation::codex_session_id(process_id)
-    }
-
     pub fn set_visibility(&self, visibility: Visibility) {
         self.output.lock().visibility = visibility;
     }
 }
+
+#[path = "session_conversation.rs"]
+mod conversation_accessors;

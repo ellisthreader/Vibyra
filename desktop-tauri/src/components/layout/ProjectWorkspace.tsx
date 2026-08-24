@@ -6,6 +6,7 @@ import {
   projectRuntimeTransitions,
   syncProjectVisibility,
 } from "../../lib/projectTransitions";
+import { useFocusVisibility } from "../../lib/useFocusVisibility";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
@@ -23,6 +24,8 @@ export function ProjectWorkspace() {
   const zoomedId = useTerminalStore((state) => state.zoomedId);
   const terminalTab = useRef<HTMLButtonElement>(null);
   const previewTab = useRef<HTMLButtonElement>(null);
+  // Hands the full native flush rate to whichever pane holds the keyboard.
+  useFocusVisibility();
   const project = projects.find((entry) => entry.id === activeId);
   const projectPanes = panes.filter((pane) => pane.projectId === activeId);
   const live = projectPanes.filter(
@@ -47,6 +50,7 @@ export function ProjectWorkspace() {
         useTerminalStore.getState().panes,
         mode === "terminals" ? activeId : null,
         setTerminalVisibility,
+        useTerminalStore.getState().focusedId,
       );
     }).then((applied) => {
       if (!current || applied.size === 0) return;

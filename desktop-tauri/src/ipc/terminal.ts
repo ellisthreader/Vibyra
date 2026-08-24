@@ -85,6 +85,15 @@ export function agentConversationResumable(
   return invoke<boolean>("agent_conversation_resumable", { agentId, sessionId, accountId });
 }
 
+/**
+ * The prompt this pane's conversation opened with, from the agent's own
+ * transcript. `null` when the agent keeps none Vibyra can read, `""` when it
+ * keeps one the user has not written to yet.
+ */
+export function agentChatPrompt(id: number): Promise<string | null> {
+  return invoke<string | null>("agent_chat_prompt", { id });
+}
+
 export async function createSshTerminal(
   target: string,
   dims?: { rows: number; cols: number } | null,

@@ -71,14 +71,70 @@ fn an_id_that_is_not_a_uuid_is_never_looked_up() {
 
 #[test]
 fn agents_without_a_local_preflight_are_admitted() {
-    // A Codex id was captured from an existing rollout and is resolved by the
-    // CLI; Gemini resumes by recency. Neither uses Claude's transcript check.
+    // Gemini resumes by recency, and a plain terminal has no conversation at
+    // all. Neither is ever handed an id, so neither can be killed by one.
     let root = projects("recency");
 
-    for agent in ["codex", "gemini", "shell", "ssh", "my-custom-agent"] {
+    for agent in ["gemini", "shell", "ssh", "my-custom-agent"] {
         let store = ConversationStore::rooted_at(root.clone());
         assert!(store.resumable(agent, SESSION), "{agent}");
     }
+}
+
+/// A throwaway stand-in for `~/.codex/sessions`, holding one rollout.
+fn sessions_holding(name: &str, session: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+        "vibyra-conversations-codex-{}-{name}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&root);
+    let day = root.join("2026").join("08").join("24");
+    std::fs::create_dir_all(&day).expect("day folder");
+    std::fs::write(
+        day.join(format!("rollout-2026-08-24T10-43-23-{session}.jsonl")),
+        "{}\n",
+    )
+    .expect("rollout");
+    root
+}
+
+#[test]
+fn a_codex_conversation_that_still_exists_can_be_resumed() {
+    let root = sessions_holding("present", SESSION);
+
+    assert!(ConversationStore::rooted_at_sessions(root).resumable("codex", SESSION));
+}
+
+#[test]
+fn a_codex_conversation_that_is_gone_is_relaunched_instead() {
+    // The bug this covers: `codex resume <id>` exits 1 on an id it cannot
+    // resolve, so a pane carrying a stale one came back dead. Ids do go stale
+    // — a rollout can be archived, cleaned up, or belong to a subagent thread
+    // that has since finished.
+    let root = sessions_holding("stale", "01a03327-3b27-7fe0-9cb9-eb55467c0a73");
+
+    assert!(!ConversationStore::rooted_at_sessions(root).resumable("codex", SESSION));
+}
+
+#[test]
+fn a_codex_id_that_is_not_a_uuid_is_never_looked_up() {
+    let root = sessions_holding("hostile", SESSION);
+
+    for hostile in ["../../etc/passwd", "..", "", "not-a-uuid"] {
+        let store = ConversationStore::rooted_at_sessions(root.clone());
+        assert!(!store.resumable("codex", hostile), "{hostile}");
+    }
+}
+
+#[test]
+fn a_codex_preflight_that_cannot_run_does_not_veto_the_resume() {
+    // Unknown is not absent. A Codex id is only persisted after being read
+    // from a rollout that existed, so with no `CODEX_HOME` to search the id is
+    // still the best evidence available — and blocking on that would stop
+    // every Codex pane on the machine from resuming.
+    let nowhere = ConversationStore::rooted_at(projects("no-codex-home"));
+
+    assert!(nowhere.resumable("codex", SESSION));
 }
 
 #[test]

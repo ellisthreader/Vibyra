@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import { useNotificationStore, setFocusProbe, setOsEscalator } from "../state/notificationStore";
 import { useNotificationPrefs } from "../state/settingsStore";
-import { primeAudio } from "./notificationSounds";
+import { primeAudio, setAudioPrimerRearm } from "./notificationSounds";
 import { raiseOsNotification, refreshOsPermission } from "./osNotifications";
 import { usePerfWatch } from "./usePerfWatch";
 import { startFocusTracking, windowIsFocused } from "./windowFocus";
@@ -24,14 +24,27 @@ function connectStore(): void {
  *
  * Capture phase is load-bearing: terminals swallow keydown in the bubble phase,
  * so a user who goes straight to typing would otherwise never prime audio.
+ *
+ * Re-armable, because the context is suspended again while idle — it costs a
+ * GStreamer pull thread to leave running. If a build turns out not to honour
+ * `resume()` outside a gesture, the sound engine says so and the next click
+ * unlocks it again rather than the app going quietly mute.
  */
 function usePrimedAudio(): void {
   useEffect(() => {
+    let live = true;
     const prime = () => primeAudio();
     const options = { capture: true, once: true, passive: true } as const;
-    document.addEventListener("pointerdown", prime, options);
-    document.addEventListener("keydown", prime, options);
+    const arm = () => {
+      if (!live) return;
+      document.addEventListener("pointerdown", prime, options);
+      document.addEventListener("keydown", prime, options);
+    };
+    setAudioPrimerRearm(arm);
+    arm();
     return () => {
+      live = false;
+      setAudioPrimerRearm(() => {});
       document.removeEventListener("pointerdown", prime, true);
       document.removeEventListener("keydown", prime, true);
     };

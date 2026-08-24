@@ -29,6 +29,25 @@ export function normalizeTerminalOscTitle(value: string | null | undefined): str
   return title;
 }
 
+/**
+ * The name a pane should take, or `null` to keep the one it has.
+ *
+ * A name read from the agent's own transcript is the submitted prompt, so it
+ * corrects a keystroke guess that got in first. A guess corrects nothing, or a
+ * mid-chat message would rename a pane that had already settled.
+ */
+export function acceptedChatTitle(
+  pane: TerminalTitleState,
+  next: string,
+  fromTranscript: boolean,
+): string | null {
+  const title = normalizeTerminalChatTitle(next);
+  if (!title) return null;
+  const named = normalizeTerminalChatTitle(pane.chatTitle);
+  if (named && (!fromTranscript || named === title)) return null;
+  return title;
+}
+
 /** Manual names win, then chat-aware names, then the CLI's raw terminal title. */
 export function terminalDisplayTitle(pane: TerminalTitleState): string {
   return (

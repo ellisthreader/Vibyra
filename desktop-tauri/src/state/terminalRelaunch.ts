@@ -3,6 +3,9 @@ import type { StoreApi } from "zustand";
 import { listAgents } from "../ipc/agents";
 import { agentConversationResumable } from "../ipc/terminal";
 import { inspectSafeWorkspace } from "../ipc/workspace";
+import { notifyNewConversation } from "../lib/notificationTriggers";
+import { noteResumeAttempt, startsNewConversation } from "../lib/resumeRecovery";
+import type { RelaunchContinuity } from "../lib/sessionRestore";
 import { relaunchContinuity } from "../lib/sessionRestore";
 import type { PaneState, TerminalStore } from "./terminalStoreTypes";
 import { useWorkspaceStore } from "./workspaceStore";
@@ -18,20 +21,12 @@ function reportError(error: unknown): void {
 }
 
 /**
- * Relaunches a pane from its saved recipe. Shared by restart and resume so
- * both paths agree on how an agent is looked up and how a safe workspace is
- * re-checked — a fingerprint captured earlier may no longer describe the tree.
- * They differ only in what they carry over; see `relaunchContinuity`.
+ * Only a suspended pane asks to continue anything, and only one carrying an id
+ * names a conversation that can have gone missing since. If the check itself
+ * fails, assume it is there: a broken lookup must not quietly stop resuming
+ * the conversations that are.
  */
-export async function relaunch(
-  get: GetState,
-  pane: PaneState,
-  replaces?: number,
-): Promise<boolean> {
-  // Only a suspended pane asks to continue anything, and only one carrying an
-  // id names a conversation that can have gone missing since. If the check
-  // itself fails, assume it is there: a broken lookup must not quietly stop
-  // resuming the conversations that are.
+async function resolveContinuity(get: GetState, pane: PaneState): Promise<RelaunchContinuity> {
   const conversationResumable =
     pane.status === "suspended" && pane.agentSessionId
       ? await agentConversationResumable(
@@ -40,7 +35,28 @@ export async function relaunch(
           pane.accountId,
         ).catch(() => true)
       : true;
-  const { resume, replaySnapshot } = relaunchContinuity(pane, get().panes, conversationResumable);
+  return relaunchContinuity(pane, get().panes, conversationResumable);
+}
+
+/**
+ * Relaunches a pane from its saved recipe. Shared by restart and resume so
+ * both paths agree on how an agent is looked up and how a safe workspace is
+ * re-checked — a fingerprint captured earlier may no longer describe the tree.
+ * They differ only in what they carry over; see `relaunchContinuity`.
+ *
+ * `override` exists for one case: a resume the agent refused. That pane's
+ * recipe is fine and its scrollback is real work, but its conversation has
+ * just proved unusable, so the decision is handed in rather than derived again
+ * from a pane whose status now says `exited`.
+ */
+export async function relaunch(
+  get: GetState,
+  pane: PaneState,
+  replaces?: number,
+  override?: RelaunchContinuity,
+): Promise<boolean> {
+  const { resume, replaySnapshot } = override ?? (await resolveContinuity(get, pane));
+  if (startsNewConversation(pane, resume)) notifyNewConversation(pane);
   if (pane.agentId === "ssh") {
     return get().spawnSsh(pane.title, pane.projectId, {
       replaces,
@@ -60,6 +76,9 @@ export async function relaunch(
       .then((preflight) => preflight.fingerprint)
       .catch(() => fingerprint);
   }
+  // Recorded before the process can exit, and only for agents that are
+  // actually given the flag — `spawnSsh` above has no conversation to continue.
+  if (resume) noteResumeAttempt(pane.persistenceId);
   return get().spawnAgent(agent, pane.projectId, {
     model: pane.model,
     permissionMode: pane.permissionMode,

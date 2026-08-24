@@ -110,6 +110,7 @@ import "./styles/screenshot-editor.css";
 import "./styles/screenshot-controls.css";
 import "./styles/screenshot-tray.css";
 import "./styles/settings-graphics.css";
+import "./styles/settings-updates.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";
 
@@ -124,4 +125,14 @@ void initTerminalFont();
 void initRendererPolicy();
 installAppDropGuard();
 
-createRoot(document.getElementById("root")!).render(<App />);
+const root = createRoot(document.getElementById("root")!);
+if (import.meta.env.VITE_LATENCY_PROBE === "1") {
+  // Diagnostics build only: measures keystroke-to-paint latency on the real
+  // renderer. Never true in a normal build, so this import stays out of the
+  // production bundle and the app below is untouched.
+  void import("./probe/ProbeScreen").then(({ ProbeScreen }) => {
+    root.render(<ProbeScreen />);
+  });
+} else {
+  root.render(<App />);
+}

@@ -39,10 +39,14 @@ website, Expo browser client, and native phone app.
   `Desktop/Tauri Terminal Performance Overhaul.md`
 - Terminal panes, provider routing, launch settings, effort tables, and
   provider-account boundaries: `Desktop/AI Terminals.md`
+- Provider OSC behavior, prompt-derived chat names, title precedence, and
+  persistence: `Desktop/Terminal Chat Titles.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
 - In-app reports, authenticated backend delivery, permission disclosure, and
   server-owned webhook boundary: `Desktop/In-App Reporting.md`
 - Workspace Preview: `Desktop/Projects And Preview.md`
+- Release polling, the status/checkState split, and the three update
+  surfaces: `Desktop/Desktop Updates.md`
 - System-wide F9 screenshot capture and annotation editor:
   `Desktop/Screenshot Capture.md`
 
@@ -107,6 +111,14 @@ rows/cols (`src/lib/spawnSize.ts`) so PTYs do not start at the 100x30 default.
 The Rust flusher (`pty/flusher.rs`) flushes immediately on wake and then rests
 one 16 ms tick — do not reintroduce a sleep before the first flush; it puts a
 fixed floor under keystroke echo latency.
+
+Off-screen panes must map logical `hidden` to native `hibernated`, detach their
+frontend output handler without disposing the registry xterm, and resync from
+the native ring when revealed. Relaunch operations are single-flight and
+replacement-first; stable pane persistence IDs plus serialized, merge-aware
+saves preserve scrollback through resume and updater restarts. Use the desktop
+terminal reliability checklist in `.agents/skills/VibyraOptimse/SKILL.md` and
+the focused performance note for the complete validation pattern.
 
 ## Launch Contract
 

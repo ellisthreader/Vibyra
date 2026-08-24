@@ -83,6 +83,8 @@ export interface TerminalStore {
   /** Relaunch one pane on a different provider account, in place. */
   switchAccount: (id: number, accountId: string | null) => Promise<void>;
   resume: (id: number) => Promise<void>;
+  /** Replace a pane whose agent refused to continue its conversation. */
+  recoverResume: (id: number) => Promise<void>;
   restoreSession: () => Promise<void>;
   close: (id: number) => Promise<void>;
   hibernate: (id: number) => Promise<void>;
@@ -91,7 +93,7 @@ export interface TerminalStore {
   setFocus: (id: number) => void;
   markFocused: (id: number) => void;
   rename: (id: number, title: string) => void;
-  setChatTitle: (id: number, title: string) => void;
+  setChatTitle: (id: number, title: string, fromTranscript?: boolean) => void;
   setOsc: (id: number, title: string) => void;
   markExited: (id: number, code: number | null) => void;
   applyActivity: (next: Record<number, ActivityState>) => void;

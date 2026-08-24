@@ -1,4 +1,6 @@
-const MAX_PROMPT_CHARS = 4_000;
+import { TerminalPromptTracker } from "./terminalPromptTracker.ts";
+import { normalizeTerminalChatTitle } from "./terminalTitle.ts";
+
 const MAX_TITLE_CHARS = 64;
 const MAX_TITLE_WORDS = 9;
 
@@ -10,6 +12,31 @@ const SHORT_REPLY = /^(?:[yn]|yes|no|ok|okay|allow|deny|always allow|trust|cance
 /** Claude supplies its own chat-aware OSC title; shells are not AI chats. */
 export function needsPromptDerivedTitle(agentId: string): boolean {
   return !NATIVE_CHAT_TITLE_AGENTS.has(agentId) && !NON_CHAT_AGENTS.has(agentId);
+}
+
+interface ChatPane {
+  agentId: string;
+  status: string;
+  chatTitle: string | null;
+}
+
+/** A pane still to be named after its conversation, rather than its model. */
+export function awaitsChatTitle(pane: ChatPane): boolean {
+  return pane.status === "running"
+    && needsPromptDerivedTitle(pane.agentId)
+    && !normalizeTerminalChatTitle(pane.chatTitle);
+}
+
+/**
+ * Whether to ask the agent what this pane's conversation is about.
+ *
+ * A pane that already has a name is still asked once, because the name may
+ * have been restored from a session that could only guess at it — and a wrong
+ * name nothing ever revisits is worse than none.
+ */
+export function asksForChatTitle(pane: ChatPane, answered: boolean): boolean {
+  if (answered) return awaitsChatTitle(pane);
+  return pane.status === "running" && needsPromptDerivedTitle(pane.agentId);
 }
 
 /** A compact, local-only title from the first real prompt sent to an AI CLI. */
@@ -28,10 +55,10 @@ export function titleFromPrompt(raw: string): string | null {
 
   if (!prompt || UTILITY_COMMAND.test(prompt) || SHORT_REPLY.test(prompt)) return null;
   prompt = prompt.replace(/^\/\S+\s+/, "");
-  prompt = stripConversationalLead(prompt);
+  prompt = unwrapRequest(prompt);
   const sentence = prompt
     .split(/(?<=[.!?])\s+/u)
-    .map((part) => stripConversationalLead(part).replace(/[.!?]+$/, "").trim())
+    .map((part) => unwrapRequest(part.replace(/[.!?]+$/, "").trim()))
     .find((part) => !UTILITY_COMMAND.test(part) && !SHORT_REPLY.test(part)
       && (part.match(/[\p{L}\p{N}]/gu)?.length ?? 0) >= 4);
   if (sentence) prompt = sentence;
@@ -52,143 +79,33 @@ export function titleFromPrompt(raw: string): string | null {
   return title ? `${title}${truncated ? "…" : ""}` : null;
 }
 
-function stripConversationalLead(prompt: string): string {
-  const lead = /^(?:(?:please\s+)?(?:can|could|would|will)\s+you\s+|please\s+|i\s+(?:need|want)\s+you\s+to\s+|help\s+me\s+(?:to\s+)?|(?:deeply|carefully|thoroughly)\s+)/i;
+/**
+ * Drops the conversational wrapping so the title is the request itself.
+ *
+ * The openers end at a word boundary rather than a space, because a dictated
+ * prompt often trails off — "Can you... Can you make it so …" would otherwise
+ * name the pane after the false start.
+ */
+function unwrapRequest(prompt: string): string {
+  const lead = /^(?:(?:please\s+)?(?:can|could|would|will)\s+you\b\s*|please\b\s*|i\s+(?:need|want)\s+you\s+to\b\s*|help\s+me\s+(?:to\s+)?|(?:deeply|carefully|thoroughly)\s+)/i;
   let result = prompt;
   while (lead.test(result)) result = result.replace(lead, "").trimStart();
-  return result.replace(
+  result = result.replace(
     /^((?:review|audit|check)(?:ing)?)\s+(?:everything\s+)?(?:what|all(?:\s+of)?\s+what)\s+you(?:'ve|\s+have)?\s+(?:done|changed|implemented)\s+(?:for|with|to)\s+(?:the\s+)?/i,
     "$1 ",
   );
-}
-
-function insertAt(value: string, cursor: number, text: string): [string, number] {
-  const room = Math.max(0, MAX_PROMPT_CHARS - value.length);
-  const inserted = text.slice(0, room);
-  return [value.slice(0, cursor) + inserted + value.slice(cursor), cursor + inserted.length];
-}
-
-/** Reconstructs the current TUI input line without ever putting the prompt in app state. */
-export class TerminalPromptTracker {
-  private value = "";
-  private cursor = 0;
-  private pasted = false;
-  private protocol: "text" | "escape" | "csi" | "string" | "string-escape" | "ss3" = "text";
-  private csi = "";
-  private stringAllowsBell = false;
-
-  push(data: string): string | null {
-    for (const char of data) {
-      if (this.consumeProtocol(char)) continue;
-      if (this.pasted && (char === "\r" || char === "\n")) {
-        [this.value, this.cursor] = insertAt(this.value, this.cursor, " ");
-      } else if (char === "\r" || char === "\n") {
-        const title = titleFromPrompt(this.value);
-        this.reset();
-        if (title) return title;
-      } else if (char === "\x7f" || char === "\b") {
-        if (this.cursor > 0) {
-          this.value = this.value.slice(0, this.cursor - 1) + this.value.slice(this.cursor);
-          this.cursor -= 1;
-        }
-      } else if (char === "\x01") {
-        this.cursor = 0;
-      } else if (char === "\x05") {
-        this.cursor = this.value.length;
-      } else if (char === "\x03" || char === "\x15") {
-        this.reset();
-      } else if (char >= " ") {
-        [this.value, this.cursor] = insertAt(this.value, this.cursor, char);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * xterm's data event also carries replies it generates for terminal queries.
-   * Consume those protocol frames while retaining CSI keys used to edit input.
-   */
-  private consumeProtocol(char: string): boolean {
-    const code = char.charCodeAt(0);
-    if (this.protocol === "text") {
-      if (char === "\x1b") this.protocol = "escape";
-      else if (char === "\x9b") this.startCsi();
-      else if (char === "\x9d") this.startString(true);
-      else if ([0x90, 0x98, 0x9e, 0x9f].includes(code)) this.startString(false);
-      else return code >= 0x80 && code <= 0x9f;
-      return true;
-    }
-    if (this.protocol === "escape") {
-      if (char === "[") this.startCsi();
-      else if (char === "]") this.startString(true);
-      else if (["P", "X", "^", "_"].includes(char)) this.startString(false);
-      else if (char === "O" || (code >= 0x20 && code <= 0x2f)) this.protocol = "ss3";
-      else this.protocol = "text";
-      return true;
-    }
-    if (this.protocol === "ss3") {
-      this.protocol = "text";
-      return true;
-    }
-    if (this.protocol === "csi") {
-      this.csi += char;
-      if (code >= 0x40 && code <= 0x7e) {
-        const sequence = this.csi;
-        this.protocol = "text";
-        this.csi = "";
-        this.applySequence(sequence);
-      }
-      return true;
-    }
-    if (this.protocol === "string-escape") {
-      if (char === "\\") this.protocol = "text";
-      else this.protocol = char === "\x1b" ? "string-escape" : "string";
-      return true;
-    }
-    if (char === "\x9c" || (this.stringAllowsBell && char === "\x07")) {
-      this.protocol = "text";
-    } else if (char === "\x1b") {
-      this.protocol = "string-escape";
-    }
-    return true;
-  }
-
-  private startCsi(): void {
-    this.protocol = "csi";
-    this.csi = "\x1b[";
-  }
-
-  private startString(allowsBell: boolean): void {
-    this.protocol = "string";
-    this.stringAllowsBell = allowsBell;
-  }
-
-  private applySequence(sequence: string): void {
-    if (sequence === "\x1b[200~") this.pasted = true;
-    if (sequence === "\x1b[201~") this.pasted = false;
-    const final = sequence.at(-1);
-    if (final === "D") this.cursor = Math.max(0, this.cursor - 1);
-    if (final === "C") this.cursor = Math.min(this.value.length, this.cursor + 1);
-    if (final === "H" || sequence === "\x1b[1~") this.cursor = 0;
-    if (final === "F" || sequence === "\x1b[4~") this.cursor = this.value.length;
-    if (sequence === "\x1b[3~" && this.cursor < this.value.length) {
-      this.value = this.value.slice(0, this.cursor) + this.value.slice(this.cursor + 1);
-    }
-  }
-
-  private reset(): void {
-    this.value = "";
-    this.cursor = 0;
-    this.pasted = false;
-  }
+  // A closing courtesy names nothing, and dictated prompts nearly all have one.
+  return result.replace(/[,\s]+(?:please|thanks|thank\s+you)\s*$/i, "").trimEnd();
 }
 
 const trackers = new Map<number, TerminalPromptTracker>();
 
+/** The title a submitted prompt earns, once one is submitted on this session. */
 export function observeTerminalPrompt(id: number, data: string): string | null {
   const tracker = trackers.get(id) ?? new TerminalPromptTracker();
   trackers.set(id, tracker);
-  const title = tracker.push(data);
+  const submitted = tracker.push(data);
+  const title = submitted === null ? null : titleFromPrompt(submitted);
   if (title) trackers.delete(id);
   return title;
 }

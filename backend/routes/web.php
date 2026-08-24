@@ -11,10 +11,10 @@ use App\Http\Controllers\WebsiteProviderAuthController;
 use App\Http\Middleware\PublicCommunityCache;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 Route::get('/', fn () => view('marketing'));
 Route::view('/legal/privacy', 'legal.privacy')->name('legal.privacy');
@@ -38,14 +38,14 @@ Route::get('/web-api/updates/{target}/{arch}/{bundleType}/{current}', [ReleaseUp
     ->where('current', '[0-9A-Za-z.+-]+')
     ->middleware('throttle:60,1');
 
-Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:5,1');
-Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/web-api/auth/signup', [WebsiteAuthController::class, 'signup'])->middleware('throttle:auth-signup');
+Route::post('/web-api/auth/login', [WebsiteAuthController::class, 'login'])->middleware('throttle:auth-login');
 Route::delete('/web-api/auth/logout', [WebsiteAuthController::class, 'logout'])->middleware('auth');
 Route::get('/web-api/session', [WebsiteAuthController::class, 'session']);
 Route::post('/web-api/auth/provider/{provider}/start', [WebsiteProviderAuthController::class, 'start'])
-    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:12,1');
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:auth-provider-start');
 Route::get('/web-api/auth/provider/{provider}/status/{flowId}', [WebsiteProviderAuthController::class, 'status'])
-    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:120,1');
+    ->whereIn('provider', ['apple', 'google'])->middleware('throttle:auth-provider-status');
 
 Route::middleware('auth')->group(function (): void {
     Route::view('/account', 'portal');
@@ -78,20 +78,22 @@ if (config('desktop.legacy_routes_enabled')) {
     Route::post('/commands/run', [VibyraDesktopController::class, 'runCommand']);
 }
 
-Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:5,1');
-Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])->middleware('throttle:12,1');
+Route::post('/api/auth/signup', [VibyraAppController::class, 'signup'])->middleware('throttle:auth-signup');
+Route::post('/api/auth/login', [VibyraAppController::class, 'login'])->middleware('throttle:auth-login');
+Route::post('/api/auth/provider/challenge', [VibyraAppController::class, 'providerChallenge'])
+    ->middleware('throttle:auth-provider-challenge');
 Route::post('/api/auth/desktop/{provider}/start', [VibyraAppController::class, 'desktopProviderStart'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:12,1');
+    ->middleware('throttle:auth-provider-start');
 Route::get('/api/auth/desktop/{provider}/status/{flowId}', [VibyraAppController::class, 'desktopProviderStatus'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:120,1');
+    ->middleware('throttle:auth-provider-status');
 Route::match(['get', 'post'], '/api/auth/desktop/{provider}/callback', [VibyraAppController::class, 'desktopProviderCallback'])
     ->whereIn('provider', ['apple', 'google'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:auth-provider-callback')
     ->name('auth.desktop.callback');
-Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/api/auth/password/forgot', [VibyraAppController::class, 'forgotPassword'])
+    ->middleware('throttle:auth-password-forgot');
 Route::post('/api/auth/password/reset', [VibyraAppController::class, 'resetPassword'])->middleware('throttle:5,1');
 Route::get('/api/auth/password/open', [VibyraAppController::class, 'openPasswordReset'])->middleware('throttle:12,1');
 Route::get('/reset-password', [VibyraAppController::class, 'showPasswordResetLink'])->middleware('throttle:30,1');

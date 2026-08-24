@@ -84,8 +84,9 @@ test("the download page says it is beta and that the app updates itself", () => 
   // The version badge is fed from the release feed, never hardcoded.
   assert.match(whatsNew, /\{version\}/);
   assert.doesNotMatch(whatsNew, /Beta 0\.\d+\.\d+/);
+  assert.match(whatsNew, /Typing that keeps up/);
+  assert.match(whatsNew, /Updates from Settings/);
   assert.match(whatsNew, /Terminal performance fixed/);
-  assert.match(whatsNew, /We’re sorry: recent releases caused terminal lag/);
   assert.match(whatsNew, /Correct character spacing/);
   assert.match(whatsNew, /Lower CPU usage/);
   assert.match(whatsNew, /Reliable fast input/);

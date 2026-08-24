@@ -19,7 +19,47 @@ import type { SoundCueId } from "../notificationTypes";
 const SILENT = 0.0001;
 const TAIL_S = 0.02;
 
+/** Longest cue is 0.18 s, so this only ever fires between notifications. */
+const IDLE_SUSPEND_MS = 3_000;
+
 let ctx: AudioContext | null = null;
+let idleTimer = 0;
+/** True once the context has actually been observed running, i.e. a gesture
+ * unlocked it. Until then `resume()` is the platform's to grant, not ours. */
+let unlocked = false;
+/** Turned off for good the first time a resume fails to take, so a WebKit
+ * build that only honours `resume()` inside a gesture can never be left mute. */
+let idleSuspend = true;
+let rearmPrimer: () => void = () => {};
+
+/** Lets the runtime re-offer its one-shot gesture listeners if audio ever
+ * gets stuck suspended. Injected rather than imported: this module must not
+ * depend on React. */
+export function setAudioPrimerRearm(rearm: () => void): void {
+  rearmPrimer = rearm;
+}
+
+/**
+ * A running AudioContext costs real CPU whether or not anything is playing:
+ * WebKitGTK keeps a GStreamer `webkitwebaudiosrc` pulling ~344 quanta/s for
+ * the life of the context. Measured at 3.4% of a core on an app that had made
+ * no sound in an hour. Suspending between cues gives that back.
+ */
+function scheduleIdleSuspend(): void {
+  if (!idleSuspend) return;
+  window.clearTimeout(idleTimer);
+  idleTimer = window.setTimeout(() => {
+    if (ctx?.state === "running") void Promise.resolve(ctx.suspend()).catch(() => {});
+  }, IDLE_SUSPEND_MS);
+}
+
+/** Audio is asleep and would not wake. Stop suspending it and let the next
+ * click or keypress unlock it again — one cue is lost, never the feature. */
+function abandonIdleSuspend(): void {
+  idleSuspend = false;
+  window.clearTimeout(idleTimer);
+  rearmPrimer();
+}
 
 /** Call from a user gesture. Cheap and idempotent after the first success. */
 export function primeAudio(): void {
@@ -28,7 +68,13 @@ export function primeAudio(): void {
       if (typeof AudioContext === "undefined") return;
       ctx = new AudioContext();
     }
-    if (ctx.state !== "running") void ctx.resume();
+    if (ctx.state === "running") unlocked = true;
+    else void Promise.resolve(ctx.resume()).then(() => {
+      if (ctx?.state === "running") unlocked = true;
+    }, () => {});
+    // The gesture that unlocks audio is usually nowhere near a notification,
+    // so without this the context runs idle from the first click onwards.
+    scheduleIdleSuspend();
   } catch {
     ctx = null;
   }
@@ -52,9 +98,26 @@ function render(cue: SoundCueId, volume: number): void {
   const tones = CUES[cue];
   if (!tones || tones.length === 0) return;
   const audio = ctx;
-  // Re-checked here, not just at prime time: the context can be suspended
-  // again by the platform whenever it likes.
-  if (!audio || audio.state !== "running") return;
+  if (!audio) return;
+  if (audio.state === "running") {
+    unlocked = true;
+    play(audio, tones, volume);
+    return;
+  }
+  // Suspended. If a gesture has never unlocked this context then resuming is
+  // not ours to do — stay silent exactly as before. If we put it to sleep,
+  // wake it and play on the far side.
+  if (!unlocked || !idleSuspend || audio.state !== "suspended") return;
+  void Promise.resolve(audio.resume()).then(
+    () => {
+      if (audio.state === "running") play(audio, tones, volume);
+      else abandonIdleSuspend();
+    },
+    abandonIdleSuspend,
+  );
+}
+
+function play(audio: AudioContext, tones: readonly ToneSpec[], volume: number): void {
   if (!takeVoice(soundGate)) return;
   const done = releaseOnce();
   try {
@@ -68,6 +131,7 @@ function render(cue: SoundCueId, volume: number): void {
   } catch {
     done();
   }
+  scheduleIdleSuspend();
 }
 
 /** The voice is released exactly once, whether by the timer or by a failure. */

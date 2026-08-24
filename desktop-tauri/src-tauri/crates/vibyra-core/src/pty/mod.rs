@@ -1,13 +1,23 @@
 mod buffer;
+mod chat_prompt;
 mod conversation;
 mod flusher;
 mod manager;
+// Only `conversation` reads rollout headers, and only Linux exposes the open
+// files it reads them from. Kept available under `test` so the rule itself is
+// still exercised on the platforms that cannot use it.
+#[cfg(any(target_os = "linux", test))]
+mod rollout_source;
 mod session;
 mod writer;
 
 // Every test in here drives a real PTY through `/bin/sh`, so the whole module
 // is Unix-only. Gating the tests individually left the helpers behind them
 // unused on Windows, where `-D warnings` turned that into a failed release.
+#[cfg(all(test, unix))]
+mod flusher_latency_tests;
+#[cfg(all(test, unix))]
+mod flusher_tests;
 #[cfg(all(test, unix))]
 mod manager_tests;
 
@@ -20,8 +30,15 @@ pub type SessionId = u64;
 /// How the frontend is currently presenting a terminal, which drives how
 /// aggressively Rust flushes output for it.
 ///
-/// - `Visible`: flushed immediately when idle, one tick (~16 ms) apart under
-///   sustained output.
+/// - `Visible`: the pane with keyboard focus; flushed immediately when idle,
+///   one tick (~16 ms) apart under sustained output, so its echo is instant.
+/// - `Background`: on screen but not focused. Every delivery costs the
+///   renderer a full xterm write plus a canvas repaint (~1.2 ms measured), so
+///   a grid of panes all flushing at the tick multiplies straight into the
+///   frame budget: eight of them saturate the WebKit main thread and the
+///   focused pane's own echo is what starves. Paced instead, which is
+///   imperceptible for streaming output and leaves the budget to whoever is
+///   being typed into.
 /// - `Hidden`: rendered but off-screen (other tab); flushed at a slow
 ///   interval so xterm.js stays warm without burning CPU.
 /// - `Hibernated`: not rendered at all; nothing is sent, output is retained
@@ -30,6 +47,7 @@ pub type SessionId = u64;
 #[serde(rename_all = "lowercase")]
 pub enum Visibility {
     Visible,
+    Background,
     Hidden,
     Hibernated,
 }

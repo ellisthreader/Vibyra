@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { ackCloseRequest, armCloseGuard } from "../ipc/session";
 import { useCloseGuardStore } from "../state/closeGuardStore";
 import { startSessionPersistence } from "./sessionPersistence";
+import { startChatTitleSource } from "./terminalChatTitleSource";
 
 /**
  * Keeps the saved session current, and answers Rust's close veto.
@@ -19,6 +20,7 @@ import { startSessionPersistence } from "./sessionPersistence";
 export function useSessionLifecycle(): void {
   useEffect(() => {
     const stopPersisting = startSessionPersistence();
+    const stopNaming = startChatTitleSource();
     const unlisten = listen("vibyra://close-requested", () => {
       void ackCloseRequest().catch(() => {});
       void useCloseGuardStore.getState().request();
@@ -28,6 +30,7 @@ export function useSessionLifecycle(): void {
     const armed = unlisten.then(() => armCloseGuard(true).catch(() => {}));
     return () => {
       stopPersisting();
+      stopNaming();
       void armed.then(() => armCloseGuard(false).catch(() => {}));
       void unlisten.then((off) => off());
     };
