@@ -1,5 +1,7 @@
 #[cfg(any(target_os = "linux", test))]
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(target_os = "linux")]
+use std::path::PathBuf;
 
 #[cfg(target_os = "linux")]
 use super::rollout_source;
