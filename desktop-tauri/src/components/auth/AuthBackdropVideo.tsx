@@ -28,6 +28,10 @@ export default function AuthBackdropVideo({ posterUrl }: { posterUrl: string }) 
   }, []);
 
   useEffect(() => {
+    // Captured here, not read in the cleanup: React detaches refs before it
+    // flushes an unmounting tree's effect cleanups, so `videoRef.current` is
+    // already null by then and the teardown below would silently do nothing.
+    const video = videoRef.current;
     const resume = () => {
       if (!document.hidden) startPlayback();
     };
@@ -37,6 +41,15 @@ export default function AuthBackdropVideo({ posterUrl }: { posterUrl: string }) 
     return () => {
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
+      // Signing in unmounts the auth screen, but detaching a playing element
+      // does not stop WebKit's GStreamer pipeline: this 1080p24 loop kept
+      // decoding for the rest of the session, burning renderer CPU that the
+      // terminals need to stay responsive. Dropping the source is what
+      // actually tears the decoder down.
+      if (!video) return;
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
     };
   }, [startPlayback]);
 

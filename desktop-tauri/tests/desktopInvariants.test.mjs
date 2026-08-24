@@ -86,13 +86,36 @@ test("status indicators never keep WebKit repainting terminal canvases", async (
   );
 });
 
-test("terminal IPC serialises each PTY input stream", async () => {
+test("terminal input is posted immediately and ordered natively", async () => {
   const ipc = await read("src/ipc/terminal.ts");
   const registry = await read("src/lib/terminalRegistry.ts");
+  const command = await read("src-tauri/src/commands/terminal.rs");
+  const writer = await read("src-tauri/crates/vibyra-core/src/pty/writer.rs");
+
+  // Ordering belongs to the native side, so typing never waits on IPC. Both
+  // halves of that bargain are pinned: a promise-chained queue in the frontend
+  // makes every key wait for the previous key's reply (typed text lands one key
+  // behind), and an async command lets `tokio::spawn` reverse two keystrokes.
   assert.match(
     ipc,
-    /export const writeTerminal = createTerminalInputQueue/,
-    "independent invoke calls can overtake each other and render typed text one key behind",
+    /export function writeTerminal\([^)]*\): Promise<void> \{\s*return invoke\("write_terminal"/,
+    "writeTerminal must post straight to IPC, never chain onto a previous write",
+  );
+  assert.doesNotMatch(
+    ipc,
+    /await\s+invoke\("write_terminal"|createTerminalInputQueue/,
+    "awaiting a write couples typing to the renderer's paint loop",
+  );
+  assert.match(
+    command,
+    // `\s+`, not `\n`: Windows checks these sources out with CRLF.
+    /#\[tauri::command\]\s+pub fn write_terminal/,
+    "write_terminal must stay synchronous; an async command is spawned and can reorder keystrokes",
+  );
+  assert.match(
+    writer,
+    /fn queue\(/,
+    "the synchronous command may only queue — blocking the IPC thread on a full PTY freezes the UI",
   );
   const inputHandler = registry.match(/term\.onData\(\(data\) => \{([\s\S]*?)\n\s*\}\);/)?.[1] ?? "";
   assert.match(inputHandler, /sessionInputReceived\(id, data\)/);

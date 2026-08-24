@@ -1,5 +1,4 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import { createTerminalInputQueue } from "../lib/terminalInputQueue";
 import { dispatch } from "../lib/terminalBus";
 import { nativeTerminalVisibility } from "../lib/terminalVisibility";
 import type { SessionInfo, TermEvent, Visibility } from "../types";
@@ -101,9 +100,22 @@ export async function createSshTerminal(
   return info;
 }
 
-export const writeTerminal = createTerminalInputQueue((id, data) =>
-  invoke("write_terminal", { id, data }),
-);
+/**
+ * Posts input the instant it is typed and never waits for the reply.
+ *
+ * Byte order is guaranteed on the native side: `write_terminal` is a
+ * synchronous command, so Tauri runs it inline on the thread that receives IPC
+ * messages rather than scheduling it on the async runtime, and WebKit delivers
+ * those messages in the order this function posted them.
+ *
+ * Do not reintroduce a promise-chained queue here. Awaiting the previous
+ * keystroke's response before sending the next one couples typing to the
+ * renderer's paint loop — the reply callback lands behind whatever xterm is
+ * drawing — and the pane then permanently shows the key typed before last.
+ */
+export function writeTerminal(id: number, data: string): Promise<void> {
+  return invoke("write_terminal", { id, data });
+}
 
 export function resizeTerminal(id: number, rows: number, cols: number): Promise<void> {
   return invoke("resize_terminal", { id, rows, cols });

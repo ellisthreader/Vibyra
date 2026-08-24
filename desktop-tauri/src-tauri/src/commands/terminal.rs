@@ -73,8 +73,19 @@ pub async fn create_ssh_terminal(
     Ok(info)
 }
 
+/// Deliberately **not** `async`. Tauri hands every async command to
+/// `tokio::spawn`, and two spawned tasks can be polled in either order, so two
+/// keystrokes posted a millisecond apart could reach the PTY reversed. A
+/// synchronous command runs inline on the thread that receives IPC messages,
+/// which WebKit delivers in order, so the byte order is preserved structurally.
+///
+/// Nothing here may block that thread, which is why `write_input` only queues:
+/// the blocking PTY write happens on the session's own writer thread. Keeping
+/// the ordering guarantee here is what lets the frontend post each keystroke
+/// the moment it is typed instead of waiting for the previous one's response —
+/// that wait is what made typing appear one key behind.
 #[tauri::command]
-pub async fn write_terminal(
+pub fn write_terminal(
     state: State<'_, AppState>,
     id: SessionId,
     data: String,
