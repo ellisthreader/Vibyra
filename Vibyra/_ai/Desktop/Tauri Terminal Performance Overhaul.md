@@ -2,7 +2,7 @@
 title: Tauri Terminal Performance Overhaul
 date: 2026-08-20
 updated: 2026-08-24
-status: rollout-ready
+status: released
 tags:
   - vibyra/desktop
   - vibyra/tauri
@@ -22,11 +22,9 @@ Scope: the Rust/Tauri app in `desktop-tauri/` only. The Electron app in
 `desktop/` is a separate implementation and shares none of these fixes; its
 performance record stays in this note.
 
-> [!info] Committed and rollout-ready; not published
-> `desktop-tauri/` and its workflows are now in version control, so CI and
-> every developer get these fixes. Nothing is served to end users yet — the
-> website still offers the Electron app on purpose. See
-> [[#Rollout readiness]] for what is done and what remains.
+> [!info] Public desktop release
+> Vibyra Desktop 0.1.10 is live for Windows and Linux. The website downloads
+> and signed Tauri updater feed serve the spacing, typing, and sustained-lag fix.
 
 ## Symptoms
 
@@ -187,6 +185,31 @@ unmount-remount. The animation-on control averaged 94.67% renderer CPU and
 line-limit, diff-whitespace, strict Rust format/clippy, 254 Rust tests, and the
 focused backend release tests all pass. Publish only the signed Ubuntu 22.04 CI
 artifacts; the local host build is verification evidence, not a release asset.
+
+#### Vibyra 0.1.10 public release
+
+The isolated candidate is commit `57303da`, tagged `v0.1.10`, on
+`release/0.1.10-terminal-performance`. GitHub Actions run `32677819901` passed
+the complete release gate, updater-signed all three packages, and installed and
+launched each package on its native runner. Independent local verification
+matched every archived checksum and verified all three signatures against the
+public key embedded in the candidate.
+
+Production serves Windows NSIS (8,429,243 bytes, SHA-256 `4e088a69…`), Linux
+AppImage (98,904,568 bytes, SHA-256 `cd6708b9…`), and Debian (10,870,488 bytes,
+SHA-256 `4c46716d…`). Each artifact was streamed to a hidden Railway volume path,
+verified remotely, and atomically promoted before deployment `7308b36e`
+activated the metadata and website. Full public GET hashes, attachment headers,
+the 0.1.9-to-0.1.10 updater payloads/signatures, and 0.1.10 no-update responses
+were verified for all three bundle types. The rendered Downloads page includes
+the apology and directs users to 0.1.10. macOS remains unavailable.
+
+The production announcement dry run found two verified accounts. Delivery was
+not sent: the command correctly refused `--send` because production still uses
+the `log` mailer, and the connected Gmail identity is a personal account rather
+than an authenticated Vibyra sender. Keep both recipients pending until a real
+transactional provider and Vibyra From domain are configured; do not claim an
+email delivery from this release.
 
 For recurrence diagnosis, measure actual PTY ingress from the named
 `vibyra-pty-*` threads under `/proc/<Vibyra PID>/task/*/io`; child-process

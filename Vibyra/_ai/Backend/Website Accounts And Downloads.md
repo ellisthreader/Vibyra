@@ -151,3 +151,19 @@ as a general product-update broadcast until those controls and a valid
 production mail transport are deliberately established. A unique delivery row
 prevents ordinary reruns, but recording after the provider send is not
 crash-safe or concurrency-safe exactly-once delivery.
+
+## 0.1.10 terminal performance release
+
+Release commit `57303da` is tagged `v0.1.10`; GitHub Actions run `32677819901`
+built, updater-signed, installed, and launched Windows NSIS, Linux AppImage, and
+Debian packages. Production deployment `7308b36e` serves all three from the
+persistent release volume. Live `/web-api/releases`, download headers, full GET
+hashes, signed 0.1.9 update payloads, 0.1.10 no-update responses, and the
+browser-rendered apology on `/downloads` were verified on 2026-08-24.
+
+The apology email is deployed but unsent. The production dry run returns two
+verified pending accounts; `--send` refuses because `mail.default` is `log`.
+The only connected Gmail identity is a personal account, so it is not a safe
+substitute for an authenticated Vibyra sender. Configure a transactional mail
+provider and Vibyra From domain, rerun the dry run, then send once; the delivery
+table must remain empty until a provider accepts those messages.
