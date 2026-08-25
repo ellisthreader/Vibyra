@@ -117,6 +117,9 @@ export interface Settings {
   /** Skip decorative animation regardless of the OS reduced-motion setting. */
   reduceMotion: boolean;
   enabledAgentIds: string[];
+  /** Which login each company's terminals run as, by provider id. A missing
+   *  entry means the CLI's own folder — the account every install already had. */
+  activeProviderAccounts: Record<string, string>;
   aiDailyCallCap: number;
   aiHourlyCallCap: number;
   aiDailySpendCapUsd: number;

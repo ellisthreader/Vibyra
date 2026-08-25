@@ -89,7 +89,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
       stopPreviews: stopProjectPreviews,
       stopWatcher: unwatchWorkspace,
       clearWorkspace: () =>
-        useWorkspaceStore.setState({ root: null, projectMode: "terminals", preview: null }),
+        useWorkspaceStore.setState({ root: null, stageLayout: "terminals", preview: null }),
       showHome: () => set({ view: "home" }),
     });
   };
@@ -102,7 +102,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
     if (previous && previous.id !== id) {
       await stopProjectPreviews(previous.root).catch(() => {});
     }
-    useWorkspaceStore.setState({ projectMode: "terminals", preview: null });
+    useWorkspaceStore.setState({ stageLayout: "terminals", preview: null });
     set({ activeId: id, view: "project" });
     const touched = list.map((entry) =>
       entry.id === id ? { ...entry, lastOpenedMs: Date.now() } : entry,

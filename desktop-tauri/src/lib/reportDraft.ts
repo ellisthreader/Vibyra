@@ -51,13 +51,14 @@ export const REPORT_AREAS = [
 export function areaFor(state: {
   settingsOpen: boolean;
   companionOpen: boolean;
-  projectMode: string;
+  stageLayout: string;
   view: string;
   hasPane: boolean;
 }): string {
   if (state.settingsOpen) return "Settings";
   if (state.view !== "project") return "Home screen";
-  if (state.projectMode === "preview") return "Preview";
+  // Split still reports the terminal pane: it is what the keyboard is in.
+  if (state.stageLayout === "preview") return "Preview";
   if (state.hasPane) return "Terminal pane";
   if (state.companionOpen) return "AI companion";
   return "Somewhere else";

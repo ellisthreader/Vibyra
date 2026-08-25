@@ -1,4 +1,4 @@
-/* Title-bar notification bell. Sits immediately right of `.chrome__attn` so
+/* Title-bar notification bell. Sits immediately right of the layout group so
    the amber "N need you" chip and the bell read as one cluster, and left of
    the account avatar. Import after `chrome-account.css`. */
 

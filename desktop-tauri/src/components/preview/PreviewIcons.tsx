@@ -1,20 +1,6 @@
-export function TerminalModeIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="16" rx="2.5" />
-      <path d="m7 9 3 3-3 3M13 15h4" />
-    </svg>
-  );
-}
-
-export function PreviewModeIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
-      <circle cx="12" cy="12" r="2.7" />
-    </svg>
-  );
-}
+/* Icons for the preview toolbar. The Terminals/Preview pair that used to
+   live here went with the mode bar — the stage layout control draws
+   layout rather than a terminal and an eye. */
 
 export function RotateDeviceIcon() {
   return (

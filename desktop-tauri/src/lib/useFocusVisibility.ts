@@ -5,6 +5,7 @@ import { useProjectStore } from "../state/projectStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { applyProjectVisibility, syncFocusVisibility } from "./projectTransitions";
+import { terminalsVisible } from "./stageLayout";
 
 /**
  * Keeps the native flush rate pointed at whichever pane has the keyboard.
@@ -21,10 +22,10 @@ import { applyProjectVisibility, syncFocusVisibility } from "./projectTransition
 export function useFocusVisibility(): void {
   const focusedId = useTerminalStore((state) => state.focusedId);
   const activeId = useProjectStore((state) => state.activeId);
-  const mode = useWorkspaceStore((state) => state.projectMode);
+  const layout = useWorkspaceStore((state) => state.stageLayout);
 
   useEffect(() => {
-    if (!activeId || mode !== "terminals") return;
+    if (!activeId || !terminalsVisible(layout)) return;
     let current = true;
     void syncFocusVisibility(
       useTerminalStore.getState().panes,
@@ -40,5 +41,5 @@ export function useFocusVisibility(): void {
     return () => {
       current = false;
     };
-  }, [focusedId, activeId, mode]);
+  }, [focusedId, activeId, layout]);
 }

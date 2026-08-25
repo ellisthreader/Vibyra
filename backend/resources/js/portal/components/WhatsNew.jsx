@@ -2,19 +2,41 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "One stage, split how you like",
+    body: "Terminals and preview share the stage instead of replacing each other, and the rail stays put so there is always a way back.",
+    fresh: true,
+  },
+  {
+    title: "Jump anywhere from the command bar",
+    body: "Switch project, pane or layout without reaching for the mouse.",
+    fresh: true,
+  },
+  {
+    title: "See your voice",
+    body: "Dictation shows a live level meter, so you can tell it is hearing you before you finish the sentence.",
+    fresh: true,
+  },
+  {
+    title: "Carry a conversation between agents",
+    body: "Hand what Claude was working on to Codex — or the other way round — without pasting the context yourself.",
+    fresh: true,
+  },
+  {
+    title: "One account per pane",
+    body: "Run two providers side by side and see which account each pane is signed in as.",
+    fresh: true,
+  },
+  {
     title: "Notifications that tell you what they want",
     body: "Every notice now says what it is about and what it needs from you \u2014 a decision, a failure, a warning, work in progress, or just news. A blocked agent can no longer be pushed off screen by three that finished.",
-    fresh: true,
   },
   {
     title: "Answer an agent without leaving what you are doing",
     body: "When Codex, Claude or Gemini asks permission to run a command, the notification shows the command and the answer buttons. Vibyra re-reads the pane before sending anything, so it can never answer a question that has moved on.",
-    fresh: true,
   },
   {
     title: "Updates you can follow",
     body: "Downloads show real progress in one card that becomes \u201cRestart to finish\u201d, and updates finally live in Settings \u2192 Notifications like everything else.",
-    fresh: true,
   },
   {
     title: "A Performance home in Settings",

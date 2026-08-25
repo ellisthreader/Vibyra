@@ -1,4 +1,5 @@
 pub mod account;
+pub mod agent_chat_prompt;
 pub mod agent_conversations;
 #[cfg(test)]
 mod agent_conversations_tests;
@@ -6,8 +7,10 @@ pub mod agents;
 pub mod ai;
 pub mod ai_memory;
 pub mod ai_service;
+pub mod claude_transcripts;
 pub mod clipboard;
 pub mod codex_transcripts;
+pub mod conversation_carry;
 pub mod fs;
 pub mod memory;
 pub mod memory_browser;
@@ -42,6 +45,9 @@ mod terminal_launch;
 mod terminal_launch_tests;
 mod terminal_prepare;
 pub mod voice;
+mod voice_level;
+#[cfg(test)]
+mod voice_level_tests;
 
 use vibyra_core::{CoreError, CoreResult};
 

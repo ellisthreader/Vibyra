@@ -1,0 +1,131 @@
+/* The titlebar's three working parts: the project switcher on the left, the
+   command bar in the middle, and the stage layout control on the right.
+
+   Between them they replace six things — a status subtitle, a breadcrumb, an
+   attention chip, a live readout, an update chip and a lifebuoy — so the row
+   reads as identity, then intent, then state rather than as a shelf. */
+
+/* ── project switcher ─────────────────────────────────────────────────── */
+
+.pswitch {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pswitch__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  max-width: 190px;
+  padding: 0 8px 0 9px;
+  border: 1px solid transparent;
+  border-radius: var(--r-control);
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-semi);
+  transition: background var(--t-base) var(--e-standard),
+    border-color var(--t-base) var(--e-standard);
+}
+
+.pswitch__btn:hover,
+.pswitch__btn[aria-expanded="true"] {
+  border-color: var(--line);
+  background: var(--hover);
+}
+
+.pswitch__btn svg {
+  flex-shrink: 0;
+  color: var(--dim);
+}
+
+.pswitch__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Square rather than round: the round dot in this product means live session,
+   and a project is not one. */
+.pswitch__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+/* ── command bar ──────────────────────────────────────────────────────── */
+
+.cmdbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(420px, 100%);
+  min-height: 30px;
+  padding: 0 8px 0 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--dim);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  transition: border-color var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard);
+}
+
+.cmdbar:hover {
+  border-color: var(--accent-border);
+  color: var(--muted);
+}
+
+.cmdbar svg {
+  flex-shrink: 0;
+}
+
+.cmdbar__hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdbar__kbd {
+  flex-shrink: 0;
+}
+
+/* ── stage layout control ─────────────────────────────────────────────────
+   Shape comes from `nav-segmented.css`; only the icon-only trim is here, per
+   that sheet's rule that per-surface adjustments live in the consumer. */
+
+.stage-layout button {
+  width: 30px;
+  padding: 0;
+}
+
+.stage-layout button svg {
+  color: currentColor;
+}
+
+/* ── shared titlebar dropdown ─────────────────────────────────────────────
+   Shape is owned by `chrome-account.css`, which carries both selector sets so
+   the account menu and the project switcher cannot drift apart. Only the
+   left-anchoring and the row layout the switcher adds are here. */
+
+.chrome-menu--left {
+  right: auto;
+  left: 0;
+}
+
+.chrome-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.chrome-menu__item[aria-current="true"] {
+  background: var(--accent-soft);
+  color: var(--text);
+}

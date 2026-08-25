@@ -74,35 +74,72 @@
   flex-shrink: 0;
 }
 
-.voice-hud__levels {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 18px;
+/* The meter. Driven by real microphone level from `voice:level`, twenty
+   readings a second, written straight to these two elements — the transition
+   is what fills the 50 ms between them, on the compositor rather than in JS.
+   Only transform and opacity are animated, so no frame costs a repaint. */
+
+.voice-pulse {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
 }
 
-.voice-hud__levels i {
-  width: 3px;
-  height: 6px;
-  border-radius: 999px;
+.voice-pulse__halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
   background: currentColor;
-  animation: voice-level 680ms ease-in-out infinite alternate;
+  opacity: 0.14;
+  transform: scale(0.5);
+  transition: transform 70ms linear, opacity 70ms linear;
+  will-change: transform, opacity;
 }
 
-.voice-hud__levels i:nth-child(2) {
-  animation-delay: -220ms;
+.voice-pulse__core {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  background: currentColor;
+  transition: transform 70ms linear;
+  will-change: transform;
 }
 
-.voice-hud__levels i:nth-child(3) {
-  animation-delay: -410ms;
+/* No level arrived within a second of the microphone opening. Breathing says
+   "listening, but not measuring"; a meter stuck at zero would say "broken". */
+.voice-pulse--idle .voice-pulse__halo {
+  transition: none;
+  animation: voice-breathe 1900ms ease-in-out infinite alternate;
 }
 
-@keyframes voice-level {
+.voice-pulse--idle .voice-pulse__core {
+  transition: none;
+}
+
+@keyframes voice-breathe {
   from {
-    height: 6px;
+    transform: scale(0.5);
+    opacity: 0.12;
   }
   to {
-    height: 18px;
+    transform: scale(0.86);
+    opacity: 0.3;
+  }
+}
+
+/* Reduced motion keeps the level readable — the dot still sizes to your voice
+   — but drops the interpolation and the idle breathing. */
+@media (prefers-reduced-motion: reduce) {
+  .voice-pulse__halo,
+  .voice-pulse__core {
+    transition: none;
+  }
+
+  .voice-pulse--idle .voice-pulse__halo {
+    animation: none;
   }
 }
 

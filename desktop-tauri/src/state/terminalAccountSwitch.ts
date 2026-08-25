@@ -1,17 +1,13 @@
 import type { StoreApi } from "zustand";
 
 import { listAgents } from "../ipc/agents";
-import {
-  agentConversationResumable,
-  removeTerminal,
-  terminalSnapshot,
-} from "../ipc/terminal";
+import { carryAgentConversation, removeTerminal, terminalSnapshot } from "../ipc/terminal";
 import { dropStats } from "../lib/activity";
 import { suppressExitNotice } from "../lib/sessionExitNotifications";
 import { isSuspendedId } from "../lib/sessionRestore";
 import { destroySession } from "../lib/terminalRegistry";
 import { mergeReplaySnapshots } from "../lib/terminalReplay";
-import type { PaneState, TerminalStore } from "./terminalStoreTypes";
+import type { TerminalStore } from "./terminalStoreTypes";
 import { useWorkspaceStore } from "./workspaceStore";
 
 type GetState = StoreApi<TerminalStore>["getState"];
@@ -24,10 +20,13 @@ type GetState = StoreApi<TerminalStore>["getState"];
  * slot in the grid and its output on screen, which is the difference between
  * switching accounts and losing a terminal.
  *
- * The conversation does not come with it, because it never belonged to the new
- * account: transcripts live inside whichever credential folder created them.
- * It is not destroyed either — it stays where it is, and switching back finds
- * it again. That is why this is offered rather than refused.
+ * The conversation comes with it. Transcripts live inside whichever credential
+ * folder created them, so the new account has never seen this chat — but a
+ * transcript is only a file, and copying it across is enough for the CLI to
+ * resume from it. See `conversation_carry.rs` for what was measured.
+ *
+ * Copied rather than moved: the chat still belongs to the account that paid
+ * for it, and switching back has to find it there.
  */
 export async function switchPaneAccount(
   get: GetState,
@@ -50,6 +49,17 @@ export async function switchPaneAccount(
         pane.snapshot,
         await terminalSnapshot(id).catch(() => null),
       );
+  // Before anything is torn down, because a conversation that cannot travel
+  // changes what the relaunch is allowed to ask for.
+  const carried = pane.agentSessionId
+    ? await carryAgentConversation(
+        pane.agentId,
+        pane.agentSessionId,
+        pane.accountId,
+        accountId,
+      ).catch(() => false)
+    : false;
+
   const launched = await get().spawnAgent(agent, pane.projectId, {
     model: pane.model,
     permissionMode: pane.permissionMode,
@@ -65,10 +75,10 @@ export async function switchPaneAccount(
     // What was on screen stays on screen, above whatever the new account's
     // process prints. Losing it would make a switch look like a crash.
     replaySnapshot,
-    // A fresh conversation, deliberately: the old one is in the old account's
-    // folder, and asking the new account to resume it would only fail.
-    resume: false,
-    agentSessionId: null,
+    // Only resume what the new account can actually open. Handing either CLI
+    // an id it cannot resolve exits 1, which would kill the pane outright.
+    resume: carried,
+    agentSessionId: carried ? pane.agentSessionId : null,
     accountId,
   });
   if (!launched) return;
@@ -80,21 +90,4 @@ export async function switchPaneAccount(
   destroySession(id);
   dropStats(id);
   if (!isSuspendedId(id)) await removeTerminal(id).catch(() => {});
-}
-
-/**
- * Whether switching this pane would actually cost the user anything.
- *
- * A pane that has not started a conversation has nothing to leave behind, and
- * asking it to confirm is a prompt about nothing. Only a pane whose transcript
- * exists is worth stopping for.
- *
- * A failed lookup counts as "yes, there is something" — the safe direction is
- * to ask rather than to silently drop a conversation.
- */
-export async function switchLosesConversation(pane: PaneState): Promise<boolean> {
-  if (!pane.agentSessionId) return false;
-  return agentConversationResumable(pane.agentId, pane.agentSessionId, pane.accountId).catch(
-    () => true,
-  );
 }

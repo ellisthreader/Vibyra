@@ -1,6 +1,7 @@
 import { shortcutLabel } from "../../lib/hotkeys";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useVoiceStore } from "../../state/voiceStore";
+import { VoicePulse } from "./VoicePulse";
 
 function MicIcon() {
   return (
@@ -38,11 +39,7 @@ export function VoiceHud() {
     <div className="voice-hud" data-phase={phase} role="status">
       <span className="voice-hud__mark">
         {phase === "listening" ? (
-          <span className="voice-hud__levels" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
+          <VoicePulse />
         ) : phase === "transcribing" || phase === "starting" ? (
           <span className="voice-hud__spinner" aria-hidden="true" />
         ) : phase === "sent" ? (

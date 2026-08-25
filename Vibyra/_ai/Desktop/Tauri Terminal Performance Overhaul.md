@@ -725,3 +725,93 @@ their real session — needs their app restarted onto a build carrying this
 flusher. `~/Vibyra.AppImage` (14:20) has an intermediate flusher (per-session
 pacing + priority, no epoch alignment); the final one is in the tree, built
 and gate-clean but deliberately not installed.
+
+## 2026-08-25 — the surviving one-char-behind was the renderer setting, not code
+
+The 0.2.0 build (23:26 install) still typed one character behind in every
+pane. Diagnosed live against the running app; the flusher and the whole Rust
+delivery chain are exonerated.
+
+**Cause**: `rendererMode` flipped `auto` → `"accelerated"` in settings.json
+during the 2026-08-23 evening GPU-settings work (the 18:08 recovery snapshot
+still says `auto`). On this NVIDIA/X11 box that removes
+`WEBKIT_DISABLE_DMABUF_RENDERER`, so terminals run xterm-webgl on WebKit's
+DMA-BUF path — and there the terminal canvas **presents exactly one draw
+late**. Every delivery paints the *previous* delivery's content; the newest
+keystroke's echo sits drawn-but-unpresented until the next PTY delivery
+pushes it out.
+
+**Evidence** (screen recordings + `/proc` thread wake counters, no ptrace):
+- Idle pane, typed `z`: writer/reader/flusher threads all woke within 250 ms
+  (and the flusher has a ~4/s heartbeat that would flush any pending visible
+  chunk anyway), yet the glyph never presented for 4.7 s. It appeared the
+  instant `q` was typed — showing `z`, not `zq`. Backspaces walked the same
+  one-behind ledger. Mouse motion over the webview never flushed it: the
+  stale canvas buffer just gets re-composited.
+- A turn-end TUI redraw sat unpresented for ~45 s until the next keystroke.
+- System MiniBrowser (same webkit 2.52.3, dmabuf on): DOM textarea instant,
+  plain fullscreen WebGL canvas instant — the generic NVIDIA/dmabuf stack is
+  fine. But **xterm.js + addon-webgl in that same MiniBrowser rendered
+  nothing at all** (not even the cursor): xterm's WebGL canvas specifically
+  does not composite correctly on this path. In the app it degrades to
+  one-draw-late instead of blank.
+- Why every measurement missed it: the latency probe ran under Xephyr with
+  the DOM renderer (`webglIsTrustworthy` decides per-session), so the probe
+  never exercised dmabuf + webgl.
+
+**Detection signal for next time**: typing one-behind *at rest* (last char
+never appears without another event) = presentation layer, not delivery.
+Delivery bugs cannot survive the flusher's 250 ms hidden-interval heartbeat.
+
+**Remedy**: Settings → Graphics → Automatic (or Compatibility) + restart.
+Durable fix candidate: `webglIsTrustworthy` should also refuse WebGL when
+`policy.nvidiaSession` is true even under accelerated compositing — the
+frontend already receives that field.
+
+## 2026-08-25 — shipped in 0.2.5 (all of the above closed)
+
+Released as v0.2.5 (branch `release/0.2.5`, commit fab06a2), live on the feed
+and website the same day. What shipped, and where:
+
+- `webglIsTrustworthy` (rendererPolicy.ts) now refuses WebGL on
+  `nvidiaSession` even under accelerated compositing — the one-draw-late
+  presentation bug is unreachable from any Settings value.
+- **Startup self-heal** (`renderer_heal.rs`, runs before the webview in
+  `renderer::configure`): an install with `rendererMode=accelerated` + NVIDIA
+  session + heal marker unset is rewritten to `auto` once, marker
+  `rendererAccelHealDone` set, `healedThisLaunch` surfaced on the renderer
+  policy payload and announced once in-app. An explicit re-pick of
+  accelerated after that is never fought. Verified by booting the actual
+  release AppImage against a seeded config (also the debug binary: promoted →
+  healed, fresh → marker only, re-pick → survives).
+- The perf watchdog (perfGuard/perfPolicy) never offers "Allow GPU next
+  launch" on NVIDIA sessions (that offer, shipped in d78b03a, is exactly how
+  this machine got stuck), and when degraded on the GPU path with
+  accelerated forced it now offers `revertToAutoGraphics` — the way back
+  that never existed.
+- **Settings → Performance section** (SettingsPerformancePane +
+  PerformanceStatusCard): live readout (compositing path, terminal renderer,
+  app CPU, renderer CPU of one core, memory, streaming panes; 4 s poll only
+  while open), the graphics card moved out of General with an NVIDIA warning
+  hint on "Allow GPU" and a Restart-now button (flushes session first, same
+  contract as the updater), scrollback + restore-output moved in, hibernate-
+  idle button, and a `reduceMotion` setting mirroring prefers-reduced-motion
+  (also skips the 3.7 MB auth video chunk).
+- Waste fixes: SuspendedPaneView ResizeObserver throttled (90 ms + rAF, same
+  as TerminalView), terminalBus queue bounded at 2 M chars (drop-oldest
+  output, resync/exit markers survive), the 120 s session-snapshot heartbeat
+  skips when `latestOutputAt()` hasn't advanced (3 MB rewrite avoided at
+  idle), and tests/ipcOrdering.test.mjs pins the CSP that keeps Tauri's
+  unordered `ipc://` protocol disabled (the keystroke-ordering landmine).
+- Deliberately NOT changed: the Integrations 1.8 s poll (it only runs while
+  a provider sign-in/install is mid-flight and feeds the CLI-question reply
+  box), and the flusher epochs (no user knob — they are already auto-tiered).
+
+Ellis's live machine still runs 0.2.0 on accelerated; the updater will offer
+0.2.5 and the first 0.2.5 boot heals to auto *before* the webview is created,
+so one restart lands on the fast path.
+
+The full postmortem of the incident behind all of this — how the app
+promoted itself into the broken mode, why there was no way back, and the
+binding never-again rules — is the permanent record in
+[[Incident - GPU Mode One Character Behind]].

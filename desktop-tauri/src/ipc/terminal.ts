@@ -86,6 +86,29 @@ export function agentConversationResumable(
 }
 
 /**
+ * Copies a conversation into another account's transcripts so it can be
+ * resumed there, answering whether it arrived.
+ *
+ * Asked before a pane changes account: the new login has never seen the chat
+ * the pane is in the middle of, and both CLIs treat an id they cannot resolve
+ * as fatal. `false` is not a failure — a pane with nothing said in it has
+ * nothing to carry — it just means the relaunch starts clean.
+ */
+export function carryAgentConversation(
+  agentId: string,
+  sessionId: string,
+  fromAccount: string | null,
+  toAccount: string | null,
+): Promise<boolean> {
+  return invoke<boolean>("carry_agent_conversation", {
+    agentId,
+    sessionId,
+    fromAccount,
+    toAccount,
+  });
+}
+
+/**
  * The prompt this pane's conversation opened with, from the agent's own
  * transcript. `null` when the agent keeps none Vibyra can read, `""` when it
  * keeps one the user has not written to yet.

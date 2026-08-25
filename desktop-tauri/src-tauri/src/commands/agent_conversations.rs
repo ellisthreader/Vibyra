@@ -36,16 +36,11 @@
 //! relaunched under the very id it already owned, and the next resume works.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
-use tauri::State;
-use vibyra_core::pty::SessionId;
-use vibyra_core::CoreResult;
-
+use super::claude_transcripts;
 use super::codex_transcripts;
+use super::run_blocking;
 use super::terminal_args::validate_session_id;
-use super::{run_blocking, run_blocking_core};
-use crate::state::AppState;
 
 /// Where one provider account keeps its conversations.
 pub struct ConversationStore {
@@ -123,7 +118,7 @@ impl ConversationStore {
         }
         self.projects
             .as_deref()
-            .is_some_and(|projects| holds(projects, session))
+            .is_some_and(|projects| claude_transcripts::holds_conversation(projects, session))
     }
 
     /// Nowhere to look reads as *unknown*, and unknown resumes.
@@ -141,6 +136,32 @@ impl ConversationStore {
             .as_deref()
             .is_none_or(|sessions| codex_transcripts::holds_conversation(sessions, session))
     }
+
+    /// The folder this agent's transcripts hang off for this account.
+    ///
+    /// Carrying a conversation between accounts needs both ends of the move,
+    /// and the two providers root theirs differently. Agents that resume by
+    /// recency keep nothing addressable, so they get `None`.
+    pub fn transcript_root(&self, agent: &str) -> Option<&Path> {
+        match agent {
+            "claude" => self.projects.as_deref(),
+            "codex" => self.sessions.as_deref(),
+            _ => None,
+        }
+    }
+
+    /// Where `session` sits beneath `transcript_root`, if this account has it.
+    pub fn locate(&self, agent: &str, session: &str) -> Option<PathBuf> {
+        if invalid(session) {
+            return None;
+        }
+        let root = self.transcript_root(agent)?;
+        match agent {
+            "claude" => claude_transcripts::find_conversation(root, session),
+            "codex" => codex_transcripts::find_conversation(root, session),
+            _ => None,
+        }
+    }
 }
 
 /// An id becomes a file name in both lookups, so it is held to a plain UUID
@@ -148,22 +169,6 @@ impl ConversationStore {
 /// argument: an id shaped like a path would be read as one.
 fn invalid(session: &str) -> bool {
     validate_session_id(session).is_err()
-}
-
-/// `--resume` finds an id in whichever project folder holds it, not only the
-/// one matching the current directory — verified against claude 2.1.238 by
-/// resuming a conversation from a different folder, which found it and kept
-/// appending to the original file. Matching on the id alone therefore agrees
-/// with the CLI, and avoids rebuilding a folder name out of a working
-/// directory the pane may not be launched in again.
-fn holds(projects: &Path, session: &str) -> bool {
-    let transcript = format!("{session}.jsonl");
-    let Ok(entries) = std::fs::read_dir(projects) else {
-        return false;
-    };
-    entries
-        .flatten()
-        .any(|entry| entry.path().join(&transcript).is_file())
 }
 
 /// Asked before a suspended pane is resumed, so Vibyra can start it fresh
@@ -179,20 +184,4 @@ pub async fn agent_conversation_resumable(
             .resumable(&agent_id, &session_id))
     })
     .await
-}
-
-/// The prompt a pane's conversation opened with, so the pane can be named
-/// after the chat instead of the model that runs it.
-///
-/// `Some("")` means the provider keeps a transcript that has no submitted
-/// prompt in it yet; `None` means there is no transcript to read, and the
-/// caller falls back to watching what is typed. A pane that has already
-/// closed simply has nothing to read, which is the same answer.
-#[tauri::command]
-pub async fn agent_chat_prompt(
-    state: State<'_, AppState>,
-    id: SessionId,
-) -> CoreResult<Option<String>> {
-    let manager = Arc::clone(&state.manager);
-    run_blocking_core(move || Ok(manager.agent_chat_prompt(id).ok().flatten())).await
 }

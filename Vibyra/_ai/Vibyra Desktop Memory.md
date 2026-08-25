@@ -37,10 +37,22 @@ website, Expo browser client, and native phone app.
 - Terminal lag and blank-pane overhaul, WebKit compositing policy, measured
   results, and distribution status:
   `Desktop/Tauri Terminal Performance Overhaul.md`
+- **⚠ Permanent incident record + never-again rules** (read before changing
+  graphics modes, renderer policy, or any notification that changes a
+  setting): `Desktop/Incident - GPU Mode One Character Behind.md`
 - Terminal panes, provider routing, launch settings, effort tables, and
   provider-account boundaries: `Desktop/AI Terminals.md`
 - Provider OSC behavior, prompt-derived chat names, title precedence, and
   persistence: `Desktop/Terminal Chat Titles.md`
+- Reading an agent's approval prompt into a notification, the fingerprint
+  guard before any keystroke reaches a PTY, and why Vibyra keeps no
+  auto-approve list of its own: `Desktop/Agent Prompt Notifications.md`
+- Titlebar rebuild, the stage split that replaced the Terminals/Preview mode,
+  and why `terminalsVisible()` is the native flush budget:
+  `Desktop/Project Stage And Titlebar.md`
+- Real microphone level for the F8 HUD, the dBFS mapping that makes it
+  readable, and why the renderer never opens a microphone:
+  `Desktop/Dictation Level Meter.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
 - In-app reports, authenticated backend delivery, permission disclosure, and
   server-owned webhook boundary: `Desktop/In-App Reporting.md`

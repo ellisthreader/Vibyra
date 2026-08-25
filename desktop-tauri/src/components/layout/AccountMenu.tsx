@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { avatarInitial, logoutConfirmCopy } from "../../lib/accountPolicy";
+import { navUpdateCopy } from "../../lib/updatePolicy";
 import { useAccountStore } from "../../state/accountStore";
+import { useReportStore } from "../../state/reportStore";
 import { useTerminalStore } from "../../state/terminalStore";
+import { useUpdateStore } from "../../state/updateStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 
 export function AccountMenu() {
@@ -10,6 +13,9 @@ export function AccountMenu() {
   const busy = useAccountStore((s) => s.busy);
   const panes = useTerminalStore((s) => s.panes);
   const openSettingsSection = useWorkspaceStore((s) => s.openSettingsSection);
+  const updateStatus = useUpdateStore((s) => s.status);
+  const updateVersion = useUpdateStore((s) => s.version);
+  const updateProgress = useUpdateStore((s) => s.progress);
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -18,6 +24,9 @@ export function AccountMenu() {
 
   const running = panes.filter((p) => p.status === "running").length;
   const confirmCopy = logoutConfirmCopy(running);
+  // Both moved off the titlebar: a lifebuoy and an update chip were two of the
+  // seven controls in a row that is now four.
+  const update = navUpdateCopy(updateStatus, updateVersion, updateProgress);
 
   const close = (restoreFocus: boolean) => {
     setOpen(false);
@@ -59,6 +68,13 @@ export function AccountMenu() {
       menuRef.current?.querySelector<HTMLButtonElement>("[role='menuitem']")?.focus();
     }
   }, [open, confirming]);
+
+  /** Never respects `dismissed`, so a live release stays reachable from here. */
+  const actOnUpdate = () => {
+    const store = useUpdateStore.getState();
+    if (store.status === "ready" || store.status === "restartError") void store.restart();
+    else if (store.status !== "downloading" && store.status !== "installing") void store.download();
+  };
 
   const requestLogout = () => {
     if (confirmCopy) {
@@ -117,6 +133,29 @@ export function AccountMenu() {
               >
                 Settings
               </button>
+              <button
+                role="menuitem"
+                className="account-menu__item"
+                onClick={() => {
+                  close(false);
+                  void useReportStore.getState().begin();
+                }}
+              >
+                Report a bug
+              </button>
+              {update && (
+                <button
+                  role="menuitem"
+                  className={`account-menu__item account-menu__update account-menu__update--${updateStatus}`}
+                  title={update.title}
+                  disabled={update.busy}
+                  onClick={actOnUpdate}
+                >
+                  <span className="account-menu__update-dot" aria-hidden="true" />
+                  {update.label}
+                </button>
+              )}
+              <div className="account-menu__sep" role="separator" />
               <button
                 role="menuitem"
                 className="account-menu__item"

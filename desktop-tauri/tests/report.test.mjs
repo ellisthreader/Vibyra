@@ -68,14 +68,16 @@ test("where the user is standing is read most-specific first", () => {
   const base = {
     settingsOpen: false,
     companionOpen: false,
-    projectMode: "terminals",
+    stageLayout: "terminals",
     view: "project",
     hasPane: true,
   };
   // A modal is what the user is looking at, even with a project behind it.
   assert.equal(areaFor({ ...base, settingsOpen: true }), "Settings");
   assert.equal(areaFor({ ...base, view: "home" }), "Home screen");
-  assert.equal(areaFor({ ...base, projectMode: "preview" }), "Preview");
+  assert.equal(areaFor({ ...base, stageLayout: "preview" }), "Preview");
+  // A split is still a terminal pane — that is where the keyboard is.
+  assert.equal(areaFor({ ...base, stageLayout: "split" }), "Terminal pane");
   assert.equal(areaFor(base), "Terminal pane");
   assert.equal(areaFor({ ...base, hasPane: false, companionOpen: true }), "AI companion");
   assert.equal(areaFor({ ...base, hasPane: false }), "Somewhere else");

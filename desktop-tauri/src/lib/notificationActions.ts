@@ -92,7 +92,8 @@ export function runNotificationAction(action: NotificationAction): void {
       if (typeof action.arg === "string") {
         void useProjectStore.getState().activate(action.arg);
       }
-      useWorkspaceStore.getState().setProjectMode("preview");
+      // Split, not full preview: the pane that raised the notice stays visible.
+      useWorkspaceStore.getState().setStageLayout("split");
       return;
     default:
       return;

@@ -29,6 +29,7 @@ Vibyra/Productivity Stats.json
 /Cargo.toml
 /Cargo.lock
 /src/main.rs
+/rust-toolchain.toml
 /fakebin/
 /npm-installer/
 /artifacts/
