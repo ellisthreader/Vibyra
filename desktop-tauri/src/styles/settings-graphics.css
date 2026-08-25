@@ -1,5 +1,6 @@
-/* Graphics-mode picker in Settings → Performance. Three stacked choices
-   rather than a select, because each one needs its trade-off spelled out. */
+/* Graphics-mode picker in Settings → Performance. Stacked choices rather
+   than a select, because each one needs its trade-off spelled out. The
+   classes are shared by PerformanceModeCard — same shape of decision. */
 
 .graphics-modes {
   display: flex;

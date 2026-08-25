@@ -10,6 +10,7 @@ import "./styles/base-controls.css";
 import "./styles/base-badges.css";
 import "./styles/base-scrollbars.css";
 import "./styles/base-motion.css";
+import "./styles/base-performance.css";
 import "./styles/base-activity-dots.css";
 import "./styles/base-tooltips.css";
 import "./styles/controls.css";

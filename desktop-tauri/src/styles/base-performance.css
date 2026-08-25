@@ -1,0 +1,15 @@
+/* Maximum performance mode (Settings → Performance).
+   `data-perf-max` is set by settingsStore alongside `data-reduce-motion`
+   (which kills animation/transitions in base-motion.css); this file strips
+   the paint-cost finish: shadows, blur, filters. Deliberately blunt — the
+   mode's contract is "flat and fast", and every effect below is decorative.
+   Focus rings survive: they are outline-based (base.css), never shadows. */
+
+:root[data-perf-max] *,
+:root[data-perf-max] *::before,
+:root[data-perf-max] *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+}

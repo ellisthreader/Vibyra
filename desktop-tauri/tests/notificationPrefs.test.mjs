@@ -5,6 +5,7 @@ import {
   DEFAULT_KINDS,
   DEFAULT_NOTIFICATIONS,
   normalizeNotifications,
+  silenceAll,
 } from "../src/lib/notificationPrefs.ts";
 
 test("an absent block returns the defaults by identity, not by value", () => {
@@ -58,4 +59,20 @@ test("booleans fall back per field instead of dropping the whole block", () => {
 
 test("going quiet is opt-in", () => {
   assert.equal(DEFAULT_NOTIFICATIONS.agentIdleEnabled, false);
+});
+
+test("maximum performance silences every channel without rewriting the stored choices", () => {
+  const stored = normalizeNotifications({ enabled: true, soundEnabled: true, osEnabled: true, agentIdleEnabled: true, volume: 0.8 });
+  const silenced = silenceAll(stored);
+  // enabled:false is the master gate in notificationPolicy — nothing shows,
+  // no cue plays, nothing escalates.
+  assert.equal(silenced.enabled, false);
+  assert.equal(silenced.soundEnabled, false);
+  assert.equal(silenced.osEnabled, false);
+  assert.equal(silenced.agentIdleEnabled, false);
+  // The user's own object is untouched: Standard restores exactly this.
+  assert.equal(stored.enabled, true);
+  assert.equal(stored.soundEnabled, true);
+  assert.equal(silenced.volume, stored.volume);
+  assert.equal(silenced.kinds, stored.kinds);
 });

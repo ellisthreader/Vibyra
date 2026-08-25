@@ -1,15 +1,18 @@
 import { hibernateIdleTerminals } from "../../lib/terminalHibernate";
 import { useTerminalStore } from "../../state/terminalStore";
 import { GraphicsCard } from "./GraphicsCard";
+import { PerformanceModeCard } from "./PerformanceModeCard";
 import { PerformanceStatusCard } from "./PerformanceStatusCard";
 import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 
 /**
- * One user decision (the graphics mode), everything else visible and
- * automatic. The status card shows the numbers the watchdog acts on; the rest
- * of the pane holds the resource levers that used to hide inside General.
+ * Two user decisions (the performance mode, the graphics mode), everything
+ * else visible and automatic. The status card shows the numbers the watchdog
+ * acts on; the rest of the pane holds the resource levers that used to hide
+ * inside General.
  */
 export function SettingsPerformancePane({ settings, update }: SettingsPaneProps) {
+  const maxPerformance = settings.performanceMode === "max";
   // Subscribing to the store keeps the idle count honest while the pane is
   // open — hibernating from here should immediately show zero left to do.
   const idleCount = useTerminalStore(
@@ -24,6 +27,7 @@ export function SettingsPerformancePane({ settings, update }: SettingsPaneProps)
 
   return (
     <>
+      <PerformanceModeCard settings={settings} update={update} />
       <PerformanceStatusCard />
       <GraphicsCard settings={settings} update={update} />
       <SettingsBlock label="Terminal resources">
@@ -43,8 +47,15 @@ export function SettingsPerformancePane({ settings, update }: SettingsPaneProps)
       </SettingsBlock>
       <SettingsBlock label="Motion">
         <div className="settings-group">
-          <SettingRow label="Reduce motion" hint="Skips decorative animation and the sign-in backdrop video. The OS-level reduced-motion preference does this too; this switch works without it.">
-            <Switch label="Reduce motion" checked={settings.reduceMotion} onChange={(next) => void update({ reduceMotion: next })} />
+          <SettingRow
+            label="Reduce motion"
+            hint={
+              maxPerformance
+                ? "Included in Maximum performance mode; your own choice comes back on Standard."
+                : "Skips decorative animation and the sign-in backdrop video. The OS-level reduced-motion preference does this too; this switch works without it."
+            }
+          >
+            <Switch label="Reduce motion" checked={settings.reduceMotion || maxPerformance} disabled={maxPerformance} onChange={(next) => void update({ reduceMotion: next })} />
           </SettingRow>
         </div>
       </SettingsBlock>

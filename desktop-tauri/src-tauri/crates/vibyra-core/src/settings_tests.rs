@@ -76,16 +76,19 @@ fn renderer_heal_and_reduce_motion_default_off_for_older_files() {
     let loaded = Settings::load_from(&path);
     assert!(!loaded.renderer_accel_heal_done);
     assert!(!loaded.reduce_motion);
+    assert_eq!(loaded.performance_mode, "standard");
 
     let settings = Settings {
         renderer_accel_heal_done: true,
         reduce_motion: true,
+        performance_mode: "max".to_string(),
         ..Settings::default()
     };
     settings.save_to(&path).unwrap();
     let loaded = Settings::load_from(&path);
     assert!(loaded.renderer_accel_heal_done);
     assert!(loaded.reduce_motion);
+    assert_eq!(loaded.performance_mode, "max");
 }
 
 #[test]

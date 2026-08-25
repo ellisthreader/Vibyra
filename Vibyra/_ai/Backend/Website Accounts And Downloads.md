@@ -180,6 +180,33 @@ full-GET sha match, portal serving the new What's New copy. Release notes on
 the feed: "Typing stays instant while agents stream, and Settings → Updates
 checks for new releases on demand." The announcement email remains unsent.
 
+## 0.2.7 published 2026-08-25T16:11Z
+
+All three platforms at 0.2.7 from CI run 32868198519, commit c9d5e59 (branch
+release/0.2.7, tag v0.2.7): same procedure — staged `.uploading-*` uploads with
+remote size and sha256 verified through `railway ssh` before the atomic rename,
+24 env keys in one `railway variables --skip-deploys`, one `railway up`.
+Verified live: /web-api/releases all 0.2.7 (8476634 / 98970104 / 10946806),
+signed 200 payloads for 0.2.6 clients on appimage/deb/nsis, 204 for 0.2.7
+clients, download headers matching, and a full GET of the AppImage whose
+sha256 equalled the CI artifact. Release theme: the split stage, command bar
+and project switcher, titlebar/account-menu rework, dictation level meter,
+conversation carry between agents, per-pane provider accounts.
+
+**Scope trap worth remembering.** 0.2.6 shipped the notification work alone
+because a clarifying question offered "notifications only" as the recommended
+option, when the ask had been "everything". Five finished features stayed
+behind — and, worse, they had never been committed on any branch, so they
+existed only as working-tree edits. When someone says "release everything",
+first run `git status` and enumerate what "everything" actually is, then
+confirm that list; do not offer a narrower default. Uncommitted work is also
+unbacked-up work: commit it to a `wip/` branch immediately, before any
+release discussion.
+
+Note `0.2.6.1` was requested and is not valid semver — npm, Cargo and
+`tauri.conf.json` all reject four-part versions and the Tauri updater compares
+semver, so it became 0.2.7.
+
 ## 0.2.6 published 2026-08-25T14:38Z
 
 All three platforms at 0.2.6 from CI run 32858819882, commit 105a737 (branch

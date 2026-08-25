@@ -120,3 +120,14 @@ export function normalizeNotifications(value: unknown): NotificationPrefs {
     kinds: kinds as Record<NotificationKind, NotificationKindPrefs>,
   };
 }
+
+/**
+ * Maximum performance mode: every channel off without touching the stored
+ * choices, so switching back to Standard restores exactly what the user had.
+ * `enabled: false` is the master gate — nothing enters history, no toast
+ * mounts, no cue plays (so no AudioContext is ever created), and nothing
+ * escalates to the desktop.
+ */
+export function silenceAll(prefs: NotificationPrefs): NotificationPrefs {
+  return { ...prefs, enabled: false, soundEnabled: false, osEnabled: false, agentIdleEnabled: false };
+}

@@ -51,6 +51,10 @@ pub struct Settings {
     /// Skip decorative animation and the sign-in backdrop video, independent
     /// of the OS-level reduced-motion preference.
     pub reduce_motion: bool,
+    /// "standard" runs everything; "max" temporarily disables the
+    /// nonessentials — animation, notifications, sounds, visual effects.
+    /// Only the frontend interprets it; unknown values read as "standard".
+    pub performance_mode: String,
     /// AI CLI integrations explicitly enabled for terminal model selection.
     pub enabled_agent_ids: Vec<String>,
     /// Which login each company's terminals run as, by provider id. Absent
@@ -94,6 +98,7 @@ impl Default for Settings {
             renderer_mode: "auto".to_string(),
             renderer_accel_heal_done: false,
             reduce_motion: false,
+            performance_mode: "standard".to_string(),
             enabled_agent_ids: Vec::new(),
             active_provider_accounts: BTreeMap::new(),
             ai_daily_call_cap: 250,

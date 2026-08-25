@@ -21,6 +21,12 @@ export function SettingsNotificationsPane({ settings, update }: SettingsPaneProp
     <>
       <SettingsBlock label="Notifications">
         <div className="settings-group">
+          {settings.performanceMode === "max" && (
+            <p className="settings-note">
+              Maximum performance mode (Performance pane) is silencing all notifications right
+              now. The choices below are kept and come back on Standard.
+            </p>
+          )}
           <SettingRow
             label="Show notifications"
             hint="Toasts in the corner, and a history behind the bell in the title bar."

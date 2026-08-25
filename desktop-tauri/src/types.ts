@@ -86,6 +86,10 @@ export interface ProjectSpec {
 
 export type RendererMode = "auto" | "accelerated" | "compatibility";
 
+/** "standard" runs everything; "max" temporarily disables the nonessentials —
+ * animation, notifications, sounds, visual effects. */
+export type PerformanceMode = "standard" | "max";
+
 export interface RendererPolicy {
   mode: RendererMode;
   softwareCompositing: boolean;
@@ -116,6 +120,8 @@ export interface Settings {
   rendererAccelHealDone: boolean;
   /** Skip decorative animation regardless of the OS reduced-motion setting. */
   reduceMotion: boolean;
+  /** See PerformanceMode above; picked in Settings → Performance. */
+  performanceMode: PerformanceMode;
   enabledAgentIds: string[];
   /** Which login each company's terminals run as, by provider id. A missing
    *  entry means the CLI's own folder — the account every install already had. */

@@ -1,7 +1,8 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 
 import { getSettings, saveSettings } from "../ipc/settings";
-import { DEFAULT_NOTIFICATIONS, normalizeNotifications } from "../lib/notificationPrefs";
+import { DEFAULT_NOTIFICATIONS, normalizeNotifications, silenceAll } from "../lib/notificationPrefs";
 import { normalizeRendererMode } from "../lib/rendererPolicy";
 import { applySettingsToAll } from "../lib/terminalRegistry";
 import { resolveTheme } from "../lib/xtermTheme";
@@ -17,11 +18,19 @@ interface SettingsStore {
 function applyTheme(settings: Settings): void {
   document.documentElement.dataset.theme = resolveTheme(settings.theme);
   // Mirrors the prefers-reduced-motion kill rule in base-motion.css, so the
-  // in-app toggle works without an OS-level accessibility change.
-  if (settings.reduceMotion) {
+  // in-app toggle works without an OS-level accessibility change. Maximum
+  // performance mode implies it — one kill rule, two ways in.
+  const maxPerformance = settings.performanceMode === "max";
+  if (settings.reduceMotion || maxPerformance) {
     document.documentElement.dataset.reduceMotion = "true";
   } else {
     delete document.documentElement.dataset.reduceMotion;
+  }
+  // Flattens shadows, blur and filters — see base-performance.css.
+  if (maxPerformance) {
+    document.documentElement.dataset.perfMax = "true";
+  } else {
+    delete document.documentElement.dataset.perfMax;
   }
 }
 
@@ -34,6 +43,7 @@ function normalizeSettings(settings: Settings): Settings {
         ? settings.activeProviderAccounts
         : {},
     rendererMode: normalizeRendererMode(settings.rendererMode),
+    performanceMode: settings.performanceMode === "max" ? "max" : "standard",
     // A hand-edited or older settings.json must not be able to break the pane.
     notifications: normalizeNotifications(settings.notifications),
   };
@@ -90,8 +100,14 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", ()
 });
 
 /** Stable-reference selector, same reason as `useProjects` above: a missing
- * block resolves to the one frozen default object, never a fresh one. */
+ * block resolves to the one frozen default object, never a fresh one. The
+ * memo keeps the silenced derivation stable too — everything downstream
+ * (runtime, ticker) re-renders only when the underlying prefs or mode move. */
 export function useNotificationPrefs(): NotificationPrefs {
   const settings = useSettingsStore((s) => s.settings);
-  return settings?.notifications ?? DEFAULT_NOTIFICATIONS;
+  const prefs = settings?.notifications ?? DEFAULT_NOTIFICATIONS;
+  // Maximum performance mode silences every channel without rewriting the
+  // stored choices; Standard hands back the user's own object untouched.
+  const silenced = settings?.performanceMode === "max";
+  return useMemo(() => (silenced ? silenceAll(prefs) : prefs), [prefs, silenced]);
 }

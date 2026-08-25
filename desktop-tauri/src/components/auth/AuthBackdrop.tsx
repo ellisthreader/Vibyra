@@ -16,7 +16,11 @@ export function AuthBackdrop() {
   const [reducedMotion, setReducedMotion] = useState(reducedMotionEnabled);
   // The in-app toggle counts too: skipping the video also skips parsing its
   // multi-megabyte chunk, which is the point of the setting on a slow machine.
-  const reduceMotionSetting = useSettingsStore((state) => Boolean(state.settings?.reduceMotion));
+  // Maximum performance mode implies it for the same reason — the loop's h264
+  // decode pipeline is exactly the kind of standing cost the mode exists to shed.
+  const reduceMotionSetting = useSettingsStore(
+    (state) => Boolean(state.settings?.reduceMotion) || state.settings?.performanceMode === "max",
+  );
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
