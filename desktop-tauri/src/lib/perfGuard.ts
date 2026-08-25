@@ -36,7 +36,7 @@ export function initialGuardState(): PerfGuardState {
 }
 
 function message(reason: PerfReason, window: PerfWindow): NotificationInput {
-  const base = { category: "performance", severity: "warning", osEligible: false } as const;
+  const base = { kind: "performance", tier: "risk", osEligible: false } as const;
   if (reason === "compositing") {
     const canPromoteAuto = window.autoGraphics && window.graphicsSwitchAvailable;
     return {

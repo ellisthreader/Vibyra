@@ -60,8 +60,8 @@ fn notifications_default_in_for_a_pre_feature_settings_file() {
     let loaded = Settings::load_from(&path);
     assert!(loaded.notifications.enabled);
     assert!(loaded.notifications.sound_enabled);
-    assert_eq!(loaded.notifications.categories.len(), 8);
-    assert_eq!(loaded.notifications.categories["agentFailed"].cue, "fail");
+    assert_eq!(loaded.notifications.kinds.len(), 10);
+    assert_eq!(loaded.notifications.kinds["agent"].cue, "done");
     assert!((0.0..=1.0).contains(&loaded.notifications.volume));
 }
 

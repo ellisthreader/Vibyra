@@ -8,20 +8,22 @@ import {
   shouldShow,
 } from "../src/lib/notificationPolicy.ts";
 
-const CATEGORIES = [
-  "agentAttention",
-  "agentDone",
-  "agentFailed",
+const KINDS = [
+  "approval",
+  "agent",
+  "update",
+  "account",
+  "spend",
   "performance",
   "preview",
-  "aiSpend",
   "models",
-  "system",
+  "project",
+  "app",
 ];
 
 function prefs(overrides = {}, channel = "system", cue = "done") {
-  const categories = {};
-  for (const id of CATEGORIES) categories[id] = { channel, cue };
+  const kinds = {};
+  for (const id of KINDS) kinds[id] = { channel, cue };
   return {
     enabled: true,
     soundEnabled: true,
@@ -29,7 +31,7 @@ function prefs(overrides = {}, channel = "system", cue = "done") {
     osEnabled: true,
     osOnlyWhenAway: true,
     agentIdleEnabled: false,
-    categories,
+    kinds,
     ...overrides,
   };
 }
@@ -40,8 +42,8 @@ function item(overrides = {}) {
     at: 0,
     count: 1,
     read: false,
-    category: "agentDone",
-    severity: "success",
+    kind: "agent",
+    tier: "done",
     title: "Agent finished",
     ...overrides,
   };
@@ -65,7 +67,7 @@ test("the cue is silent until prefs load, and honours volume and the channel", (
   assert.equal(cueFor(prefs({ soundEnabled: false }), item()), "none");
   assert.equal(cueFor(prefs({ volume: 0 }), item()), "none");
   assert.equal(cueFor(prefs({}, "off"), item()), "none");
-  // An explicit cue on the item overrides the category default.
+  // An explicit cue on the item overrides the kind default.
   assert.equal(cueFor(prefs(), item({ cue: "blip" })), "blip");
 });
 
@@ -74,7 +76,7 @@ test("each rung of the escalation matrix blocks on its own", () => {
   assert.equal(escalates(prefs({ enabled: false }), item()), false);
   assert.equal(escalates(prefs({ osEnabled: false }), item()), false);
   assert.equal(escalates(prefs({}, "app"), item()), false);
-  assert.equal(escalates(prefs(), item({ severity: "info" })), false);
+  assert.equal(escalates(prefs(), item({ tier: "news" })), false);
   assert.equal(escalates(prefs(), item({ osEligible: false })), false);
   assert.equal(escalates(prefs(), item(), { isRepeat: true }), false);
 });
@@ -87,7 +89,7 @@ test("osOnlyWhenAway blocks while the window is focused, and can be turned off",
 test("a blocked notification does not spend an OS slot", () => {
   const gate = createOsGate();
   const ctx = { focused: false, isRepeat: false, now: 0 };
-  shouldEscalate(prefs(), item({ severity: "info" }), ctx, gate);
+  shouldEscalate(prefs(), item({ tier: "news" }), ctx, gate);
   assert.equal(shouldEscalate(prefs(), item(), ctx, gate), true);
 });
 

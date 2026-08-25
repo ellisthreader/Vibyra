@@ -18,8 +18,15 @@ test("the chosen account reaches the terminal it launches", () => {
   const launch = source("../src-tauri/src/commands/terminal_launch.rs");
   const prepare = source("../src-tauri/src/commands/terminal_prepare.rs");
 
-  assert.match(configured, /accountId: preferences\.accountByProvider\[agent\.id\] \?\? null/);
-  assert.match(lifecycle, /accountId: options\?\.accountId \?\? null/);
+  // Not `?? null`: null is a choice — the first account — and would outrank
+  // the account chosen in Settings → Integrations for every project that has
+  // never touched its own picker.
+  assert.match(configured, /accountId: preferences\.accountByProvider\[agent\.id\],/);
+  assert.match(
+    lifecycle,
+    /options\?\.accountId !== undefined \? options\.accountId : launchAccountId\(agent\.id\)/,
+    "an explicit account wins; only an absent one falls back",
+  );
   assert.match(ipc, /accountId: options\.accountId \?\? null/);
   assert.match(launch, /pub account_id: Option<String>/);
   assert.match(prepare, /select_launch_account\(&mut spec, &agent\.spec\.id, request\.account_id/);
@@ -94,8 +101,6 @@ test("switching a pane relaunches it in place without destroying anything", () =
   assert.match(swap, /replaces: id/, "the pane keeps its slot in the grid");
   assert.match(swap, /terminalSnapshot\(id\)/, "live output is captured before the switch");
   assert.match(swap, /replaySnapshot,/, "its output stays on screen");
-  assert.match(swap, /resume: false/);
-  assert.match(swap, /agentSessionId: null/, "the new account starts its own conversation");
   assert.doesNotMatch(
     swap,
     /get\(\)\.close\(/,
@@ -109,16 +114,85 @@ test("switching a pane relaunches it in place without destroying anything", () =
 });
 
 /**
- * A pane that never started a conversation has nothing to leave behind, so
- * asking it to confirm is a prompt about nothing. A failed lookup asks anyway:
- * the safe direction is to interrupt, not to drop a conversation silently.
+ * The conversation goes with the pane. Transcripts live inside whichever
+ * credential folder created them, so the new account has never seen this chat
+ * — but a transcript is only a file, and copying it across is enough for the
+ * CLI to resume from it. Without that, switching account to escape a spent
+ * balance would cost the user the work they were in the middle of.
  */
-test("only a pane with a conversation is worth stopping to confirm", () => {
+test("switching a pane carries its conversation onto the new account", () => {
   const swap = source("../src/state/terminalAccountSwitch.ts");
-  const control = source("../src/components/terminal/PaneAccountControl.tsx");
+  const ipc = source("../src/ipc/terminal.ts");
+  const carry = source("../src-tauri/src/commands/conversation_carry.rs");
 
-  assert.match(swap, /if \(!pane\.agentSessionId\) return false;/);
-  assert.match(swap, /\.catch\(\s*\(\) => true,?\s*\)/);
-  assert.match(control, /if \(await switchLosesConversation\(pane\)\) \{/);
-  assert.match(control, /accounts\.length < 2\) return null/, "one account is not a choice");
+  assert.match(swap, /carryAgentConversation\(/, "the transcript is copied before the relaunch");
+  assert.match(
+    swap,
+    /resume: carried/,
+    "only a conversation that actually arrived is resumed",
+  );
+  assert.match(swap, /agentSessionId: carried \? pane\.agentSessionId : null/);
+  assert.match(ipc, /invoke<boolean>\("carry_agent_conversation"/);
+
+  // Copied, not moved: the chat still belongs to the account that paid for it,
+  // and switching back has to find it there.
+  assert.match(carry, /std::fs::copy\(source, destination\)/);
+  assert.doesNotMatch(carry, /std::fs::rename|remove_file/);
+});
+
+/**
+ * Switching is offered where an account is chosen, not on the pane. Running
+ * out of credits happens to an account, so the fix is to move everything that
+ * was spending them — asking pane by pane made the common case the tedious one.
+ */
+test("accounts are switched from Integrations, not from the terminal", () => {
+  const use = source("../src/components/settings/ProviderAccountUse.tsx");
+  const row = source("../src/components/settings/ProviderAccountRow.tsx");
+  const badge = source("../src/components/terminal/PaneAccountBadge.tsx");
+
+  assert.match(row, /<ProviderAccountUse provider=\{provider\} account=\{account\} \/>/);
+  assert.match(use, /switchProviderAccount\(provider\.runtimeId, account\.accountId\)/);
+
+  // The pane keeps the answer to "did that reach this one", and nothing more.
+  assert.doesNotMatch(badge, /switchAccount|<button/, "the pane no longer switches anything");
+  assert.match(badge, /accounts\.length < 2\) return null/, "one account is not a choice");
+});
+
+/**
+ * A relaunch cuts off whatever the agent was in the middle of saying, and that
+ * answer does not come back. Panes merely waiting on the user are not busy in
+ * this sense: nothing is in flight, and the question survives the restart.
+ */
+test("a switch stops to confirm only when it would interrupt an answer", () => {
+  const use = source("../src/components/settings/ProviderAccountUse.tsx");
+  const swap = source("../src/state/providerAccountSwitch.ts");
+
+  assert.match(swap, /activity\[pane\.id\] === "working"/);
+  assert.match(use, /workingPanes\(provider\.runtimeId\)\.length === 0/);
+});
+
+/**
+ * The choice has to outlive the panes it moved, or the next terminal opened
+ * quietly reaches for the credits the user just walked away from.
+ */
+test("the chosen account is remembered for terminals opened later", () => {
+  const swap = source("../src/state/providerAccountSwitch.ts");
+  const spawn = source("../src/state/terminalSpawnActions.ts");
+  const settings = source("../src-tauri/crates/vibyra-core/src/settings.rs");
+
+  assert.match(swap, /activeProviderAccounts: \{/);
+  assert.match(spawn, /function launchAccountId\(providerId: string\)/);
+  assert.match(settings, /pub active_provider_accounts: BTreeMap<String, String>/);
+});
+
+/**
+ * Panes belonging to other companies are never touched: a Claude switch has
+ * nothing to say about a Codex chat, and relaunching one would be a bug the
+ * user reads as Vibyra restarting terminals at random.
+ */
+test("switching one company leaves the other companies' terminals alone", () => {
+  const swap = source("../src/state/providerAccountSwitch.ts");
+
+  assert.match(swap, /pane\.agentId === providerId && pane\.status !== "exited"/);
+  assert.match(swap, /\(pane\) => pane\.accountId !== target/, "panes already there are left alone");
 });

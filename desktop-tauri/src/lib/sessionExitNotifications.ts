@@ -51,8 +51,8 @@ export function exitNotification(
   const action = { id: "focusSession", label: "Open terminal", arg: pane.id } as const;
   if (code === 0) {
     return {
-      category: "agentDone",
-      severity: "success",
+      kind: "agent",
+      tier: "done",
       title: `${label} finished`,
       // Shared across sessions so a burst of completions collapses into one line.
       dedupeKey: "agentDone",
@@ -60,12 +60,11 @@ export function exitNotification(
     };
   }
   return {
-    category: "agentFailed",
-    severity: "danger",
+    kind: "agent",
+    tier: "fail",
     title: `${label} exited with code ${code}`,
     // Per session: a failure is worth its own row, and its own dismissal.
     dedupeKey: `agentFailed:${pane.id}`,
-    timeoutMs: 0,
     action,
   };
 }

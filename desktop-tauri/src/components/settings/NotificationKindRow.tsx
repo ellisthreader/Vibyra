@@ -1,21 +1,22 @@
 import { previewCue } from "../../lib/notificationSounds";
 import { CUE_LABELS, CUE_ORDER } from "../../lib/soundCues";
 import type {
-  NotificationCategoryPrefs,
   NotificationChannel,
+  NotificationKindPrefs,
   SoundCueId,
 } from "../../notificationTypes";
 import { MonitorIcon, PlayIcon } from "../common/StatusIcons";
-import type { CategoryDescriptor } from "./notificationCategories";
+import { kindMark } from "../notifications/notificationMarks";
+import type { KindDescriptor } from "./notificationKinds";
 import { SettingRow, Switch } from "./SettingsShared";
 
 interface Props {
-  descriptor: CategoryDescriptor;
-  prefs: NotificationCategoryPrefs;
+  descriptor: KindDescriptor;
+  prefs: NotificationKindPrefs;
   volume: number;
   soundEnabled: boolean;
   disabled: boolean;
-  onChange: (next: NotificationCategoryPrefs) => void;
+  onChange: (next: NotificationKindPrefs) => void;
 }
 
 function nextChannel(on: boolean, osCapable: boolean): NotificationChannel {
@@ -23,7 +24,7 @@ function nextChannel(on: boolean, osCapable: boolean): NotificationChannel {
   return osCapable ? "system" : "app";
 }
 
-export function NotificationCategoryRow({
+export function NotificationKindRow({
   descriptor,
   prefs,
   volume,
@@ -33,9 +34,13 @@ export function NotificationCategoryRow({
 }: Props) {
   const on = prefs.channel !== "off";
   const locked = descriptor.locked === true;
+  const kind = kindMark(descriptor.id);
 
   return (
     <SettingRow
+      // The same glyph the card carries, so a row and the notices it governs
+      // are recognisably the same thing.
+      icon={<kind.Icon size={14} />}
       label={descriptor.label}
       hint={
         locked
@@ -43,7 +48,7 @@ export function NotificationCategoryRow({
           : descriptor.hint
       }
     >
-      <div className="notif-cat">
+      <div className="notif-kind">
         <select
           className="input input--sm input--sound"
           value={prefs.cue}
@@ -70,7 +75,7 @@ export function NotificationCategoryRow({
           // one row give the eye nothing to tell them apart.
           <button
             type="button"
-            className="icon-btn notif-cat__os"
+            className="icon-btn notif-kind__os"
             aria-pressed={prefs.channel === "system"}
             aria-label={`Also show ${descriptor.label} on the desktop`}
             title="Also show on the desktop when Vibyra is in the background"

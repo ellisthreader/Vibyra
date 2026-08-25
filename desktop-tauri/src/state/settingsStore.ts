@@ -22,6 +22,10 @@ function normalizeSettings(settings: Settings): Settings {
   return {
     ...settings,
     enabledAgentIds: Array.isArray(settings.enabledAgentIds) ? settings.enabledAgentIds : [],
+    activeProviderAccounts:
+      settings.activeProviderAccounts && typeof settings.activeProviderAccounts === "object"
+        ? settings.activeProviderAccounts
+        : {},
     rendererMode: normalizeRendererMode(settings.rendererMode),
     // A hand-edited or older settings.json must not be able to break the pane.
     notifications: normalizeNotifications(settings.notifications),

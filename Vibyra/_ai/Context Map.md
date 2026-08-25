@@ -71,6 +71,9 @@ Read `Vibyra Desktop Memory.md`, then one focused note from `Vibyra/_ai/Desktop/
 - Post-auth welcome: `Desktop/Rust Tauri First Welcome.md`
 - Account auth and session storage: `Desktop/Tauri Account Authentication.md`
 - Terminal performance and WebKit compositing: `Desktop/Tauri Terminal Performance Overhaul.md`
+- **⚠ Required before touching graphics modes, renderer policy, or perf
+  notifications** — the one-way-ratchet incident and its never-again rules:
+  `Desktop/Incident - GPU Mode One Character Behind.md`
 - Terminal panes, provider routing, launch settings: `Desktop/AI Terminals.md`
 - Accurate AI chat names and generic OSC-title fallback:
   `Desktop/Terminal Chat Titles.md`

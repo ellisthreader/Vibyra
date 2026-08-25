@@ -48,20 +48,30 @@
   border-radius: var(--r-card);
 }
 
-.nmark--info {
-  color: var(--accent);
+/* One class per tier. The mark, the rail and the chip all read the same
+   token, so a tier can never half-change. */
+.nmark--ask {
+  color: var(--ask);
 }
 
-.nmark--success {
-  color: var(--success);
+.nmark--fail {
+  color: var(--danger);
 }
 
-.nmark--warning {
+.nmark--risk {
   color: var(--amber);
 }
 
-.nmark--danger {
-  color: var(--danger);
+.nmark--busy {
+  color: var(--accent);
+}
+
+.nmark--done {
+  color: var(--success);
+}
+
+.nmark--news {
+  color: var(--dim);
 }
 
 /* ---------- switch ---------- */

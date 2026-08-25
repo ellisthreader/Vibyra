@@ -167,3 +167,58 @@ The only connected Gmail identity is a personal account, so it is not a safe
 substitute for an authenticated Vibyra sender. Configure a transactional mail
 provider and Vibyra From domain, rerun the dry run, then send once; the delivery
 table must remain empty until a provider accepts those messages.
+
+## 0.2.0 published 2026-08-24T15:21Z
+
+All three platforms (AppImage / deb / Windows NSIS) at 0.2.0 from CI run
+32741427722, commit 3d57690: volume bytes verified (remote sha256 = CI
+artifact sha256), env metadata set with `railway variables --skip-deploys`
+(new; avoids the stale-GitHub rebuild race entirely), one `railway up`, then
+verified live: /web-api/releases all 0.2.0, signed 200 payloads for 0.1.11
+clients on all three bundle types, 204 for 0.2.0 clients, download headers +
+full-GET sha match, portal serving the new What's New copy. Release notes on
+the feed: "Typing stays instant while agents stream, and Settings → Updates
+checks for new releases on demand." The announcement email remains unsent.
+
+## 0.2.6 published 2026-08-25T14:38Z
+
+All three platforms at 0.2.6 from CI run 32858819882, commit 105a737 (branch
+release/0.2.6, tag v0.2.6): same procedure as 0.2.5 — staged `.uploading-*`
+volume uploads with remote size and sha256 verified through `railway ssh`
+against the CI artifacts before the atomic rename, all 24 env keys in one
+`railway variables --skip-deploys`, then one `railway up`. Verified live:
+/web-api/releases all 0.2.6 (8455093 / 98949624 / 10917150 bytes), signed 200
+payloads for 0.2.5 clients on appimage/deb/nsis, 204 for 0.2.6 clients,
+download headers with matching `X-Checksum-SHA256` and a full-GET that
+streamed all 98949624 AppImage bytes. Release theme: the notification
+tier/kind split, agent approvals answered from the card, and the updater
+folded into the notification system.
+
+**Branch trap, cost about an hour.** The working tree was on `release/0.2.0`
+and `v0.2.5` sat one commit *ahead* of it on a separate line, so every file
+0.2.5 shipped — `SettingsPerformancePane`, `PerformanceStatusCard`,
+`renderer_heal.rs`, `rendererHealNotice.ts`, `appRestart.ts` — was absent.
+Releasing that tree would have silently reverted the whole 0.2.5 release.
+Always check `git merge-base --is-ancestor v<latest> HEAD` before starting a
+release, and build it in a worktree cut from the newest tag, never from the
+working tree. Four 0.2.5 call sites also still used the pre-split
+`category`/`severity` notification API and had to be migrated by hand; a
+tag-to-tag rebase is never purely mechanical when the release changes a
+shared contract.
+
+## 0.2.5 published 2026-08-25T10:14Z
+
+All three platforms at 0.2.5 from CI run 32833968567, commit fab06a2 (branch
+release/0.2.5, tag v0.2.5): same procedure as 0.2.0 — staged `.uploading-*`
+volume uploads with remote sha256 verified against the CI artifacts before
+rename, all 24 env keys in one `railway variables --skip-deploys`, portal JS
+rebuilt locally, one `railway up`. Verified live: signed 200 payloads for
+0.2.0 clients on appimage/deb/nsis, 204 for 0.2.5 clients, /web-api/releases
+all 0.2.5, download headers + full-GET sha match on all three files, portal
+serving the "Performance home in Settings" What's New copy. Release theme:
+Settings → Performance section, NVIDIA graphics self-heal (an install left on
+"accelerated" by the old promotion notification is rewritten to auto at first
+0.2.5 boot — verified end-to-end by booting the actual release AppImage
+against a seeded config), WebGL refused on NVIDIA sessions, session-snapshot
+and resize-observer waste fixes. The heal was also the fix for the live
+one-char-behind incident on Ellis's machine. Announcement email still unsent.

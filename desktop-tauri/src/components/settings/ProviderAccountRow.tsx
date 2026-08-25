@@ -2,6 +2,7 @@ import { accountWorking, providerStatusLabel } from "../../lib/providerAccountPo
 import type { ProviderAccount, ProviderIntegration } from "../../providerTypes";
 import { ProviderAccountActions } from "./ProviderAccountActions";
 import { ProviderAccountReply } from "./ProviderAccountReply";
+import { ProviderAccountUse } from "./ProviderAccountUse";
 
 interface Props {
   provider: ProviderIntegration;
@@ -53,6 +54,7 @@ export function ProviderAccountRow({
           <i aria-hidden="true" />{providerStatusLabel(account)}
         </span>
         <p>{account.detail}</p>
+        <ProviderAccountUse provider={provider} account={account} />
       </div>
 
       <ProviderAccountActions

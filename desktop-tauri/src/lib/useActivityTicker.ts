@@ -4,7 +4,7 @@ import { useNotificationPrefs } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { activityFor, type ActivityState } from "./activity";
 import { detectTransitions, type SessionPhase } from "./activityTransitions";
-import { notifyActivityTransitions } from "./notificationTriggers";
+import { dismissSettledPrompts, notifyActivityTransitions } from "./notificationTriggers";
 import { windowIsFocused } from "./windowFocus";
 
 const ACTIVITY_TICK_MS = 1_500;
@@ -28,6 +28,9 @@ export function useActivityTicker(): void {
         next[pane.id] = activityFor(pane.id);
       }
       applyActivity(next);
+      // Before the edges, so a prompt answered in the pane loses its toast on
+      // the same tick the pane stops asking.
+      dismissSettledPrompts(next);
       const result = detectTransitions(phases, next, {
         now: Date.now(),
         focusedId: useTerminalStore.getState().focusedId,

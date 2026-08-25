@@ -13,7 +13,7 @@ import { useProjectStore } from "../../state/projectStore";
 import { useProviderAccountStore } from "../../state/providerAccountStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { connectedAccounts } from "../../lib/providerAccountPolicy";
+import { activeAccountId, connectedAccounts } from "../../lib/providerAccountPolicy";
 import { LaunchAccountPicker } from "./LaunchAccountPicker";
 import { LaunchAdvancedOptions } from "./LaunchAdvancedOptions";
 import { LaunchEffortPicker } from "./LaunchEffortPicker";
@@ -32,6 +32,7 @@ export function LaunchSettingsPanel() {
   const accountsLoaded = useProviderAccountStore((s) => s.loaded);
   const providers = useProviderAccountStore((s) => s.providers);
   const enabledAgentIds = useSettingsStore((s) => s.settings?.enabledAgentIds ?? NO_AGENT_IDS);
+  const activeAccounts = useSettingsStore((s) => s.settings?.activeProviderAccounts);
   const groups = useModelCatalogStore((s) => s.groups);
   const openPicker = useWorkspaceStore((s) => s.openAgentPicker);
   const openSettingsSection = useWorkspaceStore((s) => s.openSettingsSection);
@@ -68,9 +69,16 @@ export function LaunchSettingsPanel() {
   const runnerId = selected?.plan.runner?.id ?? null;
   const provider = providers.find((candidate) => candidate.runtimeId === runnerId) ?? null;
   const accounts = provider ? connectedAccounts(provider) : [];
+  // Falls back to the company's account in Settings → Integrations, not to
+  // whichever login happens to sort first: this picker is a per-project
+  // override, and an untouched one has to show what it is inheriting.
   const selectedAccount =
     accounts.find((account) => account.accountId === settings.accountByProvider[runnerId ?? ""])
       ?.accountId ??
+    accounts.find(
+      (account) =>
+        account.accountId === activeAccountId(activeAccounts, runnerId ?? ""),
+    )?.accountId ??
     accounts[0]?.accountId ??
     "";
 

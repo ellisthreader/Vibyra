@@ -1,9 +1,13 @@
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use tauri::State;
+use tauri::{AppHandle, State};
 use vibyra_core::agents::program_in_path;
+
+use super::voice_level::spawn_level_meter;
 
 use crate::ai_usage::{voice_cost_usd, AiCall};
 use crate::state::AppState;
@@ -12,6 +16,14 @@ use crate::state::AppState;
 pub struct VoiceRecording {
     child: Child,
     path: PathBuf,
+    /// Cleared when the capture ends, which is what stops the level meter.
+    metering: Arc<AtomicBool>,
+}
+
+impl VoiceRecording {
+    fn end_metering(&self) {
+        self.metering.store(false, Ordering::Relaxed);
+    }
 }
 
 #[derive(Serialize)]
@@ -24,11 +36,11 @@ pub struct VoiceStatus {
 pub const VOICE_MODEL: &str = "whisper-1";
 
 const SAMPLE_RATE: u32 = 16_000;
-const BYTES_PER_SECOND: usize = SAMPLE_RATE as usize * 2;
+pub(super) const BYTES_PER_SECOND: usize = SAMPLE_RATE as usize * 2;
 /// Whisper is billed by the minute, so a recorder that never stopped — a stuck
 /// key, a crashed UI — is the expensive failure here. Audio past this point is
 /// discarded before it is ever uploaded.
-const MAX_RECORDING_SECONDS: usize = 120;
+pub(super) const MAX_RECORDING_SECONDS: usize = 120;
 
 #[tauri::command]
 pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
@@ -39,7 +51,7 @@ pub async fn voice_status(state: State<'_, AppState>) -> Result<VoiceStatus, Str
 }
 
 #[tauri::command]
-pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
+pub async fn voice_start(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     stop_recorder(&state);
     // Checked before the microphone opens: being refused after speaking a
     // whole sentence is a worse experience than being told up front.
@@ -59,7 +71,15 @@ pub async fn voice_start(state: State<'_, AppState>) -> Result<(), String> {
     let child = command
         .spawn()
         .map_err(|e| format!("could not start recording: {e}"))?;
-    *state.voice.lock() = Some(VoiceRecording { child, path });
+    // The meter reads the file the capture is already writing, so dictation
+    // needs no second microphone client and no new permission.
+    let metering = Arc::new(AtomicBool::new(true));
+    spawn_level_meter(app, path.clone(), Arc::clone(&metering));
+    *state.voice.lock() = Some(VoiceRecording {
+        child,
+        path,
+        metering,
+    });
     Ok(())
 }
 
@@ -71,6 +91,7 @@ pub async fn voice_stop(
     let Some(mut recording) = state.voice.lock().take() else {
         return Ok(None);
     };
+    recording.end_metering();
     let _ = recording.child.kill();
     let _ = recording.child.wait();
     let raw = std::fs::read(&recording.path).unwrap_or_default();
@@ -143,6 +164,7 @@ async fn transcribe(wav: Vec<u8>, key: String) -> Result<String, String> {
 
 fn stop_recorder(state: &State<'_, AppState>) {
     if let Some(mut recording) = state.voice.lock().take() {
+        recording.end_metering();
         let _ = recording.child.kill();
         let _ = recording.child.wait();
         let _ = std::fs::remove_file(&recording.path);

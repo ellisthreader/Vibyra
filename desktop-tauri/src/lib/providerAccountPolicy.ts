@@ -44,6 +44,25 @@ function providerConnected(provider: ProviderIntegration): boolean {
   return provider.accounts.some((account) => account.status === "connected");
 }
 
+/** The id the settings map uses for the login every install already had. */
+export const DEFAULT_ACCOUNT = "default";
+
+/**
+ * Panes address the first account as `null`, because it is the absence of a
+ * redirect rather than a place; the settings map has to name it to store it.
+ */
+export function paneAccountId(accountId: string): string | null {
+  return accountId === DEFAULT_ACCOUNT ? null : accountId;
+}
+
+/** Which account this company's terminals currently run as. */
+export function activeAccountId(
+  accounts: Record<string, string> | undefined,
+  providerId: string,
+): string {
+  return accounts?.[providerId] ?? DEFAULT_ACCOUNT;
+}
+
 /** The accounts a launcher may run as. */
 export function connectedAccounts(provider: ProviderIntegration): ProviderAccount[] {
   return provider.accounts.filter((account) => account.status === "connected");

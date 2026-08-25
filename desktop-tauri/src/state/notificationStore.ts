@@ -18,7 +18,8 @@ import { create } from "zustand";
 import { cueFor, createOsGate, shouldEscalate, shouldShow } from "../lib/notificationPolicy";
 import { playCue } from "../lib/notificationSounds";
 import { allowCue, soundGate } from "../lib/soundGate";
-import { enqueue, timeoutFor } from "./notificationQueue";
+import { enqueue, nextPinned } from "./notificationQueue";
+import { armTimer, clearAllTimers, clearTimer, pauseTimers } from "./notificationTimers";
 import type { NotificationInput, NotificationItem, NotificationPrefs } from "../notificationTypes";
 
 /** Both arrays are stored fields seeded from this one constant. No selector in
@@ -26,17 +27,6 @@ import type { NotificationInput, NotificationItem, NotificationPrefs } from "../
  * (the NO_PROJECTS lesson in settingsStore.ts). */
 const EMPTY: NotificationItem[] = [];
 
-/** Auto-dismiss timers live outside the store so state stays serialisable and
- * a re-render can never re-arm one. */
-interface Armed {
-  handle: number;
-  /** Wall-clock deadline, so a pause can bank the time that is left. */
-  dueAt: number;
-  remainingMs: number;
-}
-
-const timers = new Map<number, Armed>();
-let paused = false;
 const osGate = createOsGate();
 
 let seq = 0;
@@ -57,22 +47,14 @@ export function setFocusProbe(fn: FocusProbe): void {
   isFocused = fn;
 }
 
-function clearTimer(id: number): void {
-  const armed = timers.get(id);
-  if (armed) {
-    window.clearTimeout(armed.handle);
-    timers.delete(id);
-  }
-}
-
-function clearAllTimers(): void {
-  for (const armed of timers.values()) window.clearTimeout(armed.handle);
-  timers.clear();
-}
-
 interface NotificationStore {
   history: NotificationItem[];
   visible: NotificationItem[];
+  /** The one notice drawn in the banner slot above the workspace, or none. */
+  pinned: NotificationItem | null;
+  /** Notices the stack could not fit since it was last empty. Drawn as one
+   * "+N more" row rather than allowed to vanish silently. */
+  overflow: number;
   unread: number;
   centreOpen: boolean;
   prefs: NotificationPrefs | null;
@@ -88,6 +70,8 @@ interface NotificationStore {
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
   history: EMPTY,
   visible: EMPTY,
+  pinned: null,
+  overflow: 0,
   unread: 0,
   centreOpen: false,
   prefs: null,
@@ -102,12 +86,14 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     set({
       history: result.history,
       visible: result.visible,
+      pinned: nextPinned(state.pinned, result.item),
+      overflow: state.overflow + result.evicted.length,
       unread: result.history.reduce((total, item) => (item.read ? total : total + 1), 0),
     });
-    arm(result.item, get().dismiss);
+    armTimer(result.item, get().dismiss);
     if (result.isRepeat) return; // a repeat never replays a sound or re-escalates
     const cue = cueFor(state.prefs, result.item);
-    if (allowCue(soundGate, cue, result.item.category, now)) {
+    if (allowCue(soundGate, cue, result.item.kind, now)) {
       playCue(cue, state.prefs?.volume ?? 0);
     }
     const ctx = { focused: isFocused(), isRepeat: false, now };
@@ -117,13 +103,20 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   dismiss: (id) => {
     clearTimer(id);
     // History keeps the item — dismissing a toast is not reading it.
-    const visible = get().visible.filter((item) => item.id !== id);
-    set({ visible: visible.length === 0 ? EMPTY : visible });
+    const state = get();
+    const visible = state.visible.filter((item) => item.id !== id);
+    set({
+      visible: visible.length === 0 ? EMPTY : visible,
+      pinned: state.pinned?.id === id ? null : state.pinned,
+      // The counter belongs to a run of stacked toasts; an empty stack has
+      // nothing left to be "more" than.
+      overflow: visible.length === 0 ? 0 : state.overflow,
+    });
   },
 
   dismissAllToasts: () => {
     clearAllTimers();
-    set({ visible: EMPTY });
+    set({ visible: EMPTY, overflow: 0 });
   },
 
   markAllRead: () => {
@@ -133,55 +126,18 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   clearHistory: () => {
     clearAllTimers();
-    set({ history: EMPTY, visible: EMPTY, unread: 0 });
+    set({ history: EMPTY, visible: EMPTY, pinned: null, overflow: 0, unread: 0 });
   },
 
-  setCentreOpen: (centreOpen) => set({ centreOpen }),
+  // Opening the centre is where the overflow went, so the counter has served
+  // its purpose the moment the user looks.
+  setCentreOpen: (centreOpen) => set(centreOpen ? { centreOpen, overflow: 0 } : { centreOpen }),
 
   setPrefs: (prefs) => set({ prefs }),
 }));
 
-function schedule(id: number, ms: number, dismiss: (id: number) => void): void {
-  timers.set(id, {
-    handle: window.setTimeout(() => {
-      timers.delete(id);
-      dismiss(id);
-    }, ms),
-    dueAt: Date.now() + ms,
-    remainingMs: ms,
-  });
-}
-
-function arm(item: NotificationItem, dismiss: (id: number) => void): void {
-  clearTimer(item.id);
-  const ms = item.timeoutMs ?? timeoutFor(item.severity);
-  if (ms <= 0) return; // sticky
-  if (paused) {
-    // Armed but not running: a toast that arrives while the user is reading the
-    // stack must not start counting down behind their cursor.
-    timers.set(item.id, { handle: 0, dueAt: 0, remainingMs: ms });
-    return;
-  }
-  schedule(item.id, ms, dismiss);
-}
-
-/**
- * Hovering the stack freezes every countdown, and leaving resumes from where it
- * stopped rather than restarting. The CSS timer bar pauses on the same event,
- * so bar and deadline stay in step — a bar that empties while the toast lingers
- * (or the reverse) reads as a bug.
- */
+/** The stack's hover handler. Thin wrapper so the timers module never has to
+ * import the store it would otherwise close a cycle with. */
 export function setTimersPaused(next: boolean): void {
-  if (paused === next) return;
-  paused = next;
-  const dismiss = useNotificationStore.getState().dismiss;
-  const now = Date.now();
-  for (const [id, armed] of timers) {
-    if (next) {
-      window.clearTimeout(armed.handle);
-      timers.set(id, { handle: 0, dueAt: 0, remainingMs: Math.max(0, armed.dueAt - now) });
-    } else {
-      schedule(id, armed.remainingMs, dismiss);
-    }
-  }
+  pauseTimers(next, useNotificationStore.getState().dismiss);
 }

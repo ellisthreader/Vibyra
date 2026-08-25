@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -45,6 +46,13 @@ pub struct Settings {
     pub renderer_mode: String,
     /// AI CLI integrations explicitly enabled for terminal model selection.
     pub enabled_agent_ids: Vec<String>,
+    /// Which login each company's terminals run as, by provider id. Absent
+    /// means the CLI's own folder — the account every install already had.
+    ///
+    /// Persisted because a switch has to outlive the panes it moved: opening a
+    /// new terminal after changing account must not quietly reach for the old
+    /// one's credits. Sorted so the settings file stays diffable.
+    pub active_provider_accounts: BTreeMap<String, String>,
     /// Spend guardrails for the user's own OpenAI key, enforced before every
     /// billed call. Zero disables that particular cap.
     pub ai_daily_call_cap: u32,
@@ -78,6 +86,7 @@ impl Default for Settings {
             screenshot_shortcut: "F9".to_string(),
             renderer_mode: "auto".to_string(),
             enabled_agent_ids: Vec::new(),
+            active_provider_accounts: BTreeMap::new(),
             ai_daily_call_cap: 250,
             ai_hourly_call_cap: 60,
             ai_daily_spend_cap_usd: 2.0,

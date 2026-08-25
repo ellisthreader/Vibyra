@@ -1,6 +1,7 @@
 import { useProjectStore } from "../state/projectStore";
 import { useNotificationStore } from "../state/notificationStore";
 import { useSettingsStore } from "../state/settingsStore";
+import { useUpdateStore } from "../state/updateStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import type { NotificationAction } from "../notificationTypes";
@@ -43,8 +44,8 @@ async function enableAcceleratedGraphics(): Promise<void> {
   try {
     await settings.update({ rendererMode: "accelerated" });
     useNotificationStore.getState().push({
-      category: "performance",
-      severity: "success",
+      kind: "performance",
+      tier: "done",
       title: "GPU rendering is ready for next launch",
       body: "Restart Vibyra when convenient. Your running terminals were left untouched.",
       dedupeKey: "perf:accelerated-staged",
@@ -52,8 +53,8 @@ async function enableAcceleratedGraphics(): Promise<void> {
     });
   } catch {
     useNotificationStore.getState().push({
-      category: "performance",
-      severity: "warning",
+      kind: "performance",
+      tier: "risk",
       title: "Graphics mode could not be changed",
       body: "Open Graphics settings and choose Accelerated manually.",
       dedupeKey: "perf:accelerated-stage-failed",
@@ -88,11 +89,23 @@ export function runNotificationAction(action: NotificationAction): void {
     case "openModelPicker":
       workspace.openAgentPicker();
       return;
+    case "downloadUpdate":
+      void useUpdateStore.getState().download();
+      return;
+    case "restartForUpdate":
+      // Two clicks, still: this window holds live terminal sessions, and the
+      // swap only happens on an explicit choice. The tier says as much.
+      void useUpdateStore.getState().restart();
+      return;
+    case "openUpdateSettings":
+      workspace.openSettingsSection("updates");
+      return;
     case "openPreview":
       if (typeof action.arg === "string") {
         void useProjectStore.getState().activate(action.arg);
       }
-      useWorkspaceStore.getState().setProjectMode("preview");
+      // Split, not full preview: the pane that raised the notice stays visible.
+      useWorkspaceStore.getState().setStageLayout("split");
       return;
     default:
       return;

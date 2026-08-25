@@ -1,0 +1,299 @@
+VIBYRA RUST/TAURI ACCOUNT AUTHENTICATION PLAN
+Reviewed: 18 August 2026
+
+GOAL
+
+After downloading Vibyra Desktop, a user must be able to create or access a
+Vibyra account using Google, Apple, or email. A returning session must restore
+securely, the authenticated user must be able to see and update their profile
+in Settings, and they must be able to log out. All new surfaces must use a
+clean, restrained Graphite and Cobalt desktop design.
+
+
+CURRENT POSITION
+
+1. The Rust/Tauri application currently starts the workspace without a Vibyra
+   account gate.
+2. Native state manages terminals, settings, AI-provider accounts, and local
+   secrets, but it does not manage the user's Vibyra account session.
+3. Settings currently contains General, Integrations, Custom agents, and
+   Shortcuts. It does not contain a Profile section.
+4. The title bar currently exposes a Settings button rather than a user avatar
+   and account menu.
+5. The Laravel backend already provides the required account contracts:
+   - Email signup and login
+   - Google and Apple desktop browser OAuth
+   - Session verification, rotation, and logout
+   - Password recovery and email verification
+   - Profile updates
+   - Signed-in device/session management
+6. Settings > Integrations already connects Codex, Claude, and Gemini provider
+   accounts. These AI billing/runtime accounts must remain separate from the
+   user's Vibyra account identity.
+
+
+RECOMMENDED ARCHITECTURE
+
+React authentication and profile UI
+        |
+        | Safe Tauri IPC commands only
+        v
+Native Rust AccountSessionManager
+        |-- Laravel Vibyra account API
+        |-- Operating-system credential store
+        `-- System browser for Google and Apple
+
+The bearer token, provider authorization URL, OAuth flow ID, and credential
+storage must remain native-side. React may receive only safe account details
+and status such as name, email, provider, plan, verification state, loading
+state, and errors suitable for display.
+
+
+PHASE 1 - NATIVE ACCOUNT FOUNDATION
+
+1. Add focused Rust modules for:
+   - Account API requests
+   - Account/session state
+   - Google and Apple OAuth attempts
+   - Renderer-safe account types
+   - Tauri account commands
+2. Add AccountSessionManager to native AppState.
+3. Extend the existing SecretStore with a separate
+   "vibyra-account-session" credential entry.
+4. Store the bearer token only in Keychain, Windows Credential Manager, or
+   Linux Secret Service. Never store it in Settings JSON, localStorage, logs,
+   or renderer state.
+5. Generate one stable native installation ID and a truthful device label for
+   backend session/device records.
+6. Add one native account API client using the existing reqwest dependency:
+   - Production Vibyra API as the packaged default
+   - Explicit loopback override for development
+   - Enumerated endpoint paths rather than renderer-provided URLs
+   - Bounded request timeout and one retry for backend cold starts
+7. Expose narrow commands for:
+   - Restoring and verifying a saved session
+   - Email login
+   - Email signup
+   - Starting/cancelling Google or Apple authorization
+   - Reading and refreshing the safe profile
+   - Updating the profile
+   - Password recovery and email-verification resend
+   - Logging out
+8. Keep every new first-party Rust and TypeScript source file within the
+   repository's 200-line limit.
+
+Checkpoint:
+Native tests prove that credentials stay out of every renderer-facing payload,
+invalid API paths cannot be requested, and credentials are written and removed
+atomically.
+
+
+PHASE 2 - AUTHENTICATION GATE AND WELCOME SCREEN
+
+1. Add a focused account store with these explicit states:
+   - Restoring
+   - Signed out
+   - Authorizing
+   - Signed in
+   - Retryable connection error
+2. Make session restoration the first startup checkpoint. Projects, agents,
+   models, shortcuts, and workspace state should initialize only after the
+   account gate succeeds.
+3. Create a full-window authentication surface using:
+   - The existing front-auth-desktop-4k.webp artwork
+   - The canonical cobalt Vibyra mark
+   - Graphite foundations and restrained cobalt interaction colour
+   - A minimal draggable title area and native window controls
+4. Keep three clear primary choices:
+   - Continue with Google
+   - Continue with Apple
+   - Continue with email
+5. Use real Google and Apple SVG marks rather than placeholder letters.
+6. Google and Apple use a unified Continue flow. The backend determines whether
+   the verified provider identity signs into an existing account or creates a
+   new Vibyra account. Do not add separate social signup and login pages.
+7. Continue with email expands one compact form with a Log in/Create account
+   switch:
+   - Login: email and password
+   - Signup: name, email, and password of at least eight characters
+8. Keep provider progress and provider failures beside the provider buttons.
+   Keep email validation and server errors inside the email form.
+9. Include Forgot password, Privacy Policy, and Terms of Service links.
+10. Do not add quizzes, onboarding routes, marketing dashboards, or extra
+    account-choice pages. Successful authentication enters the existing native
+    workspace directly.
+
+Checkpoint:
+Fresh-install email signup, email login, Google, and Apple all reach the same
+authenticated account state without exposing a token to React.
+
+
+PHASE 3 - GOOGLE AND APPLE DESKTOP OAUTH
+
+1. Native Rust calls /api/auth/desktop/{provider}/start with the installation
+   ID and device label.
+2. Validate the returned HTTPS authorization URL and open it in the user's
+   system browser.
+3. Retain the OAuth URL and flow ID native-side.
+4. Poll the one-time status endpoint until the attempt is pending, complete,
+   failed, cancelled, or expired.
+5. Show honest inline progress such as "Finish signing in with Google in your
+   browser" together with Cancel.
+6. On completion, consume the result once, verify the returned session through
+   /api/session, then atomically persist it in the operating-system credential
+   store.
+7. Provide Try again after failure or expiry. Never fake success or silently
+   replace social authentication with email login.
+
+Checkpoint:
+Cancellation, browser denial, timeout, expired flows, one-time result pickup,
+new provider accounts, and existing provider accounts are covered by tests.
+
+
+PHASE 4 - ACCOUNT MENU, PROFILE, AND LOGOUT
+
+1. Replace the title-bar Settings gear with a quiet account avatar showing the
+   user's first initial. Use an image only if the backend later provides a
+   trusted profile-image URL.
+2. Keep the account dropdown sparse:
+   - Name and email
+   - Settings
+   - Log out
+3. Add Profile as the first Settings section and visually separate it from the
+   existing AI Integrations section.
+4. Profile shows truthful backend data only:
+   - Display name
+   - Email address
+   - Email verification state
+   - Sign-in provider
+   - Current plan
+5. Allow display-name updates.
+6. Allow email changes only for email accounts. Google and Apple email remains
+   provider-managed, matching the backend contract.
+7. Provide password recovery for email accounts and verification resend when
+   the email is unverified.
+8. Put Log out in both the account dropdown and Profile.
+9. If terminals are running, show an inline confirmation explaining that
+   logout will close them. Closing them prevents the next account from
+   inheriting terminal output or active processes.
+10. Logout should:
+    - Revoke the backend session when reachable
+    - Close account-bound running terminal sessions after confirmation
+    - Clear the native credential entry
+    - Clear account-scoped renderer state
+    - Return immediately to the authentication screen
+
+Checkpoint:
+The profile refreshes from the backend, edits obey provider rules, and no
+authenticated workspace remains visible after logout.
+
+
+PHASE 5 - SESSION RESILIENCE AND SECURITY
+
+1. Verify a restored credential before exposing the workspace.
+2. Clear a saved session only after an authoritative HTTP 401 or 403.
+3. On a network failure or backend 5xx response, preserve the credential and
+   show a stable Retry state instead of falsely reporting that the user was
+   logged out.
+4. If the operating-system credential store is unavailable, permit a
+   current-process session with a clear "sign in again next time" notice.
+   Never fall back to plaintext credential storage.
+5. Support controlled token rotation through
+   /api/auth/session/rotate and replace the stored token atomically.
+6. Redact passwords, tokens, OAuth URLs, flow IDs, and identity payloads from
+   application logs and user-facing errors.
+7. Do not accept arbitrary account API URLs or HTTP methods from the renderer.
+8. Keep Vibyra account identity separate from AI account Integrations in code,
+   state, copy, and Settings navigation.
+
+Checkpoint:
+Restart, expired session, revoked session, transient outage, unavailable
+credential store, malformed backend response, and token rotation all fail
+safely and predictably.
+
+
+PHASE 6 - VISUAL AND ACCESSIBILITY PASS
+
+1. Keep authentication always dark, cinematic, and restrained: one background,
+   one logo, three provider actions, and one expandable email form.
+2. Use the approved Graphite and Cobalt system. Reserve cobalt for primary
+   actions, focus, provider progress, and meaningful state.
+3. Avoid decorative glow, oversized cards, dashboard widgets, excessive pills,
+   and repeated explanatory copy.
+4. Keep authentication buttons and form controls aligned, comfortably spaced,
+   and stable while loading.
+5. Expand Settings to one stable desktop frame with a fixed navigation rail and
+   one scrolling detail pane. Do not make short sections resize the modal.
+6. Use a neutral selected navigation row and restrained cobalt focus styling.
+7. Add complete modal behavior:
+   - Move focus inside when opened
+   - Trap focus
+   - Make the background inert
+   - Close on Escape
+   - Restore focus to the opener
+8. Support keyboard-only operation, screen-reader labels, reduced motion, and
+   visible focus in every authentication and account action.
+9. Review the live native application at:
+   - 1440 x 900
+   - 1180 x 780
+   - The current 960 x 600 minimum window size
+10. Review Profile and the account menu in dark and light themes. Authentication
+    remains consistently dark.
+
+Checkpoint:
+No clipped provider label, wrapped primary action, inaccessible modal, jumping
+Settings frame, or contrast failure is present at supported window sizes.
+
+
+BACKEND AND RELEASE CONFIGURATION
+
+1. Reuse the existing Laravel endpoints; no duplicate authentication API is
+   required for the initial implementation.
+2. Configure and verify the production provider credentials:
+   - GOOGLE_DESKTOP_CLIENT_ID
+   - GOOGLE_DESKTOP_CLIENT_SECRET
+   - GOOGLE_DESKTOP_REDIRECT_URI
+   - APPLE_DESKTOP_CLIENT_ID
+   - APPLE_DESKTOP_CLIENT_SECRET, or Apple team/key/private-key fields
+   - APPLE_DESKTOP_REDIRECT_URI
+3. Register the exact HTTPS Google and Apple callback URLs with each provider.
+4. Verify provider flows against the production backend from an installed
+   application, not only from the development server.
+
+
+TEST AND RELEASE GATES
+
+1. Fresh-install email signup.
+2. Returning email login.
+3. New and existing Google accounts.
+4. New and existing Apple accounts, including Apple's first-login name result.
+5. OAuth cancellation, denial, expiry, retry, and one-time result consumption.
+6. Restarted-app session restoration.
+7. Authoritative session expiry and remote revocation.
+8. Profile update and provider-managed email restrictions.
+9. Email verification resend and password recovery.
+10. Logout with zero, one, and multiple running terminals.
+11. Tests proving credentials never reach renderer-facing types or Settings.
+12. Existing backend authentication, provider, account, and session feature
+    tests remain passing.
+13. Run the complete native frontend/Rust checks:
+    - npm --prefix desktop-tauri test
+    - npm --prefix desktop-tauri run typecheck
+    - npm --prefix desktop-tauri run build
+    - npm --prefix desktop-tauri run rust:fmt
+    - npm --prefix desktop-tauri run rust:clippy
+    - npm --prefix desktop-tauri run rust:test
+    - node scripts/check-desktop-lines.mjs
+14. Build the packaged application and complete a live provider-login test on
+    each supported operating system before release.
+
+
+DEFINITION OF DONE
+
+The work is complete only when a fresh installed copy of Vibyra Desktop can
+create or access a real Vibyra account using email, Google, or Apple; securely
+restore that account after restart; show accurate profile information in
+Settings; update permitted profile fields; and log out without exposing the
+previous account or terminal state. The complete experience must be verified
+in the real Tauri window and packaged application, not only through unit tests
+or browser mocks.

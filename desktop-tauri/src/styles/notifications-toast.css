@@ -41,22 +41,31 @@
   animation: fade-up 200ms var(--e-hero);
 }
 
-/* --- severity rail --- */
+/* --- tier rail --- */
 
-.vtoast--info {
-  --vtone: var(--accent);
+.vtoast--ask {
+  --vtone: var(--ask);
 }
 
-.vtoast--success {
-  --vtone: var(--success);
+.vtoast--fail {
+  --vtone: var(--danger);
 }
 
-.vtoast--warning {
+.vtoast--risk {
   --vtone: var(--amber);
 }
 
-.vtoast--danger {
-  --vtone: var(--danger);
+.vtoast--busy {
+  --vtone: var(--accent);
+}
+
+.vtoast--done {
+  --vtone: var(--success);
+}
+
+/* News is the one tier that should not catch the eye at all. */
+.vtoast--news {
+  --vtone: var(--dim);
 }
 
 .vtoast::before {
@@ -73,4 +82,31 @@
    needs the rail nearer full strength to read as a status edge at 2px. */
 :root[data-theme="light"] .vtoast::before {
   background: color-mix(in srgb, var(--vtone) 72%, transparent);
+}
+
+/* A sticky card that never changes is furniture inside half a minute, and the
+   whole point of `ask` is that an agent is stopped until you look. Two pixels
+   of opacity is the cheapest thing that stays findable in peripheral vision —
+   and it is the only thing in the product that moves while at rest, so it
+   cannot be mistaken for anything else. */
+@keyframes vtoast-ask {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--vtone) 38%, transparent);
+  }
+
+  50% {
+    background: var(--vtone);
+  }
+}
+
+.vtoast--ask::before {
+  animation: vtoast-ask 2.4s var(--e-standard) infinite;
+}
+
+/* Reduced motion loses the pulse, so the rail has to carry it standing still. */
+@media (prefers-reduced-motion: reduce) {
+  .vtoast--ask::before {
+    background: var(--vtone);
+  }
 }

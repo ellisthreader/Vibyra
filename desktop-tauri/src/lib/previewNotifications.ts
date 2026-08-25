@@ -24,8 +24,8 @@ export function previewNotification(
 
   if (next.phase === "running" && previous?.phase === "starting") {
     return {
-      category: "preview",
-      severity: "info",
+      kind: "preview",
+      tier: "done",
       title: "Preview is running",
       body: next.url ?? undefined,
       dedupeKey: `preview:${next.targetId}`,
@@ -37,12 +37,11 @@ export function previewNotification(
 
   if (next.phase === "failed" && previous && LIVE.includes(previous.phase)) {
     return {
-      category: "preview",
-      severity: "danger",
+      kind: "preview",
+      tier: "fail",
       title: "Preview stopped unexpectedly",
       body: reason(next),
       dedupeKey: `preview:${next.targetId}`,
-      timeoutMs: 0,
       action: { id: "openPreview", label: "Open preview" },
     };
   }

@@ -1,0 +1,68 @@
+/* Choosing which login a company's terminals run as.
+ *
+ * Its own file rather than more of settings-integration-accounts.css, which is
+ * already near the 200-line ceiling. Everything here hangs off one row of the
+ * account list and never restyles the row itself. */
+
+.integration-account-use {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 6px;
+}
+
+.integration-account-use em {
+  font-style: normal;
+  font-size: 11.5px;
+  opacity: 0.66;
+  min-width: 0;
+}
+
+/* The account already in use states a fact rather than offering an action, so
+ * it is a quiet badge and not a disabled button. */
+.integration-account-use--active {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--vb-success, #3fbf7f);
+  opacity: 0.9;
+}
+
+.integration-account-use__go,
+.integration-account-use__keep {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--vb-border, rgba(127, 127, 127, 0.28));
+  background: var(--vb-surface-1, rgba(127, 127, 127, 0.08));
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.integration-account-use__go:hover:not(:disabled),
+.integration-account-use__keep:hover:not(:disabled) {
+  background: var(--vb-surface-3, rgba(127, 127, 127, 0.16));
+  border-color: var(--vb-border-strong, rgba(127, 127, 127, 0.4));
+}
+
+.integration-account-use__go:disabled,
+.integration-account-use__keep:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Interrupting an agent mid-answer is the one outcome here that cannot be
+ * undone, so the confirm reads as a warning rather than as more of the row. */
+.integration-account-use--confirm em {
+  opacity: 0.95;
+  color: var(--vb-warning, #d8a13a);
+}
+
+.integration-account-use--confirm .integration-account-use__go {
+  border-color: var(--vb-warning, #d8a13a);
+}

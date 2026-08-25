@@ -1,0 +1,91 @@
+/* The `busy` tier: a bar that fills, and the row that stands in for the
+   notices the stack could not fit.
+
+   Kept apart from `notifications-toast-motion.css` on purpose — that sheet
+   owns the timer bar, which drains to say "this is about to leave". Reusing it
+   for work in progress would read as a countdown to nothing, so the two live
+   in different files and share only their 2px height and their corner. */
+
+.vtoast__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--vtone) 16%, transparent);
+  overflow: hidden;
+}
+
+.vtoast__progress i {
+  display: block;
+  height: 100%;
+  width: var(--vtoast-pct, 0%);
+  background: var(--vtone);
+  /* Progress arrives in chunks, not on a clock. Easing the width keeps a
+     lumpy stream from reading as a stuttering bar. */
+  transition: width var(--t-soft) var(--e-standard);
+}
+
+/* A response with no content-length leaves the percentage unknowable, which is
+   common enough to deserve a real state rather than a bar stuck at zero. */
+.vtoast__progress--unknown i {
+  width: 34%;
+  transition: none;
+  animation: vtoast-sweep 1.5s var(--e-standard) infinite;
+}
+
+@keyframes vtoast-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A bar sliding back and forth is the worst offender on this surface. A
+     still, half-strength fill still says "under way". */
+  .vtoast__progress--unknown i {
+    width: 100%;
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* ---------- overflow ---------- */
+
+/* Evicted toasts used to vanish. They now collapse to one row that opens the
+   bell, so the stack can stay at three without anything being lost. */
+.vtoast-more {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  align-self: stretch;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu), var(--e-inset-hi);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+  text-align: left;
+  cursor: pointer;
+  animation: fade-up 200ms var(--e-hero);
+  transition:
+    background var(--t-ui) var(--e-standard),
+    color var(--t-ui) var(--e-standard);
+}
+
+.vtoast-more:hover {
+  background: var(--hover-strong);
+  color: var(--text);
+}
+
+.vtoast-more svg {
+  flex-shrink: 0;
+  color: var(--dim);
+}

@@ -1,13 +1,9 @@
 // Pure queue logic behind `notificationStore`. No React, no zustand, no
 // timers — everything here is a function of (state, input, now), which is what
-// makes the coalescing rules testable in plain Node.
+// makes the coalescing and ordering rules testable in plain Node.
 
-import type {
-  NotificationCategory,
-  NotificationInput,
-  NotificationItem,
-  NotificationSeverity,
-} from "../notificationTypes";
+import { rankFor } from "../lib/notificationTiers.ts";
+import type { NotificationInput, NotificationItem, NotificationKind } from "../notificationTypes";
 
 /** History is a capped ring; the bell is a glance surface, not an archive. */
 export const HISTORY_MAX = 100;
@@ -15,28 +11,24 @@ export const HISTORY_MAX = 100;
 export const TOAST_MAX = 3;
 /** Same dedupeKey inside this window collapses onto the existing item. */
 export const COALESCE_WINDOW_MS = 8_000;
-/** Same category inside this window is one event to a human, not N. */
+/** Same kind inside this window is one event to a human, not N. */
 export const BURST_MS = 1_200;
 
-export function timeoutFor(severity: NotificationSeverity): number {
-  if (severity === "danger") return 0; // sticky: failures must be acknowledged
-  if (severity === "warning") return 8_000;
-  return severity === "success" ? 5_000 : 4_500;
-}
-
-const SUMMARY: Record<NotificationCategory, string> = {
-  agentAttention: "agents need you",
-  agentDone: "agents finished",
-  agentFailed: "agents failed",
+const SUMMARY: Record<NotificationKind, string> = {
+  agent: "agent updates",
+  approval: "decisions waiting",
+  update: "update notices",
+  account: "account notices",
+  spend: "spend alerts",
   performance: "performance notices",
   preview: "preview updates",
-  aiSpend: "spend alerts",
   models: "model updates",
-  system: "app notices",
+  project: "project notices",
+  app: "app notices",
 };
 
-export function summaryTitle(category: NotificationCategory, count: number): string {
-  return `${count} ${SUMMARY[category]}`;
+export function summaryTitle(kind: NotificationKind, count: number): string {
+  return `${count} ${SUMMARY[kind]}`;
 }
 
 export interface QueueState {
@@ -54,6 +46,16 @@ export interface QueueResult extends QueueState {
   evicted: number[];
 }
 
+/**
+ * Level 0: an ongoing thing reporting its next state. Unbounded by time on
+ * purpose — a 40 MB download outlives the coalesce window by minutes, and the
+ * whole point is that it keeps one card the entire way.
+ */
+function replaceMatch(history: NotificationItem[], input: NotificationInput) {
+  if (input.replaceKey === undefined) return undefined;
+  return history.find((item) => item.replaceKey === input.replaceKey);
+}
+
 /** Level 1: an exact dedupeKey match still inside the coalesce window. */
 function exactMatch(history: NotificationItem[], input: NotificationInput, now: number) {
   if (input.dedupeKey === undefined) return undefined;
@@ -62,15 +64,24 @@ function exactMatch(history: NotificationItem[], input: NotificationInput, now: 
   );
 }
 
-/** Level 2: the newest item shares this category and arrived a blink ago. */
+/** Level 2: the newest item shares this kind and arrived a blink ago. */
 function burstMatch(history: NotificationItem[], input: NotificationInput, now: number) {
   const head = history[0];
-  if (!head || head.category !== input.category) return undefined;
+  if (!head || head.kind !== input.kind) return undefined;
   return now - head.at <= BURST_MS ? head : undefined;
 }
 
-function surface(visible: NotificationItem[], item: NotificationItem): QueueState["visible"] {
-  return [item, ...visible.filter((entry) => entry.id !== item.id)];
+/**
+ * The stack, ordered.
+ *
+ * Rank first, then recency — so an unanswered `ask` sits at the corner and a
+ * burst of finished agents queues behind it instead of scrolling it away. The
+ * sort must be stable within a rank, which `Array.sort` is, so the recency
+ * comparison alone settles ties.
+ */
+function surface(visible: NotificationItem[], item: NotificationItem): NotificationItem[] {
+  const next = [item, ...visible.filter((entry) => entry.id !== item.id)];
+  return next.sort((left, right) => rankFor(left.tier) - rankFor(right.tier) || right.at - left.at);
 }
 
 export function enqueue(
@@ -79,21 +90,62 @@ export function enqueue(
   id: number,
   now: number,
 ): QueueResult {
-  const target = exactMatch(state.history, input, now) ?? burstMatch(state.history, input, now);
-  const item: NotificationItem = target
-    ? collapse(target, now)
-    : { ...input, id, at: now, count: 1, read: false };
-  const history = target
-    ? [item, ...state.history.filter((entry) => entry.id !== item.id)]
-    : [item, ...state.history].slice(0, HISTORY_MAX);
+  const superseded = replaceMatch(state.history, input);
+  const target = superseded
+    ? undefined
+    : exactMatch(state.history, input, now) ?? burstMatch(state.history, input, now);
+  // A superseded notice keeps its id, so its timer, its DOM node and its place
+  // in the stack all survive the swap rather than the card flickering out and
+  // back in on every progress tick.
+  const item: NotificationItem = superseded
+    ? { ...input, id: superseded.id, at: now, count: 1, read: false }
+    : target
+      ? collapse(target, now)
+      : { ...input, id, at: now, count: 1, read: false };
+  const history =
+    superseded || target
+      ? [item, ...state.history.filter((entry) => entry.id !== item.id)]
+      : [item, ...state.history].slice(0, HISTORY_MAX);
+  // A supersede is a repeat only while the tier holds. A download ticking from
+  // 12% to 48% must not chime forty times; the moment it becomes "restart to
+  // finish" it is a different event, and that one has earned the cue and the
+  // desktop notification.
+  const isRepeat = superseded ? superseded.tier === item.tier : target !== undefined;
+  // A pinned notice draws in the banner slot, so it never spends a toast slot.
+  if (item.pinned) {
+    return {
+      history,
+      visible: state.visible.filter((entry) => entry.id !== item.id),
+      item,
+      isRepeat,
+      evicted: [],
+    };
+  }
   const stacked = surface(state.visible, item);
   return {
     history,
     visible: stacked.slice(0, TOAST_MAX),
     item,
-    isRepeat: target !== undefined,
+    isRepeat,
     evicted: stacked.slice(TOAST_MAX).map((entry) => entry.id),
   };
+}
+
+/**
+ * Who holds the banner slot after a push.
+ *
+ * The subtlety is the third case. A superseded notice keeps its id, so an
+ * update going from `ready` (pinned) to `error` (not pinned) hands back an item
+ * with the pinned item's id and `pinned` false. Without the id check the slot
+ * would keep the stale "Restart to finish" card while a failure toast said the
+ * opposite directly underneath it.
+ */
+export function nextPinned(
+  current: NotificationItem | null,
+  item: NotificationItem,
+): NotificationItem | null {
+  if (item.pinned) return item;
+  return current?.id === item.id ? null : current;
 }
 
 function collapse(target: NotificationItem, now: number): NotificationItem {
@@ -106,6 +158,6 @@ function collapse(target: NotificationItem, now: number): NotificationItem {
     at: now,
     count,
     read: false,
-    title: burst ? summaryTitle(target.category, count) : target.title,
+    title: burst ? summaryTitle(target.kind, count) : target.title,
   };
 }

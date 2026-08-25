@@ -7,16 +7,17 @@ import {
   HISTORY_MAX,
   TOAST_MAX,
   enqueue,
+  nextPinned,
   summaryTitle,
-  timeoutFor,
 } from "../src/state/notificationQueue.ts";
+import { timeoutFor } from "../src/lib/notificationTiers.ts";
 
 const EMPTY = { history: [], visible: [] };
 
 function input(overrides = {}) {
   return {
-    category: "agentDone",
-    severity: "success",
+    kind: "agent",
+    tier: "done",
     title: "Agent finished",
     ...overrides,
   };
@@ -45,20 +46,20 @@ test("the same key past the window is a new item", () => {
   assert.equal(second.item.count, 1);
 });
 
-test("two same-category items inside the burst window collapse to one summary", () => {
-  // No dedupeKey at all: level 2 has to catch this on category alone.
+test("two same-kind items inside the burst window collapse to one summary", () => {
+  // No dedupeKey at all: level 2 has to catch this on kind alone.
   let state = push(EMPTY, {}, 1_000);
   state = push(state, {}, 1_000);
   state = push(state, {}, 1_100);
   assert.equal(state.history.length, 1);
   assert.equal(state.visible.length, 1);
   assert.equal(state.item.count, 3);
-  assert.equal(state.item.title, "3 agents finished");
+  assert.equal(state.item.title, "3 agent updates");
 });
 
-test("a different category in the same instant stays its own item", () => {
+test("a different kind in the same instant stays its own item", () => {
   const first = push(EMPTY, {}, 500);
-  const second = push(first, { category: "agentFailed", severity: "danger" }, 500);
+  const second = push(first, { kind: "spend", tier: "fail" }, 500);
   assert.equal(second.isRepeat, false);
   assert.equal(second.history.length, 2);
 });
@@ -92,24 +93,88 @@ test("the toast stack caps at three and reports what it evicted", () => {
   assert.deepEqual(state.evicted, [ids[0]]);
 });
 
-test("severity drives the dismiss timeout, and danger is sticky", () => {
-  assert.equal(timeoutFor("info"), 4_500);
-  assert.equal(timeoutFor("success"), 5_000);
-  assert.equal(timeoutFor("warning"), 8_000);
-  assert.equal(timeoutFor("danger"), 0);
+test("the tier drives the dismiss timeout, and ask and fail are sticky", () => {
+  assert.equal(timeoutFor("news"), 6_500);
+  assert.equal(timeoutFor("done"), 5_000);
+  assert.equal(timeoutFor("risk"), 12_000);
+  // The two tiers that need acknowledging never leave on their own.
+  assert.equal(timeoutFor("ask"), 0);
+  assert.equal(timeoutFor("fail"), 0);
+  // Work in progress ends when the work does, not on a clock.
+  assert.equal(timeoutFor("busy"), 0);
 });
 
-test("every category has summary wording", () => {
-  for (const category of [
-    "agentAttention",
-    "agentDone",
-    "agentFailed",
+test("the stack is ordered by tier, so a blocked agent is never pushed off", () => {
+  // Three finished runs, then the decision that was already waiting.
+  let state = push(EMPTY, { kind: "agent", tier: "done", dedupeKey: "a" }, 1_000);
+  state = push(state, { kind: "preview", tier: "done", dedupeKey: "b" }, 20_000);
+  state = push(state, { kind: "spend", tier: "risk", dedupeKey: "c" }, 40_000);
+  const asked = push(state, { kind: "approval", tier: "ask", dedupeKey: "d" }, 60_000);
+
+  assert.equal(asked.visible.length, TOAST_MAX);
+  assert.equal(asked.visible[0].tier, "ask", "the decision takes the corner");
+  assert.deepEqual(asked.visible.map((entry) => entry.tier), ["ask", "risk", "done"]);
+
+  // And a later, lower-ranked arrival evicts a transient rather than the ask.
+  const after = push(asked, { kind: "models", tier: "news", dedupeKey: "e" }, 61_000);
+  assert.equal(after.visible[0].tier, "ask");
+  assert.equal(after.evicted.length, 1);
+  assert.ok(
+    after.visible.every((entry) => entry.tier !== "news"),
+    "news ranks below everything already up",
+  );
+});
+
+test("an ongoing job keeps one card from beginning to end", () => {
+  const started = push(EMPTY, { kind: "update", tier: "busy", replaceKey: "update", progress: 4 }, 0);
+  // Well past the coalesce window: a download outlives it by minutes.
+  const later = push(started, { kind: "update", tier: "busy", replaceKey: "update", progress: 61 }, 90_000);
+  assert.equal(later.history.length, 1);
+  assert.equal(later.item.id, started.item.id, "the card keeps its identity");
+  assert.equal(later.item.progress, 61);
+  assert.equal(later.item.count, 1, "progress is not a repeat count");
+  assert.equal(later.isRepeat, true, "same tier, so no second chime");
+
+  // Finishing is a different event, and that one has earned the cue.
+  const done = push(later, { kind: "update", tier: "ask", replaceKey: "update" }, 120_000);
+  assert.equal(done.history.length, 1);
+  assert.equal(done.item.id, started.item.id);
+  assert.equal(done.isRepeat, false, "a state change is not a repeat");
+});
+
+test("a pinned notice takes the banner slot, never a toast slot", () => {
+  const pinned = push(EMPTY, { kind: "update", tier: "news", pinned: true }, 0);
+  assert.equal(pinned.visible.length, 0);
+  assert.equal(pinned.history.length, 1);
+});
+
+test("every kind has summary wording", () => {
+  for (const kind of [
+    "agent",
+    "approval",
+    "update",
+    "account",
+    "spend",
     "performance",
     "preview",
-    "aiSpend",
     "models",
-    "system",
+    "project",
+    "app",
   ]) {
-    assert.match(summaryTitle(category, 4), /^4 \w/);
+    assert.match(summaryTitle(kind, 4), /^4 \w/);
   }
+});
+
+test("the banner slot is handed over, and given up, by the same push", () => {
+  const offer = { id: 7, at: 0, count: 1, read: false, kind: "update", tier: "news", title: "0.2.1 is available", pinned: true };
+  assert.equal(nextPinned(null, offer), offer, "a pinned notice takes the slot");
+
+  // An unrelated toast must not evict whatever is perched.
+  const toast = { ...offer, id: 8, kind: "agent", tier: "done", pinned: false };
+  assert.equal(nextPinned(offer, toast), offer);
+
+  // But the same notice turning unpinned — ready -> error, which keeps its id
+  // because it supersedes — has to give the slot back.
+  const failed = { ...offer, tier: "fail", pinned: false };
+  assert.equal(nextPinned(offer, failed), null);
 });

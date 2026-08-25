@@ -21,3 +21,16 @@ Vibyra/Productivity Stats.json
 # never in the repo. A leaked key lets anyone sign a "Vibyra update".
 *.key
 !desktop-tauri/src-tauri/tests/fixtures/*.sig
+
+# Local probe/scaffolding that must never reach this public repo.
+# The provider-audit crate at the root is a throwaway used to time CLI auth
+# probes; fakebin holds stub executables for launch tests; the rest is build
+# and installer output.
+/Cargo.toml
+/Cargo.lock
+/src/main.rs
+/rust-toolchain.toml
+/fakebin/
+/npm-installer/
+/artifacts/
+/Microsoft/

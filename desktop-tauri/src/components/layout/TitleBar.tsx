@@ -1,90 +1,67 @@
 import logoUrl from "../../assets/vibyra-cobalt.png";
+import { terminalsVisible } from "../../lib/stageLayout";
 import { useProjectStore } from "../../state/projectStore";
-import { useProjects } from "../../state/settingsStore";
-import { paneLabel, useTerminalStore } from "../../state/terminalStore";
+import { useWorkspaceStore } from "../../state/workspaceStore";
 import { NotificationBellHost } from "../notifications/NotificationBellHost";
-import { LifebuoyIcon } from "../report/ReportIcons";
-import { useReportStore } from "../../state/reportStore";
 import { AccountMenu } from "./AccountMenu";
+import { CommandBar } from "./CommandBar";
+import { LayoutControl } from "./LayoutControl";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 import { ResizeHandles, WindowControls } from "./WindowChrome";
-import { UpdateNavAction } from "./UpdateNavAction";
 
+function SidePanelGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M15 4v16" />
+    </svg>
+  );
+}
+
+/**
+ * Identity, then intent, then state.
+ *
+ * The row used to carry two readouts it would not let you press — a "N need
+ * you" chip and a "N live" chip — above a wordmark whose subtitle counted the
+ * same sessions a third time. All three are gone: attention lives on the
+ * project tile, the terminal row, the bell and the toast, none of which claim
+ * to be a control. Bug report and update check moved into the account menu.
+ */
 export function TitleBar() {
-  const panes = useTerminalStore((s) => s.panes);
-  const activity = useTerminalStore((s) => s.activity);
-  const setFocus = useTerminalStore((s) => s.setFocus);
-  const view = useProjectStore((s) => s.view);
-  const activeId = useProjectStore((s) => s.activeId);
-  const goHome = useProjectStore((s) => s.goHome);
-  const projects = useProjects();
-  const beginReport = useReportStore((s) => s.begin);
-
-  const live = panes.filter((p) => p.status === "running" && p.visibility !== "hibernated").length;
-  const waiting = panes.filter((p) => activity[p.id] === "attention");
-  const project = projects.find((p) => p.id === activeId);
-  const status =
-    panes.length === 0
-      ? "Native workspace"
-      : `${panes.length} terminal${panes.length === 1 ? "" : "s"} · ${live} live`;
-
-  const jumpToWaiting = () => {
-    const pane = waiting[0];
-    if (!pane) return;
-    void useProjectStore
-      .getState()
-      .activate(pane.projectId)
-      .then(() => setFocus(pane.id));
-  };
+  const view = useProjectStore((state) => state.view);
+  const layout = useWorkspaceStore((state) => state.stageLayout);
+  const companionOpen = useWorkspaceStore((state) => state.companionOpen);
+  const inProject = view === "project";
+  const sidePanelLabel = companionOpen ? "Hide side panel" : "Show side panel";
 
   return (
     <>
       <header className="chrome" data-tauri-drag-region>
         <div className="chrome__brand" data-tauri-drag-region>
           <img className="chrome__logo" src={logoUrl} alt="" />
-          <div className="chrome__copy">
-            <h1>Vibyra</h1>
-            <p>{status}</p>
-          </div>
+          <h1 className="chrome__word">Vibyra</h1>
+          <ProjectSwitcher />
         </div>
+
         <div className="chrome__drag" data-tauri-drag-region>
-          <span className="chrome__crumb">
-            <button className="chrome__crumb-btn" onClick={goHome}>
-              Home
-            </button>
-            {view === "project" && project && (
-              <>
-                <span className="chrome__crumb-sep">/</span>
-                <b>{project.name}</b>
-              </>
-            )}
-          </span>
+          <CommandBar />
         </div>
+
         <div className="chrome__right">
-          <UpdateNavAction />
-          {waiting.length > 0 && (
+          {inProject && <LayoutControl />}
+          {inProject && terminalsVisible(layout) && (
             <button
-              className="chip chrome__attn"
-              title={waiting.map((p) => paneLabel(p)).join(", ")}
-              onClick={jumpToWaiting}
+              type="button"
+              className={`icon-btn ${companionOpen ? "icon-btn--active" : ""}`}
+              title={sidePanelLabel}
+              aria-label={sidePanelLabel}
+              aria-pressed={companionOpen}
+              onClick={() => useWorkspaceStore.getState().toggleCompanion()}
             >
-              <span className="adot adot--attention" />
-              {waiting.length === 1 ? "1 needs you" : `${waiting.length} need you`}
+              <SidePanelGlyph />
             </button>
           )}
-          {live > 0 && (
-            <span className="chip chrome__stats">
-              <span className="dot" />
-              {live} live
-            </span>
-          )}
-          <button
-            className="icon-btn chrome__report"
-            title="Report a bug"
-            aria-label="Report a bug"
-            onClick={() => void beginReport()}
-          >
-            <LifebuoyIcon size={15} />
-          </button>
+          {inProject && <span className="chrome__sep" aria-hidden="true" />}
           <NotificationBellHost />
           <AccountMenu />
           <WindowControls />

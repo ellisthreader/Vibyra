@@ -1,6 +1,12 @@
 import { create } from "zustand";
 
 import { fsReadPreview, onFsChanged } from "../ipc/fs";
+import {
+  clampStageRatio,
+  restoreStageRatio,
+  saveStageRatio,
+  type StageLayout,
+} from "../lib/stageLayout";
 import { useNotificationStore } from "./notificationStore";
 import {
   clampCompanionWidth,
@@ -13,7 +19,7 @@ import {
 import type { FilePreview } from "../types";
 
 export type { CompanionTab } from "../lib/companionPreferences";
-export type ProjectMode = "terminals" | "preview";
+export type { StageLayout } from "../lib/stageLayout";
 export type SettingsSectionId =
   | "profile"
   | "general"
@@ -28,8 +34,8 @@ export type SettingsSectionId =
 function reportProblem(message: string | null): void {
   if (!message) return;
   useNotificationStore.getState().push({
-    category: "system",
-    severity: "danger",
+    kind: "app",
+    tier: "fail",
     title: message,
     dedupeKey: `system:${message}`,
     osEligible: false,
@@ -39,7 +45,10 @@ function reportProblem(message: string | null): void {
 interface WorkspaceStore {
   /** Root of the active project — set by projectStore.activate. */
   root: string | null;
-  projectMode: ProjectMode;
+  /** Which of the stage's two surfaces are on screen. */
+  stageLayout: StageLayout;
+  /** Share of the stage the terminals take while both are up. */
+  stageRatio: number;
   settingsOpen: boolean;
   settingsSection: SettingsSectionId;
   agentPickerOpen: boolean;
@@ -61,7 +70,8 @@ interface WorkspaceStore {
   toggleCompanion: () => void;
   setCompanionTab: (tab: CompanionTab) => void;
   setCompanionWidth: (width: number) => void;
-  setProjectMode: (mode: ProjectMode) => void;
+  setStageLayout: (layout: StageLayout) => void;
+  setStageRatio: (ratio: number) => void;
   openPreview: (path: string) => Promise<void>;
   closePreview: () => void;
   setError: (error: string | null) => void;
@@ -69,7 +79,8 @@ interface WorkspaceStore {
 
 export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   root: null,
-  projectMode: "terminals",
+  stageLayout: "terminals",
+  stageRatio: restoreStageRatio(),
   settingsOpen: false,
   settingsSection: "general",
   agentPickerOpen: false,
@@ -120,7 +131,13 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
     set({ companionWidth });
   },
 
-  setProjectMode: (projectMode) => set({ projectMode }),
+  setStageLayout: (stageLayout) => set({ stageLayout }),
+
+  setStageRatio: (ratio) => {
+    const stageRatio = clampStageRatio(ratio);
+    saveStageRatio(stageRatio);
+    set({ stageRatio });
+  },
 
   openPreview: async (path) => {
     try {

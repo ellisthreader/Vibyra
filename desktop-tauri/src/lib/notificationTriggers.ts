@@ -3,6 +3,9 @@ import type { PreviewStatus } from "../previewTypes";
 import { useNotificationStore } from "../state/notificationStore";
 import { useTerminalStore } from "../state/terminalStore";
 import type { PaneState } from "../state/terminalStoreTypes";
+import type { ActivityState } from "./activity";
+import { promptHeadline } from "./agentPrompt";
+import { scanAgentPrompt, type PromptAnswer } from "./agentPromptScan";
 import type { ActivityTransition } from "./activityTransitions";
 import { notePreviewTransition } from "./previewNotifications";
 import { exitNoticeSuppressed, exitNotification } from "./sessionExitNotifications";
@@ -27,8 +30,8 @@ export function notifySessionExit(id: number, code: number | null): void {
  */
 export function notifyNewConversation(pane: PaneState): void {
   useNotificationStore.getState().push({
-    category: "system",
-    severity: "info",
+    kind: "project",
+    tier: "news",
     title: `${terminalDisplayTitle(pane)} started a new conversation`,
     body: "Its previous one could not be identified, so this pane is fresh. The output you were reading is still above it.",
     dedupeKey: "resume:new-conversation",
@@ -38,8 +41,8 @@ export function notifyNewConversation(pane: PaneState): void {
 /** A resume the agent refused outright, restarted clean rather than left dead. */
 export function notifyResumeRestarted(pane: PaneState): void {
   useNotificationStore.getState().push({
-    category: "system",
-    severity: "warning",
+    kind: "project",
+    tier: "risk",
     title: `${terminalDisplayTitle(pane)} could not continue where it left off`,
     body: "The agent refused its previous conversation, so the pane was restarted on a new one rather than left closed.",
     dedupeKey: "resume:restarted",
@@ -58,20 +61,23 @@ export function notifyActivityTransitions(transitions: ActivityTransition[]): vo
     const label = paneTitle(transition.id);
     const action = { id: "focusSession", label: "Open terminal", arg: transition.id } as const;
     if (transition.kind === "attention") {
+      // Read once, here, on the edge — the ticker has already waited out 2.5s
+      // of silence, so this costs a buffer walk an hour, not one per write.
+      const prompt = scanAgentPrompt(transition.id);
       push({
-        category: "agentAttention",
-        severity: "warning",
-        title: `${label} needs you`,
-        body: "It is waiting on an answer before it can carry on.",
+        kind: "approval",
+        tier: "ask",
+        title: prompt ? promptHeadline(label, prompt) : `${label} needs you`,
+        body: prompt?.question || "It is waiting on an answer before it can carry on.",
         dedupeKey: `attention:${transition.id}`,
-        timeoutMs: 0,
         action,
+        prompt: prompt ?? undefined,
       });
       continue;
     }
     push({
-      category: "agentDone",
-      severity: "success",
+      kind: "agent",
+      tier: "done",
       title: `${label} has gone quiet`,
       body: "No output for a while — it may be finished.",
       // Shares the completion key so a quiet run and a real exit collapse together.
@@ -86,8 +92,8 @@ export function notifyModelsReleased(models: ReleasedModel[]): void {
   if (models.length === 0) return;
   const names = models.slice(0, 3).map((model) => model.name).join(", ");
   useNotificationStore.getState().push({
-    category: "models",
-    severity: "info",
+    kind: "models",
+    tier: "news",
     title: models.length === 1 ? "New model released" : `${models.length} new models released`,
     body: models.length > 3 ? `${names}…` : names,
     dedupeKey: "models",
@@ -101,4 +107,48 @@ export function notifyModelsReleased(models: ReleasedModel[]): void {
 export function notifyPreviewStatus(next: PreviewStatus): void {
   const notice = notePreviewTransition(next);
   if (notice) useNotificationStore.getState().push(notice);
+}
+
+/**
+ * Retires a prompt toast the moment its pane stops asking.
+ *
+ * `answerAgentPrompt` would refuse a click on a settled prompt anyway, but it
+ * can only do that after the user has made it. A sticky card still offering
+ * buttons for a question already answered in the terminal is worse than no
+ * card at all.
+ */
+export function dismissSettledPrompts(states: Readonly<Record<number, ActivityState>>): void {
+  const { visible, dismiss } = useNotificationStore.getState();
+  for (const item of visible) {
+    if (item.prompt && states[item.prompt.sessionId] !== "attention") dismiss(item.id);
+  }
+}
+
+const UNANSWERED: Record<Exclude<PromptAnswer, "sent">, { title: string; body: string }> = {
+  stale: {
+    title: "That question has moved on",
+    body: "The agent redrew it, so Vibyra sent nothing. Open the terminal to see what it is asking now.",
+  },
+  gone: {
+    title: "That terminal is not open",
+    body: "Vibyra could not read the pane, so it sent nothing. Open it to answer there.",
+  },
+};
+
+/** Says plainly that a click was refused. Never escalated to the OS: the user
+ * is at the keyboard by definition, having just pressed the button. */
+export function notifyPromptUnanswered(
+  sessionId: number,
+  outcome: Exclude<PromptAnswer, "sent">,
+): void {
+  const copy = UNANSWERED[outcome];
+  useNotificationStore.getState().push({
+    kind: "approval",
+    tier: "risk",
+    title: copy.title,
+    body: copy.body,
+    dedupeKey: `attention:unanswered:${sessionId}`,
+    osEligible: false,
+    action: { id: "focusSession", label: "Open terminal", arg: sessionId },
+  });
 }

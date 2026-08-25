@@ -9,9 +9,9 @@ use tauri::ipc::Invoke;
 use tauri::Wry;
 
 use super::{
-    account, agent_conversations, agents, ai, ai_memory, ai_service, clipboard, fs, memory,
-    memory_browser, perf, preview, probe, provider_accounts, render, report, screenshot,
-    screenshot_reveal, session, settings, terminal, voice,
+    account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, clipboard,
+    conversation_carry, fs, memory, memory_browser, perf, preview, probe, provider_accounts,
+    render, report, screenshot, screenshot_reveal, session, settings, terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -40,7 +40,8 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         terminal::list_terminals,
         agents::list_agents,
         agent_conversations::agent_conversation_resumable,
-        agent_conversations::agent_chat_prompt,
+        agent_chat_prompt::agent_chat_prompt,
+        conversation_carry::carry_agent_conversation,
         render::renderer_policy,
         provider_accounts::provider_accounts,
         provider_accounts::connect_provider_account,

@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 14px;
+  padding: 0 12px 0 14px;
   min-width: calc(var(--strip-w) + var(--rail-w));
 }
 
@@ -31,24 +31,15 @@
   pointer-events: none;
 }
 
-.chrome__copy {
-  display: grid;
-  pointer-events: none;
-}
-
-.chrome__copy h1 {
-  font-size: 13.5px;
-  font-weight: 720;
+/* The wordmark used to carry a "N terminals · N live" subtitle — the third
+   copy of that count on one screen. It is a name now, nothing else. */
+.chrome__word {
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-heavy);
   letter-spacing: -0.01em;
   line-height: 17px;
   color: var(--text);
-}
-
-.chrome__copy p {
-  font-size: 10.5px;
-  font-weight: 540;
-  line-height: 13px;
-  color: var(--dim);
+  pointer-events: none;
 }
 
 .chrome__drag {
@@ -73,20 +64,12 @@
   margin-left: 6px;
 }
 
-/* A readout, not a control: it loses the chip's border so only the things you
-   can actually press look pressable. */
-.chrome__stats {
-  pointer-events: none;
-  border-color: transparent;
-  background: var(--hover);
-  color: var(--muted);
-}
-
-/* Static on purpose — a permanently animating titlebar dot kept the
-   compositor awake for zero information. */
-.chrome__stats .dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 4px var(--accent-soft);
+/* Separates what changes the workspace from what opens a panel over it. */
+.chrome__sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: var(--line);
 }
 
 .window-controls {

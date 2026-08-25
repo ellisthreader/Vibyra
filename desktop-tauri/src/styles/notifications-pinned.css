@@ -1,0 +1,40 @@
+/* The banner slot: one notification, perched above the workspace.
+   Replaces `update-banner.css`, whose `.vupdate` card was a second design for
+   the same job. The card here is the ordinary `.vtoast` — same chip, same
+   rail, same tier colours — widened and given the slot's own margins, so
+   there is exactly one notification card in the product. */
+
+.vpinned {
+  padding: 8px 12px 0;
+}
+
+.vpinned .vtoast {
+  width: 100%;
+  /* Flatter than a floating toast: this one sits *in* the layout rather than
+     over it, and the corner stack's drop shadow would make it look detached. */
+  box-shadow: var(--e-inset-hi);
+  animation: fade-up 220ms var(--e-hero);
+}
+
+/* A standing offer has more room than a corner card, so the sentence gets to
+   finish instead of being clipped at one line. */
+.vpinned .vtoast__head h3 {
+  white-space: normal;
+  overflow: visible;
+}
+
+.vpinned .vtoast__body {
+  -webkit-line-clamp: 2;
+}
+
+/* The pinned card never times out, so the progress bar is the only thing along
+   its bottom edge — worth the extra pixel at this width. */
+.vpinned .vtoast__progress {
+  height: 3px;
+}
+
+@media (max-width: 720px) {
+  .vpinned {
+    padding: 6px 8px 0;
+  }
+}

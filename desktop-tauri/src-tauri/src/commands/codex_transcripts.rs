@@ -12,45 +12,54 @@
 //! per thread, named `rollout-<timestamp>-<id>.jsonl`. Only names are read,
 //! never contents, so a preflight costs a handful of directory listings.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// `sessions/<year>/<month>/<day>/<file>` is four levels deep; the extra one
 /// is slack for a layout change. The bound is what stops an unexpectedly deep
 /// or symlinked tree from turning a preflight into a filesystem crawl.
 const MAX_DEPTH: usize = 5;
 
-/// Whether a rollout recording `session` exists anywhere under `sessions`.
+/// Where `session`'s rollout sits beneath `sessions`, if it is there.
 ///
 /// Both ends of the name are checked. Matching the id as a bare substring
 /// would accept a different conversation that merely contains it, and matching
 /// the suffix alone would accept any file that happens to end that way.
-pub fn holds_conversation(sessions: &Path, session: &str) -> bool {
+///
+/// The path comes back relative to `sessions`, because carrying a conversation
+/// onto another account has to recreate it under the same date folders that
+/// `codex resume` will look in.
+pub fn find_conversation(sessions: &Path, session: &str) -> Option<PathBuf> {
     let suffix = format!("-{session}.jsonl");
-    let mut pending = vec![(sessions.to_path_buf(), 0usize)];
-    while let Some((directory, depth)) = pending.pop() {
-        let Ok(entries) = std::fs::read_dir(&directory) else {
+    let mut pending = vec![(PathBuf::new(), 0usize)];
+    while let Some((relative, depth)) = pending.pop() {
+        let Ok(entries) = std::fs::read_dir(sessions.join(&relative)) else {
             continue;
         };
         for entry in entries.flatten() {
             let Ok(kind) = entry.file_type() else {
                 continue;
             };
-            if kind.is_dir() {
-                if depth < MAX_DEPTH {
-                    pending.push((entry.path(), depth + 1));
-                }
-                continue;
-            }
             let name = entry.file_name();
             let Some(name) = name.to_str() else {
                 continue;
             };
+            if kind.is_dir() {
+                if depth < MAX_DEPTH {
+                    pending.push((relative.join(name), depth + 1));
+                }
+                continue;
+            }
             if name.starts_with("rollout-") && name.ends_with(&suffix) {
-                return true;
+                return Some(relative.join(name));
             }
         }
     }
-    false
+    None
+}
+
+/// Whether a rollout recording `session` exists anywhere under `sessions`.
+pub fn holds_conversation(sessions: &Path, session: &str) -> bool {
+    find_conversation(sessions, session).is_some()
 }
 
 #[cfg(test)]

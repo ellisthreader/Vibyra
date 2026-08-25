@@ -33,7 +33,8 @@ interface PreparedLaunch {
   reasoningEffort: LaunchEffort | null;
   title?: string;
   safeMode: boolean;
-  accountId: string | null;
+  /** `undefined` defers to the company's account in Settings → Integrations. */
+  accountId?: string | null;
 }
 
 const FULL_ACCESS_AGENTS = new Set(["claude", "codex", "gemini"]);
@@ -115,7 +116,11 @@ export async function launchConfigured(
     safeMode: preferences.safeMode,
     // Which login this terminal runs as. Only account-backed CLIs have one;
     // a shell or an OpenRouter runner has no provider folder to point at.
-    accountId: preferences.accountByProvider[agent.id] ?? null,
+    //
+    // Left undefined rather than nulled when this project has picked no
+    // account of its own: null is a choice — the first account — and would
+    // quietly outrank the one the user set in Settings → Integrations.
+    accountId: preferences.accountByProvider[agent.id],
   };
   if (!launch.safeMode) {
     await runLaunch(launch);

@@ -3,13 +3,14 @@
 // escalation matrix be a unit test rather than a manual checklist.
 
 import type {
-  NotificationCategory,
   NotificationChannel,
   NotificationInput,
   NotificationItem,
+  NotificationKind,
   NotificationPrefs,
   SoundCueId,
 } from "../notificationTypes";
+import { canEscalate } from "./notificationTiers.ts";
 
 /** OS toasts are interruptive: at most one every few seconds, and a hard
  * ceiling per minute so a runaway trigger cannot carpet the desktop. */
@@ -27,20 +28,20 @@ export function createOsGate(): OsGate {
 
 /** Prefs arrive from disk a tick after boot. Until then we show notifications
  * but stay silent and never escalate — a missed chime beats a surprise one. */
-function channelFor(prefs: NotificationPrefs, category: NotificationCategory): NotificationChannel {
-  return prefs.categories[category]?.channel ?? "app";
+function channelFor(prefs: NotificationPrefs, kind: NotificationKind): NotificationChannel {
+  return prefs.kinds[kind]?.channel ?? "app";
 }
 
 export function shouldShow(prefs: NotificationPrefs | null, input: NotificationInput): boolean {
   if (!prefs) return true;
   if (!prefs.enabled) return false;
-  return channelFor(prefs, input.category) !== "off";
+  return channelFor(prefs, input.kind) !== "off";
 }
 
 export function cueFor(prefs: NotificationPrefs | null, item: NotificationItem): SoundCueId {
   if (!prefs || !prefs.enabled || !prefs.soundEnabled || prefs.volume <= 0) return "none";
-  if (channelFor(prefs, item.category) === "off") return "none";
-  return item.cue ?? prefs.categories[item.category]?.cue ?? "none";
+  if (channelFor(prefs, item.kind) === "off") return "none";
+  return item.cue ?? prefs.kinds[item.kind]?.cue ?? "none";
 }
 
 export interface EscalationContext {
@@ -59,8 +60,10 @@ export function shouldEscalate(
   if (ctx.isRepeat) return false;
   if (!prefs || !prefs.enabled || !prefs.osEnabled) return false;
   if (item.osEligible === false) return false;
-  if (item.severity === "info") return false;
-  if (channelFor(prefs, item.category) !== "system") return false;
+  // The tier decides whether the desktop may ever hear about this at all;
+  // `busy` and `news` never can, whatever the preferences say.
+  if (!canEscalate(item.tier)) return false;
+  if (channelFor(prefs, item.kind) !== "system") return false;
   if (prefs.osOnlyWhenAway && ctx.focused) return false;
   // Last, because it consumes a slot: a notification blocked above must not
   // spend the budget of one that would have been allowed.

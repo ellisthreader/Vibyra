@@ -1,10 +1,11 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { useAnchoredPanel } from "../../lib/useAnchoredPanel";
 import type { NotificationItem } from "../../notificationTypes";
 import { GearIcon } from "../common/Icons";
 import { NotificationEmpty } from "./NotificationEmpty";
+import { filterItems, NotificationFilters } from "./NotificationFilters";
 import { NotificationRow } from "./NotificationRow";
 import { groupNotifications } from "./notificationGroups";
 
@@ -27,8 +28,14 @@ export function NotificationCenter(props: NotificationCenterProps) {
 
   useAnchoredPanel({ open: true, onClose, rootRef, panelRef, triggerRef });
 
-  // `items` is a stored array, so this recomputes only when history changes.
-  const groups = useMemo(() => groupNotifications(items, Date.now()), [items]);
+  const [filter, setFilter] = useState("all");
+
+  // `items` is a stored array, so this recomputes only when history or the
+  // chosen filter changes.
+  const groups = useMemo(
+    () => groupNotifications(filterItems(items, filter), Date.now()),
+    [items, filter],
+  );
   const hasUnread = items.some((item) => !item.read);
 
   return (
@@ -56,6 +63,8 @@ export function NotificationCenter(props: NotificationCenterProps) {
         </div>
       </header>
 
+      <NotificationFilters items={items} active={filter} onChange={setFilter} />
+
       {groups.length === 0 ? (
         <NotificationEmpty />
       ) : (
@@ -76,7 +85,7 @@ export function NotificationCenter(props: NotificationCenterProps) {
         </div>
       )}
 
-      {groups.length > 0 && (
+      {items.length > 0 && (
         <footer className="ncenter__foot">
           <button type="button" className="ncenter__link" onClick={props.onClearAll}>
             Clear all

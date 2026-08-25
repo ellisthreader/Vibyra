@@ -71,3 +71,28 @@
 .setting-row input[type="number"]::-webkit-outer-spin-button {
   display: none;
 }
+
+/* Optional leading glyph. The adjacent-sibling rule is what keeps every row
+   without an icon laid out exactly as it was — no `:has`, no new grid, and
+   nothing to re-verify on the other seven settings panes. */
+.setting-row__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  background: var(--surface-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+}
+
+/* Owns the icon-to-text distance, so the row's own 24px gap keeps meaning
+   "text to control" and nothing else. */
+.setting-row__lead {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: 1;
+  min-width: 0;
+}

@@ -4,6 +4,7 @@ import { createSshTerminal, createTerminal, removeTerminal } from "../ipc/termin
 import { newAgentSessionId } from "../lib/agentSessions";
 import { insertPane } from "../lib/paneInsert";
 import { accentFor } from "../lib/providerAccents";
+import { activeAccountId, paneAccountId } from "../lib/providerAccountPolicy";
 import { newPanePersistenceId } from "../lib/sessionIdentity";
 import { estimateSpawnDimensions } from "../lib/spawnSize";
 import { MAX_TERMINAL_PANES } from "../lib/terminalLimits";
@@ -12,6 +13,18 @@ import { queueReplay } from "../lib/terminalReplay";
 import { useSettingsStore } from "./settingsStore";
 import type { PaneState, TerminalStore } from "./terminalStoreTypes";
 import { useWorkspaceStore } from "./workspaceStore";
+
+/**
+ * The account a newly opened terminal for this company should run as.
+ *
+ * Read at spawn rather than captured, so a terminal opened after a switch
+ * belongs to the account the user moved to — the whole point of the switch
+ * being to stop spending on the one they left.
+ */
+function launchAccountId(providerId: string): string | null {
+  const { settings } = useSettingsStore.getState();
+  return paneAccountId(activeAccountId(settings?.activeProviderAccounts, providerId));
+}
 
 type SpawnActions = Pick<TerminalStore, "spawnAgent" | "spawnSsh">;
 type SetState = StoreApi<TerminalStore>["setState"];
@@ -57,6 +70,11 @@ export function terminalSpawnActions(set: SetState, get: GetState): SpawnActions
       try {
         const dims = spawnDimensions(get, projectId);
         const agentSessionId = options?.agentSessionId ?? newAgentSessionId(agent.id);
+        // A relaunch names the account it is moving to — including `null` for
+        // the first one — so only a genuinely new pane falls back to the
+        // company's current choice.
+        const accountId =
+          options?.accountId !== undefined ? options.accountId : launchAccountId(agent.id);
         const info = await createTerminal({
           agentId: agent.id,
           cwd: options?.cwd ?? null,
@@ -69,7 +87,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): SpawnActions
           safeSnapshotFingerprint: options?.safeSnapshotFingerprint,
           resume: options?.resume,
           agentSessionId,
-          accountId: options?.accountId ?? null,
+          accountId,
         });
         if (!(await replacementStillExists(get, info.id, options?.replaces))) return false;
         const snapshot = options?.replaySnapshot
@@ -92,7 +110,7 @@ export function terminalSpawnActions(set: SetState, get: GetState): SpawnActions
           osc: null,
           accent: accentFor(agent.id, agent.accent),
           agentSessionId,
-          accountId: options?.accountId ?? null,
+          accountId,
           status: "running",
           exitCode: null,
           visibility: "visible",

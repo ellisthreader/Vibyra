@@ -1,8 +1,11 @@
 import type { AnimationEvent, CSSProperties } from "react";
 
-import type { NotificationItem } from "../../notificationTypes";
+import { isLoud } from "../../lib/notificationTiers.ts";
+import type { AgentPromptOption, NotificationItem } from "../../notificationTypes";
 import { CloseIcon, GearIcon } from "../common/Icons";
-import { isLoud, markFor } from "./notificationMarks";
+import { kindMark, markFor } from "./notificationMarks";
+import { ToastProgress } from "./ToastProgress";
+import { ToastPrompt } from "./ToastPrompt";
 
 export interface ToastProps {
   item: NotificationItem;
@@ -12,15 +15,20 @@ export interface ToastProps {
   leaving: boolean;
   onDismiss: (id: number) => void;
   onAction?: (item: NotificationItem) => void;
+  /** Answers `item.prompt` in its pane. Only ever called for a prompt toast. */
+  onAnswer?: (item: NotificationItem, option: AgentPromptOption) => void;
   onOpenSettings?: (item: NotificationItem) => void;
   /** Fired when the exit animation finishes; the stack drops the node then. */
   onExited: (id: number) => void;
 }
 
 export function Toast(props: ToastProps) {
-  const { item, durationMs, leaving, onDismiss, onAction, onOpenSettings, onExited } = props;
-  const mark = markFor(item.severity);
-  const loud = isLoud(item.severity);
+  const { item, durationMs, leaving, onDismiss, onAction, onAnswer, onOpenSettings, onExited } =
+    props;
+  const mark = markFor(item.tier);
+  const kind = kindMark(item.kind);
+  const loud = isLoud(item.tier);
+  const working = item.tier === "busy";
 
   // The exit is a real animation, never `animation: none` — the node is
   // unmounted on `animationend`, so suppressing the animation would leak
@@ -33,7 +41,7 @@ export function Toast(props: ToastProps) {
 
   return (
     <article
-      className={`vtoast vtoast--${item.severity}${leaving ? " vtoast--leaving" : ""}`}
+      className={`vtoast vtoast--${item.tier}${leaving ? " vtoast--leaving" : ""}`}
       style={{ "--vtoast-ms": `${durationMs}ms` } as CSSProperties}
       role={loud ? "alert" : "status"}
       aria-live={loud ? "assertive" : "polite"}
@@ -45,17 +53,37 @@ export function Toast(props: ToastProps) {
       </span>
 
       <div className="vtoast__text">
+        {/* What this is about, then what it wants. Without it an approval, a
+            crash and a released model are one 2px rail apart. */}
+        <div className="vtoast__kind">
+          <kind.Icon size={10} />
+          <span>{kind.label}</span>
+          <span className="vtoast__sep" aria-hidden="true">
+            ·
+          </span>
+          <span className="vtoast__tier">{mark.label}</span>
+        </div>
+
         <div className="vtoast__head">
           <h3>{item.title}</h3>
           {item.count > 1 && <span className="vtoast__count">×{item.count}</span>}
         </div>
         {item.body && <p className="vtoast__body">{item.body}</p>}
-        {item.action && (
-          <div className="vtoast__actions">
-            <button type="button" className="chip vtoast__action" onClick={() => onAction?.(item)}>
-              {item.action.label}
-            </button>
-          </div>
+        {item.prompt ? (
+          <ToastPrompt
+            offer={item.prompt}
+            action={item.action}
+            onAnswer={(option) => onAnswer?.(item, option)}
+            onAction={() => onAction?.(item)}
+          />
+        ) : (
+          item.action && (
+            <div className="vtoast__actions">
+              <button type="button" className="chip vtoast__action" onClick={() => onAction?.(item)}>
+                {item.action.label}
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -82,7 +110,10 @@ export function Toast(props: ToastProps) {
         </button>
       </div>
 
-      {durationMs > 0 && !leaving && <span className="vtoast__timer" aria-hidden="true" />}
+      {working && <ToastProgress percent={item.progress} />}
+      {!working && durationMs > 0 && !leaving && (
+        <span className="vtoast__timer" aria-hidden="true" />
+      )}
     </article>
   );
 }
