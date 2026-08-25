@@ -30,7 +30,7 @@ test("it takes a sustained run of bad windows to notify", () => {
   const short = run(initialGuardState(), verdict, ENTER_SAMPLES - 1, context());
   assert.equal(short.notify, null);
   const full = run(initialGuardState(), verdict, ENTER_SAMPLES, context());
-  assert.equal(full.notify?.category, "performance");
+  assert.equal(full.notify?.kind, "performance");
   assert.equal(full.notify?.action?.id, "hibernateIdleTerminals");
 });
 
@@ -50,7 +50,7 @@ test("background lag cannot pre-qualify a warning after focus returns", () => {
   assert.equal(firstVisible.state.badRun, 1);
 
   const sustained = run(firstVisible.state, verdict, ENTER_SAMPLES - 1, context(), 21_000);
-  assert.equal(sustained.notify?.category, "performance");
+  assert.equal(sustained.notify?.kind, "performance");
 });
 
 test("one good window does not clear the state but a long run does", () => {
@@ -66,14 +66,14 @@ test("the same reason stays quiet for the cooldown", () => {
   const again = run(first.state, verdict, ENTER_SAMPLES, context(), 10_000);
   assert.equal(again.notify, null);
   const later = nextGuardState(again.state, verdict, 10_000 + COOLDOWN_MS, context());
-  assert.equal(later.notify?.category, "performance");
+  assert.equal(later.notify?.kind, "performance");
 });
 
 test("a severe verdict may break the cooldown exactly once", () => {
   const first = run(initialGuardState(), { level: "degraded", reason: "cpu" }, ENTER_SAMPLES, context());
   const severe = { level: "severe", reason: "cpu" };
   const preempt = run(first.state, severe, ENTER_SAMPLES, context(), 10_000);
-  assert.equal(preempt.notify?.category, "performance");
+  assert.equal(preempt.notify?.kind, "performance");
   const second = run(preempt.state, severe, ENTER_SAMPLES, context(), 20_000);
   assert.equal(second.notify, null);
 });

@@ -1,6 +1,7 @@
 import { useProjectStore } from "../state/projectStore";
 import { useNotificationStore } from "../state/notificationStore";
 import { useSettingsStore } from "../state/settingsStore";
+import { useUpdateStore } from "../state/updateStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { hibernateIdleTerminals } from "./terminalHibernate";
@@ -29,8 +30,8 @@ async function stageRendererMode(mode: RendererMode, stagedTitle: string): Promi
   try {
     await settings.update({ rendererMode: mode });
     useNotificationStore.getState().push({
-      category: "performance",
-      severity: "success",
+      kind: "performance",
+      tier: "done",
       title: stagedTitle,
       body: "Restart Vibyra when convenient. Your running terminals were left untouched.",
       dedupeKey: `perf:${mode}-staged`,
@@ -38,8 +39,8 @@ async function stageRendererMode(mode: RendererMode, stagedTitle: string): Promi
     });
   } catch {
     useNotificationStore.getState().push({
-      category: "performance",
-      severity: "warning",
+      kind: "performance",
+      tier: "risk",
       title: "Graphics mode could not be changed",
       body: "Open Performance settings and pick the mode manually.",
       dedupeKey: "perf:graphics-stage-failed",
@@ -75,6 +76,17 @@ export function runNotificationAction(action: NotificationAction): void {
       return;
     case "openModelPicker":
       workspace.openAgentPicker();
+      return;
+    case "downloadUpdate":
+      void useUpdateStore.getState().download();
+      return;
+    case "restartForUpdate":
+      // Two clicks, still: this window holds live terminal sessions, and the
+      // swap only happens on an explicit choice. The tier says as much.
+      void useUpdateStore.getState().restart();
+      return;
+    case "openUpdateSettings":
+      workspace.openSettingsSection("updates");
       return;
     case "openPreview":
       if (typeof action.arg === "string") {

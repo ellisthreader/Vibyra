@@ -1,8 +1,8 @@
 import { previewCue } from "../../lib/notificationSounds";
 import { DEFAULT_NOTIFICATIONS } from "../../lib/notificationPrefs";
-import type { NotificationCategory, NotificationPrefs } from "../../notificationTypes";
-import { CATEGORY_DESCRIPTORS } from "./notificationCategories";
-import { NotificationCategoryRow } from "./NotificationCategoryRow";
+import type { NotificationKind, NotificationPrefs } from "../../notificationTypes";
+import { KIND_DESCRIPTORS } from "./notificationKinds";
+import { NotificationKindRow } from "./NotificationKindRow";
 import { NotificationPermissionRow } from "./NotificationPermissionRow";
 import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 import { VolumeSteps } from "./VolumeSteps";
@@ -14,8 +14,8 @@ export function SettingsNotificationsPane({ settings, update }: SettingsPaneProp
   const write = (partial: Partial<NotificationPrefs>) =>
     void update({ notifications: { ...prefs, ...partial } });
 
-  const setCategory = (id: NotificationCategory, next: NotificationPrefs["categories"][NotificationCategory]) =>
-    write({ categories: { ...prefs.categories, [id]: next } });
+  const setKind = (id: NotificationKind, next: NotificationPrefs["kinds"][NotificationKind]) =>
+    write({ kinds: { ...prefs.kinds, [id]: next } });
 
   return (
     <>
@@ -76,15 +76,15 @@ export function SettingsNotificationsPane({ settings, update }: SettingsPaneProp
 
       <SettingsBlock label="What to tell me about">
         <div className="settings-group">
-          {CATEGORY_DESCRIPTORS.map((descriptor) => (
-            <NotificationCategoryRow
+          {KIND_DESCRIPTORS.map((descriptor) => (
+            <NotificationKindRow
               key={descriptor.id}
               descriptor={descriptor}
-              prefs={prefs.categories[descriptor.id] ?? DEFAULT_NOTIFICATIONS.categories[descriptor.id]}
+              prefs={prefs.kinds[descriptor.id] ?? DEFAULT_NOTIFICATIONS.kinds[descriptor.id]}
               volume={prefs.volume}
               soundEnabled={prefs.soundEnabled}
               disabled={off}
-              onChange={(next) => setCategory(descriptor.id, next)}
+              onChange={(next) => setKind(descriptor.id, next)}
             />
           ))}
           <SettingRow

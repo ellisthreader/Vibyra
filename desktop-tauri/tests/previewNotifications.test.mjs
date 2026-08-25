@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { timeoutFor } from "../src/lib/notificationTiers.ts";
+
 import { previewNotification } from "../src/lib/previewNotifications.ts";
 
 function status(phase, over = {}) {
@@ -10,16 +12,17 @@ function status(phase, over = {}) {
 test("a preview coming up is announced, but never on the desktop", () => {
   // You are looking at the preview pane when this happens.
   const notice = previewNotification(status("starting"), status("running", { url: "http://localhost:5173" }));
-  assert.equal(notice.severity, "info");
+  assert.equal(notice.kind, "preview");
+  assert.equal(notice.tier, "done");
   assert.equal(notice.body, "http://localhost:5173");
   assert.equal(notice.osEligible, false);
 });
 
 test("a crash is sticky and carries the reason", () => {
   const notice = previewNotification(status("running"), status("failed", { error: "port in use" }));
-  assert.equal(notice.severity, "danger");
+  assert.equal(notice.tier, "fail");
   assert.equal(notice.body, "port in use");
-  assert.equal(notice.timeoutMs, 0);
+  assert.equal(timeoutFor(notice.tier), 0);
 });
 
 test("without an error the last log line explains it", () => {

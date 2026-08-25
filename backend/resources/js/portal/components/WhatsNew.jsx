@@ -2,14 +2,27 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Notifications that tell you what they want",
+    body: "Every notice now says what it is about and what it needs from you \u2014 a decision, a failure, a warning, work in progress, or just news. A blocked agent can no longer be pushed off screen by three that finished.",
+    fresh: true,
+  },
+  {
+    title: "Answer an agent without leaving what you are doing",
+    body: "When Codex, Claude or Gemini asks permission to run a command, the notification shows the command and the answer buttons. Vibyra re-reads the pane before sending anything, so it can never answer a question that has moved on.",
+    fresh: true,
+  },
+  {
+    title: "Updates you can follow",
+    body: "Downloads show real progress in one card that becomes \u201cRestart to finish\u201d, and updates finally live in Settings \u2192 Notifications like everything else.",
+    fresh: true,
+  },
+  {
     title: "A Performance home in Settings",
     body: "See what Vibyra is using right now — graphics path, CPU, memory — and every lever that changes it, in one place.",
-    fresh: true,
   },
   {
     title: "Graphics that heal themselves",
     body: "Installs left on a slower GPU mode are moved back to the fast path automatically, and the app never suggests a mode your hardware runs worse.",
-    fresh: true,
   },
   {
     title: "Typing that keeps up",

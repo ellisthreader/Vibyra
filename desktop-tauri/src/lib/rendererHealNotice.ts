@@ -10,8 +10,9 @@ export function announceRendererHeal(policy: RendererPolicy): void {
   if (!policy.healedThisLaunch || announced) return;
   announced = true;
   useNotificationStore.getState().push({
-    category: "performance",
-    severity: "info",
+    kind: "performance",
+    // Nothing is wrong and nothing is asked of you — Vibyra already fixed it.
+    tier: "news",
     title: "Graphics set back to Automatic",
     body: "GPU mode was slowing this NVIDIA system down and made typing lag. Automatic is the fast path here; change it any time in Settings → Performance.",
     dedupeKey: "perf:renderer-healed",

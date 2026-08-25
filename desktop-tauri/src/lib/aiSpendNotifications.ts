@@ -27,8 +27,8 @@ export function spendNotification(next: SpendTier): NotificationInput | null {
   if (next === "none") return null;
   if (next === "near") {
     return {
-      category: "aiSpend",
-      severity: "warning",
+      kind: "spend",
+      tier: "risk",
       title: "You are close to your AI spend cap",
       body: "Vibyra AI stops making billed calls once the cap is reached.",
       dedupeKey: "aiSpend:near",
@@ -37,12 +37,11 @@ export function spendNotification(next: SpendTier): NotificationInput | null {
     };
   }
   return {
-    category: "aiSpend",
-    severity: "danger",
+    kind: "spend",
+    tier: "fail",
     title: "AI spend cap reached",
     body: "Chat and dictation are paused until the cap resets or you raise it.",
     dedupeKey: "aiSpend:reached",
-    timeoutMs: 0,
     action: { id: "openAiSettings", label: "Review limits" },
   };
 }

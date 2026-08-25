@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  DEFAULT_CATEGORIES,
+  DEFAULT_KINDS,
   DEFAULT_NOTIFICATIONS,
   normalizeNotifications,
 } from "../src/lib/notificationPrefs.ts";
@@ -25,29 +25,29 @@ test("volume is clamped, and NaN falls back rather than poisoning the gain node"
 
 test("a value outside the union is coerced back into it", () => {
   const prefs = normalizeNotifications({
-    categories: { agentDone: { channel: "everywhere", cue: "airhorn" } },
+    kinds: { agent: { channel: "everywhere", cue: "airhorn" } },
   });
-  assert.deepEqual(prefs.categories.agentDone, DEFAULT_CATEGORIES.agentDone);
+  assert.deepEqual(prefs.kinds.agent, DEFAULT_KINDS.agent);
 });
 
-test("a partial category keeps the half it got right", () => {
-  const prefs = normalizeNotifications({ categories: { agentDone: { cue: "chime" } } });
-  assert.equal(prefs.categories.agentDone.cue, "chime");
-  assert.equal(prefs.categories.agentDone.channel, DEFAULT_CATEGORIES.agentDone.channel);
+test("a partial kind keeps the half it got right", () => {
+  const prefs = normalizeNotifications({ kinds: { agent: { cue: "chime" } } });
+  assert.equal(prefs.kinds.agent.cue, "chime");
+  assert.equal(prefs.kinds.agent.channel, DEFAULT_KINDS.agent.channel);
 });
 
-test("every known category is present even when the file names none", () => {
+test("every known kind is present even when the file names none", () => {
   const prefs = normalizeNotifications({ enabled: false });
-  assert.deepEqual(Object.keys(prefs.categories).sort(), Object.keys(DEFAULT_CATEGORIES).sort());
+  assert.deepEqual(Object.keys(prefs.kinds).sort(), Object.keys(DEFAULT_KINDS).sort());
   assert.equal(prefs.enabled, false);
 });
 
-test("a category from a newer build survives the round trip", () => {
+test("a kind from a newer build survives the round trip", () => {
   // Settings written by a newer Vibyra must not be silently reset by an older one.
   const prefs = normalizeNotifications({
-    categories: { somethingNew: { channel: "app", cue: "chime" } },
+    kinds: { somethingNew: { channel: "app", cue: "chime" } },
   });
-  assert.deepEqual(prefs.categories.somethingNew, { channel: "app", cue: "chime" });
+  assert.deepEqual(prefs.kinds.somethingNew, { channel: "app", cue: "chime" });
 });
 
 test("booleans fall back per field instead of dropping the whole block", () => {

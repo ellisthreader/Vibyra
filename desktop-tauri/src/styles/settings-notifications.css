@@ -2,39 +2,39 @@
    they need their own spacing; everything else reuses the shared setting-row
    and settings-group chrome. */
 
-.notif-cat {
+.notif-kind {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.notif-cat .icon-btn {
+.notif-kind .icon-btn {
   width: 24px;
   height: 24px;
 }
 
 /* The sound preview is a quiet affordance: present for keyboard users, but it
    should not compete with the switches for attention until pointed at. */
-.notif-cat .icon-btn {
+.notif-kind .icon-btn {
   color: var(--dim);
 }
 
-.notif-cat .icon-btn:hover:not(:disabled) {
+.notif-kind .icon-btn:hover:not(:disabled) {
   color: var(--accent);
 }
 
-.notif-cat .icon-btn:disabled {
+.notif-kind .icon-btn:disabled {
   opacity: 0.4;
 }
 
 /* A disabled control still has to be legible — greying it out entirely reads as
    broken rather than as "not right now". */
-.notif-cat .vswitch:disabled,
-.notif-cat select:disabled {
+.notif-kind .vswitch:disabled,
+.notif-kind select:disabled {
   opacity: 0.45;
 }
 
-.notif-cat select:disabled {
+.notif-kind select:disabled {
   cursor: default;
 }
 
@@ -46,11 +46,11 @@
 
 /* The desktop toggle. Off it reads as one more quiet glyph; on it takes the
    cobalt so the row says "this one also leaves the window" at a glance. */
-.notif-cat__os[aria-pressed="true"] {
+.notif-kind__os[aria-pressed="true"] {
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-.notif-cat__os[aria-pressed="true"]:hover:not(:disabled) {
+.notif-kind__os[aria-pressed="true"]:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }

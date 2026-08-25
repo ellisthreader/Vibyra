@@ -5,7 +5,7 @@ import { BellIcon } from "../common/StatusIcons";
 export function NotificationEmpty() {
   return (
     <div className="ncenter__empty">
-      <span className="nmark nmark--lg nmark--info">
+      <span className="nmark nmark--lg nmark--news">
         <BellIcon size={18} />
       </span>
       <h3>You’re all caught up</h3>

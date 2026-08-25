@@ -98,3 +98,57 @@
   padding: 6px 8px;
   border-top: 1px solid var(--line);
 }
+
+/* ---------- filters ---------- */
+
+/* Built from tiers, not kinds: "what is blocking me" is the only question
+   anyone asks a notification history in a hurry, and that is a tier question.
+   A filter with nothing behind it is hidden rather than greyed out — an empty
+   "Problems" is good news, and a disabled chip reads as a fault. */
+.ncenter__filters {
+  display: flex;
+  gap: 5px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ncenter__filters::-webkit-scrollbar {
+  display: none;
+}
+
+.ncenter__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--dim);
+  font-family: var(--font-ui);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--t-ui) var(--e-standard),
+    color var(--t-ui) var(--e-standard);
+}
+
+.ncenter__filter:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.ncenter__filter[aria-pressed="true"] {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.ncenter__filter-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.65;
+}

@@ -8,22 +8,42 @@ export interface SettingsPaneProps {
 }
 
 export function SettingRow({
+  icon,
   label,
   hint,
   stack,
   children,
 }: {
+  /** Optional leading glyph. Rows without one keep their existing layout
+   * exactly — the grid column only appears when something fills it. */
+  icon?: ReactNode;
   label: string;
   hint?: ReactNode;
   stack?: boolean;
   children: ReactNode;
 }) {
+  const text = (
+    <div className="setting-row__text">
+      <span className="setting-row__label">{label}</span>
+      {hint ? <span className="setting-row__hint">{hint}</span> : null}
+    </div>
+  );
+
   return (
     <div className={stack ? "setting-row setting-row--stack" : "setting-row"}>
-      <div className="setting-row__text">
-        <span className="setting-row__label">{label}</span>
-        {hint ? <span className="setting-row__hint">{hint}</span> : null}
-      </div>
+      {/* The wrapper exists only when there is a glyph to pair with the text.
+          Rows without one render exactly the markup they always did, so the
+          other settings panes cannot shift. */}
+      {icon ? (
+        <div className="setting-row__lead">
+          <span className="setting-row__icon" aria-hidden="true">
+            {icon}
+          </span>
+          {text}
+        </div>
+      ) : (
+        text
+      )}
       <div className="setting-row__control">{children}</div>
     </div>
   );

@@ -3,22 +3,22 @@
 // it. Combined with the queue's burst collapse, six agents exiting inside one
 // PTY drain produce exactly one audible cue.
 
-import type { NotificationCategory, SoundCueId } from "../notificationTypes";
+import type { NotificationKind, SoundCueId } from "../notificationTypes";
 
 /** Concurrent cues. Two overlapping is a texture; three is a mess. */
 export const MAX_VOICES = 2;
 
-const CATEGORY_GAP_MS = 1_500;
+const KIND_GAP_MS = 1_500;
 const GLOBAL_FLOOR_MS = 400;
 
 export interface SoundGate {
   lastAt: number;
-  perCategory: Map<NotificationCategory, number>;
+  perKind: Map<NotificationKind, number>;
   voices: number;
 }
 
 export function createSoundGate(): SoundGate {
-  return { lastAt: 0, perCategory: new Map(), voices: 0 };
+  return { lastAt: 0, perKind: new Map(), voices: 0 };
 }
 
 /** The single gate shared by the store and the engine. */
@@ -29,15 +29,15 @@ export const soundGate = createSoundGate();
 export function allowCue(
   gate: SoundGate,
   cue: SoundCueId,
-  category: NotificationCategory,
+  kind: NotificationKind,
   now: number,
 ): boolean {
   if (cue === "none") return false;
   if (gate.lastAt !== 0 && now - gate.lastAt < GLOBAL_FLOOR_MS) return false;
-  const last = gate.perCategory.get(category);
-  if (last !== undefined && now - last < CATEGORY_GAP_MS) return false;
+  const last = gate.perKind.get(kind);
+  if (last !== undefined && now - last < KIND_GAP_MS) return false;
   gate.lastAt = now;
-  gate.perCategory.set(category, now);
+  gate.perKind.set(kind, now);
   return true;
 }
 

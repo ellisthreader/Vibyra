@@ -11,6 +11,44 @@
   min-width: 0;
 }
 
+/* What the notice is about, then what it wants from you.
+   Sized at --fs-micro and tracked out: it has to read as a label rather than
+   as a second title, and it must never compete with the sentence below it.
+   This one line is what stops an approval, a crash and a released model
+   looking like the same card. */
+.vtoast__kind {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 1px;
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.vtoast__kind svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.vtoast__sep {
+  opacity: 0.5;
+}
+
+/* The only tinted text on the card. It carries the tier, so the chip and the
+   rail always say the same thing. */
+.vtoast__tier {
+  color: var(--vtone);
+}
+
+/* News is deliberately quiet everywhere, and --dim on --dim would erase the
+   distinction between the two halves of the chip. */
+.vtoast--news .vtoast__tier {
+  color: var(--muted);
+}
+
 .vtoast__head {
   display: flex;
   align-items: baseline;
@@ -50,8 +88,10 @@
 
 .vtoast__actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin-top: 3px;
+  margin-top: 6px;
 }
 
 .vtoast__action {

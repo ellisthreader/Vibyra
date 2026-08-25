@@ -5,6 +5,7 @@ import { useNotificationPrefs } from "../state/settingsStore";
 import { primeAudio, setAudioPrimerRearm } from "./notificationSounds";
 import { raiseOsNotification, refreshOsPermission } from "./osNotifications";
 import { usePerfWatch } from "./usePerfWatch";
+import { useUpdateNotifications } from "./useUpdateNotifications";
 import { startFocusTracking, windowIsFocused } from "./windowFocus";
 
 /** Wires the store's injectable hooks once. Module scope, not an effect: the
@@ -90,4 +91,5 @@ export function useNotificationRuntime(): void {
   useFocusTracking();
   usePrimedAudio();
   usePerfWatch();
+  useUpdateNotifications();
 }

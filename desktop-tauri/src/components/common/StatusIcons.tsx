@@ -70,3 +70,35 @@ export const MonitorIcon = icon(
     <path d="M9 20h6M12 16v4" />
   </>,
 );
+
+/** The `ask` tier — a question someone is waiting on, not a warning. */
+export const AskIcon = icon(
+  <>
+    <path d="M12 21a9 9 0 1 0-7.7-4.3L3.4 21l4.4-.9A9 9 0 0 0 12 21z" />
+    <path d="M9.6 9.6a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.3M12 16.6h.01" />
+  </>,
+);
+
+/** The `busy` tier — elapsed time, not a spinner: the card carries the bar. */
+export const BusyIcon = icon(
+  <>
+    <circle cx="12" cy="12" r="8.6" />
+    <path d="M12 6.6V12l3.4 2" />
+  </>,
+);
+
+/** Approval — a grant being asked for. */
+export const KeyIcon = icon(
+  <>
+    <circle cx="8" cy="14" r="4" />
+    <path d="m11 11 8-8M17 5l2.5 2.5M14.5 7.5 17 10" />
+  </>,
+);
+
+export const DownloadIcon = icon(
+  <>
+    <path d="M12 3.5v11" />
+    <path d="m7.6 10.4 4.4 4.4 4.4-4.4" />
+    <path d="M4.5 17.5v1a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-1" />
+  </>,
+);

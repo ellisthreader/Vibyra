@@ -16,26 +16,43 @@ const CHANNELS: [&str; 3] = ["off", "app", "system"];
 /// Accepted `cue` values, mirroring `SoundCueId` on the renderer side.
 const CUES: [&str; 7] = ["none", "chime", "done", "ask", "fail", "alert", "blip"];
 
-/// The categories this build knows about, as `(id, channel, cue)`.
-const DEFAULTS: [(&str, &str, &str); 8] = [
-    ("agentAttention", "system", "ask"),
-    ("agentDone", "system", "done"),
-    ("agentFailed", "system", "fail"),
-    ("aiSpend", "system", "alert"),
+/// The kinds this build knows about, as `(id, channel, cue)`.
+const DEFAULTS: [(&str, &str, &str); 10] = [
+    ("approval", "system", "ask"),
+    ("agent", "system", "done"),
+    ("update", "system", "chime"),
+    ("account", "system", "alert"),
+    ("spend", "system", "alert"),
     ("preview", "app", "none"),
-    ("models", "app", "none"),
     ("performance", "app", "none"),
-    ("system", "app", "fail"),
+    ("project", "app", "none"),
+    ("models", "app", "none"),
+    ("app", "app", "fail"),
+];
+
+/// Where a file written before the tier/kind split lands, as `(was, is)`.
+///
+/// The three agent categories encoded an *outcome*, which is now the tier, so
+/// two of them collapse onto `agent`; the third was only ever raised for a
+/// permission prompt and becomes `approval`. Order is the precedence: the
+/// first legacy key present settles its target and later ones are dropped.
+/// Mirrored by `LEGACY_KINDS` in `notificationPrefs.ts`.
+const LEGACY: [(&str, &str); 5] = [
+    ("agentAttention", "approval"),
+    ("agentDone", "agent"),
+    ("agentFailed", "agent"),
+    ("aiSpend", "spend"),
+    ("system", "app"),
 ];
 
 /// Half volume: audible over a fan, quiet enough not to startle. Must equal
 /// `DEFAULT_NOTIFICATIONS.volume` in `notificationPrefs.ts`.
 const DEFAULT_VOLUME: f64 = 0.5;
 
-/// Where one category is allowed to surface, and what it sounds like.
+/// Where one kind is allowed to surface, and what it sounds like.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct NotificationCategoryPrefs {
+pub struct NotificationKindPrefs {
     /// "off" | "app" | "system". One three-way value rather than two booleans,
     /// so the Settings row is a single segmented control.
     pub channel: String,
@@ -43,7 +60,7 @@ pub struct NotificationCategoryPrefs {
     pub cue: String,
 }
 
-impl Default for NotificationCategoryPrefs {
+impl Default for NotificationKindPrefs {
     fn default() -> Self {
         Self {
             channel: "app".to_string(),
@@ -65,11 +82,13 @@ pub struct NotificationPrefs {
     /// "Also tell me when a long-running agent goes quiet" — off by default,
     /// because it is the one trigger that can fire while nothing has happened.
     pub agent_idle_enabled: bool,
-    /// A map, not a struct of eight fields. With a struct, a category a future
-    /// build renames or adds is silently dropped on the first save an older
-    /// build makes; with a map, unknown keys survive the round-trip in both
-    /// directions — which is the whole reason this file needs no migration.
-    pub categories: BTreeMap<String, NotificationCategoryPrefs>,
+    /// A map, not a struct of ten fields. With a struct, a kind a future build
+    /// renames or adds is silently dropped on the first save an older build
+    /// makes; with a map, unknown keys survive the round-trip in both
+    /// directions. The alias reads a pre-split file's `categories` into the
+    /// same field, which `sanitize` then renames key by key.
+    #[serde(alias = "categories")]
+    pub kinds: BTreeMap<String, NotificationKindPrefs>,
 }
 
 impl Default for NotificationPrefs {
@@ -81,16 +100,16 @@ impl Default for NotificationPrefs {
             os_enabled: true,
             os_only_when_away: true,
             agent_idle_enabled: false,
-            categories: DEFAULTS
+            kinds: DEFAULTS
                 .iter()
-                .map(|(id, channel, cue)| ((*id).to_string(), category(channel, cue)))
+                .map(|(id, channel, cue)| ((*id).to_string(), kind(channel, cue)))
                 .collect(),
         }
     }
 }
 
-fn category(channel: &str, cue: &str) -> NotificationCategoryPrefs {
-    NotificationCategoryPrefs {
+fn kind(channel: &str, cue: &str) -> NotificationKindPrefs {
+    NotificationKindPrefs {
         channel: channel.to_string(),
         cue: cue.to_string(),
     }
@@ -103,15 +122,17 @@ impl NotificationPrefs {
     /// survives `clamp` on some paths and then poisons every later comparison
     /// as silently-false, so a slider that reads "half" would be mute forever.
     /// Unknown `channel`/`cue` values are coerced to something the renderer can
-    /// actually render, and any known category that went missing is restored.
-    /// Unknown category keys are left exactly as found — see `categories`.
+    /// actually render, and any known kind that went missing is restored.
+    /// Pre-split keys are renamed; genuinely unknown keys are left exactly as
+    /// found — see `kinds`.
     pub fn sanitize(&mut self) {
         self.volume = if self.volume.is_finite() {
             self.volume.clamp(0.0, 1.0)
         } else {
             DEFAULT_VOLUME
         };
-        for prefs in self.categories.values_mut() {
+        self.migrate_legacy();
+        for prefs in self.kinds.values_mut() {
             if !CHANNELS.contains(&prefs.channel.as_str()) {
                 prefs.channel = "app".to_string();
             }
@@ -120,9 +141,20 @@ impl NotificationPrefs {
             }
         }
         for (id, channel, cue) in DEFAULTS {
-            self.categories
+            self.kinds
                 .entry(id.to_string())
-                .or_insert_with(|| category(channel, cue));
+                .or_insert_with(|| kind(channel, cue));
+        }
+    }
+
+    /// Moves a pre-split key onto its new home and removes it. Runs before the
+    /// defaults are filled in, so a migrated value is never overwritten by one.
+    fn migrate_legacy(&mut self) {
+        for (was, is) in LEGACY {
+            let Some(prefs) = self.kinds.remove(was) else {
+                continue;
+            };
+            self.kinds.entry(is.to_string()).or_insert(prefs);
         }
     }
 }

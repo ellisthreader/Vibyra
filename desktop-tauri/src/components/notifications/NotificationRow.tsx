@@ -1,7 +1,7 @@
 import type { NotificationItem } from "../../notificationTypes";
 import { relativeTime } from "../../lib/relativeTime";
 import { CloseIcon } from "../common/Icons";
-import { categoryMark, markFor } from "./notificationMarks";
+import { kindMark, markFor } from "./notificationMarks";
 
 export interface NotificationRowProps {
   item: NotificationItem;
@@ -11,11 +11,11 @@ export interface NotificationRowProps {
 }
 
 export function NotificationRow({ item, onAction, onDismiss }: NotificationRowProps) {
-  const mark = markFor(item.severity);
-  const category = categoryMark(item.category);
+  const mark = markFor(item.tier);
+  const kind = kindMark(item.kind);
 
   return (
-    <article className={`nrow${item.read ? "" : " nrow--unread"}`}>
+    <article className={`nrow nrow--${item.tier}${item.read ? "" : " nrow--unread"}`}>
       <span className={`${mark.className} nmark--sm nrow__mark`}>
         <mark.Icon size={12} />
       </span>
@@ -27,8 +27,12 @@ export function NotificationRow({ item, onAction, onDismiss }: NotificationRowPr
         </div>
         {item.body && <p className="nrow__body">{item.body}</p>}
         <div className="nrow__meta">
-          <category.Icon size={11} />
-          <span>{category.label}</span>
+          <kind.Icon size={11} />
+          <span>{kind.label}</span>
+          <span className="nrow__sep" aria-hidden="true">
+            ·
+          </span>
+          <span className="nrow__tier">{mark.label}</span>
           <span className="nrow__sep" aria-hidden="true">
             ·
           </span>

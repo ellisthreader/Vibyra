@@ -44,8 +44,8 @@ function reportContextLoss(): void {
   if (contextLossReported) return;
   contextLossReported = true;
   useNotificationStore.getState().push({
-    category: "performance",
-    severity: "warning",
+    kind: "performance",
+    tier: "risk",
     title: "Terminals switched to the slower renderer",
     body: "The graphics context was lost, so Vibyra fell back to CPU drawing. Restarting Vibyra restores the accelerated path.",
     dedupeKey: "perf:context-loss",

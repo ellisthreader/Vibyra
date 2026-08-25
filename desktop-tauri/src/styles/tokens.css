@@ -41,6 +41,14 @@
   --danger: #f06472;
   --danger-soft: rgba(240, 100, 114, 0.15);
 
+  /* the decision hue — the `ask` tier, and nothing else.
+     Cobalt already means "information" and carries every primary button;
+     amber already means "something is wrong". A decision is neither, so it
+     gets the one step around the wheel from the nerve: related, never an
+     error, and unmistakably "you choose". */
+  --ask: #9a86f7;
+  --ask-soft: rgba(154, 134, 247, 0.14);
+
   /* states */
   --hover: rgba(255, 255, 255, 0.04);
   --hover-strong: rgba(255, 255, 255, 0.07);
@@ -151,6 +159,11 @@
   --amber-soft: rgba(169, 104, 18, 0.12);
   --danger: #c9364b;
   --danger-soft: rgba(201, 54, 75, 0.1);
+
+  /* Darkened well past the dark-theme violet: #9a86f7 on white is a 2.4:1
+     smear. This holds the same hue at a legible weight. */
+  --ask: #5b3fc4;
+  --ask-soft: rgba(91, 63, 196, 0.1);
 
   --hover: rgba(30, 28, 31, 0.045);
   --hover-strong: rgba(30, 28, 31, 0.075);

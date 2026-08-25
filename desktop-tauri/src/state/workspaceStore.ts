@@ -29,8 +29,8 @@ export type SettingsSectionId =
 function reportProblem(message: string | null): void {
   if (!message) return;
   useNotificationStore.getState().push({
-    category: "system",
-    severity: "danger",
+    kind: "app",
+    tier: "fail",
     title: message,
     dedupeKey: `system:${message}`,
     osEligible: false,

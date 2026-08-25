@@ -141,3 +141,44 @@
     opacity: 1;
   }
 }
+
+/* The unread rail takes the tier's colour rather than a flat cobalt, so a
+   glance down the list separates a waiting decision from a finished run
+   without reading a word of it. */
+.nrow--ask.nrow--unread::before {
+  background: var(--ask);
+}
+
+.nrow--fail.nrow--unread::before {
+  background: var(--danger);
+}
+
+.nrow--risk.nrow--unread::before {
+  background: var(--amber);
+}
+
+.nrow--done.nrow--unread::before {
+  background: var(--success);
+}
+
+.nrow--news.nrow--unread::before {
+  background: var(--dim);
+}
+
+/* Second half of the meta line. Tinted only where the tier earns it: a "Done"
+   in green on every finished run would turn the list into a christmas tree. */
+.nrow__tier {
+  font-weight: var(--fw-bold);
+}
+
+.nrow--ask .nrow__tier {
+  color: var(--ask);
+}
+
+.nrow--fail .nrow__tier {
+  color: var(--danger);
+}
+
+.nrow--risk .nrow__tier {
+  color: var(--amber);
+}

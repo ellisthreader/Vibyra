@@ -36,7 +36,7 @@ export function initialGuardState(): PerfGuardState {
 }
 
 function message(reason: PerfReason, window: PerfWindow): NotificationInput {
-  const base = { category: "performance", severity: "warning", osEligible: false } as const;
+  const base = { kind: "performance", tier: "risk", osEligible: false } as const;
   // Never on NVIDIA: the GPU path is the measured-slower one there, and the
   // pre-0.2.5 promotion offer is exactly how installs got stuck on it.
   if (reason === "compositing" && !window.nvidiaSession) {

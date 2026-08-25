@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { timeoutFor } from "../src/lib/notificationTiers.ts";
+
 import { exitNotification } from "../src/lib/sessionExitNotifications.ts";
 
 function pane(overrides = {}) {
@@ -19,8 +21,8 @@ function pane(overrides = {}) {
 
 test("a clean exit reads as a finished run", () => {
   const notice = exitNotification(pane(), 0, false);
-  assert.equal(notice.category, "agentDone");
-  assert.equal(notice.severity, "success");
+  assert.equal(notice.kind, "agent");
+  assert.equal(notice.tier, "done");
   assert.equal(notice.title, "Claude Code finished");
   assert.equal(notice.action.arg, 7);
 });
@@ -33,9 +35,9 @@ test("completions share a dedupe key so a burst collapses into one line", () => 
 
 test("failures get their own row, and stay until dismissed", () => {
   const notice = exitNotification(pane(), 1, false);
-  assert.equal(notice.category, "agentFailed");
-  assert.equal(notice.severity, "danger");
-  assert.equal(notice.timeoutMs, 0);
+  assert.equal(notice.kind, "agent");
+  assert.equal(notice.tier, "fail");
+  assert.equal(timeoutFor(notice.tier), 0);
   assert.match(notice.title, /code 1/);
   assert.notEqual(exitNotification(pane({ id: 8 }), 1, false).dedupeKey, notice.dedupeKey);
 });

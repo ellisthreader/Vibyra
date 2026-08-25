@@ -8,8 +8,8 @@ import { ProjectWorkspace } from "./ProjectWorkspace";
 import { Rail } from "./Rail";
 import { ScreenshotTray } from "./ScreenshotTray";
 import { TitleBar } from "./TitleBar";
-import { UpdateBanner } from "./UpdateBanner";
 import { VoiceHud } from "./VoiceHud";
+import { PinnedNotice } from "../notifications/PinnedNotice";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
 import { useActivityTicker } from "../../lib/useActivityTicker";
@@ -102,7 +102,7 @@ export function WorkspaceApp() {
           <Suspense fallback={null}><HomeView /></Suspense>
         )}
       </div>
-      <UpdateBanner />
+      <PinnedNotice />
       <Toasts />
       <VoiceHud />
       <CloseConfirmModal />
