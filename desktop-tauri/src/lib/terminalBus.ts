@@ -7,9 +7,37 @@ import type { TermEvent } from "../types";
 
 type Handler = (event: TermEvent) => void;
 
+/** A pane can stay unmounted while Rust still delivers for it (the sink only
+ * detaches on remove). Unbounded, that queue is a slow memory leak; past this
+ * many queued characters the oldest output is dropped. Agent TUIs repaint the
+ * whole viewport constantly, so a remount self-heals within one delivery. */
+export const QUEUE_CAP_CHARS = 2_000_000;
+
 const handlers = new Map<number, Handler>();
 const queues = new Map<number, TermEvent[]>();
+const queueChars = new Map<number, number>();
 const discarded = new Set<number>();
+
+function eventChars(event: TermEvent): number {
+  return event.type === "exit" ? 0 : event.data.length;
+}
+
+/** Drops oldest output first; resync and exit markers must survive because
+ * `replay` orders the handoff around them. */
+function boundQueue(id: number, queue: TermEvent[]): void {
+  let total = queueChars.get(id) ?? 0;
+  let index = 0;
+  while (total > QUEUE_CAP_CHARS && index < queue.length) {
+    const event = queue[index];
+    if (event.type !== "output") {
+      index += 1;
+      continue;
+    }
+    total -= event.data.length;
+    queue.splice(index, 1);
+  }
+  queueChars.set(id, total);
+}
 
 export function dispatch(id: number, event: TermEvent): void {
   // A killed PTY may deliver its final exit event after teardown. Native ids
@@ -24,6 +52,8 @@ export function dispatch(id: number, event: TermEvent): void {
   const queue = queues.get(id) ?? [];
   queue.push(event);
   queues.set(id, queue);
+  queueChars.set(id, (queueChars.get(id) ?? 0) + eventChars(event));
+  boundQueue(id, queue);
 }
 
 export function attach(id: number, handler: Handler): void {
@@ -31,6 +61,7 @@ export function attach(id: number, handler: Handler): void {
   const queue = queues.get(id);
   if (queue) {
     queues.delete(id);
+    queueChars.delete(id);
     replay(queue, handler);
   }
 }
@@ -66,5 +97,6 @@ export function detach(id: number): void {
 export function clear(id: number): void {
   handlers.delete(id);
   queues.delete(id);
+  queueChars.delete(id);
   discarded.add(id);
 }

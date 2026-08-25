@@ -8,6 +8,7 @@ import { useTerminalStore } from "../state/terminalStore";
 import { initialGuardState, nextGuardState } from "./perfGuard";
 import { judge, type PerfWindow } from "./perfPolicy";
 import { startDriftSampler } from "./perfSampler";
+import { announceRendererHeal } from "./rendererHealNotice";
 import { windowIsFocused } from "./windowFocus";
 
 /** Native readings are expensive relative to the drift tick, and the machine
@@ -38,6 +39,7 @@ export function usePerfWatch(): void {
     let guard = initialGuardState();
     let native: PerfSample | null = null;
     let compositing = false;
+    let nvidiaSession = false;
     let graphicsSwitchAvailable = false;
     let lastNativeAt = 0;
     let stopped = false;
@@ -48,7 +50,9 @@ export function usePerfWatch(): void {
     void rendererPolicy()
       .then((policy) => {
         compositing = policy.softwareCompositing;
+        nvidiaSession = policy.nvidiaSession;
         graphicsSwitchAvailable = policy.configurable && !policy.environmentOverride;
+        announceRendererHeal(policy);
       })
       .catch(() => {});
 
@@ -68,6 +72,7 @@ export function usePerfWatch(): void {
           });
       }
 
+      const rendererMode = useSettingsStore.getState().settings?.rendererMode;
       const window: PerfWindow = {
         lagMs,
         cpuPercent: native?.cpuPercent ?? null,
@@ -75,7 +80,9 @@ export function usePerfWatch(): void {
         rendererCpuPercent: native?.rendererCpuPercent ?? null,
         memRatio: memoryRatio(native),
         softwareCompositing: compositing,
-        autoGraphics: useSettingsStore.getState().settings?.rendererMode === "auto",
+        autoGraphics: rendererMode === "auto",
+        acceleratedGraphics: rendererMode === "accelerated",
+        nvidiaSession,
         graphicsSwitchAvailable,
         workingPanes,
       };

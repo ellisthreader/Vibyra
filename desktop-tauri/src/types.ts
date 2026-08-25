@@ -92,6 +92,8 @@ export interface RendererPolicy {
   nvidiaSession: boolean;
   configurable: boolean;
   environmentOverride: boolean;
+  /** Startup rewrote a promoted NVIDIA "accelerated" mode back to "auto". */
+  healedThisLaunch: boolean;
 }
 
 export interface Settings {
@@ -110,6 +112,10 @@ export interface Settings {
   screenshotShortcut: string;
   /** WebKit compositing policy (Linux only); applies on next launch. */
   rendererMode: RendererMode;
+  /** One-shot marker: the promoted-accelerated repair already ran here. */
+  rendererAccelHealDone: boolean;
+  /** Skip decorative animation regardless of the OS reduced-motion setting. */
+  reduceMotion: boolean;
   enabledAgentIds: string[];
   aiDailyCallCap: number;
   aiHourlyCallCap: number;

@@ -17,6 +17,7 @@ export type ProjectMode = "terminals" | "preview";
 export type SettingsSectionId =
   | "profile"
   | "general"
+  | "performance"
   | "notifications"
   | "ai"
   | "integrations"

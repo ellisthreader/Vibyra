@@ -103,6 +103,29 @@ pub fn use_shared_memory(mode: RendererMode, facts: &GpuFacts) -> bool {
 #[path = "renderer_probe.rs"]
 mod probe;
 
+#[cfg(target_os = "linux")]
+#[path = "renderer_heal.rs"]
+mod heal;
+
+/// Set when this launch rewrote a promoted `accelerated` back to `auto`, so
+/// the frontend can say so once. See `renderer_heal.rs`.
+#[cfg(target_os = "linux")]
+static HEALED_THIS_LAUNCH: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// True when startup repaired an NVIDIA-forced `accelerated` mode this launch.
+/// Always false off Linux.
+pub fn healed_this_launch() -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        HEALED_THIS_LAUNCH.load(std::sync::atomic::Ordering::Relaxed)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        false
+    }
+}
+
 /// Reads the saved renderer mode without loading the whole app state — this
 /// runs before the Tauri builder, so `AppState` does not exist yet.
 pub fn saved_mode() -> RendererMode {
@@ -143,9 +166,19 @@ pub fn nvidia_session() -> bool {
 
 /// Applies the compositing policy. A no-op off Linux: WebView2 and WKWebView
 /// have no DMA-BUF renderer and composite WebGL correctly.
+///
+/// The heal pass runs first so a promoted-then-stuck `accelerated` install is
+/// repaired before this launch reads the saved mode — one restart lands on
+/// the fast path, not two.
 pub fn configure() {
     #[cfg(target_os = "linux")]
-    probe::configure(saved_mode());
+    {
+        let path = vibyra_core::settings::Settings::default_path();
+        if heal::apply(&path, nvidia_drives_session(&probe::facts())) {
+            HEALED_THIS_LAUNCH.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
+        probe::configure(saved_mode());
+    }
 }
 
 #[cfg(test)]

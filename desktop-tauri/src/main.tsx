@@ -110,6 +110,7 @@ import "./styles/screenshot-editor.css";
 import "./styles/screenshot-controls.css";
 import "./styles/screenshot-tray.css";
 import "./styles/settings-graphics.css";
+import "./styles/settings-performance.css";
 import "./styles/settings-updates.css";
 import "./styles/settings-hotkeys.css";
 import "./styles/settings-profile.css";

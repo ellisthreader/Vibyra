@@ -2,14 +2,22 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "A Performance home in Settings",
+    body: "See what Vibyra is using right now — graphics path, CPU, memory — and every lever that changes it, in one place.",
+    fresh: true,
+  },
+  {
+    title: "Graphics that heal themselves",
+    body: "Installs left on a slower GPU mode are moved back to the fast path automatically, and the app never suggests a mode your hardware runs worse.",
+    fresh: true,
+  },
+  {
     title: "Typing that keeps up",
     body: "Your keystrokes reach the screen within a frame, even while agents stream output in other panes.",
-    fresh: true,
   },
   {
     title: "Updates from Settings",
     body: "See your version and check for the latest release any time in Settings → Updates.",
-    fresh: true,
   },
   {
     title: "Terminal performance fixed",

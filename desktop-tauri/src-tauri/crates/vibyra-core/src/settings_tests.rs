@@ -65,6 +65,29 @@ fn notifications_default_in_for_a_pre_feature_settings_file() {
     assert!((0.0..=1.0).contains(&loaded.notifications.volume));
 }
 
+/// A pre-0.2.5 settings file has neither the heal marker nor the motion
+/// toggle; both must default off so the startup repair runs exactly once and
+/// animation stays on until asked otherwise.
+#[test]
+fn renderer_heal_and_reduce_motion_default_off_for_older_files() {
+    let tmp = tempfile::tempdir().unwrap();
+    let path = tmp.path().join("settings.json");
+    std::fs::write(&path, r#"{"rendererMode":"accelerated"}"#).unwrap();
+    let loaded = Settings::load_from(&path);
+    assert!(!loaded.renderer_accel_heal_done);
+    assert!(!loaded.reduce_motion);
+
+    let settings = Settings {
+        renderer_accel_heal_done: true,
+        reduce_motion: true,
+        ..Settings::default()
+    };
+    settings.save_to(&path).unwrap();
+    let loaded = Settings::load_from(&path);
+    assert!(loaded.renderer_accel_heal_done);
+    assert!(loaded.reduce_motion);
+}
+
 #[test]
 fn corrupt_file_falls_back_to_defaults() {
     let tmp = tempfile::tempdir().unwrap();

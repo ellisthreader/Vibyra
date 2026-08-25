@@ -29,6 +29,11 @@ export interface PerfWindow {
   softwareCompositing: boolean;
   /** Auto may offer a one-click accelerated next launch without overriding an explicit choice. */
   autoGraphics: boolean;
+  /** The saved mode forces the GPU path, which has a one-switch way back. */
+  acceleratedGraphics: boolean;
+  /** Detection says this session renders through NVIDIA, where the GPU path
+   * is the measured-slower one — never promote towards it. */
+  nvidiaSession: boolean;
   /** False when an environment variable makes the saved setting inert. */
   graphicsSwitchAvailable: boolean;
   /** Panes currently streaming output, used to pick the actionable message. */

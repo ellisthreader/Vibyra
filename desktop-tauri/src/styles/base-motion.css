@@ -28,3 +28,12 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* The in-app "Reduce motion" toggle (Settings → Performance) — identical
+   effect to the OS preference above, applied by settingsStore. */
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}

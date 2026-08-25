@@ -37,7 +37,9 @@ export function initialGuardState(): PerfGuardState {
 
 function message(reason: PerfReason, window: PerfWindow): NotificationInput {
   const base = { category: "performance", severity: "warning", osEligible: false } as const;
-  if (reason === "compositing") {
+  // Never on NVIDIA: the GPU path is the measured-slower one there, and the
+  // pre-0.2.5 promotion offer is exactly how installs got stuck on it.
+  if (reason === "compositing" && !window.nvidiaSession) {
     const canPromoteAuto = window.autoGraphics && window.graphicsSwitchAvailable;
     return {
       ...base,
@@ -51,6 +53,23 @@ function message(reason: PerfReason, window: PerfWindow): NotificationInput {
       action: canPromoteAuto
         ? { id: "enableAcceleratedGraphics", label: "Allow GPU next launch" }
         : { id: "openGraphicsSettings", label: "Open graphics settings" },
+    };
+  }
+  // The way back the old guard never offered: struggling on the GPU path on
+  // NVIDIA with "accelerated" forced has a one-switch remedy.
+  if (
+    reason !== "memory" &&
+    !window.softwareCompositing &&
+    window.nvidiaSession &&
+    window.acceleratedGraphics &&
+    window.graphicsSwitchAvailable
+  ) {
+    return {
+      ...base,
+      title: "GPU graphics is underperforming on this system",
+      body: "NVIDIA sessions run measurably slower on the accelerated renderer. Going back to Automatic applies the next time Vibyra starts.",
+      dedupeKey: "perf:nvidia-accelerated",
+      action: { id: "revertToAutoGraphics", label: "Back to Automatic next launch" },
     };
   }
   if (reason === "memory") {

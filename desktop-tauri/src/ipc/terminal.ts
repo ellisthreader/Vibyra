@@ -121,6 +121,10 @@ export async function createSshTerminal(
  * keystroke's response before sending the next one couples typing to the
  * renderer's paint loop — the reply callback lands behind whatever xterm is
  * drawing — and the pane then permanently shows the key typed before last.
+ *
+ * The ordered-postMessage guarantee also depends on the window CSP keeping
+ * Tauri's `ipc://` custom protocol blocked (fetch-based, unordered). See
+ * tests/ipcOrdering.test.mjs before touching connect-src.
  */
 export function writeTerminal(id: number, data: string): Promise<void> {
   return invoke("write_terminal", { id, data });

@@ -15,9 +15,16 @@ export function normalizeRendererMode(value: unknown): RendererMode {
  * WebGL only composites on WebKit's accelerated path. Under the shared-memory
  * renderer the addon loads, the buffer fills, and the pane stays black — so a
  * failed probe must fall back to the DOM renderer, which is always correct.
+ *
+ * NVIDIA sessions are refused even on the accelerated path: there the WebGL
+ * canvas presents one draw late (every delivery paints the previous one), so
+ * typing runs permanently one character behind. Proven live 2026-08-25; the
+ * DOM renderer on the same path paints correctly.
  */
-export function webglIsTrustworthy(probe: Pick<RendererPolicy, "softwareCompositing"> | null): boolean {
-  return probe !== null && !probe.softwareCompositing;
+export function webglIsTrustworthy(
+  probe: Pick<RendererPolicy, "softwareCompositing" | "nvidiaSession"> | null,
+): boolean {
+  return probe !== null && !probe.softwareCompositing && !probe.nvidiaSession;
 }
 
 /** What the selected mode would resolve to on the next launch. */

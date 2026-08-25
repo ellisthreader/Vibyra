@@ -19,6 +19,9 @@ pub struct RendererPolicy {
     /// The app-specific environment override forced the outcome, so the saved
     /// mode is ignored until the user unsets `VIBYRA_WEBKIT_DMABUF`.
     pub environment_override: bool,
+    /// This launch rewrote a promoted NVIDIA `accelerated` mode back to
+    /// `auto` (see `renderer_heal.rs`); the frontend announces it once.
+    pub healed_this_launch: bool,
 }
 
 /// True when the WebView composites through WebKit's shared-memory path
@@ -54,5 +57,6 @@ pub fn renderer_policy() -> RendererPolicy {
         nvidia_session: renderer::nvidia_session(),
         configurable: cfg!(target_os = "linux"),
         environment_override: renderer::environment_override(),
+        healed_this_launch: renderer::healed_this_launch(),
     }
 }

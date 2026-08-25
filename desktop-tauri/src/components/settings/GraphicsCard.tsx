@@ -1,15 +1,25 @@
 import { useEffect, useState } from "react";
 
 import { rendererPolicy } from "../../ipc/render";
+import { restartAppNow } from "../../lib/appRestart";
 import { rendererNeedsRestart } from "../../lib/rendererPolicy";
 import type { RendererMode, RendererPolicy } from "../../types";
 import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
 
 const MODES: { id: RendererMode; label: string; hint: string }[] = [
-  { id: "auto", label: "Automatic (recommended)", hint: "Starts safely and offers GPU acceleration if CPU rendering stays slow" },
+  { id: "auto", label: "Automatic (recommended)", hint: "Picks the fastest path this machine can actually deliver" },
   { id: "accelerated", label: "Allow GPU", hint: "Use GPU acceleration next launch; can freeze on some NVIDIA setups" },
   { id: "compatibility", label: "Compatibility", hint: "Do not use GPU acceleration; uses more CPU while output streams" },
 ];
+
+/** The measured truth on NVIDIA replaces the generic trade-off text: the GPU
+ * path is the slow one there, and terminals refuse WebGL on it either way. */
+function modeHint(option: (typeof MODES)[number], policy: RendererPolicy): string {
+  if (option.id === "accelerated" && policy.nvidiaSession) {
+    return "Measured slower on this NVIDIA system and not recommended; terminals stay on safe drawing";
+  }
+  return option.hint;
+}
 
 function activeLabel(policy: RendererPolicy): string {
   return policy.softwareCompositing ? "CPU compatibility mode" : "GPU acceleration";
@@ -17,7 +27,7 @@ function activeLabel(policy: RendererPolicy): string {
 
 function autoHint(policy: RendererPolicy): string {
   return policy.nvidiaSession
-    ? "This NVIDIA session started safely on the CPU. If rendering stays slow, Vibyra offers GPU acceleration for the next launch."
+    ? "Automatic keeps this NVIDIA session on CPU compositing — the measured-faster path here."
     : "Automatic is allowing GPU acceleration on this system.";
 }
 
@@ -72,7 +82,7 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
                 onClick={() => void update({ rendererMode: option.id })}
               >
                 <span className="graphics-mode__label">{option.label}</span>
-                <span className="graphics-mode__hint">{option.hint}</span>
+                <span className="graphics-mode__hint">{modeHint(option, policy)}</span>
               </button>
             ))}
           </div>
@@ -83,7 +93,12 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
             over this setting. Unset it for the choice above to apply.
           </p>
         ) : needsRestart ? (
-          <p className="settings-note">Restart Vibyra to apply the new graphics mode.</p>
+          <p className="settings-note settings-note--action">
+            Restart Vibyra to apply the new graphics mode.{" "}
+            <button className="btn" onClick={() => void restartAppNow()}>
+              Restart now
+            </button>
+          </p>
         ) : null}
       </div>
     </SettingsBlock>

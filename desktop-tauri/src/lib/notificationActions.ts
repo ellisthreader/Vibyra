@@ -3,7 +3,9 @@ import { useNotificationStore } from "../state/notificationStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
+import { hibernateIdleTerminals } from "./terminalHibernate";
 import type { NotificationAction } from "../notificationTypes";
+import type { RendererMode } from "../types";
 
 // Actions are dispatched from components, never from the store: the store must
 // stay free of imports from other stores or the cycle
@@ -18,36 +20,20 @@ function focusSession(id: number): void {
     .then(() => useTerminalStore.getState().setFocus(id));
 }
 
-/** Panes that are alive, on screen, and have not produced output recently. The
- * same set the titlebar counts as idle, so the offer matches what the user sees. */
-function idleTerminalIds(): number[] {
-  const { panes, activity } = useTerminalStore.getState();
-  return panes
-    .filter(
-      (pane) =>
-        pane.status === "running" &&
-        pane.visibility !== "hibernated" &&
-        activity[pane.id] === "idle",
-    )
-    .map((pane) => pane.id);
-}
-
-function hibernateIdleTerminals(): void {
-  const hibernate = useTerminalStore.getState().hibernate;
-  for (const id of idleTerminalIds()) void hibernate(id);
-}
-
-async function enableAcceleratedGraphics(): Promise<void> {
+/** Stages a graphics mode for the next launch, saying what happened either
+ * way. Both the promotion and the way back run through here so they cannot
+ * drift apart. */
+async function stageRendererMode(mode: RendererMode, stagedTitle: string): Promise<void> {
   const settings = useSettingsStore.getState();
   if (!settings.settings) return;
   try {
-    await settings.update({ rendererMode: "accelerated" });
+    await settings.update({ rendererMode: mode });
     useNotificationStore.getState().push({
       category: "performance",
       severity: "success",
-      title: "GPU rendering is ready for next launch",
+      title: stagedTitle,
       body: "Restart Vibyra when convenient. Your running terminals were left untouched.",
-      dedupeKey: "perf:accelerated-staged",
+      dedupeKey: `perf:${mode}-staged`,
       osEligible: false,
     });
   } catch {
@@ -55,9 +41,9 @@ async function enableAcceleratedGraphics(): Promise<void> {
       category: "performance",
       severity: "warning",
       title: "Graphics mode could not be changed",
-      body: "Open Graphics settings and choose Accelerated manually.",
-      dedupeKey: "perf:accelerated-stage-failed",
-      action: { id: "openGraphicsSettings", label: "Open graphics settings" },
+      body: "Open Performance settings and pick the mode manually.",
+      dedupeKey: "perf:graphics-stage-failed",
+      action: { id: "openGraphicsSettings", label: "Open performance settings" },
       osEligible: false,
     });
   }
@@ -73,11 +59,13 @@ export function runNotificationAction(action: NotificationAction): void {
       hibernateIdleTerminals();
       return;
     case "enableAcceleratedGraphics":
-      void enableAcceleratedGraphics();
+      void stageRendererMode("accelerated", "GPU rendering is ready for next launch");
+      return;
+    case "revertToAutoGraphics":
+      void stageRendererMode("auto", "Automatic graphics is ready for next launch");
       return;
     case "openGraphicsSettings":
-      // The graphics card lives inside the General pane, not a section of its own.
-      workspace.openSettingsSection("general");
+      workspace.openSettingsSection("performance");
       return;
     case "openAiSettings":
       workspace.openSettingsSection("ai");

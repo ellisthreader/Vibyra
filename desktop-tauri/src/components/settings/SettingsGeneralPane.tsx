@@ -1,6 +1,5 @@
 import { shortcutLabel } from "../../lib/hotkeys";
 import type { Settings } from "../../types";
-import { GraphicsCard } from "./GraphicsCard";
 import { SettingRow, SettingsBlock, Switch, type SettingsPaneProps } from "./SettingsShared";
 
 const THEMES: { id: Settings["theme"]; label: string }[] = [
@@ -25,15 +24,11 @@ function ThemeCards({ settings, update }: SettingsPaneProps) {
 export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
   return (
     <>
-      <GraphicsCard settings={settings} update={update} />
       <SettingsBlock label="Theme"><ThemeCards settings={settings} update={update} /></SettingsBlock>
       <SettingsBlock label="Terminal">
         <div className="settings-group">
           <SettingRow label="Font size" hint="Terminal text size in pixels">
             <input className="input input--sm" type="number" min={9} max={24} value={settings.fontSize} onChange={(event) => void update({ fontSize: Number(event.target.value) || 13 })} />
-          </SettingRow>
-          <SettingRow label="Scrollback" hint="Lines of history kept per terminal">
-            <input className="input input--sm" type="number" min={200} max={100000} step={100} value={settings.scrollbackLines} onChange={(event) => void update({ scrollbackLines: Number(event.target.value) || 5000 })} />
           </SettingRow>
           <SettingRow label="Font family" hint="Any monospace stack installed on this machine" stack>
             <input className="input" value={settings.fontFamily} onChange={(event) => void update({ fontFamily: event.target.value })} spellCheck={false} />
@@ -53,13 +48,6 @@ export function SettingsGeneralPane({ settings, update }: SettingsPaneProps) {
           </SettingRow>
           <SettingRow label="Hide Vibyra in captures" hint="Off captures the screen exactly as it is. On asks the compositor to take Vibyra out of the shot, which costs a compositor frame per capture and needs a compositing window manager.">
             <Switch label="Hide Vibyra in captures" checked={settings.screenshotHideWindow} onChange={(next) => void update({ screenshotHideWindow: next })} />
-          </SettingRow>
-        </div>
-      </SettingsBlock>
-      <SettingsBlock label="Saved sessions">
-        <div className="settings-group">
-          <SettingRow label="Restore terminal output" hint="Your open terminals and layout always come back. This also saves the last of each terminal's output so you can read where you left off — turn it off if this machine is shared, and restored terminals will reopen blank.">
-            <Switch label="Restore terminal output" checked={settings.persistTerminalScrollback} onChange={(next) => void update({ persistTerminalScrollback: next })} />
           </SettingRow>
         </div>
       </SettingsBlock>

@@ -5,12 +5,13 @@ import { useModalFocus } from "../../lib/useModalFocus";
 import { useSettingsStore } from "../../state/settingsStore";
 import { type SettingsSectionId, useWorkspaceStore } from "../../state/workspaceStore";
 import { BellIcon } from "../common/StatusIcons";
-import { BotIcon, CloseIcon, CommandIcon, GearIcon, LinkIcon, RestartIcon, SparklesIcon, UserIcon } from "../common/Icons";
+import { BotIcon, CloseIcon, CommandIcon, GaugeIcon, GearIcon, LinkIcon, RestartIcon, SparklesIcon, UserIcon } from "../common/Icons";
 import { SettingsAgentsPane } from "./SettingsAgentsPane";
 import { SettingsAiPane } from "./SettingsAiPane";
 import { SettingsGeneralPane } from "./SettingsGeneralPane";
 import { SettingsNotificationsPane } from "./SettingsNotificationsPane";
 import { SettingsIntegrationsPane } from "./SettingsIntegrationsPane";
+import { SettingsPerformancePane } from "./SettingsPerformancePane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
 import { SettingsUpdatesPane } from "./SettingsUpdatesPane";
@@ -26,7 +27,8 @@ interface Section {
 
 const SECTIONS: Section[] = [
   { id: "profile", label: "Profile", blurb: "Your Vibyra account and session", icon: UserIcon },
-  { id: "general", label: "General", blurb: "GPU, theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
+  { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
+  { id: "performance", label: "Performance", blurb: "What Vibyra is using right now, and the levers that change it", icon: GaugeIcon },
   { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
   { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
   { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
@@ -50,6 +52,7 @@ export function SettingsModal() {
   const pane = {
     profile: <SettingsProfilePane />,
     general: <SettingsGeneralPane settings={settings} update={update} />,
+    performance: <SettingsPerformancePane settings={settings} update={update} />,
     notifications: <SettingsNotificationsPane settings={settings} update={update} />,
     ai: <SettingsAiPane settings={settings} update={update} />,
     integrations: <SettingsIntegrationsPane settings={settings} update={update} />,

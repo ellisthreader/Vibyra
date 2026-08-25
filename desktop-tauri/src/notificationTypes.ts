@@ -26,6 +26,7 @@ export type NotificationActionId =
   | "focusSession"
   | "hibernateIdleTerminals"
   | "enableAcceleratedGraphics"
+  | "revertToAutoGraphics"
   | "openGraphicsSettings"
   | "openAiSettings"
   | "openShortcutSettings"

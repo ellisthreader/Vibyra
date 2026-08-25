@@ -58,6 +58,17 @@ export function dropStats(id: number): void {
   stats.delete(id);
 }
 
+/** When the most recent output landed, across every session. The session
+ * snapshot heartbeat uses this to skip rewriting an unchanged multi-megabyte
+ * session.json while everything is quiet. */
+export function latestOutputAt(): number {
+  let latest = 0;
+  for (const s of stats.values()) {
+    if (s.lastOutputAt > latest) latest = s.lastOutputAt;
+  }
+  return latest;
+}
+
 const WORKING_WINDOW_MS = 5_000;
 const PROMPT_QUIET_MS = 2_500;
 

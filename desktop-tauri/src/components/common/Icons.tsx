@@ -118,6 +118,13 @@ export const PencilIcon = icon(
   </>,
 );
 
+export const GaugeIcon = icon(
+  <>
+    <path d="m12 15 3.5-3.5" />
+    <path d="M20.3 18a9 9 0 1 0-16.6 0" />
+  </>,
+);
+
 export const UserIcon = icon(
   <>
     <circle cx="12" cy="8" r="4" />

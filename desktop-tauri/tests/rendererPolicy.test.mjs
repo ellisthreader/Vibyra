@@ -28,8 +28,27 @@ function policy(overrides = {}) {
 }
 
 test("WebGL is trusted only on the accelerated path", () => {
-  assert.equal(webglIsTrustworthy({ softwareCompositing: false }), true);
-  assert.equal(webglIsTrustworthy({ softwareCompositing: true }), false);
+  assert.equal(
+    webglIsTrustworthy({ softwareCompositing: false, nvidiaSession: false }),
+    true,
+  );
+  assert.equal(
+    webglIsTrustworthy({ softwareCompositing: true, nvidiaSession: false }),
+    false,
+  );
+});
+
+test("NVIDIA sessions never get WebGL, even under accelerated compositing", () => {
+  // The one-character-behind bug: under DMA-BUF on NVIDIA the WebGL canvas
+  // presents one draw late. The DOM renderer on the same path is correct.
+  assert.equal(
+    webglIsTrustworthy({ softwareCompositing: false, nvidiaSession: true }),
+    false,
+  );
+  assert.equal(
+    webglIsTrustworthy({ softwareCompositing: true, nvidiaSession: true }),
+    false,
+  );
 });
 
 test("a failed compositing probe falls back to the DOM renderer", () => {

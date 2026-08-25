@@ -1,5 +1,5 @@
-/* Graphics-mode picker in Settings → General. Three stacked choices rather
-   than a select, because each one needs its trade-off spelled out. */
+/* Graphics-mode picker in Settings → Performance. Three stacked choices
+   rather than a select, because each one needs its trade-off spelled out. */
 
 .graphics-modes {
   display: flex;
@@ -50,4 +50,11 @@
   font-size: 11px;
   line-height: 1.6;
   color: var(--muted);
+}
+
+.settings-note--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }

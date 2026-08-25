@@ -43,6 +43,13 @@ pub struct Settings {
     /// Linux only; read at startup before the webview exists, so a change
     /// takes effect on the next launch. See `renderer.rs` in the app crate.
     pub renderer_mode: String,
+    /// One-shot marker for the startup repair of an NVIDIA session left on
+    /// "accelerated" by the pre-0.2.5 promotion offer. Once true, an explicit
+    /// "accelerated" choice is the user's own and is never rewritten again.
+    pub renderer_accel_heal_done: bool,
+    /// Skip decorative animation and the sign-in backdrop video, independent
+    /// of the OS-level reduced-motion preference.
+    pub reduce_motion: bool,
     /// AI CLI integrations explicitly enabled for terminal model selection.
     pub enabled_agent_ids: Vec<String>,
     /// Spend guardrails for the user's own OpenAI key, enforced before every
@@ -77,6 +84,8 @@ impl Default for Settings {
             voice_shortcut: "F8".to_string(),
             screenshot_shortcut: "F9".to_string(),
             renderer_mode: "auto".to_string(),
+            renderer_accel_heal_done: false,
+            reduce_motion: false,
             enabled_agent_ids: Vec::new(),
             ai_daily_call_cap: 250,
             ai_hourly_call_cap: 60,

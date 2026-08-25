@@ -16,6 +16,13 @@ interface SettingsStore {
 
 function applyTheme(settings: Settings): void {
   document.documentElement.dataset.theme = resolveTheme(settings.theme);
+  // Mirrors the prefers-reduced-motion kill rule in base-motion.css, so the
+  // in-app toggle works without an OS-level accessibility change.
+  if (settings.reduceMotion) {
+    document.documentElement.dataset.reduceMotion = "true";
+  } else {
+    delete document.documentElement.dataset.reduceMotion;
+  }
 }
 
 function normalizeSettings(settings: Settings): Settings {

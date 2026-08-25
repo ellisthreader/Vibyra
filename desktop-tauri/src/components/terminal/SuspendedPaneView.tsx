@@ -14,6 +14,11 @@ import { useSettingsStore } from "../../state/settingsStore";
  * `writeTerminal(id, …)`, and a suspended pane's id names no live session.
  * This terminal owns itself, takes no input, and is disposed on unmount.
  */
+/** Same rhythm as TerminalView: a window drag observes every frame, and an
+ * unthrottled synchronous `fit()` per observation is a forced-layout storm
+ * multiplied by however many restored panes are on screen. */
+const FIT_THROTTLE_MS = 90;
+
 export function SuspendedPaneView({ snapshot }: { snapshot: string | null | undefined }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +29,8 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
     let cancelled = false;
     let observer: ResizeObserver | null = null;
     let term: Terminal | null = null;
+    let trailingTimer = 0;
+    let frame = 0;
     void initTerminalFont().then(() => {
       const settings = useSettingsStore.getState().settings;
       if (cancelled || !settings) return;
@@ -43,8 +50,10 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
       openedTerm.loadAddon(fit);
       openedTerm.open(host);
 
+      let lastFitAt = 0;
       const refit = () => {
         if (cancelled) return;
+        lastFitAt = performance.now();
         const rect = host.getBoundingClientRect();
         if (rect.width > 80 && rect.height > 60) fit.fit();
       };
@@ -59,12 +68,23 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
         });
       }
 
-      observer = new ResizeObserver(refit);
+      observer = new ResizeObserver(() => {
+        if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
+          frame = requestAnimationFrame(() => {
+            frame = 0;
+            refit();
+          });
+        }
+        window.clearTimeout(trailingTimer);
+        trailingTimer = window.setTimeout(refit, FIT_THROTTLE_MS);
+      });
       observer.observe(host);
     });
     return () => {
       cancelled = true;
       observer?.disconnect();
+      window.clearTimeout(trailingTimer);
+      cancelAnimationFrame(frame);
       term?.dispose();
     };
   }, [snapshot]);

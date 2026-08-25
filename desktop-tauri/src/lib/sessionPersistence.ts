@@ -1,5 +1,6 @@
 import { saveTerminalSession } from "../ipc/session";
 import { useTerminalStore } from "../state/terminalStore";
+import { latestOutputAt } from "./activity";
 import { toPersistedPanes } from "./sessionRestore";
 
 // Two save rhythms, because the two halves of the session cost very different
@@ -53,7 +54,14 @@ export function startSessionPersistence(): () => void {
     }, METADATA_DEBOUNCE_MS);
   });
 
+  // A crash can only lose output that arrived since the last snapshot, so a
+  // quiet interval has nothing to protect — skip the multi-megabyte rewrite
+  // (session.json was measured at 3 MB with 8 panes).
+  let lastSnapshotOutputAt = -1;
   heartbeat = setInterval(() => {
+    const stamp = latestOutputAt();
+    if (stamp === lastSnapshotOutputAt) return;
+    lastSnapshotOutputAt = stamp;
     void saveSessionNow(true).catch(() => {});
   }, SNAPSHOT_INTERVAL_MS);
 
