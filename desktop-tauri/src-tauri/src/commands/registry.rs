@@ -85,6 +85,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         screenshot::save_screenshot,
         screenshot_reveal::reveal_screenshot,
         clipboard::read_clipboard_paste,
+        clipboard::write_clipboard_text,
         voice::voice_status,
         voice::voice_start,
         voice::voice_stop,
