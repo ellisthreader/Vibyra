@@ -50,6 +50,8 @@ website, Expo browser client, and native phone app.
 - Titlebar rebuild, the stage split that replaced the Terminals/Preview mode,
   and why `terminalsVisible()` is the native flush budget:
   `Desktop/Project Stage And Titlebar.md`
+- Current floating right dock, its three titlebar size controls, and the
+  active-size close rule: `Desktop/Project Dock.md`
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`
