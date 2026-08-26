@@ -1,7 +1,8 @@
 import { useAgentStore } from "../../state/agentStore";
+import { useReviewStore } from "../../state/reviewStore";
 import { paneLabel, useTerminalStore, type PaneState } from "../../state/terminalStore";
 import { AgentMark } from "../common/AgentMark";
-import { CloseIcon, ExpandIcon, MoonIcon, RestartIcon, SunIcon } from "../common/Icons";
+import { CloseIcon, ExpandIcon, GitBranchIcon, MoonIcon, RestartIcon, SunIcon } from "../common/Icons";
 import { PaneAccountBadge } from "./PaneAccountBadge";
 import { SuspendedPaneView } from "./SuspendedPaneView";
 import { TerminalView } from "./TerminalView";
@@ -67,6 +68,16 @@ export function TerminalPaneCard({
           </span>
         )}
         {!exited && !suspended ? <PaneAccountBadge pane={pane} /> : null}
+        {pane.workspace && (
+          <button
+            type="button"
+            className="pane__review"
+            title="Ran in a safe workspace — review its changes"
+            onClick={() => useReviewStore.getState().openForPane(pane.id)}
+          >
+            <GitBranchIcon size={11} /> Review
+          </button>
+        )}
         <div className="pane__actions">
           {suspended ? (
             <button

@@ -1,0 +1,93 @@
+/* Inside the dock: its header, its tool strip, and the frame each tool's
+   interior sits in. The float itself is `dock-shell.css`; the interiors keep
+   their own `companion-*` sheets and the preview sheets, none of which
+   changed when the two old right-hand surfaces became one. */
+
+/* ── header ───────────────────────────────────────────────────────────────
+   Segmented shape comes from `nav-segmented.css`; only the fit is local. */
+
+.dock__head {
+  display: flex;
+  align-items: center;
+  min-height: var(--subhead-h);
+  padding: 0 8px;
+  gap: 8px;
+  background: var(--rail);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.dock__tabs {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dock__tab {
+  min-width: 0;
+  padding: 0 9px;
+}
+
+/* Four labelled tabs do not fit a 300px column, so compact shows the glyphs
+   alone. Each keeps its title, and the palette still reaches all four by name. */
+.dock[data-size="compact"] .dock__tab {
+  width: 32px;
+  padding: 0;
+}
+
+.dock[data-size="compact"] .dock__tab-label {
+  display: none;
+}
+
+/* ── body ─────────────────────────────────────────────────────────────── */
+
+.dock__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--workspace);
+}
+
+/* The preview is mounted on first use and hidden thereafter — switching tools
+   must not restart a running dev server. */
+.dock__tool {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.dock__tool--off {
+  display: none;
+}
+
+/* The shared padding every tool interior sits in. The interiors themselves
+   keep their own `companion-*` sheets: only the shell around them changed. */
+.companion-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  gap: 10px;
+}
+
+/* The preview is a tool now, so it can be asked to render in a 300px column
+   rather than half a stage. Its pickers were sized for the latter — two at
+   190px each wrap a 440px toolbar onto three rows — so anything short of a
+   full-size dock shortens them, and compact drops the labels and the second
+   line of each picker too. Same trim `preview.css` applies at a narrow
+   viewport, keyed to the dock instead of the window. */
+.dock:not([data-size="full"]) .preview-picker {
+  min-width: 132px;
+}
+
+.dock:not([data-size="full"]) .preview-toolbar__label,
+.dock:not([data-size="full"]) .preview-toolbar__divider,
+.dock[data-size="compact"] .preview-picker__copy small {
+  display: none;
+}
+
+.dock[data-size="compact"] .preview-picker {
+  min-width: 96px;
+}

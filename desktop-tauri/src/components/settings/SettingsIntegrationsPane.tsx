@@ -9,6 +9,7 @@ import {
 import type { Settings } from "../../types";
 import { ProviderMark } from "../common/AgentMark";
 import { RestartIcon } from "../common/Icons";
+import { SettingsBlock } from "./SettingsShared";
 import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
 import { TerminalIntegrations } from "./TerminalIntegrations";
 
@@ -60,44 +61,54 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
   const catalogTone = loading ? "working" : source === "live" ? "success" : "neutral";
 
   return (
-    <section className="settings-integrations" aria-labelledby="integration-list-label">
-      <span className="section-label" id="integration-list-label">AI accounts</span>
-      <p className="integrations-intro">Connect the accounts you already use for personal AI terminals — more than one per company if you have them. Authorization stays with the official provider app.</p>
-      <div className="integration-list">
-        {!loaded ? <p className="integration-loading">Checking connected accounts…</p> : null}
-        {providers.map((provider) => (
-          <ProviderIntegrationCard
-            key={provider.id}
-            provider={provider}
-            busyKey={busyKey}
-            onAddAccount={() => void addAccount(provider.id)}
-            onInstall={() => void install(provider.id)}
-            onConnect={(account) => void connect(provider.id, account)}
-            onRemove={(account) => void removeAccount(provider.id, account)}
-            onSubmit={(account, value) => void submit(provider.id, account, value)}
-            onCancel={(account) => void cancel(provider.id, account)}
-            onDisconnect={(account) => void disconnect(provider.id, account)}
-            onOpenSignInPage={(account) => void openSignInPage(provider.id, account)}
-          />
-        ))}
-      </div>
-      {error ? <p className="integration-error" role="alert">{error}</p> : null}
+    <>
+      <p className="settings-lead">
+        Connect the accounts you already use for personal AI terminals — more than one per
+        company if you have them. Authorization stays with the official provider app.
+      </p>
 
-      <span className="section-label">Model catalog</span>
-      <article className="integration-card integration-catalog">
-        <div className="integration-card__head">
-          <ProviderMark provider="openrouter" label="OpenRouter" accent="#5b7cfa" size={40} />
-          <div className="integration-card__identity">
-            <div className="integration-card__title"><h3>OpenRouter</h3><span className={`integration-status integration-status--${catalogTone}`}><i aria-hidden="true" />{catalogLabel}</span></div>
-            <p>{modelCount} models available in agent launchers</p>
-          </div>
-          <button type="button" className="integration-refresh" disabled={loading} onClick={() => void refreshCatalog(true)}>
-            <RestartIcon size={13} />{loading ? "Refreshing" : "Refresh"}
-          </button>
+      <SettingsBlock label="AI accounts">
+        <div className="settings-group integration-list">
+          {!loaded ? <p className="settings-loading">Checking connected accounts…</p> : null}
+          {providers.map((provider) => (
+            <ProviderIntegrationCard
+              key={provider.id}
+              provider={provider}
+              busyKey={busyKey}
+              onAddAccount={() => void addAccount(provider.id)}
+              onInstall={() => void install(provider.id)}
+              onConnect={(account) => void connect(provider.id, account)}
+              onRemove={(account) => void removeAccount(provider.id, account)}
+              onSubmit={(account, value) => void submit(provider.id, account, value)}
+              onCancel={(account) => void cancel(provider.id, account)}
+              onDisconnect={(account) => void disconnect(provider.id, account)}
+              onOpenSignInPage={(account) => void openSignInPage(provider.id, account)}
+            />
+          ))}
         </div>
-        <p className="integration-card__note">Vibyra refreshes this public catalog automatically. It is not a connected billing account.</p>
-      </article>
+        {error ? <p className="integration-error" role="alert">{error}</p> : null}
+      </SettingsBlock>
+
+      <SettingsBlock label="Model catalog">
+        <article className="settings-group integration-card">
+          <div className="integration-card__head">
+            <ProviderMark provider="openrouter" label="OpenRouter" accent="#5b7cfa" size={40} />
+            <div className="integration-card__identity">
+              <div className="integration-card__title">
+                <h3>OpenRouter</h3>
+                <span className={`settings-status settings-status--${catalogTone}`}><i aria-hidden="true" />{catalogLabel}</span>
+              </div>
+              <p>{modelCount} models available in agent launchers</p>
+            </div>
+            <button type="button" className="integration-refresh" disabled={loading} onClick={() => void refreshCatalog(true)}>
+              <RestartIcon size={13} />{loading ? "Refreshing" : "Refresh"}
+            </button>
+          </div>
+          <p className="integration-card__note">Vibyra refreshes this public catalog automatically. It is not a connected billing account.</p>
+        </article>
+      </SettingsBlock>
+
       <TerminalIntegrations settings={settings} update={update} />
-    </section>
+    </>
   );
 }

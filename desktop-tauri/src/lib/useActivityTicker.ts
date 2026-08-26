@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 
-import { useNotificationPrefs } from "../state/settingsStore";
+import { useNotificationPrefs, useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { activityFor, type ActivityState } from "./activity";
 import { detectTransitions, type SessionPhase } from "./activityTransitions";
 import { dismissSettledPrompts, notifyActivityTransitions } from "./notificationTriggers";
+import { autoHibernateIdle } from "./terminalHibernate";
 import { windowIsFocused } from "./windowFocus";
 
 const ACTIVITY_TICK_MS = 1_500;
@@ -16,6 +17,7 @@ const ACTIVITY_TICK_MS = 1_500;
  */
 export function useActivityTicker(): void {
   const idleEnabled = useNotificationPrefs().agentIdleEnabled;
+  const maxPerformance = useSettingsStore((s) => s.settings?.performanceMode === "max");
   useEffect(() => {
     // Phase state lives in the closure, not React: the ticker runs whether or
     // not anything re-renders, and an edge missed by a render is an edge lost.
@@ -39,7 +41,10 @@ export function useActivityTicker(): void {
       });
       phases = result.phases;
       if (result.transitions.length > 0) notifyActivityTransitions(result.transitions);
+      // After the edges, so a pane never hibernates on the same tick a
+      // notice about it is going out.
+      if (maxPerformance) autoHibernateIdle(phases, Date.now());
     }, ACTIVITY_TICK_MS);
     return () => clearInterval(timer);
-  }, [idleEnabled]);
+  }, [idleEnabled, maxPerformance]);
 }

@@ -48,14 +48,16 @@ export function ProviderAccountRow({
 }: Props) {
   return (
     <div className="integration-account-row">
+      {/* Status gets a column of its own. Inline after the name it started at
+          a different x on every row, because an email is a different length
+          on every row. */}
       <div className="integration-account-row__identity">
         <span className="integration-account-row__name">{title(account, index)}</span>
-        <span className={`integration-status integration-status--${tone(account)}`}>
-          <i aria-hidden="true" />{providerStatusLabel(account)}
-        </span>
         <p>{account.detail}</p>
-        <ProviderAccountUse provider={provider} account={account} />
       </div>
+      <span className={`settings-status settings-status--${tone(account)}`}>
+        <i aria-hidden="true" />{providerStatusLabel(account)}
+      </span>
 
       <ProviderAccountActions
         provider={provider}
@@ -66,6 +68,8 @@ export function ProviderAccountRow({
         onDisconnect={onDisconnect}
         onRemove={onRemove}
       />
+
+      <ProviderAccountUse provider={provider} account={account} />
 
       <div className="integration-account__foot">
         {account.prompt ? (

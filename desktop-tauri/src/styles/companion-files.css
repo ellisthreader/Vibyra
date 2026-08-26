@@ -3,7 +3,7 @@
   gap: 0;
 }
 
-.companion .file-tree {
+.dock .file-tree {
   flex: 1;
   min-height: 0;
   gap: 0;
@@ -140,12 +140,12 @@
   background: var(--hover);
 }
 
-.companion .tree {
+.dock .tree {
   padding: 6px 6px 10px;
   scrollbar-gutter: stable;
 }
 
-.companion .tree-row {
+.dock .tree-row {
   position: relative;
   min-height: 28px;
   padding-block: 2px;
@@ -155,12 +155,12 @@
   font-weight: 550;
 }
 
-.companion .tree-row:hover {
+.dock .tree-row:hover {
   color: var(--text);
   background: var(--hover);
 }
 
-.companion .tree-row--selected {
+.dock .tree-row--selected {
   color: var(--text);
   background: var(--hover-strong);
   box-shadow: inset 2px 0 0 var(--accent);
@@ -180,7 +180,7 @@
   color: var(--dim);
 }
 
-.companion .tree-empty {
+.dock .tree-empty {
   padding: 14px 9px;
   color: var(--dim);
   font-size: 11px;

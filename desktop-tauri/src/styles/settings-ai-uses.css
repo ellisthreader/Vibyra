@@ -1,25 +1,25 @@
-/* Settings > Vibyra AI — what the key powers. */
-
-.ai-uses {
-  display: grid;
-  gap: 1px;
-}
+/* Settings → Vibyra AI — what the key powers. Rows in the shared group card;
+   every other list in Settings; these rows just carry copy instead of a
+   control, so they set their own padding rather than reusing `.setting-row`. */
 
 .ai-use {
-  border-top: 1px solid var(--line-soft);
   display: grid;
   gap: 3px;
-  padding: 11px 0;
+  padding: 12px 14px;
+}
+
+.ai-use + .ai-use {
+  border-top: 1px solid var(--line-soft);
 }
 
 .ai-use strong {
-  font-size: 12.5px;
-  font-weight: 650;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
 }
 
 .ai-use span {
   color: var(--dim);
-  font-size: 11px;
-  font-weight: 520;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
   line-height: 1.5;
 }

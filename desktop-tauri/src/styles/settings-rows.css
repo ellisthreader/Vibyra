@@ -1,4 +1,10 @@
-/* Grouped setting rows: labels, hints, and controls. */
+/* The row vocabulary every settings pane is built from: the group card, the
+   row inside it, and the small pieces that fill a row's control column.
+
+   Everything here is deliberately pane-agnostic. A status dot used to be
+   called `.integration-status` and live in the Integrations sheet, while
+   Notifications used it too — that kind of borrowing is what made the panes
+   drift apart. */
 
 .settings-group {
   border: 1px solid var(--line);
@@ -27,14 +33,14 @@
 }
 
 .setting-row__label {
-  font-size: 12.5px;
-  font-weight: 640;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
   color: var(--text);
 }
 
 .setting-row__hint {
-  font-size: 11px;
-  font-weight: 520;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
   line-height: 1.5;
   color: var(--dim);
 }
@@ -74,7 +80,7 @@
 
 /* Optional leading glyph. The adjacent-sibling rule is what keeps every row
    without an icon laid out exactly as it was — no `:has`, no new grid, and
-   nothing to re-verify on the other seven settings panes. */
+   nothing to re-verify on the other panes. */
 .setting-row__icon {
   display: grid;
   place-items: center;
@@ -95,4 +101,88 @@
   gap: 11px;
   flex: 1;
   min-width: 0;
+}
+
+/* --- what fills a control column ------------------------------------- */
+
+/* More than one control on a row: buttons cluster, they do not spread. */
+.settings-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A value the row reports rather than one you can change. */
+.settings-value {
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-value--caps {
+  text-transform: capitalize;
+}
+
+/* State, as a dot and a word. Shared: connected accounts, catalog freshness,
+   desktop-notification permission, email verification. */
+.settings-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-heavy);
+  color: var(--dim);
+}
+
+.settings-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.settings-status--success { color: var(--success); }
+.settings-status--warn { color: var(--amber); }
+.settings-status--working { color: var(--accent); }
+
+.settings-status--working i {
+  animation: settings-status-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes settings-status-pulse {
+  50% { opacity: 0.35; transform: scale(0.78); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-status--working i { animation: none; }
+}
+
+/* An action strip closing a group — the Save button under a form. */
+.settings-group__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface-tint);
+}
+
+.settings-feedback {
+  flex: 1;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+  color: var(--success);
+  text-align: right;
+}
+
+.settings-feedback--error {
+  color: var(--danger);
+}
+
+/* A note that is the entire card has no siblings to rule off from. */
+.settings-group > .settings-note:only-child {
+  border: 0;
 }

@@ -19,13 +19,13 @@ export function SettingsAiPane({ settings, update }: SettingsPaneProps) {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
-  if (!status) return <p className="integration-loading">Checking your OpenAI key…</p>;
+  if (!status) return <p className="settings-loading">Checking your OpenAI key…</p>;
 
   const voiceKey = shortcutLabel(settings.voiceShortcut);
 
   return (
-    <section className="settings-ai">
-      <p className="settings-ai__intro">
+    <>
+      <p className="settings-lead">
         Vibyra AI chat and <kbd className="kbd">{voiceKey}</kbd> dictation run on
         OpenAI. Both use a key you supply, so the account and the bill stay
         yours. Nothing else in Vibyra needs this key — terminals and connected AI
@@ -37,7 +37,7 @@ export function SettingsAiPane({ settings, update }: SettingsPaneProps) {
       </SettingsBlock>
 
       <SettingsBlock label="What it powers">
-        <div className="ai-uses">
+        <div className="settings-group">
           <div className="ai-use">
             <strong>Vibyra AI chat</strong>
             <span>The project companion panel, answering with {status.pricing.chatModel}.</span>
@@ -59,6 +59,6 @@ export function SettingsAiPane({ settings, update }: SettingsPaneProps) {
       <SettingsBlock label="Spend limits">
         <AiLimitsCard settings={settings} update={update} />
       </SettingsBlock>
-    </section>
+    </>
   );
 }

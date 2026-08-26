@@ -1,19 +1,38 @@
-/* The banner slot: one notification, perched above the workspace.
-   Replaces `update-banner.css`, whose `.vupdate` card was a second design for
-   the same job. The card here is the ordinary `.vtoast` — same chip, same
-   rail, same tier colours — widened and given the slot's own margins, so
-   there is exactly one notification card in the product. */
+/* The pinned notice: one notification that keeps its place until it is acted
+   on — in practice, an update waiting to be taken.
+
+   Bottom-right at z 91, one step above the toast stack (90) so a burst of
+   toasts can never bury it, and below the screenshot tray (92) and the command
+   palette (100). This is the geometry `update-banner.css` had before the two
+   systems merged; it is restored here verbatim because `PinnedNotice` renders
+   as the last flow child of `.app`, so without `position: fixed` it falls to
+   the bottom of the window and stretches the full width of it.
+
+   The card itself stays the ordinary `.vtoast` — same chip, same rail, same
+   tier colours — so there is still only one notification card in the product. */
 
 .vpinned {
-  padding: 8px 12px 0;
+  position: fixed;
+  right: 14px;
+  /* Clear of the toast stack's own 14px, plus room for one card, so an update
+     offer and a live toast can be on screen at once without overlapping. */
+  bottom: 14px;
+  z-index: 91;
+  width: 380px;
+  max-width: calc(100vw - 28px);
+  pointer-events: auto;
+}
+
+/* The stack lifts clear while a pinned notice holds the corner, so the two
+   never draw on the same pixels. The attribute and the measured height are set
+   on the document element by `PinnedNotice`, which is the only thing that knows
+   how tall the card ended up. */
+:root[data-pinned-notice] .vtoast-stack {
+  bottom: calc(14px + var(--vpinned-h, 0px) + 8px);
 }
 
 .vpinned .vtoast {
   width: 100%;
-  /* Flatter than a floating toast: this one sits *in* the layout rather than
-     over it, and the corner stack's drop shadow would make it look detached. */
-  box-shadow: var(--e-inset-hi);
-  animation: fade-up 220ms var(--e-hero);
 }
 
 /* A standing offer has more room than a corner card, so the sentence gets to
@@ -27,14 +46,10 @@
   -webkit-line-clamp: 2;
 }
 
-/* The pinned card never times out, so the progress bar is the only thing along
-   its bottom edge — worth the extra pixel at this width. */
-.vpinned .vtoast__progress {
-  height: 3px;
-}
-
 @media (max-width: 720px) {
   .vpinned {
-    padding: 6px 8px 0;
+    right: 8px;
+    bottom: 8px;
+    max-width: calc(100vw - 16px);
   }
 }

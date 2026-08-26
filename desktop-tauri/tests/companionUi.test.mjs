@@ -1,52 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  clampCompanionWidth,
-  restoreCompanionTab,
-  restoreCompanionWidth,
-  saveCompanionTab,
-  saveCompanionWidth,
-} from "../src/lib/companionPreferences.ts";
 import { visibleFileEntries } from "../src/lib/fileTreePolicy.ts";
 import { formatMemoryContext, mergeImportedMemory } from "../src/lib/memoryImport.ts";
 import { parseMemoryDocument } from "../src/lib/memoryDocument.ts";
 import { buildMemoryTree, resolveMemoryLink, searchMemoryPaths } from "../src/lib/memoryTree.ts";
 
-function memoryStorage(seed = {}) {
-  const values = new Map(Object.entries(seed));
-  return {
-    getItem: (key) => values.get(key) ?? null,
-    setItem: (key, value) => values.set(key, value),
-    values,
-  };
-}
-
 function entry(name, isDir) {
   return { name, isDir, path: `/project/${name}`, size: 0, modifiedMs: null };
 }
-
-test("clamps and persists the companion width without accepting stale values", () => {
-  assert.equal(clampCompanionWidth(240), 300);
-  assert.equal(clampCompanionWidth(420.4), 420);
-  assert.equal(clampCompanionWidth(900), 520);
-
-  assert.equal(restoreCompanionWidth(memoryStorage()), 360);
-
-  const storage = memoryStorage({ "vibyra.desktop.companionWidth": "900" });
-  assert.equal(restoreCompanionWidth(storage), 520);
-  saveCompanionWidth(344, storage);
-  assert.equal(storage.values.get("vibyra.desktop.companionWidth"), "344");
-});
-
-test("restores only known companion tools", () => {
-  const storage = memoryStorage({ "vibyra.desktop.companionTab": "memory" });
-  assert.equal(restoreCompanionTab(storage), "memory");
-  saveCompanionTab("files", storage);
-  assert.equal(restoreCompanionTab(storage), "files");
-  storage.values.set("vibyra.desktop.companionTab", "dashboard");
-  assert.equal(restoreCompanionTab(storage), "chat");
-});
 
 test("keeps generated folders quiet while preserving normal project navigation", () => {
   const entries = [

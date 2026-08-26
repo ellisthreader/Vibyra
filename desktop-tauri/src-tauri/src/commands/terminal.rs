@@ -38,7 +38,12 @@ pub async fn create_terminal(
     let manager = Arc::clone(&state.manager);
     let info = run_blocking_core(move || {
         let prepared = prepare(request, context)?;
-        manager.create_session(&prepared.agent_id, &prepared.title, &prepared.spec)
+        let mut info =
+            manager.create_session(&prepared.agent_id, &prepared.title, &prepared.spec)?;
+        // Only the prepared launch knows the worktree's branch and base; the
+        // manager describes sessions generically and reports no workspace.
+        info.workspace = prepared.workspace;
+        Ok(info)
     })
     .await?;
     state.sink.attach(info.id, on_event);

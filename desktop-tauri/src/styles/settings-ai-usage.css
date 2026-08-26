@@ -1,8 +1,10 @@
-/* Settings > Vibyra AI — usage meters and the spend breakdown. */
+/* Settings > Vibyra AI — usage meters and the spend breakdown. Chrome comes
+   from `.settings-group`, like every other list in Settings. */
 
 .ai-usage {
   display: grid;
   gap: 14px;
+  padding: 14px;
 }
 
 .ai-usage__meters {
@@ -23,21 +25,21 @@
 }
 
 .ai-meter__label {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
 }
 
 .ai-meter__value {
   color: var(--text);
-  font-size: 11.5px;
-  font-weight: 650;
+  font-size: var(--fs-control);
+  font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
 .ai-meter__value i {
   color: var(--dim);
   font-style: normal;
-  font-weight: 520;
+  font-weight: var(--fw-regular);
 }
 
 .ai-meter__track {
@@ -52,7 +54,7 @@
   border-radius: 999px;
   display: block;
   height: 100%;
-  transition: width 240ms ease;
+  transition: width var(--t-soft) var(--e-standard);
 }
 
 .ai-meter__fill--high {
@@ -70,29 +72,28 @@
   border-top: 1px solid var(--line-soft);
   display: grid;
   gap: 10px;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns: 150px minmax(0, 1fr);
   padding: 8px 0;
 }
 
 .ai-usage__breakdown dt {
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
 }
 
 .ai-usage__breakdown dd {
   color: var(--dim);
-  font-size: 11px;
-  font-weight: 520;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
   font-variant-numeric: tabular-nums;
   margin: 0;
 }
 
 .ai-usage__note {
   color: var(--dim);
-  font-size: 10.5px;
-  font-weight: 520;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-regular);
   line-height: 1.55;
   margin: 0;
-  max-width: 560px;
 }

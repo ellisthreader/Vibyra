@@ -2,6 +2,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use vibyra_core::fsx::write_private_atomic;
+use vibyra_core::workspace::SafeWorkspaceRef;
 use vibyra_core::{CoreError, CoreResult};
 
 // The saved workspace: enough to rebuild the panes, their order and their
@@ -46,6 +47,10 @@ pub struct PersistedPane {
     /// Absent in files written before accounts existed, which `serde(default)`
     /// reads as the first account — exactly what those panes used.
     pub account_id: Option<String>,
+    /// The safe-mode worktree the pane ran in, so its changes can still be
+    /// reviewed, merged or discarded after a restart. Absent for shared panes
+    /// and in files written before the Review tool existed.
+    pub workspace: Option<SafeWorkspaceRef>,
 }
 
 /// `version` is deliberately required: a file without one is from an unknown

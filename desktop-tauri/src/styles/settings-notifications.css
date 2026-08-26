@@ -38,12 +38,6 @@
   cursor: default;
 }
 
-/* The whole pane dims when the master switch is off, but the master row itself
-   must stay at full strength or there is no obvious way back. */
-.settings-pane__body .settings-block + .settings-block {
-  margin-top: 14px;
-}
-
 /* The desktop toggle. Off it reads as one more quiet glyph; on it takes the
    cobalt so the row says "this one also leaves the window" at a glance. */
 .notif-kind__os[aria-pressed="true"] {

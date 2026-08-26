@@ -15,8 +15,13 @@ interface SessionStats {
 const stats = new Map<number, SessionStats>();
 
 const ANSI_PATTERN = /\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g;
+// A HINT, not a verdict. When the pane then goes quiet, the attention edge
+// re-reads the buffer (`scanAgentPrompt`) and only a parsed prompt block may
+// say "needs you" — so a loose match here costs one buffer walk, never a
+// wrong toast. `❯\s*$` is deliberately absent: that is the empty composer
+// every agent TUI settles on after finishing, the exact opposite of an ask.
 const PROMPT_PATTERN =
-  /(\[y\/n\]|\(y\/n\)|yes\/no|do you want|allow |approve|permission|continue\?|proceed\?|password:|passphrase|\?\s*$|❯\s*$|1\.\s*yes)/i;
+  /(\[y\/n\]|\(y\/n\)|yes\/no|do you want|allow |approve|permission|continue\?|proceed\?|password:|passphrase|\?\s*$|1\.\s*yes)/i;
 
 function entry(id: number): SessionStats {
   let s = stats.get(id);
@@ -43,6 +48,22 @@ export function stampOutput(id: number, chunk: string): void {
 /** Bell = the program explicitly asked for attention. */
 export function stampBell(id: number): void {
   entry(id).attention = true;
+}
+
+/** Whether this pane's attention came from the bell — an explicit program
+ * signal — rather than from the prompt-looking-tail heuristic. The edge
+ * verdict trusts a bell even when no prompt block parses. */
+export function attentionFromBell(id: number): boolean {
+  return stats.get(id)?.attention ?? false;
+}
+
+/** The edge verdict found no real prompt behind a heuristic candidate: take
+ * the candidate back so the pane falls out of `attention` on the next tick,
+ * instead of wearing a "needs you" dot for a question nobody asked. The bell
+ * flag is deliberately left alone — only the guess is withdrawn. */
+export function demotePromptAttention(id: number): void {
+  const s = stats.get(id);
+  if (s) s.promptCandidateAt = null;
 }
 
 /** User typed or focused the terminal — attention is acknowledged. */

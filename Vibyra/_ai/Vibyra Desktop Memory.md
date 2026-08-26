@@ -53,6 +53,8 @@ website, Expo browser client, and native phone app.
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`
+- Ctrl K scopes, fuzzy ranking, answering an agent's prompt from the
+  palette, and the `!` send-to-agent mode: `Desktop/Command Palette.md`
 - Auth gate surface and Settings > Integrations: `Desktop/Desktop Shell.md`
 - In-app reports, authenticated backend delivery, permission disclosure, and
   server-owned webhook boundary: `Desktop/In-App Reporting.md`

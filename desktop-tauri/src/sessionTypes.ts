@@ -1,3 +1,5 @@
+import type { SafeWorkspaceRef } from "./types";
+
 // Wire shapes for session.json, mirroring src-tauri/src/session_store.rs.
 
 /** One pane as written to session.json. `id` is 0 for an already-suspended pane. */
@@ -21,6 +23,8 @@ export interface PersistedPane {
   agentSessionId: string | null;
   /** The provider account it ran as, so it resumes on the same login. */
   accountId: string | null;
+  /** The safe-mode worktree it ran in, so it stays reviewable after restart. */
+  workspace: SafeWorkspaceRef | null;
 }
 
 export interface TerminalSession {

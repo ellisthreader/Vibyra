@@ -8,6 +8,11 @@ import { useTerminalStore } from "../state/terminalStore";
 import { useVoiceStore } from "../state/voiceStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { shortcutFromEvent, type HotkeyAction } from "./hotkeys";
+import type { DockSize, DockTool } from "./dockLayout";
+
+/** Alt 1–5, in the order the dock's tab strip shows them. */
+const DOCK_TOOLS: DockTool[] = ["preview", "chat", "memory", "files", "review"];
+const DOCK_SIZES: DockSize[] = ["compact", "wide", "full"];
 
 const nativeActions = new Set<HotkeyAction>();
 let registered = new Map<HotkeyAction, string>();
@@ -95,9 +100,30 @@ export function useGlobalShortcuts(): void {
         useProjectStore.getState().goHome();
         return;
       }
+      // The dock. Backslash is free on every platform we ship, and the digit
+      // rows below already refuse Alt, so Alt 1–5 collides with nothing.
+      if ((event.ctrlKey || event.metaKey) && event.code === "Backslash") {
+        event.preventDefault();
+        const workspace = useWorkspaceStore.getState();
+        if (!event.shiftKey) {
+          workspace.toggleDock();
+          return;
+        }
+        const next = (DOCK_SIZES.indexOf(workspace.dockSize) + 1) % DOCK_SIZES.length;
+        workspace.setDockSize(DOCK_SIZES[next]);
+        return;
+      }
       const digit = /^Digit([1-9])$/.exec(event.code);
-      if (!digit || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (!digit) return;
       const index = Number(digit[1]) - 1;
+      if (event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        const tool = DOCK_TOOLS[index];
+        if (!tool) return;
+        event.preventDefault();
+        useWorkspaceStore.getState().setDockTool(tool);
+        return;
+      }
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       if (event.shiftKey) {
         const target = useSettingsStore.getState().settings?.projects[index];
         if (target) void useProjectStore.getState().activate(target.id);

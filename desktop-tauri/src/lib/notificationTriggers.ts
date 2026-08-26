@@ -3,10 +3,10 @@ import type { PreviewStatus } from "../previewTypes";
 import { useNotificationStore } from "../state/notificationStore";
 import { useTerminalStore } from "../state/terminalStore";
 import type { PaneState } from "../state/terminalStoreTypes";
-import type { ActivityState } from "./activity";
+import { attentionFromBell, demotePromptAttention, type ActivityState } from "./activity";
 import { promptHeadline } from "./agentPrompt";
 import { scanAgentPrompt, type PromptAnswer } from "./agentPromptScan";
-import type { ActivityTransition } from "./activityTransitions";
+import { attentionVerdict, type ActivityTransition } from "./activityTransitions";
 import { notePreviewTransition } from "./previewNotifications";
 import { exitNoticeSuppressed, exitNotification } from "./sessionExitNotifications";
 import { terminalDisplayTitle } from "./terminalTitle";
@@ -63,12 +63,40 @@ export function notifyActivityTransitions(transitions: ActivityTransition[]): vo
     if (transition.kind === "attention") {
       // Read once, here, on the edge — the ticker has already waited out 2.5s
       // of silence, so this costs a buffer walk an hour, not one per write.
+      // The scan is the verdict: the heuristic that raised the edge only
+      // nominated this pane, it does not get to caption the toast.
       const prompt = scanAgentPrompt(transition.id);
+      const verdict = attentionVerdict(
+        prompt !== null,
+        attentionFromBell(transition.id),
+        transition.workedMs,
+      );
+      if (verdict === "silent" || verdict === "finished") {
+        // Withdraw the false candidate so the pane's dot and any lingering
+        // prompt toast settle back on the next tick.
+        demotePromptAttention(transition.id);
+      }
+      if (verdict === "silent") continue;
+      if (verdict === "finished") {
+        push({
+          kind: "agent",
+          tier: "done",
+          title: `${label} looks finished`,
+          body: "It worked for a while and has settled without asking for anything. Open it to read the result.",
+          // Shares the completion key so this, a quiet run and a real exit
+          // all collapse into one card.
+          dedupeKey: "agentDone",
+          action,
+        });
+        continue;
+      }
       push({
         kind: "approval",
         tier: "ask",
         title: prompt ? promptHeadline(label, prompt) : `${label} needs you`,
-        body: prompt?.question || "It is waiting on an answer before it can carry on.",
+        body:
+          prompt?.question ||
+          "It rang the terminal bell — something there is waiting for you.",
         dedupeKey: `attention:${transition.id}`,
         action,
         prompt: prompt ?? undefined,

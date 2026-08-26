@@ -5,7 +5,7 @@ import { rendererPolicy } from "../../ipc/render";
 import { webglIsTrustworthy } from "../../lib/rendererPolicy";
 import { useTerminalStore } from "../../state/terminalStore";
 import type { RendererPolicy } from "../../types";
-import { SettingsBlock } from "./SettingsShared";
+import { SettingRow, SettingsBlock } from "./SettingsShared";
 
 /** Frequent enough to feel live while the pane is open, rare enough that the
  * reading itself never becomes the load it reports. */
@@ -19,13 +19,13 @@ function gigabytes(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
 }
 
+/** A row, not a tile. Five tiles in an auto-fit grid wrapped 4 + 1 and left a
+ * ragged hole; five rows in the shared group card line their numbers up. */
 function Stat({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className="perf-stat">
-      <span className="perf-stat__label">{label}</span>
-      <span className="perf-stat__value">{value}</span>
-      {detail ? <span className="perf-stat__detail">{detail}</span> : null}
-    </div>
+    <SettingRow label={label} hint={detail}>
+      <span className="settings-value settings-value--metric">{value}</span>
+    </SettingRow>
   );
 }
 
@@ -78,7 +78,7 @@ export function PerformanceStatusCard() {
 
   return (
     <SettingsBlock label="Right now">
-      <div className="perf-status">
+      <div className="settings-group">
         <Stat label="Graphics" value={graphicsValue(policy)} detail={graphicsDetail(policy)} />
         <Stat
           label="Vibyra CPU"
@@ -103,7 +103,7 @@ export function PerformanceStatusCard() {
           detail="terminals producing output"
         />
       </div>
-      <p className="perf-status__note">
+      <p className="settings-lead settings-lead--foot">
         High renderer CPU with several streaming panes is normal; high renderer CPU while
         everything is idle is not — check the graphics mode below.
       </p>

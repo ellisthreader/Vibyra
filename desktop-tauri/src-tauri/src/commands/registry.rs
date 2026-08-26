@@ -10,8 +10,9 @@ use tauri::Wry;
 
 use super::{
     account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, clipboard,
-    conversation_carry, fs, memory, memory_browser, perf, preview, probe, provider_accounts,
-    render, report, screenshot, screenshot_reveal, session, settings, terminal, voice,
+    conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
+    provider_accounts, render, report, review, screenshot, screenshot_reveal, session, settings,
+    terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -30,6 +31,13 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         account::account_open_legal,
         terminal::create_terminal,
         terminal::safe_workspace_preflight,
+        review::review_status,
+        review::review_file_diff,
+        review::review_merge,
+        review::review_discard,
+        github::github_status,
+        github::github_create_pr,
+        github::github_open_pr,
         terminal::create_ssh_terminal,
         terminal::write_terminal,
         terminal::resize_terminal,

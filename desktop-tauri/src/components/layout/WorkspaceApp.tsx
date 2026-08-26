@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
-import { Companion } from "../companion/Companion";
 import { CloseConfirmModal } from "./CloseConfirmModal";
 import { ProjectStrip } from "./ProjectStrip";
 import { ProjectWorkspace } from "./ProjectWorkspace";
@@ -12,7 +11,6 @@ import { VoiceHud } from "./VoiceHud";
 import { PinnedNotice } from "../notifications/PinnedNotice";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
-import { terminalsVisible } from "../../lib/stageLayout";
 import { useActivityTicker } from "../../lib/useActivityTicker";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
 import { useSessionLifecycle } from "../../lib/useSessionLifecycle";
@@ -51,7 +49,6 @@ export function WorkspaceApp() {
   const settings = useSettingsStore((s) => s.settings);
   const view = useProjectStore((s) => s.view);
   const activeId = useProjectStore((s) => s.activeId);
-  const stageLayout = useWorkspaceStore((s) => s.stageLayout);
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
@@ -95,12 +92,11 @@ export function WorkspaceApp() {
         <ProjectStrip />
         {showProject ? (
           <>
-            {/* The rail stays up in every layout — it is the terminal list, and
-                the way back from a full-stage preview. Only the side panel is
-                terminal-specific. Choosing Preview used to unmount both. */}
+            {/* The rail stays up at every dock size — it is the terminal list,
+                and the way back from a full-size dock. The dock itself lives
+                inside the workspace, which is the box it floats in. */}
             <Rail />
             <ProjectWorkspace />
-            {terminalsVisible(stageLayout) && <Companion />}
           </>
         ) : (
           <Suspense fallback={null}><HomeView /></Suspense>

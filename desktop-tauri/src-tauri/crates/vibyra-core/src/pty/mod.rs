@@ -133,4 +133,8 @@ pub struct SessionInfo {
     pub visibility: Visibility,
     pub alive: bool,
     pub exit_code: Option<i32>,
+    /// The safe-mode worktree this session runs in, for the Review tool.
+    /// The manager reports `None`; the launch path fills it, because only the
+    /// prepared launch knows the branch and base commit.
+    pub workspace: Option<crate::workspace::SafeWorkspaceRef>,
 }

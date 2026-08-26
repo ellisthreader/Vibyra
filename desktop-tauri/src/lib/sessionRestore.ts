@@ -46,6 +46,8 @@ export function toPaneStates(session: TerminalSession): PaneState[] {
     // Restored on the login it ran as, so resuming does not silently move a
     // conversation to a different account's folder.
     accountId: pane.accountId ?? null,
+    // The worktree outlives the process, so its review outlives the restart.
+    workspace: pane.workspace ?? null,
     status: "suspended",
     exitCode: null,
     visibility: "visible",
@@ -181,5 +183,6 @@ export function toPersistedPanes(panes: PaneState[]): PersistedPane[] {
     snapshot: pane.snapshot ?? null,
     agentSessionId: pane.agentSessionId ?? null,
     accountId: pane.accountId ?? null,
+    workspace: pane.workspace ?? null,
   }));
 }

@@ -1,0 +1,117 @@
+/* Command palette rows. Owned here so palette.css stays the shell. */
+
+.pal__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--r-shell);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.pal__row--sel {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.pal__row--attn.pal__row--sel {
+  background: var(--amber-soft);
+}
+
+.pal__row--danger.pal__row--sel {
+  background: var(--danger-soft);
+}
+
+.pal__row--danger .pal__label {
+  color: var(--danger);
+}
+
+/* Head of the row: an initial, an icon, or a dot — always the same width, so
+   labels line up whichever kind of entry they belong to. */
+.pal__spark,
+.pal__icon,
+.pal__mono {
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.pal__spark {
+  text-align: center;
+  color: var(--dim);
+  font-weight: 800;
+}
+
+.pal__icon {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+
+.pal__row--sel .pal__icon {
+  color: var(--accent-2);
+}
+
+.pal__row--danger.pal__row--sel .pal__icon {
+  color: var(--danger);
+}
+
+.pal__row--attn.pal__row--sel .pal__icon {
+  color: var(--amber);
+}
+
+.pal__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pal__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The second line: the command an agent wants to run, a model, a folder. */
+.pal__detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 560;
+}
+
+/* Only literal text gets the mono face — a command, a path. Prose in mono
+   reads as output the app is quoting rather than as a description. */
+.pal__detail--code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+/* Why this row matched. Reads as emphasis, never as a highlighter pen. */
+.pal__hit {
+  background: transparent;
+  color: var(--accent-2);
+  font-weight: 800;
+}
+
+.pal__row--attn .pal__hit {
+  color: var(--amber);
+}
+
+.pal__row--danger .pal__hit {
+  color: var(--danger);
+}
+
+.pal__hint {
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 640;
+  flex-shrink: 0;
+}

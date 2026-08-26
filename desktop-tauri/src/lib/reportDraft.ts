@@ -35,6 +35,7 @@ export const REPORT_AREAS = [
   "AI companion",
   "File tree",
   "Preview",
+  "Review",
   "Home screen",
   "Settings",
   "Screenshots",
@@ -48,20 +49,29 @@ export const REPORT_AREAS = [
  * Which part of the app is on screen. Checked most-specific first: a modal is
  * what the user is looking at even though a project is open behind it.
  */
+const DOCK_AREAS: Record<string, string> = {
+  preview: "Preview",
+  files: "File tree",
+  chat: "AI companion",
+  memory: "AI companion",
+  review: "Review",
+};
+
 export function areaFor(state: {
   settingsOpen: boolean;
-  companionOpen: boolean;
-  stageLayout: string;
+  dockTool: string | null;
+  dockSize: string;
   view: string;
   hasPane: boolean;
 }): string {
+  const dock = state.dockTool ? DOCK_AREAS[state.dockTool] ?? "Somewhere else" : null;
   if (state.settingsOpen) return "Settings";
   if (state.view !== "project") return "Home screen";
-  // Split still reports the terminal pane: it is what the keyboard is in.
-  if (state.stageLayout === "preview") return "Preview";
+  // A full-size dock is the only one that takes the terminals off screen, so
+  // it is the only one that outranks the pane the keyboard is in.
+  if (dock && state.dockSize === "full") return dock;
   if (state.hasPane) return "Terminal pane";
-  if (state.companionOpen) return "AI companion";
-  return "Somewhere else";
+  return dock ?? "Somewhere else";
 }
 
 export interface ReportDraft {

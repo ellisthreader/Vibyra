@@ -33,8 +33,6 @@ interface PreparedLaunch {
   reasoningEffort: LaunchEffort | null;
   title?: string;
   safeMode: boolean;
-  /** `undefined` defers to the company's account in Settings → Integrations. */
-  accountId?: string | null;
 }
 
 const FULL_ACCESS_AGENTS = new Set(["claude", "codex", "gemini"]);
@@ -59,7 +57,6 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
       permissionMode: launch.permissionMode,
       reasoningEffort: launch.reasoningEffort,
       title: launch.title,
-      accountId: launch.accountId,
       workspaceMode: launch.safeMode ? "safe" : "shared",
       safeSnapshotFingerprint: fingerprint,
     });
@@ -114,13 +111,10 @@ export async function launchConfigured(
       : options.reasoningEffort ?? preferences.effort,
     title: options.title,
     safeMode: preferences.safeMode,
-    // Which login this terminal runs as. Only account-backed CLIs have one;
-    // a shell or an OpenRouter runner has no provider folder to point at.
-    //
-    // Left undefined rather than nulled when this project has picked no
-    // account of its own: null is a choice — the first account — and would
-    // quietly outrank the one the user set in Settings → Integrations.
-    accountId: preferences.accountByProvider[agent.id],
+    // No account named here: every launcher inherits the company's account
+    // chosen in Settings → Integrations, which spawn reads at launch time.
+    // Only the relaunch and account-switch paths pass one explicitly, because
+    // a pane keeps the login it started on.
   };
   if (!launch.safeMode) {
     await runLaunch(launch);

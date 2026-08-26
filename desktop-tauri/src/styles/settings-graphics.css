@@ -1,6 +1,9 @@
-/* Graphics-mode picker in Settings → Performance. Stacked choices rather
-   than a select, because each one needs its trade-off spelled out. The
-   classes are shared by PerformanceModeCard — same shape of decision. */
+/* Graphics- and performance-mode pickers. Stacked choices rather than a
+   select, because each one needs its trade-off spelled out.
+
+   The choices ARE the card: they sit straight in a `.settings-block`, not
+   inside a `.settings-group`, or the block draws a border around a stack of
+   bordered buttons. */
 
 .graphics-modes {
   display: flex;
@@ -12,13 +15,13 @@
 .graphics-mode {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   align-items: flex-start;
   text-align: left;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-control);
-  background: var(--elevated);
+  background: var(--surface);
   color: var(--text);
   cursor: pointer;
   transition: border-color var(--t-ui) var(--e-standard), background var(--t-ui) var(--e-standard);
@@ -28,34 +31,24 @@
   border-color: var(--line-accent);
 }
 
+.graphics-mode:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .graphics-mode--active {
-  border-color: var(--accent);
+  border-color: var(--accent-border);
   background: var(--accent-soft);
 }
 
 .graphics-mode__label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
 }
 
 .graphics-mode__hint {
-  font-size: 11px;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
   line-height: 1.5;
   color: var(--muted);
-}
-
-.settings-note {
-  margin: 0;
-  padding: 10px 14px;
-  border-top: 1px solid var(--line-soft);
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--muted);
-}
-
-.settings-note--action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
 }

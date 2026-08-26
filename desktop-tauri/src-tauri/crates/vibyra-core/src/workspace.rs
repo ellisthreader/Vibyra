@@ -1,10 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::workspace_preflight::{git, git_result, safe_workspace_state};
 use crate::{CoreError, CoreResult};
+
+pub use crate::workspace_ref::{SafeWorkspace, SafeWorkspaceRef};
 
 static NEXT_WORKTREE: AtomicU64 = AtomicU64::new(0);
 
@@ -80,7 +82,7 @@ pub fn prepare_safe_workspace(
     project_root: &Path,
     worktrees_root: &Path,
     approved_fingerprint: Option<&str>,
-) -> CoreResult<PathBuf> {
+) -> CoreResult<SafeWorkspace> {
     let state = safe_workspace_state(project_root)?;
     if state.preflight.changed_files > 0
         && approved_fingerprint != Some(state.preflight.fingerprint.as_str())
@@ -114,7 +116,11 @@ pub fn prepare_safe_workspace(
             "Safe-mode project folder was not created".to_string(),
         ));
     }
-    Ok(cwd)
+    Ok(SafeWorkspace {
+        cwd,
+        branch,
+        base_commit: commit,
+    })
 }
 
 #[cfg(test)]
@@ -154,12 +160,19 @@ mod tests {
         let approved = crate::workspace_preflight::safe_workspace_preflight(&repo).unwrap();
         let safe = prepare_safe_workspace(&repo, &worktrees, Some(&approved.fingerprint)).unwrap();
         assert_eq!(
-            std::fs::read_to_string(safe.join("tracked.txt")).unwrap(),
+            std::fs::read_to_string(safe.cwd.join("tracked.txt")).unwrap(),
             "changed again"
         );
         assert_eq!(
-            std::fs::read_to_string(safe.join("new.txt")).unwrap(),
+            std::fs::read_to_string(safe.cwd.join("new.txt")).unwrap(),
             "new"
+        );
+        assert!(safe.branch.starts_with("vibyra/"));
+        // The base is the snapshot itself: reviewing later must diff against
+        // what the user had, uncommitted changes included, not bare HEAD.
+        assert_eq!(
+            git(&repo, &["rev-parse", &safe.branch]).unwrap(),
+            safe.base_commit
         );
         assert_eq!(git(&repo, &["rev-parse", "HEAD"]).unwrap(), head);
         assert!(git(&repo, &["status", "--porcelain"])

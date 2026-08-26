@@ -29,7 +29,7 @@
 .integration-reply__prompt {
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--fs-hint);
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
@@ -48,7 +48,7 @@
 
 .integration-install-hint {
   color: var(--dim);
-  font-size: 10.5px;
+  font-size: var(--fs-label);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }

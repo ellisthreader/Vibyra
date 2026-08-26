@@ -1,4 +1,4 @@
-/* Ctrl+K command palette. */
+/* Ctrl+K command palette — the shell. Rows live in palette-rows.css. */
 
 .pal-backdrop {
   position: fixed;
@@ -12,8 +12,8 @@
 }
 
 .pal {
-  width: min(520px, 90vw);
-  max-height: 60vh;
+  width: min(580px, 92vw);
+  max-height: 64vh;
   display: flex;
   flex-direction: column;
   background: var(--elevated);
@@ -37,6 +37,13 @@
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 720;
+  transition: color var(--t-soft) var(--e-standard);
+}
+
+/* Ask mode is the one scope that acts on an agent rather than the app, so it
+   takes the decision hue the rest of the app reserves for "you choose". */
+.pal__prompt--ask {
+  color: var(--ask);
 }
 
 .pal__input {
@@ -61,13 +68,15 @@
   overflow-y: auto;
   padding: 6px;
   min-height: 0;
+  flex: 1;
 }
 
 .pal__empty {
-  padding: 18px 12px;
+  padding: 22px 14px;
   color: var(--dim);
   font-size: 12.5px;
   text-align: center;
+  line-height: 1.5;
 }
 
 .pal__group {
@@ -79,47 +88,60 @@
   padding: 9px 10px 3px;
 }
 
-.pal__row {
+/* The prefixes nobody would guess, made clickable so they teach themselves. */
+.pal__foot {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: var(--r-shell);
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 600;
-  text-align: left;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px 7px 8px;
+  border-top: 1px solid var(--line);
+  background: var(--hover);
 }
 
-.pal__row--sel {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-.pal__row--attn.pal__row--sel {
-  background: var(--amber-soft);
-}
-
-.pal__spark {
-  width: 20px;
-  text-align: center;
-  color: var(--dim);
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.pal__label {
-  flex: 1;
+.pal__scopes {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.pal__hint {
+.pal__scope {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 640;
+  white-space: nowrap;
+  transition: color var(--t-soft) var(--e-standard), background var(--t-soft) var(--e-standard);
+}
+
+.pal__scope:hover {
+  color: var(--muted);
+  background: var(--hover-strong);
+}
+
+.pal__scope--on {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.pal__scope-key {
+  font-family: var(--font-mono);
+  font-weight: 760;
+  color: var(--accent);
+}
+
+.pal__keys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--dim);
   font-size: 10.5px;
-  font-weight: 640;
-  flex-shrink: 0;
+  font-weight: 620;
+  white-space: nowrap;
 }

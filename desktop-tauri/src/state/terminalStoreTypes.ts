@@ -1,5 +1,5 @@
 import type { ActivityState } from "../lib/activity";
-import type { ResolvedAgent, Visibility } from "../types";
+import type { ResolvedAgent, SafeWorkspaceRef, Visibility } from "../types";
 
 export interface PaneState {
   id: number;
@@ -32,6 +32,11 @@ export interface PaneState {
    * reads its credentials once — so it is what the pane's badge reports.
    */
   accountId: string | null;
+  /**
+   * The safe-mode worktree this pane runs in, or null for shared panes.
+   * What the Review tool diffs, merges and discards.
+   */
+  workspace: SafeWorkspaceRef | null;
 }
 
 export interface SpawnAgentOptions {

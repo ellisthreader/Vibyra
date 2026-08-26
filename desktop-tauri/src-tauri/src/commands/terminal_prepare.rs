@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use vibyra_core::agents::{resolve_agents, AgentSpec};
 use vibyra_core::pty::LaunchSpec;
-use vibyra_core::workspace::prepare_safe_workspace;
+use vibyra_core::workspace::{prepare_safe_workspace, SafeWorkspaceRef};
 use vibyra_core::{CoreError, CoreResult};
 
 use super::terminal_launch::{
@@ -19,6 +19,8 @@ pub struct PreparedSession {
     pub agent_id: String,
     pub title: String,
     pub spec: LaunchSpec,
+    /// Set for safe-mode launches: what the Review tool later diffs against.
+    pub workspace: Option<SafeWorkspaceRef>,
 }
 
 pub struct LaunchContext {
@@ -39,7 +41,7 @@ pub fn prepare(
         .ok_or_else(|| CoreError::InvalidPath(format!("unknown agent: {}", request.agent_id)))?;
 
     let source_cwd = canonical_directory(request.cwd.clone().or(context.workspace_root))?;
-    let effective_cwd = resolve_cwd(&request, source_cwd, &context.worktrees_root)?;
+    let (effective_cwd, workspace) = resolve_cwd(&request, source_cwd, &context.worktrees_root)?;
 
     let mut spec = agent
         .spec
@@ -58,6 +60,7 @@ pub fn prepare(
         agent_id: agent.spec.id.clone(),
         title: agent.spec.name.clone(),
         spec,
+        workspace,
     })
 }
 
@@ -65,9 +68,9 @@ fn resolve_cwd(
     request: &CreateTerminalRequest,
     source_cwd: Option<String>,
     worktrees_root: &Path,
-) -> CoreResult<Option<String>> {
+) -> CoreResult<(Option<String>, Option<SafeWorkspaceRef>)> {
     match request.workspace_mode.as_deref().unwrap_or("shared") {
-        "shared" => Ok(source_cwd),
+        "shared" => Ok((source_cwd, None)),
         "safe" => {
             let source = source_cwd.ok_or_else(|| {
                 CoreError::InvalidPath("Safe mode needs a project folder".to_string())
@@ -77,7 +80,10 @@ fn resolve_cwd(
                 worktrees_root,
                 request.safe_snapshot_fingerprint.as_deref(),
             )?;
-            Ok(Some(safe.to_string_lossy().to_string()))
+            Ok((
+                Some(safe.cwd.to_string_lossy().to_string()),
+                Some(safe.to_ref()),
+            ))
         }
         value => Err(CoreError::Settings(format!(
             "unknown workspace mode: {value}"

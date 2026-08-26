@@ -1,0 +1,190 @@
+/* The Review dock tool: a safe-mode worktree's changes, read and resolved.
+ *
+ * One quiet reading column. The file list is the integration-account idiom —
+ * a tinted sub-panel with hairlines, not a card per row — and the only
+ * saturated things on the surface are the diff's own +/− and the primary
+ * action. GitHub state rides on the PR button's enablement and tooltip
+ * rather than a status widget of its own. */
+
+.companion-panel--review {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+/* ── which terminal ─────────────────────────────────────────────────────── */
+
+.review-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.review-picker__chip {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: var(--fs-control);
+  font-weight: var(--fw-medium);
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-picker__chip--on {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* ── branch + tally ─────────────────────────────────────────────────────── */
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.review-head__branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+}
+
+.review-head__branch code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-head__stats {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: var(--fs-hint);
+  color: var(--dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-add,
+.review-del {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+}
+
+.review-add { color: var(--success); }
+.review-del { color: var(--danger); }
+
+/* ── the changeset ──────────────────────────────────────────────────────── */
+
+.review-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+
+.review-list {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+  overflow: hidden;
+}
+
+.review-file + .review-file {
+  border-top: 1px solid var(--line-soft);
+}
+
+.review-file__row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  font-size: var(--fs-ui);
+}
+
+.review-file__row:hover { background: var(--hover); }
+
+.review-file__mark {
+  font-family: var(--font-mono);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-bold);
+  text-align: center;
+  border-radius: var(--r-sm);
+  line-height: 18px;
+}
+
+.review-file__mark--added { color: var(--success); background: var(--success-soft); }
+.review-file__mark--modified { color: var(--amber); background: var(--amber-soft); }
+.review-file__mark--deleted { color: var(--danger); background: var(--danger-soft); }
+.review-file__mark--renamed { color: var(--accent-2); background: var(--accent-soft); }
+
+.review-file__path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl; /* a long path keeps its filename, not its prefix */
+  text-align: left;
+}
+
+.review-file__stats {
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── notes & empty state ────────────────────────────────────────────────── */
+
+.review-note {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--dim);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+.review-empty {
+  margin: auto;
+  padding: 24px;
+  max-width: 300px;
+  text-align: center;
+  color: var(--dim);
+}
+
+.review-empty h3 {
+  margin: 10px 0 6px;
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+
+.review-empty p {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.review-empty strong { color: var(--muted); }

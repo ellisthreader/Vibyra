@@ -6,6 +6,13 @@ export type { CapturedScreenshot, ClipboardPaste, Screenshot, VoiceStatus } from
 
 export type Visibility = "visible" | "background" | "hidden" | "hibernated";
 
+/** The safe-mode worktree a session runs in — everything a review needs. */
+export interface SafeWorkspaceRef {
+  path: string;
+  branch: string;
+  baseCommit: string;
+}
+
 export interface SessionInfo {
   id: number;
   agentId: string;
@@ -15,6 +22,8 @@ export interface SessionInfo {
   visibility: Visibility;
   alive: boolean;
   exitCode: number | null;
+  /** Present on safe-mode launches; the manager's listings report null. */
+  workspace: SafeWorkspaceRef | null;
 }
 
 export interface AgentSpec {

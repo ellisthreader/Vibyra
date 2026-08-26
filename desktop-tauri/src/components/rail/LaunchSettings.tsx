@@ -13,8 +13,6 @@ import { useProjectStore } from "../../state/projectStore";
 import { useProviderAccountStore } from "../../state/providerAccountStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { activeAccountId, connectedAccounts } from "../../lib/providerAccountPolicy";
-import { LaunchAccountPicker } from "./LaunchAccountPicker";
 import { LaunchAdvancedOptions } from "./LaunchAdvancedOptions";
 import { LaunchEffortPicker } from "./LaunchEffortPicker";
 import { LaunchModelPicker, type LaunchableModel } from "./LaunchModelPicker";
@@ -30,9 +28,7 @@ export function LaunchSettingsPanel() {
   const agents = useAgentStore((s) => s.agents);
   const agentsLoaded = useAgentStore((s) => s.loaded);
   const accountsLoaded = useProviderAccountStore((s) => s.loaded);
-  const providers = useProviderAccountStore((s) => s.providers);
   const enabledAgentIds = useSettingsStore((s) => s.settings?.enabledAgentIds ?? NO_AGENT_IDS);
-  const activeAccounts = useSettingsStore((s) => s.settings?.activeProviderAccounts);
   const groups = useModelCatalogStore((s) => s.groups);
   const openPicker = useWorkspaceStore((s) => s.openAgentPicker);
   const openSettingsSection = useWorkspaceStore((s) => s.openSettingsSection);
@@ -63,24 +59,6 @@ export function LaunchSettingsPanel() {
     ? resolvedModelEffort(selected.model, selected.plan.runner.id, settings.effort)
     : null;
   const patch = (value: Partial<typeof settings>) => update(projectId, value);
-
-  // Only the provider this launch will actually use has an account to choose,
-  // and only when more than one of its accounts is signed in.
-  const runnerId = selected?.plan.runner?.id ?? null;
-  const provider = providers.find((candidate) => candidate.runtimeId === runnerId) ?? null;
-  const accounts = provider ? connectedAccounts(provider) : [];
-  // Falls back to the company's account in Settings → Integrations, not to
-  // whichever login happens to sort first: this picker is a per-project
-  // override, and an untouched one has to show what it is inheriting.
-  const selectedAccount =
-    accounts.find((account) => account.accountId === settings.accountByProvider[runnerId ?? ""])
-      ?.accountId ??
-    accounts.find(
-      (account) =>
-        account.accountId === activeAccountId(activeAccounts, runnerId ?? ""),
-    )?.accountId ??
-    accounts[0]?.accountId ??
-    "";
 
   const launch = async () => {
     if (!selected || launching) return;
@@ -137,19 +115,6 @@ export function LaunchSettingsPanel() {
                 onChange={(effort) => patch({ effort })}
               />
             )}
-
-            {provider && runnerId ? (
-              <LaunchAccountPicker
-                product={provider.product}
-                accounts={accounts}
-                value={selectedAccount}
-                onChange={(accountId) =>
-                  patch({
-                    accountByProvider: { ...settings.accountByProvider, [runnerId]: accountId },
-                  })
-                }
-              />
-            ) : null}
 
             <LaunchAdvancedOptions settings={settings} patch={patch} />
 

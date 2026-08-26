@@ -1,0 +1,143 @@
+/* The right dock — one floating panel holding the preview, the AI chat, the
+   memory notes and the project files.
+
+   Replaces two sheets. `companion-shell.css` framed a docked aside that was a
+   flex column in the shell row, and `stage.css` framed a preview pane inside a
+   two-column grid with a drag divider between them: two surfaces on one edge,
+   two sizing models, and a companion that vanished whenever the preview took
+   the stage.
+
+   The panel is absolutely positioned, which is the whole reason this works.
+   Its width no longer participates in terminal layout, so the drag can follow
+   the pointer at the display's cadence without refitting a single xterm.
+   Panel interiors still live in `companion-chat.css`, `companion-memory.css`,
+   `companion-files.css` and the preview sheets; the header's segmented switch
+   in `nav-segmented.css`. */
+
+.project-workspace {
+  position: relative;
+}
+
+/* The room the terminals give up so the dock never covers them.
+   Deliberately not transitioned: this *is* terminal layout, and an animated
+   frame of it refits every xterm on screen. It is committed once, on release
+   or on a size change — never per drag frame. The dock's own width animates
+   instead, which costs nothing. */
+.workspace__stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding-right: var(--dock-reserve, 0px);
+}
+
+/* Hidden, never unmounted: a full-size dock must not throw away a pane's
+   scrollback, and `display: none` also takes the grid out of layout. */
+.workspace__stage--off {
+  display: none;
+}
+
+.dock {
+  position: absolute;
+  z-index: 24;
+  top: var(--dock-gap);
+  right: var(--dock-gap);
+  bottom: var(--dock-gap);
+  width: var(--dock-w);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  /* Opaque, never blurred. `chrome.css` records what backdrop-filter costs
+     under WebKitGTK: a full re-blur pass on every repaint. A floating panel is
+     exactly the tempting place to break that rule. */
+  background: var(--surface);
+  box-shadow: var(--e-panel);
+  animation: dock-enter 160ms var(--e-hero);
+  transition: width var(--t-soft) var(--e-hero);
+}
+
+.dock[data-size="full"] {
+  left: var(--dock-gap);
+  width: auto;
+}
+
+/* Closed, not unmounted — shutting the dock must not stop a running preview.
+   Same mechanism the stage's hidden pane used: an iframe keeps its document
+   across `display: none`, and the panel costs no layout or paint while off. */
+.dock--off {
+  display: none;
+}
+
+/* ── resize grip ──────────────────────────────────────────────────────────
+   One grip, two meanings: pixels while compact, a share of the workspace
+   while wide. It is absent at full size, where there is nothing to size. */
+
+.dock__grip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 4;
+  width: 9px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.dock__grip::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 3px;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background var(--t-ui) var(--e-standard);
+}
+
+.dock__grip:hover::after,
+.dock__grip:focus-visible::after,
+body.dock-resizing .dock__grip::after {
+  background: var(--accent);
+}
+
+.dock__grip:focus-visible {
+  outline: none;
+}
+
+/* A transition would put the panel a frame and a half behind the cursor. */
+body.dock-resizing .dock {
+  transition: none;
+}
+
+body.dock-resizing,
+body.dock-resizing * {
+  cursor: ew-resize !important;
+}
+
+@keyframes dock-enter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+/* Below this the terminals cannot spare the width, so the dock stops
+   reserving any and simply floats over them. */
+@media (max-width: 1100px) {
+  .workspace__stage {
+    padding-right: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    animation: none;
+    transition: none;
+  }
+
+  .dock__grip::after {
+    transition: none;
+  }
+}

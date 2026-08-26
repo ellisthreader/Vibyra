@@ -6,6 +6,7 @@ import { accentFor } from "../../lib/providerAccents";
 import { useAgentStore } from "../../state/agentStore";
 import type { Settings } from "../../types";
 import { AgentMark } from "../common/AgentMark";
+import { SettingsBlock } from "./SettingsShared";
 
 interface Props {
   settings: Settings;
@@ -41,9 +42,8 @@ export function TerminalIntegrations({ settings, update }: Props) {
   if (!integrations.length) return null;
 
   return (
-    <>
-      <span className="section-label">Additional runtimes</span>
-      <div className="integration-list integration-list--terminal">
+    <SettingsBlock label="Additional runtimes">
+      <div className="settings-group integration-list">
         {integrations.map((agent) => {
           if (!agent) return null;
           const active = selected.has(agent.id);
@@ -68,7 +68,7 @@ export function TerminalIntegrations({ settings, update }: Props) {
                     : `Needs the “${agent.program}” command on your PATH`}
                 </small>
               </span>
-              <span className={`integration-status${active ? " integration-status--success" : ""}`}>
+              <span className={`settings-status${active ? " settings-status--success" : ""}`}>
                 <i aria-hidden="true" />
                 {!agent.installed ? "Not installed" : active ? "Selected" : "Available"}
               </span>
@@ -77,9 +77,9 @@ export function TerminalIntegrations({ settings, update }: Props) {
           );
         })}
       </div>
-      <p className="integrations-footnote">
+      <p className="settings-lead settings-lead--foot">
         Optional local runtimes can support model families without a connected company account.
       </p>
-    </>
+    </SettingsBlock>
   );
 }

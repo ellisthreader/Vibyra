@@ -1,0 +1,42 @@
+/* The diff a review file row expands into. Rendered on the terminal-screen
+ * ground — the deepest well in the ladder — because it is program text, and
+ * coloured only by git's own prefixes. Split from dock-review.css, which owns
+ * the reading surface around it and sits near the 200-line ceiling. */
+
+.review-diff {
+  border-top: 1px solid var(--line-soft);
+  background: var(--term-screen);
+  max-height: 340px;
+  overflow: auto;
+}
+
+.review-diff pre {
+  margin: 0;
+  padding: 8px 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+}
+
+.review-diff__line {
+  display: block;
+  padding: 0 12px;
+  white-space: pre;
+  color: var(--term-muted);
+}
+
+.review-diff__line--add { color: var(--success); background: var(--success-soft); }
+.review-diff__line--del { color: var(--danger); background: var(--danger-soft); }
+.review-diff__line--hunk { color: var(--accent-2); }
+.review-diff__line--meta { color: var(--dim); }
+
+.review-diff__more {
+  display: block;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--accent-2);
+  font-size: var(--fs-hint);
+}

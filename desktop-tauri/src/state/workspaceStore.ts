@@ -2,24 +2,20 @@ import { create } from "zustand";
 
 import { fsReadPreview, onFsChanged } from "../ipc/fs";
 import {
-  clampStageRatio,
-  restoreStageRatio,
-  saveStageRatio,
-  type StageLayout,
-} from "../lib/stageLayout";
+  clampDockWidth,
+  restoreCompactWidth,
+  restoreDockTool,
+  restoreWideRatio,
+  saveCompactWidth,
+  saveDockTool,
+  saveWideRatio,
+  type DockSize,
+  type DockTool,
+} from "../lib/dockLayout";
 import { useNotificationStore } from "./notificationStore";
-import {
-  clampCompanionWidth,
-  restoreCompanionTab,
-  restoreCompanionWidth,
-  saveCompanionTab,
-  saveCompanionWidth,
-  type CompanionTab,
-} from "../lib/companionPreferences";
 import type { FilePreview } from "../types";
 
-export type { CompanionTab } from "../lib/companionPreferences";
-export type { StageLayout } from "../lib/stageLayout";
+export type { DockSize, DockTool } from "../lib/dockLayout";
 export type SettingsSectionId =
   | "profile"
   | "general"
@@ -46,17 +42,17 @@ function reportProblem(message: string | null): void {
 interface WorkspaceStore {
   /** Root of the active project — set by projectStore.activate. */
   root: string | null;
-  /** Which of the stage's two surfaces are on screen. */
-  stageLayout: StageLayout;
-  /** Share of the stage the terminals take while both are up. */
-  stageRatio: number;
+  /** The tool the dock is showing, or null while it is closed. */
+  dockTool: DockTool | null;
+  /** How much room the dock gets when it is open. */
+  dockSize: DockSize;
+  /** Remembered width for each size, in that size's own unit. */
+  dockCompactWidth: number;
+  dockWideRatio: number;
   settingsOpen: boolean;
   settingsSection: SettingsSectionId;
   agentPickerOpen: boolean;
   paletteOpen: boolean;
-  companionOpen: boolean;
-  companionTab: CompanionTab;
-  companionWidth: number;
   /** Bumped on every debounced fs change batch; tree nodes refetch on it. */
   fsVersion: number;
   preview: FilePreview | null;
@@ -68,11 +64,10 @@ interface WorkspaceStore {
   openAgentPicker: () => void;
   closeAgentPicker: () => void;
   setPaletteOpen: (open: boolean) => void;
-  toggleCompanion: () => void;
-  setCompanionTab: (tab: CompanionTab) => void;
-  setCompanionWidth: (width: number) => void;
-  setStageLayout: (layout: StageLayout) => void;
-  setStageRatio: (ratio: number) => void;
+  setDockTool: (tool: DockTool | null) => void;
+  toggleDock: () => void;
+  setDockSize: (size: DockSize) => void;
+  setDockWidth: (value: number) => void;
   openPreview: (path: string) => Promise<void>;
   closePreview: () => void;
   setError: (error: string | null) => void;
@@ -80,15 +75,14 @@ interface WorkspaceStore {
 
 export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   root: null,
-  stageLayout: "terminals",
-  stageRatio: restoreStageRatio(),
+  dockTool: restoreDockTool(),
+  dockSize: "compact",
+  dockCompactWidth: restoreCompactWidth(),
+  dockWideRatio: restoreWideRatio(),
   settingsOpen: false,
   settingsSection: "general",
   agentPickerOpen: false,
   paletteOpen: false,
-  companionOpen: true,
-  companionTab: restoreCompanionTab(),
-  companionWidth: restoreCompanionWidth(),
   fsVersion: 0,
   preview: null,
 
@@ -119,26 +113,35 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
 
   setPaletteOpen: (open) => set({ paletteOpen: open }),
 
-  toggleCompanion: () => set((state) => ({ companionOpen: !state.companionOpen })),
-
-  setCompanionTab: (tab) => {
-    saveCompanionTab(tab);
-    set({ companionTab: tab, companionOpen: true });
+  // Selecting the tool that is already up closes the dock — the tab strip is
+  // the toggle, so the titlebar does not need a fourth button beside the three
+  // sizes. Null is never persisted: see `restoreDockTool`.
+  setDockTool: (dockTool) => {
+    if (dockTool) saveDockTool(dockTool);
+    set({ dockTool });
   },
 
-  setCompanionWidth: (width) => {
-    const companionWidth = clampCompanionWidth(width);
-    saveCompanionWidth(companionWidth);
-    set({ companionWidth });
-  },
+  toggleDock: () =>
+    set((state) => ({ dockTool: state.dockTool ? null : restoreDockTool() })),
 
-  setStageLayout: (stageLayout) => set({ stageLayout }),
+  setDockSize: (dockSize) =>
+    set((state) => ({ dockSize, dockTool: state.dockTool ?? restoreDockTool() })),
 
-  setStageRatio: (ratio) => {
-    const stageRatio = clampStageRatio(ratio);
-    saveStageRatio(stageRatio);
-    set({ stageRatio });
-  },
+  // One grip, two units: pixels while compact, a share of the workspace while
+  // wide. Committed on release, so the terminals refit once per drag.
+  setDockWidth: (value) =>
+    set((state) => {
+      const width = clampDockWidth(state.dockSize, value);
+      if (state.dockSize === "compact") {
+        saveCompactWidth(width);
+        return { dockCompactWidth: width };
+      }
+      if (state.dockSize === "wide") {
+        saveWideRatio(width);
+        return { dockWideRatio: width };
+      }
+      return {};
+    }),
 
   openPreview: async (path) => {
     try {

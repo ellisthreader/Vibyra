@@ -1,11 +1,18 @@
-/* Settings pane: header, body, lead, and blocks. */
+/* Settings pane: header, body, and the three primitives every pane is built
+   from — the lead paragraph, the labelled block, and the inline note.
+
+   These live here, above every pane-specific sheet, because they are the
+   shared vocabulary: a pane that needs a paragraph uses `.settings-lead`, not
+   a class of its own. Three near-identical intro styles (`.settings-lead`,
+   `.settings-ai__intro`, `.integrations-intro`) were the reason the panes read
+   as three different products. */
 
 .settings-pane__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding: 16px 20px 13px;
+  padding: 18px 24px 15px;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -14,31 +21,35 @@
 }
 
 .settings-pane__title {
-  font-size: 15px;
-  font-weight: 720;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-black);
   letter-spacing: -0.01em;
 }
 
 .settings-pane__blurb {
-  margin-top: 2px;
-  font-size: 11.5px;
-  font-weight: 540;
+  margin-top: 3px;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
   color: var(--dim);
 }
 
+/* The body's own padding sets the measure: 900px modal − 204px nav − 48px
+   padding leaves ~648px of text column, so hints wrap at a readable length
+   without a max-width and without a ragged right gutter. */
 .settings-pane__body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 18px 20px 22px;
+  padding: 20px 24px 26px;
 }
 
+/* One paragraph style for every pane intro. */
 .settings-lead {
-  font-size: 12px;
-  font-weight: 540;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
   line-height: 1.6;
   color: var(--muted);
 }
@@ -47,4 +58,45 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* A line of explanation attached to the bottom of a group, inside its border.
+   Lived in settings-graphics.css, which made it look like a graphics detail;
+   Notifications and Updates use it too. */
+.settings-note {
+  margin: 0;
+  padding: 11px 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* A note that leads a group states a condition before the controls below it,
+   so its rule belongs underneath rather than on top. */
+.settings-group > .settings-note:first-child {
+  border-top: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.settings-note--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Pane-level "still loading" copy. Was borrowing `.integration-loading` from
+   the Integrations sheet. */
+.settings-loading {
+  padding: 18px 0;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+  color: var(--dim);
+}
+
+/* A lead that trails its block instead of introducing it. */
+.settings-lead--foot {
+  font-size: var(--fs-hint);
+  color: var(--dim);
 }

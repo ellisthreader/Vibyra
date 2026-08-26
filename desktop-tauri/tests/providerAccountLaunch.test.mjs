@@ -7,25 +7,27 @@ function source(path) {
 }
 
 /**
- * Choosing an account is only real if it survives the whole way to the
- * process. This walks that path: launcher preference → spawn options → IPC →
- * the Rust request → the environment variable the CLI actually reads.
+ * The account chosen in Settings → Integrations is only real if it survives
+ * the whole way to the process: active account → spawn options → IPC → the
+ * Rust request → the environment variable the CLI reads. Launchers name no
+ * account of their own; only relaunch and switch paths pass one.
  */
-test("the chosen account reaches the terminal it launches", () => {
+test("the active account reaches the terminal it launches", () => {
   const configured = source("../src/lib/configuredLaunch.ts");
   const lifecycle = source("../src/state/terminalSpawnActions.ts");
   const ipc = source("../src/ipc/terminal.ts");
   const launch = source("../src-tauri/src/commands/terminal_launch.rs");
   const prepare = source("../src-tauri/src/commands/terminal_prepare.rs");
 
-  // Not `?? null`: null is a choice — the first account — and would outrank
-  // the account chosen in Settings → Integrations for every project that has
-  // never touched its own picker.
-  assert.match(configured, /accountId: preferences\.accountByProvider\[agent\.id\],/);
+  assert.doesNotMatch(
+    configured,
+    /accountId:/,
+    "launchers must not override the account chosen in Settings → Integrations",
+  );
   assert.match(
     lifecycle,
     /options\?\.accountId !== undefined \? options\.accountId : launchAccountId\(agent\.id\)/,
-    "an explicit account wins; only an absent one falls back",
+    "an explicit account (relaunch, switch) wins; a fresh launch falls back",
   );
   assert.match(ipc, /accountId: options\.accountId \?\? null/);
   assert.match(launch, /pub account_id: Option<String>/);

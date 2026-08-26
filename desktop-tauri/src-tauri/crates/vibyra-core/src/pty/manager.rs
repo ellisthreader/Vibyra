@@ -9,9 +9,8 @@ use parking_lot::RwLock;
 use crate::error::{CoreError, CoreResult};
 
 use super::buffer::Drained;
-use super::flusher;
 use super::session::{Session, SessionOptions};
-use super::{LaunchSpec, SessionId, SessionInfo, Visibility};
+use super::{flusher, LaunchSpec, SessionId, SessionInfo, Visibility};
 
 pub trait OutputSink: Send + Sync + 'static {
     fn on_output(&self, id: SessionId, data: String);
@@ -196,5 +195,6 @@ fn describe(session: &Session) -> SessionInfo {
         visibility: session.output.lock().visibility,
         alive: session.is_alive(),
         exit_code: *session.exit_code.lock(),
+        workspace: None,
     }
 }

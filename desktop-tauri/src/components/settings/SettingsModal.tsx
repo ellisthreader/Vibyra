@@ -21,21 +21,39 @@ interface Section {
   label: string;
   blurb: string;
   icon: ComponentType<{ size?: number }>;
-  /** Renders a divider above this row — separates account from app groups. */
-  groupStart?: boolean;
 }
 
-const SECTIONS: Section[] = [
-  { id: "profile", label: "Profile", blurb: "Your Vibyra account and session", icon: UserIcon },
-  { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon, groupStart: true },
-  { id: "performance", label: "Performance", blurb: "What Vibyra is using right now, and the levers that change it", icon: GaugeIcon },
-  { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
-  { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
-  { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
-  { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
-  { id: "shortcuts", label: "Shortcuts", blurb: "Set global tools and review app controls", icon: CommandIcon },
-  { id: "updates", label: "Updates", blurb: "Your version, and any release waiting to install", icon: RestartIcon },
+/** Grouped rather than one flat list of nine. The three AI sections used to sit
+ * wedged between Notifications and Shortcuts, so "where do I switch account"
+ * had nothing to scan for. */
+const GROUPS: { label: string; items: Section[] }[] = [
+  {
+    label: "Account",
+    items: [
+      { id: "profile", label: "Profile", blurb: "Your Vibyra account and session", icon: UserIcon },
+    ],
+  },
+  {
+    label: "AI",
+    items: [
+      { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
+      { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
+      { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
+    ],
+  },
+  {
+    label: "Application",
+    items: [
+      { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon },
+      { id: "performance", label: "Performance", blurb: "What Vibyra is using right now, and the levers that change it", icon: GaugeIcon },
+      { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
+      { id: "shortcuts", label: "Shortcuts", blurb: "Set global tools and review app controls", icon: CommandIcon },
+      { id: "updates", label: "Updates", blurb: "Your version, and any release waiting to install", icon: RestartIcon },
+    ],
+  },
 ];
+
+const SECTIONS: Section[] = GROUPS.flatMap((group) => group.items);
 
 export function SettingsModal() {
   const open = useWorkspaceStore((state) => state.settingsOpen);
@@ -67,17 +85,19 @@ export function SettingsModal() {
         <aside className="settings-nav">
           <div className="settings-nav__title">Settings</div>
           <nav className="settings-nav__list" aria-label="Settings sections">
-            {SECTIONS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.id} className="settings-nav__slot">
-                  {item.groupStart && <div className="settings-nav__sep" role="separator" />}
-                  <button className={`settings-nav__item ${item.id === active ? "settings-nav__item--active" : ""}`} aria-current={item.id === active} onClick={() => setActive(item.id)}>
-                    <Icon size={15} />{item.label}
-                  </button>
-                </div>
-              );
-            })}
+            {GROUPS.map((group) => (
+              <div key={group.label} className="settings-nav__group" role="group" aria-label={group.label}>
+                <span className="settings-nav__group-label">{group.label}</span>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button key={item.id} className={`settings-nav__item ${item.id === active ? "settings-nav__item--active" : ""}`} aria-current={item.id === active} onClick={() => setActive(item.id)}>
+                      <Icon size={15} />{item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
           <div className="settings-nav__foot">Changes apply live and persist on disk.</div>
         </aside>

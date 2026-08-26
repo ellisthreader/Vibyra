@@ -1,43 +1,7 @@
-/* Settings → Performance: the live "right now" readout. */
+/* Settings → Performance. The live "right now" readout is five rows in the
+   shared group card; only the number's own treatment lives here. */
 
-.perf-status {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 8px;
-  width: 100%;
-}
-
-.perf-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  background: var(--elevated);
-}
-
-.perf-stat__label {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.perf-stat__value {
-  font-size: 16px;
-  font-weight: 650;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.perf-stat__detail {
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
-.perf-status__note {
-  margin: 6px 0 0;
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--muted);
+.settings-value--metric {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-heavy);
 }

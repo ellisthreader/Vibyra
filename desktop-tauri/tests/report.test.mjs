@@ -67,19 +67,21 @@ test("the question asked matches the kind of report being written", () => {
 test("where the user is standing is read most-specific first", () => {
   const base = {
     settingsOpen: false,
-    companionOpen: false,
-    stageLayout: "terminals",
+    dockTool: null,
+    dockSize: "compact",
     view: "project",
     hasPane: true,
   };
   // A modal is what the user is looking at, even with a project behind it.
   assert.equal(areaFor({ ...base, settingsOpen: true }), "Settings");
   assert.equal(areaFor({ ...base, view: "home" }), "Home screen");
-  assert.equal(areaFor({ ...base, stageLayout: "preview" }), "Preview");
-  // A split is still a terminal pane — that is where the keyboard is.
-  assert.equal(areaFor({ ...base, stageLayout: "split" }), "Terminal pane");
+  // Only a full-size dock outranks the pane the keyboard is in.
+  assert.equal(areaFor({ ...base, dockTool: "preview", dockSize: "full" }), "Preview");
+  assert.equal(areaFor({ ...base, dockTool: "files", dockSize: "full" }), "File tree");
+  assert.equal(areaFor({ ...base, dockTool: "preview", dockSize: "wide" }), "Terminal pane");
   assert.equal(areaFor(base), "Terminal pane");
-  assert.equal(areaFor({ ...base, hasPane: false, companionOpen: true }), "AI companion");
+  assert.equal(areaFor({ ...base, hasPane: false, dockTool: "chat" }), "AI companion");
+  assert.equal(areaFor({ ...base, hasPane: false, dockTool: "memory" }), "AI companion");
   assert.equal(areaFor({ ...base, hasPane: false }), "Somewhere else");
 });
 

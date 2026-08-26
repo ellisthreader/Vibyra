@@ -1,14 +1,10 @@
-.integration-list--terminal {
-  margin-top: 1px;
-}
-
 .terminal-integration {
   align-items: center;
   display: grid;
   gap: 12px;
   grid-template-columns: 34px minmax(0, 1fr) auto 28px;
-  min-height: 62px;
-  padding: 10px 0;
+  min-height: 60px;
+  padding: 10px 14px;
   text-align: left;
   width: 100%;
 }
@@ -39,13 +35,13 @@
 
 .terminal-integration__copy strong {
   color: var(--text);
-  font-size: 12px;
-  font-weight: 680;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-heavy);
 }
 
 .terminal-integration__copy small {
   color: var(--dim);
-  font-size: 10.5px;
+  font-size: var(--fs-label);
 }
 
 .terminal-integration__switch {
@@ -81,7 +77,7 @@
     grid-template-columns: 34px minmax(0, 1fr) 28px;
   }
 
-  .terminal-integration .integration-status {
+  .terminal-integration .settings-status {
     display: none;
   }
 }

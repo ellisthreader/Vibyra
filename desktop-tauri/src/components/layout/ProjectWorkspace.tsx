@@ -1,43 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 
 import { setTerminalVisibility } from "../../ipc/terminal";
+import { DOCK_GAP_PX, dockReserve, dockValue, terminalsVisible } from "../../lib/dockLayout";
 import {
   applyProjectVisibility,
   projectRuntimeTransitions,
   syncProjectVisibility,
 } from "../../lib/projectTransitions";
-import { previewVisible, terminalsVisible } from "../../lib/stageLayout";
 import { useFocusVisibility } from "../../lib/useFocusVisibility";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { PreviewWorkspace } from "../preview/PreviewWorkspace";
+import { Dock } from "../dock/Dock";
 import { TerminalStage } from "../terminal/TerminalStage";
-import { StageSplit } from "./StageSplit";
 
 export function ProjectWorkspace() {
   const activeId = useProjectStore((state) => state.activeId);
   const projects = useProjects();
-  const layout = useWorkspaceStore((state) => state.stageLayout);
-  const ratio = useWorkspaceStore((state) => state.stageRatio);
-  const setStageRatio = useWorkspaceStore((state) => state.setStageRatio);
+  const tool = useWorkspaceStore((state) => state.dockTool);
+  const size = useWorkspaceStore((state) => state.dockSize);
+  const compact = useWorkspaceStore((state) => state.dockCompactWidth);
+  const ratio = useWorkspaceStore((state) => state.dockWideRatio);
   const zoomedId = useTerminalStore((state) => state.zoomedId);
-  // Preview machinery is not started for someone who never opens it, but once
-  // it has been opened it stays mounted for the rest of the project's session:
-  // dropping back to Terminals must not restart a running dev server.
-  const [previewTouched, setPreviewTouched] = useState(false);
+  const host = useRef<HTMLElement>(null);
   // Hands the full native flush rate to whichever pane holds the keyboard.
   useFocusVisibility();
   const project = projects.find((entry) => entry.id === activeId);
-
-  useEffect(() => {
-    setPreviewTouched(false);
-  }, [activeId]);
-
-  useEffect(() => {
-    if (previewVisible(layout)) setPreviewTouched(true);
-  }, [layout, activeId]);
+  const showTerminals = terminalsVisible(size, tool !== null);
 
   useEffect(() => {
     if (!activeId) return;
@@ -49,15 +40,16 @@ export function ProjectWorkspace() {
         !current ||
         project.view !== "project" ||
         project.activeId !== activeId ||
-        workspace.stageLayout !== layout
+        terminalsVisible(workspace.dockSize, workspace.dockTool !== null) !== showTerminals
       ) {
         return new Map();
       }
-      // Full preview is the only layout where the terminals are genuinely off
-      // screen; in a split they are visible and keep their delivery rate.
+      // A full-size dock is the only state where the terminals are genuinely
+      // off screen; at compact and wide they are beside it and keep their
+      // delivery rate.
       return syncProjectVisibility(
         useTerminalStore.getState().panes,
-        terminalsVisible(layout) ? activeId : null,
+        showTerminals ? activeId : null,
         setTerminalVisibility,
         useTerminalStore.getState().focusedId,
       );
@@ -70,30 +62,34 @@ export function ProjectWorkspace() {
     return () => {
       current = false;
     };
-  }, [activeId, layout]);
+  }, [activeId, showTerminals]);
 
   if (!project || !activeId) return null;
 
-  const showPreview = previewTouched || previewVisible(layout);
-
   return (
-    <main className="workspace project-workspace">
-      <StageSplit
-        layout={layout}
-        ratio={ratio}
-        onRatio={setStageRatio}
-        terminals={<TerminalStage active={terminalsVisible(layout)} />}
-        preview={
-          showPreview ? (
-            <PreviewWorkspace key={activeId} projectId={activeId} root={project.root} />
-          ) : null
-        }
-      />
+    <main
+      className="workspace project-workspace"
+      ref={host}
+      style={
+        {
+          "--dock-gap": `${DOCK_GAP_PX}px`,
+          "--dock-reserve": dockReserve(size, tool !== null, dockValue(size, compact, ratio)),
+        } as CSSProperties
+      }
+    >
+      {/* Hidden, never unmounted: a full-size dock must not throw away a
+          pane's scrollback, and the reserve is what keeps the grid out from
+          under the dock at the other two sizes. */}
+      <div className={`workspace__stage ${showTerminals ? "" : "workspace__stage--off"}`}>
+        <TerminalStage active={showTerminals} />
+      </div>
 
-      {terminalsVisible(layout) && zoomedId !== null && (
+      <Dock projectId={activeId} root={project.root} host={host} />
+
+      {showTerminals && zoomedId !== null && (
         <button
           type="button"
-          className="chip stage__zoom-exit"
+          className="chip workspace__zoom-exit"
           onClick={() => useTerminalStore.getState().toggleZoom(zoomedId)}
         >
           Exit zoom

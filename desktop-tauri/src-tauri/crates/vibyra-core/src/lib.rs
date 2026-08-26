@@ -10,16 +10,19 @@
 pub mod agents;
 pub mod error;
 pub mod fsx;
+pub mod github;
 pub mod launch_env;
 pub mod memory;
 pub mod notifications;
 pub mod parallel;
 pub mod preview;
 pub mod pty;
+pub mod review;
 pub mod ring;
 pub mod settings;
 pub mod utf8;
 pub mod workspace;
 pub mod workspace_preflight;
+pub mod workspace_ref;
 
 pub use error::{CoreError, CoreResult};

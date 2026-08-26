@@ -36,7 +36,7 @@ export function NotificationPermissionRow({ disabled }: { disabled: boolean }) {
   return (
     <SettingRow label="Desktop notifications" hint={HINTS[state]}>
       {state === "granted" ? (
-        <span className="integration-status integration-status--success">
+        <span className="settings-status settings-status--success">
           <i aria-hidden="true" />
           Enabled
         </span>

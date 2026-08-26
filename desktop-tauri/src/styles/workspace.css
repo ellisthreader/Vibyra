@@ -20,3 +20,25 @@
   flex: 1;
   min-height: 0;
 }
+
+/* Kept from `stage.css`: `.grid` sizes itself at 100%, so the box it fills
+   needs a definite height rather than only a flex share. */
+.terminal-stage {
+  height: 100%;
+}
+
+/* Floats over the grid rather than reserving a row for a control that is
+   almost never on. Lived in `stage.css` until the stage became one surface. */
+.workspace__zoom-exit {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 20;
+  background: var(--elevated);
+  box-shadow: var(--e-menu);
+}
+
+.workspace__zoom-exit:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+}

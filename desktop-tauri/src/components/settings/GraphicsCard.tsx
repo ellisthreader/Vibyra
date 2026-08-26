@@ -4,7 +4,7 @@ import { rendererPolicy } from "../../ipc/render";
 import { restartAppNow } from "../../lib/appRestart";
 import { rendererNeedsRestart } from "../../lib/rendererPolicy";
 import type { RendererMode, RendererPolicy } from "../../types";
-import { SettingRow, SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
+import { SettingsBlock, type SettingsPaneProps } from "./SettingsShared";
 
 const MODES: { id: RendererMode; label: string; hint: string }[] = [
   { id: "auto", label: "Automatic (recommended)", hint: "Picks the fastest path this machine can actually deliver" },
@@ -59,48 +59,41 @@ export function GraphicsCard({ settings, update }: SettingsPaneProps) {
 
   return (
     <SettingsBlock label="GPU usage">
-      <div className="settings-group">
-        <SettingRow
-          label="Allow GPU usage for Vibyra"
-          hint={
-            <>
-              Running now: <strong>{activeLabel(policy)}</strong>.{" "}
-              {settings.rendererMode === "auto"
-                ? autoHint(policy)
-                : "Overriding automatic detection."}
-            </>
-          }
-          stack
-        >
-          <div className="graphics-modes" role="radiogroup" aria-label="GPU usage">
-            {MODES.map((option) => (
-              <button
-                key={option.id}
-                role="radio"
-                aria-checked={settings.rendererMode === option.id}
-                className={`graphics-mode ${settings.rendererMode === option.id ? "graphics-mode--active" : ""}`}
-                onClick={() => void update({ rendererMode: option.id })}
-              >
-                <span className="graphics-mode__label">{option.label}</span>
-                <span className="graphics-mode__hint">{modeHint(option, policy)}</span>
-              </button>
-            ))}
-          </div>
-        </SettingRow>
-        {policy.environmentOverride ? (
+      <p className="settings-lead settings-lead--foot">
+        Running now: <strong>{activeLabel(policy)}</strong>.{" "}
+        {settings.rendererMode === "auto" ? autoHint(policy) : "Overriding automatic detection."}
+      </p>
+      <div className="graphics-modes" role="radiogroup" aria-label="GPU usage">
+        {MODES.map((option) => (
+          <button
+            key={option.id}
+            role="radio"
+            aria-checked={settings.rendererMode === option.id}
+            className={`graphics-mode ${settings.rendererMode === option.id ? "graphics-mode--active" : ""}`}
+            onClick={() => void update({ rendererMode: option.id })}
+          >
+            <span className="graphics-mode__label">{option.label}</span>
+            <span className="graphics-mode__hint">{modeHint(option, policy)}</span>
+          </button>
+        ))}
+      </div>
+      {policy.environmentOverride ? (
+        <div className="settings-group">
           <p className="settings-note">
             VIBYRA_WEBKIT_DMABUF is set in your launch environment and takes priority
             over this setting. Unset it for the choice above to apply.
           </p>
-        ) : needsRestart ? (
+        </div>
+      ) : needsRestart ? (
+        <div className="settings-group">
           <p className="settings-note settings-note--action">
             Restart Vibyra to apply the new graphics mode.{" "}
             <button className="btn" onClick={() => void restartAppNow()}>
               Restart now
             </button>
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </SettingsBlock>
   );
 }

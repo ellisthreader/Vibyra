@@ -1,17 +1,16 @@
 /* The segmented switch — one idiom for "pick one of these panels".
-   Owned here so the titlebar's stage layout control (Terminals / Split /
-   Preview) and the companion dock (Chat / Memory / Files) cannot drift apart:
-   before this sheet the workspace mode bar was a filled segmented control while
-   the companion used underline tabs, and the two sat side by side on the same
-   46px row. The mode bar has since moved into the titlebar as `.stage-layout`,
-   which inherits the same shape here.
+   Owned here so the titlebar's dock size control (Compact / Wide / Full) and
+   the dock's own tool strip (Preview / Chat / Memory / Files) cannot drift
+   apart: before this sheet the workspace mode bar was a filled segmented
+   control while the companion used underline tabs, and the two sat side by
+   side on the same 46px row. Both now inherit the same shape from here.
 
    Consumers keep their own class names — this sheet is the single owner of the
    shared shape. Per-surface adjustments belong in the consuming sheet, after
    this one in `main.tsx` order. */
 
-.stage-layout,
-.companion__tabs {
+.dock-size,
+.dock__tabs {
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -21,8 +20,8 @@
   background: color-mix(in srgb, var(--workspace) 72%, transparent);
 }
 
-.stage-layout button,
-.companion__tab {
+.dock-size button,
+.dock__tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -37,29 +36,29 @@
   transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
 }
 
-.stage-layout button:hover,
-.companion__tab:hover {
+.dock-size button:hover,
+.dock__tab:hover {
   color: var(--text);
   background: var(--hover);
 }
 
 /* The selected segment reads as a raised chip with a cobalt underscore. The
    inset shadow rather than a border keeps the 28px height exact. */
-.stage-layout .stage-layout__on,
-.companion__tab--active {
+.dock-size .dock-size__on,
+.dock__tab--active {
   color: var(--text);
   background: var(--surface);
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 
-.stage-layout .stage-layout__on svg,
-.companion__tab--active svg {
+.dock-size .dock-size__on svg,
+.dock__tab--active svg {
   color: var(--accent-2);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-layout button,
-  .companion__tab {
+  .dock-size button,
+  .dock__tab {
     transition: none;
   }
 }

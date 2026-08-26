@@ -14,8 +14,8 @@
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 650;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-bold);
   text-align: center;
 }
 
@@ -34,8 +34,8 @@
   padding: 5px 6px;
   border-radius: var(--r-sm);
   color: var(--dim);
-  font-size: 10.5px;
-  font-weight: 620;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semi);
 }
 
 .hotkey-reset:hover {
@@ -47,7 +47,7 @@
   grid-column: 1 / -1;
   max-width: 260px;
   color: var(--danger);
-  font-size: 10.5px;
+  font-size: var(--fs-label);
   line-height: 1.4;
 }
 

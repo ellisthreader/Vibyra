@@ -1,53 +1,69 @@
 /* Choosing which login a company's terminals run as.
  *
  * Its own file rather than more of settings-integration-accounts.css, which is
- * already near the 200-line ceiling. Everything here hangs off one row of the
- * account list and never restyles the row itself. */
+ * near the 200-line ceiling. Everything here hangs off one row of the account
+ * list and never restyles the row itself. */
 
+/* Offering a choice takes the full row underneath — a button and the sentence
+ * saying what it will do do not fit in a column. */
 .integration-account-use {
   grid-column: 1 / -1;
+  grid-row: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .integration-account-use em {
   font-style: normal;
-  font-size: 11.5px;
-  opacity: 0.66;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
+  color: var(--dim);
   min-width: 0;
 }
 
 /* The account already in use states a fact rather than offering an action, so
  * it is a quiet badge and not a disabled button. */
+/* Reporting one is two words, so it sits on the identity line rather than
+ * spending a whole row of the card on a badge. Cobalt, not green: it sits
+ * beside a green "Connected" and means something different — chosen, not
+ * healthy. Both accounts here are connected; only one is in use. */
 .integration-account-use--active {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--vb-success, #3fbf7f);
-  opacity: 0.9;
+  grid-area: 1 / 2;
+  margin-top: 0;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .integration-account-use__go,
 .integration-account-use__keep {
-  font: inherit;
-  font-size: 12px;
-  font-weight: 550;
-  padding: 4px 10px;
-  border-radius: 7px;
-  border: 1px solid var(--vb-border, rgba(127, 127, 127, 0.28));
-  background: var(--vb-surface-1, rgba(127, 127, 127, 0.08));
-  color: inherit;
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  min-height: 26px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--elevated);
+  color: var(--text);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+  transition: background var(--t-ui) var(--e-standard), border-color var(--t-ui) var(--e-standard);
 }
 
 .integration-account-use__go:hover:not(:disabled),
 .integration-account-use__keep:hover:not(:disabled) {
-  background: var(--vb-surface-3, rgba(127, 127, 127, 0.16));
-  border-color: var(--vb-border-strong, rgba(127, 127, 127, 0.4));
+  background: var(--hover-strong);
+  border-color: var(--border);
+}
+
+.integration-account-use__go:focus-visible,
+.integration-account-use__keep:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .integration-account-use__go:disabled,
@@ -59,10 +75,10 @@
 /* Interrupting an agent mid-answer is the one outcome here that cannot be
  * undone, so the confirm reads as a warning rather than as more of the row. */
 .integration-account-use--confirm em {
-  opacity: 0.95;
-  color: var(--vb-warning, #d8a13a);
+  color: var(--amber);
 }
 
 .integration-account-use--confirm .integration-account-use__go {
-  border-color: var(--vb-warning, #d8a13a);
+  border-color: var(--amber);
+  color: var(--amber);
 }

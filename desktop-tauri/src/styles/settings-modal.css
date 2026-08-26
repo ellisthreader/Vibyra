@@ -1,33 +1,52 @@
-/* Settings modal shell: sidebar nav and the content pane. */
+/* Settings modal shell: the grouped sidebar nav and the content pane.
+   Sized so the pane's own padding produces a readable measure (~650px) with
+   no max-width and no ragged right gutter — see settings-pane.css. */
 
 .settings-modal {
   flex-direction: row;
-  width: min(860px, 94vw);
-  height: min(600px, 88vh);
-  max-height: min(600px, 88vh);
+  width: min(900px, 94vw);
+  height: min(660px, 88vh);
+  max-height: min(660px, 88vh);
 }
 
 .settings-nav {
   display: flex;
   flex-direction: column;
-  width: 192px;
+  width: 204px;
   flex-shrink: 0;
-  padding: 14px 10px 12px;
+  padding: 16px 10px 12px;
   background: var(--surface);
   border-right: 1px solid var(--line);
 }
 
 .settings-nav__title {
-  padding: 2px 10px 12px;
-  font-size: 13.5px;
-  font-weight: 720;
+  padding: 2px 10px 14px;
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-black);
   letter-spacing: -0.01em;
 }
 
 .settings-nav__list {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+/* Nine sections is too many to scan flat. Each group carries its own heading
+   instead of the single unexplained hairline that used to sit after Profile. */
+.settings-nav__group {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
+}
+
+.settings-nav__group-label {
+  padding: 0 10px 4px;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--dim);
 }
 
 .settings-nav__item {
@@ -39,8 +58,8 @@
   padding: 0 10px;
   border-radius: var(--r-control);
   color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 620;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-semi);
   text-align: left;
   transition: background var(--t-ui) var(--e-standard), color var(--t-ui) var(--e-standard);
 }
@@ -67,9 +86,9 @@
 
 .settings-nav__foot {
   margin-top: auto;
-  padding: 12px 10px 2px;
-  font-size: 10.5px;
-  font-weight: 540;
+  padding: 14px 10px 2px;
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-medium);
   line-height: 1.5;
   color: var(--dim);
 }

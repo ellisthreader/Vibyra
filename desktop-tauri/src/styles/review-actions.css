@@ -1,0 +1,175 @@
+/* How a review ends: the decision bar under the changeset, the PR sheet it
+ * opens, and the pane-header chip that leads here. Split from dock-review.css,
+ * which owns the reading surface and sits near the 200-line ceiling. */
+
+.review-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--rail);
+}
+
+.review-actions__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* The GitHub action reads as GitHub's: quiet until it can actually happen. */
+.review-actions__github {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-actions--confirm em {
+  font-style: normal;
+  font-size: var(--fs-body);
+  color: var(--amber);
+  line-height: 1.5;
+}
+
+.review-outcome {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--r-control);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+
+.review-outcome--ok {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.review-outcome--stuck {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+/* ── the pull-request sheet ─────────────────────────────────────────────── */
+
+.review-pr {
+  width: min(480px, 92vw);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-pr__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.review-pr__head h2 {
+  margin: 0;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+}
+
+.review-pr__branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--dim);
+  min-width: 0;
+}
+
+.review-pr__branch code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-tiny);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-pr__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.review-pr__field span {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semi);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.review-pr__field input,
+.review-pr__field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line);
+  background: var(--surface-tint);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-ui);
+}
+
+.review-pr__field textarea {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.review-pr__error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--r-control);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.review-pr__done {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.review-pr__done code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  color: var(--text);
+}
+
+.review-pr__foot {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── the pane-header chip ───────────────────────────────────────────────── */
+
+.pane__review {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-semi);
+  white-space: nowrap;
+}
+
+.pane__review:hover {
+  background: var(--selection);
+  color: var(--text);
+}

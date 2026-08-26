@@ -113,9 +113,9 @@
   --chrome-h: 52px;
   --rail-w: 236px;
   --strip-w: 54px;
-  /* Every second-row header (workspace mode bar, companion head) is exactly
-     this tall including its bottom hairline, so their seams line up across
-     the shell. Change here, not in the consuming sheet. */
+  /* The dock's header, counted including its bottom hairline. Every header
+     that sits a row below the titlebar uses this, so their seams line up
+     across the shell. Change here, not in the consuming sheet. */
   --subhead-h: 46px;
 
   /* terminal screen (deepest well) */

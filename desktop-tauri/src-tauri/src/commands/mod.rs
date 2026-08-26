@@ -12,6 +12,7 @@ pub mod clipboard;
 pub mod codex_transcripts;
 pub mod conversation_carry;
 pub mod fs;
+pub mod github;
 pub mod memory;
 pub mod memory_browser;
 pub mod perf;
@@ -21,6 +22,7 @@ pub mod provider_accounts;
 pub mod registry;
 pub mod render;
 pub mod report;
+pub mod review;
 pub mod screenshot;
 #[cfg(target_os = "linux")]
 mod screenshot_capture;

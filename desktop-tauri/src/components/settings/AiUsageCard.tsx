@@ -28,7 +28,7 @@ export function AiUsageCard({ status }: { status: AiServiceStatus }) {
   const { usage, limits, pricing } = status;
 
   return (
-    <article className="ai-usage">
+    <article className="settings-group ai-usage">
       <div className="ai-usage__meters">
         <Meter
           label="Requests today"

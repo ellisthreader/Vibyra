@@ -27,7 +27,7 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
   };
 
   return (
-    <article className="ai-key">
+    <article className="settings-group ai-key">
       <div className="ai-key__state">
         <span className={`ai-key__badge ai-key__badge--${status.keyConfigured ? "on" : "off"}`}>
           {status.keyConfigured ? <CheckIcon size={12} /> : null}
@@ -41,11 +41,16 @@ export function OpenAiKeyCard({ status }: { status: AiServiceStatus }) {
         ) : null}
       </div>
 
-      <ol className="ai-key__steps">
-        {STEPS.map((step, index) => (
-          <li key={index}>{step}</li>
-        ))}
-      </ol>
+      {/* The how-to is for someone who has not done it yet. Once a key is
+          installed it is four steps of clutter above the field you actually
+          came back for, so it folds away — still one click from here. */}
+      {status.keyConfigured ? null : (
+        <ol className="ai-key__steps">
+          {STEPS.map((step, index) => (
+            <li key={index}>{step}</li>
+          ))}
+        </ol>
+      )}
 
       <button type="button" className="ai-key__link" onClick={() => void openOpenAiKeyPage()}>
         <LinkIcon size={13} />Open the OpenAI keys page

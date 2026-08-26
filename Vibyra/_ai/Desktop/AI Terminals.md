@@ -60,6 +60,44 @@ being passed unverified to the personal-account CLI. Durable regression
 coverage includes `provider_auth_integration_tests.rs`, PTY environment removal,
 Gemini fixture validation, provider-account policy, and model-runner tests.
 
+## August 25, 2026 - Review Dock Tool And GitHub Pull Requests
+
+- Safe-mode worktrees are now reviewable: `prepare_safe_workspace` returns
+  `SafeWorkspace { cwd, branch, base_commit }` (`workspace_ref.rs` owns the
+  serializable `SafeWorkspaceRef`), the ref rides `SessionInfo.workspace` →
+  `PaneState.workspace` → session.json, so suspended panes review after
+  restart. Review is the fifth dock tool (`components/review/`,
+  `state/reviewStore.ts`, `lib/reviewPolicy.ts`; sheets `dock-review.css`,
+  `review-diff.css`, `review-actions.css`).
+- Native half: `vibyra-core/src/review/` (status via `--name-status`/
+  `--numstat` + untracked; bounded 512 KiB per-file diff; merge = `git add -A`
+  in the worktree then `git diff --binary <base>` applied to the user repo
+  with `apply --check` first — all-or-nothing, never commits; discard closes
+  the pane first, then `worktree remove --force` + `branch -D`). Every merge/
+  discard/PR path refuses non-`vibyra/*` branches — the ownership guard,
+  since the renderer supplies the paths.
+- GitHub: `vibyra-core/src/github.rs` + `commands/github.rs` shell out to
+  `gh` (status probes fold to "no", `git push -u origin` + `gh pr create`,
+  URL parsed from stdout, only `https://github.com/` links may be opened).
+  Auth stays in `gh` — no tokens in Vibyra, same boundary as provider
+  accounts. Contract tests: `tests/safeWorkspaceReview.test.mjs`,
+  `review/tests.rs`, `github_tests.rs`.
+- Deliberately not built: per-pane live change counts (would poll git per
+  pane), CI watching, PR-comment iteration, worktree janitor.
+
+## August 25, 2026 - Single Account Authority In Integrations
+
+- Settings → Integrations is the only place a provider account is chosen. The
+  rail launcher's per-project account dropdown (`LaunchAccountPicker.tsx`) and
+  its `accountByProvider` override in `launchSettingsStore`/`configuredLaunch`
+  were removed at Ellis's request — do not reintroduce a launch-time account
+  picker.
+- Every fresh launch inherits `Settings.activeProviderAccounts` (read at spawn
+  in `terminalSpawnActions.ts`); only relaunch, restore, and account-switch
+  paths pass an explicit `accountId`, because a pane keeps the login it
+  started on. `tests/providerAccountLaunch.test.mjs` asserts `configuredLaunch`
+  names no account.
+
 ## August 23, 2026 - Exact Codex Session Recovery
 
 - A live Codex pane receives its UUID inside the CLI, not at launch. On Linux,

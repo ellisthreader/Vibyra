@@ -46,7 +46,7 @@ export function ProviderIntegrationCard({
   const connected = connectedAccounts(provider).length;
 
   return (
-    <article className="integration-card integration-account">
+    <article className="integration-card">
       <div className="integration-card__head">
         <ProviderMark
           provider={providerIconKey(provider)}
