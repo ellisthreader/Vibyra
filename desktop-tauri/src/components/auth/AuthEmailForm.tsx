@@ -4,17 +4,31 @@ import { type EmailAuthMode, validateEmailAuth } from "../../lib/accountPolicy";
 
 interface AuthEmailFormProps {
   active: boolean;
+  mode: EmailAuthMode;
+  recovering: boolean;
   busy: boolean;
   serverError: string | null;
+  onModeChange: (mode: EmailAuthMode) => void;
+  onRecoveringChange: (recovering: boolean) => void;
   onLogin: (email: string, password: string) => void;
   onSignup: (name: string, email: string, password: string) => void;
   onForgot: (email: string) => Promise<string>;
   onResetError: () => void;
 }
 
-export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, onForgot, onResetError }: AuthEmailFormProps) {
-  const [mode, setMode] = useState<EmailAuthMode>("login");
-  const [recovering, setRecovering] = useState(false);
+export function AuthEmailForm({
+  active,
+  mode,
+  recovering,
+  busy,
+  serverError,
+  onModeChange,
+  onRecoveringChange,
+  onLogin,
+  onSignup,
+  onForgot,
+  onResetError,
+}: AuthEmailFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +41,7 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
   }, [active, mode, recovering]);
 
   const switchMode = (next: EmailAuthMode) => {
-    setMode(next);
+    onModeChange(next);
     setLocalError(null);
     setNotice(null);
     onResetError();
@@ -121,7 +135,7 @@ export function AuthEmailForm({ active, busy, serverError, onLogin, onSignup, on
           type="button"
           className="auth-link"
           onClick={() => {
-            setRecovering(!recovering);
+            onRecoveringChange(!recovering);
             setLocalError(null);
             setNotice(null);
             onResetError();

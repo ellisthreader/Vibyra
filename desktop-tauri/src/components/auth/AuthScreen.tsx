@@ -2,10 +2,12 @@ import { useState } from "react";
 
 import logoUrl from "../../assets/vibyra-cobalt.png";
 import { accountOpenLegal } from "../../ipc/account";
+import type { EmailAuthMode } from "../../lib/accountPolicy";
 import { useAccountStore } from "../../state/accountStore";
 import { AuthBackdrop } from "./AuthBackdrop";
 import { AuthEmailForm } from "./AuthEmailForm";
 import { AuthProviders } from "./AuthProviders";
+import { authVideoEnabled } from "./authVideoPolicy";
 import { AuthSpinner } from "./authMarks";
 import { ResizeHandles, WindowControls } from "../layout/WindowChrome";
 
@@ -15,6 +17,8 @@ export function AuthScreen() {
   const snapshot = useAccountStore((s) => s.snapshot);
   const busy = useAccountStore((s) => s.busy);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [emailMode, setEmailMode] = useState<EmailAuthMode>("login");
+  const [recovering, setRecovering] = useState(false);
   const [lastAttempt, setLastAttempt] = useState<Attempt>(null);
 
   const restoring = snapshot.status === "restoring";
@@ -22,6 +26,14 @@ export function AuthScreen() {
   const authorizing = snapshot.status === "authorizing";
   const providerError = lastAttempt !== "email" ? snapshot.error : null;
   const emailError = lastAttempt === "email" ? snapshot.error : null;
+  const playSignupVideo = authVideoEnabled({
+    emailOpen,
+    emailMode,
+    recovering,
+    restoring,
+    connectionError,
+    authorizing,
+  });
 
   const startProvider = (provider: "google" | "apple") => {
     setLastAttempt(provider);
@@ -30,7 +42,7 @@ export function AuthScreen() {
 
   return (
     <div className="auth" data-auth-theme="dark">
-      <AuthBackdrop />
+      <AuthBackdrop videoEnabled={playSignupVideo} />
       <div className="auth__scrim" />
       <header className="auth__bar" data-tauri-drag-region>
         <WindowControls />
@@ -84,8 +96,12 @@ export function AuthScreen() {
                 <div className="auth-reveal__inner">
                   <AuthEmailForm
                     active={emailOpen}
+                    mode={emailMode}
+                    recovering={recovering}
                     busy={authorizing || busy}
                     serverError={emailError}
+                    onModeChange={setEmailMode}
+                    onRecoveringChange={setRecovering}
                     onLogin={(email, password) => {
                       setLastAttempt("email");
                       void useAccountStore.getState().loginEmail(email, password);
