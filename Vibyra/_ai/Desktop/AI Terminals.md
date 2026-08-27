@@ -60,6 +60,30 @@ being passed unverified to the personal-account CLI. Durable regression
 coverage includes `provider_auth_integration_tests.rs`, PTY environment removal,
 Gemini fixture validation, provider-account policy, and model-runner tests.
 
+## August 26, 2026 - Terminal Copy Had Never Been Implemented
+
+- Copying from a pane did nothing at all until now: `terminalClipboard.ts`
+  handled only `KeyV`. Three things have to be true at once for a terminal
+  copy to work here, and none were: xterm ships **no** copy chord of its own,
+  its selection is painted rather than a DOM selection, and `base.css` sets
+  `user-select: none` on `body` — so WebKit's native Ctrl+C and its
+  right-click Copy both had nothing to reach either.
+- The selection must travel through Rust: `write_clipboard_text`
+  (`commands/clipboard.rs`) reuses the process-lifetime `with_clipboard`
+  handle, which exists because on X11 the clipboard owner has to stay alive to
+  serve what it copied. Do not open a per-call `Clipboard` here.
+- Chord policy lives in the pure `lib/terminalClipboardKeys.ts`
+  (`clipboardIntent`): Ctrl+Shift+C copies, Cmd+C copies on macOS,
+  Ctrl+Shift+V pastes, and **plain ^C and ^V stay the program's** — ^C is the
+  only way to interrupt an agent mid-answer. Ctrl+Shift+C is swallowed even
+  with an empty selection so it can never arrive as an interrupt.
+  Right-clicking a selection copies it; with no selection the event is left
+  alone. `tests/terminalClipboard.test.mjs` pins the matrix.
+- The display-dependent half has an `#[ignore]`d Rust test
+  (`copies_text_other_processes_can_read`) that sets the clipboard and reads
+  it back with `xclip` from another process. CI is headless, so run it by hand:
+  `cargo test --lib -- --ignored copies_text_other`.
+
 ## August 25, 2026 - Review Dock Tool And GitHub Pull Requests
 
 - Safe-mode worktrees are now reviewable: `prepare_safe_workspace` returns

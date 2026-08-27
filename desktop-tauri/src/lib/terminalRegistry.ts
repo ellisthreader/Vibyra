@@ -103,7 +103,7 @@ export function mountTerminal(
   term.loadAddon(new WebLinksAddon());
   term.open(container);
   attachTerminalRenderer(term, container);
-  attachTerminalClipboard(term);
+  attachTerminalClipboard(term, container);
 
   // Guards the onScroll handler against re-entry while the write callback is
   // already anchoring (scrollToBottom fires onScroll synchronously).
