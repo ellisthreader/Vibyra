@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { reviewablePanes, summarize } from "../../lib/reviewPolicy";
 import { useReviewStore } from "../../state/reviewStore";
@@ -20,6 +20,7 @@ interface Props {
  * selector picks the terminal, everything below is that terminal's changeset.
  */
 export function ReviewPanel({ projectId, root }: Props) {
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const panes = useTerminalStore((state) => state.panes);
   const focusedId = useTerminalStore((state) => state.focusedId);
   const selectedPane = useReviewStore((state) => state.selectedPane);
@@ -36,7 +37,10 @@ export function ReviewPanel({ projectId, root }: Props) {
     reviewable[0] ??
     null;
   const status = pane ? (statusByPane[pane.id] ?? null) : null;
+  const selectedFile = status?.changed.find((file) => file.path === selectedPath) ?? null;
   const summary = summarize(status);
+
+  useEffect(() => setSelectedPath(null), [pane?.id]);
 
   useEffect(() => {
     if (pane) void refresh(pane);
@@ -113,7 +117,13 @@ export function ReviewPanel({ projectId, root }: Props) {
         ) : (
           <div className="review-list" role="list">
             {status.changed.map((file) => (
-              <ReviewFileRow key={file.path} workspace={pane.workspace!} file={file} />
+              <ReviewFileRow
+                key={file.path}
+                workspace={pane.workspace!}
+                file={file}
+                selected={file.path === selectedFile?.path}
+                onSelect={() => setSelectedPath((path) => path === file.path ? null : file.path)}
+              />
             ))}
             {status.truncated && (
               <p className="review-note">The list stops at 2,000 files — the rest are still in the workspace.</p>
@@ -122,7 +132,13 @@ export function ReviewPanel({ projectId, root }: Props) {
         )}
       </div>
 
-      <ReviewActions pane={pane} projectRoot={root} status={status} />
+      <ReviewActions
+        pane={pane}
+        projectRoot={root}
+        status={status}
+        selectedFile={selectedFile}
+        onRejected={() => setSelectedPath(null)}
+      />
     </div>
   );
 }

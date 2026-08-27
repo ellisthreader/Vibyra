@@ -6,6 +6,7 @@ import {
   type LaunchEffort,
 } from "../state/launchSettingsStore";
 import { useSettingsStore } from "../state/settingsStore";
+import { useReviewStore } from "../state/reviewStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 
@@ -50,6 +51,7 @@ function supportsFullAccess(agentId: string): boolean {
 }
 
 async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<void> {
+  let newestPaneId: number | null = null;
   for (let index = 0; index < launch.count; index += 1) {
     const launched = await useTerminalStore.getState().spawnAgent(launch.agent, launch.projectId, {
       cwd: launch.projectRoot,
@@ -61,6 +63,10 @@ async function runLaunch(launch: PreparedLaunch, fingerprint?: string): Promise<
       safeSnapshotFingerprint: fingerprint,
     });
     if (!launched) break;
+    newestPaneId = useTerminalStore.getState().focusedId;
+  }
+  if (launch.safeMode && newestPaneId !== null) {
+    useReviewStore.getState().openForPane(newestPaneId);
   }
 }
 

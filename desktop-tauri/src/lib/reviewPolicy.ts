@@ -32,20 +32,7 @@ export function summarize(status: WorktreeStatus | null): ReviewSummary {
  */
 export function mergeWarning(activity: ActivityState): string | null {
   if (activity !== "working") return null;
-  return "The agent is still working — changes it makes after this merge stay in the safe workspace.";
-}
-
-/** What Discard costs, spelled out before the button does it. */
-export function discardCopy(summary: ReviewSummary, paneAlive: boolean): string {
-  const files =
-    summary.files === 0
-      ? "no changed files"
-      : summary.files === 1
-        ? "1 changed file"
-        : `${summary.files} changed files`;
-  return paneAlive
-    ? `Deletes ${files} and the safe workspace, and closes this terminal.`
-    : `Deletes ${files} and the safe workspace.`;
+  return "The agent is still working — changes it makes after this approval stay in the safe workspace.";
 }
 
 /** The PR inherits the pane's name — the conversation already titled itself. */

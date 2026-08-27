@@ -49,6 +49,14 @@ export function reviewMerge(
   });
 }
 
+export function reviewRejectFile(workspace: SafeWorkspaceRef, path: string): Promise<void> {
+  return invoke("review_reject_file", {
+    worktree: workspace.path,
+    baseCommit: workspace.baseCommit,
+    path,
+  });
+}
+
 export function reviewDiscard(projectRoot: string, workspace: SafeWorkspaceRef): Promise<void> {
   return invoke("review_discard", { projectRoot, worktree: workspace.path });
 }

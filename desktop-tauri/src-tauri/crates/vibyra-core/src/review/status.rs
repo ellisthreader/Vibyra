@@ -29,7 +29,7 @@ fn tracked_changes(worktree: &Path, base: &str) -> CoreResult<Vec<ChangedFile>> 
     let counts = parse_numstat(&stats);
     Ok(parse_name_status(&names)
         .into_iter()
-        .map(|(path, kind)| {
+        .map(|(path, previous_path, kind)| {
             let (additions, deletions) = counts
                 .iter()
                 .find(|(counted, _, _)| *counted == path)
@@ -37,6 +37,7 @@ fn tracked_changes(worktree: &Path, base: &str) -> CoreResult<Vec<ChangedFile>> 
                 .unwrap_or((0, 0));
             ChangedFile {
                 path,
+                previous_path,
                 kind,
                 additions,
                 deletions,
@@ -47,7 +48,7 @@ fn tracked_changes(worktree: &Path, base: &str) -> CoreResult<Vec<ChangedFile>> 
 
 /// `--name-status -z` emits `STATUS\0path\0`, and for renames
 /// `R<score>\0old\0new\0`. The new path is the one worth showing.
-fn parse_name_status(raw: &[u8]) -> Vec<(String, ChangeKind)> {
+fn parse_name_status(raw: &[u8]) -> Vec<(String, Option<String>, ChangeKind)> {
     let mut fields = raw
         .split(|byte| *byte == 0)
         .filter(|field| !field.is_empty())
@@ -60,12 +61,12 @@ fn parse_name_status(raw: &[u8]) -> Vec<(String, ChangeKind)> {
             Some('D') => ChangeKind::Deleted,
             Some('R') | Some('C') => {
                 let renamed = fields.next().unwrap_or(path.clone());
-                entries.push((renamed, ChangeKind::Renamed));
+                entries.push((renamed, Some(path), ChangeKind::Renamed));
                 continue;
             }
             _ => ChangeKind::Modified,
         };
-        entries.push((path, kind));
+        entries.push((path, None, kind));
     }
     entries
 }
@@ -113,6 +114,7 @@ fn untracked_files(worktree: &Path) -> CoreResult<Vec<ChangedFile>> {
                 deletions: 0,
                 kind: ChangeKind::Added,
                 path,
+                previous_path: None,
             }
         })
         .collect())

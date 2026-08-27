@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{CoreError, CoreResult};
 
-use super::{git, git_bytes, vibyra_branch, MergeOutcome};
+use super::{git, git_bytes, vibyra_branch, worktree_status, MergeOutcome};
 
 // A review ends one of two ways. **Merge back** lands the worktree's changes
 // in the user's checkout as ordinary working-tree edits — Vibyra never commits
@@ -33,6 +33,50 @@ pub fn merge_back(project_root: &Path, worktree: &Path, base: &str) -> CoreResul
     let outcome = apply(&repo, &patch_file);
     let _ = std::fs::remove_file(&patch_file);
     outcome
+}
+
+/// Removes one reported change from Vibyra's isolated worktree. The renderer
+/// may echo only a path from the current status, and the branch guard still
+/// proves the worktree is Vibyra-owned before anything is reset or cleaned.
+pub fn reject_file(worktree: &Path, base: &str, path: &str) -> CoreResult<()> {
+    vibyra_branch(worktree)?;
+    let change = worktree_status(worktree, base)?
+        .changed
+        .into_iter()
+        .find(|change| change.path == path)
+        .ok_or_else(|| CoreError::InvalidPath(format!("not a changed review file: {path}")))?;
+    let mut paths = vec![change.path];
+    if let Some(previous) = change.previous_path {
+        paths.push(previous);
+    }
+    for changed_path in paths {
+        git(worktree, &["reset", "--quiet", base, "--", &changed_path])?;
+        if exists_at_base(worktree, base, &changed_path)? {
+            git(
+                worktree,
+                &[
+                    "restore",
+                    "--source",
+                    base,
+                    "--staged",
+                    "--worktree",
+                    "--",
+                    &changed_path,
+                ],
+            )?;
+        } else {
+            git(worktree, &["clean", "-f", "--", &changed_path])?;
+        }
+    }
+    Ok(())
+}
+
+fn exists_at_base(worktree: &Path, base: &str, path: &str) -> CoreResult<bool> {
+    Ok(!git_bytes(
+        worktree,
+        &["ls-tree", "-z", "--name-only", base, "--", path],
+    )?
+    .is_empty())
 }
 
 fn apply(repo: &Path, patch_file: &Path) -> CoreResult<MergeOutcome> {

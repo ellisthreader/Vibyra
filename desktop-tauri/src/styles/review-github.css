@@ -1,0 +1,52 @@
+/* The compact GitHub decision at the far edge of the Review footer. Account
+ * setup and repository readiness are separate so a missing remote never looks
+ * like a missing login. */
+
+.review-actions__github-slot {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.review-actions__github-note {
+  color: var(--dim);
+  font-size: var(--fs-tiny);
+  white-space: nowrap;
+}
+
+.review-actions__github {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  padding-inline: 0;
+}
+
+.review-actions__github--locked {
+  color: var(--muted);
+}
+
+.review-actions__lock {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 9px;
+  height: 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: var(--rail);
+}
+
+.review-actions__lock::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: -6px;
+  width: 4px;
+  height: 5px;
+  border: 1.5px solid currentColor;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+}

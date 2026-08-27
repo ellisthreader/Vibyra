@@ -98,6 +98,16 @@ counter for the final figures when the canonical checker is available.
 
 When optimization work touches Vibyra terminals, preserve these invariants:
 
+- For desktop integrations backed by an official third-party CLI, leave
+  credential storage with that CLI and remove inherited automation-token
+  variables from every status and action command. Track and cancel browser
+  auth children, treat a zero exit as provisional, then verify the same account
+  identity and exact required scopes before unlocking actions. Keep project
+  readiness (such as a Git remote) separate from account readiness, enforce
+  permissions again in native mutating commands, and cover login, scope
+  upgrade, device-code handling, cancellation, and logout failure with a fake
+  CLI matrix.
+
 - An off-screen pane stays logically `hidden`, but native output delivery becomes
   `hibernated`. Detach its frontend event handler without disposing its registry
   xterm, then request an authoritative ring-buffer resync when it becomes active.

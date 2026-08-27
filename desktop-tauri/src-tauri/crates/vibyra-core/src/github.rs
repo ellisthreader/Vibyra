@@ -13,33 +13,21 @@ use crate::{CoreError, CoreResult};
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GithubStatus {
-    pub gh_installed: bool,
-    pub authed: bool,
     /// The `origin` remote's URL, when the repo has one to push to.
     pub origin: Option<String>,
 }
 
-/// Whether a pull request could be opened from this project — three probes,
-/// each folding to "no" rather than erroring, because an absent `gh` is a
-/// state to render, not a failure.
+/// Repository-specific readiness only. Account and permission checks belong
+/// to the shared integration manager, avoiding duplicate `gh` network probes
+/// whenever Review opens.
 pub fn github_status(project_root: &Path) -> GithubStatus {
-    github_status_with_path(project_root, None)
-}
-
-pub(crate) fn github_status_with_path(project_root: &Path, path: Option<&OsStr>) -> GithubStatus {
-    let gh_installed = run(gh(path).arg("--version")).is_ok();
-    let authed = gh_installed && run(gh(path).args(["auth", "status"])).is_ok();
     let origin = run(Command::new("git")
         .arg("-C")
         .arg(project_root)
         .args(["remote", "get-url", "origin"]))
     .ok()
     .filter(|url| !url.is_empty());
-    GithubStatus {
-        gh_installed,
-        authed,
-        origin,
-    }
+    GithubStatus { origin }
 }
 
 /// Commits the worktree's pending work onto its branch, pushes the branch to
@@ -133,6 +121,17 @@ fn gh(path: Option<&OsStr>) -> Command {
     if let Some(path) = path {
         command.env("PATH", path);
     }
+    // GitHub CLI may otherwise prefer an automation token inherited from the
+    // desktop session over the user's own keyring-backed `gh` account.
+    for name in [
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_ENTERPRISE_TOKEN",
+        "GITHUB_ENTERPRISE_TOKEN",
+    ] {
+        command.env_remove(name);
+    }
+    crate::launch_env::sanitize_command(&mut command);
     command
 }
 

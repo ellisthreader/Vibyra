@@ -46,6 +46,16 @@ pub async fn review_merge(
 }
 
 #[tauri::command]
+pub async fn review_reject_file(
+    worktree: String,
+    base_commit: String,
+    path: String,
+) -> Result<(), CoreError> {
+    run_blocking_core(move || review::reject_file(&PathBuf::from(worktree), &base_commit, &path))
+        .await
+}
+
+#[tauri::command]
 pub async fn review_discard(project_root: String, worktree: String) -> Result<(), CoreError> {
     run_blocking_core(move || {
         review::discard_worktree(&PathBuf::from(project_root), &PathBuf::from(worktree))

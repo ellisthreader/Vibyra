@@ -7,12 +7,14 @@ use crate::{CoreError, CoreResult};
 
 mod diff;
 mod merge;
+#[cfg(test)]
+mod reject_tests;
 mod status;
 #[cfg(test)]
 mod tests;
 
 pub use diff::file_diff;
-pub use merge::{discard_worktree, merge_back};
+pub use merge::{discard_worktree, merge_back, reject_file};
 pub use status::worktree_status;
 
 // Reviewing a safe-mode worktree: what changed, one file's diff, and the two
@@ -33,6 +35,7 @@ pub enum ChangeKind {
 #[serde(rename_all = "camelCase")]
 pub struct ChangedFile {
     pub path: String,
+    pub previous_path: Option<String>,
     pub kind: ChangeKind,
     pub additions: u32,
     pub deletions: u32,
