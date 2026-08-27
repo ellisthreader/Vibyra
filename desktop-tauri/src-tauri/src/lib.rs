@@ -17,6 +17,9 @@ mod commands;
 mod desktop_entry;
 mod discord;
 mod discord_setup;
+mod github_auth_flow;
+mod github_integration;
+mod github_integration_probe;
 mod model_watch;
 mod model_watch_discord;
 #[cfg(test)]

@@ -93,6 +93,15 @@ Gemini fixture validation, provider-account policy, and model-runner tests.
   restart. Review is the fifth dock tool (`components/review/`,
   `state/reviewStore.ts`, `lib/reviewPolicy.ts`; sheets `dock-review.css`,
   `review-diff.css`, `review-actions.css`).
+- A successful configured Safe-mode launch opens the right dock on Review for
+  the newest pane. `configuredLaunch.ts` triggers this only after spawn succeeds;
+  shared or failed launches leave the user's dock unchanged. The renderer
+  contract is pinned in `tests/safeWorkspaceReview.test.mjs`.
+- The Review footer is intentionally three controls: select a file then
+  **Reject selected**, **Approve all** remaining changes, or use the compact
+  GitHub-logo button at the far right. Rejection confirms the exact path,
+  accepts only a file in the current native status, retains the `vibyra/*`
+  branch guard, handles untracked files and renames, then refreshes the list.
 - Native half: `vibyra-core/src/review/` (status via `--name-status`/
   `--numstat` + untracked; bounded 512 KiB per-file diff; merge = `git add -A`
   in the worktree then `git diff --binary <base>` applied to the user repo
@@ -101,11 +110,32 @@ Gemini fixture validation, provider-account policy, and model-runner tests.
   discard/PR path refuses non-`vibyra/*` branches — the ownership guard,
   since the renderer supplies the paths.
 - GitHub: `vibyra-core/src/github.rs` + `commands/github.rs` shell out to
-  `gh` (status probes fold to "no", `git push -u origin` + `gh pr create`,
-  URL parsed from stdout, only `https://github.com/` links may be opened).
+  `gh` (`git push -u origin` + `gh pr create`, URL parsed from stdout, only
+  `https://github.com/` links may be opened). Repository status probes only the
+  local `origin`; account status belongs to the integration manager so Review
+  does not duplicate networked `gh` probes.
   Auth stays in `gh` — no tokens in Vibyra, same boundary as provider
   accounts. Contract tests: `tests/safeWorkspaceReview.test.mjs`,
   `review/tests.rs`, `github_tests.rs`.
+- Settings → Integrations now owns GitHub account readiness through one shared
+  renderer store and an AppState-owned native manager. It requests
+  `repo,workflow,read:org,gist` (the last is part of GitHub CLI's minimum),
+  verifies the same `gh api user` identity against
+  `gh auth status` scopes, and unlocks Review only after both pass. Every `gh`
+  process removes ambient GitHub token variables so automation credentials
+  cannot silently replace the user's CLI account; `github_create_pr` repeats
+  the permission check natively before commit or push.
+- Browser login/refresh is tracked and cancellable. The bridge recognizes only
+  the official `XXXX-XXXX` one-time-code prompt, copies the ephemeral code via
+  the process-lifetime clipboard, feeds the expected newline to open GitHub,
+  and never logs, serializes, returns, or stores the code. A zero-exit auth
+  child is not success until identity and scopes probe ready. GitHub CLI 2.45
+  writes human status to stderr and has no `auth status --json`; preserve the
+  compatible parser and fake-CLI matrix. The Review GitHub control routes to
+  Integrations while locked and reports a missing `origin` separately.
+- The reusable external-CLI permission checklist lives in
+  `.agents/skills/VibyraOptimse/SKILL.md`; use it when adding or repairing a
+  desktop account integration.
 - Deliberately not built: per-pane live change counts (would poll git per
   pane), CI watching, PR-comment iteration, worktree janitor.
 

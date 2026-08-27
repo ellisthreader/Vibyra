@@ -73,6 +73,8 @@ test("copying goes out through the native clipboard, and right-click copies too"
   assert.match(clipboard, /writeClipboardText\(selection\)/);
   assert.match(clipboard, /addEventListener\("contextmenu"/);
   assert.match(native, /pub async fn write_clipboard_text/);
-  assert.match(native, /with_clipboard\(\|clipboard\| \{[\s\S]*?set_text\(text\)/);
+  assert.match(native, /pub\(crate\) fn copy_text[\s\S]*?with_clipboard/);
+  assert.match(native, /set_text\(text\.to_owned\(\)\)/);
+  assert.match(native, /run_blocking\(move \|\| copy_text\(&text\)\)/);
   assert.match(registry, /clipboard::write_clipboard_text/);
 });

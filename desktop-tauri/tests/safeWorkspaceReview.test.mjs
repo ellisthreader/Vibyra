@@ -69,15 +69,20 @@ test("a pull request carries the uncommitted work", () => {
 
 /**
  * GitHub authorization stays with the official CLI, exactly as provider
- * accounts keep authorization with theirs. Vibyra shells out to `gh` and
- * stores nothing; the only URL it will open is the one gh printed.
+ * accounts keep authorization with theirs. Vibyra may remove ambient token
+ * variables so `gh` uses its own account, but never reads or persists a token;
+ * the only URL it will open is the one gh printed.
  */
 test("github integration owns no credentials", () => {
   const core = source("../src-tauri/crates/vibyra-core/src/github.rs");
   const command = source("../src-tauri/src/commands/github.rs");
 
   assert.match(core, /Command::new\("gh"\)/);
-  assert.doesNotMatch(core, /keyring|GITHUB_TOKEN|GH_TOKEN|hosts\.yml/);
+  assert.match(core, /command\.env_remove\(name\)/);
+  assert.doesNotMatch(
+    core,
+    /\["auth", "token"\]|keyring::|hosts\.yml|serde_json::to_|std::fs::write|File::create/,
+  );
   assert.match(command, /url\.starts_with\("https:\/\/github\.com\/"\)/);
 });
 
@@ -104,4 +109,53 @@ test("review is a first-class dock tool", () => {
   assert.match(tabs, /id: "review", label: "Review"/);
   assert.match(palette, /id: "review", label: "Review"/);
   assert.match(pane, /openForPane\(pane\.id\)/);
+});
+
+/**
+ * Safe-mode launches should land where their isolated changes are visible.
+ * The dock opens only after spawn succeeds, using the new focused pane rather
+ * than a stale review selection. Shared launches keep the user's current dock.
+ */
+test("a successful safe-mode launch opens Review for its new pane", () => {
+  const launch = source("../src/lib/configuredLaunch.ts");
+
+  assert.match(
+    launch,
+    /if \(!launched\) break;[\s\S]*?newestPaneId = useTerminalStore\.getState\(\)\.focusedId;/,
+  );
+  assert.match(
+    launch,
+    /if \(launch\.safeMode && newestPaneId !== null\) \{[\s\S]*?openForPane\(newestPaneId\);/,
+  );
+});
+
+test("the review footer presents one clear decision and a GitHub integration route", () => {
+  const actions = source("../src/components/review/ReviewActions.tsx");
+  const row = source("../src/components/review/ReviewFileRow.tsx");
+
+  assert.match(actions, />\s*Reject selected\s*</);
+  assert.match(actions, /"Approve all"/);
+  assert.match(actions, /useGithubIntegrationStore/);
+  assert.match(actions, /void refreshGithubIntegration\(\)/);
+  assert.match(actions, /openSettingsSection\("integrations"\)/);
+  assert.match(actions, /integration\.permissionsReady/);
+  assert.match(actions, /Connect GitHub in Integrations/);
+  assert.match(actions, /No GitHub remote/);
+  assert.match(actions, /This project has no origin GitHub remote/);
+  assert.match(actions, /<GithubIcon size=\{17\} \/>/);
+  assert.match(actions, /review-actions__lock/);
+  assert.match(row, /aria-pressed=\{selected\}/);
+});
+
+test("reject selected is guarded natively and refreshes the review", () => {
+  const core = source("../src-tauri/crates/vibyra-core/src/review/merge.rs");
+  const commands = source("../src-tauri/src/commands/review.rs");
+  const registry = source("../src-tauri/src/commands/registry.rs");
+  const store = source("../src/state/reviewStore.ts");
+
+  assert.match(core, /pub fn reject_file[\s\S]*?vibyra_branch\(worktree\)\?/);
+  assert.match(core, /find\(\|change\| change\.path == path\)/);
+  assert.match(commands, /pub async fn review_reject_file/);
+  assert.match(registry, /review::review_reject_file/);
+  assert.match(store, /await reviewRejectFile[\s\S]*?await get\(\)\.refresh\(pane\)/);
 });

@@ -1,60 +1,112 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { discardCopy, mergeWarning, summarize } from "../../lib/reviewPolicy";
-import type { WorktreeStatus } from "../../ipc/review";
+import { mergeWarning, summarize } from "../../lib/reviewPolicy";
+import type { ChangedFile, WorktreeStatus } from "../../ipc/review";
+import { useGithubIntegrationStore } from "../../state/githubIntegrationStore";
 import { useReviewStore } from "../../state/reviewStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import type { PaneState } from "../../state/terminalStoreTypes";
+import { useWorkspaceStore } from "../../state/workspaceStore";
+import { GithubIcon } from "../common/Icons";
 import { ReviewPrSheet } from "./ReviewPrSheet";
 
 interface Props {
   pane: PaneState;
   projectRoot: string;
   status: WorktreeStatus | null;
+  selectedFile: ChangedFile | null;
+  onRejected: () => void;
 }
 
 /**
- * How a review ends. Merge and discard both act on the user's project, so
- * each pauses once — inline, the account-switch idiom — before doing it.
- * The GitHub action mounts here too: the branch is sitting ready to push.
+ * One clear decision bar: reject the selected safe-workspace file, approve
+ * every remaining change into the project, or open the quiet GitHub action.
+ * Destructive rejection pauses once with the exact path visible.
  */
-export function ReviewActions({ pane, projectRoot, status }: Props) {
+export function ReviewActions({ pane, projectRoot, status, selectedFile, onRejected }: Props) {
   const busyPane = useReviewStore((state) => state.busyPane);
   const outcome = useReviewStore((state) => state.outcomeByPane[pane.id]);
   const github = useReviewStore((state) => state.github);
   const merge = useReviewStore((state) => state.merge);
-  const discard = useReviewStore((state) => state.discard);
+  const rejectFile = useReviewStore((state) => state.rejectFile);
+  const integration = useGithubIntegrationStore((state) => state.status);
+  const integrationBusy = useGithubIntegrationStore((state) => state.busy);
+  const refreshGithubIntegration = useGithubIntegrationStore((state) => state.refresh);
+  const openSettingsSection = useWorkspaceStore((state) => state.openSettingsSection);
   const activity = useTerminalStore((state) => state.activity[pane.id] ?? "idle");
-  const [confirming, setConfirming] = useState<"merge" | "discard" | null>(null);
+  const [confirming, setConfirming] = useState<"approve" | "reject" | null>(null);
   const [prOpen, setPrOpen] = useState(false);
 
   const busy = busyPane !== null;
   const summary = summarize(status);
   const empty = summary.files === 0;
   const warning = mergeWarning(activity);
-  const githubReady = github !== null && github.ghInstalled && github.authed && github.origin !== null;
+  const integrationReady =
+    integration?.ghInstalled === true &&
+    integration.connected &&
+    integration.permissionsReady;
+  const repositoryReady = github?.origin != null;
+  const integrationHint = integration?.connecting || integrationBusy
+    ? "GitHub is connecting — open Integrations to finish setup"
+    : !integration?.ghInstalled
+      ? "Set up GitHub in Integrations"
+      : !integration.connected
+        ? "Connect GitHub in Integrations"
+        : "Grant the required GitHub permissions in Integrations";
+  const repositoryHint = github === null
+    ? "Checking this project's GitHub repository"
+    : !repositoryReady
+      ? "This project has no origin GitHub remote"
+      : empty
+        ? "There are no changes to open as a pull request"
+        : "Push this branch and open a pull request";
+
+  useEffect(() => {
+    // One bounded status refresh when Review appears. Connecting follow-up
+    // belongs to the Integrations screen; Review never starts a poller.
+    void refreshGithubIntegration();
+  }, [refreshGithubIntegration]);
 
   const runMerge = async () => {
     setConfirming(null);
     await merge(pane, projectRoot);
   };
 
+  const runReject = async () => {
+    if (!selectedFile) return;
+    const rejected = await rejectFile(pane, selectedFile.path);
+    if (rejected) onRejected();
+    setConfirming(null);
+  };
+
+  const runGithubAction = () => {
+    if (!integrationReady) {
+      openSettingsSection("integrations");
+      return;
+    }
+    if (repositoryReady) setPrOpen(true);
+  };
+
   if (confirming) {
-    const isMerge = confirming === "merge";
+    const approving = confirming === "approve";
     return (
       <footer className="review-actions review-actions--confirm">
-        <em>{isMerge ? warning : discardCopy(summary, pane.status === "running")}</em>
+        <em>
+          {approving
+            ? warning
+            : <>Reject <code>{selectedFile?.path}</code>? This removes its changes from the safe workspace.</>}
+        </em>
         <div className="review-actions__row">
           <button type="button" className="btn" disabled={busy} onClick={() => setConfirming(null)}>
-            Wait
+            Keep it
           </button>
           <button
             type="button"
-            className={`btn ${isMerge ? "btn--primary" : "btn--danger"}`}
+            className={`btn ${approving ? "btn--primary" : "btn--danger"}`}
             disabled={busy}
-            onClick={() => void (isMerge ? runMerge() : discard(pane, projectRoot))}
+            onClick={() => void (approving ? runMerge() : runReject())}
           >
-            {isMerge ? "Merge anyway" : "Discard everything"}
+            {approving ? "Approve anyway" : "Reject file"}
           </button>
         </div>
       </footer>
@@ -66,41 +118,47 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
       {outcome && (
         <p className={`review-outcome ${outcome.applied ? "review-outcome--ok" : "review-outcome--stuck"}`}>
           {outcome.applied
-            ? "Changes are in your project as ordinary edits — commit them when you're ready."
+            ? "Approved changes are in your project — commit them when you're ready."
             : outcome.conflicts.length > 0
-              ? `Not merged — your project has its own changes in: ${outcome.conflicts.join(", ")}. Nothing was touched.`
-              : "Nothing to merge yet."}
+              ? `Not approved — your project has its own changes in: ${outcome.conflicts.join(", ")}. Nothing was touched.`
+              : "Nothing to approve yet."}
         </p>
       )}
       <div className="review-actions__row">
         <button
           type="button"
-          className="btn btn--primary"
-          disabled={busy || empty}
-          onClick={() => void (warning ? setConfirming("merge") : runMerge())}
+          className="btn"
+          disabled={busy || selectedFile === null}
+          onClick={() => setConfirming("reject")}
         >
-          {busyPane === pane.id ? "Working…" : "Bring into project"}
-        </button>
-        <button type="button" className="btn" disabled={busy} onClick={() => setConfirming("discard")}>
-          Discard
+          Reject selected
         </button>
         <button
           type="button"
-          className="btn review-actions__github"
-          disabled={busy || empty || !githubReady}
-          title={
-            githubReady
-              ? "Push this branch and open a pull request"
-              : github === null || !github.ghInstalled
-                ? "Needs the GitHub CLI (gh) installed"
-                : !github.authed
-                  ? "Sign in first: run `gh auth login` in a terminal"
-                  : "This project has no GitHub remote"
-          }
-          onClick={() => setPrOpen(true)}
+          className="btn btn--primary"
+          disabled={busy || empty}
+          onClick={() => void (warning ? setConfirming("approve") : runMerge())}
         >
-          Open pull request
+          {busyPane === pane.id ? "Working…" : "Approve all"}
         </button>
+        <div className="review-actions__github-slot">
+          {integrationReady && !repositoryReady && (
+            <span className="review-actions__github-note">
+              {github === null ? "Checking repository…" : "No GitHub remote"}
+            </span>
+          )}
+          <button
+            type="button"
+            className={`btn review-actions__github ${integrationReady ? "" : "review-actions__github--locked"}`}
+            aria-label={integrationReady ? repositoryHint : "Connect GitHub in Integrations"}
+            disabled={integrationReady && (busy || empty || !repositoryReady)}
+            title={integrationReady ? repositoryHint : integrationHint}
+            onClick={runGithubAction}
+          >
+            <GithubIcon size={17} />
+            {!integrationReady && <span className="review-actions__lock" aria-hidden="true" />}
+          </button>
+        </div>
       </div>
       {prOpen && <ReviewPrSheet pane={pane} status={status} onClose={() => setPrOpen(false)} />}
     </footer>

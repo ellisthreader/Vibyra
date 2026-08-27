@@ -18,19 +18,16 @@
   flex-wrap: wrap;
 }
 
-/* The GitHub action reads as GitHub's: quiet until it can actually happen. */
-.review-actions__github {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .review-actions--confirm em {
   font-style: normal;
   font-size: var(--fs-body);
   color: var(--amber);
   line-height: 1.5;
+}
+
+.review-actions--confirm code {
+  font-family: var(--font-mono);
+  color: var(--text);
 }
 
 .review-outcome {

@@ -18,15 +18,20 @@ const MARKS: Record<ChangedFile["kind"], string> = {
 export function ReviewFileRow({
   workspace,
   file,
+  selected,
+  onSelect,
 }: {
   workspace: SafeWorkspaceRef;
   file: ChangedFile;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [diff, setDiff] = useState<string | null>(null);
 
   const toggle = async () => {
     const next = !open;
+    onSelect();
     setOpen(next);
     if (next && diff === null) {
       try {
@@ -41,8 +46,9 @@ export function ReviewFileRow({
     <div className="review-file" role="listitem">
       <button
         type="button"
-        className="review-file__row"
+        className={`review-file__row${selected ? " review-file__row--selected" : ""}`}
         aria-expanded={open}
+        aria-pressed={selected}
         onClick={() => void toggle()}
       >
         <span className={`review-file__mark review-file__mark--${file.kind}`} aria-hidden="true">

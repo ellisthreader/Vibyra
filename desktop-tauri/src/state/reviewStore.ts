@@ -4,6 +4,7 @@ import { githubStatus, type GithubStatus } from "../ipc/github";
 import {
   reviewDiscard,
   reviewMerge,
+  reviewRejectFile,
   reviewStatus,
   type MergeOutcome,
   type WorktreeStatus,
@@ -31,6 +32,7 @@ interface ReviewStore {
   refresh: (pane: PaneState) => Promise<void>;
   refreshGithub: (projectRoot: string) => Promise<void>;
   merge: (pane: PaneState, projectRoot: string) => Promise<void>;
+  rejectFile: (pane: PaneState, path: string) => Promise<boolean>;
   discard: (pane: PaneState, projectRoot: string) => Promise<void>;
   /** The pane-header chip's action: open the dock on Review, on this pane. */
   openForPane: (paneId: number) => void;
@@ -85,6 +87,21 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
       await get().refresh(pane);
     } catch (error) {
       reportError(error);
+    } finally {
+      set({ busyPane: null });
+    }
+  },
+
+  rejectFile: async (pane, path) => {
+    if (!pane.workspace || get().busyPane !== null) return false;
+    set({ busyPane: pane.id });
+    try {
+      await reviewRejectFile(pane.workspace, path);
+      await get().refresh(pane);
+      return true;
+    } catch (error) {
+      reportError(error);
+      return false;
     } finally {
       set({ busyPane: null });
     }

@@ -10,6 +10,7 @@ import type { Settings } from "../../types";
 import { ProviderMark } from "../common/AgentMark";
 import { RestartIcon } from "../common/Icons";
 import { SettingsBlock } from "./SettingsShared";
+import { GithubIntegrationCard } from "./GithubIntegrationCard";
 import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
 import { TerminalIntegrations } from "./TerminalIntegrations";
 
@@ -87,6 +88,10 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
           ))}
         </div>
         {error ? <p className="integration-error" role="alert">{error}</p> : null}
+      </SettingsBlock>
+
+      <SettingsBlock label="Developer tools">
+        <GithubIntegrationCard />
       </SettingsBlock>
 
       <SettingsBlock label="Model catalog">
