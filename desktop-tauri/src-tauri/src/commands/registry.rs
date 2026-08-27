@@ -9,8 +9,8 @@ use tauri::ipc::Invoke;
 use tauri::Wry;
 
 use super::{
-    account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, clipboard,
-    conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
+    account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, boot,
+    clipboard, conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
     provider_accounts, render, report, review, screenshot, screenshot_reveal, session, settings,
     terminal, voice,
 };
@@ -29,6 +29,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         account::account_resend_verification,
         account::account_logout,
         account::account_open_legal,
+        boot::boot_main_ready,
         terminal::create_terminal,
         terminal::safe_workspace_preflight,
         review::review_status,

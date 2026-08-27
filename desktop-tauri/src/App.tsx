@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { AuthScreen } from "./components/auth/AuthScreen";
 import { WorkspaceApp } from "./components/layout/WorkspaceApp";
 import { onAccountChanged } from "./ipc/account";
+import { signalAppReady } from "./lib/bootHandoff";
 import { useAccountStore } from "./state/accountStore";
 
 /** Session restoration is the first startup checkpoint: the workspace only
@@ -23,6 +24,16 @@ export default function App() {
       void unlisten.then((fn) => fn());
     };
   }, []);
+
+  // The splash stays up until the gate has decided what this window is — a
+  // sign-in card or a workspace. Revealing any earlier would put the decision
+  // itself on screen; waiting any longer would hold a blank splash over an app
+  // that is already usable.
+  useEffect(() => {
+    if (status !== "restoring") {
+      signalAppReady();
+    }
+  }, [status]);
 
   // Any sign-out after a successful sign-in (logout elsewhere, remote
   // revocation, expiry) reloads the window so no account-scoped renderer

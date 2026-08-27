@@ -7,6 +7,7 @@ pub mod agents;
 pub mod ai;
 pub mod ai_memory;
 pub mod ai_service;
+pub mod boot;
 pub mod claude_transcripts;
 pub mod clipboard;
 pub mod codex_transcripts;

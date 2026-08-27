@@ -13,6 +13,21 @@
   "app": {
     "windows": [
       {
+        "label": "boot",
+        "url": "boot.html",
+        "title": "Starting Vibyra",
+        "width": 380,
+        "height": 232,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "center": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "dragDropEnabled": false,
+        "backgroundColor": "#0e0f12"
+      },
+      {
         "title": "Vibyra",
         "width": 1440,
         "height": 900,
@@ -22,7 +37,9 @@
         "center": true,
         "decorations": false,
         "dragDropEnabled": false,
-        "backgroundColor": "#0e0f12"
+        "backgroundColor": "#0e0f12",
+        "label": "main",
+        "visible": false
       }
     ],
     "security": {
