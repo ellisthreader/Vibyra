@@ -175,10 +175,7 @@ impl GithubIntegrationManager {
         }
     }
 
-    // Gated exactly as their only callers are: the tests below drive a fake
-    // `gh` that is a `/bin/sh` script, so they cannot run on Windows. Left on
-    // a bare `cfg(test)` these would compile there with nothing calling them,
-    // and `-D warnings` turns that into a failed release build.
+    // Gated as their only callers are: unused on Windows is a build failure.
     #[cfg(all(test, unix))]
     fn test(program: &std::ffi::OsStr) -> Self {
         Self::test_with_copier(program, Arc::new(|_| Ok(())))
