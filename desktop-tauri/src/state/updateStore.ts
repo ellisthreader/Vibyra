@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { checkForUpdate, downloadUpdate, installUpdate, type Update } from "../ipc/updates";
-import { saveSessionNow } from "../lib/sessionPersistence";
+import { markPostUpdateChangelogPending } from "../lib/postUpdateChangelogPolicy";
 import type { CheckState } from "../lib/updateCheckPolicy";
 import {
   advanceProgress,
@@ -26,9 +26,12 @@ interface UpdateStore {
   /** Version the user waved away. In-memory only, so a newer release —
    * or the next launch — brings the banner back. */
   dismissed: string;
-  check: () => Promise<void>;
-  download: () => Promise<void>;
-  restart: () => Promise<void>;
+  /** `true` means the feed answered, whether current or update-available. */
+  check: (timeoutMs?: number) => Promise<boolean>;
+  download: () => Promise<boolean>;
+  /** Installs before the workspace mounts, when there is no session to save. */
+  installAtStartup: () => Promise<boolean>;
+  restart: () => Promise<boolean>;
   dismiss: () => void;
 }
 
@@ -36,6 +39,9 @@ interface UpdateStore {
  * store: putting it in React state invites a re-render to clone it, and a
  * cloned handle no longer maps to the resource the plugin allocated. */
 let pending: Update | null = null;
+let checkFlight: Promise<boolean> | null = null;
+let downloadFlight: Promise<boolean> | null = null;
+let installFlight: Promise<boolean> | null = null;
 
 /** Each `check()` that finds a release allocates a Rust-side resource. The
  * watcher runs every 20 minutes for as long as the banner is up, so dropping
@@ -52,78 +58,130 @@ async function replacePending(next: Update | null): Promise<void> {
   }
 }
 
-export const useUpdateStore = create<UpdateStore>((set, get) => ({
-  status: "idle",
-  version: "",
-  notes: "",
-  progress: NO_PROGRESS,
-  error: null,
-  checkState: "idle",
-  checkError: null,
-  lastCheckedAt: null,
-  dismissed: "",
-
-  check: async () => {
-    // Never interrupt a download or a staged install to re-check.
-    if (["downloading", "ready", "installing", "restartError"].includes(get().status)) return;
-    set({ checkState: "checking" });
-    try {
-      const update = await checkForUpdate();
-      const checked = { checkState: "done" as const, checkError: null, lastCheckedAt: Date.now() };
-      if (!update) {
-        await replacePending(null);
-        set({ status: "idle", version: "", notes: "", error: null, ...checked });
-        return;
-      }
-      await replacePending(update);
-      set({
-        status: "available",
-        version: update.version,
-        notes: update.body ?? "",
-        progress: NO_PROGRESS,
-        error: null,
-        ...checked,
-      });
-    } catch (error) {
-      // Still background noise for the banner and the titlebar chip — a single
-      // missed tick is not worth interrupting anyone, and the next one retries.
-      // It is recorded rather than swallowed so Settings → Updates can say the
-      // check is failing, which is otherwise indistinguishable from being current.
-      console.warn("update check failed", error);
-      set({ checkState: "failed", checkError: String(error) });
-    }
-  },
-
-  download: async () => {
+export const useUpdateStore = create<UpdateStore>((set, get) => {
+  const install = (preserveSession: boolean): Promise<boolean> => {
+    if (installFlight) return installFlight;
     const update = pending;
-    if (!update || get().status === "downloading") return;
-    set({ status: "downloading", progress: NO_PROGRESS, error: null });
-    try {
-      await downloadUpdate(update, (event) => {
-        set((state) => ({ progress: advanceProgress(state.progress, event) }));
-      });
-      set({ status: "ready" });
-    } catch (error) {
-      set({ status: "error", error: String(error) });
-    }
-  },
+    if (
+      !update || checkFlight || downloadFlight
+      || !["ready", "restartError"].includes(get().status)
+    ) return Promise.resolve(false);
 
-  restart: async () => {
-    const update = pending;
-    if (!update || !["ready", "restartError"].includes(get().status)) return;
     set({ status: "installing", error: null });
-    try {
-      // `relaunch()` exits the process outright — it never raises the window
-      // close event the guard listens for, so the scrollback flush that
-      // normally happens on close has to happen here instead. Layout is
-      // already saved continuously; snapshots are only written every two
-      // minutes, and that is what would otherwise be lost.
-      await saveSessionNow(true);
-      await installUpdate(update);
-    } catch (error) {
-      set({ status: "restartError", error: String(error) });
-    }
-  },
+    const run = async (): Promise<boolean> => {
+      try {
+        // A workspace restart must flush terminal snapshots. Startup install
+        // runs before terminals mount, so it neither executes nor eagerly
+        // loads the terminal persistence graph.
+        if (preserveSession) {
+          const { saveSessionNow } = await import("../lib/sessionPersistence");
+          await saveSessionNow(true);
+        }
+        markPostUpdateChangelogPending(update.version);
+        await installUpdate(update);
+        await replacePending(null);
+        return true;
+      } catch (error) {
+        set({ status: "restartError", error: String(error) });
+        return false;
+      }
+    };
+    const flight = run().finally(() => {
+      if (installFlight === flight) installFlight = null;
+    });
+    installFlight = flight;
+    return flight;
+  };
 
-  dismiss: () => set((state) => ({ dismissed: state.version })),
-}));
+  return {
+    status: "idle",
+    version: "",
+    notes: "",
+    progress: NO_PROGRESS,
+    error: null,
+    checkState: "idle",
+    checkError: null,
+    lastCheckedAt: null,
+    dismissed: "",
+
+    check: (timeoutMs = 30_000) => {
+      if (checkFlight) return checkFlight;
+      if (
+        downloadFlight || installFlight
+        || ["downloading", "ready", "installing", "restartError"].includes(get().status)
+      ) return Promise.resolve(false);
+
+      set({ checkState: "checking", checkError: null });
+      const run = async (): Promise<boolean> => {
+        try {
+          const update = await checkForUpdate(timeoutMs);
+          const checked = {
+            checkState: "done" as const,
+            checkError: null,
+            lastCheckedAt: Date.now(),
+          };
+          if (!update) {
+            await replacePending(null);
+            set({
+              status: "idle", version: "", notes: "", progress: NO_PROGRESS,
+              error: null, ...checked,
+            });
+            return true;
+          }
+          await replacePending(update);
+          set({
+            status: "available",
+            version: update.version,
+            notes: update.body ?? "",
+            progress: NO_PROGRESS,
+            error: null,
+            ...checked,
+          });
+          return true;
+        } catch (error) {
+          console.warn("update check failed", error);
+          set({ checkState: "failed", checkError: String(error) });
+          return false;
+        }
+      };
+      const flight = run().finally(() => {
+        if (checkFlight === flight) checkFlight = null;
+      });
+      checkFlight = flight;
+      return flight;
+    },
+
+    download: () => {
+      if (downloadFlight) return downloadFlight;
+      const update = pending;
+      if (
+        !update || checkFlight || installFlight
+        || !["available", "error"].includes(get().status)
+      ) return Promise.resolve(false);
+
+      set({ status: "downloading", progress: NO_PROGRESS, error: null });
+      const run = async (): Promise<boolean> => {
+        try {
+          await downloadUpdate(update, (event) => {
+            set((state) => ({ progress: advanceProgress(state.progress, event) }));
+          });
+          set({ status: "ready" });
+          return true;
+        } catch (error) {
+          set({ status: "error", error: String(error) });
+          return false;
+        }
+      };
+      const flight = run().finally(() => {
+        if (downloadFlight === flight) downloadFlight = null;
+      });
+      downloadFlight = flight;
+      return flight;
+    },
+
+    installAtStartup: () => install(false),
+    // `true` is the durable boundary: every in-workspace install saves first.
+    restart: () => install(true),
+    dismiss: () => set((state) => ({ dismissed: state.version })),
+  };
+});

@@ -7,8 +7,30 @@ permissions:
   contents: read
 
 jobs:
+  release-preflight:
+    name: Verify release version and updater feed
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+      - name: Verify package and Tauri versions agree
+        run: node scripts/verify-release.mjs version
+      - name: Require a current release candidate and healthy updater feed
+        run: node scripts/verify-release.mjs feed
+
   package:
     name: ${{ matrix.label }} Rust package
+    needs: release-preflight
     strategy:
       fail-fast: false
       matrix:
@@ -59,11 +81,13 @@ jobs:
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
-      - name: Read the version being released
+      - name: Verify and read the version being released
         id: version
         shell: bash
         run: |
-          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          # A drift here creates a package whose UI and native updater disagree
+          # about which release is installed.
+          version=$(node scripts/verify-release.mjs version)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "output=Vibyra-Desktop-$version-${{ matrix.suffix }}" >> "$GITHUB_OUTPUT"
 
@@ -79,14 +103,17 @@ jobs:
         run: |
           mkdir -p release
           output="${{ steps.version.outputs.output }}"
+          shopt -s nullglob
           matches=( ${{ matrix.source }} )
           test "${#matches[@]}" = 1
+          test -s "${matches[0]}"
+          test -s "${matches[0]}.sig"
           cp "${matches[0]}" "release/$output"
           sha256sum "release/$output" > "release/$output.sha256"
           # The updater refuses an unsigned package, so a missing .sig here is
           # a failed release, not a warning.
-          test -f "${matches[0]}.sig"
           cp "${matches[0]}.sig" "release/$output.sig"
+          node scripts/verify-release.mjs artifact "${{ matrix.bundle }}" "release/$output"
       - name: Smoke-test Linux AppImage launch
         if: matrix.bundle == 'appimage'
         shell: bash
@@ -160,5 +187,45 @@ jobs:
             desktop-tauri/release/${{ steps.version.outputs.output }}
             desktop-tauri/release/${{ steps.version.outputs.output }}.sha256
             desktop-tauri/release/${{ steps.version.outputs.output }}.sig
+            desktop-tauri/release/${{ steps.version.outputs.output }}.metadata.json
           if-no-files-found: error
           retention-days: 30
+
+  verify-release-set:
+    name: Verify complete signed release set and updater feed
+    needs: package
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.23.2
+      - name: Download every matrix artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: vibyra-rust-beta-*-${{ github.sha }}
+          path: desktop-tauri/release-set
+      - name: Verify all packages, checksums, signatures and metadata
+        run: node scripts/verify-release.mjs set release-set
+      - name: Smoke-test the configured live updater contract
+        run: node scripts/verify-release.mjs feed
+      - name: Record the safe publication boundary
+        shell: bash
+        run: |
+          {
+            echo "### Signed desktop release set verified"
+            echo
+            echo "Windows NSIS, Linux AppImage and Debian artifacts are present with matching checksums, signatures and metadata."
+            echo
+            echo "The configured feed offered a signed update to an old client and returned 204 for this release candidate and a future client on all three routes."
+            echo
+            echo "No files were published to the live release volume."
+          } >> "$GITHUB_STEP_SUMMARY"

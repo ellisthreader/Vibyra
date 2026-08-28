@@ -74,6 +74,25 @@ the user is at the keyboard by definition, having just pressed the button.
 The notification centre deliberately shows no answer buttons: a history row is
 stale by definition.
 
+## Interactive Focus Handoff
+
+Codex startup update choices and numbered approval prompts are keyboard-driven.
+The pane can already own logical `focusedId` while `TerminalView` is still
+waiting for the font and xterm has no textarea, so `setFocus` at pane insertion
+can legitimately do nothing. After `mountTerminal`, transfer focus on the next
+frame only if that pane is still active and focused, its host is connected and
+not inert, and no modal is open. A late mount must never steal focus.
+
+Toast and command-palette answer controls temporarily own DOM focus and then
+unmount. After answering, explicitly hand focus back: a toast restores the pane
+that remained logically focused, while a palette answer opens and focuses the
+pane that asked. Keep the fingerprint and submit-key rules above unchanged;
+never "fix" focus by auto-accepting an update, bypassing an approval, or adding
+an unconditional Enter.
+
+Ownership: `src/lib/terminalFocus.ts`, `TerminalView.tsx`, `Toasts.tsx`,
+`paletteAttentionEntries.ts`, and `tests/terminalInteractiveFocus.test.mjs`.
+
 ## Checks
 
 `npm --prefix desktop-tauri run verify`. The parser rules are covered by

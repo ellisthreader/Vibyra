@@ -22,11 +22,12 @@ function focus(pane: PaneState): void {
  *
  * `answerAgentPrompt` re-reads the pane and refuses if the agent has redrawn
  * since the palette read it — by then the keystroke no longer means what the
- * row said it did. A refused answer must not look like a click that did
- * nothing, so it turns into a jump to the pane.
+ * row said it did. Either way the palette input is about to unmount, so the
+ * keyboard must be handed back to the pane that asked the question.
  */
 function answer(pane: PaneState, offer: AgentPromptOffer, option: AgentPromptOption): void {
-  if (answerAgentPrompt(offer, option) !== "sent") focus(pane);
+  answerAgentPrompt(offer, option);
+  focus(pane);
 }
 
 function offerEntries(pane: PaneState, offer: AgentPromptOffer): CommandPaletteEntry[] {

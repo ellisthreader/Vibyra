@@ -1,0 +1,61 @@
+@media (max-width: 620px) {
+  .post-update-changelog { padding: 10px; }
+
+  .post-update-changelog__dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+    border-radius: 12px;
+  }
+
+  .post-update-changelog__header { padding: 18px 18px 15px; }
+  .post-update-changelog__art { margin: 14px 14px 0; }
+  .post-update-changelog__art figcaption { display: none; }
+  .post-update-changelog__art img { height: 215px; }
+  .post-update-changelog__release { padding: 22px 14px 6px; }
+
+  .post-update-changelog__feature {
+    grid-template-columns: 28px 1fr;
+    gap: 9px;
+    padding: 12px 8px;
+  }
+
+  .post-update-changelog__marker {
+    width: 27px;
+    height: 27px;
+  }
+
+  .post-update-changelog__footer {
+    min-height: 58px;
+    padding: 10px 18px;
+  }
+}
+
+@media (max-height: 650px) and (min-width: 621px) {
+  .post-update-changelog { padding: 10px; }
+
+  .post-update-changelog__dialog {
+    max-height: calc(100vh - 20px);
+  }
+
+  .post-update-changelog__header {
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+
+  .post-update-changelog__art { margin-top: 14px; }
+  .post-update-changelog__art img { height: 185px; }
+  .post-update-changelog__release { padding-top: 18px; }
+
+  .post-update-changelog__footer {
+    min-height: 52px;
+    padding: 6px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-update-changelog,
+  .post-update-changelog__dialog { animation: none; }
+}
+
+:root[data-reduce-motion] .post-update-changelog,
+:root[data-reduce-motion] .post-update-changelog__dialog { animation: none; }

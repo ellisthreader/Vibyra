@@ -4,6 +4,7 @@ import type { RefObject } from "react";
 const FOCUSABLE =
   "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), " +
   "textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+const DEFAULT_BACKGROUND = ".app > .chrome, .app > .shell";
 
 /** Complete modal behaviour: moves focus inside on open, traps Tab, makes the
  * workspace behind the dialog inert, closes on Escape, and restores focus to
@@ -12,15 +13,16 @@ export function useModalFocus(
   ref: RefObject<HTMLElement | null>,
   open: boolean,
   onClose: () => void,
+  backgroundSelector = DEFAULT_BACKGROUND,
+  onAfterRestore?: () => void,
 ) {
   useEffect(() => {
     if (!open) return;
     const node = ref.current;
     if (!node) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    // The modal is a child of .app, so inert its siblings rather than .app.
     const background = Array.from(
-      document.querySelectorAll<HTMLElement>(".app > .chrome, .app > .shell"),
+      document.querySelectorAll<HTMLElement>(backgroundSelector),
     );
     for (const element of background) element.setAttribute("inert", "");
     (node.querySelector<HTMLElement>("[data-autofocus]") ??
@@ -39,7 +41,9 @@ export function useModalFocus(
       const last = items[items.length - 1];
       const active = document.activeElement;
       const outside = !(active instanceof Node) || !node.contains(active);
-      if (event.shiftKey && (active === first || outside)) {
+      const staticFocus = active instanceof HTMLElement
+        && node.contains(active) && !items.includes(active);
+      if (event.shiftKey && (active === first || outside || staticFocus)) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && (active === last || outside)) {
@@ -52,6 +56,7 @@ export function useModalFocus(
       window.removeEventListener("keydown", onKeyDown, true);
       for (const element of background) element.removeAttribute("inert");
       opener?.focus();
+      onAfterRestore?.();
     };
-  }, [ref, open, onClose]);
+  }, [backgroundSelector, ref, open, onAfterRestore, onClose]);
 }

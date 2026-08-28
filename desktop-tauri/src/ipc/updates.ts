@@ -11,8 +11,8 @@ export type { Update };
  *
  * The request is made by the Rust plugin over reqwest, not by the webview, so
  * the window CSP never enters into it. */
-export function checkForUpdate(): Promise<Update | null> {
-  return check({ timeout: 30_000 });
+export function checkForUpdate(timeoutMs = 30_000): Promise<Update | null> {
+  return check({ timeout: timeoutMs });
 }
 
 /** Fetches the package but stops short of touching the installed app, so the

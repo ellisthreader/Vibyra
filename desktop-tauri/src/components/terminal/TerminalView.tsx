@@ -5,6 +5,7 @@ import {
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
 import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
+import { focusMountedTerminal } from "../../lib/terminalFocus";
 import { initTerminalFont } from "../../lib/terminalFont";
 import {
   fitTerminal,
@@ -49,9 +50,21 @@ export function TerminalView({
     let observer: ResizeObserver | null = null;
     let trailingTimer = 0;
     let frame = 0;
+    let focusFrame = 0;
     void initTerminalFont().then(() => {
       if (cancelled) return;
       const entry = mountTerminal(id, settings, host, bottomAnchored);
+      focusFrame = requestAnimationFrame(() => {
+        focusFrame = 0;
+        focusMountedTerminal({
+          id,
+          focusedId: useTerminalStore.getState().focusedId,
+          active,
+          host: entry.container,
+          modalOpen: document.querySelector("[aria-modal='true']") !== null,
+          focus: () => entry.term.focus(),
+        });
+      });
       let lastFitAt = 0;
       const fitNow = () => {
         if (cancelled) return;
@@ -78,6 +91,7 @@ export function TerminalView({
       observer?.disconnect();
       window.clearTimeout(trailingTimer);
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(focusFrame);
       unmountTerminal(id);
     };
   }, [active, bottomAnchored, id]);
@@ -86,7 +100,7 @@ export function TerminalView({
     <div
       ref={hostRef}
       className="term-view"
-      onMouseDown={() => useTerminalStore.getState().markFocused(id)}
+      onMouseDown={() => useTerminalStore.getState().setFocus(id)}
       onDragOver={(event) => {
         // A drag only exposes its types, never its data — accepting here is
         // what lets the drop through at all.
@@ -101,8 +115,7 @@ export function TerminalView({
         const entry = getTerminal(id);
         if (!entry) return;
         entry.term.paste(text);
-        entry.term.focus();
-        useTerminalStore.getState().markFocused(id);
+        useTerminalStore.getState().setFocus(id);
       }}
     />
   );

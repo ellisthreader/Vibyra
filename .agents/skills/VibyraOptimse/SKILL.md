@@ -130,6 +130,11 @@ When optimization work touches Vibyra terminals, preserve these invariants:
   regular/bold bundled-font load before `open()` or `fit()`. Prewarming alone
   can lose to a fast restore. Attach one renderer per xterm and expose the
   observed backend on the terminal host for live inspection.
+- Treat store focus and browser focus as separate terminal state. After an
+  asynchronous xterm mount, focus its textarea only when the pane is still the
+  active logical target, connected, non-inert, and unobscured by a modal. When
+  a toast or palette answers a keyboard-only update/permission prompt, restore
+  xterm focus after that control unmounts without overriding a newer pane choice.
 - Keep `onData` free of viewport scans, fitting, or scroll anchoring; typing is
   an IPC hot path. Use xterm's `scrollOnUserInput` and let scroll/output events
   own anchoring work.

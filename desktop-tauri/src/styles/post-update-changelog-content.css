@@ -1,0 +1,111 @@
+.post-update-changelog__release {
+  padding: 25px 24px 8px;
+}
+
+.post-update-changelog__section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.post-update-changelog__section-heading h2 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.post-update-changelog__section-heading > span {
+  width: 100%;
+  height: 1px;
+  background: var(--line-accent);
+}
+
+.post-update-changelog__features {
+  display: grid;
+  gap: 6px;
+}
+
+.post-update-changelog__feature {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  padding: 14px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+
+.post-update-changelog__feature:hover {
+  border-color: var(--line);
+  background: var(--hover);
+}
+
+.post-update-changelog__marker {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--accent-2);
+  background: var(--accent-soft);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.post-update-changelog__feature h3 {
+  margin: 0 0 5px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.post-update-changelog__feature p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.post-update-changelog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--elevated);
+}
+
+.post-update-changelog__footer p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.post-update-changelog__footer p > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px var(--success-soft);
+}
+
+.post-update-changelog__footer button {
+  min-width: 78px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: var(--action);
+  color: var(--on-action);
+  font-weight: 750;
+  transition: background-color var(--t-ui) ease, transform var(--t-ui) ease;
+}
+
+.post-update-changelog__footer button:hover { background: var(--action-hover); }
+.post-update-changelog__footer button:active { transform: translateY(1px); }

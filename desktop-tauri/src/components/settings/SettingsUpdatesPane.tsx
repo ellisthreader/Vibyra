@@ -17,7 +17,7 @@ function runAction(kind: CheckAction): void {
 }
 
 /**
- * The manual half of the updater. The banner and titlebar chip only ever
+ * The manual half of the updater. The pinned notice and account-menu action
  * appear when there is something to install, which leaves a healthy app
  * indistinguishable from one whose release feed is quietly failing — this pane
  * is where the version, the last check and any failure are always readable,
@@ -97,14 +97,14 @@ export function SettingsUpdatesPane() {
       <SettingsBlock label="How updating works">
         <div className="settings-group">
           <p className="settings-note vupdate-panel__note">
-            Vibyra checks for a new release shortly after launch and every 20 minutes
-            after that. When one is found it announces itself once, and stays reachable
-            from the titlebar and from here until you install it.
+            Vibyra checks before opening your account or workspace, then every 20 minutes
+            while the workspace is open. Startup updates install before terminals load;
+            later updates stay reachable from the account menu and from here.
           </p>
           <p className="settings-note vupdate-panel__note">
-            Downloading and restarting are separate steps on purpose. This window holds
-            live terminal sessions, so nothing is swapped out until you choose to restart —
-            and your open terminals and layout are saved first.
+            Updates found after the workspace opens keep downloading and restarting as
+            separate steps. This window holds live terminal sessions, so nothing is swapped
+            out until you choose to restart — and your open terminals and layout are saved first.
           </p>
         </div>
       </SettingsBlock>
