@@ -1,6 +1,12 @@
+import { lazy, Suspense, useCallback, useState } from "react";
+
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
+import type { ProjectMenuTarget } from "../projects/ProjectActions";
+
+const ProjectActions = lazy(() => import("../projects/ProjectActions")
+  .then((module) => ({ default: module.ProjectActions })));
 
 function HomeGlyph() {
   return (
@@ -20,6 +26,13 @@ export function ProjectStrip() {
   const panes = useTerminalStore((s) => s.panes);
   const activity = useTerminalStore((s) => s.activity);
   const pickAndCreate = useProjectStore((s) => s.pickAndCreate);
+  const [menu, setMenu] = useState<ProjectMenuTarget | null>(null);
+
+  const dismissMenu = useCallback(() => setMenu(null), []);
+  const openMenu = (project: (typeof projects)[number], button: HTMLButtonElement, y: number) => {
+    const rect = button.getBoundingClientRect();
+    setMenu({ project, anchor: { x: rect.right + 7, y } });
+  };
 
   const needsAttention = (projectId: string) =>
     panes.some((p) => p.projectId === projectId && activity[p.id] === "attention");
@@ -43,7 +56,19 @@ export function ProjectStrip() {
             }`}
             style={{ "--tile-c": project.color } as React.CSSProperties}
             data-tip={`${project.name}${index < 9 ? `  ·  Ctrl+Shift+${index + 1}` : ""}`}
+            aria-haspopup="menu"
+            aria-expanded={menu?.project.id === project.id}
             onClick={() => void activate(project.id)}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              openMenu(project, event.currentTarget, event.clientY);
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+              event.preventDefault();
+              const rect = event.currentTarget.getBoundingClientRect();
+              openMenu(project, event.currentTarget, rect.top + 8);
+            }}
           >
             {project.name.charAt(0).toUpperCase()}
             {needsAttention(project.id) && <span className="pstrip__badge" />}
@@ -54,6 +79,7 @@ export function ProjectStrip() {
       <button className="pstrip__tile pstrip__tile--add" data-tip="New project" onClick={() => void pickAndCreate()}>
         ＋
       </button>
+      {menu && <Suspense fallback={null}><ProjectActions key={menu.project.id} target={menu} onClose={dismissMenu} /></Suspense>}
     </nav>
   );
 }

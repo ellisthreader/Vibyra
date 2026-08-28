@@ -11,8 +11,8 @@ use tauri::Wry;
 use super::{
     account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, boot,
     clipboard, conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
-    provider_accounts, render, report, review, screenshot, screenshot_reveal, session, settings,
-    terminal, voice,
+    project_activity, provider_accounts, render, report, review, screenshot, screenshot_reveal,
+    session, settings, terminal, voice,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -37,6 +37,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         review::review_merge,
         review::review_reject_file,
         review::review_discard,
+        project_activity::project_activity,
         github::github_status,
         github::github_create_pr,
         github::github_open_pr,

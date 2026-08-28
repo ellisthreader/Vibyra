@@ -1,0 +1,92 @@
+/* Project-only configuration and deliberate two-stage close confirmation. */
+
+.project-config { width: min(410px, 92vw); }
+.project-config__body { padding: 18px; }
+.project-config__field { display: grid; gap: 7px; }
+.project-config__field span,
+.project-config__colours legend,
+.project-config__path > span {
+  color: var(--muted);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-semi);
+}
+
+.project-config__field input {
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+}
+
+.project-config__field input:focus { border-color: var(--accent); }
+.project-config__colours { margin: 17px 0 0; padding: 0; border: 0; }
+.project-config__colours > div { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 9px; }
+
+.project-colour {
+  width: 27px;
+  height: 27px;
+  border: 3px solid var(--elevated);
+  border-radius: var(--r-control);
+  background: var(--project-c);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.project-colour--selected { box-shadow: 0 0 0 2px var(--text); }
+.project-config__path {
+  display: grid;
+  gap: 5px;
+  margin-top: 19px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--bg) 30%, transparent);
+}
+.project-config__path code { overflow: hidden; color: var(--muted); font: var(--fs-tiny) var(--font-mono); text-overflow: ellipsis; white-space: nowrap; user-select: text; }
+.project-config__path small { color: var(--dim); font-size: var(--fs-micro); }
+.project-config__actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); }
+.project-config__error,
+.project-close__error { margin-top: 13px; color: var(--danger); font-size: var(--fs-tiny); line-height: 1.45; }
+
+.project-close {
+  align-items: center;
+  width: min(420px, 92vw);
+  padding: 22px;
+  text-align: center;
+}
+
+.project-close__steps { display: flex; align-items: center; gap: 6px; }
+.project-close__steps small { margin-left: 5px; color: var(--dim); font-size: var(--fs-micro); }
+.project-close__step { width: 18px; height: 3px; border-radius: 999px; background: var(--border); }
+.project-close__step--active { background: var(--danger); }
+.project-close__symbol {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 22px 0 15px;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-radius: var(--r-panel);
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.project-close h2 { max-width: 350px; font-size: var(--fs-title); font-weight: var(--fw-heavy); }
+.project-close > p { max-width: 340px; margin-top: 8px; color: var(--muted); font-size: var(--fs-hint); line-height: 1.55; }
+.project-close__safe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 17px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+  border-radius: var(--r-control);
+  color: color-mix(in srgb, var(--success) 72%, var(--text));
+  background: color-mix(in srgb, var(--success) 7%, transparent);
+  font-size: var(--fs-micro);
+}
+
+.project-close__actions { display: flex; justify-content: center; gap: 8px; margin-top: 21px; }
+.project-close__actions .btn { min-width: 92px; }

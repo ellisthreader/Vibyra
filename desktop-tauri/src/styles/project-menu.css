@@ -1,0 +1,126 @@
+/* Project-tile context menu: rare actions remain off the permanent strip. */
+
+.project-menu {
+  --project-c: var(--accent);
+  position: fixed;
+  z-index: 75;
+  width: 232px;
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: var(--r-menu);
+  background: color-mix(in srgb, var(--elevated) 97%, transparent);
+  box-shadow: var(--e-menu);
+  animation: project-menu-in var(--t-ui) var(--e-standard);
+}
+
+@keyframes project-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+}
+
+.project-menu__identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 6px 7px 8px;
+}
+
+.project-menu__identity > span:last-child {
+  min-width: 0;
+}
+
+.project-menu__identity strong,
+.project-menu__identity small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-menu__identity strong {
+  font-size: var(--fs-control);
+  font-weight: var(--fw-bold);
+}
+
+.project-menu__identity small {
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: var(--fs-micro);
+}
+
+.project-menu__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: var(--r-control);
+  color: #0b0c10;
+  background: var(--project-c);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-black);
+}
+
+.project-menu__rule {
+  display: block;
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--line);
+}
+
+.project-menu__item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: var(--r-shell);
+  color: var(--muted);
+  text-align: left;
+}
+
+.project-menu__item:hover,
+.project-menu__item:focus-visible {
+  color: var(--text);
+  background: var(--hover-strong);
+  outline: none;
+}
+
+.project-menu__item-icon {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+
+.project-menu__item strong,
+.project-menu__item small {
+  display: block;
+}
+
+.project-menu__item strong {
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+}
+
+.project-menu__item small {
+  margin-top: 2px;
+  color: var(--dim);
+  font-size: var(--fs-micro);
+}
+
+.project-menu__item--danger,
+.project-menu__item--danger .project-menu__item-icon,
+.project-menu__item--danger small {
+  color: var(--danger);
+}
+
+.project-menu__item--danger:hover,
+.project-menu__item--danger:focus-visible {
+  color: var(--danger);
+  background: var(--danger-soft);
+}

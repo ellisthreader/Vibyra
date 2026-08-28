@@ -16,6 +16,7 @@ pub mod memory;
 pub mod notifications;
 pub mod parallel;
 pub mod preview;
+pub mod project_activity;
 pub mod pty;
 pub mod review;
 pub mod ring;

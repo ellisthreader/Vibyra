@@ -19,6 +19,7 @@ pub mod memory_browser;
 pub mod perf;
 pub mod preview;
 pub mod probe;
+pub mod project_activity;
 pub mod provider_accounts;
 pub mod registry;
 pub mod render;

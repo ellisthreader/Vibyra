@@ -53,6 +53,9 @@ website, Expo browser client, and native phone app.
   `Desktop/Project Stage And Titlebar.md`
 - Current floating right dock, its three titlebar size controls, and the
   active-size close rule: `Desktop/Project Dock.md`
+- Project-tile right-click actions, project configuration, Git-backed daily
+  activity, and the two-confirmation close rule:
+  `Desktop/Project Menu And Activity.md`
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`

@@ -75,7 +75,23 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     ) {
       applySettingsToAll(next);
     }
-    await saveSettings(next);
+    try {
+      await saveSettings(next);
+    } catch (error) {
+      // Renderer state is optimistic so controls respond immediately, but a
+      // failed atomic native save must not leave UI that claims persistence.
+      set({ settings: current });
+      applyTheme(current);
+      if (
+        next.fontSize !== current.fontSize ||
+        next.fontFamily !== current.fontFamily ||
+        next.scrollbackLines !== current.scrollbackLines ||
+        next.theme !== current.theme
+      ) {
+        applySettingsToAll(current);
+      }
+      throw error;
+    }
   },
 
 }));

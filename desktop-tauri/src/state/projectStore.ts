@@ -10,32 +10,13 @@ import {
   projectRuntimeTransitions,
   syncProjectVisibility,
 } from "../lib/projectTransitions";
+import { basename, nextProjectColor, PROJECT_COLORS } from "../lib/projectIdentity";
 import type { ProjectSpec } from "../types";
 import { useSettingsStore } from "./settingsStore";
 import { useTerminalStore } from "./terminalStore";
 import { useWorkspaceStore } from "./workspaceStore";
 
 export type AppView = "home" | "project";
-
-const PROJECT_COLORS = [
-  "#5b7cfa",
-  "#ff9b6a",
-  "#37c78a",
-  "#bd8cff",
-  "#6aa8ff",
-  "#e8a94b",
-  "#f472b6",
-  "#69d6c7",
-];
-
-export function basename(path: string): string {
-  const parts = path.replace(/\/+$/, "").split("/");
-  return parts[parts.length - 1] || path;
-}
-
-function nextColor(existing: ProjectSpec[]): string {
-  return PROJECT_COLORS[existing.length % PROJECT_COLORS.length];
-}
 
 interface ProjectStore {
   view: AppView;
@@ -47,6 +28,7 @@ interface ProjectStore {
   pickAndCreate: () => Promise<void>;
   activate: (id: string) => Promise<void>;
   goHome: () => Promise<void>;
+  updateProject: (id: string, patch: Pick<ProjectSpec, "name" | "color">) => Promise<void>;
   remove: (id: string) => Promise<void>;
 }
 
@@ -54,11 +36,14 @@ function projects(): ProjectSpec[] {
   return useSettingsStore.getState().settings?.projects ?? [];
 }
 
-async function persist(next: ProjectSpec[], activeId: string | null): Promise<void> {
-  await useSettingsStore
-    .getState()
-    .update({ projects: next, activeProjectId: activeId })
-    .catch(() => useWorkspaceStore.getState().setError("Vibyra could not save project changes."));
+async function persist(next: ProjectSpec[], activeId: string | null): Promise<boolean> {
+  try {
+    await useSettingsStore.getState().update({ projects: next, activeProjectId: activeId });
+    return true;
+  } catch {
+    useWorkspaceStore.getState().setError("Vibyra could not save project changes.");
+    return false;
+  }
 }
 
 /** Point the file tree + watcher at the project root (never watch $HOME). */
@@ -154,7 +139,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
         id: `p-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4).toString(36)}`,
         name: (name ?? "").trim() || basename(trimmed),
         root: trimmed,
-        color: nextColor(list),
+        color: nextProjectColor(list),
         lastOpenedMs: Date.now(),
       };
       await persist([...list, project], project.id);
@@ -176,17 +161,37 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
 
     goHome: () => projectRuntimeTransitions.run(goHomeNow),
 
+    updateProject: (id, patch) => projectRuntimeTransitions.run(async () => {
+      const name = patch.name.trim();
+      if (!name || !PROJECT_COLORS.includes(patch.color)) {
+        throw new Error("Choose a project name and one of Vibyra's project colours.");
+      }
+      const current = projects();
+      if (!current.some((project) => project.id === id)) {
+        throw new Error("This project is no longer available.");
+      }
+      const next = current.map((project) =>
+        project.id === id ? { ...project, name, color: patch.color } : project,
+      );
+      if (!(await persist(next, get().activeId))) {
+        throw new Error("Project configuration could not be saved.");
+      }
+    }),
+
     remove: (id) => projectRuntimeTransitions.run(async () => {
       const current = projects();
       const project = current.find((entry) => entry.id === id);
+      if (!project) throw new Error("This project is no longer available.");
       const list = current.filter((entry) => entry.id !== id);
       const removingActive = get().activeId === id;
       const activeId = removingActive ? null : get().activeId;
       if (removingActive) await goHomeNow();
-      else if (project) await stopProjectPreviews(project.root).catch(() => {});
+      else await stopProjectPreviews(project.root).catch(() => {});
       const doomed = useTerminalStore.getState().panes.filter((pane) => pane.projectId === id);
       for (const pane of doomed) await useTerminalStore.getState().close(pane.id);
-      await persist(list, activeId);
+      if (!(await persist(list, activeId))) {
+        throw new Error("The project could not be closed because its settings were not saved.");
+      }
       set({ activeId, view: activeId ? get().view : "home" });
     }),
   };
