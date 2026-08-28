@@ -82,11 +82,13 @@ Immediately before either startup or in-workspace installation,
 `updateStore` best-effort records the signed target in the account-independent
 `vibyra.desktop.postUpdateChangelog` receipt. Storage failure never blocks the
 install. After relaunch, the deferred changelog requires an exact bundled entry
-for the running version. The 0.2.9 entry alone allows an unmarked first launch
-because the already-released 0.2.8 binary cannot write this new receipt; this
-also means a fresh 0.2.9 install sees that one introduction. Later entries are
-receipt-only. Development stays silent unless `VITE_CHANGELOG_PREVIEW_VERSION`
-explicitly enables visual QA.
+for the running version. The 0.2.9 and 0.3.0 entries allow an unmarked first
+launch as one-release bridges: 0.2.8 cannot mark 0.2.9 pending, and the shipped
+0.2.9 updater cannot mark 0.3.0 pending. Dismissal still makes either view
+strictly one-time, including on a fresh install. Starting with 0.3.1, entries
+should be receipt-only because 0.3.0 writes the pending target. Development
+stays silent unless `VITE_CHANGELOG_PREVIEW_VERSION` explicitly enables visual
+QA.
 Dismissal records the version and clears pending state, while a crash leaves it
 pending for the next launch. The modal waits for auth/workspace and any first
 welcome, then owns focus/inert state; content, CSS, and its sub-100 KB artwork
@@ -105,9 +107,13 @@ SHA-256, Minisign signatures (including trusted comments and configured key),
 and generated metadata. A final job re-verifies the complete three-platform
 artifact set before a person can publish it.
 
-The checkout is currently 0.2.8 while the live feed advertises 0.2.9, so the
-new release preflight correctly blocks this checkout until both desktop version
-files are bumped. Do not weaken that check or publish an older build.
+The 0.3.0 candidate demonstrated the intended boundary: build and signing ran
+without publishing, the complete artifact set was downloaded and re-verified,
+artifacts were uploaded to hidden names, remote sizes and hashes were checked,
+and final names were switched atomically. All 24 release metadata values were
+then set with `railway variable set --skip-deploys` and compared to CI metadata
+before one exact-source deployment exposed the new feed. Keep that staged
+sequence; do not let a metadata write trigger a partial release deployment.
 
 ## Validation
 
@@ -118,14 +124,37 @@ Canonical local gates are `npm run verify` in `desktop-tauri`, the backend
 boundaries. Visual QA should include 1440×900 and minimum 960×600 failure,
 determinate download, and reduced-motion indeterminate states.
 
-On 2026-08-28, a normally mounted, isolated AppImage built from this 0.2.8
-source completed a live signed 0.2.9 download, replaced only its temporary
-copy, relaunched under a new process, opened authentication, and closed through
-the shared window control. `APPIMAGE_EXTRACT_AND_RUN=1` is useful for launch
-smoke tests but cannot prove relaunch because it removes the temporary mount;
-use normal FUSE execution for AppImage handoff QA.
+On 2026-08-28, a normally mounted, isolated AppImage built from 0.2.8 completed
+a live signed 0.2.9 download, replaced only its temporary copy, relaunched under
+a new process, opened authentication, and closed through the shared window
+control. `APPIMAGE_EXTRACT_AND_RUN=1` is useful for launch smoke tests but cannot
+prove relaunch because it removes the temporary mount; use normal FUSE execution
+for AppImage handoff QA.
 
-Before publishing, still run N→N+1 on clean Windows NSIS and exercise Debian
-elevation/replacement; repeat AppImage QA for the actual release candidate.
-Local tests cannot prove protected CI secrets or every OS installer path, and
-macOS is not in the current release matrix.
+## Published 0.3.0
+
+Vibyra 0.3.0 was published on 2026-08-28 from commit
+`3b1636b9f9c07ccfebcf54eddfc599c5d6034180` and annotated tag `v0.3.0`.
+GitHub Actions run `33211698641` passed Windows NSIS install/launch, AppImage
+launch, Debian install/launch, checksums, signatures, metadata, and the aggregate
+release-set gate. Railway production deployment
+`eb3ae982-39a1-480f-a42c-4b7cf1600715` then passed health and served:
+
+- Windows NSIS: 6,659,886 bytes, SHA-256
+  `08285557d179e794921bb6490dcec2d0fba35943e703b6fca3048e0f4b2e5c15`.
+- Linux AppImage: 97,180,152 bytes, SHA-256
+  `f3294df8c6f96898bf803d21b4c5b21b1f80b41ce795d8a75ddd2eb9bcf4d1d5`.
+- Debian package: 9,186,324 bytes, SHA-256
+  `08d1c069fd12f3bd1442b4217a1974ac4dbaac1468a9e4ff67730007dc7becfd`.
+
+Post-cutover verification fetched all three public downloads and reproduced
+those hashes, validated all three signed N−1 feeds as 200, and validated current
+and future versions as 204. The website release API and bundled What's New copy
+both advertised 0.3.0. Production telemetry also showed two real 0.2.9
+AppImage clients at distinct public IPs receiving the 0.3.0 offer. Existing
+0.2.9 clients poll every 20 minutes and retain the user-controlled
+download/restart flow, so publication proves delivery of the offer, not a
+forced installation on offline machines or a restart without consent.
+
+Local tests cannot prove every OS installer path, protected CI secrets must
+remain in CI, and macOS is not in the current release matrix.
