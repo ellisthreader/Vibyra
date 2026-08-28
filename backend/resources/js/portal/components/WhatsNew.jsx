@@ -2,29 +2,49 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Updates finish before your workspace opens",
+    body: "Launch checks, downloads and installs trusted releases before terminals and projects start, with clear progress and safe recovery controls.",
+    fresh: true,
+  },
+  {
+    title: "A proper introduction after every update",
+    body: "The new What’s New view explains the release once, in a focused window that is easy to dismiss and never interrupts you twice.",
+    fresh: true,
+  },
+  {
+    title: "See the recent story of a project",
+    body: "Right-click a project — or press Shift+F10 — to review seven days of Git activity, then give it a clearer name and color.",
+    fresh: true,
+  },
+  {
+    title: "Close projects without the risky click",
+    body: "A two-step close flow explains what will happen and protects open work from accidental removal.",
+    fresh: true,
+  },
+  {
+    title: "Terminal prompts keep their focus",
+    body: "Permission requests, update notices, toasts and dialogs return typing to the terminal instead of leaving it unresponsive.",
+    fresh: true,
+  },
+  {
     title: "One stage, split how you like",
     body: "Terminals and preview share the stage instead of replacing each other, and the rail stays put so there is always a way back.",
-    fresh: true,
   },
   {
     title: "Jump anywhere from the command bar",
     body: "Switch project, pane or layout without reaching for the mouse.",
-    fresh: true,
   },
   {
     title: "See your voice",
     body: "Dictation shows a live level meter, so you can tell it is hearing you before you finish the sentence.",
-    fresh: true,
   },
   {
     title: "Carry a conversation between agents",
     body: "Hand what Claude was working on to Codex — or the other way round — without pasting the context yourself.",
-    fresh: true,
   },
   {
     title: "One account per pane",
     body: "Run two providers side by side and see which account each pane is signed in as.",
-    fresh: true,
   },
   {
     title: "Notifications that tell you what they want",

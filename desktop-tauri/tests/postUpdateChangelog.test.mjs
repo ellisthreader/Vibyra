@@ -106,16 +106,16 @@ test("the approved visual, interaction and accessibility contract is present", a
   assert.match(responsive, /prefers-reduced-motion: reduce/);
 });
 
-test("0.2.9 content and its optimized local artwork ship together", async () => {
+test("0.3.0 content and its optimized local artwork ship together", async () => {
   const content = await read("../src/components/changelog/changelogContent.ts");
   const hero = await stat(new URL(
-    "../src/assets/changelog/vibyra-release-0.2.9.webp",
+    "../src/assets/changelog/vibyra-release-0.3.0.webp",
     import.meta.url,
   ));
-  assert.match(content, /"0\.2\.9"/);
+  assert.match(content, /"0\.3\.0"/);
   assert.match(content, /allowUnmarkedLaunch: true/);
-  assert.match(content, /Updates finish before work begins/);
-  assert.match(content, /A calmer, clearer launch/);
-  assert.match(content, /Stronger release checks/);
+  assert.match(content, /Updates finish before your workspace opens/);
+  assert.match(content, /Projects show their recent story/);
+  assert.match(content, /Terminal prompts keep their focus/);
   assert.ok(hero.size > 0 && hero.size < 100_000, `hero is ${hero.size} bytes`);
 });

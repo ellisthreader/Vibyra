@@ -24,6 +24,14 @@ test("the startup gate stays above both authentication and workspace mounting", 
   assert.ok(gate >= 0 && gate < auth && auth < workspace);
 });
 
+test("the native boot splash hands over to the packaged updater immediately", async () => {
+  const app = await read("../src/App.tsx");
+
+  assert.match(app, /import \{ signalAppReady \} from "\.\/lib\/bootHandoff"/);
+  assert.match(app, /if \(!startup\.complete \|\| status !== "restoring"\)/);
+  assert.match(app, /signalAppReady\(\)/);
+});
+
 test("the signed-in workspace preloads once without blocking updater first paint", async () => {
   const app = await read("../src/App.tsx");
 
