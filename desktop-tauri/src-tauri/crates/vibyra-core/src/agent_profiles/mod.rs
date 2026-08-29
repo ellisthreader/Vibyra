@@ -12,7 +12,7 @@ mod store;
 #[cfg(test)]
 mod tests;
 
-pub use place_store::{grant_place, list_places, revoke_place};
+pub use place_store::{grant_place, list_places, revoke_place, routines_allowed};
 pub use places::{authorize, canonical_place, directory_arguments, within, AgentPlace};
 pub use record::{AgentProfile, AgentUpdate, NewAgent};
 pub use store::{archive, create, delete, get, list, update};

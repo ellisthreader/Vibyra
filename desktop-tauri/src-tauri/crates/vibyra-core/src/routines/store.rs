@@ -67,6 +67,11 @@ pub(super) const COLUMNS: &str =
 
 /// Saves a routine and resolves its first run.
 pub fn create(db: &AgentDb, draft: RoutineDraft) -> CoreResult<Routine> {
+    if !crate::agent_profiles::routines_allowed(db, &draft.agent_id) {
+        return Err(CoreError::Settings(
+            "that teammate has scheduled work turned off. Turn it on in its settings first.".into(),
+        ));
+    }
     let routine = build(new_id(), &draft, now_ms(), now_ms())?;
     write(db, &routine, true)?;
     Ok(routine)

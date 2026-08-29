@@ -34,8 +34,13 @@ pub enum Due {
 /// Split from the tick so the policy is testable without a database, a clock
 /// or a provider — which is the only way to test "what happens after a week
 /// offline" without waiting a week.
-pub fn due(routine: &Routine, now: DateTime<Utc>, running: bool) -> Due {
-    if !routine.enabled || running {
+///
+/// `agent_allows` is the agent's own routine permission, read fresh each tick.
+/// Turning it off has to stop existing routines, not merely prevent new ones —
+/// otherwise the switch means "no more of these" rather than "not this agent",
+/// which is what a person turning it off is asking for.
+pub fn due(routine: &Routine, now: DateTime<Utc>, running: bool, agent_allows: bool) -> Due {
+    if !routine.enabled || running || !agent_allows {
         return Due::Wait;
     }
     let Some(next_ms) = routine.next_run_ms else {
@@ -64,7 +69,8 @@ pub fn plan_tick(db: &AgentDb, now: DateTime<Utc>) -> CoreResult<(Vec<Routine>, 
     let mut skip = Vec::new();
     for routine in list(db, None)? {
         let already = busy.contains(&routine.id);
-        match due(&routine, now, already) {
+        let allows = crate::agent_profiles::routines_allowed(db, &routine.agent_id);
+        match due(&routine, now, already, allows) {
             Due::Run if run.len() < MAX_CONCURRENT.saturating_sub(busy.len()) => run.push(routine),
             // Over the cap this tick: left alone, still due, picked up next
             // tick rather than dropped.

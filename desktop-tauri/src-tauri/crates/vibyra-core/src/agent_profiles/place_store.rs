@@ -15,6 +15,26 @@ use crate::error::{CoreError, CoreResult};
 
 use super::places::{canonical_place, AgentPlace};
 
+/// Whether this agent is allowed to run routines at all.
+///
+/// Deliberately account-free and deliberately pessimistic: the scheduler asks
+/// this on every tick and has no account to hand, and an agent it cannot find
+/// is one whose routines must not fire. Kept beside the grant reads because it
+/// is the same kind of question — what is this agent permitted to do.
+pub fn routines_allowed(db: &AgentDb, agent_id: &str) -> bool {
+    db.with(|connection| {
+        Ok(connection
+            .query_row(
+                "SELECT routines_allowed FROM agent_profiles WHERE id = ?1",
+                params![agent_id],
+                |row| row.get::<_, i64>(0),
+            )
+            .map(|value| value != 0)
+            .unwrap_or(false))
+    })
+    .unwrap_or(false)
+}
+
 /// The folders this agent may use, home first.
 pub fn list_places(db: &AgentDb, agent_id: &str) -> CoreResult<Vec<AgentPlace>> {
     db.with(|connection| {

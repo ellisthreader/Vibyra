@@ -45,7 +45,7 @@ fn resuming_recomputes_rather_than_firing_immediately() {
     let paused = set_enabled(&db, &routine.id, false).unwrap();
     assert!(!paused.enabled && paused.next_run_ms.is_none());
     assert_eq!(
-        due(&paused, Utc::now() + Duration::days(30), false),
+        due(&paused, Utc::now() + Duration::days(30), false, true),
         Due::Wait
     );
 

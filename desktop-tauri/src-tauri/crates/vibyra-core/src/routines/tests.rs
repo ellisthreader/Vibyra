@@ -80,15 +80,18 @@ fn a_week_offline_skips_the_missed_run_rather_than_bursting() {
     let db = seeded();
     let routine = create(&db, draft()).unwrap();
 
-    assert_eq!(due(&routine, at(&routine, -1), false), Due::Wait);
-    assert_eq!(due(&routine, at(&routine, 1), false), Due::Run);
+    assert_eq!(due(&routine, at(&routine, -1), false, true), Due::Wait);
+    assert_eq!(due(&routine, at(&routine, 1), false, true), Due::Run);
     assert_eq!(
-        due(&routine, at(&routine, 10), false),
+        due(&routine, at(&routine, 10), false, true),
         Due::Run,
         "slightly late still runs"
     );
-    assert_eq!(due(&routine, at(&routine, 60), false), Due::Skip);
-    assert_eq!(due(&routine, at(&routine, 60 * 24 * 7), false), Due::Skip);
+    assert_eq!(due(&routine, at(&routine, 60), false, true), Due::Skip);
+    assert_eq!(
+        due(&routine, at(&routine, 60 * 24 * 7), false, true),
+        Due::Skip
+    );
 }
 
 /// One run per routine at a time, and a cap across all of them, so a tick
@@ -97,7 +100,7 @@ fn a_week_offline_skips_the_missed_run_rather_than_bursting() {
 fn a_routine_never_runs_twice_at_once_and_a_tick_is_capped() {
     let db = seeded();
     let routine = create(&db, draft()).unwrap();
-    assert_eq!(due(&routine, at(&routine, 1), true), Due::Wait);
+    assert_eq!(due(&routine, at(&routine, 1), true, true), Due::Wait);
 
     for index in 0..6 {
         let mut extra = draft();
@@ -132,4 +135,36 @@ fn a_skipped_run_is_recorded_and_the_schedule_moves_on() {
         get(&db, &routine.id).unwrap().next_run_ms.unwrap() > was,
         "still due forever"
     );
+}
+
+/// A teammate with scheduled work turned off runs nothing — including
+/// routines that already existed, because the switch means "not this agent",
+/// not "no more of these".
+#[test]
+fn an_agent_with_routines_off_neither_gains_nor_keeps_them() {
+    let db = seeded();
+    let routine = create(&db, draft()).unwrap();
+    assert_eq!(due(&routine, at(&routine, 1), false, true), Due::Run);
+
+    db.with(|connection| {
+        connection
+            .execute("UPDATE agent_profiles SET routines_allowed = 0", [])
+            .unwrap();
+        Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(
+        due(&routine, at(&routine, 1), false, false),
+        Due::Wait,
+        "an existing routine kept firing after its agent was switched off"
+    );
+    let (to_run, _) = plan_tick(&db, Utc::now() + Duration::days(1)).unwrap();
+    assert!(
+        to_run.is_empty(),
+        "the tick started work for a switched-off agent"
+    );
+
+    let refused = create(&db, draft()).unwrap_err().to_string();
+    assert!(refused.contains("scheduled work turned off"), "{refused}");
 }

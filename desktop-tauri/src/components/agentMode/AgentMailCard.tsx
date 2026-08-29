@@ -99,6 +99,18 @@ export function AgentMailCard({ agent }: { agent: AgentProfile }) {
           onChange={(event) => void saveSettings({ agentMailPaused: event.target.checked })}
         />
       </label>
+
+      <label className="settings-row">
+        <span className="settings-row__label">
+          May run scheduled routines. Turning this off stops the ones it already
+          has, not only new ones.
+        </span>
+        <input
+          type="checkbox"
+          checked={agent.routinesAllowed}
+          onChange={(event) => void update(agent.id, { routinesAllowed: event.target.checked })}
+        />
+      </label>
     </section>
   );
 }
