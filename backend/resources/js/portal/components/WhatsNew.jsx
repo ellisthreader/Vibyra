@@ -2,29 +2,54 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Teammates that remember",
+    body: "Give an agent a name, a brief and its own folders, and it keeps all of it \u2014 plus what it has learned \u2014 across every conversation you have with it.",
+    fresh: true,
+  },
+  {
+    title: "As many chats as you need",
+    body: "One teammate, many conversations. Starting a new one touches nothing else, and all of them share the same brief, memory and skills.",
+    fresh: true,
+  },
+  {
+    title: "You decide what leaves the machine",
+    body: "Reading inside a folder you granted never asks. Publishing, spending, deleting and anything touching a secret always do \u2014 and what you approved is what runs, even if the agent changes its mind afterwards.",
+    fresh: true,
+  },
+  {
+    title: "Work that happens on a schedule",
+    body: "A routine opens a fresh chat each time it runs, at the time you set, in the timezone you set. Miss one because the app was shut and it is skipped, never fired in a burst when you come back.",
+    fresh: true,
+  },
+  {
+    title: "Teach it once",
+    body: "Write down a procedure \u2014 when it applies, what to do, how to know it worked, where to stop \u2014 and hand it to whichever teammates need it. An agent can suggest one; only you install it.",
+    fresh: true,
+  },
+  {
+    title: "A chat with nothing attached",
+    body: "Chat Mode has no project, no folder and no memory until you give it one. Attach a screenshot and it is copied in, so the folder it came from stays yours.",
+    fresh: true,
+  },
+  {
     title: "One stage, split how you like",
     body: "Terminals and preview share the stage instead of replacing each other, and the rail stays put so there is always a way back.",
-    fresh: true,
   },
   {
     title: "Jump anywhere from the command bar",
     body: "Switch project, pane or layout without reaching for the mouse.",
-    fresh: true,
   },
   {
     title: "See your voice",
     body: "Dictation shows a live level meter, so you can tell it is hearing you before you finish the sentence.",
-    fresh: true,
   },
   {
     title: "Carry a conversation between agents",
     body: "Hand what Claude was working on to Codex — or the other way round — without pasting the context yourself.",
-    fresh: true,
   },
   {
     title: "One account per pane",
     body: "Run two providers side by side and see which account each pane is signed in as.",
-    fresh: true,
   },
   {
     title: "Notifications that tell you what they want",
