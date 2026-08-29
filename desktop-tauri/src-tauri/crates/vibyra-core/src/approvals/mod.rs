@@ -14,6 +14,8 @@ mod risk;
 mod rows;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod trust_tests;
 
 pub use broker::{request, resolve, ApprovalRequest, Outcome, ProposedAction};
 pub use fingerprint::fingerprint;

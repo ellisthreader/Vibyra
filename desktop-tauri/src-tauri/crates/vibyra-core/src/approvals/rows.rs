@@ -1,25 +1,40 @@
 //! Reading approval rows back.
 //!
-//! Kept apart from `broker`, which decides things. One notable choice lives
-//! here: `trustable` is *recomputed* on read rather than stored, because
-//! whether a standing yes may be offered depends on the agent's permission
-//! now, not on what it was when the card was raised.
+//! Kept apart from `broker`, which decides things. One choice here is
+//! load-bearing: `trustable` — whether the card may offer "don't ask again" —
+//! is *recomputed on read* from the agent's permission as it stands now,
+//! rather than stored when the card was raised.
+//!
+//! Which means every read has to join the agent to find that permission. It
+//! is not optional and it is not a detail: reading it as a constant `true`
+//! offers a standing yes for a write proposed by a Plan-mode agent, which is
+//! precisely the case `risk::decide` refuses. A `LEFT JOIN`, because a card
+//! outlives the agent that asked for it — and an agent that is gone can hold
+//! no permission, so its cards are never trustable.
 
 use rusqlite::params;
 
+use crate::agent_model::PermissionMode;
 use crate::agentdb::ids::now_ms;
 use crate::agentdb::{sql, AgentDb};
 use crate::error::{CoreError, CoreResult};
 
-use super::broker::{ApprovalRequest, COLUMNS};
+use super::broker::ApprovalRequest;
 use super::risk::{trustable, Risk};
+
+/// The columns every read selects: the card, then the agent's permission as it
+/// stands now. Qualified because both tables carry an `id` and an `account`.
+const JOINED: &str = "SELECT r.id, r.account, r.agent_id, r.agent_name, r.chat_id, r.turn_id, \
+     r.risk, r.action, r.target, r.detail, r.cost_usd, r.fingerprint, r.state, r.created_ms, \
+     r.resolved_ms, p.permission FROM approval_requests r \
+     LEFT JOIN agent_profiles p ON p.id = r.agent_id";
 
 pub(super) fn get_in(
     connection: &rusqlite::Connection,
     account: &str,
     id: &str,
 ) -> CoreResult<ApprovalRequest> {
-    let query = format!("SELECT {COLUMNS} FROM approval_requests WHERE id = ?1 AND account = ?2");
+    let query = format!("{JOINED} WHERE r.id = ?1 AND r.account = ?2");
     connection
         .query_row(&query, params![id, account], |row| Ok(from_row(row)))
         .map_err(|_| CoreError::Settings(format!("no decision {id} on this account")))?
@@ -42,12 +57,20 @@ pub(super) fn from_row(row: &rusqlite::Row<'_>) -> CoreResult<ApprovalRequest> {
         cost_usd: row.get(10).map_err(sql)?,
         fingerprint: row.get(11).map_err(sql)?,
         state: row.get(12).map_err(sql)?,
-        // Recomputed rather than stored: whether a standing yes may be offered
-        // depends on the agent's permission *now*, not when the card was made.
-        trustable: trustable(risk, true),
         created_ms: row.get(13).map_err(sql)?,
         resolved_ms: row.get(14).map_err(sql)?,
+        // A missing permission is an agent that has been deleted, or a Chat
+        // Mode card that never had one. Neither may be trusted away.
+        trustable: trustable(risk, writes_now(row)?),
     })
+}
+
+/// Whether the agent behind this card may currently write at all.
+fn writes_now(row: &rusqlite::Row<'_>) -> CoreResult<bool> {
+    let permission: Option<String> = row.get(15).map_err(sql)?;
+    Ok(permission
+        .map(|level| PermissionMode::parse(&level).writes())
+        .unwrap_or(false))
 }
 
 /// Kills every card raised for a turn that is no longer running.
@@ -71,8 +94,8 @@ pub fn invalidate_turn(db: &AgentDb, turn_id: &str) -> CoreResult<usize> {
 pub fn pending(db: &AgentDb, account: &str) -> CoreResult<Vec<ApprovalRequest>> {
     db.with(|connection| {
         let query = format!(
-            "SELECT {COLUMNS} FROM approval_requests \
-             WHERE account = ?1 AND state = 'pending' ORDER BY created_ms DESC LIMIT 100"
+            "{JOINED} WHERE r.account = ?1 AND r.state = 'pending' \
+                     ORDER BY r.created_ms DESC LIMIT 100"
         );
         let mut statement = connection.prepare(&query).map_err(sql)?;
         let rows = statement

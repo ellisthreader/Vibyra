@@ -6,7 +6,14 @@
 //! model's. The real CLIs are covered by the fixture tests next door and by
 //! the live journeys, which no unit test can replace.
 
-use super::process::{run, TurnCommand, TurnExit, TurnHandle};
+use super::process::{run, TurnCommand, TurnHandle};
+
+// Every test below but the last needs a shell, so they are unix-only — which
+// makes `TurnExit` a unix-only import. At module scope it would be an unused
+// import on Windows, and `-D warnings` turns that into a failed release job.
+// See `platform_import_tests`.
+#[cfg(unix)]
+use super::process::TurnExit;
 
 #[cfg(unix)]
 fn fake(script: &str, prompt: &str) -> TurnCommand {

@@ -68,10 +68,6 @@ pub struct ApprovalRequest {
     pub resolved_ms: Option<i64>,
 }
 
-pub(super) const COLUMNS: &str =
-    "id, account, agent_id, agent_name, chat_id, turn_id, risk, action, \
-     target, detail, cost_usd, fingerprint, state, created_ms, resolved_ms";
-
 /// Raises a card, or answers immediately when policy already knows.
 ///
 /// `writes` is the agent's permission level, which is why a Plan-mode agent's

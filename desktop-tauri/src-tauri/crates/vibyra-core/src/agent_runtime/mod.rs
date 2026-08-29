@@ -18,12 +18,15 @@ mod codex_events;
 #[cfg(test)]
 mod codex_tests;
 pub mod events;
+#[cfg(test)]
+#[path = "platform_import_scan.rs"]
+mod platform_import_scan;
+#[cfg(test)]
+#[path = "platform_import_tests.rs"]
+mod platform_import_tests;
 pub mod process;
 mod process_io;
 mod process_kill;
-#[cfg(test)]
-#[path = "process_kill_tests.rs"]
-mod process_kill_tests;
 #[cfg(test)]
 mod process_tests;
 #[cfg(test)]
