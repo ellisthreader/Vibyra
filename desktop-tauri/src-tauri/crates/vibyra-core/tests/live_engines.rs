@@ -73,8 +73,19 @@ fn journey(engine: Engine) {
     // Turn one: a word the second turn can ask about, so a resume that
     // silently started a fresh conversation is detectable rather than merely
     // plausible.
-    let first = turn(&db, &chat.id, engine, &profile.home_path, "Reply with exactly: banana");
-    assert_eq!(first, TurnExit::Completed, "{} failed its first turn", engine.as_str());
+    let first = turn(
+        &db,
+        &chat.id,
+        engine,
+        &profile.home_path,
+        "Reply with exactly: banana",
+    );
+    assert_eq!(
+        first,
+        TurnExit::Completed,
+        "{} failed its first turn",
+        engine.as_str()
+    );
 
     let bound = agent_chats::get(&db, "live", &chat.id).unwrap().session_id;
     assert!(
@@ -90,7 +101,12 @@ fn journey(engine: Engine) {
         &profile.home_path,
         "What single word did I ask you to reply with? Answer with just that word.",
     );
-    assert_eq!(second, TurnExit::Completed, "{} failed its second turn", engine.as_str());
+    assert_eq!(
+        second,
+        TurnExit::Completed,
+        "{} failed its second turn",
+        engine.as_str()
+    );
 
     // The id must not have moved: a chat is one conversation for its whole life.
     assert_eq!(
@@ -115,13 +131,7 @@ fn journey(engine: Engine) {
     );
 }
 
-fn turn(
-    db: &AgentDb,
-    chat_id: &str,
-    engine: Engine,
-    cwd: &str,
-    prompt: &str,
-) -> TurnExit {
+fn turn(db: &AgentDb, chat_id: &str, engine: Engine, cwd: &str, prompt: &str) -> TurnExit {
     let chat = agent_chats::get(db, "live", chat_id).unwrap();
     let turn_id = vibyra_core::agentdb::ids::new_id();
     let planned = TurnPlan {

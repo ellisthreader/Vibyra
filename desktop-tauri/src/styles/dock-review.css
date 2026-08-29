@@ -42,7 +42,7 @@
   color: var(--text);
 }
 
-/* ── branch + tally ─────────────────────────────────────────────────────── */
+/* ── the shared head row ────────────────────────────────────────────────── */
 
 .review-head {
   display: flex;
@@ -50,33 +50,6 @@
   gap: 10px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--line-soft);
-}
-
-.review-head__branch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  color: var(--muted);
-}
-
-.review-head__branch code {
-  font-family: var(--font-mono);
-  font-size: var(--fs-hint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.review-head__stats {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  font-size: var(--fs-hint);
-  color: var(--dim);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 .review-add,
@@ -139,14 +112,16 @@
 .review-file__mark--deleted { color: var(--danger); background: var(--danger-soft); }
 .review-file__mark--renamed { color: var(--accent-2); background: var(--accent-soft); }
 
+/* The filename always survives, the directory gives way — done with two
+   spans rather than `direction: rtl`, which kept the name visible by
+   reordering the text and mangled any path holding a bidi-neutral character.
+   See `splitPath` in ReviewFileRow. */
 .review-file__path {
+  display: flex;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-hint);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  direction: rtl; /* a long path keeps its filename, not its prefix */
-  text-align: left;
 }
 
 .review-file__stats {

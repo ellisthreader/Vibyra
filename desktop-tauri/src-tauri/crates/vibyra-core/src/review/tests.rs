@@ -6,7 +6,7 @@ use crate::workspace::{prepare_safe_workspace, SafeWorkspace};
 use super::status::worktree_status;
 use super::{discard_worktree, file_diff, merge_back, ChangeKind};
 
-fn run(dir: &Path, args: &[&str]) {
+pub(super) fn run(dir: &Path, args: &[&str]) {
     let output = Command::new("git")
         .arg("-C")
         .arg(dir)
@@ -19,7 +19,7 @@ fn run(dir: &Path, args: &[&str]) {
 
 /// A committed repo plus a safe-mode worktree launched from a clean tree,
 /// exactly as `prepare_safe_workspace` builds one in production.
-fn repo_and_worktree(temp: &Path) -> (PathBuf, SafeWorkspace) {
+pub(super) fn repo_and_worktree(temp: &Path) -> (PathBuf, SafeWorkspace) {
     let repo = temp.join("repo");
     std::fs::create_dir_all(&repo).unwrap();
     run(&repo, &["init"]);
@@ -31,7 +31,7 @@ fn repo_and_worktree(temp: &Path) -> (PathBuf, SafeWorkspace) {
     (repo, safe)
 }
 
-fn read_lf(path: &Path) -> String {
+pub(super) fn read_lf(path: &Path) -> String {
     std::fs::read_to_string(path).unwrap().replace("\r\n", "\n")
 }
 
@@ -92,7 +92,7 @@ fn merge_back_lands_changes_without_touching_head_or_index() {
     let head = crate::workspace_preflight::git(&repo, &["rev-parse", "HEAD"]).unwrap();
     agent_edits(&safe);
 
-    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit).unwrap();
+    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit, &[]).unwrap();
     assert!(outcome.applied);
     assert!(outcome.conflicts.is_empty());
     // Normalized: Windows checkouts read back CRLF under git's autocrlf.
@@ -119,7 +119,7 @@ fn merge_back_conflicts_report_and_change_nothing() {
     // The user rewrote the same file while the agent worked.
     std::fs::write(repo.join("tracked.txt"), "mine\n").unwrap();
 
-    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit).unwrap();
+    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit, &[]).unwrap();
     assert!(!outcome.applied);
     assert_eq!(outcome.conflicts, vec!["tracked.txt".to_string()]);
     // All-or-nothing: the clean parts of the patch must not half-land either.
@@ -135,7 +135,7 @@ fn merge_back_conflicts_report_and_change_nothing() {
 fn untouched_worktree_merges_as_a_no_op() {
     let temp = tempfile::tempdir().unwrap();
     let (repo, safe) = repo_and_worktree(temp.path());
-    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit).unwrap();
+    let outcome = merge_back(&repo, &safe.cwd, &safe.base_commit, &[]).unwrap();
     assert!(!outcome.applied);
     assert!(outcome.conflicts.is_empty());
 }
@@ -160,6 +160,6 @@ fn review_refuses_paths_that_are_not_vibyra_worktrees() {
     let temp = tempfile::tempdir().unwrap();
     let (repo, _safe) = repo_and_worktree(temp.path());
     // The repo itself sits on the user's branch, not a vibyra/* one.
-    assert!(merge_back(&repo, &repo, "HEAD").is_err());
+    assert!(merge_back(&repo, &repo, "HEAD", &[]).is_err());
     assert!(discard_worktree(&repo, &repo).is_err());
 }

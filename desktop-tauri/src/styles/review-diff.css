@@ -1,42 +1,58 @@
-/* The diff a review file row expands into. Rendered on the terminal-screen
- * ground — the deepest well in the ladder — because it is program text, and
- * coloured only by git's own prefixes. Split from dock-review.css, which owns
- * the reading surface around it and sits near the 200-line ceiling. */
+/* The diff a review file row expands into: the scroll box and the window.
+ *
+ * Rendered on the terminal-screen ground — the deepest well in the ladder —
+ * because it is program text, and coloured only by git's own +/−. Aiming at a
+ * well-set printed patch rather than a code editor: hairlines by inset shadow,
+ * a generous line-height, monospace at `--fs-hint`, and no second saturated
+ * colour anywhere on the surface.
+ *
+ * This is a nested scroll box inside the dock's `.review-scroll`, and the row
+ * window measures itself against *this* one. The rules below are load-bearing
+ * for that: every row is exactly one line tall, so the list's height is a
+ * multiplication and a row's position is an index. Anything that wraps, pads
+ * vertically or adds a border to a row breaks the arithmetic — use an inset
+ * shadow for a hairline, and keep `white-space: pre`.
+ *
+ * Row internals live in `review-diff-rows.css`. */
 
 .review-diff {
+  position: relative;
   border-top: 1px solid var(--line-soft);
   background: var(--term-screen);
   max-height: 340px;
   overflow: auto;
-}
-
-.review-diff pre {
-  margin: 0;
-  padding: 8px 0;
+  /* A nested scroller that hands its overscroll to the panel behind it makes
+     the whole dock jump the moment a diff reaches its end. */
+  overscroll-behavior: contain;
+  padding: 6px 0;
   font-family: var(--font-mono);
   font-size: var(--fs-hint);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
-.review-diff__line {
-  display: block;
-  padding: 0 12px;
-  white-space: pre;
-  color: var(--term-muted);
+.review-diff:focus-visible {
+  outline: 1px solid var(--accent-border);
+  outline-offset: -1px;
 }
 
-.review-diff__line--add { color: var(--success); background: var(--success-soft); }
-.review-diff__line--del { color: var(--danger); background: var(--danger-soft); }
-.review-diff__line--hunk { color: var(--accent-2); }
-.review-diff__line--meta { color: var(--dim); }
+/* The measured row. Out of flow, out of the accessibility tree, and never
+   taller than one line — it is the only thing the window's maths trusts. */
+.review-diff__probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 
-.review-diff__more {
-  display: block;
-  width: 100%;
-  padding: 6px;
-  border: 0;
-  border-top: 1px solid var(--line-soft);
-  background: transparent;
-  color: var(--accent-2);
-  font-size: var(--fs-hint);
+/* Holds the full scroll height while carrying only the visible rows. Before
+   the probe has been read the rows sit in normal flow, so the first paint is
+   a short readable list rather than a stack at the origin. */
+.review-diff__body {
+  position: relative;
+}
+
+.review-diff__body--sized > .review-diff__row {
+  position: absolute;
+  left: 0;
 }

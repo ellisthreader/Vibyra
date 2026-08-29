@@ -1,0 +1,126 @@
+/* One workspace, one row — the Fleet level's row language, split from
+ * dock-fleet.css to keep both sheets under the 200-line ceiling.
+ *
+ * Two lines inside a tinted sub-panel, the same shape the changeset's file
+ * rows use: who and what state on top, then the branch and the tally. Nothing
+ * here is coloured except the status dot and the pip; the row is meant to be
+ * scanned, and a scan is ruined by a second colour competing with the first. */
+
+.fleet-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding-right: 8px;
+}
+
+.fleet-row + .fleet-row {
+  border-top: 1px solid var(--line-soft);
+}
+
+.fleet-row__open {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: var(--fs-ui);
+}
+
+button.fleet-row__open:hover {
+  background: var(--hover);
+}
+
+/* An orphan leads nowhere, so it must not feel like a link. */
+.fleet-row__open--static {
+  cursor: default;
+}
+
+.fleet-row__top {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fleet-row__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--fw-semi);
+}
+
+.fleet-row__pane {
+  flex-shrink: 0;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  color: var(--dim);
+}
+
+/* The state sentence sits left in the meta line and pushes the tally right;
+   its type and colours live in review-verbs.css. */
+.fleet-row__state {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-row__orphan-mark {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--hover);
+  color: var(--dim);
+}
+
+.fleet-row__meta {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.fleet-row__tally {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: var(--fs-hint);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Someone else is in this file too. Dim for a shared file, amber once the
+   ranges actually meet — a pip, never a banner. */
+.fleet-pip {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--dim);
+}
+
+.fleet-pip--warn {
+  background: var(--amber);
+}
+
+/* `ready` is the state the whole panel exists to surface and the pane grid has
+   no word for it, so it gets a dot built from the same tokens as the rest.
+   Accent rather than another green on purpose: `working` already owns green,
+   and "still running" versus "finished, come and look" are the two states this
+   list must never blur. Accent is the app's actionable colour, which is
+   exactly what a ready workspace is. */
+.adot--ready {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}

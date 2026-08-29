@@ -3,7 +3,7 @@ use std::process::Command;
 
 use crate::{CoreError, CoreResult};
 
-use super::git_bytes;
+use super::{git_bytes, git_root, repo_relative};
 
 /// The renderer must never receive an unbounded string; a diff past this is
 /// cut on a character boundary with an explicit marker.
@@ -12,26 +12,19 @@ const MAX_DIFF_BYTES: usize = 512 * 1024;
 /// One file's unified diff against the safe-mode base. Tracked files diff
 /// through git; a file the agent created and never added has no history to
 /// diff against, so it is compared to nothing via `--no-index`.
+///
+/// Run from the checkout root, because that is the frame `worktree_status`
+/// names its paths in — pointed at a subfolder instead, every path from a
+/// monorepo status listing missed as a pathspec and fell through to the
+/// untracked branch.
 pub fn file_diff(worktree: &Path, base: &str, path: &str) -> CoreResult<String> {
-    validate(path)?;
-    let tracked = git_bytes(worktree, &["diff", base, "--", path])?;
+    repo_relative(path)?;
+    let root = git_root(worktree)?;
+    let tracked = git_bytes(&root, &["diff", base, "--", path])?;
     if !tracked.is_empty() {
         return Ok(bounded(tracked));
     }
-    Ok(bounded(untracked_diff(worktree, path)?))
-}
-
-/// The path comes from a status listing the renderer echoed back; it must
-/// still name something inside the worktree, not wherever `..` points.
-fn validate(path: &str) -> CoreResult<()> {
-    let escapes =
-        Path::new(path).is_absolute() || path.split(['/', '\\']).any(|segment| segment == "..");
-    if path.is_empty() || escapes {
-        return Err(CoreError::InvalidPath(format!(
-            "not a worktree-relative path: {path}"
-        )));
-    }
-    Ok(())
+    Ok(bounded(untracked_diff(&root, path)?))
 }
 
 /// `git diff --no-index` exits 1 when the files differ — that is the answer,

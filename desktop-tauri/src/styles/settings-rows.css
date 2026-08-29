@@ -146,6 +146,9 @@
 .settings-status--success { color: var(--success); }
 .settings-status--warn { color: var(--amber); }
 .settings-status--working { color: var(--accent); }
+/* A state that is wrong rather than merely unfinished — a failing check run.
+   The fourth member of the same set, so it lives with the other three. */
+.settings-status--danger { color: var(--danger); }
 
 .settings-status--working i {
   animation: settings-status-pulse 1.4s ease-in-out infinite;

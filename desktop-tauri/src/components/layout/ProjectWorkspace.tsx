@@ -9,6 +9,7 @@ import {
   syncProjectVisibility,
 } from "../../lib/projectTransitions";
 import { useFocusVisibility } from "../../lib/useFocusVisibility";
+import { useReviewWatch } from "../../lib/useReviewWatch";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
@@ -28,6 +29,9 @@ export function ProjectWorkspace() {
   // Hands the full native flush rate to whichever pane holds the keyboard.
   useFocusVisibility();
   const project = projects.find((entry) => entry.id === activeId);
+  // Above the dock on purpose: the Review tab's badge has to be right whether
+  // or not the panel is open, so the fleet cannot be watched from inside it.
+  useReviewWatch(activeId, project?.root ?? null);
   const showTerminals = terminalsVisible(size, tool !== null);
 
   useEffect(() => {

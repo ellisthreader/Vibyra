@@ -3,6 +3,7 @@ import type { ComponentType, KeyboardEvent } from "react";
 
 import type { DockTool } from "../../lib/dockLayout";
 import { FolderIcon, GitBranchIcon, MemoryIcon, SparklesIcon } from "../common/Icons";
+import { useReadyCount } from "../review/fleet/useFleet";
 import { MonitorIcon } from "../common/StatusIcons";
 
 /**
@@ -32,6 +33,11 @@ interface Props {
 
 export function DockTabs({ tool, onTool }: Props) {
   const buttons = useRef<Partial<Record<DockTool, HTMLButtonElement | null>>>({});
+  // How many safe-mode workspaces are finished and unread. Review is the one
+  // tool whose contents change while you are not looking at it, so it is the
+  // one tab that needs to say so — the count comes from the same `fleetRows`
+  // the panel draws, never a second tally that could disagree with the list.
+  const ready = useReadyCount();
 
   const moveFocus = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = index;
@@ -51,6 +57,7 @@ export function DockTabs({ tool, onTool }: Props) {
       {TOOLS.map((entry, index) => {
         const Icon = entry.icon;
         const active = tool === entry.id;
+        const badge = entry.id === "review" && ready > 0 ? ready : 0;
         return (
           <button
             key={entry.id}
@@ -64,12 +71,18 @@ export function DockTabs({ tool, onTool }: Props) {
             aria-controls="dock-panel"
             tabIndex={active || (tool === null && index === 0) ? 0 : -1}
             title={active ? `Hide ${entry.label}` : entry.label}
-            className={`dock__tab ${active ? "dock__tab--active" : ""}`}
+            aria-label={badge > 0 ? `${entry.label} — ${badge} ready` : undefined}
+            className={`dock__tab ${active ? "dock__tab--active" : ""} ${badge > 0 ? "dock__tab--badged" : ""}`}
             onClick={() => onTool(active ? null : entry.id)}
             onKeyDown={(event) => moveFocus(event, index)}
           >
             <Icon size={13} />
             <span className="dock__tab-label">{entry.label}</span>
+            {badge > 0 && (
+              <span className="pill dock__tab-badge" aria-hidden="true">
+                {badge}
+              </span>
+            )}
           </button>
         );
       })}

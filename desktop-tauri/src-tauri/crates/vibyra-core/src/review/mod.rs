@@ -1,18 +1,24 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use serde::Serialize;
 
 use crate::{CoreError, CoreResult};
 
+mod conflicts;
 mod diff;
 mod merge;
+mod registry;
+#[cfg(test)]
+mod scope_tests;
+mod scratch;
 mod status;
 #[cfg(test)]
 mod tests;
 
 pub use diff::file_diff;
 pub use merge::{discard_worktree, merge_back};
+pub use registry::{list_worktrees, prune_worktrees, PruneOutcome, WorktreeEntry};
 pub use status::worktree_status;
 
 // Reviewing a safe-mode worktree: what changed, one file's diff, and the two
@@ -83,4 +89,35 @@ pub(crate) fn vibyra_branch(worktree: &Path) -> CoreResult<String> {
         )));
     }
     Ok(branch)
+}
+
+/// The top of the checkout that `path` belongs to.
+///
+/// Every review command is handed the *project* folder, which in a monorepo
+/// is a subfolder of the repository. Running git from there and scoping with
+/// `-- .` made review blind to anything the agent touched outside it, and
+/// made merge drop it — silently, which is the one thing this module must
+/// never do. Anchoring status, diff and merge at the root instead also makes
+/// their paths mean the same thing, so a path from a status listing is a
+/// pathspec the diff and the merge both understand.
+pub(crate) fn git_root(path: &Path) -> CoreResult<PathBuf> {
+    if !path.is_dir() {
+        return Err(CoreError::InvalidPath(
+            "that folder is not available".to_string(),
+        ));
+    }
+    Ok(PathBuf::from(git(path, &["rev-parse", "--show-toplevel"])?))
+}
+
+/// Paths arrive from the renderer echoing a status listing back at us; they
+/// must still name something inside the checkout, not wherever `..` points.
+pub(crate) fn repo_relative(path: &str) -> CoreResult<()> {
+    let escapes =
+        Path::new(path).is_absolute() || path.split(['/', '\\']).any(|segment| segment == "..");
+    if path.is_empty() || escapes {
+        return Err(CoreError::InvalidPath(format!(
+            "not a worktree-relative path: {path}"
+        )));
+    }
+    Ok(())
 }

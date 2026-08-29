@@ -9,6 +9,17 @@ use crate::{CoreError, CoreResult};
 // GitHub through the official `gh` CLI, the same boundary the provider
 // accounts keep: authorization stays with the official tool, and no token
 // ever passes through Vibyra. Everything here shells out; nothing is stored.
+//
+// The two halves of a pull request's life live beside this file rather than
+// in it: `branches` answers what a PR should target, `pr_state` what became
+// of it. Both reuse the `gh` and `run` helpers below, so the boundary above
+// is stated and enforced in exactly one place.
+
+mod branches;
+mod pr_state;
+
+pub use branches::{list_branches, RepoBranches};
+pub use pr_state::{pr_state, PrState};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -17,6 +28,10 @@ pub struct GithubStatus {
     pub authed: bool,
     /// The `origin` remote's URL, when the repo has one to push to.
     pub origin: Option<String>,
+    /// Whether that remote actually lives on github.com. A GitLab or
+    /// self-hosted origin can be pushed to, but `gh pr create` would then
+    /// fail after the push — so the PR action needs this, not just `origin`.
+    pub origin_github: bool,
 }
 
 /// Whether a pull request could be opened from this project — three probes,
@@ -38,8 +53,19 @@ pub(crate) fn github_status_with_path(project_root: &Path, path: Option<&OsStr>)
     GithubStatus {
         gh_installed,
         authed,
+        origin_github: origin.as_deref().is_some_and(is_github_remote),
         origin,
     }
+}
+
+/// The three shapes a github.com remote takes: HTTPS, scp-style SSH, and
+/// explicit ssh://. Host matching is exact — `github.com.evil.example`
+/// must not pass.
+pub(crate) fn is_github_remote(url: &str) -> bool {
+    let url = url.trim();
+    url.strip_prefix("https://github.com/").is_some()
+        || url.strip_prefix("git@github.com:").is_some()
+        || url.strip_prefix("ssh://git@github.com/").is_some()
 }
 
 /// Commits the worktree's pending work onto its branch, pushes the branch to

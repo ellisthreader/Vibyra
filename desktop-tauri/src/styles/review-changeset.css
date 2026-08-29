@@ -1,0 +1,158 @@
+/* The Changeset level: the way back, the tally, and the per-file tick.
+ *
+ * Everything above the file list is fixed chrome in one column — back bar,
+ * tally, overlap banner — so the only thing that scrolls is the changeset
+ * itself and a diff opened inside it. Colour stays on tokens; the only
+ * saturated marks here are the overlap pips, which earn it by being the one
+ * thing on the surface that means "someone else is holding this file".
+ */
+
+/* ── back bar ───────────────────────────────────────────────────────────── */
+
+.review-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 6px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.review-back__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 4px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+}
+
+.review-back__btn:hover { background: var(--hover); color: var(--text); }
+
+.review-back__chevron { display: inline-flex; transform: rotate(180deg); }
+
+.review-back__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex: none;
+  background: var(--dim);
+}
+
+.review-back__dot--working { background: var(--accent); }
+.review-back__dot--attention { background: var(--amber); }
+.review-back__dot--idle { background: var(--success); }
+
+/* The head's title styling lives in review-verbs.css with the 2026-08-29
+   re-skin; the branch chip it replaced is gone (the branch survives in the
+   title's tooltip). */
+
+/* ── tally and whole-selection actions ──────────────────────────────────── */
+
+.review-tally {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.review-tally__count {
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.review-tally__stats { display: inline-flex; gap: 6px; font-variant-numeric: tabular-nums; }
+
+.review-tally__acts {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.review-tally__act {
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+}
+
+.review-tally__act:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.review-tally__act:disabled { opacity: 0.45; }
+
+/* ── overlap banner ─────────────────────────────────────────────────────── */
+
+.review-overlap {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-control);
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+
+.review-overlap--conflict { background: var(--danger-soft); color: var(--danger); }
+
+.review-overlap svg { flex: none; margin-top: 1px; }
+
+.review-overlap code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  overflow-wrap: anywhere;
+}
+
+/* ── the file row's tick, path and pip ──────────────────────────────────── */
+
+.review-file__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 10px;
+}
+
+.review-file__head:hover { background: var(--hover); }
+
+/* A real checkbox, sized to the row rather than restyled into a div: this
+   control decides what lands in the user's project, so it keeps its own
+   keyboard behaviour and its own accessible name. */
+.review-file__check {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  accent-color: var(--action);
+  cursor: pointer;
+}
+
+/* The disclosure no longer owns the row's hover; its container does. */
+.review-file__row { padding-left: 0; }
+.review-file__row:hover { background: transparent; }
+
+.review-file__dir {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dim);
+}
+
+.review-file__name { flex: none; color: var(--muted); }
+
+/* Dim and quiet at `touch`: two agents in different functions of one file is
+   ordinary work, and a loud mark there is how a radar becomes noise. */
+.review-file__pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  align-self: center;
+  background: var(--dim);
+}
+
+.review-file__pip--overlap { background: var(--amber); }
+.review-file__pip--conflict { background: var(--danger); }

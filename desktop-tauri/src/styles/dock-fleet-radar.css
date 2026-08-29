@@ -1,0 +1,163 @@
+/* The collision radar and the fleet's land-all footer — the two places the
+ * Fleet level is allowed to be loud, split from dock-fleet.css so both sheets
+ * stay under the 200-line ceiling.
+ *
+ * The severity tint sits on the row rather than on the section, because one
+ * radar can hold an overlap and a conflict at once and the user has to be able
+ * to tell which is which without reading. */
+
+.fleet-radar {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+  overflow: hidden;
+}
+
+.fleet-radar__head {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.fleet-radar--conflict .fleet-radar__head {
+  color: var(--danger);
+}
+
+.fleet-radar__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.radar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 8px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.radar-row--overlap {
+  background: var(--amber-soft);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* Someone already landed on this path, so the other patch will not apply. */
+.radar-row--conflict {
+  background: var(--danger-soft);
+  box-shadow: inset 2px 0 0 var(--danger);
+}
+
+.radar-row__path {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  color: var(--text);
+}
+
+.radar-row__parties {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  font-size: var(--fs-hint);
+  color: var(--muted);
+}
+
+.radar-row__party {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.radar-row__landed {
+  font-style: normal;
+  font-size: var(--fs-tiny);
+  color: var(--danger);
+}
+
+.radar-row__go {
+  justify-self: end;
+  max-width: 17ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.radar-row__go:hover {
+  background: var(--hover-strong);
+  color: var(--text);
+}
+
+/* ── land all that apply cleanly ────────────────────────────────────────── */
+
+.fleet-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--rail);
+}
+
+.fleet-foot__land {
+  width: 100%;
+}
+
+.fleet-foot__report {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--fs-body);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fleet-foot__report strong {
+  color: var(--text);
+  font-weight: var(--fw-semi);
+}
+
+/* What bounced, still linked to its changeset. A failure that is only a
+   number is a failure the user cannot act on. */
+.fleet-foot__stuck {
+  padding: 1px 8px;
+  border: 1px solid color-mix(in srgb, var(--amber) 38%, transparent);
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+}
+
+.fleet-foot__stuck:hover {
+  background: color-mix(in srgb, var(--amber) 24%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-row__go {
+    transition: none;
+  }
+}
