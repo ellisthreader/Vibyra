@@ -1,0 +1,72 @@
+/* One teammate: the chat list, the header, and the surface below it. */
+
+.agent-surface {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+}
+
+.agent-surface__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The header sits a row below the titlebar, so it takes the shared seam
+   height rather than inventing its own — see --subhead-h in tokens.css. */
+.agent-head {
+  flex: none;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.agent-head__identity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: var(--subhead-h);
+  padding: 0 16px;
+}
+
+.agent-head__names {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.agent-head__names h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.005em;
+}
+
+.agent-head__names p {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+.agent-head__busy {
+  color: var(--accent-2);
+}
+
+.agent-head__identity .dock__tabs {
+  margin-left: auto;
+}
+
+/* The one piece of chrome that earns its space: a CLI too old for structured
+   chat is the difference between "it's broken" and "run npm update". */
+.agent-head__blocked {
+  margin: 0;
+  padding: 8px 16px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}

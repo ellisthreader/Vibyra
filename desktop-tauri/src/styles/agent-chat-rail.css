@@ -1,0 +1,138 @@
+/* The per-agent chat list, and Chat Mode's, which share it. */
+
+/* --------------------------------------------------------- the chat list */
+
+.chat-rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: var(--rail);
+}
+
+.chat-rail__head {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: none;
+  padding: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.chat-rail__new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 30px;
+  border-radius: var(--r-control);
+  background: var(--action);
+  color: var(--on-action);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+}
+
+.chat-rail__new:hover {
+  background: var(--action-hover);
+}
+
+.chat-rail__search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  color: var(--dim);
+}
+
+.chat-rail__search input {
+  flex: 1;
+  min-width: 0;
+  min-height: 28px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-body);
+}
+
+.chat-rail__search input:focus {
+  outline: none;
+}
+
+.chat-rail__list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.chat-rail__list li {
+  position: relative;
+}
+
+.chat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  text-align: left;
+}
+
+.chat-row:hover {
+  background: var(--hover);
+}
+
+.chat-row.is-on {
+  background: var(--surface);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.chat-row__title {
+  overflow: hidden;
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-row__meta {
+  color: var(--dim);
+  font-size: var(--fs-tiny);
+  white-space: nowrap;
+}
+
+.chat-row__tag {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Row actions appear on hover rather than sitting there: three glyphs on
+   every row is a list you read past instead of down. */
+.chat-row__actions {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--e-standard);
+}
+
+.chat-rail__list li:hover .chat-row__actions,
+.chat-rail__list li:focus-within .chat-row__actions {
+  opacity: 1;
+}

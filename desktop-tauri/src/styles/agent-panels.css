@@ -1,0 +1,178 @@
+/* Dashboard, decisions, routines and skills — the four panels the rail opens.
+
+   They share one page shape so switching between them does not feel like
+   switching apps: a heading, a sentence saying what the panel is for and what
+   its limits are, then the list. */
+
+.panel {
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+  overflow-y: auto;
+}
+
+.panel__head {
+  margin-bottom: 18px;
+}
+
+.panel__head h2 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.008em;
+}
+
+.panel__head p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.62;
+}
+
+.panel__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: var(--fs-body);
+}
+
+.panel__quiet {
+  margin: 8px 0;
+  color: var(--dim);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.panel__quiet--foot {
+  margin-top: 18px;
+  font-size: var(--fs-hint);
+}
+
+.panel__error {
+  margin: 8px 0;
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.panel__new {
+  min-height: 30px;
+  margin-bottom: 14px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+}
+
+.panel__new:hover {
+  border-color: var(--accent-border);
+  background: var(--hover);
+}
+
+.panel__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------- dashboard */
+
+.dashboard {
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+  overflow-y: auto;
+}
+
+.dashboard__block {
+  margin-bottom: 26px;
+}
+
+.dashboard__block .section-label {
+  display: block;
+  margin-bottom: 9px;
+}
+
+.dashboard__quiet {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--fs-body);
+}
+
+.dashboard__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dashboard__more,
+.dashboard__list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-body);
+  text-align: left;
+}
+
+.dashboard__more:hover,
+.dashboard__list button:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.dashboard__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__when {
+  flex: none;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+.dashboard__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__chips button {
+  min-height: 26px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--muted);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-medium);
+}
+
+.dashboard__chips button:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+}

@@ -9,6 +9,7 @@ use vibyra_core::pty::{FlushConfig, PtyManager};
 use vibyra_core::settings::Settings;
 
 use crate::account_session::AccountSessionManager;
+use crate::agent_mode::AgentHub;
 use crate::ai_usage::AiLimits;
 use crate::ai_usage_guard::AiUsageGuard;
 use crate::commands::voice::VoiceRecording;
@@ -18,6 +19,9 @@ use crate::sink::ChannelSink;
 
 pub struct AppState {
     pub account: AccountSessionManager,
+    /// Agent Mode's per-account world. Opened on first use, closed on
+    /// sign-out; see `agent_mode::hub`.
+    pub agents: Arc<AgentHub>,
     pub manager: Arc<PtyManager>,
     pub sink: Arc<ChannelSink>,
     pub preview: Arc<PreviewManager>,
@@ -61,6 +65,7 @@ impl AppState {
             .unwrap_or_else(|| std::env::temp_dir().join("vibyra-ai-usage.json"));
         Self {
             account: AccountSessionManager::default(),
+            agents: Arc::new(AgentHub::default()),
             manager,
             sink,
             preview: PreviewManager::new(),

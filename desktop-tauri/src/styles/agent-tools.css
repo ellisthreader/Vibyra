@@ -1,0 +1,153 @@
+/* Tool blocks, file-change lists and the empty state — the parts of a
+   transcript that are not prose. */
+
+/* ------------------------------------------------------------- tool calls */
+
+.tool-block {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  overflow: hidden;
+}
+
+.tool-block.is-failed {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+}
+
+.tool-block__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  min-width: 0;
+}
+
+.tool-block__name {
+  flex: none;
+  color: var(--accent-2);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-heavy);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tool-block__summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-block__exit {
+  flex: none;
+  color: var(--danger);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-bold);
+}
+
+.tool-block__output summary {
+  padding: 0 11px 8px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  cursor: pointer;
+}
+
+.tool-block__output pre {
+  max-height: 320px;
+  margin: 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line-soft);
+  overflow: auto;
+  background: var(--term-screen);
+  color: var(--term-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------- file changes */
+
+.transcript__files ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 5px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript__files li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.transcript__files code {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transcript__change {
+  flex: none;
+  min-width: 46px;
+  color: var(--dim);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.transcript__change--add {
+  color: var(--success);
+}
+
+.transcript__change--delete {
+  color: var(--danger);
+}
+
+.transcript__notice {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--r-card);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+.transcript__notice--error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.transcript__notice--info {
+  background: var(--hover);
+  color: var(--muted);
+}
+
+.chat-empty {
+  max-width: 460px;
+  margin: auto;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.chat-empty h3 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+}
+
+.chat-empty p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+}

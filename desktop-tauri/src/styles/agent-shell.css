@@ -1,0 +1,165 @@
+/* Agent and Chat mode's frame: the mode switch, the shell that holds one mode
+   at a time, and the primary rail.
+
+   The shell rule is the load-bearing one. Code Mode is hidden with `hidden`,
+   never unmounted — its panes carry live PTYs with xterm renderers and
+   scrollback, and remounting them would cost both. `display: contents` on the
+   wrapper keeps the existing three-column grid working untouched. */
+
+.shell__mode {
+  display: contents;
+}
+
+.shell__mode[hidden] {
+  display: none;
+}
+
+/* The titlebar switch. Shape comes from nav-segmented.css; only the spacing
+   that puts it beside the wordmark belongs here. */
+.mode-switch {
+  margin-left: 14px;
+}
+
+.mode-switch button {
+  min-height: 26px;
+  padding: 0 10px;
+}
+
+.agent-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--workspace);
+  background-image: var(--wash);
+}
+
+/* ---------------------------------------------------------------- the rail */
+
+.agent-rail__panels {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.agent-rail__panel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.agent-rail__panel:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.agent-rail__panel.is-on {
+  color: var(--text);
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.agent-rail__panel svg {
+  flex: none;
+  color: var(--dim);
+}
+
+.agent-rail__panel.is-on svg {
+  color: var(--accent-2);
+}
+
+/* The one count in the rail, and it only ever means "these need you". */
+.agent-rail__count {
+  margin-left: auto;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 9px;
+  background: var(--ask-soft);
+  color: var(--ask);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-heavy);
+  text-align: center;
+}
+
+.agent-rail__roster {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-rail__empty,
+.chat-rail__empty {
+  padding: 4px 9px 10px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.agent-rail__new {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 30px;
+  margin-top: 6px;
+  padding: 0 9px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+}
+
+.agent-rail__new:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+  background: var(--hover);
+}
+
+.agent-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 9px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  text-align: left;
+}
+
+.agent-row:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.agent-row.is-on {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.agent-row__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-row__working {
+  flex: none;
+}

@@ -1,0 +1,77 @@
+/* The approval card.
+
+   Owns the one use of the `ask` hue in the product: cobalt already means
+   information and carries every primary button, amber already means something
+   is wrong, and a decision is neither. */
+
+/* ------------------------------------------------------------- decisions */
+
+/* The `ask` hue and nothing else uses it: cobalt already means information,
+   amber already means something is wrong, and a decision is neither. */
+.approval {
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ask);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.approval--spend,
+.approval--publish,
+.approval--secret {
+  border-left-color: var(--amber);
+}
+
+.approval--destructive {
+  border-left-color: var(--danger);
+}
+
+.approval__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 7px;
+  font-size: var(--fs-ui);
+}
+
+.approval__who {
+  color: var(--text);
+  font-weight: var(--fw-bold);
+}
+
+.approval__verb {
+  color: var(--muted);
+}
+
+.approval__target {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+}
+
+.approval__detail {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.approval__cost {
+  margin: 0 0 9px;
+  color: var(--amber);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+
+.approval__once {
+  margin: 0 0 9px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+.approval__actions {
+  display: flex;
+  gap: 8px;
+}

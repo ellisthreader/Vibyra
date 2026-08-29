@@ -5,6 +5,7 @@ import { useAgentStore } from "../state/agentStore";
 import { useModelCatalogStore } from "../state/modelCatalogStore";
 import { useProjectStore } from "../state/projectStore";
 import { useProviderAccountStore } from "../state/providerAccountStore";
+import { adoptRememberedMode } from "../state/agentModeStore.ts";
 import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
@@ -58,6 +59,10 @@ function useAppStartup(): void {
       {
         initializeWorkspace: async () => {
           await useSettingsStore.getState().load();
+          // Straight after settings, before the workspace paints: the window
+          // should open in whichever of the three modes it was left in, not
+          // flash Code Mode on the way to Agent Mode.
+          adoptRememberedMode();
           void refreshConnectedAccounts();
           await useWorkspaceStore.getState().init();
           await useProjectStore.getState().init();

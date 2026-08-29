@@ -1,7 +1,7 @@
 mod private;
 mod watch;
 
-pub use private::{harden, write_private_atomic};
+pub use private::{harden, harden_dir, write_private_atomic};
 pub use watch::{FsChange, WorkspaceWatcher};
 
 use std::path::Path;

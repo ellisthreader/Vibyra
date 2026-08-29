@@ -1,0 +1,128 @@
+/* The composer, and the line above it that says what this turn can reach.
+
+   That line is the last honest moment before something happens, which is why
+   it is here and not two panes away in Settings. */
+
+.composer {
+  flex: none;
+  padding: 10px 22px 16px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+
+.composer__reach {
+  max-width: 760px;
+  margin: 0 auto 8px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.composer__reach--detached {
+  color: var(--muted);
+}
+
+.composer__error {
+  max-width: 760px;
+  margin: 0 auto 8px;
+  padding: 7px 11px;
+  border-radius: var(--r-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.composer__field {
+  max-width: 760px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--term-input);
+  transition: border-color var(--t-base) var(--e-standard);
+}
+
+.composer__field:focus-within {
+  border-color: var(--accent-border);
+}
+
+.composer__field textarea {
+  display: block;
+  width: 100%;
+  padding: 12px 14px 6px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-ui);
+  line-height: 1.6;
+  resize: none;
+}
+
+.composer__field textarea:focus {
+  outline: none;
+}
+
+.composer__actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px 9px 14px;
+}
+
+.permission-picker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.permission-picker select {
+  min-height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-control);
+}
+
+.composer__send,
+.composer__stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0 14px;
+  border-radius: var(--r-control);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+}
+
+.composer__send {
+  background: var(--action);
+  color: var(--on-action);
+}
+
+.composer__send:hover:not(:disabled) {
+  background: var(--action-hover);
+}
+
+.composer__send:disabled {
+  background: var(--elevated);
+  color: var(--dim);
+  cursor: default;
+}
+
+/* Stop takes Send's place rather than sitting beside it: a second button that
+   only sometimes matters is one people hunt for exactly when they need it. */
+.composer__stop {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.composer__stop:hover {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  color: var(--danger);
+}

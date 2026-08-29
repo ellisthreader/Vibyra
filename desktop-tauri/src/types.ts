@@ -145,6 +145,10 @@ export interface Settings {
   customAgents: AgentSpec[];
   projects: ProjectSpec[];
   activeProjectId: string | null;
+  /** App-wide stops for scheduled work and agent-to-agent messages. */
+  routinesPaused: boolean;
+  agentMailPaused: boolean;
+  lastMode: "agent" | "code" | "chat";
 }
 
 export type TermEvent =

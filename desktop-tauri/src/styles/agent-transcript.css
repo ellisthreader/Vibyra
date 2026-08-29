@@ -1,0 +1,99 @@
+/* The transcript.
+
+   Each kind of thing gets a shape rather than a tint: a prompt is a set-in
+   block, an answer is plain prose, a tool is a bordered box that folds, a file
+   change is a list, and only a failure carries a hue. Six kinds distinguished
+   by colour alone would fail at a glance and fail entirely for anyone who
+   cannot separate the tints. */
+
+.chat-surface {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.chat-surface__scroll {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 22px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript__quiet {
+  max-width: 520px;
+  margin: 48px auto;
+  color: var(--dim);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* What the person said. Inset and bordered on one side rather than a bubble:
+   at this width a right-aligned bubble makes the eye jump columns. */
+.transcript__prompt {
+  margin: 0;
+  padding: 9px 13px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: var(--fs-ui);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.transcript__say {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-ui);
+  line-height: 1.68;
+  white-space: pre-wrap;
+}
+
+/* A caret while text is arriving, so a pause reads as thinking rather than as
+   the app having stopped. */
+.transcript__say.is-streaming::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--accent-2);
+  vertical-align: text-bottom;
+  animation: transcript-caret 1s steps(2, start) infinite;
+}
+
+@keyframes transcript-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.transcript__thinking summary {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.transcript__thinking p {
+  margin: 6px 0 0;
+  padding-left: 11px;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

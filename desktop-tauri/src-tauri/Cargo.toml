@@ -6,6 +6,20 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 parking_lot = "0.12"
 thiserror = "2"
+# Agent Mode's durable store. `bundled` compiles SQLite itself rather than
+# linking whatever the build host happens to ship, so the WAL/foreign-key
+# behaviour the migrations rely on is the same on every platform we release.
+rusqlite = { version = "0.40", features = ["bundled"] }
+# Routine schedules are civil-time rules ("09:00 on weekdays"), so the next
+# run has to be resolved through a real timezone database or it drifts an hour
+# twice a year. chrono-tz carries the IANA rules; chrono applies them.
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+chrono-tz = "0.10"
+uuid = { version = "1", features = ["v4", "v7"] }
+# The approval broker's fingerprint. A 32-bit non-cryptographic hash is fine
+# for noticing that a terminal screen changed; it is not fine for a token that
+# authorises spending money, where a collision is the whole attack.
+sha2 = "0.10"
 
 [package]
 name = "vibyra-desktop"
@@ -20,6 +34,7 @@ name = "vibyra_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dev-dependencies]
+tempfile = "3"
 # The exact verifier `tauri-plugin-updater` uses, so this crate proves the
 # shipped public key against a real signature rather than a lookalike.
 minisign-verify = "0.2"
@@ -46,6 +61,7 @@ time = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "multipart", "json"] }
 getrandom = "0.3"
 tokio = { version = "1", default-features = false, features = ["time"] }
+chrono = { workspace = true }
 arboard = { version = "3.6", features = ["wayland-data-control"] }
 # Only the `system` feature: disks, networks, components and users are all
 # extra probes we never read. Pinned to 0.38, which declares MSRV 1.88 to match

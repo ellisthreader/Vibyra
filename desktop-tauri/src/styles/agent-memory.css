@@ -1,0 +1,116 @@
+/* The memory ledger and the deletion confirmation.
+
+   Split from agent-settings.css so the shared field/row language stays in one
+   sheet and the two lists that are specific to a teammate live in another. */
+
+/* ---------------------------------------------------------------- memory */
+
+.memory-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.memory-row--proposed {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.memory-row.is-pinned {
+  border-left: 2px solid var(--accent);
+}
+
+.memory-row p {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+.memory-row__class {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--hover);
+  color: var(--dim);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.memory-row__class--constraint,
+.memory-row__class--decision {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.memory-row__actions {
+  display: flex;
+  gap: 2px;
+}
+
+.memory-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.memory-add input {
+  flex: 1;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--term-input);
+  color: var(--text);
+  font-size: var(--fs-body);
+}
+
+.memory-add input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+/* --------------------------------------------------------------- danger */
+
+.settings-card--danger {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+}
+
+.btn-ghost--danger {
+  color: var(--danger);
+}
+
+.btn-ghost--danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.danger-confirm {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--r-card);
+  background: var(--danger-soft);
+}
+
+.danger-confirm p {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+.danger-confirm input {
+  width: 100%;
+  min-height: 30px;
+  margin-bottom: 10px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--term-input);
+  color: var(--text);
+  font-size: var(--fs-ui);
+}

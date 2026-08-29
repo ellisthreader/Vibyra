@@ -1,0 +1,154 @@
+/* Routines and skills: the two list-and-editor panels. */
+
+.routine-list,
+.skill-list,
+.assign-list,
+.allow-list,
+.place-list,
+.memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.routine-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.routine-row.is-paused {
+  opacity: 0.65;
+}
+
+.routine-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.routine-row__name {
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+}
+
+.routine-row__meta {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+/* The last result is a sentence, not a pill: the cases worth showing are
+   "it failed and here is why" and "it was skipped because the app was shut",
+   and both need words. */
+.routine-row__last {
+  margin-top: 3px;
+  font-size: var(--fs-hint);
+}
+
+.routine-row__last--failed {
+  color: var(--danger);
+}
+
+.routine-row__last--skipped {
+  color: var(--amber);
+}
+
+.routine-row__last--completed,
+.routine-row__last--running {
+  color: var(--muted);
+}
+
+.routine-row__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  flex: none;
+}
+
+.routine-row__next {
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  white-space: nowrap;
+}
+
+.routine-row__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.routine-editor,
+.skill-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+
+.routine-editor__schedule {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.routine-editor__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.routine-editor__days button {
+  min-width: 42px;
+  min-height: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--dim);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-bold);
+}
+
+.routine-editor__days button.is-on {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-2);
+}
+
+/* The resolved sentence. A schedule is easy to set and hard to read back, so
+   what it will actually do is spelled out before it can be saved. */
+.routine-editor__resolved {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+
+.routine-editor__warn {
+  margin: 0;
+  color: var(--amber);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.routine-editor__actions,
+.skill-editor__actions,
+.danger-confirm__actions {
+  display: flex;
+  gap: 8px;
+}

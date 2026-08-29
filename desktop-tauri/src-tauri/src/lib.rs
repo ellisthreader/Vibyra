@@ -7,6 +7,7 @@ mod account_session;
 #[cfg(test)]
 mod account_tests;
 mod account_types;
+mod agent_mode;
 mod ai_usage;
 mod ai_usage_guard;
 mod ai_usage_limits;
@@ -105,7 +106,14 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(state::AppState::new())
         .setup(|app| {
+            use tauri::Manager;
+
             model_watch::spawn(app.handle().clone());
+            // The routine scheduler runs for the life of the process and does
+            // nothing whenever no account is signed in, so it can start here
+            // rather than being wired to the sign-in event.
+            let hub = std::sync::Arc::clone(&app.state::<state::AppState>().agents);
+            agent_mode::scheduler::start(app.handle().clone(), hub);
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and

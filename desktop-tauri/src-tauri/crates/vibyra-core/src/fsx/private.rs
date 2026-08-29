@@ -41,6 +41,21 @@ pub fn harden(path: &Path) {
     }
 }
 
+/// Tightens an existing directory to owner-only.
+///
+/// Deliberately not `harden`: that sets 0600, and a directory without its
+/// execute bit cannot be entered, so hardening a folder the way a file is
+/// hardened makes everything inside it unreachable — including, in the case
+/// this was written for, an already-open SQLite database.
+pub fn harden_dir(path: &Path) {
+    let _ = path;
+    #[cfg(unix)]
+    if path.is_dir() {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -54,6 +69,28 @@ mod tests {
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "second");
         let strays = std::fs::read_dir(dir.path()).unwrap().count();
         assert_eq!(strays, 1, "a temp file was left behind");
+    }
+
+    /// The trap this pair exists for: 0600 on a directory locks everything
+    /// inside it away, so the two hardeners must not be interchangeable.
+    #[cfg(unix)]
+    #[test]
+    fn a_hardened_directory_can_still_be_entered() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempfile::tempdir().unwrap();
+        let nested = dir.path().join("private");
+        std::fs::create_dir(&nested).unwrap();
+        harden_dir(&nested);
+        assert_eq!(
+            nested.metadata().unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+        std::fs::write(nested.join("inside"), b"reachable").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(nested.join("inside")).unwrap(),
+            "reachable"
+        );
     }
 
     #[cfg(unix)]

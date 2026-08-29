@@ -1,8 +1,15 @@
 pub mod account;
+pub mod agent_approvals_cmd;
+pub mod agent_chat;
 pub mod agent_chat_prompt;
+pub mod agent_config;
 pub mod agent_conversations;
 #[cfg(test)]
 mod agent_conversations_tests;
+pub mod agent_mail_cmd;
+pub mod agent_roster;
+pub mod agent_routines_cmd;
+pub mod agent_skills_cmd;
 pub mod agents;
 pub mod ai;
 pub mod ai_memory;

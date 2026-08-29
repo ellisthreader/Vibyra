@@ -1,0 +1,130 @@
+/* Attachments, handoffs, cross-chat search, skill history and the mail trail —
+   the pieces that hang off a surface rather than being one. */
+
+.composer__attach {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.composer__attach-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--dim);
+}
+
+.composer__attach-add:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+}
+
+.composer__attach-list {
+  display: flex;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  overflow: hidden;
+  list-style: none;
+}
+
+.composer__attach-list li {
+  max-width: 140px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--hover);
+  color: var(--muted);
+  font-size: var(--fs-tiny);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer__attach-error {
+  color: var(--danger);
+  font-size: var(--fs-tiny);
+}
+
+/* ------------------------------------------------------------- handoffs */
+
+.handoff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 22px 0;
+}
+
+.handoff select,
+.handoff input {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--term-input);
+  color: var(--text);
+  font-size: var(--fs-control);
+}
+
+.handoff input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.handoff input:focus,
+.handoff select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+/* Always shown, including a refusal in the guard's own words: "nothing
+   happened" with no reason is indistinguishable from a bug. */
+.handoff__result {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------- search */
+
+.chat-search {
+  margin-bottom: 22px;
+}
+
+.chat-search .chat-rail__search {
+  background: var(--surface);
+}
+
+.chat-search__hits {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-search__hits button {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-body);
+  text-align: left;
+}
+
+.chat-search__hits button:hover {
+  color: var(--text);
+  background: var(--hover);
+}

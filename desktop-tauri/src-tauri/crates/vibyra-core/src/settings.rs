@@ -79,11 +79,26 @@ pub struct Settings {
     pub custom_agents: Vec<AgentSpec>,
     pub projects: Vec<ProjectSpec>,
     pub active_project_id: Option<String>,
+    /// The app-wide stop for scheduled work. Read on every scheduler tick
+    /// rather than cached, so switching it on stops the next minute rather
+    /// than the next launch. Off by default — a routine the user created is a
+    /// routine they expect to run.
+    pub routines_paused: bool,
+    /// The app-wide stop for agent-to-agent messages, for the same reason and
+    /// read the same way. This one is the emergency brake on the feature most
+    /// able to spend money unattended.
+    pub agent_mail_paused: bool,
+    /// Which mode the window opens in: "agent", "code" or "chat". Remembered
+    /// per account by the renderer; this is only the last one used.
+    pub last_mode: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            routines_paused: false,
+            agent_mail_paused: false,
+            last_mode: "code".to_string(),
             theme: "dark".to_string(),
             font_size: 13,
             font_family: "\"JetBrains Mono\", \"Fira Code\", monospace".to_string(),

@@ -1,0 +1,107 @@
+/* Skills: the library rows, their editor, and the two assignment checklists.
+
+   Split from agent-work.css, which keeps routines, so a change to one list
+   cannot accidentally restyle the other. */
+
+/* ---------------------------------------------------------------- skills */
+
+.skill-row {
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.skill-row summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px;
+  cursor: pointer;
+}
+
+.skill-row__name {
+  color: var(--text);
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+}
+
+.skill-row__version {
+  color: var(--dim);
+  font-size: var(--fs-tiny);
+}
+
+.skill-row__trigger {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-row__body {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.skill-row__body p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.skill-row__body pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  overflow: auto;
+  background: var(--elevated);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.skill-row__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.assign-list label,
+.allow-list label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: var(--fs-body);
+  cursor: pointer;
+}
+
+.assign-list label:hover,
+.allow-list label:hover {
+  background: var(--hover);
+}
+
+.assign-list__name {
+  color: var(--text);
+  font-weight: var(--fw-medium);
+}
+
+.assign-list__trigger {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

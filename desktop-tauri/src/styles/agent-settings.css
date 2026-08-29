@@ -1,0 +1,160 @@
+/* One teammate's settings.
+
+   Uses the shared settings row/card language rather than inventing a second
+   one — see settings-pane.css and settings-rows.css. What is here is only what
+   Agent Mode adds: the places list, the memory ledger and the typed-name
+   deletion. */
+
+.agent-settings {
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 22px 24px 40px;
+  overflow-y: auto;
+}
+
+.agent-settings .settings-card {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+}
+
+.agent-settings .settings-card h3 {
+  margin: 0 0 12px;
+  color: var(--text);
+  font-size: var(--fs-strong);
+  font-weight: var(--fw-bold);
+}
+
+.settings-card__hint {
+  margin: 6px 0 12px;
+  max-width: 62ch;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.settings-field > span {
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+}
+
+.settings-field input,
+.settings-field textarea,
+.settings-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--term-input);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-ui);
+  line-height: 1.55;
+}
+
+.settings-field textarea {
+  resize: vertical;
+}
+
+.settings-field input:focus,
+.settings-field textarea:focus,
+.settings-field select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+
+.agent-settings .settings-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.agent-settings .settings-row__label {
+  flex: 1;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+}
+
+.agent-settings .settings-row select,
+.agent-settings .settings-row input[type="text"],
+.agent-settings .settings-row input:not([type="checkbox"]) {
+  flex: none;
+  min-width: 180px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--term-input);
+  color: var(--text);
+  font-size: var(--fs-control);
+}
+
+/* ---------------------------------------------------------------- places */
+
+.place-list li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.place-list code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.place-list__access {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.place-list__access--read {
+  background: var(--hover);
+  color: var(--dim);
+}
+
+.place-list__access--readWrite {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.place-list__home {
+  flex: none;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+.place-list__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}

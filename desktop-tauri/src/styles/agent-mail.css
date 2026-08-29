@@ -1,0 +1,99 @@
+/* Skill version history and the mail trail — the two audit lists.
+
+   Split from agent-extras.css, which keeps the composer's attachments, the
+   handoff bar and cross-chat search. */
+
+/* -------------------------------------------------------- skill history */
+
+.skill-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.skill-history summary {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  cursor: pointer;
+}
+
+.skill-history ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-history li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.skill-history__version {
+  flex: none;
+  color: var(--dim);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-bold);
+}
+
+.skill-history__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------- mail trail */
+
+.mail-trail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.mail-trail__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 9px;
+  padding: 6px 9px;
+  border-radius: var(--r-sm);
+  background: var(--hover);
+  font-size: var(--fs-hint);
+}
+
+.mail-trail__who {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.mail-trail__body {
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-trail__status {
+  color: var(--dim);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mail-trail__row--refused .mail-trail__status {
+  color: var(--danger);
+}
+
+.mail-trail__row--awaitingApproval .mail-trail__status {
+  color: var(--ask);
+}

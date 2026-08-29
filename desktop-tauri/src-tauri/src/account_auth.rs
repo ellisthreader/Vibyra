@@ -135,6 +135,11 @@ pub async fn logout(state: &AppState) -> AccountSnapshot {
         let _ = state.manager.kill(session.id);
         let _ = state.manager.remove(session.id);
     }
+    // Agent Mode gets the same treatment as the terminals: every structured
+    // turn is signalled, the scheduler stops finding work, and the database
+    // handle is dropped. Without this, one account's teammates would keep
+    // running — and keep writing — into the next account's session.
+    state.agents.close();
     account.clear_session(&SecretStore);
     account.snapshot()
 }

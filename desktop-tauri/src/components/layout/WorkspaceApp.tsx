@@ -18,6 +18,7 @@ import { useUpdateWatch } from "../../lib/useUpdateWatch";
 import { useNotificationRuntime } from "../../lib/useNotificationRuntime";
 import { useWorkspaceRuntime } from "../../lib/useWorkspaceRuntime";
 import { useAccountStore } from "../../state/accountStore";
+import { useAgentModeStore } from "../../state/agentModeStore";
 import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useReportStore } from "../../state/reportStore";
@@ -25,6 +26,10 @@ import { useScreenshotStore } from "../../state/screenshotStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 
+const AgentMode = lazy(() => import("../agentMode/AgentMode")
+  .then((module) => ({ default: module.AgentMode })));
+const ChatMode = lazy(() => import("../agentMode/ChatMode")
+  .then((module) => ({ default: module.ChatMode })));
 const AgentPickerModal = lazy(() => import("../agents/AgentPickerModal")
   .then((module) => ({ default: module.AgentPickerModal })));
 const CommandPalette = lazy(() => import("./CommandPalette")
@@ -47,6 +52,7 @@ const SettingsModal = lazy(() => import("../settings/SettingsModal")
 export function WorkspaceApp() {
   const profile = useAccountStore((s) => s.snapshot.profile);
   const settings = useSettingsStore((s) => s.settings);
+  const mode = useAgentModeStore((s) => s.mode);
   const view = useProjectStore((s) => s.view);
   const activeId = useProjectStore((s) => s.activeId);
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
@@ -84,22 +90,38 @@ export function WorkspaceApp() {
   }
 
   const showProject = view === "project" && activeId !== null;
+  // Code Mode is hidden rather than unmounted. Its panes hold live PTYs with
+  // xterm renderers and scrollback; unmounting to show a chat list would cost
+  // every one of them both, and they would come back blank.
+  const inCode = mode === "code";
 
   return (
     <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""}`}>
       <TitleBar />
-      <div className="shell">
-        <ProjectStrip />
-        {showProject ? (
-          <>
-            {/* The rail stays up at every dock size — it is the terminal list,
-                and the way back from a full-size dock. The dock itself lives
-                inside the workspace, which is the box it floats in. */}
-            <Rail />
-            <ProjectWorkspace />
-          </>
-        ) : (
-          <Suspense fallback={null}><HomeView /></Suspense>
+      <div className="shell" data-mode={mode}>
+        <div className="shell__mode" hidden={!inCode}>
+          <ProjectStrip />
+          {showProject ? (
+            <>
+              {/* The rail stays up at every dock size — it is the terminal
+                  list, and the way back from a full-size dock. The dock itself
+                  lives inside the workspace, which is the box it floats in. */}
+              <Rail />
+              <ProjectWorkspace />
+            </>
+          ) : (
+            <Suspense fallback={null}><HomeView /></Suspense>
+          )}
+        </div>
+        {mode === "agent" && (
+          <div className="shell__mode">
+            <Suspense fallback={null}><AgentMode /></Suspense>
+          </div>
+        )}
+        {mode === "chat" && (
+          <div className="shell__mode">
+            <Suspense fallback={null}><ChatMode /></Suspense>
+          </div>
         )}
       </div>
       <PinnedNotice />
