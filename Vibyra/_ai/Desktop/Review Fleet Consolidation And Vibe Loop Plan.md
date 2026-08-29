@@ -169,9 +169,82 @@ Gate per phase: `npm --prefix desktop-tauri run lines`, `typecheck`, `test`,
 `build`, `cargo test` in `src-tauri` — verified in a clean worktree, never
 the working tree ([[release-pipeline-blockers]]).
 
-## Non-goals
+## Non-goals (see As Built below for what shipped)
 
 Unchanged from the fleet plan: no merge editor, no git client, no cloud
 state, no automatic landing. Additionally: no automatic brief generation, no
 CI watching, no PR-comment iteration, no multi-worktree preview grid.
 Phase 7 launch coordination stays research.
+
+---
+
+# As Built — 2026-08-29
+
+Phase A shipped, plus the vocabulary re-skin and the GitHub connect gate, on
+branch `vibyra/vibyra-1a04dd6cbb1-5` (commits `af4273a` import, `3c7d908`
+redesign). Where this section and the plan disagree, this section is what is
+on disk.
+
+## What shipped
+
+- **The fleet build is imported whole** from worktree `vibyra-1a04a6263f0-1`
+  (tracked diff applied `--3way` against `dae3d44`, 47 new files copied) and
+  passes every gate on this newer base: 554 Node tests, 330 Rust tests,
+  clippy `-D warnings`, fmt, 0 files over 200 lines, knip, typecheck, vite
+  build.
+- **All five audit findings closed**, each pinned by a test:
+  `GithubStatus.origin_github` (exact-host match for https/scp/ssh GitHub
+  remotes; lookalike domains refused), collision-safe pid+counter scratch
+  names written `create_new` (`review/scratch.rs`, split from merge.rs for
+  the line gate), `same_repository` via `--git-common-dir` before merge *and*
+  discard, `ReviewPrSheet` ignoring Escape/backdrop while busy, and
+  `reviewStore.github` keyed `{root, status}` with a probe ticket.
+- **The verbs**: Approve (green, `.btn--approve` solid for the primary,
+  `.act--approve` tinted on rows) and Reject (red tinted, inline confirm in
+  the row via `fleet-row__confirm`). Fleet rows are named by the pane's chat
+  title with sentence statuses ("Ready to review", "Still working…",
+  "Terminal closed — work saved"); the branch lives only in tooltips. File
+  marks are words (`new`/`edit`/`gone`/`moved`); `edit` is accent, not amber.
+  The fleet masthead is a title plus one sentence — no counts, no refresh
+  (mount fan-out + `useReviewWatch` replace the manual control). Radar head:
+  "Two agents are changing the same file". Sheet: `review-verbs.css`, loaded
+  last so the re-skin overrides the fleet build's sheets instead of editing
+  them.
+- **GitHub connect gate**: "Share on GitHub" is disabled only by busy/empty.
+  Not connected opens `GithubConnectSheet` — install guidance, copyable
+  `gh auth login` (via `writeClipboardText`), "I've signed in — check again"
+  re-probe — and the same open state renders the real PR sheet the moment
+  readiness arrives. Auth stays entirely inside `gh`; the sheet never runs a
+  command itself. `tests/reviewVibeVerbs.test.mjs` pins all of it.
+- **One deviation from the vocabulary spec above**: the status *dots* keep
+  the app's language (`working` green, `ready` accent) rather than the
+  mockup's green-ready — green already means "working" on the terminal grid,
+  and recolouring it only inside Review would give green two meanings in one
+  window. The colour-coded *buttons* ship exactly as approved; "Ready to
+  review" wears accent to match its dot.
+
+## Deliberately not in this pass
+
+Phases B–D (worktree Preview, the plain-language brief, Undo) — each needs
+new native surface and none was going to ship honestly in the same change as
+the consolidation. No dead buttons: the artifact mockup shows them, the app
+does not until they exist.
+
+## Two things the build discovered
+
+- **The shared cargo target dir serves stale rlibs across worktrees.** With
+  24 worktrees sharing `/mnt/nvme/.../cargo-target`, another session's build
+  of the same crate names left an old `vibyra-core` rlib that made
+  `vibyra-desktop` fail with missing-item errors in *unrelated* modules
+  (memory, github). `cargo clean -p vibyra-core -p vibyra-desktop` and
+  rebuild fixes it; the errors look like broken code but are cache identity.
+- **`git apply … | head` kills the apply.** SIGPIPE from a closed pager
+  reaches git before it writes anything, while the "Applied cleanly" lines
+  already printed. Never pipe a mutating git command through `head`.
+
+## Not yet verified running
+
+Same status the fleet build carried: every gate is static or unit-level.
+The manual matrix (six live agents, dock-grip drag, keyboard-only approve,
+20k-line diff, radar appearing live) still needs a human session on the
+installed build.
