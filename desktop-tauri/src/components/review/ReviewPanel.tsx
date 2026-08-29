@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 
-import { reviewablePanes, summarize } from "../../lib/reviewPolicy";
+import { reviewablePanes } from "../../lib/reviewPolicy";
 import { useReviewStore } from "../../state/reviewStore";
 import { useTerminalStore } from "../../state/terminalStore";
-import { GitBranchIcon, RestartIcon } from "../common/Icons";
-import { ReviewActions } from "./ReviewActions";
-import { ReviewFileRow } from "./ReviewFileRow";
+import { GitBranchIcon } from "../common/Icons";
+import { ReviewChangeset } from "./changeset/ReviewChangeset";
+import { ReviewFleet } from "./fleet/ReviewFleet";
 
 interface Props {
   projectId: string;
@@ -13,42 +13,43 @@ interface Props {
 }
 
 /**
- * The Review dock tool: what a safe-mode agent changed, and the two ways the
- * review ends — the changes come into the project, or the worktree goes.
+ * The Review dock tool: two levels and no third.
  *
- * One pane at a time. A review is a reading moment, not a dashboard: the
- * selector picks the terminal, everything below is that terminal's changeset.
+ * Fleet answers "who is done?" across every safe-mode workspace; Changeset
+ * reads one of them, with each file's diff expanding in place. A diff is
+ * therefore never a navigation, which is what keeps Back meaning exactly one
+ * thing however deep into a patch you are.
+ *
+ * This file only routes. Everything it renders owns its own fetching, and the
+ * fleet is watched from `useReviewWatch` above the dock — the tab's badge has
+ * to be right while this panel is closed.
  */
 export function ReviewPanel({ projectId, root }: Props) {
   const panes = useTerminalStore((state) => state.panes);
-  const focusedId = useTerminalStore((state) => state.focusedId);
+  const level = useReviewStore((state) => state.level);
   const selectedPane = useReviewStore((state) => state.selectedPane);
-  const statusByPane = useReviewStore((state) => state.statusByPane);
-  const loadingPane = useReviewStore((state) => state.loadingPane);
+  const orphans = useReviewStore((state) => state.orphans);
   const select = useReviewStore((state) => state.select);
-  const refresh = useReviewStore((state) => state.refresh);
-  const refreshGithub = useReviewStore((state) => state.refreshGithub);
+  const openFleet = useReviewStore((state) => state.openFleet);
 
   const reviewable = reviewablePanes(panes, projectId);
-  const pane =
-    reviewable.find((candidate) => candidate.id === selectedPane) ??
-    reviewable.find((candidate) => candidate.id === focusedId) ??
-    reviewable[0] ??
-    null;
-  const status = pane ? (statusByPane[pane.id] ?? null) : null;
-  const summary = summarize(status);
+  const pane = reviewable.find((candidate) => candidate.id === selectedPane) ?? null;
 
+  // One workspace does not need a list of one. Opening the tool goes straight
+  // to the only changeset there is; the fleet earns its place from two up.
   useEffect(() => {
-    if (pane) void refresh(pane);
-    // Refresh keys off identity, not the object: panes re-render often.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pane?.id, pane?.workspace?.path]);
+    if (level === "changeset" || reviewable.length !== 1 || orphans.length > 0) return;
+    select(reviewable[0].id);
+  }, [level, reviewable, orphans.length, select]);
 
+  // A workspace can vanish under the panel — discarded here, or its pane
+  // closed from the grid. Falling back beats rendering a changeset for a
+  // worktree that is no longer on disk.
   useEffect(() => {
-    void refreshGithub(root);
-  }, [root, refreshGithub]);
+    if (level === "changeset" && pane === null) openFleet();
+  }, [level, pane, openFleet]);
 
-  if (!pane) {
+  if (reviewable.length === 0 && orphans.length === 0) {
     return (
       <div className="companion-panel companion-panel--review">
         <div className="review-empty">
@@ -65,64 +66,11 @@ export function ReviewPanel({ projectId, root }: Props) {
 
   return (
     <div className="companion-panel companion-panel--review">
-      {reviewable.length > 1 && (
-        <div className="review-picker" role="tablist" aria-label="Terminal to review">
-          {reviewable.map((candidate) => (
-            <button
-              key={candidate.id}
-              type="button"
-              role="tab"
-              aria-selected={candidate.id === pane.id}
-              className={`review-picker__chip ${candidate.id === pane.id ? "review-picker__chip--on" : ""}`}
-              onClick={() => select(candidate.id)}
-            >
-              {candidate.customTitle || candidate.chatTitle || candidate.title}
-            </button>
-          ))}
-        </div>
+      {level === "changeset" && pane !== null ? (
+        <ReviewChangeset pane={pane} root={root} />
+      ) : (
+        <ReviewFleet projectId={projectId} root={root} />
       )}
-
-      <header className="review-head">
-        <span className="review-head__branch" title={pane.workspace?.branch}>
-          <GitBranchIcon size={13} />
-          <code>{pane.workspace?.branch}</code>
-        </span>
-        <span className="review-head__stats">
-          {summary.files === 1 ? "1 file" : `${summary.files} files`}
-          <em className="review-add">+{summary.additions}</em>
-          <em className="review-del">−{summary.deletions}</em>
-        </span>
-        <button
-          type="button"
-          className="icon-btn"
-          title="Refresh changes"
-          disabled={loadingPane === pane.id}
-          onClick={() => void refresh(pane)}
-        >
-          <RestartIcon size={13} />
-        </button>
-      </header>
-
-      <div className="review-scroll">
-        {status === null ? (
-          <p className="review-note">Reading changes…</p>
-        ) : status.changed.length === 0 ? (
-          <p className="review-note">
-            No changes yet. Everything the agent edits in its safe workspace will be listed here.
-          </p>
-        ) : (
-          <div className="review-list" role="list">
-            {status.changed.map((file) => (
-              <ReviewFileRow key={file.path} workspace={pane.workspace!} file={file} />
-            ))}
-            {status.truncated && (
-              <p className="review-note">The list stops at 2,000 files — the rest are still in the workspace.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      <ReviewActions pane={pane} projectRoot={root} status={status} />
     </div>
   );
 }

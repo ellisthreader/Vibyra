@@ -50,6 +50,7 @@ pub mod voice;
 mod voice_level;
 #[cfg(test)]
 mod voice_level_tests;
+pub mod workspaces;
 
 use vibyra_core::{CoreError, CoreResult};
 

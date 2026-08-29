@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { githubCreatePr, githubOpenPr } from "../../ipc/github";
+import { githubCreatePr, githubListBranches, type RepoBranches } from "../../ipc/github";
 import { prBody, prTitle } from "../../lib/reviewPolicy";
 import type { WorktreeStatus } from "../../ipc/review";
 import { useModalFocus } from "../../lib/useModalFocus";
 import type { PaneState } from "../../state/terminalStoreTypes";
 import { GitBranchIcon } from "../common/Icons";
+import { ReviewPrStatus } from "./ReviewPrStatus";
 
 interface Props {
   pane: PaneState;
@@ -17,30 +18,59 @@ interface Props {
  * Push the safe-mode branch and open a pull request, through `gh` — GitHub
  * auth never passes through Vibyra. Title and body arrive prefilled: the
  * conversation already named itself, and the changeset writes its own manifest.
+ *
+ * The base branch is a choice rather than an assumption. `gh` targets the
+ * repository default when nothing says otherwise, which is the wrong target
+ * whenever the agent was launched from a feature branch — the PR then proposes
+ * the feature's whole history and nobody can review it.
  */
 export function ReviewPrSheet({ pane, status, onClose }: Props) {
+  const worktree = pane.workspace?.path ?? "";
   const branch = pane.workspace?.branch ?? "";
   const [title, setTitle] = useState(() => prTitle(pane));
   const [body, setBody] = useState(() => prBody(status, branch));
+  const [bases, setBases] = useState<RepoBranches | null>(null);
+  const [base, setBase] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   useModalFocus(modalRef, true, onClose);
 
+  // One fetch when the sheet opens. A branch list changes on the scale of
+  // somebody creating a branch, and a failure here is a degraded picker — the
+  // PR still opens against the repository default, exactly as it used to.
+  useEffect(() => {
+    if (!worktree) return;
+    let cancelled = false;
+    void githubListBranches(worktree)
+      .then((next) => {
+        if (cancelled) return;
+        setBases(next);
+        setBase(next.defaultBranch);
+      })
+      .catch(() => {
+        if (!cancelled) setBases({ defaultBranch: null, names: [], truncated: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [worktree]);
+
   const submit = async () => {
-    const worktree = pane.workspace?.path;
     if (busy || !worktree || title.trim().length === 0) return;
     setBusy(true);
     setError(null);
     try {
-      setUrl(await githubCreatePr(worktree, title.trim(), body));
+      setUrl(await githubCreatePr(worktree, title.trim(), body, base));
     } catch (failure) {
       setError(String(failure));
     } finally {
       setBusy(false);
     }
   };
+
+  const names = bases?.names ?? [];
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -71,9 +101,30 @@ export function ReviewPrSheet({ pane, status, onClose }: Props) {
               />
             </label>
             <label className="review-pr__field">
+              <span>Base branch{bases?.truncated ? " — first 100" : ""}</span>
+              <select
+                className="input"
+                value={base ?? ""}
+                disabled={names.length === 0}
+                onChange={(event) => setBase(event.target.value || null)}
+              >
+                {names.length === 0 ? (
+                  <option value="">
+                    {bases === null ? "Loading branches…" : "Repository default"}
+                  </option>
+                ) : (
+                  names.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
+            <label className="review-pr__field">
               <span>Description</span>
               <textarea
-                rows={7}
+                rows={6}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
               />
@@ -98,23 +149,7 @@ export function ReviewPrSheet({ pane, status, onClose }: Props) {
             </footer>
           </>
         ) : (
-          <>
-            <p className="review-pr__done">
-              Pull request opened. <code>{url}</code>
-            </p>
-            <footer className="review-pr__foot">
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => void githubOpenPr(url)}
-              >
-                Open on GitHub
-              </button>
-              <button type="button" className="btn" onClick={onClose}>
-                Done
-              </button>
-            </footer>
-          </>
+          <ReviewPrStatus worktree={worktree} url={url} onClose={onClose} />
         )}
       </div>
     </div>

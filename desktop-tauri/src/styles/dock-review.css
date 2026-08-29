@@ -139,14 +139,16 @@
 .review-file__mark--deleted { color: var(--danger); background: var(--danger-soft); }
 .review-file__mark--renamed { color: var(--accent-2); background: var(--accent-soft); }
 
+/* The filename always survives, the directory gives way — done with two
+   spans rather than `direction: rtl`, which kept the name visible by
+   reordering the text and mangled any path holding a bidi-neutral character.
+   See `splitPath` in ReviewFileRow. */
 .review-file__path {
+  display: flex;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-hint);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  direction: rtl; /* a long path keeps its filename, not its prefix */
-  text-align: left;
 }
 
 .review-file__stats {

@@ -1,0 +1,153 @@
+/* One row of the patch: gutter, sign, text — and the two quiet rows between
+ * changes, the hunk range and the elided run.
+ *
+ * Every rule here has to leave the row exactly one line tall; see the header
+ * of `review-diff.css` for why. Hairlines are inset shadows for that reason,
+ * and nothing wraps. */
+
+.review-diff__row {
+  display: flex;
+  align-items: stretch;
+  min-width: 100%;
+  width: max-content;
+  white-space: pre;
+  background: var(--term-screen);
+  color: var(--term-muted);
+}
+
+/* ── the gutter ─────────────────────────────────────────────────────────── */
+
+/* Old and new, side by side, sticky so a line still knows where it lives when
+   a long line has been scrolled sideways. Tabular figures because a ragged
+   number column is the fastest way to make a patch unreadable. */
+.review-diff__gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: inline-flex;
+  gap: 8px;
+  flex: none;
+  padding: 0 10px 0 12px;
+  background: var(--term-screen);
+  color: var(--term-dim);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.review-diff__num {
+  display: inline-block;
+  text-align: right;
+}
+
+.review-diff__sign {
+  display: inline-block;
+  width: 1ch;
+  text-align: center;
+}
+
+.review-diff__code {
+  display: inline-block;
+  padding: 0 12px 0 0;
+  font: inherit;
+  color: inherit;
+}
+
+/* ── what git said about the line ───────────────────────────────────────── */
+
+/* The tint is laid over the screen ground as an image rather than set as the
+   colour, so the gutter stays opaque: it is sticky and sits above the code, and
+   a translucent background there would show a scrolled line through the line
+   numbers. Same two layers on the row and its gutter, so they read as one. */
+.review-diff__row--add,
+.review-diff__row--add > .review-diff__gutter {
+  color: var(--success);
+  background-color: var(--term-screen);
+  background-image: linear-gradient(var(--success-soft), var(--success-soft));
+}
+
+.review-diff__row--del,
+.review-diff__row--del > .review-diff__gutter {
+  color: var(--danger);
+  background-color: var(--term-screen);
+  background-image: linear-gradient(var(--danger-soft), var(--danger-soft));
+}
+
+.review-diff__row--add > .review-diff__gutter,
+.review-diff__row--del > .review-diff__gutter {
+  color: var(--term-dim);
+}
+
+/* The sign is the one thing in the gutter that keeps the line's own colour —
+   it belongs to the change, not to the numbering beside it. */
+.review-diff__row--add .review-diff__sign {
+  color: var(--success);
+}
+
+.review-diff__row--del .review-diff__sign {
+  color: var(--danger);
+}
+
+/* The line already carries its +/−, so the changed segment is the same tint
+   laid over itself — a second reading of the line, not a second colour. */
+.review-diff__mark {
+  color: inherit;
+  background: transparent;
+  border-radius: 2px;
+}
+
+.review-diff__row--add .review-diff__mark {
+  background: var(--success-soft);
+}
+
+.review-diff__row--del .review-diff__mark {
+  background: var(--danger-soft);
+}
+
+.review-diff__nonl {
+  color: var(--dim);
+}
+
+/* ── the rows between changes ───────────────────────────────────────────── */
+
+.review-diff__row--hunk {
+  gap: 10px;
+  padding: 0 12px;
+  box-shadow: inset 0 1px 0 var(--line-soft);
+  color: var(--dim);
+}
+
+.review-diff__range {
+  font-variant-numeric: tabular-nums;
+}
+
+.review-diff__heading {
+  color: var(--term-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.review-diff__row--gap,
+.review-diff__row--note {
+  padding: 0 12px;
+  color: var(--dim);
+}
+
+.review-diff__gap {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.review-diff__gap:hover {
+  color: var(--accent-2);
+}
+
+.review-diff__gap-mark {
+  letter-spacing: 0.08em;
+}

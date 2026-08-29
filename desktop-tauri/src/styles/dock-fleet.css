@@ -1,0 +1,77 @@
+/* The Review dock's Fleet level: every safe-mode workspace in one column.
+ *
+ * It inherits dock-review.css's contract and does not widen it — one quiet
+ * reading column, the shared tinted-sub-panel row language, type and colour
+ * from tokens. Exactly two things on this surface are saturated: the radar
+ * (dock-fleet-radar.css) and the primary Land. Everything else is --muted and
+ * --dim, because a list where everything is emphasised is a list where the
+ * eye has nowhere to land.
+ *
+ * No backdrop-filter here or anywhere in the dock; see the note at the top of
+ * chrome.css. */
+
+/* ── header ─────────────────────────────────────────────────────────────── */
+
+.fleet-head__facts {
+  margin: 0;
+  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--fs-hint);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one coloured fact, and it exists only when it is non-zero. A permanent
+   "0 overlap" would be a number the eye stops reading, and the amber is worth
+   something precisely because it is unusual. */
+.fleet-head__overlap {
+  color: var(--amber);
+  font-weight: var(--fw-semi);
+}
+
+.fleet-head__refresh {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── the list ───────────────────────────────────────────────────────────── */
+
+.fleet-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fleet-list {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+  overflow: hidden;
+}
+
+/* ── the Review tab's count ─────────────────────────────────────────────── */
+
+/* Positioned rather than inline: a compact dock renders the tabs as 32px
+   glyphs with their labels hidden, and an inline pill would have nowhere to
+   sit. The modifier carries the positioning context so the shared .dock__tab
+   is left exactly as nav-segmented.css wrote it. */
+.dock__tab--badged {
+  position: relative;
+}
+
+.pill.dock__tab-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 15px;
+  padding: 0 4px;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--on-action);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+}

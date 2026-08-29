@@ -1,0 +1,77 @@
+import { useCallback } from "react";
+
+import {
+  blockedKeys,
+  contestedKeys,
+  fleetFacts,
+  radarCollisions,
+} from "../../../lib/reviewFleetActionPolicy";
+import { reviewablePanes } from "../../../lib/reviewPolicy";
+import { useReviewStore } from "../../../state/reviewStore";
+import { useTerminalStore } from "../../../state/terminalStore";
+import { ReviewFleetFooter } from "./ReviewFleetFooter";
+import { ReviewFleetHeader } from "./ReviewFleetHeader";
+import { ReviewFleetRow } from "./ReviewFleetRow";
+import { ReviewRadar } from "./ReviewRadar";
+import { useFleet } from "./useFleet";
+
+interface Props {
+  projectId: string;
+  root: string;
+}
+
+/**
+ * The Fleet level: every safe-mode workspace at once, answering one question.
+ *
+ * Who is done. That is the whole brief, and it is why this is a list with one
+ * alarm rather than a dashboard — three facts on top, the radar only when
+ * something is actually contested, then the rows. Nothing here is saturated
+ * except the radar and the primary Land, because everything that is always
+ * loud is something the eye learns to skip.
+ *
+ * It does not fetch on mount. `useReviewWatch` runs above the dock and keeps
+ * the fleet current whether or not this panel is open — the tab's badge
+ * depends on that — so a second fan-out from here would only double the git
+ * processes. The header's Refresh is the deliberate, manual edge.
+ */
+export function ReviewFleet({ projectId, root }: Props) {
+  const { rows, found, panes } = useFleet(projectId);
+  const refreshAll = useReviewStore((state) => state.refreshAll);
+  const refreshOrphans = useReviewStore((state) => state.refreshOrphans);
+  const refreshing = useReviewStore((state) => state.refreshingAll);
+
+  const facts = fleetFacts(rows, found);
+  const radar = radarCollisions(found);
+  const blocked = blockedKeys(found);
+  const contested = contestedKeys(found);
+
+  // Panes are read at click time rather than closed over. This list re-renders
+  // on every activity tick, and a callback that changed with it would hand the
+  // header a new prop several times a second for no new behaviour.
+  const refresh = useCallback(() => {
+    void refreshAll(reviewablePanes(useTerminalStore.getState().panes, projectId));
+    void refreshOrphans(root);
+  }, [projectId, root, refreshAll, refreshOrphans]);
+
+  return (
+    <>
+      <ReviewFleetHeader facts={facts} refreshing={refreshing} onRefresh={refresh} />
+      <div className="review-scroll fleet-scroll">
+        <ReviewRadar collisions={radar} />
+        <div className="fleet-list" role="list" aria-label="Safe workspaces">
+          {rows.map((row) => (
+            <ReviewFleetRow
+              key={row.key}
+              row={row}
+              pane={panes.find((pane) => pane.id === row.paneId) ?? null}
+              contested={contested.has(row.key)}
+              blocked={blocked.has(row.key)}
+              root={root}
+            />
+          ))}
+        </div>
+      </div>
+      <ReviewFleetFooter rows={rows} panes={panes} root={root} />
+    </>
+  );
+}

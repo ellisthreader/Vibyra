@@ -5,7 +5,7 @@ import { useModalFocus } from "../../lib/useModalFocus";
 import { useSettingsStore } from "../../state/settingsStore";
 import { type SettingsSectionId, useWorkspaceStore } from "../../state/workspaceStore";
 import { BellIcon } from "../common/StatusIcons";
-import { BotIcon, CloseIcon, CommandIcon, GaugeIcon, GearIcon, LinkIcon, RestartIcon, SparklesIcon, UserIcon } from "../common/Icons";
+import { BotIcon, CloseIcon, CommandIcon, GaugeIcon, GearIcon, GitBranchIcon, LinkIcon, RestartIcon, SparklesIcon, UserIcon } from "../common/Icons";
 import { SettingsAgentsPane } from "./SettingsAgentsPane";
 import { SettingsAiPane } from "./SettingsAiPane";
 import { SettingsGeneralPane } from "./SettingsGeneralPane";
@@ -15,6 +15,7 @@ import { SettingsPerformancePane } from "./SettingsPerformancePane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
 import { SettingsUpdatesPane } from "./SettingsUpdatesPane";
+import { SettingsWorkspacesPane } from "./SettingsWorkspacesPane";
 
 interface Section {
   id: SettingsSectionId;
@@ -39,6 +40,7 @@ const GROUPS: { label: string; items: Section[] }[] = [
       { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
       { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
       { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
+      { id: "workspaces", label: "Safe workspaces", blurb: "The isolated worktrees agents run in, and the disk they hold", icon: GitBranchIcon },
     ],
   },
   {
@@ -75,6 +77,7 @@ export function SettingsModal() {
     ai: <SettingsAiPane settings={settings} update={update} />,
     integrations: <SettingsIntegrationsPane settings={settings} update={update} />,
     agents: <SettingsAgentsPane settings={settings} update={update} />,
+    workspaces: <SettingsWorkspacesPane />,
     shortcuts: <SettingsShortcutsPane settings={settings} update={update} />,
     updates: <SettingsUpdatesPane />,
   }[section.id];

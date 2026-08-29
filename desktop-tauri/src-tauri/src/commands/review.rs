@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use vibyra_core::review::{self, MergeOutcome, WorktreeStatus};
+use vibyra_core::review::{self, MergeOutcome, PruneOutcome, WorktreeEntry, WorktreeStatus};
 use vibyra_core::CoreError;
 
 use super::run_blocking_core;
@@ -29,17 +29,22 @@ pub async fn review_file_diff(
         .await
 }
 
+/// `paths` selects which of the worktree's files to land, repo-root-relative.
+/// Optional rather than required, and absent means all of them, so a caller
+/// with no selection to make keeps calling this exactly as it always has.
 #[tauri::command]
 pub async fn review_merge(
     project_root: String,
     worktree: String,
     base_commit: String,
+    paths: Option<Vec<String>>,
 ) -> Result<MergeOutcome, CoreError> {
     run_blocking_core(move || {
         review::merge_back(
             &PathBuf::from(project_root),
             &PathBuf::from(worktree),
             &base_commit,
+            &paths.unwrap_or_default(),
         )
     })
     .await
@@ -51,4 +56,16 @@ pub async fn review_discard(project_root: String, worktree: String) -> Result<()
         review::discard_worktree(&PathBuf::from(project_root), &PathBuf::from(worktree))
     })
     .await
+}
+
+/// Housekeeping. Both are guarded to `vibyra/*` inside the core, so neither
+/// can see or touch a worktree or branch the app did not create.
+#[tauri::command]
+pub async fn review_list_worktrees(project_root: String) -> Result<Vec<WorktreeEntry>, CoreError> {
+    run_blocking_core(move || review::list_worktrees(&PathBuf::from(project_root))).await
+}
+
+#[tauri::command]
+pub async fn review_prune_worktrees(project_root: String) -> Result<PruneOutcome, CoreError> {
+    run_blocking_core(move || review::prune_worktrees(&PathBuf::from(project_root))).await
 }

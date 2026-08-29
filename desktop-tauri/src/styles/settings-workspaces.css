@@ -1,0 +1,92 @@
+/* Settings ▸ Safe workspaces.
+ *
+ * A list of worktrees inside a settings card, so it borrows the row's own type
+ * classes (`.setting-row__text`, `__label`, `__hint`) and adds only the two
+ * things a plain row cannot do: a state column between the text and the
+ * actions, and a confirm that spans the full width beneath them.
+ *
+ * The pattern is `.integration-account-row`'s, deliberately — one tinted list
+ * with hairlines, never N bordered cards nested inside a bordered card. */
+
+.safe-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 14px;
+}
+
+.safe-workspace + .safe-workspace {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* A worktree path is long and its tail is the identifying part, so it wears a
+   plain ellipsis rather than `direction: rtl` — which reverses the ordering of
+   any path containing bidi-neutral characters. */
+.safe-workspace__path {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Discard is destructive and must never read at the weight of Open review.
+   Same treatment the Integrations card gives its third, rarer action. */
+.safe-workspace .btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.safe-workspace .btn--ghost:hover:not(:disabled) {
+  opacity: 1;
+  border-color: var(--line);
+  color: var(--danger);
+}
+
+/* The confirm states what is about to be deleted, on its own line under the
+   row — the user cannot see the folder or the branch from this pane, so
+   naming both is the whole point of the step. */
+.safe-workspace__confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: var(--r-control);
+  background: var(--danger-soft);
+}
+
+.safe-workspace__confirm p {
+  margin: 0;
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.safe-workspace__confirm code {
+  font-family: var(--font-mono);
+  color: var(--danger);
+}
+
+/* A housekeeping result that failed. `.settings-note` sets its own colour, so
+   the override has to be a class of its own rather than a borrowed one. */
+.settings-note.safe-workspace__failure {
+  color: var(--danger);
+}
+
+/* Below the modal's narrow breakpoint the three columns stop fitting, so the
+   row stacks the way `.integration-account-row` does at the same width. */
+@media (max-width: 720px) {
+  .safe-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .safe-workspace__confirm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

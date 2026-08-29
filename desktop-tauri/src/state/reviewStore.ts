@@ -1,54 +1,48 @@
 import { create } from "zustand";
 
-import { githubStatus, type GithubStatus } from "../ipc/github";
-import {
-  reviewDiscard,
-  reviewMerge,
-  reviewStatus,
-  type MergeOutcome,
-  type WorktreeStatus,
-} from "../ipc/review";
-import type { PaneState } from "./terminalStoreTypes";
-import { useTerminalStore } from "./terminalStore";
+import { githubStatus } from "../ipc/github";
+import { reviewStatus } from "../ipc/review";
+import { toggleSelection } from "../lib/reviewSelection";
+import { reviewFleetActions } from "./reviewFleetActions";
+import { reviewLandActions } from "./reviewLandActions";
+import type { ReviewStore } from "./reviewStoreTypes";
 import { useWorkspaceStore } from "./workspaceStore";
 
-// State for the Review dock tool. Statuses are fetched when the panel looks,
-// not watched: a review is a deliberate reading moment, and the refresh
-// button is honest about when the list was taken.
-
-interface ReviewStore {
-  /** The pane the panel is reviewing, or null to follow the focused pane. */
-  selectedPane: number | null;
-  statusByPane: Record<number, WorktreeStatus>;
-  /** The last merge's result, kept until the next action replaces it. */
-  outcomeByPane: Record<number, MergeOutcome>;
-  loadingPane: number | null;
-  /** Merge, discard and PR are single-flight, like relaunch operations. */
-  busyPane: number | null;
-  /** GitHub readiness for the project root last asked about. */
-  github: GithubStatus | null;
-  select: (paneId: number | null) => void;
-  refresh: (pane: PaneState) => Promise<void>;
-  refreshGithub: (projectRoot: string) => Promise<void>;
-  merge: (pane: PaneState, projectRoot: string) => Promise<void>;
-  discard: (pane: PaneState, projectRoot: string) => Promise<void>;
-  /** The pane-header chip's action: open the dock on Review, on this pane. */
-  openForPane: (paneId: number) => void;
-}
+// State for the Review dock tool.
+//
+// The panel has two levels — a fleet of every safe-mode workspace, and one
+// workspace's changeset — and this store owns which one is up. Fetches are
+// deliberate rather than polled: `reviewWatch` refreshes on the edge where a
+// pane stops working, because an agent going idle *is* the "ready" signal and
+// a timer over six worktrees would run `git diff` forever to learn nothing.
 
 function reportError(error: unknown): void {
   useWorkspaceStore.getState().setError(String(error));
 }
 
 export const useReviewStore = create<ReviewStore>((set, get) => ({
+  level: "fleet",
   selectedPane: null,
   statusByPane: {},
   outcomeByPane: {},
+  rangesByPane: {},
+  selectionByPane: {},
+  landed: [],
+  changedAt: {},
+  orphans: [],
   loadingPane: null,
   busyPane: null,
+  refreshingAll: false,
   github: null,
 
-  select: (selectedPane) => set({ selectedPane }),
+  ...reviewFleetActions(set, get),
+  ...reviewLandActions(set, get),
+
+  /** Choosing a workspace is what opens its changeset; there is no third step. */
+  select: (selectedPane) =>
+    set(selectedPane === null ? { selectedPane, level: "fleet" } : { selectedPane, level: "changeset" }),
+
+  openFleet: () => set({ level: "fleet" }),
 
   refresh: async (pane) => {
     if (!pane.workspace) return;
@@ -57,6 +51,7 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
       const status = await reviewStatus(pane.workspace);
       set((state) => ({
         statusByPane: { ...state.statusByPane, [pane.id]: status },
+        changedAt: { ...state.changedAt, [pane.id]: Date.now() },
       }));
     } catch (error) {
       reportError(error);
@@ -74,47 +69,25 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
     }
   },
 
-  merge: async (pane, projectRoot) => {
-    if (!pane.workspace || get().busyPane !== null) return;
-    set({ busyPane: pane.id });
-    try {
-      const outcome = await reviewMerge(projectRoot, pane.workspace);
-      set((state) => ({
-        outcomeByPane: { ...state.outcomeByPane, [pane.id]: outcome },
-      }));
-      await get().refresh(pane);
-    } catch (error) {
-      reportError(error);
-    } finally {
-      set({ busyPane: null });
-    }
-  },
+  toggleFile: (paneId, path) =>
+    set((state) => ({
+      selectionByPane: {
+        ...state.selectionByPane,
+        [paneId]: toggleSelection(
+          state.statusByPane[paneId] ?? null,
+          state.selectionByPane[paneId],
+          path,
+        ),
+      },
+    })),
 
-  // The worktree dies with the pane: a terminal still running in a deleted
-  // folder is a broken shell, so the pane is closed first, then the folder
-  // and its branch go. Confirmation happened in the panel before this.
-  discard: async (pane, projectRoot) => {
-    if (!pane.workspace || get().busyPane !== null) return;
-    set({ busyPane: pane.id });
-    try {
-      await useTerminalStore.getState().close(pane.id);
-      await reviewDiscard(projectRoot, pane.workspace);
-      set((state) => {
-        const statusByPane = { ...state.statusByPane };
-        const outcomeByPane = { ...state.outcomeByPane };
-        delete statusByPane[pane.id];
-        delete outcomeByPane[pane.id];
-        return { statusByPane, outcomeByPane, selectedPane: null };
-      });
-    } catch (error) {
-      reportError(error);
-    } finally {
-      set({ busyPane: null });
-    }
-  },
+  setSelection: (paneId, selection) =>
+    set((state) => ({
+      selectionByPane: { ...state.selectionByPane, [paneId]: selection },
+    })),
 
   openForPane: (paneId) => {
-    set({ selectedPane: paneId });
+    set({ selectedPane: paneId, level: "changeset" });
     useWorkspaceStore.getState().setDockTool("review");
   },
 }));

@@ -1,0 +1,123 @@
+/* The blocked land, and the two menus in the action bar.
+ *
+ * Weight is the whole argument here. The land is one wide primary button with
+ * a caret welded to it; discard is a text item inside the `⋯`, tinted only
+ * once it is the thing you are about to do. Nothing on this surface may put a
+ * destructive action at the same weight as a constructive one.
+ */
+
+/* ── the split land button ──────────────────────────────────────────────── */
+
+.review-actions__split {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.review-actions__land {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* A hairline, not a gap: the caret is the same action, not a second one. */
+.review-actions__caret {
+  padding: 0 7px;
+  border-left: 1px solid color-mix(in srgb, var(--on-action) 26%, transparent);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* ── the menus ──────────────────────────────────────────────────────────── */
+
+.review-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.review-menu__sheet {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--elevated);
+  box-shadow: var(--e-menu);
+}
+
+.review-menu__item {
+  display: block;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  text-align: left;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.review-menu__item:hover,
+.review-menu__item:focus-visible { background: var(--hover-strong); }
+
+.review-menu__item--danger { color: var(--danger); }
+
+.review-menu__item--danger:hover,
+.review-menu__item--danger:focus-visible { background: var(--danger-soft); }
+
+/* ── the blocked land ───────────────────────────────────────────────────── */
+
+.review-conflict {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent);
+  border-radius: var(--r-control);
+  background: var(--amber-soft);
+}
+
+.review-conflict__lead {
+  margin: 0;
+  color: var(--amber);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semi);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.review-conflict__copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.review-conflict__routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Routes that have no native command yet read as unavailable rather than
+   broken — their `title` says what is missing. Never wire one of these to a
+   command that does not exist. */
+.review-conflict__routes .btn:disabled { opacity: 0.5; }
+
+.review-conflict__hint {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+/* The handback's receipt. Quiet: the interesting thing just moved to the
+ * terminal, and this line exists only so the click is not silent. */
+.review-conflict__sent {
+  margin: 0;
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+  color: var(--success);
+}

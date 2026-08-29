@@ -52,6 +52,9 @@ website, Expo browser client, and native phone app.
   `Desktop/Project Stage And Titlebar.md`
 - Current floating right dock, its three titlebar size controls, and the
   active-size close rule: `Desktop/Project Dock.md`
+- Review of the parallel-worktree fleet: current-state audit of the Review
+  dock tool and safe-mode worktrees, the collision radar, the landing lane,
+  and the phased build: `Desktop/Parallel Review And Worktree Fleet Plan.md`
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use vibyra_core::github::{self, GithubStatus};
+use vibyra_core::github::{self, GithubStatus, PrState, RepoBranches};
 use vibyra_core::CoreError;
 
 use super::run_blocking_core;
@@ -24,6 +24,21 @@ pub async fn github_create_pr(
         github::create_pr(&PathBuf::from(worktree), &title, &body, base.as_deref())
     })
     .await
+}
+
+/// The branches a pull request could target, for the base picker. Fetched
+/// when the sheet opens and never again — the answer changes on the scale of
+/// somebody creating a branch, not on the scale of a keystroke.
+#[tauri::command]
+pub async fn github_list_branches(worktree: String) -> Result<RepoBranches, CoreError> {
+    run_blocking_core(move || github::list_branches(&PathBuf::from(worktree))).await
+}
+
+/// What became of a pull request. Called only when the user asks for it: a
+/// poll would spend their API budget re-learning an answer nobody is reading.
+#[tauri::command]
+pub async fn github_pr_state(worktree: String, url: String) -> Result<PrState, CoreError> {
+    run_blocking_core(move || github::pr_state(&PathBuf::from(worktree), &url)).await
 }
 
 /// Opens the pull request the user just created. Only a github.com link is

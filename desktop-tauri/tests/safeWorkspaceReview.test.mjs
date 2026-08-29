@@ -33,12 +33,25 @@ test("the safe workspace survives from launch to review", () => {
  * never commits to the user's branch — the same contract safe mode keeps on
  * the way in — and it checks the whole patch before applying any of it, so a
  * conflict reports files and changes nothing.
+ *
+ * Three-way is what lets a merge survive the project moving on in a different
+ * hunk of the same file, which plain apply fails on context drift alone. It
+ * does not soften the contract: `--3way` carries both invocations, the check
+ * still runs first, and because three-way can exit 0 having resolved *with
+ * markers*, the stderr it wrote is read too before anything is applied.
  */
 test("merge is check-first, all-or-nothing, and never commits", () => {
   const merge = source("../src-tauri/crates/vibyra-core/src/review/merge.rs");
 
-  assert.match(merge, /"apply", "--check"/);
-  assert.match(merge, /\["apply", patch\.as_ref\(\)\]/);
+  // Both invocations are three-way, and the check is the one that comes first.
+  assert.match(merge, /"apply", "--3way"/);
+  assert.match(
+    merge,
+    /three_way\(repo, index, &\["--check", patch\.as_ref\(\)\]\)\?;[\s\S]*?three_way\(repo, index, &\[patch\.as_ref\(\)\]\)\?;/,
+    "the whole patch must still be checked before any of it is applied",
+  );
+  // A clean exit is not enough on its own — markers count as a refusal.
+  assert.match(merge, /conflicts::unresolved\(&noise\)/);
   assert.doesNotMatch(merge, /"commit"/, "merging must leave committing to the user");
 });
 
@@ -82,12 +95,22 @@ test("github integration owns no credentials", () => {
 });
 
 /**
- * A terminal still running inside a deleted folder is a broken shell, so
- * discarding closes the pane first and only then removes the worktree.
+ * Discarding removes the worktree first and closes the pane second.
+ *
+ * The order used to be the other way round, on the reasoning that a terminal
+ * running inside a deleted folder is a broken shell. It is — but closing
+ * first meant a native failure left the pane gone *and* the worktree
+ * stranded, with nothing in the app able to reach it again. Removing first
+ * fails safe: the pane and its route into the panel both survive, and the
+ * close still follows immediately on success, so no shell is left sitting in
+ * a folder that has gone.
  */
-test("discard closes the pane before deleting its folder", () => {
-  const store = source("../src/state/reviewStore.ts");
-  assert.match(store, /close\(pane\.id\);[\s\S]*?reviewDiscard\(/);
+test("discard removes the worktree before closing its pane", () => {
+  const actions = source("../src/state/reviewLandActions.ts");
+  assert.match(actions, /reviewDiscard\([\s\S]*?close\(pane\.id\)/);
+  // The failing path is the whole point: a rejected removal must not have
+  // closed anything, so the close may not be reached before the await above.
+  assert.doesNotMatch(actions, /close\(pane\.id\)[\s\S]*?await reviewDiscard\(/);
 });
 
 /**

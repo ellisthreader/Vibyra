@@ -9,6 +9,17 @@ use crate::{CoreError, CoreResult};
 // GitHub through the official `gh` CLI, the same boundary the provider
 // accounts keep: authorization stays with the official tool, and no token
 // ever passes through Vibyra. Everything here shells out; nothing is stored.
+//
+// The two halves of a pull request's life live beside this file rather than
+// in it: `branches` answers what a PR should target, `pr_state` what became
+// of it. Both reuse the `gh` and `run` helpers below, so the boundary above
+// is stated and enforced in exactly one place.
+
+mod branches;
+mod pr_state;
+
+pub use branches::{list_branches, RepoBranches};
+pub use pr_state::{pr_state, PrState};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -25,6 +25,7 @@ export type SettingsSectionId =
   | "integrations"
   | "agents"
   | "shortcuts"
+  | "workspaces"
   | "updates";
 
 /** Routes a failure into the notification system as a sticky app error. */

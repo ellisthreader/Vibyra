@@ -12,7 +12,7 @@ use super::{
     account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, clipboard,
     conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
     provider_accounts, render, report, review, screenshot, screenshot_reveal, session, settings,
-    terminal, voice,
+    terminal, voice, workspaces,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -35,9 +35,14 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         review::review_file_diff,
         review::review_merge,
         review::review_discard,
+        review::review_list_worktrees,
+        review::review_prune_worktrees,
         github::github_status,
         github::github_create_pr,
+        github::github_list_branches,
+        github::github_pr_state,
         github::github_open_pr,
+        workspaces::workspaces_disk_usage,
         terminal::create_ssh_terminal,
         terminal::write_terminal,
         terminal::resize_terminal,
