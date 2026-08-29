@@ -71,9 +71,9 @@ function fileCount(n: number): string {
  */
 export function landRestCopy(kept: readonly string[], blocked: readonly string[]): string {
   if (kept.length === 0) {
-    return `Nothing is left to land — ${nameList(blocked)} is the whole selection.`;
+    return `Nothing else to approve — ${nameList(blocked)} is the whole selection.`;
   }
-  return `Lands ${fileCount(kept.length)}. ${nameList(blocked)} stays in the workspace, unmerged.`;
+  return `Puts ${fileCount(kept.length)} into your project. ${nameList(blocked)} stays in the agent's copy, untouched.`;
 }
 
 /**
@@ -84,5 +84,5 @@ export function landRestCopy(kept: readonly string[], blocked: readonly string[]
  * reader who does not know that reads the routes below as damage control.
  */
 export function conflictHeadline(blocked: readonly string[]): string {
-  return `Not landed — your project has its own changes in ${nameList(blocked)}. Nothing was touched.`;
+  return `Didn't fit — your project has its own changes in ${nameList(blocked)}. Nothing was touched.`;
 }

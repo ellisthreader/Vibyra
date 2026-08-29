@@ -54,14 +54,14 @@ test("a blocked retry materialises the list rather than staying 'everything'", (
 
 test("a conflict naming every selected file leaves nothing to retry", () => {
   assert.deepEqual(retryPaths(FOUR, ["a.ts"], ["a.ts"]), []);
-  assert.match(landRestCopy([], ["a.ts"]), /Nothing is left to land/);
+  assert.match(landRestCopy([], ["a.ts"]), /Nothing else to approve/);
 });
 
 test("the copy names what stays behind instead of counting it", () => {
   const copy = landRestCopy(["a.ts", "c.ts"], ["b.ts"]);
-  assert.match(copy, /Lands 2 files/);
-  assert.match(copy, /b\.ts stays in the workspace/);
-  assert.match(landRestCopy(["a.ts"], ["b.ts"]), /Lands 1 file\./);
+  assert.match(copy, /Puts 2 files into your project/);
+  assert.match(copy, /b\.ts stays in the agent's copy/);
+  assert.match(landRestCopy(["a.ts"], ["b.ts"]), /Puts 1 file into your project\./);
 });
 
 test("long blocked lists summarise their tail, never their head", () => {

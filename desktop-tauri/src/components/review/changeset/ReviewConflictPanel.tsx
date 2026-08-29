@@ -30,7 +30,8 @@ import type { PaneState } from "../../../state/terminalStoreTypes";
 // Rebase stays disabled rather than faked — it has no native command yet, and
 // a button that quietly did nothing would be worse than one that says so.
 
-const REBASE_HINT = "Rebasing inside the safe workspace is coming — it has no native command yet.";
+const REBASE_HINT =
+  "Bringing the agent's copy up to date with your project is coming — it has no native command yet.";
 
 interface Props {
   pane: PaneState;
@@ -69,20 +70,20 @@ export function ReviewConflictPanel({ pane, root, conflicts }: Props) {
   };
 
   return (
-    <section className="review-conflict" aria-label="This land was blocked">
+    <section className="review-conflict" aria-label="These changes didn't fit">
       <p className="review-conflict__lead">{conflictHeadline(named)}</p>
       <p className="review-conflict__copy">{landRestCopy(kept, named)}</p>
       <div className="review-conflict__routes">
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn btn--approve"
           disabled={busy || kept.length === 0}
           onClick={() => void landRest()}
         >
-          {kept.length === 1 ? "Land the other file" : `Land the other ${kept.length} files`}
+          {kept.length === 1 ? "Approve the other file" : `Approve the other ${kept.length} files`}
         </button>
         <button type="button" className="btn" disabled title={REBASE_HINT}>
-          Rebase in the workspace
+          Update the copy to match your project
         </button>
         {canHandBack(pane) && (
           <button
@@ -101,8 +102,8 @@ export function ReviewConflictPanel({ pane, root, conflicts }: Props) {
         </p>
       ) : (
         <p className="review-conflict__hint">
-          Or open the file below, take the parts you want by hand, and land the rest — the workspace
-          keeps everything either way.
+          Or open the file below, take the parts you want by hand, and approve the rest — the
+          agent's copy keeps everything either way.
         </p>
       )}
     </section>
