@@ -30,6 +30,12 @@ export function readClipboardPaste(): Promise<ClipboardPaste> {
   return invoke("read_clipboard_paste");
 }
 
+/** Copies a terminal selection out natively — xterm's selection is not a DOM
+ * one, so the page has nothing WebKit's own copy could reach. */
+export function writeClipboardText(text: string): Promise<void> {
+  return invoke("write_clipboard_text", { text });
+}
+
 export function saveScreenshot(dataUrl: string): Promise<Screenshot> {
   return invoke("save_screenshot", { dataUrl });
 }

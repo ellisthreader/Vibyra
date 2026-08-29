@@ -25,6 +25,15 @@ For Ellis's stable communication style, frontend taste, backend expectations,
 and preferred agent behaviour, read `99 Meta/Ellis - Coding Memory.md`.
 The current user message always overrides that profile.
 
+## Ellis Personal And Real-World Questions
+
+For questions about Ellis's personal life, money, career, business choices,
+leadership, relationships, motivation, trade-offs, or other realistic real-world
+decisions, read `99 Meta/Ellis AI Mind/Ellis AI Mind.md`, then
+`99 Meta/Ellis AI Mind/Books And Real-World Decisions.md`. Apply only the most
+relevant lenses from the four books and do not load a Vibyra code domain unless
+the question actually depends on project source or live state.
+
 For code cleanup, organization, API-compatible splitting, performance-safe
 refactoring, or the hard 200-line source standard, read
 `Code Organization And Refactoring Standard.md` and use `vibyra-refactor`.

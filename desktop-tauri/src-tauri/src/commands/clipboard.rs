@@ -43,6 +43,23 @@ pub(super) fn copy_image(image: DynamicImage) -> Result<(), String> {
     })
 }
 
+/// Copies a terminal selection out.
+///
+/// xterm draws its own selection rather than making a DOM one, and the page
+/// sets `user-select: none`, so WebKit has nothing of its own to copy — the
+/// selected text has to travel through here or it never reaches the clipboard.
+#[tauri::command]
+pub async fn write_clipboard_text(text: String) -> Result<(), String> {
+    super::run_blocking(move || {
+        with_clipboard(|clipboard| {
+            clipboard
+                .set_text(text)
+                .map_err(|e| format!("Could not copy to the clipboard: {e}"))
+        })
+    })
+    .await
+}
+
 /// What a terminal paste should insert.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
@@ -71,6 +88,35 @@ fn paste_image(image: ImageData<'_>, dir: std::path::PathBuf) -> Result<Clipboar
     Ok(ClipboardPaste::Image {
         path: path.to_string_lossy().into_owned(),
     })
+}
+
+/// Copying out is the half no unit test can reach: it depends on the display
+/// server, and on X11 specifically on this process still owning the selection
+/// when another one asks for it. Ignored by default because CI is headless —
+/// run it on a desktop with `cargo test -- --ignored copies_text_other`.
+#[cfg(test)]
+mod tests {
+    use std::process::Command;
+
+    #[test]
+    #[ignore = "needs a display server"]
+    fn copies_text_other_processes_can_read() {
+        let probe = "vibyra-copy-probe-42";
+        super::with_clipboard(|clipboard| {
+            clipboard
+                .set_text(probe.to_string())
+                .map_err(|e| e.to_string())
+        })
+        .expect("set_text");
+
+        // Read from a separate process while this one still owns the
+        // selection — that is exactly the arrangement the app runs in.
+        let seen = Command::new("xclip")
+            .args(["-o", "-selection", "clipboard"])
+            .output()
+            .expect("run xclip");
+        assert_eq!(String::from_utf8_lossy(&seen.stdout), probe);
+    }
 }
 
 #[tauri::command]
