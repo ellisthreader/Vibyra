@@ -124,6 +124,28 @@ stored with their reason.
   animation frame outside React — the same contract `terminalBus` uses, and for
   the same reason.
 
+## Two defects found after the code "worked"
+
+Both passed every test that existed at the time, which is the point of writing
+them down.
+
+**A stale permission on read.** `approvals::pending()` reported `trustable` —
+whether a card may offer "don't ask again" — from a hardcoded "this agent may
+write". Creation was correct; the *read* was not, so a write proposed by a
+Plan-mode agent came back offering the one standing grant `risk::decide`
+refuses. Any field recomputed on read has to be recomputed from something
+real: it now joins `agent_profiles.permission`, and a deleted agent (whose
+cards outlive it) yields `false`.
+
+**Two mirror-image platform-import breaks.** Clippy runs on Linux and cannot
+see the `cfg(not(unix))` branches, so it will tell you to delete an import
+Windows needs — and stay silent about one Windows rejects as unused, where
+`-D warnings` makes it an error. Both cost a release-job round trip.
+`agent_runtime/platform_import_tests.rs` now refuses the shape that causes
+either. Note its companion test: the first draft flagged a trait imported for
+its methods and an import both branches use, and a lint that cries wolf gets
+deleted rather than obeyed.
+
 ## Gotchas found the hard way
 
 - `fsx::harden` is a **file** hardener (0600). Applying it to a directory
