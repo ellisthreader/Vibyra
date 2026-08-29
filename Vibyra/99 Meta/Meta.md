@@ -2,7 +2,7 @@
 type: index
 aliases:
   - Vault Meta
-updated: 2026-07-09
+updated: 2026-08-28
 tags:
   - index/meta
 ---
@@ -11,6 +11,7 @@ tags:
 
 ## AI And Memory Audits
 
+- [[99 Meta/Ellis AI Mind/Ellis AI Mind|Ellis AI Mind]]
 - [[99 Meta/Ellis - Coding Memory|Ellis - Coding Memory]]
 - [[99 Meta/Codex Chat Memory Audit - 2026-07-10|Codex Chat Memory Audit - 2026-07-10]]
 - [[99 Meta/Vault Inventory|Vault Inventory]]

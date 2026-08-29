@@ -1,6 +1,6 @@
 ---
 name: vibyra-obsidian
-description: Keep Vibyra Obsidian memory accurate before, during, and after repo work. Use when working in this repo on code, architecture, workflows, permissions, routes, debugging, or durable project decisions, especially when changes should be recorded in Vibyra/_ai so future sessions do not rediscover them.
+description: Keep Vibyra Obsidian memory accurate before, during, and after repo work, and route Ellis-specific personal questions through the vault's personalisation hub. Use for code, architecture, workflows, permissions, debugging, durable decisions, or personal real-world guidance that depends on stored context.
 metadata:
   short-description: Maintain Vibyra Obsidian memory
 ---
@@ -38,6 +38,17 @@ Before topic-specific work, check `.agents/skills/` for a matching local skill
 and read it. Treat relevant skills as active instructions for the task.
 
 For memory/skill audits, also read `Vibyra/_ai/Memory And Skills Optimization.md`.
+
+### Personal And Real-World Questions
+
+When the prompt concerns Ellis's personal life, money, career, business choices,
+leadership, relationships, motivation, or a realistic real-world trade-off,
+read `Vibyra/99 Meta/Ellis AI Mind/Ellis AI Mind.md` and then
+`Vibyra/99 Meta/Ellis AI Mind/Books And Real-World Decisions.md`. This personal
+route replaces the app/desktop/backend domain step unless the question also
+depends on Vibyra source or live state. Use only confirmed personal facts, let
+the current message override memory, and apply the smallest relevant set of
+book lenses rather than mentioning all four mechanically.
 
 ### Prompt Transcript Audits
 
@@ -96,6 +107,7 @@ only the routing/context fact to Obsidian.
 - Backend/cloud index: `Vibyra/_ai/Vibyra Backend Memory.md`
 - Focused app facts: the relevant file under `Vibyra/_ai/App/`
 - Generated run summaries: `Vibyra/_ai/Runs/` only when a run note is explicitly useful
+- Ellis personalisation: `Vibyra/99 Meta/Ellis AI Mind/`
 
 Prefer the smallest focused note that future sessions will naturally read. Keep index notes short and move feature-specific details to focused notes.
 

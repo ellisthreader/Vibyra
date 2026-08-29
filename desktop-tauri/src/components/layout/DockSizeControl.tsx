@@ -6,8 +6,8 @@ import { useWorkspaceStore } from "../../state/workspaceStore";
 // Where Terminals / Split / Preview used to live. The three buttons mean the
 // same thing they always did — how much of the workspace the right-hand
 // surface gets — they just no longer decide *which* surface that is. Choosing
-// a size opens the dock if it was shut; the tab strip inside it is what closes
-// it again, which is why this row is still three glyphs and not four.
+// a size opens the dock if it was shut. Pressing the active size closes it, so
+// the titlebar remains a compact three-glyph control without becoming one-way.
 
 function CompactGlyph() {
   return (
@@ -51,20 +51,22 @@ export function DockSizeControl() {
   const size = useWorkspaceStore((state) => state.dockSize);
   const open = useWorkspaceStore((state) => state.dockTool !== null);
   const setDockSize = useWorkspaceStore((state) => state.setDockSize);
+  const toggleDock = useWorkspaceStore((state) => state.toggleDock);
 
   return (
-    <div className="dock-size" role="group" aria-label="Dock size">
+    <div className="dock-size" role="group" aria-label="Dock size and visibility">
       {CHOICES.map(({ id, label, Glyph }) => {
         const on = open && size === id;
+        const actionLabel = on ? "Close dock" : label;
         return (
           <button
             key={id}
             type="button"
             className={on ? "dock-size__on" : ""}
             aria-pressed={on}
-            aria-label={label}
-            title={label}
-            onClick={() => setDockSize(id)}
+            aria-label={actionLabel}
+            title={actionLabel}
+            onClick={() => (on ? toggleDock() : setDockSize(id))}
           >
             <Glyph />
           </button>

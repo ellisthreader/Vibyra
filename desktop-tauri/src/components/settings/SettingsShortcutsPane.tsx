@@ -93,6 +93,8 @@ const APP_SHORTCUTS = [
   { label: "Cycle the dock size", keys: "Ctrl/Cmd + Shift + \\" },
   { label: "Dock: preview, chat, memory, files, review", keys: "Alt + 1–5" },
   { label: "Switch project 1–9", keys: "Ctrl/Cmd + Shift + 1–9" },
+  { label: "Copy the terminal selection", keys: "Ctrl/Cmd + Shift + C" },
+  { label: "Paste into the terminal", keys: "Ctrl/Cmd + Shift + V" },
   { label: "Send composer line", keys: "Enter" },
   { label: "New line in composer", keys: "Shift + Enter" },
 ];

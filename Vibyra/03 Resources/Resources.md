@@ -2,7 +2,7 @@
 type: index
 aliases:
   - Resource Library
-updated: 2026-07-09
+updated: 2026-08-28
 tags:
   - index/resources
 ---
@@ -17,6 +17,10 @@ tags:
 - [[03 Resources/Repository Checklist|Repository Checklist]]
 
 Use this folder for reusable technical notes, checklists, snippets, research, and references that belong to more than one project.
+
+## Books And Decision-Making
+
+- [[03 Resources/Books/Money Entrepreneurship And Leadership - Master Study Guide|Money, Entrepreneurship And Leadership - Master Study Guide]]
 
 ## Navigation
 
