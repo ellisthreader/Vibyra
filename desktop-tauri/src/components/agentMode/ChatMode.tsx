@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { NONE } from "../../lib/emptyList";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { ChatModeRail } from "./ChatModeRail";
@@ -16,7 +17,7 @@ import { ChatSurface } from "./ChatSurface";
 export function ChatMode() {
   const loadChats = useAgentChatStore((state) => state.loadChats);
   const openChat = useAgentChatStore((state) => state.openChat);
-  const chats = useAgentChatStore((state) => state.chats.detached ?? []);
+  const chats = useAgentChatStore((state) => state.chats.detached ?? NONE);
   const chatId = useAgentModeStore((state) => state.chatId);
   const selectChat = useAgentModeStore((state) => state.selectChat);
 

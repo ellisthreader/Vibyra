@@ -1,6 +1,7 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import type { AgentProfile } from "../../agentTypes";
+import { NONE } from "../../lib/emptyList";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 
 /**
@@ -13,7 +14,7 @@ import { useAgentRosterStore } from "../../state/agentRosterStore";
  * time someone switches tabs.
  */
 export function AgentPlacesCard({ agent }: { agent: AgentProfile }) {
-  const places = useAgentRosterStore((state) => state.places[agent.id] ?? []);
+  const places = useAgentRosterStore((state) => state.places[agent.id] ?? NONE);
   const grant = useAgentRosterStore((state) => state.grant);
   const revoke = useAgentRosterStore((state) => state.revoke);
   const error = useAgentRosterStore((state) => state.error);

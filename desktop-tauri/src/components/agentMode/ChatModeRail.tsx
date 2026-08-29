@@ -1,5 +1,6 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
+import { NONE } from "../../lib/emptyList";
 import { relativeTime } from "../../lib/relativeTime";
 import { mountChatPlace } from "../../ipc/agentChats";
 import { TrashIcon } from "../common/AgentIcons";
@@ -15,7 +16,7 @@ import { useAgentModeStore } from "../../state/agentModeStore";
  * deliberate trip to the side of the screen rather than sitting next to Send.
  */
 export function ChatModeRail() {
-  const chats = useAgentChatStore((state) => state.chats.detached ?? []);
+  const chats = useAgentChatStore((state) => state.chats.detached ?? NONE);
   const running = useAgentChatStore((state) => state.running);
   const newChat = useAgentChatStore((state) => state.newChat);
   const remove = useAgentChatStore((state) => state.remove);

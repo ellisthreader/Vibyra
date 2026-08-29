@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { AgentProfile, MemoryEntry, Reflection } from "../../agentTypes";
 import { PinIcon, TrashIcon } from "../common/AgentIcons";
+import { NONE } from "../../lib/emptyList";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 
@@ -15,7 +16,7 @@ import { useAgentWorkStore } from "../../state/agentWorkStore";
  * room.
  */
 export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
-  const entries = useAgentWorkStore((state) => state.memory[agent.id] ?? []);
+  const entries = useAgentWorkStore((state) => state.memory[agent.id] ?? NONE);
   const load = useAgentWorkStore((state) => state.loadMemory);
   const add = useAgentWorkStore((state) => state.addMemory);
   const setStatus = useAgentWorkStore((state) => state.setMemoryStatus);

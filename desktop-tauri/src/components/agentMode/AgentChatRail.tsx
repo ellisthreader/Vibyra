@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { AgentProfile } from "../../agentTypes";
 import { PinIcon, TrashIcon } from "../common/AgentIcons";
 import { PlusIcon, SearchIcon } from "../common/Icons";
+import { NONE } from "../../lib/emptyList";
 import { relativeTime } from "../../lib/relativeTime";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
@@ -16,7 +17,7 @@ import { useAgentModeStore } from "../../state/agentModeStore";
  * touched, and all of them keep the same brief, memory, skills and grants.
  */
 export function AgentChatRail({ agent }: { agent: AgentProfile }) {
-  const chats = useAgentChatStore((state) => state.chats[agent.id] ?? []);
+  const chats = useAgentChatStore((state) => state.chats[agent.id] ?? NONE);
   const running = useAgentChatStore((state) => state.running);
   const newChat = useAgentChatStore((state) => state.newChat);
   const amend = useAgentChatStore((state) => state.amend);

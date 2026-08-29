@@ -25,10 +25,10 @@ export function AgentDashboard() {
   const agents = useAgentRosterStore((state) => state.agents);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const openPanel = useAgentModeStore((state) => state.openPanel);
-  const working = useAgentChatStore((state) =>
-    Object.entries(state.running)
-      .filter(([, busy]) => busy)
-      .map(([chatId]) => chatId),
+  // A count, not the list: a selector that builds a fresh array re-renders on
+  // every store change, because zustand compares results with Object.is.
+  const working = useAgentChatStore(
+    (state) => Object.values(state.running).filter(Boolean).length,
   );
 
   useEffect(() => {
@@ -64,11 +64,11 @@ export function AgentDashboard() {
 
       <section className="dashboard__block">
         <h3 className="section-label">Working now</h3>
-        {working.length === 0 ? (
+        {working === 0 ? (
           <p className="dashboard__quiet">Nothing is running.</p>
         ) : (
           <p className="dashboard__quiet">
-            {working.length} chat{working.length === 1 ? "" : "s"} in progress.
+            {working} chat{working === 1 ? "" : "s"} in progress.
           </p>
         )}
       </section>

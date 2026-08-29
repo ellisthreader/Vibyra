@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import type { Routine } from "../../agentTypes";
+import { NONE } from "../../lib/emptyList";
 import { relativeTime } from "../../lib/relativeTime";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 
@@ -20,7 +21,7 @@ export function RoutineRow({
   agentName: string;
   onEdit: () => void;
 }) {
-  const runs = useAgentWorkStore((state) => state.runs[routine.id] ?? []);
+  const runs = useAgentWorkStore((state) => state.runs[routine.id] ?? NONE);
   const loadRuns = useAgentWorkStore((state) => state.loadRuns);
   const setEnabled = useAgentWorkStore((state) => state.setRoutineEnabled);
   const remove = useAgentWorkStore((state) => state.deleteRoutine);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
+import { NONE } from "../../lib/emptyList";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { AgentComposer } from "./AgentComposer";
@@ -21,7 +22,7 @@ import { mailAllowlist } from "../../ipc/agentMail";
 export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const chatId = useAgentModeStore((state) => state.chatId);
   const blocks = useAgentChatStore((state) =>
-    chatId ? (state.transcripts[chatId]?.blocks ?? []) : [],
+    chatId ? (state.transcripts[chatId]?.blocks ?? NONE) : NONE,
   );
   const [allowed, setAllowed] = useState<string[]>([]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -42,7 +43,10 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   }, [chatId]);
 
   useEffect(() => {
-    if (!agent?.id) return setAllowed([]);
+    if (!agent?.id) {
+      setAllowed([]);
+      return;
+    }
     void mailAllowlist(agent.id).then(setAllowed).catch(() => setAllowed([]));
   }, [agent?.id]);
 
