@@ -5,7 +5,6 @@ import {
   blockedKeys,
   canLandInline,
   contestedKeys,
-  fleetFacts,
   landReport,
   landableRows,
   radarCollisions,
@@ -93,23 +92,13 @@ test("land-all targets skip orphans, whose panes are gone", () => {
   assert.deepEqual(landableRows(rows).map((entry) => entry.paneId), [3]);
 });
 
-test("the header counts contested files, not contested pairs", () => {
-  const rows = [row({ paneId: 3 }), row({ paneId: 5, status: "working" })];
-  const found = [
-    collision("a.ts", "touch", [3, 5]),
-    collision("b.ts", "overlap", [3, 5]),
-    collision("c.ts", "conflict", [3, 5]),
-  ];
-  assert.deepEqual(fleetFacts(rows, found), { workspaces: 2, ready: 1, overlaps: 2 });
-});
-
 test("a clean run says only what it did", () => {
   const report = landReport([
     { key: "pane:3", paneId: 3, label: "claude #3", applied: true },
     { key: "pane:5", paneId: 5, label: "codex #5", applied: true },
   ]);
   assert.deepEqual(report.stuck, []);
-  assert.equal(report.text, "Landed 2");
+  assert.equal(report.text, "Approved 2");
 });
 
 test("a mixed run names what bounced and keeps it linkable", () => {
@@ -120,7 +109,7 @@ test("a mixed run names what bounced and keeps it linkable", () => {
     { key: "pane:9", paneId: 9, label: "claude #9", applied: false },
   ]);
   assert.equal(report.landed, 3);
-  assert.equal(report.text, "Landed 3 · 1 needs attention");
+  assert.equal(report.text, "Approved 3 · 1 needs attention");
   assert.deepEqual(report.stuck.map((entry) => entry.paneId), [9]);
 });
 
@@ -130,5 +119,5 @@ test("a run that lands nothing never reports a landing", () => {
     { key: "pane:5", paneId: 5, label: "codex #5", applied: false },
   ]);
   assert.equal(report.landed, 0);
-  assert.equal(report.text, "Nothing landed · 2 need attention");
+  assert.equal(report.text, "Nothing went in · 2 need attention");
 });

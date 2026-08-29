@@ -81,6 +81,7 @@ import "./styles/review-diff-rows.css";
 import "./styles/review-actions.css";
 import "./styles/review-changeset.css";
 import "./styles/review-conflict.css";
+import "./styles/review-verbs.css";
 import "./styles/companion-chat.css";
 import "./styles/companion-chat-composer.css";
 import "./styles/companion-memory.css";

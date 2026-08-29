@@ -35,7 +35,13 @@ export function ReviewPrSheet({ pane, status, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  useModalFocus(modalRef, true, onClose);
+  // While the commit/push/PR run, the sheet is the only thing showing them.
+  // Escape and a backdrop click must not dismiss it mid-flight — the native
+  // work would keep going invisibly.
+  const closeUnlessBusy = () => {
+    if (!busy) onClose();
+  };
+  useModalFocus(modalRef, true, closeUnlessBusy);
 
   // One fetch when the sheet opens. A branch list changes on the scale of
   // somebody creating a branch, and a failure here is a degraded picker — the
@@ -73,7 +79,7 @@ export function ReviewPrSheet({ pane, status, onClose }: Props) {
   const names = bases?.names ?? [];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={closeUnlessBusy}>
       <div
         className="modal review-pr"
         role="dialog"

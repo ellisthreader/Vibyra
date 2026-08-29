@@ -129,3 +129,23 @@ fn only_vibyra_branches_may_become_pull_requests() {
     // The repo itself sits on the user's branch, not a vibyra/* one.
     assert!(create_pr(&repo, "t", "b", None).is_err());
 }
+
+#[test]
+fn only_a_github_origin_arms_the_share_flow() {
+    // Exact host or nothing: a lookalike domain, a GitLab remote, or the
+    // local file path the other fixtures use must all read as "not GitHub".
+    assert!(is_github_remote("https://github.com/ellis/vibyra.git"));
+    assert!(is_github_remote("git@github.com:ellis/vibyra.git"));
+    assert!(is_github_remote("ssh://git@github.com/ellis/vibyra.git"));
+    assert!(!is_github_remote("https://gitlab.com/ellis/vibyra.git"));
+    assert!(!is_github_remote("https://github.com.evil.example/x.git"));
+    assert!(!is_github_remote("git@github.com.evil.example:x.git"));
+
+    // The status probe keeps the raw origin for display but only flags
+    // GitHub-capable ones — the fixture's origin is a local bare repo.
+    let temp = tempfile::tempdir().unwrap();
+    let (repo, _origin, _worktree) = repo_origin_worktree(temp.path());
+    let status = github_status_with_path(&repo, Some(OsStr::new("/nonexistent")));
+    assert!(status.origin.is_some());
+    assert!(!status.origin_github);
+}

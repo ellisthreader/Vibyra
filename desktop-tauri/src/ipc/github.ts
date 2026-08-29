@@ -5,6 +5,12 @@ export interface GithubStatus {
   authed: boolean;
   /** The `origin` remote's URL, when the repo has one to push to. */
   origin: string | null;
+  /**
+   * Whether that remote lives on github.com. A GitLab or self-hosted origin
+   * can be pushed to, but `gh pr create` would fail after the push — so
+   * sharing needs this, not just a non-empty `origin`.
+   */
+  originGithub: boolean;
 }
 
 export function githubStatus(projectRoot: string): Promise<GithubStatus> {

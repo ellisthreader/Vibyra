@@ -5,11 +5,13 @@ import type { SafeWorkspaceRef } from "../../types";
 import { ReviewDiffView } from "./ReviewDiffView";
 import type { Overlap } from "./changeset/useChangesetOverlaps";
 
+// Words, not git letter codes: `A`/`M`/`D` mean nothing to someone who has
+// never staged a commit, and the chip is wide enough to just say it.
 const MARKS: Record<ChangedFile["kind"], string> = {
-  added: "+",
-  modified: "~",
-  deleted: "−",
-  renamed: "→",
+  added: "new",
+  modified: "edit",
+  deleted: "gone",
+  renamed: "moved",
 };
 
 /**

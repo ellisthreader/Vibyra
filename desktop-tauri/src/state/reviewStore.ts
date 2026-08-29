@@ -20,6 +20,10 @@ function reportError(error: unknown): void {
   useWorkspaceStore.getState().setError(String(error));
 }
 
+// Monotonic ticket for GitHub probes: a slow response for the previous
+// project must never land on top of the current one's.
+let githubProbe = 0;
+
 export const useReviewStore = create<ReviewStore>((set, get) => ({
   level: "fleet",
   selectedPane: null,
@@ -61,11 +65,13 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
   },
 
   refreshGithub: async (projectRoot) => {
+    const probe = ++githubProbe;
     try {
-      set({ github: await githubStatus(projectRoot) });
+      const status = await githubStatus(projectRoot);
+      if (probe === githubProbe) set({ github: { root: projectRoot, status } });
     } catch {
       // GitHub readiness is a hint, never worth an error toast of its own.
-      set({ github: null });
+      if (probe === githubProbe) set({ github: { root: projectRoot, status: null } });
     }
   },
 

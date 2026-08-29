@@ -142,3 +142,28 @@ fn a_large_untracked_tree_truncates_before_it_is_read() {
     assert!(status.truncated);
     assert_eq!(status.changed.len(), MAX_FILES);
 }
+
+/// A `vibyra/*` branch name proves the worktree is Vibyra's; it does not
+/// prove it belongs to the repository the renderer handed over. Both
+/// destructive paths must refuse a workspace from a different repository
+/// before touching anything.
+#[test]
+fn a_worktree_from_another_repository_is_refused() {
+    let temp = tempfile::tempdir().unwrap();
+    let repo_a = committed_repo(&temp.path().join("a"), &[("main.txt", "a\n")]);
+    let repo_b = committed_repo(&temp.path().join("b"), &[("main.txt", "b\n")]);
+    let safe_b = prepare_safe_workspace(&repo_b, &temp.path().join("worktrees"), None).unwrap();
+    std::fs::write(safe_b.cwd.join("main.txt"), "changed\n").unwrap();
+
+    assert!(merge_back(&repo_a, &safe_b.cwd, &safe_b.base_commit, &[]).is_err());
+    assert_eq!(read_lf(&repo_a.join("main.txt")), "a\n");
+    assert!(super::discard_worktree(&repo_a, &safe_b.cwd).is_err());
+    assert!(safe_b.cwd.is_dir());
+
+    // The same workspace against its own repository still works.
+    assert!(
+        merge_back(&repo_b, &safe_b.cwd, &safe_b.base_commit, &[])
+            .unwrap()
+            .applied
+    );
+}

@@ -1,0 +1,193 @@
+/* The Review dock's three verbs, colour-coded (Ellis, 2026-08-29):
+ * green puts work into the project, red throws it away, and the neutral
+ * chrome around them stays quiet so those two colours keep their meaning.
+ * One solid green per screen — the primary Approve — everything else tinted.
+ *
+ * Loaded after dock-review.css / review-actions.css on purpose: the word-chip
+ * file marks and the fleet-head rewrite override the sheets that came with
+ * the fleet build rather than editing them, so the diff against that build
+ * stays readable. */
+
+/* ── the verbs ──────────────────────────────────────────────────────────── */
+
+.btn--approve {
+  background: var(--success);
+  border-color: transparent;
+  color: #fff;
+}
+
+.btn--approve:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--success) 86%, #000);
+}
+
+/* Tinted row-level actions: legible as buttons, quieter than the primary. */
+.act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 25px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--elevated);
+  font-size: var(--fs-control);
+  font-weight: var(--fw-semi);
+  color: var(--text);
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.act:hover:not(:disabled) { background: var(--hover-strong); }
+.act:disabled { opacity: 0.5; cursor: default; }
+
+.act--approve {
+  background: var(--success-soft);
+  border-color: color-mix(in srgb, var(--success) 36%, transparent);
+  color: var(--success);
+}
+
+.act--approve:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--success) 22%, transparent);
+}
+
+.act--reject {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 34%, transparent);
+  color: var(--danger);
+}
+
+.act--reject:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+}
+
+/* ── fleet masthead ─────────────────────────────────────────────────────── */
+
+.review-head--fleet {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.review-head__title {
+  margin: 0;
+  font-size: var(--fs-strong);
+  font-weight: var(--fw-bold);
+}
+
+.review-head__sub {
+  margin: 0;
+  font-size: var(--fs-hint);
+  color: var(--dim);
+}
+
+/* ── fleet rows ─────────────────────────────────────────────────────────── */
+
+.fleet-row__acts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+}
+
+.fleet-row__act { min-height: 24px; padding: 0 9px; }
+
+/* The status is a sentence now, and `ready` wears the same accent as its
+   dot — one colour meaning "come and look" on both. */
+.fleet-row__state {
+  font-size: var(--fs-hint);
+  color: var(--dim);
+}
+
+.fleet-row__state--ready { color: var(--accent); font-weight: var(--fw-semi); }
+.fleet-row__state--attention { color: var(--amber); font-weight: var(--fw-semi); }
+
+/* The row-level reject pauses in place, exactly like the action bar does. */
+.fleet-row__confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 10px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--line-soft);
+  background: var(--hover);
+}
+
+.fleet-row__confirm em {
+  flex: 1 1 100%;
+  font-style: normal;
+  font-size: var(--fs-hint);
+  color: var(--muted);
+}
+
+.fleet-row__confirm .fleet-row__acts { flex-direction: row; padding: 0; }
+
+/* What the approve-all run promises, under the button that runs it. */
+.fleet-foot__hint {
+  margin: 0;
+  font-size: var(--fs-hint);
+  color: var(--dim);
+  text-align: center;
+}
+
+/* ── changeset head ─────────────────────────────────────────────────────── */
+
+.review-back__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-semi);
+}
+
+/* ── file marks: words, not git letters ─────────────────────────────────── */
+
+.review-file__mark {
+  font-family: var(--font-ui);
+  font-size: var(--fs-tiny);
+  padding: 0 5px;
+  letter-spacing: 0.02em;
+}
+
+/* "edit" is the normal case, not a warning — amber stays reserved for the
+   radar. */
+.review-file__mark--modified { color: var(--accent); background: var(--accent-soft); }
+
+/* ── connect-GitHub sheet ───────────────────────────────────────────────── */
+
+.review-connect__body {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--muted);
+}
+
+.review-connect__body code,
+.review-connect__command code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  color: var(--text);
+}
+
+.review-connect__steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--fs-body);
+  color: var(--muted);
+}
+
+.review-connect__command {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+}
+
+.review-connect__command code { flex: 1; }

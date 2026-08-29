@@ -10,9 +10,9 @@ import { discardCopy, type ReviewSummary } from "../../../lib/reviewPolicy";
 
 /** What a confirmed press is called, so the verb matches the sentence above. */
 export const CONFIRM_ACTION = {
-  merge: "Land anyway",
-  sweep: "Land and discard",
-  discard: "Discard everything",
+  merge: "Approve anyway",
+  sweep: "Approve, then remove",
+  discard: "Yes, delete it",
 } as const;
 
 export type Confirm = keyof typeof CONFIRM_ACTION;
@@ -36,15 +36,20 @@ export function confirmCopy(confirm: Confirm, input: ConfirmInput): string {
   if (confirm === "discard") return discardCopy(input.summary, input.paneAlive);
   // The sweep is the one press that both keeps and destroys, so it says both
   // halves — and names the unticked files it is about to delete rather than
-  // land, which is the part a user does not expect.
+  // approve, which is the part a user does not expect.
   const unticked = input.left > 0 ? ` — including ${fileCount(input.left)} you left unticked` : "";
   const closes = input.paneAlive ? ", and closes this terminal" : "";
-  return `Lands ${fileCount(input.count)}, then deletes the safe workspace${unticked}${closes}. The delete cannot be undone.`;
+  return `Puts ${fileCount(input.count)} into your project, then deletes the agent's safe copy${unticked}${closes}. The delete cannot be undone.`;
 }
 
-/** GitHub readiness rides on this tooltip rather than a status widget. */
+/**
+ * The share button is never disabled by readiness — a vibe coder who has not
+ * connected GitHub yet gets walked through connecting, not a dead button.
+ */
 export function githubTitle(ready: boolean, github: GithubStatus | null): string {
-  if (ready) return "Push this branch and open a pull request";
-  if (github === null || !github.ghInstalled) return "Needs the GitHub CLI (gh) installed";
-  return github.authed ? "This project has no GitHub remote" : "Sign in first: run `gh auth login` in a terminal";
+  if (ready) return "Put this work on GitHub as a pull request";
+  if (github !== null && github.ghInstalled && github.authed) {
+    return "This project isn't linked to a GitHub repository";
+  }
+  return "Connect your GitHub account first — this walks you through it";
 }

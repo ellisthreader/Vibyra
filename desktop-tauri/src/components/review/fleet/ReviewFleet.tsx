@@ -1,9 +1,8 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 import {
   blockedKeys,
   contestedKeys,
-  fleetFacts,
   radarCollisions,
 } from "../../../lib/reviewFleetActionPolicy";
 import { reviewablePanes } from "../../../lib/reviewPolicy";
@@ -29,18 +28,16 @@ interface Props {
  * except the radar and the primary Land, because everything that is always
  * loud is something the eye learns to skip.
  *
- * It does not fetch on mount. `useReviewWatch` runs above the dock and keeps
- * the fleet current whether or not this panel is open — the tab's badge
- * depends on that — so a second fan-out from here would only double the git
- * processes. The header's Refresh is the deliberate, manual edge.
+ * `useReviewWatch` runs above the dock and keeps the fleet current whether or
+ * not this panel is open — the tab's badge depends on that. The one manual
+ * refresh control is gone (Ellis, 2026-08-29), so opening the panel is now the
+ * deliberate edge: one fan-out on mount, then the watcher owns it.
  */
 export function ReviewFleet({ projectId, root }: Props) {
   const { rows, found, panes } = useFleet(projectId);
   const refreshAll = useReviewStore((state) => state.refreshAll);
   const refreshOrphans = useReviewStore((state) => state.refreshOrphans);
-  const refreshing = useReviewStore((state) => state.refreshingAll);
 
-  const facts = fleetFacts(rows, found);
   const radar = radarCollisions(found);
   const blocked = blockedKeys(found);
   const contested = contestedKeys(found);
@@ -53,9 +50,11 @@ export function ReviewFleet({ projectId, root }: Props) {
     void refreshOrphans(root);
   }, [projectId, root, refreshAll, refreshOrphans]);
 
+  useEffect(() => refresh(), [refresh]);
+
   return (
     <>
-      <ReviewFleetHeader facts={facts} refreshing={refreshing} onRefresh={refresh} />
+      <ReviewFleetHeader />
       <div className="review-scroll fleet-scroll">
         <ReviewRadar collisions={radar} />
         <div className="fleet-list" role="list" aria-label="Safe workspaces">

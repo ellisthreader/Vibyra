@@ -29,7 +29,9 @@ export function ReviewRadar({ collisions }: Props) {
     >
       <h3 className="fleet-radar__head" id="fleet-radar-head">
         <WarnIcon size={12} />
-        {collisions.length === 1 ? "1 contested file" : `${collisions.length} contested files`}
+        {collisions.length === 1
+          ? "Two agents are changing the same file"
+          : `${collisions.length} files are being changed by more than one agent`}
       </h3>
       <ul className="fleet-radar__list">
         {collisions.map((collision) => (

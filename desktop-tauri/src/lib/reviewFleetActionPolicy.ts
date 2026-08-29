@@ -1,5 +1,5 @@
 import type { Collision } from "./reviewCollisions";
-import { fleetTally, type FleetRow } from "./reviewFleet.ts";
+import type { FleetRow } from "./reviewFleet.ts";
 
 // What the Fleet level is allowed to offer, and what a "land all" run adds up
 // to. Pure, and kept out of the components for the same reason `reviewPolicy`
@@ -46,19 +46,6 @@ export function blockedKeys(found: Collision[]): Set<string> {
   return keysOf(radarCollisions(found));
 }
 
-export interface FleetFacts {
-  workspaces: number;
-  ready: number;
-  /** Contested files, not contested pairs — the header counts rows of radar. */
-  overlaps: number;
-}
-
-/** The header's one line: `{n} workspaces · {r} ready · {c} overlap`. */
-export function fleetFacts(rows: FleetRow[], found: Collision[]): FleetFacts {
-  const { workspaces, ready } = fleetTally(rows);
-  return { workspaces, ready, overlaps: radarCollisions(found).length };
-}
-
 /**
  * Rows a land can act on at all: finished, and with a terminal behind them.
  *
@@ -100,9 +87,9 @@ function needing(count: number): string {
 }
 
 /**
- * What a "land all that apply cleanly" run is allowed to claim afterwards.
+ * What an "approve everything" run is allowed to claim afterwards.
  *
- * Never "landed everything": the run is a sequence of independent
+ * Never "approved everything": the run is a sequence of independent
  * all-or-nothing merges, some of which are expected to bounce off a checkout
  * the earlier ones just moved. Saying exactly how many bounced, and leaving
  * them linked to their changesets, is the honest report.
@@ -110,7 +97,7 @@ function needing(count: number): string {
 export function landReport(attempts: LandAttempt[]): LandReport {
   const stuck = attempts.filter((attempt) => !attempt.applied);
   const landed = attempts.length - stuck.length;
-  if (landed === 0) return { landed, stuck, text: `Nothing landed · ${needing(stuck.length)}` };
-  if (stuck.length === 0) return { landed, stuck, text: `Landed ${landed}` };
-  return { landed, stuck, text: `Landed ${landed} · ${needing(stuck.length)}` };
+  if (landed === 0) return { landed, stuck, text: `Nothing went in · ${needing(stuck.length)}` };
+  if (stuck.length === 0) return { landed, stuck, text: `Approved ${landed}` };
+  return { landed, stuck, text: `Approved ${landed} · ${needing(stuck.length)}` };
 }

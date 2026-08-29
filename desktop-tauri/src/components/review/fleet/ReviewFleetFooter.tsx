@@ -87,14 +87,20 @@ export function ReviewFleetFooter({ rows, panes, root }: Props) {
         </p>
       )}
       {targets.length >= 2 && (
-        <button
-          type="button"
-          className="btn btn--primary fleet-foot__land"
-          disabled={running || busyPane !== null}
-          onClick={() => void run()}
-        >
-          {running ? "Landing…" : "Land all that apply cleanly"}
-        </button>
+        <>
+          <button
+            type="button"
+            className="btn btn--approve fleet-foot__land"
+            disabled={running || busyPane !== null}
+            onClick={() => void run()}
+          >
+            {running ? "Approving…" : `Approve all ${targets.length} that are ready`}
+          </button>
+          <p className="fleet-foot__hint">
+            Each one is safety-checked against your project first; anything that doesn't fit
+            cleanly is left for you.
+          </p>
+        </>
       )}
     </footer>
   );

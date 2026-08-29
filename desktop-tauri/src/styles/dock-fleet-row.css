@@ -61,11 +61,14 @@ button.fleet-row__open:hover {
   color: var(--dim);
 }
 
+/* The state sentence sits left in the meta line and pushes the tally right;
+   its type and colours live in review-verbs.css. */
 .fleet-row__state {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: var(--fs-hint);
-  color: var(--dim);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fleet-row__orphan-mark {
@@ -86,17 +89,6 @@ button.fleet-row__open:hover {
   gap: 8px;
 }
 
-.fleet-row__branch {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: var(--fs-hint);
-  color: var(--muted);
-}
-
 .fleet-row__tally {
   flex-shrink: 0;
   display: inline-flex;
@@ -106,12 +98,6 @@ button.fleet-row__open:hover {
   font-size: var(--fs-hint);
   color: var(--dim);
   font-variant-numeric: tabular-nums;
-}
-
-.btn.fleet-row__land {
-  min-height: 26px;
-  padding: 0 11px;
-  font-size: var(--fs-control);
 }
 
 /* Someone else is in this file too. Dim for a shared file, amber once the

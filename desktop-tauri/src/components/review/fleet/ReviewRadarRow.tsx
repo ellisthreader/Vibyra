@@ -30,7 +30,7 @@ export function ReviewRadarRow({ collision }: Props) {
         {collision.workspaces.map((party) => (
           <span key={party.key} className="radar-row__party">
             {party.label}
-            {party.landed && <em className="radar-row__landed">already landed</em>}
+            {party.landed && <em className="radar-row__landed">already in your project</em>}
           </span>
         ))}
       </p>

@@ -44,23 +44,9 @@
 .review-back__dot--attention { background: var(--amber); }
 .review-back__dot--idle { background: var(--success); }
 
-.review-back__branch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  color: var(--muted);
-}
-
-.review-back__branch code {
-  font-family: var(--font-mono);
-  font-size: var(--fs-hint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.review-back .icon-btn { margin-left: auto; }
+/* The head's title styling lives in review-verbs.css with the 2026-08-29
+   re-skin; the branch chip it replaced is gone (the branch survives in the
+   title's tooltip). */
 
 /* ── tally and whole-selection actions ──────────────────────────────────── */
 

@@ -38,7 +38,12 @@ export interface ReviewStore {
   /** Land, discard and PR are single-flight, like relaunch operations. */
   busyPane: number | null;
   refreshingAll: boolean;
-  github: GithubStatus | null;
+  /**
+   * Keyed by the project it was probed for, and never trusted across a
+   * project switch — an unkeyed result could show one project's GitHub
+   * readiness on another project's Review panel.
+   */
+  github: { root: string; status: GithubStatus | null } | null;
 
   select: (paneId: number | null) => void;
   openFleet: () => void;

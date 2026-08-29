@@ -52,7 +52,7 @@ export function ReviewSelectionBar({ paneId, status, selection }: Props) {
           disabled={isEverything(selection)}
           onClick={() => setSelection(paneId, undefined)}
         >
-          Select all
+          Keep all
         </button>
         <button
           type="button"
@@ -60,7 +60,7 @@ export function ReviewSelectionBar({ paneId, status, selection }: Props) {
           disabled={picked.length === 0}
           onClick={() => setSelection(paneId, [])}
         >
-          None
+          Keep none
         </button>
       </div>
     </div>

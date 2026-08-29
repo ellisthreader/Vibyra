@@ -7,6 +7,7 @@ import { useReviewStore } from "../../state/reviewStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import type { PaneState } from "../../state/terminalStoreTypes";
 import { ChevronDownIcon, MoreIcon } from "../common/Icons";
+import { GithubConnectSheet } from "./GithubConnectSheet";
 import { ReviewPrSheet } from "./ReviewPrSheet";
 import { ReviewConflictPanel } from "./changeset/ReviewConflictPanel";
 import { ReviewMenu } from "./changeset/ReviewMenu";
@@ -21,24 +22,32 @@ interface Props {
 /**
  * How a review ends.
  *
- * Land is the primary action and the only one at that weight — discard is an
- * irreversible delete, and a delete sitting beside a land in the same button
- * shape is a mis-click waiting to happen, so it lives in the overflow as a
- * text button and states what it removes before it removes it. Both still
- * pause inline, the account-switch idiom, rather than opening a modal: the
- * sentence appears where the button was, so the thing you were reading and the
- * thing you are agreeing to are in the same place.
+ * Approve is the primary action and the only one at that weight — Reject is an
+ * irreversible delete, and a delete sitting beside an approve in the same
+ * button shape is a mis-click waiting to happen, so it lives in the overflow
+ * and states what it removes before it removes it. Both still pause inline,
+ * the account-switch idiom, rather than opening a modal: the sentence appears
+ * where the button was, so the thing you were reading and the thing you are
+ * agreeing to are in the same place.
+ *
+ * Share on GitHub is never disabled by readiness: not connected opens the
+ * connect walk-through, and the moment a re-check comes back connected the
+ * same open state renders the real pull-request sheet instead.
  */
 export function ReviewActions({ pane, projectRoot, status }: Props) {
   const busyPane = useReviewStore((state) => state.busyPane);
   const outcome = useReviewStore((state) => state.outcomeByPane[pane.id]);
   const selection = useReviewStore((state) => state.selectionByPane[pane.id]);
-  const github = useReviewStore((state) => state.github);
+  // Keyed by project: a slow probe for the previous project must never
+  // enable this project's share button.
+  const github = useReviewStore((state) =>
+    state.github?.root === projectRoot ? state.github.status : null,
+  );
   const merge = useReviewStore((state) => state.merge);
   const discard = useReviewStore((state) => state.discard);
   const activity = useTerminalStore((state) => state.activity[pane.id] ?? "idle");
   const [confirming, setConfirming] = useState<Confirm | null>(null);
-  const [prOpen, setPrOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const busy = busyPane !== null;
   const summary = summarize(status);
@@ -46,8 +55,14 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
   const left = summary.files - count;
   const warning = mergeWarning(activity);
   const alive = pane.status === "running";
-  const githubReady = github !== null && github.ghInstalled && github.authed && github.origin !== null;
-  const landLabel = count === 1 ? "Land 1 file" : `Land ${count} files`;
+  const githubReady =
+    github !== null && github.ghInstalled && github.authed && github.originGithub;
+  const landLabel =
+    count === summary.files && count > 1
+      ? `Approve all ${count} files`
+      : count === 1
+        ? "Approve 1 file"
+        : `Approve ${count} files`;
 
   const runMerge = async () => {
     setConfirming(null);
@@ -98,11 +113,12 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
     <footer className="review-actions">
       {outcome?.applied && (
         <p className="review-outcome review-outcome--ok">
-          Changes are in your project as ordinary edits — commit them when you're ready.
+          Approved — the changes are in your project as ordinary edits. Commit them whenever
+          you're ready.
         </p>
       )}
       {outcome && !outcome.applied && outcome.conflicts.length === 0 && (
-        <p className="review-outcome review-outcome--stuck">Nothing to merge yet.</p>
+        <p className="review-outcome review-outcome--stuck">Nothing to approve yet.</p>
       )}
       {outcome && !outcome.applied && outcome.conflicts.length > 0 && (
         <ReviewConflictPanel pane={pane} root={projectRoot} conflicts={outcome.conflicts} />
@@ -111,15 +127,15 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
         <div className="review-actions__split">
           <button
             type="button"
-            className="btn btn--primary review-actions__land"
+            className="btn btn--approve review-actions__land"
             disabled={busy || count === 0}
             onClick={() => void (warning ? setConfirming("merge") : runMerge())}
           >
             {busyPane === pane.id ? "Working…" : landLabel}
           </button>
           <ReviewMenu
-            label="More landing options"
-            className="btn btn--primary review-actions__caret"
+            label="More approve options"
+            className="btn btn--approve review-actions__caret"
             glyph={<ChevronDownIcon size={13} />}
             disabled={busy || count === 0}
           >
@@ -133,7 +149,7 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
                   setConfirming("sweep");
                 }}
               >
-                Land and discard workspace
+                Approve, then remove the workspace
               </button>
             )}
           </ReviewMenu>
@@ -141,11 +157,11 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
         <button
           type="button"
           className="btn review-actions__github"
-          disabled={busy || summary.files === 0 || !githubReady}
+          disabled={busy || summary.files === 0}
           title={githubTitle(githubReady, github)}
-          onClick={() => setPrOpen(true)}
+          onClick={() => setShareOpen(true)}
         >
-          Open pull request
+          Share on GitHub
         </button>
         <ReviewMenu
           label="More actions"
@@ -163,12 +179,21 @@ export function ReviewActions({ pane, projectRoot, status }: Props) {
                 setConfirming("discard");
               }}
             >
-              Discard workspace…
+              Reject — delete this work…
             </button>
           )}
         </ReviewMenu>
       </div>
-      {prOpen && <ReviewPrSheet pane={pane} status={status} onClose={() => setPrOpen(false)} />}
+      {shareOpen &&
+        (githubReady ? (
+          <ReviewPrSheet pane={pane} status={status} onClose={() => setShareOpen(false)} />
+        ) : (
+          <GithubConnectSheet
+            projectRoot={projectRoot}
+            github={github}
+            onClose={() => setShareOpen(false)}
+          />
+        ))}
     </footer>
   );
 }

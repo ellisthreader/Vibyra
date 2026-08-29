@@ -1,8 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::{Command, Output};
 
 use crate::{CoreError, CoreResult};
 
+use super::scratch::{patch_path, same_repository, scratch_index, scratch_write};
 use super::{conflicts, git, git_bytes, git_root, repo_relative, vibyra_branch, MergeOutcome};
 
 // A review ends one of two ways. **Merge back** lands the worktree's changes
@@ -28,6 +29,7 @@ pub fn merge_back(
     }
     let repo = git_root(project_root)?;
     let source = git_root(worktree)?;
+    same_repository(&repo, &source)?;
     let specs: Vec<&str> = paths.iter().map(String::as_str).collect();
 
     // Files the agent created but never added have to enter the diff; staging
@@ -42,7 +44,7 @@ pub fn merge_back(
     }
 
     let patch_file = patch_path(worktree);
-    std::fs::write(&patch_file, &patch)?;
+    scratch_write(&patch_file, &patch)?;
     let outcome = apply(&repo, &patch_file, worktree);
     let _ = std::fs::remove_file(&patch_file);
     outcome
@@ -145,26 +147,11 @@ fn mirror_working_tree(repo: &Path, index: &Path) -> CoreResult<()> {
 pub fn discard_worktree(project_root: &Path, worktree: &Path) -> CoreResult<()> {
     let branch = vibyra_branch(worktree)?;
     let repo = git_root(project_root)?;
+    same_repository(&repo, &git_root(worktree)?)?;
     git(
         &repo,
         &["worktree", "remove", "--force", &worktree.to_string_lossy()],
     )?;
     git(&repo, &["branch", "-D", &branch])?;
     Ok(())
-}
-
-/// The patch sits beside the worktree, not in a shared temp dir: unique per
-/// worktree, cleaned with it, and never racing another merge.
-fn patch_path(worktree: &Path) -> PathBuf {
-    worktree.with_extension("vibyra-merge.patch")
-}
-
-/// The scratch index keeps the same company, and wears the `snapshot-*.index`
-/// name the housekeeping sweep already knows to reap if a merge dies.
-fn scratch_index(worktree: &Path) -> PathBuf {
-    let name = worktree
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("merge");
-    worktree.with_file_name(format!("snapshot-merge-{name}.index"))
 }

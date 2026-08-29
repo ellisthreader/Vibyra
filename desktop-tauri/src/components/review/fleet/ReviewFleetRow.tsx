@@ -1,6 +1,9 @@
+import { useState } from "react";
+
 import { rowLabel } from "../../../lib/reviewDerive";
 import type { FleetRow, FleetStatus } from "../../../lib/reviewFleet";
 import { canLandInline } from "../../../lib/reviewFleetActionPolicy";
+import { discardCopy } from "../../../lib/reviewPolicy";
 import { useReviewStore } from "../../../state/reviewStore";
 import type { PaneState } from "../../../state/terminalStoreTypes";
 import { AgentMark } from "../../common/AgentMark";
@@ -30,12 +33,17 @@ const DOT: Record<FleetStatus, string> = {
   orphaned: "adot--sleeping",
 };
 
+/**
+ * Sentences, not git words (Ellis, 2026-08-29). The row has to be understood
+ * by someone who has never heard of a worktree: what the agent is doing, in
+ * the words a person would use.
+ */
 const WORD: Record<FleetStatus, string> = {
-  ready: "ready",
-  working: "working",
-  attention: "needs you",
-  idle: "idle",
-  orphaned: "no terminal",
+  ready: "Ready to review",
+  working: "Still working…",
+  attention: "Waiting for you",
+  idle: "No changes yet",
+  orphaned: "Terminal closed — work saved",
 };
 
 function tallyLabel(row: FleetRow): string {
@@ -46,8 +54,12 @@ function tallyLabel(row: FleetRow): string {
 export function ReviewFleetRow({ row, pane, contested, blocked, root }: Props) {
   const select = useReviewStore((state) => state.select);
   const merge = useReviewStore((state) => state.merge);
+  const discard = useReviewStore((state) => state.discard);
   const busyPane = useReviewStore((state) => state.busyPane);
-  const canLand = pane !== null && canLandInline(row, blocked);
+  const [rejecting, setRejecting] = useState(false);
+  const busy = busyPane !== null;
+  const actionable = pane !== null && row.status === "ready";
+  const canApprove = pane !== null && canLandInline(row, blocked);
 
   const body = (
     <>
@@ -68,18 +80,15 @@ export function ReviewFleetRow({ row, pane, contested, blocked, root }: Props) {
             role="img"
             title={
               blocked
-                ? "Another workspace has changed the same lines"
-                : "Another workspace has changed the same file"
+                ? "Another agent has changed the same lines"
+                : "Another agent has changed the same file"
             }
-            aria-label={blocked ? "Overlaps another workspace" : "Shares a file with another workspace"}
+            aria-label={blocked ? "Overlaps another agent's work" : "Shares a file with another agent"}
           />
         )}
-        <span className="fleet-row__state">{WORD[row.status]}</span>
       </span>
       <span className="fleet-row__meta">
-        <code className="fleet-row__branch" title={row.branch}>
-          {row.branch}
-        </code>
+        <span className={`fleet-row__state fleet-row__state--${row.status}`}>{WORD[row.status]}</span>
         {row.stale ? (
           <span className="fleet-row__tally">not read yet</span>
         ) : (
@@ -103,26 +112,63 @@ export function ReviewFleetRow({ row, pane, contested, blocked, root }: Props) {
         <div className="fleet-row__open fleet-row__open--static">{body}</div>
       ) : (
         // No aria-label on the button: one would *replace* everything inside
-        // it, and the state, branch and tally are the row. The content names
-        // it instead, which is why each of those carries its own wording.
+        // it, and the state and tally are the row. The branch keeps living in
+        // the tooltip for anyone who wants the git name.
         <button
           type="button"
           className="fleet-row__open"
-          title={`Open ${rowLabel(row)}'s changes`}
+          title={`Look at ${rowLabel(row)}'s changes (${row.branch})`}
           onClick={() => select(row.paneId)}
         >
           {body}
         </button>
       )}
-      {canLand && (
-        <button
-          type="button"
-          className="btn btn--primary fleet-row__land"
-          disabled={busyPane !== null}
-          onClick={() => void merge(pane, root)}
-        >
-          Land
-        </button>
+      {actionable && !rejecting && (
+        <span className="fleet-row__acts">
+          {canApprove && (
+            <button
+              type="button"
+              className="act act--approve fleet-row__act"
+              title="Put this work into your project"
+              disabled={busy}
+              onClick={() => void merge(pane, root)}
+            >
+              Approve
+            </button>
+          )}
+          <button
+            type="button"
+            className="act act--reject fleet-row__act"
+            title="Throw this work away"
+            disabled={busy}
+            onClick={() => setRejecting(true)}
+          >
+            Reject
+          </button>
+        </span>
+      )}
+      {actionable && rejecting && (
+        <div className="fleet-row__confirm">
+          <em>{discardCopy(row.summary, pane.status === "running")}</em>
+          <span className="fleet-row__acts">
+            <button
+              type="button"
+              className="act fleet-row__act"
+              disabled={busy}
+              onClick={() => setRejecting(false)}
+            >
+              Keep it
+            </button>
+            <button
+              type="button"
+              className="act act--reject fleet-row__act"
+              disabled={busy}
+              onClick={() => void discard(pane, root)}
+            >
+              Yes, delete it
+            </button>
+          </span>
+        </div>
       )}
     </div>
   );

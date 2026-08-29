@@ -1,57 +1,16 @@
-import type { FleetFacts } from "../../../lib/reviewFleetActionPolicy";
-import { RestartIcon } from "../../common/Icons";
-
-interface Props {
-  facts: FleetFacts;
-  refreshing: boolean;
-  onRefresh: () => void;
-}
-
-function count(value: number, one: string, many: string): string {
-  return `${value} ${value === 1 ? one : many}`;
-}
-
-/**
- * One line, three facts, in the panel's existing `review-head` rhythm.
- *
- * The overlap count is the only coloured thing up here and it only exists when
- * it is non-zero — a permanent "0 overlap" would be a number the eye stops
- * reading, and the whole value of the amber is that it is unusual.
- *
- * Each fact carries its own accessible name because the separators are
- * decorative: read out raw, "6 · 3 · 1" is three numbers with no nouns.
- */
-export function ReviewFleetHeader({ facts, refreshing, onRefresh }: Props) {
+// The Fleet level's masthead.
+//
+// No live counts and no controls up here — Ellis's call (2026-08-29): the
+// "6 workspaces · 3 ready" line read as jargon, the rows one glance below
+// already answer both numbers, and `useReviewWatch` keeps everything current
+// so a manual refresh icon was a control without a job. What earns the space
+// instead is the one sentence a new user needs before the list makes sense:
+// these are isolated copies, and nothing has touched the project yet.
+export function ReviewFleetHeader() {
   return (
-    <header className="review-head">
-      <p className="fleet-head__facts">
-        <span aria-label={count(facts.workspaces, "workspace", "workspaces")}>
-          {count(facts.workspaces, "workspace", "workspaces")}
-        </span>
-        <span aria-hidden="true">·</span>
-        <span aria-label={`${facts.ready} ready to review`}>{facts.ready} ready</span>
-        {facts.overlaps > 0 && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span
-              className="fleet-head__overlap"
-              aria-label={`${count(facts.overlaps, "file", "files")} changed by more than one workspace`}
-            >
-              {facts.overlaps} overlap
-            </span>
-          </>
-        )}
-      </p>
-      <button
-        type="button"
-        className="icon-btn fleet-head__refresh"
-        title="Refresh every workspace"
-        aria-label="Refresh every workspace"
-        disabled={refreshing}
-        onClick={onRefresh}
-      >
-        <RestartIcon size={13} />
-      </button>
+    <header className="review-head review-head--fleet">
+      <h3 className="review-head__title">Your agents&rsquo; work</h3>
+      <p className="review-head__sub">Each one works in its own safe copy of your project.</p>
     </header>
   );
 }

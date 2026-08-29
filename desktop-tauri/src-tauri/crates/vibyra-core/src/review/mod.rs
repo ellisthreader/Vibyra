@@ -11,6 +11,7 @@ mod merge;
 mod registry;
 #[cfg(test)]
 mod scope_tests;
+mod scratch;
 mod status;
 #[cfg(test)]
 mod tests;

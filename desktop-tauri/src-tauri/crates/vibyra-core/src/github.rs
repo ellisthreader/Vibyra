@@ -28,6 +28,10 @@ pub struct GithubStatus {
     pub authed: bool,
     /// The `origin` remote's URL, when the repo has one to push to.
     pub origin: Option<String>,
+    /// Whether that remote actually lives on github.com. A GitLab or
+    /// self-hosted origin can be pushed to, but `gh pr create` would then
+    /// fail after the push — so the PR action needs this, not just `origin`.
+    pub origin_github: bool,
 }
 
 /// Whether a pull request could be opened from this project — three probes,
@@ -49,8 +53,19 @@ pub(crate) fn github_status_with_path(project_root: &Path, path: Option<&OsStr>)
     GithubStatus {
         gh_installed,
         authed,
+        origin_github: origin.as_deref().is_some_and(is_github_remote),
         origin,
     }
+}
+
+/// The three shapes a github.com remote takes: HTTPS, scp-style SSH, and
+/// explicit ssh://. Host matching is exact — `github.com.evil.example`
+/// must not pass.
+pub(crate) fn is_github_remote(url: &str) -> bool {
+    let url = url.trim();
+    url.strip_prefix("https://github.com/").is_some()
+        || url.strip_prefix("git@github.com:").is_some()
+        || url.strip_prefix("ssh://git@github.com/").is_some()
 }
 
 /// Commits the worktree's pending work onto its branch, pushes the branch to
