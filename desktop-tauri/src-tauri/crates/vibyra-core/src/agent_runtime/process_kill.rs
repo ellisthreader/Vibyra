@@ -5,6 +5,12 @@
 //! leaves a compiler running. On Unix the child becomes a session leader so
 //! the whole tree can be signalled at once; Windows has no equivalent, so
 //! `taskkill /T` walks the tree instead.
+//!
+//! Every platform-only import in this file is written inside the function that
+//! needs it rather than at the top. A `use` at module scope that only one
+//! branch uses is an unused import on the *other* platform — and clippy, run
+//! on Linux, reports it as dead while the Windows build breaks on its absence.
+//! That is a failure only CI can see, so it is designed out here.
 
 use std::process::Command;
 
@@ -49,6 +55,8 @@ pub(super) fn terminate_group(pid: u32) {
 /// which is the closest equivalent and better than killing the child alone.
 #[cfg(not(unix))]
 pub(super) fn terminate_group(pid: u32) {
+    use std::process::Stdio;
+
     let _ = Command::new("taskkill")
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .stdout(Stdio::null())

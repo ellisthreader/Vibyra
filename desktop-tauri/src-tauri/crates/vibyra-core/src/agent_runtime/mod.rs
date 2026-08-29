@@ -22,6 +22,9 @@ pub mod process;
 mod process_io;
 mod process_kill;
 #[cfg(test)]
+#[path = "process_kill_tests.rs"]
+mod process_kill_tests;
+#[cfg(test)]
 mod process_tests;
 #[cfg(test)]
 mod tests;
