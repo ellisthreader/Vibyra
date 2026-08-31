@@ -55,3 +55,21 @@ export function restoreTerminalFocusAfterOverlay(
     if (terminals.focusedId === id) terminals.setFocus(id);
   });
 }
+
+/**
+ * Whether a mousedown on the pane needs focus moved by hand.
+ *
+ * xterm focuses itself for a press on its own element. A press anywhere else
+ * in the pane — the empty run above a bottom-anchored prompt — would instead
+ * leave focus on the host div, and the prompt would ignore typing until the
+ * user happened to click on the text itself.
+ */
+export function clickNeedsTerminalFocus(
+  target: EventTarget | null,
+  termElement: Node | undefined,
+): boolean {
+  // Deliberately not `target instanceof Node`: that global does not exist
+  // outside a DOM, so the guard threw where this logic is unit-tested.
+  if (!termElement || !target) return true;
+  return !termElement.contains(target as Node);
+}

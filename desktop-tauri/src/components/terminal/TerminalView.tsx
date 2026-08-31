@@ -5,7 +5,7 @@ import {
   terminalViewportIsNearBottom,
 } from "../../lib/terminalBottomAnchor";
 import { dropCarriesText, terminalDropText } from "../../lib/terminalDrop";
-import { focusMountedTerminal } from "../../lib/terminalFocus";
+import { clickNeedsTerminalFocus, focusMountedTerminal } from "../../lib/terminalFocus";
 import { initTerminalFont } from "../../lib/terminalFont";
 import {
   fitTerminal,
@@ -100,7 +100,15 @@ export function TerminalView({
     <div
       ref={hostRef}
       className="term-view"
-      onMouseDown={() => useTerminalStore.getState().setFocus(id)}
+      onMouseDown={(event) => {
+        useTerminalStore.getState().setFocus(id);
+        // Off the xterm element WebKit would focus this host instead; do what
+        // xterm does for a press on itself. See `clickNeedsTerminalFocus`.
+        const entry = getTerminal(id);
+        if (!entry || !clickNeedsTerminalFocus(event.target, entry.term.element)) return;
+        event.preventDefault();
+        entry.term.focus();
+      }}
       onDragOver={(event) => {
         // A drag only exposes its types, never its data — accepting here is
         // what lets the drop through at all.
