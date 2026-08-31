@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Starting Vibyra</title>
+    <!-- Linked rather than imported from the entry module: the stylesheet has
+         to be in flight before the script runs, or the first frame is an
+         unstyled mark on a white page — the exact flash this window exists to
+         remove. -->
+    <link rel="stylesheet" href="/src/styles/boot.css" />
+  </head>
+  <body>
+    <div class="boot" data-tauri-drag-region>
+      <div class="boot__wash" aria-hidden="true"></div>
+      <div class="boot__stage">
+        <span class="boot__halo" aria-hidden="true"></span>
+        <img
+          class="boot__mark"
+          src="/src/assets/vibyra-cobalt.png"
+          alt=""
+          draggable="false"
+        />
+        <h1 class="boot__word">Vibyra</h1>
+        <!-- Markup, not script, sets the first line: the window must say
+             something in the frame it paints, before the module has run. -->
+        <p class="boot__status" id="boot-status" role="status" aria-live="polite">
+          Starting up…
+        </p>
+      </div>
+      <div class="boot__rail">
+        <span class="boot__fill boot__fill--sweep" id="boot-fill"></span>
+      </div>
+    </div>
+    <script type="module" src="/src/boot/boot.ts"></script>
+  </body>
+</html>

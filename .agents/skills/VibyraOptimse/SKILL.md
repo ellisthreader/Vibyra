@@ -98,6 +98,16 @@ counter for the final figures when the canonical checker is available.
 
 When optimization work touches Vibyra terminals, preserve these invariants:
 
+- For desktop integrations backed by an official third-party CLI, leave
+  credential storage with that CLI and remove inherited automation-token
+  variables from every status and action command. Track and cancel browser
+  auth children, treat a zero exit as provisional, then verify the same account
+  identity and exact required scopes before unlocking actions. Keep project
+  readiness (such as a Git remote) separate from account readiness, enforce
+  permissions again in native mutating commands, and cover login, scope
+  upgrade, device-code handling, cancellation, and logout failure with a fake
+  CLI matrix.
+
 - An off-screen pane stays logically `hidden`, but native output delivery becomes
   `hibernated`. Detach its frontend event handler without disposing its registry
   xterm, then request an authoritative ring-buffer resync when it becomes active.
@@ -120,6 +130,11 @@ When optimization work touches Vibyra terminals, preserve these invariants:
   regular/bold bundled-font load before `open()` or `fit()`. Prewarming alone
   can lose to a fast restore. Attach one renderer per xterm and expose the
   observed backend on the terminal host for live inspection.
+- Treat store focus and browser focus as separate terminal state. After an
+  asynchronous xterm mount, focus its textarea only when the pane is still the
+  active logical target, connected, non-inert, and unobscured by a modal. When
+  a toast or palette answers a keyboard-only update/permission prompt, restore
+  xterm focus after that control unmounts without overriding a newer pane choice.
 - Keep `onData` free of viewport scans, fitting, or scroll anchoring; typing is
   an IPC hot path. Use xterm's `scrollOnUserInput` and let scroll/output events
   own anchoring work.

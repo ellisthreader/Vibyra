@@ -1,0 +1,174 @@
+/* The boot window — the first thing on screen, before the app bundle exists.
+   Imports the tokens so the splash and the shell are the same product; loads
+   nothing else. No Inter, no React, no icons: this sheet's whole job is to
+   paint in the first frame, and a webfont would cost the flash it exists to
+   prevent. System UI stack is the deliberate trade. */
+
+@import "./tokens.css";
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.boot {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  /* The window is frameless, so this hairline is the only thing separating
+     the splash from the desktop behind it. */
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  cursor: default;
+  user-select: none;
+}
+
+.boot__wash {
+  position: absolute;
+  inset: 0;
+  background: var(--wash);
+  pointer-events: none;
+}
+
+.boot__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 28px;
+  text-align: center;
+  /* Every child is decorative, so pointer events fall through to `.boot`,
+     which carries `data-tauri-drag-region`. Tauri reads that attribute off
+     the event target, not off its ancestors — without this the window would
+     only be draggable in the gaps between the mark and the status line. */
+  pointer-events: none;
+}
+
+/* The cobalt bloom behind the mark. Sized well past the logo so it reads as
+   atmosphere rather than as a ring around it. */
+.boot__halo {
+  position: absolute;
+  top: 4px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(91, 124, 250, 0.26), transparent 62%);
+  pointer-events: none;
+}
+
+.boot__mark {
+  position: relative;
+  width: 44px;
+  height: auto;
+  filter: drop-shadow(0 4px 18px rgba(91, 124, 250, 0.4));
+  animation: boot-float 5.5s ease-in-out infinite;
+}
+
+.boot__word {
+  position: relative;
+  margin: 2px 0 0;
+  font-size: var(--fs-title);
+  font-weight: var(--fw-black);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.boot__status {
+  position: relative;
+  margin: 0;
+  min-height: 1.2em;
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
+  color: var(--muted);
+  letter-spacing: 0.01em;
+  animation: boot-status-in var(--t-soft) var(--e-standard) both;
+}
+
+/* Flush to the window's bottom edge rather than an inset pill: at 380px wide
+   a short centred bar leaves a dead band under it, and the full-bleed rail
+   reads as chrome, which is what the rest of the shell does. */
+.boot__rail {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+  background: var(--line-soft);
+  pointer-events: none;
+}
+
+.boot__fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px rgba(91, 124, 250, 0.55);
+}
+
+/* Determinate: the width is the measurement, so it animates. */
+.boot__fill--measured {
+  width: var(--boot-percent, 0%);
+  transition: width 240ms var(--e-standard);
+}
+
+/* Indeterminate: a fixed sliver sweeping the rail. It must never look like a
+   bar filling up — an unknown total that renders as progress is a lie. */
+.boot__fill--sweep {
+  width: 34%;
+  animation: boot-sweep 1.15s var(--e-standard) infinite;
+}
+
+@keyframes boot-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(294%);
+  }
+}
+
+@keyframes boot-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes boot-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* `base-motion.css` belongs to the app bundle, which this window never loads,
+   so the opt-out is repeated here. The sweep is exempt from the blanket
+   duration override: reduced to 0.01ms it would sit frozen at one end of the
+   rail and read as a hang, so it is replaced with a still, dimmed bar. */
+@media (prefers-reduced-motion: reduce) {
+  .boot__mark,
+  .boot__status {
+    animation: none;
+  }
+
+  .boot__fill--measured {
+    transition: none;
+  }
+
+  .boot__fill--sweep {
+    width: 100%;
+    opacity: 0.4;
+    animation: none;
+  }
+}

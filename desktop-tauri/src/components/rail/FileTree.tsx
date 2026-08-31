@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { fsListDir } from "../../ipc/fs";
 import { visibleFileEntries } from "../../lib/fileTreePolicy";
-import { basename } from "../../state/projectStore";
+import { basename } from "../../lib/projectIdentity";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import type { DirEntryInfo } from "../../types";
 import { ChevronIcon, FileIcon, FolderIcon } from "../common/Icons";

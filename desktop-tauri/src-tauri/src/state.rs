@@ -13,6 +13,7 @@ use crate::agent_mode::AgentHub;
 use crate::ai_usage::AiLimits;
 use crate::ai_usage_guard::AiUsageGuard;
 use crate::commands::voice::VoiceRecording;
+use crate::github_integration::GithubIntegrationManager;
 use crate::provider_auth::ProviderAuthManager;
 use crate::secret_store::SecretStore;
 use crate::sink::ChannelSink;
@@ -29,6 +30,7 @@ pub struct AppState {
     pub settings_path: PathBuf,
     pub openai_api_key: Mutex<Option<String>>,
     pub usage: Arc<AiUsageGuard>,
+    pub github_integration: Arc<GithubIntegrationManager>,
     pub provider_auth: Arc<ProviderAuthManager>,
     pub secret_store_available: Mutex<bool>,
     pub watcher: Mutex<Option<WorkspaceWatcher>>,
@@ -73,6 +75,7 @@ impl AppState {
             settings_path,
             openai_api_key: Mutex::new(openai_api_key),
             usage: Arc::new(AiUsageGuard::new(usage_path)),
+            github_integration: Arc::new(GithubIntegrationManager::default()),
             provider_auth: Arc::new(ProviderAuthManager::default()),
             secret_store_available: Mutex::new(secret_store_available),
             watcher: Mutex::new(None),

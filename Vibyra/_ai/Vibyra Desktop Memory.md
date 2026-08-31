@@ -45,8 +45,9 @@ website, Expo browser client, and native phone app.
 - Provider OSC behavior, prompt-derived chat names, title precedence, and
   persistence: `Desktop/Terminal Chat Titles.md`
 - Reading an agent's approval prompt into a notification, the fingerprint
-  guard before any keystroke reaches a PTY, and why Vibyra keeps no
-  auto-approve list of its own: `Desktop/Agent Prompt Notifications.md`
+  guard before any keystroke reaches a PTY, keyboard focus after update or
+  approval UI, and why Vibyra keeps no auto-approve list of its own:
+  `Desktop/Agent Prompt Notifications.md`
 - Titlebar rebuild, the stage split that replaced the Terminals/Preview mode,
   and why `terminalsVisible()` is the native flush budget:
   `Desktop/Project Stage And Titlebar.md`
@@ -59,6 +60,9 @@ website, Expo browser client, and native phone app.
   PTY one, the two adapters and what was verified against the real CLIs, the
   path and approval boundaries, and the rules behind memory, skills, routines
   and handoffs: `Desktop/Agent Mode As Built.md`
+- Project-tile right-click actions, project configuration, Git-backed daily
+  activity, and the two-confirmation close rule:
+  `Desktop/Project Menu And Activity.md`
 - Real microphone level for the F8 HUD, the dBFS mapping that makes it
   readable, and why the renderer never opens a microphone:
   `Desktop/Dictation Level Meter.md`
@@ -68,8 +72,8 @@ website, Expo browser client, and native phone app.
 - In-app reports, authenticated backend delivery, permission disclosure, and
   server-owned webhook boundary: `Desktop/In-App Reporting.md`
 - Workspace Preview: `Desktop/Projects And Preview.md`
-- Release polling, the status/checkState split, and the three update
-  surfaces: `Desktop/Desktop Updates.md`
+- Startup gating, release polling, the status/checkState split, update
+  surfaces, and post-update changelog: `Desktop/Desktop Updates.md`
 - System-wide F9 screenshot capture and annotation editor:
   `Desktop/Screenshot Capture.md`
 

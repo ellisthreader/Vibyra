@@ -29,6 +29,14 @@ fn with_clipboard<T>(
     action(clipboard.as_mut().expect("clipboard initialized"))
 }
 
+pub(crate) fn copy_text(text: &str) -> Result<(), String> {
+    with_clipboard(|clipboard| {
+        clipboard
+            .set_text(text.to_owned())
+            .map_err(|e| format!("Could not copy to the clipboard: {e}"))
+    })
+}
+
 pub(super) fn copy_image(image: DynamicImage) -> Result<(), String> {
     let rgba = image.into_rgba8();
     let data = ImageData {
@@ -50,14 +58,7 @@ pub(super) fn copy_image(image: DynamicImage) -> Result<(), String> {
 /// selected text has to travel through here or it never reaches the clipboard.
 #[tauri::command]
 pub async fn write_clipboard_text(text: String) -> Result<(), String> {
-    super::run_blocking(move || {
-        with_clipboard(|clipboard| {
-            clipboard
-                .set_text(text)
-                .map_err(|e| format!("Could not copy to the clipboard: {e}"))
-        })
-    })
-    .await
+    super::run_blocking(move || copy_text(&text)).await
 }
 
 /// What a terminal paste should insert.

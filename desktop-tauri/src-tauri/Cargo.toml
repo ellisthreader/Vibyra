@@ -34,11 +34,11 @@ name = "vibyra_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dev-dependencies]
-tempfile = "3"
 # The exact verifier `tauri-plugin-updater` uses, so this crate proves the
 # shipped public key against a real signature rather than a lookalike.
 minisign-verify = "0.2"
 base64 = "0.22"
+tempfile = "3"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

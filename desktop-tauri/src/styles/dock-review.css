@@ -98,6 +98,12 @@
 
 .review-file__row:hover { background: var(--hover); }
 
+.review-file__row--selected,
+.review-file__row--selected:hover {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 var(--accent-2);
+}
+
 .review-file__mark {
   font-family: var(--font-mono);
   font-size: var(--fs-control);

@@ -64,7 +64,9 @@ follow the checklist rather than assuming a push worked.
 | Piece | Where |
 | --- | --- |
 | Poll loop (8s, then every 20 min) | `desktop-tauri/src/lib/useUpdateWatch.ts` |
-| Banner and buttons | `desktop-tauri/src/components/layout/UpdateBanner.tsx` |
+| Check, download and install UI | `desktop-tauri/src/components/settings/SettingsUpdatesPane.tsx` |
+| "Update available" chip in the account menu | `desktop-tauri/src/components/layout/AccountMenu.tsx` |
+| Splash shown while the app starts | `desktop-tauri/boot.html`, `desktop-tauri/src/boot/`, `desktop-tauri/src-tauri/src/boot_window.rs` |
 | Download / install / relaunch | `desktop-tauri/src/ipc/updates.ts` |
 | Endpoint + public key | `desktop-tauri/src-tauri/tauri.conf.json` |
 | Feed | `backend/app/Http/Controllers/ReleaseUpdateController.php` |

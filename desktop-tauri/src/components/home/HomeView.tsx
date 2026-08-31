@@ -1,6 +1,7 @@
 import logoUrl from "../../assets/vibyra-cobalt.png";
+import { basename } from "../../lib/projectIdentity";
 import { relativeTime } from "../../lib/relativeTime";
-import { basename, useProjectStore } from "../../state/projectStore";
+import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
 import { HomeLaunchBar } from "./HomeLaunchBar";

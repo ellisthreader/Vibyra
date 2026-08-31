@@ -13,11 +13,15 @@ mod ai_usage_guard;
 mod ai_usage_limits;
 #[cfg(test)]
 mod ai_usage_tests;
+mod boot_window;
 mod close_guard;
 mod commands;
 mod desktop_entry;
 mod discord;
 mod discord_setup;
+mod github_auth_flow;
+mod github_integration;
+mod github_integration_probe;
 mod model_watch;
 mod model_watch_discord;
 #[cfg(test)]
@@ -93,7 +97,15 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             use tauri::Manager;
 
-            if let Some(window) = app.get_webview_window("main") {
+            // While the splash is up, `main` is deliberately hidden and has
+            // painted nothing — showing it here would answer the second launch
+            // with an empty window. Raise whichever one the user can see.
+            let label = if app.get_webview_window(boot_window::BOOT_LABEL).is_some() {
+                boot_window::BOOT_LABEL
+            } else {
+                boot_window::MAIN_LABEL
+            };
+            if let Some(window) = app.get_webview_window(label) {
                 let _ = window.unminimize();
                 let _ = window.show();
                 let _ = window.set_focus();
@@ -108,6 +120,7 @@ pub fn run() {
         .setup(|app| {
             use tauri::Manager;
 
+            boot_window::arm(app.handle());
             model_watch::spawn(app.handle().clone());
             // The routine scheduler runs for the life of the process and does
             // nothing whenever no account is signed in, so it can start here
@@ -126,6 +139,17 @@ pub fn run() {
             let tauri::WindowEvent::CloseRequested { api, .. } = event else {
                 return;
             };
+            // The splash is never vetoed. We close it ourselves at handover,
+            // which re-enters here, and a user closing it early is asking for
+            // the app — so hand over rather than leave `main` hidden behind a
+            // window that is on its way out.
+            if window.label() == boot_window::BOOT_LABEL {
+                boot_window::hand_over_now(window.app_handle());
+                return;
+            }
+            if window.label() != boot_window::MAIN_LABEL {
+                return;
+            }
             if !close_guard::should_veto(&window.state::<state::AppState>()) {
                 return;
             }

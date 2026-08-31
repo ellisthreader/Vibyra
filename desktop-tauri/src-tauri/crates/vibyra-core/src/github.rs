@@ -159,6 +159,17 @@ fn gh(path: Option<&OsStr>) -> Command {
     if let Some(path) = path {
         command.env("PATH", path);
     }
+    // GitHub CLI may otherwise prefer an automation token inherited from the
+    // desktop session over the user's own keyring-backed `gh` account. Carried
+    // forward from the 0.3.0 line, which the 0.3.5 rewrite of this file lost.
+    for name in [
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_ENTERPRISE_TOKEN",
+        "GITHUB_ENTERPRISE_TOKEN",
+    ] {
+        command.env_remove(name);
+    }
     command
 }
 

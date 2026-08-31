@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { abbreviateHome, relativeTime } from "../../lib/relativeTime";
 import { useProjectStore } from "../../state/projectStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
@@ -8,13 +6,11 @@ import type { ProjectSpec } from "../../types";
 
 export function HomeProjectCard({ project }: { project: ProjectSpec }) {
   const activate = useProjectStore((state) => state.activate);
-  const remove = useProjectStore((state) => state.remove);
   const homeDir = useProjectStore((state) => state.homeDir);
   const openAgentPicker = useWorkspaceStore((state) => state.openAgentPicker);
   const allPanes = useTerminalStore((state) => state.panes);
   const panes = allPanes.filter((pane) => pane.projectId === project.id);
   const activity = useTerminalStore((state) => state.activity);
-  const [confirming, setConfirming] = useState(false);
 
   const working = panes.filter((pane) => activity[pane.id] === "working").length;
   const waiting = panes.filter((pane) => activity[pane.id] === "attention").length;
@@ -36,7 +32,6 @@ export function HomeProjectCard({ project }: { project: ProjectSpec }) {
       onKeyDown={(event) => {
         if (event.key === "Enter") void activate(project.id);
       }}
-      onMouseLeave={() => setConfirming(false)}
     >
       <div className="hcard__top">
         <span className="hcard__mono">{project.name.charAt(0).toUpperCase()}</span>
@@ -53,22 +48,6 @@ export function HomeProjectCard({ project }: { project: ProjectSpec }) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-          </button>
-          <button
-            className={`icon-btn ${confirming ? "icon-btn--danger" : ""}`}
-            title={confirming ? "Click again to remove from Vibyra (folder is untouched)" : "Remove project"}
-            onClick={() => {
-              if (confirming) void remove(project.id);
-              else setConfirming(true);
-            }}
-          >
-            {confirming ? (
-              <span className="hcard__confirm">sure?</span>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-            )}
           </button>
         </span>
       </div>

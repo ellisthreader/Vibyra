@@ -22,10 +22,13 @@ function announce(state: UpdateState): void {
 /**
  * Turns updater states into notifications for as long as the workspace is up.
  *
- * The first check runs eight seconds after launch, so subscribing on mount is
- * early enough to catch every transition — including the `available` that
- * arrives before the user has touched anything.
+ * The startup gate can finish before the authenticated workspace mounts, so
+ * announce the current snapshot once before subscribing to later changes.
+ * This keeps a startup failure retryable from the normal update surfaces.
  */
 export function useUpdateNotifications(): void {
-  useEffect(() => useUpdateStore.subscribe(announce), []);
+  useEffect(() => {
+    announce(useUpdateStore.getState());
+    return useUpdateStore.subscribe(announce);
+  }, []);
 }

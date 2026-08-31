@@ -29,6 +29,28 @@ const FEATURES = [
   {
     title: "A chat with nothing attached",
     body: "Chat Mode has no project, no folder and no memory until you give it one. Attach a screenshot and it is copied in, so the folder it came from stays yours.",
+    title: "Updates finish before your workspace opens",
+    body: "Launch checks, downloads and installs trusted releases before terminals and projects start, with clear progress and safe recovery controls.",
+    fresh: false,
+  },
+  {
+    title: "A proper introduction after every update",
+    body: "The new What’s New view explains the release once, in a focused window that is easy to dismiss and never interrupts you twice.",
+    fresh: false,
+  },
+  {
+    title: "See the recent story of a project",
+    body: "Right-click a project — or press Shift+F10 — to review seven days of Git activity, then give it a clearer name and color.",
+    fresh: false,
+  },
+  {
+    title: "Close projects without the risky click",
+    body: "A two-step close flow explains what will happen and protects open work from accidental removal.",
+    fresh: false,
+  },
+  {
+    title: "Terminal prompts keep their focus",
+    body: "Permission requests, update notices, toasts and dialogs return typing to the terminal instead of leaving it unresponsive.",
     fresh: true,
   },
   {

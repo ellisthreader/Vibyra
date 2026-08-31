@@ -1,10 +1,12 @@
 import { useCallback } from "react";
 
 import { answerAgentPrompt } from "../../lib/agentPromptScan";
+import { restoreTerminalFocusAfterOverlay } from "../../lib/terminalFocus";
 import { runNotificationAction } from "../../lib/notificationActions";
 import { notifyPromptUnanswered } from "../../lib/notificationTriggers";
 import { timeoutFor } from "../../lib/notificationTiers.ts";
 import { setTimersPaused, useNotificationStore } from "../../state/notificationStore";
+import { useTerminalStore } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import type { AgentPromptOption, NotificationItem } from "../../notificationTypes";
 import { ToastStack } from "./ToastStack";
@@ -24,10 +26,12 @@ export function Toasts() {
   const onAnswer = useCallback(
     (item: NotificationItem, option: AgentPromptOption) => {
       if (!item.prompt) return;
+      const focusedId = useTerminalStore.getState().focusedId;
       // The guard lives in `answerAgentPrompt`, not here: this component cannot
       // know whether the pane still shows the question it drew a button for.
       const outcome = answerAgentPrompt(item.prompt, option);
       dismiss(item.id);
+      restoreTerminalFocusAfterOverlay(focusedId, () => useTerminalStore.getState());
       if (outcome !== "sent") notifyPromptUnanswered(item.prompt.sessionId, outcome);
     },
     [dismiss],

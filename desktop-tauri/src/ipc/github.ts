@@ -68,3 +68,32 @@ export function githubPrState(worktree: string, url: string): Promise<PrState> {
 export function githubOpenPr(url: string): Promise<void> {
   return invoke("github_open_pr", { url });
 }
+
+export interface GithubIntegrationStatus {
+  ghInstalled: boolean;
+  connected: boolean;
+  connecting: boolean;
+  login: string | null;
+  permissionsReady: boolean;
+  error: string | null;
+}
+
+export function githubIntegrationStatus(): Promise<GithubIntegrationStatus> {
+  return invoke("github_integration_status");
+}
+
+export function githubConnect(): Promise<GithubIntegrationStatus> {
+  return invoke("github_connect");
+}
+
+export function githubCancelConnect(): Promise<GithubIntegrationStatus> {
+  return invoke("github_cancel_connect");
+}
+
+export function githubDisconnect(): Promise<GithubIntegrationStatus> {
+  return invoke("github_disconnect");
+}
+
+export function githubOpenInstall(): Promise<void> {
+  return invoke("github_open_install");
+}

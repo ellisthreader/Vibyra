@@ -39,7 +39,8 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
   toggleZoom: (id) => {
     const zoomed = get().zoomedId === id ? null : id;
-    set({ zoomedId: zoomed, focusedId: id });
+    set({ zoomedId: zoomed });
+    get().setFocus(id);
     const projectId = get().panes.find((pane) => pane.id === id)?.projectId ?? null;
     const target = (pane: PaneState): Visibility | null =>
       zoomVisibilityTarget(pane, projectId, zoomed, id);
@@ -61,7 +62,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
   setFocus: (id) => {
     get().markFocused(id);
-    getTerminal(id)?.term.focus();
+    const entry = getTerminal(id);
+    if (entry?.container.isConnected && entry.container.closest("[inert]") === null) {
+      entry.term.focus();
+    }
   },
 
   markFocused: (id) => {

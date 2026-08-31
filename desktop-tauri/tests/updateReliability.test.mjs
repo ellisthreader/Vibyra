@@ -7,9 +7,33 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 test("an update cannot restart past a failed terminal save", async () => {
   const store = await read("../src/state/updateStore.ts");
   assert.match(store, /set\(\{ status: "installing", error: null \}\)/);
-  assert.match(store, /await saveSessionNow\(true\);\s*\n\s*await installUpdate\(update\)/);
+  assert.doesNotMatch(store, /^import \{ saveSessionNow \}/m);
+  assert.match(
+    store,
+    /if \(preserveSession\) \{\s*const \{ saveSessionNow \} = await import\("\.\.\/lib\/sessionPersistence"\);\s*await saveSessionNow\(true\);\s*\}\s*markPostUpdateChangelogPending\(update\.version\);\s*await installUpdate\(update\)/,
+  );
+  assert.match(store, /installAtStartup: \(\) => install\(false\)/);
+  assert.match(store, /restart: \(\) => install\(true\)/);
   assert.doesNotMatch(store, /saveSessionNow\(true\)\.catch/);
   assert.match(store, /status: "restartError"/);
+});
+
+test("updater operations are explicit, configurable and single-flight", async () => {
+  const ipc = await read("../src/ipc/updates.ts");
+  const store = await read("../src/state/updateStore.ts");
+
+  assert.match(ipc, /checkForUpdate\(timeoutMs = 30_000\)/);
+  assert.match(ipc, /check\(\{ timeout: timeoutMs \}\)/);
+  assert.match(store, /check: \(timeoutMs\?: number\) => Promise<boolean>/);
+  assert.match(store, /download: \(\) => Promise<boolean>/);
+  assert.match(store, /installAtStartup: \(\) => Promise<boolean>/);
+  assert.match(store, /restart: \(\) => Promise<boolean>/);
+
+  for (const action of ["check", "download", "install"]) {
+    assert.match(store, new RegExp(`let ${action}Flight: Promise<boolean> \\| null = null`));
+    assert.match(store, new RegExp(`if \\(${action}Flight\\) return ${action}Flight`));
+    assert.match(store, new RegExp(`if \\(${action}Flight === flight\\) ${action}Flight = null`));
+  }
 });
 
 test("metadata, heartbeat and update saves share one ordered queue", async () => {
@@ -24,7 +48,7 @@ test("a failed check is recorded rather than swallowed", async () => {
   // be discoverable somewhere — otherwise a broken updater looks exactly like
   // an app that is already current.
   const store = await read("../src/state/updateStore.ts");
-  assert.match(store, /set\(\{ checkState: "checking" \}\)/);
+  assert.match(store, /set\(\{ checkState: "checking", checkError: null \}\)/);
   assert.match(store, /set\(\{ checkState: "failed", checkError: String\(error\) \}\)/);
   assert.match(store, /lastCheckedAt: Date\.now\(\)/);
 });

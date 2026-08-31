@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
-import { basename, useProjectStore } from "../../state/projectStore";
+import { basename } from "../../lib/projectIdentity";
+import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 
 export function HomeLaunchBar() {

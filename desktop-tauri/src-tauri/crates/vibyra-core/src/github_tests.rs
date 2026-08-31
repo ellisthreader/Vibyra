@@ -1,4 +1,3 @@
-use std::ffi::OsStr;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -79,12 +78,28 @@ fn fake_gh(dir: &Path) -> std::ffi::OsString {
 }
 
 #[test]
-fn status_reports_a_missing_gh_without_erroring() {
+fn status_reports_a_missing_origin_without_erroring() {
     let temp = tempfile::tempdir().unwrap();
-    let status = github_status_with_path(temp.path(), Some(OsStr::new("/nonexistent")));
-    assert!(!status.gh_installed);
-    assert!(!status.authed);
+    let status = github_status(temp.path());
     assert!(status.origin.is_none());
+}
+
+#[test]
+fn every_pull_request_gh_command_ignores_ambient_tokens() {
+    let command = gh(None);
+    let removed: Vec<_> = command
+        .get_envs()
+        .filter(|(_, value)| value.is_none())
+        .map(|(name, _)| name.to_string_lossy().into_owned())
+        .collect();
+    for name in [
+        "GH_TOKEN",
+        "GITHUB_TOKEN",
+        "GH_ENTERPRISE_TOKEN",
+        "GITHUB_ENTERPRISE_TOKEN",
+    ] {
+        assert!(removed.iter().any(|removed| removed == name));
+    }
 }
 
 #[test]
@@ -145,7 +160,7 @@ fn only_a_github_origin_arms_the_share_flow() {
     // GitHub-capable ones — the fixture's origin is a local bare repo.
     let temp = tempfile::tempdir().unwrap();
     let (repo, _origin, _worktree) = repo_origin_worktree(temp.path());
-    let status = github_status_with_path(&repo, Some(OsStr::new("/nonexistent")));
+    let status = github_status(&repo);
     assert!(status.origin.is_some());
     assert!(!status.origin_github);
 }

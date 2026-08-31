@@ -39,6 +39,7 @@ pub enum ChangeKind {
 #[serde(rename_all = "camelCase")]
 pub struct ChangedFile {
     pub path: String,
+    pub previous_path: Option<String>,
     pub kind: ChangeKind,
     pub additions: u32,
     pub deletions: u32,

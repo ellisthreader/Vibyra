@@ -5,28 +5,29 @@ gate, chrome, and settings integrations.
 
 ## Auth Gate
 
-The auth surface uses
-`desktop-tauri/src/components/auth/AuthBackdrop.tsx` with the bundled silent
-H.264 `auth-space-loop.mp4` and its matching first-frame WebP poster. The poster
-stays mounted beneath the video; playback fades in only after `playing`, and
-reduced-motion or decoder failure remains static. Replacement videos must be
-circularly crossfaded before export, use broadly compatible `yuv420p`, contain
-no audio, and avoid an additional CSS drift animation. On Linux production
-builds, import the MP4 with Vite's `?inline` query and allow `data:` in the
-Tauri `media-src`; custom-protocol and Blob delivery can stall or corrupt media
-range reads in WebKit/GStreamer even when dev playback works. Confirm playback
-with two time-separated native captures, not markup alone. The `<video>` and
-that import live in `AuthBackdropVideo.tsx`, which `AuthBackdrop` pulls in with
-`lazy()`: the inlined loop is ~3.5 MB of JavaScript, and imported eagerly it was
-78% of the startup chunk and had to be parsed before the app could paint. Keep
-the `?inline` query *and* the lazy boundary — they solve different problems. The
-poster is the designed cover while that chunk loads. Regression coverage
-is in `desktop-tauri/tests/authBackground.test.mjs`. Email signup/login continue
-through native account commands to backend `/api/auth/signup|login`; the
-backend lifecycle test verifies user/session persistence, logout revocation,
-and a fresh login in isolated SQLite. Switching between provider, login,
-signup, and recovery paths clears stale backend errors; password recovery is
-shown only for login, never while creating an account.
+`AuthBackdrop.tsx` always mounts the 125 KB WebP poster, but may mount the real
+media only when `authVideoPolicy.ts` says the visible email surface is signup.
+Login, provider, recovery, restore, connection-error, and authorization states
+must have no `<video>` element. Reduced motion and maximum-performance mode also
+keep the poster-only path and avoid loading the lazy media chunk.
+
+The loop is the silent 1280x720/24fps VP8 `auth-space-loop.webm`, inlined as a
+`data:` URI inside lazy `AuthBackdropVideo.tsx`. Keep both `?inline` and the lazy
+boundary: custom-protocol/Blob delivery is unreliable for production media
+range reads, while eager inlining puts the media payload on the startup path.
+The previous H.264 MP4 returned `MEDIA_ERR_SRC_NOT_SUPPORTED` in the packaged
+Linux WebKit/GStreamer runtime even though source tests passed.
+
+Lifecycle containment is strict. A hidden window pauses playback. Leaving
+signup synchronously unmounts the media component; its layout-effect cleanup
+must call `pause()`, remove `src`, then `load()` so GStreamer cannot keep
+decoding behind the terminal workspace. Native packaged verification must show
+an advancing, unpaused clock on visible signup and zero video elements plus the
+three teardown calls on login and three seconds later. Regression coverage is
+in `desktop-tauri/tests/authBackground.test.mjs`.
+
+Email signup/login continue through native account commands to backend
+`/api/auth/signup|login`; password recovery is shown only for login.
 
 ## Rust/Tauri Settings Integrations
 
