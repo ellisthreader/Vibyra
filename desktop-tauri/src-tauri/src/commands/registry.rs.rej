@@ -1,0 +1,16 @@
+--- desktop-tauri/src-tauri/src/commands/registry.rs
++++ desktop-tauri/src-tauri/src/commands/registry.rs
+@@ -9,10 +9,9 @@ use tauri::ipc::Invoke;
+ use tauri::Wry;
+ 
+ use super::{
+-    account, agent_chat_prompt, agent_conversations, agents, ai, ai_memory, ai_service, clipboard,
+-    conversation_carry, fs, github, memory, memory_browser, perf, preview, probe,
+-    provider_accounts, render, report, review, screenshot, screenshot_reveal, session, settings,
+-    terminal, voice,
++    account, agent_chat_prompt, agent_conversations, agents, ai, ai_service, clipboard,
++    conversation_carry, fs, github, memory, perf, preview, probe, provider_accounts, render,
++    report, review, screenshot, screenshot_reveal, session, settings, speech, terminal, voice,
+ };
+ 
+ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {

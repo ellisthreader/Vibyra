@@ -124,15 +124,23 @@ test("both widths survive a restart, and a corrupt one falls back", () => {
 });
 
 test("only a known tool is restored, and closed is never one of them", () => {
+  // Two tools have left this list: "memory", when the vault became a Settings
+  // integration, and "chat", when it was replaced by "ask". A dock left on
+  // either reopens on the default instead of on nothing — no migration code,
+  // just the fallback doing its job.
+  for (const retired of ["memory", "chat"]) {
+    const stale = fakeStorage({ "vibyra.desktop.dockTool": retired });
+    assert.equal(restoreDockTool(stale), "ask", `${retired} should fall back`);
+  }
+
   const storage = fakeStorage({ "vibyra.desktop.dockTool": "memory" });
-  assert.equal(restoreDockTool(storage), "memory");
   saveDockTool("preview", storage);
   assert.equal(restoreDockTool(storage), "preview");
   // Shutting the dock is a thing you just did, not a preference: reopening
   // lands on the last tool rather than on a blank panel.
   storage.setItem("vibyra.desktop.dockTool", "null");
-  assert.equal(restoreDockTool(storage), "chat");
-  assert.equal(restoreDockTool(fakeStorage()), "chat");
+  assert.equal(restoreDockTool(storage), "ask");
+  assert.equal(restoreDockTool(fakeStorage()), "ask");
 });
 
 test("dock sizing never throws the workspace out when storage refuses", () => {
@@ -146,7 +154,7 @@ test("dock sizing never throws the workspace out when storage refuses", () => {
   };
   assert.equal(restoreCompactWidth(hostile), DOCK_COMPACT_DEFAULT);
   assert.equal(restoreWideRatio(hostile), DOCK_WIDE_DEFAULT_RATIO);
-  assert.equal(restoreDockTool(hostile), "chat");
+  assert.equal(restoreDockTool(hostile), "ask");
   assert.doesNotThrow(() => saveCompactWidth(360, hostile));
   assert.doesNotThrow(() => saveWideRatio(0.5, hostile));
   assert.doesNotThrow(() => saveDockTool("files", hostile));

@@ -8,8 +8,7 @@ import {
   dockWidth,
 } from "../../lib/dockLayout";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { ChatPanel } from "../companion/ChatPanel";
-import { MemoryPanel } from "../companion/MemoryPanel";
+import { AskPanel } from "../companion/AskPanel";
 import { PreviewWorkspace } from "../preview/PreviewWorkspace";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { FileTree } from "../rail/FileTree";
@@ -99,8 +98,7 @@ export function Dock({ projectId, root, host }: Props) {
             <PreviewWorkspace key={projectId} projectId={projectId} root={root} />
           </div>
         )}
-        {tool === "chat" && <ChatPanel />}
-        {tool === "memory" && <MemoryPanel />}
+        {tool === "ask" && <AskPanel />}
         {tool === "review" && <ReviewPanel projectId={projectId} root={root} />}
         {tool === "files" && (
           <div className="companion-panel companion-panel--files">

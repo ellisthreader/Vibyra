@@ -1,0 +1,111 @@
+/* Ask Vibyra — the "what I can see" summary, its actions and the starters.
+   Split from companion-ask.css on the seam between the panel shell (identity,
+   turns, composer) and the workspace summary that only shows before the first
+   question. */
+
+/* ── what Ask can see ─────────────────────────────────────────────── */
+.ask-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--workspace);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-card);
+}
+
+.ask-workspace__label {
+  font-size: var(--fs-label);
+  font-weight: 690;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.ask-panes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ask-pane {
+  display: grid;
+  grid-template-columns: 7px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-hint);
+}
+
+.ask-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.ask-dot--work { background: var(--success); }
+.ask-dot--ask { background: var(--ask); }
+.ask-dot--dead { background: var(--danger); }
+.ask-dot--off { background: var(--border); }
+
+.ask-pane__name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-pane__note {
+  color: var(--dim);
+  font-size: var(--fs-tiny);
+  white-space: nowrap;
+}
+
+.ask-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.ask-action {
+  padding: 7px 10px;
+  text-align: left;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-control);
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: var(--fs-hint);
+}
+.ask-action:hover { background: rgba(91, 124, 250, 0.2); }
+
+.ask-empty-note {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+}
+
+/* ── starters ─────────────────────────────────────────────────────── */
+.ask-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ask-starters button {
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-control);
+  color: var(--muted);
+  font-size: var(--fs-control);
+}
+.ask-starters button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--hover);
+  border-color: var(--line);
+}
+.ask-starters button:disabled { opacity: 0.5; }

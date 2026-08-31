@@ -82,13 +82,6 @@ export const SparklesIcon = icon(
   </>,
 );
 
-export const MemoryIcon = icon(
-  <>
-    <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v18H7.5A2.5 2.5 0 0 1 5 17.5z" />
-    <path d="M5 17.5A2.5 2.5 0 0 1 7.5 15H19M9 6h6M9 10h5" />
-  </>,
-);
-
 export const SendIcon = icon(
   <>
     <path d="m4 12 16-8-6.5 16-2.2-6.1z" />

@@ -122,6 +122,10 @@ export interface Settings {
   openaiKeyConfigured: boolean;
   secureStorageAvailable: boolean;
   voiceShortcut: string;
+  /** Ask reads its replies aloud. Muted from the panel header. */
+  askSpeakReplies: boolean;
+  /** Which tts-1 voice Ask speaks in; the backend validates it. */
+  askVoice: string;
   screenshotShortcut: string;
   /** WebKit compositing policy (Linux only); applies on next launch. */
   rendererMode: RendererMode;
@@ -156,45 +160,4 @@ export type TermEvent =
   | { type: "resync"; data: string }
   | { type: "exit"; code: number | null };
 
-export interface AiLimits {
-  dailyCalls: number;
-  hourlyCalls: number;
-  dailySpendUsd: number;
-  monthlySpendUsd: number;
-}
-
-export interface AiUsage {
-  day: string;
-  month: string;
-  callsToday: number;
-  chatCallsToday: number;
-  voiceCallsToday: number;
-  inputTokensToday: number;
-  outputTokensToday: number;
-  voiceSecondsToday: number;
-  spendTodayUsd: number;
-  callsThisMonth: number;
-  spendMonthUsd: number;
-  callsLastMinute: number;
-  callsLastHour: number;
-}
-
-export interface AiPricing {
-  chatModel: string;
-  voiceModel: string;
-  chatInputUsdPerMtok: number;
-  chatOutputUsdPerMtok: number;
-  voiceUsdPerMinute: number;
-}
-
-export interface AiServiceStatus {
-  keyConfigured: boolean;
-  /** Masked fragment such as "sk-…wxyz" — never the whole key. */
-  keyHint: string | null;
-  secureStorageAvailable: boolean;
-  recorderAvailable: boolean;
-  keyPageUrl: string;
-  limits: AiLimits;
-  usage: AiUsage;
-  pricing: AiPricing;
-}
+export type * from "./aiTypes";

@@ -11,7 +11,7 @@ import { shortcutFromEvent, type HotkeyAction } from "./hotkeys";
 import type { DockSize, DockTool } from "./dockLayout";
 
 /** Alt 1–5, in the order the dock's tab strip shows them. */
-const DOCK_TOOLS: DockTool[] = ["preview", "chat", "memory", "files", "review"];
+const DOCK_TOOLS: DockTool[] = ["preview", "ask", "files", "review"];
 const DOCK_SIZES: DockSize[] = ["compact", "wide", "full"];
 
 const nativeActions = new Set<HotkeyAction>();

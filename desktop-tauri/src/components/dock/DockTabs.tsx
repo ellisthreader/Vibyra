@@ -2,7 +2,7 @@ import { useRef } from "react";
 import type { ComponentType, KeyboardEvent } from "react";
 
 import type { DockTool } from "../../lib/dockLayout";
-import { FolderIcon, GitBranchIcon, MemoryIcon, SparklesIcon } from "../common/Icons";
+import { FolderIcon, GitBranchIcon, SparklesIcon } from "../common/Icons";
 import { useReadyCount } from "../review/fleet/useFleet";
 import { MonitorIcon } from "../common/StatusIcons";
 
@@ -20,8 +20,7 @@ import { MonitorIcon } from "../common/StatusIcons";
 
 const TOOLS: { id: DockTool; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: "preview", label: "Preview", icon: MonitorIcon },
-  { id: "chat", label: "Chat", icon: SparklesIcon },
-  { id: "memory", label: "Memory", icon: MemoryIcon },
+  { id: "ask", label: "Ask", icon: SparklesIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "review", label: "Review", icon: GitBranchIcon },
 ];

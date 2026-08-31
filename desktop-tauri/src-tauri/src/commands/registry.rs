@@ -10,10 +10,10 @@ use tauri::Wry;
 
 use super::{
     account, agent_approvals_cmd, agent_chat, agent_chat_prompt, agent_config, agent_conversations,
-    agent_mail_cmd, agent_roster, agent_routines_cmd, agent_skills_cmd, agents, ai, ai_memory,
-    ai_service, boot, clipboard, conversation_carry, fs, github, memory, memory_browser, perf,
-    preview, probe, project_activity, provider_accounts, render, report, review, screenshot,
-    screenshot_reveal, session, settings, terminal, voice, workspaces,
+    agent_mail_cmd, agent_roster, agent_routines_cmd, agent_skills_cmd, agents, ai, ai_service,
+    boot, clipboard, conversation_carry, fs, github, memory, perf, preview, probe,
+    project_activity, provider_accounts, render, report, review, screenshot, screenshot_reveal,
+    session, settings, speech, terminal, voice, workspaces,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -149,8 +149,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         voice::voice_start,
         voice::voice_stop,
         ai::ai_chat,
-        ai_memory::load_memory,
-        ai_memory::save_memory,
+        speech::ai_speak,
         ai_service::ai_service_status,
         ai_service::set_openai_key,
         ai_service::clear_openai_key,
@@ -158,10 +157,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         memory::memory_sources,
         memory::connect_obsidian_vault,
         memory::disconnect_obsidian_vault,
-        memory::pick_memory_files,
         memory::search_memory_sources,
-        memory_browser::memory_note_index,
-        memory_browser::read_memory_note,
         // Spelled out rather than imported above: the crate root of the app has its
         // own `perf` and `report` modules (the sampler and the delivery
         // half), so the bare names would resolve to the wrong ones.

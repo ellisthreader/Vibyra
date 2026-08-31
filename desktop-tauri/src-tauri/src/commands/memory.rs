@@ -1,18 +1,24 @@
-use std::path::{Path, PathBuf};
+//! The connected Obsidian vault, and the notes it can lend an agent.
+//!
+//! One vault for the whole app. It is connected from Settings → Integrations,
+//! beside the provider accounts, because connecting it is a one-time setup act
+//! rather than something done while working. Nothing here ever writes to the
+//! vault: it is read-only, bounded, and local.
 
-use serde::Serialize;
+use std::path::Path;
+
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 use vibyra_core::memory::{
-    connect_vault, disconnect_vault, discover_vaults, load_connected_vault, read_imported_notes,
-    search_vault, summarize_vault, MemoryImportBatch, MemorySnippet, VaultSummary,
+    connect_vault, disconnect_vault, discover_vaults, load_connected_vault, search_vault,
+    summarize_vault, MemorySnippet, VaultSummary,
 };
 
 use crate::state::AppState;
 
 use super::run_blocking;
 
-#[derive(Serialize)]
+#[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MemorySourcesState {
     vault: Option<VaultSummary>,
@@ -20,11 +26,7 @@ pub struct MemorySourcesState {
     warning: Option<String>,
 }
 
-pub(crate) fn project_key(project: Option<String>) -> String {
-    project.unwrap_or_else(|| "global".into())
-}
-
-pub(crate) fn source_store_path(state: &State<'_, AppState>) -> PathBuf {
+fn source_store_path(state: &State<'_, AppState>) -> std::path::PathBuf {
     state
         .settings_path
         .parent()
@@ -32,8 +34,8 @@ pub(crate) fn source_store_path(state: &State<'_, AppState>) -> PathBuf {
         .unwrap_or_else(|| std::env::temp_dir().join("vibyra-memory-sources.json"))
 }
 
-fn load_source_state(store: &Path, project: &str) -> MemorySourcesState {
-    match load_connected_vault(store, project) {
+fn load_source_state(store: &Path) -> MemorySourcesState {
+    match load_connected_vault(store) {
         Ok(Some(path)) => match summarize_vault(&path) {
             Ok(vault) => MemorySourcesState {
                 vault: Some(vault),
@@ -59,24 +61,18 @@ fn disconnected_state(warning: Option<String>) -> MemorySourcesState {
 }
 
 #[tauri::command]
-pub async fn memory_sources(
-    state: State<'_, AppState>,
-    project: Option<String>,
-) -> Result<MemorySourcesState, String> {
+pub async fn memory_sources(state: State<'_, AppState>) -> Result<MemorySourcesState, String> {
     let store = source_store_path(&state);
-    let project = project_key(project);
-    run_blocking(move || Ok(load_source_state(&store, &project))).await
+    run_blocking(move || Ok(load_source_state(&store))).await
 }
 
 #[tauri::command]
 pub async fn connect_obsidian_vault(
     app: AppHandle,
     state: State<'_, AppState>,
-    project: Option<String>,
     candidate_id: Option<String>,
 ) -> Result<MemorySourcesState, String> {
     let store = source_store_path(&state);
-    let project = project_key(project);
     let path = if let Some(candidate_id) = candidate_id {
         Some(
             run_blocking(move || {
@@ -101,12 +97,13 @@ pub async fn connect_obsidian_vault(
         })
         .await?
     };
+    // A cancelled picker is not a failure; report the state unchanged.
     let Some(path) = path else {
-        return run_blocking(move || Ok(load_source_state(&store, &project))).await;
+        return run_blocking(move || Ok(load_source_state(&store))).await;
     };
     run_blocking(move || {
-        connect_vault(&store, &project, &path).map_err(|error| error.to_string())?;
-        Ok(load_source_state(&store, &project))
+        connect_vault(&store, &path).map_err(|error| error.to_string())?;
+        Ok(load_source_state(&store))
     })
     .await
 }
@@ -114,47 +111,27 @@ pub async fn connect_obsidian_vault(
 #[tauri::command]
 pub async fn disconnect_obsidian_vault(
     state: State<'_, AppState>,
-    project: Option<String>,
 ) -> Result<MemorySourcesState, String> {
     let store = source_store_path(&state);
-    let project = project_key(project);
     run_blocking(move || {
-        disconnect_vault(&store, &project).map_err(|error| error.to_string())?;
-        Ok(load_source_state(&store, &project))
+        disconnect_vault(&store).map_err(|error| error.to_string())?;
+        Ok(load_source_state(&store))
     })
     .await
 }
 
-#[tauri::command]
-pub async fn pick_memory_files(app: AppHandle) -> Result<MemoryImportBatch, String> {
-    run_blocking(move || {
-        let selected = app
-            .dialog()
-            .file()
-            .set_title("Import memory notes")
-            .add_filter("Markdown notes", &["md", "markdown", "txt"])
-            .blocking_pick_files()
-            .unwrap_or_default();
-        let paths: Result<Vec<_>, _> = selected.into_iter().map(|path| path.into_path()).collect();
-        read_imported_notes(&paths.map_err(|error| error.to_string())?)
-            .map_err(|error| error.to_string())
-    })
-    .await
-}
-
+/// The notes worth lending for one question. Ranked locally, never uploaded.
 #[tauri::command]
 pub async fn search_memory_sources(
     state: State<'_, AppState>,
-    project: Option<String>,
     query: String,
 ) -> Result<Vec<MemorySnippet>, String> {
     let store = source_store_path(&state);
-    let project = project_key(project);
     run_blocking(move || {
-        let Ok(Some(vault)) = load_connected_vault(&store, &project) else {
+        let Some(vault) = load_connected_vault(&store).unwrap_or(None) else {
             return Ok(Vec::new());
         };
-        search_vault(&vault, &query).map_err(|error| error.to_string())
+        Ok(search_vault(&vault, &query).unwrap_or_default())
     })
     .await
 }

@@ -3,7 +3,8 @@ use tauri::State;
 use vibyra_core::agents::program_in_path;
 
 use crate::ai_usage::{
-    AiLimits, CHAT_INPUT_USD_PER_MTOK, CHAT_OUTPUT_USD_PER_MTOK, VOICE_USD_PER_MINUTE,
+    AiLimits, CHAT_INPUT_USD_PER_MTOK, CHAT_OUTPUT_USD_PER_MTOK, SPEECH_USD_PER_MCHAR,
+    VOICE_USD_PER_MINUTE,
 };
 use crate::openai_key;
 use crate::provider_auth_url;
@@ -32,9 +33,11 @@ pub struct UsageView {
     calls_today: u32,
     chat_calls_today: u32,
     voice_calls_today: u32,
+    speech_calls_today: u32,
     input_tokens_today: u64,
     output_tokens_today: u64,
     voice_seconds_today: f64,
+    speech_chars_today: u64,
     spend_today_usd: f64,
     calls_this_month: u32,
     spend_month_usd: f64,
@@ -47,9 +50,11 @@ pub struct UsageView {
 pub struct PricingView {
     chat_model: &'static str,
     voice_model: &'static str,
+    speech_model: &'static str,
     chat_input_usd_per_mtok: f64,
     chat_output_usd_per_mtok: f64,
     voice_usd_per_minute: f64,
+    speech_usd_per_mchar: f64,
 }
 
 #[tauri::command]
@@ -95,9 +100,11 @@ fn view(state: &AppState) -> AiServiceView {
             calls_today: ledger.calls(),
             chat_calls_today: ledger.chat_calls,
             voice_calls_today: ledger.voice_calls,
+            speech_calls_today: ledger.speech_calls,
             input_tokens_today: ledger.input_tokens,
             output_tokens_today: ledger.output_tokens,
             voice_seconds_today: ledger.voice_seconds,
+            speech_chars_today: ledger.speech_chars,
             spend_today_usd: ledger.spend_usd,
             calls_this_month: ledger.month_calls,
             spend_month_usd: ledger.month_spend_usd,
@@ -107,9 +114,11 @@ fn view(state: &AppState) -> AiServiceView {
         pricing: PricingView {
             chat_model: crate::commands::ai::CHAT_MODEL,
             voice_model: crate::commands::voice::VOICE_MODEL,
+            speech_model: crate::commands::speech::SPEECH_MODEL,
             chat_input_usd_per_mtok: CHAT_INPUT_USD_PER_MTOK,
             chat_output_usd_per_mtok: CHAT_OUTPUT_USD_PER_MTOK,
             voice_usd_per_minute: VOICE_USD_PER_MINUTE,
+            speech_usd_per_mchar: SPEECH_USD_PER_MCHAR,
         },
     }
 }

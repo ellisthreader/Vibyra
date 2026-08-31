@@ -91,7 +91,7 @@ const APP_SHORTCUTS = [
   { label: "Focus terminal 1–9", keys: "Ctrl/Cmd + 1–9" },
   { label: "Show or hide the dock", keys: "Ctrl/Cmd + \\" },
   { label: "Cycle the dock size", keys: "Ctrl/Cmd + Shift + \\" },
-  { label: "Dock: preview, chat, memory, files, review", keys: "Alt + 1–5" },
+  { label: "Dock: preview, ask, files, review", keys: "Alt + 1–4" },
   { label: "Switch project 1–9", keys: "Ctrl/Cmd + Shift + 1–9" },
   { label: "Copy the terminal selection", keys: "Ctrl/Cmd + Shift + C" },
   { label: "Paste into the terminal", keys: "Ctrl/Cmd + Shift + V" },

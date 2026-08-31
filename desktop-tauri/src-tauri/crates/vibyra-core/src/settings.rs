@@ -38,6 +38,12 @@ pub struct Settings {
     pub legacy_openai_api_key: Option<String>,
     /// System-wide push-to-talk binding. Defaults to F8.
     pub voice_shortcut: String,
+    /// Whether Ask reads its replies aloud. On by default: the feature exists
+    /// to be spoken to, and the header mutes it in one click.
+    pub ask_speak_replies: bool,
+    /// Which tts-1 voice Ask speaks in. Validated against the model's own list
+    /// before it is sent, so an edited settings file cannot break every reply.
+    pub ask_voice: String,
     /// System-wide screenshot binding. Defaults to F9.
     pub screenshot_shortcut: String,
     /// WebKit compositing policy: "auto", "accelerated", or "compatibility".
@@ -109,6 +115,8 @@ impl Default for Settings {
             screenshot_hide_window: false,
             legacy_openai_api_key: None,
             voice_shortcut: "F8".to_string(),
+            ask_speak_replies: true,
+            ask_voice: "nova".to_string(),
             screenshot_shortcut: "F9".to_string(),
             renderer_mode: "auto".to_string(),
             renderer_accel_heal_done: false,

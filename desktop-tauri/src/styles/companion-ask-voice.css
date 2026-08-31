@@ -1,0 +1,121 @@
+/* Ask's voice: the orb stage, and the three controls that drive it.
+   Two hues do the talking — the cobalt accent while you speak, the reserved
+   `--ask` violet while Vibyra does. Nothing else in the panel changes colour,
+   so the switch is unambiguous. */
+
+.ask-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 6px;
+  animation: fade-up 220ms var(--e-hero);
+}
+
+.ask-orb {
+  display: block;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 34%, transparent));
+  transition: filter 240ms ease;
+}
+
+.ask-stage[data-mode="speaking"] .ask-orb {
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ask) 42%, transparent));
+}
+
+.ask-stage[data-mode="thinking"] .ask-orb {
+  filter: none;
+}
+
+.ask-stage__caption {
+  margin: 0;
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ask-stage[data-mode="listening"] .ask-stage__caption { color: var(--accent-2); }
+.ask-stage[data-mode="speaking"] .ask-stage__caption { color: var(--ask); }
+
+.ask-stage__action {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--elevated);
+  color: var(--muted);
+  font-size: var(--fs-hint);
+}
+
+.ask-stage__action:hover {
+  border-color: var(--accent-border);
+  color: var(--text);
+}
+
+/* ── controls ─────────────────────────────────────────────────────── */
+.ask-mute {
+  margin-left: auto;
+  width: auto;
+  padding: 0 6px;
+  color: var(--dim);
+}
+
+.ask-mute[aria-pressed="true"] { color: var(--ask); }
+.ask-mute:hover { color: var(--text); }
+
+.ask-mic {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--workspace);
+  color: var(--muted);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.ask-mic:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent-border);
+}
+
+.ask-mic:disabled { opacity: 0.4; }
+
+.ask-mic[data-live] {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  animation: ask-mic-live 1.6s ease-in-out infinite;
+}
+
+@keyframes ask-mic-live {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 5px transparent; }
+}
+
+.ask-turn__foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ask-replay {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease;
+}
+
+.ask-turn:hover .ask-replay,
+.ask-replay:focus-visible,
+.ask-replay[data-live] { opacity: 1; }
+
+.ask-replay:hover { color: var(--text); }
+.ask-replay[data-live] { color: var(--ask); }

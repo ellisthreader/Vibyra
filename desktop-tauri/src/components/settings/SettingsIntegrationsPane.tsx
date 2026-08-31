@@ -13,6 +13,7 @@ import { SettingsBlock } from "./SettingsShared";
 import { GithubIntegrationCard } from "./GithubIntegrationCard";
 import { ProviderIntegrationCard } from "./ProviderIntegrationCard";
 import { TerminalIntegrations } from "./TerminalIntegrations";
+import { VaultIntegrationCard } from "./VaultIntegrationCard";
 
 interface Props {
   settings: Settings;
@@ -111,6 +112,10 @@ export function SettingsIntegrationsPane({ settings, update }: Props) {
           </div>
           <p className="integration-card__note">Vibyra refreshes this public catalog automatically. It is not a connected billing account.</p>
         </article>
+      </SettingsBlock>
+
+      <SettingsBlock label="Context sources">
+        <VaultIntegrationCard />
       </SettingsBlock>
 
       <TerminalIntegrations settings={settings} update={update} />

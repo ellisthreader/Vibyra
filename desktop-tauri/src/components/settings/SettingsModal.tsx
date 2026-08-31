@@ -37,7 +37,7 @@ const GROUPS: { label: string; items: Section[] }[] = [
   {
     label: "AI",
     items: [
-      { id: "integrations", label: "Integrations", blurb: "Connected AI accounts and model services", icon: LinkIcon },
+      { id: "integrations", label: "Integrations", blurb: "Connected AI accounts, model services and context sources", icon: LinkIcon },
       { id: "ai", label: "Vibyra AI", blurb: "Your OpenAI key, usage and spend limits", icon: SparklesIcon },
       { id: "agents", label: "Custom agents", blurb: "Bring any AI CLI into the rail", icon: BotIcon },
       { id: "workspaces", label: "Safe workspaces", blurb: "The isolated worktrees agents run in, and the disk they hold", icon: GitBranchIcon },

@@ -83,7 +83,7 @@ export function HomeView() {
           <div className="home-empty">
             <h2>Projects are the spine of Vibyra</h2>
             <p>
-              Each project keeps its own agents, files, memory and chat. Add your first one —
+              Each project keeps its own agents, files and conversation. Add your first one —
               agents will launch straight into its folder.
             </p>
             <button className="btn btn--primary" onClick={() => void pickAndCreate()}>

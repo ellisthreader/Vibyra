@@ -1,6 +1,6 @@
 import type { DockSize, DockTool, SettingsSectionId } from "../../state/workspaceStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { EyeIcon, FolderIcon, GearIcon, GitBranchIcon, MemoryIcon, SparklesIcon } from "../common/Icons";
+import { EyeIcon, FolderIcon, GearIcon, GitBranchIcon, SparklesIcon } from "../common/Icons";
 import { MonitorIcon } from "../common/StatusIcons";
 import type { CommandPaletteEntry } from "../../lib/paletteTypes";
 
@@ -15,8 +15,7 @@ const SIZES: { id: DockSize; label: string; detail: string }[] = [
 
 const TOOLS: { id: DockTool; label: string; icon: typeof FolderIcon }[] = [
   { id: "preview", label: "Preview", icon: MonitorIcon },
-  { id: "chat", label: "Chat", icon: SparklesIcon },
-  { id: "memory", label: "Memory", icon: MemoryIcon },
+  { id: "ask", label: "Ask Vibyra", icon: SparklesIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "review", label: "Review", icon: GitBranchIcon },
 ];
@@ -53,7 +52,7 @@ export function viewEntries(): CommandPaletteEntry[] {
     kind: "command",
     group: "View",
     label: open ? "Hide dock" : "Show dock",
-    keywords: "companion sidebar chat memory files preview drawer panel",
+    keywords: "companion sidebar ask chat files preview review drawer panel",
     icon: EyeIcon,
     run: workspace.toggleDock,
   });

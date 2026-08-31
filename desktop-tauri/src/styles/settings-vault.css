@@ -1,0 +1,71 @@
+/* The Obsidian vault card on Settings → Integrations.
+   Replaces the five companion-memory sheets the dock panel needed. Everything
+   structural is borrowed from settings-integrations.css; only the vault mark
+   and the connect list are local, and both keep that sheet's vocabulary. */
+
+.vault-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--r-control);
+  border: 1px solid var(--line-soft);
+  color: var(--accent-2);
+}
+
+.vault-choices {
+  display: grid;
+  margin-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.vault-choice {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 5px 7px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.vault-choice + .vault-choice {
+  border-top: 1px solid var(--line-soft);
+}
+
+.vault-choice:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.vault-choice:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.vault-choice > svg {
+  color: var(--accent-2);
+}
+
+.vault-choice > span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vault-choice strong {
+  color: var(--text);
+  font-weight: var(--fw-bold);
+}
+
+.vault-choice small {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

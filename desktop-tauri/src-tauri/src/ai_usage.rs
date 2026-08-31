@@ -9,6 +9,8 @@ pub const CHAT_INPUT_USD_PER_MTOK: f64 = 0.15;
 pub const CHAT_OUTPUT_USD_PER_MTOK: f64 = 0.60;
 /// whisper-1 list price, USD per minute of audio.
 pub const VOICE_USD_PER_MINUTE: f64 = 0.006;
+/// tts-1 list price, USD per million characters spoken.
+pub const SPEECH_USD_PER_MCHAR: f64 = 15.0;
 
 pub fn chat_cost_usd(input_tokens: u64, output_tokens: u64) -> f64 {
     (input_tokens as f64 * CHAT_INPUT_USD_PER_MTOK
@@ -20,10 +22,16 @@ pub fn voice_cost_usd(seconds: f64) -> f64 {
     (seconds / 60.0) * VOICE_USD_PER_MINUTE
 }
 
+pub fn speech_cost_usd(chars: u64) -> f64 {
+    (chars as f64 * SPEECH_USD_PER_MCHAR) / 1_000_000.0
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AiCall {
     Chat,
     Voice,
+    /// Text-to-speech: Ask reading a reply aloud.
+    Speech,
 }
 
 /// The user's own spend ceiling, from settings. Zero means "no cap of this
@@ -49,9 +57,11 @@ pub struct UsageLedger {
     pub month: String,
     pub chat_calls: u32,
     pub voice_calls: u32,
+    pub speech_calls: u32,
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub voice_seconds: f64,
+    pub speech_chars: u64,
     pub spend_usd: f64,
     pub month_calls: u32,
     pub month_spend_usd: f64,
@@ -59,7 +69,7 @@ pub struct UsageLedger {
 
 impl UsageLedger {
     pub fn calls(&self) -> u32 {
-        self.chat_calls + self.voice_calls
+        self.chat_calls + self.voice_calls + self.speech_calls
     }
 
     /// Zeroes whichever buckets belong to a period that has ended. Called
@@ -70,9 +80,11 @@ impl UsageLedger {
             self.day = day.to_owned();
             self.chat_calls = 0;
             self.voice_calls = 0;
+            self.speech_calls = 0;
             self.input_tokens = 0;
             self.output_tokens = 0;
             self.voice_seconds = 0.0;
+            self.speech_chars = 0;
             self.spend_usd = 0.0;
         }
         if self.month != month {
@@ -89,6 +101,7 @@ impl UsageLedger {
         match kind {
             AiCall::Chat => self.chat_calls += 1,
             AiCall::Voice => self.voice_calls += 1,
+            AiCall::Speech => self.speech_calls += 1,
         }
         self.month_calls += 1;
     }
@@ -102,6 +115,11 @@ impl UsageLedger {
     pub fn add_voice_cost(&mut self, seconds: f64) {
         self.voice_seconds += seconds;
         self.add_spend(voice_cost_usd(seconds));
+    }
+
+    pub fn add_speech_cost(&mut self, chars: u64) {
+        self.speech_chars += chars;
+        self.add_spend(speech_cost_usd(chars));
     }
 
     fn add_spend(&mut self, usd: f64) {

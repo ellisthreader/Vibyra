@@ -1,15 +1,18 @@
 import { create } from "zustand";
 
-import { writeTerminal } from "../ipc/terminal";
-import { notePromptInput } from "../lib/terminalChatTitleSource";
 import { voiceStart, voiceStatus, voiceStop } from "../ipc/tools";
 import { shortcutLabel } from "../lib/hotkeys";
+import { useAskSpeechStore } from "./askSpeechStore";
 import { useSettingsStore } from "./settingsStore";
-import { useTerminalStore } from "./terminalStore";
+import { deliverTranscript, resolveSink, type VoiceSink } from "./voiceSinks";
 
-// F8 dictation, ported from the old app's phase machine:
+// Dictation, ported from the old app's phase machine:
 // idle → starting → listening → transcribing → sent | error.
-// The transcript is sent straight into the target terminal.
+//
+// One machine serves both destinations because there is only one recorder:
+// F8 sends the transcript to the focused terminal, Ask's microphone sends it
+// to Ask. `voiceSinks` is the only part that differs; everything here — the
+// generation guard, the timeouts, the error copy — is shared.
 
 export type VoicePhase = "idle" | "starting" | "listening" | "transcribing" | "sent" | "error";
 
@@ -18,11 +21,14 @@ interface VoiceStore {
   title: string;
   sub: string;
   targetId: number | null;
+  sink: VoiceSink;
   generation: number;
-  toggle: () => void;
+  toggle: (sink?: VoiceSink) => void;
   cancel: () => void;
 }
 
+/** The destination's display name, kept for the phases that follow the start. */
+let destination = "";
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
 let maxTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -51,20 +57,21 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
     hideSoon(4200);
   };
 
-  const start = async () => {
+  const start = async (sink: VoiceSink) => {
     const generation = get().generation + 1;
-    set({ generation });
-    const panes = useTerminalStore.getState().panes;
-    const focusedId = useTerminalStore.getState().focusedId;
-    const target =
-      panes.find((p) => p.id === focusedId && p.status === "running") ??
-      panes.find((p) => p.status === "running" && p.visibility !== "hibernated");
-    if (!target) {
-      fail("Open a terminal first");
+    set({ generation, sink });
+    // Barge-in: speaking over Ask's own voice is how a conversation works, and
+    // the microphone would otherwise record the reply playing out loud.
+    useAskSpeechStore.getState().stop();
+
+    const target = resolveSink(sink);
+    if (!target.ok) {
+      fail(target.message);
       return;
     }
-    set({ targetId: target.id });
-    show("starting", "Opening microphone", target.title);
+    set({ targetId: target.targetId ?? null });
+    destination = target.title;
+    show("starting", "Opening microphone", destination);
     try {
       const status = await voiceStatus();
       if (!status.recorder) {
@@ -94,27 +101,22 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
 
   const stop = async () => {
     clearTimers();
-    const generation = get().generation;
-    const targetId = get().targetId;
-    const pane = useTerminalStore.getState().panes.find((p) => p.id === targetId);
-    show("transcribing", "Transcribing", pane?.title ?? "");
+    const { generation, targetId, sink } = get();
+    show("transcribing", "Transcribing", destination);
     try {
       const text = await voiceStop(false);
       if (generation !== get().generation) return;
-      if (!text || targetId === null) {
+      if (!text) {
         fail("No speech heard");
         return;
       }
-      if (!pane || pane.status !== "running") {
-        fail("The target terminal was closed");
+      const delivered = await deliverTranscript(sink, targetId, text);
+      if (generation !== get().generation) return;
+      if (!delivered.ok) {
+        fail(delivered.message);
         return;
       }
-      const submitted = `${text}\r`;
-      // Dictation goes straight to the PTY, so the pane would never see this
-      // prompt in what was typed into it.
-      notePromptInput(targetId, submitted);
-      await writeTerminal(targetId, submitted);
-      show("sent", "Sent to terminal", pane.title);
+      show("sent", delivered.title, delivered.sub);
       hideSoon(1800);
     } catch (error) {
       fail(String(error));
@@ -126,20 +128,28 @@ export const useVoiceStore = create<VoiceStore>((set, get) => {
     title: "",
     sub: "",
     targetId: null,
+    sink: "terminal",
     generation: 0,
 
-    toggle: () => {
+    toggle: (sink = "terminal") => {
       const phase = get().phase;
       if (phase === "starting") {
         get().cancel();
         return;
       }
       if (phase === "listening") {
+        // A second press on the *other* destination's button cancels rather
+        // than sends: the transcript would otherwise land somewhere the user
+        // did not aim it.
+        if (sink !== get().sink) {
+          get().cancel();
+          return;
+        }
         void stop();
         return;
       }
       if (phase === "transcribing") return;
-      void start();
+      void start(sink);
     },
 
     cancel: () => {

@@ -65,6 +65,12 @@ export function AiUsageCard({ status }: { status: AiServiceStatus }) {
           </dd>
         </div>
         <div>
+          <dt>Spoken today</dt>
+          <dd>
+            {usage.speechCallsToday} replies · {usage.speechCharsToday.toLocaleString()} characters
+          </dd>
+        </div>
+        <div>
           <dt>Last hour</dt>
           <dd>
             {usage.callsLastHour} requests ({usage.callsLastMinute} in the last minute)
@@ -76,8 +82,9 @@ export function AiUsageCard({ status }: { status: AiServiceStatus }) {
         Estimated at OpenAI list prices: {pricing.chatModel} at{" "}
         {usd(pricing.chatInputUsdPerMtok)} per million input tokens and{" "}
         {usd(pricing.chatOutputUsdPerMtok)} per million output, {pricing.voiceModel} at{" "}
-        {usd(pricing.voiceUsdPerMinute)} a minute. Your OpenAI dashboard remains the
-        billing record.
+        {usd(pricing.voiceUsdPerMinute)} a minute, {pricing.speechModel} at{" "}
+        {usd(pricing.speechUsdPerMchar)} per million characters spoken. Your OpenAI
+        dashboard remains the billing record.
       </p>
     </article>
   );

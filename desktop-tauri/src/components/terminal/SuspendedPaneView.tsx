@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 
 import { initTerminalFont } from "../../lib/terminalFont";
+import { previewSlice } from "../../lib/suspendedPreview";
 import { themeFor } from "../../lib/xtermTheme";
 import { useSettingsStore } from "../../state/settingsStore";
 
@@ -31,59 +32,78 @@ export function SuspendedPaneView({ snapshot }: { snapshot: string | null | unde
     let term: Terminal | null = null;
     let trailingTimer = 0;
     let frame = 0;
-    void initTerminalFont().then(() => {
-      const settings = useSettingsStore.getState().settings;
-      if (cancelled || !settings) return;
+    const build = (): void => {
+      void initTerminalFont().then(() => {
+        const settings = useSettingsStore.getState().settings;
+        if (cancelled || !settings) return;
 
-      const openedTerm = new Terminal({
-        disableStdin: true,
-        cursorBlink: false,
-        cursorStyle: "bar",
-        fontSize: settings.fontSize,
-        fontFamily: `"JetBrains Mono Variable", ${settings.fontFamily}`,
-        scrollback: settings.scrollbackLines,
-        theme: themeFor(settings.theme),
-        allowProposedApi: true,
-      });
-      term = openedTerm;
-      const fit = new FitAddon();
-      openedTerm.loadAddon(fit);
-      openedTerm.open(host);
-
-      let lastFitAt = 0;
-      const refit = () => {
-        if (cancelled) return;
-        lastFitAt = performance.now();
-        const rect = host.getBoundingClientRect();
-        if (rect.width > 80 && rect.height > 60) fit.fit();
-      };
-      refit();
-      // The snapshot is a tail of a raw ANSI stream, so it can begin mid escape
-      // sequence. Resetting first stops a severed sequence corrupting the view —
-      // the same guard the live resync path uses.
-      if (snapshot) {
-        openedTerm.reset();
-        openedTerm.write(snapshot, () => {
-          if (!cancelled) openedTerm.scrollToBottom();
+        const openedTerm = new Terminal({
+          disableStdin: true,
+          cursorBlink: false,
+          cursorStyle: "bar",
+          fontSize: settings.fontSize,
+          fontFamily: `"JetBrains Mono Variable", ${settings.fontFamily}`,
+          scrollback: settings.scrollbackLines,
+          theme: themeFor(settings.theme),
+          allowProposedApi: true,
         });
-      }
+        term = openedTerm;
+        const fit = new FitAddon();
+        openedTerm.loadAddon(fit);
+        openedTerm.open(host);
 
-      observer = new ResizeObserver(() => {
-        if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
-          frame = requestAnimationFrame(() => {
-            frame = 0;
-            refit();
+        let lastFitAt = 0;
+        const refit = () => {
+          if (cancelled) return;
+          lastFitAt = performance.now();
+          const rect = host.getBoundingClientRect();
+          if (rect.width > 80 && rect.height > 60) fit.fit();
+        };
+        refit();
+        // Only the tail is drawn — `snapshot` itself stays whole on the pane,
+        // for `relaunchContinuity` to replay on resume. See `suspendedPreview`.
+        // Either way this is a tail of a raw ANSI stream and can begin mid
+        // escape sequence, so resetting first stops a severed sequence
+        // corrupting the view — the same guard the live resync path uses.
+        const visible = previewSlice(snapshot);
+        if (visible) {
+          openedTerm.reset();
+          openedTerm.write(visible, () => {
+            if (!cancelled) openedTerm.scrollToBottom();
           });
         }
-        window.clearTimeout(trailingTimer);
-        trailingTimer = window.setTimeout(refit, FIT_THROTTLE_MS);
+
+        observer = new ResizeObserver(() => {
+          if (!frame && performance.now() - lastFitAt > FIT_THROTTLE_MS) {
+            frame = requestAnimationFrame(() => {
+              frame = 0;
+              refit();
+            });
+          }
+          window.clearTimeout(trailingTimer);
+          trailingTimer = window.setTimeout(refit, FIT_THROTTLE_MS);
+        });
+        observer.observe(host);
       });
-      observer.observe(host);
+    };
+
+    // Two frames, not one: a single rAF callback still runs before the paint
+    // it belongs to. Letting the card chrome — title, status pill, Resume —
+    // land first is what makes switching projects feel immediate, and a
+    // suspended pane is a still picture that loses nothing by arriving a beat
+    // later.
+    let startFrame = requestAnimationFrame(() => {
+      startFrame = requestAnimationFrame(() => {
+        startFrame = 0;
+        build();
+      });
     });
+
     return () => {
       cancelled = true;
       observer?.disconnect();
       window.clearTimeout(trailingTimer);
+      cancelAnimationFrame(startFrame);
       cancelAnimationFrame(frame);
       term?.dispose();
     };

@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { visibleFileEntries } from "../src/lib/fileTreePolicy.ts";
-import { formatMemoryContext, mergeImportedMemory } from "../src/lib/memoryImport.ts";
-import { parseMemoryDocument } from "../src/lib/memoryDocument.ts";
-import { buildMemoryTree, resolveMemoryLink, searchMemoryPaths } from "../src/lib/memoryTree.ts";
+import { formatVaultContext } from "../src/lib/vaultContext.ts";
 
 function entry(name, isDir) {
   return { name, isDir, path: `/project/${name}`, size: 0, modifiedMs: null };
@@ -32,47 +30,20 @@ test("keeps generated folders quiet while preserving normal project navigation",
   );
 });
 
-test("imports selected notes into editable project memory without source paths", () => {
-  const merged = mergeImportedMemory("# Project\n\nKeep this.", [
-    { name: "decisions.md", content: "# Decisions\n\nUse the native shell." },
-    { name: "empty.md", content: "   " },
-  ]);
-  assert.match(merged, /^# Project/);
-  assert.match(merged, /## Imported · decisions\.md/);
-  assert.doesNotMatch(merged, /empty\.md/);
-  assert.doesNotMatch(merged, /\/home\//);
-});
-
-test("labels editable and read-only memory context separately", () => {
-  const context = formatMemoryContext("# Local rule", [
+test("labels what the vault lent, and drops notes with nothing in them", () => {
+  const context = formatVaultContext([
     { path: "Architecture/Terminal.md", content: "PTY sessions persist." },
+    { path: "Empty.md", content: "   " },
   ]);
-  assert.match(context, /editable MEMORY\.md/);
   assert.match(context, /read-only notes selected locally/);
   assert.match(context, /Architecture\/Terminal\.md/);
+  assert.match(context, /PTY sessions persist\./);
+  // A path with no body is noise, not context.
+  assert.doesNotMatch(context, /Empty\.md/);
 });
 
-test("builds a stable Obsidian-style note tree without loading note bodies", () => {
-  const tree = buildMemoryTree([
-    "Decisions.md",
-    "Architecture/Terminal.md",
-    "Architecture/Desktop.md",
-  ]);
-  assert.equal(tree[0].kind, "folder");
-  assert.equal(tree[0].name, "Architecture");
-  assert.deepEqual(tree[0].children.map(({ name }) => name), ["Desktop", "Terminal"]);
-  assert.deepEqual(searchMemoryPaths(["Architecture/Terminal.md"], "term"), [
-    "Architecture/Terminal.md",
-  ]);
-  assert.equal(
-    resolveMemoryLink(["Architecture/Terminal.md"], "Terminal"),
-    "Architecture/Terminal.md",
-  );
-});
-
-test("parses a safe readable memory document and unique outline anchors", () => {
-  const model = parseMemoryDocument("# Project\n\n## Rules\n- Fast\n- Clear\n\n## Rules\n```ts\nrun();\n```");
-  assert.deepEqual(model.headings.map(({ id }) => id), ["project", "rules", "rules-2"]);
-  assert.equal(model.blocks.find(({ kind }) => kind === "list")?.items.length, 2);
-  assert.equal(model.blocks.find(({ kind }) => kind === "code")?.language, "ts");
+test("a vault with nothing to lend contributes nothing at all", () => {
+  // The caller appends only on a truthy result, so silence has to be "".
+  assert.equal(formatVaultContext([]), "");
+  assert.equal(formatVaultContext([{ path: "Blank.md", content: "\n\n" }]), "");
 });

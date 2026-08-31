@@ -30,10 +30,12 @@ function AlertIcon() {
 }
 
 export function VoiceHud() {
-  const { phase, title, sub, cancel } = useVoiceStore();
+  const { phase, title, sub, sink, cancel } = useVoiceStore();
   const shortcut = useSettingsStore((state) => state.settings?.voiceShortcut ?? "F8");
 
-  if (phase === "idle") return null;
+  // Ask draws its own listening state inside the panel, right where the answer
+  // will appear. A second floating HUD saying the same thing is noise.
+  if (phase === "idle" || sink === "ask") return null;
 
   return (
     <div className="voice-hud" data-phase={phase} role="status">

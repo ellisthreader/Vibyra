@@ -7,8 +7,15 @@ use crate::ai_usage_guard::GuardInner;
 // user-editable: they exist to stop a stuck key repeat, a render loop, or a
 // retry storm from firing hundreds of paid calls in seconds — the failure mode
 // that produces a surprise bill before anyone can react.
-const MIN_CALL_INTERVAL: Duration = Duration::from_millis(1_200);
-const MAX_CALLS_PER_MINUTE: usize = 10;
+//
+// Both numbers have to leave room for one legitimate pipeline: a spoken turn
+// in Ask bills three calls — transcribe, chat, speak — each fired only when
+// the previous one *returned*. A chain like that cannot run away on its own,
+// so the limits are set to stop unattended repetition rather than to cap a
+// conversation. A stuck key repeats at ~30 Hz and a render loop far faster;
+// both are still refused by an interval this long.
+const MIN_CALL_INTERVAL: Duration = Duration::from_millis(400);
+const MAX_CALLS_PER_MINUTE: usize = 20;
 pub(crate) const MINUTE: Duration = Duration::from_secs(60);
 const HOUR: Duration = Duration::from_secs(3_600);
 
@@ -23,6 +30,7 @@ pub(crate) fn admit(
     let busy = match kind {
         AiCall::Chat => inner.chat_in_flight,
         AiCall::Voice => inner.voice_in_flight,
+        AiCall::Speech => inner.speech_in_flight,
     };
     if busy {
         return Err("A request is already running — wait for it to finish.".into());
@@ -34,7 +42,7 @@ pub(crate) fn admit(
         .last()
         .is_some_and(|last| now.duration_since(*last) < MIN_CALL_INTERVAL)
     {
-        return Err("Slow down — Vibyra allows about one AI request per second.".into());
+        return Err("Slow down — Vibyra is pacing AI requests.".into());
     }
     let last_minute = inner
         .recent

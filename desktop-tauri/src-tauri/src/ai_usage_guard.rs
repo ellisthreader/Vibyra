@@ -34,6 +34,7 @@ pub(crate) struct GuardInner {
     pub(crate) recent: Vec<Instant>,
     pub(crate) chat_in_flight: bool,
     pub(crate) voice_in_flight: bool,
+    pub(crate) speech_in_flight: bool,
 }
 
 impl AiUsageGuard {
@@ -49,6 +50,7 @@ impl AiUsageGuard {
                 recent: Vec::new(),
                 chat_in_flight: false,
                 voice_in_flight: false,
+                speech_in_flight: false,
             }),
         }
     }
@@ -103,6 +105,7 @@ impl AiUsageGuard {
             match kind {
                 AiCall::Chat => inner.chat_in_flight = true,
                 AiCall::Voice => inner.voice_in_flight = true,
+                AiCall::Speech => inner.speech_in_flight = true,
             }
             inner.recent.push(Instant::now());
             inner.ledger.count_call(kind);
@@ -143,6 +146,7 @@ impl AiUsageGuard {
         match kind {
             AiCall::Chat => inner.chat_in_flight = false,
             AiCall::Voice => inner.voice_in_flight = false,
+            AiCall::Speech => inner.speech_in_flight = false,
         }
     }
 }
@@ -163,6 +167,10 @@ impl CallPermit {
 
     pub fn finish_voice(self, seconds: f64) {
         self.guard.settle(|ledger| ledger.add_voice_cost(seconds));
+    }
+
+    pub fn finish_speech(self, chars: u64) {
+        self.guard.settle(|ledger| ledger.add_speech_cost(chars));
     }
 }
 

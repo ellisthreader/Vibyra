@@ -1,7 +1,8 @@
 import { BellIcon } from "../common/StatusIcons";
 
 /** Empty state for the notification centre, following the shape established
- * by `MemoryEmptyState`: one mark, one line of reassurance, one of guidance. */
+ * by the settings empty states: one mark, one line of reassurance, one of
+ * guidance. */
 export function NotificationEmpty() {
   return (
     <div className="ncenter__empty">

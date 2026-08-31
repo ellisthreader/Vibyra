@@ -1,8 +1,8 @@
-export type DockTool = "preview" | "chat" | "memory" | "files" | "review";
+export type DockTool = "preview" | "ask" | "files" | "review";
 export type DockSize = "compact" | "wide" | "full";
 
 // The dock owns the workspace's right edge: one floating panel holding the
-// preview, the chat, the memory notes and the file tree.
+// preview, Ask, the file tree and the review of a pane's changes.
 //
 // It replaces the pair that used to split that job — `stageLayout.ts`, which
 // sized a preview pane inside the stage grid, and `companionPreferences.ts`,
@@ -15,7 +15,7 @@ export type DockSize = "compact" | "wide" | "full";
 /** Inset between the dock and the workspace edges. The float, in one number. */
 export const DOCK_GAP_PX = 10;
 
-/** Compact is a reading width — chat, notes, a file tree. */
+/** Compact is a reading width — an answer, a file tree, a diff. */
 export const DOCK_COMPACT_DEFAULT = 360;
 export const DOCK_COMPACT_MIN = 300;
 export const DOCK_COMPACT_MAX = 560;
@@ -33,7 +33,7 @@ const TOOL_KEY = "vibyra.desktop.dockTool";
 const COMPACT_KEY = "vibyra.desktop.dockCompactWidth";
 const WIDE_KEY = "vibyra.desktop.dockWideRatio";
 
-const TOOLS: DockTool[] = ["preview", "chat", "memory", "files", "review"];
+const TOOLS: DockTool[] = ["preview", "ask", "files", "review"];
 
 interface PreferenceStorage {
   getItem: (key: string) => string | null;
@@ -175,14 +175,18 @@ export function saveWideRatio(ratio: number, storage = browserStorage()): void {
  * "Closed" is never stored: shutting the dock is a thing you did just now, not
  * a preference, and reopening to a blank panel would be worse than reopening
  * to whatever you last had up.
+ *
+ * Anything not in `TOOLS` falls back, which is what retires or renames a tool
+ * for free — a dock left on `memory`, or on `chat` before it became `ask`,
+ * reopens on the default.
  */
 export function restoreDockTool(storage = browserStorage()): DockTool {
-  if (!storage) return "chat";
+  if (!storage) return "ask";
   try {
     const value = storage.getItem(TOOL_KEY);
-    return TOOLS.includes(value as DockTool) ? (value as DockTool) : "chat";
+    return TOOLS.includes(value as DockTool) ? (value as DockTool) : "ask";
   } catch {
-    return "chat";
+    return "ask";
   }
 }
 

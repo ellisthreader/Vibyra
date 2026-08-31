@@ -6,13 +6,8 @@ use std::path::{Path, PathBuf};
 
 use crate::{CoreError, CoreResult};
 
-use super::{
-    ImportedMemoryNote, MemoryImportBatch, VaultSummary, MAX_VAULT_NOTES, NOTE_EXTENSIONS,
-};
+use super::{VaultSummary, MAX_VAULT_NOTES, NOTE_EXTENSIONS};
 
-const MAX_IMPORT_FILES: usize = 32;
-const MAX_IMPORT_NOTE_BYTES: u64 = 256 * 1024;
-const MAX_IMPORT_TOTAL_BYTES: usize = 1024 * 1024;
 const SKIPPED_DIRECTORIES: &[&str] = &[
     ".git",
     ".obsidian",
@@ -82,35 +77,6 @@ pub(crate) fn read_bounded(path: &Path, max_bytes: u64) -> CoreResult<Option<Str
     Ok(Some(String::from_utf8_lossy(&bytes).into_owned()))
 }
 
-pub fn read_imported_notes(paths: &[PathBuf]) -> CoreResult<MemoryImportBatch> {
-    let mut batch = MemoryImportBatch::default();
-    let mut total = 0usize;
-    for path in paths.iter().take(MAX_IMPORT_FILES) {
-        if !path.is_file() || !is_memory_note(path) {
-            batch.skipped += 1;
-            continue;
-        }
-        let Some(content) = read_bounded(path, MAX_IMPORT_NOTE_BYTES)? else {
-            batch.skipped += 1;
-            continue;
-        };
-        let content = content.trim().to_string();
-        if content.is_empty() || total + content.len() > MAX_IMPORT_TOTAL_BYTES {
-            batch.skipped += 1;
-            continue;
-        }
-        total += content.len();
-        let name = path
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("Imported note")
-            .replace(['\n', '\r'], " ");
-        batch.notes.push(ImportedMemoryNote { name, content });
-    }
-    batch.skipped += paths.len().saturating_sub(MAX_IMPORT_FILES);
-    Ok(batch)
-}
-
 pub fn summarize_vault(path: &Path) -> CoreResult<VaultSummary> {
     let canonical = fs::canonicalize(path)?;
     if !canonical.join(".obsidian").is_dir() {
@@ -170,17 +136,5 @@ mod tests {
         fs::write(temp.path().join("node_modules/skip.md"), "# Skip").unwrap();
         let summary = summarize_vault(temp.path()).unwrap();
         assert_eq!(summary.note_count, 1);
-    }
-
-    #[test]
-    fn imports_supported_notes_without_returning_source_paths() {
-        let temp = tempfile::tempdir().unwrap();
-        let note = temp.path().join("decisions.md");
-        let ignored = temp.path().join("secret.json");
-        fs::write(&note, "# Decisions").unwrap();
-        fs::write(&ignored, "{}").unwrap();
-        let batch = read_imported_notes(&[note, ignored]).unwrap();
-        assert_eq!(batch.notes[0].name, "decisions.md");
-        assert_eq!(batch.skipped, 1);
     }
 }
