@@ -2,29 +2,49 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Ask Vibyra, and it can see your workspace",
+    body: "The dock's chat is now an assistant briefed on live state \u2014 what every pane is doing, what just failed, what you have spent \u2014 with credentials stripped before anything is sent.",
+    fresh: true,
+  },
+  {
+    title: "Speak to it, and it answers out loud",
+    body: "Press the microphone and talk. One ring shows who is speaking: cobalt for you, violet for Vibyra, both driven by real audio rather than decoration.",
+    fresh: true,
+  },
+  {
+    title: "The startup splash and project activity are back",
+    body: "Three features that went missing when 0.3.5 was branched return here: the splash at launch, seven days of Git activity per project, and the lighter auth backdrop.",
+    fresh: true,
+  },
+  {
+    title: "Switching projects is immediate again",
+    body: "A suspended pane was redrawing its entire scrollback on every switch. It now draws a bounded tail, and restoring a terminal is unchanged.",
+    fresh: true,
+  },
+  {
     title: "Teammates that remember",
     body: "Give an agent a name, a brief and its own folders, and it keeps all of it \u2014 plus what it has learned \u2014 across every conversation you have with it.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "As many chats as you need",
     body: "One teammate, many conversations. Starting a new one touches nothing else, and all of them share the same brief, memory and skills.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "You decide what leaves the machine",
     body: "Reading inside a folder you granted never asks. Publishing, spending, deleting and anything touching a secret always do \u2014 and what you approved is what runs, even if the agent changes its mind afterwards.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Work that happens on a schedule",
     body: "A routine opens a fresh chat each time it runs, at the time you set, in the timezone you set. Miss one because the app was shut and it is skipped, never fired in a burst when you come back.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Teach it once",
     body: "Write down a procedure \u2014 when it applies, what to do, how to know it worked, where to stop \u2014 and hand it to whichever teammates need it. An agent can suggest one; only you install it.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "A chat with nothing attached",
@@ -51,7 +71,7 @@ const FEATURES = [
   {
     title: "Terminal prompts keep their focus",
     body: "Permission requests, update notices, toasts and dialogs return typing to the terminal instead of leaving it unresponsive.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "One stage, split how you like",

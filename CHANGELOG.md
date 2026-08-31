@@ -3,6 +3,81 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.4.0 — 31 August 2026
+
+A reconciliation and a new way to use Vibyra.
+
+### The 0.3.0 work is back
+
+0.3.5 was branched from 0.2.8, and 0.2.9 and 0.3.0 were never merged into it.
+Three finished features were missing from the build you have been running, and
+all three return here.
+
+**Startup shows a splash again** instead of a blank rectangle, and the
+workspace window opens only once it has something to draw.
+
+**Project activity returns.** Right-click a project — or press Shift+F10 — for
+seven days of Git activity, a clearer name, and a colour. Closing a project
+still takes two deliberate steps.
+
+**The auth backdrop is a WebM again**, 750 kB rather than 2.7 MB, and it mounts
+only on signup. The startup chunk drops back from around 948 kB to 560 kB.
+
+Where the two lines had both changed the same thing, the newer review fleet
+wins. One casualty is named honestly: 0.3.0's per-file **Reject selected** is
+gone, because the fleet reviews per agent and the old button had no home in it.
+Rejecting a whole agent's work is unaffected.
+
+One security fix falls out of the merge. The 0.3.5 rewrite of the GitHub probe
+had lost the scrub that removes `GH_TOKEN` and friends before running `gh`, so
+an automation token in your environment could have been preferred over your own
+account. The scrub is back.
+
+### Ask Vibyra
+
+The dock's Chat panel is now **Ask** — an assistant that can actually see your
+workspace, and the Memory panel is retired.
+
+Ask is briefed on live state: every pane's status, what it is doing, its
+branch, its exit code, renderer and app CPU, memory, what you have spent today
+and this month, your settings, and matching notes from a connected Obsidian
+vault. It reads terminal output from at most two panes — the one waiting on you
+and the one that just died — because four healthy panes are already described
+by their summary lines.
+
+**Ask advises; the app acts.** The buttons under an answer are computed from
+your workspace, never chosen by the model. The briefing contains output your
+own agents wrote, and this is what makes that safe to send.
+
+**Credentials never leave the machine.** API keys, tokens, JWTs, PEM blocks,
+`Authorization:` headers and passwords inside URLs are stripped before the
+briefing is sent, and the panel tells you how many were removed. Commit SHAs,
+stack traces and test output are deliberately left alone.
+
+### Talking to it
+
+Ask listens and answers out loud. Press the microphone in the composer, speak,
+and the reply is read back to you. Mute it from the panel header, or replay any
+past answer.
+
+One ring shows who is talking — **cobalt while you speak, violet while Vibyra
+does** — and both are real readings, not decoration: your microphone level, and
+the frequency of the audio actually leaving the speakers. Speaking over Ask
+interrupts it, the way a conversation should. Spoken replies are billed to your
+own OpenAI key and appear in Settings with everything else.
+
+F8 dictation into a terminal is unchanged.
+
+### Fixes
+
+- **Switching projects no longer stalls.** A suspended pane was rebuilding a
+  full terminal and re-parsing its whole scrollback on every switch — about
+  250 kB a pane. It now draws a bounded tail. Restoring a terminal is
+  untouched: it replays from the saved snapshot, not from the preview.
+- **A click above the prompt types again.** Pressing the empty space over a
+  bottom-anchored prompt left focus on the pane instead of the terminal, so the
+  keyboard did nothing until you clicked directly on the text.
+
 ## 0.3.5 — 29 August 2026
 
 Two large additions, and the first is a second thing Vibyra can be.
