@@ -24,6 +24,7 @@ export function useAgentWorkBus(): void {
   const loadApprovals = useAgentWorkStore((state) => state.loadApprovals);
   const loadRoutines = useAgentWorkStore((state) => state.loadRoutines);
   const loadRuns = useAgentWorkStore((state) => state.loadRuns);
+  const setLastChecked = useAgentWorkStore((state) => state.setLastChecked);
 
   useEffect(() => {
     let live = true;
@@ -51,13 +52,20 @@ export function useAgentWorkBus(): void {
     });
 
     const offCard = listen("approval-raised", () => void refreshApprovals());
+    // The scheduler's heartbeat, emitted whether or not anything was due. It
+    // is what lets an empty Routines panel say the clock is still running,
+    // which is the answer to "is this thing on?".
+    const offTick = listen<number>("routine-tick", ({ payload }) => {
+      setLastChecked(typeof payload === "number" ? payload : Date.now());
+    });
     const timer = window.setInterval(() => void refreshApprovals(), FALLBACK_POLL_MS);
 
     return () => {
       live = false;
       void off.then((stop) => stop());
       void offCard.then((stop) => stop());
+      void offTick.then((stop) => stop());
       window.clearInterval(timer);
     };
-  }, [loadApprovals, loadRoutines, loadRuns]);
+  }, [loadApprovals, loadRoutines, loadRuns, setLastChecked]);
 }

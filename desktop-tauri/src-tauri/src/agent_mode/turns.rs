@@ -19,7 +19,9 @@ use std::sync::Arc;
 
 use vibyra_core::agent_chats::{transcript, ChatEventRow};
 use vibyra_core::agent_model::PermissionMode;
-use vibyra_core::agent_runtime::{adapter::TurnPlan, normalize, run, AgentEvent, TurnExit};
+use vibyra_core::agent_runtime::{
+    adapter::TurnPlan, normalize, run, AgentEvent, TurnExit, TurnOccasion,
+};
 
 use super::hub::AgentWorld;
 use super::prepare::prepare;
@@ -74,6 +76,14 @@ pub fn execute(
     record(
         AgentEvent::TurnStarted {
             prompt: request.prompt.clone(),
+            // Recorded on the turn rather than derived from the chat later: a
+            // chat's source says a routine opened it, but only the turn knows
+            // which routine, and a handoff's sender is not on the chat at all.
+            occasion: match (&request.occasion_routine, &request.occasion_handoff) {
+                (Some(name), _) => Some(TurnOccasion::Routine { name: name.clone() }),
+                (_, Some(from)) => Some(TurnOccasion::Handoff { from: from.clone() }),
+                _ => None,
+            },
         },
         &mut emit,
     );

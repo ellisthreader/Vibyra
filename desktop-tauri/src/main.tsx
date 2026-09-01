@@ -62,6 +62,7 @@ import "./styles/agent-panels.css";
 import "./styles/agent-decisions.css";
 import "./styles/agent-work.css";
 import "./styles/agent-unattended.css";
+import "./styles/agent-provenance.css";
 import "./styles/agent-running.css";
 import "./styles/agent-skills.css";
 import "./styles/agent-settings.css";

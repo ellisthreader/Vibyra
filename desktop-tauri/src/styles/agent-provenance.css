@@ -1,0 +1,120 @@
+/* Where a turn came from, and what shaped it: the occasion banner above a
+   prompt nobody typed, and the skills that were injected into it.
+
+   Both are violet, the hue this product reserves for "a choice somebody made"
+   — a decision waiting, a handoff, a standing instruction. Never a hue that
+   reads as an error: a skill firing is the system working. */
+
+/* --------------------------------------------------------- applied skills */
+
+.applied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Violet, because a skill is the same class of thing as a decision: something
+   standing behind the turn that a person chose to put there. Never a hue that
+   reads as an error — a skill firing is the system working. */
+.applied__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--ask) 30%, transparent);
+  border-radius: 999px;
+  background: var(--ask-soft);
+  color: var(--ask);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.applied__pill:hover {
+  background: color-mix(in srgb, var(--ask) 22%, transparent);
+}
+
+.applied__pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.applied__ver {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+}
+
+/* ------------------------------------------------- the count on Agent Mode */
+
+/* The ambient version of the decisions queue. Loaded by the work bus, so it is
+   true from Code Mode — a count that is only right while you are looking at
+   the thing it counts is worse than no count. */
+.mode-switch__pip {
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--ask);
+  color: var(--bg);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------- occasion */
+
+/* Above a prompt nobody typed. A person reading a routine's chat a day later
+   has no other way to know why it exists, and "the agent said this out of
+   nowhere" is how an unattended system loses trust. */
+.occasion {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin: 0 0 8px;
+  padding: 3px 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-2);
+  font-size: var(--fs-hint);
+}
+
+/* A handoff is the violet family, like a decision: another agent chose this,
+   and the reader is being told whose choice it was. */
+.occasion--handoff {
+  border-color: color-mix(in srgb, var(--ask) 30%, transparent);
+  background: var(--ask-soft);
+  color: var(--ask);
+}
+
+/* Parked is the violet family, never the red one: a turn stopped at a decision
+   has done nothing wrong and is waiting on the reader. */
+.routine-row__last--parked,
+.working__row.is-parked .working__what {
+  color: var(--ask);
+}
+
+.working__row.is-parked {
+  border-color: color-mix(in srgb, var(--ask) 30%, transparent);
+}
+
+.working__row.is-parked .working__pulse {
+  background: var(--ask);
+  box-shadow: 0 0 0 3px var(--ask-soft);
+}
+
+.working__row:disabled {
+  cursor: default;
+}
+
+.routines__checked {
+  margin-top: 14px;
+}

@@ -64,41 +64,62 @@ fn tick(app: &AppHandle, hub: &Arc<AgentHub>) {
         // Advanced *before* the run, not after: a routine whose turn takes
         // twenty minutes must not still be due when the next tick looks.
         let _ = runs::advance_past(&world.db, &routine.id, now);
-
-        let Ok(chat) = vibyra_core::agent_chats::create(
-            &world.db,
-            &world.account,
-            vibyra_core::agent_chats::NewChat {
-                agent_id: Some(routine.agent_id.clone()),
-                engine: engine_for(&world, &routine.agent_id),
-                title: routine.name.clone(),
-                source: ChatSource::Routine,
-            },
-        ) else {
-            continue;
-        };
-        let Ok(run) = runs::begin(&world.db, &routine.id, Some(&chat.id), scheduled) else {
-            continue;
-        };
-
-        let runner = app.clone();
-        let world = Arc::clone(&world);
-        let request = TurnRequest {
-            chat_id: chat.id.clone(),
-            prompt: routine.instruction.clone(),
-            permission: Some(routine.permission),
-            occasion_routine: Some(routine.name.clone()),
-            occasion_handoff: None,
-            account_id: None,
-        };
-        std::thread::spawn(move || {
-            let outcome = execute(&world, request, |_| {});
-            let error = outcome.err();
-            let _ = runs::finish(&world.db, &run.id, error.as_deref());
-            let _ = runner.emit("routine-status", &run.routine_id);
-        });
-        let _ = app.emit("routine-status", &routine.id);
+        launch(app, &world, &routine, scheduled);
     }
+
+    // The heartbeat. Emitted whether or not anything was due, because the
+    // useful thing to tell someone watching an empty Routines panel is that
+    // Vibyra is still looking — and a panel that says "last checked 09:03"
+    // with nothing having run is the answer to "is this thing on?".
+    let _ = app.emit("routine-tick", Utc::now().timestamp_millis());
+}
+
+/// Opens a routine's chat and runs its turn on its own thread.
+///
+/// Shared by the tick and by Run now, so a manual run is the same run: the
+/// same fresh chat, the same occasion line telling the agent nobody is
+/// watching, the same recorded outcome. The one thing it deliberately does not
+/// touch is `next_run_ms` — running a routine by hand is not the scheduled
+/// run happening early, and advancing the clock would silently swallow it.
+pub fn launch(
+    app: &AppHandle,
+    world: &Arc<super::hub::AgentWorld>,
+    routine: &vibyra_core::routines::Routine,
+    scheduled: i64,
+) {
+    let Ok(chat) = vibyra_core::agent_chats::create(
+        &world.db,
+        &world.account,
+        vibyra_core::agent_chats::NewChat {
+            agent_id: Some(routine.agent_id.clone()),
+            engine: engine_for(world, &routine.agent_id),
+            title: routine.name.clone(),
+            source: ChatSource::Routine,
+        },
+    ) else {
+        return;
+    };
+    let Ok(run) = runs::begin(&world.db, &routine.id, Some(&chat.id), scheduled) else {
+        return;
+    };
+
+    let runner = app.clone();
+    let world = Arc::clone(world);
+    let request = TurnRequest {
+        chat_id: chat.id.clone(),
+        prompt: routine.instruction.clone(),
+        permission: Some(routine.permission),
+        occasion_routine: Some(routine.name.clone()),
+        occasion_handoff: None,
+        account_id: None,
+    };
+    std::thread::spawn(move || {
+        let outcome = execute(&world, request, |_| {});
+        let error = outcome.err();
+        let _ = runs::finish(&world.db, &run.id, error.as_deref());
+        let _ = runner.emit("routine-status", &run.routine_id);
+    });
+    let _ = app.emit("routine-status", &routine.id);
 }
 
 /// The app-wide pause. Read from settings on every tick rather than cached, so

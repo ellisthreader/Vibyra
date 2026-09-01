@@ -34,5 +34,5 @@ mod tests;
 
 pub use adapter::{normalize, PlannedTurn, TurnPlan};
 pub use capabilities::EngineCapabilities;
-pub use events::AgentEvent;
+pub use events::{AgentEvent, TurnOccasion};
 pub use process::{run, TurnCommand, TurnExit, TurnHandle};

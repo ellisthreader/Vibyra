@@ -53,10 +53,27 @@ export function runStrip(runs: readonly RoutineRun[]): RunMark[] {
     .reverse();
 }
 
+/**
+ * Whether this run is waiting on a person rather than working.
+ *
+ * Derived from the decisions queue rather than stored: a card carries the chat
+ * it was raised in, and a run carries the chat it opened, so the join is
+ * enough. Adding a `parked` status to the run table would be a second source
+ * of truth that could disagree with the queue — and the queue is the one the
+ * user answers.
+ */
+export function isParked(run: RoutineRun | undefined, waitingChatIds: readonly string[]): boolean {
+  if (!run || run.status !== "running" || !run.chatId) return false;
+  return waitingChatIds.includes(run.chatId);
+}
+
 /** The sentence under the name. Words, because "failed" and "skipped" both
  *  need a reason and a pill cannot carry one. */
-export function lastRunLine(run: RoutineRun | undefined): string {
+export function lastRunLine(run: RoutineRun | undefined, parked = false): string {
   if (!run) return "";
+  // Parked is not failed, and saying so is the whole point: a turn stopped at
+  // a decision has done nothing wrong and is waiting on the reader.
+  if (parked) return "Waiting on a decision — the turn is parked, not failed.";
   if (run.status === "running") return "Running now";
   if (run.status === "failed") return `Last run failed: ${run.error ?? "no reason given"}`;
   if (run.status === "skipped") return "Last run skipped — Vibyra was closed.";

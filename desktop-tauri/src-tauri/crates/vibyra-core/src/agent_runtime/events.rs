@@ -19,6 +19,19 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Why a turn is happening, when nobody typed it.
+///
+/// The transcript needs this to say "Scheduled run · Morning digest" above a
+/// prompt no person wrote. `Occasion` in `agent_context` shapes what the
+/// *agent* is told; this is what the *reader* is told, and they are separate
+/// types on purpose — one is prompt text, the other is a stored fact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum TurnOccasion {
+    Routine { name: String },
+    Handoff { from: String },
+}
+
 /// Beyond this, a single text payload is truncated with a marker. Generous
 /// enough for a normal file or command output, small enough that a runaway
 /// process cannot fill the disk one row at a time.
@@ -29,7 +42,15 @@ pub const MAX_TEXT: usize = 60_000;
 #[serde(tag = "kind")]
 pub enum AgentEvent {
     #[serde(rename = "turn.started")]
-    TurnStarted { prompt: String },
+    TurnStarted {
+        prompt: String,
+        /// Why this turn happened, when nobody typed it. Optional and
+        /// defaulted so every turn stored before this field existed still
+        /// deserialises — a transcript is an append-only log, and old rows
+        /// are never rewritten.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        occasion: Option<TurnOccasion>,
+    },
     /// Streaming text. Never persisted; see the module note.
     #[serde(rename = "assistant.delta")]
     AssistantDelta { text: String },

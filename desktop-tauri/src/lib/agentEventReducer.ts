@@ -1,4 +1,7 @@
 import type { AgentEvent, ChatEventRow } from "../agentTypes";
+import type { TranscriptBlock, TranscriptState } from "./agentTranscriptTypes.ts";
+
+export type { TranscriptBlock, TranscriptState } from "./agentTranscriptTypes.ts";
 import {
   addFile,
   addSkill,
@@ -28,57 +31,6 @@ import {
 //   so a reconnect that replays the tail costs nothing.
 // * **Order is by `seq`, not arrival.** Two events written in the same
 //   millisecond still have an order, and a late delivery must not jump it.
-
-/** One rendered block. */
-export type TranscriptBlock =
-  | { id: string; type: "prompt"; seq: number; text: string }
-  | { id: string; type: "assistant"; seq: number; text: string; streaming: boolean }
-  | { id: string; type: "reasoning"; seq: number; text: string }
-  | {
-      id: string;
-      type: "tool";
-      seq: number;
-      tool: string;
-      summary: string;
-      output: string | null;
-      exitCode: number | null;
-      failed: boolean;
-      running: boolean;
-      /** For the elapsed time: both rows carry `createdMs`. */
-      startedMs: number;
-      endedMs: number | null;
-    }
-  | { id: string; type: "files"; seq: number; paths: { path: string; change: string }[] }
-  | {
-      id: string;
-      type: "skills";
-      seq: number;
-      applied: { skillId: string; name: string; version: number }[];
-    }
-  | { id: string; type: "notice"; seq: number; tone: "error" | "info"; text: string }
-  | {
-      id: string;
-      type: "footer";
-      seq: number;
-      turnId: string;
-      /** The prompt this turn ran, so Retry and Edit have it without a lookup. */
-      prompt: string;
-      inputTokens: number;
-      outputTokens: number;
-      costUsd: number | null;
-      elapsedMs: number | null;
-    };
-
-export interface TranscriptState {
-  blocks: TranscriptBlock[];
-  /** Seqs already folded in, so a replayed tail is free. */
-  seen: Set<number>;
-  /** Tokens and cost for the chat so far, as the provider reported them. */
-  usage: { inputTokens: number; outputTokens: number; costUsd: number | null };
-  /** Turns that have started, so a footer knows when its turn began and what
-   *  it was asked. Dropped once the footer carries both. */
-  turns: Record<string, { startedMs: number; prompt: string }>;
-}
 
 export function emptyTranscript(): TranscriptState {
   return {
@@ -122,7 +74,16 @@ function applyEvent(
   const event: AgentEvent = row;
   switch (event.kind) {
     case "turn.started":
-      return [...blocks, { id: `${row.turnId}-prompt`, type: "prompt", seq: row.seq, text: event.prompt }];
+      return [
+        ...blocks,
+        {
+          id: `${row.turnId}-prompt`,
+          type: "prompt",
+          seq: row.seq,
+          text: event.prompt,
+          occasion: event.occasion ?? null,
+        },
+      ];
 
     case "assistant.delta":
       return appendDelta(blocks, row.turnId, event.text);

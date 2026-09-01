@@ -64,8 +64,13 @@ export interface AgentChat {
 }
 
 /** One normalized event, flattened: `{ kind, …payload }`. */
+/** Why a turn happened, when nobody typed it. Absent on a turn someone did. */
+export type TurnOccasion =
+  | { kind: "routine"; name: string }
+  | { kind: "handoff"; from: string };
+
 export type AgentEvent =
-  | { kind: "turn.started"; prompt: string }
+  | { kind: "turn.started"; prompt: string; occasion?: TurnOccasion | null }
   | { kind: "assistant.delta"; text: string }
   | { kind: "assistant.completed"; text: string }
   | { kind: "reasoning.summary"; text: string }

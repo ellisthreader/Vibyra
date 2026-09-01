@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import type { Routine } from "../../agentTypes";
 import { NONE } from "../../lib/emptyList";
 import { relativeTime } from "../../lib/relativeTime";
-import { lastRunLine, runStrip } from "../../lib/routineRunStrip.ts";
+import { isParked, lastRunLine, runStrip } from "../../lib/routineRunStrip.ts";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
@@ -46,6 +46,8 @@ export function RoutineRow({
   const loadRuns = useAgentWorkStore((state) => state.loadRuns);
   const setEnabled = useAgentWorkStore((state) => state.setRoutineEnabled);
   const remove = useAgentWorkStore((state) => state.deleteRoutine);
+  const runNow = useAgentWorkStore((state) => state.runNow);
+  const waitingChats = useAgentWorkStore((state) => state.approvalChatIds);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const selectChat = useAgentModeStore((state) => state.selectChat);
   const openChat = useAgentChatStore((state) => state.openChat);
@@ -56,6 +58,8 @@ export function RoutineRow({
 
   const last = runs[0];
   const strip = runStrip(runs);
+  const parked = isParked(last, waitingChats);
+  const busy = last?.status === "running";
 
   // A routine that produced work nobody ever saw is the failure this whole
   // design is about, so the last run is a way into the chat it created.
@@ -83,14 +87,14 @@ export function RoutineRow({
           (last.chatId ? (
             <button
               type="button"
-              className={`routine-row__last routine-row__last--${last.status} is-link`}
+              className={`routine-row__last routine-row__last--${parked ? "parked" : last.status} is-link`}
               onClick={open}
             >
-              {lastRunLine(last)}
+              {lastRunLine(last, parked)}
             </button>
           ) : (
-            <span className={`routine-row__last routine-row__last--${last.status}`}>
-              {lastRunLine(last)}
+            <span className={`routine-row__last routine-row__last--${parked ? "parked" : last.status}`}>
+              {lastRunLine(last, parked)}
             </span>
           ))}
         {strip.length > 0 ? (
@@ -110,6 +114,24 @@ export function RoutineRow({
             : "Paused"}
         </span>
         <div className="routine-row__actions">
+          {last?.chatId && (busy || parked) ? (
+            <button className="btn-ghost" onClick={open}>
+              Open chat
+            </button>
+          ) : (
+            <button
+              className="btn-ghost"
+              disabled={!routine.enabled}
+              title={
+                routine.enabled
+                  ? "Run it now. The schedule is untouched."
+                  : "Resume it first — a paused routine does not run."
+              }
+              onClick={() => void runNow(routine.id)}
+            >
+              Run now
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => void setEnabled(routine.id, !routine.enabled)}>
             {routine.enabled ? "Pause" : "Resume"}
           </button>

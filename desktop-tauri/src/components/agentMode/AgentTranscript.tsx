@@ -55,7 +55,18 @@ export const AgentTranscript = memo(function AgentTranscript({
         const answer = lastAnswer;
         return (
           <li key={block.id} className={`transcript__item transcript__item--${block.type}`}>
-            {block.type === "prompt" && <p className="transcript__prompt">{block.text}</p>}
+            {block.type === "prompt" && (
+              <>
+                {block.occasion && (
+                  <p className={`occasion occasion--${block.occasion.kind}`}>
+                    {block.occasion.kind === "routine"
+                      ? `Scheduled run · ${block.occasion.name}`
+                      : `Handed over by ${block.occasion.from}`}
+                  </p>
+                )}
+                <p className="transcript__prompt">{block.text}</p>
+              </>
+            )}
 
             {block.type === "assistant" && (
               <AnswerBlock text={block.text} streaming={block.streaming} />

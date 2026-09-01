@@ -81,3 +81,34 @@ pub async fn routine_history(
 pub async fn routine_zones() -> Result<Vec<String>, String> {
     Ok(vibyra_core::routines::offered_zones())
 }
+
+/// Runs a routine now, without touching when it next runs.
+///
+/// A manual run is not the scheduled run happening early: advancing the clock
+/// here would silently swallow the next one. It opens its own fresh chat and
+/// carries the same Occasion line, so what the agent is told is identical to
+/// what a tick would have told it.
+#[tauri::command]
+pub async fn routine_run_now(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    let world = world(&state)?;
+    let routine = run_blocking({
+        let world = std::sync::Arc::clone(&world);
+        let id = id.clone();
+        move || vibyra_core::routines::get(&world.db, &id).map_err(|error| error.to_string())
+    })
+    .await?;
+    if !routine.enabled {
+        return Err("That routine is paused. Resume it first.".into());
+    }
+    crate::agent_mode::scheduler::launch(
+        &app,
+        &world,
+        &routine,
+        chrono::Utc::now().timestamp_millis(),
+    );
+    Ok(())
+}

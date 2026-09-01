@@ -16,6 +16,9 @@ import { RoutineRow } from "./RoutineRow";
  * standup never happened.
  */
 export function RoutinesPanel() {
+  // The heartbeat, so an empty list can still say the clock is running. Until
+  // the first tick arrives it says so without a time rather than inventing one.
+  const lastCheckedMs = useAgentWorkStore((state) => state.lastCheckedMs);
   const routines = useAgentWorkStore((state) => state.routines);
   const load = useAgentWorkStore((state) => state.loadRoutines);
   const agents = useAgentRosterStore((state) => state.agents);
@@ -77,6 +80,14 @@ export function RoutinesPanel() {
               })}
             </ul>
           )}
+          <p className="panel__quiet routines__checked">
+            {lastCheckedMs
+              ? `Vibyra looks once a minute. Last checked ${new Date(lastCheckedMs).toLocaleTimeString(
+                  undefined,
+                  { hour: "2-digit", minute: "2-digit" },
+                )}.`
+              : "Vibyra looks once a minute while it is open."}
+          </p>
         </>
       )}
       {routines.length > 0 && paused && (

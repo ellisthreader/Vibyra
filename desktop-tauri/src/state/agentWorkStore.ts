@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import type { ApprovalRequest, MemoryEntry, Routine, RoutineRun, Skill } from "../agentTypes";
 import * as ipc from "../ipc/agentConfig";
+import { approvalActions } from "./agentApprovalActions.ts";
 
 // Memory, skills, routines and pending decisions — the four lists the
 // dashboard and the settings panes read.
@@ -18,6 +19,10 @@ interface WorkStore {
   routines: Routine[];
   runs: Record<string, RoutineRun[]>;
   approvals: ApprovalRequest[];
+  /** The chats those cards were raised in, kept beside the queue rather than
+   *  derived in a selector: a selector that builds a fresh array re-renders on
+   *  every store change, because zustand compares results with Object.is. */
+  approvalChatIds: string[];
   error: string | null;
   loadMemory: (agentId: string) => Promise<void>;
   addMemory: (agentId: string, body: string, klass: MemoryEntry["class"]) => Promise<void>;
@@ -37,6 +42,11 @@ interface WorkStore {
   setRoutineEnabled: (id: string, enabled: boolean) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
   loadRuns: (routineId: string) => Promise<void>;
+  runNow: (id: string) => Promise<void>;
+  /** When the scheduler last looked. Set by the work bus from its heartbeat,
+   *  so an empty Routines panel can still say the clock is running. */
+  lastCheckedMs: number | null;
+  setLastChecked: (at: number) => void;
   loadApprovals: () => Promise<void>;
   resolveApproval: (id: string, approved: boolean, fingerprint: string) => Promise<void>;
   clear: () => void;
@@ -51,6 +61,8 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
     routines: [],
     runs: {},
     approvals: [],
+    approvalChatIds: [],
+    lastCheckedMs: null,
     error: null,
 
     loadMemory: async (agentId) => {
@@ -146,23 +158,20 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
       set((state) => ({ runs: { ...state.runs, [routineId]: runs } }));
     },
 
-    loadApprovals: async () => set({ approvals: await ipc.listApprovals().catch(() => []) }),
-
-    resolveApproval: async (id, approved, fingerprint) => {
+    runNow: async (id) => {
       try {
-        const resolved = await ipc.resolveApproval(id, approved, fingerprint);
-        if (resolved.state === "invalidated") {
-          set({
-            error:
-              "That action changed after the card was raised, so nothing was done. " +
-              "Ask again if you still want it.",
-          });
-        }
+        await ipc.runRoutineNow(id);
+        set({ error: null });
       } catch (error) {
-        fail(error);
+        // Worth surfacing: the two refusals are "it is paused" and "it is
+        // gone", and both tell the user what to do next.
+        set({ error: String(error) });
       }
-      await get().loadApprovals();
     },
+
+    setLastChecked: (lastCheckedMs) => set({ lastCheckedMs }),
+
+    ...approvalActions(set, get),
 
     clear: () =>
       set({ memory: {}, skills: [], routines: [], runs: {}, approvals: [], error: null }),

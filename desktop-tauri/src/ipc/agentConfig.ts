@@ -119,6 +119,12 @@ export function deleteRoutine(id: string): Promise<void> {
   return invoke("routine_delete", { id });
 }
 
+/** Runs a routine now. Its schedule is untouched — a manual run is not the
+ *  next scheduled one happening early. */
+export function runRoutineNow(id: string): Promise<void> {
+  return invoke("routine_run_now", { id });
+}
+
 export function routineHistory(routineId: string): Promise<RoutineRun[]> {
   return invoke("routine_history", { routineId });
 }

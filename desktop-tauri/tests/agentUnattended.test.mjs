@@ -140,3 +140,51 @@ test("a turn where nothing matched renders nothing at all", () => {
   ]);
   assert.equal(state.blocks.some((block) => block.type === "skills"), false);
 });
+
+// ── parked ───────────────────────────────────────────────────────────────
+
+test("a run waiting on a decision is parked, not failed", async () => {
+  const { isParked } = await import("../src/lib/routineRunStrip.ts");
+  const active = run("a", "running", { chatId: "c1" });
+
+  assert.equal(isParked(active, ["c1"]), true);
+  assert.equal(isParked(active, ["other"]), false, "another chat's card is not this run's");
+  assert.equal(isParked(run("a", "running"), ["c1"]), false, "a run with no chat cannot park");
+  // A finished run is never parked, whatever is still in the queue: the card
+  // outlives the turn that raised it.
+  assert.equal(isParked(run("a", "completed", { chatId: "c1" }), ["c1"]), false);
+
+  assert.equal(
+    lastRunLine(active, true),
+    "Waiting on a decision — the turn is parked, not failed.",
+  );
+});
+
+// ── the occasion ─────────────────────────────────────────────────────────
+
+test("a turn nobody typed says why it happened", async () => {
+  const prompt = (occasion) =>
+    reduceAll([
+      {
+        chatId: "c1",
+        turnId: "t1",
+        seq: 0,
+        createdMs: 1,
+        kind: "turn.started",
+        prompt: "go",
+        ...(occasion ? { occasion } : {}),
+      },
+    ]).blocks[0];
+
+  assert.deepEqual(prompt({ kind: "routine", name: "Morning digest" }).occasion, {
+    kind: "routine",
+    name: "Morning digest",
+  });
+  assert.deepEqual(prompt({ kind: "handoff", from: "Mason" }).occasion, {
+    kind: "handoff",
+    from: "Mason",
+  });
+  // A prompt a person typed carries no banner — one over every prompt would
+  // be noise, and every turn stored before the field existed has none.
+  assert.equal(prompt(null).occasion, null);
+});

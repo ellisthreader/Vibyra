@@ -102,6 +102,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         agent_routines_cmd::routine_set_enabled,
         agent_routines_cmd::routine_delete,
         agent_routines_cmd::routine_history,
+        agent_routines_cmd::routine_run_now,
         agent_routines_cmd::routine_zones,
         agent_approvals_cmd::approval_list,
         agent_approvals_cmd::approval_resolve,
