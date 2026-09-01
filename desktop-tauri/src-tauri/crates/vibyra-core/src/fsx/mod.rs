@@ -1,5 +1,6 @@
 mod private;
 mod watch;
+mod watch_tree;
 
 pub use private::{harden, harden_dir, write_private_atomic};
 pub use watch::{FsChange, WorkspaceWatcher};
