@@ -2,7 +2,7 @@
 // no cached catalog exists. Native-CLI companies keep their full walls
 // (every entry with per-model artwork); the rest get their flagship.
 
-import { COMPANY_META } from "./companyMeta";
+import { COMPANY_META } from "./companyMeta.ts";
 import type { CatalogModel, CompanyGroup } from "./catalogTypes";
 
 function entry(id: string, label: string, company: string, contextLength = 200_000): CatalogModel {

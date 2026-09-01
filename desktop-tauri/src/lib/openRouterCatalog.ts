@@ -6,6 +6,7 @@
 import { COMPANY_META, COMPANY_PRIORITY, companyForModel, trimCompanyPrefix } from "./companyMeta";
 import type { CatalogModel, CompanyGroup } from "./catalogTypes";
 import { modelArtworkFile } from "./modelArtworkData";
+import { seedCuratedModels } from "./catalogSeed";
 import { catalogQuality, displayOrder, selectForCompany } from "./openRouterCatalogRanking";
 import {
   normalizeOpenRouterReasoning,
@@ -87,6 +88,7 @@ function buildGroups(raw: RawModel[]): CompanyGroup[] {
     list.push(normalized);
     byCompany.set(normalized.company, list);
   }
+  seedCuratedModels(byCompany);
   return Array.from(byCompany.entries())
     .map(([company, models]) => ({
       company,

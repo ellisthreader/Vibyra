@@ -1,4 +1,4 @@
-import { modelArtworkFile } from "./modelArtworkData";
+import { modelArtworkFile } from "./modelArtworkData.ts";
 import type { CatalogModel } from "./catalogTypes";
 
 const NEWEST_RESERVE = 4;
