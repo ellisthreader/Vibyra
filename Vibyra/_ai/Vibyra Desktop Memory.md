@@ -137,7 +137,13 @@ replayed output never wraps at a stale width, and spawn passes estimated
 rows/cols (`src/lib/spawnSize.ts`) so PTYs do not start at the 100x30 default.
 The Rust flusher (`pty/flusher.rs`) flushes immediately on wake and then rests
 one 16 ms tick — do not reintroduce a sleep before the first flush; it puts a
-fixed floor under keystroke echo latency.
+fixed floor under keystroke echo latency. Since 2026-09-01 it also holds a
+pane's next chunk until the frontend reports the last one painted
+(`terminal_painted`, bounded by `FlushConfig::paint_timeout`), and background
+panes pace at 250 ms on the shared-memory compositing path
+(`pty/flush_pacing.rs`). The workspace watcher registers one non-recursive
+inotify watch per non-ignored directory (`fsx/watch_tree.rs`), never a
+recursive one on the root.
 
 Off-screen panes must map logical `hidden` to native `hibernated`, detach their
 frontend output handler without disposing the registry xterm, and resync from

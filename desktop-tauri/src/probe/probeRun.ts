@@ -73,6 +73,7 @@ async function runPhase(phase: string, panes: ProbePanes, keys: number): Promise
   const pending: KeystrokeSample[] = [];
   const samples: KeystrokeSample[] = [];
   const frameGaps: number[] = [];
+  let paintReports = 0;
 
   let framing = true;
   let lastFrame = performance.now();
@@ -96,7 +97,12 @@ async function runPhase(phase: string, panes: ProbePanes, keys: number): Promise
         for (const sample of resolved) sample.paint = painted;
         // The shipped path reports each painted frame; without this the probe
         // would measure a pane Rust is holding back to `paint_timeout`.
-        void terminalPainted(panes.focusedId).catch(() => {});
+        void terminalPainted(panes.focusedId).then(
+          () => {
+            paintReports += 1;
+          },
+          () => {},
+        );
       });
     });
   });
@@ -117,7 +123,9 @@ async function runPhase(phase: string, panes: ProbePanes, keys: number): Promise
   framing = false;
 
   const dropped = samples.filter((sample) => sample.paint === null).length;
-  await report(JSON.stringify(phaseReport(phase, samples, dropped, frameGaps.slice(1))));
+  await report(
+    JSON.stringify(phaseReport(phase, samples, dropped, frameGaps.slice(1), paintReports)),
+  );
 }
 
 async function setAll(panes: ProbePanes, noisy: Visibility): Promise<void> {

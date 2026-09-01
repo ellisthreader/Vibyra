@@ -69,6 +69,10 @@ export interface PhaseReport {
   dropped: number;
   /** Renderer frame spacing while the phase ran. */
   frames: LatencySummary;
+  /** Paint reports Rust accepted for the typed pane. Zero means the flusher
+   * never armed its one-unpainted-chunk rule and this run measured the plain
+   * interval pacing instead. */
+  paintReports: number;
 }
 
 export function phaseReport(
@@ -76,10 +80,12 @@ export function phaseReport(
   samples: KeystrokeSample[],
   dropped: number,
   frameGaps: number[],
+  paintReports = 0,
 ): PhaseReport {
   const done = samples.filter((sample) => sample.paint !== null);
   return {
     phase,
+    paintReports,
     echo: summarize(done.map((sample) => (sample.event ?? 0) - sample.sent)),
     parse: summarize(done.map((sample) => (sample.parse ?? 0) - sample.sent)),
     paint: summarize(done.map((sample) => (sample.paint ?? 0) - sample.sent)),

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { invoke } from "@tauri-apps/api/core";
 
+import { signalAppReady } from "../lib/bootHandoff";
 import { initTerminalFont } from "../lib/terminalFont";
 import { mountTerminal } from "../lib/terminalRegistry";
 import { useSettingsStore } from "../state/settingsStore";
@@ -20,6 +21,10 @@ export function ProbeScreen() {
     const grid = gridRef.current;
     if (!grid || started.current) return;
     started.current = true;
+    // The host keeps the main window hidden behind the splash until told
+    // otherwise, and a hidden window's frames stop — which would measure the
+    // splash's watchdog, not the renderer.
+    signalAppReady();
 
     void (async () => {
       try {

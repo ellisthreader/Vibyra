@@ -1,7 +1,7 @@
 ---
 title: Tauri Terminal Performance Overhaul
 date: 2026-08-20
-updated: 2026-08-24
+updated: 2026-09-01
 status: released
 tags:
   - vibyra/desktop
@@ -815,3 +815,54 @@ The full postmortem of the incident behind all of this — how the app
 promoted itself into the broken mode, why there was no way back, and the
 binding never-again rules — is the permanent record in
 [[Incident - GPU Mode One Character Behind]].
+
+## 2026-09-01 — pacing by what the renderer can paint (branch `perf/low-end-terminals`)
+
+The reported freeze ("can't click anything while several agents stream") was
+measured on 2026-08-31 as **cost per painted frame of the visible window**:
+~50 ms of the single WebKit main thread per repaint on the NVIDIA/shared-memory
++ DOM-renderer path, so four streaming panes put that thread at 83% and clicks
+queued behind repaints. Three changes, all timing-only — nothing the terminal
+shows changes, only when:
+
+1. **Shared-memory compositing paces background panes at 250 ms** (was 75 ms).
+   `pty/flush_pacing.rs::flush_config(software_compositing)`; the one reader of
+   `WEBKIT_DISABLE_DMABUF_RENDERER` is now `src-tauri/src/compositing.rs`. The
+   focused pane's 16 ms tick is deliberately untouched.
+2. **One unpainted chunk per pane.** `terminalEvents.ts` reports each painted
+   frame through `terminal_painted` (`terminalDeliveryAck.ts` coalesces to one
+   report per frame per pane). Once a session's renderer has reported at all,
+   `flusher.rs` holds its next chunk until the last one is drawn or
+   `FlushConfig::paint_timeout` (500 ms) passes; bytes arriving meanwhile
+   coalesce. A renderer that never reports — an older frontend, every test
+   sink — keeps the plain interval pacing, so the gate cannot stall anything.
+   State lives on `SessionOutput` (`renderer_busy_for`, `painted`); tests in
+   `flusher_paint_tests.rs` (real PTY) and `buffer.rs`.
+3. **fs watcher registers only non-ignored directories** (`fsx/watch_tree.rs`):
+   9,463 inotify watches → 273 on this repo, and the debouncer's start-up
+   file-id walk 62,418 → 2,440 stats. New directories get a watch when their
+   create/rename event arrives.
+
+Measured with the in-app latency probe (Xephyr :99, DOM renderer, 6 streaming
++ 1 typed pane, 40 keys/phase), 0.4.1 vs this branch, shipped pane
+configuration (focused Visible, rest Background):
+
+| | quiet machine | app pinned to ¼ of one core |
+|---|---|---|
+| 0.4.1 paint p50 / p95 | 10 / 21 ms | **93 / 109 ms**, frames 70 ms |
+| branch paint p50 / p95 | 12 / 21 ms | **16 / 77 ms**, frames 27 ms |
+
+Echo p50 stays 1 ms in both. `paintReports` in the probe's phase JSON proves
+the gate armed (40/40 accepted on the real webview).
+
+Dead ends, measured so nobody re-chases them (`compositing_bench.py`, a
+1854×1048 WebKitGTK page rewriting 67 rows × 230 cols at 12 fps):
+`WEBKIT_DISABLE_COMPOSITING_MODE=1` 35% vs 33% baseline,
+`WEBKIT_SKIA_ENABLE_CPU_RENDERING=1` 34%. The cost is per *changed row*
+(2 changed rows: 6%; a static page: 0.2%), not a fixed window composite — so
+fewer, larger deliveries are the lever, and that is what 1 and 2 do.
+
+Probe trap: since the 0.4.x boot splash, the main window stays hidden until
+`boot_main_ready`, and a hidden window's frames stop. `ProbeScreen` now calls
+`signalAppReady()`; without it the first phase measured the 20 s watchdog
+(paint p50 3 s) and looked like a catastrophic regression.
