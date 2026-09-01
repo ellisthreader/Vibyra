@@ -59,17 +59,19 @@ export function PostUpdateChangelog() {
         </header>
 
         <div className="post-update-changelog__scroll">
-          <figure className="post-update-changelog__art">
-            <img
-              src={content.hero.src}
-              alt={content.hero.alt}
-              width="1200"
-              height="800"
-              decoding="async"
-              draggable={false}
-            />
-            <figcaption>{content.hero.caption}</figcaption>
-          </figure>
+          {content.hero && (
+            <figure className="post-update-changelog__art">
+              <img
+                src={content.hero.src}
+                alt={content.hero.alt}
+                width="1200"
+                height="800"
+                decoding="async"
+                draggable={false}
+              />
+              <figcaption>{content.hero.caption}</figcaption>
+            </figure>
+          )}
           <section className="post-update-changelog__release" aria-labelledby="release-heading">
             <div className="post-update-changelog__section-heading">
               <h2 id="release-heading">{content.sectionLabel}</h2><span />

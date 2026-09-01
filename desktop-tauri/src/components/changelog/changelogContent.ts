@@ -14,7 +14,9 @@ export interface DesktopChangelog {
   title: string;
   sectionLabel: string;
   allowUnmarkedLaunch: boolean;
-  hero: {
+  /** Optional: a release without bespoke art still shows its notes rather
+   *  than being skipped. The notes are the thing that has to arrive. */
+  hero?: {
     src: string;
     alt: string;
     caption: string;
@@ -23,6 +25,58 @@ export interface DesktopChangelog {
 }
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.4.0": {
+    version: "0.4.0",
+    releasedAt: "2026-09-01",
+    releasedLabel: "1 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    // 0.3.5 shipped without an entry here, so the release before this one
+    // introduced itself with nothing. Everyone arriving from it is unmarked.
+    allowUnmarkedLaunch: true,
+    features: [
+      {
+        id: "01",
+        title: "Ask can see your workspace.",
+        body: "The dock’s Chat panel is now Ask, briefed on live pane status, spend, settings and your vault notes. Credentials are stripped before anything is sent, and the panel says how many were removed.",
+      },
+      {
+        id: "02",
+        title: "Ask listens, and answers out loud.",
+        body: "Speak into the composer and hear the reply. One ring shows who is talking — cobalt for you, violet for Vibyra — and both are real readings, not decoration.",
+      },
+      {
+        id: "03",
+        title: "Agent Mode reads like a conversation.",
+        body: "Answers now render properly instead of arriving as raw characters: headings, lists and code blocks you can copy. Every turn ends with what it cost, and Copy, Retry and Edit & resend.",
+      },
+      {
+        id: "04",
+        title: "See what an agent changed.",
+        body: "Files a teammate touched open into a real diff, and tool calls read as what they did, to what, and how it went — so the one that failed is findable at a glance.",
+      },
+      {
+        id: "05",
+        title: "Unattended work reports itself.",
+        body: "Routines show their last dozen runs, why a failure failed, and a way into the chat each one opened. Skills that shaped an answer are named above it, at the version that ran.",
+      },
+      {
+        id: "06",
+        title: "A decision finds you anywhere.",
+        body: "Waiting decisions and failed routines now reach you in Code Mode, with a count on the Agent button. A routine that simply worked stays silent.",
+      },
+      {
+        id: "07",
+        title: "Switching modes no longer drags.",
+        body: "Leaving Code Mode now tells your terminals they are off screen. They were still streaming at full rate behind the scenes, which is what made switching slow and could push the renderer into its fallback.",
+      },
+      {
+        id: "08",
+        title: "The 0.3.0 work is back.",
+        body: "Startup shows a splash again, project activity and safer project closing return, and the GitHub probe once more scrubs automation tokens before running gh.",
+      },
+    ],
+  },
   "0.3.0": {
     version: "0.3.0",
     releasedAt: "2026-08-28",

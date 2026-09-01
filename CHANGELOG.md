@@ -68,6 +68,71 @@ own OpenAI key and appear in Settings with everything else.
 
 F8 dictation into a terminal is unchanged.
 
+### Agent Mode is readable
+
+The runtime under Agent Mode was finished; the surface reading it was a
+plain-text log. It now renders.
+
+**Answers are rendered**, not printed. Headings, lists, bold, inline code and
+fenced blocks arrive as themselves rather than as the characters the model
+typed, and a code block has a copy button. An unterminated fence is still
+treated as a fence, so a block does not snap from prose to code when the model
+finishes typing it.
+
+**A turn says what it cost.** Tokens and cost were being computed and thrown
+away; they now close every turn, alongside Copy, Retry and Edit & resend. Retry
+appends rather than replacing — branching a transcript is a real feature and an
+append dressed up as one is worse than not having it.
+
+**Files a teammate changed open into a diff**, through the same windowed,
+word-level renderer the review dock uses. What it shows is the file's
+uncommitted state rather than a replay of the edit, and the heading says so.
+The diff is fetched when a row is opened, and only for paths inside that
+agent's own grants.
+
+**Tool calls read as verb, target, outcome** — what it did, to what, and how
+that went, with the time it took — so a run of six is scanned rather than
+opened one by one.
+
+**Attachments belong to the chat.** They were held in the view that added them,
+so they vanished on the first chat switch while the files stayed in the folder
+and stayed on every following turn.
+
+Agent Mode also gets a keyboard: mode switching, new chat, focus composer, step
+between chats, stop the running turn, and palette entries for every teammate,
+panel and chat. Every binding is refused while Code Mode has the window, so a
+terminal keeps every key it is sent.
+
+### Unattended work reports itself
+
+The scheduler has been announcing every routine run since Agent Mode shipped
+and nothing was listening. One subscription now holds that listener, mounted
+above every mode so it survives being in Code Mode.
+
+**Routines show their work.** The last dozen outcomes as marks — amber for a
+run skipped because Vibyra was closed, red for a real failure with its reason
+in words, cobalt for one happening now — the agent's mark before the name, and
+the last run as a way into the chat it created. Run now runs one immediately
+without disturbing its schedule.
+
+**Skills leave evidence.** A skill is a standing instruction injected into
+every matching turn, and until now there was no way to tell one had fired. The
+skills that shaped an answer are named above it at the version that ran, each
+one a link to the procedure.
+
+**A decision finds you where you are.** A waiting decision and a failed routine
+now raise a notice from anywhere, and the Agent button carries a count. A
+routine that simply worked raises nothing: a toast every morning at 09:00 is
+how a person learns to ignore toasts.
+
+### Switching modes no longer drags
+
+Leaving Code Mode hid the terminals with CSS but never told the native side
+they were off screen, so every pane kept streaming at its on-screen rate into
+canvases nobody could see — up to sixty deliveries a second, for as long as you
+stayed away. That is what made switching feel slow, and it is also where the
+graphics-context loss that drops every terminal to the slower renderer lives.
+
 ### Fixes
 
 - **Switching projects no longer stalls.** A suspended pane was rebuilding a
