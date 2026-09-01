@@ -31,6 +31,9 @@ interface AgentModeStore {
    *  its chat so a late arrival cannot land in a conversation someone has
    *  since moved away from. */
   draft: { chatId: string; text: string } | null;
+  /** The skill the library should open expanded — set by an Applied pill so a
+   *  turn can be traced to the procedure that shaped it. */
+  skillId: string | null;
   /** The non-agent panels reachable from the primary rail. */
   panel: "dashboard" | "routines" | "skills" | "decisions" | null;
   setMode: (mode: AppMode) => void;
@@ -38,6 +41,7 @@ interface AgentModeStore {
   selectChat: (chatId: string | null) => void;
   setTab: (tab: AgentModeStore["tab"]) => void;
   setDraft: (draft: AgentModeStore["draft"]) => void;
+  openSkill: (skillId: string | null) => void;
   openPanel: (panel: AgentModeStore["panel"]) => void;
 }
 
@@ -48,6 +52,7 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
   tab: "chats",
   panel: "dashboard",
   draft: null,
+  skillId: null,
 
   setMode: (mode) => {
     if (get().mode === mode) return;
@@ -68,6 +73,7 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
   selectChat: (chatId) => set({ chatId }),
   setTab: (tab) => set({ tab }),
   setDraft: (draft) => set({ draft }),
+  openSkill: (skillId) => set({ skillId }),
   openPanel: (panel) => set({ panel, agentId: panel ? null : get().agentId }),
 }));
 

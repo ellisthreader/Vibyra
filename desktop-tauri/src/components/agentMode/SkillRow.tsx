@@ -2,14 +2,30 @@ import type { Skill } from "../../agentTypes";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 import { SkillHistory } from "./SkillHistory";
 
-/** One skill, folded down to its trigger until opened. */
-export function SkillRow({ skill, onEdit }: { skill: Skill; onEdit: () => void }) {
+/**
+ * One skill, folded down to its trigger until opened.
+ *
+ * `open` is controlled so an Applied pill in a transcript can land here with
+ * the right procedure already expanded — tracing an answer back to the
+ * standing instruction that shaped it is the whole point of that pill.
+ */
+export function SkillRow({
+  skill,
+  open,
+  onToggle,
+  onEdit,
+}: {
+  skill: Skill;
+  open: boolean;
+  onToggle: (open: boolean) => void;
+  onEdit: () => void;
+}) {
   const setStatus = useAgentWorkStore((state) => state.setSkillStatus);
   const proposed = skill.status === "proposed";
 
   return (
     <li className="skill-row">
-      <details>
+      <details open={open} onToggle={(event) => onToggle(event.currentTarget.open)}>
         <summary>
           <span className="skill-row__name">{skill.name}</span>
           <span className="skill-row__version">v{skill.version}</span>

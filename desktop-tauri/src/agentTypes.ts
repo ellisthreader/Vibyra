@@ -79,6 +79,7 @@ export type AgentEvent =
       failed: boolean;
     }
   | { kind: "file.changed"; path: string; change: string }
+  | { kind: "skill.applied"; skillId: string; name: string; version: number }
   | { kind: "approval.requested"; approvalId: string; action: string }
   | { kind: "approval.resolved"; approvalId: string; approved: boolean }
   | { kind: "usage.updated"; inputTokens: number; outputTokens: number; costUsd: number | null }

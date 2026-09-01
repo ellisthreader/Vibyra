@@ -63,7 +63,7 @@ pub fn execute(
         .permission
         .or(profile.as_ref().map(|p| p.permission))
         .unwrap_or(PermissionMode::Plan);
-    let (places, cwd, system_prompt) =
+    let (places, cwd, system_prompt, applied) =
         prepare(world, &chat, profile.as_ref(), permission, &request)?;
 
     let record = |event: AgentEvent, emit: &mut dyn FnMut(&ChatEventRow)| {
@@ -77,6 +77,20 @@ pub fn execute(
         },
         &mut emit,
     );
+    // After the prompt, before the run: a skill is a standing instruction that
+    // shaped what follows, so it belongs above the answer it shaped. A turn
+    // where nothing matched records nothing — an empty state on every turn
+    // would be noise.
+    for skill in applied {
+        record(
+            AgentEvent::SkillApplied {
+                skill_id: skill.id,
+                name: skill.name,
+                version: skill.version,
+            },
+            &mut emit,
+        );
+    }
     let _ = vibyra_core::agent_chats::set_state(&db, &chat.id, "running");
 
     let engine = chat.engine;

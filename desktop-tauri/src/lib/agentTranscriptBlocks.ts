@@ -157,3 +157,33 @@ export function addUsage(
       event.costUsd === null ? usage.costUsd : (usage.costUsd ?? 0) + event.costUsd,
   };
 }
+
+/**
+ * The skills that shaped this turn, as one block.
+ *
+ * Folded together rather than one block per match: three skills that applied
+ * are one line naming three, not three lines. Keyed by turn so a skill from
+ * the turn before is not added to it.
+ *
+ * A turn where nothing matched adds nothing at all. An empty "no skills
+ * applied" state on every turn would be noise on the majority of them, and the
+ * useful signal here is entirely in the positive case.
+ */
+export function addSkill(
+  blocks: TranscriptBlock[],
+  row: ChatEventRow,
+  event: Extract<AgentEvent, { kind: "skill.applied" }>,
+): TranscriptBlock[] {
+  const id = `${row.turnId}-skills`;
+  const entry = { skillId: event.skillId, name: event.name, version: event.version };
+  const index = blocks.findIndex((block) => block.id === id);
+  if (index === -1) {
+    return [...blocks, { id, type: "skills", seq: row.seq, applied: [entry] }];
+  }
+  const existing = blocks[index];
+  if (existing.type !== "skills") return blocks;
+  if (existing.applied.some((applied) => applied.skillId === entry.skillId)) return blocks;
+  const next = [...blocks];
+  next[index] = { ...existing, applied: [...existing.applied, entry] };
+  return next;
+}

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 import { SkillEditor } from "./SkillEditor";
 import { SkillRow } from "./SkillRow";
+import { useAgentModeStore } from "../../state/agentModeStore";
 
 /**
  * The skill library.
@@ -17,6 +18,18 @@ export function SkillsPanel() {
   const skills = useAgentWorkStore((state) => state.skills);
   const load = useAgentWorkStore((state) => state.loadSkills);
   const [editing, setEditing] = useState<string | null>(null);
+  // An Applied pill asks for one skill by id. Taken once and cleared, so
+  // coming back to the library later opens it as you left it rather than
+  // re-expanding whatever a transcript pointed at an hour ago.
+  const requested = useAgentModeStore((state) => state.skillId);
+  const clearRequested = useAgentModeStore((state) => state.openSkill);
+  const [expanded, setExpanded] = useState<string | null>(requested);
+
+  useEffect(() => {
+    if (!requested) return;
+    setExpanded(requested);
+    clearRequested(null);
+  }, [requested, clearRequested]);
 
   useEffect(() => {
     void load();
@@ -54,7 +67,13 @@ export function SkillsPanel() {
           </p>
           <ul className="skill-list">
             {proposed.map((skill) => (
-              <SkillRow key={skill.id} skill={skill} onEdit={() => setEditing(skill.id)} />
+              <SkillRow
+                key={skill.id}
+                skill={skill}
+                open={skill.id === expanded}
+                onToggle={(next) => setExpanded(next ? skill.id : null)}
+                onEdit={() => setEditing(skill.id)}
+              />
             ))}
           </ul>
         </section>
@@ -67,7 +86,13 @@ export function SkillsPanel() {
         ) : (
           <ul className="skill-list">
             {installed.map((skill) => (
-              <SkillRow key={skill.id} skill={skill} onEdit={() => setEditing(skill.id)} />
+              <SkillRow
+                key={skill.id}
+                skill={skill}
+                open={skill.id === expanded}
+                onToggle={(next) => setExpanded(next ? skill.id : null)}
+                onEdit={() => setEditing(skill.id)}
+              />
             ))}
           </ul>
         )}

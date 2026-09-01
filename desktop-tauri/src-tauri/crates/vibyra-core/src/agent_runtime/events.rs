@@ -53,6 +53,14 @@ pub enum AgentEvent {
     },
     #[serde(rename = "file.changed")]
     FileChanged { path: String, change: String },
+    /// A skill whose trigger matched this prompt, named at the version that
+    /// ran. Emitted once per match, before the turn starts.
+    #[serde(rename = "skill.applied")]
+    SkillApplied {
+        skill_id: String,
+        name: String,
+        version: i64,
+    },
     #[serde(rename = "approval.requested")]
     ApprovalRequested { approval_id: String, action: String },
     #[serde(rename = "approval.resolved")]
@@ -87,6 +95,7 @@ impl AgentEvent {
             AgentEvent::ToolRequested { .. } => "tool.requested",
             AgentEvent::ToolOutput { .. } => "tool.output",
             AgentEvent::FileChanged { .. } => "file.changed",
+            AgentEvent::SkillApplied { .. } => "skill.applied",
             AgentEvent::ApprovalRequested { .. } => "approval.requested",
             AgentEvent::ApprovalResolved { .. } => "approval.resolved",
             AgentEvent::UsageUpdated { .. } => "usage.updated",

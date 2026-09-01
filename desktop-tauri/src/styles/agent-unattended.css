@@ -1,0 +1,167 @@
+/* What unattended work looks like when it finally reports: the run strip on a
+   routine row, the skill provenance above an answer, and the count on the
+   Agent button.
+
+   All three are the same idea in three places — work happened on a thread
+   nobody was watching, and this is where it says so. */
+
+/* ------------------------------------------------------------ run strip */
+
+/* Twelve marks, three colours, no legend. Amber is a skip, which is a fact
+   about the laptop being shut rather than a failure; red is a real failure and
+   the sentence above says why; cobalt is the run happening now. */
+.run-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  margin-top: 9px;
+}
+
+.run-strip__m {
+  width: 4px;
+  height: 13px;
+  border-radius: 1px;
+  /* Neutral by default: every status below overrides it, so this is only
+     what an outcome this sheet has not been taught yet looks like. */
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-bottom: 2px solid var(--dim);
+}
+
+.run-strip__m--completed {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  border-bottom-color: var(--success);
+}
+
+.run-strip__m--failed {
+  background: var(--danger-soft);
+  border-bottom-color: var(--danger);
+}
+
+.run-strip__m--skipped {
+  background: var(--amber-soft);
+  border-bottom-color: var(--amber);
+}
+
+.run-strip__m--running {
+  background: var(--accent-soft);
+  border-bottom-color: var(--accent);
+  animation: run-strip-breathe 1.2s ease-in-out infinite;
+}
+
+@keyframes run-strip-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run-strip__m--running {
+    animation: none;
+  }
+}
+
+/* A routine nobody has seen work shows an empty strip, which is the answer. */
+.run-strip--empty {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+/* The last run is a way into the chat it created — a routine that produced
+   work you never saw is the failure this whole design is about. */
+.routine-row__last.is-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
+  transition: text-decoration-color var(--t-base) var(--e-standard);
+}
+
+.routine-row__last.is-link:hover {
+  text-decoration-color: currentColor;
+}
+
+.routine-row__last.is-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.routine-row__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------- applied skills */
+
+.applied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Violet, because a skill is the same class of thing as a decision: something
+   standing behind the turn that a person chose to put there. Never a hue that
+   reads as an error — a skill firing is the system working. */
+.applied__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--ask) 30%, transparent);
+  border-radius: 999px;
+  background: var(--ask-soft);
+  color: var(--ask);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.applied__pill:hover {
+  background: color-mix(in srgb, var(--ask) 22%, transparent);
+}
+
+.applied__pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.applied__ver {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+}
+
+/* ------------------------------------------------- the count on Agent Mode */
+
+/* The ambient version of the decisions queue. Loaded by the work bus, so it is
+   true from Code Mode — a count that is only right while you are looking at
+   the thing it counts is worse than no count. */
+.mode-switch__pip {
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--ask);
+  color: var(--bg);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  font-variant-numeric: tabular-nums;
+}

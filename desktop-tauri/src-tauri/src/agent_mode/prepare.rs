@@ -13,7 +13,7 @@
 use std::sync::Arc;
 
 use vibyra_core::agent_chats::AgentChat;
-use vibyra_core::agent_context::{assemble, Occasion};
+use vibyra_core::agent_context::{assemble, AppliedSkill, Occasion};
 use vibyra_core::agent_model::PermissionMode;
 use vibyra_core::agent_profiles::AgentProfile;
 
@@ -26,7 +26,12 @@ use super::turns::TurnRequest;
 /// A chat with no agent is Chat Mode: it gets the one folder it was explicitly
 /// mounted on, or nothing at all, and no brief, memory or skills. That is the
 /// whole difference between the two modes, expressed once.
-pub(super) type Prepared = (Vec<String>, String, Option<String>);
+/// Places, working directory, system prompt, and the skills that shaped it.
+///
+/// The applied list rides back with the prompt rather than being recomputed
+/// later: it is a property of the text that was actually assembled, and
+/// re-deriving it would be a second answer to a question already settled.
+pub(super) type Prepared = (Vec<String>, String, Option<String>, Vec<AppliedSkill>);
 
 pub(super) fn prepare(
     world: &Arc<AgentWorld>,
@@ -43,7 +48,8 @@ pub(super) fn prepare(
                 .into_owned()
         });
         std::fs::create_dir_all(&cwd).map_err(|error| error.to_string())?;
-        return Ok((mounted.into_iter().collect(), cwd, None));
+        // A detached chat has no agent, so no skills and nothing to declare.
+        return Ok((mounted.into_iter().collect(), cwd, None, Vec::new()));
     };
 
     let db = &world.db;
@@ -71,5 +77,10 @@ pub(super) fn prepare(
     // happens to have open. Reaching a granted folder is what `--add-dir` is
     // for; silently starting inside one is how an agent edits the wrong repo.
     std::fs::create_dir_all(&profile.home_path).map_err(|error| error.to_string())?;
-    Ok((places, profile.home_path.clone(), Some(context.text)))
+    Ok((
+        places,
+        profile.home_path.clone(),
+        Some(context.text),
+        context.applied,
+    ))
 }

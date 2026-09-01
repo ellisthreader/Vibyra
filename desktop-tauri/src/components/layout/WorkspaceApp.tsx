@@ -12,6 +12,7 @@ import { PinnedNotice } from "../notifications/PinnedNotice";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
 import { useActivityTicker } from "../../lib/useActivityTicker";
+import { useAgentWorkBus } from "../../lib/agentWorkBus.ts";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
 import { useSessionLifecycle } from "../../lib/useSessionLifecycle";
 import { useUpdateWatch } from "../../lib/useUpdateWatch";
@@ -67,6 +68,10 @@ export function WorkspaceApp() {
 
   useGlobalShortcuts();
   useWorkspaceRuntime();
+  // Above the mode switch on purpose: Code Mode is where people sit, Agent
+  // Mode is unmounted while they are there, and a bus mounted inside it could
+  // never raise the toast that fetches them back.
+  useAgentWorkBus();
   useNotificationRuntime();
   useSessionLifecycle();
   useActivityTicker();

@@ -1,6 +1,7 @@
 import type { AgentEvent, ChatEventRow } from "../agentTypes";
 import {
   addFile,
+  addSkill,
   addUsage,
   appendDelta,
   fillTool,
@@ -48,6 +49,12 @@ export type TranscriptBlock =
       endedMs: number | null;
     }
   | { id: string; type: "files"; seq: number; paths: { path: string; change: string }[] }
+  | {
+      id: string;
+      type: "skills";
+      seq: number;
+      applied: { skillId: string; name: string; version: number }[];
+    }
   | { id: string; type: "notice"; seq: number; tone: "error" | "info"; text: string }
   | {
       id: string;
@@ -151,6 +158,11 @@ function applyEvent(
 
     case "file.changed":
       return addFile(blocks, row, event.path, event.change);
+
+    // Collapsed into one block per turn: three skills that matched are one
+    // line naming three, not three lines.
+    case "skill.applied":
+      return addSkill(blocks, row, event);
 
     case "turn.failed":
       return [

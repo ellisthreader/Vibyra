@@ -3,6 +3,8 @@ import { useNotificationStore } from "../state/notificationStore";
 import { useSettingsStore } from "../state/settingsStore";
 import { useUpdateStore } from "../state/updateStore";
 import { useTerminalStore } from "../state/terminalStore";
+import { useAgentChatStore } from "../state/agentChatStore";
+import { useAgentModeStore } from "../state/agentModeStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { hibernateIdleTerminals } from "./terminalHibernate";
 import type { NotificationAction } from "../notificationTypes";
@@ -11,6 +13,21 @@ import type { RendererMode } from "../types";
 // Actions are dispatched from components, never from the store: the store must
 // stay free of imports from other stores or the cycle
 // settingsStore -> terminalRegistry -> ... -> notificationStore closes.
+
+/** Takes you to the queue from wherever you were — usually Code Mode. */
+function openDecisions(): void {
+  const mode = useAgentModeStore.getState();
+  mode.setMode("agent");
+  mode.openPanel("decisions");
+}
+
+/** Opens the chat a failed run created, in the mode that owns it. */
+function openAgentChat(chatId: string): void {
+  const mode = useAgentModeStore.getState();
+  mode.setMode("agent");
+  mode.selectChat(chatId);
+  void useAgentChatStore.getState().openChat(chatId);
+}
 
 function focusSession(id: number): void {
   const pane = useTerminalStore.getState().panes.find((candidate) => candidate.id === id);
@@ -53,6 +70,12 @@ async function stageRendererMode(mode: RendererMode, stagedTitle: string): Promi
 export function runNotificationAction(action: NotificationAction): void {
   const workspace = useWorkspaceStore.getState();
   switch (action.id) {
+    case "openDecisions":
+      openDecisions();
+      return;
+    case "openAgentChat":
+      if (typeof action.arg === "string") openAgentChat(action.arg);
+      return;
     case "focusSession":
       if (typeof action.arg === "number") focusSession(action.arg);
       return;

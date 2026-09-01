@@ -6,10 +6,11 @@ import { ApprovalCard } from "./ApprovalCard";
 /**
  * Every decision waiting.
  *
- * Polled rather than pushed: a card can be raised by a routine running
- * unattended on the scheduler's thread, where no channel is open, and a
- * ten-second poll of an indexed query is cheaper than the plumbing to push.
- * A decision that appears ten seconds late is still a decision that waits.
+ * The queue is kept current by `agentWorkBus`, which is mounted above every
+ * mode and holds both the `approval-raised` listener and the fallback poll.
+ * This refreshes once on open so a panel entered from a stale badge is right
+ * immediately; it does not own a timer, because a poll that only runs while
+ * this component is mounted is the defect the bus exists to fix.
  */
 export function DecisionsPanel() {
   const approvals = useAgentWorkStore((state) => state.approvals);
@@ -18,8 +19,6 @@ export function DecisionsPanel() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), 10_000);
-    return () => window.clearInterval(timer);
   }, [load]);
 
   return (

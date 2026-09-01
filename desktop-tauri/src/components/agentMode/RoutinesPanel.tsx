@@ -62,14 +62,19 @@ export function RoutinesPanel() {
             <p className="panel__quiet">No routines yet.</p>
           ) : (
             <ul className="routine-list">
-              {routines.map((routine) => (
-                <RoutineRow
-                  key={routine.id}
-                  routine={routine}
-                  agentName={agents.find((agent) => agent.id === routine.agentId)?.name ?? "—"}
-                  onEdit={() => setEditing(routine.id)}
-                />
-              ))}
+              {routines.map((routine) => {
+                const owner = agents.find((agent) => agent.id === routine.agentId);
+                return (
+                  <RoutineRow
+                    key={routine.id}
+                    routine={routine}
+                    agentId={routine.agentId}
+                    agentName={owner?.name ?? "—"}
+                    accent={owner?.accent || "var(--accent)"}
+                    onEdit={() => setEditing(routine.id)}
+                  />
+                );
+              })}
             </ul>
           )}
         </>

@@ -50,7 +50,9 @@ export type NotificationActionId =
   | "openPreview"
   | "downloadUpdate"
   | "restartForUpdate"
-  | "openUpdateSettings";
+  | "openUpdateSettings"
+  | "openDecisions"
+  | "openAgentChat";
 
 export interface NotificationAction {
   id: NotificationActionId;

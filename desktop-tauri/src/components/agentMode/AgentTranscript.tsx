@@ -3,6 +3,7 @@ import { memo } from "react";
 import type { AgentProfile } from "../../agentTypes";
 import type { TranscriptBlock } from "../../lib/agentEventReducer";
 import { AnswerBlock } from "./AnswerBlock";
+import { AppliedSkills } from "./AppliedSkills";
 import { ChangedFiles } from "./ChangedFiles";
 import { ToolBlock } from "./ToolBlock";
 import { TurnFooter } from "./TurnFooter";
@@ -66,6 +67,8 @@ export const AgentTranscript = memo(function AgentTranscript({
                 <p>{block.text}</p>
               </details>
             )}
+
+            {block.type === "skills" && <AppliedSkills applied={block.applied} />}
 
             {block.type === "tool" && <ToolBlock block={block} />}
 

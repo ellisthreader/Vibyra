@@ -22,9 +22,19 @@ use crate::agent_model::PermissionMode;
 use crate::agent_profiles::{AgentPlace, AgentProfile};
 use crate::skills::Skill;
 
+mod skill_match;
+pub use skill_match::{applies, AppliedSkill};
+
 /// Everything a turn is allowed to know, and the digest that identifies it.
 pub struct AssembledContext {
     pub text: String,
+    /// The skills whose trigger matched this prompt, in the order they were
+    /// expanded. Returned rather than discarded because a skill is a standing
+    /// instruction injected into every matching turn — which is exactly the
+    /// shape prompt injection tries to create — and the only way to tune the
+    /// deliberately eager trigger matching, or to notice one firing where it
+    /// should not, is to see which ones fired on the turn it happened.
+    pub applied: Vec<AppliedSkill>,
     /// Stored with the turn. Two turns with the same fingerprint were told the
     /// same thing; two that differ can be diffed by re-assembling.
     pub fingerprint: String,
@@ -63,6 +73,7 @@ pub fn assemble(
     prompt: &str,
 ) -> AssembledContext {
     let mut text = String::new();
+    let mut applied = Vec::new();
 
     text.push_str(&format!(
         "You are {}, a persistent teammate in Vibyra.\n",
@@ -91,6 +102,7 @@ pub fn assemble(
             text.push_str("\n### Applies to this request\n");
             for skill in applicable {
                 text.push_str(&skill.expanded());
+                applied.push(AppliedSkill::of(skill));
             }
         }
     }
@@ -126,7 +138,11 @@ pub fn assemble(
     );
 
     let fingerprint = digest(&text);
-    AssembledContext { text, fingerprint }
+    AssembledContext {
+        text,
+        fingerprint,
+        applied,
+    }
 }
 
 /// The one sentence that says what this turn may do.
@@ -145,21 +161,6 @@ fn authority_line(permission: PermissionMode) -> &'static str {
              relaxed. That is still not permission to act outside them."
         }
     }
-}
-
-/// Whether a skill's trigger looks like it matches this request.
-///
-/// Word overlap, not a model call: deciding which skill applies must not cost
-/// a round trip, and a false positive costs one expanded procedure while a
-/// false negative costs the skill. Erring toward expanding is the cheaper
-/// mistake, so the bar is one shared significant word.
-fn applies(skill: &Skill, prompt: &str) -> bool {
-    let trigger = crate::agent_memory::reflect::significant_words(&skill.trigger);
-    if trigger.is_empty() {
-        return false;
-    }
-    let asked = crate::agent_memory::reflect::significant_words(prompt);
-    trigger.iter().any(|word| asked.contains(word))
 }
 
 fn digest(text: &str) -> String {
