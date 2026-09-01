@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::ring::ByteRing;
 use crate::utf8::take_complete_utf8;
@@ -19,6 +19,12 @@ pub struct SessionOutput {
     scrollback: ByteRing,
     pub visibility: Visibility,
     pub last_flush: Instant,
+    /// When the last chunk left for the renderer, until `painted` clears it.
+    unpainted_since: Option<Instant>,
+    /// Set by the first `painted`. Until then the renderer is taken to paint
+    /// instantly, which keeps an older frontend — and every test sink that
+    /// never reports — on the plain interval pacing.
+    renderer_reports_paints: bool,
     pending_cap: usize,
 }
 
@@ -39,6 +45,8 @@ impl SessionOutput {
             scrollback: ByteRing::new(scrollback_cap),
             visibility: Visibility::Visible,
             last_flush: Instant::now(),
+            unpainted_since: None,
+            renderer_reports_paints: false,
             pending_cap: pending_cap.max(4096),
         }
     }
@@ -62,22 +70,42 @@ impl SessionOutput {
 
     /// Called by the flusher thread when this session is due for delivery.
     pub fn drain(&mut self) -> Drained {
-        self.last_flush = Instant::now();
+        let now = Instant::now();
+        self.last_flush = now;
         if self.overflowed {
             self.overflowed = false;
             self.pending.clear();
-            let snapshot = self.scrollback.to_utf8();
-            return Drained::Resync(snapshot);
+            self.unpainted_since = Some(now);
+            return Drained::Resync(self.scrollback.to_utf8());
         }
         if self.pending.is_empty() {
             return Drained::Nothing;
         }
         let text = take_complete_utf8(&mut self.pending);
         if text.is_empty() {
-            Drained::Nothing
-        } else {
-            Drained::Chunk(text)
+            return Drained::Nothing;
         }
+        self.unpainted_since = Some(now);
+        Drained::Chunk(text)
+    }
+
+    /// The renderer has drawn the last delivery. The first call is also what
+    /// tells the flusher this session's renderer reports at all.
+    pub fn painted(&mut self) {
+        self.renderer_reports_paints = true;
+        self.unpainted_since = None;
+    }
+
+    /// How much longer the flusher should hold this session's next delivery
+    /// for a paint report, or `None` when it may deliver now: nothing is
+    /// unpainted, the renderer never reports, or the wait has hit `timeout`.
+    pub fn renderer_busy_for(&self, timeout: Duration) -> Option<Duration> {
+        if !self.renderer_reports_paints {
+            return None;
+        }
+        timeout
+            .checked_sub(self.unpainted_since?.elapsed())
+            .filter(|remaining| !remaining.is_zero())
     }
 
     /// Full scrollback snapshot for (re)attaching a terminal view.
@@ -92,7 +120,9 @@ impl SessionOutput {
     pub fn force_resync(&mut self) -> String {
         self.pending.clear();
         self.overflowed = false;
-        self.last_flush = Instant::now();
+        let now = Instant::now();
+        self.last_flush = now;
+        self.unpainted_since = Some(now);
         self.snapshot()
     }
 }
@@ -123,6 +153,30 @@ mod tests {
             _ => panic!("expected resync"),
         }
         assert!(matches!(out.drain(), Drained::Nothing));
+    }
+
+    #[test]
+    fn a_renderer_that_never_reports_is_never_waited_for() {
+        let mut out = SessionOutput::new(4096, 4096);
+        out.push(b"abc");
+        assert!(matches!(out.drain(), Drained::Chunk(_)));
+        assert_eq!(out.renderer_busy_for(Duration::from_secs(1)), None);
+    }
+
+    #[test]
+    fn waits_for_the_renderer_once_it_has_reported_and_gives_up_at_the_timeout() {
+        let mut out = SessionOutput::new(4096, 4096);
+        out.painted();
+        out.push(b"abc");
+        assert!(matches!(out.drain(), Drained::Chunk(_)));
+        assert!(out.renderer_busy_for(Duration::from_secs(1)).is_some());
+        assert_eq!(out.renderer_busy_for(Duration::ZERO), None);
+        out.painted();
+        assert_eq!(out.renderer_busy_for(Duration::from_secs(1)), None);
+        // A wake from hibernation is a delivery too: the rebuilt view has to
+        // draw the snapshot before it is handed more.
+        out.force_resync();
+        assert!(out.renderer_busy_for(Duration::from_secs(1)).is_some());
     }
 
     #[test]

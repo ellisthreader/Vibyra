@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 use parking_lot::RwLock;
 
 use super::buffer::Drained;
-use super::manager::{FlushConfig, OutputSink};
+use super::flush_pacing::FlushConfig;
+use super::manager::OutputSink;
 use super::session::Session;
 use super::{SessionId, Visibility};
 
@@ -84,6 +85,11 @@ fn epoch(origin: Instant, at: Instant, interval: Duration) -> u128 {
 ///   period lands in the same scan and the burst settles together. A session
 ///   quiet for longer than its interval sits in an older epoch, so waking
 ///   panes still deliver the instant they have something.
+/// - **A session whose renderer is still painting waits**, whatever its tier.
+///   Deliveries are cheap to send and expensive to draw, so a machine that
+///   draws slowly used to be handed a backlog it could never catch up on; the
+///   paint report caps it at one chunk in flight per pane, and the bytes that
+///   arrive meanwhile coalesce into the next. See `FlushConfig::paint_timeout`.
 fn flush_due(
     sessions: &RwLock<HashMap<SessionId, Arc<Session>>>,
     sink: &dyn OutputSink,
@@ -103,6 +109,12 @@ fn flush_due(
         let drained = {
             let mut output = session.output.lock();
             if !output.has_pending() {
+                continue;
+            }
+            // One unpainted chunk per session: a renderer still drawing the
+            // last delivery is not handed another. See `FlushConfig::paint_timeout`.
+            if let Some(remaining) = output.renderer_busy_for(config.paint_timeout) {
+                nearer(remaining);
                 continue;
             }
             match output.visibility {
@@ -141,46 +153,5 @@ fn flush_due(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{delivery_priority, epoch, Visibility};
-    use std::time::{Duration, Instant};
-
-    #[test]
-    fn the_focused_pane_is_handed_to_the_renderer_first() {
-        // Ordering only shows up as latency, never as wrong output, so it has
-        // no natural assertion at the integration level — and timing one is
-        // measuring drift, not order. The rule itself is the thing to pin.
-        let mut tiers = [
-            Visibility::Hibernated,
-            Visibility::Hidden,
-            Visibility::Background,
-            Visibility::Visible,
-        ];
-        tiers.sort_by_key(|visibility| delivery_priority(*visibility));
-        assert_eq!(
-            tiers,
-            [
-                Visibility::Visible,
-                Visibility::Background,
-                Visibility::Hidden,
-                Visibility::Hibernated,
-            ],
-            "the pane holding the keyboard must be delivered before any paced one",
-        );
-    }
-
-    #[test]
-    fn paced_sessions_share_epoch_boundaries_instead_of_drifting() {
-        let origin = Instant::now();
-        let interval = Duration::from_millis(75);
-        // Two sessions that last delivered at different moments inside the
-        // same period still both become due when the next boundary passes:
-        // the epoch is a property of the shared clock, not of the session.
-        let a = origin + Duration::from_millis(10);
-        let b = origin + Duration::from_millis(60);
-        let later = origin + Duration::from_millis(80);
-        assert_eq!(epoch(origin, a, interval), epoch(origin, b, interval));
-        assert!(epoch(origin, later, interval) > epoch(origin, a, interval));
-        assert!(epoch(origin, later, interval) > epoch(origin, b, interval));
-    }
-}
+#[path = "flusher_rules_tests.rs"]
+mod tests;

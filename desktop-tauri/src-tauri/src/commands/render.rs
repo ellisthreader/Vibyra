@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use crate::compositing::software_compositing;
 use crate::renderer::{self, RendererMode};
 
 /// What the running webview actually got, plus the inputs behind that choice.
@@ -22,26 +23,6 @@ pub struct RendererPolicy {
     /// This launch rewrote a promoted NVIDIA `accelerated` mode back to
     /// `auto` (see `renderer_heal.rs`); the frontend announces it once.
     pub healed_this_launch: bool,
-}
-
-/// True when the WebView composites through WebKit's shared-memory path
-/// (the DMA-BUF renderer is disabled). WebGL canvases do not composite
-/// reliably in that mode — xterm's WebGL addon "loads" but the terminal
-/// stays black — so the frontend uses this to prefer the DOM renderer.
-///
-/// The env var is set by `renderer::configure` before the webview is created
-/// (or inherited from the user's environment), so reading it here reflects
-/// the mode the running webview actually uses. Reported to the frontend as
-/// part of [`renderer_policy`] rather than as a command of its own.
-fn software_compositing() -> bool {
-    #[cfg(target_os = "linux")]
-    {
-        std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_some()
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        false
-    }
 }
 
 #[tauri::command]

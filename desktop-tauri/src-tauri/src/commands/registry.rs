@@ -53,6 +53,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         github::github_open_install,
         terminal::create_ssh_terminal,
         terminal::write_terminal,
+        terminal::terminal_painted,
         terminal::resize_terminal,
         terminal::set_terminal_visibility,
         terminal::terminal_snapshot,

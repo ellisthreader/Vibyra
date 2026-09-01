@@ -1,6 +1,7 @@
 mod buffer;
 mod chat_prompt;
 mod conversation;
+mod flush_pacing;
 mod flusher;
 mod manager;
 // Only `conversation` reads rollout headers, and only Linux exposes the open
@@ -17,11 +18,16 @@ mod writer;
 #[cfg(all(test, unix))]
 mod flusher_latency_tests;
 #[cfg(all(test, unix))]
+mod flusher_pacing_tests;
+#[cfg(all(test, unix))]
+mod flusher_paint_tests;
+#[cfg(all(test, unix))]
 mod flusher_tests;
 #[cfg(all(test, unix))]
 mod manager_tests;
 
-pub use manager::{FlushConfig, OutputSink, PtyManager};
+pub use flush_pacing::{flush_config, FlushConfig};
+pub use manager::{OutputSink, PtyManager};
 
 use serde::{Deserialize, Serialize};
 
@@ -38,7 +44,9 @@ pub type SessionId = u64;
 ///   frame budget: eight of them saturate the WebKit main thread and the
 ///   focused pane's own echo is what starves. Paced instead, which is
 ///   imperceptible for streaming output and leaves the budget to whoever is
-///   being typed into.
+///   being typed into. How far apart depends on what a repaint actually
+///   costs on this machine — see `flush_config`, which slows this tier
+///   further when the webview composites in shared memory.
 /// - `Hidden`: rendered but off-screen (other tab); flushed at a slow
 ///   interval so xterm.js stays warm without burning CPU.
 /// - `Hibernated`: not rendered at all; nothing is sent, output is retained

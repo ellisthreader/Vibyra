@@ -1,14 +1,20 @@
 import type { Terminal } from "@xterm/xterm";
 
+import { terminalPainted } from "../ipc/terminal";
 import type { TermEvent } from "../types";
 import { stampOutput } from "./activity";
 import { terminalViewportIsNearBottom } from "./terminalBottomAnchor";
 import { attach } from "./terminalBus";
+import { createPaintReporter } from "./terminalDeliveryAck";
 
 // Everything Rust sends about a session, turned into writes on its terminal.
 //
 // Split from the registry, which owns the xterm instances themselves: this is
 // only the routing, and it is the half that the workspace hooks into.
+
+/** Called from each write callback: the data is parsed, the next frame draws
+ * it, and Rust may then hand the pane its next chunk. */
+const reportPainted = createPaintReporter(terminalPainted);
 
 let onSessionExit: (id: number, code: number | null) => void = () => {};
 let onSessionTitle: (id: number, title: string) => void = () => {};
@@ -52,13 +58,19 @@ export function attachSessionEvents(
     if (event.type === "output") {
       stampOutput(id, event.data);
       const followOutput = terminalViewportIsNearBottom(term);
-      term.write(event.data, () => anchorNow(followOutput));
+      term.write(event.data, () => {
+        anchorNow(followOutput);
+        reportPainted(id);
+      });
     } else if (event.type === "resync") {
       // Rust sends this when a hibernated session wakes or overflows: the view
       // is rebuilt from its ring rather than caught up incrementally.
       stampOutput(id, event.data);
       term.reset();
-      term.write(event.data, () => anchorNow(true));
+      term.write(event.data, () => {
+        anchorNow(true);
+        reportPainted(id);
+      });
     } else {
       const label = event.code === null ? "" : ` (code ${event.code})`;
       term.write(`\r\n\x1b[2m[process exited${label}]\x1b[0m\r\n`, () => anchorNow(true));

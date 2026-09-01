@@ -5,7 +5,7 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 use vibyra_core::fsx::WorkspaceWatcher;
 use vibyra_core::preview::PreviewManager;
-use vibyra_core::pty::{FlushConfig, PtyManager};
+use vibyra_core::pty::{flush_config, PtyManager};
 use vibyra_core::settings::Settings;
 
 use crate::account_session::AccountSessionManager;
@@ -52,9 +52,12 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
         let sink = Arc::new(ChannelSink::default());
+        // Shared-memory compositing pays for every repaint on the CPU, so the
+        // paced tier is slowed to keep a grid of streaming agents off the one
+        // WebKit thread that also dispatches input.
         let manager = PtyManager::new(
             Arc::clone(&sink) as Arc<dyn vibyra_core::pty::OutputSink>,
-            FlushConfig::default(),
+            flush_config(crate::compositing::software_compositing()),
         );
         let settings_path = Settings::default_path();
         let mut settings = Settings::load_from(&settings_path);

@@ -2,13 +2,13 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, SyncSender};
 use std::sync::Arc;
-use std::time::Duration;
 
 use parking_lot::RwLock;
 
 use crate::error::{CoreError, CoreResult};
 
 use super::buffer::Drained;
+use super::flush_pacing::FlushConfig;
 use super::session::{Session, SessionOptions};
 use super::{flusher, LaunchSpec, SessionId, SessionInfo, Visibility};
 
@@ -16,29 +16,6 @@ pub trait OutputSink: Send + Sync + 'static {
     fn on_output(&self, id: SessionId, data: String);
     fn on_resync(&self, id: SessionId, snapshot: String);
     fn on_exit(&self, id: SessionId, code: Option<i32>);
-}
-
-#[derive(Debug, Clone)]
-pub struct FlushConfig {
-    pub tick: Duration,
-    pub background_interval: Duration,
-    pub hidden_interval: Duration,
-    pub pending_cap: usize,
-    pub scrollback_cap: usize,
-}
-
-impl Default for FlushConfig {
-    fn default() -> Self {
-        Self {
-            // Both pace *sustained* output only — the flusher delivers on
-            // wake, so an isolated keystroke never waits. See `Visibility`.
-            tick: Duration::from_millis(16),
-            background_interval: Duration::from_millis(75),
-            hidden_interval: Duration::from_millis(250),
-            pending_cap: 1024 * 1024,
-            scrollback_cap: 4 * 1024 * 1024,
-        }
-    }
 }
 
 pub struct PtyManager {
@@ -130,6 +107,15 @@ impl PtyManager {
             let snapshot = session.output.lock().force_resync();
             self.sink.on_resync(id, snapshot);
         }
+        let _ = self.flush_tx.try_send(());
+        Ok(())
+    }
+
+    /// The renderer has painted the last chunk delivered to `id`. Releases
+    /// that session's hold and wakes the flusher, so whatever buffered in the
+    /// meantime goes out now rather than at `paint_timeout`.
+    pub fn painted(&self, id: SessionId) -> CoreResult<()> {
+        self.session(id)?.output.lock().painted();
         let _ = self.flush_tx.try_send(());
         Ok(())
     }

@@ -8,7 +8,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Terminal } from "@xterm/xterm";
 
-import { createTerminal, setTerminalVisibility, writeTerminal } from "../ipc/terminal";
+import {
+  createTerminal,
+  setTerminalVisibility,
+  terminalPainted,
+  writeTerminal,
+} from "../ipc/terminal";
 import { attach } from "../lib/terminalBus";
 import type { TermEvent, Visibility } from "../types";
 import {
@@ -89,6 +94,9 @@ async function runPhase(phase: string, panes: ProbePanes, keys: number): Promise
       for (const sample of resolved) sample.parse = parsed;
       requestAnimationFrame((painted) => {
         for (const sample of resolved) sample.paint = painted;
+        // The shipped path reports each painted frame; without this the probe
+        // would measure a pane Rust is holding back to `paint_timeout`.
+        void terminalPainted(panes.focusedId).catch(() => {});
       });
     });
   });

@@ -16,6 +16,7 @@ mod ai_usage_tests;
 mod boot_window;
 mod close_guard;
 mod commands;
+mod compositing;
 mod desktop_entry;
 mod discord;
 mod discord_setup;

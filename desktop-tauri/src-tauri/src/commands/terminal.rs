@@ -98,6 +98,15 @@ pub fn write_terminal(
     state.manager.write_input(id, data.as_bytes())
 }
 
+/// The renderer has drawn the last chunk delivered for `id`; see
+/// `PtyManager::painted`. Synchronous for the same reason as `write_terminal`
+/// — it only clears a flag and wakes the flusher — and because the paint
+/// report of the focused pane must not queue behind the async runtime.
+#[tauri::command]
+pub fn terminal_painted(state: State<'_, AppState>, id: SessionId) -> Result<(), CoreError> {
+    state.manager.painted(id)
+}
+
 #[tauri::command]
 pub async fn resize_terminal(
     state: State<'_, AppState>,
