@@ -9,9 +9,14 @@ import type {
   PermissionMode,
 } from "../agentTypes";
 
-// Chats and turns. `sendTurn` mirrors `createTerminal`: a channel per call,
-// native-side batching, and no polling — the transcript on screen is written
-// from the same loop as the transcript in the database.
+// Chats and turns. `sendTurn` mirrors `createTerminal`: a channel per call and
+// no polling — the transcript on screen is written from the same loop as the
+// transcript in the database.
+//
+// Unlike `createTerminal` there is no native-side batching: `agent_turn_send`
+// sends every row as it happens, one IPC crossing per streamed delta. The
+// coalescing is all on this side, in `agentChatStore`'s frame buffer, so React
+// is protected but the webview boundary is not.
 
 export function listChats(agentId: string | null): Promise<AgentChat[]> {
   return invoke("agent_chat_list", { agentId });

@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 
 import { setTerminalVisibility } from "../ipc/terminal";
+import { useAgentModeStore } from "../state/agentModeStore";
 import { useProjectStore } from "../state/projectStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { applyProjectVisibility, syncFocusVisibility } from "./projectTransitions";
-import { terminalsVisible } from "./dockLayout";
+import { terminalsOnScreen } from "./terminalPresence";
 
 /**
  * Keeps the native flush rate pointed at whichever pane has the keyboard.
@@ -18,15 +19,20 @@ import { terminalsVisible } from "./dockLayout";
  *
  * Runs off the project effect deliberately: focus changes on every click, and
  * reasserting the whole grid that often would spend a round trip per pane.
+ *
+ * Silent while the grid is off screen: leaving Code Mode is a demotion the
+ * project effect owns, and handing the 16 ms tick back to a pane nobody can
+ * see would undo it on the next click.
  */
 export function useFocusVisibility(): void {
   const focusedId = useTerminalStore((state) => state.focusedId);
   const activeId = useProjectStore((state) => state.activeId);
+  const mode = useAgentModeStore((state) => state.mode);
   const size = useWorkspaceStore((state) => state.dockSize);
   const dockOpen = useWorkspaceStore((state) => state.dockTool !== null);
 
   useEffect(() => {
-    if (!activeId || !terminalsVisible(size, dockOpen)) return;
+    if (!activeId || !terminalsOnScreen(mode, size, dockOpen)) return;
     let current = true;
     void syncFocusVisibility(
       useTerminalStore.getState().panes,
@@ -42,5 +48,5 @@ export function useFocusVisibility(): void {
     return () => {
       current = false;
     };
-  }, [focusedId, activeId, size, dockOpen]);
+  }, [focusedId, activeId, mode, size, dockOpen]);
 }

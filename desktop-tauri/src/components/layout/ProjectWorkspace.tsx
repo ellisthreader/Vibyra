@@ -2,14 +2,16 @@ import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 
 import { setTerminalVisibility } from "../../ipc/terminal";
-import { DOCK_GAP_PX, dockReserve, dockValue, terminalsVisible } from "../../lib/dockLayout";
+import { DOCK_GAP_PX, dockReserve, dockValue } from "../../lib/dockLayout";
 import {
   applyProjectVisibility,
   projectRuntimeTransitions,
   syncProjectVisibility,
 } from "../../lib/projectTransitions";
+import { terminalsOnScreen } from "../../lib/terminalPresence";
 import { useFocusVisibility } from "../../lib/useFocusVisibility";
 import { useReviewWatch } from "../../lib/useReviewWatch";
+import { useAgentModeStore } from "../../state/agentModeStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
@@ -25,6 +27,7 @@ export function ProjectWorkspace() {
   const compact = useWorkspaceStore((state) => state.dockCompactWidth);
   const ratio = useWorkspaceStore((state) => state.dockWideRatio);
   const zoomedId = useTerminalStore((state) => state.zoomedId);
+  const mode = useAgentModeStore((state) => state.mode);
   const host = useRef<HTMLElement>(null);
   // Hands the full native flush rate to whichever pane holds the keyboard.
   useFocusVisibility();
@@ -32,7 +35,7 @@ export function ProjectWorkspace() {
   // Above the dock on purpose: the Review tab's badge has to be right whether
   // or not the panel is open, so the fleet cannot be watched from inside it.
   useReviewWatch(activeId, project?.root ?? null);
-  const showTerminals = terminalsVisible(size, tool !== null);
+  const showTerminals = terminalsOnScreen(mode, size, tool !== null);
 
   useEffect(() => {
     if (!activeId) return;
@@ -40,17 +43,18 @@ export function ProjectWorkspace() {
     void projectRuntimeTransitions.run(async () => {
       const project = useProjectStore.getState();
       const workspace = useWorkspaceStore.getState();
+      const live = useAgentModeStore.getState().mode;
       if (
         !current ||
         project.view !== "project" ||
         project.activeId !== activeId ||
-        terminalsVisible(workspace.dockSize, workspace.dockTool !== null) !== showTerminals
+        terminalsOnScreen(live, workspace.dockSize, workspace.dockTool !== null) !== showTerminals
       ) {
         return new Map();
       }
-      // A full-size dock is the only state where the terminals are genuinely
-      // off screen; at compact and wide they are beside it and keep their
-      // delivery rate.
+      // Off screen means Agent or Chat Mode has the window, or a full-size dock
+      // is covering the grid. At compact and wide the terminals are beside the
+      // dock and keep their delivery rate.
       return syncProjectVisibility(
         useTerminalStore.getState().panes,
         showTerminals ? activeId : null,

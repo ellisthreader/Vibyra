@@ -10,8 +10,13 @@ import { useSettingsStore } from "./settingsStore";
 // and the panes carry live xterm instances; tearing them down to show a chat
 // list would cost every one of them its renderer and its scrollback. The
 // workspace is hidden with `display`, exactly as the existing project/home
-// switch already does, and the native side keeps hibernating what is off
-// screen.
+// switch already does.
+//
+// Hiding it is only half the job: the mode is also an input to
+// `terminalsOnScreen`, which is what demotes the grid natively. Without that
+// the panes stayed at their on-screen delivery rate behind the `display:
+// none`, writing into canvases nobody could see. Anything that reads `mode` to
+// decide what is on screen must go through that function.
 
 interface AgentModeStore {
   mode: AppMode;
