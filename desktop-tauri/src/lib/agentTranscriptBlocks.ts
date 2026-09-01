@@ -62,6 +62,8 @@ export function fillTool(
         exitCode: event.exitCode,
         failed: event.failed,
         running: false,
+        startedMs: row.createdMs,
+        endedMs: row.createdMs,
       },
     ];
   }
@@ -75,8 +77,57 @@ export function fillTool(
     exitCode: event.exitCode,
     failed: event.failed,
     running: false,
+    endedMs: row.createdMs,
   };
   return next;
+}
+
+/**
+ * Closes a turn with the line that says what it cost.
+ *
+ * Folded into the existing footer when one is already there rather than
+ * appended twice: a provider is free to report usage more than once in a
+ * turn, and two cost lines under one answer would read as two turns.
+ *
+ * A footer with no `progress` — the turn started before this page of the
+ * transcript — still renders its tokens and cost. Only the elapsed time and
+ * the retry prompt are lost with it, and both are absent rather than wrong.
+ */
+export function settleFooter(
+  blocks: TranscriptBlock[],
+  row: ChatEventRow,
+  event: Extract<AgentEvent, { kind: "usage.updated" }>,
+  progress: { startedMs: number; prompt: string } | undefined,
+): TranscriptBlock[] {
+  const id = `${row.turnId}-end`;
+  const index = blocks.findIndex((block) => block.id === id);
+  if (index >= 0) {
+    const existing = blocks[index];
+    if (existing.type !== "footer") return blocks;
+    const next = [...blocks];
+    next[index] = {
+      ...existing,
+      inputTokens: existing.inputTokens + event.inputTokens,
+      outputTokens: existing.outputTokens + event.outputTokens,
+      costUsd:
+        event.costUsd === null ? existing.costUsd : (existing.costUsd ?? 0) + event.costUsd,
+    };
+    return next;
+  }
+  return [
+    ...blocks,
+    {
+      id,
+      type: "footer",
+      seq: row.seq,
+      turnId: row.turnId,
+      prompt: progress?.prompt ?? "",
+      inputTokens: event.inputTokens,
+      outputTokens: event.outputTokens,
+      costUsd: event.costUsd,
+      elapsedMs: progress ? Math.max(0, row.createdMs - progress.startedMs) : null,
+    },
+  ];
 }
 
 /** Consecutive file changes collapse into one block: eleven edits is a list. */

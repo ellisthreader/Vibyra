@@ -4,6 +4,7 @@ import type { AgentProfile, PermissionMode } from "../../agentTypes";
 import { SendIcon } from "../common/Icons";
 import { StopIcon } from "../common/AgentIcons";
 import { useAgentChatStore } from "../../state/agentChatStore";
+import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { ComposerAttachments } from "./ComposerAttachments";
 import { ComposerDisclosure } from "./ComposerDisclosure";
@@ -33,11 +34,27 @@ export function AgentComposer({
   const send = useAgentChatStore((state) => state.send);
   const cancel = useAgentChatStore((state) => state.cancel);
   const places = useAgentRosterStore((state) => (agent ? state.places[agent.id] : undefined));
+  const draft = useAgentModeStore((state) => state.draft);
+  const setDraft = useAgentModeStore((state) => state.setDraft);
   const field = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     field.current?.focus();
   }, [chatId]);
+
+  // Edit & resend hands a past prompt back through the store. Cleared as it is
+  // taken, so returning to this chat later does not re-fill the composer with
+  // something the user already dealt with, and ignored when it names another
+  // chat — a click and a chat switch can land in either order.
+  useEffect(() => {
+    if (!draft || draft.chatId !== chatId) return;
+    setText(draft.text);
+    setDraft(null);
+    const node = field.current;
+    if (!node) return;
+    node.focus();
+    node.setSelectionRange(draft.text.length, draft.text.length);
+  }, [draft, chatId, setDraft]);
 
   const level = permission ?? agent?.permission ?? "plan";
 

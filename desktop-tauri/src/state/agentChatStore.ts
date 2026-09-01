@@ -23,6 +23,9 @@ interface ChatStore {
   transcripts: Record<string, TranscriptState>;
   /** Chats with a turn in flight, by id. */
   running: Record<string, boolean>;
+  /** When each in-flight turn started, so the dashboard can say how long it
+   *  has been going. Only ever read for chats in `running`. */
+  startedMs: Record<string, number>;
   error: string | null;
   loadChats: (agentId: string | null) => Promise<void>;
   openChat: (chatId: string) => Promise<void>;
@@ -71,6 +74,7 @@ export const useAgentChatStore = create<ChatStore>((set, get) => ({
   chats: {},
   transcripts: {},
   running: {},
+  startedMs: {},
   error: null,
 
   loadChats: async (agentId) => {
@@ -103,7 +107,11 @@ export const useAgentChatStore = create<ChatStore>((set, get) => ({
 
   send: async (chatId, prompt, permission) => {
     if (get().running[chatId]) return;
-    set((state) => ({ running: { ...state.running, [chatId]: true }, error: null }));
+    set((state) => ({
+      running: { ...state.running, [chatId]: true },
+      startedMs: { ...state.startedMs, [chatId]: Date.now() },
+      error: null,
+    }));
     try {
       await ipc.sendTurn({ chatId, prompt, permission }, (row) => queue(chatId, row));
     } catch (error) {
@@ -112,7 +120,11 @@ export const useAgentChatStore = create<ChatStore>((set, get) => ({
       // Flushed before the flag clears, so the last events of a turn are on
       // screen by the time the composer becomes writable again.
       flush();
-      set((state) => ({ running: { ...state.running, [chatId]: false } }));
+      set((state) => {
+        const startedMs = { ...state.startedMs };
+        delete startedMs[chatId];
+        return { running: { ...state.running, [chatId]: false }, startedMs };
+      });
     }
   },
 
@@ -144,11 +156,18 @@ export const useAgentChatStore = create<ChatStore>((set, get) => ({
   // into a chat that is already working.
   adoptRunning: async () => {
     const busy = await ipc.runningChats().catch(() => []);
-    set({ running: Object.fromEntries(busy.map((id) => [id, true])) });
+    // Adopted turns started before this window did, and nothing records when.
+    // Counting from now understates the elapsed time, which is the honest
+    // direction to be wrong in — it never claims a turn is older than it is.
+    const now = Date.now();
+    set({
+      running: Object.fromEntries(busy.map((id) => [id, true])),
+      startedMs: Object.fromEntries(busy.map((id) => [id, now])),
+    });
   },
 
   clear: () => {
     pending.clear();
-    set({ chats: {}, transcripts: {}, running: {}, error: null });
+    set({ chats: {}, transcripts: {}, running: {}, startedMs: {}, error: null });
   },
 }));

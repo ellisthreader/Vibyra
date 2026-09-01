@@ -5,6 +5,7 @@
 //! and an ordered event log. What differs is authority, and that is a nullable
 //! `agent_id` plus an optional mounted place, not a second implementation.
 
+pub mod attachment_store;
 #[cfg(test)]
 mod attachment_tests;
 pub mod attachments;

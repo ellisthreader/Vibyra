@@ -34,16 +34,51 @@
   list-style: none;
 }
 
+/* A chip per file, each with its own way out. The name is the basename: the
+   full path is the title, and a composer row is not where a reader parses
+   directories. */
 .composer__attach-list li {
-  max-width: 140px;
-  padding: 2px 7px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 160px;
+  padding: 2px 4px 2px 7px;
   border-radius: 8px;
-  overflow: hidden;
   background: var(--hover);
   color: var(--muted);
   font-size: var(--fs-tiny);
+}
+
+.composer__attach-list li span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.composer__attach-list li button {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color var(--t-base) var(--e-standard);
+}
+
+.composer__attach-list li button:hover {
+  color: var(--danger);
+}
+
+.composer__attach-list li button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .composer__attach-error {

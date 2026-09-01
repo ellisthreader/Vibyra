@@ -5,6 +5,7 @@ import {
   appendDelta,
   fillTool,
   settleAssistant,
+  settleFooter,
 } from "./agentTranscriptBlocks.ts";
 
 // Folding a stream of events into something a person can read.
@@ -42,9 +43,24 @@ export type TranscriptBlock =
       exitCode: number | null;
       failed: boolean;
       running: boolean;
+      /** For the elapsed time: both rows carry `createdMs`. */
+      startedMs: number;
+      endedMs: number | null;
     }
   | { id: string; type: "files"; seq: number; paths: { path: string; change: string }[] }
-  | { id: string; type: "notice"; seq: number; tone: "error" | "info"; text: string };
+  | { id: string; type: "notice"; seq: number; tone: "error" | "info"; text: string }
+  | {
+      id: string;
+      type: "footer";
+      seq: number;
+      turnId: string;
+      /** The prompt this turn ran, so Retry and Edit have it without a lookup. */
+      prompt: string;
+      inputTokens: number;
+      outputTokens: number;
+      costUsd: number | null;
+      elapsedMs: number | null;
+    };
 
 export interface TranscriptState {
   blocks: TranscriptBlock[];
@@ -52,20 +68,38 @@ export interface TranscriptState {
   seen: Set<number>;
   /** Tokens and cost for the chat so far, as the provider reported them. */
   usage: { inputTokens: number; outputTokens: number; costUsd: number | null };
+  /** Turns that have started, so a footer knows when its turn began and what
+   *  it was asked. Dropped once the footer carries both. */
+  turns: Record<string, { startedMs: number; prompt: string }>;
 }
 
 export function emptyTranscript(): TranscriptState {
-  return { blocks: [], seen: new Set(), usage: { inputTokens: 0, outputTokens: 0, costUsd: null } };
+  return {
+    blocks: [],
+    seen: new Set(),
+    usage: { inputTokens: 0, outputTokens: 0, costUsd: null },
+    turns: {},
+  };
 }
 
 /** Folds one row in, returning a new state (or the same one if it changed nothing). */
 export function reduce(state: TranscriptState, row: ChatEventRow): TranscriptState {
   if (row.seq >= 0 && state.seen.has(row.seq)) return state;
-  const blocks = applyEvent(state.blocks, row);
+  const turns = trackTurn(state.turns, row);
+  const blocks = applyEvent(state.blocks, row, turns);
   const usage = row.kind === "usage.updated" ? addUsage(state.usage, row) : state.usage;
-  if (blocks === state.blocks && usage === state.usage) return state;
+  if (blocks === state.blocks && usage === state.usage && turns === state.turns) return state;
   const seen = row.seq >= 0 ? new Set(state.seen).add(row.seq) : state.seen;
-  return { blocks, seen, usage };
+  return { blocks, seen, usage, turns };
+}
+
+/** Remembers when a turn began and what it was asked, for its footer. */
+function trackTurn(
+  turns: TranscriptState["turns"],
+  row: ChatEventRow,
+): TranscriptState["turns"] {
+  if (row.kind !== "turn.started") return turns;
+  return { ...turns, [row.turnId]: { startedMs: row.createdMs, prompt: row.prompt } };
 }
 
 /** Folds a whole page in one pass — what opening a chat does. */
@@ -73,7 +107,11 @@ export function reduceAll(rows: readonly ChatEventRow[]): TranscriptState {
   return rows.reduce(reduce, emptyTranscript());
 }
 
-function applyEvent(blocks: TranscriptBlock[], row: ChatEventRow): TranscriptBlock[] {
+function applyEvent(
+  blocks: TranscriptBlock[],
+  row: ChatEventRow,
+  turns: TranscriptState["turns"],
+): TranscriptBlock[] {
   const event: AgentEvent = row;
   switch (event.kind) {
     case "turn.started":
@@ -103,6 +141,8 @@ function applyEvent(blocks: TranscriptBlock[], row: ChatEventRow): TranscriptBlo
           exitCode: null,
           failed: false,
           running: true,
+          startedMs: row.createdMs,
+          endedMs: null,
         },
       ];
 
@@ -118,11 +158,18 @@ function applyEvent(blocks: TranscriptBlock[], row: ChatEventRow): TranscriptBlo
         { id: `${row.seq}-fail`, type: "notice", seq: row.seq, tone: "error", text: event.message },
       ];
 
+    // The footer hangs off usage rather than off `turn.completed`, because
+    // only Claude emits one: Codex's `turn.completed` line carries the usage
+    // and nothing else, and a successful Codex turn records no closing event
+    // at all. Both engines report usage exactly once per turn, so this is the
+    // one row that marks a turn's end on either of them.
+    case "usage.updated":
+      return settleFooter(blocks, row, event, turns[row.turnId]);
+
     // Rendered as nothing: they move state the header shows, not the
     // transcript. Listed rather than defaulted so a new event type is a
     // compile error here instead of silently disappearing.
     case "turn.completed":
-    case "usage.updated":
     case "session.identified":
     case "approval.requested":
     case "approval.resolved":

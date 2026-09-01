@@ -1,6 +1,7 @@
 pub mod account;
 pub mod agent_approvals_cmd;
 pub mod agent_chat;
+pub mod agent_chat_files;
 pub mod agent_chat_prompt;
 pub mod agent_config;
 pub mod agent_conversations;

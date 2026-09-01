@@ -7,6 +7,7 @@ import { useSettingsStore } from "../state/settingsStore";
 import { useTerminalStore } from "../state/terminalStore";
 import { useVoiceStore } from "../state/voiceStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
+import { handleAgentShortcut } from "./agentShortcuts.ts";
 import { shortcutFromEvent, type HotkeyAction } from "./hotkeys";
 import type { DockSize, DockTool } from "./dockLayout";
 
@@ -87,6 +88,13 @@ export function useGlobalShortcuts(): void {
         event.preventDefault();
         event.stopPropagation();
         runAction("screenshot");
+        return;
+      }
+      // Agent and Chat Mode's own keyboard, refused while Code Mode has the
+      // window so a terminal keeps every key it is sent.
+      if (handleAgentShortcut(event)) {
+        event.preventDefault();
+        event.stopPropagation();
         return;
       }
       if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.code === "KeyK") {

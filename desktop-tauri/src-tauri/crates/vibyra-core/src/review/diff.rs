@@ -27,6 +27,33 @@ pub fn file_diff(worktree: &Path, base: &str, path: &str) -> CoreResult<String> 
     Ok(bounded(untracked_diff(&root, path)?))
 }
 
+/// One file's unified diff against `HEAD`, addressed by absolute path.
+///
+/// Agent Mode has neither a worktree nor a base commit: an agent edits inside
+/// a folder it was granted, which may or may not be a repository. What a
+/// person wants after a turn is what is different now and not yet committed,
+/// which is `git diff HEAD` scoped to the one file — with the same fall
+/// through to `--no-index` for a file the agent created and never added.
+///
+/// A path outside any repository answers with an empty string rather than an
+/// error. "There is no diff to show here" is a state the transcript renders,
+/// not a failure worth a red line in a conversation.
+pub fn uncommitted_file_diff(file: &Path) -> CoreResult<String> {
+    let Some(parent) = file.parent() else {
+        return Ok(String::new());
+    };
+    let Ok(root) = git_root(parent) else {
+        return Ok(String::new());
+    };
+    let name = file.to_string_lossy().into_owned();
+    // `--` keeps a path that happens to look like a revision a pathspec.
+    let tracked = git_bytes(&root, &["diff", "HEAD", "--", &name])?;
+    if !tracked.is_empty() {
+        return Ok(bounded(tracked));
+    }
+    Ok(bounded(untracked_diff(&root, &name)?))
+}
+
 /// `git diff --no-index` exits 1 when the files differ — that is the answer,
 /// not a failure, so this cannot go through `git_bytes`.
 fn untracked_diff(worktree: &Path, path: &str) -> CoreResult<Vec<u8>> {

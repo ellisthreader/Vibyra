@@ -9,11 +9,11 @@ use tauri::ipc::Invoke;
 use tauri::Wry;
 
 use super::{
-    account, agent_approvals_cmd, agent_chat, agent_chat_prompt, agent_config, agent_conversations,
-    agent_mail_cmd, agent_roster, agent_routines_cmd, agent_skills_cmd, agents, ai, ai_service,
-    boot, clipboard, conversation_carry, fs, github, memory, perf, preview, probe,
-    project_activity, provider_accounts, render, report, review, screenshot, screenshot_reveal,
-    session, settings, speech, terminal, voice, workspaces,
+    account, agent_approvals_cmd, agent_chat, agent_chat_files, agent_chat_prompt, agent_config,
+    agent_conversations, agent_mail_cmd, agent_roster, agent_routines_cmd, agent_skills_cmd,
+    agents, ai, ai_service, boot, clipboard, conversation_carry, fs, github, memory, perf, preview,
+    probe, project_activity, provider_accounts, render, report, review, screenshot,
+    screenshot_reveal, session, settings, speech, terminal, voice, workspaces,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
@@ -77,6 +77,9 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         agent_chat::agent_chat_delete,
         agent_chat::agent_chat_search,
         agent_chat::agent_chat_attach,
+        agent_chat_files::agent_chat_attachments,
+        agent_chat_files::agent_chat_attachment_remove,
+        agent_chat_files::agent_file_diff,
         agent_chat::agent_turn_send,
         agent_chat::agent_turn_cancel,
         agent_chat::agent_turn_running,

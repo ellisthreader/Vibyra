@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 
 import { relativeTime } from "../../lib/relativeTime";
-import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 import { ApprovalCard } from "./ApprovalCard";
 import { ChatSearch } from "./ChatSearch";
+import { WorkingNow } from "./WorkingNow";
 
 /**
  * The first screen, and an operational one.
@@ -25,11 +25,6 @@ export function AgentDashboard() {
   const agents = useAgentRosterStore((state) => state.agents);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const openPanel = useAgentModeStore((state) => state.openPanel);
-  // A count, not the list: a selector that builds a fresh array re-renders on
-  // every store change, because zustand compares results with Object.is.
-  const working = useAgentChatStore(
-    (state) => Object.values(state.running).filter(Boolean).length,
-  );
 
   useEffect(() => {
     void loadApprovals();
@@ -64,13 +59,7 @@ export function AgentDashboard() {
 
       <section className="dashboard__block">
         <h3 className="section-label">Working now</h3>
-        {working === 0 ? (
-          <p className="dashboard__quiet">Nothing is running.</p>
-        ) : (
-          <p className="dashboard__quiet">
-            {working} chat{working === 1 ? "" : "s"} in progress.
-          </p>
-        )}
+        <WorkingNow />
       </section>
 
       <section className="dashboard__block">

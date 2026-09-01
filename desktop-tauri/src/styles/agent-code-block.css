@@ -1,0 +1,77 @@
+/* Fenced code inside an answer: the language label, the copy control, and
+   the source itself. Split from the prose sheet the way the components
+   are split — a code block is the one part of an answer that is not
+   prose, and it is the part with an action on it. */
+
+.code-block {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  overflow: hidden;
+}
+
+.code-block__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.code-block__lang {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.code-block__copy {
+  flex: none;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--t-base) var(--e-standard),
+    border-color var(--t-base) var(--e-standard);
+}
+
+.code-block__copy:hover {
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.code-block__copy:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 9px 11px;
+  overflow-x: auto;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+/* Still arriving: the border warms rather than the block moving, because a
+   code block that resizes as it streams drags the whole transcript with it. */
+.code-block.is-open {
+  border-color: var(--accent-border);
+}

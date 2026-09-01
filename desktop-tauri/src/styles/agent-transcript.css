@@ -54,33 +54,6 @@
   white-space: pre-wrap;
 }
 
-.transcript__say {
-  margin: 0;
-  color: var(--text);
-  font-size: var(--fs-ui);
-  line-height: 1.68;
-  white-space: pre-wrap;
-}
-
-/* A caret while text is arriving, so a pause reads as thinking rather than as
-   the app having stopped. */
-.transcript__say.is-streaming::after {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 1em;
-  margin-left: 2px;
-  background: var(--accent-2);
-  vertical-align: text-bottom;
-  animation: transcript-caret 1s steps(2, start) infinite;
-}
-
-@keyframes transcript-caret {
-  50% {
-    opacity: 0;
-  }
-}
-
 .transcript__thinking summary {
   color: var(--dim);
   font-size: var(--fs-hint);

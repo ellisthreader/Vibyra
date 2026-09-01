@@ -1,0 +1,88 @@
+/* The end of a turn — what it cost, and what to do about it — and the files
+   it changed.
+
+   Both are quiet by construction. They sit between answers in a column that
+   is read top to bottom, so anything with weight here would compete with the
+   prose that is the point of the page. */
+
+/* --------------------------------------------------------- the turn footer */
+
+.turn-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 13px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.turn-foot__engine {
+  color: var(--muted);
+}
+
+/* The actions sit at the far end and stay invisible until the turn is under
+   the pointer or the keyboard. A row of three buttons after every answer
+   would turn a transcript into a control panel. */
+.turn-foot__acts {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity var(--t-base) var(--e-standard);
+}
+
+.transcript__item:hover .turn-foot__acts,
+.turn-foot:focus-within .turn-foot__acts {
+  opacity: 1;
+}
+
+.turn-foot__acts button {
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--t-base) var(--e-standard),
+    border-color var(--t-base) var(--e-standard);
+}
+
+.turn-foot__acts button:hover:not(:disabled) {
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.turn-foot__acts button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.turn-foot__acts button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
+.turn-foot__edit {
+  color: var(--accent-2) !important;
+}
+
+/* Always legible for anyone who cannot hover, and for a reader who has asked
+   the system to stop things appearing and disappearing. */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .turn-foot__acts {
+    opacity: 1;
+    transition: none;
+  }
+}

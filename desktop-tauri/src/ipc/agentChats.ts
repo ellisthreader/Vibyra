@@ -72,6 +72,27 @@ export function attachToChat(chatId: string, path: string): Promise<ChatAttachme
   return invoke("agent_chat_attach", { chatId, path });
 }
 
+/** What a chat already holds. Read on open, so the list is the chat's, not
+ *  the view's — the files outlive whichever composer added them. */
+export function chatAttachments(chatId: string): Promise<ChatAttachment[]> {
+  return invoke("agent_chat_attachments", { chatId });
+}
+
+export function removeAttachment(chatId: string, attachmentId: string): Promise<void> {
+  return invoke("agent_chat_attachment_remove", { chatId, attachmentId });
+}
+
+/**
+ * One changed file's uncommitted diff.
+ *
+ * `agentId` is what authorises it: the native side resolves that agent's
+ * grants and refuses a path outside them, so this cannot be used to read a
+ * file the agent was never given.
+ */
+export function agentFileDiff(agentId: string | null, path: string): Promise<string> {
+  return invoke<string>("agent_file_diff", { agentId, path });
+}
+
 /** Runs a turn, calling `onEvent` for each normalized event as it arrives. */
 export function sendTurn(
   options: {

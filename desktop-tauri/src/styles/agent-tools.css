@@ -22,8 +22,12 @@
   min-width: 0;
 }
 
-.tool-block__name {
+/* Three fields in fixed positions, so a column of these is scanned rather
+   than read: what it did, what it did it to, how that went. The verb column
+   is given a floor so the targets line up down the block. */
+.tool-block__verb {
   flex: none;
+  min-width: 52px;
   color: var(--accent-2);
   font-size: var(--fs-tiny);
   font-weight: var(--fw-heavy);
@@ -31,7 +35,7 @@
   letter-spacing: 0.05em;
 }
 
-.tool-block__summary {
+.tool-block__target {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -42,11 +46,26 @@
   white-space: nowrap;
 }
 
-.tool-block__exit {
+.tool-block__outcome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-block__exit {
   color: var(--danger);
   font-size: var(--fs-tiny);
   font-weight: var(--fw-bold);
+}
+
+/* Duration is the quietest thing on the row. It matters when it is large and
+   should not compete with the outcome when it is not. */
+.tool-block__time {
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
 }
 
 .tool-block__output summary {
@@ -67,50 +86,6 @@
   font-family: var(--font-mono);
   font-size: var(--fs-hint);
   line-height: 1.5;
-}
-
-/* ---------------------------------------------------------- file changes */
-
-.transcript__files ul {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin: 5px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.transcript__files li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.transcript__files code {
-  overflow: hidden;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: var(--fs-hint);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.transcript__change {
-  flex: none;
-  min-width: 46px;
-  color: var(--dim);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-heavy);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.transcript__change--add {
-  color: var(--success);
-}
-
-.transcript__change--delete {
-  color: var(--danger);
 }
 
 .transcript__notice {

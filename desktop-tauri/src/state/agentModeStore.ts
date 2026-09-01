@@ -26,12 +26,18 @@ interface AgentModeStore {
   chatId: string | null;
   /** Which tab of the agent surface: its chats, its skills, its settings. */
   tab: "chats" | "skills" | "settings";
+  /** Text to place in the composer. Edit & resend puts a past prompt back
+   *  rather than making someone retype a turn that was nearly right. Carries
+   *  its chat so a late arrival cannot land in a conversation someone has
+   *  since moved away from. */
+  draft: { chatId: string; text: string } | null;
   /** The non-agent panels reachable from the primary rail. */
   panel: "dashboard" | "routines" | "skills" | "decisions" | null;
   setMode: (mode: AppMode) => void;
   selectAgent: (agentId: string | null) => void;
   selectChat: (chatId: string | null) => void;
   setTab: (tab: AgentModeStore["tab"]) => void;
+  setDraft: (draft: AgentModeStore["draft"]) => void;
   openPanel: (panel: AgentModeStore["panel"]) => void;
 }
 
@@ -41,6 +47,7 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
   chatId: null,
   tab: "chats",
   panel: "dashboard",
+  draft: null,
 
   setMode: (mode) => {
     if (get().mode === mode) return;
@@ -60,6 +67,7 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
 
   selectChat: (chatId) => set({ chatId }),
   setTab: (tab) => set({ tab }),
+  setDraft: (draft) => set({ draft }),
   openPanel: (panel) => set({ panel, agentId: panel ? null : get().agentId }),
 }));
 

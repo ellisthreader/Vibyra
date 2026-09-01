@@ -16,7 +16,7 @@ mod status;
 #[cfg(test)]
 mod tests;
 
-pub use diff::file_diff;
+pub use diff::{file_diff, uncommitted_file_diff};
 pub use merge::{discard_worktree, merge_back};
 pub use registry::{list_worktrees, prune_worktrees, PruneOutcome, WorktreeEntry};
 pub use status::worktree_status;

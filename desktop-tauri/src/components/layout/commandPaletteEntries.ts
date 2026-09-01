@@ -1,6 +1,7 @@
 import { rankPaletteEntries } from "../../lib/paletteRanking";
 import type { CommandPaletteEntry, PaletteResult } from "../../lib/paletteTypes";
 import { useProjectStore } from "../../state/projectStore";
+import { agentEntries } from "./paletteAgentEntries";
 import { askEntries } from "./paletteAskEntries";
 import { attentionEntries } from "./paletteAttentionEntries";
 import { launchEntries } from "./paletteLaunchEntries";
@@ -20,6 +21,7 @@ export function commandPaletteEntries(): CommandPaletteEntry[] {
   return [
     ...attentionEntries(activeProjectId),
     ...sessionEntries(activeProjectId),
+    ...agentEntries(),
     ...launchEntries(activeProjectId),
     ...viewEntries(),
     ...toolEntries(),

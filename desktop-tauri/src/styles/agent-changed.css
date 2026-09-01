@@ -1,0 +1,130 @@
+/* The files a turn changed, and the diff each row opens into.
+
+   The rows are the summary and the diff is the detail, so the row styling
+   lives here and the diff itself is `ReviewDiffView`'s own — Code Mode's
+   review dock and this render the same patch through the same rules. */
+
+.changed {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+.changed__head {
+  margin: 0;
+  padding: 7px 11px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+}
+
+/* The qualification is load-bearing: this is the file's uncommitted state,
+   not a replay of the edit, and the reader has to know which they are seeing
+   before they decide to keep it. */
+.changed__head span {
+  color: var(--dim);
+  font-weight: var(--fw-regular);
+}
+
+.changed__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.changed__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 11px;
+  border: none;
+  border-top: 1px solid var(--line-soft);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.changed__list li:first-child .changed__row {
+  border-top: none;
+}
+
+.changed__row:hover {
+  background: var(--hover);
+}
+
+.changed__row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.changed__kind {
+  flex: none;
+  min-width: 46px;
+  color: var(--dim);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.changed__kind--add,
+.changed__kind--added,
+.changed__kind--create {
+  color: var(--success);
+}
+
+.changed__kind--delete,
+.changed__kind--deleted,
+.changed__kind--remove {
+  color: var(--danger);
+}
+
+.changed__path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  direction: rtl;
+  font-family: var(--font-mono);
+  font-size: var(--fs-hint);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A long path is cut at its front, where the uninformative half is. `rtl`
+   moves the ellipsis; the override keeps the characters in their own order. */
+.changed__path {
+  unicode-bidi: plaintext;
+}
+
+.changed__chevron {
+  flex: none;
+  width: 12px;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+/* No height and no overflow of its own: `.review-diff` inside is already a
+   bounded scroller, and its row window measures itself against that box. A
+   second clip here would cut the list the window thinks it is filling. */
+.changed__diff {
+  border-top: 1px solid var(--line-soft);
+}
+
+.changed__quiet {
+  margin: 0;
+  padding: 12px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}
+
+.changed__quiet--bad {
+  color: var(--danger);
+}

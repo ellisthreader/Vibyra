@@ -1,0 +1,127 @@
+/* A rendered answer: prose, lists, quotes and fenced code.
+
+   The measure is set by `.transcript` above it, so nothing here sets a width.
+   Every rule is either vertical rhythm or the one distinction that matters in
+   a transcript — which of these characters came from the model's prose and
+   which came from a file. */
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  color: var(--text);
+  font-size: var(--fs-ui);
+  line-height: 1.68;
+}
+
+.answer__p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Answers are read at one size. A heading is heavier and tighter than the
+   prose under it, never larger — six sizes inside a chat bubble reads as a
+   document that wandered in. */
+.answer__heading {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-size: var(--fs-strong);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+
+.answer > .answer__heading:first-child {
+  margin-top: 0;
+}
+
+h4.answer__heading {
+  font-size: var(--fs-ui);
+  color: var(--muted);
+}
+
+.answer__list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.answer__list li {
+  padding-left: 2px;
+}
+
+.answer__list li::marker {
+  color: var(--dim);
+}
+
+.answer__quote {
+  margin: 0;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.answer__rule {
+  width: 100%;
+  height: 1px;
+  margin: 3px 0;
+  border: none;
+  background: var(--line);
+}
+
+.answer code {
+  padding: 1px 4px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--accent-2);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  word-break: break-word;
+}
+
+.answer strong {
+  font-weight: var(--fw-bold);
+}
+
+.answer em {
+  font-style: italic;
+}
+
+/* Shown, not clickable: there is no opener in this build, and an anchor here
+   would navigate the webview the app is running in. */
+.answer__link {
+  color: var(--accent-2);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+/* The caret rides the last paragraph, so a pause reads as thinking rather
+   than as the app having stopped. Suppressed while the tail of the answer is
+   a code block, where it would sit inside the source. */
+.answer.is-streaming > :last-child::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  background: var(--accent-2);
+  vertical-align: text-bottom;
+  animation: answer-caret 1s steps(2, start) infinite;
+}
+
+@keyframes answer-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer.is-streaming > :last-child::after {
+    animation: none;
+  }
+}

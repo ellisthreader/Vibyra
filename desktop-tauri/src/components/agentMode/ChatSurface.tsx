@@ -18,6 +18,11 @@ import { mailAllowlist } from "../../ipc/agentMail";
  * mid-answer to re-read something and being yanked back down by the next chunk
  * is the single most irritating thing a streaming UI can do, and the terminal
  * pane solves it the same way.
+ *
+ * The anchor check runs before anything is read from the element, so a reader
+ * who has scrolled up costs no layout at all while text streams past. When it
+ * does run it is batched into a frame, so two commits in one frame measure
+ * once.
  */
 export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const chatId = useAgentModeStore((state) => state.chatId);
@@ -27,11 +32,20 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const [allowed, setAllowed] = useState<string[]>([]);
   const scroller = useRef<HTMLDivElement>(null);
   const anchored = useRef(true);
+  const frame = useRef(0);
 
   useEffect(() => {
-    const node = scroller.current;
-    if (!node || !anchored.current) return;
-    node.scrollTop = node.scrollHeight;
+    if (!anchored.current || frame.current) return;
+    frame.current = window.requestAnimationFrame(() => {
+      frame.current = 0;
+      const node = scroller.current;
+      if (node && anchored.current) node.scrollTop = node.scrollHeight;
+    });
+    return () => {
+      if (!frame.current) return;
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+    };
   }, [blocks]);
 
   // A fresh chat starts anchored; otherwise opening an old one would land
@@ -62,7 +76,7 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
           anchored.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48;
         }}
       >
-        <AgentTranscript chatId={chatId} blocks={blocks} />
+        <AgentTranscript chatId={chatId} blocks={blocks} agent={agent} />
       </div>
       {agent && allowed.length > 0 && <HandoffBar agent={agent} allowed={allowed} />}
       <AgentComposer agent={agent} chatId={chatId} />
