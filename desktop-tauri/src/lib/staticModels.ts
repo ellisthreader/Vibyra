@@ -33,6 +33,7 @@ const WALLS: Array<[string, Array<[string, string]>]> = [
     ["openai/gpt-5-codex", "GPT-5 Codex"],
   ]],
   ["Anthropic", [
+    ["anthropic/claude-fable-5.1", "Claude Fable 5.1"],
     ["anthropic/claude-opus-5", "Claude Opus 5"],
     ["anthropic/claude-fable-5", "Claude Fable 5"],
     ["anthropic/claude-sonnet-5", "Claude Sonnet 5"],

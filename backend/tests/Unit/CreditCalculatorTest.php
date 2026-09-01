@@ -31,6 +31,22 @@ class CreditCalculatorTest extends TestCase
         );
     }
 
+    public function test_claude_fable_5_1_bills_at_the_fable_tier(): void
+    {
+        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog->method('freshPricingFor')->willReturn(null);
+        $calc = new CreditCalculator($catalog);
+
+        $this->assertSame('anthropic/claude-fable-5.1', $calc->resolveSlug('claude-fable-5.1'));
+        $this->assertSame('anthropic/claude-fable-5.1', $calc->resolveSlug('claude-fable-5-1'));
+        $this->assertSame('premium', $calc->tier('claude-fable-5.1'));
+        $this->assertEqualsWithDelta(
+            60.0,
+            $calc->estimateUsd('anthropic/claude-fable-5.1', 1_000_000, 1_000_000),
+            0.000001
+        );
+    }
+
     public function test_dynamic_openrouter_slugs_resolve_as_billable_models(): void
     {
         $catalog = $this->createMock(OpenRouterPricingCatalog::class);

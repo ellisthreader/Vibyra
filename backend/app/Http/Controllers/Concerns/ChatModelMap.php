@@ -18,6 +18,8 @@ trait ChatModelMap
         'claude-opus-5' => 'anthropic/claude-opus-5',
         'claude-opus-5-fast' => 'anthropic/claude-opus-5-fast',
         'claude-sonnet-5' => 'anthropic/claude-sonnet-5',
+        'claude-fable-5.1' => 'anthropic/claude-fable-5.1',
+        'claude-fable-5-1' => 'anthropic/claude-fable-5.1',
         'claude-fable-5' => 'anthropic/claude-fable-5',
         'claude-opus-4' => 'anthropic/claude-opus-4.8',
         'claude-sonnet-4' => 'anthropic/claude-sonnet-4.6',

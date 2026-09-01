@@ -25,6 +25,21 @@ export interface DesktopChangelog {
 }
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.4.1": {
+    version: "0.4.1",
+    releasedAt: "2026-09-01",
+    releasedLabel: "1 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    allowUnmarkedLaunch: false,
+    features: [
+      {
+        id: "01",
+        title: "Claude Fable 5.1 is here.",
+        body: "Anthropic’s most capable widely released model sits at the top of the Anthropic wall. With a connected Claude account it runs natively, with the full effort ladder from Low to Max — and Ultracode.",
+      },
+    ],
+  },
   "0.4.0": {
     version: "0.4.0",
     releasedAt: "2026-09-01",

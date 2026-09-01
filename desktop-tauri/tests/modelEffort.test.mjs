@@ -50,6 +50,7 @@ test("does not add xhigh to a model when OpenRouter omits it", () => {
 
 test("offers Ultracode on every supported offline Claude family", () => {
   const supported = [
+    "claude-fable-5.1",
     "claude-fable-5",
     "claude-opus-5",
     "claude-sonnet-5",

@@ -17,6 +17,8 @@ const CLAUDE_ICONS: Array<[string, string]> = [
   ["claude-sonnet-5", "claude-sonnet-5.png"],
   ["claude-sonnet-4-6", "claude-sonnet-4.6.png"],
   ["claude-sonnet-4-5", "claude-sonnet-4.5.png"],
+  // Shares the Fable plate until 5.1 gets its own; the art carries no minor.
+  ["claude-fable-5-1", "claude-fable-5.png"],
   ["claude-fable-5", "claude-fable-5.png"],
   ["claude-haiku-4-5", "claude-haiku-4.5.png"],
   ["claude-opus-4", "claude-opus-4.png"],

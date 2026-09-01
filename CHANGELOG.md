@@ -3,6 +3,18 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.4.1 — 1 September 2026
+
+**Claude Fable 5.1 is selectable.** Anthropic's most capable widely released
+model joins the Anthropic wall, above Opus 5. On a connected Claude account it
+launches natively as `claude-fable-5-1` with the full effort ladder —
+low through max, plus Ultracode — the same range Fable 5 offers.
+
+Billing knows it: premium tier, and the conservative $10/$50 per million
+tokens it shares with Fable 5, so an estimate over-charges rather than under.
+Until it has its own plate it borrows Fable 5's artwork, which carries no minor
+version.
+
 ## 0.4.0 — 31 August 2026
 
 A reconciliation and a new way to use Vibyra.

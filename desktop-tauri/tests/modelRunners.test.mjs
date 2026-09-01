@@ -61,3 +61,11 @@ test("unverified provider-catalog variants do not route through account CLIs", (
   assert.equal(plan.runner?.id, "aider");
   assert.equal(plan.launchModel, "openrouter/anthropic/claude-opus-5:extended");
 });
+
+test("launches Claude Fable 5.1 on the account CLI under its dashed model id", () => {
+  const fable = model("anthropic/claude-fable-5.1", "Anthropic", "Claude Fable 5.1");
+  const plan = planRunner(fable, [agent("claude")], ["claude"]);
+  assert.equal(plan.runner?.id, "claude");
+  assert.equal(plan.launchModel, "claude-fable-5-1");
+  assert.equal(plan.blocked, "");
+});
