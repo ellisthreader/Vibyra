@@ -25,6 +25,33 @@ export interface DesktopChangelog {
 }
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.4.2": {
+    version: "0.4.2",
+    releasedAt: "2026-09-02",
+    releasedLabel: "2 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    allowUnmarkedLaunch: false,
+    features: [
+      {
+        id: "01",
+        title: "Start a real project from Vibyra.",
+        body: "New Project now guides you through the kind, stack, options and destination, shows the exact scaffold command, and opens the completed project in your workspace." },
+      {
+        id: "02",
+        title: "Busy terminals no longer freeze the workspace.",
+        body: "Terminal output now follows what the renderer actually paints, background panes are paced on compatibility graphics, and generated folders no longer flood the file watcher." },
+      {
+        id: "03",
+        title: "Agent and Chat are clearly work in progress.",
+        body: "Both modes stay visible with a WIP label but cannot be opened yet. Shortcuts, notifications and remembered state all return safely to Code." },
+      {
+        id: "04",
+        title: "Fable 5.1 has its own face.",
+        body: "Claude Fable 5.1 now has distinct artwork that matches the rest of the model wall instead of borrowing Fable 5’s icon.",
+      },
+    ],
+  },
   "0.4.1": {
     version: "0.4.1",
     releasedAt: "2026-09-01",

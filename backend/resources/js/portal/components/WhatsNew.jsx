@@ -2,24 +2,44 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "Start a real project from Vibyra",
+    body: "Choose a project type and stack, review the exact scaffold command, then let Vibyra build it and open the finished workspace.",
+    fresh: true,
+  },
+  {
+    title: "Busy terminals stay responsive",
+    body: "Output now follows what the renderer can paint, while generated folders are skipped by the file watcher instead of flooding the app with work.",
+    fresh: true,
+  },
+  {
+    title: "Agent and Chat are clearly marked WIP",
+    body: "Both modes remain visible so you know what is coming, but every route into the unfinished surfaces is disabled until they are ready.",
+    fresh: true,
+  },
+  {
+    title: "Fable 5.1 has its own artwork",
+    body: "Claude Fable 5.1 now has a distinct model-wall plate that matches the current icon family instead of borrowing Fable 5's image.",
+    fresh: true,
+  },
+  {
     title: "Ask Vibyra, and it can see your workspace",
     body: "The dock's chat is now an assistant briefed on live state \u2014 what every pane is doing, what just failed, what you have spent \u2014 with credentials stripped before anything is sent.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Speak to it, and it answers out loud",
     body: "Press the microphone and talk. One ring shows who is speaking: cobalt for you, violet for Vibyra, both driven by real audio rather than decoration.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "The startup splash and project activity are back",
     body: "Three features that went missing when 0.3.5 was branched return here: the splash at launch, seven days of Git activity per project, and the lighter auth backdrop.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Switching projects is immediate again",
     body: "A suspended pane was redrawing its entire scrollback on every switch. It now draws a bounded tail, and restoring a terminal is unchanged.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Teammates that remember",
@@ -47,8 +67,6 @@ const FEATURES = [
     fresh: false,
   },
   {
-    title: "A chat with nothing attached",
-    body: "Chat Mode has no project, no folder and no memory until you give it one. Attach a screenshot and it is copied in, so the folder it came from stays yours.",
     title: "Updates finish before your workspace opens",
     body: "Launch checks, downloads and installs trusted releases before terminals and projects start, with clear progress and safe recovery controls.",
     fresh: false,

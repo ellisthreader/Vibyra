@@ -1,6 +1,7 @@
 import type { AppMode } from "../agentTypes";
 import { useAgentChatStore } from "../state/agentChatStore";
 import { useAgentModeStore } from "../state/agentModeStore";
+import { availableAppModes } from "./workspaceModePolicy";
 
 // Agent and Chat Mode's keyboard.
 //
@@ -13,6 +14,7 @@ import { useAgentModeStore } from "../state/agentModeStore";
 // because these are the only bindings in the app that are scoped to a mode.
 
 const MODES: AppMode[] = ["agent", "code", "chat"];
+const AVAILABLE_MODES = availableAppModes(MODES);
 
 /** The chats of whichever surface is showing, in the order the rail lists them. */
 function visibleChats(): { id: string }[] {
@@ -71,7 +73,9 @@ export function handleAgentShortcut(event: KeyboardEvent): boolean {
   const store = useAgentModeStore.getState();
 
   if (event.shiftKey && event.code === "KeyM") {
-    store.setMode(MODES[(MODES.indexOf(store.mode) + 1) % MODES.length]);
+    if (AVAILABLE_MODES.length < 2) return false;
+    const current = AVAILABLE_MODES.indexOf(store.mode);
+    store.setMode(AVAILABLE_MODES[(current + 1) % AVAILABLE_MODES.length]);
     return true;
   }
 

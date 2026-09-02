@@ -3,6 +3,31 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.4.2 — 2 September 2026
+
+**New Project is now a complete guided builder.** Choose what you are making,
+browse and search supported stacks, set the destination and options, review the
+exact command, and watch the real scaffold run before Vibyra opens the finished
+project. Missing toolchains are explained before a build can start.
+
+**Terminal load follows the renderer instead of overwhelming it.** A pane now
+accepts one unpainted output chunk at a time, background panes are paced on the
+shared-memory compatibility path, and painted panes are acknowledged together
+once per frame. The focused terminal keeps its immediate input path. Project
+watching also skips generated and ignored directory trees instead of registering
+thousands of needless file watches.
+
+**Agent and Chat remain visible but are explicitly WIP.** Their title-bar modes
+are disabled and labelled, while remembered modes, keyboard shortcuts, command
+palette entries and notification deep links all fall back to Code. Their
+unfinished surfaces cannot mount accidentally.
+
+**Claude Fable 5.1 has distinct artwork.** Its model-wall plate now matches the
+current icon system without reusing Fable 5's image.
+
+The Ask, Review and workspace surfaces also receive the integrated layout and
+voice polish completed across the reconciled worktrees.
+
 ## 0.4.1 — 1 September 2026
 
 **Claude Fable 5.1 is selectable.** Anthropic's most capable widely released

@@ -7,6 +7,7 @@ import { useAgentChatStore } from "../state/agentChatStore";
 import { useAgentModeStore } from "../state/agentModeStore";
 import { useWorkspaceStore } from "../state/workspaceStore";
 import { hibernateIdleTerminals } from "./terminalHibernate";
+import { isWipAppMode } from "./workspaceModePolicy";
 import type { NotificationAction } from "../notificationTypes";
 import type { RendererMode } from "../types";
 
@@ -16,6 +17,7 @@ import type { RendererMode } from "../types";
 
 /** Takes you to the queue from wherever you were — usually Code Mode. */
 function openDecisions(): void {
+  if (isWipAppMode("agent")) return;
   const mode = useAgentModeStore.getState();
   mode.setMode("agent");
   mode.openPanel("decisions");
@@ -23,6 +25,7 @@ function openDecisions(): void {
 
 /** Opens the chat a failed run created, in the mode that owns it. */
 function openAgentChat(chatId: string): void {
+  if (isWipAppMode("agent")) return;
   const mode = useAgentModeStore.getState();
   mode.setMode("agent");
   mode.selectChat(chatId);

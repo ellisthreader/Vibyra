@@ -25,6 +25,26 @@
   padding: 0 10px;
 }
 
+.mode-switch .mode-switch__wip {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.mode-switch .mode-switch__wip:hover {
+  color: var(--dim);
+  background: transparent;
+}
+
+.mode-switch__wip-label {
+  padding: 1px 4px;
+  border-radius: 999px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
+}
+
 .agent-main {
   display: flex;
   flex-direction: column;

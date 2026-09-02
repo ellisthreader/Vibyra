@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { AppMode } from "../agentTypes";
+import { isWipAppMode } from "../lib/workspaceModePolicy";
 import { useSettingsStore } from "./settingsStore";
 
 // Which of the three places the window is in, and what is selected inside
@@ -55,6 +56,7 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
   skillId: null,
 
   setMode: (mode) => {
+    if (isWipAppMode(mode)) return;
     if (get().mode === mode) return;
     set({ mode });
     // Remembered so the next launch opens where the user left off. Failing to
@@ -80,7 +82,9 @@ export const useAgentModeStore = create<AgentModeStore>((set, get) => ({
 /** Restores the remembered mode once settings have loaded. */
 export function adoptRememberedMode(): void {
   const last = useSettingsStore.getState().settings?.lastMode;
-  if (last === "agent" || last === "chat" || last === "code") {
+  if ((last === "agent" || last === "chat" || last === "code") && !isWipAppMode(last)) {
     useAgentModeStore.setState({ mode: last });
+  } else {
+    useAgentModeStore.setState({ mode: "code" });
   }
 }
