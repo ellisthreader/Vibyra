@@ -111,13 +111,27 @@ impl PtyManager {
         Ok(())
     }
 
-    /// The renderer has painted the last chunk delivered to `id`. Releases
-    /// that session's hold and wakes the flusher, so whatever buffered in the
-    /// meantime goes out now rather than at `paint_timeout`.
+    /// `painted_all` for one session, failing when there is no such session.
     pub fn painted(&self, id: SessionId) -> CoreResult<()> {
-        self.session(id)?.output.lock().painted();
-        let _ = self.flush_tx.try_send(());
+        self.session(id)?;
+        self.painted_all(&[id]);
         Ok(())
+    }
+
+    /// One frame drew every session in `ids`: the webview reports a frame, not
+    /// a pane, so several streaming panes cost one call and one flusher wake.
+    /// A pane closed between its write and the frame is simply skipped.
+    pub fn painted_all(&self, ids: &[SessionId]) {
+        let painted: Vec<Arc<Session>> = {
+            let sessions = self.sessions.read();
+            ids.iter()
+                .filter_map(|id| sessions.get(id).cloned())
+                .collect()
+        };
+        for session in painted {
+            session.output.lock().painted();
+        }
+        let _ = self.flush_tx.try_send(());
     }
 
     pub fn snapshot(&self, id: SessionId) -> CoreResult<String> {

@@ -154,12 +154,13 @@ export function writeTerminal(id: number, data: string): Promise<void> {
 }
 
 /**
- * The last chunk Rust delivered for `id` has been drawn, which releases the
- * next one. Sent once per painted frame by `terminalDeliveryAck`; Rust's
- * `paint_timeout` covers a report that never comes.
+ * One frame has drawn the last chunk Rust delivered to each of `ids`, which
+ * releases their next ones. Sent once per painted frame by
+ * `terminalDeliveryAck`; Rust's `paint_timeout` covers a report that never
+ * comes, and a pane closed since its write is skipped there.
  */
-export function terminalPainted(id: number): Promise<void> {
-  return invoke("terminal_painted", { id });
+export function terminalsPainted(ids: number[]): Promise<void> {
+  return invoke("terminals_painted", { ids });
 }
 
 export function resizeTerminal(id: number, rows: number, cols: number): Promise<void> {

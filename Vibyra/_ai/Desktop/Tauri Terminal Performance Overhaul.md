@@ -1,7 +1,7 @@
 ---
 title: Tauri Terminal Performance Overhaul
 date: 2026-08-20
-updated: 2026-09-01
+updated: 2026-09-02
 status: released
 tags:
   - vibyra/desktop
@@ -866,3 +866,43 @@ Probe trap: since the 0.4.x boot splash, the main window stays hidden until
 `boot_main_ready`, and a hidden window's frames stop. `ProbeScreen` now calls
 `signalAppReady()`; without it the first phase measured the 20 s watchdog
 (paint p50 3 s) and looked like a catastrophic regression.
+
+## 2026-09-02 — one report per frame, and GPU compositing measured on the real display
+
+Follow-up on the same branch. Two code changes, both timing-only:
+
+1. **One paint report per frame, not per pane.** `terminals_painted(ids)`
+   replaces `terminal_painted(id)`; `terminalDeliveryAck.ts` sends the panes
+   that drew in a frame as one IPC call, and `PtyManager::painted_all` clears
+   them under one sessions read and wakes the flusher once. A pane closed
+   between its write and the frame is skipped, not an error. With N streaming
+   panes this is N-1 fewer invokes and promise callbacks per frame on the
+   thread that paints.
+2. **The tier is resolved before the paint gate** in `flusher::flush_due`, so
+   a hibernated session with pending bytes no longer schedules a wake at
+   `paint_timeout` for a scan that delivers nothing.
+
+**GPU compositing + DOM renderer on NVIDIA, finally measured** — the "untested
+combination" from 2026-08-31. Probe binary from this branch on the real X11
+display (`:1`, GTX 1080, driver 580, webkit 2.52.3), scratch config, private
+bus, the user's own app running alongside; 6 streaming + 1 typed pane, 40 keys
+per phase, two pairs in opposite order:
+
+| | all-visible main-thread CPU | focus-paced CPU | focus-paced paint p50/p95 | echo p50 |
+|---|---|---|---|---|
+| CPU compositing (Auto's choice) | 88%, 87% | 24%, 16% | 11/35, 9/17 ms | 2, 1 ms |
+| GPU compositing (`VIBYRA_WEBKIT_DMABUF=1`) | 91%, 91% | 48%, 42% | 10/43, 9/18 ms | 1, 1 ms |
+
+DMA-BUF compositing costs the same at saturation and about **twice** the main
+thread in the shipped configuration, for no paint-latency gain. So Auto's
+shared-memory choice on NVIDIA is right for the DOM renderer too, and the
+Settings/guard copy ("measured slower on this NVIDIA system") stands. Do not
+re-chase this; the remaining lever on NVIDIA is a GPU *terminal* renderer,
+which is blocked by xterm-webgl presenting one draw late under DMA-BUF.
+
+Probe-on-real-display traps (`probe-ab.sh` pattern): the app reparents to
+systemd once up, so find it by binary path, not by launcher child; the boot
+splash owns an earlier `WebKitWebProcess` that exits when main is ready, so
+resolve the *newest* web process at the first PHASE line; `org.freedesktop.
+secrets` activation on a private bus times out after ~25 s before the webview
+exists, so wait 60 s; the stderr log has control bytes, so `grep -a`.

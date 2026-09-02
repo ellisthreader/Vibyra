@@ -11,7 +11,7 @@ import type { Terminal } from "@xterm/xterm";
 import {
   createTerminal,
   setTerminalVisibility,
-  terminalPainted,
+  terminalsPainted,
   writeTerminal,
 } from "../ipc/terminal";
 import { attach } from "../lib/terminalBus";
@@ -97,7 +97,7 @@ async function runPhase(phase: string, panes: ProbePanes, keys: number): Promise
         for (const sample of resolved) sample.paint = painted;
         // The shipped path reports each painted frame; without this the probe
         // would measure a pane Rust is holding back to `paint_timeout`.
-        void terminalPainted(panes.focusedId).then(
+        void terminalsPainted([panes.focusedId]).then(
           () => {
             paintReports += 1;
           },

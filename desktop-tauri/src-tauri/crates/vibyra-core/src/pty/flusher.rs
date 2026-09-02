@@ -111,27 +111,30 @@ fn flush_due(
             if !output.has_pending() {
                 continue;
             }
+            // The tier decides before the paint gate does: a hibernated session
+            // is never delivered to, so waking for its paint timeout would scan
+            // for nothing.
+            let paced_interval = match output.visibility {
+                Visibility::Hibernated => continue,
+                Visibility::Visible => None,
+                Visibility::Background => Some(config.background_interval),
+                Visibility::Hidden => Some(config.hidden_interval),
+            };
             // One unpainted chunk per session: a renderer still drawing the
             // last delivery is not handed another. See `FlushConfig::paint_timeout`.
             if let Some(remaining) = output.renderer_busy_for(config.paint_timeout) {
                 nearer(remaining);
                 continue;
             }
-            match output.visibility {
-                Visibility::Hibernated => continue,
-                Visibility::Visible => match config.tick.checked_sub(output.last_flush.elapsed()) {
+            match paced_interval {
+                None => match config.tick.checked_sub(output.last_flush.elapsed()) {
                     Some(remaining) if !remaining.is_zero() => {
                         nearer(remaining);
                         None
                     }
                     _ => Some(output.drain()),
                 },
-                paced => {
-                    let interval = if paced == Visibility::Background {
-                        config.background_interval
-                    } else {
-                        config.hidden_interval
-                    };
+                Some(interval) => {
                     if epoch(origin, now, interval) > epoch(origin, output.last_flush, interval) {
                         Some(output.drain())
                     } else {

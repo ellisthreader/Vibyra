@@ -1,6 +1,6 @@
 import type { Terminal } from "@xterm/xterm";
 
-import { terminalPainted } from "../ipc/terminal";
+import { terminalsPainted } from "../ipc/terminal";
 import type { TermEvent } from "../types";
 import { stampOutput } from "./activity";
 import { terminalViewportIsNearBottom } from "./terminalBottomAnchor";
@@ -14,7 +14,7 @@ import { createPaintReporter } from "./terminalDeliveryAck";
 
 /** Called from each write callback: the data is parsed, the next frame draws
  * it, and Rust may then hand the pane its next chunk. */
-const reportPainted = createPaintReporter(terminalPainted);
+const reportPainted = createPaintReporter(terminalsPainted);
 
 let onSessionExit: (id: number, code: number | null) => void = () => {};
 let onSessionTitle: (id: number, title: string) => void = () => {};

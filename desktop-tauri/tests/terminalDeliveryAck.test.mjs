@@ -7,8 +7,8 @@ function harness() {
   const reported = [];
   const frames = [];
   const reporter = createPaintReporter(
-    async (id) => {
-      reported.push(id);
+    async (ids) => {
+      reported.push(ids);
     },
     (callback) => frames.push(callback),
   );
@@ -19,7 +19,7 @@ function harness() {
   return { reporter, reported, frames, paint };
 }
 
-test("every pane written in a frame is reported once, after that frame", () => {
+test("every pane written in a frame is reported once, in one call, after that frame", () => {
   const { reporter, reported, frames, paint } = harness();
   reporter(1);
   reporter(2);
@@ -29,7 +29,10 @@ test("every pane written in a frame is reported once, after that frame", () => {
   assert.deepEqual(reported, []);
   assert.equal(frames.length, 1, "one frame is scheduled, not one per write");
   paint();
-  assert.deepEqual(reported.sort(), [1, 2]);
+  // One IPC call per frame, however many panes drew in it: each call rides the
+  // same main thread the paint does.
+  assert.equal(reported.length, 1, "one call per frame, not one per pane");
+  assert.deepEqual([...reported[0]].sort(), [1, 2]);
 });
 
 test("the next frame starts fresh", () => {
@@ -38,7 +41,7 @@ test("the next frame starts fresh", () => {
   paint();
   reporter(7);
   paint();
-  assert.deepEqual(reported, [7, 7]);
+  assert.deepEqual(reported, [[7], [7]]);
 });
 
 test("a rejected report never surfaces as an unhandled error", async () => {
