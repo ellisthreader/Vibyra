@@ -158,3 +158,37 @@ forced installation on offline machines or a restart without consent.
 
 Local tests cannot prove every OS installer path, protected CI secrets must
 remain in CI, and macOS is not in the current release matrix.
+
+## Published 0.4.2
+
+Vibyra 0.4.2 superseded the live 0.4.0 release on 2026-09-02; 0.4.1 was never
+published. The exact signed source is commit
+`21cc02d3d4a70e92e8ef3993ce95289062014709` and annotated tag `v0.4.2`.
+GitHub Actions run `33616986020` passed the complete frontend/Rust gates,
+Windows NSIS install/launch, AppImage launch, Debian install/launch,
+checksums, updater signatures, metadata, and the aggregate release-set gate.
+Windows-specific scaffold tests must gate Unix-only imports and compare paths
+as `Path` values rather than slash-formatted strings.
+
+Railway production deployment `5c5a7002-3815-4bab-91f9-42c1dafaa0f1` passed
+`/up` and published the updated website plus all three release records:
+
+- Windows NSIS: 8,131,858 bytes, SHA-256
+  `003f55ec82845dd35fb274d045c94ab89f86f7ef1e34f50ae1980b2cc8d703e8`.
+- Linux AppImage: 99,035,640 bytes, SHA-256
+  `723014ee1bb2101d8b6733f057ca001f21978655f5e491af972c3f424ca521ec`.
+- Debian package: 11,292,676 bytes, SHA-256
+  `6154b89944abf220935f346ee4435591876b41fb7115d16a38d113ff0e79a66b`.
+
+Post-cutover checks fetched each public download and reproduced those hashes;
+the Windows, AppImage, and deb updater feeds all returned 200 for an old client
+and 204 for current/future clients. `/web-api/releases` advertised 0.4.2 for
+all supported formats, and the live portal bundle contained the four new
+website highlights. The desktop bundle includes matching 0.4.2 What's New
+content; the updater marks 0.4.2 pending before install, and the regression
+test proves the modal appears once after relaunch and remains dismissed.
+
+The stable local launcher path
+`/home/ellis/.local/opt/vibyra/Vibyra.AppImage` was atomically replaced with
+the verified 0.4.2 AppImage. Do not restart a running Vibyra process during an
+agent session; the new inode is used on the next normal launch.
