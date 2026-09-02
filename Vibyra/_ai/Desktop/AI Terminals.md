@@ -23,6 +23,12 @@ native Claude model advertises xhigh: currently Fable 5, Opus 5, Sonnet 5,
 Opus 4.8, Opus 4.7, and qualifying fast variants. Keep this direct-account
 contract exact: every stop passes a native effort value the CLI accepts.
 
+Model artwork is resolved in `src/lib/modelArtworkData.ts` by ordered slug
+matching. Put point releases before their family prefix so a model such as
+Fable 5.1 cannot inherit Fable 5 artwork. Fable 5.1 owns the 128 px
+`claude-fable-5.1.png` sky, peach-cloud, and moon tile derived from Anthropic's
+launch treatment; keep version text and the family label legible at picker size.
+
 Rust/Tauri terminal integration selection is persisted in native
 `Settings.enabledAgentIds`. A catalog model is visible and launchable only when
 its mapped CLI is both selected there and installed; native families map to
