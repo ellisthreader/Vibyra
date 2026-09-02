@@ -84,7 +84,10 @@ fn resolves_the_dir_and_venv_tokens() {
     }];
     let steps = prepare(&request).unwrap();
     let leaf = if cfg!(windows) { "Scripts" } else { "bin" };
-    assert!(steps[0].program.ends_with(&format!(".venv/{leaf}/pip")));
+    assert_eq!(
+        std::path::Path::new(&steps[0].program),
+        target.join(".venv").join(leaf).join("pip")
+    );
     assert_eq!(steps[0].args[1], target.to_string_lossy());
 }
 
