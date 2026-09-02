@@ -41,6 +41,22 @@ test("dismissal clears pending state and survives another launch", () => {
   });
 });
 
+test("the 0.4.2 updater opens its changelog exactly once", async () => {
+  const storage = new MemoryStorage();
+  assert.equal(markPostUpdateChangelogPending("0.4.2", storage), true);
+  assert.equal(shouldShowPostUpdateChangelog("0.4.2", storage), true);
+
+  const content = await read("../src/components/changelog/changelogContent.ts");
+  assert.match(content, /"0\.4\.2"/);
+  assert.match(content, /Start a real project from Vibyra/);
+  assert.match(content, /Busy terminals no longer freeze the workspace/);
+  assert.match(content, /Agent and Chat are clearly work in progress/);
+  assert.match(content, /Fable 5\.1 has its own face/);
+
+  assert.equal(rememberPostUpdateChangelog("0.4.2", storage), true);
+  assert.equal(shouldShowPostUpdateChangelog("0.4.2", storage), false);
+});
+
 test("the first content release bridges binaries that could not mark pending", () => {
   const storage = new MemoryStorage();
   assert.equal(shouldShowPostUpdateChangelog("8.2.5", storage), false);
