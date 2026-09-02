@@ -50,3 +50,87 @@
   font-size: var(--fs-micro);
   font-variant-numeric: tabular-nums;
 }
+
+/* ── leftovers ──────────────────────────────────────────────────────────────
+   Quieter than the list above it in every respect that carries meaning: no
+   border, dim type, and shut until asked. Forty of these used to render as
+   full rows in `.fleet-list`, which buried the three agents the panel exists
+   to surface. It is deliberately not a card — a card would put it back on the
+   same footing as the work. */
+
+.fleet-left {
+  margin-top: 2px;
+}
+
+.fleet-left__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--r-control);
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.fleet-left__head:hover {
+  background: var(--hover);
+  color: var(--muted);
+}
+
+.fleet-left__head svg {
+  flex: none;
+  transition: transform var(--t-ui) var(--e-standard);
+}
+
+.fleet-left[data-open] .fleet-left__head svg {
+  transform: rotate(90deg);
+}
+
+.fleet-left__title {
+  font-weight: var(--fw-semi);
+}
+
+.fleet-left__note {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fleet-left__blurb {
+  margin: 2px 9px 8px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+}
+
+.fleet-left__list {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-control);
+  background: var(--surface-tint);
+  overflow: hidden;
+}
+
+.fleet-left__manage {
+  margin: 8px 0 2px 9px;
+  color: var(--accent-2);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+}
+
+.fleet-left__manage:hover {
+  text-decoration: underline;
+}
+
+/* Every safe workspace is a leftover — nothing running. Says so, rather than
+   drawing an empty bordered list above the folded group. */
+.fleet-none {
+  margin: 0;
+  padding: 10px 2px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+}

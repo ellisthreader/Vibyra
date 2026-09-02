@@ -37,10 +37,16 @@ export function ReviewPanel({ projectId, root }: Props) {
 
   // One workspace does not need a list of one. Opening the tool goes straight
   // to the only changeset there is; the fleet earns its place from two up.
+  //
+  // Leftover worktrees used to veto this. They no longer do: the fleet folds
+  // them into one shut line and Settings ▸ Safe workspaces owns them, so they
+  // are not a reason to show a list. On a machine with forty of them — which
+  // is a few weeks of ordinary use — that veto was permanent, and the shortcut
+  // had effectively been switched off for good.
   useEffect(() => {
-    if (level === "changeset" || reviewable.length !== 1 || orphans.length > 0) return;
+    if (level === "changeset" || reviewable.length !== 1) return;
     select(reviewable[0].id);
-  }, [level, reviewable, orphans.length, select]);
+  }, [level, reviewable, select]);
 
   // A workspace can vanish under the panel — discarded here, or its pane
   // closed from the grid. Falling back beats rendering a changeset for a

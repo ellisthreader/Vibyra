@@ -86,20 +86,32 @@
 
 /* ── overlap banner ─────────────────────────────────────────────────────── */
 
+/* A tinted block for a fact that is usually not a problem — two agents in
+   different parts of one file is ordinary work — trained the eye to skip the
+   colour, which is the last thing you want when the same colour also marks a
+   real conflict. So the ordinary case is a quiet line with a coloured icon,
+   and the tint is spent only on the conflict, which has earned it. */
 .review-overlap {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  margin: 0 2px 10px;
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.review-overlap svg { color: var(--amber); }
+
+.review-overlap--conflict {
   margin: 0 0 10px;
   padding: 8px 10px;
   border-radius: var(--r-control);
-  background: var(--amber-soft);
-  color: var(--amber);
-  font-size: var(--fs-body);
-  line-height: 1.5;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
-.review-overlap--conflict { background: var(--danger-soft); color: var(--danger); }
+.review-overlap--conflict svg { color: var(--danger); }
 
 .review-overlap svg { flex: none; margin-top: 1px; }
 
@@ -125,9 +137,9 @@
    keyboard behaviour and its own accessible name. */
 .review-file__check {
   flex: none;
-  width: 13px;
-  height: 13px;
-  accent-color: var(--action);
+  width: 12px;
+  height: 12px;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -135,14 +147,20 @@
 .review-file__row { padding-left: 0; }
 .review-file__row:hover { background: transparent; }
 
+/* The name never truncates and the folder always may — the reverse of what
+   these two did before the order changed. */
+.review-file__name {
+  flex: none;
+  color: var(--text);
+}
+
 .review-file__dir {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--dim);
+  font-size: var(--fs-tiny);
 }
-
-.review-file__name { flex: none; color: var(--muted); }
 
 /* Dim and quiet at `touch`: two agents in different functions of one file is
    ordinary work, and a loud mark there is how a radar becomes noise. */

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useState } from "react";
 
+import { useProjectCreateStore } from "../../state/projectCreateStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
@@ -25,7 +26,7 @@ export function ProjectStrip() {
   const projects = useProjects();
   const panes = useTerminalStore((s) => s.panes);
   const activity = useTerminalStore((s) => s.activity);
-  const pickAndCreate = useProjectStore((s) => s.pickAndCreate);
+  const startProject = useProjectCreateStore((s) => s.start);
   const [menu, setMenu] = useState<ProjectMenuTarget | null>(null);
 
   const dismissMenu = useCallback(() => setMenu(null), []);
@@ -76,7 +77,7 @@ export function ProjectStrip() {
         ))}
       </div>
       <span className="pstrip__sep" />
-      <button className="pstrip__tile pstrip__tile--add" data-tip="New project" onClick={() => void pickAndCreate()}>
+      <button className="pstrip__tile pstrip__tile--add" data-tip="Start a project" onClick={startProject}>
         ＋
       </button>
       {menu && <Suspense fallback={null}><ProjectActions key={menu.project.id} target={menu} onClose={dismissMenu} /></Suspense>}

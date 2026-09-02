@@ -78,3 +78,29 @@ export function easeBars(current: number[], next: number[]): number[] {
     return from + (target - from) * (target > from ? 0.55 : 0.16);
   });
 }
+
+/**
+ * A slow undulation just above the floor, blended under every other source.
+ *
+ * Silence is not the same as "off", and the ring has to say so. Without this
+ * the ring is geometrically perfect whenever nobody is talking, and a perfect
+ * circle reads as a graphic rather than a live meter — which is exactly the
+ * complaint a frozen ring draws. The amplitude is deliberately tiny: it must
+ * never be mistaken for signal.
+ */
+export function breatheBars(elapsedMs: number, count = BAR_COUNT): number[] {
+  const phase = elapsedMs / 1_450;
+  return Array.from({ length: count }, (_, index) => {
+    const around = (index / count) * Math.PI * 2;
+    const swell = Math.sin(around * 2 + phase) + Math.sin(around * 3 - phase * 0.7);
+    return clamp01(FLOOR + (swell * 0.25 + 0.5) * 0.08);
+  });
+}
+
+/** The louder of two rings, position by position. Blends breath under signal. */
+export function liftBars(bars: number[], floor: number[]): number[] {
+  return bars.map((value, index) => {
+    const under = floor[index] ?? 0;
+    return under > value ? under : value;
+  });
+}

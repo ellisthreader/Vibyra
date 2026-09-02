@@ -1,6 +1,7 @@
 import { accentFor } from "../../lib/providerAccents";
 import { launchConfigured } from "../../lib/configuredLaunch";
 import { useAgentStore } from "../../state/agentStore";
+import { useProjectCreateStore } from "../../state/projectCreateStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
@@ -79,9 +80,19 @@ export function launchEntries(activeProjectId: string | null): CommandPaletteEnt
       id: "proj-new",
       kind: "command",
       group: "Projects",
-      label: "Add a project…",
+      label: "Start a project…",
+      detail: "Build something new, or open a folder",
+      keywords: "new create open folder import repo scaffold template",
+      icon: PlusIcon,
+      run: useProjectCreateStore.getState().start,
+    },
+    {
+      id: "proj-open",
+      kind: "command",
+      group: "Projects",
+      label: "Open a folder as a project…",
       detail: "Pick a folder",
-      keywords: "new create open folder import repo",
+      keywords: "add existing import repo browse",
       icon: FolderIcon,
       run: () => void projectStore.pickAndCreate(),
     },

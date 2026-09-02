@@ -1,36 +1,36 @@
 /* Ask's voice: the orb stage, and the three controls that drive it.
    Two hues do the talking — the cobalt accent while you speak, the reserved
    `--ask` violet while Vibyra does. Nothing else in the panel changes colour,
-   so the switch is unambiguous. */
+   so the switch is unambiguous.
+
+   The stage sits between the transcript and the composer rather than at the
+   end of the scroll, where it used to be: a meter you have to scroll to find
+   is a meter you will assume is broken. Pinned here it is on screen for the
+   whole exchange, right above the control that started it. */
 
 .ask-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px 0 6px;
+  gap: 9px;
+  flex: none;
+  padding: 14px 12px 16px;
+  border-top: 1px solid var(--line-soft);
   animation: fade-up 220ms var(--e-hero);
 }
 
+/* No CSS glow: `base-performance.css` strips `filter` under maximum
+   performance, and the orb's own glow is painted inside the canvas so that
+   the mode which needs the reassurance most is not the one that loses it. */
 .ask-orb {
   display: block;
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 34%, transparent));
-  transition: filter 240ms ease;
-}
-
-.ask-stage[data-mode="speaking"] .ask-orb {
-  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ask) 42%, transparent));
-}
-
-.ask-stage[data-mode="thinking"] .ask-orb {
-  filter: none;
 }
 
 .ask-stage__caption {
   margin: 0;
   font-size: var(--fs-tiny);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.09em;
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -39,66 +39,66 @@
 .ask-stage[data-mode="speaking"] .ask-stage__caption { color: var(--ask); }
 
 .ask-stage__action {
-  padding: 4px 12px;
-  border: 1px solid var(--line);
+  padding: 5px 14px;
   border-radius: 999px;
-  background: var(--elevated);
+  background: var(--hover-strong);
   color: var(--muted);
   font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
 }
 
 .ask-stage__action:hover {
-  border-color: var(--accent-border);
+  background: var(--hover-strong);
   color: var(--text);
 }
 
-/* ── controls ─────────────────────────────────────────────────────── */
+/* ── controls ─────────────────────────────────────────────────────────── */
+
 .ask-mute {
-  margin-left: auto;
-  width: auto;
-  padding: 0 6px;
+  width: 26px;
+  height: 26px;
   color: var(--dim);
 }
 
 .ask-mute[aria-pressed="true"] { color: var(--ask); }
 .ask-mute:hover { color: var(--text); }
 
+/* Inside the composer, so it reads as one field with two ways to fill it. */
 .ask-mic {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   flex: none;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  background: var(--workspace);
-  color: var(--muted);
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  border-radius: 50%;
+  color: var(--dim);
+  transition: color var(--t-base) var(--e-standard), background var(--t-base) var(--e-standard);
 }
 
 .ask-mic:hover:not(:disabled) {
+  background: var(--hover-strong);
   color: var(--text);
-  border-color: var(--accent-border);
 }
 
 .ask-mic:disabled { opacity: 0.4; }
 
 .ask-mic[data-live] {
-  color: var(--accent);
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
+  color: var(--on-action);
+  background: var(--accent);
   animation: ask-mic-live 1.6s ease-in-out infinite;
 }
 
 @keyframes ask-mic-live {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
-  50% { box-shadow: 0 0 0 5px transparent; }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
 }
 
 .ask-turn__foot {
   display: flex;
   align-items: center;
   gap: 7px;
+  min-height: 18px;
 }
 
 .ask-replay {
@@ -107,10 +107,10 @@
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 50%;
   color: var(--dim);
   opacity: 0;
-  transition: opacity 140ms ease, color 140ms ease;
+  transition: opacity var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
 }
 
 .ask-turn:hover .ask-replay,

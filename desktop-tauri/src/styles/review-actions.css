@@ -11,11 +11,27 @@
   background: var(--rail);
 }
 
+/* Approve takes the full width and the secondary controls sit under it. As
+   one wrapping row, "Approve 5 files", its caret, "Share on GitHub" and the
+   overflow could not fit a compact dock together, so the row broke — and a
+   primary action that changes shape with the label is one you stop aiming at.
+   Grid, not wrap: the split button spans, the rest share the line below. */
 .review-actions__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+}
+
+.review-actions__split { grid-column: 1 / -1; }
+
+.review-actions__github {
+  justify-self: start;
+}
+
+.review-actions--confirm .review-actions__row {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .review-actions--confirm em {

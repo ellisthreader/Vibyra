@@ -37,13 +37,19 @@ const DOT: Record<FleetStatus, string> = {
  * Sentences, not git words (Ellis, 2026-08-29). The row has to be understood
  * by someone who has never heard of a worktree: what the agent is doing, in
  * the words a person would use.
+ *
+ * `orphaned` used to read "Terminal closed — work saved", which said the two
+ * things it should not. It led with the terminal, which is the part the user
+ * has already forgotten about and cannot act on, and it promised the work was
+ * kept — a claim the fleet never checks, since an orphan's changeset is never
+ * read. What is actually known is that nothing owns the copy any more.
  */
 const WORD: Record<FleetStatus, string> = {
   ready: "Ready to review",
   working: "Still working…",
   attention: "Waiting for you",
   idle: "No changes yet",
-  orphaned: "Terminal closed — work saved",
+  orphaned: "Nothing is using this",
 };
 
 function tallyLabel(row: FleetRow): string {
@@ -89,7 +95,9 @@ export function ReviewFleetRow({ row, pane, contested, blocked, root }: Props) {
       </span>
       <span className="fleet-row__meta">
         <span className={`fleet-row__state fleet-row__state--${row.status}`}>{WORD[row.status]}</span>
-        {row.stale ? (
+        {/* A leftover's changeset is never fetched, so "not read yet" would
+            promise a read that is not coming. It gets no tally at all. */}
+        {row.paneId === null ? null : row.stale ? (
           <span className="fleet-row__tally">not read yet</span>
         ) : (
           <span className="fleet-row__tally" aria-label={tallyLabel(row)}>

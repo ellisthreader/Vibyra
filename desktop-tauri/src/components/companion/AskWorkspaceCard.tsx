@@ -4,6 +4,7 @@ import { suggestedActions, type AskAction } from "../../lib/askActions";
 import type { AskPane } from "../../lib/askContext";
 import { useReviewStore } from "../../state/reviewStore";
 import { useTerminalStore } from "../../state/terminalStore";
+import { ChevronIcon } from "../common/Icons";
 
 /**
  * What Ask can see, shown before it is asked anything.
@@ -12,6 +13,10 @@ import { useTerminalStore } from "../../state/terminalStore";
  * into the briefing, visible to the user first. And the actions here come from
  * `suggestedActions`, which reads the workspace — never from a model reply.
  * A pane's output cannot talk this panel into pressing anything.
+ *
+ * One block, no frames. The list and the actions used to sit in a bordered
+ * card with three more bordered buttons inside it; they are the same two
+ * groups, now separated by a hairline and told apart by weight instead.
  */
 
 const DOT: Record<string, string> = {
@@ -64,7 +69,7 @@ export function AskWorkspaceCard({ panes }: { panes: AskPane[] }) {
 
   return (
     <div className="ask-workspace">
-      <span className="ask-workspace__label">What I can see</span>
+      <span className="ask-block__label">What I can see</span>
       <ul className="ask-panes">
         {panes.map((pane) => (
           <li key={pane.id} className="ask-pane">
@@ -76,14 +81,18 @@ export function AskWorkspaceCard({ panes }: { panes: AskPane[] }) {
       </ul>
       {actions.length > 0 && (
         <div className="ask-actions">
-          {actions.map((action) => (
+          {/* Only the first is ever time-critical — `suggestedActions` ranks
+              them — so only the first is allowed to look urgent. */}
+          {actions.map((action, index) => (
             <button
               key={`${action.kind}-${"paneId" in action ? action.paneId : action.paneIds.join(",")}`}
               type="button"
               className="ask-action"
+              data-lead={index === 0 || undefined}
               onClick={() => runAction(action)}
             >
-              {action.label}
+              <span>{action.label}</span>
+              <ChevronIcon size={12} />
             </button>
           ))}
         </div>

@@ -3,10 +3,11 @@
  * chrome around them stays quiet so those two colours keep their meaning.
  * One solid green per screen — the primary Approve — everything else tinted.
  *
- * Loaded after dock-review.css / review-actions.css on purpose: the word-chip
- * file marks and the fleet-head rewrite override the sheets that came with
- * the fleet build rather than editing them, so the diff against that build
- * stays readable. */
+ * Loaded after dock-review.css / review-actions.css on purpose: the fleet-head
+ * rewrite overrides the sheet that came with the fleet build rather than
+ * editing it, so the diff against that build stays readable. The file-mark
+ * override that used to live here is gone — dock-review.css owns the mark
+ * outright now, which is one declaration to read instead of two to reconcile. */
 
 /* ── the verbs ──────────────────────────────────────────────────────────── */
 
@@ -141,19 +142,6 @@
   font-size: var(--fs-ui);
   font-weight: var(--fw-semi);
 }
-
-/* ── file marks: words, not git letters ─────────────────────────────────── */
-
-.review-file__mark {
-  font-family: var(--font-ui);
-  font-size: var(--fs-tiny);
-  padding: 0 5px;
-  letter-spacing: 0.02em;
-}
-
-/* "edit" is the normal case, not a warning — amber stays reserved for the
-   radar. */
-.review-file__mark--modified { color: var(--accent); background: var(--accent-soft); }
 
 /* ── connect-GitHub sheet ───────────────────────────────────────────────── */
 

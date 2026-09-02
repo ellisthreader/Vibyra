@@ -1,0 +1,178 @@
+/* The questions themselves: the kind grid, the stack list, naming, review and
+   the build. Split from `project-new.css` only for the 200-line gate — the two
+   sheets are one design and are imported next to each other. */
+
+/* --- kind: nine tiles ------------------------------------------------- */
+
+.np-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.np-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 13px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  text-align: left;
+  transition: border-color var(--t-ui) var(--e-standard),
+    background var(--t-ui) var(--e-standard);
+}
+
+.np-tile:hover,
+.np-tile:focus-visible {
+  border-color: var(--accent-border);
+  background: var(--surface-tint);
+}
+
+.np-tile--on {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.np-tile__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 8px;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  background: var(--surface-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.np-tile:hover .np-tile__mark,
+.np-tile--on .np-tile__mark {
+  color: var(--accent);
+}
+
+.np-tile strong {
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+
+.np-tile small {
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+@media (max-width: 640px) {
+  .np-grid { grid-template-columns: 1fr; }
+}
+
+/* --- stack: rows, because the blurb is what picks one -------------------- */
+
+.np-stack {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 11px 14px;
+  text-align: left;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.np-stack + .np-stack {
+  border-top: 1px solid var(--line-soft);
+}
+
+.np-stack:hover:not(:disabled),
+.np-stack:focus-visible {
+  background: var(--hover);
+}
+
+.np-stack--on {
+  background: var(--accent-soft);
+}
+
+.np-stack:disabled {
+  opacity: 0.55;
+}
+
+.np-stack__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.np-stack__text strong {
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+
+.np-stack__text small {
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+/* Missing toolchains are named, not merely greyed: "Needs flutter" is the
+   whole reason the row cannot be clicked. */
+.np-stack__need {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--amber) 26%, transparent);
+  border-radius: 999px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+}
+
+.np-stack__go {
+  flex-shrink: 0;
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--e-standard);
+}
+
+.np-stack:hover .np-stack__go,
+.np-stack:focus-visible .np-stack__go,
+.np-stack--on .np-stack__go {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* The chevron on "Other…" is a signpost, not a hover reward — it says the row
+   opens something rather than choosing something. */
+.np-stack__go--always {
+  opacity: 1;
+}
+
+/* Where a stack is filed, shown only while browsing them all: picking Next.js
+   from inside Game should not feel like it came from nowhere. */
+.np-stack__kind {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--dim);
+  background: var(--surface-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semi);
+  font-style: normal;
+  vertical-align: 1px;
+}
+
+.np-stack--other {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 26%, transparent);
+}
+
+.np-stack--other strong {
+  color: var(--accent);
+}

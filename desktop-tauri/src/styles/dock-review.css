@@ -82,13 +82,18 @@
   border-top: 1px solid var(--line-soft);
 }
 
+/* Four columns, and the second one is fixed. The kind used to share a 20px
+   track with nothing to stop it overflowing, so "moved" and "gone" ran
+   straight into the path beside them — `gonesrc/components/…`. A track wide
+   enough for the longest word also puts every filename on the same x, which
+   is what makes the list scannable. */
 .review-file__row {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   width: 100%;
-  padding: 7px 10px;
+  padding: 7px 10px 7px 0;
   background: transparent;
   border: 0;
   color: inherit;
@@ -104,26 +109,32 @@
   box-shadow: inset 2px 0 var(--accent-2);
 }
 
+/* A word, in colour, with no chip around it. Seven filled pills down a narrow
+   column read as seven buttons; the colour alone carries the same four
+   meanings and lets the filenames be the loudest thing in the row, which is
+   what the user is actually here to read. */
 .review-file__mark {
-  font-family: var(--font-mono);
-  font-size: var(--fs-control);
-  font-weight: var(--fw-bold);
-  text-align: center;
-  border-radius: var(--r-sm);
-  line-height: 18px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
 }
 
-.review-file__mark--added { color: var(--success); background: var(--success-soft); }
-.review-file__mark--modified { color: var(--amber); background: var(--amber-soft); }
-.review-file__mark--deleted { color: var(--danger); background: var(--danger-soft); }
-.review-file__mark--renamed { color: var(--accent-2); background: var(--accent-soft); }
+.review-file__mark--added { color: var(--success); }
+/* "edit" is the ordinary case, not a warning — amber stays reserved for the
+   overlap radar, so this takes the neutral nerve instead. */
+.review-file__mark--modified { color: var(--accent); }
+.review-file__mark--deleted { color: var(--danger); }
+.review-file__mark--renamed { color: var(--ask); }
 
-/* The filename always survives, the directory gives way — done with two
-   spans rather than `direction: rtl`, which kept the name visible by
-   reordering the text and mangled any path holding a bidi-neutral character.
-   See `splitPath` in ReviewFileRow. */
+/* Name first, folder after it and dimmed. See `splitPath` in ReviewFileRow
+   for why that order matters more than it looks. */
 .review-file__path {
   display: flex;
+  align-items: baseline;
+  gap: 7px;
   min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-hint);

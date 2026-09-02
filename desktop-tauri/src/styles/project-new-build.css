@@ -1,0 +1,81 @@
+/* The build screen: one line of progress, the log a click away, and the two
+   ways out of a failure. Last sheet of the new-project dialog. */
+
+/* --- run: one line of progress, the log a click away -------------------- */
+
+.np-run__bar {
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.np-run__bar i {
+  display: block;
+  width: 38%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  opacity: 0;
+}
+
+.np-run__bar--live i {
+  opacity: 1;
+  animation: np-run-sweep 1.5s var(--e-standard) infinite;
+}
+
+@keyframes np-run-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(265%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-run__bar--live i { animation: none; width: 100%; }
+}
+
+.np-run__step {
+  margin-top: 15px;
+  font-size: var(--fs-strong);
+  font-weight: var(--fw-bold);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.np-run__tail,
+.np-run__log {
+  display: block;
+  font: var(--fs-hint) var(--font-mono);
+  color: var(--term-muted);
+}
+
+.np-run__tail {
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-run__toggle {
+  align-self: flex-start;
+  margin-top: 14px;
+  color: var(--accent);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+}
+
+.np-run__toggle:hover {
+  text-decoration: underline;
+}
+
+.np-run__log {
+  max-height: 260px;
+  margin-top: 9px;
+  padding: 11px 12px;
+  overflow: auto;
+  border-radius: var(--r-control);
+  background: var(--term-screen);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-all;
+  user-select: text;
+}

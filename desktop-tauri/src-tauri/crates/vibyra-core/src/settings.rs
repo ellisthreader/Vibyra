@@ -17,6 +17,12 @@ pub struct ProjectSpec {
     pub root: String,
     pub color: String,
     pub last_opened_ms: u64,
+    /// The catalog entry Vibyra built this project from, when it did. Nothing
+    /// reads it yet; it is here so a later feature does not need a migration.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

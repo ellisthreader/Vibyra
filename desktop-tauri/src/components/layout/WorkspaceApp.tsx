@@ -23,6 +23,7 @@ import { useAgentModeStore } from "../../state/agentModeStore";
 import { useLaunchApprovalStore } from "../../state/launchApprovalStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useReportStore } from "../../state/reportStore";
+import { useProjectCreateStore } from "../../state/projectCreateStore";
 import { useScreenshotStore } from "../../state/screenshotStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
@@ -41,6 +42,8 @@ const HomeView = lazy(() => import("../home/HomeView")
   .then((module) => ({ default: module.HomeView })));
 const LaunchApprovalModal = lazy(() => import("../rail/LaunchApprovalModal")
   .then((module) => ({ default: module.LaunchApprovalModal })));
+const NewProjectDialog = lazy(() => import("../projects/new/NewProjectDialog")
+  .then((module) => ({ default: module.NewProjectDialog })));
 const ReportModal = lazy(() => import("../report/ReportModal")
   .then((module) => ({ default: module.ReportModal })));
 const ScreenshotEditor = lazy(() => import("./ScreenshotEditor")
@@ -59,6 +62,7 @@ export function WorkspaceApp() {
   const settingsOpen = useWorkspaceStore((s) => s.settingsOpen);
   const agentPickerOpen = useWorkspaceStore((s) => s.agentPickerOpen);
   const paletteOpen = useWorkspaceStore((s) => s.paletteOpen);
+  const newProjectOpen = useProjectCreateStore((s) => s.open);
   const filePreviewOpen = useWorkspaceStore((s) => s.preview !== null);
   const launchApprovalOpen = useLaunchApprovalStore((s) => s.pending !== null);
   const screenshotEditorOpen = useScreenshotStore((s) => s.draft !== null);
@@ -142,6 +146,7 @@ export function WorkspaceApp() {
         {settingsOpen ? <SettingsModal /> : null}
         {reportOpen ? <ReportModal /> : null}
         {filePreviewOpen ? <FilePreviewModal /> : null}
+        {newProjectOpen ? <NewProjectDialog /> : null}
       </Suspense>
       {welcomeOpen && profile ? (
         <FirstWelcome

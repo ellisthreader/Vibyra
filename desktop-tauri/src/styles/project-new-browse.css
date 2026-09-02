@@ -1,0 +1,51 @@
+/* Searching the whole catalog, for when the stack you want is not filed under
+   the kind you picked. Continued from `project-new-steps.css`. */
+
+/* --- browsing the whole catalog ---------------------------------------- */
+
+.np-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 11px;
+  padding: 0 11px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--dim);
+}
+
+.np-search:focus-within {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.np-search__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: var(--fs-ui);
+}
+
+.np-search__input::placeholder {
+  color: var(--dim);
+}
+
+.np-empty {
+  padding: 22px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-control);
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Two quiet choices sit apart: leaving the browser is not the same gesture as
+   giving up on the question. */
+.np-skip .np-quiet + .np-quiet {
+  margin-left: auto;
+}

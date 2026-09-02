@@ -12,7 +12,7 @@ use super::{
     account, agent_approvals_cmd, agent_chat, agent_chat_files, agent_chat_prompt, agent_config,
     agent_conversations, agent_mail_cmd, agent_roster, agent_routines_cmd, agent_skills_cmd,
     agents, ai, ai_service, boot, clipboard, conversation_carry, fs, github, memory, perf, preview,
-    probe, project_activity, provider_accounts, render, report, review, screenshot,
+    probe, project_activity, provider_accounts, render, report, review, scaffold, screenshot,
     screenshot_reveal, session, settings, speech, terminal, voice, workspaces,
 };
 
@@ -40,6 +40,9 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         review::review_list_worktrees,
         review::review_prune_worktrees,
         project_activity::project_activity,
+        scaffold::scaffold_preflight,
+        scaffold::scaffold_run,
+        scaffold::scaffold_cancel,
         github::github_status,
         github::github_create_pr,
         github::github_list_branches,

@@ -23,7 +23,7 @@ interface ProjectStore {
   activeId: string | null;
   homeDir: string;
   init: () => Promise<void>;
-  create: (root: string, name?: string) => Promise<ProjectSpec | null>;
+  create: (root: string, name?: string, templateId?: string) => Promise<ProjectSpec | null>;
   /** Native folder picker → project. The one-gesture "new project". */
   pickAndCreate: () => Promise<void>;
   activate: (id: string) => Promise<void>;
@@ -126,7 +126,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
       if (active) set({ activeId: active.id, view: "home" });
     }),
 
-    create: (root, name) => projectRuntimeTransitions.run(async () => {
+    create: (root, name, templateId) => projectRuntimeTransitions.run(async () => {
       const trimmed = root.trim().replace(/\/+$/, "");
       if (!trimmed) return null;
       const list = projects();
@@ -141,6 +141,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => {
         root: trimmed,
         color: nextProjectColor(list),
         lastOpenedMs: Date.now(),
+        ...(templateId ? { templateId, createdMs: Date.now() } : {}),
       };
       await persist([...list, project], project.id);
       await activateNow(project.id);

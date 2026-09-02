@@ -7,7 +7,8 @@ import { useProjectStore } from "../../state/projectStore";
 import { useSettingsStore } from "../../state/settingsStore";
 import { useTerminalStore } from "../../state/terminalStore";
 import { useWorkspaceStore } from "../../state/workspaceStore";
-import { SendIcon } from "../common/Icons";
+import { ChevronIcon, SendIcon } from "../common/Icons";
+import { AskMark } from "./AskMark";
 import { AskMicButton, AskMuteToggle, AskReplayButton } from "./AskVoiceButtons";
 import { AskVoiceStage } from "./AskVoiceStage";
 import { AskWorkspaceCard } from "./AskWorkspaceCard";
@@ -19,6 +20,12 @@ import { AskWorkspaceCard } from "./AskWorkspaceCard";
  * builds it a briefing of live state, and the system prompt tells it to hand
  * code questions to a terminal agent. Nothing it replies can act on anything;
  * the buttons come from `suggestedActions`, which reads state directly.
+ *
+ * Only one thing here is drawn as a container: the user's own message. An
+ * answer is the panel's content rather than an object sitting on it, and the
+ * empty state is two flat blocks. The previous layout gave a border to the
+ * summary card, to each of three actions and to each of four questions, which
+ * stacked nine framed rectangles down a 340px column before a word was said.
  */
 
 const NO_TURNS: AskTurn[] = [];
@@ -26,7 +33,7 @@ const NO_TURNS: AskTurn[] = [];
 function Turn({ turn, id }: { turn: AskTurn; id: string }) {
   return (
     <div className={`ask-turn ask-turn--${turn.role}`}>
-      <div className="ask-bubble">{turn.content}</div>
+      <div className="ask-turn__body">{turn.content}</div>
       {turn.role === "assistant" && (
         <span className="ask-turn__foot">
           <AskReplayButton turnKey={id} content={turn.content} />
@@ -83,31 +90,40 @@ export function AskPanel() {
 
   return (
     <div className="companion-panel companion-panel--ask">
-      <div className="ask-identity">
-        <span className="ask-mark" aria-hidden="true">?</span>
-        <div>
-          <strong>Ask Vibyra</strong>
-          <span>About the app, not your code</span>
-        </div>
+      <header className="ask-head">
+        <AskMark />
+        <strong>Ask</strong>
         <AskMuteToggle />
         {turns.length > 0 && (
-          <button className="icon-btn ask-clear" onClick={() => clear(projectId)}>Clear</button>
+          /* A "×" here would be read as "close the dock" — the one control
+             this header must not be mistaken for. The word is unambiguous
+             and costs no more room than the glyph did. */
+          <button className="ask-head__clear" onClick={() => clear(projectId)}>
+            Clear
+          </button>
         )}
-      </div>
+      </header>
 
       <div className="ask-scroll" ref={scrollRef}>
         {turns.length === 0 && (
           <>
+            <p className="ask-intro">
+              I can see what your terminals are doing, what they cost and what is waiting on you.
+              For questions about your code, ask an agent.
+            </p>
             <AskWorkspaceCard panes={panes} />
-            <div className="ask-starters">
+            <div className="ask-suggest">
+              <span className="ask-block__label">Try asking</span>
               {questions.map((question) => (
                 <button
                   key={question}
                   type="button"
+                  className="ask-suggest__row"
                   disabled={!configured}
                   onClick={() => submit(question)}
                 >
-                  {question}
+                  <span>{question}</span>
+                  <ChevronIcon size={13} />
                 </button>
               ))}
             </div>
@@ -116,9 +132,10 @@ export function AskPanel() {
         {turns.map((turn, index) => (
           <Turn key={index} turn={turn} id={turnKey(projectId, index)} />
         ))}
-        <AskVoiceStage />
         {error && <p className="ask-error" role="alert">{error}</p>}
       </div>
+
+      <AskVoiceStage />
 
       {!configured && (
         <div className="ask-setup" role="note">

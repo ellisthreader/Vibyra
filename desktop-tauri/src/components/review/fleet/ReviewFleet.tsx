@@ -5,12 +5,14 @@ import {
   contestedKeys,
   radarCollisions,
 } from "../../../lib/reviewFleetActionPolicy";
+import { splitFleet } from "../../../lib/reviewLeftovers";
 import { reviewablePanes } from "../../../lib/reviewPolicy";
 import { useReviewStore } from "../../../state/reviewStore";
 import { useTerminalStore } from "../../../state/terminalStore";
 import { ReviewFleetFooter } from "./ReviewFleetFooter";
 import { ReviewFleetHeader } from "./ReviewFleetHeader";
 import { ReviewFleetRow } from "./ReviewFleetRow";
+import { ReviewLeftovers } from "./ReviewLeftovers";
 import { ReviewRadar } from "./ReviewRadar";
 import { useFleet } from "./useFleet";
 
@@ -38,6 +40,10 @@ export function ReviewFleet({ projectId, root }: Props) {
   const refreshAll = useReviewStore((state) => state.refreshAll);
   const refreshOrphans = useReviewStore((state) => state.refreshOrphans);
 
+  // Leftover worktrees are housekeeping, not work in flight, so they do not
+  // get to sit between the user and the agent that is waiting on them.
+  const { live, leftovers } = splitFleet(rows);
+
   const radar = radarCollisions(found);
   const blocked = blockedKeys(found);
   const contested = contestedKeys(found);
@@ -57,8 +63,14 @@ export function ReviewFleet({ projectId, root }: Props) {
       <ReviewFleetHeader />
       <div className="review-scroll fleet-scroll">
         <ReviewRadar collisions={radar} />
+        {live.length === 0 && (
+          <p className="fleet-none">
+            No agent is working in a safe copy right now.
+          </p>
+        )}
+        {live.length > 0 && (
         <div className="fleet-list" role="list" aria-label="Safe workspaces">
-          {rows.map((row) => (
+          {live.map((row) => (
             <ReviewFleetRow
               key={row.key}
               row={row}
@@ -69,6 +81,8 @@ export function ReviewFleet({ projectId, root }: Props) {
             />
           ))}
         </div>
+        )}
+        <ReviewLeftovers rows={leftovers} root={root} />
       </div>
       <ReviewFleetFooter rows={rows} panes={panes} root={root} />
     </>

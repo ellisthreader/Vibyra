@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -33,6 +34,9 @@ pub struct AppState {
     pub github_integration: Arc<GithubIntegrationManager>,
     pub provider_auth: Arc<ProviderAuthManager>,
     pub secret_store_available: Mutex<bool>,
+    /// Cancel flags for scaffold runs in flight, keyed by the run id the
+    /// dialog generated. Removed when the run returns.
+    pub scaffold_runs: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     pub watcher: Mutex<Option<WorkspaceWatcher>>,
     pub voice: Mutex<Option<VoiceRecording>>,
     /// Set once the user has confirmed the close. Without it the
@@ -81,6 +85,7 @@ impl AppState {
             github_integration: Arc::new(GithubIntegrationManager::default()),
             provider_auth: Arc::new(ProviderAuthManager::default()),
             secret_store_available: Mutex::new(secret_store_available),
+            scaffold_runs: Arc::new(Mutex::new(HashMap::new())),
             watcher: Mutex::new(None),
             voice: Mutex::new(None),
             closing: AtomicBool::new(false),

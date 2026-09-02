@@ -1,0 +1,131 @@
+/* Naming the project and reviewing it — the two screens before anything runs.
+   Continued from `project-new-steps.css`. */
+
+/* --- where: one name, one folder, one resolved path --------------------- */
+
+.np-where__name {
+  display: grid;
+  gap: 7px;
+}
+
+.np-where__name span {
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-semi);
+  color: var(--muted);
+}
+
+.np-where__folder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface);
+}
+
+.np-where__folder-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.np-where__folder-text small {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semi);
+  color: var(--dim);
+}
+
+.np-where__folder-text code {
+  overflow: hidden;
+  font: var(--fs-hint) var(--font-mono);
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-where__folder .btn {
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.np-where__path {
+  margin-top: 11px;
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.np-where__path--bad {
+  color: var(--amber);
+}
+
+/* --- review: the facts, then the literal commands ----------------------- */
+
+.np-review__facts {
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.np-review__facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 9px 12px;
+  background: var(--surface);
+}
+
+.np-review__facts dt {
+  width: 62px;
+  flex-shrink: 0;
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-semi);
+  color: var(--dim);
+}
+
+.np-review__facts dd {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-medium);
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.np-review__facts dd code {
+  font: var(--fs-hint) var(--font-mono);
+  color: var(--muted);
+  user-select: text;
+}
+
+.np-review__commands {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.np-review__commands pre {
+  margin: 0;
+  padding: 11px 12px;
+  overflow-x: auto;
+  border-radius: var(--r-control);
+  background: var(--term-screen);
+  color: var(--term-text);
+  font: var(--fs-hint) var(--font-mono);
+  line-height: 1.7;
+  user-select: text;
+}
+
+.np-review__quiet {
+  margin-top: 14px;
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+  color: var(--dim);
+}

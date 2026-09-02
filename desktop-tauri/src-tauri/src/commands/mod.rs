@@ -31,6 +31,7 @@ pub mod registry;
 pub mod render;
 pub mod report;
 pub mod review;
+pub mod scaffold;
 pub mod screenshot;
 #[cfg(target_os = "linux")]
 mod screenshot_capture;

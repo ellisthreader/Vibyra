@@ -4,13 +4,15 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 import { onVoiceLevel } from "../../ipc/tools";
 import { smoothVoiceLevel } from "../../lib/voiceLevel";
 import {
-  BAR_COUNT,
   barsFromLevel,
   barsFromSpectrum,
+  breatheBars,
   easeBars,
+  liftBars,
   restingBars,
   sweepBars,
 } from "../../lib/voiceBars";
+import { orbMotion, paintOrb, type OrbMode } from "../../lib/voiceOrbPaint";
 
 /**
  * Who is talking, drawn as one ring.
@@ -20,16 +22,22 @@ import {
  * is driven by the microphone level the recorder reports, the speaking ring by
  * the frequency data of the audio actually coming out of the speakers.
  *
- * Canvas rather than elements: fifty-six bars re-styled every frame is a lot
- * of layout work to hand WebKit, and this app already watches its renderer
- * budget. One canvas is one paint. The loop runs only while the orb is live.
+ * Canvas rather than elements: a ring re-styled every frame is a lot of layout
+ * work to hand WebKit, and this app already watches its renderer budget. One
+ * canvas is one paint. The loop runs only while the orb is live.
+ *
+ * What reduced motion may and may not take away is `orbMotion`, which this
+ * component used to decide inline — and decided wrongly, freezing the ring for
+ * everyone running maximum performance.
  */
 
-export type OrbMode = "idle" | "listening" | "thinking" | "speaking";
+export type { OrbMode };
 
-const SIZE = 128;
-const INNER = 27;
-const REACH = 25;
+const SIZE = 104;
+/** Decorative drift, radians per second. Zero when motion is reduced. */
+const SPIN = 0.12;
+/** Reduced motion keeps the reading, at half the frames. */
+const REDUCED_FPS = 30;
 
 function hue(styles: CSSStyleDeclaration, mode: OrbMode): string {
   if (mode === "speaking") return styles.getPropertyValue("--ask").trim() || "#9a86f7";
@@ -69,70 +77,49 @@ export function AskVoiceOrb({ mode, analyser }: { mode: OrbMode; analyser: Analy
     canvas.width = SIZE * ratio;
     canvas.height = SIZE * ratio;
     context.scale(ratio, ratio);
-    const styles = getComputedStyle(canvas);
-    const colour = hue(styles, mode);
+    const colour = hue(getComputedStyle(canvas), mode);
     const spectrum = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
     const started = performance.now();
     let bars = restingBars();
     let frame = 0;
+    let painted = 0;
 
-    // The user's own reduced-motion setting (Settings → Performance) cannot
-    // reach a canvas through CSS, so it is honoured here: one static ring
-    // instead of a loop. The state is still legible from the colour and the
-    // caption beside it.
-    const still = document.documentElement.hasAttribute("data-reduce-motion");
+    // The user's own reduced-motion setting (Settings → Performance, which
+    // "maximum performance" also turns on) cannot reach a canvas through CSS,
+    // so it is honoured here rather than in the sheet. `orbMotion` owns what
+    // it costs; on that path the frames are also halved.
+    const reduced = document.documentElement.hasAttribute("data-reduce-motion");
+    const { live, flourish } = orbMotion(mode, reduced);
 
     const draw = (now: number) => {
-      if (!still) frame = requestAnimationFrame(draw);
+      if (live) frame = requestAnimationFrame(draw);
+      const elapsed = now - started;
+      if (reduced && now - painted < 1_000 / REDUCED_FPS) return;
+      painted = now;
+
       let target: number[];
-      if (still) {
-        target = barsFromLevel(0.45);
-      } else if (mode === "speaking" && analyser && spectrum) {
+      if (mode === "speaking" && analyser && spectrum) {
         analyser.getByteFrequencyData(spectrum);
         target = barsFromSpectrum(spectrum);
       } else if (mode === "listening") {
         target = barsFromLevel(level.current);
+      } else if (flourish) {
+        target = sweepBars(elapsed);
       } else {
-        target = sweepBars(now - started);
+        target = barsFromLevel(0.45);
       }
-      bars = easeBars(bars, target);
+      if (flourish) target = liftBars(target, breatheBars(elapsed));
 
-      const mid = SIZE / 2;
-      context.clearRect(0, 0, SIZE, SIZE);
-
-      const loudest = bars.reduce((peak, value) => (value > peak ? value : peak), 0);
-      const glow = context.createRadialGradient(mid, mid, 2, mid, mid, INNER + REACH);
-      glow.addColorStop(0, colour);
-      glow.addColorStop(1, "transparent");
-      context.globalAlpha = 0.1 + loudest * 0.22;
-      context.fillStyle = glow;
-      context.fillRect(0, 0, SIZE, SIZE);
-
-      context.globalAlpha = 1;
-      context.strokeStyle = colour;
-      context.lineCap = "round";
-      context.lineWidth = 2.2;
-      for (let index = 0; index < BAR_COUNT; index += 1) {
-        const angle = (index / BAR_COUNT) * Math.PI * 2 - Math.PI / 2;
-        const reach = INNER + bars[index] * REACH;
-        context.globalAlpha = 0.32 + bars[index] * 0.68;
-        context.beginPath();
-        context.moveTo(mid + Math.cos(angle) * INNER, mid + Math.sin(angle) * INNER);
-        context.lineTo(mid + Math.cos(angle) * reach, mid + Math.sin(angle) * reach);
-        context.stroke();
-      }
-
-      context.globalAlpha = 0.5 + loudest * 0.5;
-      context.lineWidth = 1;
-      context.beginPath();
-      context.arc(mid, mid, INNER - 7 + loudest * 3, 0, Math.PI * 2);
-      context.stroke();
-      context.globalAlpha = 1;
+      bars = live ? easeBars(bars, target) : target;
+      paintOrb(context, {
+        bars,
+        colour,
+        size: SIZE,
+        spin: flourish ? (elapsed / 1_000) * SPIN : 0,
+      });
     };
 
-    if (still) bars = barsFromLevel(0.45);
     frame = requestAnimationFrame(draw);
-
     return () => cancelAnimationFrame(frame);
   }, [mode, analyser]);
 

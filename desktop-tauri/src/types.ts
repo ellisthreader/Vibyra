@@ -91,6 +91,9 @@ export interface ProjectSpec {
   root: string;
   color: string;
   lastOpenedMs: number;
+  /** The catalog entry Vibyra built this project from, when it did. */
+  templateId?: string;
+  createdMs?: number;
 }
 
 export type RendererMode = "auto" | "accelerated" | "compatibility";

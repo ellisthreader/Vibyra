@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { reviewFileDiff, type ChangedFile } from "../../ipc/review";
+import { splitPath } from "../../lib/reviewFilePath";
 import type { SafeWorkspaceRef } from "../../types";
 import { ReviewDiffView } from "./ReviewDiffView";
 import type { Overlap } from "./changeset/useChangesetOverlaps";
@@ -13,20 +14,6 @@ const MARKS: Record<ChangedFile["kind"], string> = {
   deleted: "gone",
   renamed: "moved",
 };
-
-/**
- * Splits a path where the ellipsis should fall.
- *
- * The directory truncates and the filename never does, which is what the old
- * `direction: rtl` was reaching for — but that reordered the text itself, so
- * any path carrying a bidi-neutral character (a bracket, a dash, a quote in a
- * filename) rendered in an order nobody typed. Two spans get the same
- * behaviour out of ordinary left-to-right layout.
- */
-function splitPath(path: string): { dir: string; name: string } {
-  const cut = path.lastIndexOf("/");
-  return cut < 0 ? { dir: "", name: path } : { dir: path.slice(0, cut + 1), name: path.slice(cut + 1) };
-}
 
 interface Props {
   workspace: SafeWorkspaceRef;
@@ -49,7 +36,7 @@ interface Props {
 export function ReviewFileRow({ workspace, file, selected, onToggle, overlap }: Props) {
   const [open, setOpen] = useState(false);
   const [diff, setDiff] = useState<string | null>(null);
-  const { dir, name } = splitPath(file.path);
+  const { folder, name } = splitPath(file.path);
 
   const toggle = async () => {
     const next = !open;
@@ -83,8 +70,8 @@ export function ReviewFileRow({ workspace, file, selected, onToggle, overlap }: 
             {MARKS[file.kind]}
           </span>
           <code className="review-file__path" title={file.path}>
-            {dir && <span className="review-file__dir">{dir}</span>}
             <span className="review-file__name">{name}</span>
+            {folder && <span className="review-file__dir">{folder}</span>}
           </code>
           <span className="review-file__stats">
             {overlap && (

@@ -30,6 +30,7 @@ pub mod pty;
 pub mod review;
 pub mod ring;
 pub mod routines;
+pub mod scaffold;
 pub mod settings;
 pub mod skills;
 pub mod utf8;

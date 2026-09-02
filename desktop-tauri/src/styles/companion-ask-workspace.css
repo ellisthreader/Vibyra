@@ -1,26 +1,42 @@
-/* Ask Vibyra — the "what I can see" summary, its actions and the starters.
-   Split from companion-ask.css on the seam between the panel shell (identity,
-   turns, composer) and the workspace summary that only shows before the first
-   question. */
+/* Ask Vibyra — the empty state: the opening line, the "what I can see"
+   summary and the suggested questions.
 
-/* ── what Ask can see ─────────────────────────────────────────────── */
-.ask-workspace {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: var(--workspace);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-card);
+   Two blocks, not nine. Both are tinted surfaces rather than bordered cards,
+   and the rows inside them are separated by hairlines instead of each being
+   framed. That is the whole change: the information is identical, the frames
+   are gone, and what is left is a hierarchy you can read at a glance —
+   heading, facts, the one urgent thing, then the quiet suggestions. */
+
+.ask-intro {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.6;
 }
 
-.ask-workspace__label {
+/* The shared label for both blocks. */
+.ask-block__label {
   font-size: var(--fs-label);
-  font-weight: 690;
-  letter-spacing: 0.055em;
+  font-weight: var(--fw-heavy);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--dim);
 }
+
+.ask-workspace,
+.ask-suggest {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-card);
+  background: var(--surface-tint);
+}
+
+.ask-workspace {
+  gap: 9px;
+  padding: 11px 12px 4px;
+}
+
+/* ── what Ask can see ─────────────────────────────────────────────────── */
 
 .ask-panes {
   list-style: none;
@@ -28,14 +44,14 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
 }
 
 .ask-pane {
   display: grid;
-  grid-template-columns: 7px minmax(0, 1fr) auto;
+  grid-template-columns: 6px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   font-size: var(--fs-hint);
 }
 
@@ -45,10 +61,22 @@
   border-radius: 50%;
   background: var(--dim);
 }
+
 .ask-dot--work { background: var(--success); }
 .ask-dot--ask { background: var(--ask); }
 .ask-dot--dead { background: var(--danger); }
 .ask-dot--off { background: var(--border); }
+
+/* The one dot that is asking for something moves, because "waiting for you"
+   is the only line here that stops being true when you look away. */
+.ask-dot--ask {
+  animation: ask-dot-wake 2s var(--e-standard) infinite;
+}
+
+@keyframes ask-dot-wake {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ask) 55%, transparent); }
+  60% { box-shadow: 0 0 0 4px transparent; }
+}
 
 .ask-pane__name {
   color: var(--text);
@@ -63,49 +91,90 @@
   white-space: nowrap;
 }
 
+/* ── the actions, under a hairline in the same block ──────────────────── */
+
 .ask-actions {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 3px;
+  margin: 2px -12px 0;
+  border-top: 1px solid var(--line-soft);
 }
 
-.ask-action {
-  padding: 7px 10px;
+.ask-action,
+.ask-suggest__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
   text-align: left;
-  border: 1px solid var(--accent-border);
-  border-radius: var(--r-control);
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  line-height: 1.4;
+  transition: background var(--t-base) var(--e-standard), color var(--t-base) var(--e-standard);
+}
+
+.ask-action span,
+.ask-suggest__row span {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The chevron is the affordance the border used to carry, so it never fully
+   leaves: faint at rest is what tells a row from a paragraph, and it brightens
+   and steps forward under the pointer. */
+.ask-action svg,
+.ask-suggest__row svg {
+  flex: none;
+  opacity: 0.3;
+  transition: opacity var(--t-base) var(--e-standard), transform var(--t-base) var(--e-standard);
+}
+
+.ask-action:hover:not(:disabled),
+.ask-suggest__row:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.ask-action:hover svg,
+.ask-action:focus-visible svg,
+.ask-suggest__row:hover svg,
+.ask-suggest__row:focus-visible svg {
+  opacity: 0.75;
+  transform: translateX(2px);
+}
+
+/* Ranked first by `suggestedActions`, so it is the only one that gets colour.
+   The rest stay quiet — three equally loud buttons is no ranking at all. */
+.ask-action[data-lead] {
+  color: var(--accent-2);
+  font-weight: var(--fw-semi);
+}
+
+.ask-action[data-lead]:hover {
   background: var(--accent-soft);
   color: var(--accent-2);
-  font-size: var(--fs-hint);
 }
-.ask-action:hover { background: rgba(91, 124, 250, 0.2); }
 
 .ask-empty-note {
   margin: 0;
+  padding: 11px 12px;
+  border-radius: var(--r-card);
+  background: var(--surface-tint);
   color: var(--dim);
   font-size: var(--fs-hint);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
-/* ── starters ─────────────────────────────────────────────────────── */
-.ask-starters {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+/* ── suggestions ──────────────────────────────────────────────────────── */
+
+.ask-suggest {
+  padding: 11px 0 4px;
 }
 
-.ask-starters button {
-  padding: 8px 10px;
-  text-align: left;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--r-control);
-  color: var(--muted);
-  font-size: var(--fs-control);
+.ask-suggest .ask-block__label {
+  padding: 0 12px 4px;
 }
-.ask-starters button:hover:not(:disabled) {
-  color: var(--text);
-  background: var(--hover);
-  border-color: var(--line);
+
+.ask-suggest__row:disabled {
+  opacity: 0.45;
 }
-.ask-starters button:disabled { opacity: 0.5; }

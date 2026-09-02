@@ -1,52 +1,21 @@
-/* The compact GitHub decision at the far edge of the Review footer. Account
- * setup and repository readiness are separate so a missing remote never looks
- * like a missing login. */
-
-.review-actions__github-slot {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.review-actions__github-note {
-  color: var(--dim);
-  font-size: var(--fs-tiny);
-  white-space: nowrap;
-}
+/* The GitHub decision in the Review footer.
+ *
+ * This sheet used to describe a 34px icon button with a lock badge welded to
+ * its corner, plus a slot and a note beside it. That design is gone — the
+ * footer renders a plain text button reading "Share on GitHub", and whether
+ * the account is ready is carried by the button's tooltip rather than by a
+ * status widget. The rules outlived it: `width: 34px; padding-inline: 0` was
+ * still being applied to the text button, squeezing the label into an icon's
+ * worth of room, and `__github-slot`, `__github-note`, `__github--locked` and
+ * `__lock` were matching nothing at all. No tool catches that — knip reads
+ * modules, not selectors — so a stale sheet stays stale until someone opens
+ * the panel and reads it.
+ *
+ * What is left is what the live markup actually needs. */
 
 .review-actions__github {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  padding-inline: 0;
-}
-
-.review-actions__github--locked {
-  color: var(--muted);
-}
-
-.review-actions__lock {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 9px;
-  height: 7px;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  background: var(--rail);
-}
-
-.review-actions__lock::before {
-  content: "";
-  position: absolute;
-  left: 1px;
-  top: -6px;
-  width: 4px;
-  height: 5px;
-  border: 1.5px solid currentColor;
-  border-bottom: 0;
-  border-radius: 5px 5px 0 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -1,0 +1,89 @@
+/* Ask Vibyra — the key prompt and the composer.
+
+   Split from `companion-ask.css` on the seam between the conversation (header,
+   turns) and the controls under it. One field, not three side-by-side boxes:
+   the border belongs to the thing you type in, and the two ways to fill it —
+   the microphone and send — sit inside that one border rather than each
+   carrying their own. */
+.ask-setup {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-hint);
+  color: var(--muted);
+  flex: none;
+}
+
+.ask-setup button {
+  margin-left: auto;
+  color: var(--accent-2);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+  white-space: nowrap;
+}
+
+/* The composer is one field, not three controls in a row: the border belongs
+   to the box you type in, and the mic and send sit inside it. */
+.ask-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex: none;
+  margin: 0 12px 12px;
+  padding: 5px 5px 5px 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--workspace);
+  transition: border-color var(--t-ui) var(--e-standard);
+}
+
+.ask-input:focus-within {
+  border-color: var(--accent-border);
+}
+
+.ask-input__area {
+  flex: 1;
+  min-width: 0;
+  min-height: 28px;
+  max-height: 120px;
+  padding: 6px 8px;
+  resize: none;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+}
+
+.ask-input__area:focus-visible {
+  outline: none;
+}
+
+.ask-input__area::placeholder {
+  color: var(--dim);
+}
+
+.ask-input__send {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--action);
+  color: var(--on-action);
+  transition: background var(--t-base) var(--e-standard);
+}
+
+.ask-input__send:hover:not(:disabled) {
+  background: var(--action-hover);
+}
+
+.ask-input__send:disabled {
+  background: var(--hover-strong);
+  color: var(--dim);
+  opacity: 1;
+}

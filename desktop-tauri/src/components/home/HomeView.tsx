@@ -1,6 +1,7 @@
 import logoUrl from "../../assets/vibyra-cobalt.png";
 import { basename } from "../../lib/projectIdentity";
 import { relativeTime } from "../../lib/relativeTime";
+import { useProjectCreateStore } from "../../state/projectCreateStore";
 import { useProjectStore } from "../../state/projectStore";
 import { useProjects } from "../../state/settingsStore";
 import { paneLabel, useTerminalStore } from "../../state/terminalStore";
@@ -23,7 +24,7 @@ function ownerName(homeDir: string): string {
 export function HomeView() {
   const projects = useProjects();
   const homeDir = useProjectStore((state) => state.homeDir);
-  const pickAndCreate = useProjectStore((state) => state.pickAndCreate);
+  const startProject = useProjectCreateStore((state) => state.start);
   const panes = useTerminalStore((state) => state.panes);
   const activity = useTerminalStore((state) => state.activity);
   const setFocus = useTerminalStore((state) => state.setFocus);
@@ -73,10 +74,10 @@ export function HomeView() {
         {ordered.length > 0 ? (
           <div className="hcards">
             {ordered.map((project) => <HomeProjectCard key={project.id} project={project} />)}
-            <button className="hcard hcard--new" onClick={() => void pickAndCreate()}>
+            <button className="hcard hcard--new" onClick={startProject}>
               <span className="hcard__plus">＋</span>
               <strong>New project</strong>
-              <small>pick a folder — it remembers everything</small>
+              <small>start something new, or open a folder you have</small>
             </button>
           </div>
         ) : (
@@ -86,8 +87,8 @@ export function HomeView() {
               Each project keeps its own agents, files and conversation. Add your first one —
               agents will launch straight into its folder.
             </p>
-            <button className="btn btn--primary" onClick={() => void pickAndCreate()}>
-              ＋ Add your first project
+            <button className="btn btn--primary" onClick={startProject}>
+              ＋ Start your first project
             </button>
           </div>
         )}

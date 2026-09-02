@@ -5,7 +5,9 @@ import {
   BAR_COUNT,
   barsFromLevel,
   barsFromSpectrum,
+  breatheBars,
   easeBars,
+  liftBars,
   restingBars,
   sweepBars,
 } from "../src/lib/voiceBars.ts";
@@ -19,6 +21,7 @@ test("every source produces one bar per ring position, all in range", () => {
     barsFromLevel(0.5),
     barsFromSpectrum(spectrum),
     sweepBars(400),
+    breatheBars(400),
   ]) {
     assert.equal(bars.length, BAR_COUNT);
     assert.ok(inRange(bars), JSON.stringify(bars.slice(0, 4)));
@@ -77,4 +80,32 @@ test("easing rises faster than it falls", () => {
 test("easing a ring towards itself leaves it unchanged", () => {
   const bars = barsFromLevel(0.6);
   assert.deepEqual(easeBars(bars, bars), bars);
+});
+
+test("the resting breath moves, but never loudly enough to read as signal", () => {
+  const first = breatheBars(0);
+  const later = breatheBars(700);
+  assert.notDeepEqual(first, later);
+  // It only ever lifts the ring a hair off its resting floor, so breath can
+  // never be mistaken for a voice — it proves the meter is alive while nobody
+  // is talking, and says nothing else.
+  const floor = restingBars()[0];
+  assert.ok(Math.min(...later) >= floor, "breath never dips below the floor");
+  assert.ok(Math.max(...later) - floor < 0.1, `too loud: ${Math.max(...later)}`);
+  assert.ok(Math.max(...later) < Math.max(...barsFromLevel(0.35)));
+});
+
+test("lifting takes the louder of the two rings at every position", () => {
+  const signal = barsFromLevel(0.8);
+  const breath = breatheBars(250);
+  const lifted = liftBars(signal, breath);
+  assert.equal(lifted.length, BAR_COUNT);
+  lifted.forEach((value, index) => {
+    assert.equal(value, Math.max(signal[index], breath[index]));
+  });
+});
+
+test("lifting a ring cannot quieten it", () => {
+  const signal = barsFromLevel(0.6);
+  assert.ok(liftBars(signal, breatheBars(90)).every((v, i) => v >= signal[i]));
 });
