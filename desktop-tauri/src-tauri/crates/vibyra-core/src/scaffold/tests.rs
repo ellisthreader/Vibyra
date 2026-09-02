@@ -1,7 +1,9 @@
 use std::fs;
+#[cfg(unix)]
 use std::sync::atomic::AtomicBool;
 
 use super::plan::{prepare, ScaffoldPlan, ScaffoldSeed, ScaffoldStep};
+#[cfg(unix)]
 use super::run::{run_step, StepOutcome};
 
 fn temp_dir(name: &str) -> std::path::PathBuf {
