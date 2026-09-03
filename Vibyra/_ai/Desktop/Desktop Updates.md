@@ -192,3 +192,40 @@ The stable local launcher path
 `/home/ellis/.local/opt/vibyra/Vibyra.AppImage` was atomically replaced with
 the verified 0.4.2 AppImage. Do not restart a running Vibyra process during an
 agent session; the new inode is used on the next normal launch.
+
+## Published 0.4.3
+
+Vibyra 0.4.3 superseded the live 0.4.2 release on 2026-09-03. The exact
+signed source is commit `4abe89647205ce9bfb2e94c892b50112a3939f41` and
+annotated tag `v0.4.3` on `release/0.4.3`. GitHub Actions run `33745055315`
+passed the complete frontend/Rust gates, Windows NSIS install/launch, AppImage
+launch, Debian install/launch, checksums, updater signatures, metadata, and the
+aggregate release-set gate. The same commit was verified with `npm ci` and the
+full `verify` in a clean worktree before dispatch.
+
+Railway production deployment `dd118a0c-b5fe-40de-999d-7dad865d87f7` was
+pushed from a clean worktree of `release/0.4.3` linked to the `Vibyra`
+service (never from `~/Desktop/Vibyra`, which sat at 0.2.8), with the portal
+bundle rebuilt first. It published all three release records:
+
+- Windows NSIS: 8,182,069 bytes, SHA-256
+  `7d925e24cfd60f3ff4435cd7be659952dcc38b25f6d43691563510776064aa06`.
+- Linux AppImage: 99,105,272 bytes, SHA-256
+  `d5f596629b99813130efc4947fcdd6957096b3aa45b58168342e1924cfa7cada`.
+- Debian package: 11,357,882 bytes, SHA-256
+  `add68ec6a295470e7e61d16e8f99f884badc5de3432a49331b2fabacd25fa1a4`.
+
+The feed served 0.4.3 about 150 s after `railway up`: all three updater
+routes returned 200 with version 0.4.3 for a 0.4.2 client and 204 for a 0.4.3
+client, and `verify-release.mjs feed` passed. The desktop bundle carries the
+0.4.3 What's New notes (`changelogContent.ts`, with older releases moved to
+`changelogArchive.ts`); `allowUnmarkedLaunch` is false, so only an install the
+updater marked pending sees them.
+
+What shipped: Agent and Chat Mode un-gated; the Decisions queue fed by a real
+Claude permission bridge (bridged turns run `--permission-mode manual`); every
+Agent screen rebuilt on the shared design system; the event wire-format fix;
+orphaned cards invalidated at startup; and the gate hardening a pre-release
+review forced (shell classifier fails closed on `find -exec`, `$(...)`,
+backticks and `&`; read-only subjects are refused writes; an error boundary
+around each un-gated mode; bounded listener). See `Agent Mode As Built.md`.
