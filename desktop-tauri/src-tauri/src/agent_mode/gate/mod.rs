@@ -12,6 +12,8 @@
 mod context;
 mod decide;
 #[cfg(test)]
+mod decide_deny_tests;
+#[cfg(test)]
 mod decide_tests;
 mod listener;
 pub mod waiters;

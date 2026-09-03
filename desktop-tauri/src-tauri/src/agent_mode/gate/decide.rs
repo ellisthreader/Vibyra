@@ -29,7 +29,7 @@ pub fn answer(
     raise: &dyn Fn(&ApprovalRequest),
     patience: Duration,
 ) -> BridgeReply {
-    if request.token != expected_token {
+    if !same_token(&request.token, expected_token) {
         return BridgeReply::deny("This question did not come from a turn Vibyra started.");
     }
     let subject = match context::load(world, &request.chat_id) {
@@ -43,7 +43,17 @@ pub fn answer(
     // writable grant it proceeds, outside every grant it is refused. Asking
     // here instead would put a card on screen for every edit of a folder the
     // user handed over on purpose, which is how people learn to click yes.
-    if classified.action == "file.write" && subject.writes {
+    //
+    // A subject that may not write — a Plan-level teammate, or a Chat Mode
+    // chat with no folder mounted — is refused a write before anyone is
+    // asked. Raising a card instead would let one Approve put a file
+    // anywhere on disk, which is more than a chat *with* a grant may do.
+    if classified.action == "file.write" && !subject.writes {
+        return BridgeReply::deny(
+            "This chat has no folder it may write to. Grant one, or ask for a plan instead.",
+        );
+    }
+    if classified.action == "file.write" {
         return match vibyra_core::agent_profiles::authorize(
             &subject.places,
             Path::new(&classified.target),
@@ -91,4 +101,19 @@ pub fn answer(
             }
         }
     }
+}
+
+/// Equal without short-circuiting on the first differing byte. The caller is
+/// an unauthenticated local socket that can retry without limit, so the
+/// comparison must not tell it how much of a guess was right.
+fn same_token(given: &str, expected: &str) -> bool {
+    let (given, expected) = (given.as_bytes(), expected.as_bytes());
+    if given.len() != expected.len() {
+        return false;
+    }
+    given
+        .iter()
+        .zip(expected)
+        .fold(0u8, |acc, (a, b)| acc | (a ^ b))
+        == 0
 }

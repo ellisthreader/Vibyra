@@ -20,6 +20,8 @@ mod fingerprint_tests;
 mod orphan_tests;
 mod risk;
 mod rows;
+#[cfg(test)]
+mod shell_hole_tests;
 mod shell_risk;
 #[cfg(test)]
 mod tests;

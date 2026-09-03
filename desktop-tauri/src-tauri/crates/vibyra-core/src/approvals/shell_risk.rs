@@ -18,6 +18,8 @@ const SECRET: &[&str] = &[
     "keyring",
     "pass show",
     "printenv",
+    // Another process's argv or environment: where a bridge token would be.
+    "/proc/",
 ];
 
 const DESTRUCTIVE: &[&str] = &[

@@ -14,7 +14,7 @@ use super::waiters;
 use crate::agent_mode::bridge::wire::BridgeRequest;
 use crate::agent_mode::hub::{AgentHub, AgentWorld};
 
-fn world(tmp: &tempfile::TempDir) -> (Arc<AgentWorld>, String) {
+pub(super) fn world(tmp: &tempfile::TempDir) -> (Arc<AgentWorld>, String) {
     let hub = AgentHub::default();
     let world = hub.world("acct", tmp.path()).unwrap();
     let profile = vibyra_core::agent_profiles::create(

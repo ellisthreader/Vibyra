@@ -70,13 +70,45 @@ pub(super) fn mutating_request(lower: &str) -> bool {
     })
 }
 
+/// Shell shapes that run a command the segment's first word does not name:
+/// substitution, process substitution, and the flags that turn `find` or
+/// `awk` into an executor. Interpreters and `sudo` need no entry — they are
+/// not in `READ_ONLY`, so a segment starting with one is already a write.
+const HIDDEN_EXEC: &[&str] = &[
+    "$(",
+    "`",
+    "<(",
+    ">(",
+    "|&",
+    " -exec",
+    " -execdir",
+    " -delete",
+    " -ok",
+    " -okdir",
+    "system(",
+];
+
 /// Whether every segment of the line is a program that only reads.
+///
+/// Biased to fail closed: a false "write" costs one card, a false "read" is
+/// the failure the whole broker exists to prevent. So the line is refused as
+/// a read if it contains anything that could run a command its first word
+/// does not name — `find -exec`, `$(...)`, an `awk` `system()` — before any
+/// program name is looked at.
 pub(super) fn read_only(command: &str) -> bool {
     let stripped = command
         .replace("2>&1", "")
         .replace("2>/dev/null", "")
         .replace("&>/dev/null", "");
     if stripped.contains('>') || stripped.trim().is_empty() {
+        return false;
+    }
+    let padded = format!(" {} ", stripped.to_lowercase());
+    if HIDDEN_EXEC.iter().any(|shape| padded.contains(shape)) {
+        return false;
+    }
+    // A lone `&` backgrounds whatever precedes it and starts a new command.
+    if padded.replace("&&", "").contains('&') {
         return false;
     }
     let every_segment_reads = segments(&stripped).all(|segment| {
@@ -110,8 +142,7 @@ pub(super) fn read_only(command: &str) -> bool {
 
 fn segments(command: &str) -> impl Iterator<Item = &str> {
     command
-        .split(['|', ';', '\n'])
-        .flat_map(|part| part.split("&&"))
+        .split(['|', ';', '\n', '&'])
         .map(str::trim)
         .filter(|part| !part.is_empty())
 }

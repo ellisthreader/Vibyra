@@ -3,7 +3,7 @@
 //! One thread per connection, because a question can wait half an hour for
 //! an answer and the next turn's question must not queue behind it.
 
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,6 +11,9 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 use super::decide::{answer, PATIENCE};
+
+/// The most a question may be, in bytes, before it is dropped unread.
+const QUESTION_LIMIT: u64 = 64 * 1024;
 use crate::agent_mode::bridge::wire::{BridgeReply, BridgeRequest};
 use crate::agent_mode::hub::AgentHub;
 
@@ -18,7 +21,13 @@ pub(super) fn spawn(app: AppHandle, hub: Arc<AgentHub>, listener: TcpListener, t
     std::thread::Builder::new()
         .name("vibyra-permission-gate".into())
         .spawn(move || {
-            for stream in listener.incoming().flatten() {
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else {
+                    // Descriptor exhaustion makes accept fail on every call;
+                    // without a pause this thread would spin at full speed.
+                    std::thread::sleep(Duration::from_millis(200));
+                    continue;
+                };
                 let app = app.clone();
                 let hub = Arc::clone(&hub);
                 let token = token.clone();
@@ -37,7 +46,15 @@ fn serve(app: AppHandle, hub: Arc<AgentHub>, mut stream: TcpStream, token: &str)
     let Ok(mut reader) = stream.try_clone().map(BufReader::new) else {
         return;
     };
-    if reader.read_line(&mut line).is_err() {
+    // A question is one line and a few kilobytes; nothing legitimate needs
+    // more, and a caller that never sends a newline must not grow a string
+    // for ever before the token is even checked.
+    if (&mut reader)
+        .take(QUESTION_LIMIT)
+        .read_line(&mut line)
+        .is_err()
+        || !line.ends_with('\n')
+    {
         return;
     }
     let reply = match serde_json::from_str::<BridgeRequest>(line.trim()) {

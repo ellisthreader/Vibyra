@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useState } from "react";
 
 import { FirstWelcome } from "../auth/FirstWelcome";
 import { CloseConfirmModal } from "./CloseConfirmModal";
+import { ModeErrorBoundary } from "./ModeErrorBoundary";
 import { ProjectStrip } from "./ProjectStrip";
 import { ProjectWorkspace } from "./ProjectWorkspace";
 import { Rail } from "./Rail";
@@ -124,12 +125,16 @@ export function WorkspaceApp() {
         </div>
         {mode === "agent" && (
           <div className="shell__mode">
-            <Suspense fallback={null}><AgentMode /></Suspense>
+            <ModeErrorBoundary label="Agent">
+              <Suspense fallback={null}><AgentMode /></Suspense>
+            </ModeErrorBoundary>
           </div>
         )}
         {mode === "chat" && (
           <div className="shell__mode">
-            <Suspense fallback={null}><ChatMode /></Suspense>
+            <ModeErrorBoundary label="Chat">
+              <Suspense fallback={null}><ChatMode /></Suspense>
+            </ModeErrorBoundary>
           </div>
         )}
       </div>
