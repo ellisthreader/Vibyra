@@ -147,6 +147,7 @@ fn turn(db: &AgentDb, chat_id: &str, engine: Engine, cwd: &str, prompt: &str) ->
         system_prompt: None,
         env: Vec::new(),
         env_remove: Vec::new(),
+        bridge: None,
     }
     .build();
 

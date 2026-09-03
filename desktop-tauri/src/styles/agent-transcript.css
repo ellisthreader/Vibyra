@@ -21,6 +21,32 @@
   overscroll-behavior: contain;
 }
 
+/* Before the first chat: the shared empty card, centred in the surface. */
+.chat-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 22px;
+}
+
+.chat-empty .empty {
+  width: min(460px, 100%);
+}
+
+/* A decision this chat is parked on, above the composer. The turn is blocked
+   on it, so it sits where the answer would have appeared. */
+.chat-surface__decisions {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 22px 10px;
+}
+
 .transcript {
   display: flex;
   flex-direction: column;

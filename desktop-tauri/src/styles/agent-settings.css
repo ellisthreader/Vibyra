@@ -1,160 +1,80 @@
 /* One teammate's settings.
 
-   Uses the shared settings row/card language rather than inventing a second
-   one — see settings-pane.css and settings-rows.css. What is here is only what
-   Agent Mode adds: the places list, the memory ledger and the typed-name
-   deletion. */
+   Built from the shared settings group/row language — see settings-rows.css
+   and settings-pane.css — so a teammate's settings look like the app's own.
+   What is here is only what Agent Mode adds: the narrower measure, the places
+   rows, and the typed-name deletion. */
 
 .agent-settings {
-  max-width: 780px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 22px 24px 40px;
-  overflow-y: auto;
+  max-width: 820px;
+  gap: 20px;
 }
 
-.agent-settings .settings-card {
-  margin-bottom: 18px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-panel);
-  background: var(--surface);
-}
-
-.agent-settings .settings-card h3 {
-  margin: 0 0 12px;
-  color: var(--text);
-  font-size: var(--fs-strong);
-  font-weight: var(--fw-bold);
-}
-
-.settings-card__hint {
-  margin: 6px 0 12px;
-  max-width: 62ch;
-  color: var(--dim);
-  font-size: var(--fs-hint);
-  line-height: 1.55;
-}
-
-.settings-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-bottom: 12px;
-}
-
-.settings-field > span {
-  color: var(--muted);
-  font-size: var(--fs-hint);
-  font-weight: var(--fw-medium);
-}
-
-.settings-field input,
-.settings-field textarea,
-.settings-field select {
-  width: 100%;
+/* A stacked row's control is the full measure, and a textarea in it is the
+   same control as an input, only taller. */
+.agent-settings .setting-row--stack textarea.input {
+  min-height: auto;
   padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-control);
-  background: var(--term-input);
-  color: var(--text);
   font-family: var(--font-ui);
-  font-size: var(--fs-ui);
   line-height: 1.55;
-}
-
-.settings-field textarea {
   resize: vertical;
 }
 
-.settings-field input:focus,
-.settings-field textarea:focus,
-.settings-field select:focus {
-  outline: none;
-  border-color: var(--accent-border);
+/* Two section labels in a row inside one block (memory's "waiting" and
+   "knows" lists) get the section rhythm rather than the block's 8px. */
+.agent-settings .settings-block > .panel__section-head,
+.agent-settings .settings-block > .section-label:not(:first-child) {
+  margin-top: 8px;
 }
 
-.agent-settings .settings-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 9px 0;
-  border-top: 1px solid var(--line-soft);
-}
-
-.agent-settings .settings-row__label {
-  flex: 1;
-  color: var(--muted);
-  font-size: var(--fs-body);
-  line-height: 1.5;
-}
-
-.agent-settings .settings-row select,
-.agent-settings .settings-row input[type="text"],
-.agent-settings .settings-row input:not([type="checkbox"]) {
-  flex: none;
-  min-width: 180px;
-  min-height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--term-input);
-  color: var(--text);
-  font-size: var(--fs-control);
+.settings-note--error {
+  color: var(--danger);
 }
 
 /* ---------------------------------------------------------------- places */
 
-.place-list li {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 8px 11px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-}
-
-.place-list code {
-  flex: 1;
-  min-width: 0;
+.place__path {
   overflow: hidden;
   color: var(--text);
   font-family: var(--font-mono);
   font-size: var(--fs-hint);
+  font-weight: var(--fw-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: rtl;
   text-align: left;
 }
 
-.place-list__access {
-  flex: none;
-  padding: 1px 7px;
-  border-radius: 8px;
+.place__access {
+  padding: 2px 8px;
+  border-radius: 999px;
   font-size: var(--fs-micro);
   font-weight: var(--fw-heavy);
-  text-transform: uppercase;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.place-list__access--read {
-  background: var(--hover);
+.place__access--read {
+  background: var(--hover-strong);
   color: var(--dim);
 }
 
-.place-list__access--readWrite {
+.place__access--readWrite {
   background: var(--amber-soft);
   color: var(--amber);
 }
 
-.place-list__home {
-  flex: none;
-  color: var(--dim);
-  font-size: var(--fs-hint);
+/* --------------------------------------------------------------- danger */
+
+.settings-group--danger {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
 }
 
-.place-list__actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
+.danger-confirm {
+  background: var(--danger-soft);
+}
+
+.danger-confirm__actions {
+  justify-content: flex-end;
 }

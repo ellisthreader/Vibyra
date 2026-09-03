@@ -118,6 +118,10 @@ pub fn execute(
         system_prompt,
         env,
         env_remove,
+        // Where this turn's permission questions go. `None` while the gate is
+        // down, which runs the provider exactly as it ran before there was
+        // one — a bridge that failed to bind must never fail a turn.
+        bridge: super::gate::bridge_for(&chat.id, &turn_id),
     }
     .build();
 

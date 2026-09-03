@@ -12,12 +12,17 @@ pub mod capabilities;
 pub mod claude;
 mod claude_events;
 #[cfg(test)]
+mod claude_input_tests;
+#[cfg(test)]
 mod claude_tests;
 pub mod codex;
 mod codex_events;
 #[cfg(test)]
 mod codex_tests;
 pub mod events;
+mod events_bounds;
+#[cfg(test)]
+mod events_wire_tests;
 #[cfg(test)]
 #[path = "platform_import_scan.rs"]
 mod platform_import_scan;
@@ -34,5 +39,6 @@ mod tests;
 
 pub use adapter::{normalize, PlannedTurn, TurnPlan};
 pub use capabilities::EngineCapabilities;
+pub use claude::PermissionBridge;
 pub use events::{AgentEvent, TurnOccasion};
 pub use process::{run, TurnCommand, TurnExit, TurnHandle};

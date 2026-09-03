@@ -40,9 +40,9 @@ export function RoutineScheduleFields({
   return (
     <>
       <div className="routine-editor__schedule">
-        <label className="settings-field">
+        <label className="field">
           <span>Repeats</span>
-          <select value={kind} onChange={(event) => onKind(event.target.value as Schedule["kind"])}>
+          <select className="input" value={kind} onChange={(event) => onKind(event.target.value as Schedule["kind"])}>
             <option value="daily">Every day</option>
             <option value="weekdays">On chosen days</option>
             <option value="every">On an interval</option>
@@ -50,9 +50,9 @@ export function RoutineScheduleFields({
         </label>
 
         {kind === "every" ? (
-          <label className="settings-field">
+          <label className="field">
             <span>Every</span>
-            <select value={minutes} onChange={(event) => onMinutes(Number(event.target.value))}>
+            <select className="input" value={minutes} onChange={(event) => onMinutes(Number(event.target.value))}>
               {INTERVALS.map((value) => (
                 <option key={value} value={value}>
                   {value < 60 ? `${value} minutes` : `${value / 60} hour${value === 60 ? "" : "s"}`}
@@ -61,17 +61,17 @@ export function RoutineScheduleFields({
             </select>
           </label>
         ) : (
-          <label className="settings-field">
+          <label className="field">
             <span>At</span>
-            <input type="time" value={time} onChange={(event) => onTime(event.target.value)} />
+            <input className="input" type="time" value={time} onChange={(event) => onTime(event.target.value)} />
           </label>
         )}
 
         {/* An interval is not civil time, so it has no timezone to get wrong. */}
         {kind !== "every" && (
-          <label className="settings-field">
+          <label className="field">
             <span>Timezone</span>
-            <select value={timezone} onChange={(event) => onTimezone(event.target.value)}>
+            <select className="input" value={timezone} onChange={(event) => onTimezone(event.target.value)}>
               {zones.map((zone) => (
                 <option key={zone} value={zone}>
                   {zone}

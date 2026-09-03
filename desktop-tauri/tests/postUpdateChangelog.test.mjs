@@ -57,6 +57,17 @@ test("the 0.4.2 updater opens its changelog exactly once", async () => {
   assert.equal(shouldShowPostUpdateChangelog("0.4.2", storage), false);
 });
 
+test("the 0.4.3 notes announce the release that opened Agent Mode", async () => {
+  const content = await read("../src/components/changelog/changelogContent.ts");
+  assert.match(content, /"0\.4\.3"/);
+  assert.match(content, /Agent Mode is open/);
+  // The claim the whole release rests on: outward effects stop and wait.
+  assert.match(content, /stops and asks before anything outward/);
+  // A release announces itself only to someone the updater marked, so an
+  // existing install cannot be shown notes for a version it did not take.
+  assert.match(content, /"0\.4\.3":[\s\S]*?allowUnmarkedLaunch: false/);
+});
+
 test("the first content release bridges binaries that could not mark pending", () => {
   const storage = new MemoryStorage();
   assert.equal(shouldShowPostUpdateChangelog("8.2.5", storage), false);
@@ -123,7 +134,9 @@ test("the approved visual, interaction and accessibility contract is present", a
 });
 
 test("0.3.0 content and its optimized local artwork ship together", async () => {
-  const content = await read("../src/components/changelog/changelogContent.ts");
+  // Archived, not deleted: a release's notes are a record. The split keeps
+  // `changelogContent` inside the line limit as releases accumulate.
+  const content = await read("../src/components/changelog/changelogArchive.ts");
   const hero = await stat(new URL(
     "../src/assets/changelog/vibyra-release-0.3.0.webp",
     import.meta.url,

@@ -11,7 +11,6 @@ import { VoiceHud } from "./VoiceHud";
 import { PinnedNotice } from "../notifications/PinnedNotice";
 import { Toasts } from "../notifications/Toasts";
 import { hasSeenFirstWelcome } from "../../lib/firstWelcomePolicy";
-import { isWipAppMode } from "../../lib/workspaceModePolicy";
 import { useActivityTicker } from "../../lib/useActivityTicker";
 import { useAgentWorkBus } from "../../lib/agentWorkBus.ts";
 import { useGlobalShortcuts } from "../../lib/useGlobalShortcuts";
@@ -103,13 +102,12 @@ export function WorkspaceApp() {
   // Code Mode is hidden rather than unmounted. Its panes hold live PTYs with
   // xterm renderers and scrollback; unmounting to show a chat list would cost
   // every one of them both, and they would come back blank.
-  const safeMode = isWipAppMode(mode) ? "code" : mode;
-  const inCode = safeMode === "code";
+  const inCode = mode === "code";
 
   return (
     <div className={`app ${welcomeHandoff ? "app--welcome-handoff" : ""}`}>
       <TitleBar />
-      <div className="shell" data-mode={safeMode}>
+      <div className="shell" data-mode={mode}>
         <div className="shell__mode" hidden={!inCode}>
           <ProjectStrip />
           {showProject ? (
@@ -124,12 +122,12 @@ export function WorkspaceApp() {
             <Suspense fallback={null}><HomeView /></Suspense>
           )}
         </div>
-        {safeMode === "agent" && !isWipAppMode(safeMode) && (
+        {mode === "agent" && (
           <div className="shell__mode">
             <Suspense fallback={null}><AgentMode /></Suspense>
           </div>
         )}
-        {safeMode === "chat" && !isWipAppMode(safeMode) && (
+        {mode === "chat" && (
           <div className="shell__mode">
             <Suspense fallback={null}><ChatMode /></Suspense>
           </div>

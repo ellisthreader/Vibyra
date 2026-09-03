@@ -106,23 +106,3 @@
   color: var(--muted);
 }
 
-.chat-empty {
-  max-width: 460px;
-  margin: auto;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.chat-empty h3 {
-  margin: 0 0 8px;
-  color: var(--text);
-  font-size: var(--fs-title);
-  font-weight: var(--fw-bold);
-}
-
-.chat-empty p {
-  margin: 0 0 18px;
-  color: var(--muted);
-  font-size: var(--fs-body);
-  line-height: 1.65;
-}

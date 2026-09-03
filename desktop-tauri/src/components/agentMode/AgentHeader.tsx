@@ -1,4 +1,5 @@
 import type { AgentProfile } from "../../agentTypes";
+import { engineLabel } from "../../lib/agentEngineLabel";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore, capabilityFor } from "../../state/agentRosterStore";
@@ -26,8 +27,9 @@ export function AgentHeader({ agent }: { agent: AgentProfile }) {
   );
   const working = useAgentChatStore((state) => {
     const chats = state.chats[agent.id] ?? [];
-    return chats.filter((chat) => state.running[chat.id]).length;
+    return chats.filter((chat) => state.running[chat.id] || chat.state === "running").length;
   });
+  const version = capability.version ? ` ${capability.version.split(" ")[0]}` : "";
 
   return (
     <header className="agent-head">
@@ -40,11 +42,16 @@ export function AgentHeader({ agent }: { agent: AgentProfile }) {
         />
         <div className="agent-head__names">
           <h2>{agent.name}</h2>
-          <p>
-            {agent.engine === "claude" ? "Claude Code" : "Codex"}
-            {capability.version ? ` ${capability.version.split(" ")[0]}` : ""}
-            {working > 0 && <span className="agent-head__busy"> · working on {working}</span>}
-          </p>
+          <span className="agent-head__engine">
+            {engineLabel(agent.engine)}
+            {version}
+          </span>
+          <span
+            className={`agent-head__status ${working > 0 ? "agent-head__status--busy" : ""}`}
+          >
+            <span className={`adot ${working > 0 ? "adot--working" : "adot--idle"}`} />
+            {working > 0 ? `Working in ${working} chat${working === 1 ? "" : "s"}` : "Idle"}
+          </span>
         </div>
         <div className="dock__tabs" role="tablist" aria-label="Agent view">
           {TABS.map(({ id, label }) => (

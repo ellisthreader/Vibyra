@@ -74,7 +74,7 @@ export function AgentChatRail({ agent }: { agent: AgentProfile }) {
               <span className="chat-row__title">{chat.title || "New chat"}</span>
               <span className="chat-row__meta">
                 {running[chat.id] ? (
-                  <span className="activity-dot" title="Working" />
+                  <span className="adot adot--working" title="Working" />
                 ) : (
                   relativeTime(chat.updatedMs)
                 )}

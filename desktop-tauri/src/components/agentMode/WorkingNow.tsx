@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 
-import { NONE } from "../../lib/emptyList";
 import { isParked } from "../../lib/routineRunStrip.ts";
+import { liveWork, type Live } from "../../lib/agentLiveWork.ts";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { EmptyState } from "./EmptyState";
+import { TerminalIcon } from "../common/AgentIcons";
 
 /**
  * What the team is doing, as a list you can steer from.
@@ -14,14 +16,9 @@ import { useAgentWorkStore } from "../../state/agentWorkStore";
  * title, no elapsed time and nothing to click, on the one screen that exists
  * to answer *what is my team doing*.
  *
- * Both kinds of work appear, because both are the team working: a routine
- * running on the scheduler's thread, and a chat you started that is still
- * going. A routine is listed by its own name rather than its chat's, because
- * the name is the thing you scheduled.
- *
  * Parked is called out separately and never as failure. A turn stopped at a
  * decision has done nothing wrong; it is waiting on the reader, and saying so
- * on this screen is what turns "why is nothing happening" into one click.
+ * here is what turns "why is nothing happening" into one click.
  *
  * The elapsed clock ticks once every ten seconds, not every second. This sits
  * beside live terminals and a re-render a second across a running grid is
@@ -36,16 +33,6 @@ function since(startedMs: number, now: number): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-interface Live {
-  key: string;
-  who: string;
-  what: string;
-  parked: boolean;
-  startedMs: number | null;
-  chatId: string | null;
-  agentId: string | null;
-}
-
 export function WorkingNow() {
   const chats = useAgentChatStore((state) => state.chats);
   const running = useAgentChatStore((state) => state.running);
@@ -58,41 +45,16 @@ export function WorkingNow() {
   const mode = useAgentModeStore();
   const [now, setNow] = useState(() => Date.now());
 
-  const named = (id: string | null) =>
-    agents.find((agent) => agent.id === id)?.name ?? "Detached";
-
-  const live: Live[] = [];
-  const seen = new Set<string>();
-
-  for (const routine of routines) {
-    const run = (runs[routine.id] ?? NONE)[0];
-    if (!run || run.status !== "running") continue;
-    if (run.chatId) seen.add(run.chatId);
-    live.push({
-      key: run.id,
-      who: named(routine.agentId),
-      what: routine.name,
-      parked: isParked(run, waitingChats),
-      startedMs: run.startedMs,
-      chatId: run.chatId,
-      agentId: routine.agentId,
-    });
-  }
-
-  for (const [owner, list] of Object.entries(chats)) {
-    for (const chat of list) {
-      if (!running[chat.id] || seen.has(chat.id)) continue;
-      live.push({
-        key: chat.id,
-        who: named(owner === "detached" ? null : owner),
-        what: chat.title || "New chat",
-        parked: waitingChats.includes(chat.id),
-        startedMs: startedMs[chat.id] ?? null,
-        chatId: chat.id,
-        agentId: chat.agentId,
-      });
-    }
-  }
+  const live = liveWork({
+    chats,
+    running,
+    startedMs,
+    routines,
+    runs,
+    waitingChats,
+    agents,
+    isParked,
+  });
 
   useEffect(() => {
     if (live.length === 0) return;
@@ -101,30 +63,43 @@ export function WorkingNow() {
   }, [live.length]);
 
   if (live.length === 0) {
-    return <p className="dashboard__quiet">Nothing is running.</p>;
+    return (
+      <EmptyState
+        compact
+        icon={<TerminalIcon size={16} />}
+        title="Nothing is running"
+        body="A turn you send, a routine that fires, or a handoff from another teammate will show here."
+      />
+    );
   }
 
+  const open = (entry: Live) => {
+    if (!entry.chatId) return;
+    mode.setMode("agent");
+    if (entry.agentId) mode.selectAgent(entry.agentId);
+    mode.selectChat(entry.chatId);
+    void openChat(entry.chatId);
+  };
+
   return (
-    <ul className="working">
+    <ul className="rows">
       {live.map((entry) => (
         <li key={entry.key}>
           <button
             type="button"
-            className={`working__row ${entry.parked ? "is-parked" : ""}`}
+            className={`row working__row ${entry.parked ? "is-parked" : ""}`}
             disabled={!entry.chatId}
-            onClick={() => {
-              if (!entry.chatId) return;
-              mode.setMode("agent");
-              if (entry.agentId) mode.selectAgent(entry.agentId);
-              mode.selectChat(entry.chatId);
-              void openChat(entry.chatId);
-            }}
+            onClick={() => open(entry)}
           >
             <span className="working__pulse" aria-hidden="true" />
-            <span className="working__who">{entry.who}</span>
-            <span className="working__what">
-              {entry.what}
-              {entry.parked && " — waiting on a decision"}
+            <span className="row__text">
+              <span className="row__title">
+                <span>{entry.what}</span>
+              </span>
+              <span className="row__meta">
+                {entry.who}
+                {entry.parked && " — waiting on a decision"}
+              </span>
             </span>
             <span className="working__since">
               {entry.startedMs ? since(entry.startedMs, now) : ""}

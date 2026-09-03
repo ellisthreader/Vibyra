@@ -2,9 +2,13 @@
 
 .agent-surface {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 0;
   height: 100%;
+}
+
+.agent-surface--wide {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .agent-surface__main {
@@ -19,7 +23,7 @@
 .agent-head {
   flex: none;
   border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  background: var(--rail);
 }
 
 .agent-head__identity {
@@ -27,13 +31,13 @@
   align-items: center;
   gap: 11px;
   min-height: var(--subhead-h);
-  padding: 0 16px;
+  padding: 0 18px;
 }
 
 .agent-head__names {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -43,16 +47,32 @@
   font-size: var(--fs-title-sm);
   font-weight: var(--fw-bold);
   letter-spacing: -0.005em;
+  white-space: nowrap;
 }
 
-.agent-head__names p {
-  margin: 0;
+/* Engine and version as one quiet pill, status as a dot and a word. */
+.agent-head__engine {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   color: var(--dim);
-  font-size: var(--fs-hint);
+  font-size: var(--fs-tiny);
+  font-weight: var(--fw-semi);
+  white-space: nowrap;
 }
 
-.agent-head__busy {
-  color: var(--accent-2);
+.agent-head__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+}
+
+.agent-head__status--busy {
+  color: var(--success);
 }
 
 .agent-head__identity .dock__tabs {
@@ -63,7 +83,7 @@
    chat is the difference between "it's broken" and "run npm update". */
 .agent-head__blocked {
   margin: 0;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-top: 1px solid var(--line-soft);
   background: var(--amber-soft);
   color: var(--amber);

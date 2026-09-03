@@ -92,24 +92,18 @@ fn claude_an_errored_result_fails_the_turn_rather_than_completing_it() {
 /// id — that is what makes a chat one conversation for its whole life.
 #[test]
 fn claude_pins_then_resumes_the_same_conversation() {
-    let first = claude::turn_args(
-        "sess-1",
-        false,
-        PermissionMode::Standard,
-        &[],
-        None,
-        None,
-        None,
-    );
-    let later = claude::turn_args(
-        "sess-1",
-        true,
-        PermissionMode::Standard,
-        &[],
-        None,
-        None,
-        None,
-    );
+    let shape = |resume| claude::TurnShape {
+        session: "sess-1",
+        resume,
+        permission: PermissionMode::Standard,
+        places: &[],
+        model: None,
+        effort: None,
+        system_prompt: None,
+        bridged: true,
+    };
+    let first = claude::turn_args(shape(false));
+    let later = claude::turn_args(shape(true));
 
     assert!(first.windows(2).any(|w| w == ["--session-id", "sess-1"]));
     assert!(later.windows(2).any(|w| w == ["--resume", "sess-1"]));
@@ -128,12 +122,60 @@ fn claude_pins_then_resumes_the_same_conversation() {
     }
 }
 
+/// The mapping the whole decision queue rests on.
+///
+/// `acceptEdits` never consults the permission-prompt tool — checked against
+/// claude 2.1.258 with a real `rm -f`, which ran unasked — so a bridged turn
+/// has to be `manual` or Vibyra is never told anything and Decisions stays
+/// empty. Unbridged it goes back to `acceptEdits`, because `manual` with no
+/// tool to ask denies every call and the turn does nothing at all.
 #[test]
 fn claude_plan_mode_is_the_providers_own_plan_mode() {
-    assert_eq!(claude::permission_mode(PermissionMode::Plan), "plan");
+    for bridged in [true, false] {
+        assert_eq!(
+            claude::permission_mode(PermissionMode::Plan, bridged),
+            "plan"
+        );
+    }
     assert_eq!(
-        claude::permission_mode(PermissionMode::Standard),
+        claude::permission_mode(PermissionMode::Standard, true),
+        "manual"
+    );
+    assert_eq!(
+        claude::permission_mode(PermissionMode::Full, true),
+        "manual"
+    );
+    assert_eq!(
+        claude::permission_mode(PermissionMode::Standard, false),
         "acceptEdits"
     );
-    assert_eq!(claude::permission_mode(PermissionMode::Full), "acceptEdits");
+    assert_eq!(
+        claude::permission_mode(PermissionMode::Full, false),
+        "acceptEdits"
+    );
+}
+
+/// The bridge rides on two flags and nothing on disk: the tool name Claude
+/// consults, and an inline server definition whose env names the running app.
+#[test]
+fn claude_permission_prompts_are_routed_through_the_bridge() {
+    let args = claude::bridge_args(&claude::PermissionBridge {
+        exe: "/opt/vibyra/vibyra-desktop".into(),
+        port: 43_210,
+        token: "tok".into(),
+        chat_id: "chat-1".into(),
+        turn_id: "turn-1".into(),
+    });
+    assert_eq!(args[0], "--permission-prompt-tool");
+    assert_eq!(args[1], "mcp__vibyra__approve");
+    assert_eq!(args[2], "--mcp-config");
+    let config: serde_json::Value = serde_json::from_str(&args[3]).unwrap();
+    let server = &config["mcpServers"]["vibyra"];
+    assert_eq!(server["command"], "/opt/vibyra/vibyra-desktop");
+    assert_eq!(server["args"][0], "--permission-bridge");
+    assert_eq!(server["env"]["VIBYRA_BRIDGE_PORT"], "43210");
+    assert_eq!(server["env"]["VIBYRA_BRIDGE_TOKEN"], "tok");
+    assert_eq!(server["env"]["VIBYRA_BRIDGE_CHAT"], "chat-1");
+    assert_eq!(server["env"]["VIBYRA_BRIDGE_TURN"], "turn-1");
+    assert_eq!(args.len(), 4);
 }

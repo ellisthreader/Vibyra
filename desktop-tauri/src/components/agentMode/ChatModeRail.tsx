@@ -67,7 +67,7 @@ export function ChatModeRail() {
             >
               <span className="chat-row__title">{chat.title || "New chat"}</span>
               <span className="chat-row__meta">
-                {running[chat.id] ? <span className="activity-dot" /> : relativeTime(chat.updatedMs)}
+                {running[chat.id] ? <span className="adot adot--working" title="Working" /> : relativeTime(chat.updatedMs)}
               </span>
               {chat.mountedPlace && (
                 <span className="chat-row__tag" title={chat.mountedPlace}>

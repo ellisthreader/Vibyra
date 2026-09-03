@@ -5,6 +5,7 @@ import { routineZones } from "../../ipc/agentConfig";
 import { describeSchedule } from "../../lib/routineSchedule";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { EditorDialog } from "./EditorDialog";
 import { RoutineScheduleFields } from "./RoutineScheduleFields";
 
 /**
@@ -67,16 +68,22 @@ export function RoutineEditor({
   };
 
   return (
-    <form
-      className="routine-editor"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
+    <EditorDialog
+      title={routineId ? `Edit ${existing?.name ?? "routine"}` : "New routine"}
+      lede="Each run opens a fresh chat as the teammate that owns it, with that teammate's brief, folders and memory."
+      submitLabel={routineId ? "Save routine" : "Create routine"}
+      busy={!name.trim() || !instruction.trim() || !agentId}
+      error={error}
+      onClose={onClose}
+      onSubmit={() => void submit()}
     >
-      <label className="settings-field">
-        <span>Agent</span>
-        <select value={agentId} onChange={(event) => setAgentId(event.target.value)}>
+      <label className="field">
+        <span>Teammate</span>
+        <select
+          className="input"
+          value={agentId}
+          onChange={(event) => setAgentId(event.target.value)}
+        >
           {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
               {agent.name}
@@ -85,14 +92,21 @@ export function RoutineEditor({
         </select>
       </label>
 
-      <label className="settings-field">
+      <label className="field">
         <span>Name</span>
-        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Morning check" />
+        <input
+          className="input"
+          autoFocus
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Morning check"
+        />
       </label>
 
-      <label className="settings-field">
+      <label className="field">
         <span>What it does each time</span>
         <textarea
+          className="input"
           value={instruction}
           rows={3}
           onChange={(event) => setInstruction(event.target.value)}
@@ -114,9 +128,10 @@ export function RoutineEditor({
         zones={zones}
       />
 
-      <label className="settings-field">
+      <label className="field">
         <span>Access while it runs</span>
         <select
+          className="input"
           value={permission}
           onChange={(event) => setPermission(event.target.value as PermissionMode)}
         >
@@ -133,17 +148,7 @@ export function RoutineEditor({
       )}
 
       <p className="routine-editor__resolved">{describeSchedule(schedule, timezone)}</p>
-      {error && <p className="panel__error">{error}</p>}
-
-      <div className="routine-editor__actions">
-        <button type="submit" className="btn-primary">
-          {routineId ? "Save routine" : "Create routine"}
-        </button>
-        <button type="button" className="btn-ghost" onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </form>
+    </EditorDialog>
   );
 }
 

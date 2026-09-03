@@ -32,7 +32,7 @@ export function SkillHistory({ skill }: { skill: Skill }) {
             <span className="skill-history__version">v{entry.version}</span>
             <span className="skill-history__text">{entry.procedure.split("\n")[0]}</span>
             <button
-              className="btn-ghost"
+              className="btn btn--sm btn--secondary"
               onClick={async () => {
                 await rollBackSkill(skill.id, entry.version).catch(() => {});
                 await load();

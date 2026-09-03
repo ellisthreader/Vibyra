@@ -1,5 +1,5 @@
-/* Attachments, handoffs, cross-chat search, skill history and the mail trail —
-   the pieces that hang off a surface rather than being one. */
+/* Attachments and handoffs — the pieces that hang off a chat surface rather
+   than being one. Cross-chat search lives in agent-dashboard.css. */
 
 .composer__attach {
   display: flex;
@@ -98,26 +98,16 @@
   padding: 8px 22px 0;
 }
 
-.handoff select,
-.handoff input {
+.handoff select.input {
+  width: auto;
+  flex: none;
   min-height: 28px;
-  padding: 0 9px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--term-input);
-  color: var(--text);
-  font-size: var(--fs-control);
 }
 
-.handoff input {
+.handoff input.input {
   flex: 1;
   min-width: 160px;
-}
-
-.handoff input:focus,
-.handoff select:focus {
-  outline: none;
-  border-color: var(--accent-border);
+  min-height: 28px;
 }
 
 /* Always shown, including a refusal in the guard's own words: "nothing
@@ -128,38 +118,4 @@
   color: var(--muted);
   font-size: var(--fs-hint);
   line-height: 1.5;
-}
-
-/* --------------------------------------------------------------- search */
-
-.chat-search {
-  margin-bottom: 22px;
-}
-
-.chat-search .chat-rail__search {
-  background: var(--surface);
-}
-
-.chat-search__hits {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.chat-search__hits button {
-  width: 100%;
-  min-height: 30px;
-  padding: 0 11px;
-  border-radius: var(--r-sm);
-  color: var(--muted);
-  font-size: var(--fs-body);
-  text-align: left;
-}
-
-.chat-search__hits button:hover {
-  color: var(--text);
-  background: var(--hover);
 }

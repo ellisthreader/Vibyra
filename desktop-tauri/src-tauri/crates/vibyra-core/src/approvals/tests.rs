@@ -1,7 +1,7 @@
 use super::*;
 use crate::agentdb::AgentDb;
 
-fn proposed(action: &str, risk: Risk) -> ProposedAction {
+pub(super) fn proposed(action: &str, risk: Risk) -> ProposedAction {
     ProposedAction {
         agent_id: Some("a".into()),
         agent_name: "Nia".into(),
@@ -15,7 +15,7 @@ fn proposed(action: &str, risk: Risk) -> ProposedAction {
     }
 }
 
-fn seeded() -> AgentDb {
+pub(super) fn seeded() -> AgentDb {
     let db = AgentDb::open_memory().unwrap();
     db.with(|connection| {
         connection

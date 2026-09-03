@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 
+import { ShieldIcon } from "../common/AgentIcons";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 import { ApprovalCard } from "./ApprovalCard";
+import { EmptyState } from "./EmptyState";
+import { PanelHead } from "./PanelHead";
 
 /**
  * Every decision waiting.
@@ -23,23 +26,32 @@ export function DecisionsPanel() {
 
   return (
     <div className="panel">
-      <header className="panel__head">
-        <h2>Decisions</h2>
-        <p>
-          Publishing, spending, deleting outside a granted folder, and anything touching a
-          secret always stop here first — whatever a file, a webpage or a prompt says.
-        </p>
-      </header>
-      {error && <p className="panel__error">{error}</p>}
-      {approvals.length === 0 ? (
-        <p className="panel__quiet">Nothing is waiting.</p>
-      ) : (
-        <div className="panel__cards">
-          {approvals.map((request) => (
-            <ApprovalCard key={request.id} request={request} />
-          ))}
-        </div>
-      )}
+      <div className="panel__inner">
+        <PanelHead
+          title="Decisions"
+          blurb="Publishing, spending, deleting outside a granted folder, and anything touching a secret always stop here first — whatever a file, a webpage or a prompt says."
+        />
+        {error && <p className="panel__error">{error}</p>}
+        {approvals.length === 0 ? (
+          <EmptyState
+            icon={<ShieldIcon size={18} />}
+            title="Nothing is waiting"
+            body="An agent that wants to do something with an effect outside your granted folders will ask here, and wait until you answer."
+          />
+        ) : (
+          <section className="panel__section">
+            <div className="panel__section-head">
+              <span className="section-label">Waiting for you</span>
+              <span className="panel__count panel__count--ask">{approvals.length}</span>
+            </div>
+            <div className="panel__cards">
+              {approvals.map((request) => (
+                <ApprovalCard key={request.id} request={request} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

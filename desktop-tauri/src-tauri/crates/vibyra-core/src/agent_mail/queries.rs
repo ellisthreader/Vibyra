@@ -90,32 +90,36 @@ pub(super) fn digest_of(body: &str) -> String {
     format!("{:x}", hasher.finalize())[..16].to_string()
 }
 
+/// The columns `message_from_row` reads, in its order.
+pub(super) const COLUMNS: &str = "id, chain_id, parent_id, sender_id, sender_name, recipient_id, \
+     chat_id, body, status, hop, created_ms";
+
+pub(super) fn message_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<MailMessage> {
+    Ok(MailMessage {
+        id: row.get(0)?,
+        chain_id: row.get(1)?,
+        parent_id: row.get(2)?,
+        sender_id: row.get(3)?,
+        sender_name: row.get(4)?,
+        recipient_id: row.get(5)?,
+        chat_id: row.get(6)?,
+        body: row.get(7)?,
+        status: row.get(8)?,
+        hop: row.get(9)?,
+        created_ms: row.get(10)?,
+    })
+}
+
 /// One agent's mail, sent and received, newest first.
 pub fn trail(db: &AgentDb, agent_id: &str, limit: i64) -> CoreResult<Vec<MailMessage>> {
     db.with(|connection| {
-        let mut statement = connection
-            .prepare(
-                "SELECT id, chain_id, parent_id, sender_id, sender_name, recipient_id, chat_id, \
-                 body, status, hop, created_ms FROM agent_mail \
-                 WHERE sender_id = ?1 OR recipient_id = ?1 ORDER BY created_ms DESC LIMIT ?2",
-            )
-            .map_err(sql)?;
+        let query = format!(
+            "SELECT {COLUMNS} FROM agent_mail WHERE sender_id = ?1 OR recipient_id = ?1 \
+             ORDER BY created_ms DESC LIMIT ?2"
+        );
+        let mut statement = connection.prepare(&query).map_err(sql)?;
         let rows = statement
-            .query_map(params![agent_id, limit], |row| {
-                Ok(MailMessage {
-                    id: row.get(0)?,
-                    chain_id: row.get(1)?,
-                    parent_id: row.get(2)?,
-                    sender_id: row.get(3)?,
-                    sender_name: row.get(4)?,
-                    recipient_id: row.get(5)?,
-                    chat_id: row.get(6)?,
-                    body: row.get(7)?,
-                    status: row.get(8)?,
-                    hop: row.get(9)?,
-                    created_ms: row.get(10)?,
-                })
-            })
+            .query_map(params![agent_id, limit], message_from_row)
             .map_err(sql)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(sql)
     })

@@ -1,6 +1,5 @@
 import type { AppMode } from "../../agentTypes";
 import { relativeTime } from "../../lib/relativeTime";
-import { isWipAppMode } from "../../lib/workspaceModePolicy";
 import type { CommandPaletteEntry } from "../../lib/paletteTypes";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
@@ -35,7 +34,6 @@ export function agentEntries(): CommandPaletteEntry[] {
   const entries: CommandPaletteEntry[] = [];
 
   for (const entry of MODES) {
-    if (isWipAppMode(entry.id)) continue;
     entries.push({
       id: `mode-${entry.id}`,
       kind: "command",
@@ -48,8 +46,6 @@ export function agentEntries(): CommandPaletteEntry[] {
       run: () => mode.setMode(entry.id),
     });
   }
-
-  if (isWipAppMode("agent") && isWipAppMode("chat")) return entries;
 
   for (const agent of roster.agents) {
     const busy = (chats.chats[agent.id] ?? []).some((chat) => chats.running[chat.id]);

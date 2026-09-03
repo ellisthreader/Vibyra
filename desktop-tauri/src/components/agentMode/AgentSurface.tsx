@@ -35,7 +35,7 @@ export function AgentSurface() {
   if (!agent) return null;
 
   return (
-    <div className="agent-surface">
+    <div className={`agent-surface ${tab === "chats" ? "" : "agent-surface--wide"}`}>
       {tab === "chats" && <AgentChatRail agent={agent} />}
       <section className="agent-surface__main">
         <AgentHeader agent={agent} />

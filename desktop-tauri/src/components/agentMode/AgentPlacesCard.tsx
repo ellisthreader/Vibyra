@@ -1,6 +1,7 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import type { AgentProfile } from "../../agentTypes";
+import { FolderIcon } from "../common/Icons";
 import { NONE } from "../../lib/emptyList";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 
@@ -29,40 +30,55 @@ export function AgentPlacesCard({ agent }: { agent: AgentProfile }) {
   };
 
   return (
-    <section className="settings-card">
-      <h3>Places</h3>
-      <p className="settings-card__hint">
-        Nothing outside these folders is readable or writable, whatever a prompt asks for.
-        Removing one takes effect on the next turn and the next routine run.
-      </p>
-      {error && <p className="panel__error">{error}</p>}
-      <ul className="place-list">
+    <section className="settings-block">
+      <span className="section-label">Places</span>
+      <div className="settings-group">
+        <p className="settings-note">
+          Nothing outside these folders is readable or writable, whatever a prompt asks for.
+          Removing one takes effect on the next turn and the next routine run.
+        </p>
         {places.map((place) => {
           const home = place.path === agent.homePath;
           return (
-            <li key={place.id}>
-              <code>{place.path}</code>
-              <span className={`place-list__access place-list__access--${place.access}`}>
-                {place.access === "readWrite" ? "read & write" : "read only"}
+            <div className="setting-row" key={place.id}>
+              <span className="setting-row__lead">
+                <span className="setting-row__icon">
+                  <FolderIcon size={13} />
+                </span>
+                <span className="setting-row__text">
+                  <code className="place__path" title={place.path}>
+                    {place.path}
+                  </code>
+                  <span className="setting-row__hint">
+                    {home ? "Its own folder — always granted, always writable." : place.label}
+                  </span>
+                </span>
               </span>
-              {home ? (
-                <span className="place-list__home">its own folder</span>
-              ) : (
-                <button className="btn-ghost" onClick={() => void revoke(agent.id, place.id)}>
-                  Remove
-                </button>
-              )}
-            </li>
+              <span className="setting-row__control settings-row-actions">
+                <span className={`place__access place__access--${place.access}`}>
+                  {place.access === "readWrite" ? "Read & write" : "Read only"}
+                </span>
+                {!home && (
+                  <button
+                    className="btn btn--sm btn--secondary"
+                    onClick={() => void revoke(agent.id, place.id)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </span>
+            </div>
           );
         })}
-      </ul>
-      <div className="place-list__actions">
-        <button className="btn-ghost" onClick={() => void pick("read")}>
-          Add a folder to read
-        </button>
-        <button className="btn-ghost" onClick={() => void pick("readWrite")}>
-          Add a folder it may change
-        </button>
+        <div className="settings-group__foot">
+          {error && <span className="settings-feedback settings-feedback--error">{error}</span>}
+          <button className="btn btn--sm" onClick={() => void pick("read")}>
+            Add a folder to read
+          </button>
+          <button className="btn btn--sm" onClick={() => void pick("readWrite")}>
+            Add a folder it may change
+          </button>
+        </div>
       </div>
     </section>
   );

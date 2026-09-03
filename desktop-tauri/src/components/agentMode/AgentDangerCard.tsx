@@ -20,55 +20,75 @@ export function AgentDangerCard({ agent }: { agent: AgentProfile }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <section className="settings-card settings-card--danger">
-      <h3>Archive or delete</h3>
-      <div className="settings-row">
-        <span className="settings-row__label">
-          Hide this teammate without losing anything
-        </span>
-        <button className="btn-ghost" onClick={() => void archive(agent.id, true)}>
-          Archive
-        </button>
-      </div>
-
-      {!open ? (
-        <div className="settings-row">
-          <span className="settings-row__label">
-            Delete {agent.name}, its chats, memory, routines and its own folder
+    <section className="settings-block">
+      <span className="section-label">Archive or delete</span>
+      <div className="settings-group settings-group--danger">
+        <div className="setting-row">
+          <span className="setting-row__text">
+            <span className="setting-row__label">Archive {agent.name}</span>
+            <span className="setting-row__hint">
+              Hides it from the rail without losing anything. Its routines stop.
+            </span>
           </span>
-          <button className="btn-ghost btn-ghost--danger" onClick={() => setOpen(true)}>
-            Delete…
-          </button>
+          <span className="setting-row__control">
+            <button className="btn btn--sm" onClick={() => void archive(agent.id, true)}>
+              Archive
+            </button>
+          </span>
         </div>
-      ) : (
-        <div className="danger-confirm">
-          <p>
-            This removes every chat, every memory and everything in {agent.name}&rsquo;s own
-            folder. Decisions it asked for stay in the record. Type its name to confirm.
-          </p>
-          <input
-            value={typed}
-            onChange={(event) => setTyped(event.target.value)}
-            placeholder={agent.name}
-            aria-label={`Type ${agent.name} to confirm deletion`}
-          />
-          <div className="danger-confirm__actions">
-            <button
-              className="btn-ghost btn-ghost--danger"
-              disabled={typed.trim() !== agent.name}
-              onClick={async () => {
-                await remove(agent.id);
-                selectAgent(null);
-              }}
-            >
-              Delete {agent.name}
-            </button>
-            <button className="btn-ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </button>
+
+        {!open ? (
+          <div className="setting-row">
+            <span className="setting-row__text">
+              <span className="setting-row__label">Delete {agent.name}</span>
+              <span className="setting-row__hint">
+                Removes its chats, memory, routines and its own folder. Decisions it asked for
+                stay in the record.
+              </span>
+            </span>
+            <span className="setting-row__control">
+              <button className="btn btn--sm btn--danger" onClick={() => setOpen(true)}>
+                Delete…
+              </button>
+            </span>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="setting-row setting-row--stack danger-confirm">
+            <span className="setting-row__text">
+              <span className="setting-row__label">Type its name to confirm</span>
+              <span className="setting-row__hint">
+                This removes every chat, every memory and everything in {agent.name}&rsquo;s own
+                folder. There is no undo.
+              </span>
+            </span>
+            <span className="setting-row__control">
+              <input
+                className="input"
+                autoFocus
+                value={typed}
+                onChange={(event) => setTyped(event.target.value)}
+                placeholder={agent.name}
+                aria-label={`Type ${agent.name} to confirm deletion`}
+              />
+            </span>
+            <span className="settings-row-actions danger-confirm__actions">
+              <button className="btn btn--sm btn--secondary" onClick={() => setOpen(false)}>
+                Keep it
+              </button>
+              <button
+                className="btn btn--sm btn--danger"
+                disabled={typed.trim() !== agent.name}
+                onClick={async () => {
+                  await remove(agent.id);
+                  selectAgent(null);
+                }}
+              >
+                Delete {agent.name}
+              </button>
+            </span>
+          </div>
+        )}
+      </div>
     </section>
   );
 }

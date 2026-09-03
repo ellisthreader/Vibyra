@@ -46,7 +46,7 @@ fn content(value: &serde_json::Value) -> Vec<AgentEvent> {
                 "tool_use" => Some(AgentEvent::ToolRequested {
                     call_id: text_at(block, "id").unwrap_or_default(),
                     tool: text_at(block, "name").unwrap_or_else(|| "tool".into()),
-                    summary: summarize_input(block.get("input")),
+                    summary: tool_target(block.get("input")),
                 }),
                 _ => None,
             },
@@ -119,7 +119,48 @@ fn blocks(value: &serde_json::Value) -> Vec<serde_json::Value> {
 
 /// Tool inputs are arbitrary JSON. The transcript wants one readable line, so
 /// a bare string passes through and anything else is rendered compactly.
+/// The one field of a tool's input a person reads: the command for Bash,
+/// the path for a file tool, the pattern for a search. Claude sends the
+/// whole input object, and showing it as JSON put `{"command":"ls"}` in a
+/// column that exists to be scanned. Anything without a known field keeps
+/// the JSON, which is at least honest about what was asked.
+fn tool_target(value: Option<&serde_json::Value>) -> String {
+    const FIELDS: [&str; 8] = [
+        "command",
+        "file_path",
+        "path",
+        "pattern",
+        "query",
+        "url",
+        "prompt",
+        "description",
+    ];
+    if let Some(input) = value.and_then(|v| v.as_object()) {
+        for field in FIELDS {
+            if let Some(text) = input.get(field).and_then(|v| v.as_str()) {
+                return text.to_string();
+            }
+        }
+    }
+    summarize_input(value)
+}
+
+/// Tool results arrive either as a string or as content blocks; the text of
+/// the blocks is what the transcript shows, not their JSON envelope.
 fn summarize_input(value: Option<&serde_json::Value>) -> String {
+    if let Some(blocks) = value.and_then(|v| v.as_array()) {
+        let texts: Vec<&str> = blocks
+            .iter()
+            .filter_map(|block| block.get("text").and_then(|t| t.as_str()))
+            .collect();
+        if !texts.is_empty() {
+            return texts.join("\n");
+        }
+    }
+    summarize_scalar(value)
+}
+
+fn summarize_scalar(value: Option<&serde_json::Value>) -> String {
     match value {
         None | Some(serde_json::Value::Null) => String::new(),
         Some(serde_json::Value::String(text)) => text.clone(),

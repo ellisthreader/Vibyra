@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import type { Engine } from "../../agentTypes";
-import { useModalFocus } from "../../lib/useModalFocus";
+import { engineLabel } from "../../lib/agentEngineLabel";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentRosterStore, capabilityFor } from "../../state/agentRosterStore";
+import { EditorDialog } from "./EditorDialog";
 
 /**
  * Creating a teammate: three fields, then it opens.
@@ -24,8 +25,7 @@ export function NewAgentDialog({ onClose }: { onClose: () => void }) {
   const [brief, setBrief] = useState("");
   const [engine, setEngine] = useState<Engine>(usable[0]?.engine ?? "claude");
   const [busy, setBusy] = useState(false);
-  const shell = useRef<HTMLDivElement>(null);
-  useModalFocus(shell, true, onClose);
+  const chosen = capabilityFor(capabilities, engine);
 
   const submit = async () => {
     if (!name.trim() || busy) return;
@@ -39,78 +39,55 @@ export function NewAgentDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="modal-scrim" onMouseDown={onClose}>
-      <div
-        className="modal modal--narrow"
-        ref={shell}
-        role="dialog"
-        aria-label="New agent"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <h2>New agent</h2>
-        <p className="modal__lede">
-          A teammate keeps its own brief, memory, skills and folders across every chat you have
-          with it.
-        </p>
+    <EditorDialog
+      title="New teammate"
+      lede="A teammate keeps its own brief, memory, skills and folders across every chat you have with it."
+      submitLabel="Create teammate"
+      busy={busy || !name.trim() || !chosen.structured}
+      error={error ?? (chosen.structured ? null : chosen.blocker)}
+      onClose={onClose}
+      onSubmit={() => void submit()}
+    >
+      <label className="field">
+        <span>Name</span>
+        <input
+          className="input"
+          autoFocus
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Release"
+        />
+      </label>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void submit();
-          }}
+      <label className="field">
+        <span>What it is for</span>
+        <textarea
+          className="input"
+          rows={5}
+          value={brief}
+          onChange={(event) => setBrief(event.target.value)}
+          placeholder={
+            "What it is responsible for, the context it needs, the standard you expect, " +
+            "and where it should stop and ask you."
+          }
+        />
+      </label>
+
+      <label className="field">
+        <span>Engine</span>
+        <select
+          className="input"
+          value={engine}
+          onChange={(event) => setEngine(event.target.value as Engine)}
         >
-          <label className="settings-field">
-            <span>Name</span>
-            <input
-              autoFocus
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Release"
-            />
-          </label>
-
-          <label className="settings-field">
-            <span>What it is for</span>
-            <textarea
-              rows={5}
-              value={brief}
-              onChange={(event) => setBrief(event.target.value)}
-              placeholder={
-                "What it is responsible for, the context it needs, the standard you expect, " +
-                "and where it should stop and ask you."
-              }
-            />
-          </label>
-
-          <label className="settings-field">
-            <span>Engine</span>
-            <select value={engine} onChange={(event) => setEngine(event.target.value as Engine)}>
-              {(usable.length > 0 ? usable : capabilities).map((entry) => (
-                <option key={entry.engine} value={entry.engine} disabled={!entry.structured}>
-                  {entry.engine === "claude" ? "Claude Code" : "Codex"}
-                  {entry.structured ? "" : " — unavailable"}
-                </option>
-              ))}
-            </select>
-          </label>
-          {(() => {
-            const chosen = capabilityFor(capabilities, engine);
-            return chosen.structured ? null : (
-              <p className="panel__error">{chosen.blocker}</p>
-            );
-          })()}
-          {error && <p className="panel__error">{error}</p>}
-
-          <div className="modal__actions">
-            <button type="submit" className="btn-primary" disabled={!name.trim() || busy}>
-              Create
-            </button>
-            <button type="button" className="btn-ghost" onClick={onClose}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          {(usable.length > 0 ? usable : capabilities).map((entry) => (
+            <option key={entry.engine} value={entry.engine} disabled={!entry.structured}>
+              {engineLabel(entry.engine)}
+              {entry.structured ? "" : " — unavailable"}
+            </option>
+          ))}
+        </select>
+      </label>
+    </EditorDialog>
   );
 }

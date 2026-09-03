@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 
+import { BookIcon } from "../common/AgentIcons";
+import { PlusIcon } from "../common/Icons";
+import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { EmptyState } from "./EmptyState";
+import { PanelHead } from "./PanelHead";
 import { SkillEditor } from "./SkillEditor";
 import { SkillRow } from "./SkillRow";
-import { useAgentModeStore } from "../../state/agentModeStore";
 
 /**
  * The skill library.
@@ -37,66 +41,70 @@ export function SkillsPanel() {
 
   const proposed = skills.filter((skill) => skill.status === "proposed");
   const installed = skills.filter((skill) => skill.status === "installed");
+  const row = (skill: (typeof skills)[number]) => (
+    <SkillRow
+      key={skill.id}
+      skill={skill}
+      open={skill.id === expanded}
+      onToggle={(next) => setExpanded(next ? skill.id : null)}
+      onEdit={() => setEditing(skill.id)}
+    />
+  );
 
   return (
     <div className="panel">
-      <header className="panel__head">
-        <h2>Skills</h2>
-        <p>
-          A procedure a teammate can be taught once and reuse. Each one names when it applies,
-          what to do, how to check it worked, and where to stop and ask.
-        </p>
-      </header>
-
-      <button className="panel__new" onClick={() => setEditing("new")}>
-        Write a skill
-      </button>
-      {editing && (
-        <SkillEditor
-          skillId={editing === "new" ? undefined : editing}
-          onClose={() => setEditing(null)}
+      <div className="panel__inner">
+        <PanelHead
+          title="Skills"
+          blurb="A procedure a teammate can be taught once and reuse. Each one names when it applies, what to do, how to check it worked, and where to stop and ask."
+          actions={
+            <button className="btn btn--sm btn--primary" onClick={() => setEditing("new")}>
+              <PlusIcon size={13} /> Write a skill
+            </button>
+          }
         />
-      )}
-
-      {proposed.length > 0 && (
-        <section>
-          <h3 className="section-label">Proposed by an agent</h3>
-          <p className="panel__quiet">
-            Written by a teammate after repeating the same work. Read it before installing —
-            once installed it is injected into every matching turn.
-          </p>
-          <ul className="skill-list">
-            {proposed.map((skill) => (
-              <SkillRow
-                key={skill.id}
-                skill={skill}
-                open={skill.id === expanded}
-                onToggle={(next) => setExpanded(next ? skill.id : null)}
-                onEdit={() => setEditing(skill.id)}
-              />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section>
-        <h3 className="section-label">Installed</h3>
-        {installed.length === 0 ? (
-          <p className="panel__quiet">No skills yet.</p>
-        ) : (
-          <ul className="skill-list">
-            {installed.map((skill) => (
-              <SkillRow
-                key={skill.id}
-                skill={skill}
-                open={skill.id === expanded}
-                onToggle={(next) => setExpanded(next ? skill.id : null)}
-                onEdit={() => setEditing(skill.id)}
-              />
-            ))}
-          </ul>
+        {editing && (
+          <SkillEditor
+            skillId={editing === "new" ? undefined : editing}
+            onClose={() => setEditing(null)}
+          />
         )}
-      </section>
+
+        {proposed.length > 0 && (
+          <section className="panel__section">
+            <div className="panel__section-head">
+              <span className="section-label">Proposed by a teammate</span>
+              <span className="panel__count panel__count--ask">{proposed.length}</span>
+            </div>
+            <p className="panel__quiet">
+              Written after repeating the same work. Read it before installing — once installed
+              it is injected into every matching turn.
+            </p>
+            <ul className="rows">{proposed.map(row)}</ul>
+          </section>
+        )}
+
+        <section className="panel__section">
+          <div className="panel__section-head">
+            <span className="section-label">Installed</span>
+            {installed.length > 0 && <span className="panel__count">{installed.length}</span>}
+          </div>
+          {installed.length === 0 ? (
+            <EmptyState
+              icon={<BookIcon size={18} />}
+              title="No skills yet"
+              body="Write the procedure once and give it to whichever teammates need it. Each one is offered as a single line in every turn, and expanded only when its trigger matches."
+              action={
+                <button className="btn btn--primary" onClick={() => setEditing("new")}>
+                  <PlusIcon size={13} /> Write a skill
+                </button>
+              }
+            />
+          ) : (
+            <ul className="rows">{installed.map(row)}</ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -10,8 +10,8 @@ import { AgentRosterRow } from "./AgentRosterRow";
  *
  * Panels first because they are where attention goes — a decision waiting is
  * more urgent than any particular agent — and the roster below because that is
- * the list that grows. New Agent sits at the bottom of the roster rather than
- * in a header, where it would compete with the section label for the same eye.
+ * the list that grows. New teammate sits in the section head once there is a
+ * roster, and as the roster's own call to action while there is none.
  */
 const PANELS = [
   { id: "dashboard", label: "Dashboard", Icon: GaugeIcon },
@@ -31,7 +31,7 @@ export function AgentRail({ onNewAgent }: { onNewAgent: () => void }) {
     <aside className="rail agent-rail">
       <div className="rail__scroll">
         <div className="rail__section">
-          <nav className="agent-rail__panels">
+          <nav className="agent-rail__panels" aria-label="Agent panels">
             {PANELS.map(({ id, label, Icon }) => (
               <button
                 key={id}
@@ -54,11 +54,23 @@ export function AgentRail({ onNewAgent }: { onNewAgent: () => void }) {
         <div className="rail__section">
           <div className="rail__section-head">
             <span className="section-label">Teammates</span>
+            {agents.length > 0 && (
+              <div className="rail__section-actions">
+                <button className="icon-btn" title="New teammate" onClick={onNewAgent}>
+                  <PlusIcon size={13} />
+                </button>
+              </div>
+            )}
           </div>
           {agents.length === 0 ? (
-            <p className="agent-rail__empty">
-              No teammates yet. An agent keeps a brief, its own memory and its own chats.
-            </p>
+            <>
+              <p className="agent-rail__empty">
+                A teammate keeps its own brief, memory, skills and folders across every chat.
+              </p>
+              <button className="agent-rail__new" onClick={onNewAgent}>
+                <PlusIcon size={13} /> New teammate
+              </button>
+            </>
           ) : (
             <ul className="agent-rail__roster">
               {agents.map((agent) => (
@@ -66,9 +78,6 @@ export function AgentRail({ onNewAgent }: { onNewAgent: () => void }) {
               ))}
             </ul>
           )}
-          <button className="agent-rail__new" onClick={onNewAgent}>
-            <PlusIcon size={13} /> New agent
-          </button>
         </div>
       </div>
     </aside>

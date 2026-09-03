@@ -92,3 +92,33 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* The action strip that closes a dialog: a way out, then the one thing to do. */
+.modal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-tint);
+}
+
+.modal__foot .modal__error {
+  flex: 1;
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--fs-hint);
+}
+
+/* The sentence under a dialog title that says what the form will do. */
+.modal__lede {
+  margin: 0 0 14px;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+}
+
+.modal--narrow {
+  width: min(520px, 92vw);
+}

@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 
 import type { AgentChat } from "../../agentTypes";
 import { searchChats } from "../../ipc/agentChats";
+import { relativeTime } from "../../lib/relativeTime";
 import { SearchIcon } from "../common/Icons";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
+import { useAgentRosterStore } from "../../state/agentRosterStore";
 
 /**
  * Search across every chat on the account, by title or by anything said.
@@ -16,6 +18,7 @@ import { useAgentModeStore } from "../../state/agentModeStore";
 export function ChatSearch() {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<AgentChat[]>([]);
+  const agents = useAgentRosterStore((state) => state.agents);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const selectChat = useAgentModeStore((state) => state.selectChat);
   const openChat = useAgentChatStore((state) => state.openChat);
@@ -33,6 +36,9 @@ export function ChatSearch() {
     }, 220);
     return () => window.clearTimeout(timer);
   }, [query]);
+
+  const owner = (chat: AgentChat) =>
+    agents.find((agent) => agent.id === chat.agentId)?.name ?? "Detached";
 
   return (
     <div className="chat-search">
@@ -57,14 +63,17 @@ export function ChatSearch() {
                   setQuery("");
                 }}
               >
-                {chat.title || "New chat"}
+                <span>{chat.title || "New chat"}</span>
+                <span>
+                  {owner(chat)} · {relativeTime(chat.updatedMs)}
+                </span>
               </button>
             </li>
           ))}
         </ul>
       )}
       {query.trim().length >= 3 && hits.length === 0 && (
-        <p className="panel__quiet">No chat mentions that.</p>
+        <p className="chat-search__none">No chat mentions that.</p>
       )}
     </div>
   );

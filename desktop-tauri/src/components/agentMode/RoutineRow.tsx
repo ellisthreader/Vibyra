@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import type { Routine } from "../../agentTypes";
+import { TrashIcon } from "../common/AgentIcons";
 import { NONE } from "../../lib/emptyList";
 import { relativeTime } from "../../lib/relativeTime";
 import { isParked, lastRunLine, runStrip } from "../../lib/routineRunStrip.ts";
@@ -29,6 +30,12 @@ import { AgentMark } from "../common/AgentMark";
  * again, which is how a routine could run, fail, and leave the row still
  * showing yesterday.
  */
+const ACCESS: Record<Routine["permission"], string> = {
+  plan: "Plan only",
+  standard: "Standard access",
+  full: "Full access",
+};
+
 export function RoutineRow({
   routine,
   agentName,
@@ -60,6 +67,7 @@ export function RoutineRow({
   const strip = runStrip(runs);
   const parked = isParked(last, waitingChats);
   const busy = last?.status === "running";
+  const lastClass = `routine-row__last routine-row__last--${parked ? "parked" : last?.status}`;
 
   // A routine that produced work nobody ever saw is the failure this whole
   // design is about, so the last run is a way into the chat it created.
@@ -72,76 +80,79 @@ export function RoutineRow({
 
   return (
     <li className={`routine-row ${routine.enabled ? "" : "is-paused"}`}>
-      <div className="routine-row__main">
-        <span className="routine-row__name">
-          <AgentMark agentId={agentId} name={agentName} accent={accent} size={16} />
-          {routine.name}
-        </span>
-        <span className="routine-row__meta">
-          {agentName} · {routine.description} · {routine.timezone}
-        </span>
-        <span className="routine-row__meta">
-          {routine.permission === "plan" ? "Plan only" : `Runs with ${routine.permission} access`}
-        </span>
-        {last &&
-          (last.chatId ? (
-            <button
-              type="button"
-              className={`routine-row__last routine-row__last--${parked ? "parked" : last.status} is-link`}
-              onClick={open}
-            >
-              {lastRunLine(last, parked)}
-            </button>
-          ) : (
-            <span className={`routine-row__last routine-row__last--${parked ? "parked" : last.status}`}>
-              {lastRunLine(last, parked)}
-            </span>
-          ))}
-        {strip.length > 0 ? (
-          <span className="run-strip" role="img" aria-label={`Last ${strip.length} runs`}>
-            {strip.map((mark) => (
-              <i key={mark.id} className={`run-strip__m run-strip__m--${mark.status}`} title={mark.title} />
-            ))}
+      <div className="row">
+        <AgentMark agentId={agentId} name={agentName} accent={accent} size={22} />
+        <span className="row__text">
+          <span className="row__title">
+            <span>{routine.name}</span>
+            {!routine.enabled && <span className="panel__count">Paused</span>}
           </span>
-        ) : (
-          <span className="run-strip run-strip--empty">No runs yet.</span>
-        )}
-      </div>
-      <div className="routine-row__side">
-        <span className="routine-row__next">
-          {routine.enabled && routine.nextRunMs
-            ? `Next ${relativeTime(routine.nextRunMs)}`
-            : "Paused"}
+          <span className="row__meta">
+            {agentName} · {routine.description} · {ACCESS[routine.permission]}
+          </span>
+          {last &&
+            (last.chatId ? (
+              <button type="button" className={`${lastClass} is-link`} onClick={open}>
+                {lastRunLine(last, parked)}
+              </button>
+            ) : (
+              <span className={lastClass}>{lastRunLine(last, parked)}</span>
+            ))}
         </span>
-        <div className="routine-row__actions">
-          {last?.chatId && (busy || parked) ? (
-            <button className="btn-ghost" onClick={open}>
-              Open chat
-            </button>
+        <span className="row__side routine-row__side">
+          {strip.length > 0 ? (
+            <span className="run-strip" role="img" aria-label={`Last ${strip.length} runs`}>
+              {strip.map((mark) => (
+                <i
+                  key={mark.id}
+                  className={`run-strip__m run-strip__m--${mark.status}`}
+                  title={mark.title}
+                />
+              ))}
+            </span>
           ) : (
-            <button
-              className="btn-ghost"
-              disabled={!routine.enabled}
-              title={
-                routine.enabled
-                  ? "Run it now. The schedule is untouched."
-                  : "Resume it first — a paused routine does not run."
-              }
-              onClick={() => void runNow(routine.id)}
-            >
-              Run now
-            </button>
+            <span className="run-strip run-strip--empty">No runs yet</span>
           )}
-          <button className="btn-ghost" onClick={() => void setEnabled(routine.id, !routine.enabled)}>
-            {routine.enabled ? "Pause" : "Resume"}
+          <span className="row__when">
+            {routine.enabled && routine.nextRunMs ? `Next ${relativeTime(routine.nextRunMs)}` : ""}
+          </span>
+        </span>
+      </div>
+      <div className="routine-row__actions">
+        {last?.chatId && (busy || parked) ? (
+          <button className="btn btn--sm" onClick={open}>
+            Open chat
           </button>
-          <button className="btn-ghost" onClick={onEdit}>
-            Edit
+        ) : (
+          <button
+            className="btn btn--sm"
+            disabled={!routine.enabled}
+            title={
+              routine.enabled
+                ? "Run it now. The schedule is untouched."
+                : "Resume it first — a paused routine does not run."
+            }
+            onClick={() => void runNow(routine.id)}
+          >
+            Run now
           </button>
-          <button className="btn-ghost" onClick={() => void remove(routine.id)}>
-            Delete
-          </button>
-        </div>
+        )}
+        <button
+          className="btn btn--sm btn--secondary"
+          onClick={() => void setEnabled(routine.id, !routine.enabled)}
+        >
+          {routine.enabled ? "Pause" : "Resume"}
+        </button>
+        <button className="btn btn--sm btn--secondary" onClick={onEdit}>
+          Edit
+        </button>
+        <button
+          className="icon-btn icon-btn--danger"
+          title="Delete this routine"
+          onClick={() => void remove(routine.id)}
+        >
+          <TrashIcon size={13} />
+        </button>
       </div>
     </li>
   );

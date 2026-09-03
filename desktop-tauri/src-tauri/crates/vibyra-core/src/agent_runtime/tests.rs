@@ -78,6 +78,7 @@ fn codex_context_is_delimited_in_the_prompt_and_claude_uses_its_own_channel() {
         system_prompt: Some("You keep release notes honest.".into()),
         env: vec![],
         env_remove: vec![],
+        bridge: None,
     };
 
     let codex = plan(Engine::Codex).build();

@@ -120,3 +120,10 @@ select.input {
   background: var(--danger-soft);
   color: var(--danger);
 }
+
+/* The dense variant for buttons inside a list row or a card foot. */
+.btn--sm {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: var(--fs-control);
+}

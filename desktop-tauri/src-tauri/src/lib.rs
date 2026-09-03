@@ -64,6 +64,12 @@ mod sink;
 mod state;
 
 pub fn handle_cli() -> Option<Result<&'static str, String>> {
+    // Claude starts this same binary as its permission-prompt MCP server. It
+    // never returns: stdout is the protocol channel, so the caller must not
+    // print anything after it.
+    if agent_mode::bridge::requested() {
+        agent_mode::bridge::run_from_cli();
+    }
     discord_setup::handle_cli()
 }
 
@@ -127,7 +133,11 @@ pub fn run() {
             // nothing whenever no account is signed in, so it can start here
             // rather than being wired to the sign-in event.
             let hub = std::sync::Arc::clone(&app.state::<state::AppState>().agents);
-            agent_mode::scheduler::start(app.handle().clone(), hub);
+            agent_mode::scheduler::start(app.handle().clone(), std::sync::Arc::clone(&hub));
+            // The permission gate binds a loopback port and answers questions
+            // from bridge processes. Started here rather than on the first
+            // turn: binding costs nothing, and a turn must never wait on it.
+            agent_mode::gate::start(app.handle().clone(), hub);
             Ok(())
         })
         // Closing is vetoed once so the UI can warn about live terminals and

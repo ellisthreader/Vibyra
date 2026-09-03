@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import type { AgentProfile, MailMessage } from "../../agentTypes";
 import { mailAllowlist, mailTrail, setMailAllowlist } from "../../ipc/agentMail";
@@ -36,52 +36,72 @@ export function AgentMailCard({ agent }: { agent: AgentProfile }) {
   };
 
   const others = agents.filter((entry) => entry.id !== agent.id);
-
-  return (
-    <section className="settings-card">
-      <h3>Teammate messages</h3>
-      <label className="settings-row">
-        <span className="settings-row__label">Accepts handoffs from other agents</span>
+  const row = (label: string, hint: string, checked: boolean, onChange: (on: boolean) => void) => (
+    <label className="setting-row">
+      <span className="setting-row__text">
+        <span className="setting-row__label">{label}</span>
+        <span className="setting-row__hint">{hint}</span>
+      </span>
+      <span className="setting-row__control">
         <input
           type="checkbox"
-          checked={agent.mailEnabled}
-          onChange={(event) => void update(agent.id, { mailEnabled: event.target.checked })}
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
         />
-      </label>
-      <p className="settings-card__hint">
-        A handoff can never widen what this agent may do — its turn is built from its own
-        brief, folders and access level. Anything asking it to publish, spend or delete
-        becomes a decision for you instead.
-      </p>
+      </span>
+    </label>
+  );
+
+  return (
+    <section className="settings-block">
+      <span className="section-label">Working with others</span>
+      <div className="settings-group">
+        {row(
+          "Accepts handoffs from other teammates",
+          "A handoff can never widen what this teammate may do — its turn is built from its own brief, folders and access level. One asking it to publish, spend or delete becomes a decision for you.",
+          agent.mailEnabled,
+          (on) => void update(agent.id, { mailEnabled: on }),
+        )}
+        {row(
+          "May run scheduled routines",
+          "Turning this off stops the routines it already has, not only new ones.",
+          agent.routinesAllowed,
+          (on) => void update(agent.id, { routinesAllowed: on }),
+        )}
+        {row(
+          "Pause all teammate messages, app-wide",
+          "Every handoff between any two teammates is refused while this is on.",
+          paused,
+          (on) => void saveSettings({ agentMailPaused: on }),
+        )}
+      </div>
 
       {others.length > 0 && (
         <>
-          <p className="section-label">{agent.name} may write to</p>
-          <ul className="allow-list">
+          <span className="section-label">{agent.name} may hand work to</span>
+          <div className="settings-group">
             {others.map((peer) => (
-              <li key={peer.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={allowed.includes(peer.id)}
-                    onChange={() => void toggle(peer.id)}
-                  />
-                  {peer.name}
-                </label>
-              </li>
+              <Fragment key={peer.id}>
+                {row(
+                  peer.name,
+                  peer.brief.split("\n")[0] || "No brief yet.",
+                  allowed.includes(peer.id),
+                  () => void toggle(peer.id),
+                )}
+              </Fragment>
             ))}
-          </ul>
+          </div>
         </>
       )}
 
       {trail.length > 0 && (
         <>
-          <p className="section-label">Recent handoffs</p>
+          <span className="section-label">Recent handoffs</span>
           <ul className="mail-trail">
             {trail.slice(0, 6).map((message) => (
               <li key={message.id} className={`mail-trail__row mail-trail__row--${message.status}`}>
                 <span className="mail-trail__who">
-                  {message.senderId === agent.id ? `to ${message.recipientId ? "a teammate" : "—"}` : `from ${message.senderName}`}
+                  {message.senderId === agent.id ? "Sent" : `From ${message.senderName}`}
                 </span>
                 <span className="mail-trail__body">{message.body}</span>
                 <span className="mail-trail__status">{message.status}</span>
@@ -90,27 +110,6 @@ export function AgentMailCard({ agent }: { agent: AgentProfile }) {
           </ul>
         </>
       )}
-
-      <label className="settings-row">
-        <span className="settings-row__label">Pause all agent messages, app-wide</span>
-        <input
-          type="checkbox"
-          checked={paused}
-          onChange={(event) => void saveSettings({ agentMailPaused: event.target.checked })}
-        />
-      </label>
-
-      <label className="settings-row">
-        <span className="settings-row__label">
-          May run scheduled routines. Turning this off stops the ones it already
-          has, not only new ones.
-        </span>
-        <input
-          type="checkbox"
-          checked={agent.routinesAllowed}
-          onChange={(event) => void update(agent.id, { routinesAllowed: event.target.checked })}
-        />
-      </label>
     </section>
   );
 }

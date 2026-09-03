@@ -52,7 +52,12 @@ export function HandoffBar({ agent, allowed }: { agent: AgentProfile; allowed: s
 
   return (
     <div className="handoff">
-      <select value={target} onChange={(event) => setTarget(event.target.value)} aria-label="Hand to">
+      <select
+        className="input"
+        value={target}
+        onChange={(event) => setTarget(event.target.value)}
+        aria-label="Hand to"
+      >
         {peers.map((peer) => (
           <option key={peer.id} value={peer.id}>
             Hand to {peer.name}
@@ -60,11 +65,15 @@ export function HandoffBar({ agent, allowed }: { agent: AgentProfile; allowed: s
         ))}
       </select>
       <input
+        className="input"
         value={note}
         onChange={(event) => setNote(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") void hand();
+        }}
         placeholder="What should they pick up?"
       />
-      <button className="btn-ghost" disabled={!note.trim()} onClick={() => void hand()}>
+      <button className="btn btn--sm" disabled={!note.trim()} onClick={() => void hand()}>
         Hand over
       </button>
       {result && <p className="handoff__result">{result}</p>}

@@ -8,6 +8,7 @@
 //! than about authority.
 
 mod allow;
+mod approval_link;
 #[cfg(test)]
 mod delivery_tests;
 mod guards;
@@ -17,6 +18,7 @@ mod store;
 mod tests;
 
 pub use allow::{allowlist, set_allowlist};
+pub use approval_link::{by_approval, link_approval, set_status};
 pub use guards::{needs_approval, refuse, Refusal, SendContext, MAX_CHAIN_MESSAGES, MAX_HOPS};
 pub use queries::trail;
 pub use store::{attach_chat, send, Delivery, Handoff, MailMessage};

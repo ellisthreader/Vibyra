@@ -1,50 +1,21 @@
-/* Routines and skills: the two list-and-editor panels. */
+/* Routines: the row inside the shared list, and the editor's own pieces.
 
-.routine-list,
-.skill-list,
-.assign-list,
-.allow-list,
-.place-list,
-.memory-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 8px 0 0;
-  padding: 0;
-  list-style: none;
+   The row itself is `.row` from agent-lists.css; what is here is only what a
+   routine adds to it — the last-run sentence, the side column with the run
+   strip, and the action strip under the row. */
+
+.routine-row.is-paused .row {
+  opacity: 0.6;
 }
 
-.routine-row {
-  display: flex;
+.routine-row .row {
   align-items: flex-start;
-  gap: 16px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--surface);
+  padding-top: 11px;
+  padding-bottom: 6px;
 }
 
-.routine-row.is-paused {
-  opacity: 0.65;
-}
-
-.routine-row__main {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
-}
-
-.routine-row__name {
-  color: var(--text);
-  font-size: var(--fs-ui);
-  font-weight: var(--fw-bold);
-}
-
-.routine-row__meta {
-  color: var(--dim);
-  font-size: var(--fs-hint);
+.routine-row .row > .agent-mark {
+  margin-top: 1px;
 }
 
 /* The last result is a sentence, not a pill: the cases worth showing are
@@ -53,6 +24,7 @@
 .routine-row__last {
   margin-top: 3px;
   font-size: var(--fs-hint);
+  line-height: 1.5;
 }
 
 .routine-row__last--failed {
@@ -63,52 +35,73 @@
   color: var(--amber);
 }
 
+.routine-row__last--parked {
+  color: var(--ask);
+}
+
 .routine-row__last--completed,
 .routine-row__last--running {
   color: var(--muted);
 }
 
 .routine-row__side {
-  display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 7px;
-  flex: none;
+  gap: 4px;
 }
 
-.routine-row__next {
-  color: var(--muted);
-  font-size: var(--fs-hint);
-  white-space: nowrap;
+.routine-row__side .run-strip {
+  margin-top: 2px;
 }
 
 .routine-row__actions {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px 10px 48px;
 }
 
-.routine-editor,
-.skill-editor {
+.routine-row__actions .icon-btn {
+  margin-left: auto;
+}
+
+/* ----------------------------------------------------------- the editors */
+
+/* A labelled field in a dialog: the label above, the control below. Every
+   control carries `.input`, so the look is base-controls.css's and only the
+   stacking is decided here. */
+.field {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 18px;
-  padding: 16px;
-  border: 1px solid var(--accent-border);
-  border-radius: var(--r-panel);
-  background: var(--surface);
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.field > span {
+  color: var(--muted);
+  font-size: var(--fs-hint);
+  font-weight: var(--fw-semi);
+}
+
+.field textarea.input {
+  min-height: auto;
+  padding: 8px 10px;
+  font-family: var(--font-ui);
+  line-height: 1.55;
+  resize: vertical;
 }
 
 .routine-editor__schedule {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  gap: 0 12px;
 }
 
 .routine-editor__days {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+  margin: -4px 0 12px;
 }
 
 .routine-editor__days button {
@@ -137,18 +130,12 @@
   color: var(--text);
   font-size: var(--fs-body);
   font-weight: var(--fw-medium);
-}
-
-.routine-editor__warn {
-  margin: 0;
-  color: var(--amber);
-  font-size: var(--fs-hint);
   line-height: 1.5;
 }
 
-.routine-editor__actions,
-.skill-editor__actions,
-.danger-confirm__actions {
-  display: flex;
-  gap: 8px;
+.routine-editor__warn {
+  margin: -4px 0 12px;
+  color: var(--amber);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
 }

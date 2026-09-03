@@ -69,7 +69,9 @@ export function TurnFooter({
       <span>
         {tokens(block.inputTokens)} in · {tokens(block.outputTokens)} out
       </span>
-      {block.costUsd !== null && <span>${block.costUsd.toFixed(block.costUsd < 1 ? 3 : 2)}</span>}
+      {typeof block.costUsd === "number" && (
+        <span>${block.costUsd.toFixed(block.costUsd < 1 ? 3 : 2)}</span>
+      )}
       <span className="turn-foot__acts">
         {answer && (
           <button type="button" onClick={() => void copy()}>

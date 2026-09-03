@@ -2,7 +2,6 @@ import { BotIcon, ChatIcon, TerminalIcon } from "../common/AgentIcons";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
 import type { AppMode } from "../../agentTypes";
-import { isWipAppMode } from "../../lib/workspaceModePolicy";
 
 /**
  * Agent / Code / Chat, in the titlebar.
@@ -33,30 +32,24 @@ export function ModeSwitch() {
 
   return (
     <div className="dock-size mode-switch" role="tablist" aria-label="Workspace mode">
-      {MODES.map(({ id, label, Icon, hint }) => {
-        const wip = isWipAppMode(id);
-        return (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={mode === id}
-            aria-disabled={wip}
-            disabled={wip}
-            className={`${mode === id ? "dock-size__on" : ""} ${wip ? "mode-switch__wip" : ""}`}
-            title={wip ? `${label} — work in progress` : hint}
-            onClick={() => setMode(id)}
-          >
-            <Icon size={13} />
-            {label}
-            {wip ? <span className="mode-switch__wip-label">WIP</span> : null}
-            {!wip && id === "agent" && waiting > 0 && (
-              <span className="mode-switch__pip" aria-label={`${waiting} waiting for you`}>
-                {waiting}
-              </span>
-            )}
-          </button>
-        );
-      })}
+      {MODES.map(({ id, label, Icon, hint }) => (
+        <button
+          key={id}
+          role="tab"
+          aria-selected={mode === id}
+          className={mode === id ? "dock-size__on" : ""}
+          title={hint}
+          onClick={() => setMode(id)}
+        >
+          <Icon size={13} />
+          {label}
+          {id === "agent" && waiting > 0 && (
+            <span className="mode-switch__pip" aria-label={`${waiting} waiting for you`}>
+              {waiting}
+            </span>
+          )}
+        </button>
+      ))}
     </div>
   );
 }

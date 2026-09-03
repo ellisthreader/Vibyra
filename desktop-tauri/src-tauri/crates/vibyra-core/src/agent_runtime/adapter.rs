@@ -43,6 +43,9 @@ pub struct TurnPlan {
     /// variable to strip. Supplied by the shell crate, which owns accounts.
     pub env: Vec<(String, String)>,
     pub env_remove: Vec<String>,
+    /// Where Claude's permission prompts go. `None` runs the provider with its
+    /// own non-interactive behaviour, which denies anything it cannot allow.
+    pub bridge: Option<super::claude::PermissionBridge>,
 }
 
 /// A built turn: the process to run, and the session id it will belong to.
@@ -72,15 +75,19 @@ impl TurnPlan {
     fn build_claude(self) -> PlannedTurn {
         let resume = self.session.is_some();
         let session = self.session.clone().unwrap_or_else(new_session_id);
-        let args = super::claude::turn_args(
-            &session,
+        let mut args = super::claude::turn_args(super::claude::TurnShape {
+            session: &session,
             resume,
-            self.permission,
-            &self.places,
-            self.model.as_deref(),
-            self.effort.as_deref(),
-            self.system_prompt.as_deref(),
-        );
+            permission: self.permission,
+            places: &self.places,
+            model: self.model.as_deref(),
+            effort: self.effort.as_deref(),
+            system_prompt: self.system_prompt.as_deref(),
+            bridged: self.bridge.is_some(),
+        });
+        if let Some(bridge) = self.bridge.as_ref() {
+            args.extend(super::claude::bridge_args(bridge));
+        }
         PlannedTurn {
             command: TurnCommand {
                 program: "claude".into(),

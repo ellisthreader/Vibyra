@@ -9,7 +9,9 @@
 //! and closing it stops every provider process, which is what makes Vibyra's
 //! sign-out promise true for Agent Mode too.
 
+pub mod bridge;
 mod env;
+pub mod gate;
 pub mod hub;
 mod prepare;
 mod probe;

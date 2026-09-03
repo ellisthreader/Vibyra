@@ -2,6 +2,7 @@ import type { AgentProfile } from "../../agentTypes";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { AgentMark } from "../common/AgentMark";
+import { engineLabel } from "../../lib/agentEngineLabel";
 
 /**
  * One teammate in the rail.
@@ -10,9 +11,8 @@ import { AgentMark } from "../common/AgentMark";
  * working right now — including a turn *it* started. `running` only records
  * turns this window sent, so a routine firing on the scheduler's thread left
  * the dot dark on the one occasion it mattered most; the chat's own persisted
- * state is what covers both. Deliberately not a count of chats, unread anything, or a
- * "last active" — the rail is a list of people to talk to, and every extra
- * number on a row is one more thing to read before choosing.
+ * state is what covers both. Deliberately not a count of chats, unread
+ * anything, or a "last active" — the rail is a list of people to talk to.
  */
 export function AgentRosterRow({
   agent,
@@ -30,7 +30,7 @@ export function AgentRosterRow({
   return (
     <li>
       <button
-        className={`agent-row ${selected ? "is-on" : ""}`}
+        className={`roster-row ${selected ? "is-on" : ""}`}
         aria-current={selected}
         onClick={() => selectAgent(agent.id)}
       >
@@ -38,12 +38,15 @@ export function AgentRosterRow({
           agentId={agent.engine}
           name={agent.name}
           accent={agent.accent || "var(--accent)"}
-          size={20}
+          size={22}
         />
-        <span className="agent-row__name">{agent.name}</span>
+        <span className="roster-row__text">
+          <span className="roster-row__name">{agent.name}</span>
+          <span className="roster-row__engine">{engineLabel(agent.engine)}</span>
+        </span>
         {working && (
-          <span className="agent-row__working" title="Working now">
-            <span className="activity-dot" />
+          <span className="roster-row__working" title="Working now">
+            <span className="adot adot--working" />
           </span>
         )}
       </button>

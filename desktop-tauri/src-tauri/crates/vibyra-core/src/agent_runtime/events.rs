@@ -38,6 +38,14 @@ pub enum TurnOccasion {
 pub const MAX_TEXT: usize = 60_000;
 
 /// One thing that happened in a chat, provider-independent.
+///
+/// Field names cross to the frontend as camelCase and are stored that way
+/// from now on; the snake_case aliases read every row written before this,
+/// because a transcript is append-only and old rows are never rewritten.
+/// The outer `ChatEventRow` flattens this enum, and its own `rename_all`
+/// does not reach flattened fields — which is how `call_id` and `cost_usd`
+/// reached a frontend reading `callId` and `costUsd`, gave every tool block
+/// the key `tool-undefined`, and crashed the turn footer on `undefined.toFixed`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind")]
 pub enum AgentEvent {
@@ -60,15 +68,18 @@ pub enum AgentEvent {
     ReasoningSummary { text: String },
     #[serde(rename = "tool.requested")]
     ToolRequested {
+        #[serde(rename = "callId", alias = "call_id")]
         call_id: String,
         tool: String,
         summary: String,
     },
     #[serde(rename = "tool.output")]
     ToolOutput {
+        #[serde(rename = "callId", alias = "call_id")]
         call_id: String,
         tool: String,
         output: String,
+        #[serde(rename = "exitCode", alias = "exit_code")]
         exit_code: Option<i64>,
         failed: bool,
     },
@@ -78,25 +89,40 @@ pub enum AgentEvent {
     /// ran. Emitted once per match, before the turn starts.
     #[serde(rename = "skill.applied")]
     SkillApplied {
+        #[serde(rename = "skillId", alias = "skill_id")]
         skill_id: String,
         name: String,
         version: i64,
     },
     #[serde(rename = "approval.requested")]
-    ApprovalRequested { approval_id: String, action: String },
+    ApprovalRequested {
+        #[serde(rename = "approvalId", alias = "approval_id")]
+        approval_id: String,
+        action: String,
+    },
     #[serde(rename = "approval.resolved")]
-    ApprovalResolved { approval_id: String, approved: bool },
+    ApprovalResolved {
+        #[serde(rename = "approvalId", alias = "approval_id")]
+        approval_id: String,
+        approved: bool,
+    },
     #[serde(rename = "usage.updated")]
     UsageUpdated {
+        #[serde(rename = "inputTokens", alias = "input_tokens")]
         input_tokens: i64,
+        #[serde(rename = "outputTokens", alias = "output_tokens")]
         output_tokens: i64,
+        #[serde(rename = "costUsd", alias = "cost_usd")]
         cost_usd: Option<f64>,
     },
     /// The provider has told us which conversation this is. Until this
     /// arrives a chat cannot be resumed, which is why it is persisted even
     /// though it renders as nothing.
     #[serde(rename = "session.identified")]
-    SessionIdentified { session_id: String },
+    SessionIdentified {
+        #[serde(rename = "sessionId", alias = "session_id")]
+        session_id: String,
+    },
     #[serde(rename = "turn.completed")]
     TurnCompleted { result: String },
     #[serde(rename = "turn.failed")]
@@ -136,43 +162,6 @@ impl AgentEvent {
         !matches!(self, AgentEvent::AssistantDelta { .. })
     }
 
-    /// Clamps every text payload to `MAX_TEXT`, marking what was cut.
-    ///
-    /// Applied on the way *in*, before the event is queued or stored, so a
-    /// provider that streams a runaway file cannot reach either the database
-    /// or the webview with it.
-    pub fn bounded(self) -> Self {
-        match self {
-            AgentEvent::AssistantDelta { text } => AgentEvent::AssistantDelta { text: clamp(text) },
-            AgentEvent::AssistantCompleted { text } => {
-                AgentEvent::AssistantCompleted { text: clamp(text) }
-            }
-            AgentEvent::ReasoningSummary { text } => {
-                AgentEvent::ReasoningSummary { text: clamp(text) }
-            }
-            AgentEvent::ToolOutput {
-                call_id,
-                tool,
-                output,
-                exit_code,
-                failed,
-            } => AgentEvent::ToolOutput {
-                call_id,
-                tool,
-                output: clamp(output),
-                exit_code,
-                failed,
-            },
-            AgentEvent::TurnCompleted { result } => AgentEvent::TurnCompleted {
-                result: clamp(result),
-            },
-            AgentEvent::TurnFailed { message } => AgentEvent::TurnFailed {
-                message: clamp(message),
-            },
-            other => other,
-        }
-    }
-
     /// The session id this event carries, if any. The runtime watches for it
     /// so the chat can be bound to its provider conversation the moment the
     /// provider names one.
@@ -182,18 +171,4 @@ impl AgentEvent {
             _ => None,
         }
     }
-}
-
-/// Truncates on a character boundary, never mid-UTF-8, and says so in the text
-/// rather than leaving the reader to wonder why output stops.
-fn clamp(text: String) -> String {
-    if text.len() <= MAX_TEXT {
-        return text;
-    }
-    let cut = (0..=MAX_TEXT)
-        .rev()
-        .find(|index| text.is_char_boundary(*index))
-        .unwrap_or(0);
-    let dropped = text.len() - cut;
-    format!("{}\n… {dropped} more bytes not shown", &text[..cut])
 }

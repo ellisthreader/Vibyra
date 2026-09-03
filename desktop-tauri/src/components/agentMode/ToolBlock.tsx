@@ -30,7 +30,7 @@ export function ToolBlock({ block }: { block: Extract<TranscriptBlock, { type: "
         )}
         <span className="tool-block__outcome">
           {block.running ? (
-            <span className="activity-dot" title="Running" />
+            <span className="adot adot--working" title="Running" />
           ) : (
             <>
               {block.exitCode !== null && block.exitCode !== 0 && (

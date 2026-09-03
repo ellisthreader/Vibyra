@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { EditorDialog } from "./EditorDialog";
 
 /**
  * Writing a skill.
@@ -59,33 +60,43 @@ export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: (
   };
 
   return (
-    <form
-      className="skill-editor"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
+    <EditorDialog
+      title={skillId ? `Edit ${existing?.name ?? "skill"}` : "Write a skill"}
+      lede={
+        skillId
+          ? "Saving makes a new version. Earlier ones stay readable, and any of them can be restored."
+          : "Once installed, this is offered to the teammates you give it to in every turn, and expanded when its trigger matches."
+      }
+      submitLabel={skillId ? "Save as a new version" : "Install skill"}
+      busy={!draft.name.trim() || !draft.trigger.trim() || !draft.procedure.trim()}
+      error={error}
+      onClose={onClose}
+      onSubmit={() => void submit()}
     >
-      <label className="settings-field">
+      <label className="field">
         <span>Name</span>
         <input
+          className="input"
+          autoFocus
           value={draft.name}
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           placeholder="Prove it before saying it works"
         />
       </label>
-      <label className="settings-field">
+      <label className="field">
         <span>One line about it</span>
         <input
+          className="input"
           value={draft.summary}
           onChange={(event) => setDraft({ ...draft, summary: event.target.value })}
           placeholder="Re-run the original failing case rather than reasoning that a fix should hold"
         />
       </label>
       {FIELDS.map(({ key, label, placeholder, rows }) => (
-        <label className="settings-field" key={key}>
+        <label className="field" key={key}>
           <span>{label}</span>
           <textarea
+            className="input"
             rows={rows}
             value={draft[key]}
             placeholder={placeholder}
@@ -93,15 +104,6 @@ export function SkillEditor({ skillId, onClose }: { skillId?: string; onClose: (
           />
         </label>
       ))}
-      {error && <p className="panel__error">{error}</p>}
-      <div className="skill-editor__actions">
-        <button type="submit" className="btn-primary">
-          {skillId ? "Save as a new version" : "Install skill"}
-        </button>
-        <button type="button" className="btn-ghost" onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </form>
+    </EditorDialog>
   );
 }

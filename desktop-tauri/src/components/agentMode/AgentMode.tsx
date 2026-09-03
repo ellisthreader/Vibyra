@@ -34,7 +34,7 @@ export function AgentMode() {
           <AgentSurface />
         ) : (
           <>
-            {panel === "dashboard" && <AgentDashboard />}
+            {panel === "dashboard" && <AgentDashboard onNewAgent={() => setCreating(true)} />}
             {panel === "decisions" && <DecisionsPanel />}
             {panel === "routines" && <RoutinesPanel />}
             {panel === "skills" && <SkillsPanel />}

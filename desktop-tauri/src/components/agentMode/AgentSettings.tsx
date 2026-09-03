@@ -10,17 +10,20 @@ import { AgentPlacesCard } from "./AgentPlacesCard";
  *
  * Ordered by how often a person actually changes each: the brief is the thing
  * they revise, places are what they widen, memory is what they correct, and
- * messaging and deletion are the two that need a moment's thought. Uses the
- * shared settings row/card language rather than inventing a second one.
+ * messaging and deletion are the two that need a moment's thought. Built from
+ * the shared settings group/row language — the same one the app's own
+ * Settings dialog uses — rather than a second vocabulary of cards.
  */
 export function AgentSettings({ agent }: { agent: AgentProfile }) {
   return (
-    <div className="settings-pane agent-settings">
-      <AgentBriefCard agent={agent} />
-      <AgentPlacesCard agent={agent} />
-      <AgentMemoryCard agent={agent} />
-      <AgentMailCard agent={agent} />
-      <AgentDangerCard agent={agent} />
+    <div className="panel">
+      <div className="panel__inner agent-settings">
+        <AgentBriefCard agent={agent} />
+        <AgentPlacesCard agent={agent} />
+        <AgentMemoryCard agent={agent} />
+        <AgentMailCard agent={agent} />
+        <AgentDangerCard agent={agent} />
+      </div>
     </div>
   );
 }

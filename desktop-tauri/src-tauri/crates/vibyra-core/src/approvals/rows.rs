@@ -90,6 +90,24 @@ pub fn invalidate_turn(db: &AgentDb, turn_id: &str) -> CoreResult<usize> {
     })
 }
 
+/// Kills every card that was waiting on a turn, at startup.
+///
+/// No turn survives the app closing, so a turn-bound card found pending on
+/// open belongs to a process that is gone: approving it would notify nobody
+/// and yet read as "yes". Handoff cards have no turn and are left alone —
+/// the handoff is still deliverable once someone answers.
+pub fn invalidate_orphans(db: &AgentDb) -> CoreResult<usize> {
+    db.with(|connection| {
+        connection
+            .execute(
+                "UPDATE approval_requests SET state = 'invalidated', resolved_ms = ?1 \
+                 WHERE state = 'pending' AND turn_id IS NOT NULL",
+                params![now_ms()],
+            )
+            .map_err(sql)
+    })
+}
+
 /// Cards still waiting, newest first.
 pub fn pending(db: &AgentDb, account: &str) -> CoreResult<Vec<ApprovalRequest>> {
     db.with(|connection| {
@@ -105,5 +123,25 @@ pub fn pending(db: &AgentDb, account: &str) -> CoreResult<Vec<ApprovalRequest>> 
             .map_err(sql)?
             .into_iter()
             .collect()
+    })
+}
+
+/// One card, whatever its state.
+pub fn get(db: &AgentDb, account: &str, id: &str) -> CoreResult<ApprovalRequest> {
+    db.with(|connection| get_in(connection, account, id))
+}
+
+/// Ends a card nobody answered in time. Invalidated rather than denied: the
+/// user never said no, and the difference is visible in the ledger.
+pub fn expire(db: &AgentDb, account: &str, id: &str) -> CoreResult<()> {
+    db.with(|connection| {
+        connection
+            .execute(
+                "UPDATE approval_requests SET state = 'invalidated', resolved_ms = ?1 \
+                 WHERE id = ?2 AND account = ?3 AND state = 'pending'",
+                params![now_ms(), id, account],
+            )
+            .map_err(sql)?;
+        Ok(())
     })
 }

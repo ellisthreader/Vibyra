@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
 import { NONE } from "../../lib/emptyList";
+import { mailAllowlist } from "../../ipc/agentMail";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
+import { useAgentWorkStore } from "../../state/agentWorkStore";
 import { AgentComposer } from "./AgentComposer";
 import { AgentTranscript } from "./AgentTranscript";
+import { ApprovalCard } from "./ApprovalCard";
 import { ChatEmpty } from "./ChatEmpty";
 import { HandoffBar } from "./HandoffBar";
-import { mailAllowlist } from "../../ipc/agentMail";
 
 /**
  * The transcript and the composer, with the scroll rule that makes a streaming
@@ -19,15 +21,20 @@ import { mailAllowlist } from "../../ipc/agentMail";
  * is the single most irritating thing a streaming UI can do, and the terminal
  * pane solves it the same way.
  *
- * The anchor check runs before anything is read from the element, so a reader
- * who has scrolled up costs no layout at all while text streams past. When it
- * does run it is batched into a frame, so two commits in one frame measure
- * once.
+ * A decision this chat is parked on is shown here, above the composer, as
+ * well as in Decisions. The turn is blocked on it: a person reading the
+ * transcript wondering why nothing is happening should not have to leave the
+ * chat to find out, or to answer.
  */
 export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const chatId = useAgentModeStore((state) => state.chatId);
   const blocks = useAgentChatStore((state) =>
     chatId ? (state.transcripts[chatId]?.blocks ?? NONE) : NONE,
+  );
+  const approvals = useAgentWorkStore((state) => state.approvals);
+  const waiting = useMemo(
+    () => approvals.filter((request) => request.chatId === chatId),
+    [approvals, chatId],
   );
   const [allowed, setAllowed] = useState<string[]>([]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -78,6 +85,13 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
       >
         <AgentTranscript chatId={chatId} blocks={blocks} agent={agent} />
       </div>
+      {waiting.length > 0 && (
+        <div className="chat-surface__decisions">
+          {waiting.map((request) => (
+            <ApprovalCard key={request.id} request={request} />
+          ))}
+        </div>
+      )}
       {agent && allowed.length > 0 && <HandoffBar agent={agent} allowed={allowed} />}
       <AgentComposer agent={agent} chatId={chatId} />
     </div>

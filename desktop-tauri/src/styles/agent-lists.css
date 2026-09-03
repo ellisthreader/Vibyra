@@ -1,0 +1,147 @@
+/* The two shapes every Agent Mode panel fills itself with: the empty state,
+   and the bordered list of rows. Split from agent-panels.css, which keeps the
+   page frame those two sit inside. */
+
+/* The empty state: one card, one sentence, one thing to do. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 34px 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-panel);
+  text-align: center;
+}
+
+.empty__glyph {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 6px;
+  border-radius: var(--r-menu);
+  background: var(--surface-tint);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+}
+
+.empty h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-strong);
+  font-weight: var(--fw-bold);
+}
+
+.empty p {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.55;
+}
+
+.empty .btn {
+  margin-top: 10px;
+}
+
+.empty--compact {
+  padding: 18px 20px;
+}
+
+/* A bordered stack of rows: the list every panel is made of. */
+.rows {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-menu);
+  background: var(--surface);
+  list-style: none;
+  overflow: hidden;
+}
+
+.rows > li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 14px;
+  color: var(--text);
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+  transition: background var(--t-base) var(--e-standard);
+}
+
+button.row:hover {
+  background: var(--hover);
+}
+
+button.row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* A row that is a checkbox: the whole row is the label. */
+.row--check {
+  cursor: pointer;
+}
+
+.row--check input {
+  flex: none;
+  margin: 0;
+}
+
+.row--check:hover {
+  background: var(--hover);
+}
+
+.row__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.row__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-bold);
+}
+
+.row__title > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row__meta {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  line-height: 1.5;
+}
+
+.row__side {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.row__when {
+  color: var(--dim);
+  font-size: var(--fs-hint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

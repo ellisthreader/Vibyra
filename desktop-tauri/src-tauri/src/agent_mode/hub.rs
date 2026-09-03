@@ -62,6 +62,17 @@ impl AgentWorld {
         self.running.lock().keys().cloned().collect()
     }
 
+    /// Whether the turn in `chat_id` has been stopped — or is no longer here
+    /// at all, which for anything waiting on it means the same thing. The
+    /// permission gate asks this: a card nobody will ever consume must not
+    /// keep a provider process parked for half an hour.
+    pub fn is_cancelled(&self, chat_id: &str) -> bool {
+        match self.running.lock().get(chat_id) {
+            Some(handle) => handle.cancelled(),
+            None => true,
+        }
+    }
+
     /// Signals every turn. Called on sign-out and on app close, so no provider
     /// process outlives the session that started it.
     pub fn cancel_all(&self) {
@@ -108,6 +119,9 @@ impl AgentHub {
         // is a crash's leftover rather than work in progress.
         let _ = vibyra_core::agent_chats::reset_running(&db);
         let _ = vibyra_core::routines::runs::reset_running(&db);
+        // The same goes for a decision a dead turn was waiting on: nobody is
+        // listening for the answer, so the card must not offer one.
+        let _ = vibyra_core::approvals::invalidate_orphans(&db);
 
         let world = Arc::new(AgentWorld {
             db: Arc::new(db),

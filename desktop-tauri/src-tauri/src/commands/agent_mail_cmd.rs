@@ -11,14 +11,18 @@
 
 use std::sync::Arc;
 
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 use vibyra_core::agent_mail::{Delivery, Handoff, MailMessage};
-use vibyra_core::agent_model::ChatSource;
+use vibyra_core::agent_model::PermissionMode;
+use vibyra_core::approvals::{self, Outcome, ProposedAction};
 
 use super::agent_roster::world;
 use super::run_blocking;
-use crate::agent_mode::turns::{execute, TurnRequest};
 use crate::state::AppState;
+
+#[path = "agent_mail_wake.rs"]
+mod wake_mod;
+pub(super) use wake_mod::wake;
 
 /// What happened to a handoff, in terms the transcript can render.
 #[derive(serde::Serialize)]
@@ -32,6 +36,7 @@ pub struct HandoffResult {
 
 #[tauri::command]
 pub async fn agent_mail_send(
+    app: AppHandle,
     state: State<'_, AppState>,
     handoff: Handoff,
 ) -> Result<HandoffResult, String> {
@@ -59,15 +64,61 @@ pub async fn agent_mail_send(
             message: refusal.message(),
             chat_id: None,
         }),
-        Delivery::NeedsApproval { message, phrase } => Ok(HandoffResult {
-            status: "awaitingApproval".into(),
-            message: format!(
-                "That handoff asks {} to “{phrase}”, which needs your approval. \
-                 It is waiting in Decisions rather than running.",
-                recipient.name
-            ),
-            chat_id: message.chat_id,
-        }),
+        Delivery::NeedsApproval { message, phrase } => {
+            // The card is what makes the sentence below true. Without it the
+            // message sat at `awaitingApproval` for ever and Decisions never
+            // showed it, so the handoff was silently dropped.
+            let proposed = ProposedAction {
+                agent_id: Some(recipient.id.clone()),
+                agent_name: recipient.name.clone(),
+                chat_id: None,
+                turn_id: None,
+                risk: approvals::escalation_risk(phrase),
+                action: "mail.handoff".into(),
+                target: recipient.name.clone(),
+                detail: message.body.clone(),
+                cost_usd: None,
+            };
+            let writes = recipient.permission != PermissionMode::Plan;
+            let outcome = approvals::request(&world.db, &world.account, proposed, writes)
+                .map_err(|error| error.to_string())?;
+            match outcome {
+                Outcome::Forbidden(reason) => {
+                    let _ = vibyra_core::agent_mail::set_status(&world.db, &message.id, "refused");
+                    Ok(HandoffResult {
+                        status: "refused".into(),
+                        message: reason.into(),
+                        chat_id: None,
+                    })
+                }
+                // The broker has already decided this needs nobody: deliver it
+                // rather than leave it parked against a card that never exists.
+                Outcome::Allowed => {
+                    let _ =
+                        vibyra_core::agent_mail::set_status(&world.db, &message.id, "delivered");
+                    let chat_id = wake(&world, &recipient, &message)?;
+                    Ok(HandoffResult {
+                        status: "delivered".into(),
+                        message: format!("Handed to {} in a new chat.", recipient.name),
+                        chat_id: Some(chat_id),
+                    })
+                }
+                Outcome::Pending(card) => {
+                    vibyra_core::agent_mail::link_approval(&world.db, &message.id, &card.id)
+                        .map_err(|error| error.to_string())?;
+                    let _ = app.emit("approval-raised", &*card);
+                    Ok(HandoffResult {
+                        status: "awaitingApproval".into(),
+                        message: format!(
+                            "That handoff asks {} to “{phrase}”, which needs your approval. \
+                             It is waiting in Decisions rather than running.",
+                            recipient.name
+                        ),
+                        chat_id: message.chat_id,
+                    })
+                }
+            }
+        }
         Delivery::Delivered(message) => {
             let chat_id = wake(&world, &recipient, &message)?;
             Ok(HandoffResult {
@@ -77,44 +128,6 @@ pub async fn agent_mail_send(
             })
         }
     }
-}
-
-/// Opens the recipient's fresh chat and runs the handoff in it.
-///
-/// A fresh chat every time, never an existing one: a handoff arriving in the
-/// middle of a conversation the user was having would rewrite that
-/// conversation's subject without asking.
-fn wake(
-    world: &Arc<crate::agent_mode::AgentWorld>,
-    recipient: &vibyra_core::agent_profiles::AgentProfile,
-    message: &MailMessage,
-) -> Result<String, String> {
-    let chat = vibyra_core::agent_chats::create(
-        &world.db,
-        &world.account,
-        vibyra_core::agent_chats::NewChat {
-            agent_id: Some(recipient.id.clone()),
-            engine: recipient.engine,
-            title: String::new(),
-            source: ChatSource::Handoff,
-        },
-    )
-    .map_err(|e| e.to_string())?;
-    let _ = vibyra_core::agent_mail::attach_chat(&world.db, &message.id, &chat.id);
-
-    let world = Arc::clone(world);
-    let request = TurnRequest {
-        chat_id: chat.id.clone(),
-        prompt: message.body.clone(),
-        permission: None,
-        occasion_routine: None,
-        occasion_handoff: Some(message.sender_name.clone()),
-        account_id: None,
-    };
-    std::thread::spawn(move || {
-        let _ = execute(&world, request, |_| {});
-    });
-    Ok(chat.id)
 }
 
 #[tauri::command]

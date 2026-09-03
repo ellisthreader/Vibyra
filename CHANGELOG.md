@@ -3,6 +3,42 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.4.3 — 3 September 2026
+
+**Agent Mode is open.** The title-bar Agent button no longer carries a WIP
+label and no longer refuses the click. Create a teammate with its own brief,
+engine, granted folders and access level; every chat you have with it shares
+those and nothing else. Chat Mode — a conversation with no project and no
+folder until you give it one — opens with it. Remembered modes, keyboard
+shortcuts, command-palette entries and notification deep links no longer fall
+back to Code.
+
+**Decisions actually stop work.** Anything a teammate wants to do with an
+effect outside the folders you granted — deleting, publishing, spending,
+touching a secret — now pauses the real turn and waits for you. The card shows
+the exact command in the terminal's own type rather than the agent's summary
+of it, and the work stays blocked until you answer, you cancel it, or it times
+out. Nothing has happened when the card appears. Handoffs between teammates
+that ask for one of those effects raise a card the same way, instead of being
+silently parked for ever.
+
+A decision left waiting by a turn that ended when the app closed is now
+retired at startup, rather than surviving as a card whose Approve would
+authorise something nobody is listening for.
+
+**Every Agent screen was rebuilt.** Dashboard, Decisions, Routines, Skills and
+a teammate's settings now use the same list rows, cards, dialogs, buttons and
+status dots as the rest of Vibyra. Creating a teammate, a routine or a skill
+all open the same dialog shape. A chat parked on a decision shows it inline,
+above the composer, as well as in the queue.
+
+**Transcripts say what actually ran.** A tool call reads as its command or its
+file path instead of raw JSON, and tool output arriving as content blocks
+renders as its text. A finished turn now reports its cost: the event payloads
+crossing from the native side used different field names than the transcript
+expected, which left every tool block unidentified and could blank the window
+when a turn completed.
+
 ## 0.4.2 — 2 September 2026
 
 **New Project is now a complete guided builder.** Choose what you are making,
