@@ -177,3 +177,11 @@ Before final response:
   before allocation, and make rejected input visible even with notices muted.
 - Validate a changed production launcher in the actual build image before
   cutover, including stream concurrency, authorization forwarding and shutdown.
+- For signed-package comparisons after publication, prevent only the fixture
+  process from fetching updates and use the existing offline continuation;
+  otherwise the baseline can install the candidate before measurements begin.
+- A private-keyring failure does not prevent verified in-memory desktop login.
+  Use an isolated loopback Laravel fixture and real sign-in. Label a nested X11
+  display explicitly, and never report whole-string injection-to-PTY timing as
+  physical key-to-paint latency. Preserve asynchronous clipboard ordering failures
+  separately from tests that deliberately wait before pressing Enter.

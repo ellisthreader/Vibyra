@@ -28,6 +28,14 @@ work; never publish that checkout as a replacement for the current release.
 Published 0.4.4: signed desktop source/tag 7a00633/v0.4.4, Actions 33972227791;
 backend cc8f57f, Railway 8af52660-07c6-48f2-a805-a3c56d2d1ab4. Public installer
 hashes and updater feeds were verified; the stable local AppImage is updated.
-Phone delivery and authenticated workspace performance remain unverified. Overall
-Security CI retains historical scan/mobile dependency failures; backend checks pass.
+Signed 0.4.3/0.4.4 packages completed fixture password sign-in, project opening,
+exact typing/paste and a 5,000-line native terminal workload in Xephyr on the PC.
+Private-keyring failure still permits a verified in-memory session. Idle CPU and
+input injection timings do not establish a release speed-up. A cold paste followed
+immediately by Enter remains an unresolved ordering edge case. Normal compositor,
+multi-pane key-to-paint and phone delivery/performance remain unverified.
+Actual mobile transport plus Laravel fixture measured 99.97% fewer HTTP body bytes
+for one edit among 40 synthetic histories; this excludes initial sync, headers and
+TLS, and is not a delivered phone result. Overall Security CI retains historical
+scan/mobile dependency failures; backend checks pass.
 Evidence and precise limits: docs/audits/performance-release-0.4.4.md.

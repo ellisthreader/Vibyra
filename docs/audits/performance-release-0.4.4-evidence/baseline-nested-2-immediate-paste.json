@@ -1,0 +1,41 @@
+{
+  "scenario": "Paste 2006 characters then immediate Return; no clipboard wait",
+  "version": "0.4.3",
+  "runs": [
+    {
+      "inputLengths": [
+        2006
+      ],
+      "emptyEnterPrecededPaste": false,
+      "pastedTextExact": true
+    },
+    {
+      "inputLengths": [
+        2006
+      ],
+      "emptyEnterPrecededPaste": false,
+      "pastedTextExact": true
+    },
+    {
+      "inputLengths": [
+        2006
+      ],
+      "emptyEnterPrecededPaste": false,
+      "pastedTextExact": true
+    },
+    {
+      "inputLengths": [
+        2006
+      ],
+      "emptyEnterPrecededPaste": false,
+      "pastedTextExact": true
+    },
+    {
+      "inputLengths": [
+        2006
+      ],
+      "emptyEnterPrecededPaste": false,
+      "pastedTextExact": true
+    }
+  ]
+}

@@ -68,12 +68,82 @@ about 5.7 seconds. CPU varied substantially, and the initial host was heavily
 limited by disk I/O. The alternating runs used extraction mode and private-session
 setup, so they are not direct measurements of an ordinary signed-in cold start.
 
-No reliable overall performance percentage is established. These checks verify
-packaged launch and sign-in rendering, not authenticated terminal input latency,
-large-workspace behavior, microphone hardware or a physical phone. The attempted
-isolated authenticated fixture hit secure-store setup problems; no signed-in
-workspace success is claimed. A connected phone and a configured native mobile
-build are still required for phone measurements.
+The signed packages subsequently completed real password sign-in against the
+isolated Laravel fixture, first welcome, project opening and native shell launch.
+Private-keyring persistence failed, but the native account manager correctly
+adopted the verified session in memory. Two ordinary-display attempts exited
+normally before sign-in could be completed; their cause was not established.
+The successful workspace checks used a Xephyr nested X11 display on this PC,
+separate XDG profiles and private D-Bus sessions. This is native packaged execution
+on the physical CPU, but does not establish normal GNOME compositor performance.
+
+Each completed run typed ten exact 127-character lines, pasted 2,006 characters,
+printed 5,000 lines and accepted another exact input afterward. All main-workload
+input readbacks passed. Terminal rendering through the final output marker was
+visually inspected. No provider account, paid AI request or real project was used.
+
+| Signed package/run | Idle CPU, one core | Native/WebKit RSS | 127-character injection-to-PTY median |
+| --- | ---: | ---: | ---: |
+| 0.4.4, first | 2.59% | 581.6 MiB | 348.5 ms |
+| 0.4.3 | 2.59% | 585.9 MiB | 248.1 ms |
+| 0.4.4, repeat | 3.38% | 587.7 MiB | 240.7 ms |
+
+CPU samples lasted 15 seconds after settling and exclude the nested X server.
+Typing timings include injecting the entire string with xdotool, scheduling and
+PTY line completion; they are **not key-to-paint latency**. Other jobs ran on the
+host. The later two runs used a process-local unavailable external proxy, with
+loopback exempted, to prevent 0.4.3 automatically upgrading before its benchmark.
+The app's explicit offline-update continuation was exercised. The variation does
+not support a terminal speed-up or regression percentage.
+
+The main paste test allows 500 ms for asynchronous clipboard acquisition before
+Enter. An earlier 0.4.4 cold-paste trial with immediate Enter delivered an empty
+line first, then the exact paste after another Enter. Five warm immediate-paste
+trials on 0.4.3 did not reproduce it. The clipboard handler is unchanged between
+the releases; attribution remains unresolved, and the waiting main test does not
+clear this edge case. The candidate PTY environment contained no stale AppImage
+mount paths in the inspected path variables, although the extraction-mode flag
+remained inherited.
+
+No reliable overall performance percentage is established. Large workspaces,
+multi-pane key-to-paint latency, microphone hardware and a physical phone remain
+unmeasured. A connected phone and configured native mobile build are still
+required for phone measurements.
+
+## Measured cloud-save workload
+
+The actual mobile cloud transport and real Laravel/Nixpacks SQLite fixture were
+used for three alternating full-save/delta pairs at each size. Each synthetic
+thread held 80 messages with 2,000 characters each; one existing message changed.
+Every save was read back and compared with the complete expected app state.
+
+| Histories | Legacy request + response bytes | Delta request + response bytes | Body-byte reduction | Median full / delta client time |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 332,211 | 4,286 | 98.71% | 231.5 / 207.3 ms |
+| 10 | 3,245,277 | 4,286 | 99.87% | 367.1 / 240.4 ms |
+| 40 | 12,955,557 | 4,286 | 99.97% | 712.4 / 340.5 ms |
+
+These are uncompressed HTTP body bytes, excluding headers and TLS. The delta
+contains both the exact old/new text and an identity guard; its acknowledgement
+is 27 bytes. Initial full synchronization is excluded from this per-edit table.
+Latency is a small local-loopback sample under concurrent workloads, not a
+production estimate. Insertion/deletion of message arrays remains atomic and can
+send substantially larger changes. Backend storage still rewrites the JSON state.
+The server supports this protocol in production, but the mobile client has not
+been installed on a phone; these are not delivered phone-performance results.
+
+## Next performance work
+
+1. Reproduce the cold clipboard/Enter ordering case with controlled clipboard
+   completion before changing terminal input ordering. Do not count a delayed
+   test submission as a fix.
+2. Measure native key-to-paint latency and multi-pane rendering in a quiet normal
+   desktop session; distinguish input injection time from renderer latency.
+3. Install a configured native mobile build on the selected phone and compare
+   scrolling, typing and sync under the same histories and network conditions.
+4. Profile large-state database serialization before considering a schema change.
+   Tiny deltas reduce transfer, but do not eliminate whole-state storage work.
+   Keep worker counts bounded; greater concurrency alone is not a measured fix.
 
 The overall Security CI remains red for inherited mobile tooling advisories and
 150 historical secret-scan findings, including test fixtures and old browser-profile
