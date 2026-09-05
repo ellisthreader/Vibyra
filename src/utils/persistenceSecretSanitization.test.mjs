@@ -1,18 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
-import ts from "typescript";
+import { loadPersistenceSecrets as loadHelpers } from "./persistenceSecrets.testSupport.mjs";
 
-async function loadHelpers() {
-  const source = await readFile(new URL("./persistenceSecrets.ts", import.meta.url), "utf8");
-  const output = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ES2022,
-      target: ts.ScriptTarget.ES2022
-    }
-  }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
-}
 
 test("unrelated token fields survive sanitization and are not extracted", async () => {
   const helpers = await loadHelpers();

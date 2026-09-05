@@ -17,6 +17,7 @@ import {
   type BottomAnchorState,
 } from "./terminalBottomAnchor";
 import { attachTerminalClipboard } from "./terminalClipboard";
+import { reportTerminalInputFailure } from "./terminalInputNotice";
 import { attachRenderer } from "./xtermRenderer";
 import { themeFor } from "./xtermTheme";
 
@@ -119,7 +120,7 @@ export function mountTerminal(
   term.onData((data) => {
     clearAttention(id);
     sessionInputReceived(id, data);
-    void writeTerminal(id, data).catch(() => {});
+    void writeTerminal(id, data).catch((error) => reportTerminalInputFailure(id, error));
   });
   term.onResize(({ rows, cols }) => void resizeTerminal(id, rows, cols).catch(() => {}));
   term.onScroll(() => {

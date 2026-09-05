@@ -5,6 +5,7 @@ import type { useAccountState } from "./useAccountState";
 import type { useChatState } from "./useChatState";
 import type { useDesktopState } from "./useDesktopState";
 import type { useWorkspaceRuntimeState } from "./useWorkspaceRuntimeState";
+import { usePersistenceSchedule } from "./usePersistenceSchedule";
 
 type Account = ReturnType<typeof useAccountState>;
 type Desktop = ReturnType<typeof useDesktopState>;
@@ -70,37 +71,40 @@ function useHydratePersistedState(account: Account, desktop: Desktop, workspace:
 function useSavePersistedState(
   account: Account["state"], desktop: Desktop["state"], workspace: Workspace["state"], chat: Chat["state"]
 ) {
+  const persistence = usePersistenceSchedule(`${account.accountId ?? ""}:${account.authToken}`);
   useEffect(() => {
     if (!account.persistenceReady) return;
-    const appState = createPersistableAppState({
-      chatThreads: chat.chatThreads, chatTitles: chat.chatTitles,
-      detachedChatThreads: chat.detachedChatThreads, detachedChatTitles: chat.detachedChatTitles,
-      detachedChatUpdatedAt: chat.detachedChatUpdatedAt, chatProjects: chat.chatProjects,
-      projectMemories: chat.projectMemories, editApprovals: chat.editApprovals,
-      profileImageUri: account.profileImageUri, selectedModel: workspace.selectedModel,
-      selectedChatModel: workspace.selectedChatModel, desktopPermissionMode: desktop.desktopPermissionMode,
-      promptMoney: chat.promptMoney
-    });
-    void savePersistedSession({
-      authToken: account.authToken,
-      installId: account.installId,
-      onboardingComplete: account.onboardingComplete,
-      pcSetupComplete: account.pcSetupComplete,
-      pcSetupSkipped: account.pcSetupSkipped,
-      selectedChatModel: workspace.selectedChatModel,
-      rememberedDesktops: desktop.rememberedDesktops,
-      user: account.accountId ? {
-        id: account.accountId, name: account.authName || "Vibyra User", email: account.authEmail,
-        plan: account.accountPlan, planBillingCycle: "monthly", planRenewsAt: null,
-        creditsBalance: account.creditsBalance, creditsUsed: account.creditsUsed,
-        dailyCreditsUsed: account.dailyCreditsUsed, dailyCreditsCap: account.dailyCreditsCap,
-        dailyCreditsResetAt: account.dailyCreditsResetAt, burstCreditsUsed: account.burstCreditsUsed,
-        burstCreditsCap: account.burstCreditsCap, burstCreditsResetAt: account.burstCreditsResetAt,
-        burstWindowHours: account.burstWindowHours, weeklyCreditsUsed: account.weeklyCreditsUsed,
-        weeklyCreditsCap: account.weeklyCreditsCap, weeklyCreditsResetAt: account.weeklyCreditsResetAt,
-        monthlyCredits: 0, allowedModelTiers: [], level: account.levelProgress,
-        onboardingComplete: account.onboardingComplete, rememberedDesktops: desktop.rememberedDesktops, appState
-      } : null
+    persistence.schedule(() => {
+      const appState = createPersistableAppState({
+        chatThreads: chat.chatThreads, chatTitles: chat.chatTitles,
+        detachedChatThreads: chat.detachedChatThreads, detachedChatTitles: chat.detachedChatTitles,
+        detachedChatUpdatedAt: chat.detachedChatUpdatedAt, chatProjects: chat.chatProjects,
+        projectMemories: chat.projectMemories, editApprovals: chat.editApprovals,
+        profileImageUri: account.profileImageUri, selectedModel: workspace.selectedModel,
+        selectedChatModel: workspace.selectedChatModel, desktopPermissionMode: desktop.desktopPermissionMode,
+        promptMoney: chat.promptMoney
+      });
+      void savePersistedSession({
+        authToken: account.authToken,
+        installId: account.installId,
+        onboardingComplete: account.onboardingComplete,
+        pcSetupComplete: account.pcSetupComplete,
+        pcSetupSkipped: account.pcSetupSkipped,
+        selectedChatModel: workspace.selectedChatModel,
+        rememberedDesktops: desktop.rememberedDesktops,
+        user: account.accountId ? {
+          id: account.accountId, name: account.authName || "Vibyra User", email: account.authEmail,
+          plan: account.accountPlan, planBillingCycle: "monthly", planRenewsAt: null,
+          creditsBalance: account.creditsBalance, creditsUsed: account.creditsUsed,
+          dailyCreditsUsed: account.dailyCreditsUsed, dailyCreditsCap: account.dailyCreditsCap,
+          dailyCreditsResetAt: account.dailyCreditsResetAt, burstCreditsUsed: account.burstCreditsUsed,
+          burstCreditsCap: account.burstCreditsCap, burstCreditsResetAt: account.burstCreditsResetAt,
+          burstWindowHours: account.burstWindowHours, weeklyCreditsUsed: account.weeklyCreditsUsed,
+          weeklyCreditsCap: account.weeklyCreditsCap, weeklyCreditsResetAt: account.weeklyCreditsResetAt,
+          monthlyCredits: 0, allowedModelTiers: [], level: account.levelProgress,
+          onboardingComplete: account.onboardingComplete, rememberedDesktops: desktop.rememberedDesktops, appState
+        } : null
+      });
     });
   }, [
     account.accountId, account.accountPlan, account.authEmail, account.authName, account.authToken,

@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Packages.composer", "nodejs_22", "nginx"]
+
+[phases.install]
+cmds = ["cd backend && composer install --no-dev --optimize-autoloader --no-interaction", "cd backend && npm ci", "npm install -g @railway/cli"]
+
+[phases.build]
+cmds = ["cd backend && npm run build", "cd backend && php artisan config:clear && php artisan route:clear"]
+
+[start]
+cmd = "bash backend/scripts/start-production.sh"

@@ -127,6 +127,8 @@ export interface NotificationInput {
   cue?: SoundCueId;
   /** false = never escalate to the operating system, whatever the preferences. */
   osEligible?: boolean;
+  /** Failed input needs visible feedback even when optional notices are muted. */
+  inputRejected?: boolean;
   /** Milliseconds; 0 is sticky. Omitted means "derive from the tier". */
   timeoutMs?: number;
   /** Set when the notice was raised by a prompt Vibyra could actually read. */

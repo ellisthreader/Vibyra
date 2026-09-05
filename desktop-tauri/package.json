@@ -1,6 +1,6 @@
 {
   "name": "vibyra-desktop-tauri",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Vibyra Desktop — AI terminal workspace (Tauri 2 + Rust + React + xterm.js)",
   "private": true,
   "type": "module",

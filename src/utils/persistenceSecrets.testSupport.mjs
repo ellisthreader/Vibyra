@@ -2,11 +2,19 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 
 export async function loadPersistenceSecrets() {
-  const source = await readFile(new URL("./persistenceSecrets.ts", import.meta.url), "utf8");
+  return import(await moduleUrl(new URL("./persistenceSecrets.ts", import.meta.url)));
+}
+
+async function moduleUrl(file) {
+  let source = await readFile(file, "utf8");
+  for (const match of [...source.matchAll(/from\s+"(\.\/[^\"]+)"/g)]) {
+    const dependency = await moduleUrl(new URL(`${match[1]}.ts`, file));
+    source = source.replaceAll(`"${match[1]}"`, `"${dependency}"`);
+  }
   const output = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }
   }).outputText;
-  return import(`data:text/javascript;base64,${Buffer.from(output).toString("base64")}`);
+  return `data:text/javascript;base64,${Buffer.from(output).toString("base64")}`;
 }
 
 export function memoryPublic(initial = null) {

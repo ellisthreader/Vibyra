@@ -36,6 +36,7 @@ export function isAppSessionExpiredError(error: unknown) {
     if (error.status !== 401) return false;
     return error.endpoint === "/api/session"
       || error.endpoint === "/api/session/state"
+      || error.endpoint === "/api/session/state/delta"
       || isAppSessionExpiredMessage(error.message);
   }
 

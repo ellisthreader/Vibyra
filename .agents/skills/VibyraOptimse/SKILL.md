@@ -166,3 +166,14 @@ Before final response:
 - Changed PHP files pass `php -l` when applicable.
 - Permission flow has all three states represented where needed: pending, approved/applied, denied/discarded.
 - The final answer names any excluded generated folders, failed checks, or remaining risks.
+
+## Releasing performance changes
+
+- Establish the live source/version before porting an older audit checkout. Use
+  an isolated branch from that live source and preserve unrelated dirty work.
+- Rebase performance claims too: a fix already in the live release cannot count
+  as a new measured gain. Record hardware, workload, source hashes and limits.
+- Keep synchronous native input admission and ordering intact; bound reservations
+  before allocation, and make rejected input visible even with notices muted.
+- Validate a changed production launcher in the actual build image before
+  cutover, including stream concurrency, authorization forwarding and shutdown.

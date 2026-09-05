@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -18,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Versioned state comparisons require exact JSON values, including
+        // whitespace and empty strings. Legacy saves keep their old behavior.
+        $exactStateSync = fn (Request $request): bool => $request->is('api/session/state/delta')
+            || ($request->is('api/session/state') && $request->input('responseMode') === 'ack-v1');
+        $middleware->trimStrings(except: [$exactStateSync]);
+        $middleware->convertEmptyStringsToNull(except: [$exactStateSync]);
         // Railway terminates TLS at its edge and forwards plain HTTP, so
         // without this every generated URL comes out `http://` — including the
         // download URL handed to the desktop updater, which then takes an

@@ -8,6 +8,31 @@ export type { ChangelogFeature, DesktopChangelog } from "./changelogTypes";
 // accumulate rather than needing a split at the worst possible moment.
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.4.4": {
+    version: "0.4.4",
+    releasedAt: "2026-09-05",
+    releasedLabel: "5 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    allowUnmarkedLaunch: false,
+    features: [
+      {
+        id: "01",
+        title: "Busy input has a clear limit.",
+        body: "Terminal input stays in order with a bounded queue. If a terminal cannot accept more input, Vibyra tells you visibly so you can retry it.",
+      },
+      {
+        id: "02",
+        title: "File changes use bounded background work.",
+        body: "Large bursts of file activity are grouped into bounded batches, and renamed source folders stay watched. Generated folders remain excluded.",
+      },
+      {
+        id: "03",
+        title: "Dictation cleans up after itself.",
+        body: "Recordings stop after two minutes. Cancelled recordings release the microphone process and remove their temporary audio.",
+      },
+    ],
+  },
   "0.4.3": {
     version: "0.4.3",
     releasedAt: "2026-09-03",

@@ -20,8 +20,9 @@ test("mobile recurring work is stable and cloud writes are deduplicated", () => 
   assert.match(liveSync, /\[connectionKey\]/);
   assert.doesNotMatch(liveSync, /\[connection, requests, setters, onConnectionLost\]/);
   assert.match(cloudSync, /lastSyncedPayloadRef/);
-  assert.match(cloudSync, /inFlightPayloadsRef/);
-  assert.match(cloudSync, /syncChainRef/);
+  assert.match(cloudSync, /lastQueuedPayloadRef/);
+  assert.match(cloudSync, /syncQueueRef/);
+  assert.match(cloudSync, /createPersistenceWriteQueue/);
   assert.match(cloudSync, /latestPayloadKeyRef/);
   assert.match(requests, /useMemo\(\(\) => \(\{ agentRequest, desktopRequest \}\)/);
 });
