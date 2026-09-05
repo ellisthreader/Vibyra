@@ -23,6 +23,8 @@ $port = number('PORT', 8000, 1, 65535);
 $address = getenv('VIBYRA_BIND_ADDRESS') ?: '0.0.0.0';
 if (! filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) throw new RuntimeException('Invalid bind address');
 $workers = number('VIBYRA_FPM_WORKERS', 4, 1, 64);
+// Containers can see the host's CPU count rather than their CPU quota.
+$nginxWorkers = number('VIBYRA_NGINX_WORKERS', 2, 1, 16);
 // Deep Research permits two 900-second provider attempts plus bookkeeping.
 $timeout = number('VIBYRA_REQUEST_TIMEOUT', 2100, 60, 3600);
 $spare = min(2, $workers);
@@ -45,7 +47,7 @@ $scgiTemp = quoted($runtime.'/scgi');
 $nginxUser = $user === 'root' ? "user $user $group;" : '';
 $nginx = <<<CONF
 $nginxUser
-worker_processes auto;
+worker_processes $nginxWorkers;
 pid $pid;
 error_log stderr warn;
 events { worker_connections 1024; }

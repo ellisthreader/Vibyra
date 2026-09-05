@@ -20,6 +20,8 @@ work; never publish that checkout as a replacement for the current release.
 - The production web launcher supports Nginx/PHP-FPM and a legacy rollback via
   VIBYRA_WEB_SERVER=legacy. Test the actual Nixpacks image, streamed responses,
   auth headers, static files, hidden/PHP denial and Laravel sync before cutover.
+  Nginx defaults to two workers: auto saw 48 host CPUs in Railway despite an
+  eight-CPU quota. VIBYRA_NGINX_WORKERS accepts 1-16; FPM defaults to four.
 - Compare performance against the live release on the same hardware. Historic
   synthetic gains do not prove a whole-app or physical-phone percentage.
 
