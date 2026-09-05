@@ -12,3 +12,10 @@ it is excluded from incremental performance claims. No whole-app percentage
 or physical-phone improvement is established by synthetic benchmarks.
 
 Deployment and device verification are pending completion of release gates.
+
+Cross-platform gates caught Windows parent-folder renames blocked by descendant
+watch handles. Windows now uses one recursive root registration with early
+generated-path filtering; the rename and queue-bounding contracts remain tested.
+Compatible CommonMark, Browserslist, fast-uri and xmldom updates address inherited
+advisories. Historic secret-scan findings and remaining mobile tooling advisories
+require separate triage; the performance commit introduced no secret-scan finding.

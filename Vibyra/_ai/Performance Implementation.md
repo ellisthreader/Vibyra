@@ -12,7 +12,9 @@ work; never publish that checkout as a replacement for the current release.
 - Native input admission bounds bytes and messages without blocking synchronous
   IPC ordering. Rejected input always has visible in-app feedback.
 - Watcher event queues and batches are bounded. Source-directory changes trigger
-  re-registration; generated trees remain excluded. Pruning already shipped in
+  re-registration. Windows uses one recursive root handle so watched descendants
+  cannot block a parent rename; generated events are filtered before queueing.
+  Other platforms prune generated directories at registration. Pruning already shipped in
   0.4.3, so the old audit's watcher-count gain is not a new release improvement.
 - Dictation owns its process and temporary recording and caps capture at 120 s.
 - The production web launcher supports Nginx/PHP-FPM and a legacy rollback via

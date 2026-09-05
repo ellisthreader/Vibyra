@@ -21,6 +21,19 @@ impl RegisteredTree {
             .is_ok_and(|relative| !super::ignored(relative))
     }
 
+    #[cfg(windows)]
+    pub fn refresh(&mut self, watcher: &mut impl Watcher) -> notify::Result<()> {
+        // Windows cannot rename a parent while descendant directory handles
+        // are open. One recursive root handle preserves source-folder renames;
+        // the callback filters generated paths before bounded queue admission.
+        if self.paths.is_empty() {
+            watcher.watch(&self.root, RecursiveMode::Recursive)?;
+            self.paths.insert(self.root.clone());
+        }
+        Ok(())
+    }
+
+    #[cfg(not(windows))]
     pub fn refresh(&mut self, watcher: &mut impl Watcher) -> notify::Result<()> {
         // A renamed/replaced directory can retain its native watch identity.
         // Remove old registrations before adding new paths to the same inode.
@@ -82,11 +95,14 @@ mod tests {
         .unwrap();
         let mut tree = RegisteredTree::new(tmp.path().to_path_buf());
         tree.refresh(&mut watcher).unwrap();
-        assert_eq!(tree.paths.len(), 3);
-        assert!(tree.paths.contains(&tmp.path().join("src/nested")));
+        assert_eq!(tree.paths.len(), if cfg!(windows) { 1 } else { 3 });
+        assert!(tree.paths.contains(tmp.path()));
+        assert!(!tree.includes(&tmp.path().join("node_modules/pkg/nested")));
         std::fs::rename(tmp.path().join("src"), tmp.path().join("renamed")).unwrap();
         tree.refresh(&mut watcher).unwrap();
-        assert_eq!(tree.paths.len(), 3);
+        assert_eq!(tree.paths.len(), if cfg!(windows) { 1 } else { 3 });
+        assert!(tree.includes(&tmp.path().join("renamed/nested")));
+        #[cfg(not(windows))]
         assert!(tree.paths.contains(&tmp.path().join("renamed/nested")));
         assert!(!tree.paths.contains(&tmp.path().join("src/nested")));
     }
