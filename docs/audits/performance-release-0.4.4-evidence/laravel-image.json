@@ -1,0 +1,9 @@
+{
+  "authenticatedRead": true,
+  "unauthenticatedRejected": true,
+  "compactSave": true,
+  "deltaReplay": true,
+  "exactWhitespace": true,
+  "conflictPreservedRemote": true,
+  "isolatedSqlite": true
+}

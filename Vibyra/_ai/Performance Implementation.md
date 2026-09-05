@@ -25,4 +25,9 @@ work; never publish that checkout as a replacement for the current release.
 - Compare performance against the live release on the same hardware. Historic
   synthetic gains do not prove a whole-app or physical-phone percentage.
 
-Release evidence and deployment status belong in docs/audits/performance-release-0.4.4.md.
+Published 0.4.4: signed desktop source/tag 7a00633/v0.4.4, Actions 33972227791;
+backend cc8f57f, Railway 8af52660-07c6-48f2-a805-a3c56d2d1ab4. Public installer
+hashes and updater feeds were verified; the stable local AppImage is updated.
+Phone delivery and authenticated workspace performance remain unverified. Overall
+Security CI retains historical scan/mobile dependency failures; backend checks pass.
+Evidence and precise limits: docs/audits/performance-release-0.4.4.md.

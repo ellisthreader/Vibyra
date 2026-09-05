@@ -1,0 +1,20 @@
+[
+  {
+    "filename": "Vibyra-Desktop-0.4.4-amd64.deb",
+    "sha256": "2bfe385be6f16fb2f296ec365daab236b08d7fc10ae6b7b4331356311db76d93",
+    "sizeBytes": 11356796,
+    "path": "/app/storage/app/private/releases/linux/Vibyra-Desktop-0.4.4-amd64.deb"
+  },
+  {
+    "filename": "Vibyra-Desktop-0.4.4-x86_64.AppImage",
+    "sha256": "e4b0205ea74c3b44d89c15a1aa43801801513395859bf916e52b464f1710a3ea",
+    "sizeBytes": 99105272,
+    "path": "/app/storage/app/private/releases/linux/Vibyra-Desktop-0.4.4-x86_64.AppImage"
+  },
+  {
+    "filename": "Vibyra-Desktop-0.4.4-x64-setup.exe",
+    "sha256": "9277516d04a90b9e8c14137f15d909d8c9cc7b3d6d5535b548e4db1ddb5cce41",
+    "sizeBytes": 8162117,
+    "path": "/app/storage/app/private/releases/windows/Vibyra-Desktop-0.4.4-x64-setup.exe"
+  }
+]
