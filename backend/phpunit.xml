@@ -19,6 +19,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Public test-only key; tests must not require a local production .env. -->
+        <env name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="/>
         <env name="VIBYRA_LEGACY_DESKTOP_ROUTES_ENABLED" value="true"/>
         <env name="VIBYRA_CORS_ALLOW_ANY_ORIGIN" value="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
