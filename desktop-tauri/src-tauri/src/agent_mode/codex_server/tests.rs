@@ -1,6 +1,9 @@
 use super::*;
+#[cfg(unix)]
 use crate::agent_mode::gate::test_world::world;
+#[cfg(unix)]
 use std::time::Duration;
+#[cfg(unix)]
 use vibyra_core::agent_runtime::deadline::Deadline;
 
 #[cfg(unix)]

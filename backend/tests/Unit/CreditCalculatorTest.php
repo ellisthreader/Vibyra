@@ -11,7 +11,7 @@ class CreditCalculatorTest extends TestCase
 {
     public function test_current_claude_models_use_pinned_slugs_and_conservative_fallback_rates(): void
     {
-        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog = $this->createStub(OpenRouterPricingCatalog::class);
         $catalog->method('freshPricingFor')->willReturn(null);
         $calc = new CreditCalculator($catalog);
 
@@ -33,7 +33,7 @@ class CreditCalculatorTest extends TestCase
 
     public function test_claude_fable_5_1_bills_at_the_fable_tier(): void
     {
-        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog = $this->createStub(OpenRouterPricingCatalog::class);
         $catalog->method('freshPricingFor')->willReturn(null);
         $calc = new CreditCalculator($catalog);
 
@@ -49,7 +49,7 @@ class CreditCalculatorTest extends TestCase
 
     public function test_dynamic_openrouter_slugs_resolve_as_billable_models(): void
     {
-        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog = $this->createStub(OpenRouterPricingCatalog::class);
         $catalog->method('freshPricingFor')->willReturnMap([
             ['x-ai/grok-build-0.1', ['prompt' => '0.000005', 'completion' => '0.000025']],
             ['baidu/cobuddy:free', ['prompt' => '0', 'completion' => '0']],
@@ -108,7 +108,7 @@ class CreditCalculatorTest extends TestCase
 
     public function test_usage_estimate_excludes_reservation_safety_margin(): void
     {
-        $catalog = $this->createMock(OpenRouterPricingCatalog::class);
+        $catalog = $this->createStub(OpenRouterPricingCatalog::class);
         $catalog->method('freshPricingFor')->willReturn(null);
         config([
             'billing.openrouter_pricing.reservation_safety_multiplier' => 1.5,

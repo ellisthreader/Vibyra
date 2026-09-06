@@ -1,0 +1,14 @@
+# The standalone phone app has its own lockfile and bundled runtime assets.
+# Keep the desktop, backend, local logs and other checkouts out of EAS uploads.
+/*
+!/mobile
+!/mobile/**
+/mobile/node_modules/
+/mobile/.expo/
+/mobile/dist/
+/mobile/ios/
+/mobile/android/
+/mobile/.env*
+# eas-build-pre-upload regenerates these from the maintained Host transport.
+!/mobile/src/generated/
+!/mobile/src/generated/*.ts
