@@ -1,0 +1,115 @@
+@media (min-width: 1600px) {
+  .page-width { width: min(1320px, calc(100% - 140px)); }
+  .product-stage { height: 650px; }
+  .device-body { height: 440px; }
+  .terminal-content { font-size: 8px; }
+}
+@media (max-width: 1150px) {
+  .page-width { width: calc(100% - 64px); }
+  .desktop-nav { margin-left: 0; gap: 23px; }
+  .product-stage { height: 540px; }
+  .desktop-device { top: 63px; width: 87%; }
+  .device-body { height: 362px; }
+  .terminal-content { font-size: 6px; padding: 8px; }
+  .terminal-file { font-size: 5.5px; }
+  .terminal-preview .orbit-app-content { padding: 12px 18px; }
+  .terminal-preview .orbit-app .orbit-title { font-size: 26px; }
+  .terminal-preview .orbit-streak { display: none; }
+  .provider-strip { gap: 25px; }
+  .provider-strip > p { padding-right: 25px; }
+  .provider-names > span { font-size: 13px; gap: 5px; }
+  .provider-names { gap: 14px; }
+  .provider-extra:last-child { display: none; }
+  .feature-copy { padding: 23px; }
+  .feature h3 { font-size: 18px; }
+  .feature-art { height: 190px; }
+  .agents-art { padding: 29px 15px; }
+  .memory-note { width: 160px; }
+  .audience-row { grid-template-columns: 160px 1fr; gap: 20px; }
+  .audience-row > .action { grid-column: 2; justify-self: start; margin-left: 20px; }
+  .audience-copy { padding-left: 20px; }
+  .mobile-layout { gap: 25px; }
+  .mobile-note { left: 5px; top: -3%; font-size: 16px; }
+  .mobile-note em { font-size: 20px; }
+  .mobile-floating-label { right: -10px; bottom: 15%; }
+  .mobile-phone-wrap { width: 260px; }
+  .control-grid { gap: 36px; }
+  .control-grid > article + article::before { left: -18px; }
+  .plan-card { padding: 22px 15px; }
+  .plan-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .plan-price { font-size: 33px; }
+  .plan-price > span { font-size: 11px; }
+  .plan-name > span { font-size: 8px; }
+  .plan-card li { font-size: 13px; }
+  .faq-section { gap: 45px; }
+  .faq-intro h2 { font-size: 34px; }
+}
+@media (max-width: 800px) {
+  .page-width { width: calc(100% - 48px); }
+  .desktop-nav, .login-link { display: none; }
+  .menu-button { display: flex; }
+  .nav-inner { height: 66px; gap: 14px; }
+  .nav-actions { gap: 9px; }
+  .brand { font-size: 25px; }
+  .brand img { width: 27px; height: 20px; }
+  .product-stage { height: 420px; }
+  .desktop-device { width: 820px; left: 26px; top: 53px; transform: scale(.68); transform-origin: top left; }
+  .device-body { height: 380px; }
+  .walkthrough-controls { padding: 0 16px 14px; }
+  .walkthrough-tabs button { font-size: 11px; padding: 18px 3px; gap: 7px; }
+  .walkthrough-tabs button svg { margin-left: 0; width: 13px; }
+  .product-stage .preview-demo-toolbar > div { display: none; }
+  .walkthrough-caption { font-size: 10px; min-height: 45px; padding-inline: 7px; }
+  .provider-strip { display: block; padding-block: 27px; }
+  .provider-strip > p { border: 0; padding: 0; text-align: center; font-size: 10px; }
+  .provider-strip > p > br { display: none; }
+  .provider-strip > p > strong::before { content: ' '; }
+  .provider-names { margin-top: 20px; gap: 14px; justify-content: space-around; flex-wrap: wrap; }
+  .provider-names > span { font-size: 14px; }
+  .provider-extra:last-child { display: flex; }
+  .section-space { padding-block: 76px; }
+  .section-heading { display: block; margin-bottom: 35px; }
+  .section-heading > p { margin-top: 20px; font-size: 14px; }
+  .section-heading br.desktop-break { display: none; }
+  .feature-grid { grid-template-columns: repeat(2, 1fr); }
+  .feature:not(:nth-child(3n)) { border-right: 0; }
+  .feature:nth-child(odd) { border-right: 1px solid var(--home-line); }
+  .feature:nth-child(-n+4) { border-bottom: 1px solid var(--home-line); }
+  .feature-visual:nth-child(3) .feature-art { display: none; }
+  .feature-visual:nth-child(3) .feature-copy { padding-top: 33px; }
+  .mobile-layout { grid-template-columns: 1fr 1fr; padding-block: 75px; gap: 20px; }
+  .mobile-copy h2 { font-size: 37px; }
+  .mobile-description { font-size: 14px; }
+  .mobile-phone-wrap { width: 223px; margin-left: 0; transform: rotate(5deg); }
+  .mobile-phone-wrap .phone-screen { height: 348px; }
+  .mobile-phone-wrap .phone-chat { padding-inline: 14px; }
+  .mobile-phone-wrap .phone-chat .phone-title { font-size: 25px; }
+  .mobile-phone-wrap .phone-user-message { font-size: 8px; padding: 8px; }
+  .mobile-phone-wrap .phone-ai-message { font-size: 7px; }
+  .mobile-phone-wrap .phone-status { padding-inline: 15px; font-size: 8px; }
+  .mobile-phone-wrap .phone-island { width: 61px; }
+  .mobile-note, .mobile-floating-label { display: none; }
+  .mobile-demo-note { bottom: 30px; font-size: 6px; text-align: center; }
+  .phone-feature-tabs { margin-top: 25px; }
+  .phone-feature-tabs button { font-size: 13px; gap: 9px; }
+  .phone-feature-description { font-size: 12px; min-height: 65px; }
+  .control-grid { gap: 30px; }
+  .control-grid h3 { font-size: 16px; }
+  .control-grid p { font-size: 13px; }
+  .plan-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+  .plan-card { padding: 25px; }
+  .plan-price { font-size: 38px; }
+  .plan-card li { font-size: 13px; }
+  .plan-name > span { font-size: 8px; }
+  .pricing-notes { flex-direction: column; gap: 12px; }
+  .pricing-notes p:last-child { text-align: left; }
+  .faq-section { grid-template-columns: 1fr; gap: 35px; }
+  .footer-cta h2 { font-size: 43px; }
+  .footer-cta { gap: 24px; padding-block: 65px; }
+  .footer-cta-actions .action { font-size: 11px; gap: 12px; padding-inline: 17px; }
+  .footer-cta-actions > p { font-size: 11px; }
+  .footer-grid { gap: 23px; grid-template-columns: 1.4fr 1fr 1.2fr 1fr; }
+}
+@media (min-width: 581px) and (max-width: 700px) {
+  .desktop-device { transform: scale(.56); }
+}

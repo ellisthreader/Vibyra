@@ -1,6 +1,6 @@
 ---
 tags: [vibyra, memory, backend, website, downloads]
-updated: 2026-08-19
+updated: 2026-09-05
 ---
 
 # Website Accounts And Downloads
@@ -64,17 +64,21 @@ checksums in sync with these names.
 
 ## Download page UI
 
-Keep `/downloads` deliberately minimal: one title, one short no-account line,
-and Windows/macOS/Linux choices. Each choice may show only the OS
-requirements, version, size, and a subtle recommendation. Do not restore
-benefit-pill rows, decorated outer panels, filename tables, checksum sections,
-or a second nested download button. Start with `DownloadsPage.jsx`,
-`DownloadCard.jsx`, `MacDownloadCard.jsx`, and `css/portal/downloads.css`.
-The Mac card uses two small, explicitly labelled architecture actions only when
-their artifacts are ready. Platform marks live under
-`backend/public/platform-icons/`: use the official Microsoft symbol for Windows
-the Apple symbol for macOS, and the Linux Foundation Tux artwork for Linux, preserving their original
-colours rather than replacing them with text placeholders or recolouring them.
+The September 2026 user-requested redesign replaces the old minimal portal
+layout with the marketing homepage's pearl, ink and cobalt visual system.
+Both `/downloads` and `/account/downloads` render `downloads.blade.php`, with
+the separate `resources/js/downloads.jsx` entry. Components and setup guides
+live in `resources/js/marketing/downloads/`; legacy portal download components
+are retained source and no longer mounted.
+
+Read [[../Marketing/Downloads Website|Downloads Website]] for the current
+composition, local metadata proxy, package availability and QA workflow.
+`/web-api/download-catalog` uses the existing release controller outside the
+local environment; locally it reads fixed-origin public release metadata.
+Public file routes still enforce actual size and checksum checks.
+Downloads require no account; opening the desktop workspace requires sign-in.
+Retain the official platform artwork under `backend/public/platform-icons/`
+and independently gate Apple Silicon and Intel actions by artifact availability.
 
 ## Local blank-page check
 

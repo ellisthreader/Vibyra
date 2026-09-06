@@ -71,25 +71,16 @@ MIME errors and a blank page. If starting PHP manually, use Laravel's
 `Foundation/resources/server.php` router with `backend/public` as the working
 directory, then verify compiled JS responds as `application/javascript`.
 
-The homepage scroll-video hero must remain one immersive full-screen stage.
-Never replace it with permanent side-by-side or stacked text/video panels. Show
-the entire clip with `object-contain`; keep Start, Send, Run, and Review copy to
-one short headline plus one short sentence; and render each chapter in a compact
-dark glass caption so it stays readable over every scene and screen size. The
-hero entry is `backend/resources/js/marketing/Hero.jsx`; focused beam, terminal,
-stage-showcase, and scroll-video components remain in the same folder. The
-single CSS entry stays `backend/resources/css/marketing.css`, which imports the
-focused files under `backend/resources/css/marketing/`. Preserve class names,
-DOM order, copy, CSS rule order, and the single compiled CSS asset when making
-organizational-only changes. Keep the direct video stream underneath the
-blob-buffered scrub layer so the first frame is visible immediately without
-sacrificing reliable forward/backward scroll seeking on the local PHP server.
+The homepage now uses the product-led software and phone design described in
+[[Marketing/Marketing Website]]. `marketing/App.jsx` mounts focused sections
+from `marketing/home/`: interactive desktop and Agent/Code/Chat walkthroughs,
+feature stories, the upcoming phone companion, control, API-backed plans, FAQs
+and download/account actions. Product illustrations are explicitly demos.
+Legacy scroll-video source is retained but no longer mounted. The September
+2026 comprehensive marketing request supersedes the old short film-led layout.
 
-After the immersive hero, keep the shipped homepage deliberately short:
-`SimpleOverview` (three workflow steps plus one real product capture), compact
-row-based Pricing, four essential FAQs, and one final action. Do not restore the
-second product film, separate architecture/outcomes/depth sections, repeated
-proof galleries, or a capability atlas to the homepage; those systems repeated
-the same story and made the only shipped public page feel like a feature
-dashboard. The launch-film component and media may remain available as source
-material for a future dedicated product page.
+Use `npm run website` at the active repo root for the standalone local site on
+`http://127.0.0.1:8128`. `scripts/marketing/verify.mjs` covers responsive browser
+screens, keyboard interactions, real destinations, accessibility and pricing
+failure/retry. See the focused marketing note for prerequisites and the crucial
+published-tag versus current-branch distinction.

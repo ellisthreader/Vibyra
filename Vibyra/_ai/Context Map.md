@@ -45,6 +45,10 @@ runtime, read `Product Surfaces.md` first. It separates the public Laravel
 marketing website, Expo web browser client, native phone app, and the native
 Tauri desktop app, and links to each domain note.
 
+For a whole-software performance audit, read `Performance Audit Workflow.md`
+and use `vibyra-optimise`; it records isolation, measurement limits, and source
+boundaries across these four surfaces.
+
 ## Brand And Colour System
 
 For palette, theme, brand-colour, focus, contrast, or cross-surface visual work,
