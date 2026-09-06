@@ -1,0 +1,322 @@
+[
+  {
+    "file": "assets/app-C-7MPoQa.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/app.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/app-DDiw_n4R.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-UMf7COi6.js",
+      "assets/app-C-7MPoQa.js",
+      "assets/app-C-7MPoQa.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 5425,
+    "gzipBytes": 1769,
+    "modules": [
+      {
+        "id": "resources/js/app.jsx",
+        "renderedLength": 8872
+      }
+    ]
+  },
+  {
+    "file": "assets/marketing-D-UUfAUc.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-UMf7COi6.js",
+      "assets/marketing-Dg4FGGBO.js",
+      "assets/marketing-Dg4FGGBO.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 40833,
+    "gzipBytes": 11356,
+    "modules": [
+      {
+        "id": "resources/js/marketing/home/WorkspacePanels.jsx",
+        "renderedLength": 13215
+      },
+      {
+        "id": "resources/js/marketing/home/Plans.jsx",
+        "renderedLength": 8550
+      },
+      {
+        "id": "resources/js/marketing/home/Desktop.jsx",
+        "renderedLength": 8456
+      },
+      {
+        "id": "resources/js/marketing/home/WorkspaceDemo.jsx",
+        "renderedLength": 7277
+      },
+      {
+        "id": "resources/js/marketing/home/Navigation.jsx",
+        "renderedLength": 7026
+      },
+      {
+        "id": "resources/js/marketing/home/shared.jsx",
+        "renderedLength": 6643
+      },
+      {
+        "id": "resources/js/marketing/home/PhoneDemo.jsx",
+        "renderedLength": 6554
+      },
+      {
+        "id": "resources/js/marketing/home/Mobile.jsx",
+        "renderedLength": 5597
+      },
+      {
+        "id": "resources/js/marketing/home/Questions.jsx",
+        "renderedLength": 4920
+      },
+      {
+        "id": "resources/js/marketing/home/Hero.jsx",
+        "renderedLength": 4010
+      },
+      {
+        "id": "resources/js/marketing/home/Control.jsx",
+        "renderedLength": 3156
+      },
+      {
+        "id": "resources/js/marketing/App.jsx",
+        "renderedLength": 929
+      },
+      {
+        "id": "resources/js/marketing.jsx",
+        "renderedLength": 185
+      }
+    ]
+  },
+  {
+    "file": "assets/marketing-Dg4FGGBO.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/marketing.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/portal-CmMt2Ngy.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 0,
+    "gzipBytes": 20,
+    "modules": [
+      {
+        "id": "resources/css/portal.css",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/portal-DfLEu5Vn.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-UMf7COi6.js",
+      "assets/portal-CmMt2Ngy.js",
+      "assets/portal-CmMt2Ngy.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 25827,
+    "gzipBytes": 9078,
+    "modules": [
+      {
+        "id": "resources/js/portal/pages/AuthPage.jsx",
+        "renderedLength": 4565
+      },
+      {
+        "id": "resources/js/portal/components/WhatsNew.jsx",
+        "renderedLength": 4157
+      },
+      {
+        "id": "resources/js/portal/pages/AccountPage.jsx",
+        "renderedLength": 3311
+      },
+      {
+        "id": "resources/js/portal/components/LinuxDownloadCard.jsx",
+        "renderedLength": 2910
+      },
+      {
+        "id": "resources/js/portal/pages/BillingPage.jsx",
+        "renderedLength": 2845
+      },
+      {
+        "id": "resources/js/portal/pages/DownloadsPage.jsx",
+        "renderedLength": 2796
+      },
+      {
+        "id": "resources/js/portal/components/PortalShell.jsx",
+        "renderedLength": 2409
+      },
+      {
+        "id": "resources/js/portal/api.js",
+        "renderedLength": 2371
+      },
+      {
+        "id": "resources/js/portal/pages/BillingStatusPage.jsx",
+        "renderedLength": 2367
+      },
+      {
+        "id": "resources/js/portal/components/PlanCard.jsx",
+        "renderedLength": 2356
+      },
+      {
+        "id": "resources/js/portal/components/MacDownloadCard.jsx",
+        "renderedLength": 1950
+      },
+      {
+        "id": "resources/js/portal/session/WebsiteSessionProvider.jsx",
+        "renderedLength": 1804
+      },
+      {
+        "id": "resources/js/portal/components/PlatformRow.jsx",
+        "renderedLength": 1556
+      },
+      {
+        "id": "resources/js/portal/components/ProviderIcon.jsx",
+        "renderedLength": 1548
+      },
+      {
+        "id": "resources/js/portal/providerAuth.js",
+        "renderedLength": 1363
+      },
+      {
+        "id": "resources/js/portal/components/UpdatesItself.jsx",
+        "renderedLength": 1342
+      },
+      {
+        "id": "resources/js/portal/navigation.js",
+        "renderedLength": 1259
+      },
+      {
+        "id": "resources/js/portal/components/DownloadCard.jsx",
+        "renderedLength": 1158
+      },
+      {
+        "id": "resources/js/portal/PortalApp.jsx",
+        "renderedLength": 1092
+      },
+      {
+        "id": "resources/js/portal/platform.js",
+        "renderedLength": 885
+      },
+      {
+        "id": "resources/js/portal/components/BetaBanner.jsx",
+        "renderedLength": 617
+      },
+      {
+        "id": "resources/js/portal/components/Notice.jsx",
+        "renderedLength": 294
+      },
+      {
+        "id": "resources/js/portal.jsx",
+        "renderedLength": 185
+      }
+    ]
+  },
+  {
+    "file": "assets/jsx-runtime-UMf7COi6.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 190108,
+    "gzipBytes": 59218,
+    "modules": [
+      {
+        "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+        "renderedLength": 453153
+      },
+      {
+        "id": "node_modules/react/cjs/react.production.js",
+        "renderedLength": 15178
+      },
+      {
+        "id": "node_modules/scheduler/cjs/scheduler.production.js",
+        "renderedLength": 9037
+      },
+      {
+        "id": "node_modules/react-dom/cjs/react-dom.production.js",
+        "renderedLength": 5713
+      },
+      {
+        "id": "\u0000rolldown/runtime.js",
+        "renderedLength": 1162
+      },
+      {
+        "id": "node_modules/react/cjs/react-jsx-runtime.production.js",
+        "renderedLength": 871
+      },
+      {
+        "id": "node_modules/react-dom/client.js",
+        "renderedLength": 473
+      },
+      {
+        "id": "node_modules/react-dom/index.js",
+        "renderedLength": 468
+      },
+      {
+        "id": "node_modules/react/jsx-runtime.js",
+        "renderedLength": 200
+      },
+      {
+        "id": "node_modules/scheduler/index.js",
+        "renderedLength": 188
+      },
+      {
+        "id": "node_modules/react/index.js",
+        "renderedLength": 176
+      }
+    ]
+  },
+  {
+    "file": "assets/app-B2TFvmGU.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 61365,
+    "gzipBytes": 10917
+  },
+  {
+    "file": "assets/marketing-BYqLF7N4.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 92265,
+    "gzipBytes": 18822
+  },
+  {
+    "file": "assets/portal-CjRG5qfw.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 15009,
+    "gzipBytes": 3620
+  }
+]

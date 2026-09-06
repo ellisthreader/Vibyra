@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: one changed message sends its changed text, not forty histories
+ok 1 - one changed message sends its changed text, not forty histories
+  ---
+  duration_ms: 30.431247
+  type: 'test'
+  ...
+# Subtest: array insertions and deletions remain atomic
+ok 2 - array insertions and deletions remain atomic
+  ---
+  duration_ms: 0.194615
+  type: 'test'
+  ...
+# Subtest: negotiation supports old servers and isolates accounts
+ok 3 - negotiation supports old servers and isolates accounts
+  ---
+  duration_ms: 0.346718
+  type: 'test'
+  ...
+# Subtest: a conflict never falls back to overwriting the full state
+ok 4 - a conflict never falls back to overwriting the full state
+  ---
+  duration_ms: 0.585592
+  type: 'test'
+  ...
+# Subtest: a lost acknowledgement retries the same delta and server rollback falls back safely
+ok 5 - a lost acknowledgement retries the same delta and server rollback falls back safely
+  ---
+  duration_ms: 0.446177
+  type: 'test'
+  ...
+# (node:786398) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: snapshots normalize once and flush the most recent state
+ok 6 - snapshots normalize once and flush the most recent state
+  ---
+  duration_ms: 1.865272
+  type: 'test'
+  ...
+# Subtest: identity cancellation cannot replay a stale authenticated save
+ok 7 - identity cancellation cannot replay a stale authenticated save
+  ---
+  duration_ms: 0.251687
+  type: 'test'
+  ...
+# Subtest: credential clearing invalidates delayed saves before a React render
+ok 8 - credential clearing invalidates delayed saves before a React render
+  ---
+  duration_ms: 0.187004
+  type: 'test'
+  ...
+# Subtest: continuous changes do not indefinitely postpone the scheduled write
+ok 9 - continuous changes do not indefinitely postpone the scheduled write
+  ---
+  duration_ms: 0.648114
+  type: 'test'
+  ...
+# Subtest: a slow store coalesces intermediate snapshots and writes the final state
+ok 10 - a slow store coalesces intermediate snapshots and writes the final state
+  ---
+  duration_ms: 2.300967
+  type: 'test'
+  ...
+# Subtest: unchanged credentials are read and verified without repeated writes
+ok 11 - unchanged credentials are read and verified without repeated writes
+  ---
+  duration_ms: 0.480836
+  type: 'test'
+  ...
+# Subtest: a failed secret read prevents public overwrite and later saves can recover
+ok 12 - a failed secret read prevents public overwrite and later saves can recover
+  ---
+  duration_ms: 0.423018
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1800.996194

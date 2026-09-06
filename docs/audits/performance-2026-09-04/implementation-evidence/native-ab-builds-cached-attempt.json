@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "baseline",
+    "exit": 0,
+    "seconds": 317.03122458300004,
+    "command": [
+      "cargo",
+      "build",
+      "--manifest-path",
+      "/tmp/vibyra-perf-final-20260905-ve27rxj1/ab-native/Cargo.toml",
+      "--locked",
+      "--offline",
+      "--features",
+      "tauri/custom-protocol"
+    ],
+    "binarySha256": "451ed779f8397f2ed1e0515920ff27df704925be48fb56a4d3630ed7d403093e",
+    "writerSha256": "eda6ccf3f417cc623584db92c9e0a93b44c74050819779a957da38db0748d67b"
+  },
+  {
+    "kind": "bounded",
+    "exit": 0,
+    "seconds": 82.7216358180001,
+    "command": [
+      "cargo",
+      "build",
+      "--manifest-path",
+      "/tmp/vibyra-perf-final-20260905-ve27rxj1/ab-native/Cargo.toml",
+      "--locked",
+      "--offline",
+      "--features",
+      "tauri/custom-protocol"
+    ],
+    "binarySha256": "451ed779f8397f2ed1e0515920ff27df704925be48fb56a4d3630ed7d403093e",
+    "writerSha256": "8ea47266ea1822873694de1465002b29ad4ca9f364c4c12a6255e6a641182be2"
+  }
+]

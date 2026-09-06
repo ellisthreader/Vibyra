@@ -1,0 +1,2618 @@
+
+> vibyra-desktop-tauri@0.2.8 test
+> node --experimental-strip-types --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: avatar initial prefers the name and falls back to email
+ok 1 - avatar initial prefers the name and falls back to email
+  ---
+  duration_ms: 1.486764
+  type: 'test'
+  ...
+# Subtest: email edits are reserved for email-provider accounts
+ok 2 - email edits are reserved for email-provider accounts
+  ---
+  duration_ms: 0.280943
+  type: 'test'
+  ...
+# Subtest: email auth validation mirrors the backend rules
+ok 3 - email auth validation mirrors the backend rules
+  ---
+  duration_ms: 0.666947
+  type: 'test'
+  ...
+# Subtest: profile edit validation requires name and valid email
+ok 4 - profile edit validation requires name and valid email
+  ---
+  duration_ms: 0.257188
+  type: 'test'
+  ...
+# Subtest: oauth progress copy names the provider honestly
+ok 5 - oauth progress copy names the provider honestly
+  ---
+  duration_ms: 0.24155
+  type: 'test'
+  ...
+# Subtest: logout confirmation appears only when terminals are running
+ok 6 - logout confirmation appears only when terminals are running
+  ---
+  duration_ms: 0.314602
+  type: 'test'
+  ...
+# Subtest: entering attention fires once, and staying there does not repeat
+ok 7 - entering attention fires once, and staying there does not repeat
+  ---
+  duration_ms: 2.91317
+  type: 'test'
+  ...
+# Subtest: leaving and re-entering attention fires again
+ok 8 - leaving and re-entering attention fires again
+  ---
+  duration_ms: 0.365342
+  type: 'test'
+  ...
+# Subtest: a pane the user is already looking at stays silent
+ok 9 - a pane the user is already looking at stays silent
+  ---
+  duration_ms: 0.344767
+  type: 'test'
+  ...
+# Subtest: a focused pane still speaks up when the window is in the background
+ok 10 - a focused pane still speaks up when the window is in the background
+  ---
+  duration_ms: 0.24584
+  type: 'test'
+  ...
+# Subtest: going quiet says nothing unless the preference is on
+ok 11 - going quiet says nothing unless the preference is on
+  ---
+  duration_ms: 0.454789
+  type: 'test'
+  ...
+# Subtest: a short burst of work is not a run worth announcing
+ok 12 - a short burst of work is not a run worth announcing
+  ---
+  duration_ms: 0.280986
+  type: 'test'
+  ...
+# Subtest: quiet needs the silence to settle, not just to start
+ok 13 - quiet needs the silence to settle, not just to start
+  ---
+  duration_ms: 0.249585
+  type: 'test'
+  ...
+# Subtest: quiet is announced once per run, not once per tick
+ok 14 - quiet is announced once per run, not once per tick
+  ---
+  duration_ms: 0.232238
+  type: 'test'
+  ...
+# Subtest: an acknowledged attention run cannot come back as a quiet toast
+ok 15 - an acknowledged attention run cannot come back as a quiet toast
+  ---
+  duration_ms: 0.576812
+  type: 'test'
+  ...
+# Subtest: a long-settled run is not borrowed by a stray attention hours later
+ok 16 - a long-settled run is not borrowed by a stray attention hours later
+  ---
+  duration_ms: 0.625135
+  type: 'test'
+  ...
+# Subtest: a fresh settle still lends its stretch to the verdict
+ok 17 - a fresh settle still lends its stretch to the verdict
+  ---
+  duration_ms: 0.34499
+  type: 'test'
+  ...
+# Subtest: a closed pane leaves no phase behind
+ok 18 - a closed pane leaves no phase behind
+  ---
+  duration_ms: 1.289558
+  type: 'test'
+  ...
+# Subtest: a suspended pane reappearing under a new id starts clean
+ok 19 - a suspended pane reappearing under a new id starts clean
+  ---
+  duration_ms: 0.177734
+  type: 'test'
+  ...
+# Subtest: attention entered from idle carries the working stretch that preceded it
+ok 20 - attention entered from idle carries the working stretch that preceded it
+  ---
+  duration_ms: 0.169448
+  type: 'test'
+  ...
+# Subtest: the verdict only says ask for a parsed prompt or an explicit bell
+ok 21 - the verdict only says ask for a parsed prompt or an explicit bell
+  ---
+  duration_ms: 0.158379
+  type: 'test'
+  ...
+# Subtest: auto-hibernate takes long-idle panes and nothing else
+ok 22 - auto-hibernate takes long-idle panes and nothing else
+  ---
+  duration_ms: 0.198793
+  type: 'test'
+  ...
+# Subtest: the question is the ask, not the nearest line ending in a question mark
+ok 23 - the question is the ask, not the nearest line ending in a question mark
+  ---
+  duration_ms: 4.136187
+  type: 'test'
+  ...
+# Subtest: the command block is captured, first line first
+ok 24 - the command block is captured, first line first
+  ---
+  duration_ms: 0.595611
+  type: 'test'
+  ...
+# Subtest: options carry the keystroke the agent is waiting for
+ok 25 - options carry the keystroke the agent is waiting for
+  ---
+  duration_ms: 1.132008
+  type: 'test'
+  ...
+# Subtest: "yes, and don't ask again" is a remember, never an affirm
+ok 26 - "yes, and don't ask again" is a remember, never an affirm
+  ---
+  duration_ms: 0.524359
+  type: 'test'
+  ...
+# Subtest: a prompt with output under it has already been answered
+ok 27 - a prompt with output under it has already been answered
+  ---
+  duration_ms: 0.30008
+  type: 'test'
+  ...
+# Subtest: a redraw that changes nothing keeps the same fingerprint
+ok 28 - a redraw that changes nothing keeps the same fingerprint
+  ---
+  duration_ms: 2.69195
+  type: 'test'
+  ...
+# Subtest: a different question gets a different fingerprint
+ok 29 - a different question gets a different fingerprint
+  ---
+  duration_ms: 0.914965
+  type: 'test'
+  ...
+# Subtest: the [y/n] shape is read as yes and no
+ok 30 - the [y/n] shape is read as yes and no
+  ---
+  duration_ms: 3.35126
+  type: 'test'
+  ...
+# Subtest: a numbered list with no question and no command is not a prompt
+ok 31 - a numbered list with no question and no command is not a prompt
+  ---
+  duration_ms: 1.583512
+  type: 'test'
+  ...
+# Subtest: plain output is not a prompt
+ok 32 - plain output is not a prompt
+  ---
+  duration_ms: 2.090186
+  type: 'test'
+  ...
+# Subtest: button labels keep the answer and drop the clause
+ok 33 - button labels keep the answer and drop the clause
+  ---
+  duration_ms: 2.70958
+  type: 'test'
+  ...
+# Subtest: the headline says whether a command is involved
+ok 34 - the headline says whether a command is involved
+  ---
+  duration_ms: 0.330634
+  type: 'test'
+  ...
+# Subtest: ordinary spending says nothing
+ok 35 - ordinary spending says nothing
+  ---
+  duration_ms: 1.425018
+  type: 'test'
+  ...
+# Subtest: four fifths of a cap is the warning point
+ok 36 - four fifths of a cap is the warning point
+  ---
+  duration_ms: 0.266795
+  type: 'test'
+  ...
+# Subtest: either cap can be the one that bites
+ok 37 - either cap can be the one that bites
+  ---
+  duration_ms: 0.298983
+  type: 'test'
+  ...
+# Subtest: reaching a cap outranks merely nearing the other
+ok 38 - reaching a cap outranks merely nearing the other
+  ---
+  duration_ms: 0.182905
+  type: 'test'
+  ...
+# Subtest: a cap of zero is no cap at all
+ok 39 - a cap of zero is no cap at all
+  ---
+  duration_ms: 0.206961
+  type: 'test'
+  ...
+# Subtest: the warning explains what happens next, the alarm is sticky
+ok 40 - the warning explains what happens next, the alarm is sticky
+  ---
+  duration_ms: 0.301241
+  type: 'test'
+  ...
+# Subtest: starts model and agent discovery without waiting for workspace setup
+ok 41 - starts model and agent discovery without waiting for workspace setup
+  ---
+  duration_ms: 2.868172
+  type: 'test'
+  ...
+# Subtest: isolates startup failures by task
+ok 42 - isolates startup failures by task
+  ---
+  duration_ms: 3.790941
+  type: 'test'
+  ...
+# Subtest: auth background uses a silent local loop with a matching poster
+ok 43 - auth background uses a silent local loop with a matching poster
+  ---
+  duration_ms: 21.812613
+  type: 'test'
+  ...
+# Subtest: the inlined loop stays out of the startup chunk
+ok 44 - the inlined loop stays out of the startup chunk
+  ---
+  duration_ms: 2.751987
+  type: 'test'
+  ...
+# Subtest: production CSP allows the inlined video source
+ok 45 - production CSP allows the inlined video source
+  ---
+  duration_ms: 2.17193
+  type: 'test'
+  ...
+# Subtest: poster fallback owns startup while the video fades in
+ok 46 - poster fallback owns startup while the video fades in
+  ---
+  duration_ms: 4.747904
+  type: 'test'
+  ...
+# Subtest: bundled auth media is compact and has the expected containers
+ok 47 - bundled auth media is compact and has the expected containers
+  ---
+  duration_ms: 5.355795
+  type: 'test'
+  ...
+# Subtest: account creation does not offer password recovery
+ok 48 - account creation does not offer password recovery
+  ---
+  duration_ms: 6.184664
+  type: 'test'
+  ...
+# Subtest: keeps generated folders quiet while preserving normal project navigation
+ok 49 - keeps generated folders quiet while preserving normal project navigation
+  ---
+  duration_ms: 2.406921
+  type: 'test'
+  ...
+# Subtest: imports selected notes into editable project memory without source paths
+ok 50 - imports selected notes into editable project memory without source paths
+  ---
+  duration_ms: 0.541305
+  type: 'test'
+  ...
+# Subtest: labels editable and read-only memory context separately
+ok 51 - labels editable and read-only memory context separately
+  ---
+  duration_ms: 0.263245
+  type: 'test'
+  ...
+# Subtest: builds a stable Obsidian-style note tree without loading note bodies
+ok 52 - builds a stable Obsidian-style note tree without loading note bodies
+  ---
+  duration_ms: 15.564071
+  type: 'test'
+  ...
+# Subtest: parses a safe readable memory document and unique outline anchors
+ok 53 - parses a safe readable memory document and unique outline anchors
+  ---
+  duration_ms: 2.453274
+  type: 'test'
+  ...
+# Subtest: spawn geometry still matches the pane stylesheet
+ok 54 - spawn geometry still matches the pane stylesheet
+  ---
+  duration_ms: 12.064538
+  type: 'test'
+  ...
+# Subtest: scrollbar reserve still matches the xterm build in node_modules
+ok 55 - scrollbar reserve still matches the xterm build in node_modules
+  ---
+  duration_ms: 56.984814
+  type: 'test'
+  ...
+# Subtest: mounting a terminal always hands the PTY the grid it built
+ok 56 - mounting a terminal always hands the PTY the grid it built
+  ---
+  duration_ms: 8.156334
+  type: 'test'
+  ...
+# Subtest: off-screen xterms detach while keeping their registry scrollback
+ok 57 - off-screen xterms detach while keeping their registry scrollback
+  ---
+  duration_ms: 5.893416
+  type: 'test'
+  ...
+# Subtest: status indicators never keep WebKit repainting terminal canvases
+ok 58 - status indicators never keep WebKit repainting terminal canvases
+  ---
+  duration_ms: 1.350542
+  type: 'test'
+  ...
+# Subtest: terminal input is posted immediately and ordered natively
+ok 59 - terminal input is posted immediately and ordered natively
+  ---
+  duration_ms: 2.925233
+  type: 'test'
+  ...
+# Subtest: terminal mount waits for font and renderer readiness
+ok 60 - terminal mount waits for font and renderer readiness
+  ---
+  duration_ms: 4.12262
+  type: 'test'
+  ...
+# Subtest: the native app rejects a second session owner before other plugins start
+ok 61 - the native app rejects a second session owner before other plugins start
+  ---
+  duration_ms: 4.282722
+  type: 'test'
+  ...
+# Subtest: only an explicit count opens more than one terminal
+ok 62 - only an explicit count opens more than one terminal
+  ---
+  duration_ms: 4.194456
+  type: 'test'
+  ...
+# Subtest: only a full-size dock takes the terminals off screen
+ok 63 - only a full-size dock takes the terminals off screen
+  ---
+  duration_ms: 1.439145
+  type: 'test'
+  ...
+# Subtest: each size reads its width from its own unit
+ok 64 - each size reads its width from its own unit
+  ---
+  duration_ms: 0.429933
+  type: 'test'
+  ...
+# Subtest: the terminals reserve the dock's width plus both gaps, and nothing at full
+ok 65 - the terminals reserve the dock's width plus both gaps, and nothing at full
+  ---
+  duration_ms: 0.254119
+  type: 'test'
+  ...
+# Subtest: an out-of-range width is clamped rather than allowed to collapse a surface
+ok 66 - an out-of-range width is clamped rather than allowed to collapse a surface
+  ---
+  duration_ms: 0.211952
+  type: 'test'
+  ...
+# Subtest: the grab point stays under the cursor as it crosses the grip
+ok 67 - the grab point stays under the cursor as it crosses the grip
+  ---
+  duration_ms: 0.376263
+  type: 'test'
+  ...
+# Subtest: arrow keys resize in the unit of the size in play
+ok 68 - arrow keys resize in the unit of the size in play
+  ---
+  duration_ms: 0.274716
+  type: 'test'
+  ...
+# Subtest: both widths survive a restart, and a corrupt one falls back
+ok 69 - both widths survive a restart, and a corrupt one falls back
+  ---
+  duration_ms: 0.566653
+  type: 'test'
+  ...
+# Subtest: only a known tool is restored, and closed is never one of them
+ok 70 - only a known tool is restored, and closed is never one of them
+  ---
+  duration_ms: 0.258711
+  type: 'test'
+  ...
+# Subtest: dock sizing never throws the workspace out when storage refuses
+ok 71 - dock sizing never throws the workspace out when storage refuses
+  ---
+  duration_ms: 0.78063
+  type: 'test'
+  ...
+# Subtest: welcome copy is personal and completes four measured beats in 6.4 seconds
+ok 72 - welcome copy is personal and completes four measured beats in 6.4 seconds
+  ---
+  duration_ms: 1.607102
+  type: 'test'
+  ...
+# Subtest: completion is persisted once per opaque account key
+ok 73 - completion is persisted once per opaque account key
+  ---
+  duration_ms: 1.369662
+  type: 'test'
+  ...
+# Subtest: malformed storage recovers and the history remains bounded
+ok 74 - malformed storage recovers and the history remains bounded
+  ---
+  duration_ms: 0.414154
+  type: 'test'
+  ...
+# Subtest: cinematic mounts over the workspace with accessible escape and reduced motion
+ok 75 - cinematic mounts over the workspace with accessible escape and reduced motion
+  ---
+  duration_ms: 1.324703
+  type: 'test'
+  ...
+# Subtest: only the focused pane earns the full native flush rate
+ok 76 - only the focused pane earns the full native flush rate
+  ---
+  duration_ms: 2.62264
+  type: 'test'
+  ...
+# Subtest: a grid with no focus costs nothing extra
+ok 77 - a grid with no focus costs nothing extra
+  ---
+  duration_ms: 0.331191
+  type: 'test'
+  ...
+# Subtest: panes outside the active project still hibernate
+ok 78 - panes outside the active project still hibernate
+  ---
+  duration_ms: 0.242407
+  type: 'test'
+  ...
+# Subtest: panes with nothing to assert are skipped
+ok 79 - panes with nothing to assert are skipped
+  ---
+  duration_ms: 0.246047
+  type: 'test'
+  ...
+# Subtest: focus changes send only the two panes that changed
+ok 80 - focus changes send only the two panes that changed
+  ---
+  duration_ms: 0.68697
+  type: 'test'
+  ...
+# Subtest: a focus change that alters nothing sends no IPC at all
+ok 81 - a focus change that alters nothing sends no IPC at all
+  ---
+  duration_ms: 0.320743
+  type: 'test'
+  ...
+# Subtest: a failed native update stays retryable
+ok 82 - a failed native update stays retryable
+  ---
+  duration_ms: 0.539243
+  type: 'test'
+  ...
+# Subtest: project sync keeps the focused pane at the full rate
+ok 83 - project sync keeps the focused pane at the full rate
+  ---
+  duration_ms: 0.449062
+  type: 'test'
+  ...
+# Subtest: the CSP keeps Tauri's unordered custom-protocol IPC disabled
+ok 84 - the CSP keeps Tauri's unordered custom-protocol IPC disabled
+  ---
+  duration_ms: 1.080282
+  type: 'test'
+  ...
+# Subtest: empty terminal launch offers one direct AI-account recovery path
+ok 85 - empty terminal launch offers one direct AI-account recovery path
+  ---
+  duration_ms: 1.727783
+  type: 'test'
+  ...
+# Subtest: direct Settings navigation makes Integrations the active section
+ok 86 - direct Settings navigation makes Integrations the active section
+  ---
+  duration_ms: 0.708318
+  type: 'test'
+  ...
+# Subtest: keeps Codex Ultra as a native CLI-only effort
+ok 87 - keeps Codex Ultra as a native CLI-only effort
+  ---
+  duration_ms: 2.009286
+  type: 'test'
+  ...
+# Subtest: uses OpenRouter's exact Claude effort subset
+ok 88 - uses OpenRouter's exact Claude effort subset
+  ---
+  duration_ms: 0.400322
+  type: 'test'
+  ...
+# Subtest: does not add xhigh to a model when OpenRouter omits it
+ok 89 - does not add xhigh to a model when OpenRouter omits it
+  ---
+  duration_ms: 0.185376
+  type: 'test'
+  ...
+# Subtest: offers Ultracode on every supported offline Claude family
+ok 90 - offers Ultracode on every supported offline Claude family
+  ---
+  duration_ms: 0.28976
+  type: 'test'
+  ...
+# Subtest: keeps Ultracode off Claude families without xhigh
+ok 91 - keeps Ultracode off Claude families without xhigh
+  ---
+  duration_ms: 0.308066
+  type: 'test'
+  ...
+# Subtest: requires a native integration to be explicitly selected
+ok 92 - requires a native integration to be explicitly selected
+  ---
+  duration_ms: 1.855058
+  type: 'test'
+  ...
+# Subtest: requires the selected native integration to be installed
+ok 93 - requires the selected native integration to be installed
+  ---
+  duration_ms: 0.284943
+  type: 'test'
+  ...
+# Subtest: generic OpenRouter models use only selected integrations
+ok 94 - generic OpenRouter models use only selected integrations
+  ---
+  duration_ms: 0.298502
+  type: 'test'
+  ...
+# Subtest: unverified provider-catalog variants do not route through account CLIs
+ok 95 - unverified provider-catalog variants do not route through account CLIs
+  ---
+  duration_ms: 0.322341
+  type: 'test'
+  ...
+# Subtest: anything inside the last minute is 'Just now'
+ok 96 - anything inside the last minute is 'Just now'
+  ---
+  duration_ms: 3.123882
+  type: 'test'
+  ...
+# Subtest: buckets fall on calendar boundaries, not fixed 24h windows
+ok 97 - buckets fall on calendar boundaries, not fixed 24h windows
+  ---
+  duration_ms: 0.243685
+  type: 'test'
+  ...
+# Subtest: groups come back newest-first with adjacent buckets merged
+ok 98 - groups come back newest-first with adjacent buckets merged
+  ---
+  duration_ms: 1.284493
+  type: 'test'
+  ...
+# Subtest: an empty history produces no sections at all
+ok 99 - an empty history produces no sections at all
+  ---
+  duration_ms: 0.188697
+  type: 'test'
+  ...
+# Subtest: grouping never mutates or reorders the caller's array
+ok 100 - grouping never mutates or reorders the caller's array
+  ---
+  duration_ms: 0.271718
+  type: 'test'
+  ...
+# Subtest: in-app visibility follows the master switch and the channel
+ok 101 - in-app visibility follows the master switch and the channel
+  ---
+  duration_ms: 1.528615
+  type: 'test'
+  ...
+# Subtest: the cue is silent until prefs load, and honours volume and the channel
+ok 102 - the cue is silent until prefs load, and honours volume and the channel
+  ---
+  duration_ms: 0.386472
+  type: 'test'
+  ...
+# Subtest: each rung of the escalation matrix blocks on its own
+ok 103 - each rung of the escalation matrix blocks on its own
+  ---
+  duration_ms: 0.484082
+  type: 'test'
+  ...
+# Subtest: osOnlyWhenAway blocks while the window is focused, and can be turned off
+ok 104 - osOnlyWhenAway blocks while the window is focused, and can be turned off
+  ---
+  duration_ms: 0.220204
+  type: 'test'
+  ...
+# Subtest: a blocked notification does not spend an OS slot
+ok 105 - a blocked notification does not spend an OS slot
+  ---
+  duration_ms: 0.334572
+  type: 'test'
+  ...
+# Subtest: the OS gate allows one per five seconds
+ok 106 - the OS gate allows one per five seconds
+  ---
+  duration_ms: 0.26426
+  type: 'test'
+  ...
+# Subtest: the OS gate refuses a seventh inside one minute, then recovers
+ok 107 - the OS gate refuses a seventh inside one minute, then recovers
+  ---
+  duration_ms: 0.359548
+  type: 'test'
+  ...
+# Subtest: an absent block returns the defaults by identity, not by value
+ok 108 - an absent block returns the defaults by identity, not by value
+  ---
+  duration_ms: 1.659305
+  type: 'test'
+  ...
+# Subtest: volume is clamped, and NaN falls back rather than poisoning the gain node
+ok 109 - volume is clamped, and NaN falls back rather than poisoning the gain node
+  ---
+  duration_ms: 0.806538
+  type: 'test'
+  ...
+# Subtest: a value outside the union is coerced back into it
+ok 110 - a value outside the union is coerced back into it
+  ---
+  duration_ms: 1.073547
+  type: 'test'
+  ...
+# Subtest: a partial kind keeps the half it got right
+ok 111 - a partial kind keeps the half it got right
+  ---
+  duration_ms: 0.265319
+  type: 'test'
+  ...
+# Subtest: every known kind is present even when the file names none
+ok 112 - every known kind is present even when the file names none
+  ---
+  duration_ms: 0.346282
+  type: 'test'
+  ...
+# Subtest: a kind from a newer build survives the round trip
+ok 113 - a kind from a newer build survives the round trip
+  ---
+  duration_ms: 0.301767
+  type: 'test'
+  ...
+# Subtest: booleans fall back per field instead of dropping the whole block
+ok 114 - booleans fall back per field instead of dropping the whole block
+  ---
+  duration_ms: 0.305162
+  type: 'test'
+  ...
+# Subtest: going quiet is opt-in
+ok 115 - going quiet is opt-in
+  ---
+  duration_ms: 0.169551
+  type: 'test'
+  ...
+# Subtest: maximum performance silences every channel without rewriting the stored choices
+ok 116 - maximum performance silences every channel without rewriting the stored choices
+  ---
+  duration_ms: 0.583985
+  type: 'test'
+  ...
+# Subtest: an exact dedupeKey inside the window bumps count without growing history
+ok 117 - an exact dedupeKey inside the window bumps count without growing history
+  ---
+  duration_ms: 2.085145
+  type: 'test'
+  ...
+# Subtest: the same key past the window is a new item
+ok 118 - the same key past the window is a new item
+  ---
+  duration_ms: 0.318823
+  type: 'test'
+  ...
+# Subtest: two same-kind items inside the burst window collapse to one summary
+ok 119 - two same-kind items inside the burst window collapse to one summary
+  ---
+  duration_ms: 0.268136
+  type: 'test'
+  ...
+# Subtest: a different kind in the same instant stays its own item
+ok 120 - a different kind in the same instant stays its own item
+  ---
+  duration_ms: 0.377832
+  type: 'test'
+  ...
+# Subtest: a repeat outside the burst window keeps its own wording
+ok 121 - a repeat outside the burst window keeps its own wording
+  ---
+  duration_ms: 0.275284
+  type: 'test'
+  ...
+# Subtest: history is a capped ring, newest first
+ok 122 - history is a capped ring, newest first
+  ---
+  duration_ms: 3.089552
+  type: 'test'
+  ...
+# Subtest: the toast stack caps at three and reports what it evicted
+ok 123 - the toast stack caps at three and reports what it evicted
+  ---
+  duration_ms: 1.198517
+  type: 'test'
+  ...
+# Subtest: the tier drives the dismiss timeout, and ask and fail are sticky
+ok 124 - the tier drives the dismiss timeout, and ask and fail are sticky
+  ---
+  duration_ms: 0.191524
+  type: 'test'
+  ...
+# Subtest: the stack is ordered by tier, so a blocked agent is never pushed off
+ok 125 - the stack is ordered by tier, so a blocked agent is never pushed off
+  ---
+  duration_ms: 0.743293
+  type: 'test'
+  ...
+# Subtest: an ongoing job keeps one card from beginning to end
+ok 126 - an ongoing job keeps one card from beginning to end
+  ---
+  duration_ms: 0.703341
+  type: 'test'
+  ...
+# Subtest: a pinned notice takes the banner slot, never a toast slot
+ok 127 - a pinned notice takes the banner slot, never a toast slot
+  ---
+  duration_ms: 0.286046
+  type: 'test'
+  ...
+# Subtest: every kind has summary wording
+ok 128 - every kind has summary wording
+  ---
+  duration_ms: 0.367699
+  type: 'test'
+  ...
+# Subtest: the banner slot is handed over, and given up, by the same push
+ok 129 - the banner slot is handed over, and given up, by the same push
+  ---
+  duration_ms: 0.196455
+  type: 'test'
+  ...
+# Subtest: orders OpenRouter effort metadata for the slider
+ok 130 - orders OpenRouter effort metadata for the slider
+  ---
+  duration_ms: 3.471379
+  type: 'test'
+  ...
+# Subtest: keeps vendor modes out of OpenRouter effort payloads
+ok 131 - keeps vendor modes out of OpenRouter effort payloads
+  ---
+  duration_ms: 0.222009
+  type: 'test'
+  ...
+# Subtest: removes the disable stop from mandatory reasoning models
+ok 132 - removes the disable stop from mandatory reasoning models
+  ---
+  duration_ms: 0.208117
+  type: 'test'
+  ...
+# Subtest: does not invent a selector when supported efforts are omitted
+ok 133 - does not invent a selector when supported efforts are omitted
+  ---
+  duration_ms: 0.180867
+  type: 'test'
+  ...
+# Subtest: a leading punctuation character picks a scope and leaves the rest
+ok 134 - a leading punctuation character picks a scope and leaves the rest
+  ---
+  duration_ms: 2.257992
+  type: 'test'
+  ...
+# Subtest: every advertised scope actually parses
+ok 135 - every advertised scope actually parses
+  ---
+  duration_ms: 0.420991
+  type: 'test'
+  ...
+# Subtest: an empty query matches everything at zero rather than nothing
+ok 136 - an empty query matches everything at zero rather than nothing
+  ---
+  duration_ms: 0.397902
+  type: 'test'
+  ...
+# Subtest: a whole-phrase hit always beats a scattered one
+ok 137 - a whole-phrase hit always beats a scattered one
+  ---
+  duration_ms: 0.453614
+  type: 'test'
+  ...
+# Subtest: a hit at the start of a word beats the same hit buried mid-token
+ok 138 - a hit at the start of a word beats the same hit buried mid-token
+  ---
+  duration_ms: 0.240588
+  type: 'test'
+  ...
+# Subtest: ranges point at the characters that matched, folded into runs
+ok 139 - ranges point at the characters that matched, folded into runs
+  ---
+  duration_ms: 0.336563
+  type: 'test'
+  ...
+# Subtest: a query the label cannot supply does not match
+ok 140 - a query the label cannot supply does not match
+  ---
+  duration_ms: 0.300336
+  type: 'test'
+  ...
+# Subtest: keywords reach an entry whose label shares no word with the query
+ok 141 - keywords reach an entry whose label shares no word with the query
+  ---
+  duration_ms: 0.513977
+  type: 'test'
+  ...
+# Subtest: no keywords and no label hit is simply no result
+ok 142 - no keywords and no label hit is simply no result
+  ---
+  duration_ms: 0.474985
+  type: 'test'
+  ...
+# Subtest: an empty query keeps the curated order and its headings
+ok 143 - an empty query keeps the curated order and its headings
+  ---
+  duration_ms: 2.646034
+  type: 'test'
+  ...
+# Subtest: a query ranks the rows and drops the headings
+ok 144 - a query ranks the rows and drops the headings
+  ---
+  duration_ms: 0.625999
+  type: 'test'
+  ...
+# Subtest: each scope prefix narrows to its own kind
+ok 145 - each scope prefix narrows to its own kind
+  ---
+  duration_ms: 0.331027
+  type: 'test'
+  ...
+# Subtest: a scope prefix still searches within its slice
+ok 146 - a scope prefix still searches within its slice
+  ---
+  duration_ms: 0.376145
+  type: 'test'
+  ...
+# Subtest: a waiting agent outranks an equally good match that is not waiting
+ok 147 - a waiting agent outranks an equally good match that is not waiting
+  ---
+  duration_ms: 0.423547
+  type: 'test'
+  ...
+# Subtest: ask mode builds its rows from the message and never scores them away
+ok 148 - ask mode builds its rows from the message and never scores them away
+  ---
+  duration_ms: 0.301874
+  type: 'test'
+  ...
+# Subtest: ask mode never reaches the base list
+ok 149 - ask mode never reaches the base list
+  ---
+  duration_ms: 0.327057
+  type: 'test'
+  ...
+# Subtest: what you ran last breaks ties but cannot overturn a better match
+ok 150 - what you ran last breaks ties but cannot overturn a better match
+  ---
+  duration_ms: 0.353105
+  type: 'test'
+  ...
+# Subtest: hidden keywords reach a row whose label does not contain the word
+ok 151 - hidden keywords reach a row whose label does not contain the word
+  ---
+  duration_ms: 0.642008
+  type: 'test'
+  ...
+# Subtest: a query nothing answers returns an empty list, not everything
+ok 152 - a query nothing answers returns an empty list, not everything
+  ---
+  duration_ms: 0.62494
+  type: 'test'
+  ...
+# Subtest: ranking never mutates the entries it was given
+ok 153 - ranking never mutates the entries it was given
+  ---
+  duration_ms: 0.403669
+  type: 'test'
+  ...
+# Subtest: a run goes to the front and is never listed twice
+ok 154 - a run goes to the front and is never listed twice
+  ---
+  duration_ms: 2.446355
+  type: 'test'
+  ...
+# Subtest: the list is capped, so an old habit cannot pin the ranking forever
+ok 155 - the list is capped, so an old habit cannot pin the ranking forever
+  ---
+  duration_ms: 3.938694
+  type: 'test'
+  ...
+# Subtest: nothing stored, and garbage stored, both read as no history
+ok 156 - nothing stored, and garbage stored, both read as no history
+  ---
+  duration_ms: 0.320398
+  type: 'test'
+  ...
+# Subtest: a palette that cannot write still returns the new order
+ok 157 - a palette that cannot write still returns the new order
+  ---
+  duration_ms: 0.364403
+  type: 'test'
+  ...
+# Subtest: recency is a tiebreaker, not a ranking
+ok 158 - recency is a tiebreaker, not a ranking
+  ---
+  duration_ms: 0.25544
+  type: 'test'
+  ...
+# Subtest: every palette class the components render is styled somewhere
+ok 159 - every palette class the components render is styled somewhere
+  ---
+  duration_ms: 12.011038
+  type: 'test'
+  ...
+# Subtest: every palette class the sheets define is actually rendered
+ok 160 - every palette class the sheets define is actually rendered
+  ---
+  duration_ms: 4.923738
+  type: 'test'
+  ...
+# Subtest: both palette sheets are loaded, in the order their ownership assumes
+ok 161 - both palette sheets are loaded, in the order their ownership assumes
+  ---
+  duration_ms: 1.417057
+  type: 'test'
+  ...
+# Subtest: the scopes the footer advertises are the ones the parser accepts
+ok 162 - the scopes the footer advertises are the ones the parser accepts
+  ---
+  duration_ms: 67.961241
+  type: 'test'
+  ...
+# Subtest: a resumed pane takes the suspended pane's slot instead of appending
+ok 163 - a resumed pane takes the suspended pane's slot instead of appending
+  ---
+  duration_ms: 3.875953
+  type: 'test'
+  ...
+# Subtest: a freshly spawned pane is appended
+ok 164 - a freshly spawned pane is appended
+  ---
+  duration_ms: 0.288835
+  type: 'test'
+  ...
+# Subtest: replacing a pane inherits its zoom and drops its stale activity
+ok 165 - replacing a pane inherits its zoom and drops its stale activity
+  ---
+  duration_ms: 0.228028
+  type: 'test'
+  ...
+# Subtest: a vanished replacement target never focuses an orphan terminal
+ok 166 - a vanished replacement target never focuses an orphan terminal
+  ---
+  duration_ms: 0.20708
+  type: 'test'
+  ...
+# Subtest: it takes a sustained run of bad windows to notify
+ok 167 - it takes a sustained run of bad windows to notify
+  ---
+  duration_ms: 2.227555
+  type: 'test'
+  ...
+# Subtest: startup jank and background lag are both ignored
+ok 168 - startup jank and background lag are both ignored
+  ---
+  duration_ms: 0.36306
+  type: 'test'
+  ...
+# Subtest: background lag cannot pre-qualify a warning after focus returns
+ok 169 - background lag cannot pre-qualify a warning after focus returns
+  ---
+  duration_ms: 0.474492
+  type: 'test'
+  ...
+# Subtest: one good window does not clear the state but a long run does
+ok 170 - one good window does not clear the state but a long run does
+  ---
+  duration_ms: 0.33538
+  type: 'test'
+  ...
+# Subtest: the same reason stays quiet for the cooldown
+ok 171 - the same reason stays quiet for the cooldown
+  ---
+  duration_ms: 0.414803
+  type: 'test'
+  ...
+# Subtest: a severe verdict may break the cooldown exactly once
+ok 172 - a severe verdict may break the cooldown exactly once
+  ---
+  duration_ms: 0.267171
+  type: 'test'
+  ...
+# Subtest: a session gets at most a handful of performance hints
+ok 173 - a session gets at most a handful of performance hints
+  ---
+  duration_ms: 0.410066
+  type: 'test'
+  ...
+# Subtest: Auto offers to stage GPU rendering without restarting live terminals
+ok 174 - Auto offers to stage GPU rendering without restarting live terminals
+  ---
+  duration_ms: 0.24645
+  type: 'test'
+  ...
+# Subtest: an explicit or environment-forced compatibility choice only opens settings
+ok 175 - an explicit or environment-forced compatibility choice only opens settings
+  ---
+  duration_ms: 0.564516
+  type: 'test'
+  ...
+# Subtest: NVIDIA sessions are never offered GPU promotion
+ok 176 - NVIDIA sessions are never offered GPU promotion
+  ---
+  duration_ms: 0.60892
+  type: 'test'
+  ...
+# Subtest: struggling on the GPU path on NVIDIA offers the way back to Automatic
+ok 177 - struggling on the GPU path on NVIDIA offers the way back to Automatic
+  ---
+  duration_ms: 0.309118
+  type: 'test'
+  ...
+# Subtest: a quiet machine is ok
+ok 178 - a quiet machine is ok
+  ---
+  duration_ms: 1.647451
+  type: 'test'
+  ...
+# Subtest: event-loop drift alone is enough to call it degraded
+ok 179 - event-loop drift alone is enough to call it degraded
+  ---
+  duration_ms: 1.132813
+  type: 'test'
+  ...
+# Subtest: memory outranks everything else because its fix is different
+ok 180 - memory outranks everything else because its fix is different
+  ---
+  duration_ms: 0.279058
+  type: 'test'
+  ...
+# Subtest: compatibility compositing is named instead of blaming the machine
+ok 181 - compatibility compositing is named instead of blaming the machine
+  ---
+  duration_ms: 0.203432
+  type: 'test'
+  ...
+# Subtest: Vibyra's own CPU counts even when the system looks calm
+ok 182 - Vibyra's own CPU counts even when the system looks calm
+  ---
+  duration_ms: 0.321804
+  type: 'test'
+  ...
+# Subtest: a saturated WebKit renderer counts even when the multicore machine looks calm
+ok 183 - a saturated WebKit renderer counts even when the multicore machine looks calm
+  ---
+  duration_ms: 0.24093
+  type: 'test'
+  ...
+# Subtest: native samples are optional
+ok 184 - native samples are optional
+  ---
+  duration_ms: 0.257157
+  type: 'test'
+  ...
+# Subtest: the first sample is taken at face value
+ok 185 - the first sample is taken at face value
+  ---
+  duration_ms: 1.253591
+  type: 'test'
+  ...
+# Subtest: one stray spike cannot swing the average on its own
+ok 186 - one stray spike cannot swing the average on its own
+  ---
+  duration_ms: 0.28294
+  type: 'test'
+  ...
+# Subtest: sustained load converges upward
+ok 187 - sustained load converges upward
+  ---
+  duration_ms: 0.182642
+  type: 'test'
+  ...
+# Subtest: recovery converges back down
+ok 188 - recovery converges back down
+  ---
+  duration_ms: 0.181444
+  type: 'test'
+  ...
+# Subtest: a preview coming up is announced, but never on the desktop
+ok 189 - a preview coming up is announced, but never on the desktop
+  ---
+  duration_ms: 1.286453
+  type: 'test'
+  ...
+# Subtest: a crash is sticky and carries the reason
+ok 190 - a crash is sticky and carries the reason
+  ---
+  duration_ms: 0.290786
+  type: 'test'
+  ...
+# Subtest: without an error the last log line explains it
+ok 191 - without an error the last log line explains it
+  ---
+  duration_ms: 0.291061
+  type: 'test'
+  ...
+# Subtest: a repeated poll of the same phase says nothing
+ok 192 - a repeated poll of the same phase says nothing
+  ---
+  duration_ms: 0.179384
+  type: 'test'
+  ...
+# Subtest: a preview that never started is not a crash
+ok 193 - a preview that never started is not a crash
+  ---
+  duration_ms: 0.192666
+  type: 'test'
+  ...
+# Subtest: stopping a preview on purpose is not news
+ok 194 - stopping a preview on purpose is not news
+  ---
+  duration_ms: 0.205911
+  type: 'test'
+  ...
+# Subtest: echoes resolve keystrokes strictly first-in first-out
+ok 195 - echoes resolve keystrokes strictly first-in first-out
+  ---
+  duration_ms: 2.308429
+  type: 'test'
+  ...
+# Subtest: more echoes than pending keys never fabricates a sample
+ok 196 - more echoes than pending keys never fabricates a sample
+  ---
+  duration_ms: 0.256492
+  type: 'test'
+  ...
+# Subtest: marker counting sees every occurrence, multibyte included
+ok 197 - marker counting sees every occurrence, multibyte included
+  ---
+  duration_ms: 0.198522
+  type: 'test'
+  ...
+# Subtest: summary percentiles come from the sorted distribution
+ok 198 - summary percentiles come from the sorted distribution
+  ---
+  duration_ms: 0.218476
+  type: 'test'
+  ...
+# Subtest: a phase report only measures keystrokes that reached the screen
+ok 199 - a phase report only measures keystrokes that reached the screen
+  ---
+  duration_ms: 0.255287
+  type: 'test'
+  ...
+# Subtest: overlapping project transitions finish and persist in request order
+ok 200 - overlapping project transitions finish and persist in request order
+  ---
+  duration_ms: 2.25892
+  type: 'test'
+  ...
+# Subtest: a rejected transition does not strand later navigation
+ok 201 - a rejected transition does not strand later navigation
+  ---
+  duration_ms: 0.879018
+  type: 'test'
+  ...
+# Subtest: a failed native visibility update remains eligible for retry
+ok 202 - a failed native visibility update remains eligible for retry
+  ---
+  duration_ms: 0.900793
+  type: 'test'
+  ...
+# Subtest: Home quiesces project work before clearing and unmounting it
+ok 203 - Home quiesces project work before clearing and unmounting it
+  ---
+  duration_ms: 0.533306
+  type: 'test'
+  ...
+# Subtest: project store routes startup and navigation through the ordered lifecycle
+ok 204 - project store routes startup and navigation through the ordered lifecycle
+  ---
+  duration_ms: 12.060877
+  type: 'test'
+  ...
+# Subtest: navigation and mode switches use one shared runtime queue
+ok 205 - navigation and mode switches use one shared runtime queue
+  ---
+  duration_ms: 1.436218
+  type: 'test'
+  ...
+# Subtest: a queued mode IPC cannot overtake a later Home transition
+ok 206 - a queued mode IPC cannot overtake a later Home transition
+  ---
+  duration_ms: 0.598706
+  type: 'test'
+  ...
+# Subtest: a provider sign-in keeps a stdin it can be answered on
+ok 207 - a provider sign-in keeps a stdin it can be answered on
+  ---
+  duration_ms: 1.720299
+  type: 'test'
+  ...
+# Subtest: the reply box is wired from the CLI's question to the CLI's stdin
+ok 208 - the reply box is wired from the CLI's question to the CLI's stdin
+  ---
+  duration_ms: 2.538577
+  type: 'test'
+  ...
+# Subtest: no account state renders an action the user cannot take
+ok 209 - no account state renders an action the user cannot take
+  ---
+  duration_ms: 0.406104
+  type: 'test'
+  ...
+# Subtest: the pane can start an install and watches it the way it watches a sign-in
+ok 210 - the pane can start an install and watches it the way it watches a sign-in
+  ---
+  duration_ms: 0.362839
+  type: 'test'
+  ...
+# Subtest: busy state is tracked per account, not per company
+ok 211 - busy state is tracked per account, not per company
+  ---
+  duration_ms: 0.401296
+  type: 'test'
+  ...
+# Subtest: login output is read to the end, and a half-written link is not a link
+ok 212 - login output is read to the end, and a half-written link is not a link
+  ---
+  duration_ms: 0.369957
+  type: 'test'
+  ...
+# Subtest: an uninstalled optional runtime names the command it is missing
+ok 213 - an uninstalled optional runtime names the command it is missing
+  ---
+  duration_ms: 0.357095
+  type: 'test'
+  ...
+# Subtest: the active account reaches the terminal it launches
+ok 214 - the active account reaches the terminal it launches
+  ---
+  duration_ms: 3.835294
+  type: 'test'
+  ...
+# Subtest: a restored pane comes back on the account it ran as
+ok 215 - a restored pane comes back on the account it ran as
+  ---
+  duration_ms: 0.631542
+  type: 'test'
+  ...
+# Subtest: the resumable check reads the account's own transcripts
+ok 216 - the resumable check reads the account's own transcripts
+  ---
+  duration_ms: 0.488214
+  type: 'test'
+  ...
+# Subtest: each CLI is handed the path shape it actually expects
+ok 217 - each CLI is handed the path shape it actually expects
+  ---
+  duration_ms: 0.279032
+  type: 'test'
+  ...
+# Subtest: switching a pane relaunches it in place without destroying anything
+ok 218 - switching a pane relaunches it in place without destroying anything
+  ---
+  duration_ms: 0.46976
+  type: 'test'
+  ...
+# Subtest: switching a pane carries its conversation onto the new account
+ok 219 - switching a pane carries its conversation onto the new account
+  ---
+  duration_ms: 0.448283
+  type: 'test'
+  ...
+# Subtest: accounts are switched from Integrations, not from the terminal
+ok 220 - accounts are switched from Integrations, not from the terminal
+  ---
+  duration_ms: 0.499087
+  type: 'test'
+  ...
+# Subtest: a switch stops to confirm only when it would interrupt an answer
+ok 221 - a switch stops to confirm only when it would interrupt an answer
+  ---
+  duration_ms: 0.290561
+  type: 'test'
+  ...
+# Subtest: the chosen account is remembered for terminals opened later
+ok 222 - the chosen account is remembered for terminals opened later
+  ---
+  duration_ms: 0.674239
+  type: 'test'
+  ...
+# Subtest: switching one company leaves the other companies' terminals alone
+ok 223 - switching one company leaves the other companies' terminals alone
+  ---
+  duration_ms: 0.651251
+  type: 'test'
+  ...
+# Subtest: connected company accounts own their native runtime selection
+ok 224 - connected company accounts own their native runtime selection
+  ---
+  duration_ms: 2.647442
+  type: 'test'
+  ...
+# Subtest: one signed-in account is enough to keep a runtime available
+ok 225 - one signed-in account is enough to keep a runtime available
+  ---
+  duration_ms: 0.331171
+  type: 'test'
+  ...
+# Subtest: a company with every account signed out drops its runtime
+ok 226 - a company with every account signed out drops its runtime
+  ---
+  duration_ms: 0.400182
+  type: 'test'
+  ...
+# Subtest: provider presentation stays company scoped
+ok 227 - provider presentation stays company scoped
+  ---
+  duration_ms: 0.327375
+  type: 'test'
+  ...
+# Subtest: startup account discovery updates only changed connected runtimes
+ok 228 - startup account discovery updates only changed connected runtimes
+  ---
+  duration_ms: 0.415491
+  type: 'test'
+  ...
+# Subtest: transient account states do not disable a previously selected runtime
+ok 229 - transient account states do not disable a previously selected runtime
+  ---
+  duration_ms: 0.26751
+  type: 'test'
+  ...
+# Subtest: an install in flight is transient, not a reason to deselect a runtime
+ok 230 - an install in flight is transient, not a reason to deselect a runtime
+  ---
+  duration_ms: 0.337347
+  type: 'test'
+  ...
+# Subtest: both kinds of child process count as work in progress
+ok 231 - both kinds of child process count as work in progress
+  ---
+  duration_ms: 0.237679
+  type: 'test'
+  ...
+# Subtest: release scripts package Rust AppImage and NSIS targets
+ok 232 - release scripts package Rust AppImage and NSIS targets
+  ---
+  duration_ms: 2.440273
+  type: 'test'
+  ...
+# Subtest: desktop release workflow builds and smoke-tests both public beta packages
+ok 233 - desktop release workflow builds and smoke-tests both public beta packages
+  ---
+  duration_ms: 1.45723
+  type: 'test'
+  ...
+# Subtest: the updater is configured to sign, verify and reach the release feed
+ok 234 - the updater is configured to sign, verify and reach the release feed
+  ---
+  duration_ms: 0.559442
+  type: 'test'
+  ...
+# Subtest: the update endpoint matches the route the backend actually serves
+ok 235 - the update endpoint matches the route the backend actually serves
+  ---
+  duration_ms: 0.467774
+  type: 'test'
+  ...
+# Subtest: invalid persisted graphics modes normalize to Automatic
+ok 236 - invalid persisted graphics modes normalize to Automatic
+  ---
+  duration_ms: 1.282485
+  type: 'test'
+  ...
+# Subtest: WebGL is trusted only on the accelerated path
+ok 237 - WebGL is trusted only on the accelerated path
+  ---
+  duration_ms: 0.192964
+  type: 'test'
+  ...
+# Subtest: NVIDIA sessions never get WebGL, even under accelerated compositing
+ok 238 - NVIDIA sessions never get WebGL, even under accelerated compositing
+  ---
+  duration_ms: 0.177082
+  type: 'test'
+  ...
+# Subtest: a failed compositing probe falls back to the DOM renderer
+ok 239 - a failed compositing probe falls back to the DOM renderer
+  ---
+  duration_ms: 0.114447
+  type: 'test'
+  ...
+# Subtest: explicit modes resolve without consulting detection
+ok 240 - explicit modes resolve without consulting detection
+  ---
+  duration_ms: 0.133192
+  type: 'test'
+  ...
+# Subtest: auto follows the NVIDIA detection, matching the Rust policy
+ok 241 - auto follows the NVIDIA detection, matching the Rust policy
+  ---
+  duration_ms: 0.113313
+  type: 'test'
+  ...
+# Subtest: a restart is needed only when the saved mode changes the path
+ok 242 - a restart is needed only when the saved mode changes the path
+  ---
+  duration_ms: 0.182831
+  type: 'test'
+  ...
+# Subtest: an environment override never promises that a restart will apply
+ok 243 - an environment override never promises that a restart will apply
+  ---
+  duration_ms: 0.117207
+  type: 'test'
+  ...
+# Subtest: a report is not sendable until it says what happened
+ok 244 - a report is not sendable until it says what happened
+  ---
+  duration_ms: 1.671927
+  type: 'test'
+  ...
+# Subtest: the blocker names the next thing to do rather than the error
+ok 245 - the blocker names the next thing to do rather than the error
+  ---
+  duration_ms: 0.353098
+  type: 'test'
+  ...
+# Subtest: a paste far larger than a report is refused before it is sent
+ok 246 - a paste far larger than a report is refused before it is sent
+  ---
+  duration_ms: 0.413642
+  type: 'test'
+  ...
+# Subtest: terminal output is offered by default, since that is where the evidence is
+ok 247 - terminal output is offered by default, since that is where the evidence is
+  ---
+  duration_ms: 0.221747
+  type: 'test'
+  ...
+# Subtest: severity is only asked about where it means something
+ok 248 - severity is only asked about where it means something
+  ---
+  duration_ms: 0.395875
+  type: 'test'
+  ...
+# Subtest: every kind offers a distinct choice with its own explanation
+ok 249 - every kind offers a distinct choice with its own explanation
+  ---
+  duration_ms: 0.345102
+  type: 'test'
+  ...
+# Subtest: the question asked matches the kind of report being written
+ok 250 - the question asked matches the kind of report being written
+  ---
+  duration_ms: 0.526672
+  type: 'test'
+  ...
+# Subtest: where the user is standing is read most-specific first
+ok 251 - where the user is standing is read most-specific first
+  ---
+  duration_ms: 0.403248
+  type: 'test'
+  ...
+# Subtest: a report starts with no attachments and refuses to become an album
+ok 252 - a report starts with no attachments and refuses to become an album
+  ---
+  duration_ms: 1.255777
+  type: 'test'
+  ...
+# Subtest: resuming keeps the saved output and continues the conversation
+ok 253 - resuming keeps the saved output and continues the conversation
+  ---
+  duration_ms: 3.016908
+  type: 'test'
+  ...
+# Subtest: restarting a live or exited pane deliberately starts clean
+ok 254 - restarting a live or exited pane deliberately starts clean
+  ---
+  duration_ms: 0.371997
+  type: 'test'
+  ...
+# Subtest: a suspended pane saved without output still resumes
+ok 255 - a suspended pane saved without output still resumes
+  ---
+  duration_ms: 0.261487
+  type: 'test'
+  ...
+# Subtest: a replay retained for the next save includes its continuity marker
+ok 256 - a replay retained for the next save includes its continuity marker
+  ---
+  duration_ms: 0.387847
+  type: 'test'
+  ...
+# Subtest: two panes of one agent in one folder never share a conversation
+ok 257 - two panes of one agent in one folder never share a conversation
+  ---
+  duration_ms: 0.382281
+  type: 'test'
+  ...
+# Subtest: a pane carrying its own conversation id is never ambiguous
+ok 258 - a pane carrying its own conversation id is never ambiguous
+  ---
+  duration_ms: 1.561312
+  type: 'test'
+  ...
+# Subtest: panes are only ambiguous against the same agent in the same folder
+ok 259 - panes are only ambiguous against the same agent in the same folder
+  ---
+  duration_ms: 1.685925
+  type: 'test'
+  ...
+# Subtest: saved output is still replayed even when the conversation cannot be
+ok 260 - saved output is still replayed even when the conversation cannot be
+  ---
+  duration_ms: 0.333102
+  type: 'test'
+  ...
+# Subtest: a conversation the agent no longer has is not asked for
+ok 261 - a conversation the agent no longer has is not asked for
+  ---
+  duration_ms: 0.570142
+  type: 'test'
+  ...
+# Subtest: a missing conversation still keeps the output the user was reading
+ok 262 - a missing conversation still keeps the output the user was reading
+  ---
+  duration_ms: 0.673905
+  type: 'test'
+  ...
+# Subtest: a conversation that is still there resumes as before
+ok 263 - a conversation that is still there resumes as before
+  ---
+  duration_ms: 0.282372
+  type: 'test'
+  ...
+# Subtest: the conversation id survives the save/restore round trip
+ok 264 - the conversation id survives the save/restore round trip
+  ---
+  duration_ms: 0.457264
+  type: 'test'
+  ...
+# Subtest: a pane saved before conversation ids existed restores without one
+ok 265 - a pane saved before conversation ids existed restores without one
+  ---
+  duration_ms: 0.269205
+  type: 'test'
+  ...
+# Subtest: a resume the agent refused is recovered
+ok 266 - a resume the agent refused is recovered
+  ---
+  duration_ms: 1.606922
+  type: 'test'
+  ...
+# Subtest: the recovery is claimed once, so a pane can never relaunch in a loop
+ok 267 - the recovery is claimed once, so a pane can never relaunch in a loop
+  ---
+  duration_ms: 0.23045
+  type: 'test'
+  ...
+# Subtest: a pane that never asked to resume is left alone
+ok 268 - a pane that never asked to resume is left alone
+  ---
+  duration_ms: 0.23222
+  type: 'test'
+  ...
+# Subtest: an agent finishing its work is not a refusal
+ok 269 - an agent finishing its work is not a refusal
+  ---
+  duration_ms: 0.255196
+  type: 'test'
+  ...
+# Subtest: a pane Vibyra or the user killed is not a refusal
+ok 270 - a pane Vibyra or the user killed is not a refusal
+  ---
+  duration_ms: 0.251601
+  type: 'test'
+  ...
+# Subtest: a pane that ran and later failed is not restarted underneath the user
+ok 271 - a pane that ran and later failed is not restarted underneath the user
+  ---
+  duration_ms: 0.199264
+  type: 'test'
+  ...
+# Subtest: the window is inclusive at its edge
+ok 272 - the window is inclusive at its edge
+  ---
+  duration_ms: 0.203721
+  type: 'test'
+  ...
+# Subtest: closing a pane drops its pending attempt
+ok 273 - closing a pane drops its pending attempt
+  ---
+  duration_ms: 0.198705
+  type: 'test'
+  ...
+# Subtest: a restored agent pane that cannot resume says so
+ok 274 - a restored agent pane that cannot resume says so
+  ---
+  duration_ms: 0.590755
+  type: 'test'
+  ...
+# Subtest: a pane that did resume says nothing
+ok 275 - a pane that did resume says nothing
+  ---
+  duration_ms: 0.596128
+  type: 'test'
+  ...
+# Subtest: a plain terminal has no conversation to lose
+ok 276 - a plain terminal has no conversation to lose
+  ---
+  duration_ms: 0.369776
+  type: 'test'
+  ...
+# Subtest: restarting a live pane is not a lost conversation
+ok 277 - restarting a live pane is not a lost conversation
+  ---
+  duration_ms: 0.203639
+  type: 'test'
+  ...
+# Subtest: the safe workspace survives from launch to review
+ok 278 - the safe workspace survives from launch to review
+  ---
+  duration_ms: 3.886277
+  type: 'test'
+  ...
+# Subtest: merge is check-first, all-or-nothing, and never commits
+ok 279 - merge is check-first, all-or-nothing, and never commits
+  ---
+  duration_ms: 0.487567
+  type: 'test'
+  ...
+# Subtest: review and PR creation refuse anything but vibyra branches
+ok 280 - review and PR creation refuse anything but vibyra branches
+  ---
+  duration_ms: 0.341675
+  type: 'test'
+  ...
+# Subtest: a pull request carries the uncommitted work
+ok 281 - a pull request carries the uncommitted work
+  ---
+  duration_ms: 0.29922
+  type: 'test'
+  ...
+# Subtest: github integration owns no credentials
+ok 282 - github integration owns no credentials
+  ---
+  duration_ms: 0.478858
+  type: 'test'
+  ...
+# Subtest: discard closes the pane before deleting its folder
+ok 283 - discard closes the pane before deleting its folder
+  ---
+  duration_ms: 0.281178
+  type: 'test'
+  ...
+# Subtest: review is a first-class dock tool
+ok 284 - review is a first-class dock tool
+  ---
+  duration_ms: 0.576732
+  type: 'test'
+  ...
+# Subtest: maps the native RGBA capture into a renderer-owned pixel buffer
+ok 285 - maps the native RGBA capture into a renderer-owned pixel buffer
+  ---
+  duration_ms: 4.592464
+  type: 'test'
+  ...
+# Subtest: supports a native response with a non-zero buffer offset
+ok 286 - supports a native response with a non-zero buffer offset
+  ---
+  duration_ms: 3.730245
+  type: 'test'
+  ...
+# Subtest: rejects malformed or truncated native capture responses
+ok 287 - rejects malformed or truncated native capture responses
+  ---
+  duration_ms: 0.713038
+  type: 'test'
+  ...
+# Subtest: fits the capture inside the stage without upscaling it
+ok 288 - fits the capture inside the stage without upscaling it
+  ---
+  duration_ms: 3.523617
+  type: 'test'
+  ...
+# Subtest: a stage larger than the capture presents it 1:1
+ok 289 - a stage larger than the capture presents it 1:1
+  ---
+  duration_ms: 0.355103
+  type: 'test'
+  ...
+# Subtest: never allocates more device pixels than the capture holds
+ok 290 - never allocates more device pixels than the capture holds
+  ---
+  duration_ms: 0.314944
+  type: 'test'
+  ...
+# Subtest: an unmeasured stage or an empty capture yields no view
+ok 291 - an unmeasured stage or an empty capture yields no view
+  ---
+  duration_ms: 0.208626
+  type: 'test'
+  ...
+# Subtest: only a changed layer size counts as a resize
+ok 292 - only a changed layer size counts as a resize
+  ---
+  duration_ms: 0.395553
+  type: 'test'
+  ...
+# Subtest: a clean exit reads as a finished run
+ok 293 - a clean exit reads as a finished run
+  ---
+  duration_ms: 7.961331
+  type: 'test'
+  ...
+# Subtest: completions share a dedupe key so a burst collapses into one line
+ok 294 - completions share a dedupe key so a burst collapses into one line
+  ---
+  duration_ms: 0.356147
+  type: 'test'
+  ...
+# Subtest: failures get their own row, and stay until dismissed
+ok 295 - failures get their own row, and stay until dismissed
+  ---
+  duration_ms: 0.361776
+  type: 'test'
+  ...
+# Subtest: a killed process says nothing
+ok 296 - a killed process says nothing
+  ---
+  duration_ms: 0.176843
+  type: 'test'
+  ...
+# Subtest: a deliberate teardown says nothing
+ok 297 - a deliberate teardown says nothing
+  ---
+  duration_ms: 0.354816
+  type: 'test'
+  ...
+# Subtest: the user's own shell exiting is not news
+ok 298 - the user's own shell exiting is not news
+  ---
+  duration_ms: 0.206024
+  type: 'test'
+  ...
+# Subtest: a renamed pane is announced by the name the user gave it
+ok 299 - a renamed pane is announced by the name the user gave it
+  ---
+  duration_ms: 0.292532
+  type: 'test'
+  ...
+# Subtest: a prompt-derived chat name beats a generic OSC title
+ok 300 - a prompt-derived chat name beats a generic OSC title
+  ---
+  duration_ms: 0.345744
+  type: 'test'
+  ...
+# Subtest: an unknown pane is skipped rather than guessed at
+ok 301 - an unknown pane is skipped rather than guessed at
+  ---
+  duration_ms: 0.480031
+  type: 'test'
+  ...
+# Subtest: restored panes get negative ids that cannot collide with Rust sessions
+ok 302 - restored panes get negative ids that cannot collide with Rust sessions
+  ---
+  duration_ms: 3.075827
+  type: 'test'
+  ...
+# Subtest: restored panes are suspended and carry their saved output
+ok 303 - restored panes are suspended and carry their saved output
+  ---
+  duration_ms: 0.26688
+  type: 'test'
+  ...
+# Subtest: a stale safe-workspace fingerprint is never restored
+ok 304 - a stale safe-workspace fingerprint is never restored
+  ---
+  duration_ms: 0.238811
+  type: 'test'
+  ...
+# Subtest: pane order survives the round trip
+ok 305 - pane order survives the round trip
+  ---
+  duration_ms: 0.530928
+  type: 'test'
+  ...
+# Subtest: suspended panes persist as id 0 and keep their carried snapshot
+ok 306 - suspended panes persist as id 0 and keep their carried snapshot
+  ---
+  duration_ms: 0.420355
+  type: 'test'
+  ...
+# Subtest: a live pane persists its real id so Rust can read its scrollback
+ok 307 - a live pane persists its real id so Rust can read its scrollback
+  ---
+  duration_ms: 0.253065
+  type: 'test'
+  ...
+# Subtest: a generated chat title survives the saved-session round trip
+ok 308 - a generated chat title survives the saved-session round trip
+  ---
+  duration_ms: 0.66641
+  type: 'test'
+  ...
+# Subtest: a protocol-corrupted chat title is cleared during restore and save
+ok 309 - a protocol-corrupted chat title is cleared during restore and save
+  ---
+  duration_ms: 0.251068
+  type: 'test'
+  ...
+# Subtest: pane identity survives native PTY id replacement
+ok 310 - pane identity survives native PTY id replacement
+  ---
+  duration_ms: 0.541648
+  type: 'test'
+  ...
+# Subtest: a launch that restored panes opens the project, not Home
+ok 311 - a launch that restored panes opens the project, not Home
+  ---
+  duration_ms: 0.693519
+  type: 'test'
+  ...
+# Subtest: a launch with nothing to restore still opens on Home
+ok 312 - a launch with nothing to restore still opens on Home
+  ---
+  duration_ms: 0.265163
+  type: 'test'
+  ...
+# Subtest: the panes decide when the last-opened project has none of its own
+ok 313 - the panes decide when the last-opened project has none of its own
+  ---
+  duration_ms: 0.191858
+  type: 'test'
+  ...
+# Subtest: the active project wins when it has restored panes of its own
+ok 314 - the active project wins when it has restored panes of its own
+  ---
+  duration_ms: 1.971984
+  type: 'test'
+  ...
+# Subtest: otherwise the project holding the most restored panes wins
+ok 315 - otherwise the project holding the most restored panes wins
+  ---
+  duration_ms: 0.158852
+  type: 'test'
+  ...
+# Subtest: a running pane is not a restored one
+ok 316 - a running pane is not a restored one
+  ---
+  duration_ms: 0.182674
+  type: 'test'
+  ...
+# Subtest: restored panes are dated to when the session was saved
+ok 317 - restored panes are dated to when the session was saved
+  ---
+  duration_ms: 0.158767
+  type: 'test'
+  ...
+# Subtest: placeholder ids are stable for a given position
+ok 318 - placeholder ids are stable for a given position
+  ---
+  duration_ms: 0.1153
+  type: 'test'
+  ...
+# Subtest: the dropdown order and the cue table describe the same set
+ok 319 - the dropdown order and the cue table describe the same set
+  ---
+  duration_ms: 2.375211
+  type: 'test'
+  ...
+# Subtest: none is silent
+ok 320 - none is silent
+  ---
+  duration_ms: 0.320351
+  type: 'test'
+  ...
+# Subtest: no cue can clip, blast, or drone
+ok 321 - no cue can clip, blast, or drone
+  ---
+  duration_ms: 0.663929
+  type: 'test'
+  ...
+# Subtest: cues stay in the sine/triangle register — never a square-wave beep
+ok 322 - cues stay in the sine/triangle register — never a square-wave beep
+  ---
+  duration_ms: 0.249532
+  type: 'test'
+  ...
+# Subtest: the designed contours survive an edit
+ok 323 - the designed contours survive an edit
+  ---
+  duration_ms: 0.258661
+  type: 'test'
+  ...
+# Subtest: a category may sound at most once every 1.5 seconds
+ok 324 - a category may sound at most once every 1.5 seconds
+  ---
+  duration_ms: 1.369
+  type: 'test'
+  ...
+# Subtest: a 400 ms global floor stops two categories firing on top of each other
+ok 325 - a 400 ms global floor stops two categories firing on top of each other
+  ---
+  duration_ms: 0.249788
+  type: 'test'
+  ...
+# Subtest: a refused cue does not reset the window it was refused by
+ok 326 - a refused cue does not reset the window it was refused by
+  ---
+  duration_ms: 0.202297
+  type: 'test'
+  ...
+# Subtest: the none cue never plays and never consumes the floor
+ok 327 - the none cue never plays and never consumes the floor
+  ---
+  duration_ms: 0.191541
+  type: 'test'
+  ...
+# Subtest: the voice cap refuses a third concurrent cue until one is released
+ok 328 - the voice cap refuses a third concurrent cue until one is released
+  ---
+  duration_ms: 0.259153
+  type: 'test'
+  ...
+# Subtest: releasing more than was taken cannot drive the count negative
+ok 329 - releasing more than was taken cannot drive the count negative
+  ---
+  duration_ms: 0.178509
+  type: 'test'
+  ...
+# Subtest: reserves the scrollbar gutter the old estimate spent on columns
+ok 330 - reserves the scrollbar gutter the old estimate spent on columns
+  ---
+  duration_ms: 2.346031
+  type: 'test'
+  ...
+# Subtest: never predicts a grid larger than the first fit will build
+ok 331 - never predicts a grid larger than the first fit will build
+  ---
+  duration_ms: 131.668144
+  type: 'test'
+  ...
+# Subtest: tolerates a mismeasured cell without overshooting the fit
+ok 332 - tolerates a mismeasured cell without overshooting the fit
+  ---
+  duration_ms: 0.432447
+  type: 'test'
+  ...
+# Subtest: declines to guess for degenerate geometry
+ok 333 - declines to guess for degenerate geometry
+  ---
+  duration_ms: 0.208024
+  type: 'test'
+  ...
+# Subtest: anchors the final provider content row to the pane bottom
+ok 334 - anchors the final provider content row to the pane bottom
+  ---
+  duration_ms: 0.930388
+  type: 'test'
+  ...
+# Subtest: treats a blank cursor row as the active typing row
+ok 335 - treats a blank cursor row as the active typing row
+  ---
+  duration_ms: 0.155813
+  type: 'test'
+  ...
+# Subtest: does not shift a provider that already owns the final row
+ok 336 - does not shift a provider that already owns the final row
+  ---
+  duration_ms: 0.169298
+  type: 'test'
+  ...
+# Subtest: preserves manual scrollback outside the near-bottom threshold
+ok 337 - preserves manual scrollback outside the near-bottom threshold
+  ---
+  duration_ms: 0.153508
+  type: 'test'
+  ...
+# Subtest: uses the rendered cell height for fractional bottom placement
+ok 338 - uses the rendered cell height for fractional bottom placement
+  ---
+  duration_ms: 0.144908
+  type: 'test'
+  ...
+# Subtest: a late resync supersedes hidden output but keeps exit last
+ok 339 - a late resync supersedes hidden output but keeps exit last
+  ---
+  duration_ms: 1.969546
+  type: 'test'
+  ...
+# Subtest: output after a resync is replayed before the exit marker
+ok 340 - output after a resync is replayed before the exit marker
+  ---
+  duration_ms: 0.250602
+  type: 'test'
+  ...
+# Subtest: an ordinary queued stream keeps its exact order
+ok 341 - an ordinary queued stream keeps its exact order
+  ---
+  duration_ms: 0.290865
+  type: 'test'
+  ...
+# Subtest: late events from a destroyed native session are discarded
+ok 342 - late events from a destroyed native session are discarded
+  ---
+  duration_ms: 0.282518
+  type: 'test'
+  ...
+# Subtest: a queue for an unmounted pane is bounded, dropping oldest output first
+ok 343 - a queue for an unmounted pane is bounded, dropping oldest output first
+  ---
+  duration_ms: 0.707154
+  type: 'test'
+  ...
+# Subtest: bounding never drops resync or exit markers
+ok 344 - bounding never drops resync or exit markers
+  ---
+  duration_ms: 0.279298
+  type: 'test'
+  ...
+# Subtest: all AI CLIs without Claude's native title get the shared fallback
+ok 345 - all AI CLIs without Claude's native title get the shared fallback
+  ---
+  duration_ms: 2.498438
+  type: 'test'
+  ...
+# Subtest: a conversational prompt becomes a concise task title
+ok 346 - a conversational prompt becomes a concise task title
+  ---
+  duration_ms: 4.56954
+  type: 'test'
+  ...
+# Subtest: a long review request becomes a topic instead of copied prompt filler
+ok 347 - a long review request becomes a topic instead of copied prompt filler
+  ---
+  duration_ms: 0.770736
+  type: 'test'
+  ...
+# Subtest: a dictated prompt is named after the request, not its courtesies
+ok 348 - a dictated prompt is named after the request, not its courtesies
+  ---
+  duration_ms: 0.324378
+  type: 'test'
+  ...
+# Subtest: a false start does not name the pane after the abandoned sentence
+ok 349 - a false start does not name the pane after the abandoned sentence
+  ---
+  duration_ms: 0.495777
+  type: 'test'
+  ...
+# Subtest: titles are bounded and redact credential-shaped values
+ok 350 - titles are bounded and redact credential-shaped values
+  ---
+  duration_ms: 0.388964
+  type: 'test'
+  ...
+# Subtest: utility commands and short approval replies do not name a chat
+ok 351 - utility commands and short approval replies do not name a chat
+  ---
+  duration_ms: 0.374405
+  type: 'test'
+  ...
+# Subtest: an ignored utility command does not block the first substantive prompt
+ok 352 - an ignored utility command does not block the first substantive prompt
+  ---
+  duration_ms: 1.013443
+  type: 'test'
+  ...
+# Subtest: Ctrl-C discards an abandoned prompt before the next submission
+ok 353 - Ctrl-C discards an abandoned prompt before the next submission
+  ---
+  duration_ms: 2.439035
+  type: 'test'
+  ...
+# Subtest: typed input is committed only when Enter submits it
+ok 354 - typed input is committed only when Enter submits it
+  ---
+  duration_ms: 0.674043
+  type: 'test'
+  ...
+# Subtest: bracketed multiline paste stays one prompt until the final Enter
+ok 355 - bracketed multiline paste stays one prompt until the final Enter
+  ---
+  duration_ms: 0.411428
+  type: 'test'
+  ...
+# Subtest: terminal-generated OSC colour replies never become prompt text
+ok 356 - terminal-generated OSC colour replies never become prompt text
+  ---
+  duration_ms: 0.24759
+  type: 'test'
+  ...
+# Subtest: split OSC and DCS protocol replies are ignored without losing typed input
+ok 357 - split OSC and DCS protocol replies are ignored without losing typed input
+  ---
+  duration_ms: 0.183252
+  type: 'test'
+  ...
+# Subtest: terminal protocol replies stay ignored across every possible chunk boundary
+ok 358 - terminal protocol replies stay ignored across every possible chunk boundary
+  ---
+  duration_ms: 5.246975
+  type: 'test'
+  ...
+# Subtest: cursor edits are reflected in the generated title
+ok 359 - cursor edits are reflected in the generated title
+  ---
+  duration_ms: 0.178398
+  type: 'test'
+  ...
+# Subtest: application-mode cursor keys edit the line like their CSI forms
+ok 360 - application-mode cursor keys edit the line like their CSI forms
+  ---
+  duration_ms: 0.10027
+  type: 'test'
+  ...
+# Subtest: Alt-prefixed keys never leak their bracket into the prompt
+ok 361 - Alt-prefixed keys never leak their bracket into the prompt
+  ---
+  duration_ms: 0.091931
+  type: 'test'
+  ...
+# Subtest: the shifted chord copies, on every platform's spelling
+ok 362 - the shifted chord copies, on every platform's spelling
+  ---
+  duration_ms: 1.309322
+  type: 'test'
+  ...
+# Subtest: plain Ctrl+C stays the interrupt
+ok 363 - plain Ctrl+C stays the interrupt
+  ---
+  duration_ms: 0.251764
+  type: 'test'
+  ...
+# Subtest: paste keeps the chords it already had
+ok 364 - paste keeps the chords it already had
+  ---
+  duration_ms: 0.213511
+  type: 'test'
+  ...
+# Subtest: keys that are not clipboard keys are left alone
+ok 365 - keys that are not clipboard keys are left alone
+  ---
+  duration_ms: 0.223707
+  type: 'test'
+  ...
+# Subtest: copying goes out through the native clipboard, and right-click copies too
+ok 366 - copying goes out through the native clipboard, and right-click copies too
+  ---
+  duration_ms: 0.83838
+  type: 'test'
+  ...
+# Subtest: paths are quoted so a shell sees one argument
+ok 367 - paths are quoted so a shell sees one argument
+  ---
+  duration_ms: 1.266667
+  type: 'test'
+  ...
+# Subtest: file URIs round-trip through the drop parser
+ok 368 - file URIs round-trip through the drop parser
+  ---
+  duration_ms: 2.586979
+  type: 'test'
+  ...
+# Subtest: only file entries of a uri-list become paths
+ok 369 - only file entries of a uri-list become paths
+  ---
+  duration_ms: 0.389607
+  type: 'test'
+  ...
+# Subtest: dropped files are typed as quoted paths with room for the next argument
+ok 370 - dropped files are typed as quoted paths with room for the next argument
+  ---
+  duration_ms: 0.365045
+  type: 'test'
+  ...
+# Subtest: a text drag is typed verbatim, and an empty one types nothing
+ok 371 - a text drag is typed verbatim, and an empty one types nothing
+  ---
+  duration_ms: 0.276373
+  type: 'test'
+  ...
+# Subtest: a drag is accepted only when it carries something typable
+ok 372 - a drag is accepted only when it carries something typable
+  ---
+  duration_ms: 0.245878
+  type: 'test'
+  ...
+# Subtest: a pane can only have one replacement launch in flight
+ok 373 - a pane can only have one replacement launch in flight
+  ---
+  duration_ms: 2.847368
+  type: 'test'
+  ...
+# Subtest: the guard releases a pane after failure
+ok 374 - the guard releases a pane after failure
+  ---
+  duration_ms: 0.744884
+  type: 'test'
+  ...
+# Subtest: renderer attachment waits for a delayed addon and runs once per terminal
+ok 375 - renderer attachment waits for a delayed addon and runs once per terminal
+  ---
+  duration_ms: 4.835461
+  type: 'test'
+  ...
+# Subtest: software rendering resolves without attaching an addon
+ok 376 - software rendering resolves without attaching an addon
+  ---
+  duration_ms: 0.20118
+  type: 'test'
+  ...
+# Subtest: a terminal disposed during startup is skipped and can retry on remount
+ok 377 - a terminal disposed during startup is skipped and can retry on remount
+  ---
+  duration_ms: 0.282496
+  type: 'test'
+  ...
+# Subtest: terminal font readiness explicitly loads regular and bold metrics
+ok 378 - terminal font readiness explicitly loads regular and bold metrics
+  ---
+  duration_ms: 0.418845
+  type: 'test'
+  ...
+# Subtest: terminal font readiness waits for both requested weights
+ok 379 - terminal font readiness waits for both requested weights
+  ---
+  duration_ms: 0.355357
+  type: 'test'
+  ...
+# Subtest: one rejected font weight cannot release a later font swap
+ok 380 - one rejected font weight cannot release a later font swap
+  ---
+  duration_ms: 0.9082
+  type: 'test'
+  ...
+# Subtest: terminal font readiness waits for CSS faces before requesting weights
+ok 381 - terminal font readiness waits for CSS faces before requesting weights
+  ---
+  duration_ms: 0.32565
+  type: 'test'
+  ...
+# Subtest: an empty font match is not treated as ready
+ok 382 - an empty font match is not treated as ready
+  ---
+  duration_ms: 0.342857
+  type: 'test'
+  ...
+# Subtest: an account switch retains restored history and current PTY output
+ok 383 - an account switch retains restored history and current PTY output
+  ---
+  duration_ms: 2.139865
+  type: 'test'
+  ...
+# Subtest: manual and chat-aware titles outrank a CLI's generic OSC title
+ok 384 - manual and chat-aware titles outrank a CLI's generic OSC title
+  ---
+  duration_ms: 1.713555
+  type: 'test'
+  ...
+# Subtest: protocol-corrupted generated and OSC titles fall back safely
+ok 385 - protocol-corrupted generated and OSC titles fall back safely
+  ---
+  duration_ms: 0.422495
+  type: 'test'
+  ...
+# Subtest: only a running AI pane without a name is still waiting for one
+ok 386 - only a running AI pane without a name is still waiting for one
+  ---
+  duration_ms: 0.319366
+  type: 'test'
+  ...
+# Subtest: the submitted prompt corrects a keystroke guess, and never the reverse
+ok 387 - the submitted prompt corrects a keystroke guess, and never the reverse
+  ---
+  duration_ms: 0.261514
+  type: 'test'
+  ...
+# Subtest: a name restored from an earlier session is checked once, then left alone
+ok 388 - a name restored from an earlier session is checked once, then left alone
+  ---
+  duration_ms: 0.341914
+  type: 'test'
+  ...
+# Subtest: off-screen terminals stop native delivery until their resync
+ok 389 - off-screen terminals stop native delivery until their resync
+  ---
+  duration_ms: 2.524829
+  type: 'test'
+  ...
+# Subtest: background panes stay on screen rather than hibernating
+ok 390 - background panes stay on screen rather than hibernating
+  ---
+  duration_ms: 0.214038
+  type: 'test'
+  ...
+# Subtest: releasing a zoom restores the focus-paced grid, not an all-visible one
+ok 391 - releasing a zoom restores the focus-paced grid, not an all-visible one
+  ---
+  duration_ms: 7.62486
+  type: 'test'
+  ...
+# Subtest: a healthy check says so out loud instead of rendering nothing
+ok 392 - a healthy check says so out loud instead of rendering nothing
+  ---
+  duration_ms: 1.982051
+  type: 'test'
+  ...
+# Subtest: a failing feed surfaces here even though the banner stays silent
+ok 393 - a failing feed surfaces here even though the banner stays silent
+  ---
+  duration_ms: 0.339825
+  type: 'test'
+  ...
+# Subtest: a failed check still offers a retry when the cause is unknown
+ok 394 - a failed check still offers a retry when the cause is unknown
+  ---
+  duration_ms: 0.253594
+  type: 'test'
+  ...
+# Subtest: a check in flight disables its own button rather than queueing checks
+ok 395 - a check in flight disables its own button rather than queueing checks
+  ---
+  duration_ms: 0.201368
+  type: 'test'
+  ...
+# Subtest: before the first check the pane explains the schedule rather than claiming health
+ok 396 - before the first check the pane explains the schedule rather than claiming health
+  ---
+  duration_ms: 0.403624
+  type: 'test'
+  ...
+# Subtest: a found release outranks the check that found it
+ok 397 - a found release outranks the check that found it
+  ---
+  duration_ms: 0.219494
+  type: 'test'
+  ...
+# Subtest: download progress reads the same numbers the banner does
+ok 398 - download progress reads the same numbers the banner does
+  ---
+  duration_ms: 0.355738
+  type: 'test'
+  ...
+# Subtest: an unmeasurable download does not invent a percentage
+ok 399 - an unmeasurable download does not invent a percentage
+  ---
+  duration_ms: 0.193772
+  type: 'test'
+  ...
+# Subtest: a staged release asks for a restart, not another download
+ok 400 - a staged release asks for a restart, not another download
+  ---
+  duration_ms: 0.575737
+  type: 'test'
+  ...
+# Subtest: a paused restart keeps its own error and offers the restart again
+ok 401 - a paused restart keeps its own error and offers the restart again
+  ---
+  duration_ms: 0.581369
+  type: 'test'
+  ...
+# Subtest: a download failure retries the download rather than re-checking the feed
+ok 402 - a download failure retries the download rather than re-checking the feed
+  ---
+  duration_ms: 0.272288
+  type: 'test'
+  ...
+# Subtest: every state offers exactly one thing to press
+ok 403 - every state offers exactly one thing to press
+  ---
+  duration_ms: 0.350915
+  type: 'test'
+  ...
+# Subtest: the last-checked line degrades from minutes to days
+ok 404 - the last-checked line degrades from minutes to days
+  ---
+  duration_ms: 0.264434
+  type: 'test'
+  ...
+# Subtest: a clock that jumped backwards reads as just now, never as negative time
+ok 405 - a clock that jumped backwards reads as just now, never as negative time
+  ---
+  duration_ms: 0.24579
+  type: 'test'
+  ...
+# Subtest: nothing to say while the updater is idle
+ok 406 - nothing to say while the updater is idle
+  ---
+  duration_ms: 1.397899
+  type: 'test'
+  ...
+# Subtest: an available release is news, not a warning
+ok 407 - an available release is news, not a warning
+  ---
+  duration_ms: 0.304757
+  type: 'test'
+  ...
+# Subtest: a download is busy, carries its percentage, and never reaches the desktop
+ok 408 - a download is busy, carries its percentage, and never reaches the desktop
+  ---
+  duration_ms: 0.189812
+  type: 'test'
+  ...
+# Subtest: a length-less download draws the indeterminate bar rather than nought percent
+ok 409 - a length-less download draws the indeterminate bar rather than nought percent
+  ---
+  duration_ms: 0.203545
+  type: 'test'
+  ...
+# Subtest: ready to restart is the ask tier, and it cannot time out
+ok 410 - ready to restart is the ask tier, and it cannot time out
+  ---
+  duration_ms: 2.358425
+  type: 'test'
+  ...
+# Subtest: both failures are the fail tier, and neither takes the banner slot
+ok 411 - both failures are the fail tier, and neither takes the banner slot
+  ---
+  duration_ms: 0.191153
+  type: 'test'
+  ...
+# Subtest: every state replaces the last, so one download is one card
+ok 412 - every state replaces the last, so one download is one card
+  ---
+  duration_ms: 0.954297
+  type: 'test'
+  ...
+# Subtest: a busy card offers no button while the work it would start is in flight
+ok 413 - a busy card offers no button while the work it would start is in flight
+  ---
+  duration_ms: 0.203338
+  type: 'test'
+  ...
+# Subtest: the signature changes on whole percents, not on every chunk
+ok 414 - the signature changes on whole percents, not on every chunk
+  ---
+  duration_ms: 0.668515
+  type: 'test'
+  ...
+# Subtest: progress accumulates chunk sizes rather than reading them as totals
+ok 415 - progress accumulates chunk sizes rather than reading them as totals
+  ---
+  duration_ms: 2.525928
+  type: 'test'
+  ...
+# Subtest: a restarted download resets rather than doubling the byte count
+ok 416 - a restarted download resets rather than doubling the byte count
+  ---
+  duration_ms: 0.399893
+  type: 'test'
+  ...
+# Subtest: progress never exceeds 100 percent even if the server undercounts
+ok 417 - progress never exceeds 100 percent even if the server undercounts
+  ---
+  duration_ms: 0.255102
+  type: 'test'
+  ...
+# Subtest: a missing content length leaves percent at zero for an indeterminate bar
+ok 418 - a missing content length leaves percent at zero for an indeterminate bar
+  ---
+  duration_ms: 0.265763
+  type: 'test'
+  ...
+# Subtest: banner copy names the version and matches the step the user is on
+ok 419 - banner copy names the version and matches the step the user is on
+  ---
+  duration_ms: 0.868901
+  type: 'test'
+  ...
+# Subtest: an unknown download size never renders a fake percentage
+ok 420 - an unknown download size never renders a fake percentage
+  ---
+  duration_ms: 0.251585
+  type: 'test'
+  ...
+# Subtest: the titlebar keeps every actionable update phase reachable
+ok 421 - the titlebar keeps every actionable update phase reachable
+  ---
+  duration_ms: 0.450517
+  type: 'test'
+  ...
+# Subtest: byte formatting stays readable across the sizes a bundle actually hits
+ok 422 - byte formatting stays readable across the sizes a bundle actually hits
+  ---
+  duration_ms: 0.212492
+  type: 'test'
+  ...
+# Subtest: release notes replace the generic prompt when they fit on one line
+ok 423 - release notes replace the generic prompt when they fit on one line
+  ---
+  duration_ms: 0.698183
+  type: 'test'
+  ...
+# Subtest: an update cannot restart past a failed terminal save
+ok 424 - an update cannot restart past a failed terminal save
+  ---
+  duration_ms: 9.583802
+  type: 'test'
+  ...
+# Subtest: metadata, heartbeat and update saves share one ordered queue
+ok 425 - metadata, heartbeat and update saves share one ordered queue
+  ---
+  duration_ms: 1.240633
+  type: 'test'
+  ...
+# Subtest: a failed check is recorded rather than swallowed
+ok 426 - a failed check is recorded rather than swallowed
+  ---
+  duration_ms: 1.168952
+  type: 'test'
+  ...
+# Subtest: a failed check never makes the banner or menu claim a release exists
+ok 427 - a failed check never makes the banner or menu claim a release exists
+  ---
+  duration_ms: 2.429762
+  type: 'test'
+  ...
+# Subtest: the updater is reachable from settings, not only from the notification
+ok 428 - the updater is reachable from settings, not only from the notification
+  ---
+  duration_ms: 0.952852
+  type: 'test'
+  ...
+# Subtest: the meter rises faster than it falls
+ok 429 - the meter rises faster than it falls
+  ---
+  duration_ms: 0.853527
+  type: 'test'
+  ...
+# Subtest: silence settles the meter rather than sticking on the last syllable
+ok 430 - silence settles the meter rather than sticking on the last syllable
+  ---
+  duration_ms: 0.178028
+  type: 'test'
+  ...
+# Subtest: sustained speech reaches the top of the meter
+ok 431 - sustained speech reaches the top of the meter
+  ---
+  duration_ms: 0.126144
+  type: 'test'
+  ...
+# Subtest: a garbage reading is treated as silence, never as a spike
+ok 432 - a garbage reading is treated as silence, never as a spike
+  ---
+  duration_ms: 0.148871
+  type: 'test'
+  ...
+# Subtest: the resting shape stays visible, because invisible reads as broken
+ok 433 - the resting shape stays visible, because invisible reads as broken
+  ---
+  duration_ms: 0.158649
+  type: 'test'
+  ...
+# Subtest: louder is always bigger, and the top of the range is bounded
+ok 434 - louder is always bigger, and the top of the range is bounded
+  ---
+  duration_ms: 0.639579
+  type: 'test'
+  ...
+1..434
+# tests 434
+# suites 0
+# pass 434
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1750.911178

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: one changed message sends its changed text, not forty histories
+ok 1 - one changed message sends its changed text, not forty histories
+  ---
+  duration_ms: 32.770893
+  type: 'test'
+  ...
+# Subtest: array insertions and deletions remain atomic
+ok 2 - array insertions and deletions remain atomic
+  ---
+  duration_ms: 0.248406
+  type: 'test'
+  ...
+# Subtest: negotiation supports old servers and isolates accounts
+ok 3 - negotiation supports old servers and isolates accounts
+  ---
+  duration_ms: 0.504084
+  type: 'test'
+  ...
+# Subtest: a conflict never falls back to overwriting the full state
+ok 4 - a conflict never falls back to overwriting the full state
+  ---
+  duration_ms: 0.966624
+  type: 'test'
+  ...
+# Subtest: a lost acknowledgement retries the same delta and server rollback falls back safely
+ok 5 - a lost acknowledgement retries the same delta and server rollback falls back safely
+  ---
+  duration_ms: 0.722553
+  type: 'test'
+  ...
+# Subtest: a newer snapshot first replays an unacknowledged save
+ok 6 - a newer snapshot first replays an unacknowledged save
+  ---
+  duration_ms: 0.483645
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 779.918464

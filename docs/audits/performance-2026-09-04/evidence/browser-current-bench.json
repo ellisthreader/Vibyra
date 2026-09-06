@@ -1,0 +1,335 @@
+[
+  {
+    "scenario": {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "reduced": false
+    },
+    "title": "Vibyra — Big ideas. Meet your building space.",
+    "ready": "complete",
+    "domNodes": 833,
+    "rafCallbacks": 0,
+    "longtasks": [
+      281
+    ],
+    "lcp": [
+      {
+        "start": 664,
+        "size": 193410
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 192
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 664
+      }
+    ],
+    "brokenImages": [],
+    "videos": [],
+    "heap": 2411478,
+    "idleRafCallbacksPerSecond": 0,
+    "belowHeroRafCallbacksPerSecond": 0,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 3194
+      },
+      {
+        "url": "/build/assets/marketing-BYqLF7N4.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 92413
+      },
+      {
+        "url": "/build/assets/marketing-D-UUfAUc.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 40992
+      },
+      {
+        "url": "/build/assets/jsx-runtime-UMf7COi6.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190268
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/fonts/manrope-regular.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95117
+      },
+      {
+        "url": "/fonts/manrope-extrabold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95833
+      },
+      {
+        "url": "/fonts/manrope-bold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95073
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      }
+    ],
+    "exceptions": []
+  },
+  {
+    "scenario": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "reduced": false
+    },
+    "title": "Vibyra — Big ideas. Meet your building space.",
+    "ready": "complete",
+    "domNodes": 833,
+    "rafCallbacks": 0,
+    "longtasks": [
+      96
+    ],
+    "lcp": [
+      {
+        "start": 292,
+        "size": 15698
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 108
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 292
+      }
+    ],
+    "brokenImages": [],
+    "videos": [],
+    "heap": 2412354,
+    "idleRafCallbacksPerSecond": 0,
+    "belowHeroRafCallbacksPerSecond": 0,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 3194
+      },
+      {
+        "url": "/build/assets/marketing-BYqLF7N4.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 92413
+      },
+      {
+        "url": "/build/assets/marketing-D-UUfAUc.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 40992
+      },
+      {
+        "url": "/build/assets/jsx-runtime-UMf7COi6.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190268
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/fonts/manrope-regular.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95117
+      },
+      {
+        "url": "/fonts/manrope-extrabold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95833
+      },
+      {
+        "url": "/fonts/manrope-bold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95073
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      }
+    ],
+    "exceptions": []
+  },
+  {
+    "scenario": {
+      "name": "reduced-motion",
+      "width": 1440,
+      "height": 900,
+      "reduced": true
+    },
+    "title": "Vibyra — Big ideas. Meet your building space.",
+    "ready": "complete",
+    "domNodes": 833,
+    "rafCallbacks": 0,
+    "longtasks": [
+      66
+    ],
+    "lcp": [
+      {
+        "start": 192,
+        "size": 193410
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 40
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 192
+      }
+    ],
+    "brokenImages": [],
+    "videos": [],
+    "heap": 2404206,
+    "idleRafCallbacksPerSecond": 0,
+    "belowHeroRafCallbacksPerSecond": 0,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 3194
+      },
+      {
+        "url": "/build/assets/marketing-BYqLF7N4.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 92413
+      },
+      {
+        "url": "/build/assets/marketing-D-UUfAUc.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 40992
+      },
+      {
+        "url": "/build/assets/jsx-runtime-UMf7COi6.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190268
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/fonts/manrope-regular.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95117
+      },
+      {
+        "url": "/fonts/manrope-extrabold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95833
+      },
+      {
+        "url": "/fonts/manrope-bold.ttf",
+        "type": "Font",
+        "status": 200,
+        "mime": "font/ttf",
+        "cache": false,
+        "encodedBytes": 95073
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      }
+    ],
+    "exceptions": []
+  }
+]

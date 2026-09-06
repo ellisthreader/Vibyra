@@ -1,0 +1,19 @@
+{
+  "atUtc": "2026-09-04T21:37:19.745221+00:00",
+  "stoppedOwnedProcesses": [
+    {
+      "pid": 678350,
+      "role": "isolated PHP server"
+    }
+  ],
+  "ownedProcessesStillRunning": [],
+  "auditPortsListening": {
+    "18743": false,
+    "18744": false
+  },
+  "nativeProbeRunsTerminatedTheirOwnedTrees": true,
+  "defaultCargoBuildRestored": true,
+  "installedOrPublishedDiagnostic": false,
+  "note": "Only exact scratch-profile Chrome and exact scratch-router PHP processes were signalled; other applications were preserved.",
+  "browserClosedViaDedicatedDevToolsPort": 18744
+}

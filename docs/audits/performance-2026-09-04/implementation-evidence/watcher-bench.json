@@ -1,0 +1,33 @@
+{
+  "kind": "Actual WorkspaceWatcher on synthetic directories; Linux inotify metadata; debug build",
+  "rows": [
+    {
+      "ignoredDirectories": 0,
+      "ignoredEventsDelivered": 0,
+      "kernelWatchesAdded": 2,
+      "sourceEventDelivered": true,
+      "watchStartMs": 0.382235
+    },
+    {
+      "ignoredDirectories": 100,
+      "ignoredEventsDelivered": 0,
+      "kernelWatchesAdded": 2,
+      "sourceEventDelivered": true,
+      "watchStartMs": 0.363252
+    },
+    {
+      "ignoredDirectories": 1000,
+      "ignoredEventsDelivered": 0,
+      "kernelWatchesAdded": 2,
+      "sourceEventDelivered": true,
+      "watchStartMs": 0.299894
+    },
+    {
+      "ignoredDirectories": 3000,
+      "ignoredEventsDelivered": 0,
+      "kernelWatchesAdded": 2,
+      "sourceEventDelivered": true,
+      "watchStartMs": 0.345155
+    }
+  ]
+}

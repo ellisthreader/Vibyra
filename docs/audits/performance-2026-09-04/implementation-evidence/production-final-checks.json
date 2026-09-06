@@ -1,0 +1,36 @@
+{
+  "syntax": {
+    "phpProductionConfig": 0,
+    "bashLaunchers": 0
+  },
+  "topologyTest": {
+    "command": [
+      "php",
+      "vendor/bin/phpunit",
+      "--do-not-cache-result",
+      "--filter",
+      "ProductionProcessTopologyTest"
+    ],
+    "tests": 2,
+    "assertions": 13,
+    "exit": 0
+  },
+  "generatedTimeout": {
+    "fpmSeconds": 2100,
+    "nginxSeconds": 2100,
+    "existingDeepResearchProviderAttempts": 2,
+    "perAttemptSeconds": 900,
+    "validated": true
+  },
+  "runtimeFixture": {
+    "exit": 0,
+    "coldFirstAttempt": "Initial 10-second startup readiness budget expired on a heavily loaded host before any launcher output. Repeated with 60-second readiness budget; production code unchanged.",
+    "evidence": "production-runtime.json"
+  },
+  "laravelFpmFixture": {
+    "exit": 0,
+    "evidence": "laravel-fpm.json"
+  },
+  "deploymentImageBuilt": false,
+  "deployed": false
+}

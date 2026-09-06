@@ -1,0 +1,54 @@
+{
+  "kind": "Isolated local PHP built-in server; synthetic 2 second handler; not production concurrency test",
+  "baseline": {
+    "path": "/up",
+    "seconds": 1.3251136059989221,
+    "status": 200,
+    "bytes": 1756
+  },
+  "trials": [
+    {
+      "hold": {
+        "path": "/_audit/hold",
+        "seconds": 2.003116940992186,
+        "status": 200,
+        "bytes": 26
+      },
+      "health": {
+        "path": "/up",
+        "seconds": 1.9365974190004636,
+        "status": 200,
+        "bytes": 1756
+      }
+    },
+    {
+      "hold": {
+        "path": "/_audit/hold",
+        "seconds": 2.000976601993898,
+        "status": 200,
+        "bytes": 26
+      },
+      "health": {
+        "path": "/up",
+        "seconds": 1.9170827170019038,
+        "status": 200,
+        "bytes": 1756
+      }
+    },
+    {
+      "hold": {
+        "path": "/_audit/hold",
+        "seconds": 2.0010215530055575,
+        "status": 200,
+        "bytes": 26
+      },
+      "health": {
+        "path": "/up",
+        "seconds": 1.9142836760001956,
+        "status": 200,
+        "bytes": 1756
+      }
+    }
+  ],
+  "unblockedWarmHealthSeconds": 0.0552461720071733
+}

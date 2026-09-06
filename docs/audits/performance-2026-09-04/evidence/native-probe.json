@@ -1,0 +1,2080 @@
+{
+  "elapsedSeconds": 67.57910180091858,
+  "exitBeforeCleanup": null,
+  "complete": true,
+  "clockTicksPerSecond": 100,
+  "samples": [
+    {
+      "elapsed": 0.0005435943603515625,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 3100672
+        }
+      ]
+    },
+    {
+      "elapsed": 1.0217325687408447,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 3538944
+        }
+      ]
+    },
+    {
+      "elapsed": 2.03779673576355,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 4337664
+        }
+      ]
+    },
+    {
+      "elapsed": 3.063399314880371,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 4476928
+        }
+      ]
+    },
+    {
+      "elapsed": 4.0806450843811035,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 4628480
+        }
+      ]
+    },
+    {
+      "elapsed": 5.098944902420044,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 0,
+          "rssBytes": 5533696
+        }
+      ]
+    },
+    {
+      "elapsed": 6.125547170639038,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 1,
+          "rssBytes": 8052736
+        }
+      ]
+    },
+    {
+      "elapsed": 7.1501784324646,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 4,
+          "rssBytes": 44756992
+        }
+      ]
+    },
+    {
+      "elapsed": 8.21598768234253,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 6,
+          "rssBytes": 58773504
+        }
+      ]
+    },
+    {
+      "elapsed": 9.246047735214233,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 6,
+          "rssBytes": 58773504
+        }
+      ]
+    },
+    {
+      "elapsed": 10.266355991363525,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 6,
+          "rssBytes": 61067264
+        }
+      ]
+    },
+    {
+      "elapsed": 11.291450023651123,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 10,
+          "rssBytes": 66764800
+        }
+      ]
+    },
+    {
+      "elapsed": 12.31655502319336,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 10,
+          "rssBytes": 68169728
+        }
+      ]
+    },
+    {
+      "elapsed": 13.33418321609497,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 11,
+          "rssBytes": 77148160
+        }
+      ]
+    },
+    {
+      "elapsed": 14.366804122924805,
+      "processes": [
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 12,
+          "rssBytes": 80441344
+        }
+      ]
+    },
+    {
+      "elapsed": 15.387364149093628,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 13,
+          "rssBytes": 87265280
+        }
+      ]
+    },
+    {
+      "elapsed": 16.420175075531006,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 13,
+          "rssBytes": 89378816
+        }
+      ]
+    },
+    {
+      "elapsed": 17.45499849319458,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 14,
+          "rssBytes": 90238976
+        }
+      ]
+    },
+    {
+      "elapsed": 18.48736262321472,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 14,
+          "rssBytes": 91791360
+        }
+      ]
+    },
+    {
+      "elapsed": 19.550305604934692,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 15,
+          "rssBytes": 92930048
+        }
+      ]
+    },
+    {
+      "elapsed": 20.618685960769653,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 16,
+          "rssBytes": 94040064
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 21.680952310562134,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 18,
+          "rssBytes": 95682560
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 22.72541570663452,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 18,
+          "rssBytes": 95973376
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 23.75860357284546,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 19,
+          "rssBytes": 104923136
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 24.808889389038086,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 21,
+          "rssBytes": 107794432
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 25.843257188796997,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41504768
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 22,
+          "rssBytes": 114057216
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 26.87831163406372,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 23,
+          "rssBytes": 122204160
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 27.911347150802612,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 24,
+          "rssBytes": 128286720
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 28.958158016204834,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 24,
+          "rssBytes": 129630208
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 29.997061252593994,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 24,
+          "rssBytes": 129789952
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 31.03772759437561,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 25,
+          "rssBytes": 129781760
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42201088
+        }
+      ]
+    },
+    {
+      "elapsed": 32.07406973838806,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 26,
+          "rssBytes": 130445312
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 33.108144998550415,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 30,
+          "rssBytes": 156348416
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 34.147242069244385,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 31,
+          "rssBytes": 174325760
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 35.18124318122864,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 32,
+          "rssBytes": 177659904
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 36.22224712371826,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 32,
+          "rssBytes": 180219904
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 37.293405532836914,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 41635840
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 35,
+          "rssBytes": 188829696
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 42373120
+        }
+      ]
+    },
+    {
+      "elapsed": 38.41758441925049,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 2,
+          "rssBytes": 47042560
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 38,
+          "rssBytes": 192040960
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 44642304
+        }
+      ]
+    },
+    {
+      "elapsed": 39.456021547317505,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 3,
+          "rssBytes": 48508928
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 43,
+          "rssBytes": 192352256
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 3,
+          "rssBytes": 45432832
+        }
+      ]
+    },
+    {
+      "elapsed": 40.4937961101532,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 3,
+          "rssBytes": 48508928
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 47,
+          "rssBytes": 192335872
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 5,
+          "rssBytes": 52137984
+        }
+      ]
+    },
+    {
+      "elapsed": 41.561002016067505,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 3,
+          "rssBytes": 48508928
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 49,
+          "rssBytes": 192335872
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 19,
+          "rssBytes": 167247872
+        }
+      ]
+    },
+    {
+      "elapsed": 42.59590554237366,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50106368
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 66,
+          "rssBytes": 221282304
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 45,
+          "rssBytes": 209649664
+        }
+      ]
+    },
+    {
+      "elapsed": 43.63617467880249,
+      "processes": [
+        {
+          "pid": 692419,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692420,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 652,
+          "rssBytes": 303620096
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 3,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 2,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 3,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 3,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 2,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 2,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 202,
+          "rssBytes": 229527552
+        }
+      ]
+    },
+    {
+      "elapsed": 50.54319620132446,
+      "processes": [
+        {
+          "pid": 692793,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692794,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692795,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 4,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 258,
+          "rssBytes": 231505920
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 831,
+          "rssBytes": 322011136
+        }
+      ]
+    },
+    {
+      "elapsed": 52.19040536880493,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 692919,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692920,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692921,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 692922,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 950,
+          "rssBytes": 320929792
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 286,
+          "rssBytes": 231636992
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 53.26980257034302,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 693051,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 693052,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1082,
+          "rssBytes": 312799232
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 315,
+          "rssBytes": 231768064
+        },
+        {
+          "pid": 693053,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 5,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 54.3538339138031,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1201,
+          "rssBytes": 318025728
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 345,
+          "rssBytes": 232030208
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 693195,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 693196,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 6,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 55.49068593978882,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1322,
+          "rssBytes": 321077248
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 375,
+          "rssBytes": 232161280
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 693328,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1896448
+        },
+        {
+          "pid": 693329,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 56.62801790237427,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1428,
+          "rssBytes": 323883008
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 402,
+          "rssBytes": 232554496
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 693473,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 693474,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 7,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 57.70915937423706,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1547,
+          "rssBytes": 321748992
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 431,
+          "rssBytes": 232947712
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 58.88726758956909,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 8,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 693757,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 693756,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1900544
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1622,
+          "rssBytes": 315129856
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 453,
+          "rssBytes": 233603072
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 59.965298652648926,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 693938,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 693939,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1678,
+          "rssBytes": 314363904
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 469,
+          "rssBytes": 233865216
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 9,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 61.15284061431885,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 694085,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694086,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1723,
+          "rssBytes": 314277888
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 482,
+          "rssBytes": 233996288
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 62.2311692237854,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 10,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 694212,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694213,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1776,
+          "rssBytes": 314544128
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 11,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 497,
+          "rssBytes": 234389504
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 63.27676486968994,
+      "processes": [
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1824,
+          "rssBytes": 315199488
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 512,
+          "rssBytes": 234782720
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 694370,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694371,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 64.35409450531006,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 694490,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1880064
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 694491,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1875968
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1876,
+          "rssBytes": 317165568
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 12,
+          "rssBytes": 1789952
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 525,
+          "rssBytes": 235175936
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 65.39039444923401,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 694669,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694670,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1920,
+          "rssBytes": 314478592
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 538,
+          "rssBytes": 235175936
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 66.47038412094116,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 13,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 1972,
+          "rssBytes": 315473920
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 14,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 558,
+          "rssBytes": 235962368
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    },
+    {
+      "elapsed": 67.52899813652039,
+      "processes": [
+        {
+          "pid": 691809,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 691781,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1916928
+        },
+        {
+          "pid": 694918,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694919,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1835008
+        },
+        {
+          "pid": 694920,
+          "name": "sleep",
+          "cpuTicks": 0,
+          "rssBytes": 1806336
+        },
+        {
+          "pid": 691789,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691822,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 691794,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690492,
+          "name": "WebKitWebProces",
+          "cpuTicks": 2046,
+          "rssBytes": 314191872
+        },
+        {
+          "pid": 691800,
+          "name": "sh",
+          "cpuTicks": 15,
+          "rssBytes": 1921024
+        },
+        {
+          "pid": 690459,
+          "name": "WebKitNetworkPr",
+          "cpuTicks": 4,
+          "rssBytes": 50237440
+        },
+        {
+          "pid": 689852,
+          "name": "vibyra-desktop",
+          "cpuTicks": 585,
+          "rssBytes": 236216320
+        },
+        {
+          "pid": 691837,
+          "name": "cat",
+          "cpuTicks": 0,
+          "rssBytes": 1712128
+        }
+      ]
+    }
+  ],
+  "kind": "Minified production frontend, debug native binary, isolated XDG and unavailable keyring, auto graphics"
+}

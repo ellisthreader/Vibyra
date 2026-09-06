@@ -1,0 +1,62 @@
+{
+  "checkedPngFiles": 114,
+  "method": "Pillow Image.open + verify; no asset mutations",
+  "failedDecodeOrIntegrity": [
+    {
+      "path": "src/assets/vibyra-cobalt.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "src/assets/plan-icons/pro.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "src/assets/plan-icons/starter.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "src/assets/plan-icons/builder.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/vibyra-launch-film-poster.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/mobile-vibyra-auth.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-welcome-review.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/vibyra-cobalt-stage.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-memory-voice.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-picker.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-catalog-v2.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/connected-workspace-editorial.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-multi-terminal.png",
+      "errorType": "UnidentifiedImageError"
+    },
+    {
+      "path": "backend/public/media/homepage/phone-review-editorial.png",
+      "errorType": "UnidentifiedImageError"
+    }
+  ]
+}

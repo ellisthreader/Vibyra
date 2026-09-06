@@ -1,0 +1,2471 @@
+[
+  {
+    "file": "assets/index-LED-j3pL.js",
+    "type": "chunk",
+    "entry": true,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/react-BxBun4Wg.js"
+    ],
+    "dynamicImports": [
+      "assets/addon-webgl-BIS_RUUN.js",
+      "assets/AuthBackdropVideo-vJdgv-uo.js",
+      "assets/ScreenshotEditor-CAq3rsDH.js",
+      "assets/AgentPickerModal-D7VVZyfu.js",
+      "assets/CommandPalette-DC5QYNDw.js",
+      "assets/FilePreviewModal-CLiPmxlF.js",
+      "assets/HomeView-iI1wqxTF.js",
+      "assets/LaunchApprovalModal-DrZBOF4r.js",
+      "assets/ReportModal-3wIT9cTa.js",
+      "assets/SettingsModal-cLUERMLI.js"
+    ],
+    "bytes": 937501,
+    "gzipBytes": 261665,
+    "modules": [
+      {
+        "id": "node_modules/react-dom/cjs/react-dom-client.production.js",
+        "renderedLength": 453153
+      },
+      {
+        "id": "node_modules/@xterm/xterm/lib/xterm.mjs",
+        "renderedLength": 411684
+      },
+      {
+        "id": "src/assets/providerLogos.js",
+        "renderedLength": 173453
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/window.js",
+        "renderedLength": 16492
+      },
+      {
+        "id": "node_modules/scheduler/cjs/scheduler.production.js",
+        "renderedLength": 9037
+      },
+      {
+        "id": "src/components/companion/ChatPanel.tsx",
+        "renderedLength": 7650
+      },
+      {
+        "id": "src/components/common/Icons.tsx",
+        "renderedLength": 7315
+      },
+      {
+        "id": "src/components/auth/FirstWelcome.tsx",
+        "renderedLength": 7153
+      },
+      {
+        "id": "src/components/terminal/TerminalPaneCard.tsx",
+        "renderedLength": 7064
+      },
+      {
+        "id": "src/components/companion/MemoryPanel.tsx",
+        "renderedLength": 6061
+      },
+      {
+        "id": "src/components/layout/AccountMenu.tsx",
+        "renderedLength": 5894
+      },
+      {
+        "id": "node_modules/react-dom/cjs/react-dom.production.js",
+        "renderedLength": 5713
+      },
+      {
+        "id": "src/components/auth/AuthScreen.tsx",
+        "renderedLength": 5477
+      },
+      {
+        "id": "src/components/layout/WorkspaceApp.tsx",
+        "renderedLength": 5390
+      },
+      {
+        "id": "src/components/preview/PreviewDeviceFrame.tsx",
+        "renderedLength": 5340
+      },
+      {
+        "id": "src/lib/previewDevices.ts",
+        "renderedLength": 5308
+      },
+      {
+        "id": "src/components/preview/PreviewToolbar.tsx",
+        "renderedLength": 5289
+      },
+      {
+        "id": "src/components/preview/useProjectPreview.ts",
+        "renderedLength": 5208
+      },
+      {
+        "id": "src/components/preview/PreviewPicker.tsx",
+        "renderedLength": 5179
+      },
+      {
+        "id": "src/state/projectStore.ts",
+        "renderedLength": 5124
+      },
+      {
+        "id": "src/lib/openRouterCatalog.ts",
+        "renderedLength": 5119
+      },
+      {
+        "id": "src/components/auth/AuthEmailForm.tsx",
+        "renderedLength": 5036
+      },
+      {
+        "id": "src/components/review/ReviewPanel.tsx",
+        "renderedLength": 4947
+      },
+      {
+        "id": "src/components/companion/MemoryNavigator.tsx",
+        "renderedLength": 4918
+      },
+      {
+        "id": "src/components/rail/FileTree.tsx",
+        "renderedLength": 4786
+      },
+      {
+        "id": "src/components/rail/LaunchAdvancedOptions.tsx",
+        "renderedLength": 4599
+      },
+      {
+        "id": "src/state/terminalSpawnActions.ts",
+        "renderedLength": 4487
+      },
+      {
+        "id": "src/components/common/StatusIcons.tsx",
+        "renderedLength": 4470
+      },
+      {
+        "id": "src/components/companion/MemoryToolbar.tsx",
+        "renderedLength": 4412
+      },
+      {
+        "id": "src/lib/useGlobalShortcuts.ts",
+        "renderedLength": 4409
+      },
+      {
+        "id": "src/lib/companyMeta.ts",
+        "renderedLength": 4319
+      },
+      {
+        "id": "src/lib/notificationTriggers.ts",
+        "renderedLength": 4160
+      },
+      {
+        "id": "src/components/review/ReviewPrSheet.tsx",
+        "renderedLength": 4084
+      },
+      {
+        "id": "src/components/rail/FileTreeToolbar.tsx",
+        "renderedLength": 4073
+      },
+      {
+        "id": "src/components/rail/LaunchSettings.tsx",
+        "renderedLength": 4017
+      },
+      {
+        "id": "src/state/memoryStore.ts",
+        "renderedLength": 3938
+      },
+      {
+        "id": "src/components/notifications/Toast.tsx",
+        "renderedLength": 3837
+      },
+      {
+        "id": "src/components/review/ReviewActions.tsx",
+        "renderedLength": 3816
+      },
+      {
+        "id": "src/lib/terminalPromptTracker.ts",
+        "renderedLength": 3784
+      },
+      {
+        "id": "src/lib/perfGuard.ts",
+        "renderedLength": 3748
+      },
+      {
+        "id": "src/state/reportStore.ts",
+        "renderedLength": 3707
+      },
+      {
+        "id": "src/lib/agentPrompt.ts",
+        "renderedLength": 3602
+      },
+      {
+        "id": "src/lib/terminalRegistry.ts",
+        "renderedLength": 3590
+      },
+      {
+        "id": "src/components/common/AgentMark.tsx",
+        "renderedLength": 3577
+      },
+      {
+        "id": "src/components/preview/PreviewOverlay.tsx",
+        "renderedLength": 3549
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/dpi.js",
+        "renderedLength": 3451
+      },
+      {
+        "id": "src/components/layout/VoiceHud.tsx",
+        "renderedLength": 3364
+      },
+      {
+        "id": "src/lib/terminalChatTitle.ts",
+        "renderedLength": 3318
+      },
+      {
+        "id": "src/components/rail/LaunchModelPicker.tsx",
+        "renderedLength": 3284
+      },
+      {
+        "id": "src/state/voiceStore.ts",
+        "renderedLength": 3232
+      },
+      {
+        "id": "node_modules/@xterm/addon-web-links/lib/addon-web-links.mjs",
+        "renderedLength": 3166
+      },
+      {
+        "id": "src/lib/updatePolicy.ts",
+        "renderedLength": 3120
+      },
+      {
+        "id": "src/lib/staticModels.ts",
+        "renderedLength": 3057
+      },
+      {
+        "id": "src/components/companion/MemoryEmptyState.tsx",
+        "renderedLength": 2999
+      },
+      {
+        "id": "src/lib/modelEffort.ts",
+        "renderedLength": 2991
+      },
+      {
+        "id": "src/lib/configuredLaunch.ts",
+        "renderedLength": 2971
+      },
+      {
+        "id": "src/components/rail/SessionList.tsx",
+        "renderedLength": 2937
+      },
+      {
+        "id": "src/components/layout/WindowChrome.tsx",
+        "renderedLength": 2919
+      },
+      {
+        "id": "src/components/auth/AuthProviders.tsx",
+        "renderedLength": 2887
+      },
+      {
+        "id": "src/components/dock/Dock.tsx",
+        "renderedLength": 2869
+      },
+      {
+        "id": "src/lib/reportDraft.ts",
+        "renderedLength": 2847
+      },
+      {
+        "id": "src/state/terminalStore.ts",
+        "renderedLength": 2838
+      },
+      {
+        "id": "src/components/layout/ScreenshotTray.tsx",
+        "renderedLength": 2829
+      },
+      {
+        "id": "src/components/layout/CloseConfirmModal.tsx",
+        "renderedLength": 2815
+      },
+      {
+        "id": "src/components/companion/MemoryMarkdown.tsx",
+        "renderedLength": 2814
+      },
+      {
+        "id": "src/lib/notificationPrefs.ts",
+        "renderedLength": 2785
+      },
+      {
+        "id": "src/lib/sessionRestore.ts",
+        "renderedLength": 2744
+      },
+      {
+        "id": "src/components/notifications/NotificationCenter.tsx",
+        "renderedLength": 2703
+      },
+      {
+        "id": "src/components/notifications/NotificationRow.tsx",
+        "renderedLength": 2610
+      },
+      {
+        "id": "src/components/terminal/TerminalStage.tsx",
+        "renderedLength": 2578
+      },
+      {
+        "id": "src/components/layout/DockSizeControl.tsx",
+        "renderedLength": 2550
+      },
+      {
+        "id": "src/components/layout/ProjectStrip.tsx",
+        "renderedLength": 2533
+      },
+      {
+        "id": "src/components/layout/ProjectWorkspace.tsx",
+        "renderedLength": 2497
+      },
+      {
+        "id": "src/lib/useWorkspaceRuntime.ts",
+        "renderedLength": 2484
+      },
+      {
+        "id": "src/components/rail/LaunchTerminalCount.tsx",
+        "renderedLength": 2482
+      },
+      {
+        "id": "src/lib/projectTransitions.ts",
+        "renderedLength": 2474
+      },
+      {
+        "id": "src/state/terminalLifecycleActions.ts",
+        "renderedLength": 2471
+      },
+      {
+        "id": "src/lib/notificationActions.ts",
+        "renderedLength": 2469
+      },
+      {
+        "id": "src/components/auth/authMarks.tsx",
+        "renderedLength": 2440
+      },
+      {
+        "id": "src/lib/providerAccountPolicy.ts",
+        "renderedLength": 2386
+      },
+      {
+        "id": "src/components/preview/PreviewWorkspace.tsx",
+        "renderedLength": 2372
+      },
+      {
+        "id": "src/ipc/terminal.ts",
+        "renderedLength": 2313
+      },
+      {
+        "id": "src/state/settingsStore.ts",
+        "renderedLength": 2299
+      },
+      {
+        "id": "src/state/accountStore.ts",
+        "renderedLength": 2246
+      },
+      {
+        "id": "src/lib/modelArtwork.ts",
+        "renderedLength": 2226
+      },
+      {
+        "id": "src/lib/modelArtworkData.ts",
+        "renderedLength": 2218
+      },
+      {
+        "id": "src/state/memoryVaultStore.ts",
+        "renderedLength": 2208
+      },
+      {
+        "id": "src/lib/memoryDocument.ts",
+        "renderedLength": 2174
+      },
+      {
+        "id": "\u0000vite/preload-helper.js",
+        "renderedLength": 2142
+      },
+      {
+        "id": "src/components/layout/Rail.tsx",
+        "renderedLength": 2129
+      },
+      {
+        "id": "src/state/updateStore.ts",
+        "renderedLength": 2128
+      },
+      {
+        "id": "src/lib/usePerfWatch.ts",
+        "renderedLength": 2128
+      },
+      {
+        "id": "src/lib/reportContext.ts",
+        "renderedLength": 2096
+      },
+      {
+        "id": "src/components/dock/useDockResize.ts",
+        "renderedLength": 2089
+      },
+      {
+        "id": "src/lib/memoryTree.ts",
+        "renderedLength": 2067
+      },
+      {
+        "id": "src/components/terminal/TerminalView.tsx",
+        "renderedLength": 2067
+      },
+      {
+        "id": "src/state/reviewStore.ts",
+        "renderedLength": 2060
+      },
+      {
+        "id": "src/components/rail/LaunchEffortPicker.tsx",
+        "renderedLength": 2058
+      },
+      {
+        "id": "src/lib/firstWelcomePolicy.ts",
+        "renderedLength": 2055
+      },
+      {
+        "id": "src/components/notifications/ToastPrompt.tsx",
+        "renderedLength": 2031
+      },
+      {
+        "id": "src/lib/terminalBottomAnchor.ts",
+        "renderedLength": 2008
+      },
+      {
+        "id": "src/components/terminal/SuspendedPaneView.tsx",
+        "renderedLength": 1985
+      },
+      {
+        "id": "src/lib/modelRunners.ts",
+        "renderedLength": 1974
+      },
+      {
+        "id": "src/components/dock/DockTabs.tsx",
+        "renderedLength": 1962
+      },
+      {
+        "id": "src/state/launchSettingsStore.ts",
+        "renderedLength": 1961
+      },
+      {
+        "id": "src/lib/activityTransitions.ts",
+        "renderedLength": 1946
+      },
+      {
+        "id": "src/lib/openRouterCatalogRanking.ts",
+        "renderedLength": 1909
+      },
+      {
+        "id": "src/components/review/ReviewFileRow.tsx",
+        "renderedLength": 1859
+      },
+      {
+        "id": "src/lib/previewPersistence.ts",
+        "renderedLength": 1836
+      },
+      {
+        "id": "src/lib/xtermRenderer.ts",
+        "renderedLength": 1827
+      },
+      {
+        "id": "src/components/notifications/ToastStack.tsx",
+        "renderedLength": 1808
+      },
+      {
+        "id": "src/state/chatStore.ts",
+        "renderedLength": 1806
+      },
+      {
+        "id": "src/state/terminalRelaunch.ts",
+        "renderedLength": 1801
+      },
+      {
+        "id": "src/state/providerAccountStore.ts",
+        "renderedLength": 1757
+      },
+      {
+        "id": "src/lib/activity.ts",
+        "renderedLength": 1750
+      },
+      {
+        "id": "src/lib/terminalBus.ts",
+        "renderedLength": 1743
+      },
+      {
+        "id": "src/components/preview/usePreviewStatusPolling.ts",
+        "renderedLength": 1729
+      },
+      {
+        "id": "src/lib/providerIcons.ts",
+        "renderedLength": 1682
+      },
+      {
+        "id": "src/components/notifications/NotificationBell.tsx",
+        "renderedLength": 1675
+      },
+      {
+        "id": "node_modules/@tauri-apps/plugin-updater/dist-js/index.js",
+        "renderedLength": 1650
+      },
+      {
+        "id": "src/lib/useModalFocus.ts",
+        "renderedLength": 1642
+      },
+      {
+        "id": "src/lib/reviewPolicy.ts",
+        "renderedLength": 1626
+      },
+      {
+        "id": "src/components/layout/TitleBar.tsx",
+        "renderedLength": 1615
+      },
+      {
+        "id": "src/lib/useAnchoredPanel.ts",
+        "renderedLength": 1555
+      },
+      {
+        "id": "src/lib/sessionPersistence.ts",
+        "renderedLength": 1550
+      },
+      {
+        "id": "src/state/screenshotStore.ts",
+        "renderedLength": 1540
+      },
+      {
+        "id": "src/lib/terminalChatTitleSource.ts",
+        "renderedLength": 1539
+      },
+      {
+        "id": "src/lib/useNotificationRuntime.ts",
+        "renderedLength": 1503
+      },
+      {
+        "id": "src/components/auth/AuthBackdrop.tsx",
+        "renderedLength": 1501
+      },
+      {
+        "id": "node_modules/@tauri-apps/plugin-notification/dist-js/index.js",
+        "renderedLength": 1484
+      },
+      {
+        "id": "src/lib/xtermTheme.ts",
+        "renderedLength": 1476
+      },
+      {
+        "id": "node_modules/@xterm/addon-fit/lib/addon-fit.mjs",
+        "renderedLength": 1467
+      },
+      {
+        "id": "src/components/notifications/Toasts.tsx",
+        "renderedLength": 1441
+      },
+      {
+        "id": "src/state/terminalAccountSwitch.ts",
+        "renderedLength": 1432
+      },
+      {
+        "id": "src/components/layout/VoicePulse.tsx",
+        "renderedLength": 1422
+      },
+      {
+        "id": "src/lib/accountPolicy.ts",
+        "renderedLength": 1409
+      },
+      {
+        "id": "src/lib/terminalDrop.ts",
+        "renderedLength": 1371
+      },
+      {
+        "id": "src/lib/updateNotifications.ts",
+        "renderedLength": 1354
+      },
+      {
+        "id": "src/components/review/ReviewDiffView.tsx",
+        "renderedLength": 1340
+      },
+      {
+        "id": "src/lib/perfSampler.ts",
+        "renderedLength": 1253
+      },
+      {
+        "id": "src/lib/memoryImport.ts",
+        "renderedLength": 1244
+      },
+      {
+        "id": "\u0000vite/modulepreload-polyfill.js",
+        "renderedLength": 1205
+      },
+      {
+        "id": "src/lib/agentPromptScan.ts",
+        "renderedLength": 1195
+      },
+      {
+        "id": "src/lib/terminalClipboard.ts",
+        "renderedLength": 1186
+      },
+      {
+        "id": "src/lib/terminalTitle.ts",
+        "renderedLength": 1165
+      },
+      {
+        "id": "src/lib/perfPolicy.ts",
+        "renderedLength": 1151
+      },
+      {
+        "id": "src/ipc/account.ts",
+        "renderedLength": 1150
+      },
+      {
+        "id": "src/lib/useActivityTicker.ts",
+        "renderedLength": 1138
+      },
+      {
+        "id": "src/components/notifications/NotificationBellHost.tsx",
+        "renderedLength": 1115
+      },
+      {
+        "id": "src/lib/terminalEvents.ts",
+        "renderedLength": 1110
+      },
+      {
+        "id": "src/ipc/providerAccounts.ts",
+        "renderedLength": 1107
+      },
+      {
+        "id": "src/lib/previewNotifications.ts",
+        "renderedLength": 1103
+      },
+      {
+        "id": "src/ipc/memory.ts",
+        "renderedLength": 1099
+      },
+      {
+        "id": "src/components/notifications/NotificationFilters.tsx",
+        "renderedLength": 1097
+      },
+      {
+        "id": "src/lib/hotkeys.ts",
+        "renderedLength": 1091
+      },
+      {
+        "id": "src/components/layout/CommandBar.tsx",
+        "renderedLength": 1080
+      },
+      {
+        "id": "src/ipc/tools.ts",
+        "renderedLength": 1045
+      },
+      {
+        "id": "src/components/companion/MemorySourceBar.tsx",
+        "renderedLength": 1033
+      },
+      {
+        "id": "src/lib/sessionExitNotifications.ts",
+        "renderedLength": 1030
+      },
+      {
+        "id": "src/components/preview/PreviewIcons.tsx",
+        "renderedLength": 1027
+      },
+      {
+        "id": "src/lib/screenshotCapture.ts",
+        "renderedLength": 1017
+      },
+      {
+        "id": "src/components/notifications/PinnedNotice.tsx",
+        "renderedLength": 931
+      },
+      {
+        "id": "src/lib/agentPromptIntent.ts",
+        "renderedLength": 928
+      },
+      {
+        "id": "src/lib/spawnGeometry.ts",
+        "renderedLength": 928
+      },
+      {
+        "id": "src/components/notifications/notificationMarks.tsx",
+        "renderedLength": 926
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/image.js",
+        "renderedLength": 913
+      },
+      {
+        "id": "src/components/notifications/notificationGroups.ts",
+        "renderedLength": 884
+      },
+      {
+        "id": "src/lib/useFocusVisibility.ts",
+        "renderedLength": 839
+      },
+      {
+        "id": "src/lib/resumeRecovery.ts",
+        "renderedLength": 812
+      },
+      {
+        "id": "src/App.tsx",
+        "renderedLength": 800
+      },
+      {
+        "id": "src/lib/osNotifications.ts",
+        "renderedLength": 780
+      },
+      {
+        "id": "src/state/closeGuardStore.ts",
+        "renderedLength": 764
+      },
+      {
+        "id": "src/lib/terminalFont.ts",
+        "renderedLength": 761
+      },
+      {
+        "id": "src/lib/openRouterReasoning.ts",
+        "renderedLength": 756
+      },
+      {
+        "id": "src/components/terminal/PaneAccountBadge.tsx",
+        "renderedLength": 754
+      },
+      {
+        "id": "src/lib/fileTreePolicy.ts",
+        "renderedLength": 749
+      },
+      {
+        "id": "src/lib/usePinnedNoticeBounds.ts",
+        "renderedLength": 748
+      },
+      {
+        "id": "src/lib/terminalRendererLoader.ts",
+        "renderedLength": 746
+      },
+      {
+        "id": "src/lib/spawnSize.ts",
+        "renderedLength": 713
+      },
+      {
+        "id": "src/lib/agentSessions.ts",
+        "renderedLength": 704
+      },
+      {
+        "id": "src/components/notifications/NotificationEmpty.tsx",
+        "renderedLength": 693
+      },
+      {
+        "id": "src/lib/windowFocus.ts",
+        "renderedLength": 667
+      },
+      {
+        "id": "src/lib/terminalHibernate.ts",
+        "renderedLength": 648
+      },
+      {
+        "id": "src/lib/rendererPolicy.ts",
+        "renderedLength": 640
+      },
+      {
+        "id": "src/ipc/review.ts",
+        "renderedLength": 636
+      },
+      {
+        "id": "src/lib/terminalReplay.ts",
+        "renderedLength": 630
+      },
+      {
+        "id": "src/components/notifications/ToastProgress.tsx",
+        "renderedLength": 625
+      },
+      {
+        "id": "src/lib/useSessionLifecycle.ts",
+        "renderedLength": 609
+      },
+      {
+        "id": "src/lib/voiceLevel.ts",
+        "renderedLength": 551
+      },
+      {
+        "id": "src/ipc/session.ts",
+        "renderedLength": 538
+      },
+      {
+        "id": "src/lib/paneInsert.ts",
+        "renderedLength": 533
+      },
+      {
+        "id": "src/lib/rendererHealNotice.ts",
+        "renderedLength": 529
+      },
+      {
+        "id": "src/ipc/preview.ts",
+        "renderedLength": 513
+      },
+      {
+        "id": "src/state/modelCatalogStore.ts",
+        "renderedLength": 506
+      },
+      {
+        "id": "src/lib/relativeTime.ts",
+        "renderedLength": 506
+      },
+      {
+        "id": "node_modules/@tauri-apps/plugin-global-shortcut/dist-js/index.js",
+        "renderedLength": 494
+      },
+      {
+        "id": "src/lib/terminalClipboardKeys.ts",
+        "renderedLength": 489
+      },
+      {
+        "id": "node_modules/react-dom/client.js",
+        "renderedLength": 473
+      },
+      {
+        "id": "src/components/notifications/ToastOverflow.tsx",
+        "renderedLength": 469
+      },
+      {
+        "id": "node_modules/react-dom/index.js",
+        "renderedLength": 468
+      },
+      {
+        "id": "src/lib/sessionIdentity.ts",
+        "renderedLength": 446
+      },
+      {
+        "id": "src/lib/useUpdateNotifications.ts",
+        "renderedLength": 439
+      },
+      {
+        "id": "src/lib/useUpdateWatch.ts",
+        "renderedLength": 429
+      },
+      {
+        "id": "src/components/common/iconFactory.tsx",
+        "renderedLength": 418
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/app.js",
+        "renderedLength": 386
+      },
+      {
+        "id": "src/ipc/github.ts",
+        "renderedLength": 339
+      },
+      {
+        "id": "src/lib/appStartup.ts",
+        "renderedLength": 328
+      },
+      {
+        "id": "src/lib/providerAccents.ts",
+        "renderedLength": 317
+      },
+      {
+        "id": "src/ipc/updates.ts",
+        "renderedLength": 269
+      },
+      {
+        "id": "src/state/terminalOperationGuard.ts",
+        "renderedLength": 265
+      },
+      {
+        "id": "src/state/agentStore.ts",
+        "renderedLength": 262
+      },
+      {
+        "id": "node_modules/@tauri-apps/plugin-dialog/dist-js/index.js",
+        "renderedLength": 232
+      },
+      {
+        "id": "src/main.tsx",
+        "renderedLength": 226
+      },
+      {
+        "id": "src/state/launchApprovalStore.ts",
+        "renderedLength": 203
+      },
+      {
+        "id": "node_modules/scheduler/index.js",
+        "renderedLength": 188
+      },
+      {
+        "id": "src/assets/vibyra-cobalt.png",
+        "renderedLength": 186
+      },
+      {
+        "id": "src/ipc/settings.ts",
+        "renderedLength": 185
+      },
+      {
+        "id": "src/lib/gridLayout.ts",
+        "renderedLength": 185
+      },
+      {
+        "id": "src/lib/terminalVisibility.ts",
+        "renderedLength": 164
+      },
+      {
+        "id": "src/assets/model-icons/gemini-2.5-flash-lite.png?url",
+        "renderedLength": 154
+      },
+      {
+        "id": "src/assets/model-icons/gemini-3.1-flash-lite.png?url",
+        "renderedLength": 154
+      },
+      {
+        "id": "src/ipc/workspace.ts",
+        "renderedLength": 152
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.7-fast.png?url",
+        "renderedLength": 152
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.8-fast.png?url",
+        "renderedLength": 152
+      },
+      {
+        "id": "src/ipc/models.ts",
+        "renderedLength": 152
+      },
+      {
+        "id": "node_modules/@tauri-apps/plugin-process/dist-js/index.js",
+        "renderedLength": 151
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-5-fast.png?url",
+        "renderedLength": 148
+      },
+      {
+        "id": "src/assets/model-icons/claude-sonnet-4.5.png?url",
+        "renderedLength": 146
+      },
+      {
+        "id": "src/assets/model-icons/claude-sonnet-4.6.png?url",
+        "renderedLength": 146
+      },
+      {
+        "id": "src/assets/model-icons/claude-haiku-4.5.png?url",
+        "renderedLength": 144
+      },
+      {
+        "id": "src/assets/model-icons/gemini-2.5-flash.png?url",
+        "renderedLength": 144
+      },
+      {
+        "id": "src/assets/model-icons/gemini-3.5-flash.png?url",
+        "renderedLength": 144
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.1.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.5.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.6.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.7.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.8.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/model-icons/claude-sonnet-5.png?url",
+        "renderedLength": 142
+      },
+      {
+        "id": "src/assets/auth-space-loop-poster.webp",
+        "renderedLength": 141
+      },
+      {
+        "id": "src/assets/model-icons/claude-fable-5.png?url",
+        "renderedLength": 140
+      },
+      {
+        "id": "src/assets/model-icons/gemini-2.5-pro.png?url",
+        "renderedLength": 140
+      },
+      {
+        "id": "src/assets/model-icons/gemini-3.1-pro.png?url",
+        "renderedLength": 140
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-4.png?url",
+        "renderedLength": 138
+      },
+      {
+        "id": "src/assets/model-icons/claude-opus-5.png?url",
+        "renderedLength": 138
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.6-terra.png?url",
+        "renderedLength": 138
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.4-mini.png?url",
+        "renderedLength": 136
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.6-luna.png?url",
+        "renderedLength": 136
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5-codex.png?url",
+        "renderedLength": 134
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.6-sol.png?url",
+        "renderedLength": 134
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.4.png?url",
+        "renderedLength": 126
+      },
+      {
+        "id": "src/assets/model-icons/gpt-5.5.png?url",
+        "renderedLength": 126
+      },
+      {
+        "id": "src/ipc/report.ts",
+        "renderedLength": 120
+      },
+      {
+        "id": "node_modules/@fontsource-variable/inter/index.css",
+        "renderedLength": 111
+      },
+      {
+        "id": "src/ipc/render.ts",
+        "renderedLength": 106
+      },
+      {
+        "id": "src/ipc/agents.ts",
+        "renderedLength": 98
+      },
+      {
+        "id": "src/ipc/perf.ts",
+        "renderedLength": 96
+      },
+      {
+        "id": "node_modules/@fontsource-variable/jetbrains-mono/index.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "node_modules/@xterm/xterm/css/xterm.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/tokens.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-controls.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-badges.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-scrollbars.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-motion.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-performance.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-activity-dots.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/base-tooltips.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/controls.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/nav-segmented.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chrome.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chrome-nav.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chrome-resize.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chrome-account.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-bell.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-card.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-backdrop.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-choices.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-reveal.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-status.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-overrides.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-email.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/auth-email-form.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/first-welcome.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/first-welcome-motion.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/strip.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/home.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/home-launch.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/home-cards.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/home-empty.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/home-recents.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/rail.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/rail-files.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/rail-footer.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/rail-sessions.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/launch-settings.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/launch-controls.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/launch-model-picker.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/launch-approval.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace-pane.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace-pane-states.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace-empty.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace-voice-hud.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/workspace-shot-tray.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-pinned.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-toast.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-toast-content.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-toast-prompt.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-toast-motion.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-toast-progress.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-center.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-center-empty.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/notifications-center-row.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/preview.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/preview-picker.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/preview-device.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/preview-overlay.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chat-thread.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/chat-input.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/memory-notes.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/agent-mark.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/agent-picker.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/agent-picker-models.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/dock-shell.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/dock-panels.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/dock-review.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/review-diff.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/review-actions.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-chat.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-chat-composer.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-memory.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-memory-import.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-memory-workbench.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-memory-document.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/companion-files.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/palette.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/palette-rows.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/modals.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-modal.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-pane.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-rows.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-agents.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-shortcuts.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-theme-cards.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-modal-narrow.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/kbd.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/terminal-suspended.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-ai-key.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-ai-uses.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-ai-usage.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-ai-guards.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-integrations.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-account-connect.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-account-switch.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-integration-accounts.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-terminal-integrations.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-notifications.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-choices.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-fields.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-attachments.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-context.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-footer.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-sent.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-entry.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/report-files.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/screenshot-editor.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/screenshot-controls.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/screenshot-tray.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-graphics.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-performance.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-updates.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-hotkeys.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "src/styles/settings-profile.css",
+        "renderedLength": 0
+      },
+      {
+        "id": "index.html",
+        "renderedLength": 0
+      }
+    ]
+  },
+  {
+    "file": "assets/AgentPickerModal-D7VVZyfu.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 4588,
+    "gzipBytes": 1794,
+    "modules": [
+      {
+        "id": "src/components/agents/AgentPickerModal.tsx",
+        "renderedLength": 7875
+      },
+      {
+        "id": "src/components/agents/AgentPickerModelRow.tsx",
+        "renderedLength": 1345
+      }
+    ]
+  },
+  {
+    "file": "assets/AuthBackdropVideo-vJdgv-uo.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 3688519,
+    "gzipBytes": 2776394,
+    "modules": [
+      {
+        "id": "src/assets/auth-space-loop.mp4?inline",
+        "renderedLength": 3687681
+      },
+      {
+        "id": "src/components/auth/AuthBackdropVideo.tsx",
+        "renderedLength": 1632
+      }
+    ]
+  },
+  {
+    "file": "assets/CommandPalette-DC5QYNDw.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 15660,
+    "gzipBytes": 6083,
+    "modules": [
+      {
+        "id": "src/components/layout/CommandPalette.tsx",
+        "renderedLength": 4565
+      },
+      {
+        "id": "src/components/layout/paletteToolEntries.ts",
+        "renderedLength": 3074
+      },
+      {
+        "id": "src/components/layout/paletteViewEntries.ts",
+        "renderedLength": 2922
+      },
+      {
+        "id": "src/components/layout/paletteSessionEntries.ts",
+        "renderedLength": 2864
+      },
+      {
+        "id": "src/components/layout/CommandPaletteRow.tsx",
+        "renderedLength": 2531
+      },
+      {
+        "id": "src/components/layout/paletteLaunchEntries.ts",
+        "renderedLength": 2050
+      },
+      {
+        "id": "src/lib/paletteQuery.ts",
+        "renderedLength": 2021
+      },
+      {
+        "id": "src/components/layout/paletteAttentionEntries.ts",
+        "renderedLength": 1966
+      },
+      {
+        "id": "src/components/layout/paletteAskEntries.ts",
+        "renderedLength": 1350
+      },
+      {
+        "id": "src/components/layout/CommandPaletteFooter.tsx",
+        "renderedLength": 1347
+      },
+      {
+        "id": "src/lib/paletteRanking.ts",
+        "renderedLength": 1148
+      },
+      {
+        "id": "src/lib/paletteRecents.ts",
+        "renderedLength": 924
+      },
+      {
+        "id": "src/components/layout/commandPaletteEntries.ts",
+        "renderedLength": 480
+      }
+    ]
+  },
+  {
+    "file": "assets/FilePreviewModal-CLiPmxlF.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 972,
+    "gzipBytes": 476,
+    "modules": [
+      {
+        "id": "src/components/files/FilePreviewModal.tsx",
+        "renderedLength": 1708
+      }
+    ]
+  },
+  {
+    "file": "assets/HomeView-iI1wqxTF.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 7048,
+    "gzipBytes": 2564,
+    "modules": [
+      {
+        "id": "src/components/home/HomeView.tsx",
+        "renderedLength": 5374
+      },
+      {
+        "id": "src/components/home/HomeProjectCard.tsx",
+        "renderedLength": 4560
+      },
+      {
+        "id": "src/components/home/HomeLaunchBar.tsx",
+        "renderedLength": 3711
+      }
+    ]
+  },
+  {
+    "file": "assets/LaunchApprovalModal-DrZBOF4r.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 1863,
+    "gzipBytes": 838,
+    "modules": [
+      {
+        "id": "src/components/rail/LaunchApprovalModal.tsx",
+        "renderedLength": 3272
+      }
+    ]
+  },
+  {
+    "file": "assets/ReportModal-3wIT9cTa.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 9289,
+    "gzipBytes": 2787,
+    "modules": [
+      {
+        "id": "src/components/report/ReportAttachments.tsx",
+        "renderedLength": 5827
+      },
+      {
+        "id": "src/components/report/ReportFields.tsx",
+        "renderedLength": 5500
+      },
+      {
+        "id": "src/components/report/ReportModal.tsx",
+        "renderedLength": 5001
+      },
+      {
+        "id": "src/components/report/ReportIcons.tsx",
+        "renderedLength": 1523
+      }
+    ]
+  },
+  {
+    "file": "assets/ScreenshotEditor-CAq3rsDH.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 17194,
+    "gzipBytes": 5734,
+    "modules": [
+      {
+        "id": "src/components/layout/ScreenshotEditor.tsx",
+        "renderedLength": 7089
+      },
+      {
+        "id": "src/components/layout/ScreenshotEditorToolbar.tsx",
+        "renderedLength": 5136
+      },
+      {
+        "id": "src/components/layout/ScreenshotCanvas.tsx",
+        "renderedLength": 4830
+      },
+      {
+        "id": "src/components/layout/useScreenshotPointer.ts",
+        "renderedLength": 3282
+      },
+      {
+        "id": "src/components/layout/useScreenshotLayers.ts",
+        "renderedLength": 3158
+      },
+      {
+        "id": "src/lib/screenshotDrawing.ts",
+        "renderedLength": 2474
+      },
+      {
+        "id": "src/lib/screenshotOperations.ts",
+        "renderedLength": 2219
+      },
+      {
+        "id": "src/lib/screenshotCrop.ts",
+        "renderedLength": 1759
+      },
+      {
+        "id": "src/components/layout/useScreenshotActions.ts",
+        "renderedLength": 1721
+      },
+      {
+        "id": "src/lib/screenshotView.ts",
+        "renderedLength": 948
+      }
+    ]
+  },
+  {
+    "file": "assets/SettingsModal-cLUERMLI.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js",
+      "assets/workspaceStore-DR7qSzoG.js",
+      "assets/react-BxBun4Wg.js",
+      "assets/index-LED-j3pL.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 56144,
+    "gzipBytes": 15985,
+    "modules": [
+      {
+        "id": "src/components/settings/SettingsIntegrationsPane.tsx",
+        "renderedLength": 5780
+      },
+      {
+        "id": "src/components/settings/SettingsModal.tsx",
+        "renderedLength": 5743
+      },
+      {
+        "id": "src/components/settings/SettingsProfilePane.tsx",
+        "renderedLength": 5604
+      },
+      {
+        "id": "src/components/settings/OpenAiKeyCard.tsx",
+        "renderedLength": 5468
+      },
+      {
+        "id": "src/components/settings/SettingsAgentsPane.tsx",
+        "renderedLength": 5055
+      },
+      {
+        "id": "src/components/settings/SettingsGeneralPane.tsx",
+        "renderedLength": 4963
+      },
+      {
+        "id": "src/components/settings/SettingsShortcutsPane.tsx",
+        "renderedLength": 4806
+      },
+      {
+        "id": "src/components/settings/SettingsNotificationsPane.tsx",
+        "renderedLength": 4255
+      },
+      {
+        "id": "src/components/settings/AiUsageCard.tsx",
+        "renderedLength": 3925
+      },
+      {
+        "id": "src/components/settings/SettingsUpdatesPane.tsx",
+        "renderedLength": 3818
+      },
+      {
+        "id": "src/components/settings/GraphicsCard.tsx",
+        "renderedLength": 3649
+      },
+      {
+        "id": "src/components/settings/SettingsPerformancePane.tsx",
+        "renderedLength": 3408
+      },
+      {
+        "id": "src/components/settings/ProviderIntegrationCard.tsx",
+        "renderedLength": 3319
+      },
+      {
+        "id": "src/lib/updateCheckPolicy.ts",
+        "renderedLength": 3299
+      },
+      {
+        "id": "src/components/settings/AiLimitsCard.tsx",
+        "renderedLength": 3291
+      },
+      {
+        "id": "src/components/settings/PerformanceStatusCard.tsx",
+        "renderedLength": 3022
+      },
+      {
+        "id": "src/components/settings/TerminalIntegrations.tsx",
+        "renderedLength": 2895
+      },
+      {
+        "id": "src/components/settings/ProviderAccountUse.tsx",
+        "renderedLength": 2874
+      },
+      {
+        "id": "src/components/settings/SettingsAiPane.tsx",
+        "renderedLength": 2778
+      },
+      {
+        "id": "src/components/settings/ProfileSessionBlock.tsx",
+        "renderedLength": 2701
+      },
+      {
+        "id": "src/components/settings/NotificationKindRow.tsx",
+        "renderedLength": 2514
+      },
+      {
+        "id": "src/components/settings/ProviderAccountRow.tsx",
+        "renderedLength": 2098
+      },
+      {
+        "id": "src/components/settings/ProviderAccountActions.tsx",
+        "renderedLength": 2018
+      },
+      {
+        "id": "src/components/settings/PerformanceModeCard.tsx",
+        "renderedLength": 1868
+      },
+      {
+        "id": "src/components/settings/SettingsShared.tsx",
+        "renderedLength": 1702
+      },
+      {
+        "id": "src/components/settings/NotificationPermissionRow.tsx",
+        "renderedLength": 1534
+      },
+      {
+        "id": "src/components/settings/notificationKinds.ts",
+        "renderedLength": 1533
+      },
+      {
+        "id": "src/state/aiServiceStore.ts",
+        "renderedLength": 1472
+      },
+      {
+        "id": "src/lib/aiSpendNotifications.ts",
+        "renderedLength": 1150
+      },
+      {
+        "id": "src/components/settings/ProviderAccountReply.tsx",
+        "renderedLength": 1105
+      },
+      {
+        "id": "src/state/providerAccountSwitch.ts",
+        "renderedLength": 996
+      },
+      {
+        "id": "src/components/settings/VolumeSteps.tsx",
+        "renderedLength": 605
+      },
+      {
+        "id": "src/lib/aiSpend.ts",
+        "renderedLength": 516
+      },
+      {
+        "id": "src/ipc/ai.ts",
+        "renderedLength": 318
+      },
+      {
+        "id": "src/lib/appRestart.ts",
+        "renderedLength": 144
+      }
+    ]
+  },
+  {
+    "file": "assets/addon-webgl-BIS_RUUN.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 113605,
+    "gzipBytes": 30855,
+    "modules": [
+      {
+        "id": "node_modules/@xterm/addon-webgl/lib/addon-webgl.mjs",
+        "renderedLength": 151226
+      }
+    ]
+  },
+  {
+    "file": "assets/jsx-runtime-Cltr0gcK.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 8430,
+    "gzipBytes": 3212,
+    "modules": [
+      {
+        "id": "node_modules/react/cjs/react.production.js",
+        "renderedLength": 15178
+      },
+      {
+        "id": "\u0000rolldown/runtime.js",
+        "renderedLength": 1162
+      },
+      {
+        "id": "node_modules/react/cjs/react-jsx-runtime.production.js",
+        "renderedLength": 871
+      },
+      {
+        "id": "node_modules/react/jsx-runtime.js",
+        "renderedLength": 200
+      },
+      {
+        "id": "node_modules/react/index.js",
+        "renderedLength": 176
+      }
+    ]
+  },
+  {
+    "file": "assets/react-BxBun4Wg.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/jsx-runtime-Cltr0gcK.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 651,
+    "gzipBytes": 398,
+    "modules": [
+      {
+        "id": "node_modules/zustand/esm/vanilla.mjs",
+        "renderedLength": 1075
+      },
+      {
+        "id": "node_modules/zustand/esm/react.mjs",
+        "renderedLength": 691
+      }
+    ]
+  },
+  {
+    "file": "assets/workspaceStore-DR7qSzoG.js",
+    "type": "chunk",
+    "entry": false,
+    "imports": [
+      "assets/react-BxBun4Wg.js"
+    ],
+    "dynamicImports": [],
+    "bytes": 13584,
+    "gzipBytes": 5294,
+    "modules": [
+      {
+        "id": "src/lib/dockLayout.ts",
+        "renderedLength": 3488
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/core.js",
+        "renderedLength": 3272
+      },
+      {
+        "id": "src/lib/notificationSounds.ts",
+        "renderedLength": 2886
+      },
+      {
+        "id": "src/state/notificationQueue.ts",
+        "renderedLength": 2552
+      },
+      {
+        "id": "src/state/notificationStore.ts",
+        "renderedLength": 2251
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/event.js",
+        "renderedLength": 2165
+      },
+      {
+        "id": "src/state/workspaceStore.ts",
+        "renderedLength": 2134
+      },
+      {
+        "id": "src/lib/soundCues.ts",
+        "renderedLength": 1582
+      },
+      {
+        "id": "src/lib/notificationPolicy.ts",
+        "renderedLength": 1360
+      },
+      {
+        "id": "src/state/notificationTimers.ts",
+        "renderedLength": 1192
+      },
+      {
+        "id": "src/lib/notificationTiers.ts",
+        "renderedLength": 1163
+      },
+      {
+        "id": "node_modules/@tauri-apps/api/external/tslib/tslib.es6.js",
+        "renderedLength": 1038
+      },
+      {
+        "id": "src/lib/soundGate.ts",
+        "renderedLength": 756
+      },
+      {
+        "id": "src/ipc/fs.ts",
+        "renderedLength": 519
+      }
+    ]
+  },
+  {
+    "file": "assets/auth-space-loop-poster-BiJjKnBd.webp",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 127732,
+    "gzipBytes": 127790
+  },
+  {
+    "file": "assets/claude-fable-5-BurVbMBf.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 24276,
+    "gzipBytes": 24304
+  },
+  {
+    "file": "assets/claude-haiku-4.5-CKIN1vSl.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 15743,
+    "gzipBytes": 15766
+  },
+  {
+    "file": "assets/claude-opus-4-DW9NdRd_.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 19755,
+    "gzipBytes": 19783
+  },
+  {
+    "file": "assets/claude-opus-4.1-lBA6SQy0.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 25846,
+    "gzipBytes": 25874
+  },
+  {
+    "file": "assets/claude-opus-4.5-DI7AkVaQ.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 24518,
+    "gzipBytes": 24546
+  },
+  {
+    "file": "assets/claude-opus-4.6-D-hVTazV.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 27499,
+    "gzipBytes": 27527
+  },
+  {
+    "file": "assets/claude-opus-4.7-COXv4mgi.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 25540,
+    "gzipBytes": 25568
+  },
+  {
+    "file": "assets/claude-opus-4.7-fast-BEm8sp9I.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 24568,
+    "gzipBytes": 24596
+  },
+  {
+    "file": "assets/claude-opus-4.8-DcuDYEq1.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 26231,
+    "gzipBytes": 26259
+  },
+  {
+    "file": "assets/claude-opus-4.8-fast-DN4myyvM.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 24977,
+    "gzipBytes": 25005
+  },
+  {
+    "file": "assets/claude-opus-5-GfZKT9KR.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 33740,
+    "gzipBytes": 33773
+  },
+  {
+    "file": "assets/claude-opus-5-fast-Cvl4Az-G.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 33233,
+    "gzipBytes": 33266
+  },
+  {
+    "file": "assets/claude-sonnet-4.5-DSzmfnwI.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 27680,
+    "gzipBytes": 27708
+  },
+  {
+    "file": "assets/claude-sonnet-4.6-BE4fmwvn.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 23958,
+    "gzipBytes": 23986
+  },
+  {
+    "file": "assets/claude-sonnet-5-clqtbqo9.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 25806,
+    "gzipBytes": 25834
+  },
+  {
+    "file": "assets/gemini-2.5-flash-DrFJBmek.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12529,
+    "gzipBytes": 12552
+  },
+  {
+    "file": "assets/gemini-2.5-flash-lite-ChQS_hvo.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12725,
+    "gzipBytes": 12748
+  },
+  {
+    "file": "assets/gemini-2.5-pro-coPRydOZ.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 11778,
+    "gzipBytes": 11801
+  },
+  {
+    "file": "assets/gemini-3.1-flash-lite-9b_W5rm0.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12707,
+    "gzipBytes": 12730
+  },
+  {
+    "file": "assets/gemini-3.1-pro-_6e7E5wV.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12668,
+    "gzipBytes": 12691
+  },
+  {
+    "file": "assets/gemini-3.5-flash-DiEqQM5m.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 11274,
+    "gzipBytes": 11297
+  },
+  {
+    "file": "assets/gpt-5-codex-CcmwB976.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 36015,
+    "gzipBytes": 36048
+  },
+  {
+    "file": "assets/gpt-5.4-mini-C1JrTwGG.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 30290,
+    "gzipBytes": 30292
+  },
+  {
+    "file": "assets/gpt-5.4-pQ1gFNWo.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 38737,
+    "gzipBytes": 38751
+  },
+  {
+    "file": "assets/gpt-5.5-C2bwCKmg.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 34121,
+    "gzipBytes": 34141
+  },
+  {
+    "file": "assets/gpt-5.6-luna-BoS-rwQc.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 22085,
+    "gzipBytes": 22095
+  },
+  {
+    "file": "assets/gpt-5.6-sol-SPjDsx2u.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 43135,
+    "gzipBytes": 43151
+  },
+  {
+    "file": "assets/gpt-5.6-terra-lnQQN4Rk.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 27046,
+    "gzipBytes": 27074
+  },
+  {
+    "file": "assets/index-VQkyzxvF.css",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 166018,
+    "gzipBytes": 31932
+  },
+  {
+    "file": "assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 25960,
+    "gzipBytes": 25988
+  },
+  {
+    "file": "assets/inter-cyrillic-wght-normal-DqGufNeO.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 18748,
+    "gzipBytes": 18776
+  },
+  {
+    "file": "assets/inter-greek-ext-wght-normal-DlzME5K_.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 11232,
+    "gzipBytes": 11236
+  },
+  {
+    "file": "assets/inter-greek-wght-normal-CkhJZR-_.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 18996,
+    "gzipBytes": 19024
+  },
+  {
+    "file": "assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 85068,
+    "gzipBytes": 85116
+  },
+  {
+    "file": "assets/inter-latin-wght-normal-Dx4kXJAl.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 48256,
+    "gzipBytes": 48254
+  },
+  {
+    "file": "assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 10252,
+    "gzipBytes": 10275
+  },
+  {
+    "file": "assets/jetbrains-mono-cyrillic-wght-normal-D73BlboJ.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12108,
+    "gzipBytes": 12123
+  },
+  {
+    "file": "assets/jetbrains-mono-greek-wght-normal-Bw9x6K1M.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 9004,
+    "gzipBytes": 9027
+  },
+  {
+    "file": "assets/jetbrains-mono-latin-ext-wght-normal-DBQx-q_a.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 15196,
+    "gzipBytes": 15219
+  },
+  {
+    "file": "assets/jetbrains-mono-latin-wght-normal-B9CIFXIH.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 40404,
+    "gzipBytes": 40437
+  },
+  {
+    "file": "assets/jetbrains-mono-vietnamese-wght-normal-Bt-aOZkq.woff2",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 7504,
+    "gzipBytes": 7527
+  },
+  {
+    "file": "assets/vibyra-cobalt-Cebnih3s.png",
+    "type": "asset",
+    "entry": false,
+    "imports": [],
+    "dynamicImports": [],
+    "bytes": 12389,
+    "gzipBytes": 12412
+  }
+]

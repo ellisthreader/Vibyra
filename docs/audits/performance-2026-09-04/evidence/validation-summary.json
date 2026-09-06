@@ -1,0 +1,282 @@
+[
+  {
+    "label": "desktop-tests",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "npm",
+      "test"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 4.177,
+    "started_epoch": 1788555388.9679668,
+    "log": "desktop-tests.log",
+    "startedUtc": "2026-09-04T20:56:28.967967+00:00"
+  },
+  {
+    "label": "desktop-typecheck",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 15.392,
+    "started_epoch": 1788555388.9450624,
+    "log": "desktop-typecheck.log",
+    "startedUtc": "2026-09-04T20:56:28.945062+00:00"
+  },
+  {
+    "label": "desktop-dead-code",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "npm",
+      "run",
+      "check:dead-code"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 7.452,
+    "started_epoch": 1788555410.534153,
+    "log": "desktop-dead-code.log",
+    "startedUtc": "2026-09-04T20:56:50.534153+00:00"
+  },
+  {
+    "label": "desktop-lines",
+    "cwd": "/home/ellis/Desktop/Vibyra",
+    "command": [
+      "node",
+      "scripts/check-desktop-lines.mjs"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.151,
+    "started_epoch": 1788555389.0176766,
+    "log": "desktop-lines.log",
+    "startedUtc": "2026-09-04T20:56:29.017677+00:00"
+  },
+  {
+    "label": "desktop-build",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "node",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/build_assets.mjs",
+      "desktop"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 5.396,
+    "started_epoch": 1788555524.217531,
+    "log": "desktop-build.log",
+    "startedUtc": "2026-09-04T20:58:44.217531+00:00"
+  },
+  {
+    "label": "mobile-checks",
+    "cwd": "/home/ellis/Desktop/Vibyra",
+    "command": [
+      "npm",
+      "run",
+      "check:mobile"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 43.877,
+    "started_epoch": 1788555388.9988286,
+    "log": "mobile-checks.log",
+    "startedUtc": "2026-09-04T20:56:28.998829+00:00"
+  },
+  {
+    "label": "backend-tests",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "php",
+      "vendor/bin/phpunit",
+      "--do-not-cache-result",
+      "--log-junit",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/backend-junit.xml"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 43.261,
+    "started_epoch": 1788555410.606269,
+    "log": "backend-tests.log",
+    "startedUtc": "2026-09-04T20:56:50.606269+00:00"
+  },
+  {
+    "label": "backend-tests-notices",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "php",
+      "artisan",
+      "test",
+      "--filter=CreditCalculatorTest",
+      "--display-phpunit-notices"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 51.588,
+    "started_epoch": 1788556932.8170335,
+    "log": "backend-tests-notices.log",
+    "startedUtc": "2026-09-04T21:22:12.817034+00:00"
+  },
+  {
+    "label": "native-default",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "cargo",
+      "test",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--workspace",
+      "--locked",
+      "--offline"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 300.898,
+    "started_epoch": 1788555410.5754128,
+    "log": "native-default.log",
+    "startedUtc": "2026-09-04T20:56:50.575413+00:00"
+  },
+  {
+    "label": "native-clippy",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "npm",
+      "run",
+      "rust:clippy"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 186.082,
+    "started_epoch": 1788555767.2997158,
+    "log": "native-clippy.log",
+    "startedUtc": "2026-09-04T21:02:47.299716+00:00"
+  },
+  {
+    "label": "native-format",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "npm",
+      "run",
+      "rust:fmt"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 22.636,
+    "started_epoch": 1788555766.618695,
+    "log": "native-format.log",
+    "startedUtc": "2026-09-04T21:02:46.618695+00:00"
+  },
+  {
+    "label": "native-default-build-restored",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "cargo",
+      "build",
+      "--manifest-path",
+      "src-tauri/Cargo.toml",
+      "--locked",
+      "--offline"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 360.967,
+    "started_epoch": 1788557009.9822223,
+    "log": "native-default-build-restored.log",
+    "startedUtc": "2026-09-04T21:23:29.982222+00:00"
+  },
+  {
+    "label": "website-build",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "node",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/build_assets.mjs",
+      "website"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 19.37,
+    "started_epoch": 1788555524.3173258,
+    "log": "website-build.log",
+    "startedUtc": "2026-09-04T20:58:44.317326+00:00"
+  },
+  {
+    "label": "website-source-tests",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "node",
+      "--test",
+      "resources/js/marketing/marketing.source.test.mjs"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.132,
+    "started_epoch": 1788557011.5227761,
+    "log": "website-source-tests.log",
+    "startedUtc": "2026-09-04T21:23:31.522776+00:00"
+  },
+  {
+    "label": "website-current-build",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "node",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/build_assets_current.mjs",
+      "website"
+    ],
+    "exit": 1,
+    "elapsed_seconds": 53.17,
+    "started_epoch": 1788556922.12041,
+    "log": "website-current-build.log",
+    "startedUtc": "2026-09-04T21:22:02.120410+00:00"
+  },
+  {
+    "label": "website-current-rebuild",
+    "cwd": "/home/ellis/Desktop/Vibyra/backend",
+    "command": [
+      "node",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/build_assets_current.mjs",
+      "website"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 2.29,
+    "started_epoch": 1788557163.1528246,
+    "log": "website-current-rebuild.log",
+    "startedUtc": "2026-09-04T21:26:03.152825+00:00"
+  },
+  {
+    "label": "expo-web-export",
+    "cwd": "/home/ellis/Desktop/Vibyra",
+    "command": [
+      "./node_modules/.bin/expo",
+      "export",
+      "--platform",
+      "web",
+      "--output-dir",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/expo-dist",
+      "--max-workers",
+      "2"
+    ],
+    "exit": 1,
+    "elapsed_seconds": 196.735,
+    "started_epoch": 1788555591.2709882,
+    "log": "expo-web-export.log",
+    "startedUtc": "2026-09-04T20:59:51.270988+00:00"
+  },
+  {
+    "label": "watcher-harness-build",
+    "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+    "command": [
+      "cargo",
+      "build",
+      "--manifest-path",
+      "/tmp/vibyra-performance-audit-20260904-KNtjVg/core-harness/Cargo.toml",
+      "--offline"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 143.493,
+    "started_epoch": 1788555834.9486964,
+    "log": "watcher-harness-build.log",
+    "startedUtc": "2026-09-04T21:03:54.948696+00:00"
+  },
+  {
+    "label": "watcher-runtime",
+    "cwd": "/home/ellis/Desktop/Vibyra",
+    "command": [
+      "/mnt/nvme/home/ellis/Current-PC-Builds/cargo-target/debug/vibyra-audit-harness"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 6.946,
+    "started_epoch": 1788556808.863065,
+    "log": "watcher-runtime.log",
+    "startedUtc": "2026-09-04T21:20:08.863065+00:00"
+  }
+]

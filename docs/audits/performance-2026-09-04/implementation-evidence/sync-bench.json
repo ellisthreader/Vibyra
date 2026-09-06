@@ -1,0 +1,459 @@
+{
+    "kind": "Warm local Laravel kernel; synthetic 40 x 80 messages; memory SQLite; 1 warmup + 20 changes per mode",
+    "rows": [
+        {
+            "case": "legacy-full",
+            "samples": 20,
+            "p50ms": 438.42771,
+            "p95ms": 551.878589,
+            "bytes": 6851604,
+            "queries": 4,
+            "requestBytes": 6846380,
+            "raw": [
+                {
+                    "ms": 551.878589,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 23.080000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 573.710796,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 18.89,
+                    "selects": 3
+                },
+                {
+                    "ms": 453.295357,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 17.119999999999997,
+                    "selects": 3
+                },
+                {
+                    "ms": 444.207641,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 15.150000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 431.60665,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 14.61,
+                    "selects": 3
+                },
+                {
+                    "ms": 461.022187,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 15.690000000000001,
+                    "selects": 3
+                },
+                {
+                    "ms": 426.612963,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 15.370000000000001,
+                    "selects": 3
+                },
+                {
+                    "ms": 427.026677,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 13.850000000000001,
+                    "selects": 3
+                },
+                {
+                    "ms": 429.074945,
+                    "bytes": 6851604,
+                    "queries": 4,
+                    "sqlMs": 13.84,
+                    "selects": 3
+                },
+                {
+                    "ms": 419.029696,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 18.52,
+                    "selects": 3
+                },
+                {
+                    "ms": 496.299655,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 17.509999999999998,
+                    "selects": 3
+                },
+                {
+                    "ms": 433.563846,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 14.1,
+                    "selects": 3
+                },
+                {
+                    "ms": 438.42771,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 17.26,
+                    "selects": 3
+                },
+                {
+                    "ms": 452.119189,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 14.94,
+                    "selects": 3
+                },
+                {
+                    "ms": 443.672826,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 13.93,
+                    "selects": 3
+                },
+                {
+                    "ms": 418.741915,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 13.32,
+                    "selects": 3
+                },
+                {
+                    "ms": 465.859402,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 18.99,
+                    "selects": 3
+                },
+                {
+                    "ms": 419.218337,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 14.04,
+                    "selects": 3
+                },
+                {
+                    "ms": 423.004093,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 14.469999999999999,
+                    "selects": 3
+                },
+                {
+                    "ms": 524.410473,
+                    "bytes": 6851605,
+                    "queries": 4,
+                    "sqlMs": 17.700000000000003,
+                    "selects": 3
+                }
+            ]
+        },
+        {
+            "case": "compact-full",
+            "samples": 20,
+            "p50ms": 286.67159,
+            "p95ms": 352.929697,
+            "bytes": 27,
+            "queries": 4,
+            "requestBytes": 6846404,
+            "raw": [
+                {
+                    "ms": 225.799035,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 16.560000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 211.150956,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 16.09,
+                    "selects": 3
+                },
+                {
+                    "ms": 207.471055,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 17.64,
+                    "selects": 3
+                },
+                {
+                    "ms": 234.627599,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 17.919999999999998,
+                    "selects": 3
+                },
+                {
+                    "ms": 286.67159,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 18.7,
+                    "selects": 3
+                },
+                {
+                    "ms": 298.785672,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 22.74,
+                    "selects": 3
+                },
+                {
+                    "ms": 317.544714,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 21.08,
+                    "selects": 3
+                },
+                {
+                    "ms": 358.192885,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 23.94,
+                    "selects": 3
+                },
+                {
+                    "ms": 317.348602,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 22.9,
+                    "selects": 3
+                },
+                {
+                    "ms": 324.271561,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 28.4,
+                    "selects": 3
+                },
+                {
+                    "ms": 272.105352,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 18.880000000000003,
+                    "selects": 3
+                },
+                {
+                    "ms": 266.118889,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 19.54,
+                    "selects": 3
+                },
+                {
+                    "ms": 352.929697,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 27.490000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 299.966111,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 21.64,
+                    "selects": 3
+                },
+                {
+                    "ms": 266.341839,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 22.98,
+                    "selects": 3
+                },
+                {
+                    "ms": 278.586476,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 25.27,
+                    "selects": 3
+                },
+                {
+                    "ms": 244.861634,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 22.07,
+                    "selects": 3
+                },
+                {
+                    "ms": 333.042425,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 26.73,
+                    "selects": 3
+                },
+                {
+                    "ms": 296.638017,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 23.38,
+                    "selects": 3
+                },
+                {
+                    "ms": 331.95566,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 24.49,
+                    "selects": 3
+                }
+            ]
+        },
+        {
+            "case": "delta",
+            "samples": 20,
+            "p50ms": 257.780093,
+            "p95ms": 300.563089,
+            "bytes": 27,
+            "queries": 4,
+            "requestBytes": 4495,
+            "raw": [
+                {
+                    "ms": 269.28434,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 22.800000000000004,
+                    "selects": 3
+                },
+                {
+                    "ms": 243.252055,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 18.099999999999998,
+                    "selects": 3
+                },
+                {
+                    "ms": 271.227717,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 20.17,
+                    "selects": 3
+                },
+                {
+                    "ms": 237.264879,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 19.380000000000003,
+                    "selects": 3
+                },
+                {
+                    "ms": 299.634975,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 20.53,
+                    "selects": 3
+                },
+                {
+                    "ms": 257.780093,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 19.05,
+                    "selects": 3
+                },
+                {
+                    "ms": 311.026142,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 21.47,
+                    "selects": 3
+                },
+                {
+                    "ms": 258.06873,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 18.86,
+                    "selects": 3
+                },
+                {
+                    "ms": 300.563089,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 18.88,
+                    "selects": 3
+                },
+                {
+                    "ms": 271.150667,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 26.55,
+                    "selects": 3
+                },
+                {
+                    "ms": 233.452701,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 17.1,
+                    "selects": 3
+                },
+                {
+                    "ms": 254.986483,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 20.13,
+                    "selects": 3
+                },
+                {
+                    "ms": 207.718051,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 15.830000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 223.396392,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 15.8,
+                    "selects": 3
+                },
+                {
+                    "ms": 223.967684,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 16.479999999999997,
+                    "selects": 3
+                },
+                {
+                    "ms": 256.90248,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 21.17,
+                    "selects": 3
+                },
+                {
+                    "ms": 240.301982,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 19.46,
+                    "selects": 3
+                },
+                {
+                    "ms": 287.210807,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 19.36,
+                    "selects": 3
+                },
+                {
+                    "ms": 269.631274,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 21.990000000000002,
+                    "selects": 3
+                },
+                {
+                    "ms": 259.756953,
+                    "bytes": 27,
+                    "queries": 4,
+                    "sqlMs": 23.46,
+                    "selects": 3
+                }
+            ]
+        }
+    ],
+    "peakMemoryBytes": 130678784
+}

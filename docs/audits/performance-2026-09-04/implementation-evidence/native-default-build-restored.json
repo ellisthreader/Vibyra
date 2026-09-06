@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--manifest-path",
+    "src-tauri/Cargo.toml",
+    "--locked",
+    "--offline"
+  ],
+  "cwd": "/home/ellis/Desktop/Vibyra/desktop-tauri",
+  "exit": 0,
+  "seconds": 74.93167411100012,
+  "customProtocol": false,
+  "tauriConfigOverride": false,
+  "installed": false,
+  "binarySha256": "44c59ae26d5f3a0bcb29ac4f76bf0d001d7c23c4d353b6ad249a833e8a179062"
+}

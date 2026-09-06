@@ -1,0 +1,40 @@
+{
+  "runtime": "v22.23.2",
+  "kind": "Node CPU microbenchmark; not a Hermes or device frame measurement",
+  "rows": [
+    {
+      "threads": 1,
+      "messages": 80,
+      "bytes": 164703,
+      "samples": 20,
+      "normaliseP50ms": 0.15517800000088755,
+      "serialiseP50ms": 0.34547999999995227,
+      "totalP50ms": 0.4990219999999681,
+      "totalP95ms": 0.6060539999998582
+    },
+    {
+      "threads": 10,
+      "messages": 800,
+      "bytes": 1643916,
+      "samples": 20,
+      "normaliseP50ms": 1.1708139999991545,
+      "serialiseP50ms": 2.2050269999999728,
+      "totalP50ms": 3.4969709999986662,
+      "totalP95ms": 4.987249000001611
+    },
+    {
+      "threads": 40,
+      "messages": 3200,
+      "bytes": 6574656,
+      "samples": 20,
+      "normaliseP50ms": 4.659784000001309,
+      "serialiseP50ms": 9.746229999998832,
+      "totalP50ms": 14.467537999998967,
+      "totalP95ms": 19.80596499999956
+    }
+  ],
+  "terminalBus": {
+    "tenThousandDetached1KiBEventsMs": 9.267712999999276,
+    "retainedEvents": 1953
+  }
+}

@@ -1,0 +1,876 @@
+
+> vibyra@0.1.0 check:mobile
+> npm run mobile:lines && npm run typecheck && npm run test:mobile
+
+
+> vibyra@0.1.0 mobile:lines
+> node scripts/check-source-lines.mjs --scope scripts/source-scopes/mobile.json
+
+
+Scope: Vibyra mobile first-party source and tests
+First-party code files checked: 577
+Files over 200 lines: 0
+
+> vibyra@0.1.0 typecheck
+> tsc --noEmit
+
+
+> vibyra@0.1.0 test:mobile
+> node scripts/run-mobile-tests.mjs
+
+TAP version 13
+# Subtest: URL previews allow only their exact origin
+ok 1 - URL previews allow only their exact origin
+  ---
+  duration_ms: 112.586151
+  type: 'test'
+  ...
+# Subtest: navigation rejects credentials, dangerous schemes, and lookalikes
+ok 2 - navigation rejects credentials, dangerous schemes, and lookalikes
+  ---
+  duration_ms: 33.845604
+  type: 'test'
+  ...
+# Subtest: inline previews allow about:blank operation only
+ok 3 - inline previews allow about:blank operation only
+  ---
+  duration_ms: 23.704232
+  type: 'test'
+  ...
+# Subtest: public demo policy requires hosted HTTPS and rejects inline HTML
+ok 4 - public demo policy requires hosted HTTPS and rejects inline HTML
+  ---
+  duration_ms: 23.230766
+  type: 'test'
+  ...
+# Subtest: native WebView keeps the hardened platform settings
+ok 5 - native WebView keeps the hardened platform settings
+  ---
+  duration_ms: 17.959103
+  type: 'test'
+  ...
+# Subtest: chat error copy hides raw transport and provider failures
+ok 6 - chat error copy hides raw transport and provider failures
+  ---
+  duration_ms: 1.703571
+  type: 'test'
+  ...
+# Subtest: account domains separate session, usage, and stable semantic actions
+ok 7 - account domains separate session, usage, and stable semantic actions
+  ---
+  duration_ms: 8.349566
+  type: 'test'
+  ...
+# Subtest: desktop permission context preserves project-scoped always approval
+ok 8 - desktop permission context preserves project-scoped always approval
+  ---
+  duration_ms: 3.458082
+  type: 'test'
+  ...
+# Subtest: isolated account and permission leaves no longer subscribe to the full app facade
+ok 9 - isolated account and permission leaves no longer subscribe to the full app facade
+  ---
+  duration_ms: 5.668218
+  type: 'test'
+  ...
+# Subtest: first-run routing honors onboarding and PC setup completion
+ok 10 - first-run routing honors onboarding and PC setup completion
+  ---
+  duration_ms: 2.436001
+  type: 'test'
+  ...
+# Subtest: mobile recurring work is stable and cloud writes are deduplicated
+ok 11 - mobile recurring work is stable and cloud writes are deduplicated
+  ---
+  duration_ms: 0.398106
+  type: 'test'
+  ...
+# Subtest: pairing requires desktop approval and stages a separate phone confirmation
+ok 12 - pairing requires desktop approval and stages a separate phone confirmation
+  ---
+  duration_ms: 10.083129
+  type: 'test'
+  ...
+# Subtest: phone confirmation is the only step that establishes the staged connection
+ok 13 - phone confirmation is the only step that establishes the staged connection
+  ---
+  duration_ms: 2.202632
+  type: 'test'
+  ...
+# Subtest: edit apply, deny, and always approval remain scoped to one project
+ok 14 - edit apply, deny, and always approval remain scoped to one project
+  ---
+  duration_ms: 2.817262
+  type: 'test'
+  ...
+# Subtest: pending edit operations send only the selected run identifier
+ok 15 - pending edit operations send only the selected run identifier
+  ---
+  duration_ms: 3.051092
+  type: 'test'
+  ...
+# Subtest: preview approval and denial are bound to the pending project
+ok 16 - preview approval and denial are bound to the pending project
+  ---
+  duration_ms: 4.368278
+  type: 'test'
+  ...
+# Subtest: sign-out, cache clear, and expiry clear the correct secret class
+ok 17 - sign-out, cache clear, and expiry clear the correct secret class
+  ---
+  duration_ms: 2.211326
+  type: 'test'
+  ...
+# Subtest: accepts the exact Vibyra password reset link
+ok 18 - accepts the exact Vibyra password reset link
+  ---
+  duration_ms: 118.472624
+  type: 'test'
+  ...
+# Subtest: rejects lookalike hosts, paths, insecure URLs, ports, and fragments
+ok 19 - rejects lookalike hosts, paths, insecure URLs, ports, and fragments
+  ---
+  duration_ms: 34.892104
+  type: 'test'
+  ...
+# Subtest: rejects duplicate, missing, extra, and oversized values
+ok 20 - rejects duplicate, missing, extra, and oversized values
+  ---
+  duration_ms: 18.306728
+  type: 'test'
+  ...
+# Subtest: uses the configured owned HTTPS recovery URL exactly
+ok 21 - uses the configured owned HTTPS recovery URL exactly
+  ---
+  duration_ms: 16.528152
+  type: 'test'
+  ...
+# Subtest: web purchase hooks do not load expo-iap while native purchase remains intact
+ok 22 - web purchase hooks do not load expo-iap while native purchase remains intact
+  ---
+  duration_ms: 6.77939
+  type: 'test'
+  ...
+# Subtest: folder intent parser accepts common open and folder typos
+ok 23 - folder intent parser accepts common open and folder typos
+  ---
+  duration_ms: 20.077598
+  type: 'test'
+  ...
+# Subtest: folder intent parser keeps existing natural language outcomes
+ok 24 - folder intent parser keeps existing natural language outcomes
+  ---
+  duration_ms: 2.096551
+  type: 'test'
+  ...
+# Subtest: folder intent parser asks for a name instead of inventing one
+ok 25 - folder intent parser asks for a name instead of inventing one
+  ---
+  duration_ms: 5.518955
+  type: 'test'
+  ...
+# Subtest: chat reply classifiers accept realistic casual variants
+ok 26 - chat reply classifiers accept realistic casual variants
+  ---
+  duration_ms: 7.793548
+  type: 'test'
+  ...
+# Subtest: current project and file intents handle short human phrasing
+ok 27 - current project and file intents handle short human phrasing
+  ---
+  duration_ms: 1.686466
+  type: 'test'
+  ...
+# Subtest: terminal parser accepts bare supported commands and flags unsupported command requests
+ok 28 - terminal parser accepts bare supported commands and flags unsupported command requests
+  ---
+  duration_ms: 1.773666
+  type: 'test'
+  ...
+# Subtest: matches a valid project field when sibling payload fields are null
+ok 29 - matches a valid project field when sibling payload fields are null
+  ---
+  duration_ms: 1.188851
+  type: 'test'
+  ...
+# Subtest: matches desktop folders by path when name and stack are null
+ok 30 - matches desktop folders by path when name and stack are null
+  ---
+  duration_ms: 0.209789
+  type: 'test'
+  ...
+# Subtest: does not crash or match when all searchable payload fields are null
+ok 31 - does not crash or match when all searchable payload fields are null
+  ---
+  duration_ms: 0.16207
+  type: 'test'
+  ...
+# Subtest: keeps malformed entries visible when search is empty
+ok 32 - keeps malformed entries visible when search is empty
+  ---
+  duration_ms: 0.169355
+  type: 'test'
+  ...
+# Subtest: detached folder search creates an open-folder proposal
+ok 33 - detached folder search creates an open-folder proposal
+  ---
+  duration_ms: 2.86207
+  type: 'test'
+  ...
+# Subtest: project folder search asks for confirmation instead of starting agent immediately
+ok 34 - project folder search asks for confirmation instead of starting agent immediately
+  ---
+  duration_ms: 0.362644
+  type: 'test'
+  ...
+# Subtest: file open without desktop connection prompts for connection
+ok 35 - file open without desktop connection prompts for connection
+  ---
+  duration_ms: 0.419235
+  type: 'test'
+  ...
+# Subtest: ChatComposer keeps its public facade and focused ownership boundaries
+ok 36 - ChatComposer keeps its public facade and focused ownership boundaries
+  ---
+  duration_ms: 1.329522
+  type: 'test'
+  ...
+# Subtest: /open with args routes through normal folder-search chat path
+ok 37 - /open with args routes through normal folder-search chat path
+  ---
+  duration_ms: 0.257415
+  type: 'test'
+  ...
+# Subtest: /open without args opens picker without clearing composer first
+ok 38 - /open without args opens picker without clearing composer first
+  ---
+  duration_ms: 0.225341
+  type: 'test'
+  ...
+# Subtest: tool plan cancellation and unmount retain request invalidation guards
+ok 39 - tool plan cancellation and unmount retain request invalidation guards
+  ---
+  duration_ms: 0.204667
+  type: 'test'
+  ...
+# Subtest: report modal waits for the authenticated API before showing success
+ok 40 - report modal waits for the authenticated API before showing success
+  ---
+  duration_ms: 5.872788
+  type: 'test'
+  ...
+# Subtest: community page passes its account token into every report modal
+ok 41 - community page passes its account token into every report modal
+  ---
+  duration_ms: 1.406221
+  type: 'test'
+  ...
+# Subtest: authentication legal controls open the canonical Laravel policy routes
+ok 42 - authentication legal controls open the canonical Laravel policy routes
+  ---
+  duration_ms: 1.432416
+  type: 'test'
+  ...
+# Subtest: mobile bundle requests forward the canonical project path with project ID
+ok 43 - mobile bundle requests forward the canonical project path with project ID
+  ---
+  duration_ms: 130.053719
+  type: 'test'
+  ...
+# Subtest: frontend-only React falls back from runtime detection to a static hosted bundle
+ok 44 - frontend-only React falls back from runtime detection to a static hosted bundle
+  ---
+  duration_ms: 172.56346
+  type: 'test'
+  ...
+# Subtest: Node full-stack submits both server runtime and static frontend payloads
+ok 45 - Node full-stack submits both server runtime and static frontend payloads
+  ---
+  duration_ms: 107.931018
+  type: 'test'
+  ...
+# Subtest: Python full-stack runtime containing frontend skips duplicate static capture
+ok 46 - Python full-stack runtime containing frontend skips duplicate static capture
+  ---
+  duration_ms: 121.062257
+  type: 'test'
+  ...
+# Subtest: duplicate project-not-found failures become one actionable folder error
+ok 47 - duplicate project-not-found failures become one actionable folder error
+  ---
+  duration_ms: 151.931426
+  type: 'test'
+  ...
+# Subtest: specific build errors are preserved without a generic preview prefix
+ok 48 - specific build errors are preserved without a generic preview prefix
+  ---
+  duration_ms: 57.087103
+  type: 'test'
+  ...
+# Subtest: required backend failures keep the exact runtime error
+ok 49 - required backend failures keep the exact runtime error
+  ---
+  duration_ms: 62.902989
+  type: 'test'
+  ...
+# Subtest: project menu labels follow listing lifecycle and allowed actions
+ok 50 - project menu labels follow listing lifecycle and allowed actions
+  ---
+  duration_ms: 180.91053
+  type: 'test'
+  ...
+# Subtest: live releases retain live status while a candidate updates or fails
+ok 51 - live releases retain live status while a candidate updates or fails
+  ---
+  duration_ms: 67.817603
+  type: 'test'
+  ...
+# Subtest: poll key changes for a new candidate generation
+ok 52 - poll key changes for a new candidate generation
+  ---
+  duration_ms: 66.872687
+  type: 'test'
+  ...
+# Subtest: fresh publish errors override the status-only screen
+ok 53 - fresh publish errors override the status-only screen
+  ---
+  duration_ms: 68.900017
+  type: 'test'
+  ...
+# Subtest: publish visibility selector exposes only public and private
+ok 54 - publish visibility selector exposes only public and private
+  ---
+  duration_ms: 150.283838
+  type: 'test'
+  ...
+# Subtest: dirty listing forms ignore same-project status hydration
+ok 55 - dirty listing forms ignore same-project status hydration
+  ---
+  duration_ms: 68.603501
+  type: 'test'
+  ...
+# Subtest: publish identity consistently prefers the canonical desktop project
+ok 56 - publish identity consistently prefers the canonical desktop project
+  ---
+  duration_ms: 218.111444
+  type: 'test'
+  ...
+# Subtest: full-stack publish uses one canonical project ID for desktop and backend calls
+ok 57 - full-stack publish uses one canonical project ID for desktop and backend calls
+  ---
+  duration_ms: 85.87073
+  type: 'test'
+  ...
+# Subtest: full-stack runtime capability includes both frontend and backend
+ok 58 - full-stack runtime capability includes both frontend and backend
+  ---
+  duration_ms: 60.744456
+  type: 'test'
+  ...
+# Subtest: under-review publishing always returns visible guidance
+ok 59 - under-review publishing always returns visible guidance
+  ---
+  duration_ms: 262.976484
+  type: 'test'
+  ...
+# Subtest: approved runtime publishing reports queue, build, live, and failure states
+ok 60 - approved runtime publishing reports queue, build, live, and failure states
+  ---
+  duration_ms: 104.929998
+  type: 'test'
+  ...
+# Subtest: action results stay specific instead of being replaced by current status
+ok 61 - action results stay specific instead of being replaced by current status
+  ---
+  duration_ms: 107.111157
+  type: 'test'
+  ...
+# Subtest: preview fingerprint changes when same-length HTML content changes
+ok 62 - preview fingerprint changes when same-length HTML content changes
+  ---
+  duration_ms: 111.09678
+  type: 'test'
+  ...
+# Subtest: preview mini chat keeps failed submissions available for retry
+ok 63 - preview mini chat keeps failed submissions available for retry
+  ---
+  duration_ms: 10.505175
+  type: 'test'
+  ...
+# Subtest: desktop project preview fix prompt targets existing project files
+ok 64 - desktop project preview fix prompt targets existing project files
+  ---
+  duration_ms: 126.099742
+  type: 'test'
+  ...
+# Subtest: desktop Vite import crash prompt does not include unrelated Laravel 419 triage
+ok 65 - desktop Vite import crash prompt does not include unrelated Laravel 419 triage
+  ---
+  duration_ms: 23.950708
+  type: 'test'
+  ...
+# Subtest: generated preview fix prompt keeps self-contained vibyra app contract
+ok 66 - generated preview fix prompt keeps self-contained vibyra app contract
+  ---
+  duration_ms: 26.864149
+  type: 'test'
+  ...
+# Subtest: preview modal imports the dedicated fix prompt builder
+ok 67 - preview modal imports the dedicated fix prompt builder
+  ---
+  duration_ms: 9.449601
+  type: 'test'
+  ...
+# Subtest: known first-party graphite and legacy brand colours map explicitly
+ok 68 - known first-party graphite and legacy brand colours map explicitly
+  ---
+  duration_ms: 3.147595
+  type: 'test'
+  ...
+# Subtest: unknown chromatic provider and syntax colours are never heuristically recoloured
+ok 69 - unknown chromatic provider and syntax colours are never heuristically recoloured
+  ---
+  duration_ms: 0.493408
+  type: 'test'
+  ...
+# Subtest: workspace style cascade preserves every winner and light-theme transform
+ok 70 - workspace style cascade preserves every winner and light-theme transform
+  ---
+  duration_ms: 1464.627393
+  type: 'test'
+  ...
+# Subtest: mobile palettes expose identical semantic roles and exact approved values
+ok 71 - mobile palettes expose identical semantic roles and exact approved values
+  ---
+  duration_ms: 2.317714
+  type: 'test'
+  ...
+# Subtest: focus cobalt is separate from the accessible dark filled action
+ok 72 - focus cobalt is separate from the accessible dark filled action
+  ---
+  duration_ms: 0.641768
+  type: 'test'
+  ...
+# Subtest: status roles stay semantic while legacy magenta aliases resolve to cobalt
+ok 73 - status roles stay semantic while legacy magenta aliases resolve to cobalt
+  ---
+  duration_ms: 0.224414
+  type: 'test'
+  ...
+# Subtest: core mobile chrome contains no retired violet, magenta, or old canvas literals
+ok 74 - core mobile chrome contains no retired violet, magenta, or old canvas literals
+  ---
+  duration_ms: 23.658258
+  type: 'test'
+  ...
+# Subtest: all first-party mobile source contains no legacy violet or pink chrome
+ok 75 - all first-party mobile source contains no legacy violet or pink chrome
+  ---
+  duration_ms: 593.790703
+  type: 'test'
+  ...
+# Subtest: native appearance uses the cobalt mark with light and dark splash foundations
+ok 76 - native appearance uses the cobalt mark with light and dark splash foundations
+  ---
+  duration_ms: 1.170882
+  type: 'test'
+  ...
+# Subtest: appearance changes repaint mounted auth and workspace trees
+ok 77 - appearance changes repaint mounted auth and workspace trees
+  ---
+  duration_ms: 0.945855
+  type: 'test'
+  ...
+# Subtest: production candidates contain exactly the configured HTTPS origin
+ok 78 - production candidates contain exactly the configured HTTPS origin
+  ---
+  duration_ms: 93.138922
+  type: 'test'
+  ...
+# Subtest: production rejects HTTP and unapproved remembered origins
+ok 79 - production rejects HTTP and unapproved remembered origins
+  ---
+  duration_ms: 23.882034
+  type: 'test'
+  ...
+# Subtest: development retains configured, Expo, browser, and localhost fallbacks
+ok 80 - development retains configured, Expo, browser, and localhost fallbacks
+  ---
+  duration_ms: 16.437507
+  type: 'test'
+  ...
+# Subtest: normal and streaming retries use the shared origin policy
+ok 81 - normal and streaming retries use the shared origin policy
+  ---
+  duration_ms: 3.112618
+  type: 'test'
+  ...
+# Subtest: listing metadata uses the metadata-only endpoint without publish source fields
+ok 82 - listing metadata uses the metadata-only endpoint without publish source fields
+  ---
+  duration_ms: 254.234997
+  type: 'test'
+  ...
+# Subtest: full-stack publish sends explicit frontend and backend capabilities
+ok 83 - full-stack publish sends explicit frontend and backend capabilities
+  ---
+  duration_ms: 147.231756
+  type: 'test'
+  ...
+# Subtest: community reports send authenticated bounded evidence to the report endpoint
+ok 84 - community reports send authenticated bounded evidence to the report endpoint
+  ---
+  duration_ms: 101.225933
+  type: 'test'
+  ...
+# Subtest: strict desktop URLs allow private HTTP and exact configured HTTPS relays
+ok 85 - strict desktop URLs allow private HTTP and exact configured HTTPS relays
+  ---
+  duration_ms: 158.976907
+  type: 'test'
+  ...
+# Subtest: strict desktop URLs reject bearer-leak and lookalike targets
+ok 86 - strict desktop URLs reject bearer-leak and lookalike targets
+  ---
+  duration_ms: 31.856105
+  type: 'test'
+  ...
+# Subtest: emergency rollback permits ordinary HTTP and HTTPS origins only
+ok 87 - emergency rollback permits ordinary HTTP and HTTPS origins only
+  ---
+  duration_ms: 68.069247
+  type: 'test'
+  ...
+# Subtest: health and remembered URL merging use the centralized trust policy
+ok 88 - health and remembered URL merging use the centralized trust policy
+  ---
+  duration_ms: 180.002519
+  type: 'test'
+  ...
+# Subtest: pairing deep links reject public, credentialed, and lookalike desktop URLs
+ok 89 - pairing deep links reject public, credentialed, and lookalike desktop URLs
+  ---
+  duration_ms: 52.382105
+  type: 'test'
+  ...
+# Subtest: pair request IDs use cryptographic Web Crypto when available
+ok 90 - pair request IDs use cryptographic Web Crypto when available
+  ---
+  duration_ms: 30.063788
+  type: 'test'
+  ...
+# Subtest: native device identity is shared by auth, pairing, and session refresh
+ok 91 - native device identity is shared by auth, pairing, and session refresh
+  ---
+  duration_ms: 3.63751
+  type: 'test'
+  ...
+# Subtest: pairing no longer sends a generic phone label
+ok 92 - pairing no longer sends a generic phone label
+  ---
+  duration_ms: 0.272175
+  type: 'test'
+  ...
+# Subtest: full-stack runtime bundles avoid a duplicate static upload
+ok 93 - full-stack runtime bundles avoid a duplicate static upload
+  ---
+  duration_ms: 175.740416
+  type: 'test'
+  ...
+# Subtest: hosted demo request skips stale route and preserves a complete bundle from fallback URL
+ok 94 - hosted demo request skips stale route and preserves a complete bundle from fallback URL
+  ---
+  duration_ms: 127.258492
+  type: 'test'
+  ...
+# Subtest: hosted demo request does not hide desktop failure reasons
+ok 95 - hosted demo request does not hide desktop failure reasons
+  ---
+  duration_ms: 70.950748
+  type: 'test'
+  ...
+# Subtest: hosted demo request rejects an incomplete success payload before publish
+ok 96 - hosted demo request rejects an incomplete success payload before publish
+  ---
+  duration_ms: 46.500729
+  type: 'test'
+  ...
+# Subtest: runtime request keeps a valid Laravel bundle and retries network route misses
+ok 97 - runtime request keeps a valid Laravel bundle and retries network route misses
+  ---
+  duration_ms: 21.553809
+  type: 'test'
+  ...
+# Subtest: runtime request accepts a Python backend manifest
+ok 98 - runtime request accepts a Python backend manifest
+  ---
+  duration_ms: 30.026302
+  type: 'test'
+  ...
+# Subtest: runtime request reports the exact hosting limit error
+ok 99 - runtime request reports the exact hosting limit error
+  ---
+  duration_ms: 21.941277
+  type: 'test'
+  ...
+# Subtest: native provider auth uses the official Apple and Google libraries
+ok 100 - native provider auth uses the official Apple and Google libraries
+  ---
+  duration_ms: 1.237533
+  type: 'test'
+  ...
+# Subtest: Expo Go defers the unavailable native Google module
+ok 101 - Expo Go defers the unavailable native Google module
+  ---
+  duration_ms: 0.334011
+  type: 'test'
+  ...
+# Subtest: provider login sends verified credentials instead of installation identity
+ok 102 - provider login sends verified credentials instead of installation identity
+  ---
+  duration_ms: 0.318491
+  type: 'test'
+  ...
+# Subtest: recovery and provider-aware deletion are exposed in mobile UI
+ok 103 - recovery and provider-aware deletion are exposed in mobile UI
+  ---
+  duration_ms: 2.033343
+  type: 'test'
+  ...
+# Subtest: native billing surfaces share receipt reporting and expose restore purchases
+ok 104 - native billing surfaces share receipt reporting and expose restore purchases
+  ---
+  duration_ms: 29.30788
+  type: 'test'
+  ...
+# Subtest: explicit clear-all runs after a stale save
+ok 105 - explicit clear-all runs after a stale save
+  ---
+  duration_ms: 2.455712
+  type: 'test'
+  ...
+# Subtest: explicit auth clear runs after a stale save and preserves desktop tokens
+ok 106 - explicit auth clear runs after a stale save and preserves desktop tokens
+  ---
+  duration_ms: 1.509252
+  type: 'test'
+  ...
+# Subtest: explicit desktop clear runs after a stale save and preserves login
+ok 107 - explicit desktop clear runs after a stale save and preserves login
+  ---
+  duration_ms: 0.562548
+  type: 'test'
+  ...
+# Subtest: unrelated token fields survive sanitization and are not extracted
+ok 108 - unrelated token fields survive sanitization and are not extracted
+  ---
+  duration_ms: 331.348567
+  type: 'test'
+  ...
+# Subtest: legacy migration verifies secrets before sanitizing public storage
+ok 109 - legacy migration verifies secrets before sanitizing public storage
+  ---
+  duration_ms: 2.889256
+  type: 'test'
+  ...
+# Subtest: failed migration retains legacy secrets for the current launch
+ok 110 - failed migration retains legacy secrets for the current launch
+  ---
+  duration_ms: 0.779585
+  type: 'test'
+  ...
+# Subtest: failed migration verification does not sanitize legacy storage
+ok 111 - failed migration verification does not sanitize legacy storage
+  ---
+  duration_ms: 0.489054
+  type: 'test'
+  ...
+# Subtest: secure desktop tokens merge only into matching public metadata
+ok 112 - secure desktop tokens merge only into matching public metadata
+  ---
+  duration_ms: 0.434983
+  type: 'test'
+  ...
+# Subtest: ordinary saves remove auth and remembered-desktop credentials
+ok 113 - ordinary saves remove auth and remembered-desktop credentials
+  ---
+  duration_ms: 0.794001
+  type: 'test'
+  ...
+# Subtest: serialized saves leave logout as the final secret state
+ok 114 - serialized saves leave logout as the final secret state
+  ---
+  duration_ms: 3.199629
+  type: 'test'
+  ...
+# Subtest: cache clear keeps login while deleting desktop credentials
+ok 115 - cache clear keeps login while deleting desktop credentials
+  ---
+  duration_ms: 0.51564
+  type: 'test'
+  ...
+# Subtest: session expiry deletes login only and preserves desktop credentials
+ok 116 - session expiry deletes login only and preserves desktop credentials
+  ---
+  duration_ms: 0.991007
+  type: 'test'
+  ...
+# Subtest: clearAllSecrets serializes after a stale save
+ok 117 - clearAllSecrets serializes after a stale save
+  ---
+  duration_ms: 1.130837
+  type: 'test'
+  ...
+# Subtest: clearAuthToken serializes after a stale save and preserves desktop tokens
+ok 118 - clearAuthToken serializes after a stale save and preserves desktop tokens
+  ---
+  duration_ms: 0.751456
+  type: 'test'
+  ...
+# Subtest: clearDesktopTokens serializes after a stale save and preserves login
+ok 119 - clearDesktopTokens serializes after a stale save and preserves login
+  ---
+  duration_ms: 0.58382
+  type: 'test'
+  ...
+# Subtest: source-only Vite HTML is not treated as self-contained phone preview HTML
+ok 120 - source-only Vite HTML is not treated as self-contained phone preview HTML
+  ---
+  duration_ms: 74.297667
+  type: 'test'
+  ...
+# Subtest: preflight allows Vite source-module failures for in-preview diagnostics
+ok 121 - preflight allows Vite source-module failures for in-preview diagnostics
+  ---
+  duration_ms: 156.85523
+  type: 'test'
+  ...
+# Subtest: preflight allows scoped HTTP diagnostic pages
+ok 122 - preflight allows scoped HTTP diagnostic pages
+  ---
+  duration_ms: 48.198788
+  type: 'test'
+  ...
+# Subtest: preflight rejects non-diagnostic HTTP failures
+ok 123 - preflight rejects non-diagnostic HTTP failures
+  ---
+  duration_ms: 66.08411
+  type: 'test'
+  ...
+# Subtest: preflight rejects ordinary failed bundled assets
+ok 124 - preflight rejects ordinary failed bundled assets
+  ---
+  duration_ms: 52.609754
+  type: 'test'
+  ...
+# Subtest: preflight resolves assets against the document base href
+ok 125 - preflight resolves assets against the document base href
+  ---
+  duration_ms: 42.160286
+  type: 'test'
+  ...
+# Subtest: preflight ignores malformed mixed-quote base href values
+ok 126 - preflight ignores malformed mixed-quote base href values
+  ---
+  duration_ms: 35.923204
+  type: 'test'
+  ...
+# Subtest: mobile preview sources never construct preview URLs from connection.token
+ok 127 - mobile preview sources never construct preview URLs from connection.token
+  ---
+  duration_ms: 11.406605
+  type: 'test'
+  ...
+# Subtest: workspace preview runtime requests a scoped URL from the desktop endpoint
+ok 128 - workspace preview runtime requests a scoped URL from the desktop endpoint
+  ---
+  duration_ms: 8.278919
+  type: 'test'
+  ...
+# Subtest: desktop preview candidates rewrite dev-server ports onto known desktop hosts
+ok 129 - desktop preview candidates rewrite dev-server ports onto known desktop hosts
+  ---
+  duration_ms: 183.526601
+  type: 'test'
+  ...
+# Subtest: absolute preview candidates never receive the control bearer
+ok 130 - absolute preview candidates never receive the control bearer
+  ---
+  duration_ms: 83.084638
+  type: 'test'
+  ...
+# Subtest: reachable preview resolution probes an absolute URL directly
+ok 131 - reachable preview resolution probes an absolute URL directly
+  ---
+  duration_ms: 84.330808
+  type: 'test'
+  ...
+# Subtest: relative scoped paths stay on remembered LAN bridge hosts
+ok 132 - relative scoped paths stay on remembered LAN bridge hosts
+  ---
+  duration_ms: 64.492637
+  type: 'test'
+  ...
+# Subtest: reachable preview resolution uses the LAN fallback
+ok 133 - reachable preview resolution uses the LAN fallback
+  ---
+  duration_ms: 19.527668
+  type: 'test'
+  ...
+# Subtest: public demo URL sanitizer accepts hosted HTTPS URLs
+ok 134 - public demo URL sanitizer accepts hosted HTTPS URLs
+  ---
+  duration_ms: 158.555789
+  type: 'test'
+  ...
+# Subtest: public demo URL sanitizer rejects private and local URLs
+ok 135 - public demo URL sanitizer rejects private and local URLs
+  ---
+  duration_ms: 44.153474
+  type: 'test'
+  ...
+# Subtest: public demo URL selection skips blocked URLs
+ok 136 - public demo URL selection skips blocked URLs
+  ---
+  duration_ms: 51.715442
+  type: 'test'
+  ...
+# Subtest: public demo URL sanitizer rejects unapproved origins and credentialed URLs
+ok 137 - public demo URL sanitizer rejects unapproved origins and credentialed URLs
+  ---
+  duration_ms: 38.661427
+  type: 'test'
+  ...
+# Subtest: configured public demo hosts are accepted without allowing sibling domains
+ok 138 - configured public demo hosts are accepted without allowing sibling domains
+  ---
+  duration_ms: 32.677313
+  type: 'test'
+  ...
+# Subtest: public demo URL selection returns nothing for empty or blocked candidates
+ok 139 - public demo URL selection returns nothing for empty or blocked candidates
+  ---
+  duration_ms: 38.705703
+  type: 'test'
+  ...
+# Subtest: public demo URL sanitizer allows first-party local community demo routes only in dev
+ok 140 - public demo URL sanitizer allows first-party local community demo routes only in dev
+  ---
+  duration_ms: 54.175998
+  type: 'test'
+  ...
+# Subtest: web adapter retains localStorage compatibility
+ok 141 - web adapter retains localStorage compatibility
+  ---
+  duration_ms: 86.299572
+  type: 'test'
+  ...
+1..141
+# tests 141
+# suites 0
+# pass 141
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6946.230727

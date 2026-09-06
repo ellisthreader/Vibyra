@@ -1,0 +1,10 @@
+PHPUnit 12.5.23 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /home/ellis/Desktop/Vibyra/backend/phpunit.xml
+
+.........                                                           9 / 9 (100%)
+
+Time: 00:41.828, Memory: 60.50 MB
+
+[30;42mOK (9 tests, 41 assertions)[0m

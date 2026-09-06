@@ -1,0 +1,408 @@
+[
+  {
+    "scenario": {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "reduced": false
+    },
+    "title": "Vibyra — Keep your AI builds moving when you leave your desk",
+    "ready": "complete",
+    "domNodes": 299,
+    "rafCallbacks": 559,
+    "longtasks": [
+      411,
+      1107
+    ],
+    "lcp": [
+      {
+        "start": 2512,
+        "size": 47838
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 900
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 2512
+      }
+    ],
+    "brokenImages": [],
+    "videos": [
+      {
+        "src": "/media/hero-scroll.mp4",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "src": "blob",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "heap": 3199315,
+    "idleRafCallbacksPerSecond": 60,
+    "belowHeroRafCallbacksPerSecond": 60,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 2767
+      },
+      {
+        "url": "/build/assets/marketing-DmmY3po-.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 56361
+      },
+      {
+        "url": "/build/assets/marketing-D2Eo7zqH.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 164245
+      },
+      {
+        "url": "/build/assets/jsx-runtime-Yrgo3tEG.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190580
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/media/homepage/vibyra-cobalt-stage.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 1048576
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Media",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "encodedBytes": 29123071
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Other",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/media/homepage/desktop-multi-terminal.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 124453
+      }
+    ],
+    "exceptions": []
+  },
+  {
+    "scenario": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "reduced": false
+    },
+    "title": "Vibyra — Keep your AI builds moving when you leave your desk",
+    "ready": "complete",
+    "domNodes": 299,
+    "rafCallbacks": 560,
+    "longtasks": [
+      203,
+      702
+    ],
+    "lcp": [
+      {
+        "start": 2324,
+        "size": 19923
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 344
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 2324
+      }
+    ],
+    "brokenImages": [],
+    "videos": [
+      {
+        "src": "/media/hero-scroll.mp4",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "src": "blob",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "heap": 3204971,
+    "idleRafCallbacksPerSecond": 59.8,
+    "belowHeroRafCallbacksPerSecond": 60,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 2767
+      },
+      {
+        "url": "/build/assets/marketing-DmmY3po-.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 56361
+      },
+      {
+        "url": "/build/assets/marketing-D2Eo7zqH.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 164245
+      },
+      {
+        "url": "/build/assets/jsx-runtime-Yrgo3tEG.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190580
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/media/homepage/vibyra-cobalt-stage.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 1048576
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Media",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "encodedBytes": 29123071
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      },
+      {
+        "url": "/media/homepage/desktop-multi-terminal.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 65536
+      }
+    ],
+    "exceptions": []
+  },
+  {
+    "scenario": {
+      "name": "reduced-motion",
+      "width": 1440,
+      "height": 900,
+      "reduced": true
+    },
+    "title": "Vibyra — Keep your AI builds moving when you leave your desk",
+    "ready": "complete",
+    "domNodes": 286,
+    "rafCallbacks": 12,
+    "longtasks": [],
+    "lcp": [
+      {
+        "start": 448,
+        "size": 47838
+      }
+    ],
+    "paints": [
+      {
+        "name": "first-paint",
+        "start": 232
+      },
+      {
+        "name": "first-contentful-paint",
+        "start": 448
+      }
+    ],
+    "brokenImages": [
+      "/media/homepage/desktop-multi-terminal.png"
+    ],
+    "videos": [
+      {
+        "src": "/media/hero-scroll.mp4",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "src": "blob",
+        "readyState": 1,
+        "width": 1920,
+        "height": 1080
+      }
+    ],
+    "heap": 3097854,
+    "idleRafCallbacksPerSecond": 0,
+    "belowHeroRafCallbacksPerSecond": 0,
+    "requests": [
+      {
+        "url": "/",
+        "type": "Document",
+        "status": 200,
+        "mime": "text/html",
+        "cache": false,
+        "encodedBytes": 2767
+      },
+      {
+        "url": "/build/assets/marketing-DmmY3po-.css",
+        "type": "Stylesheet",
+        "status": 200,
+        "mime": "text/css",
+        "cache": false,
+        "encodedBytes": 56361
+      },
+      {
+        "url": "/build/assets/marketing-D2Eo7zqH.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 164245
+      },
+      {
+        "url": "/build/assets/jsx-runtime-Yrgo3tEG.js",
+        "type": "Script",
+        "status": 200,
+        "mime": "application/javascript",
+        "cache": false,
+        "encodedBytes": 190580
+      },
+      {
+        "url": "/vibyra-cobalt.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 312620
+      },
+      {
+        "url": "/media/homepage/vibyra-cobalt-stage.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 1048576
+      },
+      {
+        "url": "/media/homepage/desktop-multi-terminal.png",
+        "type": "Image",
+        "status": 200,
+        "mime": "image/png",
+        "cache": false,
+        "encodedBytes": 124453
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Media",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "url": "/media/hero-scroll.mp4",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "video/mp4",
+        "cache": false,
+        "encodedBytes": 29123071
+      },
+      {
+        "url": "/api/billing/plans",
+        "type": "Fetch",
+        "status": 200,
+        "mime": "application/json",
+        "cache": false,
+        "encodedBytes": 2476
+      }
+    ],
+    "exceptions": []
+  }
+]

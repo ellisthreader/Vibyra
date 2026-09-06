@@ -1,0 +1,811 @@
+{
+  "method": "PNG signature, every chunk CRC, Pillow verify and full pixel decode",
+  "checked": 134,
+  "failed": [],
+  "assets": [
+    {
+      "path": "src/assets/persona-icons/app-builder.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/product-developer.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/side-project-builder.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/idea-explorer.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/power-engineer.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/workflow-automator.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/hobby-builder.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/persona-icons/learning-builder.png",
+      "ok": true,
+      "width": 220,
+      "height": 220
+    },
+    {
+      "path": "src/assets/welcome-setup-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/home-ready-build.png",
+      "ok": true,
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "src/assets/result-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/vibyra.png",
+      "ok": true,
+      "width": 515,
+      "height": 375
+    },
+    {
+      "path": "src/assets/onboarding-quiz-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/front-page-nebula.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/welcome-connect-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/onboarding-pricing-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/community-hero-glow-transparent.png",
+      "ok": true,
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "path": "src/assets/Front.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/plan-icons/builder.png",
+      "ok": true,
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/plan-icons/starter.png",
+      "ok": true,
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/plan-icons/pro.png",
+      "ok": true,
+      "width": 240,
+      "height": 240
+    },
+    {
+      "path": "src/assets/ai-chat-glyph.png",
+      "ok": true,
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/projects-folders-hero-glow-transparent.png",
+      "ok": true,
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/vibyra-cobalt.png",
+      "ok": true,
+      "width": 1029,
+      "height": 750
+    },
+    {
+      "path": "src/assets/ai-chat-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/projects-folders-hero.png",
+      "ok": true,
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/ai-chat-glyph-cutout.png",
+      "ok": true,
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/onboarding-moment-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/identity-icons/student.png",
+      "ok": true,
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/beginner.png",
+      "ok": true,
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/founder-freelancer.png",
+      "ok": true,
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/identity-icons/developer.png",
+      "ok": true,
+      "width": 224,
+      "height": 224
+    },
+    {
+      "path": "src/assets/projects-folders-hero-glow.png",
+      "ok": true,
+      "width": 1448,
+      "height": 1086
+    },
+    {
+      "path": "src/assets/chat-build-ai-hero.png",
+      "ok": true,
+      "width": 636,
+      "height": 492
+    },
+    {
+      "path": "src/assets/frequency-background.png",
+      "ok": true,
+      "width": 853,
+      "height": 1844
+    },
+    {
+      "path": "src/assets/moment-icons/devices.png",
+      "ok": true,
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/identity.png",
+      "ok": true,
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/frequency.png",
+      "ok": true,
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/intent.png",
+      "ok": true,
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/moment-icons/device-sync-hero.png",
+      "ok": true,
+      "width": 980,
+      "height": 720
+    },
+    {
+      "path": "src/assets/moment-icons/depth.png",
+      "ok": true,
+      "width": 320,
+      "height": 320
+    },
+    {
+      "path": "src/assets/BG-transparent-vibyra.png",
+      "ok": true,
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "src/assets/billing-plans/builder.png",
+      "ok": true,
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/free-card.png",
+      "ok": true,
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/free.png",
+      "ok": true,
+      "width": 1587,
+      "height": 991
+    },
+    {
+      "path": "src/assets/billing-plans/starter-card.png",
+      "ok": true,
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/starter.png",
+      "ok": true,
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/pro.png",
+      "ok": true,
+      "width": 1586,
+      "height": 992
+    },
+    {
+      "path": "src/assets/billing-plans/builder-card.png",
+      "ok": true,
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/billing-plans/pro-card.png",
+      "ok": true,
+      "width": 1430,
+      "height": 1100
+    },
+    {
+      "path": "src/assets/BG-transparent.png",
+      "ok": true,
+      "width": 870,
+      "height": 780
+    },
+    {
+      "path": "src/assets/ai-chat-glyph-focused.png",
+      "ok": true,
+      "width": 895,
+      "height": 895
+    },
+    {
+      "path": "src/assets/onboarding-icons/steady.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/app-website.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/light.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/computer-edits.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/automation.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/few-times-week.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/work.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/side-project.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/every-day.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/anywhere.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/occasionally.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/rarely.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/phone-first.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/learning.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/heavy.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/exploring.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/phone-computer.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "src/assets/onboarding-icons/max.png",
+      "ok": true,
+      "width": 192,
+      "height": 192
+    },
+    {
+      "path": "desktop-tauri/src/assets/vibyra-cobalt.png",
+      "ok": true,
+      "width": 160,
+      "height": 117
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.8-fast.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-flash.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-5-fast.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-sol.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-pro.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.1-flash-lite.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-haiku-4.5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.1.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-2.5-flash-lite.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.7.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-4.5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-luna.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.8.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-fable-5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.7-fast.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.4.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.1-pro.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5-codex.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.6-terra.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-sonnet-4.6.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gpt-5.4-mini.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-4.6.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/gemini-3.5-flash.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src/assets/model-icons/claude-opus-5.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square89x89Logo.png",
+      "ok": true,
+      "width": 89,
+      "height": 89
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/StoreLogo.png",
+      "ok": true,
+      "width": 50,
+      "height": 50
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/128x128.png",
+      "ok": true,
+      "width": 128,
+      "height": 128
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square44x44Logo.png",
+      "ok": true,
+      "width": 44,
+      "height": 44
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square150x150Logo.png",
+      "ok": true,
+      "width": 150,
+      "height": 150
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square107x107Logo.png",
+      "ok": true,
+      "width": 107,
+      "height": 107
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/128x128@2x.png",
+      "ok": true,
+      "width": 256,
+      "height": 256
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square310x310Logo.png",
+      "ok": true,
+      "width": 310,
+      "height": 310
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square30x30Logo.png",
+      "ok": true,
+      "width": 30,
+      "height": 30
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square142x142Logo.png",
+      "ok": true,
+      "width": 142,
+      "height": 142
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/icon.png",
+      "ok": true,
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/32x32.png",
+      "ok": true,
+      "width": 32,
+      "height": 32
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square284x284Logo.png",
+      "ok": true,
+      "width": 284,
+      "height": 284
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/64x64.png",
+      "ok": true,
+      "width": 64,
+      "height": 64
+    },
+    {
+      "path": "desktop-tauri/src-tauri/icons/Square71x71Logo.png",
+      "ok": true,
+      "width": 71,
+      "height": 71
+    },
+    {
+      "path": "remotion/public/desktop-multi-terminal.png",
+      "ok": true,
+      "width": 1196,
+      "height": 788
+    },
+    {
+      "path": "remotion/public/vibyra-mark.png",
+      "ok": true,
+      "width": 1029,
+      "height": 750
+    },
+    {
+      "path": "remotion/public/desktop-model-picker.png",
+      "ok": true,
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "remotion/public/desktop-memory-voice.png",
+      "ok": true,
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/vibyra.png",
+      "ok": true,
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "path": "backend/public/media/releases/vibyra-0.1.7-report.png",
+      "ok": true,
+      "width": 620,
+      "height": 500
+    },
+    {
+      "path": "backend/public/media/releases/vibyra-0.1.7-workspace.png",
+      "ok": true,
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "path": "backend/public/media/vibyra-launch-film-poster.png",
+      "ok": true,
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "path": "backend/public/media/marketing/vibyra-social.png",
+      "ok": true,
+      "width": 1200,
+      "height": 630
+    },
+    {
+      "path": "backend/public/media/homepage/phone-review-editorial.png",
+      "ok": true,
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-multi-terminal.png",
+      "ok": true,
+      "width": 1196,
+      "height": 788
+    },
+    {
+      "path": "backend/public/media/homepage/connected-workspace-editorial.png",
+      "ok": true,
+      "width": 1717,
+      "height": 916
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-catalog-v2.png",
+      "ok": true,
+      "width": 1418,
+      "height": 802
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-picker.png",
+      "ok": true,
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-memory-voice.png",
+      "ok": true,
+      "width": 1936,
+      "height": 1048
+    },
+    {
+      "path": "backend/public/media/homepage/vibyra-cobalt-stage.png",
+      "ok": true,
+      "width": 1672,
+      "height": 941
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-welcome-review.png",
+      "ok": true,
+      "width": 1360,
+      "height": 820
+    },
+    {
+      "path": "backend/public/media/homepage/mobile-vibyra-auth.png",
+      "ok": true,
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "backend/public/vibyra-mark.png",
+      "ok": true,
+      "width": 515,
+      "height": 375
+    },
+    {
+      "path": "backend/public/vibyra-cobalt.png",
+      "ok": true,
+      "width": 1029,
+      "height": 750
+    }
+  ]
+}

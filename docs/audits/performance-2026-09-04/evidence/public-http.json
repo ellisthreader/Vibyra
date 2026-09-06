@@ -1,0 +1,27 @@
+[
+  {
+    "path": "/up",
+    "status": 200,
+    "bytesUpTo2MiBLimit": 15,
+    "seconds": 0.5044398259924492,
+    "cacheControl": "no-cache, private",
+    "contentEncoding": null
+  },
+  {
+    "path": "/web-api/releases",
+    "status": 200,
+    "bytesUpTo2MiBLimit": 1500,
+    "seconds": 0.7983002429973567,
+    "cacheControl": "no-cache, private",
+    "contentEncoding": null,
+    "version": null
+  },
+  {
+    "path": "/api/community/projects",
+    "status": 200,
+    "bytesUpTo2MiBLimit": 3354,
+    "seconds": 0.2747705460060388,
+    "cacheControl": "max-age=30, public, s-maxage=60, stale-while-revalidate=120",
+    "contentEncoding": null
+  }
+]

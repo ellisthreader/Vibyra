@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: scroll video imports the motion component it renders
+ok 1 - scroll video imports the motion component it renders
+  ---
+  duration_ms: 1.471126
+  type: 'test'
+  ...
+# Subtest: hero terminal tabs switch between realistic Claude and Codex sessions
+ok 2 - hero terminal tabs switch between realistic Claude and Codex sessions
+  ---
+  duration_ms: 0.361301
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 92.617177

@@ -1,0 +1,41 @@
+{
+  "switched": {
+    "chatId": "chat-1",
+    "draft": "Private draft for first chat",
+    "selects": [
+      "full"
+    ]
+  },
+  "planCeiling": {
+    "profile": "plan",
+    "selects": [
+      {
+        "value": "full",
+        "options": [
+          {
+            "value": "plan",
+            "disabled": false
+          },
+          {
+            "value": "standard",
+            "disabled": false
+          },
+          {
+            "value": "full",
+            "disabled": false
+          }
+        ]
+      }
+    ]
+  },
+  "ime": {
+    "sendCalled": true,
+    "sent": [
+      "chat-1",
+      "Private draft for first chat",
+      "full"
+    ],
+    "draft": ""
+  },
+  "errors": []
+}

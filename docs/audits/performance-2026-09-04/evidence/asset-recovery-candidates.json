@@ -1,0 +1,45 @@
+{
+  "note": "Decodable candidates, visual equivalence not established; do not substitute blindly",
+  "candidates": [
+    {
+      "path": "desktop-tauri/src/assets/vibyra-cobalt.png",
+      "dimensions": [
+        160,
+        117
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "backend/public/vibyra-cobalt.png",
+      "dimensions": [
+        1029,
+        750
+      ],
+      "mode": "RGBA"
+    },
+    {
+      "path": "src/assets/billing-plans/builder.png",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "src/assets/billing-plans/starter.png",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "src/assets/billing-plans/pro.png",
+      "dimensions": [
+        1586,
+        992
+      ],
+      "mode": "RGB"
+    }
+  ]
+}

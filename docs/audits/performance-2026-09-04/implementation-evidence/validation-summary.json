@@ -1,0 +1,132 @@
+{
+  "root": "/home/ellis/Desktop/Vibyra",
+  "head": "b36fc0ab017dd816979cd4c3fbb869210377d30d",
+  "scope": "Local implementation validation; no deployment or physical-device certification",
+  "checks": [
+    {
+      "surface": "mobile",
+      "command": "npm run check:mobile",
+      "tests": 154,
+      "failures": 0,
+      "typecheck": true,
+      "lineGate": true,
+      "log": "mobile-verified.log"
+    },
+    {
+      "surface": "desktop frontend",
+      "command": "npm test",
+      "tests": 437,
+      "failures": 0,
+      "log": "desktop-verified.log"
+    },
+    {
+      "surface": "desktop static",
+      "command": "npm run lines && npm run check:dead-code && npm run typecheck",
+      "exit": 0,
+      "log": "desktop-final-static.log"
+    },
+    {
+      "surface": "Laravel",
+      "command": "php vendor/bin/phpunit --do-not-cache-result",
+      "tests": 390,
+      "assertions": 2455,
+      "failures": 0,
+      "phpunitNotices": 3,
+      "skipped": 1,
+      "log": "backend-verified.log"
+    },
+    {
+      "surface": "Rust workspace",
+      "command": "cargo test --manifest-path src-tauri/Cargo.toml --workspace --locked --offline",
+      "passed": 316,
+      "failures": 0,
+      "ignored": 1,
+      "log": "native-verified.log"
+    },
+    {
+      "surface": "Rust lint",
+      "command": "cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings",
+      "exit": 0,
+      "log": "clippy-verified.log"
+    },
+    {
+      "surface": "Rust format",
+      "command": "cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check",
+      "exit": 0,
+      "log": "fmt-final-check.log"
+    },
+    {
+      "surface": "desktop production frontend",
+      "command": "node <scratch>/build_assets.mjs desktop",
+      "exit": 0,
+      "log": "desktop-final-build.log"
+    },
+    {
+      "surface": "Expo web production export",
+      "command": "expo export --platform web --output-dir <scratch>/expo-dist --max-workers 2",
+      "exit": 0,
+      "log": "expo-verified.log"
+    },
+    {
+      "surface": "marketing build and source tests",
+      "tests": 2,
+      "buildExit": 0,
+      "logs": [
+        "website-final-build.log",
+        "website-final-tests.log"
+      ],
+      "attribution": "Concurrent redesign preserved; gains not attributed to this implementation"
+    },
+    {
+      "surface": "PNG files",
+      "checked": 134,
+      "failed": 0,
+      "log": "assets-verified-after-resume.json"
+    },
+    {
+      "surface": "Remotion",
+      "typecheckExit": 0,
+      "stillFrame": 1710,
+      "stillRendered": true,
+      "artifact": "remotion-frame.png",
+      "provenance": "Completed before machine restart; source/assets preserved"
+    },
+    {
+      "surface": "production server",
+      "exit": 0,
+      "inventory": "production-final-checks.json"
+    },
+    {
+      "surface": "controlled native writer comparison",
+      "completeRuns": 4,
+      "totalMarkers": 800,
+      "dropped": 0,
+      "log": "native-controlled-comparison.json",
+      "limits": "Shared frozen diagnostic frontend; no physical input-to-photon measurement; uncontrolled host load"
+    },
+    {
+      "surface": "normal native development build restored",
+      "exit": 0,
+      "log": "native-default-build-restored.log",
+      "configOverride": false,
+      "customProtocol": false,
+      "installed": false
+    }
+  ],
+  "knownLimits": [
+    "Existing Laravel legacy bridge integration skipped",
+    "Existing native clipboard test ignored",
+    "Linux debug native runtime and synthetic local fixtures",
+    "No signed-in physical iPhone/Android release profiling",
+    "No packaged Windows/macOS/Linux release validation",
+    "No actual microphone or paid provider calls",
+    "No Railway image build, staging rollout or production telemetry",
+    "Cloud conflict resolution requires reconciliation; automatic merge UI not added",
+    "Whole cloud state remains a single JSON database row"
+  ],
+  "deploymentPerformed": false,
+  "installationPerformed": false,
+  "productionWritesPerformed": false,
+  "lastFrontendChanges": "Rejected input stays visible with muted optional notices and does not collapse into unrelated bursts; revalidated with complete frontend suite, static checks and production build.",
+  "finalGitDiffCheckExit": 0
+}

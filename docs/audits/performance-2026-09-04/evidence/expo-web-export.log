@@ -1,0 +1,41 @@
+🔍 [expo-iap] Config values: horizonAppId=undefined, isHorizonEnabled=false, isOnsideEnabled=false
+📦 [expo-iap] Using OpenIAP from CocoaPods
+Starting Metro Bundler
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| (node:670824) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:670825) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web node_modules/expo/AppEntry.js ░░░░░░░░░░░░░░░░  4.2% ( 36/181)
+Web node_modules/expo/AppEntry.js ▓░░░░░░░░░░░░░░░ 10.5% ( 76/235)
+Web node_modules/expo/AppEntry.js ▓▓░░░░░░░░░░░░░░ 15.9% (145/377)
+Web node_modules/expo/AppEntry.js ▓▓░░░░░░░░░░░░░░ 16.1% (182/526)
+Web node_modules/expo/AppEntry.js ▓▓▓░░░░░░░░░░░░░ 20.7% (265/584)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓░░░░░░░░░░░ 36.2% (375/668)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓░░░░░░░░░ 47.8% (520/769)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.7% (667/836)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 67.5% (716/886)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.2% (789/970)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.2% ( 881/1016)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.7% ( 917/1042)
+| 🔍 [expo-iap] Config values: horizonAppId=undefined, isHorizonEnabled=false, isOnsideEnabled=false
+| 📦 [expo-iap] Using OpenIAP from CocoaPods
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.7% ( 935/1077)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.7% ( 965/1115)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 77.7% ( 993/1130)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 79.1% (1013/1143)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 81.0% (1036/1164)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 81.0% (1062/1180)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 81.2% (1084/1210)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.1% (1149/1239)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.4% (1193/1262)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.0% (1251/1285)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.0% (1274/1307)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.1% (1311/1348)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.1% (1315/1354)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.1% (1328/1369)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.1% (1347/1382)
+Web node_modules/expo/AppEntry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.3% (1384/1400)
+Web Bundling failed 110650ms node_modules/expo/AppEntry.js (1408 modules)
+SyntaxError: src/assets/vibyra-cobalt.png: unsupported file type: undefined (file: /home/ellis/Desktop/Vibyra/src/assets/vibyra-cobalt.png)

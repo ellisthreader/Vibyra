@@ -1,0 +1,76 @@
+{
+  "checkedPngFiles": 114,
+  "invalidSignatures": [
+    {
+      "path": "src/assets/vibyra-cobalt.png",
+      "bytes": 312468,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-welcome-review.png",
+      "bytes": 229280,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/mobile-vibyra-auth.png",
+      "bytes": 222598,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-memory-voice.png",
+      "bytes": 158652,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/vibyra-cobalt-stage.png",
+      "bytes": 1641170,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-picker.png",
+      "bytes": 137189,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-model-catalog-v2.png",
+      "bytes": 139455,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/vibyra-launch-film-poster.png",
+      "bytes": 344545,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/phone-review-editorial.png",
+      "bytes": 1559769,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/desktop-multi-terminal.png",
+      "bytes": 124453,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "backend/public/media/homepage/connected-workspace-editorial.png",
+      "bytes": 1490319,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "src/assets/plan-icons/builder.png",
+      "bytes": 6075,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "src/assets/plan-icons/starter.png",
+      "bytes": 3831,
+      "signatureHex": "89504e470a1a0a00"
+    },
+    {
+      "path": "src/assets/plan-icons/pro.png",
+      "bytes": 10517,
+      "signatureHex": "89504e470a1a0a00"
+    }
+  ],
+  "blockingFileMatchesHead": true
+}

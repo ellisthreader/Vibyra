@@ -1,0 +1,24 @@
+{
+  "verifiedUtc": "2026-09-05T11:26:38.158086+00:00",
+  "ownedRuntimeProcessesRemaining": [],
+  "privateWebRuntimeDirectoriesRemaining": [],
+  "temporaryBinariesProfilesAndFixtureDatabasesRemoved": [
+    "ab-baseline",
+    "ab-bounded",
+    "ab-native",
+    "runtime-bin",
+    "packages",
+    "ab-baseline-forward",
+    "ab-baseline-reverse",
+    "ab-bounded-forward",
+    "ab-bounded-reverse",
+    "fpm-fixture.sqlite"
+  ],
+  "normalCanonicalNativeBuildRestored": true,
+  "nativeBuildEvidence": "native-default-build-restored.json",
+  "installedApplicationsChanged": false,
+  "deployed": false,
+  "realAccountsOrProductionDataChanged": false,
+  "temporaryBeforeDiffBackupRetainedPrivately": true,
+  "unrelatedDesktopChangesPreserved": "preservation-final.json"
+}

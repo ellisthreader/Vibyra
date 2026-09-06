@@ -1,0 +1,27 @@
+vite v8.2.1 building client environment for production...
+[2Ktransforming...
+/fonts/manrope-regular.woff2 referenced in /fonts/manrope-regular.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/fonts/manrope-bold.woff2 referenced in /fonts/manrope-bold.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/fonts/manrope-extrabold.woff2 referenced in /fonts/manrope-extrabold.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 55 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/.vite/manifest.json               1.52 kB │ gzip:  0.35 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/portal-CjRG5qfw.css       14.99 kB │ gzip:  3.62 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/app-pTRSda09.css          61.62 kB │ gzip: 11.06 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/marketing-Cv-JTJ6k.css    65.70 kB │ gzip: 14.43 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/app-DIp_gQbN.js            5.42 kB │ gzip:  1.77 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/portal-DfLEu5Vn.js        25.82 kB │ gzip:  9.12 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/marketing-DeG8lJgS.js     51.85 kB │ gzip: 14.18 kB
+../../../../../tmp/vibyra-performance-implementation-20260904-zoqgldu3/backend-dist/assets/jsx-runtime-UMf7COi6.js  190.10 kB │ gzip: 59.86 kB
+
+✓ built in 9.20s
+[33m[PLUGIN_TIMINGS] [0mYour build spent 99% of 9.2s inside plugin hooks (9.1s).
+Not measurable — 3 hooks whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css-post renderChunk (7 calls)
+  - @tailwindcss/vite:generate:build transform (3 calls)
+  - vite:css transform (3 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+

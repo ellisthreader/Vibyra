@@ -1,0 +1,26 @@
+[
+  {
+    "path": "desktop-tauri/src-tauri/src/commands/clipboard.rs",
+    "preexistingDiffPreserved": true
+  },
+  {
+    "path": "desktop-tauri/src-tauri/src/commands/registry.rs",
+    "preexistingDiffPreserved": true
+  },
+  {
+    "path": "desktop-tauri/src/components/layout/DockSizeControl.tsx",
+    "preexistingDiffPreserved": true
+  },
+  {
+    "path": "desktop-tauri/src/components/settings/SettingsShortcutsPane.tsx",
+    "preexistingDiffPreserved": true
+  },
+  {
+    "path": "desktop-tauri/src/ipc/tools.ts",
+    "preexistingDiffPreserved": true
+  },
+  {
+    "path": "desktop-tauri/src/lib/terminalClipboard.ts",
+    "preexistingDiffPreserved": true
+  }
+]

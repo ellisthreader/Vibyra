@@ -1,0 +1,23 @@
+vite v8.2.1 building client environment for production...
+[2Ktransforming...
+/media/homepage/vibyra-cobalt-stage.png referenced in /media/homepage/vibyra-cobalt-stage.png didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 457 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/.vite/manifest.json               1.52 kB │ gzip:  0.35 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/portal-CjRG5qfw.css       14.99 kB │ gzip:  3.62 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/marketing-DmmY3po-.css    56.20 kB │ gzip: 11.26 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/app-ty2jjwFV.css          61.70 kB │ gzip: 11.06 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/app-BIw8iEPi.js            5.42 kB │ gzip:  1.77 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/portal-Ci-8Tqlr.js        25.82 kB │ gzip:  9.12 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/marketing-D2Eo7zqH.js    164.08 kB │ gzip: 53.47 kB
+../../../../../tmp/vibyra-performance-audit-20260904-KNtjVg/website-dist/assets/jsx-runtime-Yrgo3tEG.js  190.42 kB │ gzip: 60.00 kB
+
+✓ built in 5.39s
+[33m[PLUGIN_TIMINGS] [0mYour build spent 89% of 5.4s inside plugin hooks (4.8s).
+Not measurable — 3 hooks whose calls overlap, so elapsed time covers work other calls were doing. Profile with `node --cpu-prof`:
+  - vite:css-post renderChunk (7 calls)
+  - @tailwindcss/vite:generate:build transform (3 calls)
+  - vite:css transform (3 calls)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+

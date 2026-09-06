@@ -1,0 +1,19 @@
+nginx: the configuration file /tmp/vibyra-web.L44ugkp6/nginx.conf syntax is ok
+nginx: configuration file /tmp/vibyra-web.L44ugkp6/nginx.conf test is successful
+[05-Sep-2026 12:00:28] NOTICE: [pool vibyra] 'user' directive is ignored when FPM is not running as root
+[05-Sep-2026 12:00:28] NOTICE: [pool vibyra] 'group' directive is ignored when FPM is not running as root
+[05-Sep-2026 12:00:28] NOTICE: fpm is running, pid 33033
+[05-Sep-2026 12:00:28] NOTICE: ready to handle connections
+[05-Sep-2026 12:00:28] NOTICE: systemd monitor interval set to 10000ms
+127.0.0.1 - - [05/Sep/2026:12:00:31 +0100] "GET /up HTTP/1.1" 499 0 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:32 +0100] "GET /up HTTP/1.1" 200 1768 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:34 +0100] "GET /api/session HTTP/1.1" 401 60 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:35 +0100] "GET /api/session HTTP/1.1" 200 8470 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:37 +0100] "POST /api/session/state HTTP/1.1" 200 38 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:38 +0100] "POST /api/session/state/delta HTTP/1.1" 200 38 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:38 +0100] "POST /api/session/state/delta HTTP/1.1" 200 38 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:38 +0100] "GET /api/session HTTP/1.1" 200 8544 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:38 +0100] "POST /api/session/state/delta HTTP/1.1" 409 102 "-" "Python-urllib/3.12"
+127.0.0.1 - - [05/Sep/2026:12:00:38 +0100] "GET /api/session HTTP/1.1" 200 8544 "-" "Python-urllib/3.12"
+[05-Sep-2026 12:00:38] NOTICE: Finishing ...
+[05-Sep-2026 12:00:38] NOTICE: exiting, bye-bye!

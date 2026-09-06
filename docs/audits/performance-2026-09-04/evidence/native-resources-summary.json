@@ -1,0 +1,45 @@
+{
+  "kind": "Adjacent one-second same-phase samples in reverse-order run; CPU percent uses one full core=100; summed RSS double-counts shared pages",
+  "phases": {
+    "focus-paced": {
+      "rendererCpuOneCorePercent": {
+        "n": 5,
+        "median": 44.4,
+        "min": 38.64,
+        "max": 68.56
+      },
+      "nativeCpuOneCorePercent": {
+        "n": 5,
+        "median": 13.02,
+        "min": 11.96,
+        "max": 18.53
+      },
+      "summedRssMiB": {
+        "n": 5,
+        "median": 581.9,
+        "min": 572.28,
+        "max": 590.2
+      }
+    },
+    "all-visible": {
+      "rendererCpuOneCorePercent": {
+        "n": 8,
+        "median": 106.29,
+        "min": 89.3,
+        "max": 117.1
+      },
+      "nativeCpuOneCorePercent": {
+        "n": 8,
+        "median": 26.35,
+        "min": 21.53,
+        "max": 30.19
+      },
+      "summedRssMiB": {
+        "n": 8,
+        "median": 584.79,
+        "min": 580.11,
+        "max": 589.42
+      }
+    }
+  }
+}

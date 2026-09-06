@@ -1,0 +1,13 @@
+{
+  "kind": "100 synchronous snapshot changes; 40 x 80 messages; Node CPU work, not device frame timing",
+  "legacy": {
+    "normalizations": 100,
+    "cpuMs": 1864.6213669999997,
+    "finalTitle": "99"
+  },
+  "coalesced": {
+    "normalizations": 1,
+    "cpuMs": 17.230273000000125,
+    "finalTitle": "99"
+  }
+}

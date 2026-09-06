@@ -1,0 +1,123 @@
+{
+    "kind": "Warm in-process Laravel kernel, synthetic in-memory SQLite, not production network latency",
+    "rows": [
+        {
+            "case": "session",
+            "samples": 12,
+            "p50ms": 2.547041,
+            "p95ms": 11.703022,
+            "bytes": 179639,
+            "queries": 2,
+            "threads": 1,
+            "payloadBytes": 171216
+        },
+        {
+            "case": "save",
+            "samples": 12,
+            "p50ms": 8.134198,
+            "p95ms": 9.126016,
+            "bytes": 179559,
+            "queries": 2,
+            "threads": 1,
+            "payloadBytes": 171216
+        },
+        {
+            "case": "save-changing",
+            "samples": 12,
+            "p50ms": 11.631851,
+            "p95ms": 13.203648,
+            "bytes": 179600,
+            "queries": 3,
+            "threads": 1,
+            "payloadBytes": 171216
+        },
+        {
+            "case": "session",
+            "samples": 12,
+            "p50ms": 10.253013,
+            "p95ms": 11.746206,
+            "bytes": 1720052,
+            "queries": 2,
+            "threads": 10,
+            "payloadBytes": 1711629
+        },
+        {
+            "case": "save",
+            "samples": 12,
+            "p50ms": 69.391223,
+            "p95ms": 79.465683,
+            "bytes": 1719252,
+            "queries": 2,
+            "threads": 10,
+            "payloadBytes": 1711629
+        },
+        {
+            "case": "save-changing",
+            "samples": 12,
+            "p50ms": 116.071401,
+            "p95ms": 124.335758,
+            "bytes": 1719293,
+            "queries": 3,
+            "threads": 10,
+            "payloadBytes": 1711629
+        },
+        {
+            "case": "session",
+            "samples": 12,
+            "p50ms": 51.02174,
+            "p95ms": 55.115493,
+            "bytes": 6854792,
+            "queries": 2,
+            "threads": 40,
+            "payloadBytes": 6846369
+        },
+        {
+            "case": "save",
+            "samples": 12,
+            "p50ms": 301.484011,
+            "p95ms": 335.224552,
+            "bytes": 6851592,
+            "queries": 2,
+            "threads": 40,
+            "payloadBytes": 6846369
+        },
+        {
+            "case": "save-changing",
+            "samples": 12,
+            "p50ms": 534.730034,
+            "p95ms": 629.314442,
+            "bytes": 6851633,
+            "queries": 3,
+            "threads": 40,
+            "payloadBytes": 6846369
+        },
+        {
+            "case": "community",
+            "samples": 12,
+            "p50ms": 3.74844,
+            "p95ms": 5.192605,
+            "bytes": 1291,
+            "queries": 6,
+            "projects": 1
+        },
+        {
+            "case": "community",
+            "samples": 12,
+            "p50ms": 7.039016,
+            "p95ms": 9.967222,
+            "bytes": 12558,
+            "queries": 6,
+            "projects": 10
+        },
+        {
+            "case": "community",
+            "samples": 12,
+            "p50ms": 21.216,
+            "p95ms": 25.831901,
+            "bytes": 62888,
+            "queries": 6,
+            "projects": 50
+        }
+    ],
+    "peakMemoryBytes": 137523200
+}
