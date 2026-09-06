@@ -44,5 +44,6 @@
   "publicDownloadHashesVerified": true,
   "publicUpdaterChecks": 30,
   "publicReleaseTagMatchesSource": true,
-  "githubReleaseAssets": 12
+  "githubReleaseAssets": 12,
+  "temporaryPublicationAccessRemoved": true
 }
