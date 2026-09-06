@@ -29,6 +29,14 @@ const MAX = options("low", "medium", "high", "max");
 const FULL = options("low", "medium", "high", "xhigh", "max");
 const CODEX_ULTRA = options("low", "medium", "high", "xhigh", "max", "ultra");
 
+// Where the vendor names a starting point and the catalog offers none.
+// OpenAI's Astra guidance is "high" for everyday coding, with xhigh and max
+// reserved for hard architecture and debugging loops.
+const CODEX_DEFAULT_EFFORT: Record<string, LaunchEffort> = {
+  "gpt-5-6-sol": "low",
+  "gpt-6-astra": "high",
+};
+
 function modelKey(model: CatalogModel): string {
   return model.id.toLowerCase().replace(/^(?:openai|anthropic)\//, "").replace(/\./g, "-");
 }
@@ -52,7 +60,8 @@ export function modelEffortOptions(model: CatalogModel, runnerId: string): Effor
   const key = modelKey(model);
   if (runnerId === "codex" && model.company === "OpenAI") {
     if (["gpt-5-6", "gpt-5-6-sol", "gpt-5-6-terra"].includes(key)) return CODEX_ULTRA;
-    if (key === "gpt-5-6-luna") return FULL;
+    // Astra takes low…max and rejects "none" outright; it has no ultra tier.
+    if (["gpt-6-astra", "gpt-5-6-luna"].includes(key)) return FULL;
     if (["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-codex"].includes(key)) return XHIGH;
     return [];
   }
@@ -78,6 +87,6 @@ export function resolvedModelEffort(
   const supported = modelEffortOptions(model, runnerId);
   if (supported.some(({ value }) => value === current)) return current;
   const preferred: LaunchEffort = model.defaultReasoningEffort
-    ?? (runnerId === "claude" ? "high" : modelKey(model) === "gpt-5-6-sol" ? "low" : "medium");
+    ?? (runnerId === "claude" ? "high" : CODEX_DEFAULT_EFFORT[modelKey(model)] ?? "medium");
   return supported.find(({ value }) => value === preferred)?.value ?? supported[0]?.value ?? null;
 }

@@ -10,7 +10,7 @@ trait AgentExecution
 {
     private function startAgentLocked(string $projectId, string $projectPath, string $prompt, string $model, string $reasoningEffort, bool $apply): array
     {
-        $allowedModels = ['auto', 'gpt-5.6', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5-codex', 'claude-opus-4', 'claude-sonnet-4', 'claude-3-5-haiku', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+        $allowedModels = ['auto', 'gpt-6-astra', 'gpt-5.6', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5-codex', 'claude-opus-4', 'claude-sonnet-4', 'claude-3-5-haiku', 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
         $allowedEfforts = ['none', 'low', 'medium', 'high', 'xhigh', 'max', 'pro'];
         $model = in_array($model, $allowedModels, true) ? $model : 'gpt-5.6-terra';
         $reasoningEffort = in_array($reasoningEffort, $allowedEfforts, true) ? $reasoningEffort : 'medium';

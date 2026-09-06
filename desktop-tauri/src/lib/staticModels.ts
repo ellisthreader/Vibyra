@@ -24,6 +24,7 @@ function entry(id: string, label: string, company: string, contextLength = 200_0
 
 const WALLS: Array<[string, Array<[string, string]>]> = [
   ["OpenAI", [
+    ["openai/gpt-6-astra", "GPT-6 Astra"],
     ["openai/gpt-5.6-sol", "GPT-5.6 Sol"],
     ["openai/gpt-5.6-luna", "GPT-5.6 Luna"],
     ["openai/gpt-5.6-terra", "GPT-5.6 Terra"],
