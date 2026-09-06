@@ -1,0 +1,34 @@
+{
+  "name": "@vibyra/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "export": "expo export --platform ios --platform web",
+    "doctor": "npx expo-doctor",
+    "assets": "node scripts/build-runtime.mjs",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "expo": "~57.0.17",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-web": "^0.21.0",
+    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@expo/vector-icons": "^15.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "typescript": "~5.9.2",
+    "tsx": "^4.20.0",
+    "esbuild": "^0.25.0"
+  }
+}
