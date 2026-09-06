@@ -201,3 +201,53 @@ Gemini fixture validation, provider-account policy, and model-runner tests.
   `components/rail/LaunchSettings.tsx`, and `LaunchModelPicker.tsx`. Validate
   with `tests/appStartup.test.mjs`, the Tauri test/typecheck/build gates, and a
   reopened live picker containing the installed GPT, Claude, or Gemini walls.
+
+## GPT-6 Astra
+
+Added 2026-09-06, three days after OpenAI released it. Astra is the first
+entry in the OpenAI wall that is not a 5.x, so it exercises every seam at
+once — use it as the worked example for adding a model.
+
+Catalog id `openai/gpt-6-astra`; Codex launches it as the bare `gpt-6-astra`
+(OpenAI ids carry no dots, so `modelRunners.ts` strips only the company
+prefix and does not run the Anthropic dot-to-dash conversion). OpenRouter
+already lists it with `tools`, so `catalogSeed.ts` never has to seed it —
+unlike Fable 5.1, which OpenRouter had not carried at all.
+
+**Effort ladder is low, medium, high, xhigh, max — and nothing else.** Astra
+returns HTTP 400 for `reasoning_effort: none`, and it has no `ultra` tier,
+so it takes `FULL` rather than the `CODEX_ULTRA` that 5.6 Sol and Terra get.
+It starts on `high`, which is OpenAI's own recommendation for everyday
+coding, with xhigh and max reserved for hard architecture and debugging;
+that default lives in `CODEX_DEFAULT_EFFORT` in `modelEffort.ts`, which
+replaced a nested ternary that only knew about Sol.
+
+**Pricing has two published figures and they disagree.** OpenRouter's API
+reports $5/$25 per million; OpenAI's published rate, and every write-up of
+it, says $10/$50. Prompts over 272,000 input tokens bill at 2x input and
+1.5x output on top. `fallback_pricing_per_million_usd` therefore carries
+$10/$50: the fallback is only consulted when the live catalog is
+unreachable, and the house rule is that such an estimate must over-charge
+rather than under. This also matches the existing entries, which all sit
+roughly 2x above OpenRouter's live rate.
+
+Backend touch points, all four needed: `ChatModelMap.php` and
+`OpenAiStreaming.php` (the duplicated slug maps, plus a bare `gpt-6` alias),
+`config/billing.php` (a `models` entry under all three keys — bare,
+`gpt-6`, and `openai/`-prefixed — because `NativeTerminalProtocol` resolves
+`openai/gpt-6-astra` through `CreditCalculator::modelConfig` and returns
+null if it is absent), and `AgentExecution.php`'s legacy allowlist.
+`ChatModelMap::creditCost()` remains dead code; it was left alone.
+
+**The artwork is generated, not photographed.** `gpt-6-astra.png` is a
+procedural starfield — a deep-space gradient, two blurred nebula clouds, a
+faint dust band and ~220 mostly sub-pixel stars — with a white "6" and a
+letter-spaced "ASTRA", drawn in Manrope at 4x and downsampled. Nothing is
+traced from a copyrighted image, which the moon/sun/earth tiles cannot say
+for themselves. Match the family by measuring it rather than by eye: the
+numeral band is 35-37 px tall centred near y=61, the name band is 9-10 px
+centred near y=91, and the tile bakes a 20 px corner radius. The generator
+is not committed; the measurements above are what matters, and they are
+recoverable from any sibling tile by scanning rows for near-white pixels.
+Keep tiles full-bleed: `.agent-mark--art` clips with `overflow: hidden` and
+`object-fit: cover`, so a transparent margin shows the accent tint instead.

@@ -33,6 +33,7 @@ const GEMINI_ICONS: Array<[string, string]> = [
 ];
 
 const OPENAI_ICONS: Array<[string, string]> = [
+  ["gpt-6-astra", "gpt-6-astra.png"],
   ["gpt-5-6-terra", "gpt-5.6-terra.png"],
   ["gpt-5-6-luna", "gpt-5.6-luna.png"],
   ["gpt-5-6-sol", "gpt-5.6-sol.png"],

@@ -75,3 +75,21 @@ test("keeps Ultracode off Claude families without xhigh", () => {
     assert.equal(values(modelEffortOptions(claude, "claude")).includes("ultracode"), false, id);
   }
 });
+
+test("Astra takes low through max, and never none or ultra", () => {
+  const astra = model({ id: "openai/gpt-6-astra", label: "GPT-6 Astra" });
+  const available = values(modelEffortOptions(astra, "codex"));
+
+  assert.deepEqual(available, ["low", "medium", "high", "xhigh", "max"]);
+  // Astra answers 400 to reasoning_effort "none", and has no ultra tier.
+  assert.ok(!available.includes("none"));
+  assert.ok(!available.includes("ultra"));
+});
+
+test("Astra starts on high, the effort OpenAI recommends for coding", () => {
+  const astra = model({ id: "openai/gpt-6-astra", label: "GPT-6 Astra" });
+
+  assert.equal(resolvedModelEffort(astra, "codex", "ultra"), "high");
+  // An effort the model does support is left alone.
+  assert.equal(resolvedModelEffort(astra, "codex", "xhigh"), "xhigh");
+});

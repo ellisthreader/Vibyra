@@ -80,6 +80,9 @@ return [
     // and the OpenRouter slug. credits = openrouter_usd_cost * 100 * multiplier.
     'models' => [
         'auto' => ['slug' => 'openai/gpt-4o-mini', 'tier' => 'budget', 'multiplier' => 1.0],
+        'gpt-6-astra' => ['slug' => 'openai/gpt-6-astra', 'tier' => 'premium', 'multiplier' => 1.4],
+        'gpt-6' => ['slug' => 'openai/gpt-6-astra', 'tier' => 'premium', 'multiplier' => 1.4],
+        'openai/gpt-6-astra' => ['slug' => 'openai/gpt-6-astra', 'tier' => 'premium', 'multiplier' => 1.4],
         'gpt-5.6' => ['slug' => 'openai/gpt-5.6-sol', 'tier' => 'premium', 'multiplier' => 1.4],
         'gpt-5.6-sol' => ['slug' => 'openai/gpt-5.6-sol', 'tier' => 'premium', 'multiplier' => 1.4],
         'gpt-5.6-terra' => ['slug' => 'openai/gpt-5.6-terra', 'tier' => 'balanced', 'multiplier' => 1.15],
@@ -144,6 +147,11 @@ return [
         'openai/gpt-4.1' => ['input' => 3.00, 'output' => 12.00],
         'openai/o3-deep-research' => ['input' => 10.00, 'output' => 40.00],
         'openai/gpt-4o-search-preview' => ['input' => 2.50, 'output' => 10.00],
+        // OpenAI's published Astra rate. OpenRouter currently lists half this
+        // ($5/$25), and prompts over 272k input tokens bill at 2x input and
+        // 1.5x output, so the higher figure is the safe fallback: an estimate
+        // made without a live catalog over-charges rather than under.
+        'openai/gpt-6-astra' => ['input' => 10.00, 'output' => 50.00],
         'openai/gpt-5.6-sol' => ['input' => 5.00, 'output' => 30.00],
         'openai/gpt-5.6-terra' => ['input' => 2.50, 'output' => 15.00],
         'openai/gpt-5.6-luna' => ['input' => 1.00, 'output' => 6.00],

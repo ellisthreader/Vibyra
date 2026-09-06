@@ -69,3 +69,12 @@ test("launches Claude Fable 5.1 on the account CLI under its dashed model id", (
   assert.equal(plan.launchModel, "claude-fable-5-1");
   assert.equal(plan.blocked, "");
 });
+
+test("Astra launches on Codex under its bare OpenAI id", () => {
+  const astra = model("openai/gpt-6-astra", "OpenAI", "GPT-6 Astra");
+  const plan = planRunner(astra, [agent("codex")], ["codex"]);
+
+  assert.equal(plan.runner?.id, "codex");
+  assert.equal(plan.launchModel, "gpt-6-astra");
+  assert.equal(plan.blocked, "");
+});

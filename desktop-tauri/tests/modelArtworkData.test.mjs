@@ -24,3 +24,14 @@ test("keeps Fable 5.1 artwork distinct from Fable 5", async () => {
   );
   await access(new URL(`../src/assets/model-icons/${fable51}`, import.meta.url));
 });
+
+test("GPT-6 Astra owns artwork, which is what unlocks Codex for it", async () => {
+  const astra = modelArtworkFile("openai/gpt-6-astra", "GPT-6 Astra");
+
+  assert.equal(astra, "gpt-6-astra.png");
+  // OpenAI matches on the bare key exactly, so a near-miss must not borrow
+  // another model's tile the way a substring match would.
+  assert.equal(modelArtworkFile("openai/gpt-6", "GPT-6"), null);
+  assert.equal(nativeAccountModelSupported("OpenAI", "openai/gpt-6-astra"), true);
+  await access(new URL(`../src/assets/model-icons/${astra}`, import.meta.url));
+});
