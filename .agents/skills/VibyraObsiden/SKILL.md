@@ -136,3 +136,15 @@ Memory notes should be compact, factual, and future-facing:
 - Name the source files or modules future agents should inspect first.
 - Avoid blaming previous sessions or narrating the chat.
 - Avoid long changelogs. Durable architecture beats exhaustive history.
+
+### Publishing integrated desktop and phone work
+
+Use `docs/releases/0.6.0-publication.md` as the cross-surface release ledger.
+A successful desktop workflow supplies signed artifacts; it does not deploy
+backend metadata or publish a phone binary. Keep one exact source SHA per
+artifact set, verify remote hashes before staged metadata and deployment, and
+test an older updater client after cutover. Preserve active user workspaces.
+For the standalone phone client, inspect the actual EAS upload archive:
+`mobile/src/generated` must be present, while backend data and local logs must
+be absent. Native store signing, hosted web delivery and standalone Host
+previews are separate evidence. Record their state in `Desktop/Release 0.6.0.md`.

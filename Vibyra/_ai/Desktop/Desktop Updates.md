@@ -1,5 +1,7 @@
 # Desktop Updates
 
+Latest publication and remaining delivery gaps: [[Release 0.6.0]].
+
 How a published release reaches Vibyra at launch and while a workspace is
 already open.
 
