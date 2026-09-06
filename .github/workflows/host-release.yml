@@ -1,6 +1,9 @@
 name: Standalone Host preview packages
 
 on:
+  push:
+    branches: ["release/**"]
+    paths: ["host/**", ".github/workflows/host-release.yml"]
   workflow_dispatch:
 
 permissions:
