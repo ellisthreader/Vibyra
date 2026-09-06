@@ -14,6 +14,8 @@ mod delivery_tests;
 mod guards;
 mod queries;
 mod store;
+mod task_link;
+pub use task_link::{link_task, task_link, SCHEMA as TASK_LINK_SCHEMA};
 #[cfg(test)]
 mod tests;
 

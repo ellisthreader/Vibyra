@@ -30,7 +30,9 @@ export function parsePairing(link: string, now = Date.now()): Pairing {
     value.name.length > 128 || !/^[a-f0-9]{64}$/.test(value.publicKey)) {
     throw new Error('This pairing code uses an unsupported connection format.');
   }
-  const url = new URL(value.url);
+  let url: URL;
+  try { if (typeof value.url !== 'string') throw new Error(); url = new URL(value.url); }
+  catch { throw new Error('This computer has an invalid connection address.'); }
   if (url.username || url.password || url.hash || !['ws:', 'wss:'].includes(url.protocol)) {
     throw new Error('This computer has an invalid connection address.');
   }
@@ -39,7 +41,10 @@ export function parsePairing(link: string, now = Date.now()): Pairing {
   if (url.protocol === 'ws:' && (!local || value.route === 'relay')) {
     throw new Error('Internet connections require a secure wss address.');
   }
-  if (value.invite) {
+  if (value.invite !== undefined) {
+    if (typeof value.invite !== 'string' || value.invite.length < 16 || value.invite.length > 256) {
+      throw new Error('This pairing code contains an invalid invitation.');
+    }
     const expires = typeof value.expiresAt === 'number' ? value.expiresAt : Date.parse(value.expiresAt ?? '');
     if (!Number.isFinite(expires) || expires <= now) throw new Error('This pairing code expired. Create a new one on your computer.');
   }

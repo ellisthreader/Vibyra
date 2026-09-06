@@ -15,6 +15,7 @@ mod backup;
 pub mod ids;
 mod schema;
 mod schema_agents;
+mod schema_runs;
 mod schema_work;
 #[cfg(test)]
 mod tests;

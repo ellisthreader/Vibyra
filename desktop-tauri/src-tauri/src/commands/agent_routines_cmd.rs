@@ -109,6 +109,5 @@ pub async fn routine_run_now(
         &world,
         &routine,
         chrono::Utc::now().timestamp_millis(),
-    );
-    Ok(())
+    )
 }

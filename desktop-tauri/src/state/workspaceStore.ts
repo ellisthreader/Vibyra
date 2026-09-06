@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { isWipSettingsSection } from "../lib/wipSettings";
 
 import { fsReadPreview, onFsChanged } from "../ipc/fs";
 import {
@@ -102,11 +103,15 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
 
   openSettings: () => set({ settingsOpen: true }),
 
-  openSettingsSection: (settingsSection) => set({ settingsOpen: true, settingsSection }),
+  openSettingsSection: (settingsSection) => {
+    if (!isWipSettingsSection(settingsSection)) set({ settingsOpen: true, settingsSection });
+  },
 
   closeSettings: () => set({ settingsOpen: false, settingsSection: "general" }),
 
-  setSettingsSection: (settingsSection) => set({ settingsSection }),
+  setSettingsSection: (settingsSection) => {
+    if (!isWipSettingsSection(settingsSection)) set({ settingsSection });
+  },
 
   openAgentPicker: () => set({ agentPickerOpen: true }),
 

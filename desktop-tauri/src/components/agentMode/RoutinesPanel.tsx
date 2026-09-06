@@ -45,7 +45,7 @@ export function RoutinesPanel() {
       <div className="panel__inner">
         <PanelHead
           title="Routines"
-          blurb="A routine opens a fresh chat each time it runs, as the teammate that owns it. They run while Vibyra is open; a run missed because the app was closed is skipped, never caught up in a burst."
+          blurb="A routine opens a fresh chat each time it runs, as the teammate that owns it. They run while Vibyra is open; runs up to 30 minutes late may still start. Older runs are skipped."
           actions={
             agents.length > 0 && (
               <button className="btn btn--sm btn--primary" onClick={() => setEditing("new")}>

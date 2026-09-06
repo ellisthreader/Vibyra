@@ -1,3 +1,4 @@
+import { ArchivedChats } from "./ArchivedChats";
 import { useEffect, useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
@@ -83,6 +84,7 @@ export function AgentChatRail({ agent }: { agent: AgentProfile }) {
               {chat.source === "handoff" && <span className="chat-row__tag">Handoff</span>}
             </button>
             <div className="chat-row__actions">
+              <button className="icon-btn" title="Archive this chat" disabled={running[chat.id]} onClick={() => void amend(chat.id, agent.id, { archived: true })}>Archive</button>
               <button
                 className="icon-btn"
                 title={chat.pinned ? "Unpin" : "Pin"}
@@ -106,6 +108,7 @@ export function AgentChatRail({ agent }: { agent: AgentProfile }) {
           </li>
         )}
       </ul>
+      <ArchivedChats agentId={agent.id} />
     </aside>
   );
 }

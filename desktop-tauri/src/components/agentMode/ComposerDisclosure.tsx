@@ -13,11 +13,16 @@ export function ComposerDisclosure({
   agent,
   places,
   permission,
+  mountedPlace,
 }: {
   agent: AgentProfile | null;
   places: AgentPlace[] | undefined;
   permission: PermissionMode;
+  mountedPlace?: string | null;
 }) {
+  if (!agent && mountedPlace) {
+    return <p className="composer__reach">Folder: {mountedPlace} · {permission === "plan" ? "Read only" : "Edits allowed"}. No teammate memory.</p>;
+  }
   if (!agent) {
     return (
       <p className="composer__reach composer__reach--detached">

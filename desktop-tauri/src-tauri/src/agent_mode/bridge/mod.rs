@@ -43,3 +43,5 @@ pub fn requested() -> bool {
         .skip(1)
         .any(|arg| arg == "--permission-bridge")
 }
+
+pub mod proposal_tools;

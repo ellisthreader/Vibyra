@@ -1,24 +1,20 @@
+import { useAgentModeStore } from "./agentModeStore";
 import { create } from "zustand";
 
 import type { AgentPlace, AgentProfile, Engine, EngineCapabilities } from "../agentTypes";
 import * as ipc from "../ipc/agentRoster";
 
-// The teammate roster, their granted folders, and what the installed CLIs can
-// actually do.
-//
-// `capabilities` is loaded once and cached: probing two CLIs costs about a
-// second, and the answer only changes when the user updates one, which they
-// cannot do without leaving the app. Everything the UI offers — a model
-// picker, an effort control, an attach button — is gated on it, so a control
-// is never shown for a flag this build of the CLI does not have.
+// The native capability probe has a short cache and supports an explicit recheck.
 
 interface RosterStore {
   agents: AgentProfile[];
+  archived: AgentProfile[];
   places: Record<string, AgentPlace[]>;
   capabilities: EngineCapabilities[];
   loading: boolean;
   error: string | null;
   load: () => Promise<void>;
+  recheck: () => Promise<void>;
   create: (name: string, brief: string, engine: Engine) => Promise<AgentProfile | null>;
   update: (id: string, change: ipc.AgentChange) => Promise<void>;
   archive: (id: string, archived: boolean) => Promise<void>;
@@ -50,12 +46,13 @@ export function capabilityFor(
 
 export const useAgentRosterStore = create<RosterStore>((set, get) => {
   const refresh = async (): Promise<void> => {
-    const agents = await ipc.listAgents();
-    set({ agents });
+    const [agents, archived] = await Promise.all([ipc.listAgents(), ipc.listAgents(true)]);
+    set({ agents, archived });
   };
 
   return {
     agents: [],
+    archived: [],
     places: {},
     capabilities: [],
     loading: false,
@@ -64,8 +61,8 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
     load: async () => {
       set({ loading: true, error: null });
       try {
-        const [agents, capabilities] = await Promise.all([
-          ipc.listAgents(),
+        const [agents, archived, capabilities] = await Promise.all([
+          ipc.listAgents(), ipc.listAgents(true),
           // A cold probe is slow enough to be worth not blocking the roster on
           // it, but the roster is useless without knowing which engines work,
           // so both are awaited and the failure of either is one message.
@@ -73,10 +70,15 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
             ? Promise.resolve(get().capabilities)
             : ipc.engineCapabilities(),
         ]);
-        set({ agents, capabilities, loading: false });
+        set({ agents, archived, capabilities, loading: false });
       } catch (error) {
         set({ loading: false, error: String(error) });
       }
+    },
+
+    recheck: async () => {
+      try { set({ capabilities: await ipc.engineCapabilities(true), error: null }); }
+      catch (error) { set({ error: String(error) }); }
     },
 
     create: async (name, brief, engine) => {
@@ -104,23 +106,27 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
     },
 
     archive: async (id, archived) => {
-      await ipc.archiveAgent(id, archived).catch((error) => set({ error: String(error) }));
-      await refresh();
+      try {
+        await ipc.archiveAgent(id, archived);
+        if (archived && useAgentModeStore.getState().agentId === id) useAgentModeStore.getState().selectAgent(null);
+        await refresh();
+      } catch (error) { set({ error: String(error) }); }
     },
 
     remove: async (id) => {
-      await ipc.deleteAgent(id).catch((error) => set({ error: String(error) }));
-      set((state) => {
-        const places = { ...state.places };
-        delete places[id];
-        return { places };
-      });
-      await refresh();
+      try {
+        await ipc.deleteAgent(id);
+        if (useAgentModeStore.getState().agentId === id) useAgentModeStore.getState().selectAgent(null);
+        set((state) => { const places = { ...state.places }; delete places[id]; return { places }; });
+        await refresh();
+      } catch (error) { set({ error: String(error) }); }
     },
 
     loadPlaces: async (agentId) => {
-      const places = await ipc.listPlaces(agentId).catch(() => []);
-      set((state) => ({ places: { ...state.places, [agentId]: places } }));
+      try {
+        const places = await ipc.listPlaces(agentId);
+        set((state) => ({ places: { ...state.places, [agentId]: places } }));
+      } catch (error) { set({ error: String(error) }); }
     },
 
     grant: async (agentId, path, access) => {
@@ -138,6 +144,6 @@ export const useAgentRosterStore = create<RosterStore>((set, get) => {
       await get().loadPlaces(agentId);
     },
 
-    clear: () => set({ agents: [], places: {}, error: null }),
+    clear: () => set({ agents: [], archived: [], places: {}, capabilities: [], error: null }),
   };
 });

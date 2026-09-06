@@ -3,11 +3,12 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, V
 import { useTheme } from '../theme';
 import { EmptyState, Hint, Icon, IconButton } from './primitives';
 import { Sheet } from './Sheet';
+import { CodeContent } from './CodeContent';
 import type { FileEntry, Project, WorkspaceModel } from './types';
 
 type ReviewMode = 'files' | 'changes' | 'file';
-export function ReviewSheet({ visible, onClose, project, workspace }: {
-  visible: boolean; onClose: () => void; project?: Project; workspace: WorkspaceModel;
+export function ReviewSheet({ visible, onClose, project, workspace, initialMode = 'files' }: {
+  visible: boolean; onClose: () => void; project?: Project; workspace: WorkspaceModel; initialMode?: 'files' | 'changes';
 }) {
   const { colors } = useTheme();
   const [mode, setMode] = useState<ReviewMode>('files');
@@ -20,7 +21,7 @@ export function ReviewSheet({ visible, onClose, project, workspace }: {
   const [revision, setRevision] = useState(0);
   const actions = useRef(workspace.actions);
   actions.current = workspace.actions;
-  useEffect(() => { setMode('files'); setPath(''); }, [project?.id, visible]);
+  useEffect(() => { setMode(initialMode); setPath(''); }, [project?.id, visible, initialMode]);
   useEffect(() => {
     if (!visible || !project) return;
     let current = true;
@@ -45,7 +46,7 @@ export function ReviewSheet({ visible, onClose, project, workspace }: {
   return <Sheet title={project?.name ?? 'Project review'} visible={visible} onClose={onClose} scroll={false}>
     <View style={s.toolbar}>
       {(['files', 'changes'] as const).map(item => <Pressable key={item} accessibilityRole="tab"
-        accessibilityState={{ selected: item === (mode === 'file' ? 'files' : mode) }}
+        aria-selected={item === (mode === 'file' ? 'files' : mode)} accessibilityState={{ selected: item === (mode === 'file' ? 'files' : mode) }}
         onPress={() => { setMode(item); setPath(''); }} style={[s.tab,
           { backgroundColor: item === (mode === 'file' ? 'files' : mode) ? colors.elevated : 'transparent' }]}>
         <Text style={[s.tabText, { color: colors.text }]}>{item === 'files' ? 'Files' : 'Changes'}</Text>
@@ -56,8 +57,8 @@ export function ReviewSheet({ visible, onClose, project, workspace }: {
       {path ? <IconButton icon="arrow-back" label="Parent folder" onPress={parent} /> : <Icon name="folder-outline" size={18} color={colors.muted} />}
       <Text numberOfLines={2} selectable style={[s.path, { color: colors.muted }]}>{path || project?.path || 'Project'}</Text>
     </View>}
-    {mode === 'changes' && <View style={s.notice}><Hint>Current working tree changes on your computer. This may include work from other sessions.</Hint></View>}
-    {busy ? <View style={s.loading}><ActivityIndicator color={colors.accent} /><Hint>Reading from your computer…</Hint></View> :
+    {mode === 'changes' && <View style={s.notice}><Hint>{workspace.demo ? 'Example changes · No files on your computer are affected.' : 'Current working tree changes. This may include work from other sessions.'}</Hint></View>}
+    {busy ? <View style={s.loading}><ActivityIndicator color={colors.accent} /><Hint>{workspace.demo ? 'Opening example…' : 'Reading from your computer…'}</Hint></View> :
       error ? <View style={s.notice}><Hint error>{error}</Hint></View> : mode === 'files' ?
         <ScrollView contentContainerStyle={s.files}>{entries.length === 0 ? <EmptyState icon="folder-open-outline"
           title="No files here" detail="This folder is empty or contains only files hidden by the host’s access policy." /> :
@@ -70,9 +71,7 @@ export function ReviewSheet({ visible, onClose, project, workspace }: {
               <Text style={[s.size, { color: colors.muted }]}>{formatSize(entry.size)}</Text>}
           </Pressable>)}</ScrollView> : content ? <ScrollView style={[s.codeScroll, { backgroundColor: colors.workspace }]}>
           {truncated && <View style={s.notice}><Hint>The computer returned a limited preview of this file or diff.</Hint></View>}
-          <ScrollView horizontal contentContainerStyle={s.codeContent}>
-            <Text selectable style={[s.code, { color: colors.text }]}>{content}</Text>
-          </ScrollView>
+          <CodeContent content={content} diff={mode === 'changes'} />
         </ScrollView> : <EmptyState icon={mode === 'changes' ? 'checkmark-circle-outline' : 'document-outline'}
           title={mode === 'changes' ? 'No working tree changes' : 'Empty file'}
           detail={mode === 'changes' ? 'Your computer reported no diff for this project.' : 'This file has no text content.'} />}

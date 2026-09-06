@@ -14,8 +14,8 @@ use std::sync::Arc;
 
 use vibyra_core::agent_chats::AgentChat;
 use vibyra_core::agent_context::{assemble, AppliedSkill, Occasion};
-use vibyra_core::agent_model::PermissionMode;
-use vibyra_core::agent_profiles::AgentProfile;
+use vibyra_core::agent_model::{PermissionMode, PlaceAccess};
+use vibyra_core::agent_profiles::{AgentPlace, AgentProfile};
 
 use super::hub::AgentWorld;
 use super::turns::TurnRequest;
@@ -31,7 +31,13 @@ use super::turns::TurnRequest;
 /// The applied list rides back with the prompt rather than being recomputed
 /// later: it is a property of the text that was actually assembled, and
 /// re-deriving it would be a second answer to a question already settled.
-pub(super) type Prepared = (Vec<String>, String, Option<String>, Vec<AppliedSkill>);
+pub(super) struct Prepared {
+    pub places: Vec<AgentPlace>,
+    pub cwd: String,
+    pub context: String,
+    pub fingerprint: String,
+    pub applied: Vec<AppliedSkill>,
+}
 
 pub(super) fn prepare(
     world: &Arc<AgentWorld>,
@@ -42,22 +48,43 @@ pub(super) fn prepare(
 ) -> Result<Prepared, String> {
     let Some(profile) = profile else {
         let mounted = chat.mounted_place.clone();
-        let cwd = mounted.clone().unwrap_or_else(|| {
-            vibyra_core::agent_chats::attachments::folder(&world.root, &chat.id)
+        let cwd = match mounted.clone() {
+            Some(path) => path,
+            None => vibyra_core::agent_chats::attachments::folder(&world.root, &chat.id)
+                .map_err(|error| error.to_string())?
                 .to_string_lossy()
-                .into_owned()
-        });
+                .into_owned(),
+        };
         std::fs::create_dir_all(&cwd).map_err(|error| error.to_string())?;
         // A detached chat has no agent, so no skills and nothing to declare.
-        return Ok((mounted.into_iter().collect(), cwd, None, Vec::new()));
+        let places = vec![AgentPlace {
+            id: "chat".into(),
+            agent_id: String::new(),
+            path: cwd.clone(),
+            access: if mounted.is_some() {
+                PlaceAccess::ReadWrite
+            } else {
+                PlaceAccess::Read
+            },
+            label: "Chat workspace".into(),
+            created_ms: chat.created_ms,
+        }];
+        return Ok(Prepared {
+            places,
+            cwd,
+            context: String::new(),
+            fingerprint: String::new(),
+            applied: Vec::new(),
+        });
     };
 
     let db = &world.db;
     let granted = vibyra_core::agent_profiles::list_places(db, &profile.id)
         .map_err(|error| error.to_string())?;
     let memory = vibyra_core::agent_memory::within_budget(db, &profile.id, profile.memory_budget)
-        .unwrap_or_default();
-    let skills = vibyra_core::skills::assigned(db, &world.account, &profile.id).unwrap_or_default();
+        .map_err(|error| error.to_string())?;
+    let skills = vibyra_core::skills::assigned(db, &world.account, &profile.id)
+        .map_err(|error| error.to_string())?;
     let occasion = match (&request.occasion_routine, &request.occasion_handoff) {
         (Some(name), _) => Occasion::Routine { name },
         (_, Some(from)) => Occasion::Handoff { from },
@@ -72,15 +99,15 @@ pub(super) fn prepare(
         occasion,
         &request.prompt,
     );
-    let places = vibyra_core::agent_profiles::directory_arguments(&granted, permission.writes());
     // The agent's own home is always where it runs, never the project the user
     // happens to have open. Reaching a granted folder is what `--add-dir` is
     // for; silently starting inside one is how an agent edits the wrong repo.
     std::fs::create_dir_all(&profile.home_path).map_err(|error| error.to_string())?;
-    Ok((
-        places,
-        profile.home_path.clone(),
-        Some(context.text),
-        context.applied,
-    ))
+    Ok(Prepared {
+        places: granted,
+        cwd: profile.home_path.clone(),
+        context: context.text,
+        fingerprint: context.fingerprint,
+        applied: context.applied,
+    })
 }

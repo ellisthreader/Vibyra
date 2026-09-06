@@ -1,7 +1,7 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'Vibyra', slug: 'vibyra', version: '1.0.0', scheme: 'vibyra',
+  name: 'Vibyra', slug: 'vibyra', owner: 'xellis', version: '1.0.0', scheme: 'vibyra',
   orientation: 'default', userInterfaceStyle: 'automatic',
   ios: {
     bundleIdentifier: 'app.vibyra.mobile', supportsTablet: false,
@@ -15,9 +15,11 @@ const config: ExpoConfig = {
   web: { bundler: 'metro', output: 'single' },
   plugins: [
     'expo-secure-store',
+    'expo-font',
+    'expo-asset',
     ['expo-camera', { cameraPermission: 'Scan the pairing code shown on your computer.', recordAudioAndroid: false }],
     ['expo-dev-client', { launchMode: 'most-recent' }],
   ],
-  extra: { remoteProtocol: 1 },
+  extra: { remoteProtocol: 1, eas: { projectId: 'c009e48d-4c3b-47b9-bcd6-2db120d2596c' } },
 };
 export default config;

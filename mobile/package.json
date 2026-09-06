@@ -13,22 +13,42 @@
     "export": "expo export --platform ios --platform web",
     "doctor": "npx expo-doctor",
     "assets": "node scripts/build-runtime.mjs",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run assets && npm run typecheck && npm test && npm run lines",
+    "prestart": "npm run assets",
+    "preweb": "npm run assets",
+    "preexport": "npm run assets",
+    "lines": "node scripts/check-lines.mjs",
+    "verify:terminal": "npm run assets && node scripts/verify-terminal.mjs",
+    "verify:ui": "node scripts/verify-ui.mjs",
+    "verify:host-ui": "npm run assets && node scripts/verify-host-ui.mjs",
+    "phone": "expo start --go --lan --port 8081",
+    "prephone": "npm run assets"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "expo": "~57.0.17",
+    "expo-asset": "~57.0.16",
+    "expo-camera": "~57.0.4",
+    "expo-crypto": "~57.0.2",
+    "expo-dev-client": "~57.0.18",
+    "expo-font": "~57.0.3",
+    "expo-linking": "~57.0.9",
+    "expo-secure-store": "~57.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-web": "^0.21.0",
-    "@xterm/xterm": "^5.5.0",
-    "@xterm/addon-fit": "^0.10.0",
-    "@expo/vector-icons": "^15.0.3"
+    "react-native-webview": "13.16.1"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "@types/react": "~19.2.0",
-    "typescript": "~5.9.2",
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.63.0",
     "tsx": "^4.20.0",
-    "esbuild": "^0.25.0"
+    "typescript": "~6.0.3"
   }
 }

@@ -7,6 +7,7 @@ import { AppliedSkills } from "./AppliedSkills";
 import { ChangedFiles } from "./ChangedFiles";
 import { ToolBlock } from "./ToolBlock";
 import { TurnFooter } from "./TurnFooter";
+import { TaskStarters } from "./TaskStarters";
 
 /**
  * The transcript.
@@ -39,10 +40,10 @@ export const AgentTranscript = memo(function AgentTranscript({
 }) {
   if (blocks.length === 0) {
     return (
-      <p className="transcript__quiet">
+      <><p className="transcript__quiet">
         Nothing here yet. What you type stays in this chat; the agent keeps its brief, memory
         and skills across all of them.
-      </p>
+      </p><TaskStarters agent={agent} chatId={chatId} /></>
     );
   }
 

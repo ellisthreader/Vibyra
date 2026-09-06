@@ -93,7 +93,9 @@ pub struct NewAgent {
 pub struct AgentUpdate {
     pub name: Option<String>,
     pub brief: Option<String>,
+    #[serde(default, deserialize_with = "nullable_update")]
     pub model: Option<Option<String>>,
+    #[serde(default, deserialize_with = "nullable_update")]
     pub effort: Option<Option<String>>,
     pub permission: Option<PermissionMode>,
     pub memory_budget: Option<i64>,
@@ -139,4 +141,11 @@ impl AgentUpdate {
             profile.routines_allowed = routines;
         }
     }
+}
+
+/// An absent field leaves a value alone; explicit null clears it.
+fn nullable_update<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<Option<String>>, D::Error> {
+    Option::<String>::deserialize(deserializer).map(Some)
 }

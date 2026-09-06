@@ -83,21 +83,31 @@ pub fn append(
 /// Selected newest-first with a limit and then reversed, so the query reads
 /// the tail of the index rather than walking the whole chat to reach its end.
 pub fn recent(db: &AgentDb, chat_id: &str) -> CoreResult<Vec<ChatEventRow>> {
-    read(db, chat_id, i64::MAX, PAGE)
+    read(db, chat_id, i64::MAX, PAGE, false)
 }
 
 /// The page of events immediately *before* `before_seq`, oldest first. What
 /// "load earlier" asks for.
 pub fn earlier(db: &AgentDb, chat_id: &str, before_seq: i64) -> CoreResult<Vec<ChatEventRow>> {
-    read(db, chat_id, before_seq, PAGE)
+    read(db, chat_id, before_seq, PAGE, false)
 }
 
-fn read(db: &AgentDb, chat_id: &str, before_seq: i64, limit: i64) -> CoreResult<Vec<ChatEventRow>> {
+pub fn since(db: &AgentDb, chat_id: &str, after_seq: i64) -> CoreResult<Vec<ChatEventRow>> {
+    read(db, chat_id, after_seq, PAGE, true)
+}
+
+fn read(
+    db: &AgentDb,
+    chat_id: &str,
+    before_seq: i64,
+    limit: i64,
+    forward: bool,
+) -> CoreResult<Vec<ChatEventRow>> {
     db.with(|connection| {
         let mut statement = connection
             .prepare(
-                "SELECT turn_id, seq, payload, created_ms FROM chat_events \
-                 WHERE chat_id = ?1 AND seq < ?2 ORDER BY seq DESC LIMIT ?3",
+                if forward { "SELECT turn_id, seq, payload, created_ms FROM chat_events WHERE chat_id=?1 AND seq>?2 ORDER BY seq ASC LIMIT ?3" }
+                else { "SELECT turn_id, seq, payload, created_ms FROM chat_events WHERE chat_id=?1 AND seq<?2 ORDER BY seq DESC LIMIT ?3" },
             )
             .map_err(sql)?;
         let rows = statement
@@ -126,7 +136,7 @@ fn read(db: &AgentDb, chat_id: &str, before_seq: i64, limit: i64) -> CoreResult<
                 event,
             });
         }
-        out.reverse();
+        if !forward { out.reverse(); }
         Ok(out)
     })
 }
@@ -150,5 +160,5 @@ pub fn count(db: &AgentDb, chat_id: &str) -> CoreResult<i64> {
 /// Deliberately separate from `recent`: this one is allowed to be slow and is
 /// never called to paint a screen.
 pub fn all(db: &AgentDb, chat_id: &str) -> CoreResult<Vec<ChatEventRow>> {
-    read(db, chat_id, i64::MAX, i64::MAX)
+    read(db, chat_id, i64::MAX, i64::MAX, false)
 }

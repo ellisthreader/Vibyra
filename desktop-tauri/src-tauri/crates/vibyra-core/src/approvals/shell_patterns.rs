@@ -123,9 +123,34 @@ pub(super) fn read_only(command: &str) -> bool {
         match program {
             "git" => {
                 words.get(1).is_some_and(|sub| GIT_READ.contains(sub))
-                    && !words
-                        .iter()
-                        .any(|w| ["-d", "-D", "-m", "-M", "push", "pop", "drop"].contains(w))
+                    && !words.iter().any(|w| {
+                        [
+                            "-d",
+                            "-D",
+                            "-m",
+                            "-M",
+                            "push",
+                            "pop",
+                            "drop",
+                            "--exec",
+                            "--ext-diff",
+                            "--textconv",
+                            "--output",
+                        ]
+                        .contains(w)
+                            || w.starts_with("--output=")
+                    })
+                    && match words.get(1).copied() {
+                        Some("tag" | "branch") => {
+                            words.len() == 2
+                                || words
+                                    .get(2)
+                                    .is_some_and(|w| ["--list", "-l", "--show-current"].contains(w))
+                        }
+                        Some("stash") => words.get(2).is_some_and(|w| ["list", "show"].contains(w)),
+                        Some("remote") => words.len() == 2 || words.get(2) == Some(&"-v"),
+                        _ => true,
+                    }
             }
             "npm" => words
                 .get(1)
@@ -133,7 +158,12 @@ pub(super) fn read_only(command: &str) -> bool {
             "cargo" => words
                 .get(1)
                 .is_some_and(|sub| ["metadata", "tree"].contains(sub)),
-            "sed" => !words.iter().any(|w| w.starts_with("-i")),
+            // General programs have effectful forms beyond redirects. Their
+            // commands require policy review and a sandbox, regardless of name.
+            "sed" | "awk" | "sort" | "uniq" => false,
+            "find" => !words
+                .iter()
+                .any(|w| w.starts_with("-fprint") || *w == "-fprintf"),
             _ => READ_ONLY.contains(&program),
         }
     });

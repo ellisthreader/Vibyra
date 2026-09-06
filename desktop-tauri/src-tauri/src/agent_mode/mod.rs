@@ -14,11 +14,28 @@ mod env;
 pub mod gate;
 pub mod hub;
 mod prepare;
-mod probe;
+pub(crate) mod probe;
 mod reflect;
 pub mod scheduler;
 mod title;
+mod turn_claim;
+mod turn_execute;
+mod turn_output;
 pub mod turns;
+mod world;
 
 pub use hub::{AgentHub, AgentWorld};
 pub use probe::probe_engines;
+
+mod codex_server;
+
+mod claude_policy;
+
+pub mod lifecycle;
+
+mod attachments;
+
+mod turn_command;
+
+#[cfg(test)]
+mod live_validation;

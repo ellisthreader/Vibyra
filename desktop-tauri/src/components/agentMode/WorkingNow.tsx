@@ -1,3 +1,4 @@
+import { useAgentRunStore } from "../../state/agentRunStore";
 import { useEffect, useState } from "react";
 
 import { isParked } from "../../lib/routineRunStrip.ts";
@@ -34,6 +35,7 @@ function since(startedMs: number, now: number): string {
 }
 
 export function WorkingNow() {
+  const tasks = useAgentRunStore((state) => state.runs);
   const chats = useAgentChatStore((state) => state.chats);
   const running = useAgentChatStore((state) => state.running);
   const startedMs = useAgentChatStore((state) => state.startedMs);
@@ -46,6 +48,7 @@ export function WorkingNow() {
   const [now, setNow] = useState(() => Date.now());
 
   const live = liveWork({
+    tasks,
     chats,
     running,
     startedMs,
@@ -75,8 +78,8 @@ export function WorkingNow() {
 
   const open = (entry: Live) => {
     if (!entry.chatId) return;
-    mode.setMode("agent");
-    if (entry.agentId) mode.selectAgent(entry.agentId);
+    mode.setMode(entry.agentId ? "agent" : "chat");
+    mode.selectAgent(entry.agentId);
     mode.selectChat(entry.chatId);
     void openChat(entry.chatId);
   };

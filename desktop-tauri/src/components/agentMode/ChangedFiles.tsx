@@ -40,7 +40,6 @@ export function ChangedFiles({
       return;
     }
     setOpen(path);
-    if (diffs[path]?.state === "ready") return;
     setDiffs((current) => ({ ...current, [path]: { state: "loading" } }));
     try {
       const diff = await agentFileDiff(agentId, path);
@@ -54,7 +53,7 @@ export function ChangedFiles({
     <div className="changed">
       <p className="changed__head">
         {entries.length === 1 ? "1 file changed" : `${entries.length} files changed`}
-        <span> · showing what is not yet committed</span>
+        <span> · current working-copy diff; saved task changes are in Task history</span>
       </p>
       <ul className="changed__list">
         {entries.map((entry) => {

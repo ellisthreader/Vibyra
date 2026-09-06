@@ -17,7 +17,7 @@ import { useAgentAttachmentStore } from "../../state/agentAttachmentStore";
  * first time someone opened another conversation, while the files stayed in
  * the folder and stayed on every following turn.
  */
-export function ComposerAttachments({ chatId }: { chatId: string }) {
+export function ComposerAttachments({ chatId, disabled = false }: { chatId: string; disabled?: boolean }) {
   const files = useAgentAttachmentStore((state) => state.byChat[chatId]);
   const error = useAgentAttachmentStore((state) => state.error);
   const load = useAgentAttachmentStore((state) => state.load);
@@ -38,6 +38,7 @@ export function ComposerAttachments({ chatId }: { chatId: string }) {
     <div className="composer__attach">
       <button
         type="button"
+        disabled={disabled}
         className="composer__attach-add"
         onClick={() => void pick()}
         title="Attach a file to this chat"
@@ -52,6 +53,7 @@ export function ComposerAttachments({ chatId }: { chatId: string }) {
               <span>{file.original.split("/").pop() || file.original}</span>
               <button
                 type="button"
+                disabled={disabled}
                 aria-label={`Remove ${file.original}`}
                 title="Remove from this chat"
                 onClick={() => void remove(chatId, file.id)}

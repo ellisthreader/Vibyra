@@ -20,19 +20,20 @@ export function AgentMailCard({ agent }: { agent: AgentProfile }) {
   const paused = useSettingsStore((state) => state.settings?.agentMailPaused ?? false);
   const saveSettings = useSettingsStore((state) => state.update);
   const [allowed, setAllowed] = useState<string[]>([]);
+  const [error, setError] = useState("");
   const [trail, setTrail] = useState<MailMessage[]>([]);
 
   useEffect(() => {
-    void mailAllowlist(agent.id).then(setAllowed).catch(() => setAllowed([]));
-    void mailTrail(agent.id).then(setTrail).catch(() => setTrail([]));
+    void mailAllowlist(agent.id).then(setAllowed).catch((error) => setError(String(error)));
+    void mailTrail(agent.id).then(setTrail).catch((error) => setError(String(error)));
   }, [agent.id]);
 
   const toggle = async (peerId: string) => {
     const next = allowed.includes(peerId)
       ? allowed.filter((id) => id !== peerId)
       : [...allowed, peerId];
-    setAllowed(next);
-    await setMailAllowlist(agent.id, next).catch(() => {});
+    try { await setMailAllowlist(agent.id, next); setAllowed(next); setError(""); }
+    catch (error) { setError(String(error)); }
   };
 
   const others = agents.filter((entry) => entry.id !== agent.id);
@@ -55,6 +56,7 @@ export function AgentMailCard({ agent }: { agent: AgentProfile }) {
   return (
     <section className="settings-block">
       <span className="section-label">Working with others</span>
+      {error && <p className="composer__error" role="alert">{error}</p>}
       <div className="settings-group">
         {row(
           "Accepts handoffs from other teammates",

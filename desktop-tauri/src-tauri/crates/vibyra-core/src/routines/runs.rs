@@ -43,7 +43,11 @@ pub fn begin(
         status: "running".into(),
         error: None,
     };
-    insert(db, &run)?;
+    db.transact(|cx| {
+        let allowed: bool = cx.query_row("SELECT EXISTS(SELECT 1 FROM routines r JOIN agent_profiles a ON a.id=r.agent_id WHERE r.id=?1 AND r.enabled=1 AND a.routines_allowed=1 AND a.archived_ms IS NULL) AND NOT EXISTS(SELECT 1 FROM routine_runs WHERE routine_id=?1 AND status='running') AND (SELECT COUNT(*) FROM routine_runs WHERE status='running')<3", [routine_id], |row|row.get(0)).map_err(sql)?;
+        if !allowed { return Err(crate::CoreError::Task("This routine is paused, already running, or the task limit is reached.".into())); }
+        insert_in(cx, &run)
+    })?;
     Ok(run)
 }
 
@@ -67,20 +71,29 @@ pub fn skip(db: &AgentDb, routine_id: &str, scheduled_ms: i64) -> CoreResult<Rou
 
 /// Closes a run.
 pub fn finish(db: &AgentDb, run_id: &str, error: Option<&str>) -> CoreResult<()> {
+    finish_status(
+        db,
+        run_id,
+        if error.is_some() {
+            "failed"
+        } else {
+            "completed"
+        },
+        error,
+    )
+}
+
+pub fn finish_status(
+    db: &AgentDb,
+    run_id: &str,
+    status: &str,
+    error: Option<&str>,
+) -> CoreResult<()> {
     db.with(|connection| {
         connection
             .execute(
                 "UPDATE routine_runs SET status = ?1, error = ?2, ended_ms = ?3 WHERE id = ?4",
-                params![
-                    if error.is_some() {
-                        "failed"
-                    } else {
-                        "completed"
-                    },
-                    error,
-                    now_ms(),
-                    run_id
-                ],
+                params![status, error, now_ms(), run_id],
             )
             .map_err(sql)?;
         Ok(())
@@ -142,26 +155,28 @@ pub fn in_flight(db: &AgentDb) -> CoreResult<Vec<String>> {
 }
 
 fn insert(db: &AgentDb, run: &RoutineRun) -> CoreResult<()> {
-    db.with(|connection| {
-        connection
-            .execute(
-                "INSERT INTO routine_runs (id, routine_id, chat_id, scheduled_ms, started_ms, \
+    db.with(|connection| insert_in(connection, run))
+}
+
+fn insert_in(connection: &rusqlite::Connection, run: &RoutineRun) -> CoreResult<()> {
+    connection
+        .execute(
+            "INSERT INTO routine_runs (id, routine_id, chat_id, scheduled_ms, started_ms, \
                  ended_ms, status, error, created_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                params![
-                    run.id,
-                    run.routine_id,
-                    run.chat_id,
-                    run.scheduled_ms,
-                    run.started_ms,
-                    run.ended_ms,
-                    run.status,
-                    run.error,
-                    now_ms(),
-                ],
-            )
-            .map_err(sql)?;
-        Ok(())
-    })
+            params![
+                run.id,
+                run.routine_id,
+                run.chat_id,
+                run.scheduled_ms,
+                run.started_ms,
+                run.ended_ms,
+                run.status,
+                run.error,
+                now_ms(),
+            ],
+        )
+        .map_err(sql)?;
+    Ok(())
 }
 
 /// Advances a routine past the moment it just handled, whether it ran or was

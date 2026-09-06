@@ -27,7 +27,7 @@ test("direct Settings navigation makes Integrations the active section", () => {
   const workspace = source("../src/state/workspaceStore.ts");
   const settings = source("../src/components/settings/SettingsModal.tsx");
 
-  assert.match(workspace, /openSettingsSection: \(settingsSection\) => set\(\{ settingsOpen: true, settingsSection \}\)/);
+  assert.match(workspace, /openSettingsSection: \(settingsSection\) => \{[\s\S]*?set\(\{ settingsOpen: true, settingsSection \}\)/);
   assert.match(settings, /state\.settingsSection/);
   assert.match(settings, /state\.setSettingsSection/);
 });

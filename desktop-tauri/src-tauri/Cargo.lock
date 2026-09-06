@@ -5409,6 +5409,7 @@ dependencies = [
  "parking_lot",
  "raw-window-handle",
  "reqwest 0.12.28",
+ "rusqlite",
  "serde",
  "serde_json",
  "sysinfo",

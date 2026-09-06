@@ -19,9 +19,12 @@ export function sendHandoff(handoff: {
   recipientId: string;
   body: string;
   parentId?: string | null;
+  parentChatId?: string | null;
+  expectedOutput?: string;
 }): Promise<HandoffResult> {
   return invoke("agent_mail_send", {
     handoff: { ...handoff, parentId: handoff.parentId ?? null },
+    parentChatId: handoff.parentChatId ?? null, expectedOutput: handoff.expectedOutput ?? null,
   });
 }
 

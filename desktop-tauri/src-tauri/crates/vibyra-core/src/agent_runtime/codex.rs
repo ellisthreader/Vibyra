@@ -37,7 +37,7 @@ pub fn sandbox(permission: PermissionMode) -> &'static str {
     match permission {
         PermissionMode::Plan => "read-only",
         PermissionMode::Standard => "workspace-write",
-        PermissionMode::Full => "danger-full-access",
+        PermissionMode::Full => "workspace-write",
     }
 }
 

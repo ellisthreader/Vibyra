@@ -1,3 +1,4 @@
+import { useAgentRecovery } from "./useAgentRecovery";
 import { useEffect } from "react";
 
 import { NONE } from "../../lib/emptyList";
@@ -15,6 +16,7 @@ import { ChatSurface } from "./ChatSurface";
  * to be detached.
  */
 export function ChatMode() {
+  useAgentRecovery();
   const loadChats = useAgentChatStore((state) => state.loadChats);
   const openChat = useAgentChatStore((state) => state.openChat);
   const chats = useAgentChatStore((state) => state.chats.detached ?? NONE);

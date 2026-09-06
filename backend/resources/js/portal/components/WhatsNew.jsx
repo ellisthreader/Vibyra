@@ -1,6 +1,8 @@
 import React from "react";
+import { latestReleaseFeatures } from "./latestReleaseFeatures";
 
 const FEATURES = [
+  ...latestReleaseFeatures,
   {
     title: "GPT-6 Astra is selectable",
     body: "OpenAI's newest model joins the OpenAI wall with its own artwork and a 1.05M token context. On a connected Codex account it launches natively, on its own effort ladder, starting at high.",
@@ -27,8 +29,8 @@ const FEATURES = [
     fresh: false,
   },
   {
-    title: "Agent and Chat are clearly marked WIP",
-    body: "Both modes remain visible so you know what is coming, but every route into the unfinished surfaces is disabled until they are ready.",
+    title: "Agent and Chat Mode are open",
+    body: "Work with a teammate and its own folders, or start a conversation without a project. Decisions remain tied to the task's permitted access.",
     fresh: false,
   },
   {

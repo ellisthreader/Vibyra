@@ -14,18 +14,20 @@ import { useAgentWorkStore } from "../../state/agentWorkStore";
  */
 export function SkillHistory({ skill }: { skill: Skill }) {
   const load = useAgentWorkStore((state) => state.loadSkills);
+  const [error, setError] = useState("");
   const [versions, setVersions] = useState<Skill[]>([]);
 
   useEffect(() => {
-    void skillHistory(skill.id).then(setVersions).catch(() => setVersions([]));
+    void skillHistory(skill.id).then(setVersions).catch((error) => setError(String(error)));
   }, [skill.id, skill.version]);
 
   const earlier = versions.filter((entry) => entry.version < skill.version);
-  if (earlier.length === 0) return null;
+  if (earlier.length === 0) return error ? <p className="composer__error" role="alert">{error}</p> : null;
 
   return (
     <details className="skill-history">
       <summary>{earlier.length} earlier version{earlier.length === 1 ? "" : "s"}</summary>
+      {error && <p className="composer__error" role="alert">{error}</p>}
       <ul>
         {earlier.map((entry) => (
           <li key={entry.version}>
@@ -34,8 +36,8 @@ export function SkillHistory({ skill }: { skill: Skill }) {
             <button
               className="btn btn--sm btn--secondary"
               onClick={async () => {
-                await rollBackSkill(skill.id, entry.version).catch(() => {});
-                await load();
+                try { await rollBackSkill(skill.id, entry.version); await load(); setError(""); }
+                catch (error) { setError(String(error)); }
               }}
             >
               Restore

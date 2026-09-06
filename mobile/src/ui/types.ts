@@ -17,10 +17,11 @@ export interface Approval { id: string; title: string; detail: string; expiresAt
 export interface FileEntry { path: string; name: string; kind: 'file' | 'directory'; size: number }
 export interface WorkspaceActions {
   connect(link: string): Promise<void>;
+  reconnect?(): Promise<void>;
   disconnect(): void | Promise<void>;
   refresh(): Promise<void>;
   selectSession(id: string | null): void;
-  createSession(projectId: string, kind: SessionKind, title: string): Promise<void>;
+  createSession(projectId: string, kind: SessionKind, title: string): Promise<Session | void>;
   sendInput(data: string): Promise<void>;
   resize(cols: number, rows: number): void | Promise<void>;
   stopSession(id: string): Promise<void>;
@@ -31,8 +32,14 @@ export interface WorkspaceActions {
   forgetDevice?(): Promise<void>;
   revokeDevice?(id: string): Promise<void>;
   resolveApproval?(id: string, allow: boolean): Promise<void>;
+  claimControl?(): Promise<void>;
+  enterDemo?(): void;
+  exitDemo?(): void;
 }
 export interface WorkspaceModel {
+  demo?: boolean;
+  syncing?: boolean;
+  control?: 'none' | 'claiming' | 'ready' | 'readonly';
   status: ConnectionStatus;
   error: string | null;
   host: Computer | null;

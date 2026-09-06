@@ -49,7 +49,11 @@ pub fn handle(line: &str, wire: &dyn Wire, env: &Env) -> Option<String> {
     let result = match method {
         "initialize" => initialize(&params),
         "ping" => json!({}),
-        "tools/list" => json!({ "tools": [approve_tool()] }),
+        "tools/list" => {
+            let mut tools = vec![approve_tool()];
+            tools.extend(super::proposal_tools::tools());
+            json!({ "tools": tools })
+        }
         "tools/call" => return Some(call(id, &params, wire, env)),
         other => {
             return Some(error_response(
@@ -92,7 +96,7 @@ fn approve_tool() -> Value {
 
 fn call(id: Value, params: &Value, wire: &dyn Wire, env: &Env) -> String {
     let name = params.get("name").and_then(Value::as_str).unwrap_or("");
-    if name != "approve" {
+    if !["approve", "propose_memory", "propose_skill"].contains(&name) {
         return error_response(id, -32602, &format!("no tool named {name}"));
     }
     let arguments = params.get("arguments").cloned().unwrap_or(Value::Null);
@@ -100,12 +104,24 @@ fn call(id: Value, params: &Value, wire: &dyn Wire, env: &Env) -> String {
         token: env.token.clone(),
         chat_id: env.chat_id.clone(),
         turn_id: env.turn_id.clone(),
-        tool_name: arguments
-            .get("tool_name")
+        tool_name: if name == "approve" {
+            arguments
+                .get("tool_name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .into()
+        } else {
+            name.into()
+        },
+        tool_use_id: arguments
+            .get("tool_use_id")
             .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string(),
-        input: arguments.get("input").cloned().unwrap_or(json!({})),
+            .map(str::to_owned),
+        input: if name == "approve" {
+            arguments.get("input").cloned().unwrap_or(json!({}))
+        } else {
+            arguments
+        },
     };
     let reply = wire.ask(request);
     let text = serde_json::to_string(&reply).unwrap_or_else(|_| {

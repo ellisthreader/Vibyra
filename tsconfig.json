@@ -16,6 +16,8 @@
     "node_modules",
     "tmp",
     "desktop-tauri",
+    "mobile",
+    "host",
     "remotion"
   ]
 }

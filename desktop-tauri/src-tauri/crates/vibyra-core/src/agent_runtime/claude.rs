@@ -54,7 +54,7 @@ pub const PROMPT_TOOL: &str = "mcp__vibyra__approve";
 /// meant no question ever reached the app and the Decisions queue could not
 /// fill. `manual` is what makes "anything outward still asks" true.
 ///
-/// **Unbridged: `acceptEdits`.** With no prompt tool, `manual` would deny
+/// **Unbridged: deny unmatched tools.** With no prompt tool, `manual` would deny
 /// every tool call and the turn would be useless, so a gate that failed to
 /// bind leaves the provider exactly as it behaved before there was one.
 ///
@@ -65,7 +65,7 @@ pub fn permission_mode(permission: PermissionMode, bridged: bool) -> &'static st
     match permission {
         PermissionMode::Plan => "plan",
         PermissionMode::Standard | PermissionMode::Full if bridged => "manual",
-        PermissionMode::Standard | PermissionMode::Full => "acceptEdits",
+        PermissionMode::Standard | PermissionMode::Full => "dontAsk",
     }
 }
 

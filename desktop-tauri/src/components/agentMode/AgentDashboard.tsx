@@ -1,3 +1,6 @@
+import { useAgentChatStore } from "../../state/agentChatStore";
+import { ProviderReadiness } from "./ProviderReadiness";
+import { TaskHistory } from "./TaskHistory";
 import { useEffect } from "react";
 
 import { relativeTime } from "../../lib/relativeTime";
@@ -23,6 +26,7 @@ import { WorkingNow } from "./WorkingNow";
  * terminals, where every moving element costs the renderer something.
  */
 export function AgentDashboard({ onNewAgent }: { onNewAgent: () => void }) {
+  const working = useAgentChatStore((state) => Object.values(state.running).some(Boolean));
   const approvals = useAgentWorkStore((state) => state.approvals);
   const routines = useAgentWorkStore((state) => state.routines);
   const loadApprovals = useAgentWorkStore((state) => state.loadApprovals);
@@ -48,6 +52,7 @@ export function AgentDashboard({ onNewAgent }: { onNewAgent: () => void }) {
             title="Agent"
             blurb="A teammate is a persistent agent with its own brief, memory, skills and folders. Every chat you have with it shares them."
           />
+          <ProviderReadiness />
           <EmptyState
             icon={<UserIcon size={18} />}
             title="No teammates yet"
@@ -76,6 +81,7 @@ export function AgentDashboard({ onNewAgent }: { onNewAgent: () => void }) {
           }
         />
 
+        <ProviderReadiness />
         <ChatSearch />
         <DashboardStats />
 
@@ -91,7 +97,7 @@ export function AgentDashboard({ onNewAgent }: { onNewAgent: () => void }) {
               compact
               icon={<ShieldIcon size={16} />}
               title="Nothing needs a decision"
-              body="Publishing, spending, deleting outside a granted folder and anything touching a secret stop here first."
+              body="Review consequential tool requests here. Actions outside the task’s granted folders remain blocked."
             />
           ) : (
             <div className="panel__cards">
@@ -107,9 +113,13 @@ export function AgentDashboard({ onNewAgent }: { onNewAgent: () => void }) {
           )}
         </section>
 
-        <section className="panel__section">
+        {working && <section className="panel__section">
           <span className="section-label">Working now</span>
           <WorkingNow />
+        </section>}
+        <section className="panel__section">
+          <div className="panel__section-head"><span className="section-label">Recent tasks</span><button className="btn btn--sm" onClick={() => openPanel("tasks")}>View history</button></div>
+          <TaskHistory compact />
         </section>
 
         <section className="panel__section">

@@ -1,4 +1,5 @@
 import { archivedReleases } from "./changelogArchive";
+import { release060 } from "./release060";
 import type { DesktopChangelog } from "./changelogTypes";
 
 export type { ChangelogFeature, DesktopChangelog } from "./changelogTypes";
@@ -8,6 +9,7 @@ export type { ChangelogFeature, DesktopChangelog } from "./changelogTypes";
 // accumulate rather than needing a split at the worst possible moment.
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.6.0": release060,
   "0.5.1": {
     version: "0.5.1",
     releasedAt: "2026-09-06",

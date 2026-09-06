@@ -57,7 +57,7 @@ pub async fn approval_resolve(
     // fail without leaving a provider process waiting half an hour.
     waiters::notify(&record.id, record.state == "approved");
     if record.action == "mail.handoff" {
-        deliver_handoff(&world, &record)?;
+        deliver_handoff(&world, &record, state.settings.lock().agent_mail_paused)?;
     }
     let _ = app.emit("approval-resolved", &record);
     Ok(record)
@@ -69,13 +69,17 @@ pub async fn approval_resolve(
 /// the link is written right after the card is raised, and the only way to
 /// miss it is a crash between the two — so it is silence rather than a
 /// failure, and the mail stays where it was.
-fn deliver_handoff(world: &Arc<AgentWorld>, record: &ApprovalRequest) -> Result<(), String> {
+fn deliver_handoff(
+    world: &Arc<AgentWorld>,
+    record: &ApprovalRequest,
+    paused: bool,
+) -> Result<(), String> {
     let Some(message) = vibyra_core::agent_mail::by_approval(&world.db, &record.id)
         .map_err(|error| error.to_string())?
     else {
         return Ok(());
     };
-    if record.state != "approved" {
+    if record.state != "approved" || paused {
         return vibyra_core::agent_mail::set_status(&world.db, &message.id, "refused")
             .map_err(|error| error.to_string());
     }

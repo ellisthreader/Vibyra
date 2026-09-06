@@ -22,15 +22,34 @@ const MARKER: &str = "REMEMBER:";
 const MAX_PER_TURN: usize = 3;
 
 /// Extracts candidates from `text` and stores whatever reflection allows.
-pub fn after_turn(db: &AgentDb, profile: &AgentProfile, chat_id: &str, turn_id: &str, text: &str) {
+pub fn after_turn(
+    db: &AgentDb,
+    profile: &AgentProfile,
+    chat_id: &str,
+    turn_id: &str,
+    text: &str,
+) -> Result<(), String> {
+    if profile.reflection == vibyra_core::agent_model::Reflection::Off {
+        return Ok(());
+    }
     for (class, body) in candidates(text) {
-        let existing =
-            vibyra_core::agent_memory::overlapping(db, &profile.id, &body).unwrap_or_default();
-        let verdict = judge(profile.reflection, class, &body, &existing);
+        let existing = vibyra_core::agent_memory::overlapping(db, &profile.id, &body)
+            .map_err(|e| e.to_string())?;
+        let reflection = if profile.reflection == vibyra_core::agent_model::Reflection::Off {
+            profile.reflection
+        } else {
+            vibyra_core::agent_model::Reflection::Suggest
+        };
+        let verdict = judge(reflection, class, &body, &existing);
         let Some(status) = verdict.status() else {
             continue;
         };
-        let _ = vibyra_core::agent_memory::record(
+        if !vibyra_core::agent_runs::reserve_proposal(db, &profile.account, turn_id)
+            .map_err(|e| e.to_string())?
+        {
+            break;
+        }
+        vibyra_core::agent_memory::record(
             db,
             &profile.id,
             NewMemory {
@@ -46,8 +65,10 @@ pub fn after_turn(db: &AgentDb, profile: &AgentProfile, chat_id: &str, turn_id: 
                 source_turn: Some(turn_id.to_string()),
             },
             status,
-        );
+        )
+        .map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
 /// The lines an agent marked as worth keeping, with the class it named.

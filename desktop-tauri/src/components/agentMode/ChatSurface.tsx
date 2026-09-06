@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
 import { NONE } from "../../lib/emptyList";
@@ -31,6 +31,8 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const blocks = useAgentChatStore((state) =>
     chatId ? (state.transcripts[chatId]?.blocks ?? NONE) : NONE,
   );
+  const hasEarlier = useAgentChatStore((state) => chatId ? state.hasEarlier[chatId] : false);
+  const loadEarlier = useAgentChatStore((state) => state.loadEarlier);
   const approvals = useAgentWorkStore((state) => state.approvals);
   const waiting = useMemo(
     () => approvals.filter((request) => request.chatId === chatId),
@@ -40,6 +42,13 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
   const scroller = useRef<HTMLDivElement>(null);
   const anchored = useRef(true);
   const frame = useRef(0);
+  const prepending = useRef<{ chat: string; top: number; height: number } | null>(null);
+  useLayoutEffect(() => {
+    const node = scroller.current; const previous = prepending.current;
+    if (!node || !previous || previous.chat !== chatId) return;
+    node.scrollTop = previous.top + node.scrollHeight - previous.height;
+    prepending.current = null;
+  }, [blocks, chatId]);
 
   useEffect(() => {
     if (!anchored.current || frame.current) return;
@@ -83,6 +92,7 @@ export function ChatSurface({ agent }: { agent: AgentProfile | null }) {
           anchored.current = node.scrollHeight - node.scrollTop - node.clientHeight < 48;
         }}
       >
+        {hasEarlier && <button className="btn btn--sm" onClick={() => { anchored.current = false; const node = scroller.current; if (node) prepending.current = { chat: chatId, top: node.scrollTop, height: node.scrollHeight }; void loadEarlier(chatId); }}>Load earlier messages</button>}
         <AgentTranscript chatId={chatId} blocks={blocks} agent={agent} />
       </div>
       {waiting.length > 0 && (

@@ -11,7 +11,8 @@ export function Sheet({ title, visible, onClose, children, scroll = true }: {
   const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
   return <Modal visible={visible} onRequestClose={onClose} presentationStyle="pageSheet" animationType={reducedMotion ? 'none' : 'slide'}>
-    <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+    <SafeAreaView accessibilityViewIsModal role={Platform.OS === 'web' ? 'dialog' : undefined}
+      aria-label={title} aria-modal style={[s.safe, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <View style={[s.header, { borderBottomColor: colors.border }]}>
         <Text accessibilityRole="header" style={[s.title, { color: colors.text }]}>{title}</Text>
         <IconButton icon="close" label={`Close ${title}`} onPress={onClose} />

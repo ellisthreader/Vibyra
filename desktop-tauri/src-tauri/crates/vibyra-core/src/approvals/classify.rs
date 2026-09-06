@@ -37,7 +37,6 @@ const READ_TOOLS: &[&str] = &[
     "WebSearch",
     "TodoWrite",
     "TodoRead",
-    "Task",
     "NotebookRead",
 ];
 
@@ -104,12 +103,11 @@ fn command_head(command: &str) -> String {
 }
 
 fn summarise(input: &Value) -> String {
-    let text = match input {
+    match input {
         Value::Object(fields) if fields.is_empty() => String::new(),
         Value::Null => String::new(),
         other => serde_json::to_string_pretty(other).unwrap_or_default(),
-    };
-    text.chars().take(2_000).collect()
+    }
 }
 
 /// The risk class of a handoff phrase that turned it into a decision.

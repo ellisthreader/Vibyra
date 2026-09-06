@@ -100,7 +100,7 @@ function applyEvent(
       return [
         ...blocks,
         {
-          id: `tool-${event.callId}`,
+          id: `${row.turnId}-tool-${event.callId}`,
           type: "tool",
           seq: row.seq,
           tool: event.tool,

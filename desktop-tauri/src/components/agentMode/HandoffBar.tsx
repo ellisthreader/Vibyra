@@ -23,6 +23,9 @@ export function HandoffBar({ agent, allowed }: { agent: AgentProfile; allowed: s
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
   const selectChat = useAgentModeStore((state) => state.selectChat);
   const openChat = useAgentChatStore((state) => state.openChat);
+  const chatId = useAgentModeStore((state) => state.chatId);
+  const [busy, setBusy] = useState(false);
+  const [expected, setExpected] = useState("");
   const [note, setNote] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [target, setTarget] = useState("");
@@ -33,14 +36,16 @@ export function HandoffBar({ agent, allowed }: { agent: AgentProfile; allowed: s
   const hand = async () => {
     const recipientId = target || peers[0].id;
     const body = note.trim();
-    if (!body) return;
+    if (!body || busy) return;
+    setBusy(true);
     const outcome = await sendHandoff({
       senderId: agent.id,
       senderName: agent.name,
       recipientId,
-      body,
+      body, parentChatId: chatId, expectedOutput: expected.trim() || undefined,
     }).catch((error) => ({ status: "refused" as const, message: String(error), chatId: null }));
 
+    setBusy(false);
     setResult(outcome.message);
     if (outcome.status === "delivered" && outcome.chatId) {
       setNote("");
@@ -69,11 +74,12 @@ export function HandoffBar({ agent, allowed }: { agent: AgentProfile; allowed: s
         value={note}
         onChange={(event) => setNote(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter") void hand();
+          if (event.key === "Enter" && !event.nativeEvent.isComposing) void hand();
         }}
         placeholder="What should they pick up?"
       />
-      <button className="btn btn--sm" disabled={!note.trim()} onClick={() => void hand()}>
+      <input className="input" aria-label="Expected handoff result" placeholder="Expected result (optional)" value={expected} onChange={(event) => setExpected(event.target.value)} />
+      <button className="btn btn--sm" disabled={!note.trim() || busy} onClick={() => void hand()}>
         Hand over
       </button>
       {result && <p className="handoff__result">{result}</p>}

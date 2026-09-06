@@ -27,7 +27,7 @@ export const styleSource = {
       width: 52
     },
   persistentBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       overflow: "hidden"
     },
   optionIconShell: {

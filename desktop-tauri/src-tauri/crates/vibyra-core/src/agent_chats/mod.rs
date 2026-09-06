@@ -12,6 +12,9 @@ pub mod attachments;
 #[cfg(test)]
 mod detached_tests;
 mod edits;
+pub(crate) mod managed_paths;
+#[cfg(test)]
+mod managed_paths_tests;
 mod record;
 mod search;
 mod store;
@@ -24,3 +27,8 @@ pub use edits::{amend, mount_place};
 pub use record::{AgentChat, ChatEventRow};
 pub use search::search;
 pub use store::{bind_session, create, delete, get, list, reset_running, set_state, NewChat};
+
+mod lifecycle_queries;
+pub use lifecycle_queries::{archived, ids_for_agent};
+
+mod attachment_limits;

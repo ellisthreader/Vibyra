@@ -49,15 +49,48 @@ pub(super) fn read_bounded(
 /// the pipe while we are still reading stdout.
 pub(super) fn collect_stderr(stderr: std::process::ChildStderr) -> std::thread::JoinHandle<String> {
     std::thread::spawn(move || {
-        let mut text = String::new();
-        for line in BufReader::new(stderr)
-            .lines()
-            .map_while(Result::ok)
-            .take(200)
-        {
-            text.push_str(line.trim());
-            text.push('\n');
+        let mut text = Vec::new();
+        let mut reader = BufReader::new(stderr);
+        loop {
+            let mut line = Vec::new();
+            match read_bounded(&mut reader, &mut line) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {
+                    let available = 4_000usize.saturating_sub(text.len());
+                    text.extend_from_slice(&line[..line.len().min(available)]);
+                    if text.len() < 4_000 {
+                        text.push(b'\n');
+                    }
+                }
+            }
         }
-        text.trim().chars().take(4_000).collect()
+        String::from_utf8_lossy(&text).trim().to_string()
     })
+}
+
+/// A bounded live diagnostic, available even when an RPC peer exits early.
+pub(super) fn observe_stderr(
+    stderr: std::process::ChildStderr,
+) -> std::sync::Arc<parking_lot::Mutex<String>> {
+    let captured = std::sync::Arc::new(parking_lot::Mutex::new(String::new()));
+    let output = captured.clone();
+    std::thread::spawn(move || {
+        let mut reader = BufReader::new(stderr);
+        loop {
+            let mut line = Vec::new();
+            match read_bounded(&mut reader, &mut line) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {
+                    let mut text = output.lock();
+                    let available = 4000usize.saturating_sub(text.len());
+                    let decoded = String::from_utf8_lossy(&line);
+                    text.extend(decoded.chars().take(available / 4));
+                    if text.len() < 4000 {
+                        text.push('\n');
+                    }
+                }
+            }
+        }
+    });
+    captured
 }

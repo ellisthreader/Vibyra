@@ -1,14 +1,5 @@
 //! Commands for agent-to-agent handoffs.
 //!
-//! The send path does three things the core cannot do on its own: it reads the
-//! app-wide pause out of settings, it looks up the recipient's name and
-//! willingness, and — when a handoff is allowed — it opens the fresh chat the
-//! recipient wakes into and runs that turn on its own thread.
-//!
-//! What it deliberately does *not* do is pass anything from the message into
-//! the recipient's authority. The recipient's turn is assembled from the
-//! recipient's own profile; a handoff is text that arrives inside it.
-
 use std::sync::Arc;
 
 use tauri::{AppHandle, Emitter, State};
@@ -38,9 +29,39 @@ pub struct HandoffResult {
 pub async fn agent_mail_send(
     app: AppHandle,
     state: State<'_, AppState>,
-    handoff: Handoff,
+    mut handoff: Handoff,
+    parent_chat_id: Option<String>,
+    expected_output: Option<String>,
 ) -> Result<HandoffResult, String> {
     let world = world(&state)?;
+    let sender = vibyra_core::agent_profiles::get(&world.db, &world.account, &handoff.sender_id)
+        .map_err(|e| e.to_string())?;
+    if sender.archived_ms.is_some() {
+        return Err("Restore the sending teammate first.".into());
+    }
+    handoff.sender_name = sender.name;
+    if handoff.body.trim().is_empty() || handoff.body.chars().count() > 4_000 {
+        return Err("A handoff needs between 1 and 4,000 characters.".into());
+    }
+    let parent = if let Some(chat) = parent_chat_id {
+        let owned = vibyra_core::agent_chats::get(&world.db, &world.account, &chat)
+            .map_err(|e| e.to_string())?;
+        if owned.agent_id.as_deref() != Some(&handoff.sender_id) {
+            return Err("The source chat belongs to another teammate.".into());
+        }
+        vibyra_core::agent_runs::list(&world.db, &world.account, Some(&chat))
+            .map_err(|e| e.to_string())?
+            .first()
+            .map(|run| run.id.clone())
+    } else {
+        None
+    };
+    let expected = expected_output.unwrap_or_else(|| {
+        "A response with evidence, checks performed and remaining limitations.".into()
+    });
+    if expected.trim().is_empty() || expected.len() > 4_000 {
+        return Err("Describe the expected result in at most 4,000 bytes.".into());
+    }
     let paused = state.settings.lock().agent_mail_paused;
     let recipient =
         vibyra_core::agent_profiles::get(&world.db, &world.account, &handoff.recipient_id)
@@ -58,6 +79,10 @@ pub async fn agent_mail_send(
     })
     .await?;
 
+    if let Delivery::Delivered(message) | Delivery::NeedsApproval { message, .. } = &delivery {
+        vibyra_core::agent_mail::link_task(&world.db, &message.id, parent.as_deref(), &expected)
+            .map_err(|e| e.to_string())?;
+    }
     match delivery {
         Delivery::Refused(refusal) => Ok(HandoffResult {
             status: "refused".into(),

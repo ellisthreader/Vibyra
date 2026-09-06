@@ -37,19 +37,20 @@ const PROVIDER_VARIABLES: &[&str] = &[
 ];
 
 /// What to set and what to strip for a turn of `engine` on `account`.
-pub fn for_turn(engine: &str, account: Option<&str>) -> (Vec<(String, String)>, Vec<String>) {
+type TurnEnvironment = (Vec<(String, String)>, Vec<String>);
+
+pub fn for_turn(engine: &str, account: Option<&str>) -> Result<TurnEnvironment, String> {
     let remove: Vec<String> = PROVIDER_VARIABLES
         .iter()
         .map(|name| name.to_string())
         .collect();
     let account = account.unwrap_or(DEFAULT_ACCOUNT);
     let set = Registry::load()
-        .home(engine, account)
-        .ok()
-        .and_then(|home| home.env())
+        .home(engine, account)?
+        .env()
         .map(|pair| vec![pair])
         .unwrap_or_default();
-    (set, remove)
+    Ok((set, remove))
 }
 
 #[cfg(test)]
@@ -61,7 +62,7 @@ mod tests {
     /// a stray key in the user's shell does not reach the child.
     #[test]
     fn the_default_account_sets_nothing_and_still_strips_everything() {
-        let (set, remove) = for_turn("codex", None);
+        let (set, remove) = for_turn("codex", None).unwrap();
         assert!(
             set.is_empty(),
             "the default account is the CLI's own folder"
@@ -79,7 +80,7 @@ mod tests {
     #[test]
     fn every_provider_variable_is_stripped_whichever_engine_runs() {
         for engine in ["codex", "claude"] {
-            let (_, remove) = for_turn(engine, Some("some-account"));
+            let (_, remove) = for_turn(engine, None).unwrap();
             for name in PROVIDER_VARIABLES {
                 assert!(
                     remove.iter().any(|entry| entry == name),

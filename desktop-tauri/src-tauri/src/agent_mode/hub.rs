@@ -11,84 +11,27 @@
 //! attachments — not merely separate rows.
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
-use vibyra_core::agent_runtime::TurnHandle;
 use vibyra_core::agentdb::AgentDb;
 
-/// One account's Agent Mode world.
-pub struct AgentWorld {
-    pub db: Arc<AgentDb>,
-    /// The root the database, agent homes and chat attachments all live under.
-    pub root: PathBuf,
-    /// The account scope every row is written with.
-    pub account: String,
-    /// Turns in flight, by chat id. A chat runs one turn at a time; sending
-    /// again while one is running is a queue the UI prevents, not a race the
-    /// runtime has to resolve.
-    running: Mutex<HashMap<String, TurnHandle>>,
-}
+pub use super::world::AgentWorld;
 
-impl AgentWorld {
-    /// Registers a turn and hands back its handle, replacing any stale entry.
-    pub fn begin(&self, chat_id: &str) -> TurnHandle {
-        let handle = TurnHandle::new();
-        self.running
-            .lock()
-            .insert(chat_id.to_string(), handle.clone());
-        handle
-    }
-
-    pub fn finish(&self, chat_id: &str) {
-        self.running.lock().remove(chat_id);
-    }
-
-    /// Stops the turn running in `chat_id`, if any. Returns whether there was
-    /// one — the UI uses that to tell "stopped it" from "nothing to stop".
-    pub fn cancel(&self, chat_id: &str) -> bool {
-        let handle = self.running.lock().get(chat_id).cloned();
-        match handle {
-            Some(handle) => {
-                handle.cancel();
-                true
-            }
-            None => false,
-        }
-    }
-
-    pub fn busy(&self) -> Vec<String> {
-        self.running.lock().keys().cloned().collect()
-    }
-
-    /// Whether the turn in `chat_id` has been stopped — or is no longer here
-    /// at all, which for anything waiting on it means the same thing. The
-    /// permission gate asks this: a card nobody will ever consume must not
-    /// keep a provider process parked for half an hour.
-    pub fn is_cancelled(&self, chat_id: &str) -> bool {
-        match self.running.lock().get(chat_id) {
-            Some(handle) => handle.cancelled(),
-            None => true,
-        }
-    }
-
-    /// Signals every turn. Called on sign-out and on app close, so no provider
-    /// process outlives the session that started it.
-    pub fn cancel_all(&self) {
-        for (_, handle) in self.running.lock().drain() {
-            handle.cancel();
-        }
-    }
-}
+pub(super) type Notifier = Arc<dyn Fn(&str, &str) + Send + Sync>;
 
 /// Holds whichever account's world is currently open.
 #[derive(Default)]
 pub struct AgentHub {
     open: Mutex<Option<Arc<AgentWorld>>>,
+    notifier: Mutex<Option<Notifier>>,
 }
 
 impl AgentHub {
+    pub fn set_notifier(&self, notify: impl Fn(&str, &str) + Send + Sync + 'static) {
+        *self.notifier.lock() = Some(Arc::new(notify));
+    }
     /// The world for `scope`, opening it if this is the first call.
     ///
     /// A different scope closes the previous one first: two accounts are never
@@ -117,17 +60,24 @@ impl AgentHub {
 
         // Nothing survived the last shutdown, so anything still marked running
         // is a crash's leftover rather than work in progress.
-        let _ = vibyra_core::agent_chats::reset_running(&db);
-        let _ = vibyra_core::routines::runs::reset_running(&db);
+        vibyra_core::agent_chats::reset_running(&db).map_err(|e| e.to_string())?;
+        vibyra_core::agent_runs::recover(&db).map_err(|e| e.to_string())?;
+        vibyra_core::routines::runs::reset_running(&db).map_err(|e| e.to_string())?;
         // The same goes for a decision a dead turn was waiting on: nobody is
         // listening for the answer, so the card must not offer one.
-        let _ = vibyra_core::approvals::invalidate_orphans(&db);
+        vibyra_core::approvals::invalidate_orphans(&db).map_err(|e| e.to_string())?;
 
         let world = Arc::new(AgentWorld {
             db: Arc::new(db),
+            notify: self
+                .notifier
+                .lock()
+                .clone()
+                .unwrap_or_else(|| Arc::new(|_, _| {})),
             root,
             account,
             running: Mutex::new(HashMap::new()),
+            closed: std::sync::atomic::AtomicBool::new(false),
         });
         *open = Some(Arc::clone(&world));
         Ok(world)

@@ -102,7 +102,7 @@ export const styleSource = {
       justifyContent: "flex-end"
     },
   pcSwitcherScrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "rgba(0, 0, 0, 0.58)"
     },
   pcSwitcherSheet: {

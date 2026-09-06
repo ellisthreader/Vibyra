@@ -67,7 +67,7 @@ export interface RoutineRun {
   scheduledMs: number;
   startedMs: number | null;
   endedMs: number | null;
-  status: "running" | "completed" | "failed" | "skipped";
+  status: "running" | "completed" | "failed" | "skipped" | "cancelled" | "interrupted";
   error: string | null;
 }
 

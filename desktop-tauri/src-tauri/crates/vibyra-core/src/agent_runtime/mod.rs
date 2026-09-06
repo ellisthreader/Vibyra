@@ -42,3 +42,6 @@ pub use capabilities::EngineCapabilities;
 pub use claude::PermissionBridge;
 pub use events::{AgentEvent, TurnOccasion};
 pub use process::{run, TurnCommand, TurnExit, TurnHandle};
+
+pub mod deadline;
+pub mod rpc;

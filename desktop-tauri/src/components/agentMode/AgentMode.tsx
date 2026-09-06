@@ -1,3 +1,6 @@
+import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { TaskHistory } from "./TaskHistory";
+import { useAgentRecovery } from "./useAgentRecovery";
 import { useEffect, useState } from "react";
 
 import { useAgentChatStore } from "../../state/agentChatStore";
@@ -13,10 +16,13 @@ import { SkillsPanel } from "./SkillsPanel";
 
 /** Agent Mode: the rail, and whichever of the panels or agents is selected. */
 export function AgentMode() {
+  useAgentRecovery();
   const panel = useAgentModeStore((state) => state.panel);
   const agentId = useAgentModeStore((state) => state.agentId);
   const load = useAgentRosterStore((state) => state.load);
   const adoptRunning = useAgentChatStore((state) => state.adoptRunning);
+  const workError = useAgentWorkStore((state) => state.error);
+  const error = useAgentRosterStore((state) => state.error);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -30,11 +36,14 @@ export function AgentMode() {
     <>
       <AgentRail onNewAgent={() => setCreating(true)} />
       <main className="agent-main">
+        {workError && <p className="composer__error" role="alert">{workError}</p>}
+        {error && <p className="composer__error" role="alert">{error}</p>}
         {agentId ? (
           <AgentSurface />
         ) : (
           <>
             {panel === "dashboard" && <AgentDashboard onNewAgent={() => setCreating(true)} />}
+            {panel === "tasks" && <TaskHistory />}
             {panel === "decisions" && <DecisionsPanel />}
             {panel === "routines" && <RoutinesPanel />}
             {panel === "skills" && <SkillsPanel />}

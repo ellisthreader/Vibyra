@@ -1,3 +1,4 @@
+import type { RunOutcome } from "../agentRunTypes";
 import { Channel, invoke } from "@tauri-apps/api/core";
 
 import type {
@@ -18,8 +19,8 @@ import type {
 // coalescing is all on this side, in `agentChatStore`'s frame buffer, so React
 // is protected but the webview boundary is not.
 
-export function listChats(agentId: string | null): Promise<AgentChat[]> {
-  return invoke("agent_chat_list", { agentId });
+export function listChats(agentId: string | null, archived = false): Promise<AgentChat[]> {
+  return invoke("agent_chat_list", { agentId, archived });
 }
 
 export function createChat(request: {
@@ -39,8 +40,8 @@ export function createChat(request: {
 }
 
 /** The most recent page, or the page before `beforeSeq`. */
-export function chatEvents(chatId: string, beforeSeq?: number): Promise<ChatEventRow[]> {
-  return invoke("agent_chat_events", { chatId, beforeSeq: beforeSeq ?? null });
+export function chatEvents(chatId: string, beforeSeq?: number, afterSeq?: number): Promise<ChatEventRow[]> {
+  return invoke("agent_chat_events", { chatId, beforeSeq: beforeSeq ?? null, afterSeq: afterSeq ?? null });
 }
 
 export function amendChat(
@@ -102,7 +103,7 @@ export function sendTurn(
     accountId?: string | null;
   },
   onEvent: (row: ChatEventRow) => void,
-): Promise<void> {
+): Promise<RunOutcome> {
   const channel = new Channel<ChatEventRow>();
   channel.onmessage = onEvent;
   return invoke("agent_turn_send", {
@@ -119,7 +120,6 @@ export function cancelTurn(chatId: string): Promise<boolean> {
   return invoke("agent_turn_cancel", { chatId });
 }
 
-/** Which chats are working. Read after a reload, which lost its channels. */
-export function runningChats(): Promise<string[]> {
-  return invoke("agent_turn_running");
-}
+
+/** Native admission includes tasks still preparing their provider connection. */
+export const runningChats = (): Promise<string[]> => invoke("agent_turn_running");

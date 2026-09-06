@@ -40,14 +40,16 @@ pub async fn agent_chat_attachment_remove(
 ) -> Result<(), String> {
     let world = world(&state)?;
     run_blocking(move || {
-        let root = world.root.clone();
-        vibyra_core::agent_chats::attachment_store::remove(
-            &world.db,
-            &root,
-            &chat_id,
-            &attachment_id,
-        )
-        .map_err(|e| e.to_string())
+        world.with_idle(&chat_id, || {
+            let root = world.root.clone();
+            vibyra_core::agent_chats::attachment_store::remove(
+                &world.db,
+                &root,
+                &chat_id,
+                &attachment_id,
+            )
+            .map_err(|e| e.to_string())
+        })
     })
     .await
 }

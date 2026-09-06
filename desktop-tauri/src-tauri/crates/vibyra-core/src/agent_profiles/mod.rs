@@ -28,7 +28,7 @@ use crate::error::{CoreError, CoreResult};
 /// an agent that cannot write a scratch file. It is created owner-only and is
 /// always the agent's first read/write place.
 pub fn home_for(root: &Path, agent_id: &str) -> CoreResult<PathBuf> {
-    let home = root.join("agents").join(agent_id);
+    let home = managed_home(root, agent_id)?;
     std::fs::create_dir_all(&home)?;
     crate::fsx::harden_dir(&home);
     std::fs::canonicalize(&home)
@@ -52,3 +52,13 @@ pub fn clean_name(name: &str) -> CoreResult<String> {
     }
     Ok(cleaned.chars().take(60).collect())
 }
+
+#[cfg(test)]
+mod update_tests;
+
+pub fn managed_home(root: &Path, agent_id: &str) -> CoreResult<PathBuf> {
+    crate::agent_chats::managed_paths::folder_at(root, "agents", agent_id)
+}
+
+mod archive_store;
+pub use archive_store::archived;

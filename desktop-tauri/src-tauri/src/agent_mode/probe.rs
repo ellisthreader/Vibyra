@@ -5,10 +5,7 @@
 //! it has evidence for, so the answer comes from the CLI's own `--version` and
 //! `--help` rather than from a table compiled into the app.
 //!
-//! Cached for the life of the process. A user who updates Codex mid-session
-//! gets the new answer on the next launch, which is the right trade: probing
-//! two CLIs costs a second, and doing it before every turn would put that on
-//! the critical path of every message.
+//! Cached for sixty seconds, with an explicit recheck after a CLI update.
 
 use std::process::Command;
 use std::sync::OnceLock;
@@ -18,18 +15,27 @@ use vibyra_core::agent_model::Engine;
 use vibyra_core::agent_runtime::capabilities::interpret;
 use vibyra_core::agent_runtime::EngineCapabilities;
 
-static CACHE: OnceLock<Vec<EngineCapabilities>> = OnceLock::new();
+type ProbeCache = Option<(std::time::Instant, Vec<EngineCapabilities>)>;
+static CACHE: OnceLock<parking_lot::Mutex<ProbeCache>> = OnceLock::new();
 
-/// Both engines, probed once.
+pub fn invalidate() {
+    *CACHE.get_or_init(|| parking_lot::Mutex::new(None)).lock() = None;
+}
+
+/// Both engines, with a short compatibility cache.
 pub fn probe_engines() -> Vec<EngineCapabilities> {
-    CACHE
-        .get_or_init(|| {
-            [Engine::Claude, Engine::Codex]
-                .into_iter()
-                .map(probe)
-                .collect()
-        })
-        .clone()
+    let mut cache = CACHE.get_or_init(|| parking_lot::Mutex::new(None)).lock();
+    if let Some((time, capabilities)) = cache.as_ref() {
+        if time.elapsed() < Duration::from_secs(60) {
+            return capabilities.clone();
+        }
+    }
+    let capabilities: Vec<_> = [Engine::Claude, Engine::Codex]
+        .into_iter()
+        .map(probe)
+        .collect();
+    *cache = Some((std::time::Instant::now(), capabilities.clone()));
+    capabilities
 }
 
 fn probe(engine: Engine) -> EngineCapabilities {
@@ -42,7 +48,29 @@ fn probe(engine: Engine) -> EngineCapabilities {
         Engine::Claude => capture(program, &["--help"]),
     }
     .unwrap_or_default();
-    interpret(engine, &version, &help)
+    let mut capabilities = interpret(engine, &version, &help);
+    if capabilities.structured
+        && cfg!(target_os = "linux")
+        && capture(
+            "bwrap",
+            &["--ro-bind", "/", "/", "--unshare-net", "--", "/bin/true"],
+        )
+        .is_none()
+    {
+        capabilities.blocker = "The Linux sandbox could not start. Install Bubblewrap and enable its distribution AppArmor profile on Ubuntu, then recheck the provider.".into();
+        capabilities.structured = false;
+    }
+    if engine == Engine::Claude && capabilities.structured {
+        if cfg!(target_os = "windows") {
+            capabilities.blocker = "Claude Agent Mode needs a sandbox-capable worker. Use Codex on native Windows, or run Claude in WSL2.".into();
+        } else if cfg!(target_os = "linux")
+            && (capture("bwrap", &["--version"]).is_none() || capture("socat", &["-V"]).is_none())
+        {
+            capabilities.blocker = "Claude needs Bubblewrap and socat for protected execution. Install both, then recheck the provider.".into();
+        }
+        capabilities.structured = capabilities.blocker.is_empty();
+    }
+    capabilities
 }
 
 /// Runs a CLI for its own text, with the app's environment sanitised the same
@@ -54,6 +82,9 @@ fn capture(program: &str, args: &[&str]) -> Option<String> {
     command.args(args);
     vibyra_core::launch_env::sanitize_command(&mut command);
     let output = wait_bounded(command)?;
+    if !output.status.success() {
+        return None;
+    }
     let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
     text.push('\n');
     text.push_str(&String::from_utf8_lossy(&output.stderr));

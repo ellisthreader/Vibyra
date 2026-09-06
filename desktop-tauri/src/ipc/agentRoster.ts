@@ -14,8 +14,8 @@ import type {
 // call, so nothing here passes one — a scope the renderer could set would make
 // the account boundary a suggestion.
 
-export function listAgents(): Promise<AgentProfile[]> {
-  return invoke("agent_profile_list");
+export function listAgents(archived = false): Promise<AgentProfile[]> {
+  return invoke("agent_profile_list", { archived });
 }
 
 export function createAgent(request: {
@@ -69,6 +69,6 @@ export function revokePlace(agentId: string, placeId: string): Promise<void> {
 }
 
 /** What the installed CLIs actually support on this machine. */
-export function engineCapabilities(): Promise<EngineCapabilities[]> {
-  return invoke("agent_engine_capabilities");
+export function engineCapabilities(refresh = false): Promise<EngineCapabilities[]> {
+  return invoke("agent_engine_capabilities", { refresh });
 }

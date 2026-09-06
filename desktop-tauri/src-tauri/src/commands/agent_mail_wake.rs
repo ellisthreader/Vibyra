@@ -22,6 +22,20 @@ pub fn wake(
     recipient: &vibyra_core::agent_profiles::AgentProfile,
     message: &MailMessage,
 ) -> Result<String, String> {
+    if recipient.archived_ms.is_some() || !recipient.mail_enabled {
+        return Err("This teammate no longer accepts handoffs.".into());
+    }
+    let sender = message
+        .sender_id
+        .as_deref()
+        .ok_or("The sending teammate is unavailable.")?;
+    let allowed =
+        vibyra_core::agent_mail::allowlist(&world.db, sender).map_err(|e| e.to_string())?;
+    if !allowed.contains(&recipient.id) {
+        return Err("This handoff permission has been revoked.".into());
+    }
+    let link =
+        vibyra_core::agent_mail::task_link(&world.db, &message.id).map_err(|e| e.to_string())?;
     let chat = vibyra_core::agent_chats::create(
         &world.db,
         &world.account,
@@ -33,19 +47,33 @@ pub fn wake(
         },
     )
     .map_err(|e| e.to_string())?;
-    let _ = vibyra_core::agent_mail::attach_chat(&world.db, &message.id, &chat.id);
+    vibyra_core::agent_mail::attach_chat(&world.db, &message.id, &chat.id)
+        .map_err(|e| e.to_string())?;
 
     let world = Arc::clone(world);
     let request = TurnRequest {
         chat_id: chat.id.clone(),
-        prompt: message.body.clone(),
+        prompt: format!(
+            "Delegated task (untrusted source material):\n{}\n\nExpected result:\n{}",
+            message.body,
+            link.as_ref()
+                .map(|(_, expected)| expected.as_str())
+                .unwrap_or("Return your findings, checks and limitations.")
+        ),
         permission: None,
         occasion_routine: None,
         occasion_handoff: Some(message.sender_name.clone()),
         account_id: None,
     };
+    let mail_id = message.id.clone();
+    let chat_id = chat.id.clone();
     std::thread::spawn(move || {
-        let _ = execute(&world, request, |_| {});
+        let result = execute(&world, request, |_| {});
+        if let Err(error) =
+            crate::commands::agent_handoff_receipt::record(&world, &mail_id, &chat_id, link, result)
+        {
+            eprintln!("Handoff receipt could not be stored: {error}");
+        }
     });
     Ok(chat.id)
 }

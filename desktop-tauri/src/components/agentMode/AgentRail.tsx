@@ -15,6 +15,7 @@ import { AgentRosterRow } from "./AgentRosterRow";
  */
 const PANELS = [
   { id: "dashboard", label: "Dashboard", Icon: GaugeIcon },
+  { id: "tasks", label: "Task history", Icon: ClockIcon },
   { id: "decisions", label: "Decisions", Icon: ShieldIcon },
   { id: "routines", label: "Routines", Icon: ClockIcon },
   { id: "skills", label: "Skills", Icon: BookIcon },
@@ -22,6 +23,8 @@ const PANELS = [
 
 export function AgentRail({ onNewAgent }: { onNewAgent: () => void }) {
   const agents = useAgentRosterStore((state) => state.agents);
+  const archived = useAgentRosterStore((state) => state.archived);
+  const archive = useAgentRosterStore((state) => state.archive);
   const panel = useAgentModeStore((state) => state.panel);
   const agentId = useAgentModeStore((state) => state.agentId);
   const openPanel = useAgentModeStore((state) => state.openPanel);
@@ -79,6 +82,12 @@ export function AgentRail({ onNewAgent }: { onNewAgent: () => void }) {
             </ul>
           )}
         </div>
+        {archived.length > 0 && <details className="rail__section">
+          <summary className="section-label">Archived teammates · {archived.length}</summary>
+          <ul className="agent-rail__roster">{archived.map((agent) => <li key={agent.id} className="task-history__row">
+            <span>{agent.name}</span><button className="btn btn--sm" onClick={() => void archive(agent.id, false)}>Restore</button>
+          </li>)}</ul>
+        </details>}
       </div>
     </aside>
   );

@@ -30,7 +30,7 @@ fn an_attachment_is_copied_out_of_the_users_folder() {
     let db = AgentDb::open_memory().unwrap();
     let chat = detached_chat(&db);
     let source = tmp.path().join("shot.png");
-    std::fs::write(&source, b"not really a png").unwrap();
+    std::fs::write(&source, b"\x89PNG\r\n\x1a\nfixture").unwrap();
 
     let record = attachments::attach(&db, tmp.path(), &chat.id, source.to_str().unwrap()).unwrap();
     assert_ne!(record.managed_path, source.to_string_lossy());
@@ -38,14 +38,14 @@ fn an_attachment_is_copied_out_of_the_users_folder() {
     assert_eq!(record.mime, "image/png");
     assert_eq!(
         std::fs::read(&record.managed_path).unwrap(),
-        b"not really a png"
+        b"\x89PNG\r\n\x1a\nfixture"
     );
     assert_eq!(
         attachments::images(&db, &chat.id).unwrap(),
         vec![record.managed_path.clone()]
     );
 
-    attachments::discard(tmp.path(), &chat.id);
+    attachments::discard(tmp.path(), &chat.id).unwrap();
     assert!(!std::path::Path::new(&record.managed_path).exists());
 }
 
@@ -59,7 +59,7 @@ fn an_attachment_name_cannot_climb_out_of_its_folder() {
     std::fs::write(&nasty, b"x").unwrap();
 
     let record = attachments::attach(&db, tmp.path(), &chat.id, nasty.to_str().unwrap()).unwrap();
-    let folder = attachments::folder(tmp.path(), &chat.id);
+    let folder = attachments::folder(tmp.path(), &chat.id).unwrap();
     assert!(
         std::path::Path::new(&record.managed_path).starts_with(&folder),
         "{} escaped {}",

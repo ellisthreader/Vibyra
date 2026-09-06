@@ -1,3 +1,4 @@
+import { ArchivedChats } from "./ArchivedChats";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 
 import { NONE } from "../../lib/emptyList";
@@ -32,7 +33,7 @@ export function ChatModeRail() {
 
   const mount = async (id: string, current: string | null) => {
     if (current) {
-      await mountChatPlace(id, null).catch(() => {});
+      await mountChatPlace(id, null).catch((error) => useAgentChatStore.setState({ error: String(error) }));
       await loadChats(null);
       return;
     }
@@ -42,7 +43,7 @@ export function ChatModeRail() {
       title: "Give this chat one folder to read",
     }).catch(() => null);
     if (typeof picked === "string" && picked) {
-      await mountChatPlace(id, picked).catch(() => {});
+      await mountChatPlace(id, picked).catch((error) => useAgentChatStore.setState({ error: String(error) }));
       await loadChats(null);
     }
   };
@@ -91,6 +92,7 @@ export function ChatModeRail() {
         ))}
         {chats.length === 0 && <li className="chat-rail__empty">No chats yet.</li>}
       </ul>
+      <ArchivedChats agentId={null} />
     </aside>
   );
 }

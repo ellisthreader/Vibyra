@@ -10,7 +10,9 @@
 //! Deleting the chat deletes the folder, which is the other half: an
 //! attachment must not outlive the conversation it was part of.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+pub use super::managed_paths::{discard, folder};
 
 use rusqlite::params;
 use serde::Serialize;
@@ -35,11 +37,6 @@ pub struct ChatAttachment {
     pub bytes: i64,
 }
 
-/// The folder one chat's attachments live in.
-pub fn folder(root: &Path, chat_id: &str) -> PathBuf {
-    root.join("chats").join(chat_id)
-}
-
 /// Copies a file into the chat's folder and records it.
 pub fn attach(
     db: &AgentDb,
@@ -47,6 +44,7 @@ pub fn attach(
     chat_id: &str,
     source: &str,
 ) -> CoreResult<ChatAttachment> {
+    super::managed_paths::require_chat(db, chat_id)?;
     let from = Path::new(source);
     let metadata = std::fs::metadata(from)
         .map_err(|error| CoreError::InvalidPath(format!("{source}: {error}")))?;
@@ -61,7 +59,8 @@ pub fn attach(
         )));
     }
 
-    let dir = folder(root, chat_id);
+    let (bytes, mime) = super::attachment_limits::load(db, chat_id, from)?;
+    let dir = folder(root, chat_id)?;
     std::fs::create_dir_all(&dir)?;
     crate::fsx::harden_dir(&dir);
 
@@ -73,7 +72,7 @@ pub fn attach(
     // Prefixed with the row id so two files called `screenshot.png` are two
     // files, and so a crafted name cannot collide with an existing copy.
     let managed = dir.join(format!("{id}-{}", safe_name(&original)));
-    std::fs::copy(from, &managed)?;
+    crate::fsx::write_private_atomic(&managed, &bytes)?;
     crate::fsx::harden(&managed);
 
     let record = ChatAttachment {
@@ -81,10 +80,10 @@ pub fn attach(
         chat_id: chat_id.to_string(),
         original,
         managed_path: managed.to_string_lossy().into_owned(),
-        mime: mime_for(&managed),
-        bytes: metadata.len() as i64,
+        mime,
+        bytes: bytes.len() as i64,
     };
-    db.with(|connection| {
+    let inserted = db.with(|connection| {
         connection
             .execute(
                 "INSERT INTO chat_attachments \
@@ -102,7 +101,11 @@ pub fn attach(
             )
             .map_err(sql)?;
         Ok(())
-    })?;
+    });
+    if let Err(error) = inserted {
+        let _ = std::fs::remove_file(&managed);
+        return Err(error);
+    }
     Ok(record)
 }
 
@@ -120,12 +123,6 @@ pub fn images(db: &AgentDb, chat_id: &str) -> CoreResult<Vec<String>> {
             .map_err(sql)?;
         rows.collect::<Result<Vec<_>, _>>().map_err(sql)
     })
-}
-
-/// Removes a chat's attachment folder. Called when the chat is deleted; the
-/// rows go with the chat through the schema's cascade.
-pub fn discard(root: &Path, chat_id: &str) {
-    let _ = std::fs::remove_dir_all(folder(root, chat_id));
 }
 
 /// Strips everything that could make a copied name mean a path.
@@ -146,25 +143,4 @@ fn safe_name(name: &str) -> String {
     } else {
         trimmed.chars().take(80).collect()
     }
-}
-
-/// Enough of a MIME guess to tell an image from everything else, which is the
-/// only distinction the adapters make.
-fn mime_for(path: &Path) -> String {
-    let extension = path
-        .extension()
-        .map(|ext| ext.to_string_lossy().to_lowercase())
-        .unwrap_or_default();
-    match extension.as_str() {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "webp" => "image/webp",
-        "svg" => "image/svg+xml",
-        "pdf" => "application/pdf",
-        "json" => "application/json",
-        "md" | "txt" | "log" => "text/plain",
-        _ => "application/octet-stream",
-    }
-    .into()
 }

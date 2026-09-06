@@ -7,6 +7,7 @@ pub mod agent_config;
 pub mod agent_conversations;
 #[cfg(test)]
 mod agent_conversations_tests;
+mod agent_handoff_receipt;
 pub mod agent_mail_cmd;
 pub mod agent_roster;
 pub mod agent_routines_cmd;
@@ -87,3 +88,7 @@ pub(crate) async fn run_blocking_core<T: Send + 'static>(
         .await
         .map_err(|error| CoreError::Task(error.to_string()))?
 }
+
+pub mod agent_runs;
+
+pub mod agent_turn;

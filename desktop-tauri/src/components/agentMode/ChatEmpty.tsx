@@ -4,6 +4,7 @@ import { PlusIcon } from "../common/Icons";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
 import { EmptyState } from "./EmptyState";
+import { TaskStarters } from "./TaskStarters";
 
 /** The state before the first chat. One action, and what it will do. */
 export function ChatEmpty({ agent }: { agent: AgentProfile | null }) {
@@ -31,6 +32,7 @@ export function ChatEmpty({ agent }: { agent: AgentProfile | null }) {
           </button>
         }
       />
+      <TaskStarters agent={agent} />
     </div>
   );
 }

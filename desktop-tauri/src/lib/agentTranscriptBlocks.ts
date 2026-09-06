@@ -46,14 +46,14 @@ export function fillTool(
   row: ChatEventRow,
   event: Extract<AgentEvent, { kind: "tool.output" }>,
 ): TranscriptBlock[] {
-  const index = blocks.findIndex((block) => block.id === `tool-${event.callId}`);
+  const index = blocks.findIndex((block) => block.id === `${row.turnId}-tool-${event.callId}`);
   if (index === -1) {
     // Output for a call we never saw announced — Claude sends tool results as
     // their own message, and a page boundary can land between the two.
     return [
       ...blocks,
       {
-        id: `tool-${event.callId}`,
+        id: `${row.turnId}-tool-${event.callId}`,
         type: "tool",
         seq: row.seq,
         tool: event.tool || "tool",

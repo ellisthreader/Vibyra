@@ -1,3 +1,4 @@
+import type { AgentRun } from "../agentRunTypes";
 import type { AgentChat, AgentProfile } from "../agentTypes";
 import type { Routine, RoutineRun } from "../agentWorkTypes";
 
@@ -23,6 +24,7 @@ export interface Live {
 }
 
 export interface LiveWorkInput {
+  tasks?: AgentRun[];
   chats: Record<string, AgentChat[]>;
   running: Record<string, boolean>;
   startedMs: Record<string, number>;
@@ -37,6 +39,19 @@ export function liveWork(input: LiveWorkInput): Live[] {
   const { chats, running, startedMs, routines, runs, waitingChats, agents, isParked } = input;
   const named = (id: string | null) =>
     agents.find((agent) => agent.id === id)?.name ?? "Detached";
+
+  if (input.tasks) {
+    const live: Live[] = input.tasks.filter((task) => task.status === "running" || task.status === "waiting").map((task) => ({
+      key: task.id, who: task.spec.agentName, what: task.spec.prompt || "New task",
+      parked: task.status === "waiting", startedMs: task.startedMs, chatId: task.chatId, agentId: task.agentId,
+    }));
+    for (const id of Object.keys(running).filter((id) => running[id] && !live.some((task) => task.chatId === id))) {
+      const chat = Object.values(chats).flat().find((chat) => chat.id === id);
+      live.push({ key: id, who: chat ? named(chat.agentId) : "Teammate", what: "Preparing task…", parked: false,
+        startedMs: startedMs[id] ?? null, chatId: chat ? id : null, agentId: chat?.agentId ?? null });
+    }
+    return live;
+  }
 
   const live: Live[] = [];
   const seen = new Set<string>();

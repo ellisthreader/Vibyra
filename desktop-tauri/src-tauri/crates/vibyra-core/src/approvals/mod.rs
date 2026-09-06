@@ -34,3 +34,6 @@ pub use fingerprint::fingerprint;
 pub use risk::{decide, forbidden, trustable, Decision, Risk};
 pub use rows::{expire, get, invalidate_orphans, invalidate_turn, pending};
 pub use shell_risk::bash_risk;
+
+#[cfg(test)]
+mod boundary_tests;

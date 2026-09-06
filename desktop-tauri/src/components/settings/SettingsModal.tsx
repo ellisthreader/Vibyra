@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { isWipSettingsSection } from "../../lib/wipSettings";
 import type { ComponentType } from "react";
 
 import { useModalFocus } from "../../lib/useModalFocus";
@@ -68,7 +69,7 @@ export function SettingsModal() {
   useModalFocus(modalRef, open, close);
 
   if (!open || !settings) return null;
-  const section = SECTIONS.find((item) => item.id === active) ?? SECTIONS[0];
+  const section = SECTIONS.find((item) => item.id === active && !isWipSettingsSection(item.id)) ?? SECTIONS[0];
   const pane = {
     profile: <SettingsProfilePane />,
     general: <SettingsGeneralPane settings={settings} update={update} />,
@@ -94,8 +95,8 @@ export function SettingsModal() {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <button key={item.id} className={`settings-nav__item ${item.id === active ? "settings-nav__item--active" : ""}`} aria-current={item.id === active} onClick={() => setActive(item.id)}>
-                      <Icon size={15} />{item.label}
+                    <button key={item.id} disabled={isWipSettingsSection(item.id)} className={`settings-nav__item ${item.id === active ? "settings-nav__item--active" : ""}`} aria-current={item.id === active} onClick={() => setActive(item.id)}>
+                      <Icon size={15} />{item.label}{isWipSettingsSection(item.id) && <small>WIP</small>}
                     </button>
                   );
                 })}

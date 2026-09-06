@@ -15,13 +15,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::agent_model::Engine;
 
-/// The minimum each engine needs for structured chat.
-///
-/// Claude gained `--session-id` and stream-json well before 2.x; the floor
-/// here is the oldest version this was verified against rather than the oldest
-/// that might work. Codex's `exec --json` item envelopes settled in 0.14x.
-const CLAUDE_FLOOR: (u32, u32) = (2, 0);
-const CODEX_FLOOR: (u32, u32) = (0, 140);
+/// Oldest tested versions for forced Claude settings and Codex named permission profiles.
+const CLAUDE_FLOOR: (u32, u32, u32) = (2, 1, 261);
+const CODEX_FLOOR: (u32, u32, u32) = (0, 153, 2);
 
 /// What one engine offers on this machine.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,6 +62,11 @@ pub fn interpret(engine: Engine, version: &str, help: &str) -> EngineCapabilitie
             "--resume",
             "stream-json",
             "--permission-mode",
+            "--settings",
+            "--setting-sources",
+            "--strict-mcp-config",
+            "--tools",
+            "--input-format",
         ],
         Engine::Codex => &["--json", "resume"],
     };
@@ -79,11 +80,12 @@ pub fn interpret(engine: Engine, version: &str, help: &str) -> EngineCapabilitie
         format!("{} is not installed.", engine.as_str())
     } else if !recent {
         format!(
-            "{} {version} is older than the {}.{} this needs. Update it to use Agent Mode; \
+            "{} {version} is older than the {}.{}.{} this needs. Update it to use Agent Mode; \
              terminals still work.",
             engine.as_str(),
             floor.0,
-            floor.1
+            floor.1,
+            floor.2
         )
     } else if !missing.is_empty() {
         format!(
@@ -102,82 +104,36 @@ pub fn interpret(engine: Engine, version: &str, help: &str) -> EngineCapabilitie
         version: version.trim().to_string(),
         structured: blocker.is_empty(),
         supports_model: help.contains("--model") || help.contains("-m, --model"),
-        supports_effort: help.contains("--effort") || help.contains("model_reasoning_effort"),
-        supports_images: help.contains("--image") || help.contains("-i, --image"),
+        supports_effort: help.contains("--effort") || (engine == Engine::Codex && recent),
+        supports_images: help.contains("--image")
+            || help.contains("-i, --image")
+            || (engine == Engine::Claude && help.contains("--input-format")),
         blocker,
     }
 }
 
-/// Pulls `major.minor` out of whatever the CLI prints.
+/// Pulls `major.minor.patch` out of whatever the CLI prints.
 ///
 /// The two disagree on shape — Claude answers `2.1.251 (Claude Code)` and
 /// Codex answers `codex-cli 0.150.1` — so this finds the first dotted number
 /// rather than trusting a position.
-fn parse_version(text: &str) -> Option<(u32, u32)> {
+fn parse_version(text: &str) -> Option<(u32, u32, u32)> {
     for token in text.split(|c: char| c.is_whitespace() || c == '(' || c == ')') {
         let mut parts = token.split('.');
         let (Some(major), Some(minor)) = (parts.next(), parts.next()) else {
             continue;
         };
         if let (Ok(major), Ok(minor)) = (major.parse(), minor.trim_end_matches(',').parse()) {
-            return Some((major, minor));
+            let patch = parts
+                .next()
+                .and_then(|part| part.trim_end_matches(',').parse().ok())
+                .unwrap_or(0);
+            return Some((major, minor, patch));
         }
     }
     None
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// The two version strings this code actually meets, both parsed from the
-    /// real CLIs on 2026-08-29.
-    #[test]
-    fn reads_both_providers_version_shapes() {
-        assert_eq!(parse_version("2.1.251 (Claude Code)"), Some((2, 1)));
-        assert_eq!(parse_version("codex-cli 0.150.1"), Some((0, 150)));
-        assert_eq!(parse_version("no numbers here"), None);
-    }
-
-    #[test]
-    fn a_recent_claude_with_the_right_flags_is_usable() {
-        let help = "--session-id <uuid> --resume [value] --output-format stream-json \
-                    --permission-mode <mode> --model <model> --effort <level>";
-        let found = interpret(Engine::Claude, "2.1.251 (Claude Code)", help);
-        assert!(found.structured, "{}", found.blocker);
-        assert!(found.supports_model && found.supports_effort);
-    }
-
-    /// An old CLI loses structured chat and keeps its terminal, and the
-    /// message says which.
-    #[test]
-    fn an_old_cli_is_refused_with_something_to_do_about_it() {
-        let found = interpret(Engine::Codex, "codex-cli 0.90.0", "--json resume");
-        assert!(!found.structured);
-        assert!(
-            found.blocker.contains("terminals still work"),
-            "{}",
-            found.blocker
-        );
-    }
-
-    /// Present, recent, but missing a flag the adapter depends on: still
-    /// refused, and the message names the flag rather than guessing.
-    #[test]
-    fn a_missing_flag_is_named() {
-        let found = interpret(
-            Engine::Claude,
-            "2.1.251",
-            "--resume stream-json --permission-mode",
-        );
-        assert!(!found.structured);
-        assert!(found.blocker.contains("--session-id"), "{}", found.blocker);
-    }
-
-    #[test]
-    fn a_missing_cli_says_so_plainly() {
-        let found = interpret(Engine::Codex, "", "");
-        assert!(!found.installed && !found.structured);
-        assert!(found.blocker.contains("not installed"));
-    }
-}
+#[path = "capabilities_tests.rs"]
+mod tests;

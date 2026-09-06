@@ -162,7 +162,7 @@ pub fn resolve(
                 record.state
             )));
         }
-        if expected.is_some_and(|given| given != record.fingerprint) {
+        if approved && expected != Some(record.fingerprint.as_str()) {
             record.state = "invalidated".into();
         } else {
             record.state = if approved { "approved" } else { "denied" }.into();

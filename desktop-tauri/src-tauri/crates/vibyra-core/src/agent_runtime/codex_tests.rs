@@ -131,7 +131,7 @@ fn codex_resume_never_passes_flags_the_subcommand_rejects() {
 fn codex_full_access_is_a_sandbox_level_not_a_bypass() {
     assert_eq!(codex::sandbox(PermissionMode::Plan), "read-only");
     assert_eq!(codex::sandbox(PermissionMode::Standard), "workspace-write");
-    assert_eq!(codex::sandbox(PermissionMode::Full), "danger-full-access");
+    assert_eq!(codex::sandbox(PermissionMode::Full), "workspace-write");
     let args = codex::start_args("/w", PermissionMode::Full, &[], None, None, &[]);
     assert!(!args
         .iter()

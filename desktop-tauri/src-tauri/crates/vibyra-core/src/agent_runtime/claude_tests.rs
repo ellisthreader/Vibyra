@@ -147,11 +147,11 @@ fn claude_plan_mode_is_the_providers_own_plan_mode() {
     );
     assert_eq!(
         claude::permission_mode(PermissionMode::Standard, false),
-        "acceptEdits"
+        "dontAsk"
     );
     assert_eq!(
         claude::permission_mode(PermissionMode::Full, false),
-        "acceptEdits"
+        "dontAsk"
     );
 }
 

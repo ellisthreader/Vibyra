@@ -30,7 +30,7 @@ export const styleSource = {
       backgroundColor: "#101115",
       flex: 1,
       justifyContent: "center",
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   pageHeader: {
       alignItems: "flex-start",

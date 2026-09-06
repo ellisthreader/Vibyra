@@ -37,8 +37,9 @@ fn a_read_only_subject_is_refused_a_write_without_a_card() {
         BridgeRequest {
             token: "tok".into(),
             chat_id: chat_id.clone(),
-            turn_id: "t".into(),
+            turn_id: format!("turn-{chat_id}"),
             tool_name: "Write".into(),
+            tool_use_id: Some("test-call".into()),
             input: json!({ "file_path": "/etc/passwd", "content": "x" }),
         },
         &|_| panic!("no card may be raised for a refused write"),
@@ -66,15 +67,16 @@ fn a_detached_chat_with_no_folder_cannot_write() {
         },
     )
     .unwrap();
-    world.begin(&chat.id);
+    world.begin(&chat.id).unwrap();
     let reply = answer(
         &world,
         "tok",
         BridgeRequest {
             token: "tok".into(),
-            chat_id: chat.id,
-            turn_id: "t".into(),
+            chat_id: chat.id.clone(),
+            turn_id: format!("turn-{}", chat.id),
             tool_name: "Write".into(),
+            tool_use_id: Some("test-call".into()),
             input: json!({ "file_path": "/home/u/.ssh/authorized_keys", "content": "x" }),
         },
         &|_| panic!("no card may be raised for a refused write"),
@@ -93,9 +95,10 @@ fn a_wrong_token_is_refused() {
         "tok",
         BridgeRequest {
             token: "tol".into(),
-            chat_id,
-            turn_id: "t".into(),
+            chat_id: chat_id.clone(),
+            turn_id: format!("turn-{chat_id}"),
             tool_name: "Read".into(),
+            tool_use_id: Some("test-call".into()),
             input: json!({ "file_path": "/x" }),
         },
         &|_| panic!("no card"),

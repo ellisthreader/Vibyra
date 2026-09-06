@@ -27,8 +27,9 @@ export const useAgentAttachmentStore = create<AttachmentStore>((set, get) => ({
   error: null,
 
   load: async (chatId) => {
-    const files = await ipc.chatAttachments(chatId).catch(() => []);
-    set((state) => ({ byChat: { ...state.byChat, [chatId]: files } }));
+    try { const files = await ipc.chatAttachments(chatId);
+      set((state) => ({ byChat: { ...state.byChat, [chatId]: files } }));
+    } catch (error) { set({ error: String(error) }); }
   },
 
   add: async (chatId, path) => {

@@ -19,15 +19,7 @@ export function DashboardStats() {
   const lastCheckedMs = useAgentWorkStore((state) => state.lastCheckedMs);
   const agents = useAgentRosterStore((state) => state.agents);
   const openPanel = useAgentModeStore((state) => state.openPanel);
-  const running = useAgentChatStore((state) => {
-    let live = 0;
-    for (const list of Object.values(state.chats)) {
-      for (const chat of list) {
-        if (state.running[chat.id] || chat.state === "running") live += 1;
-      }
-    }
-    return live;
-  });
+  const running = useAgentChatStore((state) => Object.values(state.running).filter(Boolean).length);
 
   const scheduled = routines.filter((routine) => routine.enabled).length;
 
@@ -43,11 +35,11 @@ export function DashboardStats() {
         </span>
       </button>
 
-      <div className="stat">
+      <button className="stat" onClick={() => openPanel("tasks")}>
         <span className="stat__label">Running</span>
         <span className={`stat__value ${running > 0 ? "stat__value--live" : ""}`}>{running}</span>
         <span className="stat__hint">{running === 0 ? "Idle" : "Turns in flight"}</span>
-      </div>
+      </button>
 
       <button className="stat" onClick={() => openPanel("routines")}>
         <span className="stat__label">Scheduled</span>

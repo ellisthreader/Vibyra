@@ -1,3 +1,4 @@
+import { useAgentRunStore } from "../../state/agentRunStore";
 import { useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
@@ -26,7 +27,6 @@ function tokens(count: number): string {
 
 export function TurnFooter({
   block,
-  agent,
   chatId,
   answer,
 }: {
@@ -41,9 +41,10 @@ export function TurnFooter({
   const setDraft = useAgentModeStore((state) => state.setDraft);
   const [copied, setCopied] = useState(false);
 
+  const run = useAgentRunStore((state) => state.runs.find((entry) => entry.id === block.turnId));
   const elapsed = block.elapsedMs === null ? "" : toolElapsed(0, block.elapsedMs);
-  const engine = agent ? (agent.engine === "claude" ? "claude" : "codex") : "";
-  const model = agent?.model ?? "";
+  const engine = run?.spec.engine ?? "";
+  const model = run?.spec.model ?? "Provider default";
 
   const copy = async () => {
     if (!answer) return;
@@ -84,7 +85,7 @@ export function TurnFooter({
               type="button"
               disabled={running}
               title="Send this prompt again, as a new turn"
-              onClick={() => void send(chatId, block.prompt)}
+              onClick={() => void send(chatId, block.prompt, run?.spec.permission ?? "plan", run?.spec.accountId)}
             >
               Retry
             </button>

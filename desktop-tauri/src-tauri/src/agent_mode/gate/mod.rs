@@ -15,12 +15,15 @@ mod decide;
 mod decide_deny_tests;
 #[cfg(test)]
 mod decide_tests;
+mod file_policy;
 mod listener;
+#[cfg(test)]
+mod revocation_tests;
 pub mod waiters;
 
 use std::sync::{Arc, OnceLock};
 
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 use vibyra_core::agent_runtime::PermissionBridge;
 
 use super::hub::AgentHub;
@@ -34,8 +37,15 @@ pub struct GateInfo {
 static GATE: OnceLock<GateInfo> = OnceLock::new();
 
 /// Binds the listener and starts answering. Failing to bind is logged, not
-/// fatal: turns then run without a bridge, exactly as they did before.
+/// fatal to the window; task admission fails closed until the service is available.
 pub fn start(app: AppHandle, hub: Arc<AgentHub>) {
+    let events = app.clone();
+    hub.set_notifier(move |account, chat_id| {
+        let _ = events.emit(
+            "agent-task-changed",
+            serde_json::json!({"account":account,"chatId":chat_id}),
+        );
+    });
     let listener = match std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)) {
         Ok(listener) => listener,
         Err(error) => {
@@ -60,7 +70,14 @@ pub fn start(app: AppHandle, hub: Arc<AgentHub>) {
     {
         return;
     }
-    listener::spawn(app, hub, listener, token);
+    listener::spawn(
+        Arc::new(move |card| {
+            let _ = app.emit("approval-raised", card);
+        }),
+        hub,
+        listener,
+        token,
+    );
 }
 
 /// The bridge a turn should hand to Claude, or `None` while the gate is down.
@@ -75,6 +92,8 @@ pub fn bridge_for(chat_id: &str, turn_id: &str) -> Option<PermissionBridge> {
         .map(std::path::PathBuf::from)
         .filter(|path| path.is_file())
         .or_else(|| std::env::current_exe().ok())?;
+    #[cfg(test)]
+    let exe = VALIDATION_EXE.get().cloned().unwrap_or(exe);
     Some(PermissionBridge {
         exe,
         port: gate.port,
@@ -82,4 +101,30 @@ pub fn bridge_for(chat_id: &str, turn_id: &str) -> Option<PermissionBridge> {
         chat_id: chat_id.to_string(),
         turn_id: turn_id.to_string(),
     })
+}
+
+mod proposals;
+
+#[cfg(test)]
+pub(crate) mod test_world;
+
+#[cfg(test)]
+static VALIDATION_EXE: OnceLock<std::path::PathBuf> = OnceLock::new();
+
+#[cfg(test)]
+pub(super) fn start_validation(
+    hub: Arc<AgentHub>,
+    exe: std::path::PathBuf,
+    raise: Arc<dyn Fn(&vibyra_core::approvals::ApprovalRequest) + Send + Sync>,
+) {
+    let listener = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).unwrap();
+    let token = vibyra_core::agentdb::ids::new_id();
+    assert!(GATE
+        .set(GateInfo {
+            port: listener.local_addr().unwrap().port(),
+            token: token.clone()
+        })
+        .is_ok());
+    assert!(VALIDATION_EXE.set(exe).is_ok());
+    listener::spawn(raise, hub, listener, token);
 }

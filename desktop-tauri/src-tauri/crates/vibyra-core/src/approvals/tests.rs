@@ -99,7 +99,7 @@ fn a_card_cannot_be_answered_twice() {
         panic!("a destructive action must raise a card");
     };
     resolve(&db, "acct", &card.id, false, None).unwrap();
-    assert!(resolve(&db, "acct", &card.id, true, None).is_err());
+    assert!(resolve(&db, "acct", &card.id, true, Some(&card.fingerprint)).is_err());
 }
 
 /// A card that outlives its turn is how a stale yes authorises something
@@ -148,7 +148,7 @@ fn the_ledger_survives_the_agent_being_deleted() {
     else {
         panic!()
     };
-    resolve(&db, "acct", &card.id, true, None).unwrap();
+    resolve(&db, "acct", &card.id, true, Some(&card.fingerprint)).unwrap();
 
     db.with(|connection| {
         connection

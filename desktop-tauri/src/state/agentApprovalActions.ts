@@ -20,13 +20,15 @@ type Get = () => { loadApprovals: () => Promise<void> };
 export function approvalActions(set: Set, get: Get) {
   return {
     loadApprovals: async () => {
-      const approvals = await ipc.listApprovals().catch(() => []);
+      try {
+      const approvals = await ipc.listApprovals();
       set({
         approvals,
         approvalChatIds: approvals
           .map((request) => request.chatId)
           .filter((id): id is string => Boolean(id)),
       });
+      } catch (error) { set({ error: String(error) }); }
     },
 
     resolveApproval: async (

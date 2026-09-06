@@ -18,7 +18,7 @@ function installTypeScriptLoader() {
       return {
         Platform: { OS: "web", select: (options) => options.web ?? options.default },
         StyleSheet: {
-          absoluteFillObject: { bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
+          absoluteFill: { bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
           create: (styles) => styles,
           hairlineWidth: 1
         }

@@ -88,7 +88,7 @@ export const styleSource = {
       textAlign: "center"
     },
   connectBackdropImage: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   connectScreen: {
       flex: 1,

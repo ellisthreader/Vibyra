@@ -21,17 +21,17 @@ export const styleSource = {
       opacity: 0.9
     },
   frequencyBackdropImage: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   quizBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "#0E0F12",
       overflow: "hidden"
     },
   quizBackdropShade: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   quizBackdropVignette: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     }
 } as const;

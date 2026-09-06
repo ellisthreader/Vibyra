@@ -1,48 +1,72 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme';
-import { Hint, Icon } from './primitives';
+import { Icon, IconButton } from './primitives';
 
-export function Composer({ value, onChange, onSend, disabled, shell }: {
+export function Composer({ value, onChange, onSend, disabled, shell, demo = false, compact = false,
+  contextLabel, onContext, onReview }: {
   value: string; onChange: (value: string) => void; onSend: (value: string) => Promise<boolean>;
-  disabled: boolean; shell: boolean;
+  disabled: boolean; shell: boolean; demo?: boolean; compact?: boolean;
+  contextLabel?: string; onContext?: () => void; onReview?: () => void;
 }) {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
+  const [focused, setFocused] = useState(false);
   const [sending, setSending] = useState(false);
+  const ready = !disabled && !sending && Boolean(value.trim());
   const send = async () => {
-    if (sending || disabled || !value.trim()) return;
+    if (!ready) return;
     setSending(true);
     const submitted = value;
     try { if (await onSend(submitted)) onChange(''); } finally { setSending(false); }
   };
   return <View style={[s.container, { backgroundColor: colors.background }]}>
-    <View style={[s.composer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+    <View style={[s.composer, { backgroundColor: colors.surface,
+      borderColor: focused ? colors.muted : colors.border }, compact && s.compact]}>
       <TextInput accessibilityLabel={shell ? 'Command for computer terminal' : 'Prompt for coding agent'}
-        placeholder={disabled ? 'Reconnect to continue…' : shell ? 'Type a command…' : 'What would you like to build?'}
+        placeholder={shell ? 'Run a command…' : 'Ask Vibyra to build anything…'}
         placeholderTextColor={colors.muted} value={value} onChangeText={onChange} multiline
         editable={!sending} autoCorrect={false} autoCapitalize="none" spellCheck={false}
-        style={[s.input, { color: colors.text }]} textAlignVertical="top" />
+        onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} keyboardAppearance={dark ? 'dark' : 'light'}
+        style={[s.input, { color: colors.text }, compact && s.compactInput]} textAlignVertical="top" />
       <View style={s.toolbar}>
-        <View style={s.label}><Icon name="desktop-outline" size={14} color={colors.muted} />
-          <Text style={[s.labelText, { color: colors.muted }]}>Runs on your computer</Text></View>
-        <Pressable onPress={() => void send()} disabled={disabled || sending || !value.trim()}
-          accessibilityRole="button" accessibilityLabel={shell ? 'Send command and Enter' : 'Send prompt and Enter'}
-          accessibilityState={{ disabled: disabled || sending || !value.trim(), busy: sending }}
-          style={[s.send, { backgroundColor: value.trim() && !disabled ? colors.action : colors.elevated }]}>
-          {sending ? <ActivityIndicator color={colors.onAction} /> :
-            <Icon name="arrow-up" size={23} color={value.trim() && !disabled ? colors.onAction : colors.muted} />}
+        {!compact && <View style={s.tools}>
+          {onReview && <IconButton icon="folder-outline" label="Browse project files" onPress={onReview} />}
+          <Pressable accessibilityRole={onContext ? 'button' : undefined} accessibilityLabel="Session details"
+            disabled={!onContext} onPress={onContext} style={s.context}>
+            <Icon name={shell ? 'terminal-outline' : 'code-slash-outline'} size={14} color={colors.muted} />
+            <Text numberOfLines={1} style={[s.contextText, { color: colors.muted }]}>
+              {contextLabel ?? (shell ? 'Terminal' : 'Coding agent')}
+            </Text>
+            {onContext && <Icon name="chevron-down" size={11} color={colors.muted} />}
+          </Pressable>
+        </View>}
+        <Pressable onPress={() => void send()} disabled={!ready} accessibilityRole="button"
+          accessibilityLabel={shell ? 'Send command and Enter' : 'Send prompt and Enter'}
+          aria-disabled={!ready} aria-busy={sending} accessibilityState={{ disabled: !ready, busy: sending }}
+          style={({ pressed }) => [s.send, { backgroundColor: ready ? colors.action : colors.elevated,
+            opacity: pressed ? 0.65 : 1 }]}>
+          {sending ? <ActivityIndicator color={colors.muted} /> :
+            <Icon name="arrow-up" size={23} color={ready ? colors.onAction : colors.muted} />}
         </Pressable>
       </View>
     </View>
-    {disabled && value.length > 0 && <View style={s.draftHint}><Hint>Your draft stays here until you can send it.</Hint></View>}
+    {!compact && (!demo || (disabled && value.length > 0)) && <Text style={[s.caption, { color: colors.muted }]}>
+      {disabled && value.length > 0 ? 'Your draft stays here until you can send it.'
+        : 'Runs on your computer'}
+    </Text>}
   </View>;
 }
 const s = StyleSheet.create({
-  container: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 8 },
-  composer: { borderRadius: 24, borderWidth: StyleSheet.hairlineWidth, padding: 10 },
-  input: { fontSize: 16, lineHeight: 23, minHeight: 48, maxHeight: 150, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 8 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  label: { flexDirection: 'row', gap: 5, alignItems: 'center', paddingLeft: 8, flex: 1 },
-  labelText: { fontSize: 11, flexShrink: 1 }, send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  draftHint: { paddingHorizontal: 8, paddingTop: 7 },
+  container: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 5 },
+  composer: { borderRadius: 27, borderWidth: StyleSheet.hairlineWidth, padding: 8 },
+  input: { fontSize: 16, lineHeight: 24, minHeight: 60, maxHeight: 154, paddingHorizontal: 12,
+    paddingTop: 11, paddingBottom: 10, outlineWidth: 0, outlineStyle: 'solid' },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  tools: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 1 },
+  context: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1, paddingRight: 6 },
+  contextText: { fontSize: 12, fontWeight: '500', flexShrink: 1 },
+  send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  caption: { fontSize: 10, lineHeight: 16, textAlign: 'center', paddingTop: 8, paddingHorizontal: 8 },
+  compact: { flexDirection: 'row', alignItems: 'center', padding: 5, borderRadius: 20 },
+  compactInput: { flex: 1, minHeight: 40, maxHeight: 54 },
 });

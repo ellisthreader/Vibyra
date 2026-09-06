@@ -1,11 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { EMPTY_DRAFT, useAgentDraftStore } from "../../state/agentDraftStore";
+import { useAgentRunStore } from "../../state/agentRunStore";
+import { useSettingsStore } from "../../state/settingsStore";
+import { activeAccountId } from "../../lib/providerAccountPolicy";
+import { ComposerAccount } from "./ComposerAccount";
+import { useEffect, useRef } from "react";
 
-import type { AgentProfile, PermissionMode } from "../../agentTypes";
+import type { AgentProfile } from "../../agentTypes";
 import { SendIcon } from "../common/Icons";
 import { StopIcon } from "../common/AgentIcons";
 import { useAgentChatStore } from "../../state/agentChatStore";
 import { useAgentModeStore } from "../../state/agentModeStore";
-import { useAgentRosterStore } from "../../state/agentRosterStore";
+import { useAgentRosterStore, capabilityFor } from "../../state/agentRosterStore";
 import { ComposerAttachments } from "./ComposerAttachments";
 import { ComposerDisclosure } from "./ComposerDisclosure";
 import { PermissionPicker } from "./PermissionPicker";
@@ -27,8 +32,17 @@ export function AgentComposer({
   agent: AgentProfile | null;
   chatId: string;
 }) {
-  const [text, setText] = useState("");
-  const [permission, setPermission] = useState<PermissionMode | null>(null);
+  const saved = useAgentDraftStore((state) => state.drafts[chatId] ?? EMPTY_DRAFT);
+  const change = useAgentDraftStore((state) => state.change);
+  const { text, permission } = saved;
+  const setText = (text: string) => change(chatId, { text });
+  const chat = useAgentChatStore((state) => Object.values(state.chats).flat().find((entry) => entry.id === chatId));
+  const previous = useAgentRunStore((state) => state.runs.find((run) => run.chatId === chatId));
+  const activeAccounts = useSettingsStore((state) => state.settings?.activeProviderAccounts);
+  const engine = agent?.engine ?? chat?.engine ?? "claude";
+  const accountId = saved.accountId ?? previous?.spec.accountId ?? activeAccountId(activeAccounts, engine);
+  const capabilities = useAgentRosterStore((state) => state.capabilities);
+  const ready = capabilityFor(capabilities, engine);
   const running = useAgentChatStore((state) => Boolean(state.running[chatId]));
   const error = useAgentChatStore((state) => state.error);
   const send = useAgentChatStore((state) => state.send);
@@ -56,18 +70,20 @@ export function AgentComposer({
     node.setSelectionRange(draft.text.length, draft.text.length);
   }, [draft, chatId, setDraft]);
 
-  const level = permission ?? agent?.permission ?? "plan";
+  const ceiling = agent?.permission ?? (chat?.mountedPlace ? "standard" : "plan");
+  const levels = ["plan", "standard", "full"] as const;
+  const level = levels[Math.min(levels.indexOf(permission ?? ceiling), levels.indexOf(ceiling))];
 
   const submit = () => {
     const prompt = text.trim();
-    if (!prompt || running) return;
-    setText("");
-    void send(chatId, prompt, level);
+    if (!prompt || running || !ready.structured) return;
+    void send(chatId, prompt, level, accountId);
   };
 
   return (
     <div className="composer" data-welcome-focus>
-      <ComposerDisclosure agent={agent} places={places} permission={level} />
+      <ComposerDisclosure agent={agent} places={places} permission={level} mountedPlace={chat?.mountedPlace} />
+      {!ready.structured && <p className="composer__error" role="status">{ready.blocker}</p>}
       {error && <p className="composer__error">{error}</p>}
       <div className="composer__field">
         <textarea
@@ -82,21 +98,22 @@ export function AgentComposer({
             // Enter sends, Shift+Enter breaks the line. The prompt is prose
             // often enough that the reverse would be wrong, and a multiline
             // brief is what Shift+Enter is for.
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
               event.preventDefault();
               submit();
             }
           }}
         />
         <div className="composer__actions">
-          <ComposerAttachments chatId={chatId} />
-          <PermissionPicker value={level} onChange={setPermission} />
+          <ComposerAttachments chatId={chatId} disabled={running} />
+          <PermissionPicker value={level} ceiling={ceiling} onChange={(permission) => change(chatId, { permission })} />
+          <ComposerAccount engine={engine} value={accountId} disabled={running || Boolean(chat?.sessionId)} onChange={(accountId) => change(chatId, { accountId })} />
           {running ? (
             <button className="composer__stop" onClick={() => void cancel(chatId)}>
               <StopIcon size={13} /> Stop
             </button>
           ) : (
-            <button className="composer__send" disabled={!text.trim()} onClick={submit}>
+            <button className="composer__send" disabled={!text.trim() || !ready.structured} onClick={submit}>
               <SendIcon size={13} /> Send
             </button>
           )}

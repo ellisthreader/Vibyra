@@ -67,7 +67,7 @@ fn closing_the_hub_stops_every_turn() {
     let tmp = tempfile::tempdir().unwrap();
     let hub = AgentHub::default();
     let world = hub.world("alice", tmp.path()).unwrap();
-    let handle = world.begin("chat-1");
+    let handle = world.begin("chat-1").unwrap();
     assert_eq!(world.busy(), vec!["chat-1".to_string()]);
 
     hub.close();
@@ -83,6 +83,6 @@ fn cancelling_reports_whether_a_turn_was_running() {
     let world = hub.world("alice", tmp.path()).unwrap();
 
     assert!(!world.cancel("chat-1"), "nothing was running");
-    world.begin("chat-1");
+    world.begin("chat-1").unwrap();
     assert!(world.cancel("chat-1"));
 }

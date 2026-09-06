@@ -6,66 +6,21 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde_json::json;
-use vibyra_core::agent_model::{Engine, PermissionMode};
 use vibyra_core::approvals::ApprovalRequest;
 
 use super::decide::answer;
 use super::waiters;
 use crate::agent_mode::bridge::wire::BridgeRequest;
-use crate::agent_mode::hub::{AgentHub, AgentWorld};
 
-pub(super) fn world(tmp: &tempfile::TempDir) -> (Arc<AgentWorld>, String) {
-    let hub = AgentHub::default();
-    let world = hub.world("acct", tmp.path()).unwrap();
-    let profile = vibyra_core::agent_profiles::create(
-        &world.db,
-        &world.account,
-        &world.root,
-        vibyra_core::agent_profiles::NewAgent {
-            name: "Nia".into(),
-            brief: String::new(),
-            engine: Engine::Claude,
-        },
-    )
-    .unwrap();
-    // A teammate is created at the safe default; these cases are about what an
-    // agent that *may* write proposes, so it is widened here rather than in
-    // the fixture, where it would read as the default.
-    let profile = vibyra_core::agent_profiles::update(
-        &world.db,
-        &world.account,
-        &profile.id,
-        vibyra_core::agent_profiles::AgentUpdate {
-            permission: Some(PermissionMode::Standard),
-            ..Default::default()
-        },
-    )
-    .unwrap();
-    let chat = vibyra_core::agent_chats::create(
-        &world.db,
-        &world.account,
-        vibyra_core::agent_chats::NewChat {
-            agent_id: Some(profile.id.clone()),
-            engine: Engine::Claude,
-            title: String::new(),
-            source: vibyra_core::agent_model::ChatSource::User,
-        },
-    )
-    .unwrap();
-    // A question only ever arrives while its turn is running, and the gate
-    // relies on that: a card whose turn has already gone is abandoned rather
-    // than left parking a provider process. Registering the handle is what
-    // makes this fixture the situation the gate is actually asked about.
-    world.begin(&chat.id);
-    (world, chat.id)
-}
+pub(super) use super::test_world::world;
 
 fn ask(chat_id: &str, tool: &str, input: serde_json::Value) -> BridgeRequest {
     BridgeRequest {
         token: "tok".into(),
         chat_id: chat_id.into(),
-        turn_id: "turn".into(),
+        turn_id: format!("turn-{chat_id}"),
         tool_name: tool.into(),
+        tool_use_id: Some("test-call".into()),
         input,
     }
 }
@@ -162,7 +117,9 @@ fn a_publish_raises_a_card_and_waits_for_the_answer() {
     );
     let card = raised.lock().unwrap().clone().expect("a card was raised");
     assert_eq!(card.action, "shell.run");
-    assert_eq!(card.detail, "git push origin main");
+    assert!(card
+        .detail
+        .starts_with("git push origin main\n\nExact request:"));
     assert_eq!(card.agent_name, "Nia");
     assert_eq!(reply.behavior, "allow");
     assert_eq!(reply.updated_input, Some(input));

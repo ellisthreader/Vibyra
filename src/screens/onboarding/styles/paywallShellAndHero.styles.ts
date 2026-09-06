@@ -3,13 +3,13 @@ import { colors } from "../../../styles/theme";
 
 export const styleSource = {
   paywallBackground: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   paywallBackgroundImage: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   paywallBackgroundShade: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     },
   paywallAuraOne: {
       backgroundColor: "rgba(91, 124, 250, 0.08)",
@@ -30,7 +30,7 @@ export const styleSource = {
       width: 220
     },
   paywallNoise: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "rgba(255, 255, 255, 0.012)"
     },
   paywallBadge: {

@@ -106,7 +106,7 @@ export const styleSource = {
       lineHeight: 19
     },
   connectGuideScrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "rgba(24, 26, 32, 0.32)"
     },
   connectGuideSectionTitle: {

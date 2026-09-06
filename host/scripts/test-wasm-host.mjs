@@ -75,7 +75,9 @@ try {
   assert.equal(file.content, 'Private host project\n');
   const session = await first.request('session.create', { projectId, title: 'WASM terminal test', kind: 'shell', requestId: randomUUID() });
   const control = await first.request('session.claim', { sessionId: session.id });
-  await first.request('session.input', { sessionId: session.id, ...control, inputId: randomUUID(), data: 'echo VIBYRA_WASM_COMPUTE_VERIFIED\r' });
+  // The expected marker must not occur in the submitted text: echoed input
+  // alone is not evidence that the shell executed the command.
+  await first.request('session.input', { sessionId: session.id, ...control, inputId: randomUUID(), data: "printf 'VIBYRA_%s_COMPUTE_VERIFIED\\n' WASM\r" });
   await delay(250);
   const snapshot = await first.request('session.snapshot', { sessionId: session.id });
   assert.match(snapshot.output, /VIBYRA_WASM_COMPUTE_VERIFIED/);

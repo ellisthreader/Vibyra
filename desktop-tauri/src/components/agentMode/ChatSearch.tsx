@@ -17,6 +17,7 @@ import { useAgentRosterStore } from "../../state/agentRosterStore";
  */
 export function ChatSearch() {
   const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
   const [hits, setHits] = useState<AgentChat[]>([]);
   const agents = useAgentRosterStore((state) => state.agents);
   const selectAgent = useAgentModeStore((state) => state.selectAgent);
@@ -24,6 +25,8 @@ export function ChatSearch() {
   const openChat = useAgentChatStore((state) => state.openChat);
 
   useEffect(() => {
+    let active = true;
+    setError("");
     const term = query.trim();
     if (term.length < 3) {
       setHits([]);
@@ -32,9 +35,9 @@ export function ChatSearch() {
     // Debounced: the query walks the event payloads, and one per keystroke
     // would run it five times to answer the fifth.
     const timer = window.setTimeout(() => {
-      void searchChats(term).then(setHits).catch(() => setHits([]));
+      void searchChats(term).then((rows) => { if (active) setHits(rows); }).catch((error) => { if (active) setError(String(error)); });
     }, 220);
-    return () => window.clearTimeout(timer);
+    return () => { active = false; window.clearTimeout(timer); };
   }, [query]);
 
   const owner = (chat: AgentChat) =>
@@ -51,6 +54,7 @@ export function ChatSearch() {
           aria-label="Search every chat on this account"
         />
       </label>
+      {error && <p className="composer__error" role="alert">{error}</p>}
       {hits.length > 0 && (
         <ul className="chat-search__hits">
           {hits.map((chat) => (
@@ -72,7 +76,7 @@ export function ChatSearch() {
           ))}
         </ul>
       )}
-      {query.trim().length >= 3 && hits.length === 0 && (
+      {!error && query.trim().length >= 3 && hits.length === 0 && (
         <p className="chat-search__none">No chat mentions that.</p>
       )}
     </div>

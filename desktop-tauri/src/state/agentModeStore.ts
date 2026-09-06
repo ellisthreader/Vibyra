@@ -35,7 +35,7 @@ interface AgentModeStore {
    *  turn can be traced to the procedure that shaped it. */
   skillId: string | null;
   /** The non-agent panels reachable from the primary rail. */
-  panel: "dashboard" | "routines" | "skills" | "decisions" | null;
+  panel: "dashboard" | "routines" | "skills" | "decisions" | "tasks" | null;
   setMode: (mode: AppMode) => void;
   selectAgent: (agentId: string | null) => void;
   selectChat: (chatId: string | null) => void;

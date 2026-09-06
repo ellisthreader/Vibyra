@@ -1,4 +1,4 @@
-import init, { Client, generateKeypair } from '../../../../host/generated/noise/vibyra_transport.js';
+import init, { Client, generateKeypair } from '../../../host/generated/noise/vibyra_transport.js';
 
 declare const NOISE_WASM_BASE64: string;
 const bytes = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -17,6 +17,7 @@ let generation = 0;
 let connected = false;
 let relayId = '';
 let requestRoute = 'direct';
+let connectionId: string | undefined;
 const ready = init({ module_or_path: bytes(NOISE_WASM_BASE64) });
 
 function write(frame: Uint8Array) {
@@ -25,6 +26,8 @@ function write(frame: Uint8Array) {
   socket.send(requestRoute === 'relay' ? JSON.stringify({ type: 'frame', clientId: relayId, data: base64(frame) }) : frame);
 }
 async function command(event: MessageEvent) {
+  const native = (window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView;
+  if (!native && event.source !== parent) return;
   if (typeof event.data !== 'string') return;
   let message;
   try { message = JSON.parse(event.data); } catch { return; }
@@ -33,13 +36,14 @@ async function command(event: MessageEvent) {
     await ready;
     if (message.type === 'keygen') {
       const key = generateKeypair();
-      post({ type: 'keypair', key: Array.from(key, b => b.toString(16).padStart(2, '0')).join('') });
+      post({ type: 'keypair', key: Array.from(key.subarray(0, 32), b => b.toString(16).padStart(2, '0')).join('') });
       key.fill(0); return;
     }
     if (message.type === 'close') {
       generation++; socket?.close(); client?.free(); client = undefined; connected = false; return;
     }
     if (message.type === 'send') {
+      if (message.connectionId !== connectionId) return;
       if (!connected || !client) throw new Error('Computer is disconnected.');
       const payload = encode.encode(JSON.stringify(message.payload));
       if (payload.length > 60000) throw new Error('This request is too large.');
@@ -47,6 +51,8 @@ async function command(event: MessageEvent) {
     }
     if (message.type !== 'open') return;
     generation++; const current = generation;
+    connectionId = message.connectionId;
+    const notify = (notice: object) => post({ ...notice, connectionId: message.connectionId });
     socket?.close(); client?.free(); connected = false;
     const pairing = message.pairing;
     client = new Client(hex(message.privateKey), hex(pairing.publicKey));
@@ -73,18 +79,18 @@ async function command(event: MessageEvent) {
         if (!connected) {
           const reply = JSON.parse(decode.decode(client.finish(data)));
           if (reply.ok !== true || reply.protocol !== 1) throw new Error(reply.error?.message ?? 'Computer refused the connection.');
-          connected = true; post({ type: 'connected', deviceId: reply.deviceId });
-        } else post({ type: 'message', payload: JSON.parse(decode.decode(client.decrypt(data))) });
-      } catch { socket?.close(); post({ type: 'error', message: 'The encrypted connection could not be verified. Pair again on your computer.' }); }
+          connected = true; notify({ type: 'connected', deviceId: reply.deviceId });
+        } else notify({ type: 'message', payload: JSON.parse(decode.decode(client.decrypt(data))) });
+      } catch { socket?.close(); notify({ type: 'error', message: 'The encrypted connection could not be verified. Pair again on your computer.' }); }
     };
-    socket.onerror = () => { if (current === generation) post({ type: 'error', message: 'Cannot reach your computer. Check that Vibyra Host is running.' }); };
+    socket.onerror = () => { if (current === generation) notify({ type: 'error', message: 'Cannot reach your computer. Check that Vibyra Host is running.' }); };
     socket.onclose = () => {
       if (current !== generation) return;
       connected = false; client?.free(); client = undefined;
-      post({ type: 'closed' });
+      notify({ type: 'closed' });
     };
   } catch (error) { post({ type: 'error', message: error instanceof Error ? error.message : 'Connection failed.' }); }
 }
 window.addEventListener('message', command);
-document.addEventListener('message', command as EventListener);
+document.addEventListener('message', command as unknown as EventListener);
 ready.then(() => post({ type: 'ready' })).catch(() => post({ type: 'error', message: 'Secure connection support could not start.' }));

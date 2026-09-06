@@ -55,7 +55,9 @@ fn tick(app: &AppHandle, hub: &Arc<AgentHub>) {
     for routine in missed {
         let scheduled = routine.next_run_ms.unwrap_or(0);
         let _ = runs::skip(&world.db, &routine.id, scheduled);
-        let _ = runs::advance_past(&world.db, &routine.id, now);
+        if runs::advance_past(&world.db, &routine.id, now).is_err() {
+            continue;
+        }
         let _ = app.emit("routine-status", &routine.id);
     }
 
@@ -63,8 +65,12 @@ fn tick(app: &AppHandle, hub: &Arc<AgentHub>) {
         let scheduled = routine.next_run_ms.unwrap_or(0);
         // Advanced *before* the run, not after: a routine whose turn takes
         // twenty minutes must not still be due when the next tick looks.
-        let _ = runs::advance_past(&world.db, &routine.id, now);
-        launch(app, &world, &routine, scheduled);
+        if runs::advance_past(&world.db, &routine.id, now).is_err() {
+            continue;
+        }
+        if let Err(error) = launch(app, &world, &routine, scheduled) {
+            let _ = app.emit("agent-task-error", error);
+        }
     }
 
     // The heartbeat. Emitted whether or not anything was due, because the
@@ -86,21 +92,33 @@ pub fn launch(
     world: &Arc<super::hub::AgentWorld>,
     routine: &vibyra_core::routines::Routine,
     scheduled: i64,
-) {
-    let Ok(chat) = vibyra_core::agent_chats::create(
+) -> Result<(), String> {
+    if paused(app) {
+        return Err("All routines are paused. Resume them before running one.".into());
+    }
+    let profile = vibyra_core::agent_profiles::get(&world.db, &world.account, &routine.agent_id)
+        .map_err(|e| e.to_string())?;
+    if profile.archived_ms.is_some() || !profile.routines_allowed || !routine.enabled {
+        return Err("This teammate or routine is paused.".into());
+    }
+    let chat = vibyra_core::agent_chats::create(
         &world.db,
         &world.account,
         vibyra_core::agent_chats::NewChat {
             agent_id: Some(routine.agent_id.clone()),
-            engine: engine_for(world, &routine.agent_id),
+            engine: profile.engine,
             title: routine.name.clone(),
             source: ChatSource::Routine,
         },
-    ) else {
-        return;
-    };
-    let Ok(run) = runs::begin(&world.db, &routine.id, Some(&chat.id), scheduled) else {
-        return;
+    )
+    .map_err(|e| e.to_string())?;
+    let run = match runs::begin(&world.db, &routine.id, Some(&chat.id), scheduled) {
+        Ok(run) => run,
+        Err(error) => {
+            vibyra_core::agent_chats::delete(&world.db, &world.account, &chat.id)
+                .map_err(|e| e.to_string())?;
+            return Err(error.to_string());
+        }
     };
 
     let runner = app.clone();
@@ -115,11 +133,24 @@ pub fn launch(
     };
     std::thread::spawn(move || {
         let outcome = execute(&world, request, |_| {});
-        let error = outcome.err();
-        let _ = runs::finish(&world.db, &run.id, error.as_deref());
+        let (status, error) = match outcome {
+            Ok(result) => (
+                if result.status == vibyra_core::agent_runs::RunStatus::Succeeded {
+                    "completed"
+                } else {
+                    result.status.as_str()
+                },
+                result.message,
+            ),
+            Err(error) => ("failed", Some(error)),
+        };
+        if let Err(error) = runs::finish_status(&world.db, &run.id, status, error.as_deref()) {
+            let _ = runner.emit("agent-task-error", error.to_string());
+        }
         let _ = runner.emit("routine-status", &run.routine_id);
     });
     let _ = app.emit("routine-status", &routine.id);
+    Ok(())
 }
 
 /// The app-wide pause. Read from settings on every tick rather than cached, so
@@ -129,13 +160,4 @@ fn paused(app: &AppHandle) -> bool {
     app.try_state::<crate::state::AppState>()
         .map(|state| state.settings.lock().routines_paused)
         .unwrap_or(true)
-}
-
-/// A routine runs on its agent's engine. Falling back to Claude rather than
-/// refusing: the chat is created either way and a wrong engine is a visible,
-/// fixable error, while no chat at all is a routine that silently did nothing.
-fn engine_for(world: &super::hub::AgentWorld, agent_id: &str) -> vibyra_core::agent_model::Engine {
-    vibyra_core::agent_profiles::get(&world.db, &world.account, agent_id)
-        .map(|profile| profile.engine)
-        .unwrap_or(vibyra_core::agent_model::Engine::Claude)
 }

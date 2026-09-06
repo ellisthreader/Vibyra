@@ -28,10 +28,18 @@ pub fn world(state: &AppState) -> Result<std::sync::Arc<crate::agent_mode::Agent
 }
 
 #[tauri::command]
-pub async fn agent_profile_list(state: State<'_, AppState>) -> Result<Vec<AgentProfile>, String> {
+pub async fn agent_profile_list(
+    state: State<'_, AppState>,
+    archived: Option<bool>,
+) -> Result<Vec<AgentProfile>, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::agent_profiles::list(&world.db, &world.account).map_err(|e| e.to_string())
+        if archived.unwrap_or(false) {
+            vibyra_core::agent_profiles::archived(&world.db, &world.account)
+        } else {
+            vibyra_core::agent_profiles::list(&world.db, &world.account)
+        }
+        .map_err(|e| e.to_string())
     })
     .await
 }
@@ -59,8 +67,15 @@ pub async fn agent_profile_update(
 ) -> Result<AgentProfile, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::agent_profiles::update(&world.db, &world.account, &id, change)
-            .map_err(|e| e.to_string())
+        if change.permission.is_some() {
+            world.change_agent(&id, true, || {
+                vibyra_core::agent_profiles::update(&world.db, &world.account, &id, change)
+                    .map_err(|e| e.to_string())
+            })
+        } else {
+            vibyra_core::agent_profiles::update(&world.db, &world.account, &id, change)
+                .map_err(|e| e.to_string())
+        }
     })
     .await
 }
@@ -73,8 +88,10 @@ pub async fn agent_profile_archive(
 ) -> Result<(), String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::agent_profiles::archive(&world.db, &world.account, &id, archived)
-            .map_err(|e| e.to_string())
+        world.change_agent(&id, true, || {
+            vibyra_core::agent_profiles::archive(&world.db, &world.account, &id, archived)
+                .map_err(|e| e.to_string())
+        })
     })
     .await
 }
@@ -86,14 +103,7 @@ pub async fn agent_profile_archive(
 #[tauri::command]
 pub async fn agent_profile_delete(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let world = world(&state)?;
-    run_blocking(move || {
-        if let Ok(profile) = vibyra_core::agent_profiles::get(&world.db, &world.account, &id) {
-            let _ = std::fs::remove_dir_all(&profile.home_path);
-        }
-        vibyra_core::agent_profiles::delete(&world.db, &world.account, &id)
-            .map_err(|e| e.to_string())
-    })
-    .await
+    run_blocking(move || crate::agent_mode::lifecycle::delete_agent(&world, &id)).await
 }
 
 #[tauri::command]
@@ -133,8 +143,10 @@ pub async fn agent_place_revoke(
 ) -> Result<(), String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::agent_profiles::revoke_place(&world.db, &agent_id, &place_id)
-            .map_err(|e| e.to_string())
+        world.change_agent(&agent_id, true, || {
+            vibyra_core::agent_profiles::revoke_place(&world.db, &agent_id, &place_id)
+                .map_err(|e| e.to_string())
+        })
     })
     .await
 }
@@ -143,6 +155,10 @@ pub async fn agent_place_revoke(
 /// has evidence for.
 #[tauri::command]
 pub async fn agent_engine_capabilities(
+    refresh: Option<bool>,
 ) -> Result<Vec<vibyra_core::agent_runtime::EngineCapabilities>, String> {
+    if refresh.unwrap_or(false) {
+        crate::agent_mode::probe::invalidate();
+    }
     run_blocking(|| Ok(crate::agent_mode::probe_engines())).await
 }

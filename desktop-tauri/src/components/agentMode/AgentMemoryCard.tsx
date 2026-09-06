@@ -60,7 +60,7 @@ export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
             >
               <option value="off">Off — never extracts anything</option>
               <option value="suggest">Suggest — everything waits for you</option>
-              <option value="automatic">Automatic — facts commit, rules ask</option>
+              {agent.reflection === "automatic" && <option value="automatic">Review suggestions (legacy setting)</option>}
             </select>
           </span>
         </label>

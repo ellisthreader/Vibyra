@@ -54,6 +54,15 @@ pub struct TurnHandle {
 }
 
 impl TurnHandle {
+    pub(super) fn attach(&self, pid: u32) {
+        *self.pid.lock() = Some(pid);
+        if self.cancelled() {
+            terminate_group(pid);
+        }
+    }
+    pub(super) fn detach(&self) {
+        *self.pid.lock() = None;
+    }
     pub fn new() -> Self {
         Self {
             cancelled: Arc::new(AtomicBool::new(false)),
@@ -138,7 +147,9 @@ pub fn run(
         }
     }
 
-    let status = child.wait().map_err(CoreError::Io)?;
+    let status = child.wait();
+    handle.detach();
+    let status = status.map_err(CoreError::Io)?;
     if handle.cancelled() {
         return Ok(TurnExit::Cancelled);
     }
@@ -152,7 +163,7 @@ pub fn run(
     Ok(TurnExit::Failed(detail))
 }
 
-fn spawn(command: &TurnCommand) -> CoreResult<Child> {
+pub(super) fn spawn(command: &TurnCommand) -> CoreResult<Child> {
     let mut process = Command::new(&command.program);
     process
         .args(&command.args)

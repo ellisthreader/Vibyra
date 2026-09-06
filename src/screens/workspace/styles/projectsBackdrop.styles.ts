@@ -4,6 +4,6 @@ import { communityDetailAccent, communityDetailAccentDark } from "../data/commun
 
 export const styleSource = {
   projectsBackdrop: {
-      ...StyleSheet.absoluteFillObject
+      ...StyleSheet.absoluteFill
     }
 } as const;

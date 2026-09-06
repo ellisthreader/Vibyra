@@ -6,7 +6,6 @@
 //! sentence Claude will read — "declined", "stopped", "nobody answered" —
 //! never a silence it has to interpret.
 
-use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -32,47 +31,47 @@ pub fn answer(
     if !same_token(&request.token, expected_token) {
         return BridgeReply::deny("This question did not come from a turn Vibyra started.");
     }
-    let subject = match context::load(world, &request.chat_id) {
+    let subject = match context::load(world, &request.chat_id, &request.turn_id) {
         Ok(subject) => subject,
         Err(reason) => return BridgeReply::deny(reason),
     };
+    if ["propose_memory", "propose_skill"].contains(&request.tool_name.as_str()) {
+        return super::proposals::handle(world, &subject, &request);
+    }
     let classified = approvals::classify(&request.tool_name, &request.input);
 
-    // A file write is judged against the grants, not against a person. Both
-    // answers were already given when the places were chosen: inside a
-    // writable grant it proceeds, outside every grant it is refused. Asking
-    // here instead would put a card on screen for every edit of a folder the
-    // user handed over on purpose, which is how people learn to click yes.
-    //
-    // A subject that may not write — a Plan-level teammate, or a Chat Mode
-    // chat with no folder mounted — is refused a write before anyone is
-    // asked. Raising a card instead would let one Approve put a file
-    // anywhere on disk, which is more than a chat *with* a grant may do.
-    if classified.action == "file.write" && !subject.writes {
-        return BridgeReply::deny(
-            "This chat has no folder it may write to. Grant one, or ask for a plan instead.",
-        );
+    if let Err(reason) =
+        super::file_policy::check(&subject, &request.tool_name, &request.input, &classified)
+    {
+        return BridgeReply::deny(reason);
     }
     if classified.action == "file.write" {
-        return match vibyra_core::agent_profiles::authorize(
-            &subject.places,
-            Path::new(&classified.target),
-            true,
-        ) {
-            Ok(_) => BridgeReply::allow(request.input),
-            Err(error) => BridgeReply::deny(error.to_string()),
-        };
+        return BridgeReply::allow(request.input);
     }
 
+    if classified.risk != approvals::Risk::Read
+        && request.tool_use_id.as_deref().is_none_or(str::is_empty)
+    {
+        return BridgeReply::deny(
+            "This provider request has no tool-call identity and cannot be approved.",
+        );
+    }
     let proposed = ProposedAction {
         agent_id: subject.agent_id.clone(),
         agent_name: subject.agent_name.clone(),
         chat_id: Some(request.chat_id.clone()),
         turn_id: Some(request.turn_id.clone()),
         risk: classified.risk,
-        action: classified.action,
-        target: classified.target,
-        detail: classified.detail,
+        action: classified.action.clone(),
+        target: classified.target.clone(),
+        detail: format!(
+            "{}\n\nExact request:\n{}",
+            classified.detail,
+            serde_json::json!({
+                "toolUseId":request.tool_use_id,"tool":request.tool_name,"input":request.input,
+                "contextFingerprint":subject.context_fingerprint,
+            })
+        ),
         cost_usd: None,
     };
     let outcome = match approvals::request(&world.db, &world.account, proposed, subject.writes) {
@@ -83,9 +82,37 @@ pub fn answer(
         Outcome::Allowed => BridgeReply::allow(request.input),
         Outcome::Forbidden(reason) => BridgeReply::deny(reason),
         Outcome::Pending(card) => {
+            if let Err(error) = vibyra_core::agent_runs::set_waiting(
+                &world.db,
+                &world.account,
+                &request.turn_id,
+                true,
+            ) {
+                return BridgeReply::deny(error.to_string());
+            }
             raise(&card);
-            match waiters::wait(world, &request.chat_id, &card.id, patience) {
-                Verdict::Approved => BridgeReply::allow(request.input),
+            let verdict = waiters::wait(world, &request.chat_id, &card.id, patience);
+            if let Err(error) = vibyra_core::agent_runs::set_waiting(
+                &world.db,
+                &world.account,
+                &request.turn_id,
+                false,
+            ) {
+                return BridgeReply::deny(error.to_string());
+            }
+            match verdict {
+                Verdict::Approved => match context::load(world, &request.chat_id, &request.turn_id)
+                    .and_then(|current| {
+                        super::file_policy::check(
+                            &current,
+                            &request.tool_name,
+                            &request.input,
+                            &classified,
+                        )
+                    }) {
+                    Ok(()) => BridgeReply::allow(request.input),
+                    Err(reason) => BridgeReply::deny(reason),
+                },
                 Verdict::Denied => BridgeReply::deny(
                     "The person running Vibyra declined this. Do not retry it; explain what \
                      you would have done and continue without it.",

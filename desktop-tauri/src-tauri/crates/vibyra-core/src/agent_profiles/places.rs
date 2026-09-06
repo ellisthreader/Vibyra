@@ -73,6 +73,17 @@ pub fn authorize<'a>(
     write: bool,
 ) -> CoreResult<&'a AgentPlace> {
     let resolved = resolve_for_check(target)?;
+    if write
+        && resolved.components().any(|part| {
+            [".git", ".codex", ".claude"]
+                .iter()
+                .any(|name| part.as_os_str() == *name)
+        })
+    {
+        return Err(CoreError::InvalidPath(
+            "Agent tasks cannot modify protected repository or provider metadata.".into(),
+        ));
+    }
     let mut read_only_match = false;
     for place in places {
         let root = Path::new(&place.path);
@@ -133,17 +144,36 @@ fn resolve_for_check(target: &Path) -> CoreResult<PathBuf> {
     }
 }
 
-/// The `--add-dir` list for a turn: every place the agent may use, with the
-/// writable ones first so a provider that caps the count keeps the useful end.
+/// Additional writable roots. Read-only roots must never become --add-dir.
 pub fn directory_arguments(places: &[AgentPlace], permission_writes: bool) -> Vec<String> {
-    let mut ordered: Vec<&AgentPlace> = places.iter().collect();
-    ordered.sort_by_key(|place| match place.access {
-        PlaceAccess::ReadWrite if permission_writes => 0,
-        PlaceAccess::ReadWrite => 1,
-        PlaceAccess::Read => 2,
-    });
-    ordered
-        .into_iter()
+    places
+        .iter()
+        .filter(|place| permission_writes && place.access == PlaceAccess::ReadWrite)
         .map(|place| place.path.clone())
         .collect()
+}
+
+#[cfg(all(test, unix))]
+#[test]
+fn protected_metadata_cannot_be_written_directly_or_through_a_symlink() {
+    let root = tempfile::tempdir().unwrap();
+    let place = AgentPlace {
+        id: "p".into(),
+        agent_id: "a".into(),
+        path: root.path().to_string_lossy().into_owned(),
+        access: PlaceAccess::ReadWrite,
+        label: "fixture".into(),
+        created_ms: 0,
+    };
+    for name in [".git", ".codex", ".claude"] {
+        let folder = root.path().join(name);
+        std::fs::create_dir(&folder).unwrap();
+        let link = root.path().join(format!("link-{}", &name[1..]));
+        std::os::unix::fs::symlink(&folder, &link).unwrap();
+        for path in [folder.join("config"), link.join("config")] {
+            assert!(authorize(std::slice::from_ref(&place), &path, true).is_err());
+            assert!(authorize(std::slice::from_ref(&place), &path, false).is_ok());
+        }
+    }
+    assert!(authorize(&[place], &root.path().join("source.py"), true).is_ok());
 }

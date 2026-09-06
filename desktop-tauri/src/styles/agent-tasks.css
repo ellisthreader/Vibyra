@@ -1,0 +1,51 @@
+.task-history__filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.task-history__filters input, .task-history__filters select {
+  min-height: 34px; padding: 6px 10px; border: 1px solid var(--line);
+  border-radius: var(--r-control); background: var(--surface); color: var(--text);
+  font: inherit; font-size: var(--fs-ui);
+}
+.task-history__filters input { flex: 1; min-width: 180px; }
+.task-history__empty, .task-detail__empty { color: var(--muted); font-size: var(--fs-body); line-height: 1.7; }
+.task-history__list { display: grid; gap: 8px; padding: 0; margin: 0; list-style: none; }
+.task-history__item { border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; background: var(--surface); }
+.task-history__row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.task-history__title { min-width: 0; flex: 1; text-align: left; background: none; color: var(--text); }
+.task-history__title > span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--fs-ui); font-weight: var(--fw-bold); }
+.task-history__title small { display: block; margin-top: 5px; color: var(--muted); font-size: var(--fs-hint); }
+.task-status { flex: none; border-radius: var(--r-sm); background: var(--elevated); padding: 4px 7px; font-size: var(--fs-hint); color: var(--muted); }
+.task-status--running { background: var(--accent-soft); color: var(--accent); }
+.task-status--waiting { background: var(--ask-soft); color: var(--ask); }
+.task-status--succeeded { background: var(--success-soft); color: var(--success); }
+.task-status--failed, .task-status--interrupted { background: var(--danger-soft); color: var(--danger); }
+.task-detail { border-top: 1px solid var(--line); padding: 16px; font-size: var(--fs-body); }
+.task-detail__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; }
+.task-detail__facts dt { color: var(--dim); font-size: var(--fs-hint); }
+.task-detail__facts dd { margin: 4px 0 0; overflow-wrap: anywhere; color: var(--text); }
+.task-detail details { margin: 12px 0; }
+.task-detail summary { cursor: pointer; color: var(--muted); padding: 4px 0; }
+.task-detail__prompt, .task-detail__message { line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.task-detail pre { max-height: 300px; padding: 12px; overflow: auto; background: var(--term-screen); border-radius: var(--r-sm); white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--fs-hint); }
+.task-detail__fingerprint { overflow-wrap: anywhere; color: var(--dim); font: var(--fs-hint) var(--font-mono); }
+.task-detail__outputs { margin: 20px 0 16px; }
+.composer__actions { flex-wrap: wrap; }
+.composer__account select { max-width: 170px; }
+@media (max-width: 1000px) {
+  .task-history__row { flex-wrap: wrap; gap: 8px; }
+  .task-history__title { flex-basis: calc(100% - 140px); }
+  .task-detail__facts { grid-template-columns: 1fr; }
+  .composer { padding-left: 12px; padding-right: 12px; }
+}
+/* Shared tokens keep task surfaces aligned with the rest of Agent Mode. */
+.provider-readiness { margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; }
+.provider-readiness summary { cursor: pointer; color: var(--text); }
+.provider-readiness p { line-height: 1.5; margin: 8px 0; }
+.task-starters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; max-width: 860px; margin: 20px auto; }
+.task-starters button { display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; }
+.task-starters button:hover { border-color: var(--accent); }
+.task-starters span, .task-starters p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.task-starters p { grid-column: 1 / -1; margin: 0; }
+.archived-chats { padding: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: var(--fs-hint); }
+.archived-chats summary { cursor: pointer; }
+.archived-chats > div { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.archived-chats > div > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1150px) { .task-starters { grid-template-columns: 1fr; } .task-starters button { padding: 12px; gap: 4px; } }

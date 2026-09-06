@@ -19,7 +19,7 @@ const LEVELS: { id: PermissionMode; label: string; hint: string }[] = [
     id: "full",
     label: "Full access",
     hint:
-      "Edit inside your granted folders with the provider's sandbox relaxed. " +
+      "Edit inside your granted folders with the same enforced sandbox. " +
       "Still never publishes, spends or reveals a secret without asking.",
   },
 ];
@@ -27,8 +27,10 @@ const LEVELS: { id: PermissionMode; label: string; hint: string }[] = [
 export function PermissionPicker({
   value,
   onChange,
+  ceiling = "full",
 }: {
   value: PermissionMode;
+  ceiling?: PermissionMode;
   onChange: (level: PermissionMode) => void;
 }) {
   const current = LEVELS.find((level) => level.id === value) ?? LEVELS[0];
@@ -41,7 +43,7 @@ export function PermissionPicker({
         onChange={(event) => onChange(event.target.value as PermissionMode)}
         aria-label="What this turn may do"
       >
-        {LEVELS.map((level) => (
+        {LEVELS.slice(0, LEVELS.findIndex((level) => level.id === ceiling) + 1).map((level) => (
           <option key={level.id} value={level.id}>
             {level.label}
           </option>

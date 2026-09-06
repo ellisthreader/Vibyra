@@ -17,7 +17,7 @@ use rusqlite::params;
 use crate::agentdb::{sql, AgentDb};
 use crate::error::{CoreError, CoreResult};
 
-use super::attachments::{folder, ChatAttachment};
+use super::attachments::ChatAttachment;
 
 /// Everything attached to one chat, oldest first.
 pub fn list(db: &AgentDb, chat_id: &str) -> CoreResult<Vec<ChatAttachment>> {
@@ -54,6 +54,7 @@ pub fn list(db: &AgentDb, chat_id: &str) -> CoreResult<Vec<ChatAttachment>> {
 /// The delete is scoped by `chat_id` as well as `id`, so an id from one chat
 /// can never remove another chat's file.
 pub fn remove(db: &AgentDb, root: &Path, chat_id: &str, id: &str) -> CoreResult<()> {
+    super::managed_paths::require_chat(db, chat_id)?;
     let managed: String = db.with(|connection| {
         connection
             .query_row(
@@ -63,6 +64,7 @@ pub fn remove(db: &AgentDb, root: &Path, chat_id: &str, id: &str) -> CoreResult<
             )
             .map_err(|_| CoreError::InvalidPath("that attachment is not on this chat".into()))
     })?;
+    super::managed_paths::remove_file(root, chat_id, &managed)?;
     db.with(|connection| {
         connection
             .execute(
@@ -72,11 +74,5 @@ pub fn remove(db: &AgentDb, root: &Path, chat_id: &str, id: &str) -> CoreResult<
             .map_err(sql)?;
         Ok(())
     })?;
-    // Only inside the chat's own folder, whatever the stored path says: a row
-    // is not a capability to delete an arbitrary file.
-    let copy = Path::new(&managed);
-    if copy.starts_with(folder(root, chat_id)) {
-        let _ = std::fs::remove_file(copy);
-    }
     Ok(())
 }

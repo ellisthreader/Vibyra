@@ -66,8 +66,9 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
     error: null,
 
     loadMemory: async (agentId) => {
-      const entries = await ipc.listMemory(agentId).catch(() => []);
-      set((state) => ({ memory: { ...state.memory, [agentId]: entries } }));
+      try { const entries = await ipc.listMemory(agentId);
+        set((state) => ({ memory: { ...state.memory, [agentId]: entries } }));
+      } catch (error) { fail(error); }
     },
 
     addMemory: async (agentId, body, klass) => {
@@ -97,7 +98,7 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
       await get().loadMemory(agentId);
     },
 
-    loadSkills: async () => set({ skills: await ipc.listSkills().catch(() => []) }),
+    loadSkills: async () => { try { set({ skills: await ipc.listSkills() }); } catch (error) { fail(error); } },
 
     saveSkill: async (draft, id) => {
       try {
@@ -121,8 +122,7 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
       await ipc.assignSkill(agentId, skillId, enabled).catch(fail);
     },
 
-    loadRoutines: async (agentId) =>
-      set({ routines: await ipc.listRoutines(agentId).catch(() => []) }),
+    loadRoutines: async (agentId) => { try { set({ routines: await ipc.listRoutines(agentId) }); } catch (error) { fail(error); } },
 
     saveRoutine: async (draft, id) => {
       try {
@@ -154,8 +154,9 @@ export const useAgentWorkStore = create<WorkStore>((set, get) => {
     },
 
     loadRuns: async (routineId) => {
-      const runs = await ipc.routineHistory(routineId).catch(() => []);
-      set((state) => ({ runs: { ...state.runs, [routineId]: runs } }));
+      try { const runs = await ipc.routineHistory(routineId);
+        set((state) => ({ runs: { ...state.runs, [routineId]: runs } }));
+      } catch (error) { fail(error); }
     },
 
     runNow: async (id) => {

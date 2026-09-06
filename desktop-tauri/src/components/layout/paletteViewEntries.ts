@@ -1,4 +1,5 @@
 import type { DockSize, DockTool, SettingsSectionId } from "../../state/workspaceStore";
+import { isWipSettingsSection } from "../../lib/wipSettings";
 import { useWorkspaceStore } from "../../state/workspaceStore";
 import { EyeIcon, FolderIcon, GearIcon, GitBranchIcon, SparklesIcon } from "../common/Icons";
 import { MonitorIcon } from "../common/StatusIcons";
@@ -71,6 +72,7 @@ export function viewEntries(): CommandPaletteEntry[] {
   }
 
   for (const section of SETTINGS) {
+    if (isWipSettingsSection(section.id)) continue;
     entries.push({
       id: `set-${section.id}`,
       kind: "command",

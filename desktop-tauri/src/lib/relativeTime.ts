@@ -1,5 +1,11 @@
 export function relativeTime(timestampMs: number): string {
   const delta = Date.now() - timestampMs;
+  if (delta < -45_000) {
+    const minutes = Math.round(-delta / 60_000);
+    if (minutes < 60) return `in ${minutes}m`;
+    const hours = Math.round(minutes / 60);
+    return hours < 24 ? `in ${hours}h` : `in ${Math.round(hours / 24)}d`;
+  }
   if (delta < 45_000) return "just now";
   const minutes = Math.round(delta / 60_000);
   if (minutes < 60) return `${minutes}m ago`;

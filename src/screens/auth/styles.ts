@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
   },
   actionsExpanded: { marginTop: 22, width: "100%" },
   appleButtonBusy: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.62)",
     justifyContent: "center"
@@ -63,12 +63,12 @@ export const styles = StyleSheet.create({
   },
   authIcon: { textAlign: "center", width: 40 },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     height: undefined,
     opacity: 1,
     width: undefined
   },
-  backgroundOverlay: { ...StyleSheet.absoluteFillObject },
+  backgroundOverlay: { ...StyleSheet.absoluteFill },
   content: { flexGrow: 1, justifyContent: "space-between", paddingHorizontal: 22 },
   contentExpanded: { justifyContent: "flex-start" },
   foreground: { flex: 1 },

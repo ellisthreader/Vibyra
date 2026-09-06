@@ -18,6 +18,8 @@ pub struct BridgeRequest {
     pub chat_id: String,
     pub turn_id: String,
     pub tool_name: String,
+    #[serde(default)]
+    pub tool_use_id: Option<String>,
     pub input: Value,
 }
 
