@@ -148,3 +148,10 @@ For the standalone phone client, inspect the actual EAS upload archive:
 `mobile/src/generated` must be present, while backend data and local logs must
 be absent. Native store signing, hosted web delivery and standalone Host
 previews are separate evidence. Record their state in `Desktop/Release 0.6.0.md`.
+
+For temporary Railway publication access, this CLI version discovers registration
+candidates under `~/.ssh` even when `ssh keys add --key` receives a path elsewhere.
+A zero exit status saying all local keys are registered does not prove the new
+key was registered. Verify its fingerprint in `railway ssh keys list`, use a
+uniquely named temporary key, and remove that registration and private material
+after publication. Never print private keys or provider credentials.

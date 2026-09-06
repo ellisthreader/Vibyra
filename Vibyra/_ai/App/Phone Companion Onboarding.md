@@ -10,6 +10,8 @@ Set up later. Sample exploration does not complete setup or grant Host trust.
 Native stores the preference in SecureStore; web persists only this non-secret
 flag in localStorage. Browser pairing keys remain memory-only. Storage failure
 allows entry with a persistence notice. Settings can reopen the welcome screen.
+Pairing invitations are single-use and expire after two minutes. After cancelling
+or an expired link, type `pair` in the Host console to create a fresh invitation.
 Remembered computers offer an explicit reconnect action; remembered identity
 is not evidence of a live connection. Closing a pending pairing sheet cancels it.
 

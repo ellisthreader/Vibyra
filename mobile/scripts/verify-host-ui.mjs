@@ -47,6 +47,17 @@ try {
   await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
   await page.getByRole('textbox', { name: 'Computer pairing link' }).fill(JSON.stringify(pairing));
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
+  await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'first local approval request');
+  assert.equal(await page.getByRole('button', { name: 'Open workspace', exact: true }).count(), 0,
+    'An unapproved device cannot complete onboarding');
+  await page.getByRole('button', { name: 'Close Connect your computer', exact: true }).click();
+  hostOutput = '';
+  child.stdin.write(`pair ws://${address}\n`);
+  const retryUri = await until(() => hostOutput.match(/vibyra:\/\/pair\?data=([\w-]+)/)?.[1], 'fresh single-use invitation');
+  Object.assign(pairing, JSON.parse(Buffer.from(retryUri, 'base64url').toString()));
+  await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Computer pairing link' }).fill(JSON.stringify(pairing));
+  await page.getByRole('button', { name: 'Connect', exact: true }).click();
   const key = await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'local approval request');
   child.stdin.write(`approve ${key}\n`);
   await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
@@ -92,7 +103,7 @@ try {
   await page.getByText(/Session ended/).waitFor();
   await noTutorialFraming(page);
   assert.deepEqual(errors, []);
-  console.log('PASS: real Host pairing, two isolated terminals/drafts, input effects, diff/files, reconnect, observation/control and stop.');
+  console.log('PASS: cancel/retry before Host approval, real pairing, two isolated terminals/drafts, input effects, diff/files, reconnect, observation/control and stop.');
   console.log('This verifies standalone Host CLI sessions; existing Vibyra Desktop chat synchronization is not implemented.');
 } finally {
   await browser.close(); child.kill('SIGINT');

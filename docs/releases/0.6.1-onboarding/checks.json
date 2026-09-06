@@ -1,0 +1,48 @@
+{
+  "sourceSha": "6485f8c920acaf81964fbb3e81f9a7e6421cb72c",
+  "desktopWorkflow": 34059496980,
+  "desktopWorkflowResult": "success",
+  "desktopFrontendTests": 777,
+  "mobileTests": 29,
+  "mobileTypecheck": true,
+  "mobileNativeAndWebExport": true,
+  "mobileLineGateFiles": 75,
+  "hostedOnboardingJourneys": [
+    "phone-dark",
+    "phone-light",
+    "desktop",
+    "landscape",
+    "unavailable-storage"
+  ],
+  "hostedWebUrl": "https://vibyra.expo.app",
+  "hostedWebDeployment": "https://vibyra--7l84ja09q5.expo.app",
+  "realHost": [
+    "cancel before approval",
+    "retry with fresh single-use invitation",
+    "local approval",
+    "two independent terminals and drafts",
+    "real command and file effects",
+    "file/diff review",
+    "disconnect/reconnect",
+    "observation/control",
+    "stop session"
+  ],
+  "desktopSettingsBrowser": "navigation, WIP, Windows/Linux command, clipboard/resource IPC and failure state; mocked IPC",
+  "localExpo": {
+    "port": 8082,
+    "sdk": "57.0.0",
+    "manifest": 200,
+    "iosBundle": 200,
+    "webWelcome": true
+  },
+  "physicalIPhoneVerified": false,
+  "existingDesktopChatSync": false,
+  "backendDeployment": "44cdd3b0-85ba-470c-9905-4651e9f17214",
+  "backendDeploymentStatus": "SUCCESS",
+  "localPinnedAppImage": "0.6.1",
+  "activeUserWindowsPreserved": true,
+  "publicDownloadHashesVerified": true,
+  "publicUpdaterChecks": 30,
+  "publicReleaseTagMatchesSource": true,
+  "githubReleaseAssets": 12
+}
