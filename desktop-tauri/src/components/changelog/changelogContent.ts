@@ -8,6 +8,26 @@ export type { ChangelogFeature, DesktopChangelog } from "./changelogTypes";
 // accumulate rather than needing a split at the worst possible moment.
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.5.1": {
+    version: "0.5.1",
+    releasedAt: "2026-09-06",
+    releasedLabel: "6 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    allowUnmarkedLaunch: false,
+    features: [
+      {
+        id: "01",
+        title: "GPT-6 Astra is selectable.",
+        body: "OpenAI’s newest model joins the OpenAI wall, above 5.6 Sol, with its own artwork and a 1.05M token context. On a connected Codex account it launches natively as gpt-6-astra.",
+      },
+      {
+        id: "02",
+        title: "Astra’s effort ladder is its own.",
+        body: "Low, medium, high, x-high and max — no Ultra, and no None, because Astra refuses that outright. It starts on high, the effort OpenAI recommends for everyday coding.",
+      },
+    ],
+  },
   "0.5.0": {
     version: "0.5.0",
     releasedAt: "2026-09-06",

@@ -2,14 +2,19 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "GPT-6 Astra is selectable",
+    body: "OpenAI's newest model joins the OpenAI wall with its own artwork and a 1.05M token context. On a connected Codex account it launches natively, on its own effort ladder, starting at high.",
+    fresh: true,
+  },
+  {
     title: "0.5.0 closes the 0.4 line",
     body: "One release gathers everything shipped through 0.4.4: Agent Mode and Chat Mode open, decisions that stop work and wait for you, the guided New Project builder, and terminals that stay responsive under load.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "A new website and downloads page",
     body: "The homepage was rebuilt around the workspace tour and playground, and Downloads now reads versions, sizes and checksums from the live release feed with setup guides for Windows and Linux.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Start a real project from Vibyra",
@@ -164,14 +169,6 @@ const FEATURES = [
   {
     title: "Sessions that survive",
     body: "Your panes, layout and scrollback come back exactly as you left them.",
-  },
-  {
-    title: "In-app updates",
-    body: "New releases appear inside Vibyra and preserve terminal state before restarting.",
-  },
-  {
-    title: "Obsidian memory",
-    body: "Point Vibyra at a vault and your agents can read and write your own notes.",
   },
 ];
 

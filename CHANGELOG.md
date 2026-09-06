@@ -3,6 +3,23 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.5.1 — 6 September 2026
+
+**GPT-6 Astra is selectable.** OpenAI's newest model, released on 3 September,
+joins the OpenAI wall above 5.6 Sol with its own artwork and a 1.05M token
+context window. On a connected Codex account it launches natively as
+`gpt-6-astra`; otherwise it runs through an OpenRouter-capable CLI.
+
+Its effort ladder is low, medium, high, x-high and max. Astra has no Ultra
+tier and rejects `none` outright, so it does not inherit the ladder 5.6 Sol
+and Terra use, and it starts on high — the effort OpenAI recommends for
+everyday coding. Billing prices it as premium, using OpenAI's published rate
+rather than the lower figure OpenRouter currently lists, so an estimate made
+without the live catalog over-charges rather than under.
+
+This release carries no other desktop change: everything else is the 0.5.0
+build, which is itself the verified 0.4.4 performance work.
+
 ## 0.5.0 — 6 September 2026
 
 **The 0.4 line, complete.** 0.5.0 marks the end of the 0.4 series. Its desktop
