@@ -1,0 +1,70 @@
+name: Standalone Host preview packages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host:
+    name: ${{ matrix.label }} Host preview
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            label: Linux
+            binary: vibyra-host
+            suffix: linux-x86_64
+          - os: windows-latest
+            label: Windows
+            binary: vibyra-host.exe
+            suffix: windows-x86_64.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.97.1 --profile minimal --component clippy --component rustfmt
+      - name: Verify Host
+        working-directory: host
+        run: |
+          cargo +1.97.1 fmt --all --check
+          cargo +1.97.1 clippy --workspace --all-targets --locked -- -D warnings
+          cargo +1.97.1 test --workspace --locked
+          cargo +1.97.1 build --release --locked -p vibyra-host
+      - name: Verify packaged CLI
+        shell: bash
+        run: host/target/release/${{ matrix.binary }} --help
+      - name: Install signing CLI
+        working-directory: desktop-tauri
+        run: npm ci
+      - name: Stage and sign preview binary
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          version=$(node -p "require('./desktop-tauri/package.json').version")
+          mkdir -p host-release
+          output="Vibyra-Host-$version-preview-${{ matrix.suffix }}"
+          cp "host/target/release/${{ matrix.binary }}" "host-release/$output"
+          cp host/README.md host-release/README.md
+          sha256sum "host-release/$output" > "host-release/$output.sha256"
+          cd desktop-tauri
+          npx tauri signer sign "../host-release/$output"
+          test -s "../host-release/$output.sig"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: vibyra-host-${{ matrix.label }}
+          path: host-release/*
+          if-no-files-found: error
+          retention-days: 30
