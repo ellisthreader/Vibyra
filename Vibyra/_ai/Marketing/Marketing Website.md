@@ -79,3 +79,16 @@ The social PNG is a browser capture of `backend/resources/media/marketing-social
 The product review, claim register, scope and design plan are in
 `docs/marketing-website-plan.md`. The local `plan` skill includes the release-tag
 and phone-availability checks plus responsive-tour validation for future work.
+
+
+## Delivery status (6 September 2026)
+
+The homepage and downloads redesign, the 4 September audit evidence and the
+merged vault notes were committed on `release/0.4.4-website` (commits `2a75ffc`
+and `6464e4b`, pushed to GitHub) from the clean worktree
+`~/.config/vibyra-desktop/terminal-worktrees/website-release-0.4.4`, which is
+linked to the production Railway service. Desktop code on that branch is
+identical to 0.4.4, so no desktop release accompanies it. Deploy with
+`railway up --service Vibyra --ci` from that worktree, then confirm the live
+`marketing-*.css` bundle contains `.agent-card`, `/downloads` renders the new
+page, and the three `/web-api/updates/...` endpoints still answer 200.
