@@ -1,4 +1,4 @@
-import { parsePairing, type Pairing } from '../transport/pairing';
+import { checkBrowserConnection, parsePairing, type Pairing } from '../transport/pairing';
 import type { WorkspaceStore } from './WorkspaceStore';
 import type { HostState, SavedConnection } from './types';
 
@@ -32,6 +32,7 @@ export async function reconnect(store: WorkspaceStore) {
   await open(store, withoutInvite(store.saved.pairing));
 }
 async function open(store: WorkspaceStore, pairing: Pairing) {
+  checkBrowserConnection(pairing);
   store.disconnect();
   const epoch = store.epoch;
   const previous = store.saved;

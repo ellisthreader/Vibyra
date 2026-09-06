@@ -49,6 +49,7 @@ try {
   await page.getByRole('button', { name: 'Connect', exact: true }).click();
   const key = await until(() => hostOutput.match(/approve ([a-f0-9]{64})/)?.[1], 'local approval request');
   child.stdin.write(`approve ${key}\n`);
+  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
   await page.getByText('UI Test Computer', { exact: true }).first().waitFor();
   await openTerminal('Verified UI terminal');
   const input = page.getByRole('textbox', { name: 'Command for computer terminal' });

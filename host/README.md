@@ -4,7 +4,10 @@ The standalone Host keeps terminal sessions on your computer while the phone
 or web client observes them. This preview is separate from Vibyra Desktop:
 existing Desktop chats are not synchronized into it.
 
-Download the Host binary for your OS from the Vibyra 0.6.0 release. On Linux,
+Open **Vibyra Desktop → Settings → Phone companion (WIP)** for downloads
+and a setup command using your project folder and private Wi-Fi address.
+Download the Host binary for your OS from the
+[Vibyra Host preview release](https://github.com/ellisthreader/Vibyra/releases/tag/v0.6.0-host-preview). On Linux,
 make it executable with `chmod +x Vibyra-Host-0.6.0-preview-linux-x86_64`.
 Run it with an explicit project folder and generate a short-lived invitation:
 

@@ -24,6 +24,7 @@ pub mod fs;
 pub mod github;
 pub mod memory;
 pub mod perf;
+pub mod phone;
 pub mod preview;
 pub mod probe;
 pub mod project_activity;

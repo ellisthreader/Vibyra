@@ -15,7 +15,10 @@ npm ci
 npm run web
 ```
 
-The app opens on a new coding composer. Connect a computer, choose a project
+The app opens on a first-run welcome marked **Work in progress**. Connect your computer,
+explore an explicitly labelled sample workspace, or choose **Set up later**.
+Reopen setup from **Settings → Welcome and computer setup**. No Vibyra account
+is required for this Host preview. After connecting, choose a project
 and Claude Code, Codex, or Terminal, then continue that session from the sidebar.
 A prompt entered before creating a chat carries over as an unsent draft.
 The sidebar searches chats and filters terminals independently.

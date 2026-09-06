@@ -23,7 +23,8 @@
     "verify:host-ui": "npm run assets && node scripts/verify-host-ui.mjs",
     "phone": "expo start --go --lan --port 8081",
     "prephone": "npm run assets",
-    "eas-build-pre-upload": "npm run assets"
+    "eas-build-pre-upload": "npm run assets",
+    "verify:onboarding": "node scripts/verify-onboarding.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

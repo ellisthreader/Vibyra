@@ -50,3 +50,9 @@ export function parsePairing(link: string, now = Date.now()): Pairing {
   }
   return value;
 }
+
+export function checkBrowserConnection(pairing: Pairing, protocol = typeof location === 'undefined' ? '' : location.protocol) {
+  if (protocol === 'https:' && new URL(pairing.url).protocol === 'ws:') {
+    throw new Error('This hosted browser needs a secure connection (wss). Use the native phone preview on the same Wi-Fi, or serve the web app locally.');
+  }
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme';
 import { Button, Hint, Icon } from './primitives';
+import { SetupHelp } from '../onboarding/SetupHelp';
 import { ScannerSheet } from './ScannerSheet';
 import { Sheet } from './Sheet';
 import { useAction } from './useAction';
@@ -12,6 +13,7 @@ export function ConnectScreen({ visible, workspace, onClose }: {
 }) {
   const { colors } = useTheme();
   const [link, setLink] = useState('');
+  const [help, setHelp] = useState(false);
   const [scanner, setScanner] = useState(false);
   const { busy, error, run } = useAction();
   const pending = busy || workspace.status === 'connecting' || workspace.status === 'pairing';
@@ -19,8 +21,8 @@ export function ConnectScreen({ visible, workspace, onClose }: {
     setLink(value);
     if (await run(() => workspace.actions.connect(value.trim()))) { setLink(''); onClose(); }
   };
-  return <Sheet title="Connect your computer" visible={visible} onClose={onClose}>
-    <Text style={[s.intro, { color: colors.muted }]}>Open Vibyra Host on your computer to get its pairing code or link.</Text>
+  return <Sheet title="Connect your computer" visible={visible} onClose={() => { if (pending) workspace.actions.disconnect(); onClose(); }}>
+    <Text style={[s.intro, { color: colors.muted }]}>Open Vibyra Host on your computer to get its pairing link. Approve this device in the Host console when prompted.</Text>
     <View style={[s.trust, { borderColor: colors.border }]}>
       <Icon name="shield-checkmark-outline" size={18} color={colors.muted} />
       <Text style={[s.trustText, { color: colors.muted }]}>This phone can run commands with your computer account’s permissions. Pair only with a phone you trust.</Text>
@@ -47,6 +49,8 @@ export function ConnectScreen({ visible, workspace, onClose }: {
     {(error || workspace.error) && <Hint error>{error || workspace.error}</Hint>}
     <Button title="Connect" busy={pending} disabled={!link.trim()} onPress={() => void connect(link)} />
     <Text style={[s.note, { color: colors.muted }]}>Keep your computer awake and Vibyra Host running.</Text>
+    <Button secondary title={help ? 'Hide computer setup' : 'Help setting up my computer'} onPress={() => setHelp(!help)} />
+    {help && <SetupHelp />}
     <ScannerSheet visible={scanner} onClose={() => setScanner(false)}
       onScan={value => { setScanner(false); void connect(value); }} />
   </Sheet>;

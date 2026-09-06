@@ -16,6 +16,7 @@ import { SettingsPerformancePane } from "./SettingsPerformancePane";
 import { SettingsProfilePane } from "./SettingsProfilePane";
 import { SettingsShortcutsPane } from "./SettingsShortcutsPane";
 import { SettingsUpdatesPane } from "./SettingsUpdatesPane";
+import { SettingsPhonePane } from "./SettingsPhonePane";
 import { SettingsWorkspacesPane } from "./SettingsWorkspacesPane";
 
 interface Section {
@@ -47,6 +48,7 @@ const GROUPS: { label: string; items: Section[] }[] = [
   {
     label: "Application",
     items: [
+      { id: "phone", label: "Phone companion", blurb: "Work in progress · Connect your phone with Vibyra Host", icon: LinkIcon },
       { id: "general", label: "General", blurb: "Theme, terminal and folder defaults", icon: GearIcon },
       { id: "performance", label: "Performance", blurb: "What Vibyra is using right now, and the levers that change it", icon: GaugeIcon },
       { id: "notifications", label: "Notifications", blurb: "Alerts, sounds and desktop notices", icon: BellIcon },
@@ -72,6 +74,7 @@ export function SettingsModal() {
   const section = SECTIONS.find((item) => item.id === active && !isWipSettingsSection(item.id)) ?? SECTIONS[0];
   const pane = {
     profile: <SettingsProfilePane />,
+    phone: <SettingsPhonePane />,
     general: <SettingsGeneralPane settings={settings} update={update} />,
     performance: <SettingsPerformancePane settings={settings} update={update} />,
     notifications: <SettingsNotificationsPane settings={settings} update={update} />,
@@ -96,7 +99,7 @@ export function SettingsModal() {
                   const Icon = item.icon;
                   return (
                     <button key={item.id} disabled={isWipSettingsSection(item.id)} className={`settings-nav__item ${item.id === active ? "settings-nav__item--active" : ""}`} aria-current={item.id === active} onClick={() => setActive(item.id)}>
-                      <Icon size={15} />{item.label}{isWipSettingsSection(item.id) && <small>WIP</small>}
+                      <Icon size={15} />{item.label}{(item.id === "phone" || isWipSettingsSection(item.id)) && <small>WIP</small>}
                     </button>
                   );
                 })}

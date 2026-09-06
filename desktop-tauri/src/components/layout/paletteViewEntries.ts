@@ -22,6 +22,7 @@ const TOOLS: { id: DockTool; label: string; icon: typeof FolderIcon }[] = [
 ];
 
 const SETTINGS: { id: SettingsSectionId; label: string; keywords: string }[] = [
+  { id: "phone", label: "Phone companion (WIP)", keywords: "mobile iphone host pairing onboarding setup" },
   { id: "profile", label: "Profile", keywords: "account sign out login email plan" },
   { id: "general", label: "General", keywords: "theme dark light font folder default" },
   { id: "performance", label: "Performance", keywords: "cpu memory gpu renderer speed lag" },

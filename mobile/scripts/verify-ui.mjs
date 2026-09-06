@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
-import { capture, fullyVisible, terminalText } from './ui-test-helpers.mjs';
+import { capture, fullyVisible, terminalText, until } from './ui-test-helpers.mjs';
 
 const out = process.env.VIBYRA_SHOTS ?? '/tmp/vibyra-ios-screenshots';
 await mkdir(out, { recursive: true });
@@ -23,6 +23,7 @@ try {
       const session = async name => { await drawer(); await page.getByRole('tab', { name: 'All', exact: true }).click();
         await page.getByRole('button', { name, exact: true }).click(); };
       await page.goto(url);
+      await page.getByRole('button', { name: 'Set up later', exact: true }).click();
       await page.getByRole('textbox', { name: 'Prompt for new chat' }).waitFor();
       await shot('home');
       await page.getByRole('button', { name: 'Connect computer', exact: true }).click();
@@ -100,8 +101,10 @@ try {
       await page.getByRole('button', { name: 'Open terminal', exact: true }).click();
       assert.equal(await terminalInput.inputValue(), '', 'New terminal does not inherit the new chat prompt');
       await drawer();
+      await page.getByRole('tab', { name: 'Terminals', exact: true }).scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200); // RN ScrollView suppresses presses during scroll settling.
       await page.getByRole('tab', { name: 'Terminals', exact: true }).click();
-      assert.equal(await page.getByRole('tab', { name: 'Terminals', exact: true }).getAttribute('aria-selected'), 'true');
+      await until(async () => await page.getByRole('tab', { name: 'Terminals', exact: true }).getAttribute('aria-selected') === 'true', 'terminal filter selection');
       assert.equal(await page.getByRole('button', { name: 'A calmer checkout, Claude', exact: true }).count(), 0);
       await page.getByRole('textbox', { name: 'Search chats' }).fill('QA new terminal');
       await shot('drawer');

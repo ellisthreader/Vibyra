@@ -10,7 +10,7 @@ import type { ThemePreference, WorkspaceModel } from './types';
 const appearances: { id: ThemePreference; title: string }[] = [
   { id: 'system', title: 'System' }, { id: 'light', title: 'Light' }, { id: 'dark', title: 'Dark' },
 ];
-export function SettingsScreen({ workspace }: { workspace: WorkspaceModel }) {
+export function SettingsScreen({ workspace, onSetup }: { workspace: WorkspaceModel; onSetup: () => void }) {
   const { colors } = useTheme();
   const { busy, error, run } = useAction();
   const [expanded, setExpanded] = useState<string>();
@@ -53,7 +53,10 @@ export function SettingsScreen({ workspace }: { workspace: WorkspaceModel }) {
           onPress={workspace.demo ? workspace.actions.exitDemo! : workspace.actions.enterDemo!} />
       </View>
     </>}
-    <Text style={[s.footer, { color: colors.muted }]}>Vibyra</Text>
+    <View style={[s.group, { borderColor: colors.border, marginTop: 20 }]}>
+      <SettingRow title="Welcome and computer setup" icon="help-circle-outline" onPress={onSetup} />
+    </View>
+    <Text style={[s.footer, { color: colors.muted }]}>Vibyra phone companion · WIP</Text>
   </ScrollView>;
 }
 function SettingRow({ title, icon, value, expanded, onPress }: {

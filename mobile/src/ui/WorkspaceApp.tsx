@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StatusBar, StyleSheet, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, StatusBar, StyleSheet, Text, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { palettes, ThemeContext } from '../theme';
 import { ComputersScreen } from './ComputersScreen';
@@ -11,10 +11,14 @@ import { SessionScreen } from './SessionScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { Icon, IconButton } from './primitives';
 import { setDraftForScope } from './useDraft';
+import { WelcomeScreen } from '../onboarding/WelcomeScreen';
+import { useWelcome } from '../onboarding/useWelcome';
 import { WorkScreen } from './WorkScreen';
 import type { Destination, SessionKind, WorkspaceModel } from './types';
 
 export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
+  const welcome = useWelcome();
+  const showWelcome = !welcome.complete && !workspace.demo;
   const systemScheme = useColorScheme();
   const { width, height } = useWindowDimensions();
   const compact = width > height && height < 500;
@@ -38,7 +42,11 @@ export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
   return <ThemeContext.Provider value={{ colors, dark }}>
     <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
     <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]}>
-      <View aria-hidden={drawer || connect || newSession} accessibilityElementsHidden={drawer || connect || newSession}
+      {!welcome.ready ? <ActivityIndicator accessibilityLabel="Loading Vibyra" color={colors.accent} style={{ flex: 1 }} /> : showWelcome ?
+        <View style={{ flex: 1 }} aria-hidden={connect} accessibilityElementsHidden={connect}
+          importantForAccessibility={connect ? 'no-hide-descendants' : 'auto'}>
+          <WelcomeScreen workspace={workspace} onConnect={() => setConnect(true)} onContinue={() => void welcome.finish()} />
+        </View> : <View aria-hidden={drawer || connect || newSession} accessibilityElementsHidden={drawer || connect || newSession}
         importantForAccessibility={drawer || connect || newSession ? 'no-hide-descendants' : 'auto'}
         style={[s.frame, width > 700 && { maxWidth: 820 }]}>
         <View style={[s.header, compact && { minHeight: 44, paddingVertical: 0 }]}>
@@ -46,6 +54,7 @@ export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
           <Pressable accessibilityRole="button" accessibilityLabel={session ? 'Switch chat' : 'Choose computer'}
             onPress={() => session ? setDrawer(true) : workspace.status === 'connected' ? setDestination('computers') : setConnect(true)} style={s.heading}>
             <View style={s.headingRow}><Text numberOfLines={1} style={[s.brand, { color: colors.text }, session && s.sessionTitle]}>{session?.title ?? 'Vibyra'}</Text>
+              <Text accessibilityLabel="Work in progress" style={{ color: colors.muted, fontSize: 10 }}>WIP</Text>
               <Icon name="chevron-down" size={12} color={colors.muted} /></View>
             {!compact && <View style={s.connection}>
               <View style={[s.dot, { backgroundColor: workspace.demo ? colors.muted : workspace.status === 'connected' ? colors.success : colors.border }]} />
@@ -60,9 +69,10 @@ export function WorkspaceApp({ workspace }: { workspace: WorkspaceModel }) {
             <WorkScreen workspace={workspace} onConnect={() => setConnect(true)} onNew={start} onProjects={() => setDestination('projects')} />)}
           {destination === 'projects' && <ProjectsScreen workspace={workspace} onConnect={() => setConnect(true)} onNew={start} />}
           {destination === 'computers' && <ComputersScreen workspace={workspace} onConnect={() => setConnect(true)} />}
-          {destination === 'settings' && <SettingsScreen workspace={workspace} />}
+          {destination === 'settings' && <SettingsScreen workspace={workspace} onSetup={() => { workspace.actions.exitDemo?.(); welcome.reopen(); }} />}
         </View>
-      </View>
+        {welcome.error && <Text accessibilityLiveRegion="polite" style={{ color: colors.muted, padding: 12 }}>{welcome.error}</Text>}
+      </View>}
       <NavigationDrawer visible={drawer} destination={destination} workspace={workspace}
         onClose={() => setDrawer(false)} onNavigate={setDestination} onNew={home} />
       <ConnectScreen visible={connect} workspace={workspace} onClose={() => setConnect(false)} />
