@@ -229,3 +229,52 @@ orphaned cards invalidated at startup; and the gate hardening a pre-release
 review forced (shell classifier fails closed on `find -exec`, `$(...)`,
 backticks and `&`; read-only subjects are refused writes; an error boundary
 around each un-gated mode; bounded listener). See `Agent Mode As Built.md`.
+
+## Published 0.5.0
+
+Vibyra 0.5.0 superseded the live 0.4.4 release on 2026-09-06. The exact signed
+source is commit `1b6c92bf6a31fe4363d0ea8e1de71b10d0c73d6f` and annotated tag
+`v0.5.0` on `release/0.5.0`. GitHub Actions run `34033875878` passed the
+release preflight (version agreement and a healthy feed), the complete
+frontend/Rust gates, Windows NSIS install/launch, AppImage launch, Debian
+install/launch, checksums, updater signatures, metadata, and the aggregate
+release-set gate.
+
+0.5.0 is a **version-only desktop release**: its `desktop-tauri/` tree is
+identical to the verified 0.4.4 build, so nothing under a 0.4.4 user changed.
+What it carries is the release-line merge — `release/0.4.4-website`, which
+brought the rebuilt marketing homepage and the standalone `/downloads` page
+onto the release line from the stale `~/Desktop/Vibyra` checkout — plus the
+0.5.0 notes in `changelogContent.ts`, `CHANGELOG.md` and the portal's What's
+New. `allowUnmarkedLaunch` is false, so only an install the updater marked
+pending sees the notes.
+
+Railway production deployment `ecb63200-803c-4ef1-b801-7468814f5e3d` was
+pushed from the clean linked worktree
+`~/.config/vibyra-desktop/terminal-worktrees/release-0.5.0` and published all
+three release records:
+
+- Windows NSIS: 8,164,815 bytes, SHA-256
+  `a3e65063d013e1ea7ded87d0f35d9501c57b262aed4b3b14a0a424efacae5464`.
+- Linux AppImage: 99,105,272 bytes, SHA-256
+  `89318d7e0e5b6c91532f876e4f88b2c0f18d52be1f4e63109462d78634640431`.
+- Debian package: 11,357,004 bytes, SHA-256
+  `8a69e4142d4547273fd6f125ccd42faf17935fde0764df9f573188163d270f51`.
+
+All three updater routes returned 200 with version 0.5.0 for an old client and
+204 for a 0.5.0 client, and the live `/web-api/releases` checksums match the CI
+artifacts exactly — which is proof of intact uploads, because the backend
+re-hashes the bytes on disk before advertising them. The website shipped in the
+same deploy: the homepage serves the new bundle and `/downloads` now titles
+itself "Download Vibyra — Your next idea starts here."
+
+**The publish blocker worth remembering.** `railway volume files` authenticates
+over SSH. A Claude session could not reach any agent
+(`SSH_AUTH_SOCK=/run/user/1000/keyring/ssh` refused connections) and Claude
+Code's permission classifier blocks `ssh-agent`, `ssh-add` and `SSH_AUTH_SOCK`
+outright, so the upload cannot be driven from an agent session at all. It must
+be run from Ellis's own terminal after `eval "$(ssh-agent -s)"` and
+`ssh-add ~/.ssh/id_ed25519` — the on-disk key is passphrase-encrypted, and
+Railway's non-interactive fallback refuses encrypted keys. Note also that a
+publish script which sends `railway volume files upload` to `/dev/null` looks
+frozen for minutes on the 99 MB AppImage; show its progress instead.

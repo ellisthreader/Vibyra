@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "bundle": "windows",
+  "target": "windows",
+  "arch": "x86_64",
+  "bundleType": "nsis",
+  "version": "0.5.0",
+  "filename": "Vibyra-Desktop-0.5.0-x64-setup.exe",
+  "sizeBytes": 8164815,
+  "sha256": "a3e65063d013e1ea7ded87d0f35d9501c57b262aed4b3b14a0a424efacae5464",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdjFDWTBuVnhSV0ZmSDFZWTcwR0M1QjVIWUlXTGFzNE1kWGdEWmxkY1ZVZElBcTVjUHJVY0NwWHA1eEtlMUFiN0RkdFJlK0ZUOVdZdStQNnpSUFdNMVZRU0RBZXRGa1FrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4Njk5NTgzCWZpbGU6VmlieXJhXzAuNS4wX3g2NC1zZXR1cC5leGUKc3krUTRWRmswMFUxMnlhZ08xSEd4YyswR1RZSllWQXhuVWx5Y0pUcVFLcTR5RmxLQnQzclpBbHo2TklFUnhyNmIwUDZrdTFPTVZXOUJPOG14K3ozQUE9PQo=",
+  "updateFeedUrl": "https://vibyra-production.up.railway.app/web-api/updates/windows/x86_64/nsis/0.5.0"
+}
