@@ -2,24 +2,34 @@ import React from "react";
 
 const FEATURES = [
   {
+    title: "0.5.0 closes the 0.4 line",
+    body: "One release gathers everything shipped through 0.4.4: Agent Mode and Chat Mode open, decisions that stop work and wait for you, the guided New Project builder, and terminals that stay responsive under load.",
+    fresh: true,
+  },
+  {
+    title: "A new website and downloads page",
+    body: "The homepage was rebuilt around the workspace tour and playground, and Downloads now reads versions, sizes and checksums from the live release feed with setup guides for Windows and Linux.",
+    fresh: true,
+  },
+  {
     title: "Start a real project from Vibyra",
     body: "Choose a project type and stack, review the exact scaffold command, then let Vibyra build it and open the finished workspace.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Busy terminals stay responsive",
     body: "Output now follows what the renderer can paint, while generated folders are skipped by the file watcher instead of flooding the app with work.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Agent and Chat are clearly marked WIP",
     body: "Both modes remain visible so you know what is coming, but every route into the unfinished surfaces is disabled until they are ready.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Fable 5.1 has its own artwork",
     body: "Claude Fable 5.1 now has a distinct model-wall plate that matches the current icon family instead of borrowing Fable 5's image.",
-    fresh: true,
+    fresh: false,
   },
   {
     title: "Ask Vibyra, and it can see your workspace",

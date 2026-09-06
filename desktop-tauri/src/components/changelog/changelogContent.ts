@@ -8,6 +8,31 @@ export type { ChangelogFeature, DesktopChangelog } from "./changelogTypes";
 // accumulate rather than needing a split at the worst possible moment.
 
 const releases: Record<string, DesktopChangelog> = {
+  "0.5.0": {
+    version: "0.5.0",
+    releasedAt: "2026-09-06",
+    releasedLabel: "6 September 2026",
+    title: "What’s new",
+    sectionLabel: "New in this release",
+    allowUnmarkedLaunch: false,
+    features: [
+      {
+        id: "01",
+        title: "The 0.4 line, complete.",
+        body: "0.5.0 gathers everything shipped through 0.4.4 into one release: Agent Mode and Chat Mode open, decisions that stop work and wait for you, the guided New Project builder, and terminals that stay responsive under load.",
+      },
+      {
+        id: "02",
+        title: "A new website and downloads page.",
+        body: "vibyra.app now has a rebuilt homepage and a downloads page that reads versions, sizes and checksums from the live release feed, with setup guides for Windows and Linux and updater guidance for existing installs.",
+      },
+      {
+        id: "03",
+        title: "Nothing under you moved.",
+        body: "The desktop code in 0.5.0 is the verified 0.4.4 build. If you are updating from 0.4.4, this release changes the version you are on and nothing else.",
+      },
+    ],
+  },
   "0.4.4": {
     version: "0.4.4",
     releasedAt: "2026-09-05",

@@ -3,6 +3,29 @@
 Newest first. Versions are the desktop app's; `docs/desktop-updates.md`
 describes how a release reaches an installed copy.
 
+## 0.5.0 — 6 September 2026
+
+**The 0.4 line, complete.** 0.5.0 marks the end of the 0.4 series. Its desktop
+code is byte-for-byte the verified 0.4.4 build: Agent Mode and Chat Mode open,
+decisions that actually stop work, the guided New Project builder, terminals
+paced by what the renderer can paint, bounded terminal input and file-change
+queues, and dictation that cleans up after itself. Updating from 0.4.4 changes
+the version you are on and nothing else.
+
+**A new website and downloads page.** The homepage was rebuilt around the
+workspace tour, the playground and the agent showcase, and `/downloads` is now
+a standalone page that reads versions, sizes and checksums from the live release
+feed, offers setup guides for Windows and Linux, and points existing installs
+at the in-app updater. Downloading needs no account.
+
+## 0.4.4 — 5 September 2026
+
+**Busy input has a clear limit.** Terminal input stays in order behind a
+bounded queue, and a terminal that cannot accept more tells you visibly so you
+can retry. File changes are grouped into bounded batches and renamed source
+folders stay watched. Dictation stops after two minutes and a cancelled
+recording releases the microphone and removes its temporary audio.
+
 ## 0.4.3 — 3 September 2026
 
 **Agent Mode is open.** The title-bar Agent button no longer carries a WIP
