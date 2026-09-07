@@ -1,0 +1,42 @@
+[
+  {
+    "dialog": "agent",
+    "edit": false,
+    "nativeTyping": "Native WebKit verified",
+    "inert": false,
+    "closed": true,
+    "workspaceActive": true
+  },
+  {
+    "dialog": "routine",
+    "edit": false,
+    "nativeTyping": "Native WebKit verified",
+    "inert": false,
+    "closed": true,
+    "workspaceActive": true
+  },
+  {
+    "dialog": "routine",
+    "edit": true,
+    "nativeTyping": "Native WebKit verified",
+    "inert": false,
+    "closed": true,
+    "workspaceActive": true
+  },
+  {
+    "dialog": "skill",
+    "edit": false,
+    "nativeTyping": "Native WebKit verified",
+    "inert": false,
+    "closed": true,
+    "workspaceActive": true
+  },
+  {
+    "dialog": "skill",
+    "edit": true,
+    "nativeTyping": "Native WebKit verified",
+    "inert": false,
+    "closed": true,
+    "workspaceActive": true
+  }
+]

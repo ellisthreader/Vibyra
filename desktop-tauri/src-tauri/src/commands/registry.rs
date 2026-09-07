@@ -68,6 +68,7 @@ pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
         agents::list_agents,
         agent_roster::agent_profile_list,
         agent_roster::agent_profile_create,
+        agent_roster::agent_write_receipt,
         agent_roster::agent_profile_update,
         agent_roster::agent_profile_archive,
         agent_roster::agent_profile_delete,

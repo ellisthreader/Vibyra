@@ -80,12 +80,11 @@ test("an overlay restores only the pane that stayed logically focused", () => {
 });
 
 test("all interactive entry points preserve the focus handoff", async () => {
-  const [view, store, toasts, palette, modalFocus, changelog] = await Promise.all([
+  const [view, store, toasts, palette, changelog] = await Promise.all([
     read("src/components/terminal/TerminalView.tsx"),
     read("src/state/terminalStore.ts"),
     read("src/components/notifications/Toasts.tsx"),
     read("src/components/layout/paletteAttentionEntries.ts"),
-    read("src/lib/useModalFocus.ts"),
     read("src/components/changelog/PostUpdateChangelog.tsx"),
   ]);
 
@@ -94,7 +93,7 @@ test("all interactive entry points preserve the focus handoff", async () => {
   assert.match(store, /setFocus:[\s\S]*container\.isConnected[\s\S]*closest\("\[inert\]"\)/);
   assert.match(toasts, /answerAgentPrompt\([\s\S]*dismiss\(item\.id\)[\s\S]*restoreTerminalFocusAfterOverlay\(/);
   assert.match(palette, /function answer\([\s\S]*answerAgentPrompt\([\s\S]*focus\(pane\)/);
-  assert.match(modalFocus, /removeAttribute\("inert"\)[\s\S]*onAfterRestore\?\.\(\)/);
+  // Native-overlay focus restoration order is exercised by teammateModalChecks.
   assert.match(
     changelog,
     /useModalFocus\(\s*dialogRef,[\s\S]*?"#root > :not\(\.post-update-changelog\)",[\s\S]*?restoreTerminalFocus,\s*\)/,

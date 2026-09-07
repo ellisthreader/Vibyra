@@ -19,11 +19,21 @@ pub async fn skill_list(state: State<'_, AppState>) -> Result<Vec<Skill>, String
 }
 
 #[tauri::command]
-pub async fn skill_install(state: State<'_, AppState>, draft: SkillDraft) -> Result<Skill, String> {
+pub async fn skill_install(
+    state: State<'_, AppState>,
+    draft: SkillDraft,
+    request_id: Option<String>,
+) -> Result<Skill, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::skills::install(&world.db, &world.account, draft, SkillOrigin::User)
-            .map_err(|e| e.to_string())
+        vibyra_core::skills::install_once(
+            &world.db,
+            &world.account,
+            draft,
+            SkillOrigin::User,
+            request_id.as_deref(),
+        )
+        .map_err(|e| e.to_string())
     })
     .await
 }
@@ -33,11 +43,18 @@ pub async fn skill_revise(
     state: State<'_, AppState>,
     id: String,
     draft: SkillDraft,
+    request_id: Option<String>,
 ) -> Result<Skill, String> {
     let world = world(&state)?;
     run_blocking(move || {
-        vibyra_core::skills::revise(&world.db, &world.account, &id, draft)
-            .map_err(|e| e.to_string())
+        vibyra_core::skills::revise_once(
+            &world.db,
+            &world.account,
+            &id,
+            draft,
+            request_id.as_deref(),
+        )
+        .map_err(|e| e.to_string())
     })
     .await
 }

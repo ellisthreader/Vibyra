@@ -49,12 +49,19 @@ pub async fn agent_profile_list(
 pub async fn agent_profile_create(
     state: State<'_, AppState>,
     request: NewAgent,
+    request_id: Option<String>,
 ) -> Result<AgentProfile, String> {
     let world = world(&state)?;
     run_blocking(move || {
         let root = world.root.clone();
-        vibyra_core::agent_profiles::create(&world.db, &world.account, &root, request)
-            .map_err(|e| e.to_string())
+        vibyra_core::agent_profiles::create_once(
+            &world.db,
+            &world.account,
+            &root,
+            request,
+            request_id.as_deref(),
+        )
+        .map_err(|e| e.to_string())
     })
     .await
 }
@@ -161,4 +168,17 @@ pub async fn agent_engine_capabilities(
         crate::agent_mode::probe::invalidate();
     }
     run_blocking(|| Ok(crate::agent_mode::probe_engines())).await
+}
+
+#[tauri::command]
+pub async fn agent_write_receipt(
+    state: State<'_, AppState>,
+    request_id: String,
+) -> Result<Option<serde_json::Value>, String> {
+    let world = world(&state)?;
+    run_blocking(move || {
+        vibyra_core::agentdb::requests::receipt(&world.db, &world.account, &request_id)
+            .map_err(|e| e.to_string())
+    })
+    .await
 }

@@ -1,5 +1,12 @@
 {
   "ignoreIssues": {
-    "src/assets/providerLogos.js": ["exports"]
-  }
+    "src/assets/providerLogos.js": [
+      "exports"
+    ]
+  },
+  "entry": [
+    "scripts/*.mjs",
+    "tests/*.test.mjs",
+    "tests/ui/teammateFixture.tsx"
+  ]
 }

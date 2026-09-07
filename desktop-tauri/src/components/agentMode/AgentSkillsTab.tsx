@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { AgentProfile } from "../../agentTypes";
 import { BookIcon } from "../common/AgentIcons";
@@ -21,20 +21,39 @@ export function AgentSkillsTab({ agent }: { agent: AgentProfile }) {
   const assign = useAgentWorkStore((state) => state.assignSkill);
   const openPanel = useAgentModeStore((state) => state.openPanel);
   const [mine, setMine] = useState<string[]>([]);
+  const [pending, setPending] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const locks = useRef(new Set<string>());
+  const generation = useRef(0);
 
   useEffect(() => {
+    const current = ++generation.current;
+    setLoaded(false); setMine([]); setPending([]); setError(null); locks.current.clear();
     void load();
     void assignedSkills(agent.id)
-      .then((found) => setMine(found.map((skill) => skill.id)))
-      .catch(() => setMine([]));
-  }, [agent.id, load]);
+      .then((found) => { if (generation.current === current) { setMine(found.map(skill => skill.id)); setLoaded(true); } })
+      .catch(failure => { if (generation.current === current) setError(String(failure)); });
+    return () => { generation.current++; };
+  }, [agent.id, load, retry]);
 
   const installed = skills.filter((skill) => skill.status === "installed");
 
   const toggle = async (skillId: string) => {
+    if (!loaded || locks.current.has(skillId)) return;
+    locks.current.add(skillId);
+    const current = generation.current;
     const on = !mine.includes(skillId);
-    setMine((current) => (on ? [...current, skillId] : current.filter((id) => id !== skillId)));
-    await assign(agent.id, skillId, on);
+    setPending(items => [...items, skillId]); setError(null);
+    try {
+      await assign(agent.id, skillId, on);
+      if (generation.current === current) setMine(items => on ? [...new Set([...items, skillId])] : items.filter(id => id !== skillId));
+    } catch (failure) {
+      if (generation.current === current) setError(String(failure));
+    } finally {
+      if (generation.current === current) { locks.current.delete(skillId); setPending(items => items.filter(id => id !== skillId)); }
+    }
   };
 
   return (
@@ -49,6 +68,8 @@ export function AgentSkillsTab({ agent }: { agent: AgentProfile }) {
             </button>
           }
         />
+        {error && <p className="composer__error" role="alert">{error}</p>}
+        {!loaded && error && <button className="btn btn--sm" onClick={() => setRetry(value => value + 1)}>Retry loading skills</button>}
         {installed.length === 0 ? (
           <EmptyState
             icon={<BookIcon size={18} />}
@@ -75,11 +96,13 @@ export function AgentSkillsTab({ agent }: { agent: AgentProfile }) {
                     <input
                       type="checkbox"
                       checked={mine.includes(skill.id)}
+                      disabled={!loaded || pending.includes(skill.id)}
+                      aria-busy={pending.includes(skill.id)}
                       onChange={() => void toggle(skill.id)}
                     />
                     <span className="row__text">
                       <span className="row__title">
-                        <span>{skill.name}</span>
+                        <span>{skill.name}{pending.includes(skill.id) ? " — Saving…" : ""}</span>
                       </span>
                       <span className="row__meta">{skill.trigger}</span>
                     </span>

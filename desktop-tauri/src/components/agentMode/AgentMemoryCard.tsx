@@ -4,6 +4,7 @@ import type { AgentProfile, Reflection } from "../../agentTypes";
 import { NONE } from "../../lib/emptyList";
 import { useAgentRosterStore } from "../../state/agentRosterStore";
 import { useAgentWorkStore } from "../../state/agentWorkStore";
+import { useEditorSave } from "./useEditorSave";
 import { AgentMemoryRow } from "./AgentMemoryRow";
 
 /**
@@ -25,6 +26,7 @@ export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
   const error = useAgentWorkStore((state) => state.error);
   const update = useAgentRosterStore((state) => state.update);
   const [draft, setDraft] = useState("");
+  const submission = useEditorSave();
 
   useEffect(() => {
     void load(agent.id);
@@ -35,8 +37,10 @@ export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
 
   const submit = () => {
     if (!draft.trim()) return;
-    void add(agent.id, draft.trim(), "fact");
-    setDraft("");
+    const submitted = draft;
+    void submission.run(() => add(agent.id, submitted.trim(), "fact"), () => {
+      setDraft(current => current === submitted ? "" : current);
+    });
   };
 
   return (
@@ -89,7 +93,7 @@ export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
             </select>
           </span>
         </label>
-        {error && <p className="settings-note settings-note--error">{error}</p>}
+        {(submission.error || error) && <p className="settings-note settings-note--error" role="alert">{submission.error || error}</p>}
       </div>
 
       {proposed.length > 0 && (
@@ -135,12 +139,12 @@ export function AgentMemoryCard({ agent }: { agent: AgentProfile }) {
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") submit();
+              if (event.key === "Enter" && !event.nativeEvent.isComposing) submit();
             }}
             placeholder="Something this teammate should always know"
           />
-          <button className="btn btn--sm" disabled={!draft.trim()} onClick={submit}>
-            Add
+          <button className="btn btn--sm" disabled={submission.busy || !draft.trim()} onClick={submit}>
+            {submission.busy ? "Saving…" : "Add"}
           </button>
         </div>
       </div>

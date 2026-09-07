@@ -246,6 +246,29 @@ When optimization work touches Vibyra terminals, preserve these invariants:
 - Label React/mock-IPC screenshots as fixtures. Record live-engine opt-in and
   supported CLI versions; passing unit suites is not a live-provider claim.
 
+## Teammate dialog and save verification
+
+- Mount actual forms inside `.app > .shell`; render their overlay outside the
+  inert workspace. Exercise nested ownership, pre-existing inert, static initial
+  focus, keyboard looping, IME Enter, caret stability and opener restoration.
+- Run `npm run test:teammate-ui` in `desktop-tauri` with Chrome installed
+  (`VIBYRA_CHROME` can select its executable). This uses real React components
+  and trusted browser input with mocked IPC; it is not packaged native proof.
+- Test delayed/unavailable capabilities, lost replies after native commit,
+  pending close/reopen, renderer reload, stale reads and account changes.
+  Save receipts must be atomic, account/token scoped, and store only entity IDs
+  and hashes. Retries read current data; deletion stays deleted. Never delete
+  a reserved teammate home outside the transaction after a failed write.
+- Run the native `agentdb/request_*` tests plus `teammate_journey`. Real-provider
+  context checks require `VIBYRA_LIVE_TEAMMATE_TESTS=1`; ordinary green tests
+  do not show they ran. Keep test databases and folder grants in scratch paths.
+- For Linux WebKit interaction, load the browser fixture in an ephemeral
+  WebKit2 GTK context on a private X11 display, then send native typing/Escape.
+  Keep GTK's event loop running while xdotool types; a blocking subprocess
+  creates a test-induced input failure. Stop only that display and its fixture.
+- Record packaged Linux/Windows create/chat/restart/scheduled-run results
+  separately. A browser fixture or core provider turn cannot replace them.
+
 ## Validation Checklist
 
 Before final response:

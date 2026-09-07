@@ -38,3 +38,46 @@ search `Agent Mode As Built.md`; it is a deep reference, not a completion claim.
   was claimed. Existing user work and production source were preserved.
 - Detailed findings, source links, synthetic evidence and proposed completion
   gates: `docs/audits/agent-mode-2026-09-04/REPORT.md` at the repository root.
+
+## Teammate dialog audit, 2026-09-07
+
+- Installed AppImage hash matched published 0.6.1. Audited source is
+  `6485f8c920acaf81964fbb3e81f9a7e6421cb72c` in worktree `release-0.6.0`;
+  this older safe-mode worktree does not contain that feature implementation.
+- `WorkspaceApp` mounts Agent Mode inside `.app > .shell`. `EditorDialog`
+  invokes `useModalFocus`, which marks that ancestor inert. Browser fixtures
+  reproduce blocked teammate, routine and skill dialogs; Escape still closes.
+- Follow-on fixtures reproduce stale engine selection after capability loading,
+  duplicate create requests after a successful write but failed roster refresh,
+  repeated routine/skill saves while pending, skill checkboxes retaining failed
+  assignments, and memory drafts cleared on failed saves. Start at
+  `NewAgentDialog`, `agentRosterStore`, `RoutineEditor`, `SkillEditor`,
+  `AgentSkillsTab`, `AgentMemoryCard` and `agentWorkStore`.
+- These are audit findings, not fixes. Chromium fixtures used mocked IPC;
+  no signed-in packaged provider journey was exercised. TypeScript and the
+  desktop line gate passed. See the Agent Mode evidence checklist in
+  `.agents/skills/VibyraOptimse/SKILL.md` for dialog and failure-state checks.
+
+## Teammate save reliability implementation, 2026-09-07
+
+- Candidate branch `fix/teammate-reliability` is based on the 0.6.1 release
+  worktree, not the older safe-mode task checkout. Installed software is unchanged.
+- `EditorDialog` portals outside the workspace. `useModalFocus` owns reference
+  counted inert holds and a topmost modal stack; rerenders retain caret/focus.
+- `agentWrite` owns in-flight saves and a minimal account-scoped reload journal
+  containing only request UUID and payload hash. Success updates stores from the
+  returned record; a list-read failure cannot repeat a committed write. Closing
+  a form does not cancel an admitted native save or reopen a different screen.
+  After a visible timeout, retain the receipt through late success until the
+  original form reconciles it; clearing it early makes retry create a duplicate.
+- Schema 5 stores account/token receipts transactionally with writes. Tokens
+  conflict across changed payloads, operations and target teammates. Receipts
+  retain entity IDs, return current data, and never resurrect deleted content.
+  A rolled-back profile write may leave one empty reserved home reused by retry;
+  do not remove it after releasing the DB lock, which could race a later success.
+- Capability selection, pending saves, confirmed skill assignment and memory
+  draft retention have browser regressions in `npm run test:teammate-ui` (Linux
+  CI). Scratch migration/concurrency/reopen tests live in `agentdb/request_*`.
+- Native WebKit fixtures and real-provider core journeys are distinct from
+  signed-in packaged desktop acceptance. See the dated reliability report and
+  `.agents/skills/VibyraOptimse/SKILL.md` for repeatable checks and delivery limits.

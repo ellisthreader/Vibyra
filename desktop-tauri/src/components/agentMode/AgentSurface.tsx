@@ -40,8 +40,8 @@ export function AgentSurface() {
       <section className="agent-surface__main">
         <AgentHeader agent={agent} />
         {tab === "chats" && <ChatSurface agent={agent} />}
-        {tab === "skills" && <AgentSkillsTab agent={agent} />}
-        {tab === "settings" && <AgentSettings agent={agent} />}
+        {tab === "skills" && <AgentSkillsTab key={agent.id} agent={agent} />}
+        {tab === "settings" && <AgentSettings key={agent.id} agent={agent} />}
       </section>
     </div>
   );

@@ -10,10 +10,12 @@
 //! never silently global context for a teammate.
 
 mod budget;
+mod create;
 mod record;
 pub mod reflect;
 mod secrets;
 mod store;
+pub use create::{record, record_once, NewMemory};
 #[cfg(test)]
 mod store_tests;
 #[cfg(test)]
@@ -23,4 +25,6 @@ pub use budget::{overlapping, within_budget};
 pub use record::{MemoryClass, MemoryEntry, MemoryStatus};
 pub use reflect::{judge, Verdict};
 pub use secrets::looks_like_a_secret;
-pub use store::{amend, delete, list, record, set_status, NewMemory};
+pub use store::{amend, delete, list, set_status};
+
+pub(crate) use record::COLUMNS as RECEIPT_COLUMNS;

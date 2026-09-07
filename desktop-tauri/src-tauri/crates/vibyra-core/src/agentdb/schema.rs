@@ -21,6 +21,7 @@ pub const MIGRATIONS: &[&[&str]] = &[
     &[MAIL_APPROVAL_LINK],
     &[super::schema_runs::RUNS],
     &[crate::agent_mail::TASK_LINK_SCHEMA],
+    &[super::requests::SCHEMA],
 ];
 
 /// What a fresh database is created at, and what an old one is upgraded to.
