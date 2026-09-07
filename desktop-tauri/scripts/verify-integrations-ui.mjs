@@ -84,6 +84,14 @@ try {
   assert.equal(await page.getByRole("button", {name: "Setup needed"}).count(), 9);
   assert.equal(await page.getByRole("button", {name: "Setup needed"}).first().isDisabled(), true);
   results.push("Narrow layout and honest missing-registration state");
+  const dormant = await browser.newPage({ viewport: { width: 1000, height: 850 } });
+  dormant.on("pageerror", e => errors.push(String(e)));
+  await dormant.goto(`http://127.0.0.1:${server.address().port}/?dormant`);
+  await dormant.waitForFunction(() => window.qa.calls.some(c => c.operation === "list"));
+  await dormant.getByRole("button", {name: "Other workspace action"}).waitFor();
+  assert.equal(await dormant.getByRole("button", {name: "Integrations", exact: true}).count(), 0);
+  await dormant.close();
+  results.push("A release without provider registrations offers no Integrations button");
   assert.deepEqual(errors, []);
   await writeFile(resolve(output, "results.json"), JSON.stringify({results, errors}, null, 2));
   console.log(`PASS: ${results.length} integration browser scenarios; ${output}`);

@@ -28,6 +28,14 @@ php artisan integrations:check
 
 `integrations:check` prints presence/readiness and callback addresses, never secrets.
 It exits nonzero for missing registration configuration. It does not test real OAuth.
+
+Until at least one provider is registered the desktop **Integrations** button does
+not appear at all, so a release can ship ahead of provider setup without offering
+people nine rows they cannot use. The button appears on its own once the backend
+reports a ready provider; each teammate header rechecks every five minutes, so no
+new desktop release is needed after the registrations land. An account that is
+already connected keeps the button visible even if a registration is withdrawn,
+so existing access stays reviewable and removable.
 Run it in the intended backend environment; local results say nothing about hosted secrets.
 
 | Family | Backend environment variables | Provider setup |

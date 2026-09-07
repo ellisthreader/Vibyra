@@ -8,6 +8,9 @@ import "../../src/styles/controls.css";
 import "../../src/styles/modals.css";
 import type { IntegrationConnection } from "../../src/components/integrations/types";
 
+// ?dormant is a release that shipped before Vibyra registered any provider:
+// nothing is connectable, so the header must offer nothing at all.
+const dormant = new URLSearchParams(location.search).has("dormant");
 const providers = [
   ["gmail", "google", "Gmail", "Read recent email subjects and previews"],
   ["google-calendar", "google", "Google Calendar", "Read upcoming events"],
@@ -18,8 +21,8 @@ const providers = [
   ["stripe", "stripe", "Stripe", "Review recent payments"],
   ["shopify", "shopify", "Shopify", "Review products and recent orders"],
   ["github", "github", "GitHub", "List public repositories"],
-].map(([id, provider, name, description]) => ({ id, provider, name, description, ready: true }));
-const connections: IntegrationConnection[] = [{ id: "connection-a", service: "gmail", label: "ellis@example.test", environment: "live", status: "connected", assigned: false }];
+].map(([id, provider, name, description]) => ({ id, provider, name, description, ready: !dormant }));
+const connections: IntegrationConnection[] = dormant ? [] : [{ id: "connection-a", service: "gmail", label: "ellis@example.test", environment: "live", status: "connected", assigned: false }];
 const qa = { calls: [] as any[], fail: "", status: "pending", providers, connections };
 (window as any).qa = qa;
 (window as any).__TAURI_INTERNALS__ = { invoke: async (_command: string, args: any) => {
