@@ -38,6 +38,9 @@ pub fn answer(
     if ["propose_memory", "propose_skill"].contains(&request.tool_name.as_str()) {
         return super::proposals::handle(world, &subject, &request);
     }
+    if crate::integrations::tools::is_tool(&request.tool_name) {
+        return crate::integrations::runtime::handle(world, subject.agent_id.as_deref(), &request);
+    }
     let classified = approvals::classify(&request.tool_name, &request.input);
 
     if let Err(reason) =

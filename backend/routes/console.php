@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\IntegrationAttempt;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -14,3 +15,5 @@ Schedule::command('vibyra:recover-chat-cost-reservations')->everyFiveMinutes()->
 Schedule::command('maxmind:update')->weekly()->withoutOverlapping(120)->onOneServer();
 Schedule::command('vibyra:deploy-runtime-demos --limit=1')->everyMinute()->withoutOverlapping(30)->onOneServer();
 Schedule::command('vibyra:cleanup-runtime-demos --limit=5')->everyMinute()->withoutOverlapping(10)->onOneServer();
+
+Schedule::command('model:prune', ['--model' => [IntegrationAttempt::class]])->daily()->withoutOverlapping()->onOneServer();

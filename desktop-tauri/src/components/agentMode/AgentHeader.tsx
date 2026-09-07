@@ -1,3 +1,4 @@
+import { AgentIntegrationsButton } from "../integrations/AgentIntegrationsButton";
 import type { AgentProfile } from "../../agentTypes";
 import { engineLabel } from "../../lib/agentEngineLabel";
 import { useAgentChatStore } from "../../state/agentChatStore";
@@ -53,6 +54,7 @@ export function AgentHeader({ agent }: { agent: AgentProfile }) {
             {working > 0 ? `Working in ${working} chat${working === 1 ? "" : "s"}` : "Idle"}
           </span>
         </div>
+        <AgentIntegrationsButton key={agent.id} agentId={agent.id} agentName={agent.name} />
         <div className="dock__tabs" role="tablist" aria-label="Agent view">
           {TABS.map(({ id, label }) => (
             <button

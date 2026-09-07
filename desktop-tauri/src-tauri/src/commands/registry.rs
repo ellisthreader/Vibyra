@@ -12,13 +12,14 @@ use super::{
     account, agent_approvals_cmd, agent_chat, agent_chat_files, agent_chat_prompt, agent_config,
     agent_conversations, agent_mail_cmd, agent_roster, agent_routines_cmd, agent_runs,
     agent_skills_cmd, agent_turn, agents, ai, ai_service, boot, clipboard, conversation_carry, fs,
-    github, memory, perf, phone, preview, probe, project_activity, provider_accounts, render,
-    report, review, scaffold, screenshot, screenshot_reveal, session, settings, speech, terminal,
-    voice, workspaces,
+    github, integrations, memory, perf, phone, preview, probe, project_activity, provider_accounts,
+    render, report, review, scaffold, screenshot, screenshot_reveal, session, settings, speech,
+    terminal, voice, workspaces,
 };
 
 pub fn handler() -> impl Fn(Invoke<Wry>) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
+        integrations::integration_request,
         phone::phone_open_resource,
         account::account_snapshot,
         account::account_restore,

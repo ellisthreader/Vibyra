@@ -39,6 +39,7 @@ static GATE: OnceLock<GateInfo> = OnceLock::new();
 /// Binds the listener and starts answering. Failing to bind is logged, not
 /// fatal to the window; task admission fails closed until the service is available.
 pub fn start(app: AppHandle, hub: Arc<AgentHub>) {
+    crate::integrations::runtime::initialize(app.clone());
     let events = app.clone();
     hub.set_notifier(move |account, chat_id| {
         let _ = events.emit(

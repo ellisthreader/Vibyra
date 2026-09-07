@@ -1,0 +1,40 @@
+.agent-integrations-button { margin-left: 12px; flex-shrink: 0; }
+.integration-modal { width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); }
+.integration-modal__subtitle { margin: 4px 0 0; font-size: var(--fs-hint); color: var(--muted); }
+.integration-modal__body { overflow-y: auto; min-height: 180px; }
+.integration-search { width: 100%; margin-bottom: 14px; }
+.integration-service { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.integration-service:last-child { border-bottom: 0; }
+.integration-service__head { display: flex; align-items: center; gap: 12px; }
+.integration-service__text { flex: 1; min-width: 0; }
+.integration-service h3 { font-size: var(--fs-body); margin: 0 0 4px; }
+.integration-service p { font-size: var(--fs-hint); color: var(--muted); margin: 0; }
+.integration-mark { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; border-radius: 9px;
+  font-size: var(--fs-title); font-weight: var(--fw-semi); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.integration-account { margin: 12px 0 0 46px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.integration-account__access { display: flex; align-items: center; flex: 1; gap: 9px; min-width: 130px; }
+.integration-account__access input { width: 16px; height: 16px; flex-shrink: 0; accent-color: var(--accent); }
+.integration-account__access strong { display: block; overflow-wrap: anywhere; font-size: var(--fs-hint); }
+.integration-account__access small { display: block; margin-top: 3px; color: var(--muted); font-size: var(--fs-hint); }
+.integration-account__actions { display: flex; gap: 4px; }
+.integration-account__confirm { flex-basis: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.integration-account__confirm p { margin-bottom: 10px; }
+.integration-account__confirm button + button { margin-left: 6px; }
+.integration-modal__hint { font-size: var(--fs-hint); color: var(--muted); margin: 12px 0 0; }
+.integration-modal__foot { align-items: center; gap: 20px; }
+.integration-modal__foot span { flex: 1; font-size: var(--fs-hint); color: var(--muted); }
+.integration-connect h3, .integration-wait h3 { margin: 8px 0 14px; font-size: var(--fs-title); }
+.integration-connect p, .integration-wait p { line-height: 1.6; color: var(--muted); }
+.integration-connect label { display: grid; gap: 8px; margin-top: 20px; }
+.integration-connect__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.integration-notice { border: 1px solid var(--border); border-radius: 8px; padding: 12px; line-height: 1.5; }
+@media (max-width: 520px) {
+  .integration-service__head { gap: 8px; flex-wrap: wrap; }
+  .integration-service__text { min-width: 170px; }
+  .integration-service__head > button { margin-left: 42px; }
+  .integration-account { margin-left: 0; }
+  .integration-modal__foot { align-items: flex-start; }
+  .agent-integrations-button { margin-left: 4px; }
+}
+
+.agent-head__identity { flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }

@@ -9,6 +9,7 @@ pub fn tools() -> Vec<Value> {
 pub fn dynamic() -> Vec<Value> {
     tools()
         .into_iter()
+        .chain(crate::integrations::tools::tools())
         .map(|mut tool| {
             tool["type"] = json!("function");
             tool

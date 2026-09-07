@@ -22,6 +22,7 @@ pub mod codex_transcripts;
 pub mod conversation_carry;
 pub mod fs;
 pub mod github;
+pub mod integrations;
 pub mod memory;
 pub mod perf;
 pub mod phone;

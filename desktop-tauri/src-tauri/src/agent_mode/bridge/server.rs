@@ -52,6 +52,7 @@ pub fn handle(line: &str, wire: &dyn Wire, env: &Env) -> Option<String> {
         "tools/list" => {
             let mut tools = vec![approve_tool()];
             tools.extend(super::proposal_tools::tools());
+            tools.extend(crate::integrations::tools::tools());
             json!({ "tools": tools })
         }
         "tools/call" => return Some(call(id, &params, wire, env)),
@@ -96,7 +97,9 @@ fn approve_tool() -> Value {
 
 fn call(id: Value, params: &Value, wire: &dyn Wire, env: &Env) -> String {
     let name = params.get("name").and_then(Value::as_str).unwrap_or("");
-    if !["approve", "propose_memory", "propose_skill"].contains(&name) {
+    if !["approve", "propose_memory", "propose_skill"].contains(&name)
+        && !crate::integrations::tools::is_tool(name)
+    {
         return error_response(id, -32602, &format!("no tool named {name}"));
     }
     let arguments = params.get("arguments").cloned().unwrap_or(Value::Null);
