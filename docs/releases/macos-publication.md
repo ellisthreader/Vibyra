@@ -75,7 +75,15 @@ existing Windows/Linux behavior. Website build and PHP style passed. Native
 Mac validation is tracked by GitHub Actions; no Mac production upload or
 metadata activation has occurred.
 
-Known feature gap in 0.6.3: Mac screenshot capture still routes to
-`screenshot_capture_unsupported.rs`. A downloadable native Mac build must not
-be described as exhaustive Windows/Linux feature parity until that backend and
-interactive acceptance are completed.
+The implementation adds `screenshot_capture_macos.rs`: the pointer's display
+is selected through CoreGraphics, Screen Recording access is requested only
+on an explicit capture, and macOS supplies the PNG through `screencapture`.
+The existing crop/annotation/Copy/Save editor consumes the same RGBA contract.
+Interactive acceptance must cover denied/granted permission, Retina and multiple
+monitors, optional window hiding and both export actions.
+
+The first Mac native gates exposed a noncanonical temporary-folder test fixture
+and real file-watching failures. Watch roots now canonicalize and FSEvents uses
+one recursive root stream instead of restarting descendant streams on renames.
+Five file-watcher tests and the protected metadata test passed on Linux after
+the repair. Mac acceptance is in the latest CI run on the branch.

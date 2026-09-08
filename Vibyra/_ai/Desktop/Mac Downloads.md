@@ -26,7 +26,15 @@ signatures. The shared artifact gate also checks architecture matches the route.
 Validation: 23 focused backend download/catalog/update tests (148 assertions),
 PHP style, website build and six release-contract tests passed. Native Mac gates
 run in CI; interactive Mac feature parity and a real older-client update require
-separate acceptance. The 0.6.3 screenshot implementation currently routes Mac
-to `screenshot_capture_unsupported.rs`, so do not claim full feature parity.
+separate acceptance. The implementation replaces the original unsupported Mac
+screenshot stub with CoreGraphics pointer-display selection, the macOS capture
+command and an explicit Screen Recording permission request. Real permission,
+Retina/multi-monitor and screenshot-editor acceptance remain unverified.
+
+Native Mac CI exposed `/var` versus `/private/var` event-path mismatches and
+FSEvents stream restarts while descendant watches were re-registered. Watcher
+roots now canonicalize; Mac uses one recursive root stream with the existing
+ignored-path filter. Keep the symlink-root regression and directory-rename
+checks. Agent grant fixtures must use canonical roots, as production grants do.
 
 The VibyraObsiden skill routes Mac publication to this note and the release guide.
