@@ -53,6 +53,13 @@ export default function SetupGuide({ catalog, platform, onPlatformChange }) {
     const [appImage, setAppImage] = useState(false);
     const system = keys[selected];
     const macReady = available(catalog?.releases["macos-arm64"]) || available(catalog?.releases["macos-x64"]);
+    const unnotarizedMac = ["macos-arm64", "macos-x64"].some(
+        key => available(catalog?.releases[key]) && catalog.releases[key].notarized === false,
+    );
+    const installSteps = system === "macos" && unnotarizedMac
+        ? [...steps.macos.slice(0, 2), ["Allow this beta on first launch.",
+            "This beta is not Apple-notarized yet. After trying to open Vibyra, open System Settings → Privacy & Security → Open Anyway, then confirm Open."], steps.macos[2]]
+        : steps[system];
     const deb = available(catalog?.releases["linux-deb"]);
     const image = available(catalog?.releases.linux);
     const packageKey = (appImage && image) || !deb ? "linux" : "linux-deb";
@@ -115,7 +122,7 @@ export default function SetupGuide({ catalog, platform, onPlatformChange }) {
                             </div>
                         ) : (
                             <ol className="download-install-steps">
-                                {steps[system].map(([title, copy], index) => (
+                                {installSteps.map(([title, copy], index) => (
                                     <li key={title}>
                                         <span>0{index + 1}</span>
                                         <div>
@@ -125,6 +132,11 @@ export default function SetupGuide({ catalog, platform, onPlatformChange }) {
                                     </li>
                                 ))}
                             </ol>
+                        )}
+                        {system === "macos" && unnotarizedMac && (
+                            <a className="text-link" href="https://support.apple.com/en-us/102445" target="_blank" rel="noreferrer">
+                                Apple’s first-launch instructions <Icon size={16} />
+                            </a>
                         )}
                         {system === "linux" && command && (
                             <div className="download-linux-command">

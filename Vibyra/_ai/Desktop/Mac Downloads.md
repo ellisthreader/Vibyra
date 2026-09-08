@@ -13,7 +13,9 @@ See `docs/releases/macos-publication.md` on the implementation branch.
 `desktop-macos.yml` builds separate ARM64 and Intel packages on native runners,
 called through `desktop-release.yml` with `macos_only=true`. Validation-only
 builds use ad-hoc signing and must not be treated as trusted public installers.
-Trusted publication needs a Developer ID Application certificate and Apple
+An explicitly labelled ad-hoc beta can be promoted after native install/launch
+checks, with `notarized=false` and the macOS Open Anyway instructions.
+Apple-notarized publication needs a Developer ID Application certificate and Apple
 notarization credentials, which were absent from GitHub secret names during
 this task. Updater signing is separate and its key already exists.
 

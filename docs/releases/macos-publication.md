@@ -7,9 +7,12 @@ The release worktree is `/tmp/vibyra-macos-release`.
 ## Build and acceptance
 
 Dispatch `desktop-release.yml` on the release branch with `macos_only=true`.
-`macos_validation=true` builds ad-hoc signed **validation-only** artifacts;
-these are not approved public packages. The default false requires Apple
-credentials, notarization, a stapled app ticket and Gatekeeper acceptance.
+`macos_validation=true` builds ad-hoc signed artifacts without Apple credentials.
+They may be promoted to an explicitly labelled **unnotarized Mac beta** only
+after both native gates, mounted-DMG install/launch checks and updater signature
+verification pass. Show the first-launch approval instructions and
+`notarized=false`; never describe this mode as Apple-notarized. The default
+false requires Apple credentials, a stapled app ticket and Gatekeeper acceptance.
 Both Apple Silicon (`macos-14`) and Intel (`macos-15-intel`) run the full
 frontend/native gates, build a DMG and updater archive, mount the DMG, copy the
 app, verify architecture/signing/minimum OS and check it stays running.
@@ -31,16 +34,22 @@ See https://v2.tauri.app/distribute/sign/macos/ for Apple certificate setup.
 
 ## Publish
 
-1. Require both **notarized** CI artifacts from one exact source SHA. Read each
-   `<arch>.metadata.json`, verify the downloaded sizes/SHA-256 and signed updater
-   payload against the shipped public key. Never publish validation-only output.
+1. Require both CI artifacts from one exact source SHA and successful native
+   install/launch checks. Read each `<arch>.metadata.json`, verify downloaded
+   sizes/SHA-256 and the updater signature. Unnotarized beta promotion must
+   explicitly retain `notarized=false` and public first-launch disclosure.
+   Files from a failed job (`unverified` artifacts) must never be published.
 2. Deploy the reviewed backend Mac updater changes with the website build.
-   Preserve production release storage and all Windows/Linux metadata.
+   The actual production image is based on `d4b36c8` (0.6.0). Use the scoped
+   `release/macos-web` branch / `/tmp/vibyra-macos-web`; the 0.6.3 branch includes
+   unrelated unpublished backend integration changes. Preserve production
+   release storage and all Windows/Linux metadata.
 3. Upload each verified DMG and `.app.tar.gz` to the release volume before
    changing metadata. Recheck hashes and byte counts on the server.
 4. Configure `VIBYRA_MACOS_ARM64_RELEASE_*` and `VIBYRA_MACOS_X64_RELEASE_*`
    (`VERSION`, `PATH`, `FILENAME`, `SIZE`, `SHA256`, `NOTES`, `PUBLISHED_AT`)
-   from the **installer** record. Keep `MINIMUM_SYSTEM_VERSION=12.0`.
+   from the **installer** record. Keep `MINIMUM_SYSTEM_VERSION=12.0` and set
+   `VIBYRA_MACOS_<ARCH>_NOTARIZED` to the actual signing/notarization status.
 5. Configure each matching `VIBYRA_MACOS_<ARCH>_UPDATE_*` (`PATH`, `FILENAME`,
    `SIZE`, `SHA256`, `SIGNATURE`) from the **updater** record. Clear config cache
    or deploy the staged metadata through the existing release procedure.

@@ -110,6 +110,7 @@ class ReleaseDownloadController extends Controller
             'sizeBytes' => max(0, $size),
             'sha256' => (string) ($release['sha256'] ?? ''),
             'minimumSystemVersion' => (string) ($release['minimum_system_version'] ?? ''),
+            'notarized' => $release['notarized'] ?? null,
             'available' => $available,
             'downloadUrl' => "/downloads/{$platform}",
         ];
