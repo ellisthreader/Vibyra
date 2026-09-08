@@ -50,7 +50,7 @@ See https://v2.tauri.app/distribute/sign/macos/ for Apple certificate setup.
    (`VERSION`, `PATH`, `FILENAME`, `SIZE`, `SHA256`, `NOTES`, `PUBLISHED_AT`)
    from the **installer** record. Keep `MINIMUM_SYSTEM_VERSION=12.0` and set
    `VIBYRA_MACOS_<ARCH>_NOTARIZED` to the actual signing/notarization status.
-5. Configure each matching `VIBYRA_MACOS_<ARCH>_UPDATE_*` (`PATH`, `FILENAME`,
+5. Configure each matching `VIBYRA_MACOS_<ARCH>_UPDATE_*` (`VERSION`, `PATH`, `FILENAME`,
    `SIZE`, `SHA256`, `SIGNATURE`) from the **updater** record. Clear config cache
    or deploy the staged metadata through the existing release procedure.
 6. Fetch `/web-api/releases`; both Mac variants must be available. Download

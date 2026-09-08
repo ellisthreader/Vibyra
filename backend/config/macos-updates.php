@@ -6,7 +6,7 @@ return collect(['arm64', 'x64'])->mapWithKeys(function (string $arch): array {
 
     return ['macos-'.$arch => [
         'architecture' => $arch,
-        'version' => env($prefix.'_RELEASE_VERSION', ''),
+        'version' => env($prefix.'_UPDATE_VERSION', ''),
         'path' => env($prefix.'_UPDATE_PATH', ''),
         'filename' => env($prefix.'_UPDATE_FILENAME', ''),
         'size_bytes' => (int) env($prefix.'_UPDATE_SIZE', 0),
