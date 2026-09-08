@@ -21,39 +21,19 @@ and preview story, but they are separate user experiences with different jobs.
 | Phone app | The native iOS/Android client for account, chat, projects, community, and mobile previews. | Root `App.tsx`, `src/`, `app.config.js`, `eas.json` | From repo root: `npm run ios` or `npm run android`; Expo development can also use `npx expo start`. |
 | Desktop app | The native Tauri 2 + Rust app for AI CLI terminals, local projects, previews, and account controls. It is not the public website or the browser app. | `desktop-tauri/`, especially `desktop-tauri/src/App.tsx` and `desktop-tauri/src-tauri/` | From `desktop-tauri/`: `npm run app:dev`. |
 
-## Shared Content, Different Presentation
+## Current surfaces
 
-- Public website copy may explain phone, browser, and desktop capabilities, but
-  must not reuse authenticated product navigation or imply planned routes ship.
-- Browser and phone apps share `App.tsx` and most of `src/`; platform-specific
-  WebView, navigation, permissions, and device behavior keep their runtimes
-  distinct.
-- Desktop uses the same account and visual language, while independently owning
-  local-machine access, terminals, and preview execution. The removed Electron
-  bridge's phone pairing and LAN proxy are not part of the Tauri product.
+| Surface | Source | Launch |
+| --- | --- | --- |
+| iPhone and browser client | `mobile/` | root `npm run phone` / `npm run web` |
+| Computer Host | `host/` | `bash host/scripts/run.sh` with explicit project |
+| Native desktop | `desktop-tauri/` | `npm run app:dev` in desktop-tauri |
+| Public website and shared APIs | `backend/` | Laravel |
 
-## Link Map
-
-```mermaid
-flowchart LR
-    Website[Public website] -->|explains and links to| Phone[Phone app]
-    Website -->|explains and links to| Browser[Browser app]
-    Website -->|explains and links to| Desktop[Desktop app]
-    Phone <-->|shared Expo source and account| Browser
-    Browser <-->|API account and cloud state| Backend[Laravel backend]
-    Phone <-->|API account and cloud state| Backend
-    Website -->|served by| Backend
-    Desktop <-->|account and AI APIs| Backend
-```
-
-## Related Memory
-
-- Phone/browser client: [[Vibyra App Memory]]
-- Desktop companion: [[Vibyra Desktop Memory]]
-- Website host and shared APIs: [[Vibyra Backend Memory]]
-- Phone preview: [[App/Live Preview]]
-- Native desktop preview: [[Desktop/Projects And Preview]]
-- Public-site product/content direction: [[Marketing/Vibyra Marketing Website Master Plan]]
+There is one mobile application. Its welcome reads “Build from your pocket.”
+The former root Expo client and its older account/quiz screens are removed.
+Read [[Vibyra App Memory]] and [[App/iOS Remote Workspace]] for mobile tasks.
+Host sessions and Desktop chats remain separate until Desktop IPC is delivered.
 
 ## Current Website Reality
 

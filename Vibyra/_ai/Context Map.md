@@ -44,24 +44,9 @@ approved shared system for desktop, Expo phone/browser, and marketing.
 
 ## Mobile App
 
-Read `Vibyra App Memory.md`, then one focused note from `Vibyra/_ai/App/`.
-
-- Broad AI chat routing: `App/AI Live Chat.md`
-- Prompt routing, project briefs, reasoning effort: `App/Chat Prompt Routing.md`
-- Slash commands and AI skills: `App/Chat Slash Commands.md`
-- Streaming, code blocks, chat visual polish: `App/Chat Rendering UI.md`
-- Edit approval, changed files, run artifacts: `App/Chat Code Changes.md`
-- Detached chat folder/project intents: `App/Detached Chat Routing.md`
-- Preview/WebView/blank preview: `App/Live Preview.md`
-- Pairing/reconnect/Wi-Fi discovery: `App/Pairing And Connection.md`
-- Projects tab, file browser, folder search: `App/Workspace Projects.md`
-- `/api/session/state`, cloud sync: `App/Cloud Sync.md`
-- Profile, billing, model locks: `App/Profile Billing.md`
-- Bottom nav, app shell, broad UI: `App/Navigation UI.md`
-- App Store and Google Play release audit: `App/App Store Production Readiness.md`
-- Mobile/backend/desktop cybersecurity release audit: `App/Mobile Cybersecurity Review.md`
-- Mobile/frontend design clarity from short-form product demos: `App/Short-Form Frontend Design Principles.md`
-- Phone-only code organization, 200-line remediation, contexts, props/types, and runtime baselines: `App/Mobile Code Optimization Plan.md`
+Read `Vibyra App Memory.md`, then `App/iOS Remote Workspace.md`.
+The only mobile source is `mobile/`; the retired root Expo app must not be
+restored or launched. The confirmed entry page is “Build from your pocket.”
 
 ## Desktop App
 
@@ -93,15 +78,9 @@ Read `Vibyra Backend Memory.md`, then one focused note from `Vibyra/_ai/Backend/
 
 ## Cross-Domain Shortcuts
 
-Pairing bugs: read `App/Pairing And Connection.md`. Start near `src/context/usePairingActions.ts` and `src/context/pairingDiscovery.ts`.
-
-Agent or prompt flow: read `App/Chat Prompt Routing.md`. Start near `src/context/useAgentActions.ts` and `src/context/agentTypes.ts`.
-
-Backend account/cloud-sync errors: read `Backend/Auth And Cloud Sync.md` plus `App/Cloud Sync.md`. Start near `backend/routes/web.php`, `src/utils/appApi.ts`, and `src/context/useCloudSync.ts`.
-
-OpenRouter cost tuning: read `Backend/Chat And Cost Controls.md`. Start near `ChatEndpoint.php`, `ChatPrompting.php`, and `src/context/useAgentActions.ts`.
-
-Style or UI work: read `App/Navigation UI.md` unless the task names a more specific feature. Start near `src/styles/theme.ts`, `src/components/`, `src/screens/WorkspaceScreen.tsx`, and `src/screens/workspace/styles/`.
+Phone connection, onboarding, account and preview: `App/iOS Remote Workspace.md`.
+Host protocol and approval: `host/docs/protocol.md`.
+Backend account/API work: `Backend/Auth And Cloud Sync.md`.
 
 ## Deep References
 

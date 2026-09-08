@@ -15,3 +15,7 @@ Vibyra/.trash/
 Vibyra/_attachments/
 Vibyra/_ai/Runs/
 Vibyra/Prompt Transcripts.md
+
+# Runtime and temporary preview artifacts are not application source.
+/tmp/
+/.vibyra-agent/

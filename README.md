@@ -1,75 +1,59 @@
 # Vibyra
 
-Vibyra runs AI software workflows on a user's own machine. Vibyra Desktop is a native Tauri 2 + Rust app that orchestrates multiple AI CLI agents (Claude Code, Codex, Gemini and more) in a fast terminal grid, with per-project sessions, previews, voice input, and screenshot capture. The iPhone app gives the user a portable way to manage their account, browse the community, and run AI chat workflows.
+Build from your pocket. Vibyra's iPhone app connects to a computer you approve
+and gives you access to real projects, terminals, and coding agents.
 
-This repository holds the complete product: a Tauri 2 + Rust desktop app, an Expo React Native mobile app, and a Laravel backend for auth, billing, cloud state, community publishing, moderation, referrals, and AI chat routing.
+This repository contains one mobile application, in `mobile/`, alongside
+Vibyra Desktop, the standalone Host, and the Laravel backend.
 
-## Product Highlights
+## Run the iPhone app in Expo Go
 
-- **Multi-agent terminal workspace:** run Claude, Codex, Gemini and other AI CLIs side by side in one native terminal grid, scoped per project.
-- **Approval-gated local execution:** safe mode, launch preflight, and explicit confirmations protect project work before AI terminals make changes.
-- **Project-aware AI builds:** Vibyra discovers local projects, opens model-backed terminal workflows, and keeps sessions scoped to the selected workspace.
-- **Live preview loop:** local app previews can be started from the desktop app and inspected element by element.
-- **Professional account layer:** auth, billing plans, credit limits, device sessions, referral tracking, and community publishing are handled through the backend.
-- **Native desktop app:** a frameless Tauri shell with project switching, an AI chat and memory dock, model picker, and account controls.
+Use Node.js 22.12 or newer and the SDK 57 version of Expo Go.
 
-## Screenshots
-
-<p>
-  <img src="docs/assets/iphone-auth.png" alt="Vibyra iPhone auth screen" width="240">
-  <img src="docs/assets/iphone-onboarding.png" alt="Vibyra iPhone onboarding screen" width="240">
-  <img src="docs/assets/iphone-pricing.png" alt="Vibyra iPhone pricing screen" width="240">
-</p>
-
-## Architecture
-
-```text
-Vibyra Desktop (Tauri 2 + Rust + React + xterm.js)
-  -> native PTY terminals for AI CLI agents, per project
-  -> project discovery, file tree, previews, screenshots, voice input
-  -> account auth against the Laravel API
-
-iPhone app (Expo React Native)
-  -> account, onboarding, workspace, chat, community
-  -> talks to the Laravel API
-
-Backend (Laravel)
-  -> auth, sessions, billing, credits, OpenRouter-backed chat, cloud sync,
-     referrals, community publishing, moderation, and hosted demos
+```bash
+npm ci --prefix mobile
+bash host/scripts/build-wasm.sh
+npm run phone
 ```
 
-## Engineering Notes
+The transport build uses Rust 1.97.1 and wasm-bindgen 0.2.127. Install the Rust
+toolchain with `rustup toolchain install 1.97.1 --profile minimal` if needed.
+Sign into the same Expo account in the CLI and Expo Go, then scan the LAN QR.
+The first page says **Build from your pocket.** and offers **Get started** and
+**I already have an account**. To reopen it, use **Settings → Show welcome again**.
 
-- **State management:** workspace state is split across mobile context modules, the desktop app's Rust core and zustand stores, and backend session data.
-- **Human-in-the-loop safety:** desktop launches can run behind safe-mode git worktrees with explicit approval before local changes are touched.
-- **Modular desktop core:** PTY handling, output batching, the agent catalog, filesystem watching, previews, and settings live in the dependency-light `vibyra-core` Rust crate, separate from the Tauri shell.
-- **Backend product depth:** the Laravel app includes migrations, models, billing services, credit deduction, moderation services, community publishing models, and session/device management.
-- **Testing surface:** Rust unit tests cover the desktop core, Node tests cover the desktop frontend and mobile utility logic, and PHPUnit covers the backend.
+`npm start` and `npm run dev` launch this same app. `npm run web` opens its
+browser preview. `npm run ios` builds a development client on macOS with Xcode.
+The root package only routes commands; it is not a second Expo project.
 
-## Tech Stack
+<img src="docs/assets/iphone-welcome.png" alt="Build from your pocket — Vibyra welcome" width="240">
 
-- **Mobile:** Expo, React Native, TypeScript, React Native Reanimated, WebView, AsyncStorage.
-- **Desktop:** Tauri 2, Rust, React, TypeScript, xterm.js, portable-pty, Vite.
-- **Backend:** Laravel, SQLite-ready local development, billing and credit services, account/session APIs, community publishing APIs.
-- **AI workflow:** OpenRouter-backed chat/build routing, model tiering, reasoning effort controls, pending generated file handling, and safe command execution.
+## Connect your computer
 
-## Repository Map
-
-```text
-src/                       Expo React Native app
-src/context/               Account, workspace, cloud sync, AI agent, and app state
-src/screens/               Auth, onboarding, welcome, and workspace screens
-desktop-tauri/             Vibyra Desktop (Tauri 2 + Rust + React)
-desktop-tauri/src/         Desktop frontend: terminals, projects, panels, stores
-desktop-tauri/src-tauri/   Tauri shell, commands, and the vibyra-core Rust crate
-backend/                   Laravel API, billing, auth, sessions, community, moderation
-Vibyra/_ai/                Project memory and architecture notes for agent workflows
-docs/assets/               README screenshots and showcase imagery
+```bash
+bash host/scripts/run.sh --project /absolute/path/to/project --pair
 ```
 
-## Run Locally
+Host defaults to loopback. For phone testing, use the private-LAN listener and
+public URL options documented in [mobile/README.md](mobile/README.md), then
+approve the phone's pairing request in the Host console. Accounts are optional
+for computer pairing. The phone-only coding path is marked as rolling out.
 
-### Desktop app
+The new app uses the standalone Host. Existing Vibyra Desktop chats do not yet
+synchronize into it. Native store signing and public service qualification
+remain separate work; this repository contains an Expo Go development app.
+
+## Repository map
+
+| Path | Purpose |
+| --- | --- |
+| `mobile/` | The sole iPhone/Expo app, beginning at `WelcomeStep.tsx` |
+| `host/` | Encrypted transport, computer sessions, project access and relay |
+| `desktop-tauri/` | Native Tauri desktop application and shared PTY core |
+| `backend/` | Laravel website, accounts and shared APIs |
+| `Vibyra/_ai/` | Project memory and focused workflow notes |
+
+## Desktop
 
 ```bash
 cd desktop-tauri
@@ -77,37 +61,19 @@ npm ci
 npm run app:dev
 ```
 
-On Linux, install the GTK/WebKit build dependencies first with
-`desktop-tauri/scripts/setup-linux.sh`.
+On Linux, install GTK/WebKit dependencies using
+`desktop-tauri/scripts/setup-linux.sh` first.
 
-To produce a package, run `npm run app:build:linux` (AppImage) or
-`npm run app:build:windows` (NSIS) from `desktop-tauri/`.
-
-Requirements: Node.js, npm, and a stable Rust toolchain.
-
-### Full mobile development
-
-Install dependencies and start the backend and Expo app together:
+## Checks
 
 ```bash
-npm install
-npm start
+npm run check:mobile
+npm --prefix mobile run export
+cargo +1.97.1 test --locked --manifest-path host/Cargo.toml --workspace
+node --test scripts/mobile-entrypoints.test.mjs
 ```
 
-Open the Expo URL with Expo Go on iPhone, or run a native iOS build from macOS with Xcode/EAS.
-
-## Useful Commands
-
-```bash
-npm run backend                 # Laravel backend only
-npm run ios                     # Expo iOS target
-npm run web                     # Expo web target
-npm run typecheck               # TypeScript check
-
-cd desktop-tauri && npm run app:dev    # Run Vibyra Desktop
-cd desktop-tauri && npm run verify     # Desktop release gates
-```
-
-## Why This Project Matters
-
-Vibyra is not a single-screen demo. It is a full product system that combines a native desktop app, mobile UX, backend account infrastructure, billing controls, AI routing, preview tooling, and explicit safety boundaries. It shows end-to-end product engineering across native desktop, frontend, backend, and AI workflow design.
+The mobile checks cover type safety, account/onboarding state, transport and
+terminal behavior, and source organization. `mobile/scripts/verify-ui.mjs`
+checks the rendered onboarding and workspace; `verify-host-ui.mjs` exercises
+real local Host sessions. See [mobile/README.md](mobile/README.md) for details.

@@ -2,106 +2,23 @@
 
 ## Local App
 
-The Expo app reads `EXPO_PUBLIC_API_URL` from root `.env`; for LAN/device testing it should point to the dev machine on Laravel's API port, e.g. `http://192.168.1.109:8000`. The backend MUST be running before the app boots — otherwise the AI chat fails silently: foreground `/api/chat` POSTs reject with `Could not reach Vibyra at http://…:8000/api/chat`, the chat bubble shows the mapped "I could not reach Vibyra from the app." reply via `userFacingAgentError`, and the browser logs `ERR_CONNECTION_REFUSED` natively (not suppressible — see backend-offline gate decision).
-
-Default command to run both processes (Laravel + Expo) with `Ctrl+C` killing both:
+The only Expo app is `mobile/`, beginning at “Build from your pocket.”
 
 ```bash
-npm start
+npm ci --prefix mobile
+bash host/scripts/build-wasm.sh
+npm run phone
 ```
 
-`npm start` delegates to `npm run dev`. `scripts/start-dev.sh` refreshes root `.env` `EXPO_PUBLIC_API_URL` from the machine's current LAN IP, starts Laravel on `0.0.0.0:8000`, waits for `http://127.0.0.1:8000/api/skills`, then starts Expo web on `http://localhost:8081` so auth calls do not race a cold backend or stale LAN address. It also opens the external, phone-only preview helper at `/home/ellis/Desktop/PhonePreview/start-phone-preview.sh` after Expo web is reachable. That helper is now a standalone public repo at `https://github.com/ellisthreader/phone-preview`. It prefers a transparent Electron window with a DOM `<webview>` clipped to the selected phone screen; this is required so React Native Web modals, fixed nav, and help overlays cannot escape the phone frame while the frame/controls stay clickable. Device presets use full-screen CSS viewport dimensions and DPR metadata for app-style rendering, not shortened browser-chrome heights. Chrome is fallback only because browser windows cannot make the area outside the phone transparent. Override the preview target with `EXPO_WEB_PORT`, `EXPO_WEB_URL`, or `PHONE_PREVIEW_SCRIPT` if the dev URL/helper path changes.
+Use SDK 57 Expo Go and the matching CLI account. Keep Metro detached for phone
+QR sessions. Verify the owning checkout, LAN manifest and native launch bundle
+before sharing the address; `expo whoami` alone does not prove device discovery.
+Root `start`, `dev`, `web`, `ios`, and `android` delegate to `mobile/`.
+Settings > Show welcome again returns to the first page.
 
-As of 2026-05-20, `scripts/start-dev.sh` prefers the active default-route IPv4 address before falling back to `hostname -I`. Do not reject all `172.16.0.0/12` addresses as Docker-only; phone hotspots can use addresses such as `172.20.10.2`, and Expo login must use that Wi-Fi/LAN URL instead of a virtual bridge address.
-
-Or split across two terminals:
-
-```bash
-# terminal 1 — backend (must be first)
-npm run backend
-
-# terminal 2 — Expo
-npx expo start --web --host lan --port 8081
-```
-
-For a native phone QR launch from an automated agent/terminal, the Expo process
-must outlive the bounded command that started it. Run Metro as a detached
-background process with an explicit port, then verify `/status`, the native
-Expo manifest, and its `launchAsset.url` over the active Wi-Fi IPv4 address.
-Warm the Android/iOS bundle before showing the QR; the first Hermes transform
-can take longer than the phone request timeout after Metro discards a stale
-cache. See `.agents/skills/vibyra-expo-web-diagnostics/SKILL.md` for the exact
-three-check gate.
-
-Vibyra is pinned to Expo SDK 54 for physical-iPhone App Store Expo Go testing.
-As of July 2026, Expo's iOS App Store build does not support SDK 55/56; those
-SDKs require TestFlight/`eas go` or a development build. Because
-`expo-dev-client` is also installed, always start this path explicitly with
-`npx expo start --go --lan --port <port>`. The Expo Go adapters prevent native
-IAP and Google Sign-In from loading; those two features require a development or
-store build. Before presenting `exp://<lan-ip>:<port>`, confirm the manifest
-reports SDK 54 and warm its LAN iOS bundle successfully. Confirm the port's
-listener and manifest belong to Vibyra when other Expo projects are running;
-`/status` alone cannot detect a wrong-project collision. `metro.config.js`
-keeps desktop, backend, vault, and temporary trees out of Metro's mobile crawl.
-
-`npm run backend` delegates to `scripts/start-backend.sh`. It first checks `http://127.0.0.1:8000/health`; if this repo's Laravel backend is already running, it prints the URL and exits successfully instead of failing with `Address already in use`. If port 8000 is occupied by a non-Vibyra process, either stop that process or run `BACKEND_PORT=<free-port> npm run backend`.
-
-Manual fallback if scripts fail or you want a fully detached server:
-
-```bash
-cd backend && php artisan serve --host=0.0.0.0 --port=8000
-```
-
-Quick liveness check:
-
-```bash
-curl -s http://127.0.0.1:8000/api/skills | head -c 80
-# expect {"ok":true,"skills":[...
-```
-
-### Standalone website
-
-Run the Laravel marketing/account/download website with:
-
-```bash
-npm run website
-```
-
-Open `http://127.0.0.1:8128`. The launcher uses a Node proxy on `8128` and
-Laravel on `8129`; this avoids PHP's development server being blocked by idle
-speculative browser sockets. If the page returns `200` but renders blank, check
-for a stale `backend/public/hot` file and rebuild assets from `backend/` with
-`npm run build`.
-
-If signup/login shows "Could not reach Vibyra" or `failed to fetch`, check backend liveness before editing auth code. The app uses `EXPO_PUBLIC_API_URL` from root `.env`; both `http://127.0.0.1:8000/api/skills` and the configured LAN URL should answer while developing on web/device.
-
-If the browser reports `AppEntry.bundle` 500 plus strict MIME refusal because the script response is `application/json`, fetch the bundle URL directly and read Metro's JSON error body. This is usually a build/resolver error, not a MIME problem. For `UnableToResolveError`, verify imported files exist, especially `src/context/translations.ts` versus `src/context/i18n/*.ts`. After creating a missing module, restart Expo if Metro keeps serving the stale resolver miss, then verify the bundle returns `Content-Type: application/javascript`.
-
-If Expo/Metro crashes with `ENOSPC: System limit for number of file watchers reached, watch '/home/ellis/Desktop/Vibyra'`, raise Linux inotify limits before restarting Expo:
-
-```bash
-sudo sysctl -w fs.inotify.max_user_watches=1048576 fs.inotify.max_user_instances=1024
-```
-
-Check current values with:
-
-```bash
-sysctl fs.inotify.max_user_watches fs.inotify.max_user_instances
-```
-
-If the fix should survive reboot, add the same values to a root-owned file under `/etc/sysctl.d/` and reload with `sudo sysctl --system`.
-
-Useful checks:
-
-```bash
-npm run typecheck
-```
-
-Normalize nullable remote payloads before string operations. Project names,
-paths, and account plan values can arrive as `null`; search/filter and model
-locking code must coerce them to safe strings rather than calling
-`toLowerCase()` directly.
+Read `App/iOS Remote Workspace.md` and the Expo diagnostics skill for details.
+The former root client, backend-plus-legacy-Expo launcher and old screenshots
+are removed. Run `npm run backend` separately when developing the Laravel API.
 
 ## Desktop Bridge
 
