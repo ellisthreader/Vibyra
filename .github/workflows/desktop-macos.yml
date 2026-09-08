@@ -1,0 +1,81 @@
+name: Mac desktop packages
+on:
+  workflow_call:
+    inputs:
+      validation_only:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            arch: x64
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop-tauri
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '12.0'
+      VIBYRA_MAC_VALIDATION: ${{ inputs.validation_only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: desktop-tauri/package-lock.json
+      - name: Check signing credentials
+        if: ${{ !inputs.validation_only }}
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for key in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            test -n "${!key}" || { echo "Missing required GitHub secret: $key"; exit 1; }
+          done
+      - run: npm ci
+      - run: rustup target add ${{ matrix.target }}
+      - name: Frontend and native gates on this Mac architecture
+        run: npm run verify
+      - name: Build DMG installer and signed app updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ "$VIBYRA_MAC_VALIDATION" = true ]; then
+            unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+            export APPLE_SIGNING_IDENTITY=-
+          fi
+          npm run app:build:macos:${{ matrix.arch }}
+      - name: Verify installed bundle and launch
+        run: bash scripts/smoke-macos.sh ${{ matrix.target }}
+      - name: Stage checked installer and updater metadata
+        run: node scripts/stage-macos.mjs ${{ matrix.arch }} ${{ matrix.target }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: vibyra-macos-${{ inputs.validation_only && 'validation-only' || 'notarized' }}-${{ matrix.arch }}-${{ github.sha }}
+          path: desktop-tauri/release-macos/*
+          if-no-files-found: error
+          retention-days: 30

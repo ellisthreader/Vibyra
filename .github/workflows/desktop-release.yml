@@ -2,12 +2,22 @@ name: Rust desktop beta packages
 
 on:
   workflow_dispatch:
+    inputs:
+      macos_only:
+        description: Build the Apple Silicon and Intel Mac packages only
+        type: boolean
+        default: false
+      macos_validation:
+        description: Validate Mac builds without Apple notarization (never publish)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   release-preflight:
+    if: ${{ !inputs.macos_only }}
     name: Verify release version and updater feed
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -232,3 +242,10 @@ jobs:
             echo
             echo "No files were published to the live release volume."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  macos:
+    if: ${{ inputs.macos_only }}
+    uses: ./.github/workflows/desktop-macos.yml
+    with:
+      validation_only: ${{ inputs.macos_validation }}
+    secrets: inherit
