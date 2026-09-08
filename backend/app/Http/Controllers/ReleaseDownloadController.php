@@ -50,6 +50,22 @@ class ReleaseDownloadController extends Controller
             abort(404);
         }
 
+        return $this->streamArtifact($platform, $release);
+    }
+
+    public function update(string $platform): JsonResponse|StreamedResponse
+    {
+        abort_unless(in_array($platform, ['macos-arm64', 'macos-x64'], true), 404);
+        $release = (array) config("macos-updates.{$platform}", []);
+        if (trim((string) ($release['signature'] ?? '')) === '') {
+            return $this->unavailable();
+        }
+
+        return $this->streamArtifact($platform, $release);
+    }
+
+    private function streamArtifact(string $platform, array $release): JsonResponse|StreamedResponse
+    {
         $path = trim((string) ($release['path'] ?? ''));
         try {
             if ($this->artifacts->size($platform, $release) === null) {
