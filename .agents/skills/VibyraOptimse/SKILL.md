@@ -268,6 +268,10 @@ When optimization work touches Vibyra terminals, preserve these invariants:
   creates a test-induced input failure. Stop only that display and its fixture.
 - Record packaged Linux/Windows create/chat/restart/scheduled-run results
   separately. A browser fixture or core provider turn cannot replace them.
+- Exercise the actual routine IPC payload for daily, weekday and interval
+  schedules. Serde enum `rename_all` renames variants, not their fields:
+  preserve `minuteOfDay` on the wire and accept legacy `minute_of_day` rows.
+  Run the `routine_wire` integration target; mocked IPC misses this failure.
 
 ## Validation Checklist
 

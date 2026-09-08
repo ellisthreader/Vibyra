@@ -81,6 +81,9 @@ jobs:
         run: rustup show active-toolchain
       - name: Run release gates
         run: npm run verify
+      - name: Verify Agent forms and save recovery
+        if: matrix.bundle == 'appimage'
+        run: npm run test:teammate-ui && npm run test:integrations-ui
       - name: Verify and read the version being released
         id: version
         shell: bash

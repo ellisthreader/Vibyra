@@ -24,9 +24,16 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Schedule {
     /// Every day at a wall-clock time.
-    Daily { minute_of_day: u32 },
+    Daily {
+        #[serde(rename = "minuteOfDay", alias = "minute_of_day")]
+        minute_of_day: u32,
+    },
     /// On chosen days of the week. `days` holds 0 = Monday … 6 = Sunday.
-    Weekdays { days: Vec<u32>, minute_of_day: u32 },
+    Weekdays {
+        days: Vec<u32>,
+        #[serde(rename = "minuteOfDay", alias = "minute_of_day")]
+        minute_of_day: u32,
+    },
     /// Every N minutes from whenever it was last saved. The one rule that is
     /// not civil time, and so the one DST cannot move.
     Every { minutes: u32 },
