@@ -41,7 +41,10 @@ mod screenshot_capture;
 #[cfg(target_os = "windows")]
 #[path = "screenshot_capture_windows.rs"]
 mod screenshot_capture;
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+#[cfg(target_os = "macos")]
+#[path = "screenshot_capture_macos.rs"]
+mod screenshot_capture;
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 #[path = "screenshot_capture_unsupported.rs"]
 mod screenshot_capture;
 mod screenshot_png;
