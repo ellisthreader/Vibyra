@@ -124,7 +124,9 @@ export default function PlatformCards({ catalog, error, retry, recommended, onSe
                                 <h3 id={`platform-${platform.key}`}>{platform.label}</h3>
                                 <p>
                                     {platform.key === "macos" && packages.length
-                                        ? "Choose the chip inside your Mac."
+                                        ? packages.some(([key]) => catalog.releases[key].notarized === false)
+                                            ? "Mac beta — first launch needs approval in macOS settings."
+                                            : "Choose the chip inside your Mac."
                                         : platform.detail}
                                 </p>
                                 <div className="download-platform-actions">

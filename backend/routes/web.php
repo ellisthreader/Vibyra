@@ -29,6 +29,8 @@ Route::view('/downloads', 'downloads');
 Route::view('/account/downloads', 'downloads');
 Route::get('/web-api/download-catalog', [WebsiteDownloadsController::class, 'catalog']);
 Route::get('/web-api/releases', [ReleaseDownloadController::class, 'index']);
+Route::get('/downloads/{platform}/update', [ReleaseDownloadController::class, 'update'])
+    ->whereIn('platform', ['macos-arm64', 'macos-x64']);
 Route::get('/downloads/{platform}', [ReleaseDownloadController::class, 'download'])
     ->whereIn('platform', ['windows', 'linux', 'linux-deb', 'macos-arm64', 'macos-x64']);
 

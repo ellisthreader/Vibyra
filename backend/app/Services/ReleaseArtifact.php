@@ -47,7 +47,13 @@ class ReleaseArtifact
             return true;
         }
 
-        return in_array((string) ($release['architecture'] ?? ''), ['arm64', 'x64'], true)
+        if ($extension === 'gz' && (! str_ends_with((string) $release['path'], '.app.tar.gz')
+            || ! str_ends_with((string) $release['filename'], '.app.tar.gz'))) {
+            return false;
+        }
+
+        return $platform === 'macos-'.(string) ($release['architecture'] ?? '')
+            && in_array((string) ($release['architecture'] ?? ''), ['arm64', 'x64'], true)
             && (string) ($release['minimum_system_version'] ?? '') === '12.0';
     }
 
