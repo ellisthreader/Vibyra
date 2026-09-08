@@ -160,7 +160,10 @@ fn protected_metadata_cannot_be_written_directly_or_through_a_symlink() {
     let place = AgentPlace {
         id: "p".into(),
         agent_id: "a".into(),
-        path: root.path().to_string_lossy().into_owned(),
+        path: std::fs::canonicalize(root.path())
+            .unwrap()
+            .to_string_lossy()
+            .into_owned(),
         access: PlaceAccess::ReadWrite,
         label: "fixture".into(),
         created_ms: 0,

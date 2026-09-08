@@ -23,8 +23,7 @@ fn reports_created_files() {
     .unwrap();
     std::thread::sleep(Duration::from_millis(100));
     std::fs::write(tmp.path().join("new-file.txt"), "hello").unwrap();
-    let changes = rx.recv_timeout(Duration::from_secs(5)).unwrap();
-    assert!(changes.iter().any(|c| c.path.contains("new-file.txt")));
+    wait_for(&rx, "new-file.txt");
     drop(watcher);
 }
 
@@ -70,4 +69,23 @@ fn wait_for(rx: &mpsc::Receiver<Vec<FsChange>>, suffix: &str) {
             return;
         }
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn reports_changes_when_the_workspace_root_is_a_symlink() {
+    let tmp = tempfile::tempdir().unwrap();
+    let real = tmp.path().join("real");
+    let alias = tmp.path().join("alias");
+    std::fs::create_dir(&real).unwrap();
+    std::os::unix::fs::symlink(&real, &alias).unwrap();
+    let (tx, rx) = mpsc::channel();
+    let watcher = WorkspaceWatcher::start(alias.to_str().unwrap(), move |changes| {
+        let _ = tx.send(changes);
+    })
+    .unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    std::fs::write(alias.join("through-link.rs"), "source").unwrap();
+    wait_for(&rx, "through-link.rs");
+    drop(watcher);
 }
