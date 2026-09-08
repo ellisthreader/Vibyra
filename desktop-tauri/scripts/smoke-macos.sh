@@ -27,7 +27,7 @@ fi
 binary=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
 expected=arm64
 if [ "$1" = x86_64-apple-darwin ]; then expected=x86_64; fi
-lipo -verify_arch "$expected" "$app/Contents/MacOS/$binary"
+lipo "$app/Contents/MacOS/$binary" -verify_arch "$expected"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$app/Contents/Info.plist")" = '12.0'
 "$app/Contents/MacOS/$binary" > "$install_dir/launch.log" 2>&1 &
 app_pid=$!
